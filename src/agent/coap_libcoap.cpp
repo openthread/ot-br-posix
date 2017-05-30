@@ -50,11 +50,10 @@ static void CoapAddressInit(coap_address_t &aAddress, const uint8_t *aIp6, uint1
 {
     coap_address_init(&aAddress);
     aAddress.addr.sin6.sin6_family = AF_INET6;
+    aAddress.addr.sin6.sin6_port = htons(aPort);
 
     VerifyOrExit(aIp6 != NULL);
-
     memcpy(&aAddress.addr.sin6.sin6_addr, aIp6, sizeof(aAddress.addr.sin6.sin6_addr));
-    aAddress.addr.sin6.sin6_port = htons(aPort);
 
 exit:
     return;
@@ -63,19 +62,11 @@ exit:
 MessageLibcoap::MessageLibcoap(Message::Type aType, Message::Code aCode, uint16_t aMessageId, const uint8_t *aToken,
                                uint8_t aTokenLength)
 {
-    coap_pdu_t *pdu = coap_new_pdu();
-
-    pdu->hdr->type = aType;
-    pdu->hdr->id = aMessageId;
-    pdu->hdr->code = aCode;
-    pdu->hdr->token_length = aTokenLength;
-
-    if (aTokenLength > 0)
-    {
-        coap_add_token(pdu, aTokenLength, aToken);
-    }
-
-    mPdu = pdu;
+    mPdu = coap_new_pdu();
+    mPdu->hdr->id = aMessageId;
+    SetType(aType);
+    SetCode(aCode);
+    SetToken(aToken, aTokenLength);
 }
 
 const uint8_t *MessageLibcoap::GetToken(uint8_t &aLength) const
@@ -89,9 +80,28 @@ Message::Code MessageLibcoap::GetCode(void) const
     return static_cast<Message::Code>(mPdu->hdr->code);
 }
 
+void MessageLibcoap::SetCode(Code aCode)
+{
+    mPdu->hdr->code = aCode;
+}
+
 Message::Type MessageLibcoap::GetType(void) const
 {
     return static_cast<Message::Type>(mPdu->hdr->type);
+}
+
+void MessageLibcoap::SetType(Type aType)
+{
+    mPdu->hdr->type = aType;
+}
+
+void MessageLibcoap::SetToken(const uint8_t *aToken, uint8_t aLength)
+{
+    mPdu->hdr->token_length = aLength;
+    if (aLength)
+    {
+        coap_add_token(mPdu, aLength, aToken);
+    }
 }
 
 void MessageLibcoap::Free(void)
@@ -200,10 +210,11 @@ void AgentLibcoap::HandleRequest(coap_context_t *aCoap,
     {
         if (!strncmp(reinterpret_cast<const char *>(aResource->uri.s), resource->mPath, aResource->uri.length))
         {
-            MessageLibcoap message(aRequest);
-            resource->mHandler(*resource, message, reinterpret_cast<const uint8_t *>(&aAddress->addr.sin6.sin6_addr),
+            MessageLibcoap req(aRequest);
+            MessageLibcoap res(aResponse);
+            res.SetCode(Message::kCoapEmpty);
+            resource->mHandler(*resource, req, res, reinterpret_cast<const uint8_t *>(&aAddress->addr.sin6.sin6_addr),
                                ntohs(aAddress->addr.sin6.sin6_port), agent->mContext);
-            aResponse->hdr->code = 0;
         }
     }
 }

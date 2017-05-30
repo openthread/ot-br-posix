@@ -34,9 +34,4 @@ DISTCHECK_CONFIGURE_FLAGS="--disable-examples"
 
 SUBDIRS=repo
 
-# Recover to prevent a dirty repo.
-
-dist-hook:
-	-git checkout repo
-
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

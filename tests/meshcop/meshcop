@@ -1,0 +1,157 @@
+#!/bin/sh
+#
+#  Copyright (c) 2017, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+set -x
+
+STAGE_DIR=/tmp/test-otbr-stage
+BUILD_DIR=/tmp/test-otbr-build
+
+OT_PANID=0xface
+OT_XPANID=1122334455667788
+OT_PSKC=ee49a905637bbe2608dde3dc3576e188
+OT_JOINER_PASSWORD=123456
+OT_MASTER_KEY=00112233445566778899aabbccddeeff
+OT_CHANNEL=11
+OT_GATEWAY=fd11:22::
+
+TUN_NAME=wpan9
+
+test_setup()
+{
+    [ ! -d $STAGE_DIR ] || rm -rf $STAGE_DIR
+    [ ! -d $BUILD_DIR ] || rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    sudo cp $top_srcdir/src/border-agent/otbr-agent.conf /etc/dbus-1/system.d
+}
+
+build_wpantund()
+{
+    (cd $BUILD_DIR &&
+        git clone --depth 1 https://github.com/openthread/wpantund.git &&
+        cd wpantund &&
+        ./bootstrap.sh &&
+        ./configure --prefix=/usr --sysconf=/etc --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel &&
+        make install DESTDIR=$STAGE_DIR &&
+        $STAGE_DIR/usr/sbin/wpantund --version &&
+        sudo cp $STAGE_DIR/etc/dbus-1/system.d/wpantund.conf /etc/dbus-1/system.d)
+}
+
+build_openthread()
+{
+    (cd $BUILD_DIR &&
+        git clone --depth 1 https://github.com/openthread/openthread.git &&
+        cd openthread &&
+        ./bootstrap &&
+        ./configure --prefix=/usr         \
+        --enable-border-agent-proxy       \
+        --enable-cli-app=ftd              \
+        --enable-ncp-app=ftd              \
+        --enable-joiner                   \
+        --with-examples=posix             \
+        --with-ncp-bus=uart               \
+        --with-platform-info=POSIX &&     \
+        make install DESTDIR=$STAGE_DIR)
+}
+
+leader_start()
+{
+    sudo sh -s <<EOF
+    cd /tmp
+    $STAGE_DIR/usr/sbin/wpantund -I $TUN_NAME -s "system:$STAGE_DIR/usr/bin/ot-ncp-ftd 1" &
+    echo 'Waiting for wpantund to fully start'
+    sleep 5
+
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Daemon:AutoAssociateAfterReset false
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME leave
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:PSKc --data $OT_PSKC
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:Key --data $OT_MASTER_KEY
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:PANID $OT_PANID
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:XPANID $OT_XPANID
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME form OpenThread -c $OT_CHANNEL
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME config-gateway -d $OT_GATEWAY
+EOF
+}
+
+ba_start()
+{
+    sudo $top_builddir/src/agent/otbr-agent -I $TUN_NAME &
+    echo 'Waiting for border agent start'
+    sleep 5
+}
+
+commissioner_start()
+{
+    ./commissioner $OT_PSKC &
+    echo 'Waitint for commissioner'
+    sleep 20
+}
+
+joiner_start()
+{
+    cd /tmp
+    expect -f- <<EOF
+spawn $STAGE_DIR/usr/bin/ot-cli-ftd 2
+send "ifconfig up\r\n"
+expect "Done"
+send "joiner start $OT_JOINER_PASSWORD\r\n"
+set timeout 20
+expect {
+  "Join success" {
+    send "exit\r\n"
+  }
+  timeout {
+    exit 1
+  }
+}
+EOF
+    cd -
+}
+
+test_teardown()
+{
+    echo 'clearing all'
+    sudo rm /etc/dbus-1/system.d/wpantund.conf
+    sudo rm /etc/dbus-1/system.d/otbr-agent.conf
+    sudo rm -rf $STAGE_DIR
+    sudo killall wpantund
+    sudo killall otbr-agent
+    sudo killall commissioner
+    wait
+}
+
+test_setup
+build_wpantund
+build_openthread
+leader_start
+ba_start
+commissioner_start
+joiner_start
+EXIT_CODE=$?
+test_teardown
+exit $EXIT_CODE
