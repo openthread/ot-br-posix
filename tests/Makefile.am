@@ -28,6 +28,9 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-SUBDIRS = unit
+SUBDIRS         = \
+    unit          \
+    meshcop       \
+    $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

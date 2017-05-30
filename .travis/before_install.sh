@@ -42,17 +42,14 @@ linux)
     # This is for configuring wpantund
     sudo apt-get install autoconf-archive
 
-    # mDNS
-    sudo apt-get install libavahi-core-dev
-
-    # Doxygen
+    # For libcoap generate doc
     sudo apt-get install doxygen
 
     # For libcoap to generate .sym and .map
     sudo apt-get install ctags
 
-    # Boost
-    sudo apt-get install libboost-dev libboost-filesystem-dev libboost-system-dev
+    # Dependencies
+    sudo apt-get install libboost-dev libboost-filesystem-dev libboost-system-dev libavahi-core-dev
 
     # npm bower
     curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
@@ -60,6 +57,9 @@ linux)
     sudo apt-get install -y nodejs
 
     sudo npm -g install bower
+
+    # For functional test
+    sudo apt-get install expect
 
     # Uncrustify
     [ $BUILD_TARGET != pretty-check ] || (cd /tmp &&
@@ -81,6 +81,9 @@ linux)
         ./autogen.sh &&
         ./configure --prefix=/usr &&
         make install DESTDIR=../cpputest) || die
+
+    # Enable IPv6
+    [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
     ;;
 *)
     die

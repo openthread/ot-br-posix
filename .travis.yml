@@ -9,6 +9,6 @@ matrix:
   include:
     - env: BUILD_TARGET="pretty-check"
       os: linux
-    - env: BUILD_TARGET="posix-check"
+    - env: BUILD_TARGET="posix-check" VERBOSE=1
       os: linux
       compiler: gcc

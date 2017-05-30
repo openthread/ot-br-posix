@@ -65,14 +65,26 @@ public:
     /**
      * State of a DTLS session.
      *
+     * State machine
+     *
+     *         -----------------> Expired
+     *       /            /        |
+     *      /            /         v
+     * Handshaking --> Ready ---> End
+     *      \            \         ^
+     *       \            \        |
+     *        \             ----> Close
+     *          ----------------> Error
+     *
      */
     enum State
     {
         kStateHandshaking = 0, ///< The session is doing handshaking.
         kStateReady       = 1, ///< The session is established and ready for data transfering.
-        kStateEnd         = 2, ///< The session successfully ended.
-        kStateError       = 3, ///< The session corrupted.
-        kStateExpired     = 4, ///< The session expired.
+        kStateClose       = 2, ///< The session was closed by peer.
+        kStateEnd         = 3, ///< The session successfully ended.
+        kStateError       = 4, ///< The session corrupted.
+        kStateExpired     = 5, ///< The session expired.
     };
 
     /**
@@ -105,6 +117,19 @@ public:
      */
     virtual ssize_t Write(const uint8_t *aBuffer, uint16_t aLength) = 0;
 
+    /**
+     * This method returns the exported KEK of this session.
+     *
+     * @returns A pointer to the KEK data.
+     */
+    virtual const uint8_t *GetKek(void) = 0;
+
+    /**
+     * This method closes the DTLS session.
+     *
+     */
+    virtual void Close(void) = 0;
+
     virtual ~Session(void) {}
 };
 
@@ -128,12 +153,13 @@ public:
     /**
      * This method creates a DTLS server.
      *
+     * @param[in]   aPort           The listening port of this DTLS server.
      * @param[in]   aStateHandler   A pointer to a function to be called when session state changed.
      * @param[in]   aContext        A pointer to application-specific context.
      *
      * @returns pointer to the created the DTLS server.
      */
-    static Server *Create(StateHandler aStateHandler, void *aContext);
+    static Server *Create(uint16_t aPort, StateHandler aStateHandler, void *aContext);
 
     /**
      * This method destroy a DTLS server.
@@ -145,10 +171,11 @@ public:
     /**
      * This method updates the PSK of TLS_ECJPAKE_WITH_AES_128_CCM_8 used by this server.
      *
-     * @param[in]   aPSK    A pointer to the PSK buffer of 16 bytes length.
+     * @param[in]   aPSK    A pointer to the PSK buffer.
+     * @param[in]   aLength Length of PSK in bytes.
      *
      */
-    virtual void SetPSK(const uint8_t *aPSK) = 0;
+    virtual void SetPSK(const uint8_t *aPSK, uint8_t aLength) = 0;
 
     /**
      * This method updates the seed for random generator.

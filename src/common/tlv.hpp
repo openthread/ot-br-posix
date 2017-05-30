@@ -59,6 +59,14 @@ public:
     }
 
     /**
+     * This method sets the Tlv type.
+     *
+     */
+    void SetType(uint8_t aType) {
+        mType = aType;
+    }
+
+    /**
      * This method returns the Tlv length.
      *
      * @returns The Tlv length.
@@ -66,6 +74,22 @@ public:
      */
     uint16_t GetLength(void) const {
         return (mLength != kLengthEscape ? mLength : ((&mLength)[1] << 8 | (&mLength)[2]));
+    }
+
+    /**
+     * This method sets the length.
+     */
+    void SetLength(uint16_t aLength) {
+        if (aLength >= kLengthEscape)
+        {
+            mLength = kLengthEscape;
+            (&mLength)[1] = (aLength >> 8);
+            (&mLength)[2] = (aLength & 0xff);
+        }
+        else
+        {
+            mLength = static_cast<uint8_t>(aLength);
+        }
     }
 
     /**
@@ -92,6 +116,43 @@ public:
     }
 
     /**
+     * This method returns the value as a uint8_t.
+     *
+     * @returns The uint8_t value.
+     *
+     */
+    uint8_t GetValueUInt8(void) const {
+        return *static_cast<const uint8_t *>(GetValue());
+    }
+
+    /**
+     * This method sets uint16_t as the value.
+     */
+    void SetValue(uint16_t aValue) {
+        SetLength(sizeof(aValue));
+        uint8_t *value = static_cast<uint8_t *>(GetValue());
+        value[0] = (aValue >> 8);
+        value[1] = (aValue & 0xff);
+    }
+
+    /**
+     * This method sets uint8_t as the value.
+     */
+    void SetValue(uint8_t aValue) {
+        SetLength(sizeof(aValue));
+        *static_cast<uint8_t *>(GetValue()) = aValue;
+    }
+
+    /**
+     * This method copies the value.
+     */
+    void SetValue(const void *aValue, uint16_t aLength)
+    {
+        SetLength(aLength);
+        memcpy(GetValue(), aValue, aLength);
+    }
+
+    /**
      * This method returns the pointer to the next Tlv.
      *
      * @returns A pointer to the next Tlv.
@@ -101,10 +162,41 @@ public:
         return reinterpret_cast<const Tlv *>(static_cast<const uint8_t *>(GetValue()) + GetLength());
     }
 
+    /**
+     * This method returns the pointer to the next Tlv.
+     *
+     * @returns A pointer to the next Tlv.
+     *
+     */
+    Tlv *GetNext(void) {
+        return reinterpret_cast<Tlv *>(static_cast<uint8_t *>(GetValue()) + GetLength());
+    }
+
 private:
+    void *GetValue(void) {
+        return reinterpret_cast<uint8_t *>(this) + sizeof(mType) +
+               (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t)  + sizeof(mLength)));
+    }
     uint8_t mType;
     uint8_t mLength;
 };
+
+namespace Meshcop {
+
+enum
+{
+    kState = 16,
+    kCommissionerId = 10,
+    kCommissionerSessionId = 11,
+    kJoinerDtlsEncapsulation = 17,
+    kSteeringData = 8,
+    kJoinerUdpPort = 18,
+    kJoinerIid = 19,
+    kJoinerRouterLocator = 20,
+    kJoinerRouterKek = 21,
+};
+
+} // namespace Meshcop
 
 } // namespace ot
 

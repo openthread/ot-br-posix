@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     }
 
     openlog(kSyslogIdent, LOG_CONS | LOG_PID, LOG_USER);
-    syslog(LOG_INFO, "backbone router started on %s", interfaceName);
+    syslog(LOG_INFO, "border router agent started on %s", interfaceName);
 
     ret = Mainloop(interfaceName);
 
