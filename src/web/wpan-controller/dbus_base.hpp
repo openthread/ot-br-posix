@@ -48,15 +48,14 @@ public:
     DBusMessage *GetMessage(void);
     DBusMessage *GetReply(void);
     DBusPendingCall *GetPending(void);
-    DBusError GetError(void);
     int ProcessReply(void);
     char *GetDBusName(void);
     void free(void);
 
     void SetDestination(const char *aDestination);
-    void SetPath(const char *aPath);
     void SetIface(const char *aIface);
     void SetMethod(const char *aMethod);
+    void SetPath(const char *aPath);
     void SetInterfaceName(const char *aInterfaceName);
     void SetDBusName(const char *aDBusName);
 
@@ -67,13 +66,12 @@ private:
     DBusConnection  *mConnection;
     DBusMessage     *mMessage;
     DBusMessage     *mReply;
-    DBusError        error;
     DBusPendingCall *mPending;
 
-    const char      *mDestination;
-    const char      *mPath;
-    const char      *mIface;
     const char      *mMethod;
+    char             mDestination[DBUS_MAXIMUM_NAME_LENGTH + 1];
+    char             mPath[DBUS_MAXIMUM_NAME_LENGTH + 1];
+    char             mIface[DBUS_MAXIMUM_NAME_LENGTH + 1];
 };
 
 } //namespace Dbus

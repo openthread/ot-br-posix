@@ -42,20 +42,14 @@ namespace Dbus {
 int DBusSet::ProcessReply(void)
 {
     int          ret = 0;
-    char         path[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    const char  *iface = "org.wpantund.v1";
     const char  *method = "PropSet";
-    const char  *interfaceName = "wpan0";
     DBusMessage *messsage = NULL;
     DBusMessage *reply = NULL;
     DBusError    error;
 
+    dbus_error_init(&error);
     VerifyOrExit(GetConnection() != NULL, ret = kWpantundStatus_InvalidConnection);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, interfaceName);
-    SetIface(iface);
     SetMethod(method);
-    SetInterfaceName(interfaceName);
-    SetPath(path);
 
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
 
@@ -82,18 +76,15 @@ int DBusSet::ProcessReply(void)
     }
 
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
-    error = GetError();
     dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
                           DBUS_TYPE_INVALID);
-    if (!ret)
-    {
-        syslog(LOG_INFO, "Successfully set!\n");
-    }
-    else
-    {
-        syslog(LOG_ERR, "Error: Failed to set! %s\n", error.message);
-    }
+
 exit:
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "set error: %s", error.message);
+    }
+    dbus_error_free(&error);
     free();
     return ret;
 }
