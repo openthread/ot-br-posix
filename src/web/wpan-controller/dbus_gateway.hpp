@@ -70,10 +70,6 @@ public:
     {
         mPrefix = aPrefix;
     }
-    void SetPrefixLength(uint8_t aPrefixLength)
-    {
-        mPrefixLength = aPrefixLength;
-    }
     void SetAddressString(const char *aAddressString)
     {
         strncpy(mAddressString, aAddressString, strlen(aAddressString));

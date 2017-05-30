@@ -56,8 +56,8 @@ class Publisher
 public:
     static int StartServer(void);
     static void SetServiceName(const char *aServiceName);
-    static void SetNetworkNameTxT(const char *aTxtData);
-    static void SetEPANIDTxT(const char *aTxtData);
+    static void SetNetworkNameTxt(const char *aTxtData);
+    static void SetExtPanIdTxt(const char *aTxtData);
     static void SetType(const char *aType);
     static void SetPort(uint16_t aPort);
     static int UpdateService(void);

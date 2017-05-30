@@ -86,6 +86,10 @@ libotbr_web_la_CPPFLAGS                                         = \
     -I$(top_srcdir)/third_party/Simple-web-server/repo/           \
     -I$(top_srcdir)/third_party/mbedtls/repo/configs              \
     -I$(top_srcdir)/third_party/mbedtls/repo/include              \
+    -I$(top_srcdir)/third_party/wpantund/repo/src                 \
+    -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus        \
+    -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl         \
+    -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund        \
     -DMBEDTLS_CONFIG_FILE='<config-thread.h>'                     \
     -DWEB_FILE_PATH=\"$(datadir)/border-router/frontend\"         \
     -std=c++11                                                    \

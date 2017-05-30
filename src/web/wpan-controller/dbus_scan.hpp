@@ -73,7 +73,7 @@ private:
                                         DBusMessageIter *aIter);
 
     uint32_t               mChannelMask;
-    static WpanNetworkInfo mAvailableNetworks[SCANNED_NET_BUFFER_SIZE];
+    static WpanNetworkInfo mAvailableNetworks[OT_SCANNED_NET_BUFFER_SIZE];
     static int             mAvailableNetworksCnt;
 };
 

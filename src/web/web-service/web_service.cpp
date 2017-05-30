@@ -64,7 +64,7 @@
 #define RESPONSE_FAILURE_STATUS "HTTP/1.1 400 Bad Request\r\n"
 
 #define NETWORK_NAME_LENGTH 16
-#define EXTENED_PANID_LENGTH 8
+#define EXTENDED_PANID_LENGTH 8
 #define HARDWARE_ADDRESS_LENGTH 8
 #define PANID_LENGTH 4
 #define BORDER_ROUTER_PORT 49191
@@ -103,190 +103,185 @@ static void SetNetworkInfo(const char *networkName, const char *extPanId)
     sExtPanId = extPanId;
 }
 
-static std::string OnJoinNetworkRequest(boost::property_tree::ptree &aJoinRequest)
+static std::string OnJoinNetworkRequest(boost::property_tree::ptree &aJoinRequest, const char *aIfName)
 {
-    char extPanId[EXTENED_PANID_LENGTH * 2 + 1];
+    char extPanId[EXTENDED_PANID_LENGTH * 2 + 1];
     int  ret = ot::Dbus::kWpantundStatus_Ok;
     int  index = aJoinRequest.get<int>("index");
 
-    std::string networkKey = aJoinRequest.get<std::string>("networkKey");
-    std::string prefix = aJoinRequest.get<std::string>("prefix");
-    bool        defaultRoute = aJoinRequest.get<bool>("defaultRoute");
+    std::string              networkKey = aJoinRequest.get<std::string>("networkKey");
+    std::string              prefix = aJoinRequest.get<std::string>("prefix");
+    bool                     defaultRoute = aJoinRequest.get<bool>("defaultRoute");
+    ot::Dbus::WPANController wpanController;
 
-    VerifyOrExit(ot::Dbus::WPANController::Start() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_StartFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Leave() == ot::Dbus::kWpantundStatus_Ok,
+    wpanController.SetInterfaceName(aIfName);
+    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Set(WebServer::kPropertyType_Data,
-                                               "NetworkKey",
-                                               networkKey.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(WebServer::kPropertyType_Data,
+                                    "NetworkKey",
+                                    networkKey.c_str()) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Join(sNetworks[index].mNetworkName,
-                                                sNetworks[index].mChannel,
-                                                sNetworks[index].mExtPanId,
-                                                sNetworks[index].mPanId) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Join(sNetworks[index].mNetworkName,
+                                     sNetworks[index].mChannel,
+                                     sNetworks[index].mExtPanId,
+                                     sNetworks[index].mPanId) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_JoinFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Gateway(prefix.c_str(), 64, defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_GatewayFailed);
+    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
+                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
 
     ot::Utils::Long2Hex(sNetworks[index].mExtPanId, extPanId);
     SetNetworkInfo(sNetworks[index].mNetworkName, extPanId);
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d\n", ret);
+        syslog(LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 }
 
-static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormRequest)
+static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormRequest, const char *aIfName)
 {
     int ret = ot::Dbus::kWpantundStatus_Ok;
 
-    std::string   networkKey = aFormRequest.get<std::string>("networkKey");
-    std::string   prefix = aFormRequest.get<std::string>("prefix");
-    int           channel = aFormRequest.get<int>("channel");
-    std::string   networkName = aFormRequest.get<std::string>("networkName");
-    std::string   passphrase = aFormRequest.get<std::string>("passphrase");
-    std::string   panId = aFormRequest.get<std::string>("panId");
-    std::string   extPanId = aFormRequest.get<std::string>("extPanId");
-    bool          defaultRoute = aFormRequest.get<bool>("defaultRoute");
-    ot::Psk::Pskc psk;
-    char          pskcStr[PSKC_MAX_LENGTH*2];
-    uint8_t       extPanIdBytes[EXTENED_PANID_LENGTH];
+    std::string              networkKey = aFormRequest.get<std::string>("networkKey");
+    std::string              prefix = aFormRequest.get<std::string>("prefix");
+    uint16_t                 channel = aFormRequest.get<uint16_t>("channel");
+    std::string              networkName = aFormRequest.get<std::string>("networkName");
+    std::string              passphrase = aFormRequest.get<std::string>("passphrase");
+    std::string              panId = aFormRequest.get<std::string>("panId");
+    std::string              extPanId = aFormRequest.get<std::string>("extPanId");
+    bool                     defaultRoute = aFormRequest.get<bool>("defaultRoute");
+    ot::Psk::Pskc            psk;
+    char                     pskcStr[PSKC_MAX_LENGTH*2];
+    uint8_t                  extPanIdBytes[EXTENDED_PANID_LENGTH];
+    ot::Dbus::WPANController wpanController;
 
-    VerifyOrExit(ot::Dbus::WPANController::Start() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_StartFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Leave() == ot::Dbus::kWpantundStatus_Ok,
+    wpanController.SetInterfaceName(aIfName);
+    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_LeaveFailed);
 
-    VerifyOrExit(ot::Dbus::WPANController::Set(WebServer::kPropertyType_Data,
-                                               kWPANTUNDProperty_NetworkKey,
-                                               networkKey.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(WebServer::kPropertyType_Data,
+                                    kWPANTUNDProperty_NetworkKey,
+                                    networkKey.c_str()) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
 
-    VerifyOrExit(ot::Dbus::WPANController::Set(WebServer::kPropertyType_String,
-                                               kWPANTUNDProperty_NetworkPANID,
-                                               panId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(WebServer::kPropertyType_String,
+                                    kWPANTUNDProperty_NetworkPANID,
+                                    panId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Set(WebServer::kPropertyType_Data,
-                                               kWPANTUNDProperty_NetworkXPANID,
-                                               extPanId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(WebServer::kPropertyType_Data,
+                                    kWPANTUNDProperty_NetworkXPANID,
+                                    extPanId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
-    ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, EXTENED_PANID_LENGTH);
+    ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, EXTENDED_PANID_LENGTH);
     psk.SetSalt(extPanIdBytes, networkName.c_str());
     psk.SetPassphrase(passphrase.c_str());
     ot::Utils::Bytes2Hex(psk.GetPskc(), PSKC_MAX_LENGTH, pskcStr);
-    VerifyOrExit(ot::Dbus::WPANController::Set(WebServer::kPropertyType_Data,
-                                               kWPANTUNDProperty_NetworkPskc,
-                                               pskcStr) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(WebServer::kPropertyType_Data,
+                                    kWPANTUNDProperty_NetworkPSKc,
+                                    pskcStr) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
 
-    VerifyOrExit(ot::Dbus::WPANController::Form(networkName.c_str(), channel) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Form(networkName.c_str(), channel) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_FormFailed);
 
-    VerifyOrExit(ot::Dbus::WPANController::Gateway(prefix.c_str(), 64, defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_GatewayFailed);
+    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
+                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
     SetNetworkInfo(networkName.c_str(), extPanId.c_str());
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d\n", ret);
+        syslog(LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 }
 
-static std::string OnAddPrefixRequest(boost::property_tree::ptree &aAddPrefixRequest)
+static std::string OnAddPrefixRequest(boost::property_tree::ptree &aAddPrefixRequest, const char *aIfName)
 {
     int ret = ot::Dbus::kWpantundStatus_Ok;
 
-    std::string prefix = aAddPrefixRequest.get<std::string>("prefix");
-    bool        defaultRoute = aAddPrefixRequest.get<bool>("defaultRoute");
+    std::string              prefix = aAddPrefixRequest.get<std::string>("prefix");
+    bool                     defaultRoute = aAddPrefixRequest.get<bool>("defaultRoute");
+    ot::Dbus::WPANController wpanController;
 
-    VerifyOrExit(ot::Dbus::WPANController::Start() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_StartFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Gateway(prefix.c_str(), 64, defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_GatewayFailed);
+    wpanController.SetInterfaceName(aIfName);
+    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
+                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d\n", ret);
+        syslog(LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 
 }
 
-static std::string OnDeletePrefixRequest(boost::property_tree::ptree &aDeleteRequest)
+static std::string OnDeletePrefixRequest(boost::property_tree::ptree &aDeleteRequest, const char *aIfName)
 {
     int ret = ot::Dbus::kWpantundStatus_Ok;
 
-    std::string prefix = aDeleteRequest.get<std::string>("prefix");
+    std::string              prefix = aDeleteRequest.get<std::string>("prefix");
+    ot::Dbus::WPANController wpanController;
 
-    VerifyOrExit(ot::Dbus::WPANController::Start() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_StartFailed);
-    VerifyOrExit(ot::Dbus::WPANController::RemoveGateway(prefix.c_str(), 64) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_GatewayFailed);
+    wpanController.SetInterfaceName(aIfName);
+    VerifyOrExit(wpanController.RemoveGateway(prefix.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d\n", ret);
+        syslog(LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 }
 
-static std::string OnGetNetworkRequest(boost::property_tree::ptree &aGetNetworkRequest)
+static std::string OnGetNetworkRequest(boost::property_tree::ptree &aGetNetworkRequest, const char *aIfName)
 {
     boost::property_tree::ptree root, networkInfo;
     int                         ret = ot::Dbus::kWpantundStatus_Ok;
+    ot::Dbus::WPANController    wpanController;
 
-    VerifyOrExit(ot::Dbus::WPANController::Start() ==  ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_StartFailed);
-    networkInfo.put("NCP:State", ot::Dbus::WPANController::Get("NCP:State"));
-    networkInfo.put("Daemon:Enabled", ot::Dbus::WPANController::Get("Daemon:Enabled"));
-    networkInfo.put("NCP:Version", ot::Dbus::WPANController::Get("NCP:Version"));
-    networkInfo.put("Daemon:Version", ot::Dbus::WPANController::Get("Daemon:Version"));
-    networkInfo.put("Config:NCP:DriverName", ot::Dbus::WPANController::Get("Config:NCP:DriverName"));
-    networkInfo.put("NCP:HardwareAddress", ot::Dbus::WPANController::Get("NCP:HardwareAddress"));
-    networkInfo.put("NCP:Channel", ot::Dbus::WPANController::Get("NCP:Channel"));
-    networkInfo.put("Network:NodeType", ot::Dbus::WPANController::Get("Network:NodeType"));
-    networkInfo.put("Network:Name", ot::Dbus::WPANController::Get("Network:Name"));
-    networkInfo.put("Network:XPANID", ot::Dbus::WPANController::Get("Network:XPANID"));
-    networkInfo.put("Network:PANID", ot::Dbus::WPANController::Get("Network:PANID"));
-    networkInfo.put("IPv6:LinkLocalAddress", ot::Dbus::WPANController::Get("IPv6:LinkLocalAddress"));
-    networkInfo.put("IPv6:MeshLocalAddress", ot::Dbus::WPANController::Get("IPv6:MeshLocalAddress"));
-    networkInfo.put("IPv6:MeshLocalPrefix", ot::Dbus::WPANController::Get("IPv6:MeshLocalPrefix"));
+    wpanController.SetInterfaceName(aIfName);
+    networkInfo.put(kWPANTUNDProperty_NCPState, wpanController.Get(kWPANTUNDProperty_NCPState));
+    networkInfo.put(kWPANTUNDProperty_DaemonEnabled, wpanController.Get(kWPANTUNDProperty_DaemonEnabled));
+    networkInfo.put(kWPANTUNDProperty_NCPVersion, wpanController.Get(kWPANTUNDProperty_NCPVersion));
+    networkInfo.put(kWPANTUNDProperty_DaemonVersion, wpanController.Get(kWPANTUNDProperty_DaemonVersion));
+    networkInfo.put(kWPANTUNDProperty_ConfigNCPDriverName, wpanController.Get(kWPANTUNDProperty_ConfigNCPDriverName));
+    networkInfo.put(kWPANTUNDProperty_NCPHardwareAddress, wpanController.Get(kWPANTUNDProperty_NCPHardwareAddress));
+    networkInfo.put(kWPANTUNDProperty_NCPChannel, wpanController.Get(kWPANTUNDProperty_NCPChannel));
+    networkInfo.put(kWPANTUNDProperty_NetworkNodeType, wpanController.Get(kWPANTUNDProperty_NetworkNodeType));
+    networkInfo.put(kWPANTUNDProperty_NetworkName, wpanController.Get(kWPANTUNDProperty_NetworkName));
+    networkInfo.put(kWPANTUNDProperty_NetworkXPANID, wpanController.Get(kWPANTUNDProperty_NetworkXPANID));
+    networkInfo.put(kWPANTUNDProperty_NetworkPANID, wpanController.Get(kWPANTUNDProperty_NetworkPANID));
+    networkInfo.put(kWPANTUNDProperty_IPv6LinkLocalAddress, wpanController.Get(kWPANTUNDProperty_IPv6LinkLocalAddress));
+    networkInfo.put(kWPANTUNDProperty_IPv6MeshLocalAddress, wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalAddress));
+    networkInfo.put(kWPANTUNDProperty_IPv6MeshLocalPrefix, wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalPrefix));
     root.add_child("result", networkInfo);
-exit:
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
-    {
-        root.put("result", "failed");
-        syslog(LOG_ERR, "Error is %d\n", ret);
-    }
     root.put("error", ret);
     std::stringstream ss;
     write_json(ss, root, false);
     return ss.str();
 }
 
-static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aGetAvailableNetworkRequest)
+static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aGetAvailableNetworkRequest,
+                                                 const char *aIfName)
 {
     boost::property_tree::ptree root, networks, networkInfo;
     int                         ret = ot::Dbus::kWpantundStatus_Ok;
+    ot::Dbus::WPANController    wpanController;
 
-    VerifyOrExit(ot::Dbus::WPANController::Start() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_LookUpFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Leave() == ot::Dbus::kWpantundStatus_Ok,
+    wpanController.SetInterfaceName(aIfName);
+    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Scan() == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Scan() == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_ScanFailed);
-    sNetworksCount = ot::Dbus::WPANController::GetScanNetworksInfoCount();
+    sNetworksCount = wpanController.GetScanNetworksInfoCount();
     VerifyOrExit(sNetworksCount > 0, ret = ot::Dbus::kWpantundStatus_NetworkNotFound);
-    memcpy(sNetworks, ot::Dbus::WPANController::GetScanNetworksInfo(),
+    memcpy(sNetworks, wpanController.GetScanNetworksInfo(),
            sNetworksCount * sizeof(ot::Dbus::WpanNetworkInfo));
 
     for (int i = 0; i < sNetworksCount; i++)
     {
-        char extPanId[EXTENED_PANID_LENGTH*2+1], panId[PANID_LENGTH+3], hardwareAddress[HARDWARE_ADDRESS_LENGTH*2+1];
+        char extPanId[EXTENDED_PANID_LENGTH*2+1], panId[PANID_LENGTH+3], hardwareAddress[HARDWARE_ADDRESS_LENGTH*2+1];
         ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(sNetworks[i].mExtPanId), extPanId);
         ot::Utils::Bytes2Hex(sNetworks[i].mHardwareAddress, HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", sNetworks[i].mPanId);
@@ -302,7 +297,7 @@ exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
         root.put("result", "failed");
-        syslog(LOG_ERR, "Error is %d\n", ret);
+        syslog(LOG_ERR, "Error is %d", ret);
     }
     root.put("error", ret);
     std::stringstream ss;
@@ -310,7 +305,7 @@ exit:
     return ss.str();
 }
 
-static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsRequest)
+static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsRequest, const char *aIfName)
 {
     std::thread mdnsPublisherThread([]() {
                 ot::Mdns::Publisher::SetServiceName(sNetworkName.c_str());
@@ -318,8 +313,8 @@ static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsReque
                 ot::Mdns::Publisher::SetPort(BORDER_ROUTER_PORT);
                 sNetworkName = "nn=" + sNetworkName;
                 sExtPanId = "xp=" + sExtPanId;
-                ot::Mdns::Publisher::SetNetworkNameTxT(sNetworkName.c_str());
-                ot::Mdns::Publisher::SetEPANIDTxT(sExtPanId.c_str());
+                ot::Mdns::Publisher::SetNetworkNameTxt(sNetworkName.c_str());
+                ot::Mdns::Publisher::SetExtPanIdTxt(sExtPanId.c_str());
                 if (sIsStarted)
                     ot::Mdns::Publisher::UpdateService();
                 else
@@ -340,9 +335,10 @@ WebServer::~WebServer(void)
     delete &mServer;
 }
 
-void WebServer::StartWebServer(void)
+void WebServer::StartWebServer(const char *aIfName)
 {
     mServer->config.port = 80;
+    strncpy(mIfName, aIfName, sizeof(mIfName));
     JoinNetworkResponse();
     FormNetworkResponse();
     AddOnMeshPrefix();
@@ -359,43 +355,45 @@ void WebServer::StartWebServer(void)
 
 void WebServer::JoinNetworkResponse(void)
 {
-    HandleHttpRequest(JOIN_NETWORK_URL, REQUEST_METHOD_POST, OnJoinNetworkRequest);
+    HandleHttpRequest(JOIN_NETWORK_URL, REQUEST_METHOD_POST, OnJoinNetworkRequest, mIfName);
 }
 
 void WebServer::FormNetworkResponse(void)
 {
-    HandleHttpRequest(FORM_NETWORK_URL, REQUEST_METHOD_POST, OnFormNetworkRequest);
+    HandleHttpRequest(FORM_NETWORK_URL, REQUEST_METHOD_POST, OnFormNetworkRequest, mIfName);
 }
 
 void WebServer::AddOnMeshPrefix(void)
 {
-    HandleHttpRequest(ADD_PREFIX_URL, REQUEST_METHOD_POST, OnAddPrefixRequest);
+    HandleHttpRequest(ADD_PREFIX_URL, REQUEST_METHOD_POST, OnAddPrefixRequest, mIfName);
 }
 
 void WebServer::DeleteOnMeshPrefix(void)
 {
-    HandleHttpRequest(DELETE_PREFIX_URL, REQUEST_METHOD_POST, OnDeletePrefixRequest);
+    HandleHttpRequest(DELETE_PREFIX_URL, REQUEST_METHOD_POST, OnDeletePrefixRequest, mIfName);
 }
 
 void WebServer::GetNetworkResponse(void)
 {
-    HandleHttpRequest(GET_NETWORK_URL, REQUEST_METHOD_GET, OnGetNetworkRequest);
+    HandleHttpRequest(GET_NETWORK_URL, REQUEST_METHOD_GET, OnGetNetworkRequest, mIfName);
 }
 
 void WebServer::AvailableNetworkResponse(void)
 {
-    HandleHttpRequest(AVAILABLE_NETWORK_URL, REQUEST_METHOD_GET, OnGetAvailableNetworkResponse);
+    HandleHttpRequest(AVAILABLE_NETWORK_URL, REQUEST_METHOD_GET, OnGetAvailableNetworkResponse, mIfName);
 }
 
 void WebServer::BootMdnsPublisher(void)
 {
-    HandleHttpRequest(BOOT_MDNS_URL, REQUEST_METHOD_GET, OnBootMdnsRequest);
+    HandleHttpRequest(BOOT_MDNS_URL, REQUEST_METHOD_GET, OnBootMdnsRequest, mIfName);
 }
 
-void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback)
+void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback,
+                                  const char *aIfName)
 {
     mServer->resource[aUrl][aMethod] =
-        [aCallback](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request)
+        [aCallback, aIfName](std::shared_ptr<HttpServer::Response> response,
+                             std::shared_ptr<HttpServer::Request> request)
         {
             try
             {
@@ -407,7 +405,7 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
                     {
                         read_json(request->content, pt);
                     }
-                    httpResponse = aCallback(pt);
+                    httpResponse = aCallback(pt, aIfName);
                 }
 
                 *response << RESPONSE_SUCCESS_STATUS
@@ -430,8 +428,6 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
 
 void WebServer::DefaultHttpResponse(void)
 {
-    int ret = ot::Dbus::kWpantundStatus_Ok;
-
     mServer->default_resource[REQUEST_METHOD_GET] =
         [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request)
         {
@@ -487,17 +483,6 @@ void WebServer::DefaultHttpResponse(void)
                           << content;
             }
         };
-
-    VerifyOrExit(ot::Dbus::WPANController::Start() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_StartFailed);
-    VerifyOrExit(ot::Dbus::WPANController::Leave() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-exit:
-
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
-    {
-        syslog(LOG_ERR, "Error is %d\n", ret);
-    }
 }
 
 void DefaultResourceSend(const HttpServer &aServer, const std::shared_ptr<HttpServer::Response> &aResponse,

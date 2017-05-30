@@ -60,7 +60,7 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
 exit:
     if (ret != kPskcStatus_Ok)
     {
-        syslog(LOG_ERR, "ExtPanId or NetworkName is NULL\n");
+        syslog(LOG_ERR, "ExtPanId or NetworkName is NULL");
     }
     return;
 }

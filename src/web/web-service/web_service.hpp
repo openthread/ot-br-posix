@@ -40,10 +40,11 @@
 #include <string>
 #include <vector>
 
+#include <net/if.h>
+#include <syslog.h>
+
 #include <boost/property_tree/ptree_fwd.hpp>
 #include <boost/asio/ip/tcp.hpp>
-
-#include <syslog.h>
 
 #include "../wpan-controller/wpan_controller.hpp"
 
@@ -62,7 +63,7 @@ class WebServer
 public:
     WebServer(void);
     ~WebServer(void);
-    void StartWebServer(void);
+    void StartWebServer(const char *aIfName);
 
     enum
     {
@@ -71,9 +72,9 @@ public:
     };
 
 private:
-    typedef std::string (*HttpRequestCallback)(boost::property_tree::ptree &aPtreeObject);
+    typedef std::string (*HttpRequestCallback)(boost::property_tree::ptree &aPtreeObject, const char *aIfName);
 
-    void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback);
+    void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback, const char *aIfName);
     void JoinNetworkResponse(void);
     void FormNetworkResponse(void);
     void AddOnMeshPrefix(void);
@@ -88,6 +89,7 @@ private:
     static int                       sNetworksCount;
     static std::string               sNetowrkName, sExtPanId;
     static bool                      sIsStarted;
+    char                             mIfName[IFNAMSIZ];
 };
 
 } //namespace Web
