@@ -34,12 +34,65 @@
 #define WEB_FILE_PATH "/usr/local/share/border-router/frontend"
 #endif
 
+#include <errno.h>
+#include <stdio.h>
+#include <syslog.h>
+#include <unistd.h>
+
+#include "otbr-config.h"
 #include "web-service/web_service.hpp"
+#include "common/code_utils.hpp"
+
+static const char kSyslogIdent[]            = "otWeb";
+static const char kDefaultInterfaceName[]   = "wpan0";
+
+void PrintVersion(void)
+{
+    printf("%s\n", PACKAGE_VERSION);
+}
 
 int main(int argc, char **argv)
 {
-    ot::Web::WebServer server;
+    const char *interfaceName = NULL;
+    int         ret = 0;
+    int         opt;
 
-    server.StartWebServer();
-    return 0;
+    ot::Web::WebServer *server;
+
+    while ((opt = getopt(argc, argv, "vI:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'I':
+            interfaceName = optarg;
+            break;
+
+        case 'v':
+            PrintVersion();
+            ExitNow();
+            break;
+
+        default:
+            fprintf(stderr, "Usage: %s [-I interfaceName] [-v]\n", argv[0]);
+            ExitNow(ret = -1);
+            break;
+        }
+    }
+
+    if (interfaceName == NULL)
+    {
+        interfaceName = kDefaultInterfaceName;
+        printf("interfaceName not specified, using default %s\n", interfaceName);
+    }
+
+    openlog(kSyslogIdent, LOG_CONS | LOG_PID, LOG_USER);
+    syslog(LOG_INFO, "border router started on %s", interfaceName);
+    server = new ot::Web::WebServer();
+    server->StartWebServer(interfaceName);
+
+    closelog();
+
+exit:
+    server = NULL;
+    return ret;
 }

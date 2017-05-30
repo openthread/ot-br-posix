@@ -166,19 +166,12 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
 int DBusGet::ProcessReply(void)
 {
     int          ret = 0;
-    char         path[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    const char  *iface = "org.wpantund.v1";
     const char  *method = "PropGet";
-    const char  *interfaceName = "wpan0";
     DBusMessage *messsage = NULL;
     DBusMessage *reply = NULL;
 
     VerifyOrExit(GetConnection() != NULL, ret = kWpantundStatus_InvalidConnection);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, interfaceName);
-    SetIface(iface);
     SetMethod(method);
-    SetInterfaceName(interfaceName);
-    SetPath(path);
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
     dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyName,
                              DBUS_TYPE_INVALID);

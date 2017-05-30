@@ -52,7 +52,6 @@ int DBusIfname::ProcessReply(void)
     SetPath("/com/nestlabs/WPANTunnelDriver");
     SetMethod("GetInterfaces");
     SetIface("com.nestlabs.WPANTunnelDriver");
-    SetInterfaceName("wpan0");
     VerifyOrExit(GetMessage() != NULL, ret = kWpantundStatus_InvalidMessage);
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
 
@@ -79,6 +78,7 @@ int DBusIfname::ProcessReply(void)
             break;
         }
     }
+
 exit:
     free();
     return ret;
