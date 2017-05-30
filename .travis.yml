@@ -1,0 +1,14 @@
+language: cpp
+
+sudo: required
+dist: trusty
+
+before_install: .travis/before_install.sh
+script: .travis/script.sh
+matrix:
+  include:
+    - env: BUILD_TARGET="pretty-check"
+      os: linux
+    - env: BUILD_TARGET="posix-check"
+      os: linux
+      compiler: gcc

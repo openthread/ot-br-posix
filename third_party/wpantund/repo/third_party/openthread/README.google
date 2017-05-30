@@ -1,0 +1,13 @@
+URL: https://github.com/openthread/openthread/tree/5298a515c374ec31518ed176d1a9dd6033370c32
+Version: 5298a515c374ec31518ed176d1a9dd6033370c32
+License: BSD-3
+License File: LICENSE
+
+Description:
+OpenThread is an open-source implementation of the Thread networking
+protocol. With OpenThread, Nest is making the technology used in Nest
+products more broadly available to accelerate the development of
+products for the connected home.
+
+Local Modifications:
+Stripped all unused files.

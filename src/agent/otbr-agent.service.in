@@ -1,0 +1,15 @@
+[Unit]
+Description=Border Router Agent
+After=wpantund.service
+ConditionPathExists=@sbindir@/otbr-agent
+
+[Service]
+EnvironmentFile=-@sysconfdir@/default/otbr-agent
+ExecStart=@sbindir@/otbr-agent $BA_OPTS
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=255
+
+[Install]
+WantedBy=multi-user.target
+Alias=otbr-agent.service

@@ -1,0 +1,15 @@
+URL: https://sourceforge.net/projects/boost/files/boost/1.60.0/boost_1_60_0.tar.bz2
+Version: 1.60.0
+License: Boost Software License
+License File: LICENSE
+
+Description:
+Boost is a set of libraries for the C++ programming language that
+provide support for tasks and structures such as linear algebra,
+pseudorandom number generation, multithreading, image processing,
+regular expressions, and unit testing. It contains over eighty
+individual libraries. (Not all of which are included here)
+
+Local Modifications:
+Stripped all unused files.
+

@@ -1,0 +1,121 @@
+## New in 0.07.01
+
+* wpantund: Support for raw packet capture (Packet sniffing)
+* wpantund: StatCollector: Add scan result info to the logs
+* wpantund: Show load average when main loop is thrashing.
+* wpantund: Refactor how the address list is handled.
+* wpantund: NCPInstanceBase: Reset data pump NLPTs when entering a detached state
+* wpantund: NCPInstanceBase: Make sure we clear the global address table upon reset
+* wpantund: NCPInstanceBase: Improve information logged when kernel refuses packets.
+* wpantund: NCPInstanceBase: Fix for failure to restart NCP after firmware upgrade.
+* wpantund: NCPInstanceBase: Fix for disappearing addresses after NCP crash
+* wpantund: NCPInstanceBase: Don't let port 0 be used to start commissioning.
+* wpantund: NCPInstanceBase: Don't allow host sleep while NCP is being initialized
+* wpantund: NCPInstanceBase: Detect and report invalid state transitions
+* wpantund: NCPInstanceBase: Add support for default commissioning port.
+* wpantund: NCPInstanceBase: Add `is_initializing_ncp()` and `set_initializing_ncp()`
+* wpantund: NCPInstanceBase-NetInterface: Add mesh-local address (if non-zero) in `set_online()`
+* wpantund: Measure prefix length in bits, not bytes
+* wpantund: Fix xpanid set/get methods on big endian systems
+* wpantund: Energy scan support
+* wpantund: Adding NetworkRetain class and `wpanretain.sh` script
+* wpantund: Add return status to set_ncp_version_string()
+* wpantund: Add diagnostics(mfg) interface
+* wpanctl: Print out an appropriate error when the interface doesn't exist
+* wpanctl: Print node-type in `join`/`form` commands
+* wpanctl: Fix for infinite recursion issue with getprop
+* wpanctl: Do not use stdin or stdout as an l-value
+* wpanctl: Change how setprop processes  option arguments
+* wpan-connman-plugin: Remove scanned networks upon a successful connect
+* wpan-connman-plugin: Ensure that network info is retained in case of untimely Connman restarts
+* wpan-connman-plugin: Change the parsing of the MeshLocalPrefix value
+* utils: Added secure random number functions
+* socket-utils: Use constant macros for setting baud rate.
+* socket-utils: Rename `*_serial_socket()` to `*_super_socket()`.
+* socket-utils: Ensure child processes are terminated upon socket close
+* socket-utils: Allow the explicit specification of a TCP socket.
+* socket-utils: Add serial options `crts_iflow` and `ccts_oflow`.
+* run-in-docker: Change base image from `gcc` to `ubuntu:trusty`.
+* openthread: Support for OpenThread as of commit 27ddb2d2
+* openthread: Include building spi-hdlc-adapter for convenience
+* ncp-spinel: Updates for pcap support
+* ncp-spinel: Topology support
+* ncp-spinel: SpinelNCPTaskLeave: After `leave` clear `mNetworkKey` and `mNetworkKeyIndex`
+* ncp-spinel: SpinelNCPInstance: Switch NCP log messages to log as `warning`
+* ncp-spinel: SpinelNCPInstance: Add support for newly added NCP counters.
+* ncp-spinel: SpinelNCPControlInterface: Fix for `permit_join 0` to make wpan non-joinable
+* ncp-spinel: Remove obsolete `start_new_task()` design pattern
+* ncp-spinel: Refine and clarify how MAC addresses are handled.
+* ncp-spinel: Recovery mechanism for back-to-back NOMEM status from NCP
+* ncp-spinel: Quick fix for bad buffer-overflow check in 910769e
+* ncp-spinel: Parsing improvement for PROP_THREAD_ASSISTING_PORTS.
+* ncp-spinel: Minor changes to improve Spinel support.
+* ncp-spinel: Minor bug fixes and cleanups.
+* ncp-spinel: Log data from PROP_STREAM_DEBUG to SysLog
+* ncp-spinel: Join: Allow `ALREADY` error when setting `PROP_NET_IF_UP`
+* ncp-spinel: Issue a "reset" at the end of "leave".
+* ncp-spinel: Include Spinel TID value in info prints.
+* ncp-spinel: Improved logging. Handle garbage on the line in a better way.
+* ncp-spinel: Implement support for jam detection
+* ncp-spinel: If HDLC frames with bad CRCs are ASCII, the log them.
+* ncp-spinel: Have "Form" generate PANID, XPANID, and Mesh-local Prefix
+* ncp-spinel: Handle adding and removing of unicast addresses.
+* ncp-spinel: Fix for setting non-config properties in configuration file
+* ncp-spinel: Fix for incorrectly calculating time for next event
+* ncp-spinel: Fix for `remove_external_route()`.
+* ncp-spinel: Fix config_gateway, add/remove external route
+* ncp-spinel: Fix a buffer-overflow bug in the inbound data pump.
+* ncp-spinel: Fetch counters as 32-bit integers, not 8-bit integers.
+* ncp-spinel: Fault state should be recoverable by reset
+* ncp-spinel: Erase saved network info before `form`, `join` and after `leave`
+* ncp-spinel: Ensure the event-handler gets the original spinel data message
+* ncp-spinel: Ensure stable flag is true for on-mesh-prefix added from `address_was_added()`
+* ncp-spinel: Don't remove addresses from NCP while interface is down.
+* ncp-spinel: Don't clear addresses when we get a new IPv6 address table.
+* ncp-spinel: Consolidate and refine behavior of SendCommand task
+* ncp-spinel: Check for time out error when adding address/on-mesh-prefix
+* ncp-spinel: Change to `ISOLATED` state upon receiving `NET_ROLE_DETACHED` event from NCP
+* ncp-spinel: Allow the network key to be specified when forming.
+* ncp-spinel: Allow the channel to be set for join.
+* ncp-spinel: Allow spinel driver to enter assisting/permit-join mode.
+* ncp-spinel: Allow leave command to work even while NCP is initializing.
+* ncp-spinel: Adding support to set/get legacy ULA prefix and retain it in the settings map
+* ncp-spinel: Adding support for getting child table
+* ncp-spinel: Add the ability to specify a specific channel when forming.
+* ncp-spinel: Add supported channels set and use it during `form` if none is given
+* ncp-spinel: Add support to save and restore certain radio properties during initialization
+* ncp-spinel: Add support for unicast/broadcast counters (#108)
+* ncp-spinel: Add support for promiscuous packet capture
+* ncp-spinel: Add support for new property "JamDetection:Debug:HistoryBitmap"
+* ncp-spinel: Add support for joining as an end-device
+* ncp-spinel: Add support for in-band assisted joining
+* ncp-spinel: Add support for handling the legacy commands
+* ncp-spinel: Add support for getting neighbor table
+* ncp-spinel: Add support for getting msg buffer counters from NCP
+* ncp-spinel: Add support for Spinel counters.
+* ncp-spinel: Add support for Energy Scan operation
+* ncp-spinel: Add new properties to get leader network data
+* ncp-spinel: Add new Thread wpan properties: `RLOC16`, `RouterId` and `PreferredRouterId`
+* ncp-spinel: Add child table and last status logs
+* ncp-spinel: Add addresses for on-mesh SLAAC prefixes.
+* ncp-spinel: Add ON_MESH_NETs and LOCAL_ROUTs with stable flag set to true
+* ncp-plugins: Stop printing out `get_property` debug prints during initialization.
+* connman-plugin: Updates to get the plugin compiling on Android
+* connman-plugin: Don't include mcheck.h
+* build-system: Reintroduce AM_MAINTAINER_MODE
+* build-system: Include a stub copy of boost for systems that don't have it. (#129)
+* build-system: Don't quote AC_MSG_ERROR
+* build-system: Address M4 quoting issue
+* build-system: Add missing -module LDFLAG for ConnMan plug-in (#71)
+* build-system: Add automatic generation of Android.mk files
+* assert-macros: Have `check_noerr()` actually print out the error code.
+* any-to: Allow any_to_string to always work.
+* SuperSocket: Only try to lock actual files.
+* IPv6Helpers: General cleanup. Introduced `make_slaac_addr_from_eui64()`.
+* INSTALL: Clarified and improved installation instructions. (#4)
+* Avoid calling functions that aren't async-signal-safe from signal handlers
+
+
+## New in 0.07.00
+
+* Initial Open-Source Release.

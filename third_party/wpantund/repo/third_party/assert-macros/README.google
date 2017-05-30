@@ -1,0 +1,12 @@
+URL: https://raw.githubusercontent.com/darconeous/smcp/c3b3d11fbbe0f63aa664320d296694d24ca09b37/src/smcp/assert-macros.h
+Version: c3b3d11fbbe0f63aa664320d296694d24ca09b37
+License: MIT
+License File: LICENSE
+
+Description:
+Introduces an expanded collection of assert macros, including `check()`,
+`require()`, etc.
+
+Local Modifications:
+Minor modifications and improvements. LICENSE file has been created for
+compliance purposes. Not included in original distribution.

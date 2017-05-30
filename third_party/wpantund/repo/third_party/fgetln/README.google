@@ -1,0 +1,12 @@
+URL: https://raw.githubusercontent.com/darconeous/smcp/47e863a8f91458ed01d133dc2a9b913defc56f6b/src/missing/fgetln.h
+Version: 47e863a8f91458ed01d133dc2a9b913defc56f6b
+License: MIT
+License File: LICENSE
+
+Description:
+Provides an implementation of the BSD `fgetln()` call for platforms
+where it is not present (like Linux).
+
+Local Modifications:
+LICENSE file has been created for compliance purposes. Not included
+in original distribution.

@@ -1,0 +1,17 @@
+URL: http://dunkels.com/adam/download/pt-1.4.tar.gz
+Version: 1.4
+License: BSD-3
+License File: LICENSE
+
+Description:
+Protothreads are extremely lightweight stackless threads designed for severely
+memory constrained systems, such as small embedded systems or wireless sensor
+network nodes. Protothreads provide linear code execution for event-driven
+systems implemented in C. Protothreads can be used with or without an underlying
+operating system to provide blocking event-handlers. Protothreads provide
+sequential flow of control without complex state machines or full
+multi-threading.
+
+Local Modifications:
+LICENSE file has been created for compliance purposes. Not included in original
+distribution. Removed html and pt-refman.pdf from documentation folder.

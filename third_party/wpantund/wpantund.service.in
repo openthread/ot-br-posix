@@ -1,0 +1,14 @@
+[Unit]
+Description=wpantund
+After=network.target
+ConditionPathExists=@sbindir@/wpantund
+
+[Service]
+EnvironmentFile=-@sysconfdir@/default/wpantund
+ExecStart=@sbindir@/wpantund $WPANTUND_OPTS
+Restart=on-failure
+RestartPreventExitStatus=255
+
+[Install]
+WantedBy=multi-user.target
+Alias=wpantund

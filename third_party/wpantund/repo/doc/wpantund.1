@@ -1,0 +1,97 @@
+.TH wpantund 1 "" "" "USER COMMANDS"
+
+.SH NAME
+wpantund \- interface to 6LoWPAN communication
+
+.SH SYNOPSIS
+.B wpantund
+[\fIOPTIONS\fR]
+
+.SH DESCRIPTION
+.B wpantund
+is a userspace driver which uses the Linux TUN driver (or the UTUN driver on OS X)
+to present a network interface for 6LoWPAN communication. It communicates with the
+NCP via a socket, which can be any of the following:
+.TP
+\- a TCP socket
+
+.TP
+\- a serial port
+
+.TP
+\- stdin and stdout from a subprocess
+
+.SH OPTIONS
+
+.TP
+\fB\-h\fP, \fB\-\-help\fp
+Print help.
+
+.TP
+\fB\-v\fP, \fB\-\-version\fp
+Print version.
+
+.TP
+\fB\-d\fP, \fB\-\-debug\fp \fILEVEL
+Enable debugging mode (see \fBDEBUGGING\fP below).
+
+.TP
+\fB\-c\fP, \fB\-\-config\fp \fIFILE
+Specify config file (default /etc/wpantund.conf).
+
+.TP
+\fB\-s\fP, \fB\-\-socket\fp \fIFILE
+Specify socket file; same as \fI-o NCPSocketName\fR.
+
+.TP
+\fB\-b\fP, \fB\-\-baudrate\fp \fIFILE
+Specify baudrate; same as \fI-o NCPSocketBaud\fR.
+
+.TP
+\fB\-I\fP, \fB\-\-interface\fp \fIFILE
+Specify network interface; same as \fI-o WPANInterfaceName\fR.
+
+.TP
+\fB\-o\fP, \fB\-\-option\fp \fIWPAN_OPTIONS
+Overwrites config file options.
+
+  -- NCPSocketName \fIFILE\fR
+     Specify socket location (e.g. /dev/ttyUSB0).
+
+  -- WPANInterfaceName \fIINTERFACE\fR
+     Specify the name of the created network interface (e.g. wpan0).
+
+  -- SyslogMask \fIMASK\fR
+     To add more logs, start \fBwpantund\fP with SyslogMask all.
+
+  -- PIDFile \fIFILE\fR
+     Specify location of the file with the wpan-tunnel-daemon PID.
+
+  -- NCPReliabilityLayer
+     Specify a serial reliability layer, \fBlibsoot\fP or \fBnone\fP.
+
+  -- NCPSocketBaud
+
+.SH DEBUGGING
+
+
+.SH EXAMPLES
+
+.TP
+$ sudo wpantund -o NCPSocketName /dev/ttyUSB0 -o WPANInterfaceName wpan0
+Starts wpantund on /dev/ttyUSB0 and create network intarfeca called wpan0.
+
+.SH FILES
+.TP
+.I /etc/wpantund.conf
+The default wpantund configuration file.
+
+.SH SEE ALSO
+wpanctl(1)
+.SH BUGS
+Bug tracker:
+.IP
+http://...
+.PP
+
+.\" .SH HISTORY           \" Document history if command behaves in a unique manner

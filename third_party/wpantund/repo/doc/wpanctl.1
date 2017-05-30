@@ -1,0 +1,377 @@
+.TH wpanctl 1 "" "" "USER COMMANDS"
+
+.SH NAME
+wpanctl \- command line interfase for wpantund
+
+.SH SYNOPSIS
+.B wpanctl
+[\fIOPTIONS\fR] <\fICOMMANDS\fR> [args]
+
+.SH DESCRIPTION
+.B wpanctl
+is itself a command-line interface. You can specify an individual single command
+directly on the \fBwpanctl\fR command line, or run \fBwpanctl\fR without any arguments
+to enter the command-line interface shell.
+
+.SH OPTIONS
+
+.TP
+\fB\-h\fP, \fB\-\-help\fp
+Print help.
+
+.TP
+\fB\-v\fP, \fB\-\-version\fp
+Print version.
+
+.TP
+\fB\-f\fP \fIFILE
+Read commands from a file.
+
+.TP
+\fB\-I\fP, \fB\-\-interface\fp \fIINTERFACE\fR
+Set interface to use (e.g. wpan0).
+
+.TP
+\fB\-i\fP, \fB\-\-ignore-mismatch\fP
+Ignore driver version mismatch.
+
+.SH COMMANDS
+
+.TP
+\fBbegin-low-power\fR [\fBargs\fR]
+Enter low-power mode.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBbegin-net-wake\fR [\fBargs\fR]
+Initiate a network wakeup.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBcd\fR
+Change current interface (command mode).
+
+.TP
+\fBconfig-gateway\fR [\fBargs\fR] <\fBPREFIX\fR>
+Configure gateway.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-p\fP, \fB\-\-preferred-lifetime\fR
+  Set the \fBPREFERRED_LIFETIME\fR.
+
+  \fB\-v\fP, \fB\-\-valid-lifetime\fR
+  Set the \fBVALID_LIFETIME\fR.
+
+  \fB\-d\fP, \fB\-\-default\fR
+  Indicates that we can be a default route.
+
+.TP
+\fBform\fR [\fBargs\fR] [\fBNETWORK_NAME\fR]
+Form a new WPAN.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-u\fP, \fB\-\-ula-prefix\fR [\fBULA_PREFIX\fR]
+  Specify a specific ULA prefix.
+
+  \fB\-c\fP, \fB\-\-channel\fR [\fBCHANNEL\fR]
+  Specify a specific radio channel.
+
+.TP
+\fBgetprop\fR, \fBget\fR [\fBargs\fR] <\fBproperty-name\fR>
+Get a property.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-a\fP, \fB\-\-all\fR
+  Print all supported properties.
+
+  \fB\-v\fP, \fB\-\-value-only\fR
+  Print only the value of the property.
+
+.TP
+\fBhelp\fR
+Display help.
+
+.TP
+\fBhost-did-wake\fR [\fBargs\fR]
+Perform any host-wakeup related tasks.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBjoin\fR [\fBargs\fR] [\fBNETWORK_NAME\fR]
+Join a WPAN.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-T\fP, \fB\-\-type\fR [\fBNODE_TYPE\fR]
+  Join as a specific node type.
+
+  \fB\-p\fP, \fB\-\-panid\fR [\fBPAN_ID\fR]
+  Specify a specific PAN ID.
+
+  \fB\-x\fP, \fB\-\-xpanid\fR [\fBExtended_PAN_ID\fR]
+  Specify a specific extended PAN ID.
+
+  \fB\-c\fP, \fB\-\-channel\fR [\fBCHANNEL\fR]
+  Specify a specific radio channel.
+
+.TP
+\fBleave\fR [\fBargs\fR]
+Abandon the currently connected WPAN.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBlist\fR [\fBargs\fR]
+List available interfaces.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBpermit-join\fR [\fBargs\fR] <\fBPERMIT_JOIN_DURATION\fR> [\fBCOMMISSIONING_PORT\fR]
+Permit other devices to join the current network.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-n\fP, \fB\-\-network-wide\fR
+  Permit joining network-wide.
+
+  \fB\-c\fP, \fB\-\-tcp\fR
+  Permit only TCP for commissioning traffic.
+
+  \fB\-d\fP, \fB\-\-udp\fR
+  Permit only UDP for commissioning traffic.
+
+.TP
+\fBping\fR [\fBargs\fR]
+Ping the NCP.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBpoll\fR [\fBargs\fR]
+Poll the parent immediately to see if there is IP traffic.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBquit\fR
+Terminate command line mode.
+
+.TP
+\fBreset\fR [\fBargs\fR]
+Reset the NCP.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBresume\fR [\fBargs\fR]
+Resume a previously connected network.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+.TP
+\fBscan\fR [\fBargs\fR]
+Scan for nearby networks.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-c\fP, \fB\-\-channel\fR [\fBCHANNEL\fR]
+  Specify a specific radio channel.
+
+.TP
+\fBsetprop\fR, \fBset\fR \fBget\fR [\fBargs\fR] <\fBproperty-name\fR> <\fBproperty-value\fR>
+Set a property.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+  \fB\-d\fP, \fB\-\-data\fR
+  Value is binary data (in hex).
+
+  \fB\-s\fP, \fB\-\-string\fR
+  Value is a string.
+
+  \fB\-i\fP, \fB\-\-integer\fR
+  Value is an integer.
+
+  \fB\-v\fP, \fB\-\-value\fR
+  Useful when the value starts with a '-'.
+
+.TP
+\fBstatus\fR [\fBargs\fR]
+Retrieve the status of the interface.
+
+  \fB\-h\fP, \fB\-\-help\fR
+  Print join help.
+
+  \fB\-t\fP, \fB\-\-timeout\fR [\fBTIMEOUT\fR]
+  Set timeout period.
+
+
+.SH EXAMPLES
+
+.TP
+$ sudo wpanctl
+Enter wpanctl command line interface that starts with prompt \fBwpanctl:[Iinterface_name]>\fR
+
+.TP
+$ sudo wpanctl -I <interface-name>
+Enter wpanctl command line and connect to specified interface, e.g.
+\fI$ sudo wpanctl -I wpan0\fR
+results with the following wpanctl shell prompt:
+\fBwpanctl:wpan0>\fR
+
+.TP
+$ sudo wpanctl scan
+Sends \fIscan\fR command to wpantund.
+The wpantund output is printed in the shell.
+
+.TP
+$ sudo wpanctl scan -c25-26,14,18-16
+Requests wpantund to scan for networks on channels 14,16,17,18,25,26.
+
+.SH DEFINITIONS
+
+.TP
+\fBCHANNEL\fR
+Integer in range [11-26] indicating one of the IEEE 802.15.4 channels.
+
+.TP
+\fBCOMMISSIONING_PORT\fR
+???
+
+.TP
+\fBEXTENDED_PAN_ID\fR
+???
+
+.TP
+\fBNCP\fR
+Network Control Processor.
+
+.TP
+\fBNETWORK_NAME\fR
+A string identifier of a network, e.g. "HomeNetwork".
+
+.TP
+\fBNODE_TYPE\fR
+WPAN type as one of the following:
+  - 0 (unknown): will starts as 2
+  - 1 (coordinator)
+  - 2 (router)
+  - 3 (end | end-device)
+  - 4 (sleepy | sleepy-end-device)
+  - 5 (mobile | mobile-end-device)
+  - 6 (lurker)
+
+.TP
+\fBPAN_ID\fR
+???
+
+.TP
+\fBPERMIT_JOIN_DURATION\fR
+???unit??
+unit: seconds (sec)
+
+.TP
+\fBPREFERRED_LIFETIME\fR
+???
+unit: seconds (sec)
+(Default: infinite)
+
+.TP
+\fBTIMEOUT\fR
+???
+unit: milliseconds (msec)
+
+.TP
+\fBULA_PREFIX\fR
+A unique local address (ULA) in the block fc00::/7.
+
+.TP
+\fBVALID_LIFETIME\fR
+???
+(Default: infinite)
+
+\" .SH FILES
+\" .TP
+\" .I /etc/wpantund.conf
+\" The default wpantund configuration file.
+
+.SH SEE ALSO
+wpantund(1)
+.SH BUGS
+Bug tracker:
+.IP
+http://...
+.PP
+
+.\" .SH HISTORY
