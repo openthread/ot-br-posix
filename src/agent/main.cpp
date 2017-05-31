@@ -66,7 +66,7 @@ int Mainloop(const char *aInterfaceName)
         if ((rval < 0) && (errno != EINTR))
         {
             rval = errno;
-            perror("select");
+            perror("select failed");
             break;
         }
 
@@ -110,11 +110,11 @@ int main(int argc, char *argv[])
     if (interfaceName == NULL)
     {
         interfaceName = kDefaultInterfaceName;
-        printf("interfaceName not specified, using default %s\n", interfaceName);
+        printf("Network interface not specified, using default %s\n", interfaceName);
     }
 
     openlog(kSyslogIdent, LOG_CONS | LOG_PID, LOG_USER);
-    syslog(LOG_INFO, "backbone router started on %s", interfaceName);
+    syslog(LOG_INFO, "border router agent started on %s", interfaceName);
 
     ret = Mainloop(interfaceName);
 

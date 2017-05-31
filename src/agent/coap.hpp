@@ -100,6 +100,7 @@ public:
      *
      */
     virtual Code GetCode(void) const = 0;
+    virtual void SetCode(Code aCode) = 0;
 
     /**
      * This method returns the CoAP type of this message.
@@ -108,6 +109,7 @@ public:
      *
      */
     virtual Type GetType(void) const = 0;
+    virtual void SetType(Type aType) = 0;
 
     /**
      * This method returns the token of this message.
@@ -118,6 +120,7 @@ public:
      *
      */
     virtual const uint8_t *GetToken(uint8_t &aLength) const = 0;
+    virtual void SetToken(const uint8_t *aToken, uint8_t aLength) = 0;
 
     /**
      * This method sets the CoAP Uri Path of this message.
@@ -151,14 +154,16 @@ typedef struct Resource Resource;
 /**
  * This function pointer is called when a CoAP request received.
  *
- * @param[in]   aResource   A pointer to the resource requested.
- * @param[in]   aMessage    A pointer to the CoAP message.
- * @param[in]   aIp6        A pointer to the source Ipv6 address of this request.
+ * @param[in]   aResource   A reference to the resource requested.
+ * @param[in]   aRequest    A reference to the CoAP request message.
+ * @param[in]   aResponse   A reference to the CoAP response message.
+ * @param[in]   aIp6        A reference to the source Ipv6 address of this request.
  * @param[in]   aPort       Source UDP port of this request.
  * @param[in]   aContext    A pointer to application-specific context.
  *
  */
-typedef void (*RequestHandler)(const Resource &aResource, const Message &aMessage, const uint8_t *aIp6,
+typedef void (*RequestHandler)(const Resource &aResource, const Message &aRequest, Message &aResponse,
+                               const uint8_t *aIp6,
                                uint16_t aPort,
                                void *aContext);
 

@@ -110,12 +110,11 @@ public:
      * @param[in]   aNet        A reference to the mbedtls_net_context.
      *
      */
-    MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet);
+    MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet, const uint8_t *aIp, size_t aIpLength);
 
     ~MbedtlsSession(void);
 
     ssize_t Write(const uint8_t *aBuffer, uint16_t aLength);
-    bool Handshake(const uint8_t *aIp, size_t aIpLength);
     void SetDataHandler(DataHandler aDataHandler, void *aContext);
 
     /**
@@ -143,18 +142,36 @@ public:
     uint64_t GetExpiration() const { return mExpiration; }
 
     /**
+     * This method returns the exported KEK of this session.
+     *
+     * @returns A pointer to the KEK data.
+     */
+    const uint8_t *GetKek(void) { return mKek; }
+
+    /**
      * This method performs the session processing.
      *
      */
     void Process(void);
+
+    /**
+     * This method closes the DTLS session.
+     *
+     */
+    void Close(void);
 
 private:
     enum
     {
         kMaxPacketSize  = 1500,  ///< Max size of DTLS UDP packet.
         kSessionTimeout = 60000, ///< Default DTLS session timeout in miniseconds.
+        kKekSize        = 32,    ///< Size of KEK.
     };
 
+    static int ExportKeys(void *aContext, const unsigned char *aMasterSecret, const unsigned char *aKeyBlock,
+                          size_t aMacLength, size_t aKeyLength, size_t aIvLength);
+    int Handshake(void);
+    int Read(void);
     void SetState(State aState);
 
     mbedtls_net_context          mNet;
@@ -166,6 +183,7 @@ private:
     State                        mState;
     MbedtlsServer               &mServer;
     uint64_t                     mExpiration;
+    uint8_t                      mKek[kKekSize];
 };
 
 /**
@@ -176,17 +194,16 @@ class MbedtlsServer : public Server
 {
     friend class MbedtlsSession;
 
-    typedef std::vector< boost::shared_ptr<MbedtlsSession> > SessionSet;
-
 public:
     /**
      * The constructor to initialize a DTLS server.
      *
+     * @param[in]   aPort           The listening port of this DTLS server.
      * @param[in]   aStateHandler   A pointer to the function to be called when an session's state changed.
      * @param[in]   aContext        A pointer to application-specific context.
      *
      */
-    MbedtlsServer(StateHandler aStateHandler, void *aContext);
+    MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext);
     ~MbedtlsServer(void);
 
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout);
@@ -196,10 +213,11 @@ public:
     /**
      * This method updates the PSK of TLS_ECJPAKE_WITH_AES_128_CCM_8 used by this server.
      *
-     * @param[in]   aPSK    A pointer to the PSK buffer of 16 bytes length.
+     * @param[in]   aPSK    A pointer to the PSK buffer.
+     * @param[in]   aLength Length of PSK.
      *
      */
-    void SetPSK(const uint8_t *aPSK);
+    void SetPSK(const uint8_t *aPSK, uint8_t aLength);
 
     /**
      * This method updates the seed for random generator.
@@ -211,15 +229,23 @@ public:
     void SetSeed(const uint8_t *aSeed, uint16_t aLength);
 
 private:
+    typedef std::vector< boost::shared_ptr<MbedtlsSession> > SessionSet;
+    enum
+    {
+        kMaxSizeOfPSK = 32, ///< Max size of PSK in bytes.
+    };
+
     void HandleSessionState(Session &aSession, Session::State aState);
     void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet);
 
     SessionSet                mSessions;
+    uint16_t                  mPort;
     StateHandler              mStateHandler;
     void                     *mContext;
-    uint8_t                   mPSK[kSizePSKc];
     uint8_t                   mSeed[MBEDTLS_CTR_DRBG_MAX_SEED_INPUT];
     uint16_t                  mSeedLength;
+    uint8_t                   mPSK[kMaxSizeOfPSK];
+    uint8_t                   mPSKLength;
 
     mbedtls_net_context       mNet;
     mbedtls_ssl_cookie_ctx    mCookie;

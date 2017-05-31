@@ -46,7 +46,14 @@ namespace BorderAgent {
 
 namespace Dtls {
 
-static const char *kBorderAgentUdpPort = "49191";
+enum
+{
+    kLogLevelNone,        ///< 0 No debug
+    kLogLevelError,       ///< 1 Error
+    kLogLevelStateChange, ///< 2 State change
+    kLogLevelInfo,        ///< 3 Informational
+    kLogLevelVerbose,     ///< 4 Verbose
+};
 
 static void MbedtlsDebug(void *ctx, int level,
                          const char *file, int line,
@@ -80,15 +87,9 @@ static void MbedtlsDebug(void *ctx, int level,
     syslog(level, "%s:%04d: %s", file, line, str);
 }
 
-int export_keys(void *aContext, const unsigned char *aMasterSecret, const unsigned char *aKeyBlock,
-                size_t aMacLength, size_t aKeyLength, size_t aIvLength)
+Server *Server::Create(uint16_t aPort, StateHandler aStateHandler, void *aContext)
 {
-    return 0;
-}
-
-Server *Server::Create(StateHandler aStateHandler, void *aContext)
-{
-    return new MbedtlsServer(aStateHandler, aContext);
+    return new MbedtlsServer(aPort, aStateHandler, aContext);
 }
 
 void Server::Destroy(Server *aServer)
@@ -96,7 +97,9 @@ void Server::Destroy(Server *aServer)
     delete static_cast<MbedtlsServer *>(aServer);
 }
 
-MbedtlsServer::MbedtlsServer(StateHandler aStateHandler, void *aContext) : mStateHandler(aStateHandler),
+MbedtlsServer::MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext) :
+    mPort(aPort),
+    mStateHandler(aStateHandler),
     mContext(aContext)
 {
     int              ret = 0;
@@ -114,9 +117,7 @@ MbedtlsServer::MbedtlsServer(StateHandler aStateHandler, void *aContext) : mStat
     mbedtls_entropy_init(&mEntropy);
     mbedtls_ctr_drbg_init(&mCtrDrbg);
 
-#if defined(MBEDTLS_DEBUG_C)
-    mbedtls_debug_set_threshold(DEBUG_LEVEL);
-#endif
+    mbedtls_debug_set_threshold(kLogLevelError);
 
     syslog(LOG_DEBUG, "Setting CTR_DRBG seed");
     SuccessOrExit(ret = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed,
@@ -133,7 +134,7 @@ MbedtlsServer::MbedtlsServer(StateHandler aStateHandler, void *aContext) : mStat
     mbedtls_ssl_conf_max_version(&mConf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
     mbedtls_ssl_conf_dbg(&mConf, MbedtlsDebug, this);
     mbedtls_ssl_conf_ciphersuites(&mConf, ciphersuites);
-    mbedtls_ssl_conf_export_keys_cb(&mConf, export_keys, NULL);
+    mbedtls_ssl_conf_read_timeout(&mConf, 0);
 
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_conf_session_cache(&mConf, &mCache, mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
@@ -147,8 +148,12 @@ MbedtlsServer::MbedtlsServer(StateHandler aStateHandler, void *aContext) : mStat
 
     mbedtls_net_init(&mNet);
 
-    syslog(LOG_DEBUG, "Binding to port %s", kBorderAgentUdpPort);
-    SuccessOrExit(ret = mbedtls_net_bind(&mNet, NULL, kBorderAgentUdpPort, MBEDTLS_NET_PROTO_UDP));
+    syslog(LOG_DEBUG, "Binding to port %u", mPort);
+    {
+        char port[6];
+        sprintf(port, "%u", mPort);
+        SuccessOrExit(ret = mbedtls_net_bind(&mNet, "0.0.0.0", port, MBEDTLS_NET_PROTO_UDP));
+    }
 
 exit:
     if (ret != 0)
@@ -188,24 +193,48 @@ ssize_t MbedtlsSession::Write(const uint8_t *aBuffer, uint16_t aLength)
     return ret;
 }
 
+void MbedtlsSession::Close(void)
+{
+    VerifyOrExit(mState != kStateError && mState != kStateEnd);
+
+    while (mbedtls_ssl_close_notify(&mSsl) == MBEDTLS_ERR_SSL_WANT_WRITE) ;
+    SetState(kStateEnd);
+
+exit:
+    return;
+}
+
 MbedtlsSession::~MbedtlsSession(void)
 {
-    if (mState == kStateEnd || mState == kStateExpired)
-    {
-        while (mbedtls_ssl_close_notify(&mSsl) == MBEDTLS_ERR_SSL_WANT_WRITE) ;
-    }
-
+    Close();
     mbedtls_net_free(&mNet);
     mbedtls_ssl_free(&mSsl);
-    syslog(LOG_INFO, "DTLS session destroyed");
+    syslog(LOG_INFO, "DTLS session destroyed: %d", mState);
 }
 
 void MbedtlsSession::Process(void)
 {
+    mExpiration = GetNow() + kSessionTimeout;
+
+    switch (mState)
+    {
+    case kStateHandshaking:
+        Handshake();
+        break;
+
+    case kStateReady:
+        Read();
+        break;
+
+    default:
+        break;
+    }
+}
+
+int MbedtlsSession::Read(void)
+{
     uint8_t buffer[kMaxPacketSize];
     int     ret = 0;
-
-    mExpiration = GetNow() + kSessionTimeout;
 
     do
     {
@@ -230,7 +259,7 @@ void MbedtlsSession::Process(void)
 
         case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
             syslog(LOG_WARNING, "connection was closed gracefully");
-            SetState(kStateEnd);
+            SetState(kStateClose);
             break;
 
         case MBEDTLS_ERR_SSL_CLIENT_RECONNECT:
@@ -239,8 +268,7 @@ void MbedtlsSession::Process(void)
             break;
 
         case MBEDTLS_ERR_SSL_TIMEOUT:
-            syslog(LOG_WARNING, "timeout");
-            SetState(kStateError);
+            syslog(LOG_WARNING, "read timeout");
             break;
 
         default:
@@ -249,9 +277,24 @@ void MbedtlsSession::Process(void)
             break;
         }
     }
+
+    return ret;
 }
 
-MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet) :
+int MbedtlsSession::ExportKeys(void *aContext, const unsigned char *aMasterSecret, const unsigned char *aKeyBlock,
+                               size_t aMacLength, size_t aKeyLength, size_t aIvLength)
+{
+    mbedtls_sha256_context sha256;
+
+    mbedtls_sha256_init(&sha256);
+    mbedtls_sha256_starts(&sha256, 0);
+    mbedtls_sha256_update(&sha256, aKeyBlock, 2 * static_cast<uint16_t>(aMacLength + aKeyLength + aIvLength));
+    mbedtls_sha256_finish(&sha256, static_cast<MbedtlsSession *>(aContext)->mKek);
+    return 0;
+}
+
+MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet, const uint8_t *aIp,
+                               size_t aIpLength) :
     mNet(aNet),
     mServer(aServer)
 {
@@ -261,6 +304,12 @@ MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet
     SuccessOrExit(ret = mbedtls_ssl_setup(&mSsl, &mServer.mConf));
 
     mbedtls_ssl_set_timer_cb(&mSsl, &mTimer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
+
+    SuccessOrExit(ret = mbedtls_ssl_session_reset(&mSsl));
+    SuccessOrExit(ret = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, mServer.mPSKLength));
+    SuccessOrExit(ret = mbedtls_ssl_set_client_transport_id(&mSsl, aIp, aIpLength));
+    SuccessOrExit(ret = mbedtls_net_set_nonblock(&mNet));
+    mbedtls_ssl_set_bio(&mSsl, &mNet, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     mState = kStateHandshaking;
 
@@ -272,41 +321,42 @@ exit:
     }
 }
 
-bool MbedtlsSession::Handshake(const uint8_t *aIp, size_t aIpLength)
+int MbedtlsSession::Handshake(void)
 {
     int ret = 0;
 
     VerifyOrExit(mState == kStateHandshaking, syslog(LOG_ERR, "Invalid state"));
 
-    SuccessOrExit(ret = mbedtls_ssl_session_reset(&mSsl));
-    SuccessOrExit(ret = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, kSizePSKc));
-    SuccessOrExit(ret = mbedtls_ssl_set_client_transport_id(&mSsl, aIp, aIpLength));
-
-    mbedtls_ssl_set_bio(&mSsl, &mNet, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-
     syslog(LOG_INFO, "Performing DTLS handshake");
 
-    do
-    {
-        ret = mbedtls_ssl_handshake(&mSsl);
-    }
-    while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
-
-    SuccessOrExit(ret);
+    SuccessOrExit(ret = mbedtls_ssl_handshake(&mSsl));
 
     syslog(LOG_INFO, "DTLS session ready");
+
     SetState(kStateReady);
-    ret = 0;
+
 
 exit:
+
     if (ret)
     {
-        syslog(LOG_ERR, "Handshake failed:-0x%x", -ret);
+        if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
+        {
+            syslog(LOG_INFO, "Handshake pending:-0x%x", -ret);
+        }
+        else
+        {
+            syslog(LOG_ERR, "Handshake failed:-0x%x", -ret);
+            if (ret != MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED)
+            {
+                mbedtls_ssl_send_alert_message(&mSsl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+                                               MBEDTLS_SSL_ALERT_MSG_HANDSHAKE_FAILURE);
+            }
+            mState = kStateError;
+        }
     }
 
-    mExpiration = GetNow() + kSessionTimeout;
-
-    return mState == kStateReady;
+    return ret;
 }
 
 void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout)
@@ -325,11 +375,13 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
             HandleSessionState(*session, Session::kStateExpired);
             it = mSessions.erase(it);
         }
-        else if (session->GetState() == Session::kStateReady)
+        else if (session->GetState() == Session::kStateReady ||
+                 session->GetState() == Session::kStateHandshaking)
         {
             int      fd = session->GetFd();
             uint64_t sessionTimeout = session->GetExpiration() - now;
 
+            syslog(LOG_INFO, "DTLS session[%d] alive", fd);
             FD_SET(fd, &aReadFdSet);
 
             if (aMaxFd < fd)
@@ -387,11 +439,10 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
 
     // TODO Should check if this client has an existing session.
     {
-        boost::shared_ptr<MbedtlsSession> session(new MbedtlsSession(*this, net));
-        if (session->Handshake(addr.m8, addrLength))
-        {
-            mSessions.push_back(session);
-        }
+        boost::shared_ptr<MbedtlsSession> session(new MbedtlsSession(*this, net, addr.m8, addrLength));
+        mSessions.push_back(session);
+        mbedtls_ssl_conf_export_keys_cb(&mConf, MbedtlsSession::ExportKeys, session.get());
+        session->Process();
     }
 
 exit:
@@ -412,6 +463,7 @@ void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
 
         if (FD_ISSET(fd, &aReadFdSet))
         {
+            syslog(LOG_INFO, "DTLS session [%d] readable", fd);
             session->Process();
         }
     }
@@ -419,9 +471,10 @@ void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
     ProcessServer(aReadFdSet, aWriteFdSet);
 }
 
-void MbedtlsServer::SetPSK(const uint8_t *aPSK)
+void MbedtlsServer::SetPSK(const uint8_t *aPSK, uint8_t aLength)
 {
-    memcpy(mPSK, aPSK, kSizePSKc);
+    mPSKLength = aLength;
+    memcpy(mPSK, aPSK, aLength);
 }
 
 MbedtlsServer::~MbedtlsServer(void)
@@ -439,7 +492,7 @@ MbedtlsServer::~MbedtlsServer(void)
 void MbedtlsServer::SetSeed(const uint8_t *aSeed, uint16_t aLength)
 {
     VerifyOrExit(aLength <= sizeof(mSeed),
-                 syslog(LOG_ERR, "Seed must be no more than %u bytes", sizeof(mSeed)));
+                 syslog(LOG_ERR, "Seed must be no more than %zu bytes", sizeof(mSeed)));
 
     memcpy(mSeed, aSeed, aLength);
     mSeedLength = aLength;

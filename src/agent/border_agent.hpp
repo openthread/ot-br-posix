@@ -97,6 +97,7 @@ private:
     void HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState);
 
     static void HandleRelayReceive(const Coap::Resource &aResource, const Coap::Message &aMessage,
+                                   Coap::Message &aResponse,
                                    const uint8_t *aIp6, uint16_t aPort, void *aContext)
     {
         static_cast<BorderAgent *>(aContext)->HandleRelayReceive(aMessage, aIp6, aPort);
@@ -104,6 +105,7 @@ private:
     void HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
 
     static void HandleRelayTransmit(const Coap::Resource &aResource, const Coap::Message &aMessage,
+                                    Coap::Message &aResponse,
                                     const uint8_t *aIp6, uint16_t aPort, void *aContext)
     {
         static_cast<BorderAgent *>(aContext)->HandleRelayTransmit(aMessage, aIp6, aPort);
@@ -111,6 +113,7 @@ private:
     void HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
 
     static void ForwardCommissionerRequest(const Coap::Resource &aResource, const Coap::Message &aMessage,
+                                           Coap::Message &aResponse,
                                            const uint8_t *aIp6, uint16_t aPort, void *aContext)
     {
         static_cast<BorderAgent *>(aContext)->ForwardCommissionerRequest(aResource, aMessage, aIp6, aPort);

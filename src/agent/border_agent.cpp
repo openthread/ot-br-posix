@@ -69,7 +69,8 @@ enum
  */
 enum
 {
-    kCoapUdpPort    = 61631, ///< Thread management UDP port.
+    kCoapUdpPort        = 61631, ///< Thread management UDP port.
+    kBorderAgentUdpPort = 49191, ///< Thread commissioning port.
 };
 
 /**
@@ -213,7 +214,7 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
     mNcpController(Ncp::Controller::Create(aInterfaceName, HandlePSKcChanged, FeedCoap, this)),
     mCoap(Coap::Agent::Create(SendCoap, kCoapResources, this)),
     mCoaps(Coap::Agent::Create(SendCoaps, kCoapsResources, this)),
-    mDtlsServer(Dtls::Server::Create(HandleDtlsSessionState, this))
+    mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
 {
     int error = 0;
 
@@ -231,7 +232,7 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
         syslog(LOG_ERR, "failed to get PSKc");
         throw std::runtime_error("Failed to get PSKc");
     }
-    mDtlsServer->SetPSK(pskc);
+    mDtlsServer->SetPSK(pskc, kSizePSKc);
 
     const uint8_t *eui64 = mNcpController->GetEui64();
     if (eui64 == NULL)
@@ -325,7 +326,7 @@ void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, c
 
 void BorderAgent::HandlePSKcChanged(const uint8_t *aPSKc, void *aContext)
 {
-    static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(aPSKc);
+    static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(aPSKc, kSizePSKc);
 }
 
 } // namespace BorderAgent

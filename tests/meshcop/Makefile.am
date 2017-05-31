@@ -28,47 +28,44 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-lib_LTLIBRARIES=libmbedtls.la
+noinst_PROGRAMS = commissioner
 
-libmbedtls_la_SOURCES                   = \
-    repo/library/aes.c                    \
-    repo/library/md.c                     \
-    repo/library/md_wrap.c                \
-    repo/library/memory_buffer_alloc.c    \
-    repo/library/platform.c               \
-    repo/library/sha256.c                 \
-    repo/library/bignum.c                 \
-    repo/library/ccm.c                    \
-    repo/library/cipher.c                 \
-    repo/library/cipher_wrap.c            \
-    repo/library/cmac.c                   \
-    repo/library/ctr_drbg.c               \
-    repo/library/debug.c                  \
-    repo/library/ecjpake.c                \
-    repo/library/ecp.c                    \
-    repo/library/ecp_curves.c             \
-    repo/library/entropy.c                \
-    repo/library/entropy_poll.c           \
-    repo/library/ssl_cookie.c             \
-    repo/library/ssl_ciphersuites.c       \
-    repo/library/ssl_cli.c                \
-    repo/library/ssl_srv.c                \
-    repo/library/ssl_ticket.c             \
-    repo/library/ssl_tls.c                \
-    repo/library/net_sockets.c            \
-    repo/library/timing.c                 \
+commissioner_SOURCES                                   = \
+    commissioner.cpp                                     \
     $(NULL)
 
-libmbedtls_la_CPPFLAGS                        = \
-    -I$(srcdir)/repo/include                    \
-    -I$(srcdir)/repo/configs                    \
-    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'   \
-    -DMBEDTLS_DEBUG_C                           \
+commissioner_CPPFLAGS                                  = \
+    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'            \
+    -I$(top_srcdir)/third_party/mbedtls/repo/configs     \
+    -I$(top_srcdir)/third_party/mbedtls/repo/include     \
+    -I$(top_srcdir)/src                                  \
+    -I$(top_srcdir)/src/agent                            \
+    -I$(top_srcdir)/src/web                              \
     $(NULL)
 
-noinst_HEADERS                      = \
-    repo/configs/config-thread.h      \
-    repo/include                      \
+commissioner_LDADD                                     = \
+    $(top_builddir)/src/agent/libotbr-agent.la           \
+    $(top_builddir)/src/utils/libutils.la                \
+    $(top_builddir)/src/web/libotbr-web.la               \
     $(NULL)
+
+commissioner_LDFLAGS                                   = \
+    -static                                              \
+    $(NULL)
+
+EXTRA_DIST                                             = \
+    meshcop                                              \
+    $(NULL)
+
+TESTS_ENVIRONMENT                                         = \
+    export                                                  \
+    MAKE=$(MAKE)                                            \
+    top_builddir='$(top_builddir)'                          \
+    top_srcdir='$(top_srcdir)'                              \
+    VERBOSE=1                                               \
+    LD_LIBRARY_PATH=$(top_builddir)/third_party/cppcms/repo \
+    ;
+
+TESTS = meshcop
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

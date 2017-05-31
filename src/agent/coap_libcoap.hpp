@@ -78,10 +78,13 @@ public:
     virtual ~MessageLibcoap(void) {};
 
     Code GetCode(void) const;
+    void SetCode(Code aCode);
 
     Type GetType(void) const;
+    void SetType(Type aType);
 
     const uint8_t *GetToken(uint8_t &aLength) const;
+    void SetToken(const uint8_t *aToken, uint8_t aLength);
 
     void SetPath(const char *aPath);
 
