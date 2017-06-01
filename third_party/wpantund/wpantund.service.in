@@ -11,4 +11,4 @@ RestartPreventExitStatus=255
 
 [Install]
 WantedBy=multi-user.target
-Alias=wpantund
+Alias=wpantund.service
