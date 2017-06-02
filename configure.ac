@@ -289,9 +289,18 @@ AC_MSG_NOTICE([checking required package dependencies])
 
 AC_PATH_PROG([PKG_CONFIG],[pkg-config])
 
+# Check if ctags is present.
+
+AC_MSG_CHECKING([checking if Exuberant Ctags is available])
+AC_PATH_PROGS_FEATURE_CHECK([CTAGS], [ctags],
+                            [$ac_path_CTAGS --version | grep -q Exuberant &&
+                             ac_cv_path_CTAGS=$ac_path_CTAGS],
+                            [AC_MSG_ERROR([could not find ctags])])
+AC_MSG_RESULT([$ac_cv_path_CTAGS])
+
 # Check if the DBus module
 
-PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not found dbus(>= 1.4)])])
+PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not find dbus(>= 1.4)])])
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
