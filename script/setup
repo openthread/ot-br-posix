@@ -37,12 +37,14 @@
 
 main()
 {
+    . $BEFORE_HOOK
     otbr_uninstall
     wpantund_uninstall
     ipforward_uninstall
     ipforward_install
     wpantund_install
     otbr_install
+    . $AFTER_HOOK
 }
 
 main

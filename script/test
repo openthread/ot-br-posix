@@ -32,4 +32,11 @@
 
 . "$(dirname "$0")"/_initrc
 
-make distcheck
+main()
+{
+    . $BEFORE_HOOK
+    make distcheck
+    . $AFTER_HOOK
+}
+
+main

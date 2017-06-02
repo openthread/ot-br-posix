@@ -37,3 +37,15 @@ BUILD_DIR=$(pwd)/._build
 [ -d $BUILD_DIR ] || mkdir -v -p $BUILD_DIR
 
 export PATH=$STAGE_DIR/usr/bin:$STAGE_DIR/usr/sbin:$PATH
+
+PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+TASKNAME=$(basename $0)
+echo "Current platform is $PLATFORM"
+BEFORE_HOOK=examples/platforms/$PLATFORM/before_$TASKNAME
+AFTER_HOOK=examples/platforms/$PLATFORM/after_$TASKNAME
+if test ! -f $BEFORE_HOOK; then
+    BEFORE_HOOK=/dev/null
+fi
+if test ! -f $AFTER_HOOK; then
+    AFTER_HOOK=/dev/null
+fi
