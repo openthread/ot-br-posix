@@ -42,6 +42,41 @@ OTBR also provides the following services:
 
 Third-party components for Border Router Services include Simple Web Server and Material Design Lite for the framework of the web UI.
 
+# Get started
+
+We follow philosophy of [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all). Validated platforms include:
+
+* Raspberry Pi 3B (running recent [Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/))
+
+## Build and Install
+
+```sh
+# Install dependencies
+./script/bootstrap
+
+# Build and install border router and wpantund
+./script/setup
+```
+
+## Configure
+
+Edit `/etc/wpantund.conf` according to the comments. Basically only path to NCP's serial port is required. Plug in the NCP mode OpenThread
+device and check the corresponding device file of it. Here's an example when the device's serial port is `/dev/ttyUSB0`.
+
+```
+Config:NCP:SocketPath "/dev/ttyUSB0"
+```
+
+## Start services
+
+All border router services will be automatically started on next boot. Or you can start immediately by:
+
+```sh
+./script/server
+```
+
+Now you can access border router's Web UI through browsers and explore its features.
+
 # Need help?
 
 ## Interact
