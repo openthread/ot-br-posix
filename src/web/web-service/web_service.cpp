@@ -312,21 +312,21 @@ exit:
 static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsRequest, const char *aIfName)
 {
     std::thread mdnsPublisherThread([]() {
-                ot::Mdns::Publisher::SetServiceName(sNetworkName.c_str());
-                ot::Mdns::Publisher::SetType("_meshcop._udp");
-                ot::Mdns::Publisher::SetPort(BORDER_ROUTER_PORT);
+                ot::Mdns::Publisher::GetInstance().SetServiceName(sNetworkName.c_str());
+                ot::Mdns::Publisher::GetInstance().SetType("_meshcop._udp");
+                ot::Mdns::Publisher::GetInstance().SetPort(BORDER_ROUTER_PORT);
                 sNetworkName = "nn=" + sNetworkName;
                 sExtPanId = "xp=" + sExtPanId;
-                ot::Mdns::Publisher::SetNetworkNameTxt(sNetworkName.c_str());
-                ot::Mdns::Publisher::SetExtPanIdTxt(sExtPanId.c_str());
+                ot::Mdns::Publisher::GetInstance().SetNetworkNameTxt(sNetworkName.c_str());
+                ot::Mdns::Publisher::GetInstance().SetExtPanIdTxt(sExtPanId.c_str());
                 if (sIsStarted)
                 {
-                    ot::Mdns::Publisher::UpdateService();
+                    ot::Mdns::Publisher::GetInstance().UpdateService();
                 }
                 else
                 {
                     sIsStarted = true;
-                    ot::Mdns::Publisher::StartServer();
+                    ot::Mdns::Publisher::GetInstance().StartClient();
                 }
             });
 

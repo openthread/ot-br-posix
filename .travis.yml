@@ -13,7 +13,9 @@ addons:
     - libboost-dev
     - libboost-filesystem-dev
     - libboost-system-dev
-    - libavahi-core-dev
+    - libavahi-common-dev
+    - libavahi-client-dev
+    - avahi-daemon
     - expect
 
 cache:

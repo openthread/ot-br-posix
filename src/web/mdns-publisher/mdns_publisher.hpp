@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file implements starting mDNS server, and publish border router service.
+ *   This file implements starting mDNS client, and publish border router service.
  */
 
 #ifndef MDNS_SERVER_HPP
@@ -41,8 +41,9 @@
 #include <syslog.h>
 #include <time.h>
 
-#include <avahi-core/core.h>
-#include <avahi-core/publish.h>
+#include <avahi-client/client.h>
+#include <avahi-client/publish.h>
+#include <avahi-common/timeval.h>
 #include <avahi-common/simple-watch.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/alternative.h>
@@ -54,34 +55,101 @@ namespace Mdns {
 class Publisher
 {
 public:
-    static int StartServer(void);
-    static void SetServiceName(const char *aServiceName);
-    static void SetNetworkNameTxt(const char *aTxtData);
-    static void SetExtPanIdTxt(const char *aTxtData);
-    static void SetType(const char *aType);
-    static void SetPort(uint16_t aPort);
-    static int UpdateService(void);
-    static bool IsServerStart(void) { return isStart; };
+
+    /**
+     * This method sets the service name.
+     *
+     * @param[in]  aServiceName  A pointer to the service name.
+     *
+     */
+    void SetServiceName(const char *aServiceName);
+
+    /**
+     * This method sets the network name in TxT record.
+     *
+     * @param[in]  aNetworkNameTxt  A pointer to the network name.
+     *
+     */
+    void SetNetworkNameTxt(const char *aNetworkNameTxt);
+
+    /**
+     * This method sets the extended PAN ID in TxT record.
+     *
+     * @param[in]  aExtPanIdTxt  A pointer to the extended PAN ID.
+     *
+     */
+    void SetExtPanIdTxt(const char *aExtPanIdTxt);
+
+    /**
+     * This method sets the service type.
+     *
+     * @param[in]  aType  A pointer to the service type.
+     *
+     */
+    void SetType(const char *aType);
+
+    /**
+     * This method sets the service port.
+     *
+     * @param[in]  aPort  service port.
+     *
+     */
+    void SetPort(uint16_t aPort);
+
+    /**
+     * This method starts the mDNS client.
+     *
+     * @retval kMdnsPublisher_OK                  Successfully started the mDNS client.
+     * @retval kMdnsPublisher_FailedCreatePoll    Failed to created the simple poll.
+     * @retval kMdnsPublisher_FailedCreateServer  Failed to created the mDNS client.
+     *
+     */
+    int StartClient(void);
+
+    /**
+     * This method updates the publishing service.
+     *
+     * @retval kMdnsPublisher_OK                  Successfully updated the publishing service.
+     * @retval kMdnsPublisher_FailedUpdateSevice  Failed to updated the publishing service.
+     *
+     */
+    int UpdateService(void);
+
+    /**
+     * This method returns the reference to the mDNS publisher instance.
+     *
+     * @returns The reference to the mDNS publisher instance.
+     *
+     */
+    static Publisher &GetInstance(void)
+    {
+        static Publisher publisherInstance;
+
+        return publisherInstance;
+    }
 
 private:
-    static int CreateService(AvahiServer *aServer);
-    static void EntryGroupCallback(AvahiServer *aServer, AvahiSEntryGroup *aGroup,
-                                   AvahiEntryGroupState aState, AVAHI_GCC_UNUSED void *aUserData);
-    static void ServerCallback(AvahiServer *aServer, AvahiServerState aState,
-                               AVAHI_GCC_UNUSED void *aUserData);
-    static void PeriodicallyPublish(AVAHI_GCC_UNUSED AvahiTimeout *aTimeout, void *aUserData);
-    static void Free(void);
+    Publisher(void);
 
-    static AvahiSEntryGroup *mGroup;
-    static AvahiSimplePoll  *mSimplePoll;
-    static AvahiServer      *mServer;
-    static const char       *mNetworkNameTxt;
-    static const char       *mExtPanIdTxt;
-    static const char       *mType;
-    static uint16_t          mPort;
-    static char             *mServiceName;
-    static bool              isStart;
+    static void HandleEntryGroupStart(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState,
+                                      AVAHI_GCC_UNUSED void *aUserData);
+    void HandleEntryGroupStart(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    static void HandleClientStart(AvahiClient *aClient, AvahiClientState aState,
+                                  AVAHI_GCC_UNUSED void *aUserData);
+    void HandleClientStart(AvahiClient *aClient, AvahiClientState aState);
+    static void HandleServicePublish(AVAHI_GCC_UNUSED AvahiTimeout *aTimeout, AVAHI_GCC_UNUSED void *aUserData);
+    void HandleServicePublish(AVAHI_GCC_UNUSED AvahiTimeout *aTimeout);
+    int CreateService(AvahiClient *aClient);
+    void Free(void);
 
+    AvahiEntryGroup *mClientGroup;
+    AvahiSimplePoll *mSimplePoll;
+    AvahiClient     *mClient;
+    uint16_t         mPort;
+    char            *mServiceName;
+    char            *mNetworkNameTxt;
+    char            *mExtPanIdTxt;
+    char            *mType;
 };
 
 } //namespace Mdns
