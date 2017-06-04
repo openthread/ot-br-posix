@@ -27,64 +27,48 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+TOOLS_HOME=$HOME/.cache/tools
+[ -d $TOOLS_HOME ] || mkdir -p $TOOLS_HOME
+
 die() {
 	echo " *** ERROR: " $*
 	exit 1
 }
 
-set -x
+set -e
 
 case $TRAVIS_OS_NAME in
 linux)
-    # For wpantund
-    sudo apt-get install libdbus-1-dev
-
-    # This is for configuring wpantund
-    sudo apt-get install autoconf-archive
-
-    # For libcoap generate doc
-    sudo apt-get install doxygen
-
-    # For libcoap to generate .sym and .map
-    sudo apt-get install ctags
-
-    # Dependencies
-    sudo apt-get install libboost-dev libboost-filesystem-dev libboost-system-dev libavahi-core-dev
-
-    # npm bower
-    curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
-
-    sudo apt-get install -y nodejs
-
-    sudo npm -g install bower
-
-    # For functional test
-    sudo apt-get install expect
+    # Bower
+    [ $BUILD_TARGET != posix-check ] || {
+        curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+        sudo npm -g install bower
+    }
 
     # Uncrustify
-    [ $BUILD_TARGET != pretty-check ] || (cd /tmp &&
+    [ $BUILD_TARGET != pretty-check ] || [ -f $TOOLS_HOME/usr/bin/uncrustify ] || (cd /tmp &&
         wget https://github.com/uncrustify/uncrustify/archive/uncrustify-0.64.tar.gz &&
         tar xzf uncrustify-0.64.tar.gz &&
         cd uncrustify-uncrustify-0.64 &&
         mkdir build &&
         cd build &&
-        cmake -DCMAKE_BUILD_TYPE=Release .. &&
-        make &&
-        export PATH=/tmp/uncrustify-uncrustify-0.64/build:$PATH &&
-        uncrustify --version) || die
+        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. &&
+        make && make install DESTDIR=$TOOLS_HOME) || die
 
     # Unittest
-    [ $BUILD_TARGET != posix-check ] || (cd /tmp &&
+    [ $BUILD_TARGET != posix-check ] || [ -f $TOOLS_HOME/usr/lib/libCppUTest.a ] || (cd /tmp &&
         wget https://github.com/cpputest/cpputest/archive/v3.8.tar.gz &&
         tar xzf v3.8.tar.gz &&
         cd cpputest-3.8 &&
         ./autogen.sh &&
         ./configure --prefix=/usr &&
-        make install DESTDIR=../cpputest) || die
+        make && make install DESTDIR=$TOOLS_HOME) || die
 
     # Enable IPv6
     [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
     ;;
+
 *)
     die
     ;;

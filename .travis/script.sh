@@ -27,6 +27,8 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+TOOLS_HOME=$HOME/.cache/tools
+
 die() {
 	echo " *** ERROR: " $*
 	exit 1
@@ -36,12 +38,12 @@ set -x
 
 case $BUILD_TARGET in
 pretty-check)
-    export PATH=/tmp/uncrustify-uncrustify-0.64/build:$PATH || die
+    export PATH=$TOOLS_HOME/usr/bin:$PATH || die
     ./configure && make pretty-check || die
     ;;
 posix-check)
-    export CPPFLAGS="$CFLAGS -I/tmp/cpputest/usr/include"
-    export LDFLAGS="$LDFLAGS -L/tmp/cpputest/usr/lib"
+    export CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include"
+    export LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib"
     ./configure && make distcheck || die
     ;;
 *)

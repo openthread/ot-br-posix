@@ -3,6 +3,23 @@ language: cpp
 sudo: required
 dist: trusty
 
+addons:
+  apt:
+    packages:
+    - libdbus-1-dev
+    - autoconf-archive
+    - doxygen
+    - ctags
+    - libboost-dev
+    - libboost-filesystem-dev
+    - libboost-system-dev
+    - libavahi-core-dev
+    - expect
+
+cache:
+  directories:
+  - $HOME/.cache/tools
+
 before_install: .travis/before_install.sh
 script: .travis/script.sh
 matrix:
@@ -10,5 +27,5 @@ matrix:
     - env: BUILD_TARGET="pretty-check"
       os: linux
     - env: BUILD_TARGET="posix-check" VERBOSE=1
-      os: linux
       compiler: gcc
+      os: linux
