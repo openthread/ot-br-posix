@@ -400,6 +400,8 @@ third_party/libcoap/Makefile
 third_party/mbedtls/Makefile
 third_party/wpantund/Makefile
 third_party/mdl/Makefile
+third_party/angular/Makefile
+third_party/angular-material/Makefile
 include/Makefile
 src/Makefile
 src/agent/Makefile

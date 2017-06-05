@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -27,44 +26,17 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-TOOLS_HOME=$HOME/.cache/tools
-[ -d $TOOLS_HOME ] || mkdir -p $TOOLS_HOME
+include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-die() {
-	echo " *** ERROR: " $*
-	exit 1
-}
+jsdir = $(datadir)/border-router/frontend/res/js
+js_DATA                                              = \
+    repo/angular.min.js                                \
+    repo/angular-animate.min.js                        \
+    repo/angular-aria.min.js                           \
+    $(NULL)
 
-set -e
+EXTRA_DIST                                           = \
+    $(js_DATA)                                         \
+    $(NULL)
 
-case $TRAVIS_OS_NAME in
-linux)
-    # Uncrustify
-    [ $BUILD_TARGET != pretty-check ] || [ "$($TOOLS_HOME/usr/bin/uncrustify --version)" = 'Uncrustify-0.65' ] || (cd /tmp &&
-        wget https://github.com/uncrustify/uncrustify/archive/uncrustify-0.65.tar.gz &&
-        tar xzf uncrustify-0.65.tar.gz &&
-        cd uncrustify-uncrustify-0.65 &&
-        mkdir build &&
-        cd build &&
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. &&
-        make && make install DESTDIR=$TOOLS_HOME) || die
-
-    # Unittest
-    [ $BUILD_TARGET != posix-check ] || [ -f $TOOLS_HOME/usr/lib/libCppUTest.a ] || (cd /tmp &&
-        wget https://github.com/cpputest/cpputest/archive/v3.8.tar.gz &&
-        tar xzf v3.8.tar.gz &&
-        cd cpputest-3.8 &&
-        ./autogen.sh &&
-        ./configure --prefix=/usr &&
-        make && make install DESTDIR=$TOOLS_HOME) || die
-
-    # Enable IPv6
-    [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
-    ;;
-
-*)
-    die
-    ;;
-esac
-
-./bootstrap
+include $(abs_top_nlbuild_autotools_dir)/automake/post.am

@@ -95,26 +95,9 @@ libotbr_web_la_CPPFLAGS                                         = \
     -std=c++11                                                    \
     $(NULL)
 
-bower_dir = web-service/frontend/bower_components
-
-JS_FILES                                                       = \
-    $(bower_dir)/angular/angular.min.js                          \
-    $(bower_dir)/angular-animate/angular-animate.min.js          \
-    $(bower_dir)/angular-aria/angular-aria.min.js                \
-    $(bower_dir)/angular-material/angular-material.min.js        \
-    $(NULL)
-
-CSS_FILES                                                      = \
-    $(bower_dir)/angular-material/angular-material.min.css       \
-    $(NULL)
-
-$(JS_FILES) $(CSS_FILES):
-	cd web-service/frontend && bower install angular-material
-
 jsdir = $(datadir)/border-router/frontend/res/js
 js_DATA                                                         = \
     web-service/frontend/res/js/app.js                            \
-    $(JS_FILES)                                                   \
     $(NULL)
 
 imgdir = $(datadir)/border-router/frontend/res/img
@@ -130,7 +113,6 @@ img_DATA                                                        = \
 cssdir = $(datadir)/border-router/frontend/res/css
 css_DATA                                                        = \
     web-service/frontend/res/css/styles.css                       \
-    $(CSS_FILES)                                                  \
     $(NULL)
 
 htmldir = $(datadir)/border-router/frontend
