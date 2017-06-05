@@ -43,21 +43,14 @@ namespace Dbus {
 int DBusForm::ProcessReply(void)
 {
     int          ret = 0;
-    char         path[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    const char  *iface = "com.nestlabs.WPANTunnelDriver";
     const char  *method = "Form";
-    const char  *interfaceName = "wpan0";
     DBusMessage *messsage = NULL;
     DBusMessage *reply = NULL;
     DBusError    error;
 
+    dbus_error_init(&error);
     VerifyOrExit(GetConnection() != NULL, ret = kWpantundStatus_InvalidConnection);
-    snprintf(path, sizeof(path), "%s/%s", WPAN_TUNNEL_DBUS_PATH,
-             interfaceName);
-    SetIface(iface);
     SetMethod(method);
-    SetInterfaceName(interfaceName);
-    SetPath(path);
 
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
     VerifyOrExit(mNetworkName != NULL, ret = kWpantundStatus_InvalidArgument);
@@ -67,18 +60,15 @@ int DBusForm::ProcessReply(void)
                              DBUS_TYPE_INVALID);
 
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
-    error = GetError();
     dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
                           DBUS_TYPE_INVALID);
-    if (!ret)
-    {
-        syslog(LOG_ERR, "Successfully formed!\n");
-    }
-    else
-    {
-        syslog(LOG_ERR, "Error: Failed to formed! %s\n", error.message);
-    }
+
 exit:
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "form error: %s", error.message);
+    }
+    dbus_error_free(&error);
     free();
     return ret;
 }

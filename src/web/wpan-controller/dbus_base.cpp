@@ -45,16 +45,23 @@ namespace Dbus {
 
 DBusConnection *DBusBase::GetConnection(void)
 {
+    DBusError error;
+
     dbus_error_init(&error);
     mConnection = dbus_bus_get(DBUS_BUS_STARTER, &error);
     if (!mConnection)
     {
-        syslog(LOG_ERR, "mConnection is NULL.\n");
+        syslog(LOG_ERR, "connection is NULL.\n");
 
         dbus_error_free(&error);
         dbus_error_init(&error);
         mConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
     }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "connection error: %s", error.message);
+    }
+    dbus_error_free(&error);
     return mConnection;
 }
 
@@ -62,6 +69,10 @@ DBusMessage *DBusBase::GetMessage(void)
 {
     int ret = kWpantundStatus_Ok;
 
+    VerifyOrExit(mDestination != NULL, ret = kWpantundStatus_InvalidArgument);
+    VerifyOrExit(mPath != NULL, ret = kWpantundStatus_InvalidArgument);
+    VerifyOrExit(mIface != NULL, ret = kWpantundStatus_InvalidArgument);
+    VerifyOrExit(mMethod != NULL, ret = kWpantundStatus_InvalidArgument);
     mMessage = dbus_message_new_method_call(mDestination, mPath, mIface,
                                             mMethod);
     VerifyOrExit(mMessage != NULL, ret = kWpantundStatus_GetNullMessage);
@@ -69,15 +80,17 @@ DBusMessage *DBusBase::GetMessage(void)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "mMessage is NULL\n");
+        syslog(LOG_ERR, "message is NULL\n");
     }
     return mMessage;
 }
 
 DBusMessage *DBusBase::GetReply(void)
 {
-    int ret = kWpantundStatus_Ok;
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
 
+    dbus_error_init(&error);
     mReply = dbus_connection_send_with_reply_and_block(mConnection, mMessage,
                                                        DEFAULT_TIMEOUT_IN_MILLISECONDS, &error);
 
@@ -86,15 +99,22 @@ DBusMessage *DBusBase::GetReply(void)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "mReply is NULL; error: %s\n", error.message);
+        syslog(LOG_ERR, "reply is NULL; error: %s\n", error.message);
     }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "reply error: %s", error.message);
+    }
+    dbus_error_free(&error);
     return mReply;
 }
 
 DBusPendingCall *DBusBase::GetPending(void)
 {
-    int ret = kWpantundStatus_Ok;
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
 
+    dbus_error_init(&error);
     dbus_connection_send_with_reply(mConnection, mMessage, &mPending, DEFAULT_TIMEOUT_IN_MILLISECONDS);
 
     VerifyOrExit(mPending != NULL, ret = kWpantundStatus_GetNullPending);
@@ -102,8 +122,13 @@ DBusPendingCall *DBusBase::GetPending(void)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "mPending is NULL; error: %s\n", error.message);
+        syslog(LOG_ERR, "pending is NULL; error: %s\n", error.message);
     }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "pending error: %s", error.message);
+    }
+    dbus_error_free(&error);
     return mPending;
 }
 
@@ -117,13 +142,6 @@ void DBusBase::free()
 
     if (mReply)
         dbus_message_unref(mReply);
-
-    dbus_error_free(&error);
-}
-
-DBusError DBusBase::GetError(void)
-{
-    return error;
 }
 
 int DBusBase::ProcessReply(void)
@@ -138,29 +156,107 @@ char *DBusBase::GetDBusName(void)
 
 void DBusBase::SetDestination(const char *aDestination)
 {
-    mDestination = aDestination;
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
+
+    dbus_error_init(&error);
+    VerifyOrExit(aDestination != NULL, ret = kWpantundStatus_InvalidArgument);
+    strcpy(mDestination, aDestination);
+exit:
+    if (ret != kWpantundStatus_Ok)
+    {
+        syslog(LOG_ERR, "destination is NULL; error: %s\n", error.message);
+    }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "destination error: %s", error.message);
+    }
+    dbus_error_free(&error);
 }
-void DBusBase::SetPath(const char *aPath)
-{
-    mPath = aPath;
-}
+
 void DBusBase::SetIface(const char *aIface)
 {
-    mIface = aIface;
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
+
+    dbus_error_init(&error);
+    VerifyOrExit(aIface != NULL, ret = kWpantundStatus_InvalidArgument);
+    strcpy(mIface, aIface);
+exit:
+    if (ret != kWpantundStatus_Ok)
+    {
+        syslog(LOG_ERR, "interface is NULL; error: %s\n", error.message);
+    }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "SetIface error: %s", error.message);
+    }
+    dbus_error_free(&error);
 }
+
 void DBusBase::SetMethod(const char *aMethod)
 {
     mMethod = aMethod;
 }
+
 void DBusBase::SetInterfaceName(const char *aInterfaceName)
 {
-    strncpy(mInterfaceName, aInterfaceName, strlen(aInterfaceName));
-    mInterfaceName[strlen(aInterfaceName)] = '\0';
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
+
+    dbus_error_init(&error);
+    VerifyOrExit(aInterfaceName != NULL, ret = kWpantundStatus_InvalidArgument);
+    strcpy(mInterfaceName, aInterfaceName);
+exit:
+    if (ret != kWpantundStatus_Ok)
+    {
+        syslog(LOG_ERR, "interface name is NULL; error: %s\n", error.message);
+    }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "set interface name error: %s", error.message);
+    }
+    dbus_error_free(&error);
 }
+
+void DBusBase::SetPath(const char *aPath)
+{
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
+
+    dbus_error_init(&error);
+    VerifyOrExit(aPath != NULL, ret = kWpantundStatus_InvalidArgument);
+    strcpy(mPath, aPath);
+exit:
+    if (ret != kWpantundStatus_Ok)
+    {
+        syslog(LOG_ERR, "path is NULL; error: %s\n", error.message);
+    }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "set path error: %s", error.message);
+    }
+    dbus_error_free(&error);
+}
+
 void DBusBase::SetDBusName(const char *aDBusName)
 {
-    strncpy(mDBusName, aDBusName, strlen(aDBusName));
-    mInterfaceName[strlen(aDBusName)] = '\0';
+    int       ret = kWpantundStatus_Ok;
+    DBusError error;
+
+    dbus_error_init(&error);
+    VerifyOrExit(aDBusName != NULL, ret = kWpantundStatus_InvalidDBusName);
+    strcpy(mDBusName, aDBusName);
+exit:
+    if (ret != kWpantundStatus_Ok)
+    {
+        syslog(LOG_ERR, "pending is NULL; error: %d\n", ret);
+    }
+    if (dbus_error_is_set(&error))
+    {
+        syslog(LOG_ERR, "set dbus name error: %s", error.message);
+    }
+    dbus_error_free(&error);
 }
 
 } //namespace Dbus
