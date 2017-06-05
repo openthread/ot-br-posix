@@ -287,7 +287,7 @@ static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aG
     for (int i = 0; i < sNetworksCount; i++)
     {
         char extPanId[EXTENED_PANID_LENGTH*2+1], panId[PANID_LENGTH+3], hardwareAddress[HARDWARE_ADDRESS_LENGTH*2+1];
-        ot::Utils::Long2Hex(Thread::Encoding::Swap64(sNetworks[i].mExtPanId), extPanId);
+        ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(sNetworks[i].mExtPanId), extPanId);
         ot::Utils::Bytes2Hex(sNetworks[i].mHardwareAddress, HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", sNetworks[i].mPanId);
         networkInfo.put("nn", sNetworks[i].mNetworkName);
