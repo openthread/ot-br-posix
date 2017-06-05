@@ -37,6 +37,8 @@
 #define WPAN_TUNNEL_DBUS_PATH   "/com/nestlabs/WPANTunnelDriver"
 #define WPANTUND_DBUS_PATH      "/org/wpantund"
 #define WPANTUND_DBUS_APIv1_INTERFACE "org.wpantund.v1"
+#define WPAN_TUNNEL_DBUS_INTERFACE  "com.nestlabs.WPANTunnelDriver"
+
 #define ERRORCODE_UNKNOWN       (4)
 #define SCANNED_NET_BUFFER_SIZE 250
 #define SET_MAX_DATA_SIZE 250
@@ -126,6 +128,7 @@ enum
     kWpantundStatus_GetNullMessage           = 41,
     kWpantundStatus_GetNullReply             = 42,
     kWpantundStatus_GetNullPending           = 43,
+    kWpantundStatus_InvalidDBusName          = 44,
 };
 
 struct WpanNetworkInfo
@@ -143,20 +146,25 @@ struct WpanNetworkInfo
 class WPANController
 {
 public:
-    static const struct WpanNetworkInfo *GetScanNetworksInfo(void);
-    static int GetScanNetworksInfoCount(void);
-    static int Start(void);
-    static int Leave(void);
-    static int Form(const char *aNetworkname, int aChannel);
-    static int Scan(void);
-    static int Join(char *aNetworkname, int16_t aChannel, uint64_t aExtPanId,
-                    uint16_t aPanId);
-    static const char *Get(const char *aPropertyName);
-    static int Set(uint8_t aType, const char *aPropertyName, const char *aPropertyValue);
-    static int Gateway(const char *aPrefix, uint8_t aLength, bool aIsDefaultRoute);
-    static int RemoveGateway(const char *aPrefix, uint8_t aLength);
+    const struct WpanNetworkInfo *GetScanNetworksInfo(void);
+    int GetScanNetworksInfoCount(void);
+    const char *GetDBusInterfaceName(void);
+    int Leave(void);
+    int Form(const char *aNetworkname, int aChannel);
+    int Scan(void);
+    int Join(char *aNetworkname, int16_t aChannel, uint64_t aExtPanId,
+             uint16_t aPanId);
+    const char *Get(const char *aPropertyName);
+    int Set(uint8_t aType, const char *aPropertyName, const char *aPropertyValue);
+    int Gateway(const char *aPrefix, uint8_t aLength, bool aIsDefaultRoute);
+    int RemoveGateway(const char *aPrefix, uint8_t aLength);
+    void SetInterfaceName(const char *aIfName);
 
 private:
+
+    char            mIfName[DBUS_MAXIMUM_NAME_LENGTH + 1];
+    WpanNetworkInfo mScanedNetowrks[SCANNED_NET_BUFFER_SIZE];
+    int             mScannedNetworkCount = 0;
 
 };
 

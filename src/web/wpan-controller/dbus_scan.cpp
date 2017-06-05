@@ -44,32 +44,23 @@ WpanNetworkInfo DBusScan::mAvailableNetworks[SCANNED_NET_BUFFER_SIZE];
 int DBusScan::ProcessReply(void)
 {
     int               ret = 0;
-    char              path[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    const char       *iface = WPANTUND_DBUS_APIv1_INTERFACE;
     const char       *method = "NetScanStart";
-    const char       *interfaceName = "wpan0";
     DBusMessage      *messsage = NULL;
     DBusMessage      *reply = NULL;
     DBusConnection   *dbusConnection = NULL;
     DBusPendingCall  *pending = NULL;
     static const char dbusObjectManagerMatchString[] = "type='signal'";
     DBusMessageIter   iter;
-    DBusError         error;
 
     VerifyOrExit((dbusConnection = GetConnection()) != NULL, ret = kWpantundStatus_InvalidConnection);
-    error = GetError();
 
-    dbus_bus_add_match(dbusConnection, dbusObjectManagerMatchString, &error);
-    VerifyOrExit(error.name == NULL, ret = kWpantundStatus_Failure);
+    dbus_bus_add_match(dbusConnection, dbusObjectManagerMatchString, &mError);
+    VerifyOrExit(mError.name == NULL, ret = kWpantundStatus_Failure);
     memset(mAvailableNetworks, 0, sizeof(mAvailableNetworks));
     mAvailableNetworksCnt = 0;
 
     dbus_connection_add_filter(dbusConnection, &DbusBeaconHandler, NULL, NULL);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, interfaceName);
-    SetIface(iface);
     SetMethod(method);
-    SetInterfaceName(interfaceName);
-    SetPath(path);
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
     dbus_message_append_args(messsage, DBUS_TYPE_UINT32, &mChannelMask,
                              DBUS_TYPE_INVALID);
