@@ -214,7 +214,7 @@
 
         $scope.showConfirm = function(ev) {
             var confirm = $mdDialog.confirm()
-                .title('Are you sure you want to Form the Tread Network?')
+                .title('Are you sure you want to Form the Thread Network?')
                 .textContent('')
                 .targetEvent(ev)
                 .ok('Okay')
