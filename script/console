@@ -36,23 +36,34 @@
 test -n "$TUN" || TUN=wpan0
 test -n "$NCP" || NCP=/dev/ttyUSB0
 
-if which systemctl; then
-    sudo systemctl stop otbr-web otbr-agent wpantund || true
-fi
-
 killall_services()
 {
     sudo killall otbr-agent otbr-web wpantund || true
 }
 
-trap killall_services INT TERM EXIT
+on_exit()
+{
+    killall_services
+    . $AFTER_HOOK
+}
 
-killall_services
-ipforward_enable
-sudo sh -s <<EOF
+main()
+{
+    . $BEFORE_HOOK
+    if which systemctl; then
+        sudo systemctl stop otbr-web otbr-agent wpantund || true
+    fi
+    killall_services
+
+    trap on_exit INT TERM EXIT
+    ipforward_enable
+    sudo sh -s <<EOF
 wpantund -I $TUN -s "$NCP" &
 sleep 3
 otbr-agent -I $TUN &
 otbr-web &
 wait
 EOF
+}
+
+main

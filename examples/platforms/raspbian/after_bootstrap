@@ -26,26 +26,8 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+#   Description:
+#       This script is called after bootstrap finishes its task.
+#
 
-set -e
-cd "$(dirname "$0")/.."
-
-STAGE_DIR=$(pwd)/._stage
-BUILD_DIR=$(pwd)/._build
-
-[ -d $STAGE_DIR ] || mkdir -v -p $STAGE_DIR
-[ -d $BUILD_DIR ] || mkdir -v -p $BUILD_DIR
-
-export PATH=$STAGE_DIR/usr/bin:$STAGE_DIR/usr/sbin:$PATH
-
-PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
-TASKNAME=$(basename $0)
-echo "Current platform is $PLATFORM"
-BEFORE_HOOK=examples/platforms/$PLATFORM/before_$TASKNAME
-AFTER_HOOK=examples/platforms/$PLATFORM/after_$TASKNAME
-if test ! -f $BEFORE_HOOK; then
-    BEFORE_HOOK=/dev/null
-fi
-if test ! -f $AFTER_HOOK; then
-    AFTER_HOOK=/dev/null
-fi
+sudo apt-get remove -y avahi-daemon

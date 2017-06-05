@@ -137,10 +137,12 @@ install_cpputest()
 
 main()
 {
+    . $BEFORE_HOOK
     install_packages
     install_uncrustify
     install_cpputest
     ./bootstrap
+    . $AFTER_HOOK
 }
 
 main

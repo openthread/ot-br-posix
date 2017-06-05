@@ -32,7 +32,13 @@
 
 . "$(dirname "$0")"/_initrc
 
-# IPv6 is disabled by default on travis-ci
-echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+main()
+{
+    . $BEFORE_HOOK
+    # IPv6 is disabled by default on travis-ci
+    echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+    script/test
+    . $AFTER_HOOK
+}
 
-script/test
+main
