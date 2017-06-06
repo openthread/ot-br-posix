@@ -323,13 +323,19 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
 {
     for (WatchMap::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
-        if (!it->second) continue;
+        if (!it->second)
+        {
+            continue;
+        }
 
         DBusWatch   *watch = it->first;
         unsigned int flags = dbus_watch_get_flags(watch);
         int          fd = dbus_watch_get_unix_fd(watch);
 
-        if (fd < 0) continue;
+        if (fd < 0)
+        {
+            continue;
+        }
 
         if (flags & DBUS_WATCH_READABLE)
         {
@@ -355,13 +361,19 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
 {
     for (WatchMap::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
-        if (!it->second) continue;
+        if (!it->second)
+        {
+            continue;
+        }
 
         DBusWatch   *watch = it->first;
         unsigned int flags = dbus_watch_get_flags(watch);
         int          fd = dbus_watch_get_unix_fd(watch);
 
-        if (fd < 0) continue;
+        if (fd < 0)
+        {
+            continue;
+        }
 
         if ((flags & DBUS_WATCH_READABLE) && !FD_ISSET(fd, &aReadFdSet))
         {

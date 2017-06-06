@@ -134,13 +134,19 @@ exit:
 void DBusBase::free()
 {
     if (mConnection)
+    {
         dbus_connection_unref(mConnection);
+    }
 
     if (mMessage)
+    {
         dbus_message_unref(mMessage);
+    }
 
     if (mReply)
+    {
         dbus_message_unref(mReply);
+    }
 }
 
 int DBusBase::ProcessReply(void)

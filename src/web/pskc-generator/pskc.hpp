@@ -51,8 +51,8 @@ namespace Psk {
 
 enum
 {
-    kPskcStatus_Ok                       = 0,
-    kPskcStatus_InvalidArgument          = 1
+    kPskcStatus_Ok              = 0,
+    kPskcStatus_InvalidArgument = 1
 };
 
 class Pskc

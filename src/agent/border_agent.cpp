@@ -79,7 +79,7 @@ enum
  */
 enum
 {
-    kJoinerRouterLocator    = 20, ///< meshcop Joiner Router Locator TLV
+    kJoinerRouterLocator = 20, ///< meshcop Joiner Router Locator TLV
 };
 
 

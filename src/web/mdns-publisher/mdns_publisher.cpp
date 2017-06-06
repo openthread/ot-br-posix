@@ -36,7 +36,7 @@
 #include "mdns_publisher.hpp"
 
 #define HOST_NAME "OPENTHREAD"
-#define PERIODICAL_TIME 1000*7
+#define PERIODICAL_TIME 1000 * 7
 
 namespace ot {
 namespace Mdns {
@@ -66,10 +66,14 @@ uint16_t          Publisher::mPort = 0;
 void Publisher::Free(void)
 {
     if (mServer)
+    {
         avahi_server_free(mServer);
+    }
 
     if (mSimplePoll)
+    {
         avahi_simple_poll_free(mSimplePoll);
+    }
 
     avahi_free(mServiceName);
 }
@@ -81,8 +85,10 @@ int Publisher::CreateService(AvahiServer *aServer)
     assert(aServer);
 
     if (!mGroup)
+    {
         VerifyOrExit((mGroup = avahi_s_entry_group_new(aServer, EntryGroupCallback, NULL)) != NULL,
                      ret = kMdnsPublisher_FailedCreateGoup);
+    }
 
     syslog(LOG_ERR, "Adding service '%s'", mServiceName);
 
@@ -119,7 +125,9 @@ void Publisher::ServerCallback(AvahiServer *aServer, AvahiServerState aState,
 
     case AVAHI_SERVER_RUNNING:
         if (!mGroup)
+        {
             CreateService(aServer);
+        }
         break;
 
     case AVAHI_SERVER_COLLISION:
@@ -133,7 +141,9 @@ void Publisher::ServerCallback(AvahiServer *aServer, AvahiServerState aState,
     case AVAHI_SERVER_REGISTERING:
 
         if (mGroup)
+        {
             avahi_s_entry_group_reset(mGroup);
+        }
         break;
 
     case AVAHI_SERVER_FAILURE:
@@ -163,7 +173,9 @@ void Publisher::PeriodicallyPublish(AVAHI_GCC_UNUSED AvahiTimeout *aTimeout, voi
     {
 
         if (mGroup)
+        {
             avahi_s_entry_group_reset(mGroup);
+        }
 
         CreateService(mServer);
 

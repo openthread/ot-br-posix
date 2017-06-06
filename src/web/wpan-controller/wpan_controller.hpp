@@ -59,21 +59,21 @@ namespace Dbus {
 
 enum
 {
-    kWpantundStatus_Ok                       = 0,
-    kWpantundStatus_Failure                  = 1,
-    kWpantundStatus_InvalidArgument          = 2,
-    kWpantundStatus_NetworkNotFound          = 3,
-    kWpantundStatus_LeaveFailed              = 4,
-    kWpantundStatus_ScanFailed               = 5,
-    kWpantundStatus_SetFailed                = 6,
-    kWpantundStatus_JoinFailed               = 7,
-    kWpantundStatus_SetGatewayFailed         = 8,
-    kWpantundStatus_FormFailed               = 9,
-    kWpantundStatus_InvalidConnection        = 10,
-    kWpantundStatus_InvalidMessage           = 11,
-    kWpantundStatus_InvalidReply             = 12,
-    kWpantundStatus_InvalidPending           = 13,
-    kWpantundStatus_InvalidDBusName          = 14,
+    kWpantundStatus_Ok                = 0,
+    kWpantundStatus_Failure           = 1,
+    kWpantundStatus_InvalidArgument   = 2,
+    kWpantundStatus_NetworkNotFound   = 3,
+    kWpantundStatus_LeaveFailed       = 4,
+    kWpantundStatus_ScanFailed        = 5,
+    kWpantundStatus_SetFailed         = 6,
+    kWpantundStatus_JoinFailed        = 7,
+    kWpantundStatus_SetGatewayFailed  = 8,
+    kWpantundStatus_FormFailed        = 9,
+    kWpantundStatus_InvalidConnection = 10,
+    kWpantundStatus_InvalidMessage    = 11,
+    kWpantundStatus_InvalidReply      = 12,
+    kWpantundStatus_InvalidPending    = 13,
+    kWpantundStatus_InvalidDBusName   = 14,
 };
 
 struct WpanNetworkInfo

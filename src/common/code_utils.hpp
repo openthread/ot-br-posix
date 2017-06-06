@@ -31,7 +31,7 @@
 
 #ifndef CONTAINING_RECORD
 #define BASE 0x1
-#define myoffsetof(s, m) (((size_t)&(((s *)BASE)->m))-BASE)
+#define myoffsetof(s, m) (((size_t)&(((s *)BASE)->m)) - BASE)
 #define CONTAINING_RECORD(address, type, field) \
     ((type *)((uint8_t *)(address) - myoffsetof(type, field)))
 #endif /* CONTAINING_RECORD */

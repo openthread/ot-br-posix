@@ -44,8 +44,8 @@
 #include "common/code_utils.hpp"
 #include "web-service/web_service.hpp"
 
-static const char kSyslogIdent[]            = "otWeb";
-static const char kDefaultInterfaceName[]   = "wpan0";
+static const char kSyslogIdent[] = "otWeb";
+static const char kDefaultInterfaceName[] = "wpan0";
 
 void PrintVersion(void)
 {

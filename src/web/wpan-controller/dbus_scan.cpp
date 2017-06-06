@@ -209,7 +209,9 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
                 dbus_message_iter_get_fixed_array(&sub_iter, &value,
                                                   &nelements);
                 if (nelements == 8)
+                {
                     memcpy(aNetworkInfo->mHardwareAddress, value, nelements);
+                }
             }
         }
     }
