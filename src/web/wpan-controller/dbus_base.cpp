@@ -38,7 +38,7 @@
 #include "wpan_controller.hpp"
 
 
-#define DEFAULT_TIMEOUT_IN_MILLISECONDS 60 * 1000
+#define OT_DEFAULT_TIMEOUT_IN_MILLISECONDS 60 * 1000
 
 namespace ot {
 namespace Dbus {
@@ -91,7 +91,7 @@ DBusMessage *DBusBase::GetReply(void)
 
     dbus_error_init(&error);
     mReply = dbus_connection_send_with_reply_and_block(mConnection, mMessage,
-                                                       DEFAULT_TIMEOUT_IN_MILLISECONDS, &error);
+                                                       OT_DEFAULT_TIMEOUT_IN_MILLISECONDS, &error);
 
     VerifyOrExit(mReply != NULL, ret = kWpantundStatus_InvalidReply);
 
@@ -114,7 +114,7 @@ DBusPendingCall *DBusBase::GetPending(void)
     DBusError error;
 
     dbus_error_init(&error);
-    dbus_connection_send_with_reply(mConnection, mMessage, &mPending, DEFAULT_TIMEOUT_IN_MILLISECONDS);
+    dbus_connection_send_with_reply(mConnection, mMessage, &mPending, OT_DEFAULT_TIMEOUT_IN_MILLISECONDS);
 
     VerifyOrExit(mPending != NULL, ret = kWpantundStatus_InvalidPending);
 

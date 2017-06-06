@@ -30,8 +30,8 @@
  * @file
  *   This file is the entry of the program, it starts a Web service.
  */
-#ifndef WEB_FILE_PATH
-#define WEB_FILE_PATH "/usr/local/share/border-router/frontend"
+#ifndef OT_WEB_FILE_PATH
+#define OT_WEB_FILE_PATH "/usr/local/share/border-router/frontend"
 #endif
 
 #include "otbr-config.h"

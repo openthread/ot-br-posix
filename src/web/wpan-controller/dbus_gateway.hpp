@@ -34,7 +34,7 @@
 #ifndef DBUS_GATEWAY_HPP
 #define DBUS_GATEWAY_HPP
 
-#define INET6_ADDRSTRLEN 46
+#define OT_INET6_ADDR_STR_LENGTH 46
 
 #include <arpa/inet.h>
 #include <stdio.h>
@@ -90,7 +90,7 @@ private:
     uint32_t    mValidLifetime;
     const char *mPrefix;
     uint8_t     mPrefixLength;
-    char        mAddressString[INET6_ADDRSTRLEN];
+    char        mAddressString[OT_INET6_ADDR_STR_LENGTH];
     uint8_t     mPrefixBytes[16];
     uint8_t    *mAddr;
 };

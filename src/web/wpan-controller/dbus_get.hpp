@@ -34,9 +34,9 @@
 #ifndef DBUS_GET_HPP
 #define DBUS_GET_HPP
 
-#define LIST_MAX_LENGTH 100
-#define PROPERTY_NAME_SIZE 512
-#define PROPERTY_VALUE_SIZE 512
+#define OT_LIST_MAX_LENGTH 100
+#define OT_PROPERTY_NAME_SIZE 512
+#define OT_PROPERTY_VALUE_SIZE 512
 
 #include <math.h>
 #include <stdio.h>
@@ -52,8 +52,8 @@ namespace Dbus {
 
 struct PropertyNameValue
 {
-    char name[PROPERTY_NAME_SIZE];
-    char value[PROPERTY_VALUE_SIZE];
+    char name[OT_PROPERTY_NAME_SIZE];
+    char value[OT_PROPERTY_VALUE_SIZE];
 };
 
 class DBusGet : public DBusBase
@@ -72,9 +72,9 @@ private:
     DBusMessageIter   mIter;
 
     const char       *mPropertyName;
-    char              mPropertyValue[PROPERTY_VALUE_SIZE];
+    char              mPropertyValue[OT_PROPERTY_VALUE_SIZE];
 
-    PropertyNameValue mPropertyList[LIST_MAX_LENGTH];
+    PropertyNameValue mPropertyList[OT_LIST_MAX_LENGTH];
 };
 
 } //namespace Dbus

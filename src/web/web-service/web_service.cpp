@@ -47,29 +47,29 @@
 #include "../pskc-generator/pskc.hpp"
 #include "../utils/encoding.hpp"
 
-#define AVAILABLE_NETWORK_URL "^/available_network$"
-#define JOIN_NETWORK_URL "^/join_network$"
-#define FORM_NETWORK_URL "^/form_network$"
-#define SET_NETWORK_URL "^/settings$"
-#define GET_NETWORK_URL "^/get_properties$"
-#define ADD_PREFIX_URL "^/add_prefix"
-#define DELETE_PREFIX_URL "^/delete_prefix"
-#define BOOT_MDNS_URL "^/boot_mdns$"
-#define REQUEST_METHOD_GET "GET"
-#define REQUEST_METHOD_POST "POST"
-#define RESPONSE_SUCCESS_STATUS "HTTP/1.1 200 OK\r\n"
-#define RESPONSE_HEADER_LENGTH "Content-Length: "
-#define RESPONSE_HEADER_TYPE "Content-Type: application/json\r\n charset=utf-8"
-#define RESPONSE_PLACEHOLD "\r\n\r\n"
-#define RESPONSE_FAILURE_STATUS "HTTP/1.1 400 Bad Request\r\n"
+#define OT_ADD_PREFIX_PATH "^/add_prefix"
+#define OT_AVAILABLE_NETWORK_PATH "^/available_network$"
+#define OT_BOOT_MDNS_PATH "^/boot_mdns$"
+#define OT_DELETE_PREFIX_PATH "^/delete_prefix"
+#define OT_FORM_NETWORK_PATH "^/form_network$"
+#define OT_GET_NETWORK_PATH "^/get_properties$"
+#define OT_JOIN_NETWORK_PATH "^/join_network$"
+#define OT_SET_NETWORK_PATH "^/settings$"
+#define OT_REQUEST_METHOD_GET "GET"
+#define OT_REQUEST_METHOD_POST "POST"
+#define OT_RESPONSE_SUCCESS_STATUS "HTTP/1.1 200 OK\r\n"
+#define OT_RESPONSE_HEADER_LENGTH "Content-Length: "
+#define OT_RESPONSE_HEADER_TYPE "Content-Type: application/json\r\n charset=utf-8"
+#define OT_RESPONSE_PLACEHOLD "\r\n\r\n"
+#define OT_RESPONSE_FAILURE_STATUS "HTTP/1.1 400 Bad Request\r\n"
 
-#define NETWORK_NAME_LENGTH 16
-#define EXTENDED_PANID_LENGTH 8
-#define HARDWARE_ADDRESS_LENGTH 8
-#define PANID_LENGTH 4
-#define BORDER_ROUTER_PORT 49191
-#define PUBLISH_SERVICE_INTERVAL 20
-#define PSKC_MAX_LENGTH 16
+#define OT_BORDER_ROUTER_PORT 49191
+#define OT_EXTENDED_PANID_LENGTH 8
+#define OT_HARDWARE_ADDRESS_LENGTH 8
+#define OT_NETWORK_NAME_LENGTH 16
+#define OT_PANID_LENGTH 4
+#define OT_PSKC_MAX_LENGTH 16
+#define OT_PUBLISH_SERVICE_INTERVAL 20
 
 namespace ot {
 namespace Web {
@@ -109,7 +109,7 @@ static void SetNetworkInfo(const char *networkName, const char *extPanId)
 
 static std::string OnJoinNetworkRequest(boost::property_tree::ptree &aJoinRequest, const char *aIfName)
 {
-    char extPanId[EXTENDED_PANID_LENGTH * 2 + 1];
+    char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1];
     int  ret = ot::Dbus::kWpantundStatus_Ok;
     int  index = aJoinRequest.get<int>("index");
 
@@ -156,8 +156,8 @@ static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormReques
     std::string              extPanId = aFormRequest.get<std::string>("extPanId");
     bool                     defaultRoute = aFormRequest.get<bool>("defaultRoute");
     ot::Psk::Pskc            psk;
-    char                     pskcStr[PSKC_MAX_LENGTH * 2];
-    uint8_t                  extPanIdBytes[EXTENDED_PANID_LENGTH];
+    char                     pskcStr[OT_PSKC_MAX_LENGTH * 2];
+    uint8_t                  extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
     ot::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(aIfName);
@@ -177,9 +177,9 @@ static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormReques
                                     kWPANTUNDProperty_NetworkXPANID,
                                     extPanId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
-    ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, EXTENDED_PANID_LENGTH);
+    ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
     ot::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(),
-                                         passphrase.c_str()), PSKC_MAX_LENGTH, pskcStr);
+                                         passphrase.c_str()), OT_PSKC_MAX_LENGTH, pskcStr);
     VerifyOrExit(wpanController.Set(WebServer::kPropertyType_Data,
                                     kWPANTUNDProperty_NetworkPSKc,
                                     pskcStr) == ot::Dbus::kWpantundStatus_Ok,
@@ -284,10 +284,10 @@ static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aG
 
     for (int i = 0; i < sNetworksCount; i++)
     {
-        char extPanId[EXTENDED_PANID_LENGTH * 2 + 1], panId[PANID_LENGTH + 3],
-             hardwareAddress[HARDWARE_ADDRESS_LENGTH * 2 + 1];
+        char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1], panId[OT_PANID_LENGTH + 3],
+             hardwareAddress[OT_HARDWARE_ADDRESS_LENGTH * 2 + 1];
         ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(sNetworks[i].mExtPanId), extPanId);
-        ot::Utils::Bytes2Hex(sNetworks[i].mHardwareAddress, HARDWARE_ADDRESS_LENGTH, hardwareAddress);
+        ot::Utils::Bytes2Hex(sNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", sNetworks[i].mPanId);
         networkInfo.put("nn", sNetworks[i].mNetworkName);
         networkInfo.put("xp", extPanId);
@@ -314,7 +314,7 @@ static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsReque
     std::thread mdnsPublisherThread([]() {
                 ot::Mdns::Publisher::GetInstance().SetServiceName(sNetworkName.c_str());
                 ot::Mdns::Publisher::GetInstance().SetType("_meshcop._udp");
-                ot::Mdns::Publisher::GetInstance().SetPort(BORDER_ROUTER_PORT);
+                ot::Mdns::Publisher::GetInstance().SetPort(OT_BORDER_ROUTER_PORT);
                 sNetworkName = "nn=" + sNetworkName;
                 sExtPanId = "xp=" + sExtPanId;
                 ot::Mdns::Publisher::GetInstance().SetNetworkNameTxt(sNetworkName.c_str());
@@ -361,37 +361,37 @@ void WebServer::StartWebServer(const char *aIfName)
 
 void WebServer::JoinNetworkResponse(void)
 {
-    HandleHttpRequest(JOIN_NETWORK_URL, REQUEST_METHOD_POST, OnJoinNetworkRequest, mIfName);
+    HandleHttpRequest(OT_JOIN_NETWORK_PATH, OT_REQUEST_METHOD_POST, OnJoinNetworkRequest, mIfName);
 }
 
 void WebServer::FormNetworkResponse(void)
 {
-    HandleHttpRequest(FORM_NETWORK_URL, REQUEST_METHOD_POST, OnFormNetworkRequest, mIfName);
+    HandleHttpRequest(OT_FORM_NETWORK_PATH, OT_REQUEST_METHOD_POST, OnFormNetworkRequest, mIfName);
 }
 
 void WebServer::AddOnMeshPrefix(void)
 {
-    HandleHttpRequest(ADD_PREFIX_URL, REQUEST_METHOD_POST, OnAddPrefixRequest, mIfName);
+    HandleHttpRequest(OT_ADD_PREFIX_PATH, OT_REQUEST_METHOD_POST, OnAddPrefixRequest, mIfName);
 }
 
 void WebServer::DeleteOnMeshPrefix(void)
 {
-    HandleHttpRequest(DELETE_PREFIX_URL, REQUEST_METHOD_POST, OnDeletePrefixRequest, mIfName);
+    HandleHttpRequest(OT_DELETE_PREFIX_PATH, OT_REQUEST_METHOD_POST, OnDeletePrefixRequest, mIfName);
 }
 
 void WebServer::GetNetworkResponse(void)
 {
-    HandleHttpRequest(GET_NETWORK_URL, REQUEST_METHOD_GET, OnGetNetworkRequest, mIfName);
+    HandleHttpRequest(OT_GET_NETWORK_PATH, OT_REQUEST_METHOD_GET, OnGetNetworkRequest, mIfName);
 }
 
 void WebServer::AvailableNetworkResponse(void)
 {
-    HandleHttpRequest(AVAILABLE_NETWORK_URL, REQUEST_METHOD_GET, OnGetAvailableNetworkResponse, mIfName);
+    HandleHttpRequest(OT_AVAILABLE_NETWORK_PATH, OT_REQUEST_METHOD_GET, OnGetAvailableNetworkResponse, mIfName);
 }
 
 void WebServer::BootMdnsPublisher(void)
 {
-    HandleHttpRequest(BOOT_MDNS_URL, REQUEST_METHOD_GET, OnBootMdnsRequest, mIfName);
+    HandleHttpRequest(OT_BOOT_MDNS_PATH, OT_REQUEST_METHOD_GET, OnBootMdnsRequest, mIfName);
 }
 
 void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback,
@@ -414,19 +414,19 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
                     httpResponse = aCallback(pt, aIfName);
                 }
 
-                *response << RESPONSE_SUCCESS_STATUS
-                          << RESPONSE_HEADER_LENGTH
+                *response << OT_RESPONSE_SUCCESS_STATUS
+                          << OT_RESPONSE_HEADER_LENGTH
                           << httpResponse.length()
-                          << RESPONSE_PLACEHOLD
+                          << OT_RESPONSE_PLACEHOLD
                           << httpResponse;
             }
             catch (std::exception & e)
             {
 
-                *response << RESPONSE_FAILURE_STATUS
-                          << RESPONSE_HEADER_LENGTH
+                *response << OT_RESPONSE_FAILURE_STATUS
+                          << OT_RESPONSE_HEADER_LENGTH
                           << strlen(e.what())
-                          << RESPONSE_PLACEHOLD
+                          << OT_RESPONSE_PLACEHOLD
                           << e.what();
             }
         };
@@ -434,7 +434,7 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
 
 void WebServer::DefaultHttpResponse(void)
 {
-    mServer->default_resource[REQUEST_METHOD_GET] =
+    mServer->default_resource[OT_REQUEST_METHOD_GET] =
         [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request)
         {
             try
@@ -472,11 +472,11 @@ void WebServer::DefaultHttpResponse(void)
                     auto length = ifs->tellg();
                     ifs->seekg(0, std::ios::beg);
 
-                    *response << RESPONSE_SUCCESS_STATUS
+                    *response << OT_RESPONSE_SUCCESS_STATUS
                               << cacheControl << etag
-                              << RESPONSE_HEADER_LENGTH
+                              << OT_RESPONSE_HEADER_LENGTH
                               << length
-                              << RESPONSE_PLACEHOLD;
+                              << OT_RESPONSE_PLACEHOLD;
 
                     DefaultResourceSend(*mServer, response, ifs);
                 }
@@ -490,10 +490,10 @@ void WebServer::DefaultHttpResponse(void)
             {
                 std::string content = "Could not open path " + request->path + ": " +
                                       e.what();
-                *response << RESPONSE_FAILURE_STATUS
-                          << RESPONSE_HEADER_LENGTH
+                *response << OT_RESPONSE_FAILURE_STATUS
+                          << OT_RESPONSE_HEADER_LENGTH
                           << content.length()
-                          << RESPONSE_PLACEHOLD
+                          << OT_RESPONSE_PLACEHOLD
                           << content;
             }
         };
