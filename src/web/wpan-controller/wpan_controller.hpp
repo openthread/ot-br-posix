@@ -34,35 +34,23 @@
 #ifndef WPAN_CONTROLLER_HPP
 #define WPAN_CONTROLLER_HPP
 
-#define WPAN_TUNNEL_DBUS_PATH   "/com/nestlabs/WPANTunnelDriver"
-#define WPANTUND_DBUS_PATH      "/org/wpantund"
-#define WPANTUND_DBUS_APIv1_INTERFACE "org.wpantund.v1"
-#define ERRORCODE_UNKNOWN       (4)
-#define SCANNED_NET_BUFFER_SIZE 250
-#define SET_MAX_DATA_SIZE 250
-#define NETWORK_NAME_MAX_SIZE 17
-#define HARDWARE_ADDRESS_SIZE 8
-#define PREFIX_SIZE 8
+#define OT_SCANNED_NET_BUFFER_SIZE 250
+#define OT_SET_MAX_DATA_SIZE 250
+#define OT_NETWORK_NAME_MAX_SIZE 17
+#define OT_HARDWARE_ADDRESS_SIZE 8
+#define OT_PREFIX_SIZE 8
+#define OT_ROUTER_ROLE 2
 
-#define kWPANTUNDProperty_NetworkName            "Network:Name"
-#define kWPANTUNDProperty_NetworkXPANID          "Network:XPANID"
-#define kWPANTUNDProperty_NetworkPANID           "Network:PANID"
-#define kWPANTUNDProperty_NetworkNodeType        "Network:NodeType"
-#define kWPANTUNDProperty_NetworkKey             "Network:Key"
-#define kWPANTUNDProperty_NetworkKeyIndex        "Network:KeyIndex"
-#define kWPANTUNDProperty_NCPMACAddress          "NCP:MACAddress"
-#define kWPANTUNDProperty_NCPChannel             "NCP:Channel"
-#define kWPANTUNDProperty_NCPHardwareAddress     "NCP:HardwareAddress"
-#define kWPANTUNDProperty_NetworkPskc            "Network:PSKc"
-#define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin         "com.nestlabs.internal:Network:AllowingJoin"
-#define WPANTUND_IF_SIGNAL_NET_SCAN_BEACON    "NetScanBeacon"
-#define LEADER_ROLE 1
-#define ROUTER_ROLE 2
-
+#include <net/if.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <dbus/dbus.h>
+extern "C" {
+#include "wpanctl-utils.h"
+#include "wpan-dbus-v0.h"
+#include "wpan-dbus-v1.h"
+}
 
 #include "dbus_base.hpp"
 
@@ -73,90 +61,181 @@ enum
 {
     kWpantundStatus_Ok                       = 0,
     kWpantundStatus_Failure                  = 1,
-
     kWpantundStatus_InvalidArgument          = 2,
-    kWpantundStatus_InvalidWhenDisabled      = 3,
-    kWpantundStatus_InvalidForCurrentState   = 4,
-    kWpantundStatus_InvalidType              = 5,
-    kWpantundStatus_InvalidRange             = 6,
-
-    kWpantundStatus_Timeout                  = 7,
-    kWpantundStatus_SocketReset              = 8,
-    kWpantundStatus_Busy                     = 9,
-
-    kWpantundStatus_Already                  = 10,
-    kWpantundStatus_Canceled                 = 11,
-    kWpantundStatus_InProgress               = 12,
-    kWpantundStatus_TryAgainLater            = 13,
-
-    kWpantundStatus_FeatureNotSupported      = 14,
-    kWpantundStatus_FeatureNotImplemented    = 15,
-
-    kWpantundStatus_PropertyNotFound         = 16,
-    kWpantundStatus_PropertyEmpty            = 17,
-
-    kWpantundStatus_JoinFailedUnknown        = 18,
-    kWpantundStatus_JoinFailedAtScan         = 19,
-    kWpantundStatus_JoinFailedAtAuthenticate = 20,
-    kWpantundStatus_FormFailedAtScan         = 21,
-
-    kWpantundStatus_NCP_Crashed              = 22,
-    kWpantundStatus_NCP_Fatal                = 23,
-    kWpantundStatus_NCP_InvalidArgument      = 24,
-    kWpantundStatus_NCP_InvalidRange         = 25,
-
-    kWpantundStatus_MissingXPANID            = 26,
-
-    kWpantundStatus_NCP_Reset                = 27,
-
-    kWpantundStatus_InterfaceNotFound        = 28,
-
-    kWpantundStatus_InvalidConnection        = 29,
-    kWpantundStatus_InvalidMessage           = 30,
-    kWpantundStatus_InvalidReply             = 31,
-    kWpantundStatus_NetworkNotFound          = 32,
-    kWpantundStatus_LookUpFailed             = 33,
-    kWpantundStatus_LeaveFailed              = 34,
-    kWpantundStatus_ScanFailed               = 35,
-    kWpantundStatus_SetFailed                = 36,
-    kWpantundStatus_JoinFailed               = 37,
-    kWpantundStatus_GatewayFailed            = 38,
-    kWpantundStatus_FormFailed               = 39,
-    kWpantundStatus_StartFailed              = 40,
-    kWpantundStatus_GetNullMessage           = 41,
-    kWpantundStatus_GetNullReply             = 42,
-    kWpantundStatus_GetNullPending           = 43,
+    kWpantundStatus_NetworkNotFound          = 3,
+    kWpantundStatus_LeaveFailed              = 4,
+    kWpantundStatus_ScanFailed               = 5,
+    kWpantundStatus_SetFailed                = 6,
+    kWpantundStatus_JoinFailed               = 7,
+    kWpantundStatus_SetGatewayFailed         = 8,
+    kWpantundStatus_FormFailed               = 9,
+    kWpantundStatus_InvalidConnection        = 10,
+    kWpantundStatus_InvalidMessage           = 11,
+    kWpantundStatus_InvalidReply             = 12,
+    kWpantundStatus_InvalidPending           = 13,
+    kWpantundStatus_InvalidDBusName          = 14,
 };
 
 struct WpanNetworkInfo
 {
-    char        mNetworkName[NETWORK_NAME_MAX_SIZE];
+    char        mNetworkName[OT_NETWORK_NAME_MAX_SIZE];
     dbus_bool_t mAllowingJoin;
     uint16_t    mPanId;
     uint16_t    mChannel;
     uint64_t    mExtPanId;
     int8_t      mRssi;
-    uint8_t     mHardwareAddress[HARDWARE_ADDRESS_SIZE];
-    uint8_t     mPrefix[PREFIX_SIZE];
+    uint8_t     mHardwareAddress[OT_HARDWARE_ADDRESS_SIZE];
+    uint8_t     mPrefix[OT_PREFIX_SIZE];
 };
 
 class WPANController
 {
 public:
-    static const struct WpanNetworkInfo *GetScanNetworksInfo(void);
-    static int GetScanNetworksInfoCount(void);
-    static int Start(void);
-    static int Leave(void);
-    static int Form(const char *aNetworkname, int aChannel);
-    static int Scan(void);
-    static int Join(char *aNetworkname, int16_t aChannel, uint64_t aExtPanId,
-                    uint16_t aPanId);
-    static const char *Get(const char *aPropertyName);
-    static int Set(uint8_t aType, const char *aPropertyName, const char *aPropertyValue);
-    static int Gateway(const char *aPrefix, uint8_t aLength, bool aIsDefaultRoute);
-    static int RemoveGateway(const char *aPrefix, uint8_t aLength);
+    /**
+     * This method returns the pointer to the WpanNetworkInfo structure.
+     *
+     * @returns The pointer to the WpanNetworkInfo structure.
+     *
+     */
+    const struct WpanNetworkInfo *GetScanNetworksInfo(void) const;
+
+    /**
+     * This method returns the length of WpanNetworkInfo structure.
+     *
+     * @returns The length of WpanNetworkInfo structure.
+     *
+     */
+    int GetScanNetworksInfoCount(void) const;
+
+    /**
+     * This method returns the pointer to the DBus interface name.
+     *
+     * @returns The pointer to the DBus interface name.
+     *
+     */
+    const char *GetDBusInterfaceName(void) const;
+
+    /**
+     * This method leaves the current Thread Network.
+     *
+     * @retval kWpantundStatus_Ok                 Successfully left the Thread Network.
+     * @retval kWpantundStatus_InvalidConnection  The DBus connection is invalid.
+     * @retval kWpantundStatus_InvalidMessage     The DBus message is invalid.
+     * @retval kWpantundStatus_InvalidReply       The DBus reply message is invalid.
+     *
+     */
+    int Leave(void);
+
+    /**
+     * This method forms a new Thread Network.
+     *
+     * @param[in]  aNetworkName      A pointer to the Network Name of the new Thread Network.
+     * @param[in]  aChannel          The channel of the new Thread Network.
+     *
+     * @retval kWpantundStatus_Ok  Successfully formed a new Thread Network.
+     * @retval kWpantundStatus_InvalidConnection  The DBus connection is invalid.
+     * @retval kWpantundStatus_InvalidMessage     The DBus message is invalid.
+     * @retval kWpantundStatus_InvalidReply       The DBus reply message is invalid.
+     * @retval kWpantundStatus_InvalidArgument    The aNetworkName or aChannel is invalid.
+     *
+     */
+    int Form(const char *aNetworkName, uint16_t aChannel);
+
+    /**
+     * This method scan all existing Thread Network..
+     *
+     * @retval kWpantundStatus_Ok               Successfully scanned all existing Thread Network.
+     * @retval kWpantundStatus_NetworkNotFound  Existing Thread Networks are not found.
+     *
+     */
+    int Scan(void);
+
+    /**
+     * This method joins an existing Thread Network.
+     *
+     * @param[in]  aNetworkname      A pointer to the Network Name of the joining Thread Network.
+     * @param[in]  aChannel          The channel of the joining Thread Network.
+     * @param[in]  aExtPanId         The Extended Pan ID of the joining Network.
+     * @param[in]  aPanId            The Pan ID of the joining Network.
+     *
+     * @retval kWpantundStatus_Ok                 Successfully joined an existing Thread Network.
+     * @retval kWpantundStatus_InvalidConnection  The DBus connection is invalid.
+     * @retval kWpantundStatus_InvalidMessage     The DBus message is invalid.
+     * @retval kWpantundStatus_InvalidReply       The DBus reply message is invalid.
+     * @retval kWpantundStatus_InvalidArgument    The aNetworkName or aChannel or aExtPanId or aPanId is invalid.
+     *
+     */
+    int Join(const char *aNetworkName, uint16_t aChannel, uint64_t aExtPanId,
+             uint16_t aPanId);
+
+    /**
+     * This method gets the property of the Thread Network.
+     *
+     * @param[in]  aPropertyName     A pointer to the property name of the Thread Network.
+     *
+     * @returns The pointer to the property value.
+     *
+     */
+    const char *Get(const char *aPropertyName) const;
+
+    /**
+     * This method sets the Thread Network property.
+     *
+     * @param[in]  aType            The type of the property.
+     * @param[in]  aPropertyName    A pointer to the property name.
+     * @param[in]  aPropertyValue   A pointer to the property value.
+     *
+     * @retval kWpantundStatus_Ok                 Successfully set the property of the Thread Network.
+     * @retval kWpantundStatus_InvalidConnection  The DBus connection is invalid.
+     * @retval kWpantundStatus_InvalidMessage     The DBus message is invalid.
+     * @retval kWpantundStatus_InvalidReply       The DBus reply message is invalid.
+     * @retval kWpantundStatus_InvalidArgument    The aPropertyName or aPropertyValue is invalid.
+     *
+     */
+    int Set(uint8_t aType, const char *aPropertyName, const char *aPropertyValue);
+
+    /**
+     * This method adds the gateway of the Thread Network.
+     *
+     * @param[in]  aPrefix           A point to the prefix of the gateway.
+     * @param[in]  aIsDefaultRoute   The name of the property.
+     *
+     * @retval kWpantundStatus_Ok  Successfully added the Thread Network gateway.
+     * @retval kWpantundStatus_InvalidConnection  The DBus connection is invalid.
+     * @retval kWpantundStatus_InvalidMessage     The DBus message is invalid.
+     * @retval kWpantundStatus_InvalidReply       The DBus reply message is invalid.
+     * @retval kWpantundStatus_InvalidArgument    The aPrefix is invalid.
+     *
+     */
+    int AddGateway(const char *aPrefix, bool aIsDefaultRoute);
+
+    /**
+     * This method removes the gateway of the Thread Network.
+     *
+     * @param[in]  aPrefix           A point to the prefix of the gateway.
+     *
+     * @retval kWpantundStatus_Ok  Successfully removed the Thread Network gateway.
+     * @retval kWpantundStatus_InvalidConnection  The DBus connection is invalid.
+     * @retval kWpantundStatus_InvalidMessage     The DBus message is invalid.
+     * @retval kWpantundStatus_InvalidReply       The DBus reply message is invalid.
+     * @retval kWpantundStatus_InvalidArgument    The aPrefix is invalid.
+     *
+     */
+    int RemoveGateway(const char *aPrefix);
+
+    /**
+     * This method sets the interface name of the wpantund.
+     *
+     * @param[in]  aIfName           A point to the interface name of the wpantund.
+     *
+     */
+    void SetInterfaceName(const char *aIfName);
 
 private:
+
+    char            mIfName[IFNAMSIZ];
+    WpanNetworkInfo mScannedNetworks[OT_SCANNED_NET_BUFFER_SIZE];
+    int             mScannedNetworkCount = 0;
 
 };
 

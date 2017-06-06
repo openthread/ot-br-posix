@@ -84,7 +84,7 @@ int Publisher::CreateService(AvahiServer *aServer)
         VerifyOrExit((mGroup = avahi_s_entry_group_new(aServer, EntryGroupCallback, NULL)) != NULL,
                      ret = kMdnsPublisher_FailedCreateGoup);
 
-    syslog(LOG_ERR, "Adding service '%s'\n", mServiceName);
+    syslog(LOG_ERR, "Adding service '%s'", mServiceName);
 
     VerifyOrExit(avahi_server_add_service(aServer, mGroup, AVAHI_IF_UNSPEC,
                                           AVAHI_PROTO_UNSPEC, (AvahiPublishFlags) 0,
@@ -92,7 +92,7 @@ int Publisher::CreateService(AvahiServer *aServer)
                                           mNetworkNameTxt, mExtPanIdTxt, NULL) == 0,
                  ret = kMdnsPublisher_FailedAddSevice);
 
-    syslog(LOG_INFO, " Service Name: %s \n Port: %d \n Network Name: %s \n Extended Pan ID: %s \n",
+    syslog(LOG_INFO, " Service Name: %s Port: %d Network Name: %s Extended Pan ID: %s ",
            mServiceName, mPort, mNetworkNameTxt, mExtPanIdTxt);
 
     VerifyOrExit(avahi_s_entry_group_commit(mGroup) == 0,
@@ -126,7 +126,7 @@ void Publisher::ServerCallback(AvahiServer *aServer, AvahiServerState aState,
         char *newHostName;
 
         newHostName = avahi_alternative_host_name(avahi_server_get_host_name(aServer));
-        syslog(LOG_WARNING, "Host name collision, retrying with '%s'\n", newHostName);
+        syslog(LOG_WARNING, "Host name collision, retrying with '%s'", newHostName);
         VerifyOrExit((ret = avahi_server_set_host_name(aServer, newHostName)) == 0);
         avahi_free(newHostName);
 
@@ -138,7 +138,7 @@ void Publisher::ServerCallback(AvahiServer *aServer, AvahiServerState aState,
 
     case AVAHI_SERVER_FAILURE:
 
-        syslog(LOG_ERR, "Server failure: %s\n",
+        syslog(LOG_ERR, "Server failure: %s",
                avahi_strerror(avahi_server_errno(aServer)));
         avahi_simple_poll_quit(mSimplePoll);
         isStart = false;
@@ -233,7 +233,7 @@ void Publisher::EntryGroupCallback(AvahiServer *aServer,
     {
 
     case AVAHI_ENTRY_GROUP_ESTABLISHED:
-        syslog(LOG_ERR, "Service '%s' successfully established.\n",
+        syslog(LOG_ERR, "Service '%s' successfully established.",
                mServiceName);
         isStart = true;
         break;
@@ -244,7 +244,7 @@ void Publisher::EntryGroupCallback(AvahiServer *aServer,
         alternativeName = avahi_alternative_service_name(mServiceName);
         avahi_free(mServiceName);
         mServiceName = alternativeName;
-        syslog(LOG_WARNING, "Service name collision, renaming service to '%s'\n",
+        syslog(LOG_WARNING, "Service name collision, renaming service to '%s'",
                mServiceName);
         CreateService(aServer);
         break;
@@ -252,7 +252,7 @@ void Publisher::EntryGroupCallback(AvahiServer *aServer,
 
     case AVAHI_ENTRY_GROUP_FAILURE:
 
-        syslog(LOG_ERR, "Entry group failure: %s\n",
+        syslog(LOG_ERR, "Entry group failure: %s",
                avahi_strerror(avahi_server_errno(aServer)));
         avahi_simple_poll_quit(mSimplePoll);
         break;
@@ -263,12 +263,12 @@ void Publisher::EntryGroupCallback(AvahiServer *aServer,
     }
 }
 
-void Publisher::SetNetworkNameTxT(const char *aTxtData)
+void Publisher::SetNetworkNameTxt(const char *aTxtData)
 {
     mNetworkNameTxt = aTxtData;
 }
 
-void Publisher::SetEPANIDTxT(const char *aTxtData)
+void Publisher::SetExtPanIdTxt(const char *aTxtData)
 {
     mExtPanIdTxt = aTxtData;
 }

@@ -166,19 +166,12 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
 int DBusGet::ProcessReply(void)
 {
     int          ret = 0;
-    char         path[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    const char  *iface = "org.wpantund.v1";
     const char  *method = "PropGet";
-    const char  *interfaceName = "wpan0";
     DBusMessage *messsage = NULL;
     DBusMessage *reply = NULL;
 
     VerifyOrExit(GetConnection() != NULL, ret = kWpantundStatus_InvalidConnection);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, interfaceName);
-    SetIface(iface);
     SetMethod(method);
-    SetInterfaceName(interfaceName);
-    SetPath(path);
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
     dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyName,
                              DBUS_TYPE_INVALID);
@@ -237,7 +230,7 @@ int DBusGet::GetAllPropertyNames(void)
     {
         char *pName;
         dbus_message_iter_get_basic(&listIter, &pName);
-        strcpy(mPropertyList[propCnt].name, pName);
+        strncpy(mPropertyList[propCnt].name, pName, sizeof(mPropertyList[propCnt].name));
         propCnt++;
     }
     return propCnt;
@@ -247,8 +240,8 @@ void DBusGet::GetAllPropertyValues(int propCnt)
 {
     for (int i = 0; i < propCnt; i++)
     {
-        strcpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name));
-
+        strncpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name),
+                sizeof(mPropertyList[i].value));
     }
 }
 

@@ -51,8 +51,7 @@ int DBusIfname::ProcessReply(void)
     SetDestination("com.nestlabs.WPANTunnelDriver");
     SetPath("/com/nestlabs/WPANTunnelDriver");
     SetMethod("GetInterfaces");
-    SetIface("com.nestlabs.WPANTunnelDriver");
-    SetInterfaceName("wpan0");
+    SetInterface("com.nestlabs.WPANTunnelDriver");
     VerifyOrExit(GetMessage() != NULL, ret = kWpantundStatus_InvalidMessage);
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
 
