@@ -35,14 +35,18 @@
 . script/_otbr
 . script/_wpantund
 . script/_ipforward
+. script/_nat64
 
 main()
 {
     . $BEFORE_HOOK
     otbr_uninstall
     wpantund_uninstall
+    nat64_uninstall
     ipforward_uninstall
+
     ipforward_install
+    nat64_install
     wpantund_update
     otbr_update
     . $AFTER_HOOK

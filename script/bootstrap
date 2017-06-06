@@ -62,6 +62,9 @@ install_packages_apt()
         sudo apt-get install -y nodejs
         sudo npm -g install bower
     fi
+
+    # nat64
+    sudo apt-get install -y tayga
 }
 
 install_packages_opkg()

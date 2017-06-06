@@ -31,14 +31,17 @@
 #
 
 . "$(dirname "$0")"/_initrc
+. script/_nat64
 
 main()
 {
     . $BEFORE_HOOK
     if which systemctl; then
         sudo sysctl --system
-        sudo systemctl start wpantund || true
-        sudo systemctl start otbr-web otbr-agent || true
+        nat64_start
+        systemctl is-active wpantund || sudo systemctl start wpantund
+        systemctl is-active otbr-web || sudo systemctl start otbr-web
+        systemctl is-active otbr-agent || sudo systemctl start otbr-agent
     else
         >&2 echo 'WARNING: systemctl not found. try script/console to start in console mode.'
         exit 1
