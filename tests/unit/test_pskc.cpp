@@ -46,8 +46,6 @@ TEST(Pskc, Test123456_0001020304050607_OpenThread)
     };
     const uint8_t *pskc = NULL;
 
-    mPSKc.SetPassphrase("123456");
-    mPSKc.SetSalt(extpanid, "OpenThread");
-    pskc = mPSKc.GetPskc();
+    pskc = mPSKc.ComputePskc(extpanid, "OpenThread", "123456");
     MEMCMP_EQUAL(expected, pskc, sizeof(expected));
 }

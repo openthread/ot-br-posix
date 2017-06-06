@@ -174,9 +174,8 @@ static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormReques
                                     extPanId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
     ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, EXTENDED_PANID_LENGTH);
-    psk.SetSalt(extPanIdBytes, networkName.c_str());
-    psk.SetPassphrase(passphrase.c_str());
-    ot::Utils::Bytes2Hex(psk.GetPskc(), PSKC_MAX_LENGTH, pskcStr);
+    ot::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(),
+                                         passphrase.c_str()), PSKC_MAX_LENGTH, pskcStr);
     VerifyOrExit(wpanController.Set(WebServer::kPropertyType_Data,
                                     kWPANTUNDProperty_NetworkPSKc,
                                     pskcStr) == ot::Dbus::kWpantundStatus_Ok,

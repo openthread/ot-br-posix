@@ -52,9 +52,7 @@ int printPSKc(const char *aPassphrase, const char *aExtPanId, const char *aNetwo
     VerifyOrExit(length <= kMaxNetworkName,
                  printf("NETWOR_KNAME length must be no more than %d bytes.\n", kMaxNetworkName));
 
-    pskcComputer.SetPassphrase(aPassphrase);
-    pskcComputer.SetSalt(extpanid, aNetworkName);
-    pskc = pskcComputer.GetPskc();
+    pskc = pskcComputer.ComputePskc(extpanid, aNetworkName, aPassphrase);
     for (int i = 0; i < 16; i++)
     {
         printf("%02x", pskc[i]);
