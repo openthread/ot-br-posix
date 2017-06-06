@@ -90,9 +90,13 @@ static std::string HttpReponse(uint8_t error)
 
     root.put("error", error);
     if (error == 0)
+    {
         root.put("result", "successful");
+    }
     else
+    {
         root.put("result", "failed");
+    }
     write_json(ss, root, false);
     return ss.str();
 }
@@ -152,7 +156,7 @@ static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormReques
     std::string              extPanId = aFormRequest.get<std::string>("extPanId");
     bool                     defaultRoute = aFormRequest.get<bool>("defaultRoute");
     ot::Psk::Pskc            psk;
-    char                     pskcStr[PSKC_MAX_LENGTH*2];
+    char                     pskcStr[PSKC_MAX_LENGTH * 2];
     uint8_t                  extPanIdBytes[EXTENDED_PANID_LENGTH];
     ot::Dbus::WPANController wpanController;
 
@@ -281,7 +285,8 @@ static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aG
 
     for (int i = 0; i < sNetworksCount; i++)
     {
-        char extPanId[EXTENDED_PANID_LENGTH*2+1], panId[PANID_LENGTH+3], hardwareAddress[HARDWARE_ADDRESS_LENGTH*2+1];
+        char extPanId[EXTENDED_PANID_LENGTH * 2 + 1], panId[PANID_LENGTH + 3],
+             hardwareAddress[HARDWARE_ADDRESS_LENGTH * 2 + 1];
         ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(sNetworks[i].mExtPanId), extPanId);
         ot::Utils::Bytes2Hex(sNetworks[i].mHardwareAddress, HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", sNetworks[i].mPanId);
@@ -316,7 +321,9 @@ static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsReque
                 ot::Mdns::Publisher::SetNetworkNameTxt(sNetworkName.c_str());
                 ot::Mdns::Publisher::SetExtPanIdTxt(sExtPanId.c_str());
                 if (sIsStarted)
+                {
                     ot::Mdns::Publisher::UpdateService();
+                }
                 else
                 {
                     sIsStarted = true;
@@ -436,18 +443,24 @@ void WebServer::DefaultHttpResponse(void)
                 auto webRootPath =
                     boost::filesystem::canonical(WEB_FILE_PATH);
                 auto path = boost::filesystem::canonical(
-                    webRootPath/request->path);
+                    webRootPath / request->path);
                 //Check if path is within webRootPath
                 if (std::distance(webRootPath.begin(),
                                   webRootPath.end()) > std::distance(path.begin(), path.end()) ||
                     !std::equal(webRootPath.begin(), webRootPath.end(),
                                 path.begin()))
+                {
                     throw std::invalid_argument("path must be within root path");
+                }
                 if (boost::filesystem::is_directory(path))
+                {
                     path /= "index.html";
+                }
                 if (!(boost::filesystem::exists(path) &&
                       boost::filesystem::is_regular_file(path)))
+                {
                     throw std::invalid_argument("file does not exist");
+                }
 
                 std::string cacheControl, etag;
 
@@ -469,12 +482,14 @@ void WebServer::DefaultHttpResponse(void)
                     DefaultResourceSend(*mServer, response, ifs);
                 }
                 else
+                {
                     throw std::invalid_argument("could not read file");
+                }
 
             }
             catch (const std::exception &e)
             {
-                std::string content = "Could not open path "+request->path+": "+
+                std::string content = "Could not open path " + request->path + ": " +
                                       e.what();
                 *response << RESPONSE_FAILURE_STATUS
                           << RESPONSE_HEADER_LENGTH
@@ -500,9 +515,13 @@ void DefaultResourceSend(const HttpServer &aServer, const std::shared_ptr<HttpSe
             aServer.send(aResponse, [&aServer, aResponse, aIfStream](const boost::system::error_code &ec)
                     {
                         if (!ec)
+                        {
                             DefaultResourceSend(aServer, aResponse, aIfStream);
+                        }
                         else
+                        {
                             std::cerr << "Connection interrupted" << std::endl;
+                        }
                     });
         }
     }

@@ -81,7 +81,7 @@ inline uint32_t Reverse32(uint32_t v)
 }
 
 #define BitVectorBytes(x)           \
-    (((x) + (CHAR_BIT-1)) / CHAR_BIT)
+    (((x) + (CHAR_BIT - 1)) / CHAR_BIT)
 
 namespace BigEndian {
 

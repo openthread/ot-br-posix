@@ -36,8 +36,8 @@
 #include "border_agent.hpp"
 #include "common/code_utils.hpp"
 
-static const char kSyslogIdent[]            = "otBorderAgent";
-static const char kDefaultInterfaceName[]   = "wpan0";
+static const char kSyslogIdent[] = "otBorderAgent";
+static const char kDefaultInterfaceName[] = "wpan0";
 
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};

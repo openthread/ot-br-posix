@@ -47,10 +47,10 @@ linux)
     }
 
     # Uncrustify
-    [ $BUILD_TARGET != pretty-check ] || [ -f $TOOLS_HOME/usr/bin/uncrustify ] || (cd /tmp &&
-        wget https://github.com/uncrustify/uncrustify/archive/uncrustify-0.64.tar.gz &&
-        tar xzf uncrustify-0.64.tar.gz &&
-        cd uncrustify-uncrustify-0.64 &&
+    [ $BUILD_TARGET != pretty-check ] || [ "$($TOOLS_HOME/usr/bin/uncrustify --version)" = 'Uncrustify-0.65' ] || (cd /tmp &&
+        wget https://github.com/uncrustify/uncrustify/archive/uncrustify-0.65.tar.gz &&
+        tar xzf uncrustify-0.65.tar.gz &&
+        cd uncrustify-uncrustify-0.65 &&
         mkdir build &&
         cd build &&
         cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. &&

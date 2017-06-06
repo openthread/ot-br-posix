@@ -100,7 +100,7 @@ const uint8_t kSteeringData[] = {
 enum
 {
     kPortJoinerSession = 49192,
-    kSizeMaxPacket = 1500,
+    kSizeMaxPacket     = 1500,
 };
 
 /**
@@ -762,7 +762,9 @@ int run(Context &context)
     SuccessOrExit(ret = CommissionerServe(context));
 
     do
+    {
         ret = mbedtls_ssl_close_notify(&ssl);
+    }
     while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
     ret = 0;
 

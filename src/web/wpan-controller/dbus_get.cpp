@@ -72,7 +72,10 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
                              dbus_message_iter_get_arg_type(&subIter)
                              == DBUS_TYPE_BYTE);
         }
-        for (int i = 0; i < aIndent; i++) strcat(aOutput, "\t");
+        for (int i = 0; i < aIndent; i++)
+        {
+            strcat(aOutput, "\t");
+        }
         strcat(aOutput, "]");
         break;
     case DBUS_TYPE_VARIANT:

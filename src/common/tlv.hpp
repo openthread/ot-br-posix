@@ -185,15 +185,15 @@ namespace Meshcop {
 
 enum
 {
-    kState = 16,
-    kCommissionerId = 10,
-    kCommissionerSessionId = 11,
+    kState                   = 16,
+    kCommissionerId          = 10,
+    kCommissionerSessionId   = 11,
     kJoinerDtlsEncapsulation = 17,
-    kSteeringData = 8,
-    kJoinerUdpPort = 18,
-    kJoinerIid = 19,
-    kJoinerRouterLocator = 20,
-    kJoinerRouterKek = 21,
+    kSteeringData            = 8,
+    kJoinerUdpPort           = 18,
+    kJoinerIid               = 19,
+    kJoinerRouterLocator     = 20,
+    kJoinerRouterKek         = 21,
 };
 
 } // namespace Meshcop
