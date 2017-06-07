@@ -47,7 +47,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Ncp {
 
@@ -162,7 +162,7 @@ private:
 
 } // Ncp
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot
 

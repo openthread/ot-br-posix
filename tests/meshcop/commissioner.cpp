@@ -72,10 +72,10 @@
 #define MBEDTLS_DEBUG_C
 #define DEBUG_LEVEL 1
 
-#define SYSLOG_IDENT "otCommissioner"
+#define SYSLOG_IDENT "otbr-commissioner"
 
 using namespace ot;
-using namespace ot::BorderAgent;
+using namespace ot::BorderRouter;
 
 const uint8_t kSeed[] = "Commissioner";
 const uint8_t kPSKd[] = "123456";

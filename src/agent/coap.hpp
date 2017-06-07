@@ -39,7 +39,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Coap {
 
@@ -279,7 +279,7 @@ public:
 
 } // namespace Coap
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot
 

@@ -79,7 +79,7 @@ extern "C" {
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Dtls {
 
@@ -263,7 +263,7 @@ private:
 
 } // namespace Dtls
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot
 

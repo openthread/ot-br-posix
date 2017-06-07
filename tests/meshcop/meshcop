@@ -107,7 +107,7 @@ ba_start()
 
 commissioner_start()
 {
-    ./commissioner $OT_PSKC &
+    ./otbr-commissioner $OT_PSKC &
     echo 'Waitint for commissioner'
     sleep 20
 }
@@ -141,7 +141,7 @@ test_teardown()
     sudo rm -rf $STAGE_DIR
     sudo killall wpantund
     sudo killall otbr-agent
-    sudo killall commissioner
+    sudo killall otbr-commissioner
     wait
 }
 

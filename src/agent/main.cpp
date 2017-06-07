@@ -36,7 +36,7 @@
 #include "border_agent.hpp"
 #include "common/code_utils.hpp"
 
-static const char kSyslogIdent[] = "otBorderAgent";
+static const char kSyslogIdent[] = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
 
 // Default poll timeout.
@@ -46,7 +46,7 @@ int Mainloop(const char *aInterfaceName)
 {
     int rval = 0;
 
-    ot::BorderAgent::BorderAgent br(aInterfaceName);
+    ot::BorderRouter::BorderAgent br(aInterfaceName);
 
     while (true)
     {

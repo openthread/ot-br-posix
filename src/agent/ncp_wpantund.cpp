@@ -47,7 +47,7 @@ extern "C" {
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Ncp {
 
@@ -501,6 +501,6 @@ void Controller::Destroy(Controller *aController)
 
 } // Ncp
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot

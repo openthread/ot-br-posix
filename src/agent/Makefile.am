@@ -75,7 +75,6 @@ libotbr_agent_la_CPPFLAGS                                                  = \
     -I$(top_srcdir)/third_party/libcoap/repo                                 \
     -I$(top_srcdir)/third_party/libcoap/repo/include                         \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
-    -I$(top_builddir)/third_party/wpantund/repo/src                          \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
     -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus                   \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl                    \
