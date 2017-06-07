@@ -65,7 +65,7 @@ exit:
     return;
 }
 
-void Pskc::Pbkdf2Cmac(void)
+const uint8_t *Pskc::ComputePskc(const uint8_t *aExtPanId, const char *aNetworkName, const char *aPassphrase)
 {
     uint32_t blockCounter = 0;
     uint16_t useLen = 0;
@@ -75,6 +75,8 @@ void Pskc::Pbkdf2Cmac(void)
     uint8_t  keyBlock[MBEDTLS_CIPHER_BLKSIZE_MAX];
     uint16_t keyLen = PSKC_LENGTH;
     uint8_t *pskc = mPskc;
+
+    SetSalt(aExtPanId, aNetworkName);
 
     while (keyLen)
     {
@@ -86,8 +88,8 @@ void Pskc::Pbkdf2Cmac(void)
         prfInput[mSaltLen + 2] = (uint8_t) (blockCounter >> 8);
         prfInput[mSaltLen + 3] = (uint8_t) (blockCounter);
         // Calculate U_1
-        mbedtls_aes_cmac_prf_128(mPassphrase,
-                                 mPassphraseLen, prfInput,
+        mbedtls_aes_cmac_prf_128(reinterpret_cast<const uint8_t *>(aPassphrase),
+                                 strlen(aPassphrase), prfInput,
                                  mSaltLen + 4, prfOutput);
         memcpy(keyBlock, prfOutput, prfBlockLen);
 
@@ -96,8 +98,8 @@ void Pskc::Pbkdf2Cmac(void)
             memcpy(prfInput, prfOutput, prfBlockLen);
 
             // Calculate U_i
-            mbedtls_aes_cmac_prf_128(mPassphrase,
-                                     mPassphraseLen, prfInput,
+            mbedtls_aes_cmac_prf_128(reinterpret_cast<const uint8_t *>(aPassphrase),
+                                     strlen(aPassphrase), prfInput,
                                      prfBlockLen, prfOutput);
 
             // xor
@@ -112,7 +114,7 @@ void Pskc::Pbkdf2Cmac(void)
         pskc += useLen;
         keyLen -= useLen;
     }
-
+    return mPskc;
 }
 
 } //namespace Psk

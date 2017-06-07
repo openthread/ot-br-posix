@@ -58,25 +58,25 @@ enum
 class Pskc
 {
 public:
-    void SetPassphrase(const char *aPassphrase)
-    {
-        mPassphraseLen = strlen(aPassphrase);
-        memcpy(mPassphrase, aPassphrase, mPassphraseLen);
-    }
-    void SetSalt(const uint8_t *aExtPanId, const char *aNetworkName);
-    uint8_t *GetPskc(void)
-    {
-        Pbkdf2Cmac();
-        return mPskc;
-    }
-    void Pbkdf2Cmac(void);
+
+    /**
+     * This method computes the PSKc.
+     *
+     * @param[in]  aExtPanId      a pointer to extended PAN ID.
+     * @param[in]  aNetworkName   a pointer to network name.
+     * @param[in]  aPassphrase    a pointer to passphrase.
+     *
+     * @returns The pointer to PSKc value.
+     *
+     */
+    const uint8_t *ComputePskc(const uint8_t *aExtPanId, const char *aNetworkName, const char *aPassphrase);
 
 private:
-    uint8_t  mPassphrase[MAX_PASSPHRASE_LEN];
-    uint16_t mPassphraseLen;
-    char     mSalt[PBKDF2_SALT_MAX_LEN];
-    uint16_t mSaltLen;
+    void SetSalt(const uint8_t *aExtPanId, const char *aNetworkName);
+
     uint8_t  mPskc[PSKC_LENGTH];
+    uint16_t mSaltLen;
+    char     mSalt[PBKDF2_SALT_MAX_LEN];
 };
 
 } //namespace Psk
