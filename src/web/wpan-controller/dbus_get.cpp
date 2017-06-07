@@ -164,6 +164,8 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
         strcat(aOutput, temp);
         break;
     }
+
+    (void)aBare;
 }
 
 int DBusGet::ProcessReply(void)

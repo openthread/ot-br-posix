@@ -28,6 +28,10 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+# Disable Werror for third_party
+
+override CFLAGS                   := $(filter-out -Werror,$(CFLAGS))
+
 # Passing --disable-examples for distcheck.
 
 DISTCHECK_CONFIGURE_FLAGS="--disable-examples"

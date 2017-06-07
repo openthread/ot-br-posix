@@ -262,6 +262,10 @@ static std::string OnGetNetworkRequest(boost::property_tree::ptree &aGetNetworkR
     root.put("error", ret);
     std::stringstream ss;
     write_json(ss, root, false);
+
+    (void)aIfName;
+    (void)aGetNetworkRequest;
+
     return ss.str();
 }
 
@@ -306,6 +310,9 @@ exit:
     root.put("error", ret);
     std::stringstream ss;
     write_json(ss, root, false);
+
+    (void)aGetAvailableNetworkRequest;
+
     return ss.str();
 }
 
@@ -331,6 +338,10 @@ static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsReque
             });
 
     mdnsPublisherThread.detach();
+
+    (void)aBootMdnsRequest;
+    (void)aIfName;
+
     return HttpReponse(ot::Dbus::kWpantundStatus_Ok);
 }
 

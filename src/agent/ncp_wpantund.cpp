@@ -131,6 +131,9 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
     }
 
 exit:
+
+    (void)aConnection;
+
     return result;
 }
 

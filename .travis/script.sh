@@ -41,11 +41,21 @@ pretty-check)
     export PATH=$TOOLS_HOME/usr/bin:$PATH || die
     ./configure && make pretty-check || die
     ;;
+
 posix-check)
     export CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include"
     export LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib"
     ./configure && make distcheck || die
     ;;
+
+scan-build)
+    SCAN_TMPDIR=./scan-tmp
+    scan-build ./configure --disable-docs || die
+    scan-build -o $SCAN_TMPDIR -analyze-headers -v make || die
+    grep '^<!-- BUGFILE '$TRAVIS_BUILD_DIR $SCAN_TMPDIR/*/report-*.html | tee bugfiles
+    [ `< bugfiles grep -v 'third_party' | wc -l` = '0' ] || die
+    ;;
+
 *)
     die
     ;;

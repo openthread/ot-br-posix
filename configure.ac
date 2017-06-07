@@ -200,7 +200,7 @@ AC_PATH_PROG(PERL, perl)
 #   -Wall                        CC, CXX
 #
 
-PROSPECTIVE_CFLAGS="-Wall"
+PROSPECTIVE_CFLAGS="-Wall -Wextra -Wshadow -Werror"
 PROSPECTIVE_CXXFLAGS=""
 
 AX_CHECK_COMPILER_OPTIONS([C],   ${PROSPECTIVE_CFLAGS})

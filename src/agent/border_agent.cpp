@@ -151,6 +151,9 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 
     mCoap->Send(*message, addr.m8, kCoapUdpPort, BorderAgent::ForwardCommissionerResponse);
     mCoap->FreeMessage(message);
+
+    (void)aIp6;
+    (void)aPort;
 }
 
 void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort)
@@ -168,6 +171,9 @@ void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_
 
     mCoaps->Send(*message, NULL, 0, NULL);
     mCoaps->FreeMessage(message);
+
+    (void)aIp6;
+    (void)aPort;
 }
 
 void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort)
@@ -207,6 +213,10 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
     }
 
 exit:
+
+    (void)aIp6;
+    (void)aPort;
+
     return;
 }
 
