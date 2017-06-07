@@ -44,7 +44,7 @@ install_packages_apt()
     sudo apt-get install -y autoconf-archive
 
     # mDNS
-    sudo apt-get install -y libavahi-core-dev
+    sudo apt-get install -y libavahi-common-dev libavahi-client-dev avahi-daemon
 
     # Doxygen
     sudo apt-get install -y doxygen
