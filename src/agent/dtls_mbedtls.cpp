@@ -42,7 +42,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Dtls {
 
@@ -503,6 +503,6 @@ exit:
 
 } // namespace Dtls
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot

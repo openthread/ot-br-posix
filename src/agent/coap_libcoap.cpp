@@ -42,7 +42,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Coap {
 
@@ -305,6 +305,6 @@ void Agent::Destroy(Agent *aAgent)
 
 } // namespace Coap
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot

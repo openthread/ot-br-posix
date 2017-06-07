@@ -45,7 +45,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 /**
  * @addtogroup border-agent
@@ -152,7 +152,7 @@ private:
  * @}
  */
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot
 

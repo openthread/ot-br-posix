@@ -38,7 +38,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Dtls {
 
@@ -214,7 +214,7 @@ public:
 
 } // namespace Dtls
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot
 

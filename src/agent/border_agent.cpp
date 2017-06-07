@@ -51,7 +51,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 /**
  * Locators
@@ -329,6 +329,6 @@ void BorderAgent::HandlePSKcChanged(const uint8_t *aPSKc, void *aContext)
     static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(aPSKc, kSizePSKc);
 }
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot

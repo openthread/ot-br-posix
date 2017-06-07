@@ -34,7 +34,7 @@
 
 namespace ot {
 
-namespace BorderAgent {
+namespace BorderRouter {
 
 namespace Coap {
 
@@ -205,7 +205,7 @@ private:
 
 } // namespace Coap
 
-} // namespace BorderAgent
+} // namespace BorderRouter
 
 } // namespace ot
 
