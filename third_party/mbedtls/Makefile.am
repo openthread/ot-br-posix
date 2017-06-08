@@ -62,6 +62,7 @@ libmbedtls_la_SOURCES                   = \
 libmbedtls_la_CPPFLAGS                        = \
     -I$(srcdir)/repo/include                    \
     -I$(srcdir)/repo/configs                    \
+    -D_GNU_SOURCE                               \
     -DMBEDTLS_CONFIG_FILE='<config-thread.h>'   \
     -DMBEDTLS_DEBUG_C                           \
     $(NULL)
