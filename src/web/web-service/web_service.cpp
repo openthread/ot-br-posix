@@ -85,20 +85,20 @@ void DefaultResourceSend(const HttpServer &aServer, const std::shared_ptr<HttpSe
 
 static std::string HttpReponse(uint8_t error)
 {
-    boost::property_tree::ptree root;
-    std::stringstream           ss;
+    Json::Value       root;
+    Json::FastWriter  fastWriter;
+    std::stringstream ss;
 
-    root.put("error", error);
+    root["error"] = error;
     if (error == 0)
     {
-        root.put("result", "successful");
+        root["result"] = "successful";
     }
     else
     {
-        root.put("result", "failed");
+        root["result"] = "failed";
     }
-    write_json(ss, root, false);
-    return ss.str();
+    return fastWriter.write(root);
 }
 
 static void SetNetworkInfo(const char *networkName, const char *extPanId)
@@ -107,15 +107,15 @@ static void SetNetworkInfo(const char *networkName, const char *extPanId)
     sExtPanId = extPanId;
 }
 
-static std::string OnJoinNetworkRequest(boost::property_tree::ptree &aJoinRequest, const char *aIfName)
+static std::string OnJoinNetworkRequest(Json::Value &aJoinRequest, const char *aIfName)
 {
     char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1];
     int  ret = ot::Dbus::kWpantundStatus_Ok;
-    int  index = aJoinRequest.get<int>("index");
+    int  index = aJoinRequest["index"].asUInt();
 
-    std::string              networkKey = aJoinRequest.get<std::string>("networkKey");
-    std::string              prefix = aJoinRequest.get<std::string>("prefix");
-    bool                     defaultRoute = aJoinRequest.get<bool>("defaultRoute");
+    std::string              networkKey = aJoinRequest["networkKey"].asString();
+    std::string              prefix = aJoinRequest["prefix"].asString();
+    bool                     defaultRoute = aJoinRequest["defaultRoute"].asBool();
     ot::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(aIfName);
@@ -143,18 +143,18 @@ exit:
     return HttpReponse(ret);
 }
 
-static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormRequest, const char *aIfName)
+static std::string OnFormNetworkRequest(Json::Value &aFormRequest, const char *aIfName)
 {
     int ret = ot::Dbus::kWpantundStatus_Ok;
 
-    std::string              networkKey = aFormRequest.get<std::string>("networkKey");
-    std::string              prefix = aFormRequest.get<std::string>("prefix");
-    uint16_t                 channel = aFormRequest.get<uint16_t>("channel");
-    std::string              networkName = aFormRequest.get<std::string>("networkName");
-    std::string              passphrase = aFormRequest.get<std::string>("passphrase");
-    std::string              panId = aFormRequest.get<std::string>("panId");
-    std::string              extPanId = aFormRequest.get<std::string>("extPanId");
-    bool                     defaultRoute = aFormRequest.get<bool>("defaultRoute");
+    std::string              networkKey = aFormRequest["networkKey"].asString();
+    std::string              prefix = aFormRequest["prefix"].asString();
+    uint16_t                 channel = aFormRequest["channel"].asUInt();
+    std::string              networkName = aFormRequest["networkName"].asString();
+    std::string              passphrase = aFormRequest["passphrase"].asString();
+    std::string              panId = aFormRequest["panId"].asString();
+    std::string              extPanId = aFormRequest["extPanId"].asString();
+    bool                     defaultRoute = aFormRequest["defaultRoute"].asBool();
     ot::Psk::Pskc            psk;
     char                     pskcStr[OT_PSKC_MAX_LENGTH * 2];
     uint8_t                  extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
@@ -199,12 +199,12 @@ exit:
     return HttpReponse(ret);
 }
 
-static std::string OnAddPrefixRequest(boost::property_tree::ptree &aAddPrefixRequest, const char *aIfName)
+static std::string OnAddPrefixRequest(Json::Value &aAddPrefixRequest, const char *aIfName)
 {
     int ret = ot::Dbus::kWpantundStatus_Ok;
 
-    std::string              prefix = aAddPrefixRequest.get<std::string>("prefix");
-    bool                     defaultRoute = aAddPrefixRequest.get<bool>("defaultRoute");
+    std::string              prefix = aAddPrefixRequest["prefix"].asString();
+    bool                     defaultRoute = aAddPrefixRequest["defaultRoute"].asBool();
     ot::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(aIfName);
@@ -219,11 +219,11 @@ exit:
 
 }
 
-static std::string OnDeletePrefixRequest(boost::property_tree::ptree &aDeleteRequest, const char *aIfName)
+static std::string OnDeletePrefixRequest(Json::Value &aDeleteRequest, const char *aIfName)
 {
     int ret = ot::Dbus::kWpantundStatus_Ok;
 
-    std::string              prefix = aDeleteRequest.get<std::string>("prefix");
+    std::string              prefix = aDeleteRequest["prefix"].asString();
     ot::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(aIfName);
@@ -237,40 +237,40 @@ exit:
     return HttpReponse(ret);
 }
 
-static std::string OnGetNetworkRequest(boost::property_tree::ptree &aGetNetworkRequest, const char *aIfName)
+static std::string OnGetNetworkRequest(Json::Value &aGetNetworkRequest, const char *aIfName)
 {
-    boost::property_tree::ptree root, networkInfo;
-    int                         ret = ot::Dbus::kWpantundStatus_Ok;
-    ot::Dbus::WPANController    wpanController;
+    Json::Value              root, networkInfo;
+    int                      ret = ot::Dbus::kWpantundStatus_Ok;
+    ot::Dbus::WPANController wpanController;
+    Json::FastWriter         fastWriter;
 
     wpanController.SetInterfaceName(aIfName);
-    networkInfo.put(kWPANTUNDProperty_NCPState, wpanController.Get(kWPANTUNDProperty_NCPState));
-    networkInfo.put(kWPANTUNDProperty_DaemonEnabled, wpanController.Get(kWPANTUNDProperty_DaemonEnabled));
-    networkInfo.put(kWPANTUNDProperty_NCPVersion, wpanController.Get(kWPANTUNDProperty_NCPVersion));
-    networkInfo.put(kWPANTUNDProperty_DaemonVersion, wpanController.Get(kWPANTUNDProperty_DaemonVersion));
-    networkInfo.put(kWPANTUNDProperty_ConfigNCPDriverName, wpanController.Get(kWPANTUNDProperty_ConfigNCPDriverName));
-    networkInfo.put(kWPANTUNDProperty_NCPHardwareAddress, wpanController.Get(kWPANTUNDProperty_NCPHardwareAddress));
-    networkInfo.put(kWPANTUNDProperty_NCPChannel, wpanController.Get(kWPANTUNDProperty_NCPChannel));
-    networkInfo.put(kWPANTUNDProperty_NetworkNodeType, wpanController.Get(kWPANTUNDProperty_NetworkNodeType));
-    networkInfo.put(kWPANTUNDProperty_NetworkName, wpanController.Get(kWPANTUNDProperty_NetworkName));
-    networkInfo.put(kWPANTUNDProperty_NetworkXPANID, wpanController.Get(kWPANTUNDProperty_NetworkXPANID));
-    networkInfo.put(kWPANTUNDProperty_NetworkPANID, wpanController.Get(kWPANTUNDProperty_NetworkPANID));
-    networkInfo.put(kWPANTUNDProperty_IPv6LinkLocalAddress, wpanController.Get(kWPANTUNDProperty_IPv6LinkLocalAddress));
-    networkInfo.put(kWPANTUNDProperty_IPv6MeshLocalAddress, wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalAddress));
-    networkInfo.put(kWPANTUNDProperty_IPv6MeshLocalPrefix, wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalPrefix));
-    root.add_child("result", networkInfo);
-    root.put("error", ret);
-    std::stringstream ss;
-    write_json(ss, root, false);
-    return ss.str();
+    networkInfo[kWPANTUNDProperty_NCPState] = wpanController.Get(kWPANTUNDProperty_NCPState);
+    networkInfo[kWPANTUNDProperty_DaemonEnabled] = wpanController.Get(kWPANTUNDProperty_DaemonEnabled);
+    networkInfo[kWPANTUNDProperty_NCPVersion] = wpanController.Get(kWPANTUNDProperty_NCPVersion);
+    networkInfo[kWPANTUNDProperty_DaemonVersion] = wpanController.Get(kWPANTUNDProperty_DaemonVersion);
+    networkInfo[kWPANTUNDProperty_ConfigNCPDriverName] = wpanController.Get(kWPANTUNDProperty_ConfigNCPDriverName);
+    networkInfo[kWPANTUNDProperty_NCPHardwareAddress] = wpanController.Get(kWPANTUNDProperty_NCPHardwareAddress);
+    networkInfo[kWPANTUNDProperty_NCPChannel] = wpanController.Get(kWPANTUNDProperty_NCPChannel);
+    networkInfo[kWPANTUNDProperty_NetworkNodeType] = wpanController.Get(kWPANTUNDProperty_NetworkNodeType);
+    networkInfo[kWPANTUNDProperty_NetworkName] = wpanController.Get(kWPANTUNDProperty_NetworkName);
+    networkInfo[kWPANTUNDProperty_NetworkXPANID] = wpanController.Get(kWPANTUNDProperty_NetworkXPANID);
+    networkInfo[kWPANTUNDProperty_NetworkPANID] = wpanController.Get(kWPANTUNDProperty_NetworkPANID);
+    networkInfo[kWPANTUNDProperty_IPv6LinkLocalAddress] = wpanController.Get(kWPANTUNDProperty_IPv6LinkLocalAddress);
+    networkInfo[kWPANTUNDProperty_IPv6MeshLocalAddress] = wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalAddress);
+    networkInfo[kWPANTUNDProperty_IPv6MeshLocalPrefix] = wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalPrefix);
+    root["result"] = networkInfo;
+    root["error"] = ret;
+    return fastWriter.write(root);
 }
 
-static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aGetAvailableNetworkRequest,
+static std::string OnGetAvailableNetworkResponse(Json::Value &aGetAvailableNetworkRequest,
                                                  const char *aIfName)
 {
-    boost::property_tree::ptree root, networks, networkInfo;
-    int                         ret = ot::Dbus::kWpantundStatus_Ok;
-    ot::Dbus::WPANController    wpanController;
+    Json::Value              root, networks, networkInfo;
+    int                      ret = ot::Dbus::kWpantundStatus_Ok;
+    ot::Dbus::WPANController wpanController;
+    Json::FastWriter         fastWriter;
 
     wpanController.SetInterfaceName(aIfName);
     VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
@@ -289,27 +289,24 @@ static std::string OnGetAvailableNetworkResponse(boost::property_tree::ptree &aG
         ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(sNetworks[i].mExtPanId), extPanId);
         ot::Utils::Bytes2Hex(sNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", sNetworks[i].mPanId);
-        networkInfo.put("nn", sNetworks[i].mNetworkName);
-        networkInfo.put("xp", extPanId);
-        networkInfo.put("pi", panId);
-        networkInfo.put("ch", sNetworks[i].mChannel);
-        networkInfo.put("ha", hardwareAddress);
-        networks.push_back(std::make_pair("", networkInfo));
+        networkInfo[i]["nn"] = sNetworks[i].mNetworkName;
+        networkInfo[i]["xp"] = extPanId;
+        networkInfo[i]["pi"] = panId;
+        networkInfo[i]["ch"] = sNetworks[i].mChannel;
+        networkInfo[i]["ha"] = hardwareAddress;
     }
-    root.add_child("result", networks);
+    root["result"] = networkInfo;
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        root.put("result", "failed");
+        root["result"] = "failed";
         syslog(LOG_ERR, "Error is %d", ret);
     }
-    root.put("error", ret);
-    std::stringstream ss;
-    write_json(ss, root, false);
-    return ss.str();
+    root["error"] = ret;
+    return fastWriter.write(root);
 }
 
-static std::string OnBootMdnsRequest(boost::property_tree::ptree &aBootMdnsRequest, const char *aIfName)
+static std::string OnBootMdnsRequest(Json::Value &aBootMdnsRequest, const char *aIfName)
 {
     std::thread mdnsPublisherThread([]() {
                 ot::Mdns::Publisher::GetInstance().SetServiceName(sNetworkName.c_str());
@@ -403,15 +400,16 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
         {
             try
             {
-                boost::property_tree::ptree pt;
-                std::string                 httpResponse;
+                Json::Reader reader;
+                Json::Value  val;
+                std::string  httpResponse;
                 if (aCallback != NULL)
                 {
                     if (request->content.size() > 0)
                     {
-                        read_json(request->content, pt);
+                        reader.parse(request->content,  val);
                     }
-                    httpResponse = aCallback(pt, aIfName);
+                    httpResponse = aCallback(val, aIfName);
                 }
 
                 *response << OT_RESPONSE_SUCCESS_STATUS

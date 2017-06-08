@@ -43,8 +43,9 @@
 #include <net/if.h>
 #include <syslog.h>
 
-#include <boost/property_tree/ptree_fwd.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/writer.h>
 
 #include "../wpan-controller/wpan_controller.hpp"
 
@@ -72,7 +73,7 @@ public:
     };
 
 private:
-    typedef std::string (*HttpRequestCallback)(boost::property_tree::ptree &aPtreeObject, const char *aIfName);
+    typedef std::string (*HttpRequestCallback)(Json::Value &aJsonObject, const char *aIfName);
 
     void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback, const char *aIfName);
     void JoinNetworkResponse(void);
