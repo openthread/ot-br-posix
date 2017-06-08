@@ -131,7 +131,7 @@ nat64_uninstall()
     if which update-rc.d; then
         sudo update-rc.d otbr-nat44 remove
     fi
-    sudo rm $NAT44_SERVICE
+    test ! -f $NAT44_SERVICE || sudo rm $NAT44_SERVICE
 }
 
 nat64_start()
@@ -145,7 +145,7 @@ nat64_start()
 nat64_stop()
 {
     if which systemctl; then
-        sudo systemctl stop tayga
-        sudo systemctl stop otbr-nat44
+        sudo systemctl stop tayga || true
+        sudo systemctl stop otbr-nat44 || true
     fi
 }
