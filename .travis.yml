@@ -17,6 +17,7 @@ addons:
     - libavahi-client-dev
     - avahi-daemon
     - expect
+    - libjsoncpp-dev
 
 cache:
   directories:
