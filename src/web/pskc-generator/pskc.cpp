@@ -31,9 +31,9 @@
  *   This file implements the generating pskc function.
  */
 
-#include "common/code_utils.hpp"
-
 #include "pskc.hpp"
+
+#include "common/code_utils.hpp"
 
 namespace ot {
 namespace Psk {
@@ -48,8 +48,8 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
     memcpy(mSalt, saltPrefix, strlen(saltPrefix));
     cur += strlen(saltPrefix);
 
-    memcpy(mSalt + cur, aExtPanId, EXTEND_PAN_ID_LEN);
-    cur += EXTEND_PAN_ID_LEN;
+    memcpy(mSalt + cur, aExtPanId, OT_EXTENDED_PAN_ID_LENGTH);
+    cur += OT_EXTENDED_PAN_ID_LENGTH;
 
     VerifyOrExit(strlen(aNetworkName) > 0, ret = kPskcStatus_InvalidArgument);
     memcpy(mSalt + cur, aNetworkName, strlen(aNetworkName));
@@ -70,10 +70,10 @@ const uint8_t *Pskc::ComputePskc(const uint8_t *aExtPanId, const char *aNetworkN
     uint32_t blockCounter = 0;
     uint16_t useLen = 0;
     uint16_t prfBlockLen = MBEDTLS_CIPHER_BLKSIZE_MAX;
-    uint8_t  prfInput[PBKDF2_SALT_MAX_LEN + 4];
+    uint8_t  prfInput[OT_PBKDF2_SALT_MAX_LENGTH + 4];
     uint8_t  prfOutput[MBEDTLS_CIPHER_BLKSIZE_MAX];
     uint8_t  keyBlock[MBEDTLS_CIPHER_BLKSIZE_MAX];
-    uint16_t keyLen = PSKC_LENGTH;
+    uint16_t keyLen = OT_PSKC_LENGTH;
     uint8_t *pskc = mPskc;
 
     SetSalt(aExtPanId, aNetworkName);
@@ -93,7 +93,7 @@ const uint8_t *Pskc::ComputePskc(const uint8_t *aExtPanId, const char *aNetworkN
                                  mSaltLen + 4, prfOutput);
         memcpy(keyBlock, prfOutput, prfBlockLen);
 
-        for (uint32_t i = 1; i < ITERATION_COUNTS; i++)
+        for (uint32_t i = 1; i < OT_ITERATION_COUNTS; i++)
         {
             memcpy(prfInput, prfOutput, prfBlockLen);
 

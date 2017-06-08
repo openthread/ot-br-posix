@@ -213,7 +213,7 @@ const char *DBusGet::GetPropertyValue(const char *aPropertyName)
 {
     SetPropertyName(aPropertyName);
     ProcessReply();
-    memset(mPropertyValue, 0, PROPERTY_VALUE_SIZE);
+    memset(mPropertyValue, 0, OT_PROPERTY_VALUE_SIZE);
     DumpInfoFromIter(mPropertyValue, &mIter, 0, false);
     return mPropertyValue;
 }

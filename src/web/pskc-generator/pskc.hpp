@@ -34,11 +34,11 @@
 #ifndef PSKC_HPP
 #define PSKC_HPP
 
-#define EXTEND_PAN_ID_LEN 8
-#define PBKDF2_SALT_MAX_LEN 30
-#define PSKC_LENGTH 16
-#define ITERATION_COUNTS 16384
-#define MAX_PASSPHRASE_LEN 30
+#define OT_EXTENDED_PAN_ID_LENGTH 8
+#define OT_ITERATION_COUNTS 16384
+#define OT_PASSPHRASE_MAX_LENGTH 255
+#define OT_PBKDF2_SALT_MAX_LENGTH 30
+#define OT_PSKC_LENGTH 16
 
 #include <stdint.h>
 #include <string.h>
@@ -74,9 +74,9 @@ public:
 private:
     void SetSalt(const uint8_t *aExtPanId, const char *aNetworkName);
 
-    uint8_t  mPskc[PSKC_LENGTH];
+    char     mSalt[OT_PBKDF2_SALT_MAX_LENGTH];
     uint16_t mSaltLen;
-    char     mSalt[PBKDF2_SALT_MAX_LEN];
+    uint8_t  mPskc[OT_PSKC_LENGTH];
 };
 
 } //namespace Psk
