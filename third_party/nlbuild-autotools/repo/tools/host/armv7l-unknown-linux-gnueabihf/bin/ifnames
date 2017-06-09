@@ -31,7 +31,7 @@ eval 'case $# in 0) exec /usr/bin/perl -S "$0";; *) exec /usr/bin/perl -S "$0" "
 
 BEGIN
 {
-  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '/usr/share/autoconf';
+  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '//share/autoconf';
   unshift @INC, $pkgdatadir;
 
   # Override SHELL.  On DJGPP SHELL may not be set to a shell

@@ -26,7 +26,7 @@ eval 'case $# in 0) exec /usr/bin/perl -S "$0";; *) exec /usr/bin/perl -S "$0" "
 
 BEGIN
 {
-  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '/usr/share/autoconf';
+  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '//share/autoconf';
   unshift @INC, $pkgdatadir;
 
   # Override SHELL.  On DJGPP SHELL may not be set to a shell
@@ -92,10 +92,10 @@ my $configure_scan = 'configure.scan';
 my $log;
 
 # Autoconf and lib files.
-my $autom4te = $ENV{'AUTOM4TE'} || '/usr/bin/autom4te';
+my $autom4te = $ENV{'AUTOM4TE'} || '//bin/autom4te';
 my $autoconf = "$autom4te --language=autoconf";
 my @prepend_include;
-my @include = ('/usr/share/autoconf');
+my @include = ('//share/autoconf');
 
 # $help
 # -----

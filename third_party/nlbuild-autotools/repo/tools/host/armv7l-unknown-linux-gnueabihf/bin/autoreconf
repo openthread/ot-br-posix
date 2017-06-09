@@ -27,7 +27,7 @@ eval 'case $# in 0) exec /usr/bin/perl -S "$0";; *) exec /usr/bin/perl -S "$0" "
 
 BEGIN
 {
-  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '/usr/share/autoconf';
+  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '//share/autoconf';
   unshift @INC, $pkgdatadir;
 
   # Override SHELL.  On DJGPP SHELL may not be set to a shell
@@ -107,9 +107,9 @@ Written by David J. MacKenzie and Akim Demaille.
 ";
 
 # Lib files.
-my $autoconf   = $ENV{'AUTOCONF'}   || '/usr/bin/autoconf';
-my $autoheader = $ENV{'AUTOHEADER'} || '/usr/bin/autoheader';
-my $autom4te   = $ENV{'AUTOM4TE'}   || '/usr/bin/autom4te';
+my $autoconf   = $ENV{'AUTOCONF'}   || '//bin/autoconf';
+my $autoheader = $ENV{'AUTOHEADER'} || '//bin/autoheader';
+my $autom4te   = $ENV{'AUTOM4TE'}   || '//bin/autom4te';
 my $automake   = $ENV{'AUTOMAKE'}   || 'automake';
 my $aclocal    = $ENV{'ACLOCAL'}    || 'aclocal';
 my $libtoolize = $ENV{'LIBTOOLIZE'} || 'libtoolize';

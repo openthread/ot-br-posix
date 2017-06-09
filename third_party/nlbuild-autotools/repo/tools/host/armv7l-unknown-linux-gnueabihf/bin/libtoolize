@@ -2486,11 +2486,11 @@ func_check_macros ()
   all_pkgltdl_files="COPYING.LIB Makefile Makefile.in Makefile.inc Makefile.am README acinclude.m4 aclocal.m4 argz_.h argz.c config.h.in config-h.in configure configure.ac configure.in libltdl/lt__alloc.h libltdl/lt__dirent.h libltdl/lt__glibc.h libltdl/lt__private.h libltdl/lt__strl.h libltdl/lt_dlloader.h libltdl/lt_error.h libltdl/lt_system.h libltdl/slist.h loaders/dld_link.c loaders/dlopen.c loaders/dyld.c loaders/load_add_on.c loaders/loadlibrary.c loaders/preopen.c loaders/shl_load.c lt__alloc.c lt__dirent.c lt__strl.c lt_dlloader.c lt_error.c ltdl.c ltdl.h slist.c"
 
   # Locations for important files:
-  prefix=/usr
-  datadir=/usr/share
-  pkgdatadir=/usr/share/libtool
-  pkgltdldir=/usr/share/libtool
-  aclocaldir=/usr/share/aclocal
+  prefix=/
+  datadir=//share
+  pkgdatadir=//share/libtool
+  pkgltdldir=//share/libtool
+  aclocaldir=//share/aclocal
   auxdir=
   macrodir=
   configure_ac=configure.in

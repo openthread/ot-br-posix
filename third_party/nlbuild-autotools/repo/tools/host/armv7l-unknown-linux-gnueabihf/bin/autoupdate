@@ -27,7 +27,7 @@ eval 'case $# in 0) exec /usr/bin/perl -S "$0";; *) exec /usr/bin/perl -S "$0" "
 
 BEGIN
 {
-  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '/usr/share/autoconf';
+  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '//share/autoconf';
   unshift @INC, $pkgdatadir;
 
   # Override SHELL.  On DJGPP SHELL may not be set to a shell
@@ -47,11 +47,11 @@ use File::Basename;
 use strict;
 
 # Lib files.
-my $autom4te = $ENV{'AUTOM4TE'} || '/usr/bin/autom4te';
+my $autom4te = $ENV{'AUTOM4TE'} || '//bin/autom4te';
 my $autoconf = "$autom4te --language=autoconf";
 # We need to find m4sugar.
 my @prepend_include;
-my @include = ('/usr/share/autoconf');
+my @include = ('//share/autoconf');
 my $force = 0;
 # m4.
 my $m4 = $ENV{"M4"} || '/usr/bin/m4';
