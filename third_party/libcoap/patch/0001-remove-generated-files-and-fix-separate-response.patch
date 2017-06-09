@@ -284,11 +284,11 @@ index a549395..bbb6e7f 100644
 +
 +  /* when q is not NULL, it does not match (dst, token), so we can skip it */
 +  while (q) {
-+    if (coap_address_equals(dst, &context->sendqueue->remote) &&
++    if (coap_address_equals(dst, &q->remote) &&
 +        token_match(token, token_length,
-+                    context->sendqueue->pdu->hdr->token,
-+                    context->sendqueue->pdu->hdr->token_length) &&
-+        context->sendqueue->retransmit_cnt > COAP_DEFAULT_MAX_RETRANSMIT) {
++                    q->pdu->hdr->token,
++                    q->pdu->hdr->token_length) &&
++        q->retransmit_cnt > COAP_DEFAULT_MAX_RETRANSMIT) {
 +      p->next = q->next;
 +      q->next = NULL;
 +      *sent = q;

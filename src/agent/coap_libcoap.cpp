@@ -217,6 +217,9 @@ void AgentLibcoap::HandleRequest(coap_context_t *aCoap,
                                ntohs(aAddress->addr.sin6.sin6_port), agent->mContext);
         }
     }
+
+    (void)aEndPoint;
+    (void)aToken;
 }
 
 void AgentLibcoap::Input(const void *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort)
@@ -248,6 +251,10 @@ void AgentLibcoap::HandleResponse(coap_context_t *aCoap,
     }
 
 exit:
+
+    (void)aLocalInterface;
+    (void)aRemote;
+    (void)aId;
 
     return;
 }
@@ -286,6 +293,8 @@ ssize_t AgentLibcoap::NetworkSend(coap_context_t *aCoap,
                                   const coap_address_t *aDestination,
                                   unsigned char *aBuffer, size_t aLength)
 {
+    (void)aLocalInterface;
+
     AgentLibcoap *agent = static_cast<AgentLibcoap *>(CONTAINING_RECORD(aCoap, AgentLibcoap, mCoap));
 
     return agent->mNetworkSender(aBuffer, aLength,

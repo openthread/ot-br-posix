@@ -200,11 +200,30 @@ AC_PATH_PROG(PERL, perl)
 #   -Wall                        CC, CXX
 #
 
-PROSPECTIVE_CFLAGS="-Wall"
-PROSPECTIVE_CXXFLAGS=""
+PROSPECTIVE_CFLAGS="-Wall -Wextra -Wshadow -Werror -std=c99 -pedantic-errors"
+PROSPECTIVE_CXXFLAGS="-Wall -Wextra -Wshadow -Werror -std=gnu++98 -Wno-c++14-compat"
+
+AC_CACHE_CHECK([whether $CC is Clang],
+    [nl_cv_clang],
+    [nl_cv_clang=no
+    if test "x${GCC}" = "xyes"; then
+        AC_EGREP_CPP([NL_CC_IS_CLANG],
+            [/* Note: Clang 2.7 lacks __clang_[a-z]+__ */
+#            if defined(__clang__) && defined(__llvm__)
+             NL_CC_IS_CLANG
+#            endif
+            ],
+            [nl_cv_clang=yes])
+    fi
+    ])
+
+if test "${nl_cv_clang}" = "yes"; then
+    PROSPECTIVE_CFLAGS="${PROSPECTIVE_CFLAGS} -Wconversion"
+    PROSPECTIVE_CXXFLAGS="${PROSPECTIVE_CXXFLAGS} -Wconversion"
+fi
 
 AX_CHECK_COMPILER_OPTIONS([C],   ${PROSPECTIVE_CFLAGS})
-AX_CHECK_COMPILER_OPTIONS([C++], ${PROSPECTIVE_CFLAGS} ${PROSPECTIVE_CXXFLAGS})
+AX_CHECK_COMPILER_OPTIONS([C++], ${PROSPECTIVE_CXXFLAGS})
 
 # Check for and initialize libtool
 

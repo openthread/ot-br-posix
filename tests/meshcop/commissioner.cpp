@@ -188,6 +188,11 @@ void HandleJoinerFinalize(const Coap::Resource &aResource, const Coap::Message &
     // Piggyback response
     aResponse.SetCode(Coap::Message::kCoapResponseChanged);
     aResponse.SetPayload(payload, LengthOf(payload, responseTlv));
+
+    (void)aResource;
+    (void)aRequest;
+    (void)aIp6;
+    (void)aPort;
 }
 
 void HandleRelayReceive(const Coap::Resource &aResource, const Coap::Message &aMessage,
@@ -234,6 +239,12 @@ void HandleRelayReceive(const Coap::Resource &aResource, const Coap::Message &aM
     }
 
 exit:
+
+    (void)aResource;
+    (void)aResponse;
+    (void)aIp6;
+    (void)aPort;
+
     return;
 }
 
@@ -308,6 +319,9 @@ static ssize_t SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t 
         }
     }
 
+    (void)aIp6;
+    (void)aPort;
+
     return ret;
 }
 
@@ -324,6 +338,12 @@ static void my_debug(void *ctx, int level,
 int export_keys(void *aContext, const unsigned char *aMasterSecret, const unsigned char *aKeyBlock,
                 size_t aMacLength, size_t aKeyLength, size_t aIvLength)
 {
+    (void)aContext;
+    (void)aMasterSecret;
+    (void)aKeyBlock;
+    (void)aMacLength;
+    (void)aKeyLength;
+    (void)aIvLength;
     return 0;
 }
 

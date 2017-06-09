@@ -113,6 +113,9 @@ DBusHandlerResult DBusScan::DbusBeaconHandler(DBusConnection *aConnection,
         }
     }
 
+    (void)aConnection;
+    (void)aUserData;
+
     return DBUS_HANDLER_RESULT_HANDLED;
 }
 

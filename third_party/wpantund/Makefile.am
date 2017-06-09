@@ -34,6 +34,11 @@ EXTRA_DIST                         = \
 
 noinst_LTLIBRARIES = libwpanctl.la
 
+# Disable Werror for third_party
+
+override CFLAGS                   := $(filter-out -pedantic-errors -Werror,$(CFLAGS))
+override CXXFLAGS                 := $(filter-out -Werror,$(CXXFLAGS))
+
 libwpanctl_la_SOURCES              = \
     repo/src/wpanctl/wpanctl-utils.c \
     $(NULL)

@@ -1,0 +1,44 @@
+diff --git a/repo/include/coap/bits.h b/repo/include/coap/bits.h
+index 0b26916..36a0b46 100644
+--- a/repo/include/coap/bits.h
++++ b/repo/include/coap/bits.h
+@@ -30,7 +30,7 @@
+  */
+ inline static int
+ bits_setb(uint8_t *vec, size_t size, uint8_t bit) {
+-  if (size <= (bit >> 3))
++  if (size <= ((unsigned)bit >> 3))
+     return -1;
+ 
+   *(vec + (bit >> 3)) |= (uint8_t)(1 << (bit & 0x07));
+@@ -50,7 +50,7 @@ bits_setb(uint8_t *vec, size_t size, uint8_t bit) {
+  */
+ inline static int
+ bits_clrb(uint8_t *vec, size_t size, uint8_t bit) {
+-  if (size <= (bit >> 3))
++  if (size <= ((unsigned)bit >> 3))
+     return -1;
+ 
+   *(vec + (bit >> 3)) &= (uint8_t)(~(1 << (bit & 0x07)));
+@@ -69,7 +69,7 @@ bits_clrb(uint8_t *vec, size_t size, uint8_t bit) {
+  */
+ inline static int
+ bits_getb(const uint8_t *vec, size_t size, uint8_t bit) {
+-  if (size <= (bit >> 3))
++  if (size <= ((unsigned)bit >> 3))
+     return -1;
+ 
+   return (*(vec + (bit >> 3)) & (1 << (bit & 0x07))) != 0;
+diff --git a/repo/src/resource.c b/repo/src/resource.c
+index 2967d4f..16e1ae4 100644
+--- a/repo/src/resource.c
++++ b/repo/src/resource.c
+@@ -105,7 +105,7 @@ coap_free_subscription(coap_subscription_t *subscription) {
+  
+ static int
+ match(const str *text, const str *pattern, int match_prefix, int match_substring) {
+-  assert(text); assert(pattern);
++  assert(text); assert(pattern); assert(pattern->s);
+   
+   if (text->length < pattern->length)
+     return 0;

@@ -28,6 +28,9 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+# Temporary disable -Werror for the included third party server_http
+
+override CXXFLAGS := $(filter-out -std=gnu++98 -Wshadow -Werror,$(CXXFLAGS))
 
 sbin_PROGRAMS = otbr-web
 

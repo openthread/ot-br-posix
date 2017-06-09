@@ -31,3 +31,20 @@ matrix:
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux
+    - env: BUILD_TARGET="scan-build"
+      os: linux
+      compiler: clang
+      addons:
+        apt:
+          packages:
+          - libdbus-1-dev
+          - autoconf-archive
+          - doxygen
+          - ctags
+          - libboost-dev
+          - libboost-filesystem-dev
+          - libboost-system-dev
+          - libavahi-core-dev
+          - libavahi-client-dev
+          - expect
+          - clang

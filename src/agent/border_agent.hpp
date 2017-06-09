@@ -100,6 +100,8 @@ private:
                                    Coap::Message &aResponse,
                                    const uint8_t *aIp6, uint16_t aPort, void *aContext)
     {
+        (void)aResource;
+        (void)aResponse;
         static_cast<BorderAgent *>(aContext)->HandleRelayReceive(aMessage, aIp6, aPort);
     }
     void HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
@@ -108,6 +110,8 @@ private:
                                     Coap::Message &aResponse,
                                     const uint8_t *aIp6, uint16_t aPort, void *aContext)
     {
+        (void)aResource;
+        (void)aResponse;
         static_cast<BorderAgent *>(aContext)->HandleRelayTransmit(aMessage, aIp6, aPort);
     }
     void HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
@@ -116,6 +120,8 @@ private:
                                            Coap::Message &aResponse,
                                            const uint8_t *aIp6, uint16_t aPort, void *aContext)
     {
+        (void)aIp6;
+        (void)aResponse;
         static_cast<BorderAgent *>(aContext)->ForwardCommissionerRequest(aResource, aMessage, aIp6, aPort);
     }
     void ForwardCommissionerRequest(const Coap::Resource &aResource, const Coap::Message &aMessage,

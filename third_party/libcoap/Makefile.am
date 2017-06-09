@@ -28,10 +28,14 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+# Disable Werror for third_party
+
+override CFLAGS          := $(filter-out -pedantic-errors -Werror,$(CFLAGS))
+
 # Passing --disable-examples for distcheck.
 
-DISTCHECK_CONFIGURE_FLAGS="--disable-examples"
+DISTCHECK_CONFIGURE_FLAGS = "--disable-examples"
 
-SUBDIRS=repo
+SUBDIRS                   = repo
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

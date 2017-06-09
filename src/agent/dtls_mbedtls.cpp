@@ -85,6 +85,7 @@ static void MbedtlsDebug(void *ctx, int level,
     }
 
     syslog(level, "%s:%04d: %s", file, line, str);
+    (void)ctx;
 }
 
 Server *Server::Create(uint16_t aPort, StateHandler aStateHandler, void *aContext)
@@ -290,6 +291,8 @@ int MbedtlsSession::ExportKeys(void *aContext, const unsigned char *aMasterSecre
     mbedtls_sha256_starts(&sha256, 0);
     mbedtls_sha256_update(&sha256, aKeyBlock, 2 * static_cast<uint16_t>(aMacLength + aKeyLength + aIvLength));
     mbedtls_sha256_finish(&sha256, static_cast<MbedtlsSession *>(aContext)->mKek);
+
+    (void)aMasterSecret;
     return 0;
 }
 
@@ -412,6 +415,8 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
 
     aTimeout.tv_sec = timeout / 1000;
     aTimeout.tv_usec = (timeout % 1000) * 1000;
+
+    (void)aWriteFdSet;
 }
 
 void MbedtlsServer::HandleSessionState(Session &aSession, Session::State aState)
@@ -450,6 +455,8 @@ exit:
     {
         syslog(LOG_ERR, "Failed to initiate new session: -0x%x", -ret);
     }
+
+    (void)aWriteFdSet;
 }
 
 void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
