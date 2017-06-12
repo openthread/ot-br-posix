@@ -7,7 +7,8 @@ ConditionPathExists=@sbindir@/otbr-web
 EnvironmentFile=-@sysconfdir@/default/otbr-web
 ExecStart=@sbindir@/otbr-web $BR_OPTS
 Restart=on-failure
-RestartPreventExitStatus=255
+RestartSec=5
+RestartPreventExitStatus=SIGKILL
 
 [Install]
 WantedBy=multi-user.target
