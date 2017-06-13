@@ -8,7 +8,7 @@ EnvironmentFile=-@sysconfdir@/default/otbr-agent
 ExecStart=@sbindir@/otbr-agent $BA_OPTS
 Restart=on-failure
 RestartSec=5
-RestartPreventExitStatus=255
+RestartPreventExitStatus=SIGKILL
 
 [Install]
 WantedBy=multi-user.target
