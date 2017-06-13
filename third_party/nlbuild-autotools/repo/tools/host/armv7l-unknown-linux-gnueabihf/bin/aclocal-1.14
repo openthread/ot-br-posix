@@ -27,7 +27,7 @@ eval 'case $# in 0) exec /usr/bin/perl -S "$0";; *) exec /usr/bin/perl -S "$0" "
 
 BEGIN
 {
-  @Aclocal::perl_libdirs = ('/usr/share/automake-1.14')
+  @Aclocal::perl_libdirs = ('//share/automake-1.14')
     unless @Aclocal::perl_libdirs;
   unshift @INC, @Aclocal::perl_libdirs;
 }
@@ -69,8 +69,8 @@ $perl_threads = 0;
 # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
 # option.
 my @user_includes = ();
-my @automake_includes = ("/usr/share/aclocal-$APIVERSION");
-my @system_includes = ('/usr/share/aclocal');
+my @automake_includes = ("//share/aclocal-$APIVERSION");
+my @system_includes = ('//share/aclocal');
 
 # Whether we should copy M4 file in $user_includes[0].
 my $install = 0;

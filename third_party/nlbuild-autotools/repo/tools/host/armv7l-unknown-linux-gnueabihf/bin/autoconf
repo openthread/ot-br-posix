@@ -394,7 +394,7 @@ exit_missing_arg='
 # restore font-lock: '
 
 # Variables.
-: ${AUTOM4TE='/usr/bin/autom4te'}
+: ${AUTOM4TE='//bin/autom4te'}
 autom4te_options=
 outfile=
 verbose=false

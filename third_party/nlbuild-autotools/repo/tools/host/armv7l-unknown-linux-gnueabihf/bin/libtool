@@ -2,7 +2,7 @@
 
 # libtool - Provide generalized library-building support services.
 # Generated automatically by config.status (libtool) 2.4.2
-# Libtool was configured on host raspberrypi:
+# Libtool was configured on host technexion:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
 #   Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005,
@@ -275,10 +275,10 @@ finish_eval=""
 hardcode_into_libs=yes
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/usr/lib/gcc/arm-linux-gnueabihf/4.9 /usr/lib/arm-linux-gnueabihf /usr/lib /lib/arm-linux-gnueabihf /lib "
+sys_lib_search_path_spec="/usr/lib/gcc/arm-linux-gnueabihf/5 /usr/lib/arm-linux-gnueabihf /usr/lib /lib/arm-linux-gnueabihf /lib "
 
 # Run-time system search path for libraries.
-sys_lib_dlsearch_path_spec="/lib /usr/lib /opt/vc/lib /lib/arm-linux-gnueabihf /usr/lib/arm-linux-gnueabihf /usr/lib/arm-linux-gnueabihf/libfakeroot /usr/local/lib "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /lib/arm-linux-gnueabihf /usr/lib/arm-linux-gnueabihf /usr/lib/arm-linux-gnueabihf/mesa-egl /usr/lib/arm-linux-gnueabihf/mesa /usr/lib/arm-linux-gnueabihf/libfakeroot /usr/local/lib "
 
 # Whether dlopen is supported.
 dlopen_support=yes
@@ -10227,18 +10227,18 @@ file_list_spec=""
 hardcode_action=immediate
 
 # The directories searched by this compiler when creating a shared library.
-compiler_lib_search_dirs="/usr/lib/gcc/arm-linux-gnueabihf/4.9 /usr/lib/gcc/arm-linux-gnueabihf/4.9/../../../arm-linux-gnueabihf /usr/lib/gcc/arm-linux-gnueabihf/4.9/../../.. /lib/arm-linux-gnueabihf /usr/lib/arm-linux-gnueabihf"
+compiler_lib_search_dirs="/usr/lib/gcc/arm-linux-gnueabihf/5 /usr/lib/gcc/arm-linux-gnueabihf/5/../../../arm-linux-gnueabihf /usr/lib/gcc/arm-linux-gnueabihf/5/../../../../lib /lib/arm-linux-gnueabihf /lib/../lib /usr/lib/arm-linux-gnueabihf /usr/lib/../lib /usr/lib/gcc/arm-linux-gnueabihf/5/../../.."
 
 # Dependencies to place before and after the objects being linked to
 # create a shared library.
-predep_objects="/usr/lib/gcc/arm-linux-gnueabihf/4.9/../../../arm-linux-gnueabihf/crti.o /usr/lib/gcc/arm-linux-gnueabihf/4.9/crtbeginS.o"
-postdep_objects="/usr/lib/gcc/arm-linux-gnueabihf/4.9/crtendS.o /usr/lib/gcc/arm-linux-gnueabihf/4.9/../../../arm-linux-gnueabihf/crtn.o"
+predep_objects="/usr/lib/gcc/arm-linux-gnueabihf/5/../../../arm-linux-gnueabihf/crti.o /usr/lib/gcc/arm-linux-gnueabihf/5/crtbeginS.o"
+postdep_objects="/usr/lib/gcc/arm-linux-gnueabihf/5/crtendS.o /usr/lib/gcc/arm-linux-gnueabihf/5/../../../arm-linux-gnueabihf/crtn.o"
 predeps=""
 postdeps="-lstdc++ -lm -lgcc_s -lc -lgcc_s"
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path="-L/usr/lib/gcc/arm-linux-gnueabihf/4.9 -L/usr/lib/gcc/arm-linux-gnueabihf/4.9/../../../arm-linux-gnueabihf -L/usr/lib/gcc/arm-linux-gnueabihf/4.9/../../.. -L/lib/arm-linux-gnueabihf -L/usr/lib/arm-linux-gnueabihf"
+compiler_lib_search_path="-L/usr/lib/gcc/arm-linux-gnueabihf/5 -L/usr/lib/gcc/arm-linux-gnueabihf/5/../../../arm-linux-gnueabihf -L/usr/lib/gcc/arm-linux-gnueabihf/5/../../../../lib -L/lib/arm-linux-gnueabihf -L/lib/../lib -L/usr/lib/arm-linux-gnueabihf -L/usr/lib/../lib -L/usr/lib/gcc/arm-linux-gnueabihf/5/../../.."
 
 # ### END LIBTOOL TAG CONFIG: CXX
 

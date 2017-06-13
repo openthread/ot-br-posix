@@ -31,7 +31,7 @@ use strict;
 
 BEGIN
 {
-  @Automake::perl_libdirs = ('/usr/share/automake-1.14')
+  @Automake::perl_libdirs = ('//share/automake-1.14')
     unless @Automake::perl_libdirs;
   unshift @INC, @Automake::perl_libdirs;
 
@@ -3927,7 +3927,7 @@ sub substitute_ac_subst_variables_worker
 sub substitute_ac_subst_variables
 {
   my ($text) = @_;
-  $text =~ s/\$\{([^ \t=:+{}]+)}/substitute_ac_subst_variables_worker ($1)/ge;
+  $text =~ s/\${([^ \t=:+{}]+)}/substitute_ac_subst_variables_worker ($1)/ge;
   return $text;
 }
 
