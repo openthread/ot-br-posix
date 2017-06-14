@@ -27,6 +27,9 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -e
+set -x
+
 TOOLS_HOME=$HOME/.cache/tools
 
 die() {
@@ -34,26 +37,67 @@ die() {
 	exit 1
 }
 
-set -x
-
 case $BUILD_TARGET in
 pretty-check)
     export PATH=$TOOLS_HOME/usr/bin:$PATH || die
+    ./bootstrap || die
     ./configure && make pretty-check || die
     ;;
 
 posix-check)
     export CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include"
     export LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib"
+    ./bootstrap || die
     ./configure && make distcheck || die
     ;;
 
 scan-build)
     SCAN_TMPDIR=./scan-tmp
+    ./bootstrap || die
     scan-build ./configure --disable-docs || die
     scan-build -o $SCAN_TMPDIR -analyze-headers -v make || die
     grep '^<!-- BUGFILE '$TRAVIS_BUILD_DIR $SCAN_TMPDIR/*/report-*.html | tee bugfiles
     [ `< bugfiles grep -v 'third_party' | wc -l` = '0' ] || die
+    ;;
+
+raspbian-gcc)
+    IMAGE_FILE=2017-04-10-raspbian-jessie-lite.img
+    STAGE_DIR=/tmp/raspbian
+    IMAGE_DIR=/media/rpi
+
+    [ -d $STAGE_DIR ] || mkdir -p $STAGE_DIR
+    cp -v $TOOLS_HOME/images/$IMAGE_FILE $STAGE_DIR/raspbian.img || die
+    git archive -o $STAGE_DIR/repo.tar HEAD || die
+
+    cat > $STAGE_DIR/check.sh <<EOF
+        export LC_ALL=C
+        export DEBIAN_FRONTEND=noninteractive
+        export RELEASE=1
+
+        echo "127.0.0.1    \$(hostname)" >> /etc/hosts
+        mount -t proc none /proc
+        mount -t sysfs none /sys
+        chown -R pi:pi /home/pi/repo
+        cd /home/pi/repo
+        apt-get install -y git
+        su -m -c 'git config --global pack.threads 1' pi
+        su -m -c 'script/bootstrap' pi
+        su -m -c './configure --prefix=/usr' pi
+        su -m -c 'make' pi
+EOF
+
+    (cd docker-rpi-emu/scripts &&
+        sudo mkdir -p $IMAGE_DIR &&                                    \
+        sudo ./mount.sh $STAGE_DIR/raspbian.img $IMAGE_DIR &&          \
+        sudo mount --bind /dev/pts $IMAGE_DIR/dev/pts &&               \
+        sudo mkdir -p $IMAGE_DIR/home/pi/repo &&                       \
+        sudo tar xvf $STAGE_DIR/repo.tar -C $IMAGE_DIR/home/pi/repo && \
+        sudo git clone --depth 1 https://github.com/openthread/wpantund.git $IMAGE_DIR/home/pi/repo/._build/wpantund && \
+        sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh &&  \
+        sudo ./qemu-setup.sh $IMAGE_DIR &&                             \
+        sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh &&          \
+        sudo ./qemu-cleanup.sh $IMAGE_DIR &&                           \
+        sudo ./unmount.sh $IMAGE_DIR) || die
     ;;
 
 *)

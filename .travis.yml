@@ -31,6 +31,9 @@ matrix:
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux
+    - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1
+      compiler: gcc
+      os: linux
     - env: BUILD_TARGET="scan-build"
       os: linux
       compiler: clang

@@ -35,7 +35,9 @@
 install_packages_apt()
 {
     sudo apt-get update
-    sudo apt-get install -y build-essential cmake libtool git
+    sudo apt-get install -y build-essential libtool git
+
+    test "$RELEASE" = 1 || sudo install cmake
 
     # For wpantund
     sudo apt-get install -y libdbus-1-dev
@@ -47,9 +49,11 @@ install_packages_apt()
     sudo apt-get install -y libavahi-common-dev libavahi-client-dev avahi-daemon
 
     # Doxygen
+    # TODO remove this in release mode
     sudo apt-get install -y doxygen
 
     # For libcoap to generate .sym and .map
+    # TODO remove this in release mode
     sudo apt-get install -y ctags
 
     # Boost
@@ -134,8 +138,8 @@ main()
 {
     . $BEFORE_HOOK
     install_packages
-    install_uncrustify
-    install_cpputest
+    test "$RELEASE" = 1 || install_uncrustify
+    test "$RELEASE" = 1 || install_cpputest
     ./bootstrap
     . $AFTER_HOOK
 }

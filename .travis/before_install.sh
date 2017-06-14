@@ -27,6 +27,9 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -e
+set -x
+
 TOOLS_HOME=$HOME/.cache/tools
 [ -d $TOOLS_HOME ] || mkdir -p $TOOLS_HOME
 
@@ -34,8 +37,6 @@ die() {
 	echo " *** ERROR: " $*
 	exit 1
 }
-
-set -e
 
 case $TRAVIS_OS_NAME in
 linux)
@@ -60,11 +61,33 @@ linux)
 
     # Enable IPv6
     [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
+
+    # Prepare Raspbian image
+    [ $BUILD_TARGET != raspbian-gcc ] || {
+        sudo apt-get install --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
+
+        git clone --depth 1 https://github.com/ryankurte/docker-rpi-emu.git
+
+        IMAGE_FILE=2017-04-10-raspbian-jessie-lite.img
+        [ -f $TOOLS_HOME/images/$IMAGE_FILE ] || {
+            # unit MB
+            EXPAND_SIZE=1024
+
+            [ -d $TOOLS_HOME/images ] || mkdir -p $TOOLS_HOME/images
+
+            (cd /tmp &&
+                curl -LO http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip &&
+                unzip 2017-04-10-raspbian-jessie-lite.zip &&
+                dd if=/dev/zero bs=1048576 count=$EXPAND_SIZE >> $IMAGE_FILE &&
+                mv $IMAGE_FILE $TOOLS_HOME/images/$IMAGE_FILE)
+
+            (cd docker-rpi-emu/scripts &&
+                sudo ./expand.sh $TOOLS_HOME/images/$IMAGE_FILE $EXPAND_SIZE)
+        }
+    }
     ;;
 
 *)
     die
     ;;
 esac
-
-./bootstrap
