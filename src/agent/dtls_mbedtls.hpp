@@ -34,10 +34,12 @@
 #ifndef DTLS_MBEDTLS_HPP_
 #define DTLS_MBEDTLS_HPP_
 
-#include <cstring>
-#include <cstdlib>
-#include <cstdio>
 #include <vector>
+
+#include <netinet/in.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <boost/shared_ptr.hpp>
 
@@ -94,6 +96,12 @@ namespace Dtls {
 
 class MbedtlsServer;
 
+enum
+{
+    kMaxSizeOfPacket  = 1500, ///< Max size of packet in bytes.
+    kMaxSizeOfControl = 1500, ///< Max size of control message in bytes.
+};
+
 /**
  * This class implements the DTLS Session functionality based on mbedTLS.
  *
@@ -108,9 +116,13 @@ public:
      *
      * @param[in]   aServer     A reference to the DTLS server.
      * @param[in]   aNet        A reference to the mbedtls_net_context.
+     * @param[in]   aRemoteSock A reference to the remote sockaddr of this session.
+     * @param[in]   aLocalSock  A reference to the local sockaddr of this session.
      *
      */
-    MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet, const uint8_t *aIp, size_t aIpLength);
+    MbedtlsSession(MbedtlsServer &aServer, const mbedtls_net_context &aNet,
+                   const struct sockaddr_in6 &aRemoteSock,
+                   const struct sockaddr_in6 &aLocalSock);
 
     ~MbedtlsSession(void);
 
@@ -163,7 +175,6 @@ public:
 private:
     enum
     {
-        kMaxPacketSize  = 1500,  ///< Max size of DTLS UDP packet.
         kSessionTimeout = 60000, ///< Default DTLS session timeout in miniseconds.
         kKekSize        = 32,    ///< Size of KEK.
     };
@@ -173,6 +184,17 @@ private:
     int Handshake(void);
     int Read(void);
     void SetState(State aState);
+    static int SendMbedtls(void *aContext, const unsigned char *aBuffer, size_t aLength)
+    {
+        return static_cast<MbedtlsSession *>(aContext)->SendMbedtls(aBuffer, aLength);
+    }
+    int SendMbedtls(const unsigned char *aBuffer, size_t aLength);
+
+    static int ReadMbedtls(void *aContext, unsigned char *aBuffer, size_t aLength)
+    {
+        return static_cast<MbedtlsSession *>(aContext)->ReadMbedtls(aBuffer, aLength);
+    }
+    int ReadMbedtls(unsigned char *aBuffer, size_t aLength);
 
     mbedtls_net_context          mNet;
     mbedtls_timing_delay_context mTimer;
@@ -181,6 +203,8 @@ private:
     DataHandler                  mDataHandler;
     void                        *mContext;
     State                        mState;
+    sockaddr_in6                 mRemoteSock;
+    sockaddr_in6                 mLocalSock;
     MbedtlsServer               &mServer;
     uint64_t                     mExpiration;
     uint8_t                      mKek[kKekSize];
@@ -247,8 +271,10 @@ private:
 
     void HandleSessionState(Session &aSession, Session::State aState);
     void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet);
+    int Bind(void);
 
     SessionSet                mSessions;
+    int                       mSocket;
     uint16_t                  mPort;
     StateHandler              mStateHandler;
     void                     *mContext;
@@ -257,7 +283,6 @@ private:
     uint8_t                   mPSK[kMaxSizeOfPSK];
     uint8_t                   mPSKLength;
 
-    mbedtls_net_context       mNet;
     mbedtls_ssl_cookie_ctx    mCookie;
     mbedtls_entropy_context   mEntropy;
     mbedtls_ctr_drbg_context  mCtrDrbg;
