@@ -226,6 +226,7 @@ void AgentLibcoap::Input(const void *aBuffer, uint16_t aLength, const uint8_t *a
 {
     mPacket.length = aLength;
     mPacket.interface = mCoap.endpoint;
+    mPacket.dst = mCoap.endpoint->addr;
     CoapAddressInit(mPacket.src, aIp6, aPort);
     memcpy(mPacket.payload, aBuffer, aLength);
     coap_handle_message(&mCoap, &mPacket);
