@@ -98,10 +98,7 @@ void Server::Destroy(Server *aServer)
     delete static_cast<MbedtlsServer *>(aServer);
 }
 
-MbedtlsServer::MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext) :
-    mPort(aPort),
-    mStateHandler(aStateHandler),
-    mContext(aContext)
+void MbedtlsServer::Start(void)
 {
     int              ret = 0;
     static const int ciphersuites[] =

@@ -187,6 +187,12 @@ public:
     virtual void SetSeed(const uint8_t *aSeed, uint16_t aLength) = 0;
 
     /**
+     * This method starts the DTLS service.
+     *
+     */
+    virtual void Start(void) = 0;
+
+    /**
      * This method updates the fd_set and timeout for mainloop.
      * @p aTimeout should only be updated if the DTLS service has pending process in less than its current value.
      *

@@ -203,8 +203,18 @@ public:
      * @param[in]   aContext        A pointer to application-specific context.
      *
      */
-    MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext);
+    MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext) :
+        mPort(aPort),
+        mStateHandler(aStateHandler),
+        mContext(aContext) {}
     ~MbedtlsServer(void);
+
+
+    /**
+     * This method starts the DTLS service.
+     *
+     */
+    virtual void Start(void);
 
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout);
 
