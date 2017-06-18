@@ -181,7 +181,7 @@ exit:
 
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "error: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "error: %d", ret);
     }
 
     return ret ? "" : getProp.GetPropertyValue(aPropertyName);

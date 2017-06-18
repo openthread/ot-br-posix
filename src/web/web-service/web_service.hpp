@@ -41,7 +41,6 @@
 #include <vector>
 
 #include <net/if.h>
-#include <syslog.h>
 
 #include <boost/property_tree/ptree_fwd.hpp>
 #include <boost/asio/ip/tcp.hpp>

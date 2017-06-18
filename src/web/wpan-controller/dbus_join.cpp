@@ -79,7 +79,7 @@ int DBusJoin::ProcessReply(void)
 exit:
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "join error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "join error: %s", error.message);
         dbus_error_free(&error);
     }
     free();

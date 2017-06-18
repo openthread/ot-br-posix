@@ -49,10 +49,11 @@ otbr_agent_CPPFLAGS    = \
 noinst_LTLIBRARIES = libotbr-agent.la
 
 libotbr_agent_la_SOURCES                                      = \
-    dtls_mbedtls.cpp                                            \
-    coap_libcoap.cpp                                            \
     border_agent.cpp                                            \
+    coap_libcoap.cpp                                            \
+    dtls_mbedtls.cpp                                            \
     ncp_wpantund.cpp                                            \
+    ../common/logging.cpp                                       \
     $(NULL)
 
 libotbr_agent_la_LIBADD                                       = \

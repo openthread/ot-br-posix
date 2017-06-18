@@ -51,14 +51,14 @@ DBusConnection *DBusBase::GetConnection(void)
     mConnection = dbus_bus_get(DBUS_BUS_STARTER, &error);
     if (!mConnection)
     {
-        syslog(LOG_ERR, "connection is NULL.");
+        otbrLog(OTBR_LOG_ERR, "connection is NULL.");
         dbus_error_free(&error);
         dbus_error_init(&error);
         mConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "connection error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "connection error: %s", error.message);
         dbus_error_free(&error);
     }
     return mConnection;
@@ -79,7 +79,7 @@ DBusMessage *DBusBase::GetMessage(void)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "message is NULL");
+        otbrLog(OTBR_LOG_ERR, "message is NULL");
     }
     return mMessage;
 }
@@ -98,11 +98,11 @@ DBusMessage *DBusBase::GetReply(void)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "reply is NULL; error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "reply is NULL; error: %s", error.message);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "reply error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "reply error: %s", error.message);
         dbus_error_free(&error);
     }
     return mReply;
@@ -121,11 +121,11 @@ DBusPendingCall *DBusBase::GetPending(void)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "pending is NULL; error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "pending is NULL; error: %s", error.message);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "pending error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "pending error: %s", error.message);
         dbus_error_free(&error);
     }
     return mPending;
@@ -170,11 +170,11 @@ void DBusBase::SetDestination(const char *aDestination)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "destination is NULL; error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "destination is NULL; error: %s", error.message);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "destination error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "destination error: %s", error.message);
         dbus_error_free(&error);
     }
 }
@@ -190,11 +190,11 @@ void DBusBase::SetInterface(const char *aIface)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "interface is NULL; error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "interface is NULL; error: %s", error.message);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "SetInterface error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "SetInterface error: %s", error.message);
         dbus_error_free(&error);
     }
 }
@@ -215,11 +215,11 @@ void DBusBase::SetInterfaceName(const char *aInterfaceName)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "interface name is NULL; error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "interface name is NULL; error: %s", error.message);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "set interface name error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "set interface name error: %s", error.message);
         dbus_error_free(&error);
     }
 }
@@ -235,11 +235,11 @@ void DBusBase::SetPath(const char *aPath)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "path is NULL; error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "path is NULL; error: %s", error.message);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "set path error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "set path error: %s", error.message);
         dbus_error_free(&error);
     }
 }
@@ -255,11 +255,11 @@ void DBusBase::SetDBusName(const char *aDBusName)
 exit:
     if (ret != kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "pending is NULL; error: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "pending is NULL; error: %d", ret);
     }
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "set dbus name error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "set dbus name error: %s", error.message);
         dbus_error_free(&error);
     }
 }

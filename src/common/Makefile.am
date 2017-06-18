@@ -33,6 +33,7 @@ noinst_HEADERS   = \
     time.hpp       \
     tlv.hpp        \
     types.hpp      \
+    logging.hpp    \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

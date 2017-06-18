@@ -34,6 +34,7 @@
 #include "pskc.hpp"
 
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 
 namespace ot {
 namespace Psk {
@@ -60,7 +61,7 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
 exit:
     if (ret != kPskcStatus_Ok)
     {
-        syslog(LOG_ERR, "ExtPanId or NetworkName is NULL");
+        otbrLog(OTBR_LOG_ERR, "ExtPanId or NetworkName is NULL");
     }
     return;
 }

@@ -73,6 +73,7 @@ libotbr_web_la_SOURCES                                          = \
     mdns-publisher/mdns_publisher.cpp                             \
     pskc-generator/pskc.cpp                                       \
     web-service/web_service.cpp                                   \
+    ../common/logging.cpp                                         \
     $(NULL)
 
 libotbr_web_la_LDFLAGS                                          = \

@@ -35,9 +35,8 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include <syslog.h>
-
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 #include "common/time.hpp"
 
 namespace ot {
@@ -69,22 +68,22 @@ static void MbedtlsDebug(void *ctx, int level,
     switch (level)
     {
     case 1:
-        level = LOG_ERR;
+        level = OTBR_LOG_ERR;
         break;
     case 2:
-        level = LOG_WARNING;
+        level = OTBR_LOG_WARNING;
         break;
     case 3:
-        level = LOG_INFO;
+        level = OTBR_LOG_INFO;
         break;
     case 4:
-        level = LOG_DEBUG;
+        level = OTBR_LOG_DEBUG;
         break;
     default:
-        level = LOG_DEBUG;
+        level = OTBR_LOG_DEBUG;
     }
 
-    syslog(level, "%s:%04d: %s", file, line, str);
+    otbrLog(level, "%s:%04d: %s", file, line, str);
     (void)ctx;
 }
 
@@ -120,11 +119,11 @@ MbedtlsServer::MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *a
 
     mbedtls_debug_set_threshold(kLogLevelError);
 
-    syslog(LOG_DEBUG, "Setting CTR_DRBG seed");
+    otbrLog(OTBR_LOG_DEBUG, "Setting CTR_DRBG seed");
     SuccessOrExit(ret = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed,
                                               mSeedLength));
 
-    syslog(LOG_DEBUG, "Configuring DTLS");
+    otbrLog(OTBR_LOG_DEBUG, "Configuring DTLS");
     SuccessOrExit(ret = mbedtls_ssl_config_defaults(&mConf,
                                                     MBEDTLS_SSL_IS_SERVER,
                                                     MBEDTLS_SSL_TRANSPORT_DATAGRAM,
@@ -141,7 +140,7 @@ MbedtlsServer::MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *a
     mbedtls_ssl_conf_session_cache(&mConf, &mCache, mbedtls_ssl_cache_get, mbedtls_ssl_cache_set);
 #endif
 
-    syslog(LOG_DEBUG, "Setting up cookie");
+    otbrLog(OTBR_LOG_DEBUG, "Setting up cookie");
     SuccessOrExit(ret = mbedtls_ssl_cookie_setup(&mCookie, mbedtls_ctr_drbg_random, &mCtrDrbg));
 
     mbedtls_ssl_conf_dtls_cookies(&mConf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check,
@@ -149,7 +148,7 @@ MbedtlsServer::MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *a
 
     mbedtls_net_init(&mNet);
 
-    syslog(LOG_DEBUG, "Binding to port %u", mPort);
+    otbrLog(OTBR_LOG_DEBUG, "Binding to port %u", mPort);
     {
         char port[6];
         sprintf(port, "%u", mPort);
@@ -159,7 +158,7 @@ MbedtlsServer::MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *a
 exit:
     if (ret != 0)
     {
-        syslog(LOG_ERR, "mbedtls error: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "mbedtls error: %d", ret);
         throw std::runtime_error("Failed to create DTLS server");
     }
 }
@@ -210,7 +209,7 @@ MbedtlsSession::~MbedtlsSession(void)
     Close();
     mbedtls_net_free(&mNet);
     mbedtls_ssl_free(&mSsl);
-    syslog(LOG_INFO, "DTLS session destroyed: %d", mState);
+    otbrLog(OTBR_LOG_INFO, "DTLS session destroyed: %d", mState);
 }
 
 void MbedtlsSession::Process(void)
@@ -240,7 +239,7 @@ int MbedtlsSession::Read(void)
     do
     {
         ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
-        syslog(LOG_DEBUG, "mbedtls_ssl_read returned %d", ret);
+        otbrLog(OTBR_LOG_DEBUG, "mbedtls_ssl_read returned %d", ret);
 
         if (ret > 0)
         {
@@ -259,21 +258,21 @@ int MbedtlsSession::Read(void)
             ;
 
         case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
-            syslog(LOG_WARNING, "connection was closed gracefully");
+            otbrLog(OTBR_LOG_WARNING, "connection was closed gracefully");
             SetState(kStateClose);
             break;
 
         case MBEDTLS_ERR_SSL_CLIENT_RECONNECT:
-            syslog(LOG_WARNING, "reconnection");
+            otbrLog(OTBR_LOG_WARNING, "reconnection");
             SetState(kStateHandshaking);
             break;
 
         case MBEDTLS_ERR_SSL_TIMEOUT:
-            syslog(LOG_WARNING, "read timeout");
+            otbrLog(OTBR_LOG_WARNING, "read timeout");
             break;
 
         default:
-            syslog(LOG_ERR, "mbedtls_ssl_read returned -0x%x", -ret);
+            otbrLog(OTBR_LOG_ERR, "mbedtls_ssl_read returned -0x%x", -ret);
             SetState(kStateError);
             break;
         }
@@ -319,7 +318,7 @@ MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet
 exit:
     if (ret)
     {
-        syslog(LOG_ERR, "Failed to create session: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Failed to create session: %d", ret);
         throw std::runtime_error("Failed to create session");
     }
 }
@@ -328,13 +327,13 @@ int MbedtlsSession::Handshake(void)
 {
     int ret = 0;
 
-    VerifyOrExit(mState == kStateHandshaking, syslog(LOG_ERR, "Invalid state"));
+    VerifyOrExit(mState == kStateHandshaking, otbrLog(OTBR_LOG_ERR, "Invalid state"));
 
-    syslog(LOG_INFO, "Performing DTLS handshake");
+    otbrLog(OTBR_LOG_INFO, "Performing DTLS handshake");
 
     SuccessOrExit(ret = mbedtls_ssl_handshake(&mSsl));
 
-    syslog(LOG_INFO, "DTLS session ready");
+    otbrLog(OTBR_LOG_INFO, "DTLS session ready");
 
     SetState(kStateReady);
 
@@ -345,11 +344,11 @@ exit:
     {
         if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
         {
-            syslog(LOG_INFO, "Handshake pending:-0x%x", -ret);
+            otbrLog(OTBR_LOG_INFO, "Handshake pending:-0x%x", -ret);
         }
         else
         {
-            syslog(LOG_ERR, "Handshake failed:-0x%x", -ret);
+            otbrLog(OTBR_LOG_ERR, "Handshake failed:-0x%x", -ret);
             if (ret != MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED)
             {
                 mbedtls_ssl_send_alert_message(&mSsl, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
@@ -374,7 +373,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
 
         if (session->GetExpiration() <= now)
         {
-            syslog(LOG_INFO, "DTLS session timeout");
+            otbrLog(OTBR_LOG_INFO, "DTLS session timeout");
             HandleSessionState(*session, Session::kStateExpired);
             it = mSessions.erase(it);
         }
@@ -384,7 +383,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
             int      fd = session->GetFd();
             uint64_t sessionTimeout = session->GetExpiration() - now;
 
-            syslog(LOG_INFO, "DTLS session[%d] alive", fd);
+            otbrLog(OTBR_LOG_INFO, "DTLS session[%d] alive", fd);
             FD_SET(fd, &aReadFdSet);
 
             if (aMaxFd < fd)
@@ -421,7 +420,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
 
 void MbedtlsServer::HandleSessionState(Session &aSession, Session::State aState)
 {
-    syslog(LOG_INFO, "Session state changed to %d", aState);
+    otbrLog(OTBR_LOG_INFO, "Session state changed to %d", aState);
     if (mStateHandler)
     {
         mStateHandler(aSession, aState, mContext);
@@ -438,7 +437,7 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
 
     VerifyOrExit(FD_ISSET(mNet.fd, &aReadFdSet));
 
-    syslog(LOG_INFO, "Trying to accept connection");
+    otbrLog(OTBR_LOG_INFO, "Trying to accept connection");
     mbedtls_net_init(&net);
     SuccessOrExit(ret = mbedtls_net_accept(&mNet, &net, addr.m8, sizeof(addr), &addrLength));
 
@@ -453,7 +452,7 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
 exit:
     if (ret)
     {
-        syslog(LOG_ERR, "Failed to initiate new session: -0x%x", -ret);
+        otbrLog(OTBR_LOG_ERR, "Failed to initiate new session: -0x%x", -ret);
     }
 
     (void)aWriteFdSet;
@@ -470,7 +469,7 @@ void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
 
         if (FD_ISSET(fd, &aReadFdSet))
         {
-            syslog(LOG_INFO, "DTLS session [%d] readable", fd);
+            otbrLog(OTBR_LOG_INFO, "DTLS session [%d] readable", fd);
             session->Process();
         }
     }
@@ -499,7 +498,7 @@ MbedtlsServer::~MbedtlsServer(void)
 void MbedtlsServer::SetSeed(const uint8_t *aSeed, uint16_t aLength)
 {
     VerifyOrExit(aLength <= sizeof(mSeed),
-                 syslog(LOG_ERR, "Seed must be no more than %zu bytes", sizeof(mSeed)));
+                 otbrLog(OTBR_LOG_ERR, "Seed must be no more than %zu bytes", sizeof(mSeed)));
 
     memcpy(mSeed, aSeed, aLength);
     mSeedLength = aLength;

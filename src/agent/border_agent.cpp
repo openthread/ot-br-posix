@@ -39,12 +39,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <syslog.h>
-
 #include "border_agent.hpp"
+#include "common/code_utils.hpp"
+#include "common/logging.hpp"
 #include "common/types.hpp"
 #include "common/tlv.hpp"
-#include "common/code_utils.hpp"
 #include "dtls.hpp"
 #include "ncp.hpp"
 #include "uris.hpp"
@@ -130,7 +129,7 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 
     const char *path = aResource.mPath;
 
-    syslog(LOG_INFO, "forwarding request %s", path);
+    otbrLog(OTBR_LOG_INFO, "forwarding request %s", path);
 
     if (!strcmp(OPENTHREAD_URI_COMMISSIONER_PETITION, path))
     {
@@ -194,7 +193,7 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
 
     if (rloc == kInvalidLocator)
     {
-        syslog(LOG_ERR, "joiner rloc not found");
+        otbrLog(OTBR_LOG_ERR, "joiner rloc not found");
         ExitNow();
     }
 
@@ -232,14 +231,14 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
 
     if (error)
     {
-        syslog(LOG_ERR, "failed to enable border agent proxy");
+        otbrLog(OTBR_LOG_ERR, "failed to enable border agent proxy");
         throw std::runtime_error("Failed to start border agent proxy");
     }
 
     const uint8_t *pskc = mNcpController->GetPSKc();
     if (pskc == NULL)
     {
-        syslog(LOG_ERR, "failed to get PSKc");
+        otbrLog(OTBR_LOG_ERR, "failed to get PSKc");
         throw std::runtime_error("Failed to get PSKc");
     }
     mDtlsServer->SetPSK(pskc, kSizePSKc);
@@ -247,7 +246,7 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
     const uint8_t *eui64 = mNcpController->GetEui64();
     if (eui64 == NULL)
     {
-        syslog(LOG_ERR, "failed to get Eui64");
+        otbrLog(OTBR_LOG_ERR, "failed to get Eui64");
         throw std::runtime_error("Failed to get Eui64");
     }
     mDtlsServer->SetSeed(eui64, kSizeEui64);
@@ -274,7 +273,7 @@ void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session:
     case Dtls::Session::kStateError:
     case Dtls::Session::kStateExpired:
         mDtlsSession = NULL;
-        syslog(LOG_WARNING, "Dtls session ended");
+        otbrLog(OTBR_LOG_WARNING, "Dtls session ended");
         break;
 
     default:
