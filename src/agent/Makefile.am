@@ -96,8 +96,9 @@ noinst_HEADERS        = \
     $(NULL)
 
 EXTRA_DIST                = \
-    otbr-agent.service.in   \
     otbr-agent.conf         \
+    otbr-agent.default      \
+    otbr-agent.service.in   \
     $(NULL)
 
 dbusconfdir = $(DBUS_CONFDIR)
@@ -107,6 +108,18 @@ systemddir=$(sysconfdir)/systemd/system
 systemd_DATA                        = \
     otbr-agent.service                \
     $(NULL)
+
+defaultdir=$(sysconfdir)/default
+
+install-data-local: $(DESTDIR)$(defaultdir)/otbr-agent
+
+# Do not overwrite existing configuration file
+$(DESTDIR)$(defaultdir)/otbr-agent: otbr-agent.default
+	test -d $(DESTDIR)$(defaultdir) || mkdir -p $(DESTDIR)$(defaultdir)
+	$(INSTALL_DATA) $(srcdir)/otbr-agent.default $(DESTDIR)$(defaultdir)/otbr-agent
+
+uninstall-local:
+	-rm $(DESTDIR)$(defaultdir)/otbr-agent
 
 .PHONY: $(systemd_DATA)
 $(systemd_DATA): %: %.in
