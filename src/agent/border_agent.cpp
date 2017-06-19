@@ -251,6 +251,7 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
         throw std::runtime_error("Failed to get Eui64");
     }
     mDtlsServer->SetSeed(eui64, kSizeEui64);
+    mDtlsServer->Start();
 }
 
 BorderAgent::~BorderAgent(void)
