@@ -5,7 +5,7 @@ ConditionPathExists=@sbindir@/otbr-agent
 
 [Service]
 EnvironmentFile=-@sysconfdir@/default/otbr-agent
-ExecStart=@sbindir@/otbr-agent $BA_OPTS
+ExecStart=@sbindir@/otbr-agent $OTBR_AGENT_OPTS
 Restart=on-failure
 RestartSec=5
 RestartPreventExitStatus=SIGKILL
