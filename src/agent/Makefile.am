@@ -53,13 +53,13 @@ libotbr_agent_la_SOURCES                                      = \
     coap_libcoap.cpp                                            \
     dtls_mbedtls.cpp                                            \
     ncp_wpantund.cpp                                            \
-    ../common/logging.cpp                                       \
     $(NULL)
 
 libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/third_party/libcoap/repo/libcoap-1.la       \
     $(top_builddir)/third_party/mbedtls/libmbedtls.la           \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
+    $(top_builddir)/src/common/libotbr-logging.la               \
     $(DBUS_LIBS)                                                \
     $(NULL)
 

@@ -40,10 +40,10 @@ DIST_SUBDIRS                                         = \
 # Always build (e.g. for 'make all') these subdirectories.
 
 SUBDIRS                                              = \
+    common                                             \
     utils                                              \
     agent                                              \
     web                                                \
-    common                                             \
     $(NULL)
 
 

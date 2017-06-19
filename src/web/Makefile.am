@@ -57,6 +57,7 @@ libotbr_web_la_LIBADD                                           = \
     -lpthread                                                     \
     $(top_builddir)/third_party/mbedtls/libmbedtls.la             \
     $(top_builddir)/src/utils/libutils.la                         \
+    $(top_builddir)/src/common/libotbr-logging.la                 \
     $(NULL)
 
 libotbr_web_la_SOURCES                                          = \
@@ -73,7 +74,6 @@ libotbr_web_la_SOURCES                                          = \
     mdns-publisher/mdns_publisher.cpp                             \
     pskc-generator/pskc.cpp                                       \
     web-service/web_service.cpp                                   \
-    ../common/logging.cpp                                         \
     $(NULL)
 
 libotbr_web_la_LDFLAGS                                          = \
