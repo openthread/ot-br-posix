@@ -38,7 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <syslog.h>
 #include <time.h>
 
 #include <avahi-client/client.h>

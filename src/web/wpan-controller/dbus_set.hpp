@@ -35,7 +35,6 @@
 #define DBUS_SET_HPP
 
 #include <stdio.h>
-#include <syslog.h>
 
 #include <dbus/dbus.h>
 

@@ -30,11 +30,11 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include "border_agent.hpp"
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 
 static const char kSyslogIdent[] = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -83,14 +83,19 @@ void PrintVersion(void)
 
 int main(int argc, char *argv[])
 {
-    const char *interfaceName = NULL;
-    int         ret = 0;
+    const char *interfaceName = kDefaultInterfaceName;
+    int         logLevel = OTBR_LOG_INFO;
     int         opt;
+    int         ret = 0;
 
-    while ((opt = getopt(argc, argv, "vI:")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:v")) != -1)
     {
         switch (opt)
         {
+        case 'd':
+            logLevel = atoi(optarg);
+            break;
+
         case 'I':
             interfaceName = optarg;
             break;
@@ -101,24 +106,18 @@ int main(int argc, char *argv[])
             break;
 
         default:
-            fprintf(stderr, "Usage: %s [-I interfaceName] [-v]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", argv[0]);
             ExitNow(ret = -1);
             break;
         }
     }
 
-    if (interfaceName == NULL)
-    {
-        interfaceName = kDefaultInterfaceName;
-        printf("Network interface not specified, using default %s\n", interfaceName);
-    }
-
-    openlog(kSyslogIdent, LOG_CONS | LOG_PID, LOG_USER);
-    syslog(LOG_INFO, "border router agent started on %s", interfaceName);
+    otbrLogInit(kSyslogIdent, logLevel);
+    otbrLog(OTBR_LOG_INFO, "Border router agent started on %s", interfaceName);
 
     ret = Mainloop(interfaceName);
 
-    closelog();
+    otbrLogDeinit();
 
 exit:
     return ret;

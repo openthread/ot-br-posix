@@ -33,6 +33,15 @@ noinst_HEADERS   = \
     time.hpp       \
     tlv.hpp        \
     types.hpp      \
+    logging.hpp    \
+    $(NULL)
+
+noinst_LTLIBRARIES         = \
+    libotbr-logging.la       \
+    $(NULL)
+
+libotbr_logging_la_SOURCES = \
+    logging.cpp              \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

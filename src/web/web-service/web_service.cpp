@@ -41,6 +41,7 @@
 #include <server_http.hpp>
 
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 #include "utils/hex.hpp"
 
 #include "../mdns-publisher/mdns_publisher.hpp"
@@ -138,7 +139,7 @@ static std::string OnJoinNetworkRequest(boost::property_tree::ptree &aJoinReques
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 }
@@ -194,7 +195,7 @@ static std::string OnFormNetworkRequest(boost::property_tree::ptree &aFormReques
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 }
@@ -213,7 +214,7 @@ static std::string OnAddPrefixRequest(boost::property_tree::ptree &aAddPrefixReq
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 
@@ -232,7 +233,7 @@ static std::string OnDeletePrefixRequest(boost::property_tree::ptree &aDeleteReq
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
-        syslog(LOG_ERR, "Error is %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
     }
     return HttpReponse(ret);
 }
@@ -305,7 +306,7 @@ exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
         root.put("result", "failed");
-        syslog(LOG_ERR, "Error is %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
     }
     root.put("error", ret);
     std::stringstream ss;

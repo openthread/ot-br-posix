@@ -33,17 +33,16 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <sys/time.h>
 
 extern "C" {
 #include "wpanctl-utils.h"
 #include "wpan-dbus-v1.h"
+#include "spinel.h"
 }
 
-#include "spinel.h"
-
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 
 namespace ot {
 
@@ -74,12 +73,12 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
     const char       *sender = dbus_message_get_sender(&aMessage);
     const char       *path = dbus_message_get_path(&aMessage);
 
-    syslog(LOG_DEBUG, "dbus message received");
+    otbrLog(OTBR_LOG_DEBUG, "dbus message received");
     if (sender && path && strcmp(sender, mInterfaceDBusName) && strstr(path, mInterfaceName))
     {
         // DBus name of the interface has changed, possibly caused by wpantund restarted,
         // We have to restart the border agent proxy.
-        syslog(LOG_DEBUG, "dbus name changed");
+        otbrLog(OTBR_LOG_DEBUG, "dbus name changed");
 
         BorderAgentProxyStart();
     }
@@ -91,7 +90,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
     dbus_message_iter_get_basic(&iter, &key);
     VerifyOrExit(key != NULL, result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
     dbus_message_iter_next(&iter);
-    syslog(LOG_INFO, "property %s changed", key);
+    otbrLog(OTBR_LOG_INFO, "property %s changed", key);
 
     if (!strcmp(key, kWPANTUNDProperty_NetworkPSKc))
     {
@@ -228,7 +227,7 @@ ControllerWpantund::ControllerWpantund(const char *aInterfaceName, PSKcHandler a
 exit:
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "DBus error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
         dbus_error_free(&error);
     }
 
@@ -238,7 +237,7 @@ exit:
         {
             dbus_connection_unref(mDBus);
         }
-        syslog(LOG_ERR, "Failed to initialize ncp controller. error=%d", ret);
+        otbrLog(OTBR_LOG_ERR, "Failed to initialize ncp controller. error=%d", ret);
         throw std::runtime_error("Failed to create ncp controller");
     }
 }
@@ -421,7 +420,7 @@ exit:
 
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "DBus error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
         dbus_error_free(&error);
     }
 
@@ -440,7 +439,7 @@ int ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &
     DBusError    error;
 
     VerifyOrExit(reply = RequestProperty(aKey),
-                 ret = -1, syslog(LOG_ERR, "No reply"));
+                 ret = -1, otbrLog(OTBR_LOG_ERR, "No reply"));
 
     {
         uint8_t *buffer = NULL;
@@ -451,7 +450,7 @@ int ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &
                                            DBUS_TYPE_INT32, &ret,
                                            DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &buffer, &count,
                                            DBUS_TYPE_INVALID),
-                     ret = -1, syslog(LOG_ERR, "Failed to parse"));
+                     ret = -1, otbrLog(OTBR_LOG_ERR, "Failed to parse"));
         VerifyOrExit(ret == 0);
 
         aSize = static_cast<size_t>(count);

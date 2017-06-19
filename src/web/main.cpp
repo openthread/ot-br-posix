@@ -38,10 +38,10 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 #include "web-service/web_service.hpp"
 
 static const char kSyslogIdent[] = "otWeb";
@@ -55,15 +55,20 @@ void PrintVersion(void)
 int main(int argc, char **argv)
 {
     const char *interfaceName = NULL;
+    int         logLevel = OTBR_LOG_INFO;
     int         ret = 0;
     int         opt;
 
     ot::Web::WebServer *server = NULL;
 
-    while ((opt = getopt(argc, argv, "vI:")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:v")) != -1)
     {
         switch (opt)
         {
+        case 'd':
+            logLevel = atoi(optarg);
+            break;
+
         case 'I':
             interfaceName = optarg;
             break;
@@ -74,7 +79,7 @@ int main(int argc, char **argv)
             break;
 
         default:
-            fprintf(stderr, "Usage: %s [-I interfaceName] [-v]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", argv[0]);
             ExitNow(ret = -1);
             break;
         }
@@ -86,12 +91,12 @@ int main(int argc, char **argv)
         printf("interfaceName not specified, using default %s\n", interfaceName);
     }
 
-    openlog(kSyslogIdent, LOG_CONS | LOG_PID, LOG_USER);
-    syslog(LOG_INFO, "border router web started on %s", interfaceName);
+    otbrLogInit(kSyslogIdent, logLevel);
+    otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
     server = new ot::Web::WebServer();
     server->StartWebServer(interfaceName);
 
-    closelog();
+    otbrLogDeinit();
 
 exit:
     if (server != NULL)

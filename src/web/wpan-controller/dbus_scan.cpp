@@ -84,7 +84,7 @@ int DBusScan::ProcessReply(void)
 exit:
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "scan error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "scan error: %s", error.message);
         dbus_error_free(&error);
     }
     return ret;
@@ -142,8 +142,8 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
 
         if (dbus_message_iter_get_arg_type(aIter) != DBUS_TYPE_DICT_ENTRY)
         {
-            syslog(LOG_ERR, "error: Bad type for network (%c)",
-                   dbus_message_iter_get_arg_type(aIter));
+            otbrLog(OTBR_LOG_ERR, "error: Bad type for network (%c)",
+                    dbus_message_iter_get_arg_type(aIter));
             ret = ERRORCODE_UNKNOWN;
             return ret;
         }
@@ -152,8 +152,8 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
 
         if (dbus_message_iter_get_arg_type(&dictIter) != DBUS_TYPE_STRING)
         {
-            syslog(LOG_ERR, "error: Bad type for network list (%c)",
-                   dbus_message_iter_get_arg_type(&dictIter));
+            otbrLog(OTBR_LOG_ERR, "error: Bad type for network list (%c)",
+                    dbus_message_iter_get_arg_type(&dictIter));
             ret = ERRORCODE_UNKNOWN;
             return ret;
         }
@@ -164,8 +164,8 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
 
         if (dbus_message_iter_get_arg_type(&dictIter) != DBUS_TYPE_VARIANT)
         {
-            syslog(LOG_ERR, "error: Bad type for network list (%c)",
-                   dbus_message_iter_get_arg_type(&dictIter));
+            otbrLog(OTBR_LOG_ERR, "error: Bad type for network list (%c)",
+                    dbus_message_iter_get_arg_type(&dictIter));
             ret = ERRORCODE_UNKNOWN;
             return ret;
         }

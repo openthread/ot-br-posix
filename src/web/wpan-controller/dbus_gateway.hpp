@@ -38,7 +38,6 @@
 
 #include <arpa/inet.h>
 #include <stdio.h>
-#include <syslog.h>
 
 #include <dbus/dbus.h>
 

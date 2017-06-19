@@ -82,7 +82,7 @@ int DBusSet::ProcessReply(void)
 exit:
     if (dbus_error_is_set(&error))
     {
-        syslog(LOG_ERR, "set error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "set error: %s", error.message);
         dbus_error_free(&error);
     }
     free();

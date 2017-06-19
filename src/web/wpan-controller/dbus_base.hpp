@@ -34,9 +34,9 @@
 #ifndef DBUS_BASE_HPP
 #define DBUS_BASE_HPP
 
-#include <syslog.h>
-
 #include <dbus/dbus.h>
+
+#include "common/logging.hpp"
 
 namespace ot {
 namespace Dbus {

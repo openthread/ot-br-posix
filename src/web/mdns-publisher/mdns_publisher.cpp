@@ -34,6 +34,7 @@
 #include "mdns_publisher.hpp"
 
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 
 #define OT_HOST_NAME "OPENTHREAD"
 #define OT_PERIODICAL_TIME 1000 * 7
@@ -130,7 +131,7 @@ int Publisher::CreateService(AvahiClient *aClient)
 
     if (avahi_entry_group_is_empty(mClientGroup))
     {
-        syslog(LOG_ERR, "Adding service '%s'", mServiceName);
+        otbrLog(OTBR_LOG_ERR, "Adding service '%s'", mServiceName);
 
         VerifyOrExit(avahi_entry_group_add_service(mClientGroup, AVAHI_IF_UNSPEC,
                                                    AVAHI_PROTO_UNSPEC, static_cast<AvahiPublishFlags>(0),
@@ -138,8 +139,8 @@ int Publisher::CreateService(AvahiClient *aClient)
                                                    mNetworkNameTxt, mExtPanIdTxt, NULL) == 0,
                      ret = kMdnsPublisher_FailedAddSevice);
 
-        syslog(LOG_INFO, " Service Name: %s \n Port: %d \n Network Name: %s \n Extended Pan ID: %s",
-               mServiceName, mPort, mNetworkNameTxt, mExtPanIdTxt);
+        otbrLog(OTBR_LOG_INFO, " Service Name: %s \n Port: %d \n Network Name: %s \n Extended Pan ID: %s",
+                mServiceName, mPort, mNetworkNameTxt, mExtPanIdTxt);
 
         VerifyOrExit(avahi_entry_group_commit(mClientGroup) == 0,
                      ret = kMdnsPublisher_FailedRegisterSevice);
@@ -153,7 +154,7 @@ exit:
         serviceName = avahi_alternative_service_name(mServiceName);
         avahi_free(mServiceName);
         mServiceName = serviceName;
-        syslog(LOG_INFO, "Service name collision, renaming service to '%s'", mServiceName);
+        otbrLog(OTBR_LOG_INFO, "Service name collision, renaming service to '%s'", mServiceName);
         avahi_entry_group_reset(mClientGroup);
         ret = CreateService(aClient);
         break;
@@ -182,7 +183,7 @@ void Publisher::HandleClientStart(AvahiClient *aClient, AvahiClientState aState)
         break;
 
     case AVAHI_CLIENT_FAILURE:
-        syslog(LOG_ERR, "Client failure: %s", avahi_strerror(avahi_client_errno(aClient)));
+        otbrLog(OTBR_LOG_ERR, "Client failure: %s", avahi_strerror(avahi_client_errno(aClient)));
         avahi_simple_poll_quit(mSimplePoll);
         break;
 
@@ -206,7 +207,7 @@ exit:
 
     if (ret != kMdnsPublisher_OK)
     {
-        syslog(LOG_ERR, "started client failure: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "started client failure: %d", ret);
     }
 }
 
@@ -235,7 +236,7 @@ exit:
 
     if (ret != kMdnsPublisher_OK)
     {
-        syslog(LOG_ERR, "published service failure: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "published service failure: %d", ret);
     }
 }
 
@@ -281,7 +282,7 @@ void Publisher::HandleEntryGroupStart(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
     {
 
     case AVAHI_ENTRY_GROUP_ESTABLISHED:
-        syslog(LOG_INFO, "Service '%s' successfully established.", mServiceName);
+        otbrLog(OTBR_LOG_INFO, "Service '%s' successfully established.", mServiceName);
         break;
 
     case AVAHI_ENTRY_GROUP_COLLISION:
@@ -290,14 +291,14 @@ void Publisher::HandleEntryGroupStart(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
         serviceName = avahi_alternative_service_name(mServiceName);
         avahi_free(mServiceName);
         mServiceName = serviceName;
-        syslog(LOG_ERR, "Service name collision, renaming service to '%s'", mServiceName);
+        otbrLog(OTBR_LOG_ERR, "Service name collision, renaming service to '%s'", mServiceName);
         VerifyOrExit((ret = CreateService(avahi_entry_group_get_client(aGroup))) == kMdnsPublisher_OK);
         break;
 
     case AVAHI_ENTRY_GROUP_FAILURE:
 
-        syslog(LOG_ERR, "Entry group failure: %s",
-               avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(aGroup))));
+        otbrLog(OTBR_LOG_ERR, "Entry group failure: %s",
+                avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(aGroup))));
 
         avahi_simple_poll_quit(mSimplePoll);
         break;
@@ -314,7 +315,7 @@ exit:
 
     if (ret != kMdnsPublisher_OK)
     {
-        syslog(LOG_ERR, "Entry group failure: %d", ret);
+        otbrLog(OTBR_LOG_ERR, "Entry group failure: %d", ret);
     }
 }
 

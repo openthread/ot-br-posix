@@ -35,10 +35,9 @@
 
 #include <stdio.h>
 
-#include <syslog.h>
-
-#include "common/types.hpp"
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
+#include "common/types.hpp"
 
 namespace ot {
 
@@ -182,7 +181,7 @@ void AgentLibcoap::Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, 
         }
         else
         {
-            syslog(LOG_ERR, "no memory for callback");
+            otbrLog(OTBR_LOG_ERR, "no memory for callback");
         }
     }
     else
@@ -241,7 +240,7 @@ void AgentLibcoap::HandleResponse(coap_context_t *aCoap,
 {
     AgentLibcoap *agent = (AgentLibcoap *)CONTAINING_RECORD(aCoap, AgentLibcoap, mCoap);
 
-    VerifyOrExit(aSent != NULL, syslog(LOG_ERR, "request not found!"));
+    VerifyOrExit(aSent != NULL, otbrLog(OTBR_LOG_ERR, "request not found!"));
 
     {
         ResponseHandler handler;
