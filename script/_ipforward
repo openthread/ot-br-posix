@@ -42,11 +42,11 @@ EOF
 
 ipforward_uninstall()
 {
-    test ! -f $SYSCTL_IP_FORWARD || sudo rm $SYSCTL_IP_FORWARD
+    test ! -f $SYSCTL_IP_FORWARD || sudo rm -v $SYSCTL_IP_FORWARD
 }
 
 ipforward_enable()
 {
-    echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
-    echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+    echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding || die 'Failed to enable IPv6 forwarding!'
+    echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward || die 'Failed to enable IPv4 forwarding!'
 }

@@ -30,6 +30,12 @@
 set -e
 cd "$(dirname "$0")/.."
 
+die()
+{
+    >&2 echo ' *** ERROR: ' $*
+    exit 1
+}
+
 STAGE_DIR=$(pwd)/._stage
 BUILD_DIR=$(pwd)/._build
 

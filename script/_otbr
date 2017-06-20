@@ -52,11 +52,11 @@ otbr_install()
     if which systemctl; then
         sudo systemctl daemon-reload
         sudo systemctl enable wpantund otbr-web otbr-agent || true
-        sudo systemctl is-enabled wpantund
-        sudo systemctl is-enabled otbr-agent
-        sudo systemctl is-enabled otbr-web
+        sudo systemctl is-enabled wpantund || die 'Failed to enable wpantund!'
+        sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
+        sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else
-        >&2 echo 'WARNING: systemctl not found. otbr cannot start on boot.'
+        >&2 echo ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi
 }
 
