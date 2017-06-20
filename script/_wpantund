@@ -40,14 +40,14 @@ wpantund_uninstall()
 wpantund_install()
 {
     test -d $BUILD_DIR/wpantund || (cd $BUILD_DIR &&
-        git clone --depth 1 https://github.com/openthread/wpantund.git)
+        git clone --depth 1 https://github.com/openthread/wpantund.git) || die 'Failed to download source code of wpantund!'
 
     (cd $BUILD_DIR/wpantund &&
         (test -f configure || ./bootstrap.sh) &&
         (test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc \
         --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel) &&
         make && sudo make install &&
-        sudo sed -i '/Config:NCP:SocketPath "\/dev/i Config:NCP:SocketPath "/dev/ttyUSB0"' /etc/wpantund.conf)
+        sudo sed -i '/Config:NCP:SocketPath "\/dev/i Config:NCP:SocketPath "/dev/ttyUSB0"' /etc/wpantund.conf) || die 'Failed to install wpantund!'
 }
 
 wpantund_update()

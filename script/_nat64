@@ -38,6 +38,7 @@ WLAN_IFNAMES=eth0
 
 nat64_install()
 {
+    test -f $TAYGA_DEFAULT -a -f $TAYGA_CONF || die 'Cannot find tayga configuration file!'
     sudo sed -i 's/^RUN="no"/RUN="yes"/' $TAYGA_DEFAULT
     sudo sed -i 's/^prefix /##prefix /' $TAYGA_CONF
     sudo sed -i 's/^# prefix 64:ff9b::\/96/prefix 64:ff9b::\/96/' $TAYGA_CONF
@@ -110,8 +111,8 @@ esac
 EOF
     sudo chmod a+x $NAT44_SERVICE
     if which systemctl; then
-        sudo systemctl stop tayga
-        sudo systemctl enable otbr-nat44
+        sudo systemctl stop tayga || die 'Unable to stop tayga service!'
+        sudo systemctl enable otbr-nat44 || die 'Unable to enable nat44 service!'
     fi
 }
 
@@ -124,12 +125,12 @@ nat64_uninstall()
     sudo sed -i '/^ipv6-addr '$TAYGA_IPV6_ADDR'/d' $TAYGA_CONF
 
     if which systemctl; then
-        sudo systemctl disable otbr-nat44
+        sudo systemctl disable otbr-nat44 || true
     fi
 
     # systemctl disable doesn't remove sym-links
     if which update-rc.d; then
-        sudo update-rc.d otbr-nat44 remove
+        sudo update-rc.d otbr-nat44 remove || true
     fi
     test ! -f $NAT44_SERVICE || sudo rm $NAT44_SERVICE
 }
@@ -137,8 +138,8 @@ nat64_uninstall()
 nat64_start()
 {
     if which systemctl; then
-        sudo systemctl start tayga
-        sudo systemctl start otbr-nat44
+        sudo systemctl start tayga || die 'Failed to start tayga!'
+        sudo systemctl start otbr-nat44 || die 'Failed to start NAT44!'
     fi
 }
 
