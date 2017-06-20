@@ -3,21 +3,6 @@ language: cpp
 sudo: required
 dist: trusty
 
-addons:
-  apt:
-    packages:
-    - libdbus-1-dev
-    - autoconf-archive
-    - doxygen
-    - ctags
-    - libboost-dev
-    - libboost-filesystem-dev
-    - libboost-system-dev
-    - libavahi-common-dev
-    - libavahi-client-dev
-    - avahi-daemon
-    - expect
-
 cache:
   directories:
   - $HOME/.cache/tools
@@ -34,20 +19,9 @@ matrix:
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1
       compiler: gcc
       os: linux
+    - env: BUILD_TARGET="script-check"
+      compiler: gcc
+      os: linux
     - env: BUILD_TARGET="scan-build"
       os: linux
       compiler: clang
-      addons:
-        apt:
-          packages:
-          - libdbus-1-dev
-          - autoconf-archive
-          - doxygen
-          - ctags
-          - libboost-dev
-          - libboost-filesystem-dev
-          - libboost-system-dev
-          - libavahi-core-dev
-          - libavahi-client-dev
-          - expect
-          - clang

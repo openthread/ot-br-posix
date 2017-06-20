@@ -36,12 +36,19 @@
 main()
 {
     . $BEFORE_HOOK
-    which systemctl || die 'Cannot find systemctl. Try script/console to start in console mode!'
     sudo sysctl --system
     nat64_start || die 'Failed to start NAT64!'
-    systemctl is-active wpantund || sudo systemctl start wpantund || die 'Failed to start wpantund!'
-    systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
-    systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
+    if which systemctl; then
+        systemctl is-active wpantund || sudo systemctl start wpantund || die 'Failed to start wpantund!'
+        systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
+        systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
+    elif which service; then
+        sudo service wpantund start  || die 'Failed to start wpantund!'
+        sudo service otbr-web start || die 'Failed to start otbr-web!'
+        sudo service otbr-agent start || die 'Failed to start otbr-agent!'
+    else
+        die 'Unable to find service manager. Try script/console to start in console mode!'
+    fi
     . $AFTER_HOOK
 }
 

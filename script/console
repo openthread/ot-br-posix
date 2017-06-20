@@ -38,6 +38,7 @@ test -n "$NCP" || NCP=/dev/ttyUSB0
 
 killall_services()
 {
+    echo 'Closing services...'
     sudo killall otbr-agent otbr-web wpantund || true
 }
 
