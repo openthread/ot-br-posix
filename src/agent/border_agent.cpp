@@ -224,7 +224,7 @@ exit:
 }
 
 BorderAgent::BorderAgent(const char *aInterfaceName) :
-    mNcpController(Ncp::Controller::Create(aInterfaceName, HandlePSKcChanged, FeedCoap, this)),
+    mNcpController(Ncp::Controller::Create(aInterfaceName)),
     mCoap(Coap::Agent::Create(SendCoap, kCoapResources, this)),
     mCoaps(Coap::Agent::Create(SendCoaps, kCoapsResources, this)),
     mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
@@ -238,6 +238,9 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
         otbrLog(OTBR_LOG_ERR, "failed to enable border agent proxy");
         throw std::runtime_error("Failed to start border agent proxy");
     }
+
+    mNcpController->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
+    mNcpController->On(Ncp::kEventTMFProxyStream, FeedCoap, this);
 
     const uint8_t *pskc = mNcpController->GetPSKc();
     if (pskc == NULL)
@@ -310,12 +313,18 @@ ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const u
     return static_cast<BorderAgent *>(aContext)->mDtlsSession->Write(aBuffer, aLength);
 }
 
-void BorderAgent::FeedCoap(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort, void *aContext)
+void BorderAgent::FeedCoap(void *aContext, int aEvent, va_list aArguments)
 {
-    BorderAgent *borderAgent = static_cast<BorderAgent *>(aContext);
-    Ip6Address   addr(aLocator);
+    assert(aEvent == Ncp::kEventTMFProxyStream);
 
-    borderAgent->mCoap->Input(aBuffer, aLength, addr.m8, aPort);
+    BorderAgent   *borderAgent = static_cast<BorderAgent *>(aContext);
+    const uint8_t *buffer = va_arg(aArguments, const uint8_t *);
+    uint16_t       length = va_arg(aArguments, int);
+    uint16_t       locator = va_arg(aArguments, int);
+    uint16_t       port = va_arg(aArguments, int);
+    Ip6Address     addr(locator);
+
+    borderAgent->mCoap->Input(buffer, length, addr.m8, port);
 }
 
 void BorderAgent::FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext)
@@ -338,9 +347,12 @@ void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, c
     mDtlsServer->Process(aReadFdSet, aWriteFdSet);
 }
 
-void BorderAgent::HandlePSKcChanged(const uint8_t *aPSKc, void *aContext)
+void BorderAgent::HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments)
 {
-    static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(aPSKc, kSizePSKc);
+    assert(aEvent == Ncp::kEventPSKc);
+
+    uint8_t *pskc = va_arg(aArguments, uint8_t *);
+    static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(pskc, kSizePSKc);
 }
 
 } // namespace BorderRouter

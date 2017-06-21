@@ -62,13 +62,9 @@ public:
      * The contructor to initialize a Ncp Controller.
      *
      * @param[in]   aInterfaceName  A string of the NCP interface.
-     * @param[in]   aPSKcHandler    A pointer to the function that receives the PSKc.
-     * @param[in]   aPacketHandler  A pointer to the function that handles the packet.
-     * @param[in]   aContext    A pointer to application-specific context.
      *
      */
-    ControllerWpantund(const char *aInterfaceName, PSKcHandler aPSKcHandler, PacketHandler aPacketHandler,
-                       void *aContext);
+    ControllerWpantund(const char *aInterfaceName);
     ~ControllerWpantund(void);
 
     /**
@@ -129,6 +125,12 @@ public:
      */
     virtual const uint8_t *GetEui64(void);
 
+    /**
+     * This method request the event.
+     *
+     */
+    virtual void RequestEvent(int aEvent);
+
 private:
     /**
      * This map is used to track DBusWatch-es.
@@ -154,9 +156,6 @@ private:
     uint8_t         mEui64[kSizeEui64];
     char            mInterfaceName[IFNAMSIZ];
     DBusConnection *mDBus;
-    PacketHandler   mPacketHandler;
-    PSKcHandler     mPSKcHandler;
-    void           *mContext;
     WatchMap        mWatches;
 };
 

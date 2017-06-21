@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <spinel.h>
 
 extern "C" {
 #include "wpanctl-utils.h"
@@ -99,7 +100,9 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
 
         dbus_message_iter_recurse(&iter, &subIter);
         dbus_message_iter_get_fixed_array(&subIter, &pskc, &count);
-        mPSKcHandler(pskc, mContext);
+        VerifyOrExit(count == kSizePSKc, result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+        EventEmitter::Emit(kEventPSKc, pskc);
     }
     else if (!strcmp(key, kWPANTUNDProperty_BorderAgentProxyStream))
     {
@@ -113,7 +116,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
 
             dbus_message_iter_recurse(&iter, &sub_iter);
             dbus_message_iter_get_fixed_array(&sub_iter, &buf, &nelements);
-            len = (uint16_t)nelements;
+            len = static_cast<uint16_t>(nelements);
         }
 
         // both port and locator are encoded in network endian.
@@ -122,7 +125,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
         locator = buf[--len];
         locator |= buf[--len] << 8;
 
-        mPacketHandler(buf, len, locator, port, mContext);
+        EventEmitter::Emit(kEventTMFProxyStream, buf, len, locator, port);
     }
     else
     {
@@ -183,14 +186,11 @@ exit:
     return ret;
 }
 
-ControllerWpantund::ControllerWpantund(const char *aInterfaceName, PSKcHandler aPSKcHandler,
-                                       PacketHandler aPacketHandler, void *aContext) :
-    mPacketHandler(aPacketHandler),
-    mPSKcHandler(aPSKcHandler),
-    mContext(aContext)
+ControllerWpantund::ControllerWpantund(const char *aInterfaceName)
 {
     int       ret = 0;
     DBusError error;
+    char      dbusName[DBUS_MAXIMUM_NAME_LENGTH];
 
     strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
 
@@ -205,8 +205,9 @@ ControllerWpantund::ControllerWpantund(const char *aInterfaceName, PSKcHandler a
 
     VerifyOrExit(dbus_bus_register(mDBus, &error), ret = -1);
 
+    sprintf(dbusName, "%s.%s", BORDER_AGENT_DBUS_NAME, mInterfaceName);
     VerifyOrExit(dbus_bus_request_name(mDBus,
-                                       BORDER_AGENT_DBUS_NAME,
+                                       dbusName,
                                        DBUS_NAME_FLAG_DO_NOT_QUEUE,
                                        &error) == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER,
                  ret = -1);
@@ -432,6 +433,42 @@ exit:
     return reply;
 }
 
+void ControllerWpantund::RequestEvent(int aEvent)
+{
+    DBusMessage *message = NULL;
+    const char  *key = NULL;
+
+    switch (aEvent)
+    {
+    case kEventPSKc:
+        key = kWPANTUNDProperty_NetworkPSKc;
+        break;
+    default:
+        otbrLog(OTBR_LOG_WARNING, "Unknown event %d", aEvent);
+        break;
+    }
+
+    VerifyOrExit(key != NULL);
+    otbrLog(OTBR_LOG_DEBUG, "detecting %s", key);
+    VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName,
+                                                         mInterfaceDBusPath,
+                                                         WPANTUND_DBUS_APIv1_INTERFACE,
+                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL);
+
+    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID));
+
+    VerifyOrExit(dbus_connection_send(mDBus, message, NULL));
+
+exit:
+
+    if (message)
+    {
+        dbus_message_unref(message);
+    }
+
+    return;
+}
+
 int ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize)
 {
     int          ret = 0;
@@ -490,10 +527,9 @@ exit:
     return mEui64;
 }
 
-Controller *Controller::Create(const char *aInterfaceName, PSKcHandler aPSKcHandler, PacketHandler aPacketHandler,
-                               void *aContext)
+Controller *Controller::Create(const char *aInterfaceName)
 {
-    return new ControllerWpantund(aInterfaceName, aPSKcHandler, aPacketHandler, aContext);
+    return new ControllerWpantund(aInterfaceName);
 }
 
 void Controller::Destroy(Controller *aController)

@@ -28,20 +28,26 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-noinst_HEADERS   = \
-    code_utils.hpp \
-    time.hpp       \
-    tlv.hpp        \
-    types.hpp      \
-    logging.hpp    \
+noinst_HEADERS                                        = \
+    code_utils.hpp                                      \
+    event_emitter.hpp                                   \
+    time.hpp                                            \
+    tlv.hpp                                             \
+    types.hpp                                           \
+    logging.hpp                                         \
     $(NULL)
 
-noinst_LTLIBRARIES         = \
-    libotbr-logging.la       \
+noinst_LTLIBRARIES                                    = \
+    libotbr-logging.la                                  \
+    libotbr-event-emitter.la                            \
     $(NULL)
 
-libotbr_logging_la_SOURCES = \
-    logging.cpp              \
+libotbr_logging_la_SOURCES =                            \
+    logging.cpp                                         \
+    $(NULL)
+
+libotbr_event_emitter_la_SOURCES                      = \
+    event_emitter.cpp                                   \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am
