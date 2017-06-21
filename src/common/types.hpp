@@ -36,6 +36,8 @@
 
 #include <stdint.h>
 
+#define IN6ADDR_ANY "::"
+
 namespace ot {
 
 enum

@@ -35,6 +35,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <sys/socket.h>
+
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
@@ -143,14 +145,7 @@ void MbedtlsServer::Start(void)
     mbedtls_ssl_conf_dtls_cookies(&mConf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check,
                                   &mCookie);
 
-    mbedtls_net_init(&mNet);
-
-    otbrLog(OTBR_LOG_DEBUG, "Binding to port %u", mPort);
-    {
-        char port[6];
-        sprintf(port, "%u", mPort);
-        SuccessOrExit(ret = mbedtls_net_bind(&mNet, "0.0.0.0", port, MBEDTLS_NET_PROTO_UDP));
-    }
+    SuccessOrExit(ret = Bind());
 
 exit:
     if (ret != 0)
@@ -158,6 +153,29 @@ exit:
         otbrLog(OTBR_LOG_ERR, "mbedtls error: %d", ret);
         throw std::runtime_error("Failed to create DTLS server");
     }
+}
+
+int MbedtlsServer::Bind(void)
+{
+    int                 ret = 0;
+    int                 opt = 1;
+    struct sockaddr_in6 sin6;
+
+    memset(&sin6, 0, sizeof(sin6));
+    sin6.sin6_family = AF_INET6;
+    sin6.sin6_port = htons(mPort);
+
+    VerifyOrExit((mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1, ret = -1);
+    // This option enables retrieving the original destination IPv6 address.
+    SuccessOrExit(ret = setsockopt(mSocket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &opt, sizeof(opt)));
+    // This option allows binding to the same address.
+    SuccessOrExit(ret = setsockopt(mSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)));
+    SuccessOrExit(ret = bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)));
+
+    otbrLog(OTBR_LOG_INFO, "Bound to port %u", mPort);
+
+exit:
+    return ret;
 }
 
 void MbedtlsSession::SetState(State aState)
@@ -204,7 +222,11 @@ exit:
 MbedtlsSession::~MbedtlsSession(void)
 {
     Close();
-    mbedtls_net_free(&mNet);
+    // In case session socket is not actually created.
+    if (mNet.fd != mServer.mSocket)
+    {
+        mbedtls_net_free(&mNet);
+    }
     mbedtls_ssl_free(&mSsl);
     otbrLog(OTBR_LOG_INFO, "DTLS session destroyed: %d", mState);
 }
@@ -230,7 +252,7 @@ void MbedtlsSession::Process(void)
 
 int MbedtlsSession::Read(void)
 {
-    uint8_t buffer[kMaxPacketSize];
+    uint8_t buffer[kMaxSizeOfPacket];
     int     ret = 0;
 
     do
@@ -292,9 +314,12 @@ int MbedtlsSession::ExportKeys(void *aContext, const unsigned char *aMasterSecre
     return 0;
 }
 
-MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet, const uint8_t *aIp,
-                               size_t aIpLength) :
+MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, const mbedtls_net_context &aNet,
+                               const struct sockaddr_in6 &aRemoteSock,
+                               const sockaddr_in6 &aLocalSock) :
     mNet(aNet),
+    mRemoteSock(aRemoteSock),
+    mLocalSock(aLocalSock),
     mServer(aServer)
 {
     int ret = 0;
@@ -306,9 +331,10 @@ MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, mbedtls_net_context &aNet
 
     SuccessOrExit(ret = mbedtls_ssl_session_reset(&mSsl));
     SuccessOrExit(ret = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, mServer.mPSKLength));
-    SuccessOrExit(ret = mbedtls_ssl_set_client_transport_id(&mSsl, aIp, aIpLength));
-    SuccessOrExit(ret = mbedtls_net_set_nonblock(&mNet));
-    mbedtls_ssl_set_bio(&mSsl, &mNet, mbedtls_net_send, mbedtls_net_recv, NULL);
+    SuccessOrExit(ret = mbedtls_ssl_set_client_transport_id(&mSsl,
+                                                            reinterpret_cast<const unsigned char *>(&mRemoteSock),
+                                                            sizeof(mRemoteSock)));
+    mbedtls_ssl_set_bio(&mSsl, this, SendMbedtls, ReadMbedtls, NULL);
 
     mState = kStateHandshaking;
 
@@ -318,6 +344,29 @@ exit:
         otbrLog(OTBR_LOG_ERR, "Failed to create session: %d", ret);
         throw std::runtime_error("Failed to create session");
     }
+}
+
+int MbedtlsSession::ReadMbedtls(unsigned char *aBuffer, size_t aLength)
+{
+    return mbedtls_net_recv(&mNet, aBuffer, aLength);
+}
+
+int MbedtlsSession::SendMbedtls(const unsigned char *aBuffer, size_t aLength)
+{
+    int  opt = 1;
+    int &fd = mNet.fd;
+    int  ret = 0;
+
+    VerifyOrExit((fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1, ret = -1);
+    SuccessOrExit(ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)));
+    SuccessOrExit(ret = bind(fd, reinterpret_cast<const struct sockaddr *>(&mLocalSock), sizeof(mLocalSock)));
+    SuccessOrExit(ret = connect(fd, reinterpret_cast<const struct sockaddr *>(&mRemoteSock), sizeof(mRemoteSock)));
+    SuccessOrExit(ret = mbedtls_net_set_nonblock(&mNet));
+    mbedtls_ssl_set_bio(&mSsl, &mNet, mbedtls_net_send, mbedtls_net_recv, NULL);
+    VerifyOrExit((ret = mbedtls_net_send(&mNet, aBuffer, aLength)) != -1);
+
+exit:
+    return ret;
 }
 
 int MbedtlsSession::Handshake(void)
@@ -402,11 +451,11 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
         }
     }
 
-    FD_SET(mNet.fd, &aReadFdSet);
+    FD_SET(mSocket, &aReadFdSet);
 
-    if (aMaxFd < mNet.fd)
+    if (aMaxFd < mSocket)
     {
-        aMaxFd = mNet.fd;
+        aMaxFd = mSocket;
     }
 
     aTimeout.tv_sec = timeout / 1000;
@@ -426,21 +475,51 @@ void MbedtlsServer::HandleSessionState(Session &aSession, Session::State aState)
 
 void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
 {
-    int                 ret = 0;
-    size_t              addrLength;
-    Ip6Address          addr;
-    mbedtls_net_context net;
+    uint8_t       packet[kMaxSizeOfPacket];
+    uint8_t       control[kMaxSizeOfControl];
+    ssize_t       ret = 0;
+    sockaddr_in6  src;
+    sockaddr_in6  dst;
+    struct msghdr msghdr;
+    struct iovec  iov[1];
 
-
-    VerifyOrExit(FD_ISSET(mNet.fd, &aReadFdSet));
+    VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet));
 
     otbrLog(OTBR_LOG_INFO, "Trying to accept connection");
-    mbedtls_net_init(&net);
-    SuccessOrExit(ret = mbedtls_net_accept(&mNet, &net, addr.m8, sizeof(addr), &addrLength));
+    memset(&src, 0, sizeof(src));
+    memset(&dst, 0, sizeof(dst));
+    memset(&msghdr, 0, sizeof(msghdr));
+    msghdr.msg_name = &src;
+    msghdr.msg_namelen = sizeof(src);
+    memset(&iov, 0, sizeof(iov));
+    iov[0].iov_base = packet;
+    iov[0].iov_len = kMaxSizeOfPacket;
+    msghdr.msg_iov = iov;
+    msghdr.msg_iovlen = 1;
+    msghdr.msg_control = control;
+    msghdr.msg_controllen = sizeof(control);
 
+    VerifyOrExit(recvmsg(mSocket, &msghdr, MSG_PEEK) > 0, ret = -1);
+
+    for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msghdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&msghdr, cmsg))
+    {
+        if (cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_PKTINFO)
+        {
+            const struct in6_pktinfo *pktinfo = reinterpret_cast<const struct in6_pktinfo *>(CMSG_DATA(cmsg));
+            memcpy(dst.sin6_addr.s6_addr, pktinfo->ipi6_addr.s6_addr, sizeof(dst.sin6_addr));
+            dst.sin6_family = AF_INET6;
+            dst.sin6_port = ntohs(mPort);
+            break;
+        }
+    }
+
+    VerifyOrExit(memcmp(dst.sin6_addr.s6_addr, in6addr_any.s6_addr, sizeof(dst.sin6_addr)) != 0, ret = -1);
     // TODO Should check if this client has an existing session.
     {
-        boost::shared_ptr<MbedtlsSession> session(new MbedtlsSession(*this, net, addr.m8, addrLength));
+        mbedtls_net_context               net = {
+            mSocket
+        };
+        boost::shared_ptr<MbedtlsSession> session(new MbedtlsSession(*this, net, src, dst));
         mSessions.push_back(session);
         mbedtls_ssl_conf_export_keys_cb(&mConf, MbedtlsSession::ExportKeys, session.get());
         session->Process();
@@ -482,7 +561,7 @@ void MbedtlsServer::SetPSK(const uint8_t *aPSK, uint8_t aLength)
 
 MbedtlsServer::~MbedtlsServer(void)
 {
-    mbedtls_net_free(&mNet);
+    close(mSocket);
     mbedtls_ssl_config_free(&mConf);
     mbedtls_ssl_cookie_free(&mCookie);
 #if defined(MBEDTLS_SSL_CACHE_C)
