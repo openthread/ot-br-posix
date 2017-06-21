@@ -32,8 +32,8 @@
 #      nlbuild-autotools repository for this project.
 #
 
-(cd third_party/libcoap && patch -p1 < patch/0001-remove-generated-files-and-fix-separate-response.patch)
-(cd third_party/libcoap && patch -p1 < patch/0002-fix-warnings.patch)
+(cd third_party/libcoap && patch -N -p1 < patch/0001-remove-generated-files-and-fix-separate-response.patch)
+(cd third_party/libcoap && patch -N -p1 < patch/0002-fix-warnings.patch)
 (cd third_party/libcoap/repo && ./autogen.sh)
 
 # Set this to the relative location of nlbuild-autotools to this script

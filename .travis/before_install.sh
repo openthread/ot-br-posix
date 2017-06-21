@@ -40,6 +40,44 @@ die() {
 
 case $TRAVIS_OS_NAME in
 linux)
+    [ $BUILD_TARGET != script-check ] || {
+        (cd /tmp &&
+            git clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!' &&
+            cd openthread &&
+            ./bootstrap &&
+            ./configure --prefix=/usr       \
+                --enable-ncp-app=ftd        \
+                --with-ncp-bus=uart         \
+                --with-examples=posix       \
+                --with-platform-info=POSIX  \
+                --enable-border-router      \
+                --enable-tmf-proxy          \
+                $NULL &&
+            make && sudo make install) || die 'Failed to build OpenThread!'
+        which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
+        sudo apt-get install socat
+        # Skip installing build dependencies when checking script
+        exit 0
+    }
+
+    # Common dependencies
+    sudo apt-get install -y      \
+        libdbus-1-dev            \
+        autoconf-archive         \
+        doxygen                  \
+        ctags                    \
+        libboost-dev             \
+        libboost-filesystem-dev  \
+        libboost-system-dev      \
+        libavahi-common-dev      \
+        libavahi-client-dev      \
+        avahi-daemon             \
+        $NULL
+
+    [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
+
+    [ $BUILD_TARGET != posix-check ] || sudo apt-get install -y expect
+
     # Uncrustify
     [ $BUILD_TARGET != pretty-check ] || [ "$($TOOLS_HOME/usr/bin/uncrustify --version)" = 'Uncrustify-0.65_f' ] || (cd /tmp &&
         wget https://github.com/uncrustify/uncrustify/archive/uncrustify-0.65.tar.gz &&
