@@ -100,6 +100,9 @@ linux)
     # Enable IPv6
     [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
 
+    # Allow access syslog file for unit test
+    [ $BUILD_TARGET != posix-check ] || sudo chmod a+r /var/log/syslog || die
+
     # Prepare Raspbian image
     [ $BUILD_TARGET != raspbian-gcc ] || {
         sudo apt-get install --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
