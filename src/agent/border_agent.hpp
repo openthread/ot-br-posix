@@ -72,10 +72,24 @@ public:
 
     ~BorderAgent(void);
 
+    /**
+     * This method updates the file descriptor sets with file descriptors used by border agent.
+     *
+     * @param[inout]  aReadFdSet   A reference to read file descriptors.
+     * @param[inout]  aWriteFdSet  A reference to write file descriptors.
+     * @param[inout]  aErrorFdSet  A reference to error file descriptors.
+     * @param[inout]  aMaxFd       A reference to the max file descriptor.
+     * @param[inout]  aTimeout     A reference to timeout.
+     *
+     */
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
     /**
-     * Perform border agent processing.
+     * This method perform border agent processing.
+     *
+     * @param[in]   aReadFdSet   A reference to read file descriptors.
+     * @param[in]   aWriteFdSet  A reference to write file descriptors.
+     * @param[in]   aErrorFdSet  A reference to error file descriptors.
      *
      */
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);

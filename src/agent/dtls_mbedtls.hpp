@@ -53,11 +53,6 @@ extern "C" {
 
 #if defined(MBEDTLS_PLATFORM_C)
 #include <mbedtls/platform.h>
-#else
-#include <stdio.h>
-#define mbedtls_printf     printf
-#define mbedtls_fprintf    fprintf
-#define mbedtls_time_t     time_t
 #endif
 
 #include <mbedtls/entropy.h>
@@ -222,49 +217,73 @@ public:
     /**
      * The constructor to initialize a DTLS server.
      *
-     * @param[in]   aPort           The listening port of this DTLS server.
-     * @param[in]   aStateHandler   A pointer to the function to be called when an session's state changed.
-     * @param[in]   aContext        A pointer to application-specific context.
+     * @param[in]   aPort               The listening port of this DTLS server.
+     * @param[in]   aStateHandler       A pointer to the function to be called when an session's state changed.
+     * @param[in]   aContext            A pointer to application-specific context.
      *
      */
     MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext) :
         mPort(aPort),
         mStateHandler(aStateHandler),
         mContext(aContext) {}
+
     ~MbedtlsServer(void);
 
 
     /**
      * This method starts the DTLS service.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started.
-     * @retval OTBR_ERROR_ERRNO Failed to start for system error.
-     * @retval OTBR_ERROR_DTLS  Failed to start for DTLS error.
+     * @retval      OTBR_ERROR_NONE     Successfully started.
+     * @retval      OTBR_ERROR_ERRNO    Failed to start for system error.
+     * @retval      OTBR_ERROR_DTLS     Failed to start for DTLS error.
      *
      */
     virtual otbrError Start(void);
 
+    /**
+     * This method updates the fd_set and timeout for mainloop. @p aTimeout should
+     * only be updated if the DTLS service has pending process in less than its current value.
+     *
+     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
+     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
+     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
+     * @param[inout]    aTimeout        A reference to the timeout.
+     *
+     */
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout);
 
+    /**
+     * This method performs the DTLS processing.
+     *
+     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
+     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     *
+     */
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet);
 
     /**
      * This method updates the PSK of TLS_ECJPAKE_WITH_AES_128_CCM_8 used by this server.
      *
-     * @param[in]   aPSK    A pointer to the PSK buffer.
-     * @param[in]   aLength Length of PSK.
+     * @param[in]   aPSK                A pointer to the PSK buffer.
+     * @param[in]   aLength             The length of the PSK.
+     *
+     * @retval      OTBR_ERROR_NONE     Successfully set PSK.
+     * @retval      OTBR_ERROR_ERRNO    Failed for the given PSK is too long.
      *
      */
-    void SetPSK(const uint8_t *aPSK, uint8_t aLength);
+    otbrError SetPSK(const uint8_t *aPSK, uint8_t aLength);
 
     /**
      * This method updates the seed for random generator.
      *
-     * @param[in]   aSeed   A pointer to the buffer of seed.
-     * @param[in]   aLength The length of the seed.
+     * @param[in]   aSeed               A pointer to seed.
+     * @param[in]   aLength             The length of the seed.
+     *
+     * @retval      OTBR_ERROR_NONE     Successfully set seed.
+     * @retval      OTBR_ERROR_ERRNO    Failed for the given seed is too long.
      *
      */
-    void SetSeed(const uint8_t *aSeed, uint16_t aLength);
+    otbrError SetSeed(const uint8_t *aSeed, uint16_t aLength);
 
 private:
     typedef std::vector< boost::shared_ptr<MbedtlsSession> > SessionSet;

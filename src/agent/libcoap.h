@@ -29,6 +29,8 @@
 #ifndef LIBCOAP_H_
 #define LIBCOAP_H_
 
+/// @cond
+
 #define WITH_POSIX 1
 #include "coap_config.h"
 #include <coap/coap.h>
@@ -48,5 +50,7 @@ typedef struct coap_packet_t
     size_t                 length;                   /**< length of payload */
     unsigned char          payload[MAX_COAP_PACKET]; /**< payload */
 } coap_packet_t;
+
+/// @endcond
 
 #endif

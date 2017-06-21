@@ -186,7 +186,7 @@ void HandleJoinerFinalize(const Coap::Resource &aResource, const Coap::Message &
     responseTlv = responseTlv->GetNext();
 
     // Piggyback response
-    aResponse.SetCode(Coap::Message::kCoapResponseChanged);
+    aResponse.SetCode(Coap::kCodeChanged);
     aResponse.SetPayload(payload, LengthOf(payload, responseTlv));
 
     (void)aResource;
@@ -285,7 +285,7 @@ int SendRelayTransmit(Context &aContext)
         Coap::Message *message;
         uint16_t       token = ++aContext.mToken;
 
-        message = aContext.mCoap->NewMessage(Coap::Message::kCoapTypeNonConfirmable, Coap::Message::kCoapRequestPost,
+        message = aContext.mCoap->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
                                              reinterpret_cast<const uint8_t *>(&token), sizeof(token));
         message->SetPath("c/tx");
         message->SetPayload(payload, LengthOf(payload, responseTlv));
@@ -389,7 +389,7 @@ int CommissionerPetition(Context &aContext)
     uint16_t       token = ++aContext.mToken;
 
     token = htons(token);
-    message = aContext.mCoap->NewMessage(Coap::Message::kCoapTypeConfirmable, Coap::Message::kCoapRequestPost,
+    message = aContext.mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
                                          reinterpret_cast<const uint8_t *>(&token), sizeof(token));
     tlv->SetType(Meshcop::kCommissionerId);
     tlv->SetValue(kCommissionerId, sizeof(kCommissionerId) - 1);
@@ -468,7 +468,7 @@ int CommissionerSet(Context &aContext)
     Coap::Message *message;
 
     token = htons(token);
-    message = aContext.mCoap->NewMessage(Coap::Message::kCoapTypeConfirmable, Coap::Message::kCoapRequestPost,
+    message = aContext.mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
                                          reinterpret_cast<const uint8_t *>(&token), sizeof(token));
 
     tlv->SetType(Meshcop::kCommissionerSessionId);
@@ -551,7 +551,7 @@ int CommissionerKeepAlive(Context &aContext)
     Coap::Message *message;
 
     aContext.mToken++;
-    message = aContext.mCoap->NewMessage(Coap::Message::kCoapTypeConfirmable, Coap::Message::kCoapRequestPost,
+    message = aContext.mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
                                          reinterpret_cast<const uint8_t *>(&aContext.mToken), sizeof(aContext.mToken));
 
     tlv->SetType(Meshcop::kState);

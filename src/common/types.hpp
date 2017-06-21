@@ -37,6 +37,10 @@
 #include <stdint.h>
 
 #ifndef IN6ADDR_ANY
+/**
+ * Any IPv6 address literal.
+ *
+ */
 #define IN6ADDR_ANY "::"
 #endif
 
@@ -48,6 +52,7 @@ enum otbrError
     OTBR_ERROR_NONE  = 0,  ///< No error.
     OTBR_ERROR_ERRNO = -1, ///< Error defined by errno.
     OTBR_ERROR_DTLS  = -2, ///< DTLS error.
+    OTBR_ERROR_DBUS  = -3, ///< DBus error.
 };
 
 namespace ot {

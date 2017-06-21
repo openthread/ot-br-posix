@@ -59,7 +59,7 @@ namespace Ncp {
 const char *kDBusMatchPropChanged = "type='signal',interface='"WPANTUND_DBUS_APIv1_INTERFACE "',"
                                     "member='"WPANTUND_IF_SIGNAL_PROP_CHANGED "'";
 
-#define BORDER_AGENT_DBUS_NAME      "otbr.agent"
+#define OTBR_AGENT_DBUS_NAME_PREFIX "otbr.agent"
 
 DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
                                                                  void *aContext)
@@ -76,12 +76,11 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
     const char       *sender = dbus_message_get_sender(&aMessage);
     const char       *path = dbus_message_get_path(&aMessage);
 
-    otbrLog(OTBR_LOG_DEBUG, "dbus message received");
     if (sender && path && strcmp(sender, mInterfaceDBusName) && strstr(path, mInterfaceName))
     {
         // DBus name of the interface has changed, possibly caused by wpantund restarted,
         // We have to restart the border agent proxy.
-        otbrLog(OTBR_LOG_DEBUG, "dbus name changed");
+        otbrLog(OTBR_LOG_WARNING, "NCP DBus name changed.");
 
         TmfProxyStart();
     }
@@ -93,7 +92,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
     dbus_message_iter_get_basic(&iter, &key);
     VerifyOrExit(key != NULL, result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
     dbus_message_iter_next(&iter);
-    otbrLog(OTBR_LOG_INFO, "property %s changed", key);
+    otbrLog(OTBR_LOG_INFO, "NCP property %s changed.", key);
 
     if (!strcmp(key, kWPANTUNDProperty_NetworkPSKc))
     {
@@ -190,9 +189,10 @@ exit:
     return ret;
 }
 
-ControllerWpantund::ControllerWpantund(const char *aInterfaceName)
+ControllerWpantund::ControllerWpantund(const char *aInterfaceName) :
+    mDBus(NULL)
 {
-    int       ret = 0;
+    otbrError ret = OTBR_ERROR_DBUS;
     DBusError error;
     char      dbusName[DBUS_MAXIMUM_NAME_LENGTH];
 
@@ -205,34 +205,35 @@ ControllerWpantund::ControllerWpantund(const char *aInterfaceName)
         dbus_error_free(&error);
         mDBus = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
     }
-    VerifyOrExit(mDBus != NULL, ret = -1);
+    VerifyOrExit(mDBus != NULL);
 
-    VerifyOrExit(dbus_bus_register(mDBus, &error), ret = -1);
+    VerifyOrExit(dbus_bus_register(mDBus, &error));
 
-    sprintf(dbusName, "%s.%s", BORDER_AGENT_DBUS_NAME, mInterfaceName);
+    sprintf(dbusName, "%s.%s", OTBR_AGENT_DBUS_NAME_PREFIX, mInterfaceName);
+    otbrLog(OTBR_LOG_INFO, "NCP requesting DBus name %s...", dbusName);
     VerifyOrExit(dbus_bus_request_name(mDBus,
                                        dbusName,
                                        DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                       &error) == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER,
-                 ret = -1);
+                                       &error) == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
 
     VerifyOrExit(dbus_connection_set_watch_functions(
                      mDBus,
                      AddDBusWatch,
                      RemoveDBusWatch,
                      ToggleDBusWatch,
-                     this, NULL), ret = -1);
+                     this, NULL));
 
     dbus_bus_add_match(mDBus, kDBusMatchPropChanged, &error);
-    VerifyOrExit(!dbus_error_is_set(&error), ret = -1);
+    VerifyOrExit(!dbus_error_is_set(&error));
 
-    VerifyOrExit(dbus_connection_add_filter(mDBus, HandleProperyChangedSignal, this, NULL),
-                 ret = -1);
+    VerifyOrExit(dbus_connection_add_filter(mDBus, HandleProperyChangedSignal, this, NULL));
+
+    ret = OTBR_ERROR_NONE;
 
 exit:
     if (dbus_error_is_set(&error))
     {
-        otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
+        otbrLog(OTBR_LOG_ERR, "NCP DBus error: %s!", error.message);
         dbus_error_free(&error);
     }
 
@@ -242,8 +243,8 @@ exit:
         {
             dbus_connection_unref(mDBus);
         }
-        otbrLog(OTBR_LOG_ERR, "Failed to initialize ncp controller. error=%d", ret);
-        throw std::runtime_error("Failed to create ncp controller");
+        otbrLog(OTBR_LOG_ERR, "NCP failed to initialize!");
+        throw std::runtime_error("NCP failed to initialize!");
     }
 }
 

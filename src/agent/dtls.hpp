@@ -69,14 +69,14 @@ public:
      *
      * State machine
      *
-     *         -----------------> Expired
-     *       /            /        |
-     *      /            /         v
-     * Handshaking --> Ready ---> End
-     *      \            \         ^
-     *       \            \        |
-     *        \             ----> Close
-     *          ----------------> Error
+     *             -----------------> Expired
+     *           /            /        |
+     *          /            /         v
+     *     Handshaking --> Ready ---> End
+     *          \            \         ^
+     *           \            \        |
+     *            \             ----> Close
+     *              ----------------> Error
      *
      */
     enum State
@@ -92,9 +92,9 @@ public:
     /**
      * This function pointer is called when decrypted data are ready for use.
      *
-     * @param[in]   aBuffer     A pointer to decrypted data.
-     * @param[in]   aLength     Number of bytes of @p aBuffer.
-     * @param[in]   aContext    A pointer to application-specific context.
+     * @param[in]   aBuffer         A pointer to decrypted data.
+     * @param[in]   aLength         Number of bytes of @p aBuffer.
+     * @param[in]   aContext        A pointer to application-specific context.
      *
      */
     typedef void (*DataHandler)(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
@@ -111,8 +111,8 @@ public:
     /**
      * This method sends data through the session.
      *
-     * @param[in]   aBuffer     A pointer to plain data.
-     * @param[in]   aLength     Number of bytes of @p aBuffer.
+     * @param[in]   aBuffer         A pointer to plain data.
+     * @param[in]   aLength         Number of bytes of @p aBuffer.
      *
      * @returns number of bytes successfully sended, a negative value indicates failure.
      *
@@ -123,6 +123,7 @@ public:
      * This method returns the exported KEK of this session.
      *
      * @returns A pointer to the KEK data.
+     *
      */
     virtual const uint8_t *GetKek(void) = 0;
 
@@ -145,9 +146,9 @@ public:
     /**
      * This function pointer is called when the session state changed.
      *
-     * @param[in]   aSession    The DTLS session whose state changed.
-     * @param[in]   aState      The new state.
-     * @param[in]   aContext    A pointer to application-specific context.
+     * @param[in]   aSession            The DTLS session whose state changed.
+     * @param[in]   aState              The new state.
+     * @param[in]   aContext            A pointer to application-specific context.
      *
      */
     typedef void (*StateHandler)(Session &aSession, Session::State aState, void *aContext);
@@ -155,9 +156,9 @@ public:
     /**
      * This method creates a DTLS server.
      *
-     * @param[in]   aPort           The listening port of this DTLS server.
-     * @param[in]   aStateHandler   A pointer to a function to be called when session state changed.
-     * @param[in]   aContext        A pointer to application-specific context.
+     * @param[in]   aPort               The listening port of this DTLS server.
+     * @param[in]   aStateHandler       A pointer to a function to be called when session state changed.
+     * @param[in]   aContext            A pointer to application-specific context.
      *
      * @returns pointer to the created the DTLS server.
      */
@@ -165,7 +166,8 @@ public:
 
     /**
      * This method destroy a DTLS server.
-     * @param[in]   aServer     A pointer to the DTLS server to be destroyed.
+     *
+     * @param[in]   aServer             A pointer to the DTLS server to be destroyed.
      *
      */
     static void Destroy(Server *aServer);
@@ -173,37 +175,43 @@ public:
     /**
      * This method updates the PSK of TLS_ECJPAKE_WITH_AES_128_CCM_8 used by this server.
      *
-     * @param[in]   aPSK    A pointer to the PSK buffer.
-     * @param[in]   aLength Length of PSK in bytes.
+     * @param[in]   aPSK                A pointer to the PSK buffer.
+     * @param[in]   aLength             The length of the PSK.
+     *
+     * @retval      OTBR_ERROR_NONE     Successfully set PSK.
+     * @retval      OTBR_ERROR_ERRNO    Failed for the given PSK is too long.
      *
      */
-    virtual void SetPSK(const uint8_t *aPSK, uint8_t aLength) = 0;
+    virtual otbrError SetPSK(const uint8_t *aPSK, uint8_t aLength) = 0;
 
     /**
      * This method updates the seed for random generator.
      *
-     * @param[in]   aSeed   A pointer to the buffer of seed.
-     * @param[in]   aLength The length of the seed.
+     * @param[in]   aSeed               A pointer to seed.
+     * @param[in]   aLength             The length of the seed.
+     *
+     * @retval      OTBR_ERROR_NONE     Successfully set seed.
+     * @retval      OTBR_ERROR_ERRNO    Failed for the given seed is too long.
      *
      */
-    virtual void SetSeed(const uint8_t *aSeed, uint16_t aLength) = 0;
+    virtual otbrError SetSeed(const uint8_t *aSeed, uint16_t aLength) = 0;
 
     /**
      * This method starts the DTLS service.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started.
-     * @retval OTBR_ERROR_ERRNO Failed to start for system error.
-     * @retval OTBR_ERROR_DTLS  Failed to start for DTLS error.
+     * @retval      OTBR_ERROR_NONE     Successfully started.
+     * @retval      OTBR_ERROR_ERRNO    Failed to start for system error.
+     * @retval      OTBR_ERROR_DTLS     Failed to start for DTLS error.
      *
      */
     virtual otbrError Start(void) = 0;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
-     * @p aTimeout should only be updated if the DTLS service has pending process in less than its current value.
+     * This method updates the fd_set and timeout for mainloop. @p aTimeout should
+     * only be updated if the DTLS service has pending process in less than its current value.
      *
      * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
+     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
      * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
      * @param[inout]    aTimeout        A reference to the timeout.
      *
@@ -212,8 +220,10 @@ public:
 
     /**
      * This method performs the DTLS processing.
-     * @param[in]   aReadFdSet      A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet     A reference to fd_set ready for writing.
+     *
+     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
+     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     *
      */
     virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet) = 0;
 

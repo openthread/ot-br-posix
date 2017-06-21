@@ -43,6 +43,7 @@ class EventEmitter
     /**
      * This function pointer will be called when the @p aEvent is emitted.
      *
+     * @param[in]   aContext    A pointer to application-specific context.
      * @param[in]   aEvent      The emitted event id.
      * @param[in]   aArguments  The arguments associated with this event.
      *

@@ -50,6 +50,8 @@ int Mainloop(const char *aInterfaceName)
 
     ot::BorderRouter::BorderAgent br(aInterfaceName);
 
+    otbrLog(OTBR_LOG_INFO, "Border router agent started.");
+
     while (true)
     {
         fd_set         readFdSet;
@@ -115,7 +117,7 @@ int main(int argc, char *argv[])
     }
 
     otbrLogInit(kSyslogIdent, logLevel);
-    otbrLog(OTBR_LOG_INFO, "Border router agent started on %s", interfaceName);
+    otbrLog(OTBR_LOG_INFO, "Starting border router agent on %s...", interfaceName);
 
     ret = Mainloop(interfaceName);
 
