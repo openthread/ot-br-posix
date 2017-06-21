@@ -28,32 +28,61 @@
 
 #include "logging.hpp"
 
+#include <assert.h>
 #include <stdarg.h>
-
+#include <stdint.h>
 #include <syslog.h>
 
-static int sLevel = LOG_INFO;
+static int        sLevel = LOG_INFO;
+static const char HEX_CHARS[] = "0123456789abcdef";
 
 void otbrLogInit(const char *aIdent, int aLevel)
 {
-    if (aLevel < LOG_EMERG || aLevel > LOG_DEBUG)
-    {
-        return;
-    }
+    assert(aIdent);
+    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+
     openlog(aIdent, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
     sLevel = aLevel;
 }
 
 void otbrLog(int aLevel, const char *aFormat, ...)
 {
-    if (aLevel < LOG_EMERG || aLevel > sLevel)
+    assert(aFormat);
+    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+
+    if (aLevel > sLevel)
     {
         return;
     }
+
     va_list args;
     va_start(args, aFormat);
     vsyslog(aLevel, aFormat, args);
     va_end(args);
+}
+
+void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
+{
+    assert(aPrefix && aMemory);
+    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+
+    if (aLevel > sLevel)
+    {
+        return;
+    }
+
+    char          *hex = new char[aSize * 2 + 1];
+    const uint8_t *mem = static_cast<const uint8_t *>(aMemory);
+
+    for (size_t i = 0; i < aSize; i += 2)
+    {
+        hex[i] = HEX_CHARS[mem[i] >> 4];
+        hex[i + 1] = HEX_CHARS[mem[i] & 0x0f];
+    }
+    hex[aSize] = 0;
+
+    syslog(aLevel, "%s %s", aPrefix, hex);
+    delete[] hex;
 }
 
 void otbrLogDeinit(void)
