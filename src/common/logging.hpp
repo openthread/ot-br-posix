@@ -29,6 +29,8 @@
 #ifndef LOGGING_HPP_
 #define LOGGING_HPP_
 
+#include <stddef.h>
+
 /**
  * Logging level, which is identical to syslog
  *
@@ -62,6 +64,17 @@ void otbrLogInit(const char *aIdent, int aLevel);
  *
  */
 void otbrLog(int aLevel, const char *aFormat, ...);
+
+/**
+ * This function dump memory as hex string at level @p aLevel.
+ *
+ * @param[in]   aLevel  Log level of the logger.
+ * @param[in]   aPrefix String before dumping memory.
+ * @param[in]   aMemory The pointer to the memory to be dumped.
+ * @param[in]   aSize   The size of memory in bytes to be dumped.
+ *
+ */
+void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize);
 
 /**
  * This function deinitializes the logging service.

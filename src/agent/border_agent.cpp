@@ -142,11 +142,13 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 
     message->SetPath(path);
 
+    Ip6Address     addr(kAloc16Leader);
     uint16_t       length = 0;
     const uint8_t *payload = aMessage.GetPayload(length);
+
     message->SetPayload(payload, length);
 
-    Ip6Address addr(kAloc16Leader);
+    otbrDump(OTBR_LOG_DEBUG, "    Payload:", payload, length);
 
     mCoap->Send(*message, addr.m8, kCoapUdpPort, BorderAgent::ForwardCommissionerResponse);
     mCoap->FreeMessage(message);
@@ -180,6 +182,8 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
     uint16_t       length = 0;
     const uint8_t *payload = aMessage.GetPayload(length);
     uint16_t       rloc = kInvalidLocator;
+
+    otbrLog(OTBR_LOG_DEBUG, "Relay transmit:", payload, length);
 
     for (const Tlv *tlv = reinterpret_cast<const Tlv *>(payload); tlv < reinterpret_cast<const Tlv *>(payload + length);
          tlv = tlv->GetNext())

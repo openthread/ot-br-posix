@@ -555,6 +555,8 @@ void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
 
 void MbedtlsServer::SetPSK(const uint8_t *aPSK, uint8_t aLength)
 {
+    otbrDump(OTBR_LOG_DEBUG, "DTLS PSK:", aPSK, aLength);
+
     mPSKLength = aLength;
     memcpy(mPSK, aPSK, aLength);
 }
