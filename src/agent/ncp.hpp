@@ -34,6 +34,8 @@
 #ifndef NCP_HPP_
 #define NCP_HPP_
 
+#include "common/event_emitter.hpp"
+
 namespace ot {
 
 namespace BorderRouter {
@@ -50,33 +52,22 @@ namespace Ncp {
  */
 
 /**
+ * NCP Events definition according to spinel protocol.
+ *
+ */
+enum
+{
+    kEventPSKc           = 0x40 + 3,
+    kEventTMFProxyStream = 0x1500 + 18,
+};
+
+/**
  * This interface defines NCP Controller functionality.
  *
  */
-class Controller
+class Controller : public EventEmitter
 {
 public:
-    /**
-     * This function pointer is called when a CoAP message ready for border agent.
-     *
-     * @param[in]   aBuffer     A pointer to packet data.
-     * @param[in]   aLength     Number of bytes in this packet.
-     * @param[in]   aLocator    Source locator of this packet.
-     * @param[in]   aPort       Source port of this packet.
-     * @param[in]   aContext    A pointer to application-specific context.
-     *
-     */
-    typedef void (*PacketHandler)(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort,
-                                  void *aContext);
-    /**
-     * This function pointer is called when PSKc is changed.
-     *
-     * @param[in]   aPSKc       A pointer to PSKc.
-     * @param[in]   aContext    A pointer to application-specific context.
-     *
-     */
-    typedef void (*PSKcHandler)(const uint8_t *aPSKc, void *aContext);
-
     /**
      * This method request the NCP to start the border agent proxy service.
      *
@@ -136,16 +127,18 @@ public:
     virtual const uint8_t *GetEui64(void) = 0;
 
     /**
+     * This method request the event.
+     *
+     */
+    virtual void RequestEvent(int aEvent) = 0;
+
+    /**
      * This method creates a NCP Controller.
      *
      * @param[in]   aInterfaceName  A string of the NCP interface.
-     * @param[in]   aPSKcHandler    A pointer to the function that receives the PSKc.
-     * @param[in]   aPacketHandler  A pointer to the function that handles the packet.
-     * @param[in]   aContext    A pointer to application-specific context.
      *
      */
-    static Controller *Create(const char *aInterfaceName, PSKcHandler aPSKcHandler, PacketHandler aPacketHandler,
-                              void *aContext);
+    static Controller *Create(const char *aInterfaceName);
 
     /**
      * This method destroys a NCP Controller.

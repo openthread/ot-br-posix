@@ -81,7 +81,7 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
-    static void FeedCoap(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort, void *aContext);
+    static void FeedCoap(void *aContext, int aEvent, va_list aArguments);
     static ssize_t SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
                             void *aContext);
     ssize_t SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort);
@@ -133,7 +133,7 @@ private:
     }
     void ForwardCommissionerResponse(const Coap::Message &aMessage);
 
-    static void HandlePSKcChanged(const uint8_t *aPSKc, void *aContext);
+    static void HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments);
 
     /**
      * Border agent resources for Thread network.

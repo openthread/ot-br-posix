@@ -33,17 +33,20 @@ check_PROGRAMS = unittest
 unittest_SOURCES           = \
     main.cpp                 \
     test_pskc.cpp            \
+    test_event_emitter.cpp   \
     $(NULL)
 
 unittest_CPPFLAGS                                             = \
+    -I$(top_srcdir)/src                                         \
     -I$(top_srcdir)/src/agent                                   \
     -I$(top_srcdir)/src/web                                     \
     -I$(top_srcdir)/third_party/mbedtls/repo/include            \
     $(NULL)
 
-unittest_LDADD                                 = \
-    $(top_builddir)/src/agent/libotbr-agent.la   \
-    $(top_builddir)/src/web/libotbr-web.la       \
+unittest_LDADD                                                = \
+    $(top_builddir)/src/agent/libotbr-agent.la                  \
+    $(top_builddir)/src/common/libotbr-event-emitter.la         \
+    $(top_builddir)/src/web/libotbr-web.la                      \
     $(NULL)
 
 unittest_LDFLAGS             = \
