@@ -70,10 +70,11 @@ public:
     /**
      * This method request the Ncp to stop the border agent proxy service.
      *
-     * @returns 0 on success, otherwise failure.
+     * @retval OTBR_ERROR_NONE  Successfully started TMF Proxy.
+     * @retval OTBR_ERROR_ERRNO Failed to start, error info in errno.
      *
      */
-    virtual int BorderAgentProxyStart(void);
+    virtual otbrError TmfProxyStart(void);
 
     /**
      * This method request the Ncp to stop the border agent proxy service.
@@ -81,7 +82,7 @@ public:
      * @returns 0 on success, otherwise failure.
      *
      */
-    virtual int BorderAgentProxyStop(void);
+    virtual otbrError TmfProxyStop(void);
 
     /**
      * This method sends a packet through border agent proxy service.
@@ -89,7 +90,7 @@ public:
      * @returns 0 on success, otherwise failure.
      *
      */
-    virtual int BorderAgentProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort);
+    virtual otbrError TmfProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort);
 
     /**
      * This method updates the fd_set to poll.
@@ -114,6 +115,8 @@ public:
      *
      * @returns The current PSKc.
      *
+     * @retval  NULL    Failed to get PSKc, error code set in errno.
+     *
      */
     virtual const uint8_t *GetPSKc(void);
 
@@ -122,14 +125,21 @@ public:
      *
      * @returns The hardware address.
      *
+     * @retval  NULL    Failed to get EUI64, error code set in errno.
+     *
      */
     virtual const uint8_t *GetEui64(void);
 
     /**
      * This method request the event.
      *
+     * @param[in]   aEvent  The event id to request.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully requested the event.
+     * @retval  OTBR_ERROR_ERRNO    Failed to request the event.
+     *
      */
-    virtual void RequestEvent(int aEvent);
+    virtual otbrError RequestEvent(int aEvent);
 
 private:
     /**
@@ -141,14 +151,15 @@ private:
     static DBusHandlerResult HandleProperyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
                                                         void *aContext);
     DBusHandlerResult HandleProperyChangedSignal(DBusConnection &aConnection, DBusMessage &aMessage);
+
     DBusMessage *RequestProperty(const char *aKey);
-    int      GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize);
+    otbrError GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize);
+
+    otbrError TmfProxyEnable(dbus_bool_t aEnable);
 
     static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
     static void RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
     static void ToggleDBusWatch(struct DBusWatch *aWatch, void *aContext);
-
-    int BorderAgentProxyEnable(dbus_bool_t aEnable);
 
     char            mInterfaceDBusName[DBUS_MAXIMUM_NAME_LENGTH + 1];
     char            mInterfaceDBusPath[DBUS_MAXIMUM_NAME_LENGTH + 1];

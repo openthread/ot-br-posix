@@ -237,8 +237,12 @@ public:
     /**
      * This method starts the DTLS service.
      *
+     * @retval OTBR_ERROR_NONE  Successfully started.
+     * @retval OTBR_ERROR_ERRNO Failed to start for system error.
+     * @retval OTBR_ERROR_DTLS  Failed to start for DTLS error.
+     *
      */
-    virtual void Start(void);
+    virtual otbrError Start(void);
 
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout);
 
@@ -271,7 +275,7 @@ private:
 
     void HandleSessionState(Session &aSession, Session::State aState);
     void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet);
-    int Bind(void);
+    otbrError Bind(void);
 
     SessionSet                mSessions;
     int                       mSocket;

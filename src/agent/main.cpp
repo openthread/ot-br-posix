@@ -30,11 +30,13 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "border_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/types.hpp"
 
 static const char kSyslogIdent[] = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -65,8 +67,8 @@ int Mainloop(const char *aInterfaceName)
 
         if ((rval < 0) && (errno != EINTR))
         {
-            rval = errno;
-            perror("select failed");
+            rval = OTBR_ERROR_ERRNO;
+            otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
         }
 

@@ -36,7 +36,19 @@
 
 #include <stdint.h>
 
+#ifndef IN6ADDR_ANY
 #define IN6ADDR_ANY "::"
+#endif
+
+/**
+ * This enumeration represents error codes used throughout OpenThread Border Router.
+ */
+enum otbrError
+{
+    OTBR_ERROR_NONE  = 0,  ///< No error.
+    OTBR_ERROR_ERRNO = -1, ///< Error defined by errno.
+    OTBR_ERROR_DTLS  = -2, ///< DTLS error.
+};
 
 namespace ot {
 
