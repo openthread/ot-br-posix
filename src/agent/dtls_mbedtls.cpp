@@ -35,6 +35,7 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <assert.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <unistd.h>

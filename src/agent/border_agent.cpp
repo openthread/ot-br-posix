@@ -81,22 +81,6 @@ enum
     kJoinerRouterLocator = 20, ///< meshcop Joiner Router Locator TLV
 };
 
-
-const Coap::Resource BorderAgent::kCoapResources[] =
-{
-    { OPENTHREAD_URI_RELAY_RX, BorderAgent::HandleRelayReceive },
-    {NULL, NULL}
-};
-
-const Coap::Resource BorderAgent::kCoapsResources[] =
-{
-    { OPENTHREAD_URI_COMMISSIONER_PETITION, BorderAgent::ForwardCommissionerRequest },
-    { OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE, BorderAgent::ForwardCommissionerRequest },
-    { OPENTHREAD_URI_COMMISSIONER_SET, BorderAgent::ForwardCommissionerRequest },
-    { OPENTHREAD_URI_RELAY_TX, BorderAgent::HandleRelayTransmit },
-    {NULL, NULL},
-};
-
 void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
 {
     uint8_t        tokenLength = 0;
@@ -110,7 +94,7 @@ void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
     payload = aMessage.GetPayload(length);
     message->SetPayload(payload, length);
 
-    mCoaps->Send(*message, NULL, 0, NULL);
+    mCoaps->Send(*message, NULL, 0, NULL, NULL);
     mCoaps->FreeMessage(message);
 }
 
@@ -146,7 +130,7 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 
     otbrDump(OTBR_LOG_DEBUG, "    Payload:", payload, length);
 
-    mCoap->Send(*message, addr.m8, kCoapUdpPort, BorderAgent::ForwardCommissionerResponse);
+    mCoap->Send(*message, addr.m8, kCoapUdpPort, BorderAgent::ForwardCommissionerResponse, this);
     mCoap->FreeMessage(message);
 
     (void)aIp6;
@@ -165,7 +149,7 @@ void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_
     message->SetPath(OPENTHREAD_URI_RELAY_RX);
     message->SetPayload(payload, length);
 
-    mCoaps->Send(*message, NULL, 0, NULL);
+    mCoaps->Send(*message, NULL, 0, NULL, NULL);
     mCoaps->FreeMessage(message);
 
     (void)aIp6;
@@ -206,7 +190,7 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
 
         message->SetPath(OPENTHREAD_URI_RELAY_TX);
         message->SetPayload(payload, length);
-        mCoap->Send(*message, addr.m8, kCoapUdpPort, NULL);
+        mCoap->Send(*message, addr.m8, kCoapUdpPort, NULL, NULL);
         mCoap->FreeMessage(message);
     }
 
@@ -219,12 +203,24 @@ exit:
 }
 
 BorderAgent::BorderAgent(const char *aInterfaceName) :
+    mCommissionerPetitionHandler(OPENTHREAD_URI_COMMISSIONER_PETITION, ForwardCommissionerRequest, this),
+    mCommissionerKeepAliveHandler(OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this),
+    mCommissionerSetHandler(OPENTHREAD_URI_COMMISSIONER_SET, ForwardCommissionerRequest, this),
+    mCommissionerRelayTransmitHandler(OPENTHREAD_URI_RELAY_TX, HandleRelayTransmit, this),
+    mCommissionerRelayReceiveHandler(OPENTHREAD_URI_RELAY_RX, BorderAgent::HandleRelayReceive, this),
     mNcpController(Ncp::Controller::Create(aInterfaceName)),
-    mCoap(Coap::Agent::Create(SendCoap, kCoapResources, this)),
-    mCoaps(Coap::Agent::Create(SendCoaps, kCoapsResources, this)),
+    mCoap(Coap::Agent::Create(SendCoap, this)),
+    mCoaps(Coap::Agent::Create(SendCoaps, this)),
     mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = mCoaps->AddResource(mCommissionerPetitionHandler));
+    SuccessOrExit(error = mCoaps->AddResource(mCommissionerKeepAliveHandler));
+    SuccessOrExit(error = mCoaps->AddResource(mCommissionerSetHandler));
+    SuccessOrExit(error = mCoaps->AddResource(mCommissionerRelayTransmitHandler));
+
+    SuccessOrExit(error = mCoap->AddResource(mCommissionerRelayReceiveHandler));
 
     SuccessOrExit(error = mNcpController->TmfProxyStart());
 

@@ -264,6 +264,7 @@ otbrError ControllerWpantund::TmfProxyStart(void)
     otbrError ret = OTBR_ERROR_ERRNO;
 
     VerifyOrExit(lookup_dbus_name_from_interface(mInterfaceDBusName, mInterfaceName) == 0,
+                 otbrLog(OTBR_LOG_ERR, "NCP failed to find the interface"),
                  errno = ENODEV);
 
     // Populate the path according to source code of wpanctl, better to export a function.

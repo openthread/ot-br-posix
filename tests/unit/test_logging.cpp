@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "common/logging.hpp"
 
@@ -45,6 +46,7 @@ TEST(Logging, TestLoggingHigherLevel)
     otbrLogInit(ident, OTBR_LOG_INFO);
     otbrLog(OTBR_LOG_DEBUG, "cool");
     otbrLogDeinit();
+    sleep(0);
 
     char cmd[128];
     sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
@@ -59,6 +61,7 @@ TEST(Logging, TestLoggingEqualLevel)
     otbrLogInit(ident, OTBR_LOG_INFO);
     otbrLog(OTBR_LOG_INFO, "cool");
     otbrLogDeinit();
+    sleep(0);
 
     char cmd[128];
     sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
@@ -73,6 +76,7 @@ TEST(Logging, TestLoggingLowerLevel)
     otbrLogInit(ident, OTBR_LOG_INFO);
     otbrLog(OTBR_LOG_WARNING, "cool");
     otbrLogDeinit();
+    sleep(0);
 
     char cmd[128];
     sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
@@ -87,6 +91,7 @@ TEST(Logging, TestLoggingDump)
     otbrLogInit(ident, OTBR_LOG_INFO);
     otbrDump(OTBR_LOG_INFO, "cool", "cool", 4);
     otbrLogDeinit();
+    sleep(0);
 
     char cmd[128];
     sprintf(cmd, "grep '%s.\\+#4 636f6f6c$' /var/log/syslog", ident);
