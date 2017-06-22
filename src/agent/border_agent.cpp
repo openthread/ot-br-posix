@@ -229,35 +229,33 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
     mCoaps(Coap::Agent::Create(SendCoaps, kCoapsResources, this)),
     mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
 {
-    int error = 0;
+    otbrError error = OTBR_ERROR_NONE;
 
-    error = mNcpController->BorderAgentProxyStart();
-
-    if (error)
-    {
-        otbrLog(OTBR_LOG_ERR, "failed to enable border agent proxy");
-        throw std::runtime_error("Failed to start border agent proxy");
-    }
+    SuccessOrExit(error = mNcpController->TmfProxyStart());
 
     mNcpController->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
-    mNcpController->On(Ncp::kEventTMFProxyStream, FeedCoap, this);
+    mNcpController->On(Ncp::kEventTmfProxyStream, FeedCoap, this);
 
-    const uint8_t *pskc = mNcpController->GetPSKc();
-    if (pskc == NULL)
     {
-        otbrLog(OTBR_LOG_ERR, "failed to get PSKc");
-        throw std::runtime_error("Failed to get PSKc");
+        const uint8_t *pskc = mNcpController->GetPSKc();
+        VerifyOrExit(pskc != NULL, error = OTBR_ERROR_ERRNO);
+        mDtlsServer->SetPSK(pskc, kSizePSKc);
     }
-    mDtlsServer->SetPSK(pskc, kSizePSKc);
 
-    const uint8_t *eui64 = mNcpController->GetEui64();
-    if (eui64 == NULL)
     {
-        otbrLog(OTBR_LOG_ERR, "failed to get Eui64");
-        throw std::runtime_error("Failed to get Eui64");
+        const uint8_t *eui64 = mNcpController->GetEui64();
+        VerifyOrExit(eui64 != NULL, error = OTBR_ERROR_ERRNO);
+        mDtlsServer->SetSeed(eui64, kSizeEui64);
     }
-    mDtlsServer->SetSeed(eui64, kSizeEui64);
-    mDtlsServer->Start();
+
+    SuccessOrExit(error = mDtlsServer->Start());
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "Failed to create border agent!");
+        throw std::runtime_error("Failed to create border agent!");
+    }
 }
 
 BorderAgent::~BorderAgent(void)
@@ -300,7 +298,7 @@ ssize_t BorderAgent::SendCoap(const uint8_t *aBuffer, uint16_t aLength, const ui
     const Ip6Address *addr = reinterpret_cast<const Ip6Address *>(aIp6);
     uint16_t          rloc = addr->ToLocator();
 
-    mNcpController->BorderAgentProxySend(aBuffer, aLength, rloc, aPort);
+    mNcpController->TmfProxySend(aBuffer, aLength, rloc, aPort);
     return aLength;
 }
 
@@ -315,7 +313,7 @@ ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const u
 
 void BorderAgent::FeedCoap(void *aContext, int aEvent, va_list aArguments)
 {
-    assert(aEvent == Ncp::kEventTMFProxyStream);
+    assert(aEvent == Ncp::kEventTmfProxyStream);
 
     BorderAgent   *borderAgent = static_cast<BorderAgent *>(aContext);
     const uint8_t *buffer = va_arg(aArguments, const uint8_t *);

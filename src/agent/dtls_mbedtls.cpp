@@ -35,6 +35,7 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <errno.h>
 #include <sys/socket.h>
 
 #include "common/code_utils.hpp"
@@ -99,9 +100,10 @@ void Server::Destroy(Server *aServer)
     delete static_cast<MbedtlsServer *>(aServer);
 }
 
-void MbedtlsServer::Start(void)
+otbrError MbedtlsServer::Start(void)
 {
-    int              ret = 0;
+    otbrError        ret = OTBR_ERROR_NONE;
+    int              error = 0;
     static const int ciphersuites[] =
     {
         MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8,
@@ -119,14 +121,14 @@ void MbedtlsServer::Start(void)
     mbedtls_debug_set_threshold(kLogLevelError);
 
     otbrLog(OTBR_LOG_DEBUG, "Setting CTR_DRBG seed");
-    SuccessOrExit(ret = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed,
-                                              mSeedLength));
+    SuccessOrExit(error = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed,
+                                                mSeedLength));
 
     otbrLog(OTBR_LOG_DEBUG, "Configuring DTLS");
-    SuccessOrExit(ret = mbedtls_ssl_config_defaults(&mConf,
-                                                    MBEDTLS_SSL_IS_SERVER,
-                                                    MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-                                                    MBEDTLS_SSL_PRESET_DEFAULT));
+    SuccessOrExit(error = mbedtls_ssl_config_defaults(&mConf,
+                                                      MBEDTLS_SSL_IS_SERVER,
+                                                      MBEDTLS_SSL_TRANSPORT_DATAGRAM,
+                                                      MBEDTLS_SSL_PRESET_DEFAULT));
 
     mbedtls_ssl_conf_rng(&mConf, mbedtls_ctr_drbg_random, &mCtrDrbg);
     mbedtls_ssl_conf_min_version(&mConf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
@@ -140,7 +142,7 @@ void MbedtlsServer::Start(void)
 #endif
 
     otbrLog(OTBR_LOG_DEBUG, "Setting up cookie");
-    SuccessOrExit(ret = mbedtls_ssl_cookie_setup(&mCookie, mbedtls_ctr_drbg_random, &mCtrDrbg));
+    SuccessOrExit(error = mbedtls_ssl_cookie_setup(&mCookie, mbedtls_ctr_drbg_random, &mCtrDrbg));
 
     mbedtls_ssl_conf_dtls_cookies(&mConf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check,
                                   &mCookie);
@@ -148,33 +150,42 @@ void MbedtlsServer::Start(void)
     SuccessOrExit(ret = Bind());
 
 exit:
-    if (ret != 0)
+
+    if (error != 0)
     {
-        otbrLog(OTBR_LOG_ERR, "mbedtls error: %d", ret);
-        throw std::runtime_error("Failed to create DTLS server");
+        otbrLog(OTBR_LOG_ERR, "mbedtls error: -0x%04x!", error);
+        ret = OTBR_ERROR_DTLS;
     }
+
+    return ret;
 }
 
-int MbedtlsServer::Bind(void)
+otbrError MbedtlsServer::Bind(void)
 {
-    int                 ret = 0;
-    int                 opt = 1;
+    otbrError           ret = OTBR_ERROR_ERRNO;
+    int                 one = 1;
     struct sockaddr_in6 sin6;
 
     memset(&sin6, 0, sizeof(sin6));
     sin6.sin6_family = AF_INET6;
     sin6.sin6_port = htons(mPort);
 
-    VerifyOrExit((mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1, ret = -1);
+    VerifyOrExit((mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1);
     // This option enables retrieving the original destination IPv6 address.
-    SuccessOrExit(ret = setsockopt(mSocket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &opt, sizeof(opt)));
+    SuccessOrExit(setsockopt(mSocket, IPPROTO_IPV6, IPV6_RECVPKTINFO, &one, sizeof(one)));
     // This option allows binding to the same address.
-    SuccessOrExit(ret = setsockopt(mSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)));
-    SuccessOrExit(ret = bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)));
+    SuccessOrExit(setsockopt(mSocket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)));
+    SuccessOrExit(bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)));
 
     otbrLog(OTBR_LOG_INFO, "Bound to port %u", mPort);
+    ret = OTBR_ERROR_NONE;
 
 exit:
+    if (ret)
+    {
+        otbrLog(OTBR_LOG_ERR, "Failed to bind to port %u", strerror(errno));
+    }
+
     return ret;
 }
 

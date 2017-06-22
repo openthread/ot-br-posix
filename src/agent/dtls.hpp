@@ -36,6 +36,8 @@
 
 #include <sys/select.h>
 
+#include "common/types.hpp"
+
 namespace ot {
 
 namespace BorderRouter {
@@ -189,8 +191,12 @@ public:
     /**
      * This method starts the DTLS service.
      *
+     * @retval OTBR_ERROR_NONE  Successfully started.
+     * @retval OTBR_ERROR_ERRNO Failed to start for system error.
+     * @retval OTBR_ERROR_DTLS  Failed to start for DTLS error.
+     *
      */
-    virtual void Start(void) = 0;
+    virtual otbrError Start(void) = 0;
 
     /**
      * This method updates the fd_set and timeout for mainloop.

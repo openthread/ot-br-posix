@@ -58,7 +58,7 @@ namespace Ncp {
 enum
 {
     kEventPSKc           = 0x40 + 3,
-    kEventTMFProxyStream = 0x1500 + 18,
+    kEventTmfProxyStream = 0x1500 + 18,
 };
 
 /**
@@ -74,7 +74,7 @@ public:
      * @returns 0 on success, otherwise failure.
      *
      */
-    virtual int BorderAgentProxyStart(void) = 0;
+    virtual otbrError TmfProxyStart(void) = 0;
 
     /**
      * This method request the NCP to stop the border agent proxy service.
@@ -82,7 +82,7 @@ public:
      * @returns 0 on success, otherwise failure.
      *
      */
-    virtual int BorderAgentProxyStop(void) = 0;
+    virtual otbrError TmfProxyStop(void) = 0;
 
     /**
      * This method sends a packet through border agent proxy service.
@@ -90,7 +90,8 @@ public:
      * @returns 0 on success, otherwise failure.
      *
      */
-    virtual int BorderAgentProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort) = 0;
+    virtual otbrError TmfProxySend(const uint8_t *aBuffer, uint16_t aLength,
+                                   uint16_t aLocator, uint16_t aPort) = 0;
 
     /**
      * This method updates the fd_set to poll.
@@ -115,6 +116,8 @@ public:
      *
      * @returns The current PSKc.
      *
+     * @retval  NULL    Failed to get PSKc, error code set in errno.
+     *
      */
     virtual const uint8_t *GetPSKc(void) = 0;
 
@@ -123,14 +126,21 @@ public:
      *
      * @returns The hardware address.
      *
+     * @retval  NULL    Failed to get EUI64, error code set in errno.
+     *
      */
     virtual const uint8_t *GetEui64(void) = 0;
 
     /**
      * This method request the event.
      *
+     * @param[in]   aEvent  The event id to request.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully requested the event.
+     * @retval  OTBR_ERROR_ERRNO    Failed to request the event.
+     *
      */
-    virtual void RequestEvent(int aEvent) = 0;
+    virtual otbrError RequestEvent(int aEvent) = 0;
 
     /**
      * This method creates a NCP Controller.

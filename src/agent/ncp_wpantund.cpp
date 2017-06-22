@@ -31,6 +31,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <assert.h>
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -81,7 +83,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
         // We have to restart the border agent proxy.
         otbrLog(OTBR_LOG_DEBUG, "dbus name changed");
 
-        BorderAgentProxyStart();
+        TmfProxyStart();
     }
 
     VerifyOrExit(dbus_message_is_signal(&aMessage, WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_SIGNAL_PROP_CHANGED),
@@ -125,7 +127,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
         locator = buf[--len];
         locator |= buf[--len] << 8;
 
-        EventEmitter::Emit(kEventTMFProxyStream, buf, len, locator, port);
+        EventEmitter::Emit(kEventTmfProxyStream, buf, len, locator, port);
     }
     else
     {
@@ -155,9 +157,9 @@ void ControllerWpantund::ToggleDBusWatch(struct DBusWatch *aWatch, void *aContex
     static_cast<ControllerWpantund *>(aContext)->mWatches[aWatch] = (dbus_watch_get_enabled(aWatch) ? true : false);
 }
 
-int ControllerWpantund::BorderAgentProxyEnable(dbus_bool_t aEnable)
+otbrError ControllerWpantund::TmfProxyEnable(dbus_bool_t aEnable)
 {
-    int          ret = 0;
+    otbrError    ret = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
     const char  *key = kWPANTUNDProperty_BorderAgentProxyEnabled;
 
@@ -167,15 +169,17 @@ int ControllerWpantund::BorderAgentProxyEnable(dbus_bool_t aEnable)
         WPANTUND_DBUS_APIv1_INTERFACE,
         WPANTUND_IF_CMD_PROP_SET);
 
-    VerifyOrExit(message != NULL, ret = -1);
+    VerifyOrExit(message != NULL, errno = ENOMEM);
 
     VerifyOrExit(dbus_message_append_args(
                      message,
                      DBUS_TYPE_STRING, &key,
                      DBUS_TYPE_BOOLEAN, &aEnable,
-                     DBUS_TYPE_INVALID), ret = -1);
+                     DBUS_TYPE_INVALID), errno = EINVAL);
 
-    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), ret = -1);
+    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
+
+    ret = OTBR_ERROR_NONE;
 
 exit:
     if (message != NULL)
@@ -245,33 +249,36 @@ exit:
 
 ControllerWpantund::~ControllerWpantund(void)
 {
-    BorderAgentProxyStop();
+    TmfProxyStop();
+
+    if (mDBus)
+    {
+        dbus_connection_unref(mDBus);
+        mDBus = NULL;
+    }
 }
 
-int ControllerWpantund::BorderAgentProxyStart(void)
+otbrError ControllerWpantund::TmfProxyStart(void)
 {
-    int ret = 0;
+    otbrError ret = OTBR_ERROR_ERRNO;
 
-    SuccessOrExit(ret = lookup_dbus_name_from_interface(mInterfaceDBusName, mInterfaceName));
+    VerifyOrExit(lookup_dbus_name_from_interface(mInterfaceDBusName, mInterfaceName) == 0,
+                 errno = ENODEV);
 
-    // according to source code of wpanctl, better to export a function.
-    snprintf(mInterfaceDBusPath,
-             sizeof(mInterfaceDBusPath),
-             "%s/%s",
-             WPANTUND_DBUS_PATH,
-             mInterfaceName);
+    // Populate the path according to source code of wpanctl, better to export a function.
+    snprintf(mInterfaceDBusPath, sizeof(mInterfaceDBusPath), "%s/%s", WPANTUND_DBUS_PATH, mInterfaceName);
 
-    BorderAgentProxyEnable(TRUE);
+    ret = TmfProxyEnable(TRUE);
 
 exit:
 
     return ret;
 }
 
-int ControllerWpantund::BorderAgentProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator,
-                                             uint16_t aPort)
+otbrError ControllerWpantund::TmfProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator,
+                                           uint16_t aPort)
 {
-    int          ret = 0;
+    otbrError    ret = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
 
     std::vector<uint8_t> data(aLength + sizeof(aLocator) + sizeof(aPort));
@@ -290,15 +297,17 @@ int ControllerWpantund::BorderAgentProxySend(const uint8_t *aBuffer, uint16_t aL
         WPANTUND_DBUS_APIv1_INTERFACE,
         WPANTUND_IF_CMD_PROP_SET);
 
-    VerifyOrExit(message != NULL, ret = -1);
+    VerifyOrExit(message != NULL, errno = ENOMEM);
 
     VerifyOrExit(dbus_message_append_args(
                      message,
                      DBUS_TYPE_STRING, &key,
                      DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE,
-                     &value, data.size(), DBUS_TYPE_INVALID), ret = -1);
+                     &value, data.size(), DBUS_TYPE_INVALID), errno = EINVAL);
 
-    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), ret = -1);
+    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
+
+    ret = OTBR_ERROR_NONE;
 
 exit:
 
@@ -310,16 +319,9 @@ exit:
     return ret;
 }
 
-int ControllerWpantund::BorderAgentProxyStop(void)
+otbrError ControllerWpantund::TmfProxyStop(void)
 {
-    BorderAgentProxyEnable(FALSE);
-    if (mDBus)
-    {
-        dbus_connection_unref(mDBus);
-        mDBus = NULL;
-    }
-
-    return 0;
+    return TmfProxyEnable(FALSE);
 }
 
 void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd)
@@ -411,9 +413,9 @@ DBusMessage *ControllerWpantund::RequestProperty(const char *aKey)
     VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName,
                                                          mInterfaceDBusPath,
                                                          WPANTUND_DBUS_APIv1_INTERFACE,
-                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL);
+                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL, errno = ENOMEM);
 
-    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &aKey, DBUS_TYPE_INVALID));
+    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &aKey, DBUS_TYPE_INVALID), errno = EINVAL);
 
     reply = dbus_connection_send_with_reply_and_block(mDBus, message, timeout, &error);
 
@@ -423,6 +425,7 @@ exit:
     {
         otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
         dbus_error_free(&error);
+        errno = EREMOTEIO;
     }
 
     if (message)
@@ -433,8 +436,9 @@ exit:
     return reply;
 }
 
-void ControllerWpantund::RequestEvent(int aEvent)
+otbrError ControllerWpantund::RequestEvent(int aEvent)
 {
+    otbrError    ret = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
     const char  *key = NULL;
 
@@ -448,16 +452,20 @@ void ControllerWpantund::RequestEvent(int aEvent)
         break;
     }
 
-    VerifyOrExit(key != NULL);
-    otbrLog(OTBR_LOG_DEBUG, "detecting %s", key);
+    VerifyOrExit(key != NULL, errno = EINVAL);
+    otbrLog(OTBR_LOG_DEBUG, "Requesting %s...", key);
     VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName,
                                                          mInterfaceDBusPath,
                                                          WPANTUND_DBUS_APIv1_INTERFACE,
-                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL);
+                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL,
+                 errno = ENOMEM);
 
-    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID));
+    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID),
+                 errno = EINVAL);
 
-    VerifyOrExit(dbus_connection_send(mDBus, message, NULL));
+    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
+
+    ret = OTBR_ERROR_NONE;
 
 exit:
 
@@ -466,35 +474,41 @@ exit:
         dbus_message_unref(message);
     }
 
-    return;
+    return ret;
 }
 
-int ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize)
+otbrError ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize)
 {
-    int          ret = 0;
+    otbrError    ret = OTBR_ERROR_ERRNO;
     DBusMessage *reply = NULL;
     DBusError    error;
 
-    VerifyOrExit(reply = RequestProperty(aKey),
-                 ret = -1, otbrLog(OTBR_LOG_ERR, "No reply"));
+    dbus_error_init(&error);
+    VerifyOrExit(reply = RequestProperty(aKey));
 
     {
         uint8_t *buffer = NULL;
         int      count = 0;
 
-        dbus_error_init(&error);
         VerifyOrExit(dbus_message_get_args(reply, &error,
                                            DBUS_TYPE_INT32, &ret,
                                            DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &buffer, &count,
                                            DBUS_TYPE_INVALID),
-                     ret = -1, otbrLog(OTBR_LOG_ERR, "Failed to parse"));
-        VerifyOrExit(ret == 0);
+                     errno = EINVAL);
 
         aSize = static_cast<size_t>(count);
         memcpy(aBuffer, buffer, count);
     }
 
+    ret = OTBR_ERROR_NONE;
+
 exit:
+
+    if (dbus_error_is_set(&error))
+    {
+        otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
+        dbus_error_free(&error);
+    }
 
     if (reply)
     {
@@ -506,25 +520,28 @@ exit:
 
 const uint8_t *ControllerWpantund::GetPSKc(void)
 {
-    size_t size = 0;
+    const uint8_t *ret = NULL;
+    size_t         size = 0;
 
-    VerifyOrExit(0 == GetProperty(kWPANTUNDProperty_NetworkPSKc, mPSKc, size),
-                 memset(mPSKc, 0, sizeof(mPSKc)));
+    SuccessOrExit(GetProperty(kWPANTUNDProperty_NetworkPSKc, mPSKc, size));
+    assert(size == kSizePSKc);
+    ret = mPSKc;
 
 exit:
-    return mPSKc;
+    return ret;
 }
 
 const uint8_t *ControllerWpantund::GetEui64(void)
 {
-    size_t size = 0;
+    const uint8_t *ret = NULL;
+    size_t         size = 0;
 
-    VerifyOrExit(0 == GetProperty(kWPANTUNDProperty_NCPHardwareAddress, mEui64, size),
-                 memset(mEui64, 0, sizeof(mEui64)));
+    SuccessOrExit(GetProperty(kWPANTUNDProperty_NCPHardwareAddress, mEui64, size));
+    assert(size == kSizeEui64);
+    ret = mEui64;
 
 exit:
-
-    return mEui64;
+    return ret;
 }
 
 Controller *Controller::Create(const char *aInterfaceName)
