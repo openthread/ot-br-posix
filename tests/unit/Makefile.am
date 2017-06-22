@@ -32,8 +32,9 @@ check_PROGRAMS = unittest
 
 unittest_SOURCES           = \
     main.cpp                 \
-    test_pskc.cpp            \
     test_event_emitter.cpp   \
+    test_pskc.cpp            \
+    test_logging.cpp         \
     $(NULL)
 
 unittest_CPPFLAGS                                             = \
@@ -46,6 +47,7 @@ unittest_CPPFLAGS                                             = \
 unittest_LDADD                                                = \
     $(top_builddir)/src/agent/libotbr-agent.la                  \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
+    $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/web/libotbr-web.la                      \
     $(NULL)
 

@@ -26,67 +26,69 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logging.hpp"
+#include <CppUTest/TestHarness.h>
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <syslog.h>
+#include <stdio.h>
+#include <time.h>
 
-static int        sLevel = LOG_INFO;
-static const char HEX_CHARS[] = "0123456789abcdef";
+#include "common/logging.hpp"
 
-void otbrLogInit(const char *aIdent, int aLevel)
+TEST_GROUP(Logging)
 {
-    assert(aIdent);
-    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+};
 
-    openlog(aIdent, LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
-    sLevel = aLevel;
+TEST(Logging, TestLoggingHigherLevel)
+{
+    char ident[20];
+
+    sprintf(ident, "otbr-test-%ld", clock());
+    otbrLogInit(ident, OTBR_LOG_INFO);
+    otbrLog(OTBR_LOG_DEBUG, "cool");
+    otbrLogDeinit();
+
+    char cmd[128];
+    sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
+    CHECK(0 != system(cmd));
 }
 
-void otbrLog(int aLevel, const char *aFormat, ...)
+TEST(Logging, TestLoggingEqualLevel)
 {
-    assert(aFormat);
-    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+    char ident[20];
 
-    if (aLevel > sLevel)
-    {
-        return;
-    }
+    sprintf(ident, "otbr-test-%ld", clock());
+    otbrLogInit(ident, OTBR_LOG_INFO);
+    otbrLog(OTBR_LOG_INFO, "cool");
+    otbrLogDeinit();
 
-    va_list args;
-    va_start(args, aFormat);
-    vsyslog(aLevel, aFormat, args);
-    va_end(args);
+    char cmd[128];
+    sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
+    CHECK(0 == system(cmd));
 }
 
-void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
+TEST(Logging, TestLoggingLowerLevel)
 {
-    assert(aPrefix && aMemory);
-    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+    char ident[20];
 
-    if (aLevel > sLevel)
-    {
-        return;
-    }
+    sprintf(ident, "otbr-test-%ld", clock());
+    otbrLogInit(ident, OTBR_LOG_INFO);
+    otbrLog(OTBR_LOG_WARNING, "cool");
+    otbrLogDeinit();
 
-    char *hex = new char[aSize * 2 + 1];
-    char *ch = hex - 1;
-
-    for (const uint8_t *mem = static_cast<const uint8_t *>(aMemory), *end = mem + aSize;
-         mem != end; ++mem)
-    {
-        *++ch = HEX_CHARS[(*mem) >> 4];
-        *++ch = HEX_CHARS[(*mem) & 0x0f];
-    }
-    hex[aSize * 2] = 0;
-
-    syslog(aLevel, "%s #%zu %s", aPrefix, aSize, hex);
-    delete[] hex;
+    char cmd[128];
+    sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
+    CHECK(0 == system(cmd));
 }
 
-void otbrLogDeinit(void)
+TEST(Logging, TestLoggingDump)
 {
-    closelog();
+    char ident[20];
+
+    sprintf(ident, "otbr-test-%ld", clock());
+    otbrLogInit(ident, OTBR_LOG_INFO);
+    otbrDump(OTBR_LOG_INFO, "cool", "cool", 4);
+    otbrLogDeinit();
+
+    char cmd[128];
+    sprintf(cmd, "grep '%s.\\+#4 636f6f6c$' /var/log/syslog", ident);
+    CHECK(0 == system(cmd));
 }
