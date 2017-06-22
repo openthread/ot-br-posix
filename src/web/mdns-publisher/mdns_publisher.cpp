@@ -42,18 +42,6 @@
 namespace ot {
 namespace Mdns {
 
-enum
-{
-    kMdnsPublisher_OK = 0,
-    kMdnsPublisher_FailedCreatePoll,
-    kMdnsPublisher_FailedFreePoll,
-    kMdnsPublisher_FailedCreateGoup,
-    kMdnsPublisher_FailedAddSevice,
-    kMdnsPublisher_FailedRegisterSevice,
-    kMdnsPublisher_FailedUpdateSevice,
-    kMdnsPublisher_FailedCreateClient,
-};
-
 void Publisher::HandleServicePublish(AVAHI_GCC_UNUSED AvahiTimeout *aTimeout, AVAHI_GCC_UNUSED void *aUserData)
 {
     Publisher *publisher = static_cast<Publisher *>(aUserData);
@@ -109,6 +97,7 @@ Publisher::Publisher(void) :
     mSimplePoll(NULL),
     mClient(NULL),
     mPort(0),
+    mIsStarted(false),
     mServiceName(NULL),
     mNetworkNameTxt(NULL),
     mExtPanIdTxt(NULL),
@@ -180,6 +169,7 @@ void Publisher::HandleClientStart(AvahiClient *aClient, AvahiClientState aState)
     {
     case AVAHI_CLIENT_S_RUNNING:
         VerifyOrExit((ret = CreateService(aClient)) == kMdnsPublisher_OK);
+        mIsStarted = true;
         break;
 
     case AVAHI_CLIENT_FAILURE:
@@ -207,6 +197,7 @@ exit:
 
     if (ret != kMdnsPublisher_OK)
     {
+        mIsStarted = false;
         otbrLog(OTBR_LOG_ERR, "started client failure: %d", ret);
     }
 }
@@ -236,6 +227,7 @@ exit:
 
     if (ret != kMdnsPublisher_OK)
     {
+        mIsStarted = false;
         otbrLog(OTBR_LOG_ERR, "published service failure: %d", ret);
     }
 }
@@ -315,6 +307,7 @@ exit:
 
     if (ret != kMdnsPublisher_OK)
     {
+        mIsStarted = false;
         otbrLog(OTBR_LOG_ERR, "Entry group failure: %d", ret);
     }
 }

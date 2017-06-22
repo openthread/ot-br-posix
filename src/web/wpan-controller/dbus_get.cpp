@@ -207,6 +207,7 @@ int DBusGet::ProcessReply(void)
     }
 
 exit:
+
     free();
     return ret;
 }
@@ -214,9 +215,10 @@ exit:
 const char *DBusGet::GetPropertyValue(const char *aPropertyName)
 {
     SetPropertyName(aPropertyName);
-    ProcessReply();
     memset(mPropertyValue, 0, OT_PROPERTY_VALUE_SIZE);
+    VerifyOrExit(ProcessReply() == kWpantundStatus_Ok);
     DumpInfoFromIter(mPropertyValue, &mIter, 0, false);
+exit:
     return mPropertyValue;
 }
 

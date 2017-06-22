@@ -51,6 +51,26 @@
 namespace ot {
 namespace Mdns {
 
+/**
+ *  Status of mDNS client
+ *
+ */
+enum
+{
+    kMdnsPublisher_OK                   = 0, ///< successfully start mDNS service
+    kMdnsPublisher_FailedCreatePoll     = 1, ///< failed to create poll
+    kMdnsPublisher_FailedFreePoll       = 2, ///< failed to free poll
+    kMdnsPublisher_FailedCreateGoup     = 3, ///< failed to create group
+    kMdnsPublisher_FailedAddSevice      = 4, ///< failed to add service
+    kMdnsPublisher_FailedRegisterSevice = 5, ///< failed to register service
+    kMdnsPublisher_FailedUpdateSevice   = 6, ///< failed to update mDNS service
+    kMdnsPublisher_FailedCreateClient   = 7, ///< failed to create mDNS client
+};
+
+/**
+ * This class implements mDNS clinet.
+ *
+ */
 class Publisher
 {
 public:
@@ -127,6 +147,15 @@ public:
         return publisherInstance;
     }
 
+    /**
+     * This method indicates whether or not the mDNS service is running.
+     *
+     * @retval true   Successfully started the mdns service.
+     * @retval false  Failed to start the mdns service.
+     *
+     */
+    bool IsRunning(void) const { return mIsStarted; }
+
 private:
     Publisher(void);
 
@@ -145,6 +174,7 @@ private:
     AvahiSimplePoll *mSimplePoll;
     AvahiClient     *mClient;
     uint16_t         mPort;
+    bool             mIsStarted;
     char            *mServiceName;
     char            *mNetworkNameTxt;
     char            *mExtPanIdTxt;

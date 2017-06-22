@@ -34,15 +34,19 @@
 #define OT_WEB_FILE_PATH "/usr/local/share/border-router/frontend"
 #endif
 
+#define OT_HTTP_PORT 80
+
 #include "otbr-config.h"
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "web-service/web_service.hpp"
+#include "web-service/web_server.hpp"
 
 static const char kSyslogIdent[] = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -55,13 +59,15 @@ void PrintVersion(void)
 int main(int argc, char **argv)
 {
     const char *interfaceName = NULL;
+    const char *httpPort = NULL;
     int         logLevel = OTBR_LOG_INFO;
     int         ret = 0;
     int         opt;
+    uint16_t    port = OT_HTTP_PORT;
 
     ot::Web::WebServer *server = NULL;
 
-    while ((opt = getopt(argc, argv, "d:I:v")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:v")) != -1)
     {
         switch (opt)
         {
@@ -73,13 +79,19 @@ int main(int argc, char **argv)
             interfaceName = optarg;
             break;
 
+        case 'p':
+            httpPort = optarg;
+            VerifyOrExit(httpPort != NULL);
+            port = atoi(httpPort);
+            break;
+
         case 'v':
             PrintVersion();
             ExitNow();
             break;
 
         default:
-            fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-v]\n", argv[0]);
             ExitNow(ret = -1);
             break;
         }
@@ -91,10 +103,16 @@ int main(int argc, char **argv)
         printf("interfaceName not specified, using default %s\n", interfaceName);
     }
 
+    if (httpPort == NULL)
+    {
+        printf("http port not specified, using default %d\n", port);
+    }
+
     otbrLogInit(kSyslogIdent, logLevel);
     otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
+
     server = new ot::Web::WebServer();
-    server->StartWebServer(interfaceName);
+    server->StartWebServer(interfaceName, port);
 
     otbrLogDeinit();
 
