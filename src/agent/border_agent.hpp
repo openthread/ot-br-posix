@@ -36,9 +36,6 @@
 
 #include <stdint.h>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-
 #include "coap.hpp"
 #include "dtls.hpp"
 #include "ncp.hpp"
@@ -48,7 +45,7 @@ namespace ot {
 namespace BorderRouter {
 
 /**
- * @addtogroup border-agent
+ * @addtogroup border-router-border-agent
  *
  * @brief
  *   This module includes definition for Thread border agent
@@ -68,9 +65,19 @@ public:
      * @param[in]   aInterfaceName  interface name string.
      *
      */
-    BorderAgent(const char *aInterfaceName);
+    BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap);
 
     ~BorderAgent(void);
+
+    /**
+     * This method starts border agent service.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully started border agent.
+     * @retval  OTBR_ERROR_ERRNO    Failed to start border agent.
+     * @retval  OTBR_ERROR_DTLS     Failed to start border agent for DTLS error.
+     *
+     */
+    otbrError Start(void);
 
     /**
      * This method updates the file descriptor sets with file descriptors used by border agent.
@@ -85,7 +92,7 @@ public:
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
     /**
-     * This method perform border agent processing.
+     * This method performs border agent processing.
      *
      * @param[in]   aReadFdSet   A reference to read file descriptors.
      * @param[in]   aWriteFdSet  A reference to write file descriptors.
@@ -95,11 +102,6 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
-    static void FeedCoap(void *aContext, int aEvent, va_list aArguments);
-    static ssize_t SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                            void *aContext);
-    ssize_t SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort);
-
     static void FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
     static ssize_t SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
                              void *aContext);
@@ -158,11 +160,11 @@ private:
     // Border agent resources for Thread network.
     Coap::Resource   mCommissionerRelayReceiveHandler;
 
-    Ncp::Controller *mNcpController;
     Coap::Agent     *mCoap;
-    Coap::Agent     *mCoaps;
     Dtls::Server    *mDtlsServer;
     Dtls::Session   *mDtlsSession;
+    Coap::Agent     *mCoaps;
+    Ncp::Controller *mNcp;
 };
 
 /**

@@ -41,7 +41,7 @@ namespace BorderRouter {
 namespace Coap {
 
 /**
- * @addtogroup border-agent-coap
+ * @addtogroup border-router-coap
  *
  * @brief
  *   This module includes definition for libcoap-based CoAP service.

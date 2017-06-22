@@ -45,7 +45,7 @@ namespace BorderRouter {
 namespace Dtls {
 
 /**
- * @addtogroup border-agent-dtls
+ * @addtogroup border-router-dtls
  *
  * @brief
  *   This module includes definition for DTLS service.
@@ -212,20 +212,23 @@ public:
      *
      * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
      * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
+     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
      * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
      * @param[inout]    aTimeout        A reference to the timeout.
      *
      */
-    virtual void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout) = 0;
+    virtual void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+                             timeval &aTimeout) = 0;
 
     /**
      * This method performs the DTLS processing.
      *
      * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
      * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
      *
      */
-    virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet) = 0;
+    virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) = 0;
 
     virtual ~Server(void) {}
 };

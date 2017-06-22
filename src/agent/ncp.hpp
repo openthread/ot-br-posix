@@ -43,7 +43,7 @@ namespace BorderRouter {
 namespace Ncp {
 
 /**
- * @addtogroup border-agent-ncp
+ * @addtogroup border-router-ncp
  *
  * @brief
  *   This module includes definition for NCP service.

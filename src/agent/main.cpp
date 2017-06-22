@@ -30,10 +30,11 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "border_agent.hpp"
+#include "agent_instance.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -48,7 +49,7 @@ int Mainloop(const char *aInterfaceName)
 {
     int rval = 0;
 
-    ot::BorderRouter::BorderAgent br(aInterfaceName);
+    ot::BorderRouter::AgentInstance instance(aInterfaceName);
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
@@ -64,7 +65,7 @@ int Mainloop(const char *aInterfaceName)
         FD_ZERO(&writeFdSet);
         FD_ZERO(&errorFdSet);
 
-        br.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
+        instance.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
         rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
 
         if ((rval < 0) && (errno != EINTR))
@@ -74,7 +75,7 @@ int Mainloop(const char *aInterfaceName)
             break;
         }
 
-        br.Process(readFdSet, writeFdSet, errorFdSet);
+        instance.Process(readFdSet, writeFdSet, errorFdSet);
     }
 
     return rval;
