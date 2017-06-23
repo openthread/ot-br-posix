@@ -428,6 +428,7 @@ src/web/Makefile
 src/common/Makefile
 src/utils/Makefile
 tests/Makefile
+tests/mdns/Makefile
 tests/meshcop/Makefile
 tests/unit/Makefile
 tools/Makefile

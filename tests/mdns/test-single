@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -26,12 +27,21 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
+#
+# This script tests publishing single service.
+#
 
-SUBDIRS         = \
-    unit          \
-    mdns          \
-    meshcop       \
-    $(NULL)
+set -x
+set -e
 
-include $(abs_top_nlbuild_autotools_dir)/automake/post.am
+on_exit()
+{
+    kill $PID
+}
+
+./otbr-test-mdns s & PID=$!
+trap on_exit INT TERM EXIT
+
+sleep 2
+avahi-browse -aprt
+avahi-browse -aprt | grep -q 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'

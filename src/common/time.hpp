@@ -33,6 +33,24 @@
 
 #include <sys/time.h>
 
+namespace ot {
+
+namespace BorderRouter {
+
+
+/**
+ * This method returns the timestamp in miniseconds of @aTime.
+ *
+ * @param[in]   aTime   The time to convert to timestamp.
+ *
+ * @returns timestamp in miniseconds.
+ *
+ */
+inline uint64_t GetTimestamp(const timeval &aTime)
+{
+    return aTime.tv_sec * 1000 + aTime.tv_usec / 1000;
+}
+
 /**
  * This method returns the current timestamp in miniseconds.
  *
@@ -46,4 +64,8 @@ inline uint64_t GetNow(void) {
     return now.tv_sec * 1000 + now.tv_usec / 1000;
 }
 
-#endif // TIME_HPP_
+} // namespace BorderRouter
+
+} // namespace ot
+
+#endif  // TIME_HPP_
