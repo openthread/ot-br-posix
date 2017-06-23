@@ -68,26 +68,28 @@ public:
     ~ControllerWpantund(void);
 
     /**
-     * This method request the Ncp to stop the border agent proxy service.
+     * This method request the Ncp to start the TMF proxy service.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started TMF Proxy.
-     * @retval OTBR_ERROR_ERRNO Failed to start, error info in errno.
+     * @retval OTBR_ERROR_NONE          Successfully started TMF proxy.
+     * @retval OTBR_ERROR_ERRNO         Failed to start, error info in errno.
      *
      */
     virtual otbrError TmfProxyStart(void);
 
     /**
-     * This method request the Ncp to stop the border agent proxy service.
+     * This method request the Ncp to stop the TMF proxy service.
      *
-     * @returns 0 on success, otherwise failure.
+     * @retval  OTBR_ERROR_NONE         Successfully stopped TMF proxy.
+     * @retval  OTBR_ERROR_ERRNO        Failed to stop, error info in errno.
      *
      */
     virtual otbrError TmfProxyStop(void);
 
     /**
-     * This method sends a packet through border agent proxy service.
+     * This method sends a packet through TMF proxy service.
      *
-     * @returns 0 on success, otherwise failure.
+     * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
+     * @retval  OTBR_ERROR_ERRNO        Failed to send the packet, erro info in errno.
      *
      */
     virtual otbrError TmfProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort);
@@ -97,6 +99,7 @@ public:
      *
      * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
      * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
+     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
      * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
      *
      */
@@ -105,8 +108,10 @@ public:
     /**
      * This method performs the DTLS processing.
      *
-     * @param[in]   aReadFdSet      A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet     A reference to fd_set ready for writing.
+     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
+     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
+     *
      */
     virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
@@ -133,10 +138,10 @@ public:
     /**
      * This method request the event.
      *
-     * @param[in]   aEvent  The event id to request.
+     * @param[in]   aEvent              The event id to request.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully requested the event.
-     * @retval  OTBR_ERROR_ERRNO    Failed to request the event.
+     * @retval  OTBR_ERROR_NONE         Successfully requested the event.
+     * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
      *
      */
     virtual otbrError RequestEvent(int aEvent);

@@ -53,43 +53,42 @@ namespace Coap {
  */
 
 /**
+ * CoAP Type values.
+ *
+ */
+enum Type
+{
+    kTypeConfirmable    = 0x00, ///< Confirmable
+    kTypeNonConfirmable = 0x01, ///< Non-confirmable
+    kTypeAcknowledgment = 0x02, ///< Acknowledgment
+    kTypeReset          = 0x03, ///< Reset
+};
+
+/**
+ * CoAP Code values.
+ *
+ */
+enum Code
+{
+    kCodeEmpty   = 0x00, ///< Empty message code
+    kCodeGet     = 0x01, ///< Get
+    kCodePost    = 0x02, ///< Post
+    kCodePut     = 0x03, ///< Put
+    kCodeDelete  = 0x04, ///< Delete
+    kCodeCodeMin = 0x40, ///< 2.00
+    kCodeCreated = 0x41, ///< Created
+    kCodeDeleted = 0x42, ///< Deleted
+    kCodeValid   = 0x43, ///< Valid
+    kCodeChanged = 0x44, ///< Changed
+    kCodeContent = 0x45, ///< Content
+};
+
+/**
  * This interface defines CoAP message functionality.
  *
  */
 class Message
 {
-public:
-    /**
-     * CoAP Type values.
-     *
-     */
-    typedef enum Type
-    {
-        kCoapTypeConfirmable    = 0x00, ///< Confirmable
-        kCoapTypeNonConfirmable = 0x01, ///< Non-confirmable
-        kCoapTypeAcknowledgment = 0x02, ///< Acknowledgment
-        kCoapTypeReset          = 0x03, ///< Reset
-    } Type;
-
-    /**
-     * CoAP Code values.
-     *
-     */
-    typedef enum Code
-    {
-        kCoapEmpty           = 0x00, ///< Empty message code
-        kCoapRequestGet      = 0x01, ///< Get
-        kCoapRequestPost     = 0x02, ///< Post
-        kCoapRequestPut      = 0x03, ///< Put
-        kCoapRequestDelete   = 0x04, ///< Delete
-        kCoapResponseCodeMin = 0x40, ///< 2.00
-        kCoapResponseCreated = 0x41, ///< Created
-        kCoapResponseDeleted = 0x42, ///< Deleted
-        kCoapResponseValid   = 0x43, ///< Valid
-        kCoapResponseChanged = 0x44, ///< Changed
-        kCoapResponseContent = 0x45, ///< Content
-    } Code;
-
 public:
     virtual ~Message(void) {};
 
@@ -100,6 +99,13 @@ public:
      *
      */
     virtual Code GetCode(void) const = 0;
+
+    /**
+     * This method sets the CoAP code of this message.
+     *
+     * @param[in]   aCode       The CoAP code.
+     *
+     */
     virtual void SetCode(Code aCode) = 0;
 
     /**
@@ -109,23 +115,38 @@ public:
      *
      */
     virtual Type GetType(void) const = 0;
+
+    /**
+     * This method sets the CoAP type of this message.
+     *
+     * @param[in]   aType       The CoAP type.
+     *
+     */
     virtual void SetType(Type aType) = 0;
 
     /**
      * This method returns the token of this message.
      *
-     * @param[out]    aLength     Number of bytes of the token.
+     * @param[out]  aLength     Number of bytes of the token.
      *
      * @returns A pointer to the token.
      *
      */
     virtual const uint8_t *GetToken(uint8_t &aLength) const = 0;
+
+    /**
+     * This method sets the token of this message.
+     *
+     * @param[in]   aToken      A pointer to the token.
+     * @param[in]   aLength     Number of bytes of the token.
+     *
+     */
     virtual void SetToken(const uint8_t *aToken, uint8_t aLength) = 0;
 
     /**
      * This method sets the CoAP Uri Path of this message.
      *
-     * @param[in]   aPath   A pointer to to the null-terminated string of Uri Path.
+     * @param[in]   aPath       A pointer to to the null-terminated string of Uri Path.
      *
      */
     virtual void SetPath(const char *aPath) = 0;
@@ -149,17 +170,23 @@ public:
     virtual void SetPayload(const uint8_t *aPayload, uint16_t aLength) = 0;
 };
 
+/**
+ * @typedef struct Resource
+ *
+ * This declares the CoAP resource.
+ *
+ */
 typedef struct Resource Resource;
 
 /**
  * This function pointer is called when a CoAP request received.
  *
- * @param[in]   aResource   A reference to the resource requested.
- * @param[in]   aRequest    A reference to the CoAP request message.
- * @param[in]   aResponse   A reference to the CoAP response message.
- * @param[in]   aIp6        A reference to the source Ipv6 address of this request.
- * @param[in]   aPort       Source UDP port of this request.
- * @param[in]   aContext    A pointer to application-specific context.
+ * @param[in]   aResource       A reference to the resource requested.
+ * @param[in]   aRequest        A reference to the CoAP request message.
+ * @param[in]   aResponse       A reference to the CoAP response message.
+ * @param[in]   aIp6            A reference to the source Ipv6 address of this request.
+ * @param[in]   aPort           Source UDP port of this request.
+ * @param[in]   aContext        A pointer to application-specific context.
  *
  */
 typedef void (*RequestHandler)(const Resource &aResource, const Message &aRequest, Message &aResponse,
@@ -170,8 +197,8 @@ typedef void (*RequestHandler)(const Resource &aResource, const Message &aReques
 /**
  * This function pointer is called when a CoAP response received.
  *
- * @param[in]   aMessage    A pointer to the response message.
- * @param[in]   aContext    A pointer to application-specific context.
+ * @param[in]   aMessage        A pointer to the response message.
+ * @param[in]   aContext        A pointer to application-specific context.
  *
  */
 typedef void (*ResponseHandler)(const Message &aMessage, void *aContext);
@@ -229,7 +256,7 @@ public:
      * @returns The newly CoAP message.
      *
      */
-    virtual Message *NewMessage(Message::Type aType, Message::Code aCode, const uint8_t *aToken,
+    virtual Message *NewMessage(Type aType, Code aCode, const uint8_t *aToken,
                                 uint8_t aTokenLength) = 0;
 
     /**
@@ -254,11 +281,11 @@ public:
     /**
      * This method creates a CoAP agent.
      *
-     * @param[in]   aNetworkSender      A pointer to the function that actually sends the data.
-     * @param[in]   aResources          A pointer to the Resource array. The last resource must be {0, 0}.
-     * @param[in]   aContext    A pointer to application-specific context.
+     * @param[in]   aNetworkSender  A pointer to the function that actually sends the data.
+     * @param[in]   aResources      A pointer to the Resource array. The last resource must be {0, 0}.
+     * @param[in]   aContext        A pointer to application-specific context.
      *
-     * @returns CoAP agent.
+     * @returns The pointer to CoAP agent.
      */
     static Agent *Create(NetworkSender aNetworkSender, const Resource *aResources = NULL, void *aContext = NULL);
 

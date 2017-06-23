@@ -58,7 +58,7 @@ exit:
     return;
 }
 
-MessageLibcoap::MessageLibcoap(Message::Type aType, Message::Code aCode, uint16_t aMessageId, const uint8_t *aToken,
+MessageLibcoap::MessageLibcoap(Type aType, Code aCode, uint16_t aMessageId, const uint8_t *aToken,
                                uint8_t aTokenLength)
 {
     mPdu = coap_new_pdu();
@@ -74,9 +74,9 @@ const uint8_t *MessageLibcoap::GetToken(uint8_t &aLength) const
     return mPdu->hdr->token;
 }
 
-Message::Code MessageLibcoap::GetCode(void) const
+Code MessageLibcoap::GetCode(void) const
 {
-    return static_cast<Message::Code>(mPdu->hdr->code);
+    return static_cast<Code>(mPdu->hdr->code);
 }
 
 void MessageLibcoap::SetCode(Code aCode)
@@ -84,9 +84,9 @@ void MessageLibcoap::SetCode(Code aCode)
     mPdu->hdr->code = aCode;
 }
 
-Message::Type MessageLibcoap::GetType(void) const
+Type MessageLibcoap::GetType(void) const
 {
-    return static_cast<Message::Type>(mPdu->hdr->type);
+    return static_cast<Type>(mPdu->hdr->type);
 }
 
 void MessageLibcoap::SetType(Type aType)
@@ -146,7 +146,7 @@ const uint8_t *MessageLibcoap::GetPayload(uint16_t &aLength) const
     return payload;
 }
 
-Message *AgentLibcoap::NewMessage(Message::Type aType, Message::Code aCode, const uint8_t *aToken, uint8_t aTokenLength)
+Message *AgentLibcoap::NewMessage(Type aType, Code aCode, const uint8_t *aToken, uint8_t aTokenLength)
 {
     uint16_t messageId = coap_new_message_id(&mCoap);
 
@@ -211,7 +211,7 @@ void AgentLibcoap::HandleRequest(coap_context_t *aCoap,
         {
             MessageLibcoap req(aRequest);
             MessageLibcoap res(aResponse);
-            res.SetCode(Message::kCoapEmpty);
+            res.SetCode(kCodeEmpty);
             resource->mHandler(*resource, req, res, reinterpret_cast<const uint8_t *>(&aAddress->addr.sin6.sin6_addr),
                                ntohs(aAddress->addr.sin6.sin6_port), agent->mContext);
         }

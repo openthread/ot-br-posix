@@ -101,15 +101,11 @@ void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
 {
     uint8_t        tokenLength = 0;
     const uint8_t *token = aMessage.GetToken(tokenLength);
-
     uint16_t       length = 0;
     const uint8_t *payload = NULL;
 
-    Coap::Message::Code code = aMessage.GetCode();
-
-    Coap::Message *message = mCoaps->NewMessage(
-        Coap::Message::kCoapTypeNonConfirmable, code,
-        token, tokenLength);
+    Coap::Code     code = aMessage.GetCode();
+    Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, code, token, tokenLength);
 
     payload = aMessage.GetPayload(length);
     message->SetPayload(payload, length);
@@ -123,13 +119,17 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 {
     uint8_t        tokenLength = 0;
     const uint8_t *token = aMessage.GetToken(tokenLength);
+    const char    *path = aResource.mPath;
 
-    Coap::Message *message = mCoap->NewMessage(Coap::Message::kCoapTypeConfirmable, Coap::Message::kCoapRequestPost,
+    Coap::Message *message = mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
                                                token, tokenLength);
+    Ip6Address     addr(kAloc16Leader);
+    uint16_t       length = 0;
+    const uint8_t *payload = aMessage.GetPayload(length);
 
-    const char *path = aResource.mPath;
 
-    otbrLog(OTBR_LOG_INFO, "forwarding request %s", path);
+
+    otbrLog(OTBR_LOG_INFO, "Forwarding request %s...", path);
 
     if (!strcmp(OPENTHREAD_URI_COMMISSIONER_PETITION, path))
     {
@@ -141,10 +141,6 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
     }
 
     message->SetPath(path);
-
-    Ip6Address     addr(kAloc16Leader);
-    uint16_t       length = 0;
-    const uint8_t *payload = aMessage.GetPayload(length);
 
     message->SetPayload(payload, length);
 
@@ -161,13 +157,12 @@ void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_
 {
     uint8_t        tokenLength = 0;
     const uint8_t *token = aMessage.GetToken(tokenLength);
-
-    Coap::Message *message = mCoaps->NewMessage(Coap::Message::kCoapTypeNonConfirmable, Coap::Message::kCoapRequestPost,
-                                                token, tokenLength);
-    message->SetPath(OPENTHREAD_URI_RELAY_RX);
-
     uint16_t       length = 0;
     const uint8_t *payload = aMessage.GetPayload(length);
+
+    Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
+                                                token, tokenLength);
+    message->SetPath(OPENTHREAD_URI_RELAY_RX);
     message->SetPayload(payload, length);
 
     mCoaps->Send(*message, NULL, 0, NULL);
@@ -183,7 +178,7 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
     const uint8_t *payload = aMessage.GetPayload(length);
     uint16_t       rloc = kInvalidLocator;
 
-    otbrLog(OTBR_LOG_DEBUG, "Relay transmit:", payload, length);
+    otbrDump(OTBR_LOG_DEBUG, "Relay transmit:", payload, length);
 
     for (const Tlv *tlv = reinterpret_cast<const Tlv *>(payload); tlv < reinterpret_cast<const Tlv *>(payload + length);
          tlv = tlv->GetNext())
@@ -197,7 +192,7 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
 
     if (rloc == kInvalidLocator)
     {
-        otbrLog(OTBR_LOG_ERR, "joiner rloc not found");
+        otbrLog(OTBR_LOG_ERR, "Joiner Router Locator not found!");
         ExitNow();
     }
 
@@ -205,8 +200,8 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
         Ip6Address     addr(rloc);
         uint8_t        tokenLength = 0;
         const uint8_t *token = aMessage.GetToken(tokenLength);
-        Coap::Message *message = mCoap->NewMessage(Coap::Message::kCoapTypeNonConfirmable,
-                                                   Coap::Message::kCoapRequestPost,
+        Coap::Message *message = mCoap->NewMessage(Coap::kTypeNonConfirmable,
+                                                   Coap::kCodePost,
                                                    token, tokenLength);
 
         message->SetPath(OPENTHREAD_URI_RELAY_TX);
@@ -279,7 +274,7 @@ void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session:
     case Dtls::Session::kStateError:
     case Dtls::Session::kStateExpired:
         mDtlsSession = NULL;
-        otbrLog(OTBR_LOG_WARNING, "Dtls session ended");
+        otbrLog(OTBR_LOG_WARNING, "DTLS session ended.");
         break;
 
     default:

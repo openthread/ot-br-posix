@@ -75,23 +75,91 @@ public:
     MessageLibcoap(coap_pdu_t *aPdu) :
         mPdu(aPdu) {}
 
-    virtual ~MessageLibcoap(void) {};
+    virtual ~MessageLibcoap(void) {}
 
+    /**
+     * This method returns the CoAP code of this message.
+     *
+     * @returns the CoAP code of the message.
+     *
+     */
     Code GetCode(void) const;
+
+    /**
+     * This method sets the CoAP code of this message.
+     *
+     * @param[in]   aCode   The CoAP code.
+     *
+     */
     void SetCode(Code aCode);
 
+    /**
+     * This method returns the CoAP type of this message.
+     *
+     * @returns The CoAP type of the message.
+     *
+     */
     Type GetType(void) const;
+
+    /**
+     * This method sets the CoAP type of this message.
+     *
+     * @param[in]   aType   The CoAP type.
+     *
+     */
     void SetType(Type aType);
 
+    /**
+     * This method returns the token of this message.
+     *
+     * @param[out]    aLength       Number of bytes of the token.
+     *
+     * @returns A pointer to the token.
+     *
+     */
     const uint8_t *GetToken(uint8_t &aLength) const;
+
+    /**
+     * This method sets the token of this message.
+     *
+     * @param[in]   aToken          A pointer to the token.
+     * @param[in]   aLength         Number of bytes of the token.
+     *
+     */
     void SetToken(const uint8_t *aToken, uint8_t aLength);
 
+    /**
+     * This method sets the CoAP Uri Path of this message.
+     *
+     * @param[in]   aPath           A pointer to to the null-terminated string of Uri Path.
+     *
+     */
     void SetPath(const char *aPath);
 
+    /**
+     * This method returns the payload of this message.
+     *
+     * @param[out]  aLength         Number of bytes of the payload.
+     *
+     * @returns A pointer to the payload buffer.
+     */
     const uint8_t *GetPayload(uint16_t &aLength) const;
 
+    /**
+     * This method sets the payload of this message.
+     *
+     * @param[in]   aPayload        A pointer to the payload.
+     * @param[in]   aLength         Number of bytes of the payload.
+     *
+     * @returns A pointer to the payload buffer.
+     */
     void SetPayload(const uint8_t *aPayload, uint16_t aLength);
 
+    /**
+     * This method returns the underlying libcoap PDU.
+     *
+     * @returns A pointer to the underlying libcoap PDU.
+     */
     coap_pdu_t *GetPdu(void) { return mPdu; }
 
     /**
@@ -122,7 +190,7 @@ public:
      *
      * @param[in]   aNetworkSender      A pointer to the function that actually sends the data.
      * @param[in]   aResources          A pointer to the Resource array. The last resource must be {0, 0}.
-     * @param[in]   aContext    A pointer to application-specific context.
+     * @param[in]   aContext            A pointer to application-specific context.
      *
      */
     AgentLibcoap(NetworkSender aNetworkSender, const Resource *aResources, void *aContext);
@@ -130,10 +198,10 @@ public:
     /**
      * This method processes this CoAP message in @p aBuffer, which can be a request or response.
      *
-     * @param[in]   aBuffer     A pointer to decrypted data.
-     * @param[in]   aLength     Number of bytes of @p aBuffer.
-     * @param[in]   aIp6        A pointer to the source Ipv6 address of this request.
-     * @param[in]   aPort       Source UDP port of this request.
+     * @param[in]   aBuffer         A pointer to decrypted data.
+     * @param[in]   aLength         Number of bytes of @p aBuffer.
+     * @param[in]   aIp6            A pointer to the source Ipv6 address of this request.
+     * @param[in]   aPort           Source UDP port of this request.
      *
      */
     void Input(const void *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort);
@@ -141,10 +209,11 @@ public:
     /**
      * This method sends the CoAP message, which can be a request or response.
      *
-     * @param[in]   aMessage    A reference to the message to send.
-     * @param[in]   aIp6        A pointer to the source Ipv6 address of this request.
-     * @param[in]   aPort       Source UDP port of this request.
-     * @param[in]   aHandler    A function poiner to be called when response is received if the message is a request.
+     * @param[in]   aMessage        A reference to the message to send.
+     * @param[in]   aIp6            A pointer to the source Ipv6 address of this request.
+     * @param[in]   aPort           Source UDP port of this request.
+     * @param[in]   aHandler        A function poiner to be called when response is received if
+     *                              the message is a request.
      *
      */
     void Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, ResponseHandler aHandler);
@@ -157,15 +226,15 @@ public:
      * @param[in]   aToken          The CoAP token.
      * @param[in]   aTokenLength    Number of bytes in @p aToken.
      *
-     * @returns The newly CoAP message.
+     * @returns The pointer to the newly created CoAP message.
      *
      */
-    Message *NewMessage(Message::Type aType, Message::Code aCode, const uint8_t *aToken, uint8_t aTokenLength);
+    Message *NewMessage(Type aType, Code aCode, const uint8_t *aToken, uint8_t aTokenLength);
 
     /**
      * This method frees a CoAP message.
      *
-     * @param[in]   aMessage    A pointer to the message to free.
+     * @param[in]   aMessage        A pointer to the message to free.
      *
      */
     virtual void FreeMessage(Message *aMessage);

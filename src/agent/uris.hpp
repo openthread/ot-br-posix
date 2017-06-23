@@ -110,7 +110,7 @@
 #define OPENTHREAD_URI_COMMISSIONER_SET       "c/cs"
 
 /**
- * @def OPENTHREAD_URI_COMMISSIONER_PET
+ * @def OPENTHREAD_URI_COMMISSIONER_PETITION
  *
  * The URI Path for Commissioner Petition.
  *
@@ -118,7 +118,7 @@
 #define OPENTHREAD_URI_COMMISSIONER_PETITION   "c/cp"
 
 /**
- * @def OPENTHREAD_URI_COMMISSIONER_KA
+ * @def OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE
  *
  * The URI Path for Commissioner Keep Alive.
  *

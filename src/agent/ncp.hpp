@@ -57,8 +57,8 @@ namespace Ncp {
  */
 enum
 {
-    kEventPSKc           = 0x40 + 3,
-    kEventTmfProxyStream = 0x1500 + 18,
+    kEventPSKc           = 0x40 + 3,    ///< PSKc arrived.
+    kEventTmfProxyStream = 0x1500 + 18, ///< TMF proxy stream arrived.
 };
 
 /**
@@ -69,25 +69,28 @@ class Controller : public EventEmitter
 {
 public:
     /**
-     * This method request the NCP to start the border agent proxy service.
+     * This method request the NCP to start the TMF proxy service.
      *
-     * @returns 0 on success, otherwise failure.
+     * @retval  OTBR_ERROR_NONE         Successfully started TMF proxy.
+     * @retval  OTBR_ERROR_ERRNO        Failed to start, error info in errno.
      *
      */
     virtual otbrError TmfProxyStart(void) = 0;
 
     /**
-     * This method request the NCP to stop the border agent proxy service.
+     * This method request the NCP to stop the TMF proxy service.
      *
-     * @returns 0 on success, otherwise failure.
+     * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
+     * @retval  OTBR_ERROR_ERRNO        Failed to send the packet.
      *
      */
     virtual otbrError TmfProxyStop(void) = 0;
 
     /**
-     * This method sends a packet through border agent proxy service.
+     * This method sends a packet through TMF proxy service.
      *
-     * @returns 0 on success, otherwise failure.
+     * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
+     * @retval  OTBR_ERROR_ERRNO        Failed to send the packet.
      *
      */
     virtual otbrError TmfProxySend(const uint8_t *aBuffer, uint16_t aLength,
@@ -98,7 +101,8 @@ public:
      *
      * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
      * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
+     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
+     * @param[inout]    aMaxFd          A reference to the current max fd.
      *
      */
     virtual void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd) = 0;
@@ -106,8 +110,10 @@ public:
     /**
      * This method performs the DTLS processing.
      *
-     * @param[in]   aReadFdSet      A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet     A reference to fd_set ready for writing.
+     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
+     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
+     *
      */
     virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) = 0;
 
@@ -136,8 +142,8 @@ public:
      *
      * @param[in]   aEvent  The event id to request.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully requested the event.
-     * @retval  OTBR_ERROR_ERRNO    Failed to request the event.
+     * @retval  OTBR_ERROR_NONE         Successfully requested the event.
+     * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
      *
      */
     virtual otbrError RequestEvent(int aEvent) = 0;
