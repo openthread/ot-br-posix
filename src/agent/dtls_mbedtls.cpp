@@ -37,6 +37,7 @@
 
 #include <errno.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -426,12 +427,13 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
     for (SessionSet::iterator it = mSessions.begin();
          it != mSessions.end(); )
     {
-        boost::shared_ptr<MbedtlsSession> session = *it;
+        MbedtlsSession *session = *it;
 
         if (session->GetExpiration() <= now)
         {
             otbrLog(OTBR_LOG_INFO, "DTLS session timeout");
             HandleSessionState(*session, Session::kStateExpired);
+            delete session;
             it = mSessions.erase(it);
         }
         else if (session->GetState() == Session::kStateReady ||
@@ -458,6 +460,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
         }
         else
         {
+            delete session;
             it = mSessions.erase(it);
         }
     }
@@ -527,12 +530,12 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
     VerifyOrExit(memcmp(dst.sin6_addr.s6_addr, in6addr_any.s6_addr, sizeof(dst.sin6_addr)) != 0, ret = -1);
     // TODO Should check if this client has an existing session.
     {
-        mbedtls_net_context               net = {
+        mbedtls_net_context net = {
             mSocket
         };
-        boost::shared_ptr<MbedtlsSession> session(new MbedtlsSession(*this, net, src, dst));
+        MbedtlsSession     *session = new MbedtlsSession(*this, net, src, dst);
         mSessions.push_back(session);
-        mbedtls_ssl_conf_export_keys_cb(&mConf, MbedtlsSession::ExportKeys, session.get());
+        mbedtls_ssl_conf_export_keys_cb(&mConf, MbedtlsSession::ExportKeys, session);
         session->Process();
     }
 
@@ -551,8 +554,8 @@ void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
          it != mSessions.end();
          ++it)
     {
-        boost::shared_ptr<MbedtlsSession> session = *it;
-        int                               fd = session->GetFd();
+        MbedtlsSession *session = *it;
+        int             fd = session->GetFd();
 
         if (FD_ISSET(fd, &aReadFdSet))
         {
@@ -574,6 +577,15 @@ void MbedtlsServer::SetPSK(const uint8_t *aPSK, uint8_t aLength)
 
 MbedtlsServer::~MbedtlsServer(void)
 {
+    SessionSet::iterator it = mSessions.begin();
+
+    while (it != mSessions.end())
+    {
+        MbedtlsSession *session = *it;
+        delete session;
+        it = mSessions.erase(it);
+    }
+
     close(mSocket);
     mbedtls_ssl_config_free(&mConf);
     mbedtls_ssl_cookie_free(&mCookie);

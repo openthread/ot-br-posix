@@ -41,8 +41,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <boost/shared_ptr.hpp>
-
 extern "C" {
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -267,7 +265,7 @@ public:
     void SetSeed(const uint8_t *aSeed, uint16_t aLength);
 
 private:
-    typedef std::vector< boost::shared_ptr<MbedtlsSession> > SessionSet;
+    typedef std::vector<MbedtlsSession *> SessionSet;
     enum
     {
         kMaxSizeOfPSK = 32, ///< Max size of PSK in bytes.
