@@ -149,23 +149,20 @@ private:
 
     static void HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments);
 
-    /**
-     * Border agent resources for Thread network.
-     *
-     */
-    static const Coap::Resource kCoapResources[];
+    // Border agent resources for external commissioner.
+    Coap::Resource mCommissionerPetitionHandler;
+    Coap::Resource mCommissionerKeepAliveHandler;
+    Coap::Resource mCommissionerSetHandler;
+    Coap::Resource mCommissionerRelayTransmitHandler;
 
-    /**
-     * Border agent resources for external commissioner.
-     *
-     */
-    static const Coap::Resource kCoapsResources[];
+    // Border agent resources for Thread network.
+    Coap::Resource   mCommissionerRelayReceiveHandler;
 
-    Ncp::Controller            *mNcpController;
-    Coap::Agent                *mCoap;
-    Coap::Agent                *mCoaps;
-    Dtls::Server               *mDtlsServer;
-    Dtls::Session              *mDtlsSession;
+    Ncp::Controller *mNcpController;
+    Coap::Agent     *mCoap;
+    Coap::Agent     *mCoaps;
+    Dtls::Server    *mDtlsServer;
+    Dtls::Session   *mDtlsSession;
 };
 
 /**

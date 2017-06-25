@@ -29,6 +29,8 @@
 #ifndef COAP_LIBCOAP_HPP_
 #define COAP_LIBCOAP_HPP_
 
+#include <map>
+
 #include "libcoap.h"
 #include "coap.hpp"
 
@@ -189,11 +191,10 @@ public:
      * The constructor to initialize a CoAP agent.
      *
      * @param[in]   aNetworkSender      A pointer to the function that actually sends the data.
-     * @param[in]   aResources          A pointer to the Resource array. The last resource must be {0, 0}.
      * @param[in]   aContext            A pointer to application-specific context.
      *
      */
-    AgentLibcoap(NetworkSender aNetworkSender, const Resource *aResources, void *aContext);
+    AgentLibcoap(NetworkSender aNetworkSender, void *aContext);
 
     /**
      * This method processes this CoAP message in @p aBuffer, which can be a request or response.
@@ -209,14 +210,18 @@ public:
     /**
      * This method sends the CoAP message, which can be a request or response.
      *
-     * @param[in]   aMessage        A reference to the message to send.
-     * @param[in]   aIp6            A pointer to the source Ipv6 address of this request.
-     * @param[in]   aPort           Source UDP port of this request.
-     * @param[in]   aHandler        A function poiner to be called when response is received if
-     *                              the message is a request.
+     * @param[in]   aMessage    A reference to the message to send.
+     * @param[in]   aIp6        A pointer to the source Ipv6 address of this request.
+     * @param[in]   aPort       Source UDP port of this request.
+     * @param[in]   aHandler    A function poiner to be called when response is received if the message is a request.
+     * @param[in]   aContext    A pointer to application-specific context.
+     *
+     * @retval      OTBR_ERROR_NONE     Successfully sent the message.
+     * @retval      OTBR_ERROR_ERRNO    Failed to send the message.
+     *                                  - EMSGSIZE No space for response handler.
      *
      */
-    void Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, ResponseHandler aHandler);
+    otbrError Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, ResponseHandler aHandler, void *aContext);
 
     /**
      * This method creates a CoAP message with the given arguments.
@@ -239,7 +244,36 @@ public:
      */
     virtual void FreeMessage(Message *aMessage);
 
+    /**
+     * This method registers a CoAP resource.
+     *
+     * @param[in]   aResource       A reference to the resource.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully added the resource.
+     * @retval  OTBR_ERROR_ERRNO    Failed to added the resource.
+     *
+     */
+    otbrError AddResource(const Resource &aResource);
+
+    /**
+     * This method Deregisters a CoAP resource.
+     *
+     * @param[in]   aResource       A reference to the resource.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully added the resource.
+     * @retval  OTBR_ERROR_ERRNO    Failed to added the resource.
+     *
+     */
+    otbrError RemoveResource(const Resource &aResource);
+
 private:
+    typedef std::map<struct coap_resource_t *, const Resource *> Resources;
+
+    struct MessageMeta
+    {
+        ResponseHandler mHandler;
+        void           *mContext;
+    };
 
     static void HandleRequest(coap_context_t *aCoap,
                               struct coap_resource_t *aResource,
@@ -248,6 +282,12 @@ private:
                               coap_pdu_t *aRequest,
                               str *aToken,
                               coap_pdu_t *aResponse);
+
+    void HandleRequest(struct coap_resource_t *aResource,
+                       coap_pdu_t *aRequest,
+                       coap_pdu_t *aResponse,
+                       const uint8_t *aAddress,
+                       uint16_t aPort);
 
     static void HandleResponse(coap_context_t *ctx,
                                const coap_endpoint_t *local_interface,
@@ -261,11 +301,11 @@ private:
                                const coap_address_t *aDestination,
                                unsigned char *aBuffer, size_t aLength);
 
-    const Resource *mResources;
-    NetworkSender   mNetworkSender;
-    void           *mContext;
-    coap_context_t  mCoap;
-    coap_packet_t   mPacket;
+    Resources      mResources;
+    NetworkSender  mNetworkSender;
+    void          *mContext;
+    coap_context_t mCoap;
+    coap_packet_t  mPacket;
 };
 
 /**

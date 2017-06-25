@@ -37,6 +37,8 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include "common/types.hpp"
+
 namespace ot {
 
 namespace BorderRouter {
@@ -208,8 +210,14 @@ typedef void (*ResponseHandler)(const Message &aMessage, void *aContext);
  */
 struct Resource
 {
+    void          *mContext; ///< A pointer to application-specific context.
     const char    *mPath;    ///< The CoAP Uri Path.
     RequestHandler mHandler; ///< The function to handle request to mPath.
+
+    Resource(const char *aPath, RequestHandler aHandler, void *aContext) :
+        mContext(aContext),
+        mPath(aPath),
+        mHandler(aHandler) {}
 };
 
 /**
@@ -268,26 +276,53 @@ public:
     virtual void FreeMessage(Message *aMessage) = 0;
 
     /**
+     * This method registers a CoAP resource.
+     *
+     * @param[in]   aResource       A reference to the resource.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully added the resource.
+     * @retval  OTBR_ERROR_ERRNO    Failed to added the resource.
+     *
+     */
+    virtual otbrError AddResource(const Resource &aResource) = 0;
+
+    /**
+     * This method Deregisters a CoAP resource.
+     *
+     * @param[in]   aResource       A reference to the resource.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully added the resource.
+     * @retval  OTBR_ERROR_ERRNO    Failed to added the resource.
+     *
+     */
+    virtual otbrError RemoveResource(const Resource &aResource) = 0;
+
+    /**
      * This method sends the CoAP message, which can be a request or response.
      *
      * @param[in]   aMessage    A reference to the message to send.
      * @param[in]   aIp6        A pointer to the source Ipv6 address of this request.
      * @param[in]   aPort       Source UDP port of this request.
      * @param[in]   aHandler    A function poiner to be called when response is received if the message is a request.
+     * @param[in]   aContext    A pointer to application-specific context.
+     *
+     * @retval      OTBR_ERROR_NONE     Successfully sent the message.
+     * @retval      OTBR_ERROR_ERRNO    Failed to send the message.
+     *                                  - EMSGSIZE No space for response handler.
      *
      */
-    virtual void Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, ResponseHandler aHandler) = 0;
+    virtual otbrError Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, ResponseHandler aHandler,
+                           void *aContext) = 0;
 
     /**
      * This method creates a CoAP agent.
      *
      * @param[in]   aNetworkSender  A pointer to the function that actually sends the data.
-     * @param[in]   aResources      A pointer to the Resource array. The last resource must be {0, 0}.
      * @param[in]   aContext        A pointer to application-specific context.
      *
      * @returns The pointer to CoAP agent.
      */
-    static Agent *Create(NetworkSender aNetworkSender, const Resource *aResources = NULL, void *aContext = NULL);
+    static Agent *Create(NetworkSender aNetworkSender, void *aContext = NULL);
 
     /**
      * This method destroys a CoAP agent.

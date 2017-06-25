@@ -160,13 +160,6 @@ void HandleJoinerFinalize(const Coap::Resource &aResource, const Coap::Message &
                           Coap::Message &aResponse,
                           const uint8_t *aIp6, uint16_t aPort, void *aContext);
 
-const Coap::Resource kCoapResources[] =
-{
-    { OPENTHREAD_URI_RELAY_RX, HandleRelayReceive },
-    { OPENTHREAD_URI_JOINER_FINALIZE, HandleJoinerFinalize },
-    { 0, 0 },
-};
-
 inline uint16_t LengthOf(const void *aStart, const void *aEnd)
 {
     return static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart);
@@ -289,7 +282,7 @@ int SendRelayTransmit(Context &aContext)
                                              reinterpret_cast<const uint8_t *>(&token), sizeof(token));
         message->SetPath("c/tx");
         message->SetPayload(payload, LengthOf(payload, responseTlv));
-        aContext.mCoap->Send(*message, NULL, 0, NULL);
+        aContext.mCoap->Send(*message, NULL, 0, NULL, &aContext);
         aContext.mCoap->FreeMessage(message);
     }
 
@@ -397,7 +390,7 @@ int CommissionerPetition(Context &aContext)
 
     message->SetPath("c/cp");
     message->SetPayload(buffer, LengthOf(buffer, tlv));
-    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerPetition);
+    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerPetition, &aContext);
     aContext.mCoap->FreeMessage(message);
 
     do
@@ -481,7 +474,7 @@ int CommissionerSet(Context &aContext)
 
     message->SetPath("c/cs");
     message->SetPayload(buffer, LengthOf(buffer, tlv));
-    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerSetResponse);
+    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerSetResponse, &aContext);
     aContext.mCoap->FreeMessage(message);
 
     do
@@ -564,7 +557,7 @@ int CommissionerKeepAlive(Context &aContext)
 
     message->SetPath("c/ca");
     message->SetPayload(buffer, LengthOf(buffer, tlv));
-    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerKeepAlive);
+    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerKeepAlive, &aContext);
     aContext.mCoap->FreeMessage(message);
 
     do
@@ -708,6 +701,9 @@ int run(Context &context)
     mbedtls_ssl_config           conf;
     mbedtls_timing_delay_context timer;
 
+    Coap::Resource relayReceiveHandler(OPENTHREAD_URI_RELAY_RX, HandleRelayReceive, &context);
+    Coap::Resource joinerFinalizeHandler(OPENTHREAD_URI_JOINER_FINALIZE, HandleJoinerFinalize, &context);
+
     context.mSsl = &ssl;
     context.mNet = &client_fd;
 #if defined(MBEDTLS_DEBUG_C)
@@ -776,7 +772,11 @@ int run(Context &context)
     }
 
     context.mState = kStateConnected;
-    context.mCoap = Coap::Agent::Create(SendCoap, kCoapResources, &context);
+    context.mCoap = Coap::Agent::Create(SendCoap, &context);
+
+    SuccessOrExit(ret = context.mCoap->AddResource(relayReceiveHandler));
+    SuccessOrExit(ret = context.mCoap->AddResource(joinerFinalizeHandler));
+
     SuccessOrExit(ret = CommissionerPetition(context));
     SuccessOrExit(ret = CommissionerSet(context));
     SuccessOrExit(ret = CommissionerServe(context));
