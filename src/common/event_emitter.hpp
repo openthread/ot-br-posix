@@ -38,6 +38,10 @@ namespace ot {
 
 namespace BorderRouter {
 
+/**
+ * This class implements the basic functionality of an event emitter.
+ *
+ */
 class EventEmitter
 {
     /**

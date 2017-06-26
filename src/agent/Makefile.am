@@ -49,6 +49,7 @@ otbr_agent_CPPFLAGS    = \
 noinst_LTLIBRARIES = libotbr-agent.la
 
 libotbr_agent_la_SOURCES                                      = \
+    agent_instance.cpp                                          \
     border_agent.cpp                                            \
     coap_libcoap.cpp                                            \
     dtls_mbedtls.cpp                                            \
@@ -86,6 +87,7 @@ libotbr_agent_la_CPPFLAGS                                                  = \
     $(NULL)
 
 noinst_HEADERS        = \
+    agent_instance.hpp  \
     border_agent.hpp    \
     coap.hpp            \
     coap_libcoap.hpp    \

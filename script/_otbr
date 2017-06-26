@@ -50,6 +50,7 @@ otbr_install()
     make -j$(getconf _NPROCESSORS_ONLN)
     sudo make install
     if which systemctl; then
+        sudo systemctl reload dbus
         sudo systemctl daemon-reload
         sudo systemctl enable wpantund otbr-web otbr-agent || true
         sudo systemctl is-enabled wpantund || die 'Failed to enable wpantund!'

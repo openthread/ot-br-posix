@@ -652,7 +652,7 @@ int CommissionerServe(Context &aContext)
 
         FD_SET(aContext.mNet->fd, &readFdSet);
         FD_SET(aContext.mSocket, &readFdSet);
-        aContext.mDtlsServer->UpdateFdSet(readFdSet, writeFdSet, maxFd, timeout);
+        aContext.mDtlsServer->UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
         ret = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
         if ((ret < 0) && (errno != EINTR))
         {
@@ -671,7 +671,7 @@ int CommissionerServe(Context &aContext)
             VerifyOrExit(ret > 0 || ret == MBEDTLS_ERR_SSL_TIMEOUT);
         }
 
-        aContext.mDtlsServer->Process(readFdSet, writeFdSet);
+        aContext.mDtlsServer->Process(readFdSet, writeFdSet, errorFdSet);
     }
 
     aContext.mSession->Close();

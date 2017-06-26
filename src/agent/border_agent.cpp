@@ -28,13 +28,14 @@
 
 /**
  * @file
- *   The file implements the Thread border agent interface.
+ *   The file implements the Thread border agent.
  */
 
 #include "border_agent.hpp"
 
 #include <stdexcept>
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -202,16 +203,16 @@ exit:
     return;
 }
 
-BorderAgent::BorderAgent(const char *aInterfaceName) :
+BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
     mCommissionerPetitionHandler(OPENTHREAD_URI_COMMISSIONER_PETITION, ForwardCommissionerRequest, this),
     mCommissionerKeepAliveHandler(OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this),
     mCommissionerSetHandler(OPENTHREAD_URI_COMMISSIONER_SET, ForwardCommissionerRequest, this),
     mCommissionerRelayTransmitHandler(OPENTHREAD_URI_RELAY_TX, HandleRelayTransmit, this),
     mCommissionerRelayReceiveHandler(OPENTHREAD_URI_RELAY_RX, BorderAgent::HandleRelayReceive, this),
-    mNcpController(Ncp::Controller::Create(aInterfaceName)),
-    mCoap(Coap::Agent::Create(SendCoap, this)),
+    mCoap(aCoap),
+    mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this)),
     mCoaps(Coap::Agent::Create(SendCoaps, this)),
-    mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
+    mNcp(aNcp)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -222,19 +223,28 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
 
     SuccessOrExit(error = mCoap->AddResource(mCommissionerRelayReceiveHandler));
 
-    SuccessOrExit(error = mNcpController->TmfProxyStart());
+    mNcp->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
 
-    mNcpController->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
-    mNcpController->On(Ncp::kEventTmfProxyStream, FeedCoap, this);
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "Failed to create border agent: %d!", error);
+        throw std::runtime_error("Failed to create border agent!");
+    }
+}
+
+otbrError BorderAgent::Start(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
 
     {
-        const uint8_t *pskc = mNcpController->GetPSKc();
+        const uint8_t *pskc = mNcp->GetPSKc();
         VerifyOrExit(pskc != NULL, error = OTBR_ERROR_ERRNO);
         mDtlsServer->SetPSK(pskc, kSizePSKc);
     }
 
     {
-        const uint8_t *eui64 = mNcpController->GetEui64();
+        const uint8_t *eui64 = mNcp->GetEui64();
         VerifyOrExit(eui64 != NULL, error = OTBR_ERROR_ERRNO);
         mDtlsServer->SetSeed(eui64, kSizeEui64);
     }
@@ -244,17 +254,16 @@ BorderAgent::BorderAgent(const char *aInterfaceName) :
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to create border agent!");
-        throw std::runtime_error("Failed to create border agent!");
+        otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %d!", error);
     }
+
+    return error;
 }
 
 BorderAgent::~BorderAgent(void)
 {
     Dtls::Server::Destroy(mDtlsServer);
     Coap::Agent::Destroy(mCoaps);
-    Coap::Agent::Destroy(mCoap);
-    Ncp::Controller::Destroy(mNcpController);
 }
 
 void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState)
@@ -278,21 +287,6 @@ void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session:
     }
 }
 
-ssize_t BorderAgent::SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                              void *aContext)
-{
-    return static_cast<BorderAgent *>(aContext)->SendCoap(aBuffer, aLength, aIp6, aPort);
-}
-
-ssize_t BorderAgent::SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort)
-{
-    const Ip6Address *addr = reinterpret_cast<const Ip6Address *>(aIp6);
-    uint16_t          rloc = addr->ToLocator();
-
-    mNcpController->TmfProxySend(aBuffer, aLength, rloc, aPort);
-    return aLength;
-}
-
 ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
                                void *aContext)
 {
@@ -300,20 +294,6 @@ ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const u
     (void)aIp6;
     (void)aPort;
     return static_cast<BorderAgent *>(aContext)->mDtlsSession->Write(aBuffer, aLength);
-}
-
-void BorderAgent::FeedCoap(void *aContext, int aEvent, va_list aArguments)
-{
-    assert(aEvent == Ncp::kEventTmfProxyStream);
-
-    BorderAgent   *borderAgent = static_cast<BorderAgent *>(aContext);
-    const uint8_t *buffer = va_arg(aArguments, const uint8_t *);
-    uint16_t       length = va_arg(aArguments, int);
-    uint16_t       locator = va_arg(aArguments, int);
-    uint16_t       port = va_arg(aArguments, int);
-    Ip6Address     addr(locator);
-
-    borderAgent->mCoap->Input(buffer, length, addr.m8, port);
 }
 
 void BorderAgent::FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext)
@@ -326,14 +306,12 @@ void BorderAgent::FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aCon
 void BorderAgent::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
                               timeval &aTimeout)
 {
-    mNcpController->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd);
-    mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aMaxFd, aTimeout);
+    mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
 }
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    mNcpController->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
-    mDtlsServer->Process(aReadFdSet, aWriteFdSet);
+    mDtlsServer->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
 }
 
 void BorderAgent::HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments)

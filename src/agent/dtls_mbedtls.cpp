@@ -407,7 +407,8 @@ exit:
     return ret;
 }
 
-void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout)
+void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+                                timeval &aTimeout)
 {
     uint64_t now = GetNow();
     uint64_t timeout = aTimeout.tv_sec * 1000 + aTimeout.tv_sec / 1000;
@@ -464,6 +465,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aM
     aTimeout.tv_usec = (timeout % 1000) * 1000;
 
     (void)aWriteFdSet;
+    (void)aErrorFdSet;
 }
 
 void MbedtlsServer::HandleSessionState(Session &aSession, Session::State aState)
@@ -475,7 +477,7 @@ void MbedtlsServer::HandleSessionState(Session &aSession, Session::State aState)
     }
 }
 
-void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
+void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
     uint8_t       packet[kMaxSizeOfPacket];
     uint8_t       control[kMaxSizeOfControl];
@@ -534,9 +536,10 @@ exit:
     }
 
     (void)aWriteFdSet;
+    (void)aErrorFdSet;
 }
 
-void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
+void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
     for (SessionSet::iterator it = mSessions.begin();
          it != mSessions.end();
@@ -552,7 +555,9 @@ void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet)
         }
     }
 
-    ProcessServer(aReadFdSet, aWriteFdSet);
+    ProcessServer(aReadFdSet, aWriteFdSet, aErrorFdSet);
+
+    (void)aErrorFdSet;
 }
 
 otbrError MbedtlsServer::SetPSK(const uint8_t *aPSK, uint8_t aLength)

@@ -79,7 +79,7 @@ namespace BorderRouter {
 namespace Dtls {
 
 /**
- * @addtogroup border-agent-dtls
+ * @addtogroup border-router-dtls
  *
  * @brief
  *   This module includes definition for mbedTLS-based DTLS service.
@@ -244,20 +244,22 @@ public:
      *
      * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
      * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
+     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
      * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
      * @param[inout]    aTimeout        A reference to the timeout.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, int &aMaxFd, timeval &aTimeout);
+    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
     /**
      * This method performs the DTLS processing.
      *
      * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
      * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet);
+    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
     /**
      * This method updates the PSK of TLS_ECJPAKE_WITH_AES_128_CCM_8 used by this server.
@@ -291,7 +293,7 @@ private:
     };
 
     void HandleSessionState(Session &aSession, Session::State aState);
-    void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet);
+    void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
     otbrError Bind(void);
 
     SessionSet                mSessions;
