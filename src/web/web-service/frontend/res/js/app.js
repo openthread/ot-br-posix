@@ -28,7 +28,7 @@
 
 (function() {
     angular
-        .module('StarterApp', ['ngMaterial'])
+        .module('StarterApp', ['ngMaterial', 'ngMessages'])
         .controller('AppCtrl', AppCtrl)
         .service('sharedProperties', function() {
             var index = 0;
@@ -184,7 +184,12 @@
                 );
             };
 
-            $scope.join = function() {
+            $scope.join = function(valid) {
+                if (!valid)
+                {
+                    return;
+                }
+
                 if ($scope.thread.defaultRoute == null) {
                     $scope.thread.defaultRoute = false;
                 };
@@ -226,7 +231,12 @@
         };
 
 
-        $scope.showConfirm = function(ev) {
+        $scope.showConfirm = function(ev, valid) {
+            if (!valid)
+            {
+                return;
+            }
+
             var confirm = $mdDialog.confirm()
                 .title('Are you sure you want to Form the Thread Network?')
                 .textContent('')

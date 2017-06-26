@@ -33,6 +33,7 @@ js_DATA                                              = \
     repo/angular.min.js                                \
     repo/angular-animate.min.js                        \
     repo/angular-aria.min.js                           \
+    repo/angular-messages.min.js                       \
     $(NULL)
 
 EXTRA_DIST                                           = \
