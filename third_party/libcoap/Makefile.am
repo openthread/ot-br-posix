@@ -34,8 +34,11 @@ override CFLAGS          := $(filter-out -pedantic-errors -Werror,$(CFLAGS))
 
 # Passing --disable-examples for distcheck.
 
-DISTCHECK_CONFIGURE_FLAGS = "--disable-examples"
+DISTCHECK_CONFIGURE_FLAGS = "--disable-examples --disable-documentation"
 
 SUBDIRS                   = repo
+
+install:
+	@echo 'Skip installing libcoap since it is static linked.'
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

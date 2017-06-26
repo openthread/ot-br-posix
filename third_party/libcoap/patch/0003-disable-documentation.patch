@@ -1,0 +1,13 @@
+diff --git a/repo/Makefile.am b/repo/Makefile.am
+index fe467ec..d8cd66d 100644
+--- a/repo/Makefile.am
++++ b/repo/Makefile.am
+@@ -29,7 +29,7 @@ EXTRA_DIST = \
+ 
+ AM_CFLAGS = -I$(top_builddir)/include/coap -I$(top_srcdir)/include/coap $(WARNING_CFLAGS) -std=c99
+ 
+-SUBDIRS = . $(DOC_DIR) tests examples
++SUBDIRS = . doc tests examples
+ 
+ ## Define a libtool archive target "libcoap-@LIBCOAP_API_VERSION@.la", with
+ ## @LIBCOAP_API_VERSION@ substituted into the generated Makefile at configure
