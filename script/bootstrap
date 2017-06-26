@@ -61,6 +61,9 @@ install_packages_apt()
 
     # nat64
     sudo apt-get install -y tayga iptables
+
+    # libjsoncpp
+    sudo apt-get install -y libjsoncpp-dev
 }
 
 install_packages_opkg()

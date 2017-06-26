@@ -72,6 +72,7 @@ linux)
         libavahi-common-dev      \
         libavahi-client-dev      \
         avahi-daemon             \
+        libjsoncpp-dev           \
         $NULL
 
     [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
