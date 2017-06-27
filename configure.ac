@@ -434,7 +434,7 @@ tools/Makefile
 doc/Makefile
 ])
 
-ac_configure_args="$ac_configure_args --disable-examples"
+ac_configure_args="$ac_configure_args --disable-examples --disable-documentation"
 AC_CONFIG_SUBDIRS([third_party/libcoap/repo])
 #
 # Generate the auto-generated files for the package
