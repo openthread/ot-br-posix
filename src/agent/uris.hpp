@@ -30,99 +30,99 @@
 #define URIS_HPP_
 
 /**
- * @def OPENTHREAD_URI_RELAY_RX
+ * @def OT_URI_PATH_RELAY_RX
  *
  * The URI Path for Relay RX.
  *
  */
-#define OPENTHREAD_URI_RELAY_RX               "c/rx"
+#define OT_URI_PATH_RELAY_RX               "c/rx"
 
 /**
- * @def OPENTHREAD_URI_RELAY_TX
+ * @def OT_URI_PATH_RELAY_TX
  *
  * The URI Path for Relay TX.
  *
  */
-#define OPENTHREAD_URI_RELAY_TX               "c/tx"
+#define OT_URI_PATH_RELAY_TX               "c/tx"
 
 /**
- * @def OPENTHREAD_URI_JOINER_FINALIZE
+ * @def OT_URI_PATH_JOINER_FINALIZE
  *
  * The URI Path for Joiner Finalize
  *
  */
-#define OPENTHREAD_URI_JOINER_FINALIZE        "c/jf"
+#define OT_URI_PATH_JOINER_FINALIZE        "c/jf"
 
 /**
- * @def OPENTHREAD_URI_JOINER_ENTRUST
+ * @def OT_URI_PATH_JOINER_ENTRUST
  *
  * The URI Path for Joiner Entrust
  *
  */
-#define OPENTHREAD_URI_JOINER_ENTRUST         "c/je"
+#define OT_URI_PATH_JOINER_ENTRUST         "c/je"
 
 /**
- * @def OPENTHREAD_URI_LEADER_PETITION
+ * @def OT_URI_PATH_LEADER_PETITION
  *
  * The URI Path for Leader Petition
  *
  */
-#define OPENTHREAD_URI_LEADER_PETITION        "c/lp"
+#define OT_URI_PATH_LEADER_PETITION        "c/lp"
 
 /**
- * @def OPENTHREAD_URI_LEADER_KEEP_ALIVE
+ * @def OT_URI_PATH_LEADER_KEEP_ALIVE
  *
  * The URI Path for Leader Keep Alive
  *
  */
-#define OPENTHREAD_URI_LEADER_KEEP_ALIVE      "c/la"
+#define OT_URI_PATH_LEADER_KEEP_ALIVE      "c/la"
 
 /**
- * @def OPENTHREAD_URI_PANID_CONFLICT
+ * @def OT_URI_PATH_PANID_CONFLICT
  *
  * The URI Path for PAN ID Conflict
  *
  */
-#define OPENTHREAD_URI_PANID_CONFLICT         "c/pc"
+#define OT_URI_PATH_PANID_CONFLICT         "c/pc"
 
 /**
- * @def OPENTHREAD_URI_PANID_QUERY
+ * @def OT_URI_PATH_PANID_QUERY
  *
  * The URI Path for PAN ID Query
  *
  */
-#define OPENTHREAD_URI_PANID_QUERY            "c/pq"
+#define OT_URI_PATH_PANID_QUERY            "c/pq"
 
 /**
- * @def OPENTHREAD_URI_COMMISSIONER_GET
+ * @def OT_URI_PATH_COMMISSIONER_GET
  *
  * The URI Path for MGMT_COMMISSIONER_GET
  *
  */
-#define OPENTHREAD_URI_COMMISSIONER_GET       "c/cg"
+#define OT_URI_PATH_COMMISSIONER_GET       "c/cg"
 
 /**
- * @def OPENTHREAD_URI_COMMISSIONER_SET
+ * @def OT_URI_PATH_COMMISSIONER_SET
  *
  * The URI Path for MGMT_COMMISSIONER_SET
  *
  */
-#define OPENTHREAD_URI_COMMISSIONER_SET       "c/cs"
+#define OT_URI_PATH_COMMISSIONER_SET       "c/cs"
 
 /**
- * @def OPENTHREAD_URI_COMMISSIONER_PETITION
+ * @def OT_URI_PATH_COMMISSIONER_PETITION
  *
  * The URI Path for Commissioner Petition.
  *
  */
-#define OPENTHREAD_URI_COMMISSIONER_PETITION   "c/cp"
+#define OT_URI_PATH_COMMISSIONER_PETITION   "c/cp"
 
 /**
- * @def OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE
+ * @def OT_URI_PATH_COMMISSIONER_KEEP_ALIVE
  *
  * The URI Path for Commissioner Keep Alive.
  *
  */
-#define OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE "c/ca"
+#define OT_URI_PATH_COMMISSIONER_KEEP_ALIVE "c/ca"
 
 #endif // URIS_HPP_

@@ -701,8 +701,8 @@ int run(Context &context)
     mbedtls_ssl_config           conf;
     mbedtls_timing_delay_context timer;
 
-    Coap::Resource relayReceiveHandler(OPENTHREAD_URI_RELAY_RX, HandleRelayReceive, &context);
-    Coap::Resource joinerFinalizeHandler(OPENTHREAD_URI_JOINER_FINALIZE, HandleJoinerFinalize, &context);
+    Coap::Resource relayReceiveHandler(OT_URI_PATH_RELAY_RX, HandleRelayReceive, &context);
+    Coap::Resource joinerFinalizeHandler(OT_URI_PATH_JOINER_FINALIZE, HandleJoinerFinalize, &context);
 
     context.mSsl = &ssl;
     context.mNet = &client_fd;
