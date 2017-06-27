@@ -321,8 +321,6 @@ std::string WpanService::HandleAvailableNetworkRequest()
     int                      ret = ot::Dbus::kWpantundStatus_Ok;
 
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_LeaveFailed);
     VerifyOrExit(wpanController.Scan() == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_ScanFailed);
     mNetworksCount = wpanController.GetScanNetworksInfoCount();
