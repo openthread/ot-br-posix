@@ -116,13 +116,13 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 
     otbrLog(OTBR_LOG_INFO, "Forwarding request %s...", path);
 
-    if (!strcmp(OPENTHREAD_URI_COMMISSIONER_PETITION, path))
+    if (!strcmp(OT_URI_PATH_COMMISSIONER_PETITION, path))
     {
-        path = OPENTHREAD_URI_LEADER_PETITION;
+        path = OT_URI_PATH_LEADER_PETITION;
     }
-    else if (!strcmp(OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE, path))
+    else if (!strcmp(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, path))
     {
-        path = OPENTHREAD_URI_LEADER_KEEP_ALIVE;
+        path = OT_URI_PATH_LEADER_KEEP_ALIVE;
     }
 
     message->SetPath(path);
@@ -147,7 +147,7 @@ void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_
 
     Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
                                                 token, tokenLength);
-    message->SetPath(OPENTHREAD_URI_RELAY_RX);
+    message->SetPath(OT_URI_PATH_RELAY_RX);
     message->SetPayload(payload, length);
 
     mCoaps->Send(*message, NULL, 0, NULL, NULL);
@@ -189,7 +189,7 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
                                                    Coap::kCodePost,
                                                    token, tokenLength);
 
-        message->SetPath(OPENTHREAD_URI_RELAY_TX);
+        message->SetPath(OT_URI_PATH_RELAY_TX);
         message->SetPayload(payload, length);
         mCoap->Send(*message, addr.m8, kCoapUdpPort, NULL, NULL);
         mCoap->FreeMessage(message);
@@ -204,11 +204,11 @@ exit:
 }
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
-    mCommissionerPetitionHandler(OPENTHREAD_URI_COMMISSIONER_PETITION, ForwardCommissionerRequest, this),
-    mCommissionerKeepAliveHandler(OPENTHREAD_URI_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this),
-    mCommissionerSetHandler(OPENTHREAD_URI_COMMISSIONER_SET, ForwardCommissionerRequest, this),
-    mCommissionerRelayTransmitHandler(OPENTHREAD_URI_RELAY_TX, HandleRelayTransmit, this),
-    mCommissionerRelayReceiveHandler(OPENTHREAD_URI_RELAY_RX, BorderAgent::HandleRelayReceive, this),
+    mCommissionerPetitionHandler(OT_URI_PATH_COMMISSIONER_PETITION, ForwardCommissionerRequest, this),
+    mCommissionerKeepAliveHandler(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this),
+    mCommissionerSetHandler(OT_URI_PATH_COMMISSIONER_SET, ForwardCommissionerRequest, this),
+    mCommissionerRelayTransmitHandler(OT_URI_PATH_RELAY_TX, HandleRelayTransmit, this),
+    mCommissionerRelayReceiveHandler(OT_URI_PATH_RELAY_RX, BorderAgent::HandleRelayReceive, this),
     mCoap(aCoap),
     mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this)),
     mCoaps(Coap::Agent::Create(SendCoaps, this)),

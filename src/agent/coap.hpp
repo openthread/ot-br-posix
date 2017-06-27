@@ -214,6 +214,14 @@ struct Resource
     const char    *mPath;    ///< The CoAP Uri Path.
     RequestHandler mHandler; ///< The function to handle request to mPath.
 
+    /**
+     * The constructor to initialize a CoAP resource.
+     *
+     * @param[in]   aPath       The resource path.
+     * @param[in]   aHandler    The function to be called when received request to this resource.
+     * @param[in]   aContext        A pointer to application-specific context.
+     *
+     */
     Resource(const char *aPath, RequestHandler aHandler, void *aContext) :
         mContext(aContext),
         mPath(aPath),

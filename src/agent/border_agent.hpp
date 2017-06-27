@@ -62,7 +62,9 @@ class BorderAgent
 public:
     /**
      * The constructor to initialize the Thread border agent.
-     * @param[in]   aInterfaceName  interface name string.
+     *
+     * @param[in]   aNcp            A pointer to the NCP controller.
+     * @param[in]   aCoap           A pointer to the TMF agent.
      *
      */
     BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap);
