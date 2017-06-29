@@ -28,10 +28,36 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-SUBDIRS         = \
-    unit          \
-    mdns          \
-    meshcop       \
+noinst_PROGRAMS = otbr-test-mdns
+
+otbr_test_mdns_SOURCES                                 = \
+    main.cpp                                             \
+    $(NULL)
+
+otbr_test_mdns_CPPFLAGS                                = \
+    -I$(top_srcdir)/src                                  \
+    $(NULL)
+
+otbr_test_mdns_LDADD                                   = \
+    $(top_builddir)/src/agent/libotbr-agent.la           \
+    $(NULL)
+
+otbr_test_mdns_LDFLAGS                                 = \
+    -static                                              \
+    $(NULL)
+
+EXTRA_DIST                                             = \
+    test-single                                          \
+    test-multiple                                        \
+    test-update                                          \
+    test-stop                                            \
+    $(NULL)
+
+TESTS                                                  = \
+    test-single                                          \
+    test-multiple                                        \
+    test-update                                          \
+    test-stop                                            \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

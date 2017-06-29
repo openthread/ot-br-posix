@@ -53,6 +53,7 @@ libotbr_agent_la_SOURCES                                      = \
     border_agent.cpp                                            \
     coap_libcoap.cpp                                            \
     dtls_mbedtls.cpp                                            \
+    mdns_avahi.cpp                                              \
     ncp_wpantund.cpp                                            \
     $(NULL)
 
@@ -62,6 +63,8 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
     $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
+    -lavahi-common                                              \
+    -lavahi-client                                              \
     $(DBUS_LIBS)                                                \
     $(NULL)
 
@@ -93,6 +96,8 @@ noinst_HEADERS        = \
     coap_libcoap.hpp    \
     dtls.hpp            \
     dtls_mbedtls.hpp    \
+    mdns.hpp            \
+    mdns_avahi.hpp      \
     ncp.hpp             \
     ncp_wpantund.hpp    \
     libcoap.h           \

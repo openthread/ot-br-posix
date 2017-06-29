@@ -26,8 +26,21 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UTILS_HPP_
-#define UTILS_HPP_
+#ifndef CODE_UTILS_HPP_
+#define CODE_UTILS_HPP_
+
+/**
+ *  This aligns the pointer to @p aAlignType.
+ *
+ *  @param[in]  aMem        A pointer to abitrary memory.
+ *  @param[in]  aAlignType  The type to align with and convert the pointer to this type.
+ *
+ *  @returns A @aAlignType pointer to aligned memory.
+ *
+ */
+#define OTBR_ALIGNED(aMem, aAlignType)                                      \
+    reinterpret_cast<aAlignType>((((long)(aMem) + sizeof(aAlignType) - 1) / \
+                                  sizeof(aAlignType)) * sizeof(aAlignType))
 
 #ifndef CONTAINING_RECORD
 #define BASE 0x1
@@ -92,4 +105,4 @@
         goto exit;                              \
     } while (false)
 
-#endif // UTILS_HPP_
+#endif // CODE_UTILS_HPP_

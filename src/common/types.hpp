@@ -53,6 +53,7 @@ enum otbrError
     OTBR_ERROR_ERRNO = -1, ///< Error defined by errno.
     OTBR_ERROR_DTLS  = -2, ///< DTLS error.
     OTBR_ERROR_DBUS  = -3, ///< DBus error.
+    OTBR_ERROR_MDNS  = -4, ///< MDNS error.
 };
 
 namespace ot {

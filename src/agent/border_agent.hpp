@@ -82,7 +82,7 @@ public:
     otbrError Start(void);
 
     /**
-     * This method updates the file descriptor sets with file descriptors used by border agent.
+     * This method updates the fd_set and timeout for mainloop.
      *
      * @param[inout]  aReadFdSet   A reference to read file descriptors.
      * @param[inout]  aWriteFdSet  A reference to write file descriptors.

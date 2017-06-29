@@ -71,13 +71,18 @@ linux)
         libboost-system-dev      \
         libavahi-common-dev      \
         libavahi-client-dev      \
-        avahi-daemon             \
         libjsoncpp-dev           \
         $NULL
 
     [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
 
-    [ $BUILD_TARGET != posix-check ] || sudo apt-get install -y expect
+    [ $BUILD_TARGET != posix-check ] || {
+        sudo apt-get install -y  \
+            expect               \
+            avahi-daemon         \
+            avahi-utils          \
+            $NULL
+    }
 
     # Uncrustify
     [ $BUILD_TARGET != pretty-check ] || [ "$($TOOLS_HOME/usr/bin/uncrustify --version)" = 'Uncrustify-0.65_f' ] || (cd /tmp &&
