@@ -7,4 +7,6 @@
 Makefile.* text whitespace=trailing-space,space-before-tab,indent-with-non-tab,-tab-in-indent,tabwidth=4
 Makefile text whitespace=trailing-space,space-before-tab,indent-with-non-tab,-tab-in-indent,tabwidth=4
 *.bat text eol=crlf
-
+/etc/fuzz-corpus/* binary
+/etc/fuzz-corpus/wpantund/* binary
+/etc/fuzz-corpus/ncp-spinel/* binary

@@ -42,6 +42,8 @@ extern int parse_string_into_data(uint8_t* buffer, size_t len, const char* c_str
 extern int encode_data_into_string(const uint8_t*  buffer, size_t len, char* c_str, size_t c_str_max_len, int pad_to);
 extern int strtologmask(const char* value, int prev_mask);
 extern bool buffer_is_nonzero(const uint8_t* buffer, size_t len);
+extern bool is_hex(const uint8_t* buff, size_t len);
+extern bool is_uppercase_or_digit(const uint8_t* buff, size_t len);
 
 static inline char
 int_to_hex_digit(uint8_t x)

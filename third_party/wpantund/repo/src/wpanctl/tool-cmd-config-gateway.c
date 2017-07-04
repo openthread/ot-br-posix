@@ -44,6 +44,7 @@ static const arg_list_item_t config_gateway_option_list[] = {
 	{'v', "valid-lifetime", "seconds",
 	 "Set the valid lifetime (Default: infinite)"},
 	{'d', "default", NULL, "Indicates that we can be a default route"},
+	{'P', "priority", NULL, "(>0 for high, 0 for medium, <0 for low) Assign route priority"},
 	{0}
 };
 
@@ -57,6 +58,10 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 	DBusMessage *reply = NULL;
 	DBusError error;
 	dbus_bool_t defaultRoute = FALSE;
+	dbus_bool_t preferred = TRUE;
+	dbus_bool_t slaac = TRUE;
+	dbus_bool_t onMesh = TRUE;
+	int16_t priority = 0;
 	uint32_t preferredLifetime = 0xFFFFFFFF;
 	uint32_t validLifetime = 0xFFFFFFFF;
 	const char* prefix = NULL;
@@ -74,11 +79,12 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 			{"preferred-lifetime", required_argument, 0, 'p'},
 			{"valid-lifetime", required_argument, 0, 'v'},
 			{"default", no_argument, 0, 'd'},
+			{"priority", required_argument, 0, 'P'},
 			{0, 0, 0, 0}
 		};
 
 		int option_index = 0;
-		c = getopt_long(argc, argv, "ht:p:v:d", long_options,
+		c = getopt_long(argc, argv, "ht:p:v:dP:", long_options,
 				&option_index);
 
 		if (c == -1)
@@ -107,6 +113,9 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 			validLifetime = (uint32_t) strtol(optarg, NULL, 0);
 			break;
 
+		case 'P':
+			priority = (int16_t) strtol(optarg, NULL, 0);
+			break;
 		}
 	}
 
@@ -217,6 +226,10 @@ int tool_cmd_config_gateway(int argc, char* argv[])
 			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &addr, 16,
 		    DBUS_TYPE_UINT32, &preferredLifetime,
 		    DBUS_TYPE_UINT32, &validLifetime,
+			DBUS_TYPE_BOOLEAN, &preferred,
+			DBUS_TYPE_BOOLEAN, &slaac,
+			DBUS_TYPE_BOOLEAN, &onMesh,
+			DBUS_TYPE_INT16, &priority,
 		    DBUS_TYPE_INVALID
 		);
 

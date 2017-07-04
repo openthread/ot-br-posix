@@ -66,6 +66,7 @@ EXTRA_DIST = \
 	Timer.cpp \
 	sec-random.h \
 	sec-random.c \
+	commissioner-utils.h \
 	$(NULL)
 
 DISTCLEANFILES = \

@@ -46,7 +46,6 @@ int tool_cmd_begin_net_wake(int argc, char *argv[])
 	DBusMessage *reply = NULL;
 	DBusError error;
 
-	bool has_net_wake_data = false;
 	uint8_t net_wake_data = 0;
 	uint32_t net_wake_flags = -1;
 
@@ -79,11 +78,8 @@ int tool_cmd_begin_net_wake(int argc, char *argv[])
 	}
 
 	if (optind < argc) {
-		if (!has_net_wake_data) {
-			net_wake_data = strtol(argv[optind], NULL, 0);
-			has_net_wake_data = true;
-			optind++;
-		}
+		net_wake_data = strtol(argv[optind], NULL, 0);
+		optind++;
 	}
 
 	if (optind < argc) {

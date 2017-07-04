@@ -142,6 +142,14 @@ private:
 		NCPControlInterface* interface,
 		DBusMessage *        message
 	);
+	DBusHandlerResult interface_insert_prop_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
+	DBusHandlerResult interface_remove_prop_handler(
+		NCPControlInterface* interface,
+		DBusMessage *        message
+	);
 	DBusHandlerResult interface_reset_handler(
 		NCPControlInterface* interface,
 		DBusMessage *        message

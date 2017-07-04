@@ -66,6 +66,8 @@
 
 #define WPANTUND_IF_CMD_NET_SCAN_START        "NetScanStart"
 #define WPANTUND_IF_CMD_NET_SCAN_STOP         "NetScanStop"
+#define WPANTUND_IF_CMD_DISCOVER_SCAN_START   "DiscoverScanStart"
+#define WPANTUND_IF_CMD_DISCOVER_SCAN_STOP    "DiscoverScanStop"
 #define WPANTUND_IF_SIGNAL_NET_SCAN_BEACON    "NetScanBeacon"
 
 #define WPANTUND_IF_CMD_ENERGY_SCAN_START     "EnergyScanStart"
@@ -74,7 +76,11 @@
 
 #define WPANTUND_IF_CMD_PROP_GET              "PropGet"
 #define WPANTUND_IF_CMD_PROP_SET              "PropSet"
+#define WPANTUND_IF_CMD_PROP_INSERT           "PropInsert"
+#define WPANTUND_IF_CMD_PROP_REMOVE           "PropRemove"
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"
+
+#define WPANTUND_IF_CMD_JOINER_ADD            "JoinerAdd"
 
 // ============================================================================
 // NestLabs Internal API Interface

@@ -1,0 +1,45 @@
+language: cpp
+
+addons:
+    apt:
+        packages:
+            - bsdtar
+            - libdbus-1-dev
+            - autoconf-archive
+            - libglib2.0-dev
+            - libboost-dev
+            - libboost-signals-dev
+            - libreadline-dev
+            - libtool
+            - autoconf-archive
+
+sudo: required
+
+os:
+    - linux
+    - osx
+
+compiler:
+    - gcc
+    - clang
+
+before_install:
+    - .travis/before_install.sh
+
+script:
+    - .travis/script.sh
+
+after_success:
+    - ssh-agent .travis/after_success.sh
+
+env:
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar
+    - BUILD_MAKEPATH=build BUILD_MAKEARGS="distcheck" TAR=bsdtar BUILD_CONFIGFLAGS=--with-boost=internal
+
+matrix:
+    allow_failures:
+        - os: linux        # This seems to be some sort of weird failure to
+          compiler: clang  # find boost-signals. Needs further investigation.
+    exclude:
+        - os: osx
+          compiler: gcc

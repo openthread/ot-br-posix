@@ -136,18 +136,24 @@ public:
 
 public:
 	// ========================================================================
+	// MARK: On Mesh Prefix Management
+
+	void add_prefix(const struct in6_addr &address, uint32_t valid_lifetime = UINT32_MAX, uint32_t preferred_lifetime = UINT32_MAX, uint8_t flags = 0);
+
+public:
+	// ========================================================================
 	// MARK: Global Address Management
 
 
 	void add_address(const struct in6_addr &address, uint8_t prefix = 64, uint32_t valid_lifetime = UINT32_MAX, uint32_t preferred_lifetime = UINT32_MAX);
 	void remove_address(const struct in6_addr &address);
 
-	void refresh_global_addresses();
+	void refresh_global_addresses(void);
 
-	//! Removes all nonpermanent global address entries
+	//! Removes all non-permanent global address entries
 	void clear_nonpermanent_global_addresses();
 
-	void restore_global_addresses();
+	void restore_global_addresses(void);
 
 	bool is_address_known(const struct in6_addr &address);
 
@@ -213,21 +219,15 @@ public:
 
 	virtual std::set<std::string> get_supported_property_keys()const;
 
-	virtual void get_property(
-	    const std::string& key,
-	    CallbackWithStatusArg1 cb
-	);
+	virtual void property_get_value(const std::string& key, CallbackWithStatusArg1 cb);
 
-	virtual void set_property(
-	    const std::string& key,
-	    const boost::any& value,
-		CallbackWithStatus cb = NilReturn()
-	);
+	virtual void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb = NilReturn());
 
-	virtual void signal_property_changed(
-	    const std::string& key,
-	    const boost::any& value = boost::any()
-	);
+	virtual void property_insert_value(const std::string& key, const boost::any& value, CallbackWithStatus cb = NilReturn());
+
+	virtual void property_remove_value(const std::string& key, const boost::any& value, CallbackWithStatus cb = NilReturn());
+
+	virtual void signal_property_changed(const std::string& key, const boost::any& value = boost::any());
 
 	wpantund_status_t set_ncp_version_string(const std::string& version_string);
 
@@ -244,6 +244,7 @@ protected:
 	struct nlpt mDriverToNCPPumpPT;
 
 	std::map<struct in6_addr, GlobalAddressEntry> mGlobalAddresses;
+	std::map<struct in6_addr, GlobalAddressEntry> mOnMeshPrefixes;
 
 	IPv6PacketMatcherRule mCommissioningRule;
 	IPv6PacketMatcher mInsecureFirewall;

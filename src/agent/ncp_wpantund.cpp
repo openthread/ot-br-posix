@@ -105,7 +105,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
 
         EventEmitter::Emit(kEventPSKc, pskc);
     }
-    else if (!strcmp(key, kWPANTUNDProperty_BorderAgentProxyStream))
+    else if (!strcmp(key, kWPANTUNDProperty_TmfProxyStream))
     {
         const uint8_t *buf = NULL;
         uint16_t       locator = 0;
@@ -160,7 +160,7 @@ otbrError ControllerWpantund::TmfProxyEnable(dbus_bool_t aEnable)
 {
     otbrError    ret = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
-    const char  *key = kWPANTUNDProperty_BorderAgentProxyEnabled;
+    const char  *key = kWPANTUNDProperty_TmfProxyEnabled;
 
     message = dbus_message_new_method_call(
         mInterfaceDBusName,
@@ -285,7 +285,7 @@ otbrError ControllerWpantund::TmfProxySend(const uint8_t *aBuffer, uint16_t aLen
 
     std::vector<uint8_t> data(aLength + sizeof(aLocator) + sizeof(aPort));
     const uint8_t       *value = data.data();
-    const char          *key = kWPANTUNDProperty_BorderAgentProxyStream;
+    const char          *key = kWPANTUNDProperty_TmfProxyStream;
 
     memcpy(data.data(), aBuffer, aLength);
     data[aLength] = (aLocator >> 8);

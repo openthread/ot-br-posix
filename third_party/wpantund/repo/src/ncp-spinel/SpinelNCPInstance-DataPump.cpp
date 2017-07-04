@@ -208,7 +208,7 @@ SpinelNCPInstance::ncp_to_driver_pump()
 			mInboundFrame,
 			mInboundFrameSize
 		);
-#else
+#else // if WPANTUND_SPINEL_USE_FLEN
 
 		mInboundFrameSize = 0;
 		mInboundFrameHDLCCRC = 0xffff;
@@ -244,6 +244,8 @@ SpinelNCPInstance::ncp_to_driver_pump()
 
 		mInboundFrameSize -= 2;
 		mInboundFrameHDLCCRC ^= 0xFFFF;
+
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION // Don't do CRC checks when in fuzzing mode
 		{
 			uint16_t frame_crc = (mInboundFrame[mInboundFrameSize]|(mInboundFrame[mInboundFrameSize+1]<<8));
 			if (mInboundFrameHDLCCRC != frame_crc) {
@@ -286,7 +288,9 @@ SpinelNCPInstance::ncp_to_driver_pump()
 			}
 		}
 
-#endif
+#endif // !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+
+#endif // else WPANTUND_SPINEL_USE_FLEN
 
 		if (pt->last_errno) {
 			syslog(LOG_ERR, "[-NCP-]: Socket error on read: %s", strerror(pt->last_errno));

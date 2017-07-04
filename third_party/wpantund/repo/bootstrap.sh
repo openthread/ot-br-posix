@@ -30,10 +30,10 @@ die() {
 
 	echo " ***************************** "
 
-	[[ $prog == "autoreconf" ]] && cat "$LOGFILE"
+	[ "$prog" == "autoreconf" ] && cat "$LOGFILE"
 
 	echo ""
-	if [[ $# -ge 1 ]]
+	if [ $# -ge 1 ]
 	then echo " *** $prog failed: \"$*\""
 	else echo " *** $prog failed with error code $errcode"
 	fi

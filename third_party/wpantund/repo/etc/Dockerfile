@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM ubuntu:trusty
+FROM ubuntu:yakkety
 
 ENV CONNMAN_INCLUDE_ARCHIVE=https://gist.github.com/darconeous/d1d9bc39e0758e45a1d7/raw/ef9b01ac378a9b2e92031c846c4f6b5f94abab53/connman-include.tar.bz2
 
@@ -39,14 +39,25 @@ RUN apt-get -y update \
 				pkg-config \
 				autoconf \
 				autoconf-archive \
+				libboost-dev \
+				libboost-signals-dev \
+				llvm \
+				clang-3.8 clang++-3.8 \
+				subversion \
+				lcov \
+				libfuzzer-3.8-dev \
 				automake
 
 ADD $CONNMAN_INCLUDE_ARCHIVE /
 
-RUN apt-get -y update \
-	&& DEBIAN_FRONTEND=noninteractive \
-			apt-get install -y -q --no-install-recommends \
-				libboost-dev \
-				libboost-signals-dev
+
+RUN ln -s /usr/bin/clang-3.8 /usr/bin/clang
+RUN ln -s /usr/bin/clang++-3.8 /usr/bin/clang++
+RUN ln -s /usr/bin/llvm-symbolizer-3.8 /usr/bin/llvm-symbolizer
+
+#RUN svn co http://llvm.org/svn/llvm-project/llvm/trunk/lib/Fuzzer \
+#	&& cd /usr/lib \
+#	&& /Fuzzer/build.sh
+
 
 RUN tar xvjf /connman-include.tar.bz2 -C / && rm /connman-include.tar.bz2

@@ -1438,7 +1438,7 @@ StatCollector::get_stat_property(const std::string& key, StringList& output) con
 }
 
 void
-StatCollector::get_property(const std::string& key, CallbackWithStatusArg1 cb)
+StatCollector::property_get_value(const std::string& key, CallbackWithStatusArg1 cb)
 {
 	// First check for AutoLog properties.
 	if (strcaseequal(key.c_str(), kWPANTUNDProperty_StatAutoLog)) {
@@ -1513,7 +1513,7 @@ StatCollector::get_property(const std::string& key, CallbackWithStatusArg1 cb)
 }
 
 void
-StatCollector::set_property(const std::string& key, const boost::any& value, CallbackWithStatus cb)
+StatCollector::property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb)
 {
 	int status = kWPANTUNDStatus_Ok;
 

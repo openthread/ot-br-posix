@@ -35,6 +35,7 @@ public:
 	enum ScanType {
 		kScanTypeNet = 0,
 		kScanTypeEnergy,
+		kScanTypeDiscover,
 	};
 
 	enum {
@@ -46,7 +47,10 @@ public:
 		CallbackWithStatusArg1 cb,
 		uint32_t channel_mask,
 		uint16_t channel_scan_period = kDefaultScanPeriod,   // per channel in ms
-		ScanType scan_type = kScanTypeNet
+		ScanType scan_type = kScanTypeNet,
+		bool joiner_flag = false,          // Scan for joiner only devices (used in discover scan).
+		bool enable_filtering = false,     // Enable scan result filtering (used in discover scan).
+		uint16_t pan_id_filter = 0xffff    // PANID used for filtering, 0xFFFF to disable (used in discover scan).
 	);
 	virtual int vprocess_event(int event, va_list args);
 	virtual void finish(int status, const boost::any& value = boost::any());
@@ -56,6 +60,11 @@ private:
 	uint8_t mChannelMaskLen;
 	uint16_t mScanPeriod;  // per channel
 	ScanType mScanType;
+	bool mJoinerFlag;
+	bool mEnablerFiltering;
+	uint16_t mPanId;
+	bool mShouldInterfaceDown;
+
 };
 
 }; // namespace wpantund

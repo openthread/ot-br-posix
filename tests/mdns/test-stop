@@ -47,13 +47,13 @@ avahi-browse -aprt
 avahi-browse -aprt | grep -q 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
 
 # stop service
-kill -USR1 $PID
+/bin/kill -USR1 $PID
 sleep 1
 avahi-browse -aprt
 ! avahi-browse -aprt | grep -q 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
 
 # start service
-kill -USR2 $PID
+/bin/kill -USR2 $PID
 sleep 1
 avahi-browse -aprt
 avahi-browse -aprt | grep -q 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'

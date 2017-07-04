@@ -59,7 +59,7 @@ DummyNCPControlInterface::DummyNCPControlInterface(DummyNCPInstance* instance_po
 void
 DummyNCPControlInterface::join(
 	const ValueMap& options,
-    CallbackWithStatus cb
+	CallbackWithStatus cb
 ) {
 	// TODO: Writeme!
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
@@ -68,7 +68,7 @@ DummyNCPControlInterface::join(
 void
 DummyNCPControlInterface::form(
 	const ValueMap& options,
-    CallbackWithStatus cb
+	CallbackWithStatus cb
 ) {
 
 	// TODO: Writeme!
@@ -134,6 +134,10 @@ void
 DummyNCPControlInterface::add_on_mesh_prefix(
 	const struct in6_addr *prefix,
 	bool defaultRoute,
+	bool preferred,
+	bool slaac,
+	bool onMesh,
+	OnMeshPrefixPriority priority,
 	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
@@ -169,13 +173,23 @@ DummyNCPControlInterface::remove_external_route(
 }
 
 void
+DummyNCPControlInterface::joiner_add(
+	const char *psk,
+	uint32_t joiner_timeout,
+	const uint8_t *addr,
+	CallbackWithStatus cb
+) {
+	cb(kWPANTUNDStatus_FeatureNotImplemented);
+}
+
+void
 DummyNCPControlInterface::permit_join(
-    int seconds,
-    uint8_t traffic_type,
-    in_port_t traffic_port,
-    bool network_wide,
-    CallbackWithStatus cb
-    )
+	int seconds,
+	uint8_t traffic_type,
+	in_port_t traffic_port,
+	bool network_wide,
+	CallbackWithStatus cb
+)
 {
 	// TODO: Writeme!
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
@@ -183,16 +197,16 @@ DummyNCPControlInterface::permit_join(
 
 void
 DummyNCPControlInterface::netscan_start(
-    const ValueMap& options,
-    CallbackWithStatus cb
+	const ValueMap& options,
+	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented); // TODO: Start network scan
 }
 
 void
 DummyNCPControlInterface::mfg(
-    const std::string& mfg_command,
-    CallbackWithStatusArg1 cb
+	const std::string& mfg_command,
+	CallbackWithStatusArg1 cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented, 0); // TODO: Start mfg run
 }
@@ -205,8 +219,8 @@ DummyNCPControlInterface::netscan_stop(CallbackWithStatus cb)
 
 void
 DummyNCPControlInterface::energyscan_start(
-    const ValueMap& options,
-    CallbackWithStatus cb
+	const ValueMap& options,
+	CallbackWithStatus cb
 ) {
 	cb(kWPANTUNDStatus_FeatureNotImplemented);
 }
@@ -252,24 +266,42 @@ DummyNCPControlInterface::pcap_terminate(CallbackWithStatus cb)
 // MARK: -
 
 void
-DummyNCPControlInterface::get_property(
-    const std::string& in_key, CallbackWithStatusArg1 cb
-    )
-{
+DummyNCPControlInterface::property_get_value(
+	const std::string& in_key,
+	CallbackWithStatusArg1 cb
+) {
 	if (!mNCPInstance->is_initializing_ncp()) {
-		syslog(LOG_INFO, "get_property: key: \"%s\"", in_key.c_str());
+		syslog(LOG_INFO, "property_get_value: key: \"%s\"", in_key.c_str());
 	}
-	mNCPInstance->get_property(in_key, cb);
+	mNCPInstance->property_get_value(in_key, cb);
 }
 
 void
-DummyNCPControlInterface::set_property(
-    const std::string&                      key,
-    const boost::any&                       value,
-    CallbackWithStatus      cb
-    )
-{
-	syslog(LOG_INFO, "set_property: key: \"%s\"", key.c_str());
-	mNCPInstance->set_property(key, value, cb);
+DummyNCPControlInterface::property_set_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_set_value: key: \"%s\"", key.c_str());
+	mNCPInstance->property_set_value(key, value, cb);
+}
 
+void
+DummyNCPControlInterface::property_insert_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_insert_value: key: \"%s\"", key.c_str());
+	mNCPInstance->property_insert_value(key, value, cb);
+}
+
+void
+DummyNCPControlInterface::property_remove_value(
+	const std::string& key,
+	const boost::any& value,
+	CallbackWithStatus cb
+) {
+	syslog(LOG_INFO, "property_remove_value: key: \"%s\"", key.c_str());
+	mNCPInstance->property_remove_value(key, value, cb);
 }

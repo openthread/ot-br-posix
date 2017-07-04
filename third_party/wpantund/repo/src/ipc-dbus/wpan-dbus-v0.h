@@ -84,6 +84,8 @@
 
 #define WPAN_IFACE_CMD_GET_PROP         "GetProp"
 #define WPAN_IFACE_CMD_SET_PROP         "SetProp"
+#define WPAN_IFACE_CMD_INSERT_PROP      "InsertProp"
+#define WPAN_IFACE_CMD_REMOVE_PROP      "RemoveProp"
 
 
 #define WPAN_IFACE_PROTOCOL_TCPUDP      0xFF

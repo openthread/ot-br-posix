@@ -105,14 +105,13 @@ bail:
 }
 
 int
-read_config(
-    const char* filename,
+fread_config(
+	FILE* file,
 	config_param_set_func setter,
 	void* context
 ) {
 	int ret = 0;
 
-	FILE* file = fopen(filename, "r");
 	char* line = NULL;
 	size_t line_len = 0;
 	int line_number = 0;
@@ -122,17 +121,53 @@ read_config(
 		goto bail;
 	}
 
-	syslog(LOG_INFO, "Reading configuration from \"%s\" . . .", filename);
-
 	while (!feof(file) && (line = fgetln(file, &line_len)) && !ret) {
-		char *key = get_next_arg(line, &line);
-		char *value = get_next_arg(line, &line);
+		char *key;
+		char *value;
 		line_number++;
+
+		key = get_next_arg(line, &line);
 		if (!key) {
 			continue;
 		}
+
+		key[strnlen(key,line_len)] = 0;
+
+		if (strlen(key) >= line_len) {
+			continue;
+		}
+		line_len -= strlen(key);
+
+		value = get_next_arg(line, &line);
+		if (!value) {
+			continue;
+		}
+		value[strnlen(value, line_len)] = 0;
 		ret = setter(context, key, value);
 	}
+
+bail:
+	return ret;
+}
+
+int
+read_config(
+	const char* filename,
+	config_param_set_func setter,
+	void* context
+) {
+	int ret = 0;
+
+	FILE* file = fopen(filename, "r");
+
+	if (file == NULL) {
+		ret = -1;
+		goto bail;
+	}
+
+	syslog(LOG_INFO, "Reading configuration from \"%s\" . . .", filename);
+
+	ret = fread_config(file, setter, context);
 
 bail:
 	if (file) {

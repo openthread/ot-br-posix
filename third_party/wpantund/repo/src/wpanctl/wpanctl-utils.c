@@ -324,7 +324,6 @@ int
 lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 {
 	int ret = kWPANTUNDStatus_InterfaceNotFound;
-	int i;
 	int timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
 	DBusConnection* connection = NULL;
 	DBusMessage *message = NULL;
@@ -525,8 +524,6 @@ void print_error_diagnosis(int error)
 uint16_t
 node_type_str2int(const char *node_type)
 {
-	uint16_t type;
-
 	if (strcasecmp(node_type, "router") == 0) {
 		return WPAN_IFACE_ROLE_ROUTER;
 	} else if (strcasecmp(node_type, "r") == 0) {

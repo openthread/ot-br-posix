@@ -23,15 +23,15 @@
 #define NCP_DEFAULT_COMMAND_RESPONSE_TIMEOUT    5  // seconds
 #define NCP_DEFAULT_COMMAND_SEND_TIMEOUT        5  // seconds
 #define NCP_TICKLE_TIMEOUT                      60 // seconds
-#define NCP_DEEP_SLEEP_TICKLE_TIMEOUT          (60*70) // Seventy minutes
-#define NCP_FORM_TIMEOUT						60 // seconds
-#define NCP_JOIN_TIMEOUT						30 // seconds
+#define NCP_DEEP_SLEEP_TICKLE_TIMEOUT           (60*70) // Seventy minutes
+#define NCP_FORM_TIMEOUT                        60 // seconds
+#define NCP_JOIN_TIMEOUT                        30 // seconds
 
-#define NCP_NETWORK_KEY_SIZE         16
+#define NCP_NETWORK_KEY_SIZE                    16
 
-#define BUSY_DEBOUNCE_TIME_IN_MS         200
+#define BUSY_DEBOUNCE_TIME_IN_MS                200
 #define MAX_INSOMNIA_TIME_IN_MS                 (MSEC_PER_SEC * 60 * 3)
 
-#define NCP_DEBUG_LINE_LENGTH_MAX		400
+#define NCP_DEBUG_LINE_LENGTH_MAX               400
 
 #endif

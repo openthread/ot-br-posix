@@ -289,6 +289,13 @@ get_current_prompt()
 void
 process_input_readline(char *l)
 {
+	if (NULL == l)
+	{
+		gRet = ERRORCODE_QUIT;
+		rl_callback_handler_remove();
+		return;
+	}
+
 	process_input_line(l);
 	if (istty) {
 #if HAVE_RL_SET_PROMPT
