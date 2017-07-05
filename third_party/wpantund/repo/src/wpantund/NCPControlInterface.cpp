@@ -46,17 +46,23 @@ using namespace wpantund;
 std::string
 NCPControlInterface::external_route_priority_to_string(ExternalRoutePriority route_priority)
 {
+	const char *ret = "unknown";
+
 	switch(route_priority) {
 		case ROUTE_LOW_PREFRENCE:
-			return std::string("low preference");
+			ret = "low";
+			break;
 
 		case ROUTE_MEDIUM_PREFERENCE:
-			return std::string("Medium (normal) preference");
+			ret = "medium(normal)";
+			break;
 
 		case ROUTE_HIGH_PREFERENCE:
-			return std::string("High preference");
+			ret = "high";
+			break;
 	}
-	return std::string("Unknown route preference");
+
+	return ret;
 }
 
 NCPControlInterface::~NCPControlInterface() {
@@ -80,14 +86,14 @@ struct GetPropertyHelper {
 };
 
 boost::any
-NCPControlInterface::get_property(const std::string& key)
+NCPControlInterface::property_get_value(const std::string& key)
 {
 	// In this function, we want to immediately return the value
-	// for the given key. Since the actual get_property() function
-	// returns the value as a callback, we may not actually
-	// be able to do this. What we do here is give a callback
-	// object that contains a pointer to our return value.
-	// After we call get_property(), we then zero out that
+	// for the given key. Since the actual property_get_value()
+	// function returns the value as a callback, we may not
+	// actually be able to do this. What we do here is give a
+	// callback object that contains a pointer to our return value.
+	// After we call property_get_value(), we then zero out that
 	// pointer. For properties which get updated immediately, our
 	// return value will be updated automatically. For properties
 	// which can't be fetched immediately, we return an empty value.
@@ -100,7 +106,7 @@ NCPControlInterface::get_property(const std::string& key)
 
 	helper->dest = &ret;
 	helper->didFire = &didFire;
-	get_property(key, boost::bind(&GetPropertyHelper::operator(),
+	property_get_value(key, boost::bind(&GetPropertyHelper::operator(),
 	                              helper,
 	                              _1,
 	                              _2));
@@ -113,7 +119,7 @@ NCPControlInterface::get_property(const std::string& key)
 
 std::string
 NCPControlInterface::get_name() {
-	return boost::any_cast<std::string>(get_property(kWPANTUNDProperty_ConfigTUNInterfaceName));
+	return boost::any_cast<std::string>(property_get_value(kWPANTUNDProperty_ConfigTUNInterfaceName));
 }
 
 
@@ -209,14 +215,14 @@ struct SetPropertyHelper {
 #define kWPANTUNDPropertyGlobalIPAddressList       "GlobalIPAddressList"
 
 int
-NCPControlInterface::set_property(const std::string& key, const boost::any& value)
+NCPControlInterface::property_set_value(const std::string& key, const boost::any& value)
 {
 	// In this function, we want to immediately return the status
-	// of the set operation. Since the actual set_property() function
-	// returns the status as a callback, we may not actually
-	// be able to do this. What we do here is give a callback
-	// object that contains a pointer to our return value.
-	// After we call set_property(), we then zero out that
+	// of the set operation. Since the actual property_set_value()
+	// function returns the status as a callback, we may not
+	// actually be able to do this. What we do here is give a
+	// callback object that contains a pointer to our return value.
+	// After we call property_set_value(), we then zero out that
 	// pointer. For properties which get updated immediately, our
 	// return value will be updated automatically. For properties
 	// which can't be fetched immediately, we return -EINPROGRESS.
@@ -229,7 +235,7 @@ NCPControlInterface::set_property(const std::string& key, const boost::any& valu
 
 	helper->dest = &ret;
 	helper->didFire = &didFire;
-	set_property(key, value, boost::bind(&SetPropertyHelper::operator(),
+	property_set_value(key, value, boost::bind(&SetPropertyHelper::operator(),
 	                              helper,
 	                              _1));
 	if (!didFire) {

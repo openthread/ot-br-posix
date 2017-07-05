@@ -23,6 +23,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/third_party/assert-macros \
 	$(NULL)
 
+@CODE_COVERAGE_RULES@
+
 EXTRA_DIST = wpantund.conf
 
 DISTCLEANFILES = .deps Makefile
@@ -48,7 +50,27 @@ libwpantund_dbus_la_SOURCES = \
 	$(NULL)
 
 libwpantund_dbus_la_LIBADD =  $(DBUS_LIBS)
-libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
-libwpantund_dbus_la_CXXFLAGS = $(BOOST_CXXFLAGS)
+libwpantund_dbus_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+libwpantund_dbus_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+
+if ENABLE_FUZZ_TARGETS
+noinst_LTLIBRARIES += libwpantund-dbus-fuzz.la
+endif
+
+libwpantund_dbus_fuzz_la_SOURCES = \
+	DBUSIPCServer.cpp \
+	DBUSIPCServer.h \
+	DBusIPCAPI_v1.cpp \
+	DBusIPCAPI_v1.h \
+	wpan-dbus-v1.h \
+	DBusIPCAPI_v0.cpp \
+	DBusIPCAPI_v0.h \
+	wpan-dbus-v0.h \
+	../util/DBUSHelpers.cpp \
+	$(NULL)
+
+libwpantund_dbus_fuzz_la_LIBADD =  $(DBUS_LIBS)
+libwpantund_dbus_fuzz_la_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+libwpantund_dbus_fuzz_la_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
 
 pkginclude_HEADERS = wpan-dbus-v0.h wpan-dbus-v1.h

@@ -21,8 +21,6 @@
  *
  */
 
-#define DEBUG 1
-
 #if HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -487,20 +485,189 @@ syslog_dump_select_info(int loglevel, fd_set *read_fd_set, fd_set *write_fd_set,
 }
 
 /* ------------------------------------------------------------------------- */
+/* MARK: Main Loop Class */
+class MainLoop
+{
+	std::list<shared_ptr<nl::wpantund::IPCServer> > mIpcServerList;
+	std::map<std::string, std::string> mSettings;
+	nl::wpantund::NCPInstance * mNcpInstance;
+
+	int mFdsReady;
+	bool mInterfaceAdded;
+	int mZeroCmsInARowCount;
+public:
+	MainLoop(const std::map<std::string, std::string>& settings = std::map<std::string, std::string>()):
+		mSettings(settings), mNcpInstance(NCPInstance::alloc(settings)),
+		mFdsReady(0), mInterfaceAdded(false), mZeroCmsInARowCount(0)
+	{
+		assert(mNcpInstance != NULL);
+
+		mNcpInstance->mOnFatalError.connect(&handle_error);
+
+		mNcpInstance->get_stat_collector().set_ncp_control_interface(&mNcpInstance->get_control_interface());
+	}
+
+	~MainLoop() {
+		delete mNcpInstance;
+	}
+
+	void add_ipc_server(shared_ptr<nl::wpantund::IPCServer> ipc_server) {
+		mIpcServerList.push_back(ipc_server);
+	}
+
+	void process() {
+		std::list<shared_ptr<nl::wpantund::IPCServer> >::iterator ipc_iter;
+
+		// Process callback timers.
+		Timer::process();
+
+		// Process any necessary IPC actions.
+		for (ipc_iter = mIpcServerList.begin(); ipc_iter != mIpcServerList.end(); ++ipc_iter) {
+			(*ipc_iter)->process();
+		}
+
+		// Process the NCP instance.
+		mNcpInstance->process();
+
+		// We only expose the interface via IPC after it is
+		// successfully initialized for the first time.
+		if (!mInterfaceAdded) {
+			const boost::any value = mNcpInstance->get_control_interface().property_get_value(kWPANTUNDProperty_NCPState);
+			if ((value.type() == boost::any(std::string()).type())
+			 && (boost::any_cast<std::string>(value) != kWPANTUNDStateUninitialized)
+			) {
+				for (ipc_iter = mIpcServerList.begin(); ipc_iter != mIpcServerList.end(); ++ipc_iter) {
+					(*ipc_iter)->add_interface(&mNcpInstance->get_control_interface());
+				}
+				mInterfaceAdded = true;
+			}
+		}
+	}
+
+	void block_until_ready() {
+		int fds_ready = 0;
+		const cms_t max_main_loop_timeout(CMS_DISTANT_FUTURE);
+		cms_t cms_timeout(max_main_loop_timeout);
+		int max_fd(-1);
+		struct timeval timeout;
+		std::list<shared_ptr<nl::wpantund::IPCServer> >::iterator ipc_iter;
+
+		FD_ZERO(&gReadableFDs);
+		FD_ZERO(&gWritableFDs);
+		FD_ZERO(&gErrorableFDs);
+
+		// Update the FD masks and timeouts
+		mNcpInstance->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
+		Timer::update_timeout(&cms_timeout);
+
+		for (ipc_iter = mIpcServerList.begin(); ipc_iter != mIpcServerList.end(); ++ipc_iter) {
+			(*ipc_iter)->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
+		}
+
+		require_string(max_fd < FD_SETSIZE, bail, "Too many file descriptors");
+
+		// Negative CMS timeout values are not valid.
+		if (cms_timeout < 0) {
+			syslog(LOG_DEBUG, "Negative CMS value: %d", cms_timeout);
+			cms_timeout = 0;
+		}
+
+		// Identify conditions where we are burning too much CPU.
+		if (cms_timeout == 0) {
+			double loadavg[3] = {-1.0, -1.0, -1.0};
+
+#if HAVE_GETLOADAVG
+			getloadavg(loadavg, 3);
+#endif
+
+			switch (++mZeroCmsInARowCount) {
+			case 20:
+				syslog(LOG_INFO, "BUG: Main loop is thrashing! (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
+				break;
+
+			case 200:
+				syslog(LOG_WARNING, "BUG: Main loop is still thrashing! Slowing things down. (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
+				break;
+
+			case 1000:
+				syslog(LOG_CRIT, "BUG: Main loop had over 1000 iterations in a row with a zero timeout! Terminating. (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
+				gRet = ERRORCODE_UNKNOWN;
+				break;
+			}
+			if (mZeroCmsInARowCount > 200) {
+				// If the past 200 iterations have had a zero timeout,
+				// start using a minimum timeout of 10ms, so that we
+				// don't bring the rest of the system to a grinding halt.
+				cms_timeout = 10;
+			}
+		} else {
+			mZeroCmsInARowCount = 0;
+		}
+
+		// Convert our `cms` value into timeval compatible with select().
+		timeout.tv_sec = cms_timeout / MSEC_PER_SEC;
+		timeout.tv_usec = (cms_timeout % MSEC_PER_SEC) * USEC_PER_MSEC;
+
+#if DEBUG
+		syslog_dump_select_info(
+			LOG_DEBUG,
+			&gReadableFDs,
+			&gWritableFDs,
+			&gErrorableFDs,
+			max_fd + 1,
+			cms_timeout
+		);
+#endif
+
+		// Block until we timeout or there is FD activity.
+		fds_ready = select(
+			max_fd + 1,
+			&gReadableFDs,
+			&gWritableFDs,
+			&gErrorableFDs,
+			&timeout
+		);
+
+		if (fds_ready < 0) {
+			syslog(LOG_ERR, "select() errno=\"%s\" (%d)", strerror(errno),
+				   errno);
+
+			if (errno != EINTR) {
+				gRet = ERRORCODE_ERRNO;
+			}
+		}
+
+	bail:
+		return;
+	}
+
+
+	void run() {
+		gRet = 0;
+
+		while (!gRet) {
+			block_until_ready();
+			process();
+		}
+	}
+};
+
+
+/* ------------------------------------------------------------------------- */
 /* MARK: Main Function */
 
 int
 main(int argc, char * argv[])
 {
 	int c;
-	int fds_ready = 0;
 	bool interface_added = false;
 	int zero_cms_in_a_row_count = 0;
 	const char* config_file = SYSCONFDIR "/wpantund.conf";
 	const char* alt_config_file = SYSCONFDIR "/wpan-tunnel-driver.conf";
 	std::list<shared_ptr<nl::wpantund::IPCServer> > ipc_server_list;
+	MainLoop* main_loop = NULL;
 
-	nl::wpantund::NCPInstance *ncp_instance = NULL;
+	//nl::wpantund::NCPInstance *ncp_instance = NULL;
 	std::map<std::string, std::string> cmd_line_settings;
 
 	// ========================================================================
@@ -692,37 +859,24 @@ main(int argc, char * argv[])
 			settings = settings_for_ncp_control_interface;
 		}
 
+		main_loop = new MainLoop(settings);
+
 		// Set up DBUSIPCServer
 		try {
-			ipc_server_list.push_back(shared_ptr<nl::wpantund::IPCServer>(new DBUSIPCServer()));
+			main_loop->add_ipc_server(shared_ptr<nl::wpantund::IPCServer>(new DBUSIPCServer()));
 		} catch(std::exception x) {
 			syslog(LOG_ERR, "Unable to start DBUSIPCServer \"%s\"",x.what());
 		}
 
 		/*** Add other IPCServers here! ***/
 
-		// Always fail if we have no IPCServers.
-		if (ipc_server_list.empty()) {
-			syslog(LOG_ERR, "No viable IPC server.");
-			goto bail;
-		}
-
-		ncp_instance = NCPInstance::alloc(settings);
-
-		require_string(ncp_instance != NULL, bail, "Unable to create NCPInstance");
-
-		ncp_instance->mOnFatalError.connect(&handle_error);
-
-		ncp_instance->get_stat_collector().set_ncp_control_interface(&ncp_instance->get_control_interface());
 
 	} catch(std::runtime_error x) {
 		syslog(LOG_ERR, "Runtime error thrown while starting up, \"%s\"",x.what());
-		ncp_instance = NULL;
 		goto bail;
 
 	} catch(std::exception x) {
 		syslog(LOG_ERR, "Exception thrown while starting up, \"%s\"",x.what());
-		ncp_instance = NULL;
 		goto bail;
 	}
 
@@ -809,133 +963,14 @@ main(int argc, char * argv[])
 	// ========================================================================
 	// MAIN LOOP
 
-	gRet = 0;
-
-	while (!gRet) {
-		const cms_t max_main_loop_timeout(CMS_DISTANT_FUTURE);
-		cms_t cms_timeout(max_main_loop_timeout);
-		int max_fd(-1);
-		struct timeval timeout;
-		std::list<shared_ptr<nl::wpantund::IPCServer> >::iterator ipc_iter;
-
-		FD_ZERO(&gReadableFDs);
-		FD_ZERO(&gWritableFDs);
-		FD_ZERO(&gErrorableFDs);
-
-		// Update the FD masks and timeouts
-		ncp_instance->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
-		Timer::update_timeout(&cms_timeout);
-
-		for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
-			(*ipc_iter)->update_fd_set(&gReadableFDs, &gWritableFDs, &gErrorableFDs, &max_fd, &cms_timeout);
-		}
-
-		require_string(max_fd < FD_SETSIZE, bail, "Too many file descriptors");
-
-		// Negative CMS timeout values are not valid.
-		if (cms_timeout < 0) {
-			syslog(LOG_DEBUG, "Negative CMS value: %d", cms_timeout);
-			cms_timeout = 0;
-		}
-
-		// Identify conditions where we are burning too much CPU.
-		if (cms_timeout == 0) {
-			double loadavg[3] = {-1.0, -1.0, -1.0};
-
-#if HAVE_GETLOADAVG
-			getloadavg(loadavg, 3);
-#endif
-
-			switch (++zero_cms_in_a_row_count) {
-			case 20:
-				syslog(LOG_INFO, "BUG: Main loop is thrashing! (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
-				break;
-
-			case 200:
-				syslog(LOG_WARNING, "BUG: Main loop is still thrashing! Slowing things down. (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
-				break;
-
-			case 1000:
-				syslog(LOG_CRIT, "BUG: Main loop had over 1000 iterations in a row with a zero timeout! Terminating. (%f %f %f)", loadavg[0], loadavg[1], loadavg[2]);
-				gRet = ERRORCODE_UNKNOWN;
-				break;
-			}
-			if (zero_cms_in_a_row_count > 200) {
-				// If the past 200 iterations have had a zero timeout,
-				// start using a minimum timeout of 10ms, so that we
-				// don't bring the rest of the system to a grinding halt.
-				cms_timeout = 10;
-			}
-		} else {
-			zero_cms_in_a_row_count = 0;
-		}
-
-		// Convert our `cms` value into timeval compatible with select().
-		timeout.tv_sec = cms_timeout / MSEC_PER_SEC;
-		timeout.tv_usec = (cms_timeout % MSEC_PER_SEC) * USEC_PER_MSEC;
-
-#if DEBUG
-		syslog_dump_select_info(
-			LOG_DEBUG,
-			&gReadableFDs,
-			&gWritableFDs,
-			&gErrorableFDs,
-			max_fd + 1,
-			cms_timeout
-		);
-#endif
-
-		// Block until we timeout or there is FD activity.
-		fds_ready = select(
-			max_fd + 1,
-			&gReadableFDs,
-			&gWritableFDs,
-			&gErrorableFDs,
-			&timeout
-		);
-
-		if (fds_ready < 0) {
-			syslog(LOG_ERR, "select() errno=\"%s\" (%d)", strerror(errno),
-			       errno);
-
-			if (errno == EINTR) {
-				// EINTR isn't necessarily bad. If it was something bad,
-				// we would either already be terminated or gRet will be
-				// set and we will break out of the main loop in a moment.
-				continue;
-			}
-			gRet = ERRORCODE_ERRNO;
-			break;
-		}
-
-		// Process callback timers.
-		Timer::process();
-
-		// Process any necessary IPC actions.
-		for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
-			(*ipc_iter)->process();
-		}
-
-		// Process the NCP instance.
-		ncp_instance->process();
-
-		// We only expose the interface via IPC after it is
-		// successfully initialized for the first time.
-		if (!interface_added) {
-			const boost::any value = ncp_instance->get_control_interface().get_property(kWPANTUNDProperty_NCPState);
-			if ((value.type() == boost::any(std::string()).type())
-			 && (boost::any_cast<std::string>(value) != kWPANTUNDStateUninitialized)
-			) {
-				for (ipc_iter = ipc_server_list.begin(); ipc_iter != ipc_server_list.end(); ++ipc_iter) {
-					(*ipc_iter)->add_interface(&ncp_instance->get_control_interface());
-				}
-				interface_added = true;
-			}
-		}
-	} // while (!gRet)
+	main_loop->run();
 
 bail:
 	syslog(LOG_NOTICE, "Cleaning up. (gRet = %d)", gRet);
+
+	if (main_loop) {
+		delete main_loop;
+	}
 
 	if (gRet == ERRORCODE_QUIT) {
 		gRet = 0;

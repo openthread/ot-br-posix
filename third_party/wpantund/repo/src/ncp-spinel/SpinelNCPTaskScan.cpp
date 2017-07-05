@@ -36,8 +36,12 @@ nl::wpantund::SpinelNCPTaskScan::SpinelNCPTaskScan(
 	CallbackWithStatusArg1 cb,
 	uint32_t channel_mask,
 	uint16_t scan_period,
-	ScanType scan_type
-):	SpinelNCPTask(instance, cb), mChannelMaskLen(0), mScanPeriod(scan_period), mScanType(scan_type)
+	ScanType scan_type,
+	bool joiner_flag,
+	bool enable_filtering,
+	uint16_t pan_id
+):	SpinelNCPTask(instance, cb), mChannelMaskLen(0), mScanPeriod(scan_period), mScanType(scan_type),
+	mJoinerFlag(joiner_flag), mEnablerFiltering(enable_filtering), mPanId(pan_id), mShouldInterfaceDown(false)
 {
 	uint8_t i;
 
@@ -61,7 +65,6 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 	int ret = 0;
 
 	EH_BEGIN();
-
 
 	if (!mInstance->mEnabled) {
 		ret = kWPANTUNDStatus_InvalidWhenDisabled;
@@ -92,6 +95,7 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 	// to execute.
 	EH_WAIT_UNTIL(EVENT_STARTING_TASK != event);
 
+	mShouldInterfaceDown = false;
 
 	// Set channel mask
 	mNextCommand = SpinelPackData(
@@ -104,6 +108,51 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 	ret = mNextCommandRet;
 	require_noerr(ret, on_error);
 
+	if (mScanType == kScanTypeDiscover) {
+
+		// Set `discovery joiner flag`
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_THREAD_DISCOVERY_SCAN_JOINER_FLAG,
+			mJoinerFlag
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+
+		// Set the `enable-filtering` property
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_THREAD_DISCOVERY_SCAN_ENABLE_FILTERING,
+			mEnablerFiltering
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+
+		// Set PANID used in Discovery scan for PANID filtering.
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT16_S),
+			SPINEL_PROP_THREAD_DISCOVERY_SCAN_PANID,
+			mPanId
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+
+		// For discovery scan, interface should be up
+		if (mInstance->get_ncp_state() == OFFLINE) {
+			mNextCommand = SpinelPackData(
+				SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+				SPINEL_PROP_NET_IF_UP,
+				true
+			);
+			EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+			ret = mNextCommandRet;
+			require(ret == kWPANTUNDStatus_Ok || ret == kWPANTUNDStatus_Already, on_error);
+			mShouldInterfaceDown = true;
+		}
+	}
 
 	// Set delay period
 	mNextCommand = SpinelPackData(
@@ -115,16 +164,30 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 	ret = mNextCommandRet;
 	require_noerr(ret, on_error);
 
-
 	// Start the scan.
-	mNextCommand = SpinelPackData(
-		SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
-		SPINEL_PROP_MAC_SCAN_STATE,
-		(mScanType == kScanTypeNet) ? SPINEL_SCAN_STATE_BEACON : SPINEL_SCAN_STATE_ENERGY
-	);
-	EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
-	ret = mNextCommandRet;
-	require_noerr(ret, on_error);
+	{
+		spinel_scan_state_t scanState;
+
+		if (mScanType == kScanTypeEnergy) {
+			scanState = SPINEL_SCAN_STATE_ENERGY;
+		} else if (mScanType == kScanTypeDiscover) {
+			scanState = SPINEL_SCAN_STATE_DISCOVER;
+		} else if (mScanType == kScanTypeNet) {
+			scanState = SPINEL_SCAN_STATE_BEACON;
+		} else {
+			ret = kWPANTUNDStatus_InvalidArgument;
+			goto on_error;
+		}
+
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_UINT8_S),
+			SPINEL_PROP_MAC_SCAN_STATE,
+			scanState
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require_noerr(ret, on_error);
+	}
 
 	do {
 		EH_REQUIRE_WITHIN(
@@ -138,7 +201,8 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 		const uint8_t* data_ptr = va_arg(args, const uint8_t*);
 		spinel_size_t data_len = va_arg(args, spinel_size_t);
 
-		if ((prop_key == SPINEL_PROP_MAC_SCAN_BEACON) && (mScanType == kScanTypeNet)) {
+		if ((prop_key == SPINEL_PROP_MAC_SCAN_BEACON)
+		    && ((mScanType == kScanTypeNet) || (mScanType == kScanTypeDiscover))) {
 			const spinel_eui64_t* laddr = NULL;
 			const char* networkid = "";
 			const uint8_t* xpanid = NULL;
@@ -222,13 +286,38 @@ nl::wpantund::SpinelNCPTaskScan::vprocess_event(int event, va_list args)
 		event = EVENT_IDLE;
 	} while(true);
 
+	if (mShouldInterfaceDown)
+	{
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_IF_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		ret = mNextCommandRet;
+		require(ret == kWPANTUNDStatus_Ok || ret == kWPANTUNDStatus_Already, on_error);
+		mShouldInterfaceDown = false;
+	}
+
 	finish(ret);
 
 	EH_EXIT();
 
 on_error:
+
 	if (ret == kWPANTUNDStatus_Ok) {
 		ret = kWPANTUNDStatus_Failure;
+	}
+
+	if (mShouldInterfaceDown)
+	{
+		mNextCommand = SpinelPackData(
+			SPINEL_FRAME_PACK_CMD_PROP_VALUE_SET(SPINEL_DATATYPE_BOOL_S),
+			SPINEL_PROP_NET_IF_UP,
+			false
+		);
+		EH_SPAWN(&mSubPT, vprocess_send_command(event, args));
+		mShouldInterfaceDown = false;
 	}
 
 	syslog(LOG_ERR, "Scan failed: %d", ret);

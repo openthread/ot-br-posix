@@ -26,6 +26,8 @@ AM_CPPFLAGS = \
 	$(MISSING_CPPFLAGS) \
 	$(NULL)
 
+@CODE_COVERAGE_RULES@
+
 DISTCLEANFILES = \
 	.deps \
 	Makefile \
@@ -44,8 +46,7 @@ sysconf_DATA = wpantund.conf
 
 sbin_PROGRAMS = wpantund
 
-wpantund_SOURCES = \
-	wpantund.cpp \
+SOURCES = \
 	wpantund.h \
 	IPCServer.h \
 	NCPConstants.h \
@@ -67,6 +68,7 @@ wpantund_SOURCES = \
 	RunawayResetBackoffManager.h \
 	NCPInstanceBase-NetInterface.cpp \
 	NCPInstanceBase-Addresses.cpp \
+	NCPInstanceBase-Prefixes.cpp \
 	NCPInstanceBase-AsyncIO.cpp \
 	NCPTypes.h \
 	NCPTypes.cpp \
@@ -97,19 +99,6 @@ wpantund_SOURCES = \
 	../util/sec-random.c \
 	$(NULL)
 
-wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
-wpantund_LDADD += ../ipc-dbus/libwpantund-dbus.la
-
-if STATIC_LINK_NCP_PLUGIN
-wpantund_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@.la
-else
-wpantund_LDADD += $(LIBDL_LIBS)
-wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
-endif
-
-wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS)
-wpantund_CXXFLAGS = $(BOOST_CXXFLAGS)
-
 SOURCE_VERSION=$(shell                                            \
 	git describe --dirty --always --match "[0-9].*" 2> /dev/null  \
 )
@@ -121,4 +110,43 @@ CLEANFILES     = $(top_builddir)/$(subdir)/version.c
 $(top_builddir)/$(subdir)/version.c: ../version.c.in Makefile
 	sed 's/SOURCE_VERSION/"$(SOURCE_VERSION)"/' < $< > $@
 
-wpantund_SOURCES += $(top_builddir)/$(subdir)/version.c
+SOURCES += $(top_builddir)/$(subdir)/version.c
+
+
+wpantund_SOURCES = wpantund.cpp $(SOURCES)
+
+wpantund_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
+wpantund_LDADD += ../ipc-dbus/libwpantund-dbus.la
+
+if STATIC_LINK_NCP_PLUGIN
+wpantund_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@.la
+else
+wpantund_LDADD += $(LIBDL_LIBS)
+wpantund_LDFLAGS = @EXPORT_DYNAMIC_LDFLAGS@
+endif
+
+wpantund_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+wpantund_CXXFLAGS = $(AM_CXXFLAGS) $(BOOST_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+wpantund_CFLAGS = $(AM_CFLAGS)
+
+wpantund_CPPFLAGS += $(CODE_COVERAGE_CPPFLAGS)
+wpantund_CXXFLAGS += $(CODE_COVERAGE_CXXFLAGS)
+wpantund_CFLAGS += $(CODE_COVERAGE_CFLAGS)
+wpantund_LDADD += $(CODE_COVERAGE_LIBS)
+
+if ENABLE_FUZZ_TARGETS
+noinst_PROGRAMS = wpantund-fuzz
+endif
+
+wpantund_fuzz_SOURCES = wpantund-fuzz.cpp $(SOURCES)
+
+wpantund_fuzz_LDADD = $(MISSING_LIBADD) $(DBUS_LIBS)
+wpantund_fuzz_LDADD += ../ipc-dbus/libwpantund-dbus-fuzz.la
+wpantund_fuzz_LDADD += ../ncp-@default_ncp_plugin@/libncp-@default_ncp_plugin@-fuzz.la
+wpantund_fuzz_CPPFLAGS = $(AM_CPPFLAGS) $(DBUS_CFLAGS) $(FUZZ_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+wpantund_fuzz_CXXFLAGS = $(BOOST_CXXFLAGS) $(FUZZ_CXXFLAGS) $(CODE_COVERAGE_CXXFLAGS)
+wpantund_fuzz_CFLAGS = $(FUZZ_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+wpantund_fuzz_LDADD += $(CODE_COVERAGE_LIBS) $(FUZZ_LIBS)
+wpantund_fuzz_LDFLAGS = $(AM_LDFLAGS) $(FUZZ_LDFLAGS)
+
+

@@ -73,8 +73,8 @@ public:
 
 	static bool is_a_stat_property(const std::string& key);   // returns true if the property key is associated with stat module
 
-	void get_property(const std::string& key, CallbackWithStatusArg1 cb);
-	void set_property(const std::string& key, const boost::any& value, CallbackWithStatus cb);
+	void property_get_value(const std::string& key, CallbackWithStatusArg1 cb);
+	void property_set_value(const std::string& key, const boost::any& value, CallbackWithStatus cb);
 
 	// Methods to inform StatCollector about received/sent packets and state changes
 	void record_inbound_packet(const uint8_t *ipv6_packet);

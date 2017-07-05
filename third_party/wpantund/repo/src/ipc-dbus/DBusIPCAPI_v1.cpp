@@ -43,6 +43,7 @@
 
 #include "DBUSHelpers.h"
 #include "any-to.h"
+#include "commissioner-utils.h"
 
 using namespace DBUSHelpers;
 using namespace nl;
@@ -78,6 +79,8 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_ADD, interface_route_add_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ROUTE_REMOVE, interface_route_remove_handler);
 
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_JOINER_ADD, interface_joiner_add_handler);
+
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DATA_POLL, interface_data_poll_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_CONFIG_GATEWAY, interface_config_gateway_handler);
 
@@ -85,13 +88,17 @@ DBusIPCAPI_v1::init_callback_tables()
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_HOST_DID_WAKE, interface_host_did_wake_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_STOP, interface_net_scan_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_NET_SCAN_START, interface_net_scan_start_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DISCOVER_SCAN_STOP, interface_discover_scan_stop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_DISCOVER_SCAN_START, interface_discover_scan_start_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_STOP, interface_energy_scan_stop_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_ENERGY_SCAN_START, interface_energy_scan_start_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_MFG, interface_mfg_handler);
 
-	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_get_prop_handler);
-	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_set_prop_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_GET, interface_prop_get_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_SET, interface_prop_set_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_INSERT, interface_prop_insert_handler);
+	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PROP_REMOVE, interface_prop_remove_handler);
 
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TO_FD, interface_pcap_to_fd_handler);
 	INTERFACE_CALLBACK_CONNECT(WPANTUND_IF_CMD_PCAP_TERMINATE, interface_pcap_terminate_handler);
@@ -421,7 +428,7 @@ DBusIPCAPI_v1::status_response_helper(
 			&dict
 		);
 
-		value = interface->get_property(kWPANTUNDProperty_NCPState);
+		value = interface->property_get_value(kWPANTUNDProperty_NCPState);
 
 		if (!value.empty()) {
 			ncp_state_string = any_to_string(value);
@@ -434,84 +441,84 @@ DBusIPCAPI_v1::status_response_helper(
 						  DBUS_TYPE_STRING,
 						  &ncp_state_cstr);
 
-		value = interface->get_property(kWPANTUNDProperty_DaemonEnabled);
+		value = interface->property_get_value(kWPANTUNDProperty_DaemonEnabled);
 		if (!value.empty()) {
 			append_dict_entry(&dict, kWPANTUNDProperty_DaemonEnabled, value);
 		}
 
-		value = interface->get_property(kWPANTUNDProperty_NCPVersion);
+		value = interface->property_get_value(kWPANTUNDProperty_NCPVersion);
 		if (!value.empty()) {
 			append_dict_entry(&dict, kWPANTUNDProperty_NCPVersion, value);
 		}
 
-		value = interface->get_property(kWPANTUNDProperty_DaemonVersion);
+		value = interface->property_get_value(kWPANTUNDProperty_DaemonVersion);
 		if (!value.empty()) {
 			append_dict_entry(&dict, kWPANTUNDProperty_DaemonVersion, value);
 		}
 
-		value = interface->get_property(kWPANTUNDProperty_ConfigNCPDriverName);
+		value = interface->property_get_value(kWPANTUNDProperty_ConfigNCPDriverName);
 		if (!value.empty()) {
 			append_dict_entry(&dict, kWPANTUNDProperty_ConfigNCPDriverName, value);
 		}
 
-		value = interface->get_property(kWPANTUNDProperty_NCPHardwareAddress);
+		value = interface->property_get_value(kWPANTUNDProperty_NCPHardwareAddress);
 		if (!value.empty()) {
 			append_dict_entry(&dict, kWPANTUNDProperty_NCPHardwareAddress, value);
 		}
 
 		if (ncp_state_is_commissioned(ncp_state))
 		{
-			value = interface->get_property(kWPANTUNDProperty_NCPChannel);
+			value = interface->property_get_value(kWPANTUNDProperty_NCPChannel);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NCPChannel, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NetworkNodeType);
+			value = interface->property_get_value(kWPANTUNDProperty_NetworkNodeType);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NetworkNodeType, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NetworkName);
+			value = interface->property_get_value(kWPANTUNDProperty_NetworkName);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NetworkName, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NetworkXPANID);
+			value = interface->property_get_value(kWPANTUNDProperty_NetworkXPANID);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NetworkXPANID, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NetworkPANID);
+			value = interface->property_get_value(kWPANTUNDProperty_NetworkPANID);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NetworkPANID, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_IPv6LinkLocalAddress);
+			value = interface->property_get_value(kWPANTUNDProperty_IPv6LinkLocalAddress);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_IPv6LinkLocalAddress, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_IPv6MeshLocalAddress);
+			value = interface->property_get_value(kWPANTUNDProperty_IPv6MeshLocalAddress);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_IPv6MeshLocalAddress, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_IPv6MeshLocalPrefix);
+			value = interface->property_get_value(kWPANTUNDProperty_IPv6MeshLocalPrefix);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_IPv6MeshLocalPrefix, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NestLabs_LegacyMeshLocalAddress);
+			value = interface->property_get_value(kWPANTUNDProperty_NestLabs_LegacyMeshLocalAddress);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NestLabs_LegacyMeshLocalAddress, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
+			value = interface->property_get_value(kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NestLabs_LegacyMeshLocalPrefix, value);
 			}
 
-			value = interface->get_property(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin);
+			value = interface->property_get_value(kWPANTUNDProperty_NestLabs_NetworkAllowingJoin);
 			if (!value.empty()) {
 				append_dict_entry(&dict, kWPANTUNDProperty_NestLabs_NetworkAllowingJoin, value);
 			}
@@ -579,7 +586,7 @@ DBusIPCAPI_v1::interface_status_handler(
 	dbus_message_ref(message);
 
 	NCPState ncp_state = UNINITIALIZED;
-	boost::any value(interface->get_property(kWPANTUNDProperty_NCPState));
+	boost::any value(interface->property_get_value(kWPANTUNDProperty_NCPState));
 
 	if (!value.empty()) {
 		ncp_state = string_to_ncp_state(any_to_string(value));
@@ -742,6 +749,22 @@ DBusIPCAPI_v1::interface_net_scan_stop_handler(
 }
 
 DBusHandlerResult
+DBusIPCAPI_v1::interface_discover_scan_stop_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	interface->netscan_stop(boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+									 this, _1, message));
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
 DBusIPCAPI_v1::interface_energy_scan_stop_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
@@ -796,7 +819,7 @@ DBusIPCAPI_v1::interface_mfg_handler(
 }
 
 DBusHandlerResult
-DBusIPCAPI_v1::interface_get_prop_handler(
+DBusIPCAPI_v1::interface_prop_get_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
 ) {
@@ -818,7 +841,7 @@ DBusIPCAPI_v1::interface_get_prop_handler(
 
 	dbus_message_ref(message);
 
-	interface->get_property(
+	interface->property_get_value(
 		property_key,
 		boost::bind(
 			&DBusIPCAPI_v1::CallbackWithStatusArg1_Helper,
@@ -835,7 +858,7 @@ DBusIPCAPI_v1::interface_get_prop_handler(
 }
 
 DBusHandlerResult
-DBusIPCAPI_v1::interface_set_prop_handler(
+DBusIPCAPI_v1::interface_prop_set_handler(
 	NCPControlInterface* interface,
 	DBusMessage *        message
 ) {
@@ -861,7 +884,95 @@ DBusIPCAPI_v1::interface_set_prop_handler(
 
 	dbus_message_ref(message);
 
-	interface->set_property(
+	interface->property_set_value(
+		property_key,
+		property_value,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_prop_insert_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	DBusMessageIter iter;
+	const char* property_key_cstr = "";
+	std::string property_key;
+	boost::any property_value;
+
+	dbus_message_iter_init(message, &iter);
+
+	require (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING, bail);
+
+	dbus_message_iter_get_basic(&iter, &property_key_cstr);
+	dbus_message_iter_next(&iter);
+
+	property_value = any_from_dbus_iter(&iter);
+	property_key = property_key_cstr;
+
+	if (interface->translate_deprecated_property(property_key, property_value)) {
+		syslog(LOG_WARNING, "PropeInsert: Property \"%s\" is deprecated. Please use \"%s\" instead.", property_key_cstr, property_key.c_str());
+	}
+
+	dbus_message_ref(message);
+
+	interface->property_insert_value(
+		property_key,
+		property_value,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_prop_remove_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	DBusMessageIter iter;
+	const char* property_key_cstr = "";
+	std::string property_key;
+	boost::any property_value;
+
+	dbus_message_iter_init(message, &iter);
+
+	require (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_STRING, bail);
+
+	dbus_message_iter_get_basic(&iter, &property_key_cstr);
+	dbus_message_iter_next(&iter);
+
+	property_value = any_from_dbus_iter(&iter);
+	property_key = property_key_cstr;
+
+	if (interface->translate_deprecated_property(property_key, property_value)) {
+		syslog(LOG_WARNING, "PropRemove: Property \"%s\" is deprecated. Please use \"%s\" instead.", property_key_cstr, property_key.c_str());
+	}
+
+	dbus_message_ref(message);
+
+	interface->property_remove_value(
 		property_key,
 		property_value,
 		boost::bind(
@@ -896,8 +1007,55 @@ DBusIPCAPI_v1::interface_net_scan_start_handler(
 	);
 
 	if (channel_mask) {
-		options[kWPANTUNDProperty_NCPChannelMask] = channel_mask;
+		options[kWPANTUNDValueMapKey_Scan_ChannelMask] = channel_mask;
 	}
+
+	interface->netscan_start(
+		options,
+		boost::bind(
+			&DBusIPCAPI_v1::CallbackWithStatus_Helper,
+			this,
+			_1,
+			message
+		)
+	);
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+	return ret;
+}
+
+DBusHandlerResult
+DBusIPCAPI_v1::interface_discover_scan_start_handler(
+	NCPControlInterface* interface,
+	DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	ValueMap options;
+	NCPControlInterface::ChannelMask channel_mask = 0;
+	dbus_bool_t joiner_flag = FALSE;
+	dbus_bool_t enable_filtering = FALSE;
+	uint16_t pan_id_filter = 0xffff;
+
+	dbus_message_ref(message);
+
+	dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_UINT32, &channel_mask,
+		DBUS_TYPE_BOOLEAN, &joiner_flag,
+		DBUS_TYPE_BOOLEAN, &enable_filtering,
+		DBUS_TYPE_UINT16, &pan_id_filter,
+		DBUS_TYPE_INVALID
+	);
+
+	options[kWPANTUNDValueMapKey_Scan_Discover] = true;
+
+	if (channel_mask) {
+		options[kWPANTUNDValueMapKey_Scan_ChannelMask] = channel_mask;
+	}
+
+	options[kWPANTUNDValueMapKey_Scan_JoinerFalg] = joiner_flag ? true : false;
+	options[kWPANTUNDValueMapKey_Scan_EnableFiltering] = enable_filtering ? true : false;
+	options[kWPANTUNDValueMapKey_Scan_PANIDFilter] = pan_id_filter;
 
 	interface->netscan_start(
 		options,
@@ -1025,12 +1183,17 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 ) {
 	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	dbus_bool_t default_route = FALSE;
+	dbus_bool_t preferred = TRUE;
+	dbus_bool_t slaac = TRUE;
+	dbus_bool_t on_mesh = TRUE;
 	uint32_t preferred_lifetime = 0;
 	uint32_t valid_lifetime = 0;
 	uint8_t *prefix(NULL);
 	int prefix_len_in_bytes(0);
 	struct in6_addr address = {};
 	bool did_succeed(false);
+	int16_t priority_raw(0);
+	NCPControlInterface::OnMeshPrefixPriority priority(NCPControlInterface::PREFIX_MEDIUM_PREFERENCE);
 
 	did_succeed = dbus_message_get_args(
 		message, NULL,
@@ -1038,8 +1201,30 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
 		DBUS_TYPE_UINT32, &preferred_lifetime,
 		DBUS_TYPE_UINT32, &valid_lifetime,
+		DBUS_TYPE_BOOLEAN, &preferred,
+		DBUS_TYPE_BOOLEAN, &slaac,
+		DBUS_TYPE_BOOLEAN, &on_mesh,
+		DBUS_TYPE_INT16, &priority_raw,
 		DBUS_TYPE_INVALID
 	);
+
+	if (!did_succeed)
+	{
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_BOOLEAN, &default_route,
+			DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &prefix, &prefix_len_in_bytes,
+			DBUS_TYPE_UINT32, &preferred_lifetime,
+			DBUS_TYPE_UINT32, &valid_lifetime,
+			DBUS_TYPE_INVALID
+		);
+	} else {
+		if (priority_raw > 0) {
+			priority = NCPControlInterface::PREFIX_HIGH_PREFERENCE;
+		} else if (priority_raw < 0) {
+			priority = NCPControlInterface::PREFIX_LOW_PREFRENCE;
+		}
+	}
 
 	require(did_succeed, bail);
 	require(prefix_len_in_bytes <= sizeof(address), bail);
@@ -1058,6 +1243,10 @@ DBusIPCAPI_v1::interface_config_gateway_handler(
 		interface->add_on_mesh_prefix(
 			&address,
 			default_route,
+			preferred,
+			slaac,
+			on_mesh,
+			priority,
 			boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper,this, _1, message)
 		);
 	}
@@ -1192,6 +1381,57 @@ bail:
 	return ret;
 }
 
+DBusHandlerResult
+DBusIPCAPI_v1::interface_joiner_add_handler(
+   NCPControlInterface* interface,
+   DBusMessage *        message
+) {
+	DBusHandlerResult ret = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	dbus_message_ref(message);
+
+	const uint8_t* ext_addr = NULL;
+	int ext_addr_len = 0;
+	const char* psk = NULL;
+	int psk_len = 0;
+	uint32_t joiner_timeout = 0;
+	bool did_succeed = false;
+
+	did_succeed = dbus_message_get_args(
+		message, NULL,
+		DBUS_TYPE_STRING, &psk,
+		DBUS_TYPE_UINT32, &joiner_timeout,
+		DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &ext_addr, &ext_addr_len,
+		DBUS_TYPE_INVALID
+	);
+
+	if (!did_succeed) {
+		// No extended address specified
+		did_succeed = dbus_message_get_args(
+			message, NULL,
+			DBUS_TYPE_STRING, &psk,
+			DBUS_TYPE_UINT32, &joiner_timeout,
+			DBUS_TYPE_INVALID
+		);
+	}
+
+	require(did_succeed, bail);
+	require(psk != NULL, bail);
+
+	dbus_message_ref(message);
+	interface->joiner_add(
+		psk,
+		joiner_timeout,
+		ext_addr,
+		boost::bind(&DBusIPCAPI_v1::CallbackWithStatus_Helper, this, _1, message)
+	);
+
+	ret = DBUS_HANDLER_RESULT_HANDLED;
+
+bail:
+
+	return ret;
+}
 
 DBusHandlerResult
 DBusIPCAPI_v1::message_handler(

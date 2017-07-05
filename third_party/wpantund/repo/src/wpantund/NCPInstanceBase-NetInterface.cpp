@@ -45,16 +45,16 @@ NCPInstanceBase::link_state_changed(bool isUp, bool isRunning)
 	// we should autoconnect or not.
 
 	if (isUp) {
-		set_property(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, true);
+		property_set_value(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, true);
 
 		if (!mEnabled) {
-			set_property(kWPANTUNDProperty_DaemonEnabled, true);
+			property_set_value(kWPANTUNDProperty_DaemonEnabled, true);
 		} else if (get_ncp_state() == COMMISSIONED) {
-			set_property(kWPANTUNDProperty_InterfaceUp, true);
+			property_set_value(kWPANTUNDProperty_InterfaceUp, true);
 		}
 	} else {
-		set_property(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, false);
-		set_property(kWPANTUNDProperty_InterfaceUp, false);
+		property_set_value(kWPANTUNDProperty_DaemonAutoAssociateAfterReset, false);
+		property_set_value(kWPANTUNDProperty_InterfaceUp, false);
 	}
 }
 

@@ -46,11 +46,19 @@
 #endif
 
 TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int mtu):
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	UnixSocket(open("/dev/null",O_RDWR), true),
+#else
 	UnixSocket(tunnel_open(interface_name.c_str()), true),
+#endif
 	mInterfaceName(interface_name),
 	mLastError(0),
 	mNetlinkFD(-1),
+#if FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+	mNetifMgmtFD(-1),
+#else
 	mNetifMgmtFD(netif_mgmt_open()),
+#endif
 	mIsRunning(false),
 	mIsUp(false)
 {
@@ -58,6 +66,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 		throw std::invalid_argument("Unable to open tunnel interface");
 	}
 
+#if !FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 	{
 		char ActualInterfaceName[TUNNEL_MAX_INTERFACE_NAME_LEN] = "";
 		int ret = 0;
@@ -79,6 +88,7 @@ TunnelIPv6Interface::TunnelIPv6Interface(const std::string& interface_name, int 
 	netif_mgmt_set_mtu(mNetifMgmtFD, mInterfaceName.c_str(), mtu);
 
 	setup_signals();
+#endif
 }
 
 TunnelIPv6Interface::~TunnelIPv6Interface()

@@ -54,3 +54,28 @@ framing/unframing data and management packets, etc.
 The `IPCServer` class exposes the methods from the
 `NCPControlInterface` class via an unspecified IPC mechanism (DBus is
 currently the only sublass implemented).
+
+## Fuzzing ##
+
+Wpantund comes with some fuzz targets which can be enabled with the
+`--enable-fuzz-targets` configure script argument. It currently relies
+on the use of [clang][1] and requres [libFuzzer][2], although the
+targets could easily be modified for use with other fuzzing engines.
+
+There are currently two targets, but more may be added in the future:
+
+* `src/wpantund/wpantund-fuzz`: For general high-level fuzzing.
+* `src/ncp-spinel/ncp-spinel-fuzz`: For spinel-specific fuzzing.
+
+A corpus for each fuzz test is stored in `etc/fuzz-corpus/wpantund`
+and `etc/fuzz-corpus/ncp-spinel` respectively. This corpus will eventually
+be used as a part of unit testing to help prevent regressions.
+
+Wpantund wasn't initially designed with efficient fuzzing in mind, and
+so changes will have to be made to improve fuzzability going forward.
+If you write new code which touches or parses untrusted data, then it
+is expected that you will add it to the appropriate fuzz target or
+add a new fuzz target for it.
+
+[1]: https://clang.llvm.org/
+[2]: http://llvm.org/docs/LibFuzzer.html

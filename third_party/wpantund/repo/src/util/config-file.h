@@ -24,6 +24,8 @@ extern char* get_next_arg(char *buf, char **rest);
 typedef int (*config_param_set_func)(void* context, const char* key, const char* value);
 
 extern int read_config(const char* filename, config_param_set_func setter, void* context);
+
+extern int fread_config(FILE* file, config_param_set_func setter, void* context);
 __END_DECLS
 
 #endif // __WPAN_CONFIG_FILE_H__

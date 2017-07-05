@@ -557,6 +557,7 @@ on_error:
 	mIsPcapInProgress = false;
 	mFailureCount = 0;
 	mResetIsExpected = false;
+	mXPANIDWasExplicitlySet = false;
 	set_initializing_ncp(false);
 	mDriverState = NORMAL_OPERATION;
 

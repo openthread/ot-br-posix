@@ -47,46 +47,96 @@ public:
 
 	virtual void join(
 		const ValueMap& options,
-	    CallbackWithStatus cb = NilReturn()
+		CallbackWithStatus cb = NilReturn()
 	);
 
 	virtual void form(
 		const ValueMap& options,
-	    CallbackWithStatus cb = NilReturn()
+		CallbackWithStatus cb = NilReturn()
 	);
 
-	virtual void leave(CallbackWithStatus cb = NilReturn());
-	virtual void attach(CallbackWithStatus cb = NilReturn());
-	virtual void begin_low_power(CallbackWithStatus cb = NilReturn());
+	virtual void leave(
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void netscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn());
-	virtual void netscan_stop(CallbackWithStatus cb = NilReturn());
+	virtual void attach(
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void energyscan_start(const ValueMap& options, CallbackWithStatus cb = NilReturn());
-	virtual void energyscan_stop(CallbackWithStatus cb = NilReturn());
+	virtual void begin_low_power(
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void mfg(const std::string& mfg_command, CallbackWithStatusArg1 cb = NilReturn());
+	virtual void netscan_start(
+		const ValueMap& options,
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void begin_net_wake(uint8_t data, uint32_t flags, CallbackWithStatus cb = NilReturn());
-	virtual void reset(CallbackWithStatus cb = NilReturn());
+	virtual void netscan_stop(
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void energyscan_start(
+		const ValueMap& options,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void energyscan_stop(
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void begin_net_wake(
+		uint8_t data,
+		uint32_t flags,
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void reset(
+		CallbackWithStatus cb = NilReturn()
+	);
+
 	virtual void permit_join(
-	    int seconds = 15 * 60,
-	    uint8_t commissioning_traffic_type = 0xFF,
-	    in_port_t commissioning_traffic_port = 0,
-	    bool network_wide = false,
-	    CallbackWithStatus      cb = NilReturn());
+		int seconds = 15 * 60,
+		uint8_t commissioning_traffic_type = 0xFF,
+		in_port_t commissioning_traffic_port = 0,
+		bool network_wide = false,
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void refresh_state(CallbackWithStatus cb = NilReturn());
+	virtual void refresh_state(
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void get_property(
-	    const std::string& key, CallbackWithStatusArg1 cb);
-	virtual void set_property(
-	    const std::string&                      key,
-	    const boost::any&                       value,
-	    CallbackWithStatus      cb);
+	virtual void property_get_value(
+		const std::string& key,
+		CallbackWithStatusArg1 cb
+	);
+
+	virtual void property_set_value(
+		const std::string& key,
+		const boost::any& value,
+		CallbackWithStatus cb
+	);
+
+	virtual void property_insert_value(
+		const std::string& key,
+		const boost::any& value,
+		CallbackWithStatus cb
+	);
+
+	virtual void property_remove_value(
+		const std::string& key,
+		const boost::any& value,
+		CallbackWithStatus cb
+	);
+
 	virtual void add_on_mesh_prefix(
 		const struct in6_addr *prefix,
 		bool defaultRoute,
+		bool preferred,
+		bool slaac,
+		bool onMesh,
+		OnMeshPrefixPriority priority,
 		CallbackWithStatus cb = NilReturn()
 	);
 
@@ -110,16 +160,37 @@ public:
 		CallbackWithStatus cb = NilReturn()
 	);
 
-	virtual void data_poll(CallbackWithStatus cb = NilReturn());
-	virtual void host_did_wake(CallbackWithStatus cb = NilReturn());
+	virtual void joiner_add(
+		const char *psk,
+		uint32_t joiner_timeout,
+		const uint8_t *addr,
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual std::string get_name();
+	virtual void data_poll(
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void host_did_wake(
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual std::string get_name(void);
 
 	virtual NCPInstance& get_ncp_instance(void);
 
-	virtual void pcap_to_fd(int fd, CallbackWithStatus cb = NilReturn());
+	virtual void pcap_to_fd(int fd,
+		CallbackWithStatus cb = NilReturn()
+	);
 
-	virtual void pcap_terminate(CallbackWithStatus cb = NilReturn());
+	virtual void pcap_terminate(
+		CallbackWithStatus cb = NilReturn()
+	);
+
+	virtual void mfg(
+		const std::string& mfg_command,
+		CallbackWithStatusArg1 cb = NilReturn()
+	);
 
 private:
 

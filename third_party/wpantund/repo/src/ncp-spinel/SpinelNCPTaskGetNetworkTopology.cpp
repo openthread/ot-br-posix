@@ -297,18 +297,18 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 
 	if (mType == kChildTable) {
 		snprintf(c_string, sizeof(c_string),
-			 "%02X%02X%02X%02X%02X%02X%02X%02X, "
-			 kWPANTUNDValueMapKey_NetworkTopology_RLOC16              ": %04x, "
-			 kWPANTUNDValueMapKey_NetworkTopology_NetworkDataVersion  ": %-3d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn       ": %-2d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_AverageRssi         ": %-3d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_LastRssi            ": %-3d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_Timeout             ": %-5u, "
-			 kWPANTUNDValueMapKey_NetworkTopology_Age                 ": %-5u, "
-			 kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle        ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_FullFunction        ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_SecureDataRequest   ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_FullNetworkData     ": %s",
+			"%02X%02X%02X%02X%02X%02X%02X%02X, "
+			"RLOC16:%04x, "
+			"NetDataVer:%d, "
+			"LQIn:%d, "
+			"AveRssi:%d, "
+			"LastRssi:%d, "
+			"Timeout:%u, "
+			"Age:%u, "
+			"RxOnIdle:%s, "
+			"FFD:%s, "
+			"SecDataReq:%s, "
+			"FullNetData:%s",
 			mExtAddress[0], mExtAddress[1], mExtAddress[2], mExtAddress[3],
 			mExtAddress[4], mExtAddress[5], mExtAddress[6], mExtAddress[7],
 			mRloc16,
@@ -326,19 +326,19 @@ SpinelNCPTaskGetNetworkTopology::TableEntry::get_as_string(void) const
 
 	} else {
 		snprintf(c_string, sizeof(c_string),
-			 "%02X%02X%02X%02X%02X%02X%02X%02X, "
-			 kWPANTUNDValueMapKey_NetworkTopology_RLOC16             ": %04x, "
-			 kWPANTUNDValueMapKey_NetworkTopology_LinkQualityIn      ": %-2d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_AverageRssi        ": %-3d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_LastRssi           ": %-3d, "
-			 kWPANTUNDValueMapKey_NetworkTopology_Age                ": %-5u, "
-			 kWPANTUNDValueMapKey_NetworkTopology_LinkFrameCounter   ": %-5u, "
-			 kWPANTUNDValueMapKey_NetworkTopology_MleFrameCounter    ": %-5u, "
-			 kWPANTUNDValueMapKey_NetworkTopology_IsChild            ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_RxOnWhenIdle       ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_FullFunction       ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_SecureDataRequest  ": %s, "
-			 kWPANTUNDValueMapKey_NetworkTopology_FullNetworkData    ": %s",
+			"%02X%02X%02X%02X%02X%02X%02X%02X, "
+			"RLOC16:%04x, "
+			"LQIn:%d, "
+			"AveRssi:%d, "
+			"LastRssi:%d, "
+			"Age:%u, "
+			"LinkFC:%u, "
+			"MleFC:%u, "
+			"IsChild:%s, "
+			"RxOnIdle:%s, "
+			"FFD:%s, "
+			"SecDataReq:%s, "
+			"FullNetData:%s",
 			mExtAddress[0], mExtAddress[1], mExtAddress[2], mExtAddress[3],
 			mExtAddress[4], mExtAddress[5], mExtAddress[6], mExtAddress[7],
 			mRloc16,

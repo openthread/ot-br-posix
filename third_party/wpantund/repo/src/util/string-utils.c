@@ -297,3 +297,26 @@ buffer_is_nonzero(const uint8_t* buffer, size_t len)
 	}
 	return false;
 }
+
+bool
+is_hex(const uint8_t* buff, size_t len)
+{
+	while (len--) {
+		if (!isxdigit(*buff++)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool
+is_uppercase_or_digit(const uint8_t* buff, size_t len)
+{
+	while (len--) {
+		if (!(isupper(*buff) || isdigit(*buff))) {
+			return false;
+		}
+		buff++;
+	}
+	return true;
+}
