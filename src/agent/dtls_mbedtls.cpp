@@ -43,6 +43,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
+#include "common/types.hpp"
 
 namespace ot {
 
@@ -481,7 +482,7 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
 {
     uint8_t       packet[kMaxSizeOfPacket];
     uint8_t       control[kMaxSizeOfControl];
-    ssize_t       ret = 0;
+    otbrError     error = OTBR_ERROR_ERRNO;
     sockaddr_in6  src;
     sockaddr_in6  dst;
     struct msghdr msghdr;
@@ -489,7 +490,7 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
 
     VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet));
 
-    otbrLog(OTBR_LOG_INFO, "Trying to accept connection");
+    otbrLog(OTBR_LOG_INFO, "Trying to accept connection...");
     memset(&src, 0, sizeof(src));
     memset(&dst, 0, sizeof(dst));
     memset(&msghdr, 0, sizeof(msghdr));
@@ -503,7 +504,7 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
     msghdr.msg_control = control;
     msghdr.msg_controllen = sizeof(control);
 
-    VerifyOrExit(recvmsg(mSocket, &msghdr, MSG_PEEK) > 0, ret = -1);
+    VerifyOrExit(recvmsg(mSocket, &msghdr, MSG_PEEK) > 0);
 
     for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msghdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&msghdr, cmsg))
     {
@@ -517,7 +518,9 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
         }
     }
 
-    VerifyOrExit(memcmp(dst.sin6_addr.s6_addr, in6addr_any.s6_addr, sizeof(dst.sin6_addr)) != 0, ret = -1);
+    VerifyOrExit(memcmp(dst.sin6_addr.s6_addr, in6addr_any.s6_addr, sizeof(dst.sin6_addr)) != 0,
+                 errno = EDESTADDRREQ);
+
     // TODO Should check if this client has an existing session.
     {
         mbedtls_net_context net = {
@@ -529,10 +532,20 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
         session->Process();
     }
 
+    error = OTBR_ERROR_NONE;
+
 exit:
-    if (ret)
+    if (error)
     {
-        otbrLog(OTBR_LOG_ERR, "DTLS failed to initiate new session: -0x%04x.", -ret);
+        otbrLog(OTBR_LOG_ERR, "DTLS failed to initiate new session: %s.", otbrErrorString(error));
+        otbrLog(OTBR_LOG_INFO, "Trying to create new server socket...");
+        close(mSocket);
+
+        if (Bind())
+        {
+            otbrLog(OTBR_LOG_ERR, "Unable create new server socket! Die now!");
+            throw std::runtime_error("Unable to create server socket!");
+        }
     }
 
     (void)aWriteFdSet;
