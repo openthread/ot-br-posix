@@ -29,8 +29,10 @@
 #include "logging.hpp"
 
 #include <assert.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <string.h>
 #include <syslog.h>
 
 static int        sLevel = LOG_INFO;
@@ -84,6 +86,39 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
 
     syslog(aLevel, "%s #%zu %s", aPrefix, aSize, hex);
     delete[] hex;
+}
+
+const char *otbrErrorString(otbrError aError)
+{
+    const char *error = NULL;
+
+    switch (aError)
+    {
+    case OTBR_ERROR_NONE:
+        error = "OK";
+        break;
+
+    case OTBR_ERROR_ERRNO:
+        error = strerror(errno);
+        break;
+
+    case OTBR_ERROR_DTLS:
+        error = "DTLS error";
+        break;
+
+    case OTBR_ERROR_DBUS:
+        error = "DBUS error";
+        break;
+
+    case OTBR_ERROR_MDNS:
+        error = "MDNS error";
+        break;
+
+    default:
+        assert(false);
+    }
+
+    return error;
 }
 
 void otbrLogDeinit(void)

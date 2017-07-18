@@ -31,6 +31,8 @@
 
 #include <stddef.h>
 
+#include "types.hpp"
+
 /**
  * Logging level, which is identical to syslog
  *
@@ -75,6 +77,16 @@ void otbrLog(int aLevel, const char *aFormat, ...);
  *
  */
 void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize);
+
+/**
+ * This function converts error code to string.
+ *
+ * @param[in]   aError      The error code.
+ *
+ * @returns The string information of error.
+ *
+ */
+const char *otbrErrorString(otbrError aError);
 
 /**
  * This function deinitializes the logging service.
