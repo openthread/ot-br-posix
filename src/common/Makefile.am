@@ -35,11 +35,13 @@ noinst_HEADERS                                        = \
     tlv.hpp                                             \
     types.hpp                                           \
     logging.hpp                                         \
+    interface_address.hpp                               \
     $(NULL)
 
 noinst_LTLIBRARIES                                    = \
     libotbr-logging.la                                  \
     libotbr-event-emitter.la                            \
+    libotbr-interface-address.la                        \
     $(NULL)
 
 libotbr_logging_la_SOURCES =                            \
@@ -48,6 +50,10 @@ libotbr_logging_la_SOURCES =                            \
 
 libotbr_event_emitter_la_SOURCES                      = \
     event_emitter.cpp                                   \
+    $(NULL)
+
+libotbr_interface_address_la_SOURCES                  = \
+    interface_address.cpp                               \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

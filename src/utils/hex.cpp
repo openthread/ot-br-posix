@@ -127,6 +127,38 @@ int Long2Hex(const uint64_t aLong, char *aHex)
     return strlen(aHex);
 }
 
+
+void Ipv4AddressToBytes(const char *aStr, uint8_t *aAddress, uint8_t aLen)
+{
+    uint16_t index = 0, cur = 0;
+
+    memset(aAddress, 0, aLen);
+
+    while (index < strlen(aStr))
+    {
+        if ((static_cast<uint8_t>(*(aStr + cur)) >= '0' &&
+             static_cast<uint8_t>(*(aStr + cur)) <= '9'))
+        {
+            aAddress[index] *= 10;
+            aAddress[index] += *(aStr + cur) - '0';
+        }
+        else
+        {
+            index++;
+        }
+        cur++;
+    }
+}
+
+void  Ipv6AddressToBytes(const char *aStr, uint8_t *aAddress, uint8_t aLen)
+{
+    struct in6_addr ipv6Addr;
+
+    memset(aAddress, 0, aLen);
+    inet_pton(AF_INET6, aStr, (void *)&ipv6Addr);
+    memcpy(aAddress, ipv6Addr.__in6_u.__u6_addr8, aLen);
+}
+
 } // namespace Utils
 
 } // namespace ot

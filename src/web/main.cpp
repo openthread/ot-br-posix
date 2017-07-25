@@ -48,6 +48,12 @@
 #include "common/logging.hpp"
 #include "web-service/web_server.hpp"
 
+enum
+{
+    PROTO_INET   = 0,
+    PROTO_INET6  = 1,
+    PROTO_UNSPEC = -1,
+};
 static const char kSyslogIdent[] = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
 
@@ -60,14 +66,17 @@ int main(int argc, char **argv)
 {
     const char *interfaceName = NULL;
     const char *httpPort = NULL;
+    const char *publishInterfaceName = NULL;
     int         logLevel = OTBR_LOG_INFO;
     int         ret = 0;
     int         opt;
+    int         protocolType = PROTO_UNSPEC;
     uint16_t    port = OT_HTTP_PORT;
+
 
     ot::Web::WebServer *server = NULL;
 
-    while ((opt = getopt(argc, argv, "d:I:p:v")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:vAai:")) != -1)
     {
         switch (opt)
         {
@@ -90,8 +99,23 @@ int main(int argc, char **argv)
             ExitNow();
             break;
 
+        case 'A':
+            protocolType = PROTO_INET6;
+            break;
+
+        case 'a':
+            protocolType = PROTO_INET;
+            break;
+
+        case 'i':
+            publishInterfaceName = optarg;
+            VerifyOrExit(publishInterfaceName != NULL);
+            break;
+
         default:
-            fprintf(stderr, "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-v]\n", argv[0]);
+            fprintf(stderr,
+                    "Usage: %s [-d DEBUG_LEVEL] [-I INTERFACE_NAME] [-p PORT] [-v VERSION] [-a IPV4_ONLY] [-A IPV6_ONLY] [-i PUBLISH_INTERFACE]\n",
+                    argv[0]);
             ExitNow(ret = -1);
             break;
         }
@@ -108,11 +132,19 @@ int main(int argc, char **argv)
         printf("http port not specified, using default %d\n", port);
     }
 
+    if (publishInterfaceName == NULL)
+    {
+        protocolType = PROTO_UNSPEC;
+        printf("mDNS interface is not specified, publishing both AAAA and A records on all interfaces\n");
+    }
+
     otbrLogInit(kSyslogIdent, logLevel);
     otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
+    otbrLog(OTBR_LOG_INFO, "mDNS publisher advertise %s record on %s", (protocolType == PROTO_INET) ? "A" : "AAAA",
+            publishInterfaceName);
 
     server = new ot::Web::WebServer();
-    server->StartWebServer(interfaceName, port);
+    server->StartWebServer(interfaceName, port, protocolType, publishInterfaceName);
 
     otbrLogDeinit();
 

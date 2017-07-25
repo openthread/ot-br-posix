@@ -34,10 +34,12 @@
 #ifndef MDNS_SERVER_HPP
 #define MDNS_SERVER_HPP
 
+#include <string>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 
 #include <avahi-client/client.h>
@@ -116,6 +118,31 @@ public:
     void SetPort(uint16_t aPort);
 
     /**
+     * This method sets the protocol type.
+     *
+     * @param[in]  aProtoType  protocol type.
+     *
+     */
+    void SetProtoType(int aProtoType);
+
+    /**
+     * This method sets the interface index.
+     *
+     * @param[in]  aInterfaceIndex  Index of interface.
+     *
+     */
+    void SetInterfaceIndex(int aInterfaceIndex);
+
+    /**
+     * This method sets the publish IP address.
+     *
+     * @param[in]  aIpAddress  The pointer of IP address.
+     * @param[in]  aLen        The Length of IP address.
+     *
+     */
+    void SetIpAddress(const char *aIpAddress, uint8_t aLen);
+
+    /**
      * This method starts the mDNS client.
      *
      * @retval kMdnsPublisher_OK                  Successfully started the mDNS client.
@@ -179,6 +206,10 @@ private:
     char            *mNetworkNameTxt;
     char            *mExtPanIdTxt;
     char            *mType;
+    int              mProtoType;
+    int              mInterfaceIndex;
+    char            *mHostName;
+    char            *mIpAddress;
 };
 
 } //namespace Mdns

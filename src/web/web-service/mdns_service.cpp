@@ -35,8 +35,29 @@
 
 #include "common/code_utils.hpp"
 
+#define OT_IPV4_LENGTH 4
+#define OT_IPV6_LENGTH 16
+
 namespace ot {
 namespace Web {
+
+void MdnsService::SetProtoType(int aProtoType)
+{
+    mProtoType = aProtoType;
+}
+
+void MdnsService::SetPublishIfName(const char *aPublishIfName)
+{
+    ot::BorderRouter::InterfaceAddress ifaddr;
+
+    strncpy(mPublishIfName, aPublishIfName, sizeof(mPublishIfName));
+    if (ifaddr.LookupAddresses(mPublishIfName) != kMndsServiceStatus_OK)
+    {
+        otbrLog(OTBR_LOG_ERR, "The specified interface is not existed!");
+        exit(-1);
+    }
+
+}
 
 std::string MdnsService::HandleMdnsRequest(const std::string &aMdnsRequest)
 {
@@ -76,13 +97,41 @@ exit:
 int MdnsService::StartMdnsService(const std::string &aNetworkName, const std::string &aExtPanId)
 {
     int ret = kMndsServiceStatus_OK;
+    int interfaceIndex = AVAHI_IF_UNSPEC;
 
-    std::thread mdnsPublisherThread([aNetworkName, aExtPanId, &ret]() {
+    ot::BorderRouter::InterfaceAddress ifaddr;
+    uint8_t                            ipAddrBytes[OT_IPV6_LENGTH];
+    uint8_t                            ip4AddrBytes[OT_IPV4_LENGTH], ip6AddrBytes[OT_IPV6_LENGTH];
+    uint8_t                            bytesLength = 0;
+
+    if (mProtoType != AVAHI_PROTO_UNSPEC)
+    {
+        ifaddr.LookupAddresses(mPublishIfName);
+        interfaceIndex = ifaddr.GetInterfaceIndex();
+        if (mProtoType == AVAHI_PROTO_INET)
+        {
+            ot::Utils::Ipv4AddressToBytes(ifaddr.GetIpv4Address(), ip4AddrBytes, OT_IPV4_LENGTH);
+            memcpy(ipAddrBytes, ip4AddrBytes, OT_IPV4_LENGTH);
+            bytesLength = OT_IPV4_LENGTH;
+        }
+        else
+        {
+            ot::Utils::Ipv6AddressToBytes(ifaddr.GetIpv6Address(), ip6AddrBytes, OT_IPV6_LENGTH);
+            memcpy(ipAddrBytes, ip6AddrBytes, OT_IPV6_LENGTH);
+            bytesLength = OT_IPV6_LENGTH;
+        }
+    }
+
+    std::thread mdnsPublisherThread([aNetworkName, aExtPanId, this, interfaceIndex, ipAddrBytes, bytesLength, &ret]() {
                 std::string networkNameTxt;
                 std::string extPanIdTxt;
                 ot::Mdns::Publisher::GetInstance().SetServiceName(aNetworkName.c_str());
                 ot::Mdns::Publisher::GetInstance().SetType("_meshcop._udp");
                 ot::Mdns::Publisher::GetInstance().SetPort(OT_BORDER_ROUTER_PORT);
+                ot::Mdns::Publisher::GetInstance().SetProtoType(this->mProtoType);
+                ot::Mdns::Publisher::GetInstance().SetInterfaceIndex(interfaceIndex);
+                ot::Mdns::Publisher::GetInstance().SetIpAddress(reinterpret_cast<const char *>(ipAddrBytes),
+                                                                bytesLength);
                 networkNameTxt = "nn=" + aNetworkName;
                 extPanIdTxt = "xp=" + aExtPanId;
                 ot::Mdns::Publisher::GetInstance().SetNetworkNameTxt(networkNameTxt.c_str());

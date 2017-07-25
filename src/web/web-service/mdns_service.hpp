@@ -42,12 +42,16 @@
 
 #include <net/if.h>
 
+#include <avahi-client/client.h>
+#include <avahi-client/publish.h>
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
 #include "../mdns-publisher/mdns_publisher.hpp"
 #include "../wpan-controller/wpan_controller.hpp"
+#include "common/interface_address.hpp"
 #include "common/logging.hpp"
+#include "utils/hex.hpp"
 
 #define OT_BORDER_ROUTER_PORT 49191
 
@@ -73,20 +77,36 @@ public:
     std::string HandleMdnsRequest(const std::string &aMdnsRequest);
 
     /**
-     * This method starts mdns service.
+     * This method sets IP protocol type.
      *
-     * @param[in]  aNetworkName  The reference to the network name.
-     * @param[in]  aExtPanId     The reference to the extend PAN ID.
+     * @param[in]  aProtoType     The IP protocol type.
+     *
+     */
+    void SetProtoType(int aProtoType);
+
+    /**
+     * This method sets specific mDNS interface.
+     *
+     * @param[in]  aPublishIfName     The mDNS interface.
+     *
+     */
+    void SetPublishIfName(const char *aPublishIfName);
+
+    /**
+     * This method starts mDNS service.
+     *
+     * @param[in]  aNetworkName   The reference to the network name.
+     * @param[in]  aExtPanId      The reference to the extend PAN ID.
      *
      * @retval kMndsServiceStatus_OK Successfully started the mDNS service
      */
     int StartMdnsService(const std::string &aNetworkName, const std::string &aExtPanId);
 
     /**
-     * This method updates mdns service.
+     * This method updates mDNS service.
      *
-     * @param[in]  aNetworkName  The reference to the network name.
-     * @param[in]  aExtPanId     The reference to the extend PAN ID.
+     * @param[in]  aNetworkName   The reference to the network name.
+     * @param[in]  aExtPanId      The reference to the extend PAN ID.
      *
      * @retval kMndsServiceStatus_OK Successfully updated the mDNS service
      */
@@ -103,8 +123,9 @@ public:
 
 private:
 
-    char        mIfName[IFNAMSIZ];
+    char        mPublishIfName[IFNAMSIZ];
     std::string mNetworkName, mExtPanId;
+    int         mProtoType;
     const char *mResponseSuccess = "successful";
     const char *mResponseFail = "failed";
 
