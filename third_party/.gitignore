@@ -1,0 +1,4 @@
+# To avoid these "ignores" from being recursive
+# these ignores start with a leading /
+/Makefile
+/Makefile.in

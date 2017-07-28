@@ -1,0 +1,25 @@
+# To avoid recursively ignoring things in thirdparty
+# most of these start with a /
+/Makefile.in
+/Makefile
+/aclocal.m4
+/autom4te.cache/
+/configure
+/config.log
+/config.status
+/libtool
+/.local-version
+/._build
+
+# This is for EMACS lock file, the [] escapes the # comment char.
+[#]*[#]
+.[#]*
+
+# Standard editor backup files
+*~
+*.bak
+
+# VIM
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+
