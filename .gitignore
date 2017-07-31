@@ -1,25 +1,78 @@
-# To avoid recursively ignoring things in thirdparty
-# most of these start with a /
-/Makefile.in
-/Makefile
-/aclocal.m4
-/autom4te.cache/
-/configure
-/config.log
-/config.status
-/libtool
-/.local-version
-/._build
 
-# This is for EMACS lock file, the [] escapes the # comment char.
-[#]*[#]
+# Emacs lock/links on linux
 .[#]*
-
-# Standard editor backup files
+# Emacs backups (windows)
+[#]*[#]
+# emacs backups
 *~
+# Generic editor backups
 *.bak
+# Objects & libraries
+*.[ao]
+*.l[ao]
+*.so
+*.swp
 
-# VIM
+# Autoconf
+m4
+aclocal.m4
+autom4te.cache
+config.h.in
+config.log
+config.status
+configure
+libtool
+Makefile
+Makefile.in
+
+# Build inside border router of wpantund
+._build
+
+
+# Build bi-products.
+.local-version
+.deps
+.libs
+.dirstamp
+stamp-h1
+.stamp-h1
+
+# Border Router Docs
+doc/Doxyfile
+doc/html
+
+# Debugger stuff.
+.gdb_history
+.gdbinit
+
+
+# Configure results for border router
+include/otbr-config.h
+include/otbr-config.h.in
+
+
+
+# VIM swap files
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
 
+
+# Border router agent
+src/agent/otbr-agent
+src/agent/otbr-agent.service
+
+# Border router web service
+src/web/otbr-web
+src/web/otbr-web.service
+
+# Test code.
+tests/mdns/otbr-test-mdns
+tests/meshcop/otbr-commissioner
+tests/testdriver
+
+# all things here.
+third_party/mbedtls/repo
+third_party/wpantund/wpantund.service
+
+# Tools
+tools/pskc
