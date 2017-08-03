@@ -62,7 +62,7 @@ main()
 wpantund -I $TUN -s "$NCP" &
 sleep 3
 otbr-agent -I $TUN &
-otbr-web &
+otbr-web -I $TUN &
 wait
 EOF
 }
