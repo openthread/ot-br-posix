@@ -75,6 +75,11 @@ const uint8_t *MessageLibcoap::GetToken(uint8_t &aLength) const
     return mPdu->hdr->token;
 }
 
+uint16_t MessageLibcoap::GetMessageId(void) const
+{
+    return mPdu->hdr->id;
+}
+
 Code MessageLibcoap::GetCode(void) const
 {
     return static_cast<Code>(mPdu->hdr->code);
@@ -145,6 +150,12 @@ const uint8_t *MessageLibcoap::GetPayload(uint16_t &aLength) const
     coap_get_data(mPdu, &length, &payload);
     aLength = length;
     return payload;
+}
+
+Message *AgentLibcoap::NewMessage(Type aType, Code aCode, uint16_t aMessageId, const uint8_t *aToken,
+                                  uint8_t aTokenLength)
+{
+    return new MessageLibcoap(aType, aCode, aMessageId, aToken, aTokenLength);
 }
 
 Message *AgentLibcoap::NewMessage(Type aType, Code aCode, const uint8_t *aToken, uint8_t aTokenLength)

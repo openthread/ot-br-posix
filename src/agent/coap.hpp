@@ -95,6 +95,14 @@ public:
     virtual ~Message(void) {};
 
     /**
+     * This method returns the CoAP message id of this message.
+     *
+     * @returns the CoAP message id of the message.
+     *
+     */
+    virtual uint16_t GetMessageId(void) const = 0;
+
+    /**
      * This method returns the CoAP code of this message.
      *
      * @returns the CoAP code of the message.
@@ -273,6 +281,20 @@ public:
      *
      */
     virtual Message *NewMessage(Type aType, Code aCode, const uint8_t *aToken,
+                                uint8_t aTokenLength) = 0;
+    /**
+     * This method creates a CoAP message with the given arguments.
+     *
+     * @param[in]   aType           The CoAP type.
+     * @param[in]   aCode           The CoAP code.
+     * @param[in]   aMessageId      The CoAP message id.
+     * @param[in]   aToken          The CoAP token.
+     * @param[in]   aTokenLength    Number of bytes in @p aToken.
+     *
+     * @returns The newly CoAP message.
+     *
+     */
+    virtual Message *NewMessage(Type aType, Code aCode, uint16_t aMessageId, const uint8_t *aToken,
                                 uint8_t aTokenLength) = 0;
 
     /**
