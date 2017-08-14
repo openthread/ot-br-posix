@@ -37,7 +37,7 @@ install_packages_apt()
     sudo apt-get update
     sudo apt-get install -y build-essential libtool git
 
-    test "$RELEASE" = 1 || sudo apt-get install -y cmake
+    with RELEASE || sudo apt-get install -y cmake
 
     # For wpantund
     sudo apt-get install -y libdbus-1-dev
@@ -60,7 +60,7 @@ install_packages_apt()
     sudo apt-get install -y libboost-dev libboost-filesystem-dev libboost-system-dev
 
     # nat64
-    sudo apt-get install -y tayga iptables
+    without NAT64 || sudo apt-get install -y tayga iptables
 
     # libjsoncpp
     sudo apt-get install -y libjsoncpp-dev
@@ -68,34 +68,34 @@ install_packages_apt()
 
 install_packages_opkg()
 {
-    echo 'opkg not supported currently' && false
+    die 'opkg not supported currently'
 }
 
 install_packages_rpm()
 {
-    echo 'rpm not supported currently' && false
+    die 'rpm not supported currently'
 }
 
 install_packages_brew()
 {
-    echo 'macOS not supported currently' && false
+    die 'macOS not supported currently'
 }
 
 install_packages_source()
 {
-    echo 'source not supported currently' && false
+    die 'source not supported currently'
 }
 
 install_packages()
 {
     PM=source
-    if which apt-get; then
+    if have apt-get; then
         PM=apt
-    elif which rpm; then
+    elif have rpm; then
         PM=rpm
-    elif which opkg; then
+    elif have opkg; then
         PM=opkg
-    elif which brew; then
+    elif have brew; then
         PM=brew
     fi
     install_packages_$PM
@@ -145,8 +145,8 @@ main()
 {
     . $BEFORE_HOOK
     install_packages
-    test "$RELEASE" = 1 || install_uncrustify
-    test "$RELEASE" = 1 || install_cpputest
+    with RELEASE || install_uncrustify
+    with RELEASE || install_cpputest
     ./bootstrap
     . $AFTER_HOOK
 }
