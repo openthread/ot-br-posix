@@ -455,11 +455,14 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
         }
     }
 
-    FD_SET(mSocket, &aReadFdSet);
+    if( mSocket >= 0 ){
+       FD_SET(mSocket, &aReadFdSet);
 
-    if (aMaxFd < mSocket)
-    {
-        aMaxFd = mSocket;
+       if (aMaxFd < mSocket)
+       {
+            log_printf("mbed server mSocket is larger: %d\n", mSocket );
+            aMaxFd = mSocket;
+       }
     }
 
     aTimeout.tv_sec = timeout / 1000;
@@ -482,13 +485,25 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
 {
     uint8_t       packet[kMaxSizeOfPacket];
     uint8_t       control[kMaxSizeOfControl];
-    otbrError     error = OTBR_ERROR_ERRNO;
+    otbrError     error = OTBR_ERROR_ERRNO; // Assume error
     sockaddr_in6  src;
     sockaddr_in6  dst;
     struct msghdr msghdr;
     struct iovec  iov[1];
 
-    VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet));
+    /* Connection is not alive yet, or is shut down */
+    if( mSocket < 0 )
+    {
+	/* there is not error */
+	ExitNow(error = OTBR_ERROR_NONE);
+    }
+
+    /* If this is nto set, then some other handle became rd/wr able. */
+    if( !FD_ISSET(mSocket,&aReadFdSet) )
+    {
+	/* this is not an error */
+	ExitNow(error = OTBR_ERROR_NONE);
+    }
 
     otbrLog(OTBR_LOG_INFO, "Trying to accept connection...");
     memset(&src, 0, sizeof(src));
@@ -540,6 +555,7 @@ exit:
         otbrLog(OTBR_LOG_ERR, "DTLS failed to initiate new session: %s.", otbrErrorString(error));
         otbrLog(OTBR_LOG_INFO, "Trying to create new server socket...");
         close(mSocket);
+        mSocket = -1;
 
         if (Bind())
         {
