@@ -460,7 +460,6 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
 
        if (aMaxFd < mSocket)
        {
-            log_printf("mbed server mSocket is larger: %d\n", mSocket );
             aMaxFd = mSocket;
        }
     }
