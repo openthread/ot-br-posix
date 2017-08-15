@@ -455,13 +455,14 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
         }
     }
 
-    if( mSocket >= 0 ){
-       FD_SET(mSocket, &aReadFdSet);
+    if (mSocket >= 0)
+    {
+        FD_SET(mSocket, &aReadFdSet);
 
-       if (aMaxFd < mSocket)
-       {
+        if (aMaxFd < mSocket)
+        {
             aMaxFd = mSocket;
-       }
+        }
     }
 
     aTimeout.tv_sec = timeout / 1000;
@@ -491,17 +492,17 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
     struct iovec  iov[1];
 
     /* Connection is not alive yet, or is shut down */
-    if( mSocket < 0 )
+    if (mSocket < 0)
     {
-	/* there is not error */
-	ExitNow(error = OTBR_ERROR_NONE);
+        /* there is not error */
+        ExitNow(error = OTBR_ERROR_NONE);
     }
 
     /* If this is nto set, then some other handle became rd/wr able. */
-    if( !FD_ISSET(mSocket,&aReadFdSet) )
+    if (!FD_ISSET(mSocket, &aReadFdSet))
     {
-	/* this is not an error */
-	ExitNow(error = OTBR_ERROR_NONE);
+        /* this is not an error */
+        ExitNow(error = OTBR_ERROR_NONE);
     }
 
     otbrLog(OTBR_LOG_INFO, "Trying to accept connection...");
