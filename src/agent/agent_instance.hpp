@@ -65,6 +65,16 @@ public:
     ~AgentInstance(void);
 
     /**
+     * This method initialize the agent.
+     *
+     * @retval  OTBR_ERROR_NONE     Agent initialized successfully.
+     * @retval  OTBR_ERROR_DTLS     Failed to initialize DTLS service.
+     * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
+     *
+     */
+    otbrError Init(void);
+
+    /**
      * This method updates the file descriptor sets and timeout for mainloop.
      *
      * @param[inout]  aReadFdSet   A reference to read file descriptors.

@@ -33,8 +33,6 @@
 
 #include "border_agent.hpp"
 
-#include <stdexcept>
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -212,7 +210,9 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
     mCoap(aCoap),
     mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this)),
     mCoaps(Coap::Agent::Create(SendCoaps, this)),
-    mNcp(aNcp)
+    mNcp(aNcp) {}
+
+otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -224,18 +224,6 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
     SuccessOrExit(error = mCoap->AddResource(mCommissionerRelayReceiveHandler));
 
     mNcp->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLog(OTBR_LOG_ERR, "Failed to create border agent: %d!", error);
-        throw std::runtime_error("Failed to create border agent!");
-    }
-}
-
-otbrError BorderAgent::Start(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
 
     {
         const uint8_t *pskc = mNcp->GetPSKc();

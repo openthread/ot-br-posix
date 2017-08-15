@@ -33,8 +33,6 @@
 
 #include "mdns_avahi.hpp"
 
-#include <stdexcept>
-
 #include <avahi-common/alternative.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>

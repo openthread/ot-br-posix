@@ -119,6 +119,15 @@ public:
 
     ~MbedtlsSession(void);
 
+    /**
+     * This method initialize the session.
+     *
+     * @retval  OTBR_ERROR_NONE     Initialized successfully.
+     * @retval  OTBR_ERROR_DTLS     Failed to initialize.
+     *
+     */
+    otbrError Init(void);
+
     ssize_t Write(const uint8_t *aBuffer, uint16_t aLength);
     void SetDataHandler(DataHandler aDataHandler, void *aContext);
 

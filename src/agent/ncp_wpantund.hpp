@@ -67,6 +67,15 @@ public:
     ControllerWpantund(const char *aInterfaceName);
     ~ControllerWpantund(void);
 
+    /*
+     * This method initalize the NCP controller.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
+     * @retval  OTBR_ERROR_DBUS     Failed due to dbus error.
+     *
+     */
+    otbrError Init(void);
+
     /**
      * This method request the Ncp to start the TMF proxy service.
      *
