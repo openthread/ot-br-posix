@@ -29,7 +29,7 @@
 
 otbr_uninstall()
 {
-    if which systemctl; then
+    if have systemctl; then
         sudo systemctl stop otbr-web otbr-agent wpantund || true
         sudo systemctl disable otbr-web otbr-agent wpantund || true
         ! sudo systemctl is-enabled otbr-web
@@ -39,7 +39,7 @@ otbr_uninstall()
     sudo killall otbr-web otbr-agent || true
 
     test ! -f config.status || sudo make uninstall
-    if which systemctl; then
+    if have systemctl; then
         sudo systemctl daemon-reload
     fi
 }
@@ -49,7 +49,7 @@ otbr_install()
     test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc
     make -j$(getconf _NPROCESSORS_ONLN)
     sudo make install
-    if which systemctl; then
+    if have systemctl; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
         sudo systemctl enable wpantund otbr-web otbr-agent || true

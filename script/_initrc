@@ -36,6 +36,60 @@ die()
     exit 1
 }
 
+have()
+{
+    # This function checks if a tool is available
+    #
+
+    which "$1" > /dev/null 2> /dev/null
+}
+
+have_or_die()
+{
+    # This function verifies a tool is available and dies with proper
+    # information if not available.
+    #
+
+    have "$1" || die "$1 not available!"
+}
+
+with()
+{
+    # This function verifies a flag is on.
+    #
+    # NOTE environment settings takes higher priority than default files.
+    #
+
+    VALUE=$(printenv "$1")
+    if test -z "$VALUE"; then
+        eval VALUE="\$$1"
+    fi
+
+    test "$VALUE" = 1
+}
+
+without()
+{
+    # This function verifies a flag is off.
+    #
+    # NOTE environment settings takes higher priority than default files.
+    #
+
+    ! with "$1"
+}
+
+# Platform information is needed to load hooks and default settings.
+#
+if test -z "$PLATFORM"; then
+    have_or_die lsb_release
+    PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+fi
+echo "Current platform is $PLATFORM"
+
+if test -f examples/platforms/$PLATFORM/default; then
+    . examples/platforms/$PLATFORM/default
+fi
+
 STAGE_DIR=$(pwd)/._stage
 BUILD_DIR=$(pwd)/._build
 
@@ -44,9 +98,7 @@ BUILD_DIR=$(pwd)/._build
 
 export PATH=$STAGE_DIR/usr/bin:$STAGE_DIR/usr/sbin:$PATH
 
-PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
 TASKNAME=$(basename $0)
-echo "Current platform is $PLATFORM"
 BEFORE_HOOK=examples/platforms/$PLATFORM/before_$TASKNAME
 AFTER_HOOK=examples/platforms/$PLATFORM/after_$TASKNAME
 if test ! -f $BEFORE_HOOK; then
