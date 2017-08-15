@@ -208,7 +208,7 @@ private:
     sockaddr_in6                 mRemoteSock;
     sockaddr_in6                 mLocalSock;
     MbedtlsServer               &mServer;
-    uint64_t                     mExpiration;
+    unsigned long                mExpiration;
     uint8_t                      mKek[kKekSize];
 };
 

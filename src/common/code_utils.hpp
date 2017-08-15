@@ -39,7 +39,7 @@
  *
  */
 #define OTBR_ALIGNED(aMem, aAlignType)                                      \
-    reinterpret_cast<aAlignType>((((long)(aMem) + sizeof(aAlignType) - 1) / \
+    reinterpret_cast<aAlignType>(((reinterpret_cast<unsigned long>(aMem) + sizeof(aAlignType) - 1) / \
                                   sizeof(aAlignType)) * sizeof(aAlignType))
 
 #ifndef CONTAINING_RECORD

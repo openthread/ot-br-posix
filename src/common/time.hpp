@@ -46,9 +46,9 @@ namespace BorderRouter {
  * @returns timestamp in miniseconds.
  *
  */
-inline uint64_t GetTimestamp(const timeval &aTime)
+inline unsigned long GetTimestamp(const timeval &aTime)
 {
-    return aTime.tv_sec * 1000 + aTime.tv_usec / 1000;
+    return static_cast<unsigned long>(aTime.tv_sec * 1000 + aTime.tv_usec / 1000);
 }
 
 /**
@@ -57,11 +57,11 @@ inline uint64_t GetTimestamp(const timeval &aTime)
  * @returns Current timestamp in miniseconds.
  *
  */
-inline uint64_t GetNow(void) {
+inline unsigned long GetNow(void) {
     timeval now;
 
     gettimeofday(&now, NULL);
-    return now.tv_sec * 1000 + now.tv_usec / 1000;
+    return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
 }
 
 } // namespace BorderRouter

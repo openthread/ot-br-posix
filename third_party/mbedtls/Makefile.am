@@ -29,6 +29,7 @@
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 lib_LTLIBRARIES=libmbedtls.la
+override CFLAGS:=$(filter-out -Wconversion,$(CFLAGS)) -Wno-overlength-strings
 
 libmbedtls_la_SOURCES                   = \
     repo/library/aes.c                    \

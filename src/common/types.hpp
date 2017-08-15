@@ -104,7 +104,7 @@ public:
      */
     uint16_t ToLocator(void) const
     {
-        return (m8[14] << 8 | m8[15]);
+        return static_cast<uint16_t>(m8[14] << 8 | m8[15]);
     }
 
     union

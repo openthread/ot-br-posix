@@ -105,7 +105,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(const char *aName, const char *aType, uint16_t aPort, ...) = 0;
+    virtual otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...) = 0;
 
     /**
      * This method performs the MDNS processing.

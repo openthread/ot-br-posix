@@ -73,7 +73,8 @@ public:
      *
      */
     uint16_t GetLength(void) const {
-        return (mLength != kLengthEscape ? mLength : ((&mLength)[1] << 8 | (&mLength)[2]));
+        return (mLength != kLengthEscape ? mLength :
+                static_cast<uint16_t>((&mLength)[1] << 8 | (&mLength)[2]));
     }
 
     /**
@@ -112,7 +113,7 @@ public:
     uint16_t GetValueUInt16(void) const {
         const uint8_t *p = static_cast<const uint8_t *>(GetValue());
 
-        return (p[0] << 8 | p[1]);
+        return static_cast<uint16_t>(p[0] << 8 | p[1]);
     }
 
     /**
