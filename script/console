@@ -51,7 +51,7 @@ on_exit()
 main()
 {
     . $BEFORE_HOOK
-    if which systemctl; then
+    if have systemctl; then
         sudo systemctl stop otbr-web otbr-agent wpantund || true
     fi
     killall_services
@@ -62,7 +62,7 @@ main()
 wpantund -I $TUN -s "$NCP" &
 sleep 3
 otbr-agent -I $TUN &
-otbr-web &
+otbr-web -I $TUN &
 wait
 EOF
 }

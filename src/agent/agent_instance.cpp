@@ -33,8 +33,6 @@
 
 #include "agent_instance.hpp"
 
-#include <stdexcept>
-
 #include <assert.h>
 
 #include "common/code_utils.hpp"
@@ -47,9 +45,13 @@ namespace BorderRouter {
 AgentInstance::AgentInstance(const char *aIfName) :
     mNcp(Ncp::Controller::Create(aIfName)),
     mCoap(Coap::Agent::Create(SendCoap, this)),
-    mBorderAgent(mNcp, mCoap)
+    mBorderAgent(mNcp, mCoap) {}
+
+otbrError AgentInstance::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = mNcp->Init());
 
     mNcp->On(Ncp::kEventTmfProxyStream, FeedCoap, this);
 
@@ -61,8 +63,9 @@ exit:
     if (error != OTBR_ERROR_NONE)
     {
         otbrLog(OTBR_LOG_ERR, "Failed to create border route agent instance: %d!", error);
-        throw std::runtime_error("Failed to create border route agent instance!");
     }
+
+    return error;
 }
 
 void AgentInstance::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,

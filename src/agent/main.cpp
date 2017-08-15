@@ -47,9 +47,10 @@ static const struct timeval kPollTimeout = {10, 0};
 
 int Mainloop(const char *aInterfaceName)
 {
-    int rval = 0;
+    int rval = EXIT_FAILURE;
 
     ot::BorderRouter::AgentInstance instance(aInterfaceName);
+    SuccessOrExit(instance.Init());
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
@@ -78,6 +79,7 @@ int Mainloop(const char *aInterfaceName)
         instance.Process(readFdSet, writeFdSet, errorFdSet);
     }
 
+exit:
     return rval;
 }
 

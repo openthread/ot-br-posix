@@ -48,6 +48,10 @@ otbr_agent_CPPFLAGS    = \
 
 noinst_LTLIBRARIES = libotbr-agent.la
 
+libotbr_agent_la_CXXFLAGS                                     = \
+    -fno-exceptions
+    $(NULL)
+
 libotbr_agent_la_SOURCES                                      = \
     agent_instance.cpp                                          \
     border_agent.cpp                                            \

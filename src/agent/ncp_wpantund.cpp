@@ -28,7 +28,6 @@
 
 #include "ncp_wpantund.hpp"
 
-#include <stdexcept>
 #include <vector>
 
 #include <assert.h>
@@ -192,11 +191,14 @@ exit:
 ControllerWpantund::ControllerWpantund(const char *aInterfaceName) :
     mDBus(NULL)
 {
+    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
+}
+
+otbrError ControllerWpantund::Init(void)
+{
     otbrError ret = OTBR_ERROR_DBUS;
     DBusError error;
     char      dbusName[DBUS_MAXIMUM_NAME_LENGTH];
-
-    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
 
     dbus_error_init(&error);
     mDBus = dbus_bus_get(DBUS_BUS_STARTER, &error);
@@ -244,8 +246,9 @@ exit:
             dbus_connection_unref(mDBus);
         }
         otbrLog(OTBR_LOG_ERR, "NCP failed to initialize!");
-        throw std::runtime_error("NCP failed to initialize!");
     }
+
+    return ret;
 }
 
 ControllerWpantund::~ControllerWpantund(void)

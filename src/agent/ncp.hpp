@@ -69,6 +69,15 @@ class Controller : public EventEmitter
 {
 public:
     /**
+     * This method initalize the NCP controller.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
+     * @retval  OTBR_ERROR_DBUS     Failed due to dbus error.
+     *
+     */
+    virtual otbrError Init(void) = 0;
+
+    /**
      * This method request the NCP to start the TMF proxy service.
      *
      * @retval  OTBR_ERROR_NONE         Successfully started TMF proxy.

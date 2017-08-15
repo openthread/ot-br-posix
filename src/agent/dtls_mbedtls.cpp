@@ -32,7 +32,6 @@
 
 #include "dtls_mbedtls.hpp"
 
-#include <stdexcept>
 #include <algorithm>
 
 #include <assert.h>
@@ -321,30 +320,35 @@ MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, const mbedtls_net_context
     mNet(aNet),
     mRemoteSock(aRemoteSock),
     mLocalSock(aLocalSock),
-    mServer(aServer)
+    mServer(aServer) {}
+
+otbrError MbedtlsSession::Init(void)
 {
-    int ret = 0;
+    otbrError error = OTBR_ERROR_NONE;
+    int       rval = 0;
 
     mbedtls_ssl_init(&mSsl);
-    SuccessOrExit(ret = mbedtls_ssl_setup(&mSsl, &mServer.mConf));
+    SuccessOrExit(rval = mbedtls_ssl_setup(&mSsl, &mServer.mConf));
 
     mbedtls_ssl_set_timer_cb(&mSsl, &mTimer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
 
-    SuccessOrExit(ret = mbedtls_ssl_session_reset(&mSsl));
-    SuccessOrExit(ret = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, mServer.mPSKLength));
-    SuccessOrExit(ret = mbedtls_ssl_set_client_transport_id(&mSsl,
-                                                            reinterpret_cast<const unsigned char *>(&mRemoteSock),
-                                                            sizeof(mRemoteSock)));
+    SuccessOrExit(rval = mbedtls_ssl_session_reset(&mSsl));
+    SuccessOrExit(rval = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, mServer.mPSKLength));
+    SuccessOrExit(rval = mbedtls_ssl_set_client_transport_id(&mSsl,
+                                                             reinterpret_cast<const unsigned char *>(&mRemoteSock),
+                                                             sizeof(mRemoteSock)));
     mbedtls_ssl_set_bio(&mSsl, this, SendMbedtls, ReadMbedtls, NULL);
 
     mState = kStateHandshaking;
 
 exit:
-    if (ret)
+    if (rval)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to create session: -0x%04x!", -ret);
-        throw std::runtime_error("Failed to create session.");
+        otbrLog(OTBR_LOG_ERR, "Failed to create session: -0x%04x!", -rval);
+        error = OTBR_ERROR_DTLS;
     }
+
+    return error;
 }
 
 int MbedtlsSession::ReadMbedtls(unsigned char *aBuffer, size_t aLength)
@@ -526,7 +530,11 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
         mbedtls_net_context net = {
             mSocket
         };
-        MbedtlsSession     *session = new MbedtlsSession(*this, net, src, dst);
+
+        MbedtlsSession *session = new MbedtlsSession(*this, net, src, dst);
+
+        VerifyOrExit(session->Init() == OTBR_ERROR_NONE, delete session);
+
         mSessions.push_back(session);
         mbedtls_ssl_conf_export_keys_cb(&mConf, MbedtlsSession::ExportKeys, session);
         session->Process();
@@ -544,7 +552,7 @@ exit:
         if (Bind())
         {
             otbrLog(OTBR_LOG_ERR, "Unable create new server socket! Die now!");
-            throw std::runtime_error("Unable to create server socket!");
+            abort();
         }
     }
 
