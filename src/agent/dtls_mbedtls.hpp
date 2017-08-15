@@ -230,6 +230,7 @@ public:
      *
      */
     MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext) :
+        mSocket(-1),
         mPort(aPort),
         mStateHandler(aStateHandler),
         mContext(aContext) {}
