@@ -104,7 +104,7 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
     const uint8_t *token = aMessage.GetToken(tokenLength);
     const char    *path = aResource.mPath;
 
-    Coap::Message *message = mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
+    Coap::Message *message = mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost, aMessage.GetMessageId(),
                                                token, tokenLength);
     Ip6Address     addr(kAloc16Leader);
     uint16_t       length = 0;
@@ -183,9 +183,8 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
         Ip6Address     addr(rloc);
         uint8_t        tokenLength = 0;
         const uint8_t *token = aMessage.GetToken(tokenLength);
-        Coap::Message *message = mCoap->NewMessage(Coap::kTypeNonConfirmable,
-                                                   Coap::kCodePost,
-                                                   token, tokenLength);
+        Coap::Message *message = mCoap->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
+                                                   aMessage.GetMessageId(), token, tokenLength);
 
         message->SetPath(OT_URI_PATH_RELAY_TX);
         message->SetPayload(payload, length);
