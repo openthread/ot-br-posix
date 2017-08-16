@@ -640,6 +640,7 @@ int CommissionerServe(Context &aContext)
     VerifyOrExit(aContext.mSocket != -1, ret = errno);
     aContext.mDtlsServer = Dtls::Server::Create(kPortJoinerSession, HandleSessionChange, &aContext);
     aContext.mDtlsServer->SetPSK(kPSKd, strlen(reinterpret_cast<const char *>(kPSKd)));
+    aContext.mDtlsServer->Start();
 
     while (aContext.mState != kStateDone && aContext.mState != kStateError)
     {
