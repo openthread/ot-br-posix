@@ -499,7 +499,7 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
     VerifyOrExit(mSocket >= 0, error = OTBR_ERROR_NONE);
 
     /* If this is not set, then some other handle became rd/wr able, it is not an error */
-    VerifyOrExit( FD_ISSET(mSocket, &aReadFdSet), error = OTBR_ERROR_NONE);
+    VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet), error = OTBR_ERROR_NONE);
 
     otbrLog(OTBR_LOG_INFO, "Trying to accept connection...");
     memset(&src, 0, sizeof(src));
