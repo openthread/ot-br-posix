@@ -153,7 +153,7 @@ public:
 
         b = GetLength() - 1 - (aBit / 8);
         m = 1 << (aBit % 8);
-        b = mSteeringData[b] |= m;
+        mSteeringData[b] |= m;
     }
 
     /**
