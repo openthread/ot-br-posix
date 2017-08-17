@@ -30,6 +30,8 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 noinst_PROGRAMS = otbr-commissioner
 
+noinst_HEADERS = commissioner.hpp
+
 otbr_commissioner_SOURCES                             = \
     commissioner_argcargv.cpp                           \
     commissioner_compute.cpp                            \
@@ -60,6 +62,8 @@ otbr_commissioner_LDFLAGS                             = \
 
 EXTRA_DIST                                            = \
     meshcop                                             \
+    commissioner.hpp                                    \
+    commissioner_argcargv.hpp                           \
     $(NULL)
 
 TESTS_ENVIRONMENT                                     = \

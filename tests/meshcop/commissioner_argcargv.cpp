@@ -484,7 +484,7 @@ static void handle_debug_level(argcargv *pThis)
     }
     else
     {
-	otbrLogSetlevel(n);
+	otbrLogSetLevel(n);
     }
 }
 
