@@ -30,39 +30,44 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 noinst_PROGRAMS = otbr-commissioner
 
-otbr_commissioner_SOURCES                                   = \
-    commissioner.cpp                                     \
+otbr_commissioner_SOURCES                             = \
+    commissioner_argcargv.cpp                           \
+    commissioner_compute.cpp                            \
+    commissioner.cpp                                    \
+    commissioner_selftest.cpp                           \
+    commissioner_utils.cpp                              \
     $(NULL)
 
-otbr_commissioner_CPPFLAGS                                  = \
-    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'            \
-    -I$(top_srcdir)/third_party/mbedtls/repo/configs     \
-    -I$(top_srcdir)/third_party/mbedtls/repo/include     \
-    -I$(top_srcdir)/src                                  \
-    -I$(top_srcdir)/src/agent                            \
-    -I$(top_srcdir)/src/web                              \
+otbr_commissioner_CPPFLAGS                            = \
+    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'           \
+    -I$(top_srcdir)/third_party/mbedtls/repo/configs    \
+    -I$(top_srcdir)/third_party/mbedtls/repo/include    \
+    -I$(top_srcdir)/src                                 \
+    -I$(top_srcdir)/src/agent                           \
+    -I$(top_srcdir)/src/web                             \
     $(NULL)
 
-otbr_commissioner_LDADD                                     = \
-    $(top_builddir)/src/agent/libotbr-agent.la           \
-    $(top_builddir)/src/utils/libutils.la                \
-    $(top_builddir)/src/web/libotbr-web.la               \
+otbr_commissioner_LDADD                               = \
+    $(top_builddir)/src/agent/libotbr-agent.la          \
+    $(top_builddir)/src/utils/libutils.la               \
+    $(top_builddir)/src/web/libotbr-web.la              \
+    $(top_builddir)/src/common/libotbr-logging.la       \
     $(NULL)
 
-otbr_commissioner_LDFLAGS                                   = \
-    -static                                              \
+otbr_commissioner_LDFLAGS                             = \
+    -static                                             \
     $(NULL)
 
-EXTRA_DIST                                             = \
-    meshcop                                              \
+EXTRA_DIST                                            = \
+    meshcop                                             \
     $(NULL)
 
-TESTS_ENVIRONMENT                                         = \
-    export                                                  \
-    MAKE=$(MAKE)                                            \
-    top_builddir='$(top_builddir)'                          \
-    top_srcdir='$(top_srcdir)'                              \
-    VERBOSE=1                                               \
+TESTS_ENVIRONMENT                                     = \
+    export                                              \
+    MAKE=$(MAKE)                                        \
+    top_builddir='$(top_builddir)'                      \
+    top_srcdir='$(top_srcdir)'                          \
+    VERBOSE=1                                           \
     LD_LIBRARY_PATH=$(top_builddir)/third_party/cppcms/repo \
     ;
 

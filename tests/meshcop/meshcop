@@ -32,14 +32,46 @@ set -x
 STAGE_DIR=/tmp/test-otbr-stage
 BUILD_DIR=/tmp/test-otbr-build
 
+OT_COMMISSIONER_APP=./otbr-commissioner
+
+LEADER_NODE_NUMBER=1
+JOINER_NODE_NUMBER=2
+
 OT_PANID=0xface
 OT_XPANID=1122334455667788
-OT_PSKC=ee49a905637bbe2608dde3dc3576e188
-OT_JOINER_PASSWORD=123456
+#
+# NOTE Joiner pass phrase:
+#   Must be at least 6 bytes long
+#   And this example has: J ZERO ONE N E R
+#   We cannot use letter O and I because Q O I Z are not allowed per spec
+OT_JOINER_PASSPHRASE=J01NER
+
+# 18b430 is the nest EUI prefix.
+OT_JOINER_EUI64=18b430000000000${JOINER_NODE_NUMBER}
+
+# Just some random hex numbers here
 OT_MASTER_KEY=00112233445566778899aabbccddeeff
+
+# We must pick a channel
 OT_CHANNEL=11
+
+# And a prefix
 OT_GATEWAY=fd11:22::
 
+# The border agent, and ncp needs a pass phrase.
+OT_AGENT_PASSPHRASE=MYPASSPHRASE
+
+# The network needs a name.
+OT_NETWORK_NAME=MyTestNetwork
+
+OT_COMMISSIONER_LOG_FILE=./otbr-commissioner-log.txt
+
+
+# Compute the PSKc from the above settings.
+_x=`$OT_COMMISSIONER_APP --disable-syslog --network-name $OT_NETWORK_NAME --xpanid $OT_XPANID --agent-passphrase $OT_AGENT_PASSPHRASE --compute-pskc`
+OT_PSKC=`echo $_x | cut -d ' ' -f2`
+
+# The TUN device for wpantund.
 TUN_NAME=wpan9
 
 test_setup()
@@ -83,7 +115,7 @@ leader_start()
 {
     sudo sh -s <<EOF
     cd /tmp
-    $STAGE_DIR/usr/sbin/wpantund -I $TUN_NAME -s "system:$STAGE_DIR/usr/bin/ot-ncp-ftd 1" &
+    $STAGE_DIR/usr/sbin/wpantund -I $TUN_NAME -s "system:$STAGE_DIR/usr/bin/ot-ncp-ftd $LEADER_NODE_NUMBER" &
     echo 'Waiting for wpantund to fully start'
     sleep 5
 
@@ -93,7 +125,7 @@ leader_start()
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:Key --data $OT_MASTER_KEY
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:PANID $OT_PANID
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:XPANID $OT_XPANID
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME form OpenThread -c $OT_CHANNEL
+    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME form $OT_NETWORK_NAME -c $OT_CHANNEL
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME config-gateway -d $OT_GATEWAY
 EOF
 }
@@ -107,8 +139,24 @@ ba_start()
 
 commissioner_start()
 {
-    ./otbr-commissioner $OT_PSKC &
-    echo 'Waitint for commissioner'
+    ARGS=""
+    # We'll create our own logfile and not use the syslog
+    ARGS="$ARGS --disable-syslog"
+    # Our log file.
+    ARGS="$ARGS --logfile $OT_COMMISSIONER_LOG_FILE"
+    # And network parameters
+    ARGS="$ARGS --network-name      $OT_NETWORK_NAME"
+    ARGS="$ARGS --xpanid            $OT_XPANID"
+    ARGS="$ARGS --agent-passphrase  $OT_AGENT_PASSPHRASE"
+    # About our joiner.
+    ARGS="$ARGS --joiner-eui64      $OT_JOINER_EUI64"
+    AGGS="$ARGS --joiner-passphrase $OT_JOINER_PASSPHRASE"
+
+    # Launch the commissioner in the background
+    $OT_COMMISSIONER_APP $ARGS &
+    #
+    # It takes about 8 to 10 seconds for the DTLS handshake to complete.
+    echo 'Waiting for commissioner'
     sleep 20
 }
 
@@ -116,7 +164,7 @@ joiner_start()
 {
     cd /tmp
     expect -f- <<EOF
-spawn $STAGE_DIR/usr/bin/ot-cli-ftd 2
+spawn $STAGE_DIR/usr/bin/ot-cli-ftd $JOINER_NODE_NUMBER
 send "ifconfig up\r\n"
 expect "Done"
 send "joiner start $OT_JOINER_PASSWORD\r\n"
@@ -154,4 +202,18 @@ commissioner_start
 joiner_start
 EXIT_CODE=$?
 test_teardown
+
+if [ $EXIT_CODE != 0 ]
+then
+    echo "================== SYSLOG ========================="
+    sudo cat /var/log/syslog
+    echo "==================================================="
+    echo "================== COMMISSIONER LOG ==============="
+    cat $OT_COMMISSIONER_LOG_FILE
+    echo "==================================================="
+    echo "TEST FAIL"
+else
+    echo "TEST SUCCESS"
+fi
+
 exit $EXIT_CODE

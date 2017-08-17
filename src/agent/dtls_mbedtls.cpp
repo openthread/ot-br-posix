@@ -77,8 +77,31 @@ static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLin
         aLevel = OTBR_LOG_DEBUG;
         break;
     }
+    char buf[100];
+    /* mbed inserts a EOL
+     * And so does the otbrLog()
+     * remove that here.
+     */
 
-    otbrLog(aLevel, "%s:%04d: %s", aFile, aLine, aMessage);
+    /* make a copy because we modify it */
+    strncpy(buf, aMessage, sizeof(buf) - 1);
+    /* force termination */
+    buf[sizeof(buf) - 1] = 0;
+
+    /* now remove the extra cr/lf */
+    char *cp;
+    cp = strchr(buf, '\n');
+    if (cp)
+    {
+        *cp = 0;
+    }
+    cp = strchr(buf, '\r');
+    if (cp)
+    {
+        *cp = 0;
+    }
+
+    otbrLog(aLevel, "%s:%04d: %s", aFile, aLine, buf);
     (void)aContext;
 }
 

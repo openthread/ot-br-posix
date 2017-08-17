@@ -30,7 +30,7 @@
 #define LOGGING_HPP_
 
 #include <stddef.h>
-
+#include <stdarg.h>
 #include "types.hpp"
 
 /**
@@ -50,6 +50,34 @@ enum
 };
 
 /**
+ * Change the log level
+ *
+ * @param[in]   alevel  new log level
+ */
+
+void otbrLogSetLevel(int aLevel);
+
+
+/**
+ * Get current log level
+ */
+int otbrLogGetLevel(void);
+
+/**
+ * Control log to syslog
+ *
+ * @param[in] enable true to log to/via syslog
+ *
+ */
+void otbrLogEnableSyslog(bool enabled);
+
+/**
+ * This function causes logs to be written to a specific file
+ * Note: Logs are still written to the syslog.
+ */
+void otbrLogSetFilename(const char *filename);
+
+/**
  * This function initialize the logging service.
  *
  * @param[in]   aIdent  Identity of the logger.
@@ -66,6 +94,15 @@ void otbrLogInit(const char *aIdent, int aLevel);
  *
  */
 void otbrLog(int aLevel, const char *aFormat, ...);
+
+/**
+ * This function log at level @p aLevel.
+ *
+ * @param[in]   aLevel  Log level of the logger.
+ * @param[in]   aFormat Format string as in printf.
+ *
+ */
+void otbrLogv(int aLevel, const char *aFormat, va_list);
 
 /**
  * This function dump memory as hex string at level @p aLevel.
