@@ -29,6 +29,9 @@
 
 set -x
 
+echo "PURPOSELY FAIL TO TEST IF THIS IS CAUGHT"
+exit 1
+
 STAGE_DIR=/tmp/test-otbr-stage
 BUILD_DIR=/tmp/test-otbr-build
 
