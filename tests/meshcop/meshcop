@@ -142,7 +142,7 @@ commissioner_start()
     # We'll create our own logfile and not use the syslog
     ARGS="$ARGS --disable-syslog"
     # Our log file.
-    ARGS="$ARGS --logfile $OT_COMMISSIONER_LOG_FILE"
+    ARGS="$ARGS --log-filename $OT_COMMISSIONER_LOG_FILE"
     # And network parameters
     ARGS="$ARGS --network-name      $OT_NETWORK_NAME"
     ARGS="$ARGS --xpanid            $OT_XPANID"
@@ -153,10 +153,16 @@ commissioner_start()
 
     # Launch the commissioner in the background
     $OT_COMMISSIONER_APP $ARGS &
+    if [ $? != 0 ]
+    then
+	echo "FAILURE"
+	return 1
+    fi
     #
     # It takes about 8 to 10 seconds for the DTLS handshake to complete.
     echo 'Waiting for commissioner'
     sleep 20
+    return 0
 }
 
 joiner_start()
@@ -166,7 +172,7 @@ joiner_start()
 spawn $STAGE_DIR/usr/bin/ot-cli-ftd $JOINER_NODE_NUMBER
 send "ifconfig up\r\n"
 expect "Done"
-send "joiner start $OT_JOINER_PASSWORD\r\n"
+send "joiner start $OT_JOINER_PASSPHRASE\r\n"
 set timeout 20
 expect {
   "Join success" {
@@ -177,11 +183,15 @@ expect {
   }
 }
 EOF
+    exitcode=$?
     cd -
+    return $?
 }
 
 test_teardown()
 {
+    # Do not die on simple errors
+    set +e
     echo 'clearing all'
     sudo rm /etc/dbus-1/system.d/wpantund.conf
     sudo rm /etc/dbus-1/system.d/otbr-agent.conf
@@ -192,6 +202,8 @@ test_teardown()
     wait
 }
 
+# Die/Exit on any simple failure
+set -e
 test_setup
 build_wpantund
 build_openthread
