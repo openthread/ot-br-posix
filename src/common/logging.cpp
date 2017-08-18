@@ -28,8 +28,9 @@
 
 #include "logging.hpp"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -90,7 +91,7 @@ static int do_log(int aLevel)
 
     r = 0;
 
-    if (syslog_opened && syslog_enabled && (aLevel >= sLevel))
+    if (syslog_opened && syslog_enabled && (aLevel <= sLevel))
     {
         r = r | LOGFLAG_syslog;
     }
@@ -248,10 +249,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
      * In the form ADDR: XX XX XX XX ...
      */
 
-    p8 = (const uint8_t *)(aMemory);
-
     // we pre-increment... so subtract
-    p8 = p8 - 16;
     addr = -16;
 
     while (aSize > 0)
@@ -260,7 +258,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
         char   hex[16 * 3 + 1];
 
         addr = addr + 16;
-        p8 = p8   + 16;
+        p8 = (const uint8_t *)(aMemory) + addr;
 
         /* truncate line to max 16 bytes */
         this_size = aSize;
@@ -271,12 +269,12 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
         aSize = aSize - this_size;
 
         char *ch = hex - 1;
-        pEnd = p8 + this_size;
-        while (p8 < pEnd)
+
+	for( pEnd = p8 + this_size ; p8 < pEnd ; p8++ )
         {
             *++ch = HEX_CHARS[(*p8) >> 4];
             *++ch = HEX_CHARS[(*p8) & 0x0f];
-            p8++;
+	    *++ch = ' ';
         }
         *ch = 0;
 
@@ -326,5 +324,6 @@ const char *otbrErrorString(otbrError aError)
 
 void otbrLogDeinit(void)
 {
+    syslog_opened = false;
     closelog();
 }
