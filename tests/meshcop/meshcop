@@ -29,9 +29,6 @@
 
 set -x
 
-echo "PURPOSELY FAIL TO TEST IF THIS IS CAUGHT"
-exit 1
-
 STAGE_DIR=/tmp/test-otbr-stage
 BUILD_DIR=/tmp/test-otbr-build
 
@@ -68,7 +65,6 @@ OT_AGENT_PASSPHRASE=MYPASSPHRASE
 OT_NETWORK_NAME=MyTestNetwork
 
 OT_COMMISSIONER_LOG_FILE=./otbr-commissioner-log.txt
-
 
 # Compute the PSKc from the above settings.
 _x=`$OT_COMMISSIONER_APP --disable-syslog --network-name $OT_NETWORK_NAME --xpanid $OT_XPANID --agent-passphrase $OT_AGENT_PASSPHRASE --compute-pskc`
@@ -218,5 +214,12 @@ then
 else
     echo "TEST SUCCESS"
 fi
+
+
+echo "================== COMMISSIONER LOG ==============="
+cat $OT_COMMISSIONER_LOG_FILE
+echo "==================================================="
+echo "PURPOSELY FAIL TO TEST IF THIS IS CAUGHT and to examine the test results"
+exit 1
 
 exit $EXIT_CODE
