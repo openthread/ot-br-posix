@@ -88,28 +88,28 @@ using namespace ot::BorderRouter;
 enum
 {
     /* max size of a network packet */
-    kSizeMaxPacket		= 1500,
+    kSizeMaxPacket = 1500,
 
     /* Default size of steering data */
-    kSteeringDefaultLength	= 15,
+    kSteeringDefaultLength = 15,
 
     /* how long is an EUI64 in bytes */
-    kEui64Len			= (64 / 8),
+    kEui64Len = (64 / 8),
 
     /* how long is a PSKd in bytes */
-    kPSKdLength			= 32,
+    kPSKdLength = 32,
 
     /* What port does our internal server use? */
-    kPortJoinerSession		= 49192,
+    kPortJoinerSession = 49192,
 
     /* 64bit xpanid length in bytes */
-    kXpanidLength		= (64/8),    /* 64bits */
+    kXpanidLength = (64 / 8), /* 64bits */
 
     /* specification: 8.10.4 */
-    kNetworkNameLenMax		= 16,
-    
+    kNetworkNameLenMax = 16,
+
     /* Spec is not specific about this items max length, so we choose 64 */
-    kBorderRouterPassPhraseLen	= 64,
+    kBorderRouterPassPhraseLen = 64,
 
 };
 
@@ -139,7 +139,7 @@ enum
     kJoinerDtlsEncapsulation
 };
 
-    
+
 /**
  * Commissioner Context.
  */
@@ -149,135 +149,141 @@ struct Context
     bool commission_device;
 
     /** coap instance to talk to agent & device */
-    Coap::Agent         *mCoap;
+    Coap::Agent *mCoap;
 
     /** dtls info for talking to agent & joiner */
-    Dtls::Server        *mDtlsServer;
+    Dtls::Server *mDtlsServer;
 
     /* the session info for agent & joiner */
-    Dtls::Session       *mSession;
+    Dtls::Session *mSession;
 
     /* dtls context information */
     mbedtls_ssl_context *mSsl;
     mbedtls_net_context *mNet;
 
     /* Socket we are using with the agent */
-    int                  mSocket;
+    int mSocket;
 
     /* this generates our coap tokens */
-    uint16_t             mCoapToken;
+    uint16_t mCoapToken;
 
     /* this is the commissioner session id */
-    uint16_t             mCommissionerSessionId;
+    uint16_t mCommissionerSessionId;
 
     /** all things for the border agent */
-    struct br_agent {
+    struct br_agent
+    {
 
-	/** network port, in form mbed likes it (ascii) */
-	char                 mPort_ascii[ 7 ];
-	
-	/** network address, in form mbed likes it (ascii) */
-	char                 mAddress_ascii[64];
+        /** network port, in form mbed likes it (ascii) */
+        char mPort_ascii[ 7 ];
 
-	/** xpanid from command line & binary form */
-	/* Note: xpanid is used to calculate the PSKc */
-	struct {
-	    char ascii[  (kXpanidLength*2)+1 ];
-	    uint8_t bin  [   kXpanidLength ];
-	} mXpanid;
+        /** network address, in form mbed likes it (ascii) */
+        char mAddress_ascii[64];
 
-	/** network name from command line */
-	/* Note: networkname is used to calculate the PSKc */
-	char mNetworkName[ kNetworkNameLenMax + 1 ];
+        /** xpanid from command line & binary form */
+        /* Note: xpanid is used to calculate the PSKc */
+        struct
+        {
+            char    ascii[  (kXpanidLength * 2) + 1 ];
+            uint8_t bin  [   kXpanidLength ];
+        } mXpanid;
 
-	/** border router agent pass phrase */
-	/* Note: passphrase is used to calculate the PSKc */
-	char mPassPhrase[ kBorderRouterPassPhraseLen + 1 ];
+        /** network name from command line */
+        /* Note: networkname is used to calculate the PSKc */
+        char mNetworkName[ kNetworkNameLenMax + 1 ];
+
+        /** border router agent pass phrase */
+        /* Note: passphrase is used to calculate the PSKc */
+        char mPassPhrase[ kBorderRouterPassPhraseLen + 1 ];
 
 
-	/** the PSKc used with the agent */
-	struct {
+        /** the PSKc used with the agent */
+        struct
+        {
 
-	    /* this class does the calculation */
-	    Psk::Pskc mTool;
+            /* this class does the calculation */
+            Psk::Pskc mTool;
 
-	    /** ascii & binary of PSKc, either from calculation or cmdline */
-	    char ascii[ (OT_PSKC_LENGTH * 2) + 1 ];
-	    uint8_t bin[ OT_PSKC_LENGTH ];
-	} mPSKc;
-	
+            /** ascii & binary of PSKc, either from calculation or cmdline */
+            char    ascii[ (OT_PSKC_LENGTH * 2) + 1 ];
+            uint8_t bin[ OT_PSKC_LENGTH ];
+        } mPSKc;
+
     } mAgent;
 
     /** Kek with the joiner operation */
-    uint8_t              mKek[32];
+    uint8_t mKek[32];
 
-    struct comm_ka {
-	/** last time a COMM_KA message was sent */
-	struct timeval       mLastTxTv;
+    struct comm_ka
+    {
+        /** last time a COMM_KA message was sent */
+        struct timeval mLastTxTv;
 
         /** last time a COMM_KA.rsp was received */
-        struct timeval       mLastRxTv;
+        struct timeval mLastRxTv;
 
         /** how often should these be sent in seconds */
-        int                  mTxRate;
+        int mTxRate;
 
         /** How many have been sent & recieved */
-        int                  mTxCnt;
-        int                  mRxCnt;
+        int mTxCnt;
+        int mRxCnt;
 
         /** are these disabled? (for test purposes) */
-        bool                 mDisabled;
+        bool mDisabled;
     } mCOMM_KA;
 
     /** Total timeout (envelope) of the commissioning test */
     struct               timeval mEnvelopeStartTv;
-    int                  mEnvelopeTimeout;
+    int                          mEnvelopeTimeout;
 
     /** Commissioner state */
-    int                  mState;
-    
+    int mState;
+
 
     /** All things about the joiner */
-    struct joiner {
+    struct joiner
+    {
 
-	/** the EUI64 of the Joiner or HASHMAC, either from cmdline or computed */
-	struct {
-	    char ascii[ (kEui64Len*2) + 1 ];
-	    uint8_t bin[ kEui64Len ];
-	} mEui64, mHashMac;
+        /** the EUI64 of the Joiner or HASHMAC, either from cmdline or computed */
+        struct
+        {
+            char    ascii[ (kEui64Len * 2) + 1 ];
+            uint8_t bin[ kEui64Len ];
+        } mEui64, mHashMac;
 
         /** Set to true/false via cmdline param for test purposes. */
-        bool                 mAllowAny;
+        bool mAllowAny;
 
-	/** Computed steering data based on hashmac */
-	SteeringData         mSteeringData;
+        /** Computed steering data based on hashmac */
+        SteeringData mSteeringData;
 
-	/** UDP port of the joiner */
-	uint16_t             mUdpPort;
+        /** UDP port of the joiner */
+        uint16_t mUdpPort;
 
-	/** Interface id of the joiner device */
-	uint8_t              mIid[8];
+        /** Interface id of the joiner device */
+        uint8_t mIid[8];
 
-	/** the router we are using to talk to the joiner */
-	uint16_t             mRouterLocator;
+        /** the router we are using to talk to the joiner */
+        uint16_t mRouterLocator;
 
-	/** the port we are using */
-	uint16_t             mPortSession;
+        /** the port we are using */
+        uint16_t mPortSession;
 
-	/** This is the PSKd from the command line */
-	/* this is the shared string used by the device */
-	char                 mPSKd_ascii[ kPSKdLength + 1 ];
+        /** This is the PSKd from the command line */
+        /* this is the shared string used by the device */
+        char mPSKd_ascii[ kPSKdLength + 1 ];
 
-	/*
-	 * NOTE: The simplist barcode would contain:
-	 *
-	 *    v=1&&eui=_EUI64_ASCII_&&cc=PSKdASCIITEXT
-	 *
-	 * Example:
-	 *
-	 *    v=1&&eui=00124b000f6e649d&&cc=MYPASSPHRASE
-	 *
-	 */
+        /*
+         * NOTE: The simplist barcode would contain:
+         *
+         *    v=1&&eui=_EUI64_ASCII_&&cc=PSKdASCIITEXT
+         *
+         * Example:
+         *
+         *    v=1&&eui=00124b000f6e649d&&cc=MYPASSPHRASE
+         *
+         */
     } mJoiner;
 };
 
@@ -297,7 +303,7 @@ bool compute_pskc(void);
 const char *hex_string(const uint8_t *pBytes, int n);
 
 /** command line self test handler */
-void handle_selftest( argcargv *pThis );
+void handle_selftest(argcargv *pThis);
 
 /** Print/log an error message and exit */
-void fail(const char *fmt,...);
+void fail(const char *fmt, ...);
