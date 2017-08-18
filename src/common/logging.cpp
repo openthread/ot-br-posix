@@ -270,11 +270,11 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
 
         char *ch = hex - 1;
 
-	for( pEnd = p8 + this_size ; p8 < pEnd ; p8++ )
+        for (pEnd = p8 + this_size; p8 < pEnd; p8++)
         {
             *++ch = HEX_CHARS[(*p8) >> 4];
             *++ch = HEX_CHARS[(*p8) & 0x0f];
-	    *++ch = ' ';
+            *++ch = ' ';
         }
         *ch = 0;
 
