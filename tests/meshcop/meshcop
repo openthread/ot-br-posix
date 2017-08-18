@@ -78,7 +78,7 @@ test_setup()
     [ ! -d $STAGE_DIR ] || rm -rf $STAGE_DIR
     [ ! -d $BUILD_DIR ] || rm -rf $BUILD_DIR
     mkdir -p $BUILD_DIR
-    sudo cp $top_srcdir/src/border-agent/otbr-agent.conf /etc/dbus-1/system.d
+    sudo cp $top_srcdir/src/agent/otbr-agent.conf /etc/dbus-1/system.d
 }
 
 build_wpantund()
