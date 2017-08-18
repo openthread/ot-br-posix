@@ -65,7 +65,7 @@ TEST(Logging, TestLoggingEqualLevel)
 
     char cmd[128];
     sprintf(cmd, "grep '%s.*cool-equal' /var/log/syslog", ident);
-    printf("CMD = %s\n",cmd);
+    printf("CMD = %s\n", cmd);
     CHECK(0 == system(cmd));
 }
 
@@ -73,7 +73,7 @@ TEST(Logging, TestLoggingLowerLevel)
 {
     char ident[20];
     char cmd[128];
-    
+
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO);
     otbrLog(OTBR_LOG_WARNING, "cool-lower");
@@ -95,14 +95,14 @@ TEST(Logging, TestLoggingDump)
     otbrDump(OTBR_LOG_INFO, "foobar", s, sizeof(s));
     otbrLogDeinit();
     sleep(0);
-    
+
     /*
      * Above produces output like this
      * otbr-test-5976[47088]: foobar: 0000: 6f 6e 65 20 73 75 70 65 72 20 6c 6f 6e 67 20 73
      * otbr-test-5976[47088]: foobar: 0010: 74 72 69 6e 67 20 77 69 74 68 20 6c 6f 74 73 20
      * otbr-test-5976[47088]: foobar: 0020: 6f 66 20 74 65 78 74 00
      */
-    
+
     sprintf(cmd, "grep '%s.*: foobar: 0000: 6f 6e 65 20 73 75 70 65 72 20 6c 6f 6e 67 20 73' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 
