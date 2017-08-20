@@ -155,13 +155,15 @@ commissioner_start()
     # About our joiner.
     ARGS="$ARGS --joiner-eui64      $OT_JOINER_EUI64"
     AGGS="$ARGS --joiner-passphrase $OT_JOINER_PASSPHRASE"
+    # Tell the tool to "commission"
+    ARGS="$ARGS --commission-device"
 
     # Launch the commissioner in the background
     $OT_COMMISSIONER_APP $ARGS &
     if [ $? != 0 ]
     then
 	echo "FAILURE"
-	return 1
+	exit 1
     fi
     #
     # It takes about 8 to 10 seconds for the DTLS handshake to complete.
@@ -207,20 +209,7 @@ test_teardown()
     wait
 }
 
-# Die/Exit on any simple failure
-set -e
-test_setup
-build_wpantund
-build_openthread
-leader_start
-ba_start
-commissioner_start
-joiner_start
-EXIT_CODE=$?
-test_teardown
-
-if [ $EXIT_CODE != 0 ]
-then
+fail() {
     echo "================== SYSLOG ========================="
     sudo cat /var/log/syslog
     echo "==================================================="
@@ -228,15 +217,19 @@ then
     cat $OT_COMMISSIONER_LOG_FILE
     echo "==================================================="
     echo "TEST FAIL"
-else
-    echo "TEST SUCCESS"
-fi
+    set -e
+    exit 1
+}
 
+test_setup
+build_wpantund
+build_openthread
+leader_start  || fail
+ba_start || fail
+commissioner_start || fail
+joiner_start || fail
+test_teardown
 
-echo "================== COMMISSIONER LOG ==============="
-cat $OT_COMMISSIONER_LOG_FILE
-echo "==================================================="
-echo "PURPOSELY FAIL TO TEST IF THIS IS CAUGHT and to examine the test results"
 exit 1
 
 exit $EXIT_CODE
