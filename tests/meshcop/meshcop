@@ -100,7 +100,7 @@ build_openthread()
         cd openthread &&
         ./bootstrap &&
         ./configure --prefix=/usr         \
-        --disable-docs                    \		    
+        --disable-docs                    \
         --enable-border-agent-proxy       \
         --enable-cli-app=ftd              \
         --enable-ncp-app=ftd              \
