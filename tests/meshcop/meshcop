@@ -100,6 +100,7 @@ build_openthread()
         cd openthread &&
         ./bootstrap &&
         ./configure --prefix=/usr         \
+        --disable-docs                    \		    
         --enable-border-agent-proxy       \
         --enable-cli-app=ftd              \
         --enable-ncp-app=ftd              \
@@ -112,11 +113,14 @@ build_openthread()
 
 leader_start()
 {
+    set +e
     sudo sh -s <<EOF
+    set -x
     cd /tmp
-    $STAGE_DIR/usr/sbin/wpantund -I $TUN_NAME -s "system:$STAGE_DIR/usr/bin/ot-ncp-ftd $LEADER_NODE_NUMBER" &
+    $STAGE_DIR/usr/sbin/wpantund -d 5 -I $TUN_NAME -s "system:$STAGE_DIR/usr/bin/ot-ncp-ftd $LEADER_NODE_NUMBER" &
     echo 'Waiting for wpantund to fully start'
     sleep 5
+
 
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Daemon:AutoAssociateAfterReset false
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME leave
@@ -127,6 +131,7 @@ leader_start()
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME form $OT_NETWORK_NAME -c $OT_CHANNEL
     sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME config-gateway -d $OT_GATEWAY
 EOF
+    set -e
 }
 
 ba_start()
