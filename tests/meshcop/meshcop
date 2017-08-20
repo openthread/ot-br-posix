@@ -64,6 +64,10 @@ OT_AGENT_PASSPHRASE=MYPASSPHRASE
 # The network needs a name.
 OT_NETWORK_NAME=MyTestNetwork
 
+# The agent is on the local host.
+OT_AGENT_IPADDR=127.0.0.1
+OT_AGENT_IPPORT=49191
+
 OT_COMMISSIONER_LOG_FILE=./otbr-commissioner-log.txt
 
 # Compute the PSKc from the above settings.
@@ -79,6 +83,19 @@ test_setup()
     [ ! -d $BUILD_DIR ] || rm -rf $BUILD_DIR
     mkdir -p $BUILD_DIR
     sudo cp $top_srcdir/src/agent/otbr-agent.conf /etc/dbus-1/system.d
+}
+
+
+fail() {
+    echo "================== SYSLOG ========================="
+    sudo cat /var/log/syslog
+    echo "==================================================="
+    echo "================== COMMISSIONER LOG ==============="
+    cat $OT_COMMISSIONER_LOG_FILE
+    echo "==================================================="
+    echo "TEST FAIL"
+    set -e
+    exit 1
 }
 
 build_wpantund()
@@ -155,6 +172,9 @@ commissioner_start()
     # About our joiner.
     ARGS="$ARGS --joiner-eui64      $OT_JOINER_EUI64"
     AGGS="$ARGS --joiner-passphrase $OT_JOINER_PASSPHRASE"
+    # Where is the agent?
+    ARGS="$ARGS --agent-addr        $OT_AGENT_IPADDR"
+    ARGS="$ARGS --agent-port        $OT_AGENT_IPPORT"
     # Tell the tool to "commission"
     ARGS="$ARGS --commission-device"
 
@@ -162,7 +182,7 @@ commissioner_start()
     $OT_COMMISSIONER_APP $ARGS &
     if [ $? != 0 ]
     then
-	echo "FAILURE"
+	fail()
 	exit 1
     fi
     #
@@ -207,18 +227,6 @@ test_teardown()
     sudo killall otbr-agent
     sudo killall otbr-commissioner
     wait
-}
-
-fail() {
-    echo "================== SYSLOG ========================="
-    sudo cat /var/log/syslog
-    echo "==================================================="
-    echo "================== COMMISSIONER LOG ==============="
-    cat $OT_COMMISSIONER_LOG_FILE
-    echo "==================================================="
-    echo "TEST FAIL"
-    set -e
-    exit 1
 }
 
 test_setup
