@@ -477,13 +477,13 @@ static void handle_debug_level(argcargv *pThis)
     int n;
 
     n = pThis->num_param();
-    if( n < OTBR_LOG_EMERG )
+    if (n < OTBR_LOG_EMERG)
     {
         pThis->usage("invalid log level, must be >= %d\n", OTBR_LOG_EMERG);
     }
-    if( n > OTBR_LOG_DEBUG )
+    if (n > OTBR_LOG_DEBUG)
     {
-	n = OTBR_LOG_DEBUG;
+        n = OTBR_LOG_DEBUG;
     }
     otbrLogSetLevel(n);
 }
