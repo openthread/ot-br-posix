@@ -148,6 +148,11 @@ static void log_str(const char *cp)
             log_col0 = true;
         }
         fputc(ch, log_fp);
+        if (ch == '\n')
+        {
+	    /* force flush (in case something crashes) */
+            fflush(log_fp);
+        }
     }
 }
 
