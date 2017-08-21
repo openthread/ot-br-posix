@@ -73,6 +73,8 @@ then
     exit 1
 fi
 
+find $ABS_BLD -type f -print
+
 # What we care about is the AGENT
 #
 # this is the border router agent, it should have been built already
