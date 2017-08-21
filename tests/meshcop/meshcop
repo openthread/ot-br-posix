@@ -48,6 +48,12 @@ _f=$top_srcdir/src/agent/main.cpp
 if [ ! -f $_f ]
 then
     echo "Variable: top_srcdir seems wrong, cannot find: $_f"
+    ls -l $top_srcdir
+    echo "BUILD DIR is:"
+    ls -l $top_builddir
+    echo "VARIABLES ARE:"
+    set
+ 
     exit 1
 fi
 
