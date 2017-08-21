@@ -31,7 +31,7 @@
 THIS_DIR=`pwd`
 
 # Assume TRAVIS has set this variable
-if [ x"$TRAVIS" == x"" ]
+if [ x"${TRAVIS}" == x"" ]
 then
     # If not, then set it for us
     # for example you might be debugging
