@@ -27,16 +27,176 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -x
+# During development/test, running by hand, set this to true.
 
+DEBUG=true
+if $DEBUG
+then
+    top_srcdir=`cd ../.. && pwd`
+    top_builddir=`cd ../.. && pwd`
+fi
+
+THIS_DIR=`pwd`
+
+
+# in automated test mode, top_srcdir and top_builddir
+# macros are set globally by the build system (makefiles)
+
+# If invoked by hand .. they might not be
+# Thus, we verify they are correct.
+_f=$top_srcdir/src/agent/main.cpp
+if [ ! -f $_f ]
+then
+    echo "Variable: top_srcdir seems wrong, cannot find: $_f"
+    exit 1
+fi
+
+if [ x"$top_builddir" == x"" ]
+then
+    echo "Variable: top_srcdir is not set!"
+    exit 1
+fi    
+
+# this is the border router agent, it should have been built already
+_otbr_agent=otbr-agent
+OTBR_AGENT_EXE=$top_builddir/src/agent/$_otbr_agent
+
+# Verify that the ageint is present, and it is executable
+if [ ! -x $OTBR_AGENT_EXE ]
+then
+    echo "Missing otbr-agent: $OTBR_AGENT_EXE ..."
+    exit 1
+fi
+
+# We will be creating alot of log information
+# Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
+if [ -f /etc/logrotate.conf ]
+then
+    sudo logrotate -f /etc/logrotate.conf
+fi
+
+# Common function to write to the syslog
+write_syslog()
+{
+    logger -p syslog.alert "OPENTHREAD_TEST: $@"
+}
+
+write_syslog "MESHCOP TEST BEGIN - rotated logs"
+
+# this is our quasi-install directory
 STAGE_DIR=/tmp/test-otbr-stage
+
+# We build wpantund & openthread here
 BUILD_DIR=/tmp/test-otbr-build
 
-OT_COMMISSIONER_APP=./otbr-commissioner
+# names for later use ..
+#   lower case: used by killall
+#   UPPER CASE: absolute path to the exe.
+_wpantund=wpantund
+WPANTUND_EXE=$STAGE_DIR/usr/sbin/$_wpantund
+_wpanctl=wpanctl
+WPANCTL_EXE=$STAGE_DIR/usr/bin/$_wpanctl
 
+# Once built, the NCP and CLI will be here
+# TODO (FUTURE): commission with ot-cli-mtd?
+_ot_ncp_xxx=ot-ncp-ftd
+NCP_EXE=$STAGE_DIR/usr/bin/$_ot_ncp_xxx
+_ot_cli_xxx=ot-cli-ftd
+CLI_EXE=$STAGE_DIR/usr/bin/$_ot_cli_xxx
+
+# this is the commissioner app (built in this directory)
+_otbr_commissioner=otbr-commissioner
+OTBR_COMMISSIONER_EXE=./$_otbr_commissioner
+
+# It should be built already
+if [ ! -x $OTBR_COMMISSIONER_EXE ]
+then
+    EXIT_MESSAGE="Missing otbr-commissioner: $OTBR_COMMISSIONER_EXE"
+    echo $EXIT_MESSAGE
+    exit 1
+fi
+
+
+# From now on - all exits are TRAPPED
+# When they occur, we call the function: output_logs'.
+
+trap 'output_logs' EXIT
+
+# We assume an unknown reason
+EXIT_MESSAGE=UNKNOWN_FAILURE
+
+output_logs()
+{
+    # Capture the exit code so we can return it below
+    EXITCODE=$?
+    
+    write_syslog "EXIT ${EXITCODE} - output logs"
+    # These may or may not have problems executing..
+    # So disable the simple exit flag.
+    set +e
+
+    # Kill all programs we execute and run
+    sudo killall $_wpantund
+
+    # This too, in case it is hung
+    sudo killall $_wpanctl
+    sudo killall $_otbr_agent
+    sudo killall $_otbr_commissioner
+
+    # Both ftd & mtd (future)
+    sudo killall $_ot_ncp_xxx
+    sudo killall $_ot_cli_xxx
+    sleep 1
+    write_syslog "All apps should be dead now"
+
+    # Wait 5 seconds for the "logs to flush"
+    sleep 5
+
+    # part 1
+    # ------
+    #
+    # On travis (the CI server), we can't see what went into the
+    # syslog.  So this is here so we can see the output.
+    #
+    # part 2
+    # ------
+    #
+    # If we run locally, it is sometimes helpful for our victim (you
+    # the developer) to have logs split upto various files to help
+    # that victim, we'll GREP the log files according.
+    #
+    echo "START_LOG: SYSLOG =========="
+    cat /var/log/syslog  | tee  complete-syslog.log
+    echo "START_LOG: BR-AGENT ========="
+    cat /var/log/syslog | grep $_otbr_agent | tee otbr-agent.log
+    echo "START_LOG: OTBR-COMISSIONER ========="
+    cat /var/log/syslog | grep $_otbr_commissioner | tee otbr-commissioner.log
+    echo "START_LOG: OT-NCP ========="
+    cat /var/log/syslog | grep $_ot_ncp_xxx | tee ${_ot_ncp_xxx}.log
+    echo "START_LOG: OT-CLI ========="
+    cat /var/log/syslog | grep $_ot_cli_xxx | tee ${_ot_cli_xxx}.log
+    echo "START_LOG: WPANTUND ======"
+    cat /var/log/syslog | grep $_wpantund | tee wpantund.log
+    echo "====================================="
+    echo "Hint, for each log Search backwards for: 'START_LOG: <NAME>'"
+    echo "====================================="
+    echo "EXIT ${EXIT_CODE}: MESSAGE: $EXIT_MESSAGE"
+    exit $EXIT_CODE
+}
+
+
+
+# our node ids..
 LEADER_NODE_NUMBER=1
 JOINER_NODE_NUMBER=2
 
+#----------------------------------------
+# TODO:
+#   Change these to random values
+#   so that we test with something other
+#   then the compiled in defaults.
+#----------------------------------------
+# the test panids
 OT_PANID=0xface
 OT_XPANID=1122334455667788
 #
@@ -49,11 +209,11 @@ OT_JOINER_PASSPHRASE=J01NER
 # 18b430 is the nest EUI prefix.
 OT_JOINER_EUI64=18b430000000000${JOINER_NODE_NUMBER}
 
-# Just some random hex numbers here
+# network master key
 OT_MASTER_KEY=00112233445566778899aabbccddeeff
 
 # We must pick a channel
-OT_CHANNEL=11
+OT_CHANNEL=22
 
 # And a prefix
 OT_GATEWAY=fd11:22::
@@ -68,10 +228,14 @@ OT_NETWORK_NAME=MyTestNetwork
 OT_AGENT_IPADDR=127.0.0.1
 OT_AGENT_IPPORT=49191
 
+# Optionally we can write the commisiner log to a file
 OT_COMMISSIONER_LOG_FILE=./otbr-commissioner-log.txt
 
-# Compute the PSKc from the above settings.
-_x=`$OT_COMMISSIONER_APP --disable-syslog --network-name $OT_NETWORK_NAME --xpanid $OT_XPANID --agent-passphrase $OT_AGENT_PASSPHRASE --compute-pskc`
+# Using the commissioner app - Compute the PSKc from the above settings.
+set -x
+_x=`$OTBR_COMMISSIONER_EXE --disable-syslog --network-name $OT_NETWORK_NAME --xpanid $OT_XPANID --agent-passphrase $OT_AGENT_PASSPHRASE --compute-pskc`
+set +x
+# And parse what we want from the output
 OT_PSKC=`echo $_x | cut -d ' ' -f2`
 
 # The TUN device for wpantund.
@@ -79,124 +243,378 @@ TUN_NAME=wpan9
 
 test_setup()
 {
+    # Clean up old stuff
     [ ! -d $STAGE_DIR ] || rm -rf $STAGE_DIR
     [ ! -d $BUILD_DIR ] || rm -rf $BUILD_DIR
+    mkdir -p $STAGE_DIR
     mkdir -p $BUILD_DIR
-    sudo cp $top_srcdir/src/agent/otbr-agent.conf /etc/dbus-1/system.d
+
+
+    _f=$top_srcdir/src/agent/otbr-agent.conf
+    if [ ! -f $_f ]
+    then
+	EXIT_MESSAGE="Missing: $_f"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    
+    sudo cp $_f /etc/dbus-1/system.d
 }
 
-
-fail() {
-    echo "================== SYSLOG ========================="
-    sudo cat /var/log/syslog
-    echo "==================================================="
-    echo "================== COMMISSIONER LOG ==============="
-    cat $OT_COMMISSIONER_LOG_FILE
-    echo "==================================================="
-    echo "TEST FAIL"
+checkout_wpantund()
+{
     set -e
-    exit 1
+
+    # git only checks out to empty directories..
+    rm -rf $BUILD_DIR/wpantund
+    
+    cd $BUILD_DIR
+    git clone --depth 1 https://github.com/openthread/wpantund.git
+
+    # boot strap
+    cd wpantund
+    set -x
+    ./bootstrap.sh
+    set +x
 }
 
-build_wpantund()
+configure_wpantund()
 {
-    (cd $BUILD_DIR &&
-        git clone --depth 1 https://github.com/openthread/wpantund.git &&
-        cd wpantund &&
-        ./bootstrap.sh &&
-        ./configure --prefix=/usr --sysconf=/etc --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel &&
-        make install DESTDIR=$STAGE_DIR &&
-        $STAGE_DIR/usr/sbin/wpantund --version &&
-        sudo cp $STAGE_DIR/etc/dbus-1/system.d/wpantund.conf /etc/dbus-1/system.d)
+    set -e
+    
+    cd ${BUILD_DIR}/wpantund
+    set -x
+    ./configure --prefix=/usr --sysconf=/etc --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel
+    set +x
 }
 
-build_openthread()
+compile_wpantund()
 {
-    (cd $BUILD_DIR &&
-        git clone --depth 1 https://github.com/openthread/openthread.git &&
-        cd openthread &&
-        ./bootstrap &&
-        ./configure --prefix=/usr         \
-        --disable-docs                    \
-        --enable-border-agent-proxy       \
-        --enable-cli-app=ftd              \
-        --enable-ncp-app=ftd              \
-        --enable-joiner                   \
-        --with-examples=posix             \
-        --with-ncp-bus=uart               \
-        --with-platform-info=POSIX &&     \
-        make install DESTDIR=$STAGE_DIR)
+    set -e
+    make -C ${BUILD_DIR}/wpantund all
+    make -C ${BUILD_DIR}/wpantund install DESTDIR=$STAGE_DIR
+
+    if [ ! -x $WPANTUND_EXE ]
+    then
+	EXIT_MESSAGE="Build failed, cannot find $WPANTUND_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+
+    _f=$STAGE_DIR/etc/dbus-1/system.d/wpantund.conf
+    if [ ! -f $_f ]
+    then
+	EXIT_MESSAGE="Missing: $_f"
+	echo $EXIT_MESAGE
+	exit 1
+    fi
+    sudo cp $_f /etc/dbus-1/system.d
+
+    if [ -x /usr/sbin/service ]
+    then
+	# tell dbus to reload, we have changed/added a configuration file
+	sudo service dbus reload
+    else
+	write_syslog "WARNING: Do not know how to tell dbus to re-load config files"
+    fi
+    
 }
+
+recompile_wpantund()
+{
+    set -e
+    make -C ${BUILD_DIR}/wpantund  clean
+    compile_wpantund
+}
+
+recompile_openthread()
+{
+    set -e
+    make -C ${BUILD_DIR}/openthread clean
+    compile_openthread
+}
+
+
+checkout_openthread()
+{
+    set -e
+    cd $BUILD_DIR
+
+    # Git only checks out to empty directories.
+    rm -rf ${BUILD_DIR}/openthread
+    git clone --depth 1 https://github.com/openthread/openthread.git
+
+    # boot strap
+    cd openthread
+    ./bootstrap
+}
+
+compile_openthread()
+{
+    set -e
+    make -C ${BUILD_DIR}/openthread -j 20 all
+    make -C ${BUILD_DIR}/openthread -j 20 install DESTDIR=$STAGE_DIR
+}
+
+
+configure_openthread()
+{
+    set -e
+    set -x
+    # It is helpful to have logs enabled during testing ..
+    LOG_FLAGS=""
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_DEBG"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_API=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_ARP=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_CLI=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_COAP=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_ICMP=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_IP6=1" 
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_MAC=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_MEM=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_MLE=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_NETDATA=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_NETDIAG=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_PKT_DUMP=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_PLATFORM=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_PREPEND_LEVEL=1"
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_PREPEND_REGION=1"
+
+    CFLAGS="$CFLAGS $LOG_FLAGS"
+    CXXFLAGS="$CFLAGS $LOG_FLAGS"
+    export CFLAGS
+    export CXXFLAGS
+
+    cd ${BUILD_DIR}/openthread
+
+    # TODO: Should we test with 
+    ./configure --prefix=/usr                     \
+		--disable-docs                    \
+		--enable-tmf-proxy                \
+		--enable-border-router            \
+		--enable-cli-app=both             \
+		--enable-ncp-app=ftd              \
+		--enable-joiner                   \
+		--enable-debug                    \
+		--with-examples=posix             \
+		--with-ncp-bus=uart               \
+		--with-platform-info=POSIX
+    set +x
+}
+
 
 leader_start()
 {
-    set +e
-    sudo sh -s <<EOF
-    set -x
-    cd /tmp
-    $STAGE_DIR/usr/sbin/wpantund -d 5 -I $TUN_NAME -s "system:$STAGE_DIR/usr/bin/ot-ncp-ftd $LEADER_NODE_NUMBER" &
-    echo 'Waiting for wpantund to fully start'
-    sleep 5
-
-
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Daemon:AutoAssociateAfterReset false
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME leave
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:PSKc --data $OT_PSKC
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:Key --data $OT_MASTER_KEY
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:PANID $OT_PANID
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME setprop Network:XPANID $OT_XPANID
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME form $OT_NETWORK_NAME -c $OT_CHANNEL
-    sudo $STAGE_DIR/usr/bin/wpanctl -I $TUN_NAME config-gateway -d $OT_GATEWAY
-EOF
     set -e
+    if [ ! -x $NCP_EXE ]
+    then
+	EXIT_MESSAGE="Missing ncp: $NCP_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+
+    if [ ! -x $CLI_EXE ]
+    then
+	EXIT_MESSAGE="MISSING cli: $CLI_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+
+    if [ ! -x $WPANCTL_EXE ]
+    then
+	EXIT_MESSAGE="MISSING wpanctl: $WPANCTL_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+
+    if [ ! -x $WPANTUND_EXE ]
+    then
+	EXIT_MESSAGE="MISSING wpantund: $WPANTUND_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+
+    # These might not exit cleanly
+    set +e
+    write_syslog "LEADER: killing the old"
+    # Kill old wpantund
+    sudo killall $_wpantund
+    sudo killall $_ot_ncp_xxx
+    set -e
+
+    write_syslog "LEADER: starting"
+
+    # Do this within a private script as root.
+    sudo sh -s <<EOF
+    cd /tmp
+    set -e 
+    # We specifically put this in the background
+    set -x
+    $WPANTUND_EXE -d 5 -I $TUN_NAME -s "system:$NCP_EXE $LEADER_NODE_NUMBER" &
+    echo 'Waiting for wpantund to fully start'
+    sleep 10
+
+    sudo $WPANCTL_EXE -I $TUN_NAME setprop Daemon:AutoAssociateAfterReset false
+    sudo $WPANCTL_EXE -I $TUN_NAME leave
+    sudo $WPANCTL_EXE -I $TUN_NAME setprop Network:PSKc --data $OT_PSKC
+    sudo $WPANCTL_EXE -I $TUN_NAME setprop Network:Key --data $OT_MASTER_KEY
+    sudo $WPANCTL_EXE -I $TUN_NAME setprop Network:PANID $OT_PANID
+    sudo $WPANCTL_EXE -I $TUN_NAME setprop Network:XPANID $OT_XPANID
+    sudo $WPANCTL_EXE -I $TUN_NAME form $OT_NETWORK_NAME -c $OT_CHANNEL
+    sudo $WPANCTL_EXE -I $TUN_NAME config-gateway -d $OT_GATEWAY
+    set +x
+EOF
+    # Wait for wpantund to complete
+    sleep 10
+
+    # These should be running now
+    # And should not have crashed!
+    pidof $_wpantund
+    if [ $? != 0 ]
+    then
+	EXIT_MESSAGE="LEADER: Failed to start wpantund"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    pidof $_ot_ncp_xxx
+    if [ $? != 0 ]
+    then
+	EXIT_MESSAGE="LEADER: Failed to start $_ot_ncp_xxx"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    
+    write_syslog "LEADER: start complete"
 }
+
 
 ba_start()
 {
-    sudo $top_builddir/src/agent/otbr-agent -I $TUN_NAME &
-    echo 'Waiting for border agent start'
-    sleep 5
+    set -e
+    if [ ! -x $OTBR_AGENT_EXE ]
+    then
+	EXIT_MESSAGE="Missing: otbr-agent: $OTBR_AGENT_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    set +e
+    write_syslog "AGENT: kill old"
+    sudo killall $_otbr_agent
+    set -e
+    write_syslog "AGENT: starting"
+
+    # we launch this in the background
+    set -x
+    cd $THIS_DIR
+    sudo $OTBR_AGENT_EXE -I $TUN_NAME &
+    set +x
+    # wait for it to complete
+    sleep 10
+
+    pidof $_otbr_agent
+    if [ $? != 0 ]
+    then
+	EXIT_MESSAGE="AGENT: failed to start"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    
+    write_syslog "AGENT: start complete"
 }
 
 commissioner_start()
 {
+    set -e
+
+    if [ ! -x $OTBR_COMMISSIONER_EXE ]
+    then
+	EXIT_MESSAGE="Missing otbr-commissioner: $OTBR_COMMISSIONER_EXE"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    
+    write_syslog "COMMISSIONER: kill old"
+    set +e
+    sudo killall $_otbr_commissioner
+    set -e
+
+    set -x
+    # Clear the ARGS variable.
     ARGS=""
-    # We'll create our own logfile and not use the syslog
-    ARGS="$ARGS --disable-syslog"
-    # Our log file.
-    ARGS="$ARGS --log-filename $OT_COMMISSIONER_LOG_FILE"
+    # OPTIONALLY we can create our own logfile and not use the syslog
+    #ARGS="$ARGS --disable-syslog"
+    #ARGS="$ARGS --log-filename $OT_COMMISSIONER_LOG_FILE"
+
+    rm -f $OT_COMMISSIONER_LOG_FILE
+    
     # And network parameters
     ARGS="$ARGS --network-name      $OT_NETWORK_NAME"
     ARGS="$ARGS --xpanid            $OT_XPANID"
     ARGS="$ARGS --agent-passphrase  $OT_AGENT_PASSPHRASE"
     # About our joiner.
     ARGS="$ARGS --joiner-eui64      $OT_JOINER_EUI64"
-    AGGS="$ARGS --joiner-passphrase $OT_JOINER_PASSPHRASE"
+    ARGS="$ARGS --joiner-passphrase $OT_JOINER_PASSPHRASE"
     # Where is the agent?
     ARGS="$ARGS --agent-addr        $OT_AGENT_IPADDR"
     ARGS="$ARGS --agent-port        $OT_AGENT_IPPORT"
+    #
+    # Debug level, full blast (this is test a test on a
+    # a remote machine, being able to *SEE* the result helpful
+    ARGS="$ARGS --debug-level 7"
+
+    # All of this should be done in 200 seconds
+    # See note below about COMM_KA
+    ARGS="$ARGS --comm-envelope-timeout 200"
+
     # Tell the tool to "commission"
     ARGS="$ARGS --commission-device"
 
     # Launch the commissioner in the background
-    $OT_COMMISSIONER_APP $ARGS &
+    set -x
+    cd $THIS_DIR
+    $OTBR_COMMISSIONER_EXE $ARGS &
+    # Wait for it to launch and get started.
+    sleep 5
+    set x
+
+    # Is it still running or did it die?
+    set +x
+    pidof $_otbr_commissioner
     if [ $? != 0 ]
     then
-	fail()
+	EXIT_MESSAGE="COMMISSIONER: failed to start"
+	echo $EXIT_MESSAGE
 	exit 1
     fi
     #
     # It takes about 8 to 10 seconds for the DTLS handshake to complete.
     echo 'Waiting for commissioner'
-    sleep 20
+
+    # The ENVELOPE (total time) timeout is 200 seconds.
+    #
+    # If no COMM_KA occurs:
+    #    The Commissioner process timeout is 50 seconds.
+    # ELSE
+    #    (COMM_KA does occur)
+    #    The commissioner will not timeout
+    #
+    # By waiting 100 seconds we test that the timeout would have fired
+    # And that the COMM_KA process is actually working.
+    #
+    sleep 100
+    write_syslog "TEST: Commissioner COM_KA should be seen by now"
+    write_syslog "TEST: Commissioner ready for joiner"
     return 0
 }
 
 joiner_start()
 {
+    write_syslog "JOINER START"
     cd /tmp
+    # do not die on simple errors here
+    set +e
     expect -f- <<EOF
-spawn $STAGE_DIR/usr/bin/ot-cli-ftd $JOINER_NODE_NUMBER
+spawn $CLI_EXE $JOINER_NODE_NUMBER
 send "ifconfig up\r\n"
 expect "Done"
 send "joiner start $OT_JOINER_PASSPHRASE\r\n"
@@ -210,34 +628,58 @@ expect {
   }
 }
 EOF
-    exitcode=$?
-    cd -
-    return $?
+    if [ $1 != 0 ]
+    then
+	EXIT_MESSAGE="JOINER FAILED"
+	echo $EXIT_MESSAGE
+	exit 1
+    fi
+    # We are happy!
+    EXIT_MESSAGE="JOINER SUCCESS COMPLETE"
+    echo $EXIT_MESSAGE
 }
 
 test_teardown()
 {
     # Do not die on simple errors
     set +e
+    cd $THIS_DIR
     echo 'clearing all'
     sudo rm /etc/dbus-1/system.d/wpantund.conf
     sudo rm /etc/dbus-1/system.d/otbr-agent.conf
     sudo rm -rf $STAGE_DIR
-    sudo killall wpantund
-    sudo killall otbr-agent
-    sudo killall otbr-commissioner
+    sudo rm -rf $BUILD_DIR
+    sudo killall $_wpantund
+    sudo killall $_wpanctl
+    sudo killall $_otbr_agent
+    sudo killall $_otbr_commissioner
+    sudo killall $_ot_ncp_xxx
+    sudo killall $_ot_cli_xxx
     wait
 }
 
 test_setup
-build_wpantund
-build_openthread
-leader_start  || fail
-ba_start || fail
-commissioner_start || fail
-joiner_start || fail
+    
+# These are broken-out so that during debug you can comment out parts
+# and re-run this script multiple times script and not have your
+# test code get erased ...
+checkout_wpantund
+configure_wpantund
+recompile_wpantund
+
+# As above, these steps are broken up
+checkout_openthread
+configure_openthread
+recompile_openthread
+
+write_syslog "TEST: BUILD COMPLETE"
+
+leader_start
+ba_start
+commissioner_start
+joiner_start
 test_teardown
 
-exit 1
+# Great sucess!
+exit 0
 
-exit $EXIT_CODE
