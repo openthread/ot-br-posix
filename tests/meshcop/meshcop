@@ -27,45 +27,57 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# During development/test, running by hand, set this to true.
-
-DEBUG=true
-if $DEBUG
-then
-    top_srcdir=`cd ../.. && pwd`
-    top_builddir=`cd ../.. && pwd`
-fi
-
+# Get our starting directory and remember it
 THIS_DIR=`pwd`
 
+# Assume TRAVIS has set this variable
+if [ x"$TRAVIS" == x"" ]
+then
+    # If not, then set it for us
+    # for example you might be debugging
+    # or running this script manually
+    TRAVIS=false
+fi
 
-# in automated test mode, top_srcdir and top_builddir
-# macros are set globally by the build system (makefiles)
+# get our ABS locations.
+if $TRAVIS
+then
+    # TRAVIS NOTE:
+    #   Travis builds with  src != cwd
+    #
+    #   However, we don't seem to get the correct variables as you would expect
+    #
+    # What we do get is this (example):
+    #
+    # CWD: THIS_DIR='/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty/_build/tests/meshcop'
+    # srcdir='../../../tests/meshcop'
+    # top_builddir='/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty/_build'
+    # top_srcdir='/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty/_build'
+    #
+    # you would think $top_srcdir=/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty
+    # but we get:     $top_srcdir=/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty/_build
+    #
+    ABS_SRC=`cd ${top_srcdir}/.. && pwd`
+    ABS_BLD=`cd ${top_srcdir}    && pwd`
+else
+    ABS_SRC=`cd ../.. && pwd`
+    ABS_BLD=`cd ../.. && pwd`
+fi
 
-# If invoked by hand .. they might not be
-# Thus, we verify they are correct.
-_f=$top_srcdir/src/agent/main.cpp
+# Verify things are present
+_f=${ABS_SRC}/src/agent/main.cpp
 if [ ! -f $_f ]
 then
-    echo "Variable: top_srcdir seems wrong, cannot find: $_f"
-    ls -l $top_srcdir
-    echo "BUILD DIR is:"
-    ls -l $top_builddir
-    echo "VARIABLES ARE:"
-    set
- 
+    echo "MISSING: $_f"
     exit 1
 fi
 
-if [ x"$top_builddir" == x"" ]
-then
-    echo "Variable: top_srcdir is not set!"
-    exit 1
-fi    
-
+# What we care about is the AGENT
+#
 # this is the border router agent, it should have been built already
 _otbr_agent=otbr-agent
-OTBR_AGENT_EXE=$top_builddir/src/agent/$_otbr_agent
+OTBR_AGENT_EXE=$ABS_BLD/src/agent/$_otbr_agent
+
 
 # Verify that the ageint is present, and it is executable
 if [ ! -x $OTBR_AGENT_EXE ]
@@ -256,7 +268,7 @@ test_setup()
     mkdir -p $BUILD_DIR
 
 
-    _f=$top_srcdir/src/agent/otbr-agent.conf
+    _f=$ABS_SRC/src/agent/otbr-agent.conf
     if [ ! -f $_f ]
     then
 	EXIT_MESSAGE="Missing: $_f"
