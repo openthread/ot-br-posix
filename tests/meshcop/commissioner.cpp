@@ -69,6 +69,8 @@ void HandleJoinerFinalize(const Coap::Resource &aResource, const Coap::Message &
     uint8_t  payload[10];
     Tlv     *responseTlv = reinterpret_cast<Tlv *>(payload);
 
+    otbrLog(OTBR_LOG_INFO, "HandleJoinerFinalize, STATE = 1\n");
+    
     context.mState = kStateFinalized;
     responseTlv->SetType(Meshcop::kState);
     responseTlv->SetValue(static_cast<uint8_t>(1));
@@ -232,6 +234,7 @@ int SendRelayTransmit(Context &aContext)
 
     if (aContext.mState == kStateFinalized)
     {
+        otbrLog(OTBR_LOG_INFO, "realy: KEK state");
         responseTlv->SetType(Meshcop::kJoinerRouterKek);
         responseTlv->SetValue(aContext.mKek, sizeof(aContext.mKek));
         responseTlv = responseTlv->GetNext();
@@ -873,6 +876,11 @@ static int commissioning_session(Context &context)
         fail("Missing AGENT ip port\n");
     }
 
+    if( aContext.mJoiner.mPSKd_ascii[0] == 0 )
+    {
+	fail("Missing PSKd (joiner passphrase/password)\n");
+    }
+    
     context.mSsl = &ssl;
     context.mNet = &client_fd;
     {
