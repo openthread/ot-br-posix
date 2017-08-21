@@ -44,6 +44,7 @@ fi
 
 # get our ABS locations.
 set -x
+set -e
 if $TRAVIS
 then
     # TRAVIS NOTE:
@@ -65,8 +66,8 @@ then
     echo "Travis build"
     # This is where the 'dist-check" is performed'
     # this is a source directory
-    ABS_BLD=`${THIS_DIR}/${top_builddir} && pwd`
-    ABS_SRC=`${THIS_DIR}/${top_srcdir} && pwd`
+    ABS_BLD=`cd ${THIS_DIR}/${top_builddir} && pwd`
+    ABS_SRC=`cd ${THIS_DIR}/${top_srcdir} && pwd`
 else
     echo "non-travis build"
     ABS_SRC=`cd ${THIS_DIR}/../.. && pwd`
