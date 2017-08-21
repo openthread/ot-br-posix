@@ -30,8 +30,7 @@
 # Get our starting directory and remember it
 THIS_DIR=`pwd`
 
-# Assume TRAVIS has set this variable
-set -x
+# TRAVIS sets this variable
 if [ -z $TRAVIS ]
 then
     # If not, then set it for us
@@ -39,8 +38,9 @@ then
     # or running this script manually
     TRAVIS=false
 fi
-set +x
+
 # get our ABS locations.
+set -x
 if $TRAVIS
 then
     # TRAVIS NOTE:
@@ -58,12 +58,19 @@ then
     # you would think $top_srcdir=/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty
     # but we get:     $top_srcdir=/home/travis/build/openthread/borderrouter/otbr-gaac8ffa-dirty/_build
     #
+    echo "Travis build"
     ABS_SRC=`cd ${top_srcdir}/.. && pwd`
     ABS_BLD=`cd ${top_srcdir}    && pwd`
 else
-    ABS_SRC=`cd ../.. && pwd`
-    ABS_BLD=`cd ../.. && pwd`
+    echo "non-travis build"
+    ABS_SRC=`cd ${THIS_DIR}/../.. && pwd`
+    ABS_BLD=`cd ${THIS_DIR}/../.. && pwd`
 fi
+
+echo "top_srcdir=${top_srcdir}"
+echo "top_builddir=${top_builddir}"
+echo "ABS_SRC=${ABS_SRC}"
+echo "ABS_BLD=${ABS_BLD}"
 
 # Verify things are present
 _f=${ABS_SRC}/src/agent/main.cpp
@@ -74,7 +81,7 @@ then
 fi
 
 find $ABS_BLD -type f -print
-
+set +x
 # What we care about is the AGENT
 #
 # this is the border router agent, it should have been built already
