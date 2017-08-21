@@ -29,6 +29,9 @@
 
 # Get our starting directory and remember it
 THIS_DIR=`pwd`
+echo "cwd: ${THIS_DIR}"
+echo "top_srcdir: ${top_srcdir}"
+echo "top_builddir: ${top_builddir}"
 
 # TRAVIS sets this variable
 if [ -z $TRAVIS ]
@@ -62,17 +65,14 @@ then
     echo "Travis build"
     # This is where the 'dist-check" is performed'
     # this is a source directory
-    ABS_BLD=`cd ${top_srcdir}    && pwd`
-    ABS_SRC=`cd ${top_srcdir}/.. && pwd`
-    
+    ABS_BLD=`${THIS_DIR}/${top_builddir} && pwd`
+    ABS_SRC=`${THIS_DIR}/${top_srcdir} && pwd`
 else
     echo "non-travis build"
     ABS_SRC=`cd ${THIS_DIR}/../.. && pwd`
     ABS_BLD=`cd ${THIS_DIR}/../.. && pwd`
 fi
-
-echo "top_srcdir=${top_srcdir}"
-echo "top_builddir=${top_builddir}"
+set +x
 echo "ABS_SRC=${ABS_SRC}"
 echo "ABS_BLD=${ABS_BLD}"
 
