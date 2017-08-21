@@ -150,7 +150,7 @@ static void log_str(const char *cp)
         fputc(ch, log_fp);
         if (ch == '\n')
         {
-	    /* force flush (in case something crashes) */
+            /* force flush (in case something crashes) */
             fflush(log_fp);
         }
     }
