@@ -31,14 +31,15 @@
 THIS_DIR=`pwd`
 
 # Assume TRAVIS has set this variable
-if [ x"${TRAVIS}" == x"" ]
+set -x
+if [ -z $TRAVIS ]
 then
     # If not, then set it for us
     # for example you might be debugging
     # or running this script manually
     TRAVIS=false
 fi
-
+set +x
 # get our ABS locations.
 if $TRAVIS
 then
