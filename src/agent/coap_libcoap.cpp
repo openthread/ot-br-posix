@@ -143,7 +143,7 @@ const uint8_t *MessageLibcoap::GetPayload(uint16_t &aLength) const
     size_t   length = 0;
 
     coap_get_data(mPdu, &length, &payload);
-    aLength = length;
+    aLength = static_cast<uint16_t>(length);
     return payload;
 }
 
@@ -347,7 +347,7 @@ AgentLibcoap::AgentLibcoap(NetworkSender aNetworkSender, void *aContext)
 
     time_t clock_offset = time(NULL);
     memset(&mCoap, 0, sizeof(mCoap));
-    prng_init(reinterpret_cast<unsigned long>(aNetworkSender) ^ clock_offset);
+    prng_init(reinterpret_cast<unsigned long>(aNetworkSender) ^ static_cast<unsigned long>(clock_offset));
     prng(reinterpret_cast<unsigned char *>(&mCoap.message_id), sizeof(unsigned short));
 
     coap_address_t addr;
@@ -368,7 +368,7 @@ ssize_t AgentLibcoap::NetworkSend(coap_context_t *aCoap,
 
     AgentLibcoap *agent = static_cast<AgentLibcoap *>(CONTAINING_RECORD(aCoap, AgentLibcoap, mCoap));
 
-    return agent->mNetworkSender(aBuffer, aLength,
+    return agent->mNetworkSender(aBuffer, static_cast<uint16_t>(aLength),
                                  reinterpret_cast<const uint8_t *>(&aDestination->addr.sin6.sin6_addr),
                                  ntohs(aDestination->addr.sin6.sin6_port), agent->mContext);
 }

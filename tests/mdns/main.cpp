@@ -86,7 +86,7 @@ void PublishSingleService(void *aContext, Mdns::State aState)
     if (aState == Mdns::kStateReady)
     {
         assert(OTBR_ERROR_NONE ==
-               context.mPublisher->PublishService("SingleService", "_meshcop._udp", 12345, "nn", "cool", "xp",
+               context.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp", "nn", "cool", "xp",
                                                   "1122334455667788", NULL));
     }
 }
@@ -98,10 +98,10 @@ void PublishMultipleServices(void *aContext, Mdns::State aState)
     if (aState == Mdns::kStateReady)
     {
         assert(OTBR_ERROR_NONE ==
-               context.mPublisher->PublishService("MultipleService1", "_meshcop._udp", 12345, "nn", "cool1", "xp",
+               context.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp", "nn", "cool1", "xp",
                                                   "1122334455667788", NULL));
         assert(OTBR_ERROR_NONE ==
-               context.mPublisher->PublishService("MultipleService2", "_meshcop._udp", 12346, "nn", "cool2", "xp",
+               context.mPublisher->PublishService(12346, "MultipleService2", "_meshcop._udp", "nn", "cool2", "xp",
                                                   "1122334455667788", NULL));
     }
 }
@@ -115,13 +115,13 @@ void PublishUpdateServices(void *aContext, Mdns::State aState)
         if (!context.mUpdate)
         {
             assert(OTBR_ERROR_NONE ==
-                   context.mPublisher->PublishService("UpdateService", "_meshcop._udp", 12345, "nn", "cool", "xp",
+                   context.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp", "nn", "cool", "xp",
                                                       "1122334455667788", NULL));
         }
         else
         {
             assert(OTBR_ERROR_NONE ==
-                   context.mPublisher->PublishService("UpdateService", "_meshcop._udp", 12345, "nn", "coolcool", "xp",
+                   context.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp", "nn", "coolcool", "xp",
                                                       "8877665544332211", NULL));
         }
     }

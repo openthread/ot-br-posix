@@ -206,18 +206,18 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
         (*it)->mHappened = 0;
     }
 
-    uint64_t now = GetNow();
+    unsigned long now = GetNow();
 
     for (Timers::iterator it = mTimers.begin(); it != mTimers.end(); ++it)
     {
-        uint64_t timeout = (*it)->mTimeout;
+        unsigned long timeout = (*it)->mTimeout;
 
         if (timeout == 0)
         {
             continue;
         }
 
-        if (timeout <= now)
+        if (static_cast<long>(timeout - now) <= 0)
         {
             aTimeout.tv_usec = 0;
             aTimeout.tv_sec = 0;
@@ -249,7 +249,7 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
 
 void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    uint64_t now = GetNow();
+    unsigned long now = GetNow();
 
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
@@ -287,7 +287,7 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
             continue;
         }
 
-        if ((*it)->mTimeout <= now)
+        if (static_cast<long>((*it)->mTimeout - now) <= 0)
         {
             expired.push_back(*it);
         }
@@ -494,7 +494,7 @@ void PublisherAvahi::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet
     mPoller.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
 }
 
-otbrError PublisherAvahi::PublishService(const char *aName, const char *aType, uint16_t aPort, ...)
+otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
 {
     otbrError ret = OTBR_ERROR_ERRNO;
     int       error = 0;
@@ -505,23 +505,27 @@ otbrError PublisherAvahi::PublishService(const char *aName, const char *aType, u
     va_list          args;
     size_t           used = 0;
 
-    va_start(args, aPort);
+    va_start(args, aType);
 
     VerifyOrExit(mState == kStateReady, errno = EAGAIN);
 
     for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
     {
+        int         rval;
         const char *value = va_arg(args, const char *);
         size_t      needed = sizeof(AvahiStringList) + strlen(name) + strlen(value);
+
         VerifyOrExit(used + needed < sizeof(buffer), errno = EMSGSIZE);
         curr->next = last;
         last = curr;
-        curr->size = sprintf(reinterpret_cast<char *>(curr->text), "%s=%s", name, value);
+        rval = sprintf(reinterpret_cast<char *>(curr->text), "%s=%s", name, value);
+        assert(rval > 0);
+        curr->size = static_cast<size_t>(rval);
         {
             const uint8_t *next = curr->text + curr->size;
             curr = OTBR_ALIGNED(next, AvahiStringList *);
         }
-        used = reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(buffer);
+        used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(buffer));
     }
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)

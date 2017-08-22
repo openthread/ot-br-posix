@@ -94,7 +94,7 @@ struct AvahiWatch
  */
 struct AvahiTimeout
 {
-    uint64_t             mTimeout;  ///< Absolute time when this timer timeout.
+    unsigned long        mTimeout;  ///< Absolute time when this timer timeout.
     AvahiTimeoutCallback mCallback; ///< The function to be called when timeout.
     void                *mContext;  ///< The pointer to application-specific context.
     void                *mPoller;   ///< The poller created this timer.
@@ -225,7 +225,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(const char *aName, const char *aType, uint16_t aPort, ...);
+    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...);
 
     /**
      * This method starts the MDNS service.

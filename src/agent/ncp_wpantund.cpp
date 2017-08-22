@@ -387,12 +387,12 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
 
         if ((flags & DBUS_WATCH_READABLE) && !FD_ISSET(fd, &aReadFdSet))
         {
-            flags &= ~DBUS_WATCH_READABLE;
+            flags &= static_cast<unsigned int>(~DBUS_WATCH_READABLE);
         }
 
         if ((flags & DBUS_WATCH_WRITABLE) && !FD_ISSET(fd, &aWriteFdSet))
         {
-            flags &= ~DBUS_WATCH_WRITABLE;
+            flags &= static_cast<unsigned int>(~DBUS_WATCH_WRITABLE);
         }
 
         if (FD_ISSET(fd, &aErrorFdSet))
@@ -502,7 +502,7 @@ otbrError ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, si
                      errno = EINVAL);
 
         aSize = static_cast<size_t>(count);
-        memcpy(aBuffer, buffer, count);
+        memcpy(aBuffer, buffer, aSize);
     }
 
     ret = OTBR_ERROR_NONE;

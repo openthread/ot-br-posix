@@ -87,9 +87,9 @@ void AgentInstance::FeedCoap(void *aContext, int aEvent, va_list aArguments)
 
     AgentInstance *agentInstance = static_cast<AgentInstance *>(aContext);
     const uint8_t *buffer = va_arg(aArguments, const uint8_t *);
-    uint16_t       length = va_arg(aArguments, int);
-    uint16_t       locator = va_arg(aArguments, int);
-    uint16_t       port = va_arg(aArguments, int);
+    uint16_t       length = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    uint16_t       locator = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    uint16_t       port = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
     Ip6Address     addr(locator);
 
     agentInstance->mCoap->Input(buffer, length, addr.m8, port);

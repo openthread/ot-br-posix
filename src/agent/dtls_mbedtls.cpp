@@ -415,8 +415,8 @@ exit:
 void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
                                 timeval &aTimeout)
 {
-    uint64_t now = GetNow();
-    uint64_t timeout = aTimeout.tv_sec * 1000 + aTimeout.tv_sec / 1000;
+    unsigned long now = GetNow();
+    unsigned long timeout = static_cast<unsigned long>(aTimeout.tv_sec * 1000 + aTimeout.tv_sec / 1000);
 
     for (SessionSet::iterator it = mSessions.begin();
          it != mSessions.end(); )
@@ -433,8 +433,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
         else if (session->GetState() == Session::kStateReady ||
                  session->GetState() == Session::kStateHandshaking)
         {
-            int      fd = session->GetFd();
-            uint64_t sessionTimeout = session->GetExpiration() - now;
+            int fd = session->GetFd();
 
             otbrLog(OTBR_LOG_INFO, "DTLS session[%d] alive.", fd);
             FD_SET(fd, &aReadFdSet);
@@ -444,9 +443,9 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
                 aMaxFd = fd;
             }
 
-            if (sessionTimeout < timeout)
+            if (static_cast<long>(session->GetExpiration() - (now + timeout)) < 0)
             {
-                timeout = sessionTimeout;
+                timeout = static_cast<unsigned long>(session->GetExpiration() - now);
             }
 
             // TODO error set
