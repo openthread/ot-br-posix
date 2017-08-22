@@ -73,7 +73,21 @@ install_packages_opkg()
 
 install_packages_rpm()
 {
-    die 'rpm not supported currently'
+    if have dnf; then
+        PM=dnf
+    else
+        PM=yum
+    fi
+    sudo $PM install -y gcc gcc-c++ libtool automake autoconf autoconf-archive git
+    with RELEASE || sudo $PM install -y cmake
+    sudo $PM install -y dbus-devel
+    sudo $PM install -y avahi avahi-devel
+    sudo $PM install -y doxygen
+    sudo $PM install -y ctags
+    sudo $PM install -y boost-devel boost-filesystem boost-system
+    sudo $PM install -y tayga iptables
+    sudo $PM install -y jsoncpp-devel
+    sudo $PM install -y wget
 }
 
 install_packages_brew()
@@ -88,17 +102,17 @@ install_packages_source()
 
 install_packages()
 {
-    PM=source
     if have apt-get; then
-        PM=apt
+        install_packages_apt
     elif have rpm; then
-        PM=rpm
+        install_packages_rpm
     elif have opkg; then
-        PM=opkg
+        install_packages_opkg
     elif have brew; then
-        PM=brew
+        install_packages_brew
+    else
+        install_packages_source
     fi
-    install_packages_$PM
 }
 
 install_uncrustify()
