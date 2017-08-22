@@ -27,6 +27,8 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+IS_SUCCESS=false
+
 # Get our starting directory and remember it
 THIS_DIR=`pwd`
 echo "cwd: ${THIS_DIR}"
@@ -214,7 +216,12 @@ output_logs()
     echo "Hint, for each log Search backwards for: 'START_LOG: <NAME>'"
     echo "====================================="
     echo "EXIT ${EXIT_CODE}: MESSAGE: $EXIT_MESSAGE"
-    exit $EXIT_CODE
+    if $IS_SUCCESS
+    then
+	exit 0
+    else
+	exit 1
+    fi
 }
 
 
