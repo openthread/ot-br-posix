@@ -669,7 +669,8 @@ EOF
     fi
     # We are happy!
     EXIT_MESSAGE="JOINER SUCCESS COMPLETE"
-    echo $EXIT_MESSAGE
+    # we do not exit here!
+    # Save that for after we cleanup
 }
 
 test_teardown()
