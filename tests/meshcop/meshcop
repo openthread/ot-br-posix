@@ -714,5 +714,6 @@ joiner_start
 test_teardown
 
 # Great sucess!
-exit 0
+echo VERIFY THIS WORKED 
+exit 1
 

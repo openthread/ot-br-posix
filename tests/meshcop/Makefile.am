@@ -77,4 +77,7 @@ TESTS_ENVIRONMENT                                     = \
 
 TESTS = meshcop
 
+clean-local:
+	rm -f *.log
+
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am
