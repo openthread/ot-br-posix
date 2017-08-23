@@ -30,7 +30,6 @@
 IS_SUCCESS=false
 
 # Get our starting directory and remember it
-cd $(dirname $0)
 THIS_DIR=`pwd`
 echo "cwd: ${THIS_DIR}"
 echo "top_srcdir: ${top_srcdir}"
@@ -88,7 +87,6 @@ then
     exit 1
 fi
 
-find $ABS_BLD -type f -print
 set +x
 # What we care about is the AGENT
 #
