@@ -49,21 +49,21 @@ static void test_pskc()
                   sizeof(gContext.mAgent.mXpanid.bin));
     if (n != sizeof(gContext.mAgent.mXpanid.bin))
     {
-        fail("cannot convert xpanid\n");
+        CommissionerUtilsFail("cannot convert xpanid\n");
     }
 
-    compute_pskc();
+    CommissionerComputePskc();
 
 
     static const uint8_t expected[] = {
         0xc3, 0xf5, 0x93, 0x68, 0x44, 0x5a, 0x1b, 0x61,
         0x06, 0xbe, 0x42, 0x0a, 0x70, 0x6d, 0x4c, 0xc9
     };
-    otbrLog(OTBR_LOG_INFO, "Expected: %s\n", hex_string(expected, sizeof(expected)));
+    otbrLog(OTBR_LOG_INFO, "Expected: %s\n", CommissionerUtilsHexString(expected, sizeof(expected)));
 
     if (0 != memcmp(expected, gContext.mAgent.mPSKc.bin, sizeof(expected)))
     {
-        fail("PSKC calculation fails test vector\n");
+        CommissionerUtilsFail("PSKC calculation fails test vector\n");
     }
     otbrLog(OTBR_LOG_INFO, "PSKC: test success\n");
 }
@@ -77,15 +77,15 @@ static void test_steering(void)
     gContext.mJoiner.mSteeringData.SetLength(15);
 
     strcpy(gContext.mJoiner.mEui64.ascii, "18b4300000000002");
-    ok = compute_hashmac();
+    ok = CommissionerComputeHashMac();
     if (!ok)
     {
-        fail("invalid hashmac\n");
+        CommissionerUtilsFail("invalid hashmac\n");
     }
-    ok = compute_steering();
+    ok = CommissionerComputeSteering();
     if (!ok)
     {
-        fail("Cannot compute steering\n");
+        CommissionerUtilsFail("Cannot compute steering\n");
     }
 
     const uint8_t expected[] = {
@@ -96,19 +96,19 @@ static void test_steering(void)
         0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x10,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
-    otbrLog(OTBR_LOG_INFO, "expected: %s\n", hex_string(expected, sizeof(expected)));
+    otbrLog(OTBR_LOG_INFO, "expected: %s\n", CommissionerUtilsHexString(expected, sizeof(expected)));
     const uint8_t *pData;
     pData = gContext.mJoiner.mSteeringData.GetDataPointer();
 
     if (0 != memcmp(expected, pData, sizeof(expected)))
     {
-        fail("FAIL: Steering data");
+        CommissionerUtilsFail("FAIL: Steering data");
     }
     otbrLog(OTBR_LOG_INFO, "SUCCESS: Steering data\n");
 }
 
 /** the argcargv module calls this when the arg is found on the command line */
-void handle_selftest(argcargv *pThis)
+void CommissionerCmdLineSelfTest(argcargv *pThis)
 {
     (void)(pThis); /* not used */
     otbrLog(OTBR_LOG_INFO, "SELFTEST START\n");

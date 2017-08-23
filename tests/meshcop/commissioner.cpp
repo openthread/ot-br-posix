@@ -54,6 +54,31 @@ void HandleJoinerFinalize(const Coap::Resource &aResource, const Coap::Message &
 
 
 
+/* from the example:
+ * http://beej.us/guide/bgnet/output/html/multipage/inet_ntopman.html
+ */
+#define IPSTR_BUFSIZE (((INET6_ADDRSTRLEN > INET_ADDRSTRLEN) ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1)
+static char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
+{
+    switch (sa->sa_family)
+    {
+    case AF_INET:
+        inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
+                  s, maxlen);
+        break;
+
+    case AF_INET6:
+        inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr),
+                  s, maxlen);
+        break;
+
+    default:
+        strncpy(s, "Unknown AF", maxlen);
+        return NULL;
+    }
+
+    return s;
+}
 
 
 inline uint16_t LengthOf(const void *aStart, const void *aEnd)
@@ -94,7 +119,7 @@ void HandleRelayReceive(const Coap::Resource &aResource,
                         void *aContext)
 {
     int            ret = 0;
-    int            tlvtype;
+    int            tlvType;
     uint16_t       length;
     Context       &context = *static_cast<Context *>(aContext);
     const uint8_t *payload = aMessage.GetPayload(length);
@@ -104,8 +129,8 @@ void HandleRelayReceive(const Coap::Resource &aResource,
          requestTlv = requestTlv->GetNext())
     {
 
-        tlvtype = requestTlv->GetType();
-        switch (tlvtype)
+        tlvType = requestTlv->GetType();
+        switch (tlvType)
         {
         case Meshcop::kJoinerDtlsEncapsulation:
             struct sockaddr_in addr;
@@ -116,8 +141,8 @@ void HandleRelayReceive(const Coap::Resource &aResource,
             otbrLog(OTBR_LOG_INFO, "Encapsulation: %d bytes for port: %d",
                     requestTlv->GetLength(), kPortJoinerSession);
             {
-                char buf[50];
-                inet_ntop(AF_INET, &addr.sin_addr, buf, sizeof(buf));
+                char buf[IPSTR_BUFSIZE];
+                get_ip_str((struct sockaddr *)&addr, buf, sizeof(buf));
                 otbrLog(OTBR_LOG_INFO, "DEST: %s", buf);
             }
             ret = sendto(context.mSocket,
@@ -128,7 +153,7 @@ void HandleRelayReceive(const Coap::Resource &aResource,
                          sizeof(addr));
             if (ret < 0)
             {
-                otbrLog(OTBR_LOG_ERR, "relay receive, sendto() fails with %d", ret);
+                otbrLog(OTBR_LOG_ERR, "relay receive, sendto() fails with %d", errno);
             }
             VerifyOrExit(ret != -1, ret = errno);
             break;
@@ -150,7 +175,7 @@ void HandleRelayReceive(const Coap::Resource &aResource,
             break;
 
         default:
-            otbrLog(OTBR_LOG_INFO, "skip tlv type: %d", tlvtype);
+            otbrLog(OTBR_LOG_INFO, "skip tlv type: %d", tlvType);
             break;
         }
     }
@@ -165,30 +190,6 @@ exit:
     return;
 }
 
-/* from the example:
- * http://beej.us/guide/bgnet/output/html/multipage/inet_ntopman.html
- */
-static char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
-{
-    switch (sa->sa_family)
-    {
-    case AF_INET:
-        inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
-                  s, maxlen);
-        break;
-
-    case AF_INET6:
-        inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr),
-                  s, maxlen);
-        break;
-
-    default:
-        strncpy(s, "Unknown AF", maxlen);
-        return NULL;
-    }
-
-    return s;
-}
 
 int SendRelayTransmit(Context &aContext)
 {
@@ -210,11 +211,10 @@ int SendRelayTransmit(Context &aContext)
         // Print this, because in some environments...
         // other things on the network use the same port
         // as open thread is using here :-(
-        char buf[50];
+        char buf[IPSTR_BUFSIZE];
         get_ip_str((struct sockaddr *)(&from_addr), buf, sizeof(buf));
         otbrLog(OTBR_LOG_INFO, "relay from: %s\n", buf);
     }
-
 
     responseTlv->SetType(Meshcop::kJoinerDtlsEncapsulation);
     responseTlv->SetValue(dtlsEncapsulation, static_cast<uint16_t>(ret));
@@ -296,7 +296,7 @@ static void my_debug(void *ctx, int level,
 {
     ((void) level);
     (void)(ctx);
-#if 0
+#if MBED_LOG_TO_STDOUT
     fprintf((FILE *) ctx, "%s:%04d: %s", file, line, str);
     fflush((FILE *) ctx);
 #endif
@@ -337,7 +337,7 @@ static int export_keys(void *aContext, const unsigned char *aMasterSecret, const
 static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext)
 {
     uint16_t       length;
-    int            tlv_type;
+    int            tlvType;
     const Tlv     *tlv;
     const uint8_t *payload;
     Context       &context = *static_cast<Context *>(aContext);
@@ -348,8 +348,8 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
 
     while (LengthOf(payload, tlv) < length)
     {
-        tlv_type = tlv->GetType();
-        switch (tlv_type)
+        tlvType = tlv->GetType();
+        switch (tlvType)
         {
         case Meshcop::kState:
             if (tlv->GetValueUInt8())
@@ -369,7 +369,7 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
             break;
 
         default:
-            otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: ignore-tilv: %d", tlv_type);
+            otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: ignore-tilv: %d", tlvType);
             break;
         }
         tlv = tlv->GetNext();
@@ -432,7 +432,7 @@ static int CommissionerPetition(Context &aContext)
 void HandleCommissionerSetResponse(const Coap::Message &aMessage, void *aContext)
 {
     uint16_t       length;
-    int            tlv_type;
+    int            tlvType;
     const Tlv     *tlv;
     const uint8_t *payload;
     Context       &context = *static_cast<Context *>(aContext);
@@ -443,8 +443,8 @@ void HandleCommissionerSetResponse(const Coap::Message &aMessage, void *aContext
 
     while (LengthOf(payload, tlv) < length)
     {
-        tlv_type = tlv->GetType();
-        switch (tlv_type)
+        tlvType = tlv->GetType();
+        switch (tlvType)
         {
         case Meshcop::kState:
             if (tlv->GetValueUInt8())
@@ -464,7 +464,7 @@ void HandleCommissionerSetResponse(const Coap::Message &aMessage, void *aContext
             break;
 
         default:
-            otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: ignore-tlv=%d", tlv_type);
+            otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: ignore-tlv=%d", tlvType);
             break;
         }
         tlv = tlv->GetNext();
@@ -496,11 +496,11 @@ static int CommissionerSet(Context &aContext)
     tlv = tlv->GetNext();
 
 
-    ok = compute_steering();
+    ok = CommissionerComputeSteering();
     /* Note: Steering computation will have logged the steering data */
     if (!ok)
     {
-        fail("Cannot compute steering data\n");
+        CommissionerUtilsFail("Cannot compute steering data\n");
     }
 
     tlv->SetType(Meshcop::kSteeringData);
@@ -545,7 +545,7 @@ static int CommissionerSet(Context &aContext)
 static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext)
 {
     uint16_t       length;
-    int            tlv_type;
+    int            tlvType;
     const Tlv     *tlv;
     const uint8_t *payload;
     Context       &context = *static_cast<Context *>(aContext);
@@ -562,8 +562,8 @@ static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aCo
 
     while (LengthOf(payload, tlv) < length)
     {
-        tlv_type = tlv->GetType();
-        switch (tlv_type)
+        tlvType = tlv->GetType();
+        switch (tlvType)
         {
         case Meshcop::kState:
             if (tlv->GetValueUInt8())
@@ -579,7 +579,7 @@ static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aCo
             break;
 
         default:
-            otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: ignore-tlv=%d", tlv_type);
+            otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: ignore-tlv=%d", tlvType);
             break;
         }
         tlv = tlv->GetNext();
@@ -867,18 +867,18 @@ static int commissioning_session(Context &context)
     otbrLog(OTBR_LOG_INFO, "agent-address: %s", context.mAgent.mAddress_ascii);
     if (context.mAgent.mAddress_ascii[0] == 0)
     {
-        fail("Missing AGENT ip address\n");
+        CommissionerUtilsFail("Missing AGENT ip address\n");
     }
 
     otbrLog(OTBR_LOG_INFO, "agent-port: %s", context.mAgent.mPort_ascii);
     if (context.mAgent.mPort_ascii[0] == 0)
     {
-        fail("Missing AGENT ip port\n");
+        CommissionerUtilsFail("Missing AGENT ip port\n");
     }
 
     if (context.mJoiner.mPSKd_ascii[0] == 0)
     {
-        fail("Missing PSKd (joiner passphrase/password)\n");
+        CommissionerUtilsFail("Missing PSKd (joiner passphrase/password)\n");
     }
 
     context.mSsl = &ssl;
@@ -899,7 +899,7 @@ static int commissioning_session(Context &context)
                                      kSeed,
                                      sizeof(kSeed))) != 0)
     {
-        fail("mbed drgb seed fails?\n");
+        CommissionerUtilsFail("mbed drgb seed fails?\n");
     }
 
     otbrLog(OTBR_LOG_INFO, "connecting...");
@@ -907,9 +907,9 @@ static int commissioning_session(Context &context)
                                    context.mAgent.mAddress_ascii,
                                    context.mAgent.mPort_ascii, MBEDTLS_NET_PROTO_UDP)) != 0)
     {
-        fail("CONNECT: %s:%s failed\n",
-             context.mAgent.mAddress_ascii,
-             context.mAgent.mPort_ascii);
+        CommissionerUtilsFail("CONNECT: %s:%s failed\n",
+                              context.mAgent.mAddress_ascii,
+                              context.mAgent.mPort_ascii);
         goto exit;
     }
 
@@ -918,7 +918,7 @@ static int commissioning_session(Context &context)
                                            MBEDTLS_SSL_TRANSPORT_DATAGRAM,
                                            MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
     {
-        fail("Cannot configure mbed defaults\n");
+        CommissionerUtilsFail("Cannot configure mbed defaults\n");
         goto exit;
     }
 
@@ -934,7 +934,7 @@ static int commissioning_session(Context &context)
     otbrLog(OTBR_LOG_INFO, "connecting: ssl-setup");
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
     {
-        fail("Cannot setup ssl\n");
+        CommissionerUtilsFail("Cannot setup ssl\n");
         goto exit;
     }
 
@@ -949,11 +949,11 @@ static int commissioning_session(Context &context)
                              mbedtls_timing_get_delay);
 
 
-    ok = compute_pskc();
-    /* note: compute_pskc will have logged details */
+    ok = CommissionerComputePskc();
+    /* note: CommissionerComputePskc() will have logged details */
     if (!ok)
     {
-        fail("Cannot compute PSKc (commissioning shared key)\n");
+        CommissionerUtilsFail("Cannot compute PSKc (commissioning shared key)\n");
     }
 
     mbedtls_ssl_set_hs_ecjpake_password(&ssl,

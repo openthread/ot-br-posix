@@ -35,7 +35,7 @@
 
 
 /** the hashmac is used in the steering data */
-bool compute_hashmac(void)
+bool CommissionerComputeHashMac(void)
 {
     /* given ascii eui64, compute hashmac */
     mbedtls_sha256_context sha256;
@@ -55,7 +55,7 @@ bool compute_hashmac(void)
 
         if (gContext.mJoiner.mEui64.ascii[0] == 0)
         {
-            fail("MISSING EUI64 address\n");
+            CommissionerUtilsFail("MISSING EUI64 address\n");
             return false;
         }
 
@@ -64,7 +64,7 @@ bool compute_hashmac(void)
                        sizeof(gContext.mJoiner.mEui64.bin));
         if (r != 8)
         {
-            fail("eui64 wrong length, or non-hex data\n");
+            CommissionerUtilsFail("eui64 wrong length, or non-hex data\n");
             return false;
         }
         mbedtls_sha256_init(&sha256);
@@ -92,7 +92,7 @@ bool compute_hashmac(void)
 
 
 /** compute preshared key for commissioner */
-bool compute_pskc(void)
+bool CommissionerComputePskc(void)
 {
 
     const uint8_t *pKey;
@@ -108,21 +108,21 @@ bool compute_pskc(void)
         otbrLog(OTBR_LOG_INFO, "xpanid: %s", gContext.mAgent.mXpanid.ascii);
         if (gContext.mAgent.mXpanid.ascii[0] == 0)
         {
-            fail("compute PSKc: Missing xpanid\n");
+            CommissionerUtilsFail("compute PSKc: Missing xpanid\n");
             return false;
         }
 
         otbrLog(OTBR_LOG_INFO, "networkname: %s", gContext.mAgent.mNetworkName);
         if (gContext.mAgent.mNetworkName[0] == 0)
         {
-            fail("compute PSKc: Missing networkname\n");
+            CommissionerUtilsFail("compute PSKc: Missing networkname\n");
             return false;
         }
 
         otbrLog(OTBR_LOG_INFO, "passphrase: %s", gContext.mAgent.mPassPhrase);
         if (gContext.mAgent.mPassPhrase[0] == 0)
         {
-            fail("compute PSKc: Missing br passphrase\n");
+            CommissionerUtilsFail("compute PSKc: Missing br passphrase\n");
             return false;
         }
 
@@ -141,7 +141,7 @@ bool compute_pskc(void)
 }
 
 /** compute the steering data */
-bool compute_steering(void)
+bool CommissionerComputeSteering(void)
 {
     bool ok;
 
@@ -156,7 +156,7 @@ bool compute_steering(void)
         }
 
         /* We require a hashmac */
-        ok = compute_hashmac();
+        ok = CommissionerComputeHashMac();
         if (!ok)
         {
             otbrLog(OTBR_LOG_INFO, "error: Cannot calculate steering data, bad hashmac");
@@ -181,7 +181,7 @@ bool compute_steering(void)
         pBytes = gContext.mJoiner.mSteeringData.GetDataPointer();
 
         otbrLog(OTBR_LOG_INFO, "steering-len: %d", n);
-        otbrLog(OTBR_LOG_INFO, "steering-hex: %s", hex_string(pBytes, n));
+        otbrLog(OTBR_LOG_INFO, "steering-hex: %s", CommissionerUtilsHexString(pBytes, n));
     }
     return ok;
 }

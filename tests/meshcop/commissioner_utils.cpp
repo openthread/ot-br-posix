@@ -34,7 +34,7 @@
 #include "commissioner.hpp"
 
 /** return a hex string to print for logging */
-const char *hex_string(const uint8_t *pBytes, int n)
+const char *CommissionerUtilsHexString(const uint8_t *pBytes, int n)
 {
     static char buf[80 + 1];
 
@@ -49,7 +49,7 @@ const char *hex_string(const uint8_t *pBytes, int n)
 }
 
 /* die and exit */
-void fail(const char *fmt, ...)
+void CommissionerUtilsFail(const char *fmt, ...)
 {
     va_list ap;
 

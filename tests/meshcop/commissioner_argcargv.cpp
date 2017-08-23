@@ -181,7 +181,7 @@ void argcargv::add_option(const char *name,
     }
     if (x >= max_opts)
     {
-        fail("internal error: Too many cmdline opts!\n");
+        CommissionerUtilsFail("internal error: Too many cmdline opts!\n");
     }
 
     pOPT->name = name;
@@ -268,7 +268,7 @@ static void handle_hashmac(argcargv *pThis)
     /* once hash mac is know, we can compute the steering data
      * We assume we have the xpanid & network name.
      */
-    ok = compute_steering();
+    ok = CommissionerComputeSteering();
     if (!ok)
     {
         pThis->usage("Invalid HASHMAC: %s\n", gContext.mJoiner.mHashMac.ascii);
@@ -289,8 +289,8 @@ static void handle_eui64(argcargv *pThis)
     /* once we have this, we can calculate the HASHMAC
      * and the steering data.
      */
-    ok = compute_hashmac();
-    ok = ok && compute_steering();
+    ok = CommissionerComputeHashMac();
+    ok = ok && CommissionerComputeSteering();
     if (!ok)
     {
         pThis->usage("Invalid EUI64: %s\n", gContext.mJoiner.mEui64.ascii);
@@ -424,7 +424,7 @@ static void handle_log_filename(argcargv *pThis)
 static void handle_compute_pskc(argcargv *pThis)
 {
     (void)(pThis);
-    compute_pskc();
+    CommissionerComputePskc();
     /* we print this in a way scripts can easily parse */
     fprintf(stdout, "PSKc: %s\n", gContext.mAgent.mPSKc.ascii);
     exit(EXIT_SUCCESS);
@@ -443,7 +443,7 @@ static void handle_compute_hashmac(argcargv *pThis)
 {
     (void)pThis;
 
-    compute_hashmac();
+    CommissionerComputeHashMac();
     /* print so scripts can easily parse */
     fprintf(stdout, "eiu64: %s\n", gContext.mJoiner.mEui64.ascii);
     fprintf(stdout, "hashmac: %s\n", gContext.mJoiner.mHashMac.ascii);
@@ -456,14 +456,14 @@ static void handle_compute_steering(argcargv *pThis)
 {
     (void)pThis;
 
-    compute_steering();
+    CommissionerComputeSteering();
 
     /* print so scripts can easily parse */
     fprintf(stdout, "eiu64: %s\n", gContext.mJoiner.mEui64.ascii);
     fprintf(stdout, "hashmac: %s\n", gContext.mJoiner.mHashMac.ascii);
     fprintf(stdout, "steering-len: %d\n", gContext.mJoiner.mSteeringData.GetLength());
     fprintf(stdout, "steering-hex: %s\n",
-            hex_string(
+            CommissionerUtilsHexString(
                 gContext.mJoiner.mSteeringData.GetDataPointer(),
                 gContext.mJoiner.mSteeringData.GetLength()));
 
@@ -498,10 +498,10 @@ static void handle_allow_all_joiners(argcargv *pThis)
     /* once we have this, we can calculate the HASHMAC
      * and the steering data.
      */
-    ok = compute_steering();
+    ok = CommissionerComputeSteering();
     if (!ok)
     {
-        fail("Cannot compute steering\n");
+        CommissionerUtilsFail("Cannot compute steering\n");
     }
 }
 
@@ -560,10 +560,10 @@ void commissioner_argcargv(int argc, char **argv)
 {
     argcargv args(argc, argv);
 
-    args.add_option("--selftest",                handle_selftest,                "",
+    args.add_option("--selftest",                CommissionerCmdLineSelfTest,    "",
                     "perform internal selftests");
     args.add_option("--joiner-eui64",            handle_eui64,                   "VALUE",       "joiner EUI64 value");
-    args.add_option("--hashmac",                handle_hashmac,                 "VALUE",       "joiner HASHMAC value");
+    args.add_option("--hashmac",                 handle_hashmac,                 "VALUE",       "joiner HASHMAC value");
     args.add_option("--agent-passphrase",        handle_agent_passphrase,        "VALUE",
                     "Pass phrase for agent");
     args.add_option("--network-name",            handle_netname,                 "VALUE",

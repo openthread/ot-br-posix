@@ -291,19 +291,19 @@ struct Context
 extern struct Context gContext;
 
 /* compute the hashmac of a joiner */
-bool compute_hashmac(void);
+bool CommissionerComputeHashMac(void);
 
 /** Compute steering data */
-bool compute_steering(void);
+bool CommissionerComputeSteering(void);
 
 /** compute pskc */
-bool compute_pskc(void);
+bool CommissionerComputePskc(void);
 
 /* return a small string with this data as hex for logging purposes */
-const char *hex_string(const uint8_t *pBytes, int n);
+const char *CommissionerUtilsHexString(const uint8_t *pBytes, int n);
 
 /** command line self test handler */
-void handle_selftest(argcargv *pThis);
+void CommissionerCmdLineSelfTest(argcargv *pThis);
 
 /** Print/log an error message and exit */
-void fail(const char *fmt, ...);
+void CommissionerUtilsFail(const char *fmt, ...);

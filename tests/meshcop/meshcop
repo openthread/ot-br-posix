@@ -30,6 +30,7 @@
 IS_SUCCESS=false
 
 # Get our starting directory and remember it
+cd $(dirname $0)
 THIS_DIR=`pwd`
 echo "cwd: ${THIS_DIR}"
 echo "top_srcdir: ${top_srcdir}"
@@ -83,7 +84,7 @@ echo "ABS_BLD=${ABS_BLD}"
 _f=${ABS_SRC}/src/agent/main.cpp
 if [ ! -f $_f ]
 then
-    echo "MISSING: $_f"
+    echo "Missing: $_f"
     exit 1
 fi
 
@@ -455,21 +456,21 @@ leader_start()
 
     if [ ! -x $CLI_EXE ]
     then
-	EXIT_MESSAGE="MISSING cli: $CLI_EXE"
+	EXIT_MESSAGE="Missing cli: $CLI_EXE"
 	echo $EXIT_MESSAGE
 	exit 1
     fi
 
     if [ ! -x $WPANCTL_EXE ]
     then
-	EXIT_MESSAGE="MISSING wpanctl: $WPANCTL_EXE"
+	EXIT_MESSAGE="Missing wpanctl: $WPANCTL_EXE"
 	echo $EXIT_MESSAGE
 	exit 1
     fi
 
     if [ ! -x $WPANTUND_EXE ]
     then
-	EXIT_MESSAGE="MISSING wpantund: $WPANTUND_EXE"
+	EXIT_MESSAGE="Missing wpantund: $WPANTUND_EXE"
 	echo $EXIT_MESSAGE
 	exit 1
     fi
