@@ -60,6 +60,11 @@ void otbrLogEnableSyslog(bool b)
 /** Enable logging to a specific file */
 void otbrLogSetFilename(const char *filename)
 {
+    if( sLogfp )
+    {
+	fclose(sLogFp);
+	sLogFp = NULL;
+    }
     sLogFp = fopen(filename, "w");
     if (sLogFp == NULL)
     {
@@ -109,7 +114,7 @@ static int LogCheck(int aLevel)
 
 
 /** return the time, in milliseconds since application start */
-static unsigned msecs_now(void)
+static unsigned LogMsecsNow(void)
 {
     struct timeval tv;
     uint64_t       v;
@@ -140,7 +145,7 @@ static void LogString(const char *cp)
         {
             sLogCol0 = false;
             unsigned n;
-            n = msecs_now();
+            n = LogMsecsNow();
             fprintf(sLogFp, "%4d.%03d | ", (n / 1000), (n % 1000));
         }
         if (ch == '\n')
@@ -185,8 +190,12 @@ static void LogPrintf(const char *fmt, ...)
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, int aLevel)
 {
+    
     assert(aIdent);
     assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+
+    /* call to init the msec epoch value */
+    LogMsecsNow();
 
     /* only open the syslog once... */
     if (!sSyslogOpened)

@@ -69,13 +69,15 @@ int otbrLogGetLevel(void);
  * @param[in] enable true to log to/via syslog
  *
  */
-void otbrLogEnableSyslog(bool enabled);
+void otbrLogEnableSyslog(bool aEnabled);
 
 /**
  * This function causes logs to be written to a specific file
  * Note: Logs are still written to the syslog.
+ *
+ * @param[in] afilename filename to use for private logfile.
  */
-void otbrLogSetFilename(const char *filename);
+void otbrLogSetFilename(const char *aFilename);
 
 /**
  * This function initialize the logging service.
