@@ -60,7 +60,7 @@ void otbrLogEnableSyslog(bool b)
 /** Enable logging to a specific file */
 void otbrLogSetFilename(const char *filename)
 {
-    if( sLogfp )
+    if( sLogFp )
     {
 	fclose(sLogFp);
 	sLogFp = NULL;

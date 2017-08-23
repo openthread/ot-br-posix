@@ -41,7 +41,7 @@ using namespace ot::BorderRouter;
 int argcargv::parse_args(void)
 {
     const char                *arg;
-    const struct argcargv_opt *pOPT;
+    const struct argcargv_opt *opt;
 
     /* Done? */
     if (mARGx >= mARGC)
@@ -63,22 +63,22 @@ int argcargv::parse_args(void)
     }
 
 
-    for (pOPT = &mOpts[0]; pOPT->name; pOPT++)
+    for (opt = &mOpts[0]; opt->name; opt++)
     {
-        if (0 == strcmp(arg, pOPT->name))
+        if (0 == strcmp(arg, opt->name))
         {
             /* found */
             break;
         }
     }
 
-    if (pOPT->name == NULL)
+    if (opt->name == NULL)
     {
         /* not found */
         usage("Unknown option: %s", arg);
     }
 
-    (*(pOPT->handler))(this);
+    (*(opt->handler))(this);
     return 0;
 }
 
@@ -168,13 +168,13 @@ void argcargv::add_option(const char *name,
                           const char *valuehelp,
                           const char *helptext)
 {
-    struct argcargv_opt *pOPT;
+    struct argcargv_opt *opt;
     int                  x;
 
     for (x = 0; x < max_opts; x++)
     {
-        pOPT = &mOpts[x];
-        if (pOPT->name == NULL)
+        opt = &mOpts[x];
+        if (opt->name == NULL)
         {
             break;
         }
@@ -184,14 +184,14 @@ void argcargv::add_option(const char *name,
         CommissionerUtilsFail("internal error: Too many cmdline opts!\n");
     }
 
-    pOPT->name = name;
-    pOPT->handler = handler;
-    pOPT->helptext = helptext;
+    opt->name = name;
+    opt->handler = handler;
+    opt->helptext = helptext;
     if (valuehelp == NULL)
     {
         valuehelp = "";
     }
-    pOPT->valuehelp = valuehelp;
+    opt->valuehelp = valuehelp;
 }
 
 /** see: commissioner_argcargv.hpp, print error message & application usage */
@@ -209,14 +209,14 @@ void argcargv::usage(const char *fmt, ...)
     fprintf(stderr, "Where OPTIONS are:\n");
     fprintf(stderr, "\n");
 
-    struct argcargv_opt *pOPT;
+    struct argcargv_opt *opt;
 
-    for (pOPT = &mOpts[0]; pOPT->name; pOPT++)
+    for (opt = &mOpts[0]; opt->name; opt++)
     {
         int n;
 
-        n = fprintf(stderr, "    %s %s", pOPT->name, pOPT->valuehelp);
-        fprintf(stderr, "%*s%s\n", (30 - n), "", pOPT->helptext);
+        n = fprintf(stderr, "    %s %s", opt->name, opt->valuehelp);
+        fprintf(stderr, "%*s%s\n", (30 - n), "", opt->helptext);
     }
     fprintf(stderr, "\n");
     fprintf(stderr, "Note the order of options is important\n");
