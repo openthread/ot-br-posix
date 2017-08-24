@@ -55,8 +55,8 @@ namespace Ncp {
 /**
  * This string is used to filter the property changed signal from wpantund.
  */
-const char *kDBusMatchPropChanged = "type='signal',interface='"WPANTUND_DBUS_APIv1_INTERFACE "',"
-                                    "member='"WPANTUND_IF_SIGNAL_PROP_CHANGED "'";
+const char *kDBusMatchPropChanged = "type='signal',interface='" WPANTUND_DBUS_APIv1_INTERFACE "',"
+                                    "member='" WPANTUND_IF_SIGNAL_PROP_CHANGED "'";
 
 #define OTBR_AGENT_DBUS_NAME_PREFIX "otbr.agent"
 
