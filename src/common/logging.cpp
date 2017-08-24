@@ -75,7 +75,7 @@ void otbrLogSetFilename(const char *filename)
 }
 
 /** Get the current debug log level */
-int  otbrLogGetLevel(void)
+int otbrLogGetLevel(void)
 {
     return sLevel;
 }
