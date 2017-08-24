@@ -31,11 +31,15 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 noinst_LTLIBRARIES = libutils.la
 
 libutils_la_SOURCES = \
+    crc16.cpp         \
     hex.cpp           \
+    steeringdata.cpp  \
     $(NULL)
 
 noinst_HEADERS     = \
+    crc16.hpp        \
     hex.hpp          \
+    steeringdata.hpp \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

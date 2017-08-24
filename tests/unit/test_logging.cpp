@@ -44,12 +44,12 @@ TEST(Logging, TestLoggingHigherLevel)
 
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO);
-    otbrLog(OTBR_LOG_DEBUG, "cool");
+    otbrLog(OTBR_LOG_DEBUG, "cool-higher");
     otbrLogDeinit();
     sleep(0);
 
     char cmd[128];
-    sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
+    sprintf(cmd, "grep '%s.*cool-higher' /var/log/syslog", ident);
     CHECK(0 != system(cmd));
 }
 
@@ -59,41 +59,58 @@ TEST(Logging, TestLoggingEqualLevel)
 
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO);
-    otbrLog(OTBR_LOG_INFO, "cool");
+    otbrLog(OTBR_LOG_INFO, "cool-equal");
     otbrLogDeinit();
     sleep(0);
 
     char cmd[128];
-    sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
+    sprintf(cmd, "grep '%s.*cool-equal' /var/log/syslog", ident);
+    printf("CMD = %s\n", cmd);
     CHECK(0 == system(cmd));
 }
 
 TEST(Logging, TestLoggingLowerLevel)
 {
     char ident[20];
+    char cmd[128];
 
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO);
-    otbrLog(OTBR_LOG_WARNING, "cool");
+    otbrLog(OTBR_LOG_WARNING, "cool-lower");
     otbrLogDeinit();
     sleep(0);
 
-    char cmd[128];
-    sprintf(cmd, "grep '%s.\\+cool' /var/log/syslog", ident);
+    sprintf(cmd, "grep '%s.*cool-lower' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 }
 
 TEST(Logging, TestLoggingDump)
 {
-    char ident[20];
+    char ident[120];
+    char cmd[128];
 
     sprintf(ident, "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO);
-    otbrDump(OTBR_LOG_INFO, "cool", "cool", 4);
+    otbrLogInit(ident, OTBR_LOG_DEBUG);
+    const char s[] = "one super long string with lots of text";
+    otbrDump(OTBR_LOG_INFO, "foobar", s, sizeof(s));
     otbrLogDeinit();
     sleep(0);
 
-    char cmd[128];
-    sprintf(cmd, "grep '%s.\\+#4 636f6f6c$' /var/log/syslog", ident);
+    /*
+     * Above produces output like this
+     * otbr-test-5976[47088]: foobar: 0000: 6f 6e 65 20 73 75 70 65 72 20 6c 6f 6e 67 20 73
+     * otbr-test-5976[47088]: foobar: 0010: 74 72 69 6e 67 20 77 69 74 68 20 6c 6f 74 73 20
+     * otbr-test-5976[47088]: foobar: 0020: 6f 66 20 74 65 78 74 00
+     */
+
+    sprintf(cmd, "grep '%s.*: foobar: 0000: 6f 6e 65 20 73 75 70 65 72 20 6c 6f 6e 67 20 73' /var/log/syslog", ident);
+    CHECK(0 == system(cmd));
+
+
+    sprintf(cmd, "grep '%s.*: foobar: 0010: 74 72 69 6e 67 20 77 69 74 68 20 6c 6f 74 73 20' /var/log/syslog", ident);
+    CHECK(0 == system(cmd));
+
+
+    sprintf(cmd, "grep '%s.*: foobar: 0020: 6f 66 20 74 65 78 74 00' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 }

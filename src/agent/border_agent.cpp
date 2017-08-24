@@ -90,6 +90,8 @@ void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
     Coap::Code     code = aMessage.GetCode();
     Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, code, token, tokenLength);
 
+    otbrLog(OTBR_LOG_INFO, "Forwarding CommissionerResponse ...");
+
     payload = aMessage.GetPayload(length);
     message->SetPayload(payload, length);
 
@@ -145,6 +147,8 @@ void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_
 
     Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
                                                 token, tokenLength);
+    otbrLog(OTBR_LOG_INFO, "Handle Relay receive ...");
+
     message->SetPath(OT_URI_PATH_RELAY_RX);
     message->SetPayload(payload, length);
 
