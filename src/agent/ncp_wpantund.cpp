@@ -191,6 +191,7 @@ exit:
 ControllerWpantund::ControllerWpantund(const char *aInterfaceName) :
     mDBus(NULL)
 {
+    mInterfaceDBusName[0] = '\0';
     strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
 }
 
@@ -244,6 +245,7 @@ exit:
         if (mDBus)
         {
             dbus_connection_unref(mDBus);
+            mDBus = NULL;
         }
         otbrLog(OTBR_LOG_ERR, "NCP failed to initialize!");
     }
@@ -326,7 +328,7 @@ exit:
 
 otbrError ControllerWpantund::TmfProxyStop(void)
 {
-    return TmfProxyEnable(FALSE);
+    return mInterfaceDBusName[0] == '\0' ? OTBR_ERROR_NONE : TmfProxyEnable(FALSE);
 }
 
 void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd)
