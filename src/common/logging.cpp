@@ -60,10 +60,10 @@ void otbrLogEnableSyslog(bool b)
 /** Enable logging to a specific file */
 void otbrLogSetFilename(const char *filename)
 {
-    if( sLogFp )
+    if (sLogFp)
     {
-	fclose(sLogFp);
-	sLogFp = NULL;
+        fclose(sLogFp);
+        sLogFp = NULL;
     }
     sLogFp = fopen(filename, "w");
     if (sLogFp == NULL)
@@ -190,7 +190,7 @@ static void LogPrintf(const char *fmt, ...)
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, int aLevel)
 {
-    
+
     assert(aIdent);
     assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
 
