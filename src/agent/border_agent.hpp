@@ -153,6 +153,11 @@ private:
 
     static void HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments);
 
+    Coap::Resource mActiveGet;
+    Coap::Resource mActiveSet;
+    Coap::Resource mPendingGet;
+    Coap::Resource mPendingSet;
+
     // Border agent resources for external commissioner.
     Coap::Resource mCommissionerPetitionHandler;
     Coap::Resource mCommissionerKeepAliveHandler;

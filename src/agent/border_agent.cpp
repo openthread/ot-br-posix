@@ -206,6 +206,10 @@ exit:
 }
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
+    mActiveGet(OT_URI_PATH_ACTIVE_GET, ForwardCommissionerRequest, this),
+    mActiveSet(OT_URI_PATH_ACTIVE_SET, ForwardCommissionerRequest, this),
+    mPendingGet(OT_URI_PATH_PENDING_GET, ForwardCommissionerRequest, this),
+    mPendingSet(OT_URI_PATH_PENDING_SET, ForwardCommissionerRequest, this),
     mCommissionerPetitionHandler(OT_URI_PATH_COMMISSIONER_PETITION, ForwardCommissionerRequest, this),
     mCommissionerKeepAliveHandler(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this),
     mCommissionerSetHandler(OT_URI_PATH_COMMISSIONER_SET, ForwardCommissionerRequest, this),
@@ -219,6 +223,11 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
 otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    SuccessOrExit(error = mCoaps->AddResource(mActiveGet));
+    SuccessOrExit(error = mCoaps->AddResource(mActiveSet));
+    SuccessOrExit(error = mCoaps->AddResource(mPendingGet));
+    SuccessOrExit(error = mCoaps->AddResource(mPendingSet));
 
     SuccessOrExit(error = mCoaps->AddResource(mCommissionerPetitionHandler));
     SuccessOrExit(error = mCoaps->AddResource(mCommissionerKeepAliveHandler));
