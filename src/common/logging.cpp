@@ -39,14 +39,16 @@
 #include <syslog.h>
 #include <sys/time.h>
 
-static int        sLevel = LOG_INFO;
-static const char kHEX_CHARS[] = "0123456789abcdef";
+#include "time.hpp"
 
-static unsigned sMsecsStart;
-static bool     sLogCol0 = true; /* we start at col0 */
-static FILE    *sLogFp;
-static bool     sSyslogEnabled = true;
-static bool     sSyslogOpened = false;
+static int        sLevel = LOG_INFO;
+static const char kHexChars[] = "0123456789abcdef";
+
+static unsigned long sMsecsStart;
+static bool          sLogCol0 = true; /* we start at col0 */
+static FILE         *sLogFp;
+static bool          sSyslogEnabled = true;
+static bool          sSyslogOpened = false;
 
 #define LOGFLAG_syslog 1
 #define LOGFLAG_file   2
@@ -114,23 +116,12 @@ static int LogCheck(int aLevel)
 
 
 /** return the time, in milliseconds since application start */
-static unsigned LogMsecsNow(void)
+static unsigned long GetMsecsNow(void)
 {
-    struct timeval tv;
-    uint64_t       v;
+    unsigned long now = ot::BorderRouter::GetNow();
 
-    gettimeofday(&tv, NULL);
-
-    v = tv.tv_sec;
-    v = v * 1000;
-    v = v + (tv.tv_usec / 1000);
-
-    if (sMsecsStart == 0)
-    {
-        sMsecsStart = (unsigned)(v);
-    }
-    v = v - sMsecsStart;
-    return v;
+    now -= sMsecsStart;
+    return now;
 }
 
 
@@ -144,9 +135,9 @@ static void LogString(const char *cp)
         if (sLogCol0)
         {
             sLogCol0 = false;
-            unsigned n;
-            n = LogMsecsNow();
-            fprintf(sLogFp, "%4d.%03d | ", (n / 1000), (n % 1000));
+            unsigned long n;
+            n = GetMsecsNow();
+            fprintf(sLogFp, "%4lu.%03lu | ", (n / 1000), (n % 1000));
         }
         if (ch == '\n')
         {
@@ -190,12 +181,10 @@ static void LogPrintf(const char *fmt, ...)
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, int aLevel)
 {
-
     assert(aIdent);
     assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
 
-    /* call to init the msec epoch value */
-    LogMsecsNow();
+    sMsecsStart = ot::BorderRouter::GetNow();
 
     /* only open the syslog once... */
     if (!sSyslogOpened)
@@ -286,8 +275,8 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
 
         for (pEnd = p8 + this_size; p8 < pEnd; p8++)
         {
-            *++ch = kHEX_CHARS[(*p8) >> 4];
-            *++ch = kHEX_CHARS[(*p8) & 0x0f];
+            *++ch = kHexChars[(*p8) >> 4];
+            *++ch = kHexChars[(*p8) & 0x0f];
             *++ch = ' ';
         }
         *ch = 0;
