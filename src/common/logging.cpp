@@ -235,7 +235,7 @@ void otbrLogv(int aLevel, const char *aFormat, va_list ap)
 /** Hex dump data to the log */
 void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
 {
-    assert(aPrefix && aMemory);
+    assert(aPrefix && (aMemory || aSize == 0));
     const uint8_t *pEnd;
     const uint8_t *p8;
     int            r;
