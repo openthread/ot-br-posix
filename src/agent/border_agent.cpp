@@ -238,11 +238,7 @@ otbrError BorderAgent::Start(void)
 
     mNcp->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
 
-    {
-        const uint8_t *pskc = mNcp->GetPSKc();
-        VerifyOrExit(pskc != NULL, error = OTBR_ERROR_ERRNO);
-        mDtlsServer->SetPSK(pskc, kSizePSKc);
-    }
+    mNcp->RequestEvent(Ncp::kEventPSKc);
 
     {
         const uint8_t *eui64 = mNcp->GetEui64();
@@ -255,7 +251,7 @@ otbrError BorderAgent::Start(void)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %d!", error);
+        otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %s!", otbrErrorString(error));
     }
 
     return error;

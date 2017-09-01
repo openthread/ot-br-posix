@@ -127,16 +127,6 @@ public:
     virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) = 0;
 
     /**
-     * This method retrieves the current PSKc.
-     *
-     * @returns The current PSKc.
-     *
-     * @retval  NULL    Failed to get PSKc, error code set in errno.
-     *
-     */
-    virtual const uint8_t *GetPSKc(void) = 0;
-
-    /**
      * This method retrieves the Eui64.
      *
      * @returns The hardware address.

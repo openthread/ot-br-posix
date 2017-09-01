@@ -125,16 +125,6 @@ public:
     virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
     /**
-     * This method retrieves the current PSKc.
-     *
-     * @returns The current PSKc.
-     *
-     * @retval  NULL    Failed to get PSKc, error code set in errno.
-     *
-     */
-    virtual const uint8_t *GetPSKc(void);
-
-    /**
      * This method retrieves the Eui64.
      *
      * @returns The hardware address.
@@ -162,12 +152,13 @@ private:
      */
     typedef std::map<DBusWatch *, bool> WatchMap;
 
-    static DBusHandlerResult HandleProperyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
-                                                        void *aContext);
-    DBusHandlerResult HandleProperyChangedSignal(DBusConnection &aConnection, DBusMessage &aMessage);
+    static DBusHandlerResult HandlePropertyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
+                                                         void *aContext);
+    DBusHandlerResult HandlePropertyChangedSignal(DBusMessage &aMessage);
 
     DBusMessage *RequestProperty(const char *aKey);
     otbrError GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize);
+    otbrError ParseEvent(const char *aKey, DBusMessageIter *aIter);
 
     otbrError TmfProxyEnable(dbus_bool_t aEnable);
 
