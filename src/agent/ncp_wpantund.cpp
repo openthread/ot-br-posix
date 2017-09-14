@@ -60,18 +60,24 @@ const char *kDBusMatchPropChanged = "type='signal',interface='" WPANTUND_DBUS_AP
 
 #define OTBR_AGENT_DBUS_NAME_PREFIX "otbr.agent"
 
-DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
-                                                                 void *aContext)
+static void HandleDBusError(DBusError &aError)
 {
-    return static_cast<ControllerWpantund *>(aContext)->HandleProperyChangedSignal(*aConnection, *aMessage);
+    otbrLog(OTBR_LOG_ERR, "NCP DBus error %s: %s!", aError.name, aError.message);
+    dbus_error_free(&aError);
 }
 
-DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection &aConnection, DBusMessage &aMessage)
+DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
+                                                                  void *aContext)
 {
+    (void)aConnection;
+    return static_cast<ControllerWpantund *>(aContext)->HandlePropertyChangedSignal(*aMessage);
+}
+
+DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusMessage &aMessage)
+{
+    DBusHandlerResult result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     DBusMessageIter   iter;
-    DBusHandlerResult result = DBUS_HANDLER_RESULT_HANDLED;
     const char       *key = NULL;
-    const uint8_t    *pskc = NULL;
     const char       *sender = dbus_message_get_sender(&aMessage);
     const char       *path = dbus_message_get_path(&aMessage);
 
@@ -91,20 +97,33 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
     dbus_message_iter_get_basic(&iter, &key);
     VerifyOrExit(key != NULL, result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
     dbus_message_iter_next(&iter);
-    otbrLog(OTBR_LOG_INFO, "NCP property %s changed.", key);
 
-    if (!strcmp(key, kWPANTUNDProperty_NetworkPSKc))
+    otbrLog(OTBR_LOG_INFO, "NCP property %s changed.", key);
+    SuccessOrExit(OTBR_ERROR_NONE == ParseEvent(key, &iter));
+
+    result = DBUS_HANDLER_RESULT_HANDLED;
+
+exit:
+    return result;
+}
+
+otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIter)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+
+    if (!strcmp(aKey, kWPANTUNDProperty_NetworkPSKc))
     {
+        const uint8_t  *pskc = NULL;
         int             count = 0;
         DBusMessageIter subIter;
 
-        dbus_message_iter_recurse(&iter, &subIter);
+        dbus_message_iter_recurse(aIter, &subIter);
         dbus_message_iter_get_fixed_array(&subIter, &pskc, &count);
-        VerifyOrExit(count == kSizePSKc, result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+        VerifyOrExit(count == kSizePSKc, ret = OTBR_ERROR_DBUS);
 
         EventEmitter::Emit(kEventPSKc, pskc);
     }
-    else if (!strcmp(key, kWPANTUNDProperty_TmfProxyStream))
+    else if (!strcmp(aKey, kWPANTUNDProperty_TmfProxyStream))
     {
         const uint8_t *buf = NULL;
         uint16_t       locator = 0;
@@ -114,7 +133,7 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
             DBusMessageIter sub_iter;
             int             nelements = 0;
 
-            dbus_message_iter_recurse(&iter, &sub_iter);
+            dbus_message_iter_recurse(aIter, &sub_iter);
             dbus_message_iter_get_fixed_array(&sub_iter, &buf, &nelements);
             len = static_cast<uint16_t>(nelements);
         }
@@ -127,16 +146,9 @@ DBusHandlerResult ControllerWpantund::HandleProperyChangedSignal(DBusConnection 
 
         EventEmitter::Emit(kEventTmfProxyStream, buf, len, locator, port);
     }
-    else
-    {
-        result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-    }
 
 exit:
-
-    (void)aConnection;
-
-    return result;
+    return ret;
 }
 
 dbus_bool_t ControllerWpantund::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)
@@ -229,15 +241,14 @@ otbrError ControllerWpantund::Init(void)
     dbus_bus_add_match(mDBus, kDBusMatchPropChanged, &error);
     VerifyOrExit(!dbus_error_is_set(&error));
 
-    VerifyOrExit(dbus_connection_add_filter(mDBus, HandleProperyChangedSignal, this, NULL));
+    VerifyOrExit(dbus_connection_add_filter(mDBus, HandlePropertyChangedSignal, this, NULL));
 
     ret = OTBR_ERROR_NONE;
 
 exit:
     if (dbus_error_is_set(&error))
     {
-        otbrLog(OTBR_LOG_ERR, "NCP DBus error: %s!", error.message);
-        dbus_error_free(&error);
+        HandleDBusError(error);
     }
 
     if (ret)
@@ -269,7 +280,7 @@ otbrError ControllerWpantund::TmfProxyStart(void)
     otbrError ret = OTBR_ERROR_ERRNO;
 
     VerifyOrExit(lookup_dbus_name_from_interface(mInterfaceDBusName, mInterfaceName) == 0,
-                 otbrLog(OTBR_LOG_ERR, "NCP failed to find the interface"),
+                 otbrLog(OTBR_LOG_ERR, "NCP failed to find the interface!"),
                  errno = ENODEV);
 
     // Populate the path according to source code of wpanctl, better to export a function.
@@ -413,7 +424,7 @@ DBusMessage *ControllerWpantund::RequestProperty(const char *aKey)
 {
     DBusMessage *message = NULL;
     DBusMessage *reply = NULL;
-    int          timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
+    const int    timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
     DBusError    error;
 
     dbus_error_init(&error);
@@ -430,8 +441,7 @@ exit:
 
     if (dbus_error_is_set(&error))
     {
-        otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
-        dbus_error_free(&error);
+        HandleDBusError(error);
         errno = EREMOTEIO;
     }
 
@@ -445,9 +455,14 @@ exit:
 
 otbrError ControllerWpantund::RequestEvent(int aEvent)
 {
-    otbrError    ret = OTBR_ERROR_ERRNO;
-    DBusMessage *message = NULL;
-    const char  *key = NULL;
+    otbrError       ret = OTBR_ERROR_ERRNO;
+    DBusMessage    *message = NULL;
+    DBusMessage    *reply = NULL;
+    DBusMessageIter iter;
+    const char     *key = NULL;
+    const int       timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
+    DBusError       error;
+
 
     switch (aEvent)
     {
@@ -470,11 +485,27 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
     VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID),
                  errno = EINVAL);
 
-    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
+    dbus_error_init(&error);
+    reply = dbus_connection_send_with_reply_and_block(mDBus, message, timeout, &error);
+    VerifyOrExit(reply != NULL, HandleDBusError(error), ret = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_init(reply, &iter), errno = ENOENT);
 
-    ret = OTBR_ERROR_NONE;
+    {
+        uint32_t status = 0;
+        dbus_message_iter_get_basic(&iter, &status);
+        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EREMOTEIO);
+    }
+
+    dbus_message_iter_next(&iter);
+    ret = ParseEvent(key, &iter);
+
 
 exit:
+
+    if (reply)
+    {
+        dbus_message_unref(reply);
+    }
 
     if (message)
     {
@@ -496,12 +527,16 @@ otbrError ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, si
     {
         uint8_t *buffer = NULL;
         int      count = 0;
+        uint32_t status = 0;
 
         VerifyOrExit(dbus_message_get_args(reply, &error,
-                                           DBUS_TYPE_INT32, &ret,
+                                           DBUS_TYPE_INT32, &status,
                                            DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &buffer, &count,
                                            DBUS_TYPE_INVALID),
                      errno = EINVAL);
+
+        assert(!dbus_error_is_set(&error));
+        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EINVAL);
 
         aSize = static_cast<size_t>(count);
         memcpy(aBuffer, buffer, aSize);
@@ -513,8 +548,7 @@ exit:
 
     if (dbus_error_is_set(&error))
     {
-        otbrLog(OTBR_LOG_ERR, "DBus error: %s", error.message);
-        dbus_error_free(&error);
+        HandleDBusError(error);
     }
 
     if (reply)
@@ -522,19 +556,6 @@ exit:
         dbus_message_unref(reply);
     }
 
-    return ret;
-}
-
-const uint8_t *ControllerWpantund::GetPSKc(void)
-{
-    const uint8_t *ret = NULL;
-    size_t         size = 0;
-
-    SuccessOrExit(GetProperty(kWPANTUNDProperty_NetworkPSKc, mPSKc, size));
-    assert(size == kSizePSKc);
-    ret = mPSKc;
-
-exit:
     return ret;
 }
 
