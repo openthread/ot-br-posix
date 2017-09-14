@@ -1,3 +1,7 @@
+[![Build Status][ot-travis-svg]][ot-travis]
+
+---
+
 # OpenThread Border Router
 
 Per the [Thread 1.1.1 Specification](http://threadgroup.org/ThreadSpec), a Border Router connects a 802.15.4 network to networks at different layers, such as WiFi or Ethernet.  A Thread network requires a Border Router to connect to other networks.
@@ -12,97 +16,55 @@ OpenThread's implementation of a Border Router is called OpenThread Border Route
 -  Web UI for configuration and management
 -  Thread Border Agent to support an External Commissioner
 -  NAT64 for connecting to IPv4 networks
--  Thread interface driver using wpantund
+-  Thread interface driver using [wpantund](https://github.com/openthread/wpantund)
 
-> **Note:** This is an early MVP release of OpenThread Border Router that will be improved over time. See the [Roadmap](https://github.com/openthread/borderrouter/wiki/Roadmap) page to view major fixes in progress, or the [Issues](https://github.com/openthread/borderrouter/issues) page to report bugs and request enhancements.<br /><br />Pull requests are encouraged and welcome. See the [`CONTRIBUTING.md`](https://github.com/openthread/borderrouter/blob/master/CONTRIBUTING.md) file for more information.
+> **Note:** This is an early MVP release of OpenThread Border Router that will be improved over time.
 
-## Border Agent
+More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
-The Border Agent binds to both Thread and WAN (WiFi, Ethernet) interfaces, to support an External Thread Commissioner in authenticating and joining Thread devices."
+[ot-travis]: https://travis-ci.org/openthread/borderrouter
+[ot-travis-svg]: https://travis-ci.org/openthread/borderrouter.svg?branch=master
 
-![OTBR Architecture](https://gist.githubusercontent.com/Vyrastas/0489e2c081c0444c2462dcee54962cb7/raw/100a8a08f1e9103672017f0f05eac6f85cb8e31a/otbr-arch-borderagent_2x.png)
+## Getting started
 
-It also provides support for the NCP design, where Thread functions are offloaded to an NCP and OTBR runs on the host side.  In this design, the Border Agent communicates with the NCP via [`wpantund`](https://github.com/openthread/openthread/wiki/Wpantund-Docs) and [Spinel](https://github.com/openthread/openthread/blob/master/doc/draft-spinel-protocol.txt).  A Border Agent Proxy provides an interface between Spinel and OpenThread's CoAP client and server components on the NCP.  For communication with an external Commissioner, the Border Agent uses standard UDP sockets.
+All end-user documentation and guides are located at [openthread.io](https://openthread.io/guides/border_router). If you're looking to do things like...
 
-![OTBR NCP Architecture](https://gist.githubusercontent.com/Vyrastas/0489e2c081c0444c2462dcee54962cb7/raw/8ca4195936c867adaf7fb74058fef7c622007361/otbr-arch-borderagent-ncp_2X.png)
+- Learn about the OTBR architecture
+- See what platforms support OTBR
+- Build and configure OTBR
 
-The Border Agent utilizes the following third-party components:
+...then [openthread.io](https://openthread.io/guides/border_router) is the place for you.
 
--  libcoap — An open source C-implementation of CoAP implementation
--  mbed TLS — Supports DTLS communication with an external Commissioner
+If you're interested in contributing to OpenThread Border Router, read on.
 
-## Border Router Services
+# Contributing
 
-OTBR also provides the following services:
+We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/borderrouter/blob/master/CONTRIBUTING.md) for more information.
 
--  mDNS Publisher — allows an External Commissioner to discover an OTBR and its associated Thread network
--  PSKc Generator — for generation of PSKc keys
--  Web Service — web UI for management of a Thread network
--  WPAN Controller — DBus operations for control of the WPAN interface
+Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/borderrouter/blob/master/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/borderrouter/blob/master/STYLE_GUIDE.md).
 
-Third-party components for Border Router Services include Simple Web Server and Material Design Lite for the framework of the web UI.
-
-# Get started
-
-We follow philosophy of [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all). Validated platforms include:
-
-* Raspberry Pi 3B (running recent [Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/))
-
-## Build and Install
-
-```sh
-# Install dependencies
-./script/bootstrap
-
-# Build and install border router and wpantund
-./script/setup
-```
-
-## Configure
-
-Edit `/etc/wpantund.conf` according to the comments. Basically only path to NCP's serial port is required. Plug in the NCP mode OpenThread
-device and check the corresponding device file of it. Here's an example when the device's serial port is `/dev/ttyUSB0`.
-
-```
-Config:NCP:SocketPath "/dev/ttyUSB0"
-```
-
-## Start services
-
-All border router services will be automatically started on next boot. Or you can start immediately by:
-
-```sh
-./script/server
-```
-
-Now you can access border router's Web UI through browsers and explore its features.
-
-# Need help?
-
-## Interact
-
-There are numerous avenues for OTBR support:
-
--  Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/borderrouter/issues)
--  Stack Overflow — [post questions using the `openthread` tag](http://stackoverflow.com/questions/tagged/openthread)
--  Google Groups — discussion and announcements
-   -  [openthread-announce](https://groups.google.com/forum/#!forum/openthread-announce) — release notes and new updates on OpenThread
-   -  [openthread-users](https://groups.google.com/forum/#!forum/openthread-users) — the best place for users to discuss OpenThread and interact with the OpenThread team
-
-## OpenThread
-
-To learn more about OpenThread, see the [OpenThread repository](https://github.com/openthread/openthread).
-
-# Want to contribute?
-
-We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See the [`CONTRIBUTING.md`](https://github.com/openthread/borderrouter/blob/master/CONTRIBUTING.md) file for more information.
+We follow the philosophy of [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all).
 
 # Versioning
 
-OpenThread Border Router follows the [Semantic Versioning guidelines](http://semver.org/) for release cycle transparency and to maintain backwards compatibility. OpenThread's versioning is independent of the Thread protocol specification version but will clearly indicate which version of the specification it currently supports.
+OpenThread Border Router follows the [Semantic Versioning guidelines](http://semver.org/) for release cycle transparency and to maintain backwards compatibility. OpenThread Border Router's versioning is independent of the Thread protocol specification version but will clearly indicate which version of the specification it currently supports.
 
 # License
 
 OpenThread Border Router is released under the [BSD 3-Clause license](https://github.com/openthread/borderrouter/blob/master/LICENSE). See the [`LICENSE`](https://github.com/openthread/borderrouter/blob/master/LICENSE) file for more information.
 
 Please only use the OpenThread name and marks when accurately referencing this software distribution. Do not use the marks in a way that suggests you are endorsed by or otherwise affiliated with Nest, Google, or The Thread Group.
+
+# Need help?
+
+There are numerous avenues for OpenThread support:
+
+* Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/borderrouter/issues)
+* Stack Overflow — [post questions using the `openthread` tag](http://stackoverflow.com/questions/tagged/openthread)
+* Google Groups — [discussion and announcements at openthread-users](https://groups.google.com/forum/#!forum/openthread-users)
+
+The openthread-users Google Group is the recommended place for users to discuss OpenThread and interact directly with the OpenThread team.
+
+## OpenThread
+
+To learn more about OpenThread, see the [OpenThread repository](https://github.com/openthread/openthread).
