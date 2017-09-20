@@ -1,0 +1,30 @@
+#! /bin/bash
+
+
+bbb_disable_services()
+{
+
+    for service in  apache2 bonescript.socket bonescript.service bonescript-autorun.service
+    do
+        for action in stop disable
+        do
+            sudo systemctl $action $service
+        done
+    done    
+}
+
+
+disable_services()
+{
+    case $PLATFORM in
+
+    beagleboneblack)
+         bbb_disable_services
+         ;;
+    
+    *)
+         echo "Nothing to disable" > /dev/null
+         ;;
+    esac
+}
+
