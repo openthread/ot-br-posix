@@ -80,6 +80,19 @@ without()
 
 # Platform information is needed to load hooks and default settings.
 #
+#----
+# BeagleBone Black debian distribution does not support "lsb_release"
+if [ -f /sys/firmware/devicetree/base/model ]
+then
+    # Note: 'model' is a binary file with no newline
+    cat /sys/firmware/devicetree/base/model | grep -s "BeagleBone Black" > /dev/null
+    if [ $? -eq 0 ]
+    then
+        PLATFORM=beagleboneblack
+    fi
+fi
+
+
 if test -z "$PLATFORM"; then
     have_or_die lsb_release
     PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
