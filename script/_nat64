@@ -37,7 +37,7 @@ TAYGA_IPV6_ADDR=fdaa:bb:1::1
 NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES=eth0
 
-# Currently only ubuntu is verified.
+# Currently solution was verified only on raspbian and ubuntu.
 #
 without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
 
