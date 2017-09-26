@@ -59,7 +59,7 @@ main()
     . $BEFORE_HOOK
     extend_sudo_timeout
     setup_swapfile
-    disable_apache2
+    disable_services
     otbr_uninstall
     wpantund_uninstall
     nat64_uninstall
