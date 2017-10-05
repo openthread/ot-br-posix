@@ -28,3 +28,5 @@
 #
 
 NAT64=0
+DNS64=0
+DHCPV6_PD=0

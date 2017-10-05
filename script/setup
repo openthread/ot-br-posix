@@ -36,20 +36,23 @@
 . script/_ipforward
 . script/_nat64
 . script/_dns64
+. script/_dhcpv6_pd
 
 main()
 {
     . $BEFORE_HOOK
     otbr_uninstall
+    dhcpv6_pd_uninstall
     wpantund_uninstall
     nat64_uninstall
     dns64_uninstall
     ipforward_uninstall
-
+    
     ipforward_install
     nat64_install
     dns64_install
     wpantund_install
+    dhcpv6_pd_install
     otbr_install
     . $AFTER_HOOK
 }
