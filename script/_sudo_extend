@@ -15,21 +15,21 @@ extend_sudo_timeout()
 
     if ${SUDO_EXTEND_TIME}
     then
-	# do not repeat!
-	sudo grep -s '^Defaults\s\s*timestamp_timeout' ${ETC_SUDOERS} > /dev/null
-	if [ $? == 0 ]
+        # do not repeat!
+        sudo grep -s '^Defaults\s\s*timestamp_timeout' ${ETC_SUDOERS} > /dev/null
+        if [ $? == 0 ]
         then
             SUDO_EXTEND_TIME=false
-	    _why="Already present"
-	fi
+            _why="Already present"
+        fi
     fi
 
     if ${SUDO_EXTEND_TIME}
     then
-	echo "Extending sudo timeout..."
+        echo "Extending sudo timeout..."
         sudo /bin/sh -c "echo \"Defaults timestamp_timeout=${SUDO_EXTEND_TIME_AMOUNT}\" >> ${ETC_SUDOERS}"
     else
-	echo "sudo-timeout: Not extending, ${_why}"
+        echo "sudo-timeout: Not extending, ${_why}"
     fi
 }
 
