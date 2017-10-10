@@ -65,6 +65,9 @@ install_packages_apt()
     # dns64
     without NAT64 || sudo apt-get install -y bind9
 
+    # dhcpcd5
+    without DHCPV6_PD || sudo apt-get install -y dhcpcd5
+
     # libjsoncpp
     sudo apt-get install -y libjsoncpp-dev
 }

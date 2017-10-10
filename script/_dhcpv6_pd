@@ -1,0 +1,213 @@
+#!/bin/sh
+#
+#  Copyright (c) 2017, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#   Description:
+#       This script manipulates DHCPv6-PD configuration.
+#
+
+# Currently solution was verified only on raspbian and ubuntu.
+#
+
+WAN_INTERFACE="eth0"
+
+WPANTUND_INTERFACE="wpan0"
+WPANTUND_ENV="/etc/default/wpantund"
+
+DHCPCD_CONF="/etc/dhcpcd.conf"
+DHCPCD_CONF_BACKUP="$DHCPCD_CONF.orig"
+
+DHCPCD_RELOADER="/usr/sbin/dhcpcd_reloader"
+DHCPCD_RELOADER_SERVICE="/etc/systemd/system/dhcpcd_reloader.service"
+
+without DHCPV6_PD || test $PLATFORM = raspbian || die "DHCPv6-PD is not tested under $PLATFORM."
+
+create_dhcpcd_conf_with_dhcpv6_pd()
+{
+    sudo tee $DHCPCD_CONF << EOF
+# A sample configuration for dhcpcd.
+# See dhcpcd.conf(5) for details.
+
+# Allow users of this group to interact with dhcpcd via the control socket.
+#controlgroup wheel
+
+# Inform the DHCP server of our hostname for DDNS.
+hostname
+
+# Use the hardware address of the interface for the Client ID.
+#clientid
+# or
+# Use the same DUID + IAID as set in DHCPv6 for DHCPv4 ClientID as per RFC4361.
+duid
+
+# Persist interface configuration when dhcpcd exits.
+persistent
+
+# Rapid commit support.
+# Safe to enable by default because it requires the equivalent option set
+# on the server to actually work.
+option rapid_commit
+
+# A list of options to request from the DHCP server.
+option domain_name_servers, domain_name, domain_search, host_name
+option classless_static_routes
+# Most distributions have NTP support.
+option ntp_servers
+# Respect the network MTU.
+# Some interface drivers reset when changing the MTU so disabled by default.
+#option interface_mtu
+
+# A ServerID is required by RFC2131.
+require dhcp_server_identifier
+
+# Generate Stable Private IPv6 Addresses instead of hardware based ones
+slaac private
+
+# A hook script is provided to lookup the hostname if not set by the DHCP
+# server, but it should not be run by default.
+nohook lookup-hostname
+
+noipv6rs
+
+interface $WPANTUND_INTERFACE
+nodhcp
+nodhcp6
+
+interface $WAN_INTERFACE
+ipv6rs
+ia_na 1
+ia_pd 2/::/63 $WPANTUND_INTERFACE/1
+
+EOF
+}
+
+create_dhcpcd_reloader_script()
+{
+    sudo tee $DHCPCD_RELOADER << EOF
+#!/bin/sh
+
+PID=\$\$
+NAME="dhcpcd_reloader"
+
+echo \${PID} > /tmp/\${NAME}.pid
+
+if [ -z \${IFACE} ]; then
+        IFACE="$WPANTUND_INTERFACE"
+fi
+
+WPANTUND_IFACE="com.nestlabs.WPANTunnelDriver"
+WPANTUND_NCP_STATE_PATH="/com/nestlabs/WPANTunnelDriver/\${IFACE}/Properties/NCP/State"
+
+WATCH1="type='signal', interface=\${WPANTUND_IFACE}, path=\${WPANTUND_NCP_STATE_PATH}, member='PropertyChanged'"
+
+reload_dhcpcd_daemon()
+{
+        systemctl force-reload dhcpcd
+        systemctl reload-daemon
+        logger -t "\${NAME}[\${PID}]" "Reload: dhcpcd daemon"
+}
+
+process_output()
+{
+        while read -r line; do
+                if echo \${line} | grep -q "associated"; then
+                        reload_dhcpcd_daemon
+                fi
+        done
+}
+
+dbus-monitor --system "\${WATCH1}" | process_output
+
+EOF
+}
+
+create_dhcpcd_reloader_service()
+{
+    sudo tee $DHCPCD_RELOADER_SERVICE << EOF
+[Unit]
+Description=Daemon reload dhcpcd after change NCP state to associated
+After=wpantund.service
+ConditionPathExists=/usr/sbin/dhcpcd_reloader
+
+[Service]
+ExecStart=/bin/sh /usr/sbin/dhcpcd_reloader
+PIDFile=/tmp/dhcpcd_resolver.pid
+KillType=process
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+}
+
+create_wpantund_env_file()
+{
+    echo "WPANTUND_OPTS=-o Daemon:SetDefaultRouteForAutoAddedPrefix true -o IPv6:SetSLAACForAutoAddedPrefix true" > $WPANTUND_ENV
+}
+
+dhcpv6_pd_install()
+{
+    with DHCPV6_PD || return 0
+
+    # Create backup of the default configuration of dhcpcd
+    sudo mv $DHCPCD_CONF $DHCPCD_CONF_BACKUP
+
+    create_dhcpcd_conf_with_dhcpv6_pd
+    create_dhcpcd_reloader_script
+    create_wpantund_env_file
+
+    if have systemctl; then
+        create_dhcpcd_reloader_service
+
+        sudo systemctl restart dhcpcd || die 'Unable to restart dhcpcd!'
+
+        sudo systemctl start dhcpcd_reloader.service || die 'Unable to start dhcpcd_reloader!'
+        sudo systemctl enable dhcpcd_reloader.service || die 'Unable to enable dhcpcd_reloader!'
+    fi
+}
+
+dhcpv6_pd_uninstall()
+{
+    with DHCPV6_PD || return 0
+
+    if have systemctl; then
+        sudo systemctl disable dhcpcd_reloader.service || true
+        sudo systemctl stop dhcpcd_reloader.service || true
+
+        sudo rm -rf $DHCPCD_RELOADER_SERVICE || true
+    fi
+    
+    sudo rm -rf $DHCPCD_RELOADER || true
+    sudo rm -rf $WPANTUND_ENV || true
+
+    # Restore backup of the default configuration of dhcpcd
+    sudo mv $DHCPCD_CONF_BACKUP $DHCPCD_CONF || true
+
+    if have systemctl; then
+        sudo systemctl restart dhcpcd.service || true
+    fi
+}
