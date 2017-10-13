@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 ETC_SUDOERS=/etc/sudoers
 
@@ -16,14 +16,14 @@ extend_sudo_timeout()
     if ${SUDO_EXTEND_TIME}
     then
         # do not repeat!
-	set +e
+        set +e
         sudo grep -s '^Defaults\s\s*timestamp_timeout' ${ETC_SUDOERS} > /dev/null
         if [ $? -eq 0 ]
         then
             SUDO_EXTEND_TIME=false
             _why="Already present"
         fi
-	set -e
+        set -e
     fi
 
     if ${SUDO_EXTEND_TIME}

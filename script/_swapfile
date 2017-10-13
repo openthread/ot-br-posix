@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -52,7 +52,7 @@ create_new_swapfile()
     do
         echo "Block: ${x} of ${SWAP_BLOCK_CNT}"
         sudo dd oflag=append conv=notrunc if=/dev/zero of=${SWAP_FILENAME} bs=$SWAP_BLOCK_SIZE count=$SWAP_STEPSIZE
-	# this actually creates 1 extra but we don't care
+        # this actually creates 1 extra but we don't care
     done
 
     echo "Setting protections"
@@ -61,7 +61,6 @@ create_new_swapfile()
     echo "Format swapfile"
     sudo mkswap ${SWAP_FILENAME}
 }
-
 
 add_to_fstab()
 {
@@ -72,14 +71,12 @@ add_to_fstab()
     sudo cp /tmp/fstab.tmp /etc/fstab
 }
 
-
 enable_swapfile()
 {
     echo "Enabling swap space..."
     sudo swapon -a
 
 }
-
 
 setup_swapfile()
 {
@@ -95,5 +92,3 @@ setup_swapfile()
         echo "Swapfile: not required"
     fi
 }
-
-

@@ -1,5 +1,36 @@
 #! /bin/sh
-
+#
+#  Copyright (c) 2017, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#----------------------------------------
+# Purpose:
+#  To understand the purpose of this script see: print_big_ugly_warning() below.
+#----------------------------------------
+#   
 
 # remember the name of this script
 SCRIPT_NAME=$0
@@ -30,7 +61,6 @@ debug_echo() {
     #echo "${@}"
     true
 }
-
 
 determine_eth0_name()
 {
@@ -89,14 +119,12 @@ determine_eth0_name()
     echo "Assuming: Primary ETHERNET name is $ETH0_NAME"
 }
 
-
 install_radvd()
 {
     echo "Fetching RADVD..."
     echo "apt-get install radvd"
     sudo apt-get install radvd
 }
-
 
 choose_random_eth0_address()
 {
@@ -121,7 +149,7 @@ choose_random_eth0_address()
     #
     RANDOM_32BIT_VALUE=`od --read-bytes=4 --format=x2 /dev/urandom | \
         head -1 | \
-        cut -d' ' -f2,3 |
+        cut -d' ' -f2,3 | \
         tr ' ' ':'`
 
     # thus, "RANDOM_32BIT_VALUE=1234:5678"
@@ -133,9 +161,9 @@ choose_random_eth0_address()
     ETH0_IPV6_STATIC_ADDRESS=${ETH0_IPV6_PREFIX}::1
 }
 
-
 configure_radvd()
 {
+    # this creates a configuration file for radvd
     CFG_FILE=/etc/radvd.conf
     if [ -f $CFG_FILE ]
     then
@@ -184,6 +212,7 @@ __EOF__
 
 assign_eth0_static_ipv6() {
 
+    # this creates a static IPv6 address for Eth0
     sudo tee -a /etc/network/interfaces << __EOF__
 
 # This configuration was created by
@@ -206,9 +235,8 @@ __EOF__
 
 }
 
-
-
-
+# on BBB we do this.
+# other platforms might do something simular
 bbb_main() {
     install_radvd
     determine_eth0_name
@@ -220,6 +248,7 @@ bbb_main() {
 }
 
 print_big_ugly_warning() {
+    # Scare our victim.
 
 cat <<_EOF_
 
@@ -228,21 +257,25 @@ Please understand the purpose of this script.
 This script is not intended to be an complete and proper IPv6
 configuration script.
 
-Instead, it is exactly this: A hack/script that turns on just enough
-IPv6 such that you can perform simple COAP requests in an issolated
-test network that otherwise does not have IPv6 provisioning
+This is only hack that turns on just enough IPv6 to perform simple
+CoAP requests on or across an issolated test network to the Thread
+network.
 
-The example TEST system consists of these parts:
+The example issolated test network consists of these parts:
 
 1) A thread RF radio network.
 
-2) The OpenThread Border router attached to that network
+2) The OpenThread Border router attached to the Thread network
 
 3) The Openthread Border router would typically be connected
    to a residential home network in some way (wifi, or wired)
 
-4) Other things on the "home/test network" need to talk to the
-   various Thread end nodes via IPv6
+   In this case, it is connected to a router that is not
+   connected to an upstream provider - it is issolated.
+
+4) In order to test & develop applications other things on the
+   "home/test network" need to talk to the various Thread end nodes
+   via IPv6
 
    Examples include:
 
@@ -250,26 +283,25 @@ The example TEST system consists of these parts:
    * Android/Apple Phone or Tablet
    * other network devices
 
-5) To test/develop your applications you need to provide a means
-   for these other devices to talk to devices on the Thread
-   Network.
+To test/develop your applications a means for these other devices on
+your test network to talk to devices on the Thread Network must exist.
 
-The problem():
+The problem:
+ 
 
-a) Most home network routers provide only IPv4 services
+   Most home network routers provide only IPv4 services. They most
+   typically assume the upstream ISP network provider will provide
+   IPv6 addresses and configuration. A test network is often issolated
+   and not connected to the large world wide web, it is completely an
+   island. The upstream ISP provider does not exist. 
 
-b) They most typically assume the upstream ISP network provider
-   will provide IPv6 addresses and configuration.
+   In the end something needs to provide a minimal IPv6 configuration.
 
-c) A test network is often issolated and not connected to the large
-   world wide web, it is completely an island. The upstream ISP
-   provider does not exist.
+=========================================================
+The above is the purpose of this ipv6 standalone hack script
 
-d) Something needs to provide a minimal IPv6 configuration.
-
-That is the purpose of this "ipv6 standalone hack script"
-
-Never consider this script a "proper IPv6" configuration.
+Never consider this script a proper IPv6 configuration.
+=========================================================
 
 It is only a quick hack that enables enough IPv6 to work such that:
 
@@ -285,16 +317,14 @@ _EOF_
 
 }
 
-
-
+# ensure user/victim has read the ugly warning.
 if [ "${1}" != "enable_ipv6_hack" ]
 then
     print_big_ugly_warning
     exit 1
 fi
 
-
-
+# platforms specifc
 case ${PLATFORM} in
     "beagleboneblack")
         bbb_main
@@ -303,4 +333,3 @@ case ${PLATFORM} in
         die "Unsupported/unknown platform ${PLATFORM}"
         ;;
 esac
-
