@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -26,55 +26,69 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#   Description:
-#       This script builds and installs border router and dependencies.
-#
 
-_checkfile=./src/agent/main.cpp
-if [ ! -f $_checkfile ]
-then
-    echo ""
-    echo "ERROR: Cannot find checkfile: ${_checkfile}"
-    echo "This script should be executed from ROOT of the border router directory"
-    echo "For example:"
-    echo ""
-    echo "cd \${BORDERROUTER}"
-    echo "sh ./script/setup"
-    echo ""
-    exit 1
-fi
+SWAP_REQUIRED=${SWAP_REQUIRED:-false}
+SWAP_FILENAME=${SWAP_FILENAME:-/swapfile}
+# 1M * 1024 = 1G swapfile
+SWAP_BLOCK_SIZE=${SWAP_BLOCK_SIZE:-1M}
+SWAP_BLOCK_CNT=${SWAP_BLOCK_CNT:-1024}
 
-. "$(dirname "$0")"/_initrc
-. script/_wpantund
-. script/_otbr
-. script/_ipforward
-. script/_nat64
-. script/_dns64
-. script/_dhcpv6_pd
-. script/_swapfile
-. script/_sudo_extend
-. script/_disable_services
-
-main()
+delete_old_swapfile()
 {
-    . $BEFORE_HOOK
-    extend_sudo_timeout
-    setup_swapfile
-    disable_services
-    otbr_uninstall
-    dhcpv6_pd_uninstall
-    wpantund_uninstall
-    nat64_uninstall
-    dns64_uninstall
-    ipforward_uninstall
-    
-    ipforward_install
-    nat64_install
-    dns64_install
-    wpantund_install
-    dhcpv6_pd_install
-    otbr_install
-    . $AFTER_HOOK
+     # Delete the old
+     if [ -f ${SWAP_FILENAME} ]
+     then
+         echo "Disable & remove old swapfile"
+         sudo swapoff -a
+         sudo rm -rf ${SWAP_FILENAME}
+     fi
 }
 
-main
+create_new_swapfile()
+{
+    echo "Create new (zeroed) swapfile"
+    SWAP_STEPSIZE=64
+    for x in $(seq $SWAP_STEPSIZE $SWAP_STEPSIZE $SWAP_BLOCK_CNT)
+    do
+        echo "Block: ${x} of ${SWAP_BLOCK_CNT}"
+        sudo dd oflag=append conv=notrunc if=/dev/zero of=${SWAP_FILENAME} bs=$SWAP_BLOCK_SIZE count=$SWAP_STEPSIZE
+        # this actually creates 1 extra but we don't care
+    done
+
+    echo "Setting protections"
+    sudo chmod 0600 ${SWAP_FILENAME}
+
+    echo "Format swapfile"
+    sudo mkswap ${SWAP_FILENAME}
+}
+
+add_to_fstab()
+{
+    echo "Adding ${SWAP_FILENAME} to /etc/fstab"
+    rm -f /tmp/fstab.tmp
+    cat /etc/fstab | grep -v "^${SWAP_FILENAME}"   >> /tmp/fstab.tmp
+    echo "${SWAP_FILENAME} none swap defaults 0 0" >> /tmp/fstab.tmp
+    sudo cp /tmp/fstab.tmp /etc/fstab
+}
+
+enable_swapfile()
+{
+    echo "Enabling swap space..."
+    sudo swapon -a
+
+}
+
+setup_swapfile()
+{
+    if ${SWAP_REQUIRED}
+    then
+        echo "Swapfile: Creating..."
+        delete_old_swapfile
+        create_new_swapfile
+        add_to_fstab
+        enable_swapfile
+        echo "Swapfile: Complete"
+    else
+        echo "Swapfile: not required"
+    fi
+}
