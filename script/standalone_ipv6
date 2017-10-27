@@ -58,8 +58,10 @@ OPENTHREAD_ONMESH_PREFIX=fd11:22
 ETH0_IPV6_BASE_PREFIX=fd11:33
 
 debug_echo() {
-    #echo "${@}"
-    true
+    if [ x"${_DEBUG_IPV6}" == x"true" ]
+    then
+	echo "${@}"
+    fi
 }
 
 determine_eth0_name()
@@ -199,11 +201,6 @@ interface ${ETH0_NAME} {
          # devices should self-assign addresses with this prefix
          AdvAutonomous on;
          AdvRouterAddr on;
-        };
-    # tell everyone 'we are the route' to this address range
-    route ${OPENTHREAD_ONMESH_PREFIX}::/64 {
-        AdvRoutePreference high;
-        AdvRouteLifetime 60;
     };
 };
 __EOF__
