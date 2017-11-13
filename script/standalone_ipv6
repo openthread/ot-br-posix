@@ -38,19 +38,6 @@ SCRIPT_NAME=$0
 CWD=`pwd`
 DATE=`date`
 
-_checkfile=./src/agent/main.cpp
-if [ ! -f $_checkfile ]
-then
-    echo "ERROR: Cannot find checkfile: ${_checkfile}"
-    echo "This script should be executed from ROOT of the border router directory"
-    echo "For example:"
-    echo ""
-    echo "cd \${BORDERROUTER}"
-    echo "sh ./script/bootstrap"
-    echo ""
-    exit 1
-fi
-
 # source our common stuff
 . "$(dirname "$0")"/_initrc
 

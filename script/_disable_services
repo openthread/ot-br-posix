@@ -27,8 +27,8 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 #  Purpose:
-#       Some platforms automatically run various services that interfer with the
-#       openthread web service, this script disables those services
+#       Some platforms automatically run various services that interfere with the
+#       OpenThread web service, this script disables those services
 #
 
 bbb_disable_services()

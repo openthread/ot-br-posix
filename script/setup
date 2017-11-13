@@ -30,20 +30,6 @@
 #       This script builds and installs border router and dependencies.
 #
 
-_checkfile=./src/agent/main.cpp
-if [ ! -f $_checkfile ]
-then
-    echo ""
-    echo "ERROR: Cannot find checkfile: ${_checkfile}"
-    echo "This script should be executed from ROOT of the border router directory"
-    echo "For example:"
-    echo ""
-    echo "cd \${BORDERROUTER}"
-    echo "sh ./script/setup"
-    echo ""
-    exit 1
-fi
-
 . "$(dirname "$0")"/_initrc
 . script/_wpantund
 . script/_otbr

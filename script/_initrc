@@ -28,7 +28,17 @@
 #
 
 set -e
-cd "$(dirname "$0")/.."
+_HERE=$(dirname "$0")
+cd "${_HERE}/.."
+
+_checkfile=`pwd`/src/agent/main.cpp
+if [ ! -f $_checkfile ]
+then
+    echo ""
+    echo "ERROR: Cannot find checkfile: ${_checkfile}"
+    echo ""
+    exit 1
+fi
 
 die()
 {
