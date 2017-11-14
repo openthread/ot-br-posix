@@ -26,41 +26,40 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-#   Description:
-#       This script builds and installs border router and dependencies.
+#  Purpose:
+#       Some platforms automatically run various services that interfere with the
+#       OpenThread web service, this script disables those services
 #
 
-. "$(dirname "$0")"/_initrc
-. script/_wpantund
-. script/_otbr
-. script/_ipforward
-. script/_nat64
-. script/_dns64
-. script/_dhcpv6_pd
-. script/_swapfile
-. script/_sudo_extend
-. script/_disable_services
-
-main()
+bbb_disable_services()
 {
-    . $BEFORE_HOOK
-    extend_sudo_timeout
-    setup_swapfile
-    disable_services
-    otbr_uninstall
-    dhcpv6_pd_uninstall
-    wpantund_uninstall
-    nat64_uninstall
-    dns64_uninstall
-    ipforward_uninstall
+    SERVICE_LIST=""
+    SERVICE_LIST="${SERVICE_LIST} apache2 "
+    SERVICE_LIST="${SERVICE_LIST} bonescript.socket"
+    SERVICE_LIST="${SERVICE_LIST} bonescript.service"
+    SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
     
-    ipforward_install
-    nat64_install
-    dns64_install
-    wpantund_install
-    dhcpv6_pd_install
-    otbr_install
-    . $AFTER_HOOK
+    for service in $SERVICE_LIST
+    do
+        for action in stop disable
+        do
+            sudo systemctl $action $service
+        done
+    done    
 }
 
-main
+
+disable_services()
+{
+    case $PLATFORM in
+
+    beagleboneblack)
+         bbb_disable_services
+         ;;
+    
+    *)
+         echo "Nothing to disable" > /dev/null
+         ;;
+    esac
+}
+

@@ -27,40 +27,44 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 #   Description:
-#       This script builds and installs border router and dependencies.
+#       This script is extends the length of the SUDO timeout period to 2 hours
+#       It exists because some networks are slow, and some platforms are slow
+#       and during an un-attended build the platform is often waiting for the
+#       user to enter their sudo password to continue the build process.
 #
 
-. "$(dirname "$0")"/_initrc
-. script/_wpantund
-. script/_otbr
-. script/_ipforward
-. script/_nat64
-. script/_dns64
-. script/_dhcpv6_pd
-. script/_swapfile
-. script/_sudo_extend
-. script/_disable_services
+ETC_SUDOERS=/etc/sudoers
 
-main()
+# Assume we are not to extend the time
+SUDO_EXTEND_TIME=${SUDO_EXTEND_TIME:-false}
+
+# measurement is minutes, 120 = 2 hours
+SUDO_EXTEND_TIME_AMOUNT=120
+
+extend_sudo_timeout()
 {
-    . $BEFORE_HOOK
-    extend_sudo_timeout
-    setup_swapfile
-    disable_services
-    otbr_uninstall
-    dhcpv6_pd_uninstall
-    wpantund_uninstall
-    nat64_uninstall
-    dns64_uninstall
-    ipforward_uninstall
-    
-    ipforward_install
-    nat64_install
-    dns64_install
-    wpantund_install
-    dhcpv6_pd_install
-    otbr_install
-    . $AFTER_HOOK
+    local _why
+    _why="Disabled"
+
+    if ${SUDO_EXTEND_TIME}
+    then
+        # do not repeat!
+        set +e
+        sudo grep -s '^Defaults\s\s*timestamp_timeout' ${ETC_SUDOERS} > /dev/null
+        if [ $? -eq 0 ]
+        then
+            SUDO_EXTEND_TIME=false
+            _why="Already present"
+        fi
+        set -e
+    fi
+
+    if ${SUDO_EXTEND_TIME}
+    then
+        echo "Extending sudo timeout..."
+        sudo /bin/sh -c "echo \"Defaults timestamp_timeout=${SUDO_EXTEND_TIME_AMOUNT}\" >> ${ETC_SUDOERS}"
+    else
+        echo "sudo-timeout: Not extending, ${_why}"
+    fi
 }
 
-main
