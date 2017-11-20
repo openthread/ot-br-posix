@@ -95,13 +95,8 @@ without()
 if [ -f /sys/firmware/devicetree/base/model ]
 then
     # Note: 'model' is a binary file with no newline
-    cat /sys/firmware/devicetree/base/model | grep -s "BeagleBone Black" > /dev/null
-    if [ $? -eq 0 ]
-    then
-        PLATFORM=beagleboneblack
-    fi
+    cat /sys/firmware/devicetree/base/model | grep -s "BeagleBone Black" && PLATFORM=beagleboneblack
 fi
-
 
 if test -z "$PLATFORM"; then
     have_or_die lsb_release
