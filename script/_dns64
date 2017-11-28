@@ -51,7 +51,13 @@ dns64_update_resolvconf()
     if [ $PLATFORM = ubuntu ]; then
         sudo resolvconf -u || true
     elif [ $PLATFORM = raspbian ]; then
-        sudo systemctl restart dhcpcd || true
+        if systemctl is-enabled NetworkManager; then
+            sudo systemctl restart NetworkManager || true
+        fi
+
+        if systemctl is-enabled dhcpcd; then
+            sudo systemctl restart dhcpcd || true
+        fi
     fi
 }
 

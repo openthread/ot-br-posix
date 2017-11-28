@@ -37,6 +37,7 @@
 . script/_nat64
 . script/_dns64
 . script/_dhcpv6_pd
+. script/_network_manager
 . script/_swapfile
 . script/_sudo_extend
 . script/_disable_services
@@ -48,6 +49,7 @@ main()
     setup_swapfile
     disable_services
     otbr_uninstall
+    network_manager_uninstall
     dhcpv6_pd_uninstall
     wpantund_uninstall
     nat64_uninstall
@@ -59,6 +61,7 @@ main()
     dns64_install
     wpantund_install
     dhcpv6_pd_install
+    network_manager_install
     otbr_install
     . $AFTER_HOOK
 }
