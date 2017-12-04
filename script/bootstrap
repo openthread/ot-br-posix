@@ -65,6 +65,9 @@ install_packages_apt()
     # dns64
     without NAT64 || sudo apt-get install -y bind9
 
+    # network-manager
+    without NETWORK_MANAGER || sudo apt-get install -y network-manager
+
     # dhcpcd5
     without DHCPV6_PD || sudo apt-get install -y dhcpcd5
 

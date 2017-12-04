@@ -38,3 +38,6 @@ SWAP_REQUIRED=true
 
 # NAT64 we have not tested ...
 NAT64=0
+DNS64=0
+DHCPV6_PD=0
+NETWORK_MANAGER=0
