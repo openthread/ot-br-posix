@@ -69,7 +69,14 @@ install_packages_apt()
     without NETWORK_MANAGER || sudo apt-get install -y network-manager
 
     # dhcpcd5
-    without DHCPV6_PD || sudo apt-get install -y dhcpcd5
+    if [ $DHCPV6_PD -eq 1 ]; then
+        # More details can be found in issue: #122
+        if [ $PLATFORM = "raspbian" ]; then
+            sudo dpkg -i third_party/dhcpcd/dhcpcd5_6.11.5-1+rpt2_armhf.deb
+        else
+            sudo apt-get install -y dhcpcd5
+        fi
+    fi
 
     # libjsoncpp
     sudo apt-get install -y libjsoncpp-dev
