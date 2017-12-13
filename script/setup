@@ -59,9 +59,9 @@ main()
     ipforward_install
     nat64_install
     dns64_install
-    wpantund_install
-    dhcpv6_pd_install
     network_manager_install
+    wpantund_install
+    dhcpv6_pd_install    
     otbr_install
     . $AFTER_HOOK
 }

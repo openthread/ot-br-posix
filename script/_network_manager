@@ -257,6 +257,10 @@ release_dhcpcd()
 handle_action_up()
 {
     case \${IFNAME} in
+    enp*)
+        enable_accept_ra
+        start_dhcpcd
+        ;;
     eth*)
         enable_accept_ra
         start_dhcpcd
@@ -276,6 +280,9 @@ handle_action_up()
 handle_action_down()
 {
     case \${IFNAME} in
+    enp*)
+        release_dhcpcd
+        ;;
     eth*)
         release_dhcpcd
         ;;
@@ -316,25 +323,26 @@ network_manager_install()
     sudo systemctl daemon-reload
 
     sudo systemctl stop wpa_supplicant || true
-    sudo systemctl disable wpa_supplicant
+    sudo systemctl disable wpa_supplicant || true
 
     sudo systemctl stop dhcpcd || true
-    sudo systemctl disable dhcpcd
+    sudo systemctl disable dhcpcd || true
 
     sudo systemctl daemon-reload
 
-    sudo systemctl start NetworkManager
-    sudo systemctl enable NetworkManager
+    sudo systemctl start NetworkManager || die "Failed to start NetworkManager."
+    sudo systemctl enable NetworkManager || die "Failed to enable NetworkManager."
 
-    create_ap_helper_script
-    sudo chmod a+x ${AP_HELPER_SCRIPT}
+    # Create AP connection only on raspbian platform.
+    if [ $PLATFORM = raspbian ]; then
+        create_ap_helper_script
+        sudo chmod a+x ${AP_HELPER_SCRIPT}
+
+        create_ap_connection
+    fi
 
     create_dhcpv6_helper_script
     sudo chmod a+x ${DHCPV6_HELPER_SCRIPT}
-
-    if [ $PLATFORM = raspbian ]; then
-        create_ap_connection
-    fi
 
     create_eth_connection
 
@@ -343,11 +351,11 @@ network_manager_install()
 
     sleep 15
 
-    sudo nmcli c up ${ETH_CONN}
-
     if [ $PLATFORM = raspbian ]; then
         sudo nmcli c up ${AP_CONN}
     fi
+
+    sudo nmcli c up ${ETH_CONN}
 }
 
 network_manager_uninstall()
@@ -380,9 +388,9 @@ network_manager_uninstall()
 
     sudo systemctl daemon-reload
 
-    sudo systemctl start dhcpcd
-    sudo systemctl enable dhcpcd
+    sudo systemctl start dhcpcd || true
+    sudo systemctl enable dhcpcd || true
 
-    sudo systemctl start wpa_supplicant
-    sudo systemctl enable wpa_supplicant
+    sudo systemctl start wpa_supplicant || true
+    sudo systemctl enable wpa_supplicant || true
 }
