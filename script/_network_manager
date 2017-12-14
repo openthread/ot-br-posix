@@ -223,6 +223,9 @@ ACTION=\$2
 
 AP_CONN="${AP_CONN}"
 
+DHCPCD_INTERFACES="/tmp/dhcpcd_interfaces"
+
+
 log()
 {
     logger -t "\${NAME}[\${\$}]" \$*
@@ -246,12 +249,19 @@ start_dhcpcd()
 {
     log "Starting 'dhcpcd' on the interface: '\${IFNAME}'"
     /sbin/dhcpcd -6 -b -K -E \${IFNAME}
+
+    # Add interface to active dhcpcd interfaces.
+    sed -i "/\${IFNAME}/d" \${DHCPCD_INTERFACES}
+    echo "\${IFNAME}" >> \${DHCPCD_INTERFACES}
 }
 
 release_dhcpcd()
 {
     log "Releasing 'dhcpcd' on the interface: '\${IFNAME}'"
     /sbin/dhcpcd -6 -k \${IFNAME}
+
+    # Remove interface from active dhcpcd interfaces.
+    sed -i "/\${IFNAME}/d" \${DHCPCD_INTERFACES}
 }
 
 handle_action_up()
