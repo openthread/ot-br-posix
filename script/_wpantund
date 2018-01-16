@@ -39,10 +39,17 @@ wpantund_uninstall()
 
 wpantund_install()
 {
+    CLONE_ARGS=""
+
+    if [ -z "$WPANTUND_COMMIT" ]; then
+	CLONE_ARGS="--depth 1"
+    fi
+
     test -d $BUILD_DIR/wpantund || (cd $BUILD_DIR &&
-        git clone --depth 1 https://github.com/openthread/wpantund.git) || die 'Failed to download source code of wpantund!'
+        git clone $CLONE_ARGS https://github.com/openthread/wpantund.git) || die 'Failed to download source code of wpantund!'
 
     (cd $BUILD_DIR/wpantund &&
+	((test -n "$WPANTUND_COMMIT" && git reset $WPANTUND_COMMIT --hard) || echo "WPANTUND_COMMIT value has not been set or something went wrong during switching to the set commit.") &&
         (test -f configure || ./bootstrap.sh) &&
         (test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc \
         --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel) &&
