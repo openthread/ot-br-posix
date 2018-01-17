@@ -249,14 +249,20 @@ create_dhcpcd_reloader_script()
 PID=\$\$
 NAME="dhcpcd_reloader"
 
+DHCPCD_INTERFACES="/tmp/dhcpcd_interfaces"
+
 STATE=\$1
 
 if [ \${STATE} = "associated" ]; then
     if systemctl is-active NetworkManager; then
         logger -t "\${NAME}[\${PID}]" "NetworkManager: active"
 
-        for interface in \$(pgrep dhcpcd -a -x | rev | cut -d" " -f1 | rev); do
-            logger -t "\${NAME}[\${PID}]" "dhcpcd: rebind \${interface}"
+        if ! [ -f \${DHCPCD_INTERFACES} ]; then
+            exit 1
+        fi
+
+        for interface in \`cat \${DHCPCD_INTERFACES}\`; do
+            logger -t "\${NAME}[\${PID}]" "dhcpcd: rebind on the interface: \${interface}"
             /sbin/dhcpcd -6 -n \${interface}
         done
     fi
