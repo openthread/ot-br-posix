@@ -297,7 +297,7 @@ EOF
 
 create_wpantund_env_file()
 {
-    echo "WPANTUND_OPTS=-o Daemon:SetDefaultRouteForAutoAddedPrefix true -o IPv6:SetSLAACForAutoAddedPrefix true" > $WPANTUND_ENV
+    echo "WPANTUND_OPTS=-o Daemon:SetDefaultRouteForAutoAddedPrefix true -o IPv6:SetSLAACForAutoAddedPrefix true" | sudo tee $WPANTUND_ENV
 }
 
 dhcpv6_pd_install()
@@ -312,7 +312,7 @@ dhcpv6_pd_install()
     create_ncp_state_notifier_script
     sudo chmod +x ${NCP_STATE_NOTIFIER}
 
-    mkdir -p ${NCP_STATE_DISPATCHER}
+    sudo mkdir -p ${NCP_STATE_DISPATCHER}
 
     create_dhcpcd_reloader_script
     sudo chmod +x ${DHCPCD_RELOADER}
