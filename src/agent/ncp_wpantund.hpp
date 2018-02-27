@@ -168,7 +168,6 @@ private:
 
     char            mInterfaceDBusName[DBUS_MAXIMUM_NAME_LENGTH + 1];
     char            mInterfaceDBusPath[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    uint8_t         mPSKc[kSizePSKc];
     uint8_t         mEui64[kSizeEui64];
     char            mInterfaceName[IFNAMSIZ];
     DBusConnection *mDBus;
