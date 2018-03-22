@@ -304,10 +304,6 @@ AC_MSG_NOTICE([checking required package dependencies])
 
 # NL_WITH_PACKAGE(...)
 
-# Check if the build host has pkg-config
-
-AC_PATH_PROG([PKG_CONFIG],[pkg-config])
-
 # Check if ctags is present.
 
 AC_MSG_CHECKING([checking if Exuberant Ctags is available])
