@@ -32,7 +32,7 @@
 /**
  *  This aligns the pointer to @p aAlignType.
  *
- *  @param[in]  aMem        A pointer to abitrary memory.
+ *  @param[in]  aMem        A pointer to arbitrary memory.
  *  @param[in]  aAlignType  The type to align with and convert the pointer to this type.
  *
  *  @returns A @aAlignType pointer to aligned memory.
