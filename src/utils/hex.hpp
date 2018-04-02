@@ -35,6 +35,12 @@
 #define HEX_HPP
 
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 namespace ot {
 
@@ -45,6 +51,10 @@ int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength);
 int Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex);
 
 int Long2Hex(const uint64_t aLong, char *aHex);
+
+void Ipv4AddressToBytes(const char *aStr, uint8_t *aAddress, uint8_t aLen);
+
+void Ipv6AddressToBytes(const char *aStr, uint8_t *aAddress, uint8_t aLen);
 
 } //namespace Utils
 

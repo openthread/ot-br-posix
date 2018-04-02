@@ -81,11 +81,14 @@ public:
     /**
      * This method starts the Web Server.
      *
-     * @param[in]  aIfName  The pointer to the interface name of wpantund.
-     * @param[in]  aPort    The port of http server.
+     * @param[in]  aIfName              The pointer to the interface name of wpantund.
+     * @param[in]  aPort                The port of http server.
+     * @param[in]  aProtoType           The protocol type of mDNS IP address
+     * @param[in]  aPublishInterface    The pointer of the interface name of mDNS
      *
      */
-    void StartWebServer(const char *aIfName, uint16_t aPort);
+    void StartWebServer(const char *aIfName, uint16_t aPort, int aProtoType,
+                        const char *aPublishInterface);
 
 private:
     typedef std::string (*HttpRequestCallback)(const std::string &aRequest, void *aUserData);

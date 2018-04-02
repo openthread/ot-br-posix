@@ -85,10 +85,16 @@ void WebServer::Init()
     }
 }
 
-void WebServer::StartWebServer(const char *aIfName, uint16_t aPort)
+void WebServer::StartWebServer(const char *aIfName, uint16_t aPort, int aProtoType,
+                               const char *aPublisherInterface)
 {
     mServer->config.port = aPort;
     mWpanService.SetInterfaceName(aIfName);
+    mMdnsService.SetProtoType(aProtoType);
+    if (aPublisherInterface != NULL)
+    {
+        mMdnsService.SetPublishIfName(aPublisherInterface);
+    }
     Init();
     ResponseJoinNetwork();
     ResponseFormNetwork();

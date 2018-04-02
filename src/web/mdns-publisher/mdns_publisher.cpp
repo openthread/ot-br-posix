@@ -36,8 +36,10 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-#define OT_HOST_NAME "OPENTHREAD"
+#define OT_HOST_NAME "openthread.local"
 #define OT_PERIODICAL_TIME 1000 * 7
+#define OT_IPV4_LENGTH 4
+#define OT_IPV6_LENGTH 16
 
 namespace ot {
 namespace Mdns {
@@ -101,7 +103,11 @@ Publisher::Publisher(void) :
     mServiceName(NULL),
     mNetworkNameTxt(NULL),
     mExtPanIdTxt(NULL),
-    mType(NULL)
+    mType(NULL),
+    mProtoType(AVAHI_PROTO_UNSPEC),
+    mInterfaceIndex(AVAHI_IF_UNSPEC),
+    mHostName(NULL),
+    mIpAddress(NULL)
 {
 }
 
@@ -122,11 +128,24 @@ int Publisher::CreateService(AvahiClient *aClient)
     {
         otbrLog(OTBR_LOG_ERR, "Adding service '%s'", mServiceName);
 
-        VerifyOrExit(avahi_entry_group_add_service(mClientGroup, AVAHI_IF_UNSPEC,
-                                                   AVAHI_PROTO_UNSPEC, static_cast<AvahiPublishFlags>(0),
-                                                   mServiceName, mType, NULL, NULL, mPort,
+        VerifyOrExit(avahi_entry_group_add_service(mClientGroup, static_cast<AvahiIfIndex>(mInterfaceIndex),
+                                                   static_cast<AvahiProtocol>(mProtoType),
+                                                   static_cast<AvahiPublishFlags>(0),
+                                                   mServiceName, mType, NULL, mHostName, mPort,
                                                    mNetworkNameTxt, mExtPanIdTxt, NULL) == 0,
                      ret = kMdnsPublisher_FailedAddSevice);
+
+        if (mHostName != NULL)
+        {
+            avahi_entry_group_add_record(mClientGroup, static_cast<AvahiIfIndex>(mInterfaceIndex),
+                                         static_cast<AvahiProtocol>(mProtoType),
+                                         static_cast<AvahiPublishFlags>(0),
+                                         mHostName, AVAHI_DNS_CLASS_IN,
+                                         (mProtoType == AVAHI_PROTO_INET) ? AVAHI_DNS_TYPE_A : AVAHI_DNS_TYPE_AAAA,
+                                         AVAHI_DEFAULT_TTL,
+                                         mIpAddress,
+                                         (mProtoType == AVAHI_PROTO_INET) ? OT_IPV4_LENGTH : OT_IPV6_LENGTH);
+        }
 
         otbrLog(OTBR_LOG_INFO, " Service Name: %s \n Port: %d \n Network Name: %s \n Extended Pan ID: %s",
                 mServiceName, mPort, mNetworkNameTxt, mExtPanIdTxt);
@@ -335,15 +354,39 @@ void Publisher::SetPort(uint16_t aPort)
     mPort = aPort;
 }
 
+void Publisher::SetProtoType(int aProtoType)
+{
+    mProtoType = aProtoType;
+}
+
+void Publisher::SetInterfaceIndex(int aInterfaceIndex)
+{
+    mInterfaceIndex = aInterfaceIndex;
+}
+
+void Publisher::SetIpAddress(const char *aIpAddress, uint8_t aLen)
+{
+    if (aLen != 0)
+    {
+        avahi_free(mHostName);
+        mHostName = avahi_strdup(OT_HOST_NAME);
+        avahi_free(mIpAddress);
+        mIpAddress = avahi_strndup(aIpAddress, aLen);
+        memcpy(mIpAddress, aIpAddress, aLen);
+    }
+}
+
+
 int Publisher::UpdateService(void)
 {
     int ret = kMdnsPublisher_OK;
 
     if (mClientGroup != NULL)
     {
-        ret = avahi_entry_group_update_service_txt(mClientGroup, AVAHI_IF_UNSPEC,
-                                                   AVAHI_PROTO_UNSPEC, static_cast<AvahiPublishFlags>(0),
-                                                   mServiceName, mType, NULL, NULL, mPort,
+        ret = avahi_entry_group_update_service_txt(mClientGroup, static_cast<AvahiIfIndex>(mInterfaceIndex),
+                                                   static_cast<AvahiProtocol>(mProtoType),
+                                                   static_cast<AvahiPublishFlags>(0),
+                                                   mServiceName, mType, NULL,
                                                    mNetworkNameTxt, mExtPanIdTxt, NULL);
     }
     VerifyOrExit(ret == kMdnsPublisher_OK, ret = kMdnsPublisher_FailedUpdateSevice);

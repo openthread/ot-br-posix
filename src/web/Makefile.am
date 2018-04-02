@@ -59,6 +59,7 @@ libotbr_web_la_LIBADD                                           = \
     $(top_builddir)/third_party/mbedtls/libmbedtls.la             \
     $(top_builddir)/src/utils/libutils.la                         \
     $(top_builddir)/src/common/libotbr-logging.la                 \
+    $(top_builddir)/src/common/libotbr-interface-address.la       \
     $(NULL)
 
 libotbr_web_la_SOURCES                                          = \
