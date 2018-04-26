@@ -45,7 +45,6 @@
 
 #include <boost/asio/ip/tcp.hpp>
 
-#include "mdns_service.hpp"
 #include "wpan_service.hpp"
 
 namespace SimpleWeb {
@@ -96,7 +95,6 @@ private:
     static std::string HandleGetStatusRequest(const std::string &aGetStatusRequest, void *aUserData);
     static std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest,
                                                          void *aUserData);
-    static std::string HandleMdnsResponse(const std::string &aMdnsRequest, void *aUserData);
 
     std::string HandleJoinNetworkRequest(const std::string &aJoinRequest);
     std::string HandleFormNetworkRequest(const std::string &aFormRequest);
@@ -104,7 +102,6 @@ private:
     std::string HandleDeletePrefixRequest(const std::string &aDeletePrefixRequest);
     std::string HandleGetStatusRequest(const std::string &aGetStatusRequest);
     std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest);
-    std::string HandleMdnsResponse(const std::string &aMdnsRequest);
 
     void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback);
     void ResponseJoinNetwork(void);
@@ -113,7 +110,6 @@ private:
     void ResponseDeleteOnMeshPrefix(void);
     void ResponseGetStatus(void);
     void ResponseGetAvailableNetwork(void);
-    void ResponseMdnsRequest(void);
     void DefaultHttpResponse(void);
 
     void Init(void);
@@ -122,7 +118,6 @@ private:
     char                 mIfName[IFNAMSIZ];
     HttpServer          *mServer;
     ot::Web::WpanService mWpanService;
-    ot::Web::MdnsService mMdnsService;
 };
 
 } //namespace Web

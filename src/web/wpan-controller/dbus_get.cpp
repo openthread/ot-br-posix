@@ -123,7 +123,7 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
         uint32_t v;
         char     temp[10];
         dbus_message_iter_get_basic(aIter, &v);
-        int vLen = floor(log10(abs(v))) + 2;
+        int vLen = floor(log10(v)) + 2;
         snprintf(temp, vLen, "%d", v);
         strcat(aOutput, temp);
         break;

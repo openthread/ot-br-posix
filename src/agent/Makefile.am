@@ -67,6 +67,7 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
     $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
+    $(top_builddir)/src/utils/libutils.la                       \
     -lavahi-common                                              \
     -lavahi-client                                              \
     $(DBUS_LIBS)                                                \

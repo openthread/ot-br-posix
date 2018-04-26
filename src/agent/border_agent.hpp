@@ -38,6 +38,7 @@
 
 #include "coap.hpp"
 #include "dtls.hpp"
+#include "mdns.hpp"
 #include "ncp.hpp"
 
 namespace ot {
@@ -151,7 +152,25 @@ private:
     }
     void ForwardCommissionerResponse(const Coap::Message &aMessage);
 
+    static void HandleMdnsState(void *aContext, Mdns::State aState)
+    {
+        static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
+    }
+    void HandleMdnsState(Mdns::State aState);
+
+    void PublishService(void);
+    void StartPublishService(void);
+    void StopPublishService(void);
+    void HandleThreadChange(void);
+
+    void SetNetworkName(const char *aNetworkName);
+    void SetExtPanId(const uint8_t *aExtPanId);
+    void SetThreadStarted(bool aStarted);
+
     static void HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments);
+    static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);
+    static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
+    static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
 
     Coap::Resource mActiveGet;
     Coap::Resource mActiveSet;
@@ -171,7 +190,12 @@ private:
     Dtls::Server    *mDtlsServer;
     Dtls::Session   *mDtlsSession;
     Coap::Agent     *mCoaps;
+    Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
+
+    uint8_t          mExtPanId[kSizeExtPanId];
+    char             mNetworkName[kSizeNetworkName + 1];
+    bool             mThreadStarted;
 };
 
 /**

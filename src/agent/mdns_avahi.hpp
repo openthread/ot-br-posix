@@ -237,6 +237,15 @@ public:
     otbrError Start(void);
 
     /**
+     * This method checks if publisher has been started.
+     *
+     * @retval true     Already started.
+     * @retval false    Not started.
+     *
+     */
+    bool IsStarted(void) const;
+
+    /**
      * This method stops the MDNS service.
      *
      */

@@ -41,7 +41,6 @@
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
-#include "../mdns-publisher/mdns_publisher.hpp"
 #include "../pskc-generator/pskc.hpp"
 #include "../wpan-controller/wpan_controller.hpp"
 #include "../utils/encoding.hpp"

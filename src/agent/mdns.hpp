@@ -93,6 +93,15 @@ public:
     virtual void Stop(void) = 0;
 
     /**
+     * This method checks if publisher has been started.
+     *
+     * @retval true     Already started.
+     * @retval false    Not started.
+     *
+     */
+    virtual bool IsStarted(void) const = 0;
+
+    /**
      * This method publishes or updates a service.
      *
      * @param[in]   aName               The name of this service.

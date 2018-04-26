@@ -111,19 +111,7 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
 {
     otbrError ret = OTBR_ERROR_NONE;
 
-    if (!strcmp(aKey, kWPANTUNDProperty_NetworkPSKc))
-    {
-        const uint8_t  *pskc = NULL;
-        int             count = 0;
-        DBusMessageIter subIter;
-
-        dbus_message_iter_recurse(aIter, &subIter);
-        dbus_message_iter_get_fixed_array(&subIter, &pskc, &count);
-        VerifyOrExit(count == kSizePSKc, ret = OTBR_ERROR_DBUS);
-
-        EventEmitter::Emit(kEventPSKc, pskc);
-    }
-    else if (!strcmp(aKey, kWPANTUNDProperty_TmfProxyStream))
+    if (!strcmp(aKey, kWPANTUNDProperty_TmfProxyStream))
     {
         const uint8_t *buf = NULL;
         uint16_t       locator = 0;
@@ -145,6 +133,67 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
         locator |= buf[--len] << 8;
 
         EventEmitter::Emit(kEventTmfProxyStream, buf, len, locator, port);
+    }
+    else if (!strcmp(aKey, kWPANTUNDProperty_NCPState))
+    {
+        const char *state = NULL;
+        dbus_message_iter_get_basic(aIter, &state);
+
+        otbrLog(OTBR_LOG_INFO, "state %s", state);
+
+        EventEmitter::Emit(kEventThreadState, 0 == strcmp(state, "associated"));
+    }
+    else if (!strcmp(aKey, kWPANTUNDProperty_NetworkName))
+    {
+        const char *networkName = NULL;
+        dbus_message_iter_get_basic(aIter, &networkName);
+
+        otbrLog(OTBR_LOG_INFO, "network name %s...", networkName);
+        EventEmitter::Emit(kEventNetworkName, networkName);
+    }
+    else if (!strcmp(aKey, kWPANTUNDProperty_NetworkXPANID))
+    {
+        uint64_t xpanid = 0;
+
+        if (DBUS_TYPE_UINT64 == dbus_message_iter_get_arg_type(aIter))
+        {
+            dbus_message_iter_get_basic(aIter, &xpanid);
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+            // convert to network endian
+            for (uint8_t *p = reinterpret_cast<uint8_t *>(&xpanid), *q = p + sizeof(xpanid) - 1; p < q; ++p, --q)
+            {
+                uint8_t tmp = *p;
+                *p = *q;
+                *q = tmp;
+            }
+#endif
+        }
+        else if (DBUS_TYPE_ARRAY == dbus_message_iter_get_arg_type(aIter))
+        {
+            const uint8_t  *bytes = NULL;
+            int             count = 0;
+            DBusMessageIter subIter;
+
+            dbus_message_iter_recurse(aIter, &subIter);
+            dbus_message_iter_get_fixed_array(&subIter, &bytes, &count);
+            VerifyOrExit(count == kSizeExtPanId, ret = OTBR_ERROR_DBUS);
+            memcpy(&xpanid, bytes, sizeof(xpanid));
+        }
+
+        otbrLog(OTBR_LOG_INFO, "xpanid %llu...", xpanid);
+        EventEmitter::Emit(kEventExtPanId, reinterpret_cast<uint8_t *>(&xpanid));
+    }
+    else if (!strcmp(aKey, kWPANTUNDProperty_NetworkPSKc))
+    {
+        const uint8_t  *pskc = NULL;
+        int             count = 0;
+        DBusMessageIter subIter;
+
+        dbus_message_iter_recurse(aIter, &subIter);
+        dbus_message_iter_get_fixed_array(&subIter, &pskc, &count);
+        VerifyOrExit(count == kSizePSKc, ret = OTBR_ERROR_DBUS);
+
+        EventEmitter::Emit(kEventPSKc, pskc);
     }
 
 exit:
@@ -466,6 +515,15 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
 
     switch (aEvent)
     {
+    case kEventExtPanId:
+        key = kWPANTUNDProperty_NetworkXPANID;
+        break;
+    case kEventThreadState:
+        key = kWPANTUNDProperty_NCPState;
+        break;
+    case kEventNetworkName:
+        key = kWPANTUNDProperty_NetworkName;
+        break;
     case kEventPSKc:
         key = kWPANTUNDProperty_NetworkPSKc;
         break;
@@ -512,6 +570,10 @@ exit:
         dbus_message_unref(message);
     }
 
+    if (ret != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_WARNING, "Error requesting %s:%s", key, otbrErrorString(ret));
+    }
     return ret;
 }
 

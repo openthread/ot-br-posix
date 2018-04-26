@@ -41,7 +41,6 @@
 
 #define OT_ADD_PREFIX_PATH "^/add_prefix"
 #define OT_AVAILABLE_NETWORK_PATH "^/available_network$"
-#define OT_BOOT_MDNS_PATH "^/boot_mdns$"
 #define OT_DELETE_PREFIX_PATH "^/delete_prefix"
 #define OT_FORM_NETWORK_PATH "^/form_network$"
 #define OT_GET_NETWORK_PATH "^/get_properties$"
@@ -75,14 +74,6 @@ void WebServer::Init()
     {
         return;
     }
-    if (mMdnsService.IsStartedService())
-    {
-        mMdnsService.UpdateMdnsService(networkName, extPanId);
-    }
-    else
-    {
-        mMdnsService.StartMdnsService(networkName, extPanId);
-    }
 }
 
 void WebServer::StartWebServer(const char *aIfName, uint16_t aPort)
@@ -96,7 +87,6 @@ void WebServer::StartWebServer(const char *aIfName, uint16_t aPort)
     ResponseDeleteOnMeshPrefix();
     ResponseGetStatus();
     ResponseGetAvailableNetwork();
-    ResponseMdnsRequest();
     DefaultHttpResponse();
     std::thread ServerThread([this]() {
                 mServer->start();
@@ -280,13 +270,6 @@ std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGet
     return webServer->HandleGetAvailableNetworkResponse(aGetAvailableNetworkRequest);
 }
 
-std::string WebServer::HandleMdnsResponse(const std::string &aMdnsRequest, void *aUserData)
-{
-    WebServer *webServer = static_cast<WebServer *>(aUserData);
-
-    return webServer->HandleMdnsResponse(aMdnsRequest);
-}
-
 void WebServer::ResponseJoinNetwork(void)
 {
     HandleHttpRequest(OT_JOIN_NETWORK_PATH, OT_REQUEST_METHOD_POST, HandleJoinNetworkRequest);
@@ -315,11 +298,6 @@ void WebServer::ResponseGetStatus(void)
 void WebServer::ResponseGetAvailableNetwork(void)
 {
     HandleHttpRequest(OT_AVAILABLE_NETWORK_PATH, OT_REQUEST_METHOD_GET, HandleGetAvailableNetworkResponse);
-}
-
-void WebServer::ResponseMdnsRequest(void)
-{
-    HandleHttpRequest(OT_BOOT_MDNS_PATH, OT_REQUEST_METHOD_POST, HandleMdnsResponse);
 }
 
 std::string WebServer::HandleJoinNetworkRequest(const std::string &aJoinRequest)
@@ -352,11 +330,6 @@ std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGet
 {
     (void) aGetAvailableNetworkRequest;
     return mWpanService.HandleAvailableNetworkRequest();
-}
-
-std::string WebServer::HandleMdnsResponse(const std::string &aMdnsRequest)
-{
-    return mMdnsService.HandleMdnsRequest(aMdnsRequest);
 }
 
 } //namespace Web
