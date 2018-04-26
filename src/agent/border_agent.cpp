@@ -34,6 +34,7 @@
 #include "border_agent.hpp"
 
 #include <assert.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,10 +47,14 @@
 #include "dtls.hpp"
 #include "ncp.hpp"
 #include "uris.hpp"
+#include "utils/hex.hpp"
 
 namespace ot {
 
 namespace BorderRouter {
+
+const char kBorderAgentServiceName[] = "ba";
+const char kBorderAgentServiceType[] = "_meshcop._udp";
 
 /**
  * Locators
@@ -218,7 +223,9 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
     mCoap(aCoap),
     mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this)),
     mCoaps(Coap::Agent::Create(SendCoaps, this)),
-    mNcp(aNcp) {}
+    mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this)),
+    mNcp(aNcp),
+    mThreadStarted(false) {}
 
 otbrError BorderAgent::Start(void)
 {
@@ -236,9 +243,17 @@ otbrError BorderAgent::Start(void)
 
     SuccessOrExit(error = mCoap->AddResource(mCommissionerRelayReceiveHandler));
 
+    mNetworkName[sizeof(mNetworkName) - 1] = '\0';
+
+    mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
+    mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
+    mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
     mNcp->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
 
     mNcp->RequestEvent(Ncp::kEventPSKc);
+    mNcp->RequestEvent(Ncp::kEventNetworkName);
+    mNcp->RequestEvent(Ncp::kEventExtPanId);
+    mNcp->RequestEvent(Ncp::kEventThreadState);
 
     {
         const uint8_t *eui64 = mNcp->GetEui64();
@@ -261,6 +276,19 @@ BorderAgent::~BorderAgent(void)
 {
     Dtls::Server::Destroy(mDtlsServer);
     Coap::Agent::Destroy(mCoaps);
+}
+
+void BorderAgent::HandleMdnsState(Mdns::State aState)
+{
+    switch (aState)
+    {
+    case Mdns::kStateReady:
+        PublishService();
+        break;
+    default:
+        otbrLog(OTBR_LOG_WARNING, "Mdns service not available!");
+        break;
+    }
 }
 
 void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState)
@@ -304,19 +332,117 @@ void BorderAgent::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &a
                               timeval &aTimeout)
 {
     mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    if (mPublisher->IsStarted())
+    {
+        mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    }
 }
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
     mDtlsServer->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    if (mPublisher->IsStarted())
+    {
+        mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    }
 }
 
 void BorderAgent::HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments)
 {
     assert(aEvent == Ncp::kEventPSKc);
 
-    uint8_t *pskc = va_arg(aArguments, uint8_t *);
+    const uint8_t *pskc = va_arg(aArguments, const uint8_t *);
     static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(pskc, kSizePSKc);
+}
+
+void BorderAgent::PublishService(void)
+{
+    assert(mNetworkName[0] != '\0');
+
+    char xpanid[sizeof(mExtPanId) * 2 + 1];
+    Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
+    mPublisher->PublishService(kBorderAgentUdpPort, kBorderAgentServiceName, kBorderAgentServiceType, "nn",
+                               mNetworkName, "xp", xpanid, NULL);
+}
+
+void BorderAgent::StartPublishService(void)
+{
+    otbrLog(OTBR_LOG_INFO, "Start publishing service");
+
+    if (mPublisher->IsStarted())
+    {
+        PublishService();
+    }
+    else
+    {
+        mPublisher->Start();
+    }
+}
+
+void BorderAgent::StopPublishService(void)
+{
+    otbrLog(OTBR_LOG_INFO, "Stop publishing service");
+
+    if (mPublisher->IsStarted())
+    {
+        mPublisher->Stop();
+    }
+}
+
+void BorderAgent::HandleThreadChange(void)
+{
+    otbrLog(OTBR_LOG_INFO, "Handle Thread change");
+
+    if (mThreadStarted && mNetworkName[0] != '\0')
+    {
+        StartPublishService();
+    }
+    else
+    {
+        StopPublishService();
+    }
+}
+
+void BorderAgent::SetThreadStarted(bool aStarted)
+{
+    mThreadStarted = aStarted;
+    HandleThreadChange();
+}
+
+void BorderAgent::SetNetworkName(const char *aNetworkName)
+{
+    strncpy(mNetworkName, aNetworkName, sizeof(mNetworkName) - 1);
+    HandleThreadChange();
+}
+
+void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
+{
+    memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
+    HandleThreadChange();
+}
+
+void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
+{
+    assert(aEvent == Ncp::kEventThreadState);
+
+    int started = va_arg(aArguments, int);
+    static_cast<BorderAgent *>(aContext)->SetThreadStarted(started);
+}
+
+void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)
+{
+    assert(aEvent == Ncp::kEventNetworkName);
+
+    const char *networkName = va_arg(aArguments, const char *);
+    static_cast<BorderAgent *>(aContext)->SetNetworkName(networkName);
+}
+
+void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
+{
+    assert(aEvent == Ncp::kEventExtPanId);
+
+    const uint8_t *xpanid = va_arg(aArguments, const uint8_t *);
+    static_cast<BorderAgent *>(aContext)->SetExtPanId(xpanid);
 }
 
 } // namespace BorderRouter

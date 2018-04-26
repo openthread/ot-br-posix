@@ -439,7 +439,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
                                 timeval &aTimeout)
 {
     unsigned long now = GetNow();
-    unsigned long timeout = static_cast<unsigned long>(aTimeout.tv_sec * 1000 + aTimeout.tv_sec / 1000);
+    unsigned long timeout = GetTimestamp(aTimeout);
 
     for (SessionSet::iterator it = mSessions.begin();
          it != mSessions.end(); )

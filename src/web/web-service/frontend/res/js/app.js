@@ -214,11 +214,6 @@
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
                         $mdDialog.hide();
-                        $http({
-                            method: 'POST',
-                            url: '/boot_mdns',
-                            data: data,
-                        });
                     }
                     $scope.isDisplay = false;
                     $scope.showAlert(event, response.data.result);
@@ -273,11 +268,6 @@
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
                         $mdDialog.hide();
-                        $http({
-                            method: 'POST',
-                            url: '/boot_mdns',
-                            data: data,
-                        });
                     }
                     $scope.isForming = false;
                     $scope.showAlert(event, 'FORM', response.data.result);

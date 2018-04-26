@@ -256,6 +256,8 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
         int             fd = (*it)->mFd;
         AvahiWatchEvent events = (*it)->mEvents;
 
+        (*it)->mHappened = 0;
+
         if ((AVAHI_WATCH_IN & events) && FD_ISSET(fd, &aReadFdSet))
         {
             (*it)->mHappened |= AVAHI_WATCH_IN;
@@ -352,6 +354,11 @@ otbrError PublisherAvahi::Start(void)
     return ret;
 }
 
+bool PublisherAvahi::IsStarted(void) const
+{
+    return mClient != NULL;
+}
+
 void PublisherAvahi::Stop(void)
 {
     mServices.clear();
@@ -370,7 +377,6 @@ void PublisherAvahi::Stop(void)
     {
         avahi_client_free(mClient);
         mClient = NULL;
-        // avahi_client_free() frees all related objects, including the group.
         mGroup = NULL;
         mState = kStateIdle;
         mStateHandler(mContext, mState);
@@ -462,6 +468,9 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
          * in AVAHI_SERVER_RUNNING state we will register them
          * again with the new host name. */
         otbrLog(OTBR_LOG_ERR, "Client collision: %s", avahi_strerror(avahi_client_errno(aClient)));
+
+    // fall through
+
     case AVAHI_CLIENT_S_REGISTERING:
         /* The server records are now being established. This
          * might be caused by a host name change. We need to wait

@@ -57,8 +57,11 @@ namespace Ncp {
  */
 enum
 {
-    kEventPSKc           = 0x40 + 3,    ///< PSKc arrived.
-    kEventTmfProxyStream = 0x1500 + 18, ///< TMF proxy stream arrived.
+    kEventExtPanId,       ///< Extended PAN ID arrived.
+    kEventNetworkName,    ///< Network name arrived.
+    kEventPSKc,           ///< PSKc arrived.
+    kEventThreadState,    ///< Thread State.
+    kEventTmfProxyStream, ///< TMF proxy stream arrived.
 };
 
 /**
