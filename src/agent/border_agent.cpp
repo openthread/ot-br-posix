@@ -53,7 +53,6 @@ namespace ot {
 
 namespace BorderRouter {
 
-const char kBorderAgentServiceName[] = "ba";
 const char kBorderAgentServiceType[] = "_meshcop._udp";
 
 /**
@@ -361,7 +360,7 @@ void BorderAgent::PublishService(void)
 
     char xpanid[sizeof(mExtPanId) * 2 + 1];
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
-    mPublisher->PublishService(kBorderAgentUdpPort, kBorderAgentServiceName, kBorderAgentServiceType, "nn",
+    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn",
                                mNetworkName, "xp", xpanid, NULL);
 }
 
@@ -412,6 +411,8 @@ void BorderAgent::SetThreadStarted(bool aStarted)
 void BorderAgent::SetNetworkName(const char *aNetworkName)
 {
     strncpy(mNetworkName, aNetworkName, sizeof(mNetworkName) - 1);
+    // have to restart publisher to publish new service name.
+    mPublisher->Stop();
     HandleThreadChange();
 }
 
