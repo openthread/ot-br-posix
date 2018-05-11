@@ -52,12 +52,12 @@ public:
     /**
      * Sets the length of the steering data
      */
-    void SetLength(int n) { mLength = n; }
+    void SetLength(uint8_t n) { mLength = n; }
 
     /**
      * Returns the length of the steering data.
      */
-    int  GetLength(void) { return mLength; }
+    uint8_t GetLength(void) { return mLength; }
 
     /**
      * Init the steering data.

@@ -92,7 +92,7 @@ int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength)
     return static_cast<int>(cur - aBytes);
 }
 
-int Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
+size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 {
     char byteHex[3];
 
@@ -110,7 +110,7 @@ int Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
     return strlen(aHex);
 }
 
-int Long2Hex(const uint64_t aLong, char *aHex)
+size_t Long2Hex(const uint64_t aLong, char *aHex)
 {
     std::string hexString;
     char        byteHex[3];
