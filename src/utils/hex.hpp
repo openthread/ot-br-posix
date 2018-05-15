@@ -35,6 +35,7 @@
 #define HEX_HPP
 
 #include <stdint.h>
+#include <stddef.h>
 
 namespace ot {
 
@@ -42,9 +43,9 @@ namespace Utils {
 
 int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength);
 
-int Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex);
+size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex);
 
-int Long2Hex(const uint64_t aLong, char *aHex);
+size_t Long2Hex(const uint64_t aLong, char *aHex);
 
 } //namespace Utils
 
