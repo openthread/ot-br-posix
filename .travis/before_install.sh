@@ -40,6 +40,7 @@ die() {
 
 case $TRAVIS_OS_NAME in
 linux)
+    sudo apt-get update
     [ $BUILD_TARGET != script-check ] || {
         (cd /tmp &&
             git clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!' &&
