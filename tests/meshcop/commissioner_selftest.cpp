@@ -44,9 +44,7 @@ static void test_pskc()
     strcpy(gContext.mAgent.mPassPhrase, "12SECRETPASSWORD34");
     strcpy(gContext.mAgent.mNetworkName, "Test Network");
     strcpy(gContext.mAgent.mXpanid.ascii, "0001020304050607");
-    n = Hex2Bytes(gContext.mAgent.mXpanid.ascii,
-                  gContext.mAgent.mXpanid.bin,
-                  sizeof(gContext.mAgent.mXpanid.bin));
+    n = Hex2Bytes(gContext.mAgent.mXpanid.ascii, gContext.mAgent.mXpanid.bin, sizeof(gContext.mAgent.mXpanid.bin));
     if (n != sizeof(gContext.mAgent.mXpanid.bin))
     {
         CommissionerUtilsFail("cannot convert xpanid\n");
@@ -54,11 +52,8 @@ static void test_pskc()
 
     CommissionerComputePskc();
 
-
-    static const uint8_t expected[] = {
-        0xc3, 0xf5, 0x93, 0x68, 0x44, 0x5a, 0x1b, 0x61,
-        0x06, 0xbe, 0x42, 0x0a, 0x70, 0x6d, 0x4c, 0xc9
-    };
+    static const uint8_t expected[] = {0xc3, 0xf5, 0x93, 0x68, 0x44, 0x5a, 0x1b, 0x61,
+                                       0x06, 0xbe, 0x42, 0x0a, 0x70, 0x6d, 0x4c, 0xc9};
     otbrLog(OTBR_LOG_INFO, "Expected: %s\n", CommissionerUtilsHexString(expected, sizeof(expected)));
 
     if (0 != memcmp(expected, gContext.mAgent.mPSKc.bin, sizeof(expected)))
@@ -88,14 +83,12 @@ static void test_steering(void)
         CommissionerUtilsFail("Cannot compute steering\n");
     }
 
-    const uint8_t expected[] = {
-        /* NOTE: this is an odd sized steering data
-         * it is valid, the steering data must be
-         * between 1 and 16 bytes, thus 15 is OK!
-         */
-        0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x10,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    const uint8_t expected[] = {/* NOTE: this is an odd sized steering data
+                                 * it is valid, the steering data must be
+                                 * between 1 and 16 bytes, thus 15 is OK!
+                                 */
+                                0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x10,
+                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     otbrLog(OTBR_LOG_INFO, "expected: %s\n", CommissionerUtilsHexString(expected, sizeof(expected)));
     const uint8_t *pData;
     pData = gContext.mJoiner.mSteeringData.GetDataPointer();

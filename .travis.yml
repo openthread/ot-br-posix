@@ -13,6 +13,12 @@ matrix:
   include:
     - env: BUILD_TARGET="pretty-check"
       os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux

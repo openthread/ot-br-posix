@@ -105,9 +105,12 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
-    static void FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
-    static ssize_t SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                             void *aContext);
+    static void    FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
+    static ssize_t SendCoaps(const uint8_t *aBuffer,
+                             uint16_t       aLength,
+                             const uint8_t *aIp6,
+                             uint16_t       aPort,
+                             void *         aContext);
 
     static void HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState, void *aContext)
     {
@@ -115,9 +118,12 @@ private:
     }
     void HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState);
 
-    static void HandleRelayReceive(const Coap::Resource &aResource, const Coap::Message &aMessage,
-                                   Coap::Message &aResponse,
-                                   const uint8_t *aIp6, uint16_t aPort, void *aContext)
+    static void HandleRelayReceive(const Coap::Resource &aResource,
+                                   const Coap::Message & aMessage,
+                                   Coap::Message &       aResponse,
+                                   const uint8_t *       aIp6,
+                                   uint16_t              aPort,
+                                   void *                aContext)
     {
         (void)aResource;
         (void)aResponse;
@@ -125,9 +131,12 @@ private:
     }
     void HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
 
-    static void HandleRelayTransmit(const Coap::Resource &aResource, const Coap::Message &aMessage,
-                                    Coap::Message &aResponse,
-                                    const uint8_t *aIp6, uint16_t aPort, void *aContext)
+    static void HandleRelayTransmit(const Coap::Resource &aResource,
+                                    const Coap::Message & aMessage,
+                                    Coap::Message &       aResponse,
+                                    const uint8_t *       aIp6,
+                                    uint16_t              aPort,
+                                    void *                aContext)
     {
         (void)aResource;
         (void)aResponse;
@@ -135,16 +144,21 @@ private:
     }
     void HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
 
-    static void ForwardCommissionerRequest(const Coap::Resource &aResource, const Coap::Message &aMessage,
-                                           Coap::Message &aResponse,
-                                           const uint8_t *aIp6, uint16_t aPort, void *aContext)
+    static void ForwardCommissionerRequest(const Coap::Resource &aResource,
+                                           const Coap::Message & aMessage,
+                                           Coap::Message &       aResponse,
+                                           const uint8_t *       aIp6,
+                                           uint16_t              aPort,
+                                           void *                aContext)
     {
         (void)aIp6;
         (void)aResponse;
         static_cast<BorderAgent *>(aContext)->ForwardCommissionerRequest(aResource, aMessage, aIp6, aPort);
     }
-    void ForwardCommissionerRequest(const Coap::Resource &aResource, const Coap::Message &aMessage,
-                                    const uint8_t *aIp6, uint16_t aPort);
+    void ForwardCommissionerRequest(const Coap::Resource &aResource,
+                                    const Coap::Message & aMessage,
+                                    const uint8_t *       aIp6,
+                                    uint16_t              aPort);
 
     static void ForwardCommissionerResponse(const Coap::Message &aMessage, void *aContext)
     {
@@ -184,18 +198,18 @@ private:
     Coap::Resource mCommissionerRelayTransmitHandler;
 
     // Border agent resources for Thread network.
-    Coap::Resource   mCommissionerRelayReceiveHandler;
+    Coap::Resource mCommissionerRelayReceiveHandler;
 
-    Coap::Agent     *mCoap;
-    Dtls::Server    *mDtlsServer;
-    Dtls::Session   *mDtlsSession;
-    Coap::Agent     *mCoaps;
+    Coap::Agent *    mCoap;
+    Dtls::Server *   mDtlsServer;
+    Dtls::Session *  mDtlsSession;
+    Coap::Agent *    mCoaps;
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
 
-    uint8_t          mExtPanId[kSizeExtPanId];
-    char             mNetworkName[kSizeNetworkName + 1];
-    bool             mThreadStarted;
+    uint8_t mExtPanId[kSizeExtPanId];
+    char    mNetworkName[kSizeNetworkName + 1];
+    bool    mThreadStarted;
 };
 
 /**
@@ -206,4 +220,4 @@ private:
 
 } // namespace ot
 
-#endif  //BORDER_AGENT_HPP_
+#endif // BORDER_AGENT_HPP_

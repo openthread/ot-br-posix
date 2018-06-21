@@ -85,15 +85,9 @@ linux)
             $NULL
     }
 
-    # Uncrustify
-    [ $BUILD_TARGET != pretty-check ] || [ "$($TOOLS_HOME/usr/bin/uncrustify --version)" = 'Uncrustify-0.65_f' ] || (cd /tmp &&
-        wget https://github.com/uncrustify/uncrustify/archive/uncrustify-0.65.tar.gz &&
-        tar xzf uncrustify-0.65.tar.gz &&
-        cd uncrustify-uncrustify-0.65 &&
-        mkdir build &&
-        cd build &&
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. &&
-        make && make install DESTDIR=$TOOLS_HOME) || die
+    [ $BUILD_TARGET != pretty-check ] || {
+        clang-format --version || die
+    }
 
     # Unittest
     [ $BUILD_TARGET != posix-check ] || [ -f $TOOLS_HOME/usr/lib/libCppUTest.a ] || (cd /tmp &&

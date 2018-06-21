@@ -50,9 +50,8 @@ public:
     int ProcessReply(void);
 
 private:
-
 };
 
-} //namespace Dbus
-} //ot
-#endif  //DBUS_LEAVE_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_LEAVE_HPP

@@ -43,7 +43,6 @@ const char *CommissionerUtilsHexString(const uint8_t *pBytes, int n)
         n = 40;
     }
 
-
     Bytes2Hex(pBytes, n, buf);
     return buf;
 }
@@ -56,7 +55,6 @@ void CommissionerUtilsFail(const char *fmt, ...)
     va_start(ap, fmt);
     otbrLogv(OTBR_LOG_ERR, fmt, ap);
     va_end(ap);
-
 
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);

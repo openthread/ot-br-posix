@@ -39,7 +39,7 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
-static const char kSyslogIdent[] = "otbr-agent";
+static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
 
 // Default poll timeout.
@@ -59,7 +59,7 @@ int Mainloop(const char *aInterfaceName)
         fd_set         readFdSet;
         fd_set         writeFdSet;
         fd_set         errorFdSet;
-        int            maxFd = -1;
+        int            maxFd   = -1;
         struct timeval timeout = kPollTimeout;
 
         FD_ZERO(&readFdSet);
@@ -91,7 +91,7 @@ void PrintVersion(void)
 int main(int argc, char *argv[])
 {
     const char *interfaceName = kDefaultInterfaceName;
-    int         logLevel = OTBR_LOG_INFO;
+    int         logLevel      = OTBR_LOG_INFO;
     int         opt;
     int         ret = 0;
 

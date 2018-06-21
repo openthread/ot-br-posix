@@ -48,9 +48,9 @@
 #include "wpan_service.hpp"
 
 namespace SimpleWeb {
-template<class T> class Server;
+template <class T> class Server;
 typedef boost::asio::ip::tcp::socket HTTP;
-}
+} // namespace SimpleWeb
 
 namespace ot {
 namespace Web {
@@ -64,7 +64,6 @@ typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 class WebServer
 {
 public:
-
     /**
      * This method is constructor to initialize the WebServer.
      *
@@ -94,7 +93,7 @@ private:
     static std::string HandleDeletePrefixRequest(const std::string &aDeletePrefixRequest, void *aUserData);
     static std::string HandleGetStatusRequest(const std::string &aGetStatusRequest, void *aUserData);
     static std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest,
-                                                         void *aUserData);
+                                                         void *             aUserData);
 
     std::string HandleJoinNetworkRequest(const std::string &aJoinRequest);
     std::string HandleFormNetworkRequest(const std::string &aFormRequest);
@@ -114,13 +113,12 @@ private:
 
     void Init(void);
 
-
     char                 mIfName[IFNAMSIZ];
-    HttpServer          *mServer;
+    HttpServer *         mServer;
     ot::Web::WpanService mWpanService;
 };
 
-} //namespace Web
-} //namespace ot
+} // namespace Web
+} // namespace ot
 
 #endif

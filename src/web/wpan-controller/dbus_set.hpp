@@ -46,30 +46,18 @@ namespace Dbus {
 
 enum
 {
-    kPropertyType_String, kPropertyType_Data,
+    kPropertyType_String,
+    kPropertyType_Data,
 };
 
 class DBusSet : public DBusBase
 {
 public:
+    const char *GetPropertyName(void) { return mPropertyName; }
+    const char *GetPropertyValue(void) { return mPropertyValue; }
 
-    const char *GetPropertyName(void)
-    {
-        return mPropertyName;
-    }
-    const char *GetPropertyValue(void)
-    {
-        return mPropertyValue;
-    }
-
-    void SetPropertyName(const char *aPropertyName)
-    {
-        mPropertyName = aPropertyName;
-    }
-    void SetPropertyValue(const char *aPropertyValue)
-    {
-        mPropertyValue = aPropertyValue;
-    }
+    void SetPropertyName(const char *aPropertyName) { mPropertyName = aPropertyName; }
+    void SetPropertyValue(const char *aPropertyValue) { mPropertyValue = aPropertyValue; }
 
     void SetPropertyType(uint8_t aPropertyType)
     {
@@ -84,6 +72,6 @@ private:
     uint8_t     mPropertyType;
 };
 
-} //namespace Dbus
-} //ot
-#endif  //DBUS_SET_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_SET_HPP

@@ -39,8 +39,8 @@
 #include "otbr-config.h"
 
 #include <errno.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -48,7 +48,7 @@
 #include "common/logging.hpp"
 #include "web-service/web_server.hpp"
 
-static const char kSyslogIdent[] = "otWeb";
+static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
 
 void PrintVersion(void)
@@ -59,9 +59,9 @@ void PrintVersion(void)
 int main(int argc, char **argv)
 {
     const char *interfaceName = NULL;
-    const char *httpPort = NULL;
-    int         logLevel = OTBR_LOG_INFO;
-    int         ret = 0;
+    const char *httpPort      = NULL;
+    int         logLevel      = OTBR_LOG_INFO;
+    int         ret           = 0;
     int         opt;
     uint16_t    port = OT_HTTP_PORT;
 

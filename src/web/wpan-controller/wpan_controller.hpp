@@ -47,9 +47,9 @@
 
 #include <dbus/dbus.h>
 extern "C" {
-#include "wpanctl-utils.h"
 #include "wpan-dbus-v0.h"
 #include "wpan-dbus-v1.h"
+#include "wpanctl-utils.h"
 }
 
 #include "dbus_base.hpp"
@@ -165,8 +165,7 @@ public:
      * @retval kWpantundStatus_InvalidArgument    The aNetworkName or aChannel or aExtPanId or aPanId is invalid.
      *
      */
-    int Join(const char *aNetworkName, uint16_t aChannel, uint64_t aExtPanId,
-             uint16_t aPanId);
+    int Join(const char *aNetworkName, uint16_t aChannel, uint64_t aExtPanId, uint16_t aPanId);
 
     /**
      * This method gets the property of the Thread Network.
@@ -232,13 +231,11 @@ public:
     void SetInterfaceName(const char *aIfName);
 
 private:
-
     char            mIfName[IFNAMSIZ];
     WpanNetworkInfo mScannedNetworks[OT_SCANNED_NET_BUFFER_SIZE];
     int             mScannedNetworkCount = 0;
-
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  //WPAN_CONTROLLER_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // WPAN_CONTROLLER_HPP

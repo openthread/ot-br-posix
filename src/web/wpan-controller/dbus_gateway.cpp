@@ -31,7 +31,6 @@
  *   This file implements the function of "configure gateway" function.
  */
 
-
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
 
@@ -40,18 +39,18 @@
 namespace ot {
 namespace Dbus {
 
-DBusGateway::DBusGateway(void) :
-    mPreferredLifetime(0xFFFFFFFF),
-    mValidLifetime(0xFFFFFFFF)
+DBusGateway::DBusGateway(void)
+    : mPreferredLifetime(0xFFFFFFFF)
+    , mValidLifetime(0xFFFFFFFF)
 {
 }
 
 int DBusGateway::ProcessReply(void)
 {
-    int          ret = 0;
-    const char  *method = "ConfigGateway";
+    int          ret      = 0;
+    const char * method   = "ConfigGateway";
     DBusMessage *messsage = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply    = NULL;
     DBusError    error;
 
     dbus_error_init(&error);
@@ -60,8 +59,7 @@ int DBusGateway::ProcessReply(void)
 
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_BOOLEAN, &mDefaultRoute,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_BOOLEAN, &mDefaultRoute, DBUS_TYPE_INVALID);
 
     if (mPrefix)
     {
@@ -77,20 +75,16 @@ int DBusGateway::ProcessReply(void)
             VerifyOrExit(length > 0, ret = kWpantundStatus_InvalidArgument);
         }
 
-        inet_ntop(AF_INET6, (const void *) &mPrefixBytes, mAddressString,
-                  sizeof(mAddressString));
-
+        inet_ntop(AF_INET6, (const void *)&mPrefixBytes, mAddressString, sizeof(mAddressString));
     }
 
     mAddr = mPrefixBytes;
 
-    dbus_message_append_args(messsage, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &mAddr,
-                             16, DBUS_TYPE_UINT32, &mPreferredLifetime, DBUS_TYPE_UINT32,
-                             &mValidLifetime, DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &mAddr, 16, DBUS_TYPE_UINT32,
+                             &mPreferredLifetime, DBUS_TYPE_UINT32, &mValidLifetime, DBUS_TYPE_INVALID);
 
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
-    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
-                          DBUS_TYPE_INVALID);
+    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
 
 exit:
     if (dbus_error_is_set(&error))
@@ -102,5 +96,5 @@ exit:
     return ret;
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

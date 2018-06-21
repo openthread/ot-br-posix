@@ -63,7 +63,6 @@ class Session;
 class Session
 {
 public:
-
     /**
      * State of a DTLS session.
      *
@@ -217,7 +216,10 @@ public:
      * @param[inout]    aTimeout        A reference to the timeout.
      *
      */
-    virtual void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+    virtual void UpdateFdSet(fd_set & aReadFdSet,
+                             fd_set & aWriteFdSet,
+                             fd_set & aErrorFdSet,
+                             int &    aMaxFd,
                              timeval &aTimeout) = 0;
 
     /**
@@ -243,4 +245,4 @@ public:
 
 } // namespace ot
 
-#endif  // DTLS_HPP_
+#endif // DTLS_HPP_

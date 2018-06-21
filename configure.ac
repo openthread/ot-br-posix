@@ -264,10 +264,11 @@ AM_CONDITIONAL([OTBR_BUILD_OPTIMIZED], [test "${nl_cv_build_optimized}" = "yes"]
 # Code style
 #
 
-AC_SUBST(PRETTY, ["uncrustify"])
-AC_SUBST(PRETTY_ARGS, ["-c \${abs_top_srcdir}/.uncrustify.cfg --if-changed --no-backup --replace"])
+AC_SUBST(PRETTY, ["\${abs_top_srcdir}/.script/clang-format.sh"])
+AC_SUBST(PRETTY_ARGS, ["-style=file -i"])
 AC_SUBST(PRETTY_CHECK, ["uncrustify"])
-AC_SUBST(PRETTY_CHECK_ARGS, ["-c \${abs_top_srcdir}/.uncrustify.cfg --check"])
+AC_SUBST(PRETTY_CHECK, ["\${abs_top_srcdir}/.script/clang-format-check.sh"])
+AC_SUBST(PRETTY_CHECK_ARGS, [""])
 
 #
 # Tests

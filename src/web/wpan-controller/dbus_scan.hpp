@@ -47,35 +47,21 @@ namespace Dbus {
 class DBusScan : public DBusBase
 {
 public:
-    int ProcessReply(void);
-    uint32_t GetChannelMask(void)
-    {
-        return mChannelMask;
-    }
-    void SetChannelMask(uint32_t aChannelMask)
-    {
-        mChannelMask = aChannelMask;
-    }
-    WpanNetworkInfo *GetNetworks(void)
-    {
-        return mAvailableNetworks;
-    }
-    int GetNetworksCount(void)
-    {
-        return mAvailableNetworksCnt;
-    }
+    int              ProcessReply(void);
+    uint32_t         GetChannelMask(void) { return mChannelMask; }
+    void             SetChannelMask(uint32_t aChannelMask) { mChannelMask = aChannelMask; }
+    WpanNetworkInfo *GetNetworks(void) { return mAvailableNetworks; }
+    int              GetNetworksCount(void) { return mAvailableNetworksCnt; }
 
 private:
-    static DBusHandlerResult DbusBeaconHandler(DBusConnection *aConnection,
-                                               DBusMessage *aMessage, void *aUserData);
-    static int ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
-                                        DBusMessageIter *aIter);
+    static DBusHandlerResult DbusBeaconHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aUserData);
+    static int               ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo, DBusMessageIter *aIter);
 
     uint32_t               mChannelMask;
     static WpanNetworkInfo mAvailableNetworks[OT_SCANNED_NET_BUFFER_SIZE];
     static int             mAvailableNetworksCnt;
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  //DBUS_SCAN_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_SCAN_HPP

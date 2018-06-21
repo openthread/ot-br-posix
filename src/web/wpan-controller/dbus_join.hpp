@@ -47,47 +47,17 @@ namespace Dbus {
 class DBusJoin : public DBusBase
 {
 public:
-    const char *GetNetworkName(void)
-    {
-        return mNetworkName;
-    }
-    uint16_t GetNodeType(void)
-    {
-        return mNodeType;
-    }
-    int16_t GetChannel(void)
-    {
-        return mChannel;
-    }
-    uint64_t GetExtPanId(void)
-    {
-        return mExtPanId;
-    }
-    uint16_t GetPanId(void)
-    {
-        return mPanId;
-    }
+    const char *GetNetworkName(void) { return mNetworkName; }
+    uint16_t    GetNodeType(void) { return mNodeType; }
+    int16_t     GetChannel(void) { return mChannel; }
+    uint64_t    GetExtPanId(void) { return mExtPanId; }
+    uint16_t    GetPanId(void) { return mPanId; }
 
-    void SetNetworkName(const char *aNetworkName)
-    {
-        mNetworkName = aNetworkName;
-    }
-    void SetNodeType(uint16_t aNodeType)
-    {
-        mNodeType = aNodeType;
-    }
-    void SetChannel(int16_t aChannel)
-    {
-        mChannel = aChannel;
-    }
-    void SetExtPanId(uint64_t aExtPanId)
-    {
-        mExtPanId = aExtPanId;
-    }
-    void SetPanId(uint16_t aPanId)
-    {
-        mPanId = aPanId;
-    }
+    void SetNetworkName(const char *aNetworkName) { mNetworkName = aNetworkName; }
+    void SetNodeType(uint16_t aNodeType) { mNodeType = aNodeType; }
+    void SetChannel(int16_t aChannel) { mChannel = aChannel; }
+    void SetExtPanId(uint64_t aExtPanId) { mExtPanId = aExtPanId; }
+    void SetPanId(uint16_t aPanId) { mPanId = aPanId; }
 
     int ProcessReply(void);
 
@@ -99,6 +69,6 @@ private:
     uint16_t    mPanId;
 };
 
-} //namespace Dbus
-} //ot
-#endif  //DBUS_JOIN_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_JOIN_HPP

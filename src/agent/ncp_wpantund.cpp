@@ -32,15 +32,14 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/time.h>
-#include <spinel.h>
 
 extern "C" {
-#include "wpanctl-utils.h"
-#include "wpan-dbus-v1.h"
 #include "spinel.h"
+#include "wpan-dbus-v1.h"
+#include "wpanctl-utils.h"
 }
 
 #include "common/code_utils.hpp"
@@ -66,8 +65,9 @@ static void HandleDBusError(DBusError &aError)
     dbus_error_free(&aError);
 }
 
-DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
-                                                                  void *aContext)
+DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusConnection *aConnection,
+                                                                  DBusMessage *   aMessage,
+                                                                  void *          aContext)
 {
     (void)aConnection;
     return static_cast<ControllerWpantund *>(aContext)->HandlePropertyChangedSignal(*aMessage);
@@ -77,9 +77,9 @@ DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusMessage &a
 {
     DBusHandlerResult result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     DBusMessageIter   iter;
-    const char       *key = NULL;
-    const char       *sender = dbus_message_get_sender(&aMessage);
-    const char       *path = dbus_message_get_path(&aMessage);
+    const char *      key    = NULL;
+    const char *      sender = dbus_message_get_sender(&aMessage);
+    const char *      path   = dbus_message_get_path(&aMessage);
 
     if (sender && path && strcmp(sender, mInterfaceDBusName) && strstr(path, mInterfaceName))
     {
@@ -113,10 +113,10 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
 
     if (!strcmp(aKey, kWPANTUNDProperty_TmfProxyStream))
     {
-        const uint8_t *buf = NULL;
+        const uint8_t *buf     = NULL;
         uint16_t       locator = 0;
-        uint16_t       port = 0;
-        uint16_t       len = 0;
+        uint16_t       port    = 0;
+        uint16_t       len     = 0;
         {
             DBusMessageIter sub_iter;
             int             nelements = 0;
@@ -163,14 +163,14 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
             for (uint8_t *p = reinterpret_cast<uint8_t *>(&xpanid), *q = p + sizeof(xpanid) - 1; p < q; ++p, --q)
             {
                 uint8_t tmp = *p;
-                *p = *q;
-                *q = tmp;
+                *p          = *q;
+                *q          = tmp;
             }
 #endif
         }
         else if (DBUS_TYPE_ARRAY == dbus_message_iter_get_arg_type(aIter))
         {
-            const uint8_t  *bytes = NULL;
+            const uint8_t * bytes = NULL;
             int             count = 0;
             DBusMessageIter subIter;
 
@@ -185,7 +185,7 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
     }
     else if (!strcmp(aKey, kWPANTUNDProperty_NetworkPSKc))
     {
-        const uint8_t  *pskc = NULL;
+        const uint8_t * pskc  = NULL;
         int             count = 0;
         DBusMessageIter subIter;
 
@@ -218,23 +218,18 @@ void ControllerWpantund::ToggleDBusWatch(struct DBusWatch *aWatch, void *aContex
 
 otbrError ControllerWpantund::TmfProxyEnable(dbus_bool_t aEnable)
 {
-    otbrError    ret = OTBR_ERROR_ERRNO;
+    otbrError    ret     = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
-    const char  *key = kWPANTUNDProperty_TmfProxyEnabled;
+    const char * key     = kWPANTUNDProperty_TmfProxyEnabled;
 
-    message = dbus_message_new_method_call(
-        mInterfaceDBusName,
-        mInterfaceDBusPath,
-        WPANTUND_DBUS_APIv1_INTERFACE,
-        WPANTUND_IF_CMD_PROP_SET);
+    message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath, WPANTUND_DBUS_APIv1_INTERFACE,
+                                           WPANTUND_IF_CMD_PROP_SET);
 
     VerifyOrExit(message != NULL, errno = ENOMEM);
 
-    VerifyOrExit(dbus_message_append_args(
-                     message,
-                     DBUS_TYPE_STRING, &key,
-                     DBUS_TYPE_BOOLEAN, &aEnable,
-                     DBUS_TYPE_INVALID), errno = EINVAL);
+    VerifyOrExit(
+        dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_BOOLEAN, &aEnable, DBUS_TYPE_INVALID),
+        errno = EINVAL);
 
     VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
 
@@ -249,8 +244,8 @@ exit:
     return ret;
 }
 
-ControllerWpantund::ControllerWpantund(const char *aInterfaceName) :
-    mDBus(NULL)
+ControllerWpantund::ControllerWpantund(const char *aInterfaceName)
+    : mDBus(NULL)
 {
     mInterfaceDBusName[0] = '\0';
     strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
@@ -275,17 +270,11 @@ otbrError ControllerWpantund::Init(void)
 
     sprintf(dbusName, "%s.%s", OTBR_AGENT_DBUS_NAME_PREFIX, mInterfaceName);
     otbrLog(OTBR_LOG_INFO, "NCP requesting DBus name %s...", dbusName);
-    VerifyOrExit(dbus_bus_request_name(mDBus,
-                                       dbusName,
-                                       DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                       &error) == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
+    VerifyOrExit(dbus_bus_request_name(mDBus, dbusName, DBUS_NAME_FLAG_DO_NOT_QUEUE, &error) ==
+                 DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
 
-    VerifyOrExit(dbus_connection_set_watch_functions(
-                     mDBus,
-                     AddDBusWatch,
-                     RemoveDBusWatch,
-                     ToggleDBusWatch,
-                     this, NULL));
+    VerifyOrExit(
+        dbus_connection_set_watch_functions(mDBus, AddDBusWatch, RemoveDBusWatch, ToggleDBusWatch, this, NULL));
 
     dbus_bus_add_match(mDBus, kDBusMatchPropChanged, &error);
     VerifyOrExit(!dbus_error_is_set(&error));
@@ -329,8 +318,7 @@ otbrError ControllerWpantund::TmfProxyStart(void)
     otbrError ret = OTBR_ERROR_ERRNO;
 
     VerifyOrExit(lookup_dbus_name_from_interface(mInterfaceDBusName, mInterfaceName) == 0,
-                 otbrLog(OTBR_LOG_ERR, "NCP failed to find the interface!"),
-                 errno = ENODEV);
+                 otbrLog(OTBR_LOG_ERR, "NCP failed to find the interface!"), errno = ENODEV);
 
     // Populate the path according to source code of wpanctl, better to export a function.
     snprintf(mInterfaceDBusPath, sizeof(mInterfaceDBusPath), "%s/%s", WPANTUND_DBUS_PATH, mInterfaceName);
@@ -342,35 +330,29 @@ exit:
     return ret;
 }
 
-otbrError ControllerWpantund::TmfProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator,
-                                           uint16_t aPort)
+otbrError ControllerWpantund::TmfProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort)
 {
-    otbrError    ret = OTBR_ERROR_ERRNO;
+    otbrError    ret     = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
 
     std::vector<uint8_t> data(aLength + sizeof(aLocator) + sizeof(aPort));
-    const uint8_t       *value = data.data();
-    const char          *key = kWPANTUNDProperty_TmfProxyStream;
+    const uint8_t *      value = data.data();
+    const char *         key   = kWPANTUNDProperty_TmfProxyStream;
 
     memcpy(data.data(), aBuffer, aLength);
-    data[aLength] = (aLocator >> 8);
+    data[aLength]     = (aLocator >> 8);
     data[aLength + 1] = (aLocator & 0xff);
     data[aLength + 2] = (aPort >> 8);
     data[aLength + 3] = (aPort & 0xff);
 
-    message = dbus_message_new_method_call(
-        mInterfaceDBusName,
-        mInterfaceDBusPath,
-        WPANTUND_DBUS_APIv1_INTERFACE,
-        WPANTUND_IF_CMD_PROP_SET);
+    message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath, WPANTUND_DBUS_APIv1_INTERFACE,
+                                           WPANTUND_IF_CMD_PROP_SET);
 
     VerifyOrExit(message != NULL, errno = ENOMEM);
 
-    VerifyOrExit(dbus_message_append_args(
-                     message,
-                     DBUS_TYPE_STRING, &key,
-                     DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE,
-                     &value, data.size(), DBUS_TYPE_INVALID), errno = EINVAL);
+    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &value,
+                                          data.size(), DBUS_TYPE_INVALID),
+                 errno = EINVAL);
 
     VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
 
@@ -400,9 +382,9 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
             continue;
         }
 
-        DBusWatch   *watch = it->first;
+        DBusWatch *  watch = it->first;
         unsigned int flags = dbus_watch_get_flags(watch);
-        int          fd = dbus_watch_get_unix_fd(watch);
+        int          fd    = dbus_watch_get_unix_fd(watch);
 
         if (fd < 0)
         {
@@ -414,8 +396,7 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
             FD_SET(fd, &aReadFdSet);
         }
 
-        if ((flags & DBUS_WATCH_WRITABLE) &&
-            dbus_connection_has_messages_to_send(mDBus))
+        if ((flags & DBUS_WATCH_WRITABLE) && dbus_connection_has_messages_to_send(mDBus))
         {
             FD_SET(fd, &aWriteFdSet);
         }
@@ -438,9 +419,9 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
             continue;
         }
 
-        DBusWatch   *watch = it->first;
+        DBusWatch *  watch = it->first;
         unsigned int flags = dbus_watch_get_flags(watch);
-        int          fd = dbus_watch_get_unix_fd(watch);
+        int          fd    = dbus_watch_get_unix_fd(watch);
 
         if (fd < 0)
         {
@@ -466,21 +447,22 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
     }
 
     while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_get_dispatch_status(mDBus) &&
-           dbus_connection_read_write_dispatch(mDBus, 0)) ;
+           dbus_connection_read_write_dispatch(mDBus, 0))
+        ;
 }
 
 DBusMessage *ControllerWpantund::RequestProperty(const char *aKey)
 {
     DBusMessage *message = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply   = NULL;
     const int    timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
     DBusError    error;
 
     dbus_error_init(&error);
-    VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName,
-                                                         mInterfaceDBusPath,
-                                                         WPANTUND_DBUS_APIv1_INTERFACE,
-                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL, errno = ENOMEM);
+    VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath,
+                                                         WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_CMD_PROP_GET)) !=
+                     NULL,
+                 errno = ENOMEM);
 
     VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &aKey, DBUS_TYPE_INVALID), errno = EINVAL);
 
@@ -504,14 +486,13 @@ exit:
 
 otbrError ControllerWpantund::RequestEvent(int aEvent)
 {
-    otbrError       ret = OTBR_ERROR_ERRNO;
-    DBusMessage    *message = NULL;
-    DBusMessage    *reply = NULL;
+    otbrError       ret     = OTBR_ERROR_ERRNO;
+    DBusMessage *   message = NULL;
+    DBusMessage *   reply   = NULL;
     DBusMessageIter iter;
-    const char     *key = NULL;
+    const char *    key     = NULL;
     const int       timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
     DBusError       error;
-
 
     switch (aEvent)
     {
@@ -534,14 +515,12 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
 
     VerifyOrExit(key != NULL, errno = EINVAL);
     otbrLog(OTBR_LOG_DEBUG, "Requesting %s...", key);
-    VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName,
-                                                         mInterfaceDBusPath,
-                                                         WPANTUND_DBUS_APIv1_INTERFACE,
-                                                         WPANTUND_IF_CMD_PROP_GET)) != NULL,
+    VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath,
+                                                         WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_CMD_PROP_GET)) !=
+                     NULL,
                  errno = ENOMEM);
 
-    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID),
-                 errno = EINVAL);
+    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID), errno = EINVAL);
 
     dbus_error_init(&error);
     reply = dbus_connection_send_with_reply_and_block(mDBus, message, timeout, &error);
@@ -556,7 +535,6 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
 
     dbus_message_iter_next(&iter);
     ret = ParseEvent(key, &iter);
-
 
 exit:
 
@@ -579,7 +557,7 @@ exit:
 
 otbrError ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize)
 {
-    otbrError    ret = OTBR_ERROR_ERRNO;
+    otbrError    ret   = OTBR_ERROR_ERRNO;
     DBusMessage *reply = NULL;
     DBusError    error;
 
@@ -588,13 +566,11 @@ otbrError ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, si
 
     {
         uint8_t *buffer = NULL;
-        int      count = 0;
+        int      count  = 0;
         uint32_t status = 0;
 
-        VerifyOrExit(dbus_message_get_args(reply, &error,
-                                           DBUS_TYPE_INT32, &status,
-                                           DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &buffer, &count,
-                                           DBUS_TYPE_INVALID),
+        VerifyOrExit(dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &status, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE,
+                                           &buffer, &count, DBUS_TYPE_INVALID),
                      errno = EINVAL);
 
         assert(!dbus_error_is_set(&error));
@@ -623,7 +599,7 @@ exit:
 
 const uint8_t *ControllerWpantund::GetEui64(void)
 {
-    const uint8_t *ret = NULL;
+    const uint8_t *ret  = NULL;
     size_t         size = 0;
 
     SuccessOrExit(GetProperty(kWPANTUNDProperty_NCPHardwareAddress, mEui64, size));
@@ -644,7 +620,7 @@ void Controller::Destroy(Controller *aController)
     delete static_cast<ControllerWpantund *>(aController);
 }
 
-} // Ncp
+} // namespace Ncp
 
 } // namespace BorderRouter
 

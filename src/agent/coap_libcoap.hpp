@@ -31,8 +31,8 @@
 
 #include <map>
 
-#include "libcoap.h"
 #include "coap.hpp"
+#include "libcoap.h"
 
 namespace ot {
 
@@ -74,8 +74,10 @@ public:
      * @param[in]   aPdu    A pointer to the libcoap pdu.
      *
      */
-    MessageLibcoap(coap_pdu_t *aPdu) :
-        mPdu(aPdu) {}
+    MessageLibcoap(coap_pdu_t *aPdu)
+        : mPdu(aPdu)
+    {
+    }
 
     virtual ~MessageLibcoap(void) {}
 
@@ -272,38 +274,39 @@ private:
     struct MessageMeta
     {
         ResponseHandler mHandler;
-        void           *mContext;
+        void *          mContext;
     };
 
-    static void HandleRequest(coap_context_t *aCoap,
+    static void HandleRequest(coap_context_t *        aCoap,
                               struct coap_resource_t *aResource,
-                              const coap_endpoint_t *aEndPoint,
-                              coap_address_t *aAddress,
-                              coap_pdu_t *aRequest,
-                              str *aToken,
-                              coap_pdu_t *aResponse);
+                              const coap_endpoint_t * aEndPoint,
+                              coap_address_t *        aAddress,
+                              coap_pdu_t *            aRequest,
+                              str *                   aToken,
+                              coap_pdu_t *            aResponse);
 
     void HandleRequest(struct coap_resource_t *aResource,
-                       coap_pdu_t *aRequest,
-                       coap_pdu_t *aResponse,
-                       const uint8_t *aAddress,
-                       uint16_t aPort);
+                       coap_pdu_t *            aRequest,
+                       coap_pdu_t *            aResponse,
+                       const uint8_t *         aAddress,
+                       uint16_t                aPort);
 
-    static void HandleResponse(coap_context_t *ctx,
+    static void HandleResponse(coap_context_t *       ctx,
                                const coap_endpoint_t *local_interface,
-                               const coap_address_t *remote,
-                               coap_pdu_t *sent,
-                               coap_pdu_t *received,
-                               const coap_tid_t id);
+                               const coap_address_t * remote,
+                               coap_pdu_t *           sent,
+                               coap_pdu_t *           received,
+                               const coap_tid_t       id);
 
-    static ssize_t NetworkSend(coap_context_t *aCoap,
+    static ssize_t NetworkSend(coap_context_t *       aCoap,
                                const coap_endpoint_t *aLocalInterface,
-                               const coap_address_t *aDestination,
-                               unsigned char *aBuffer, size_t aLength);
+                               const coap_address_t * aDestination,
+                               unsigned char *        aBuffer,
+                               size_t                 aLength);
 
     Resources      mResources;
     NetworkSender  mNetworkSender;
-    void          *mContext;
+    void *         mContext;
     coap_context_t mCoap;
     coap_packet_t  mPacket;
 };
@@ -318,4 +321,4 @@ private:
 
 } // namespace ot
 
-#endif  // COAP_LIBCOAP_HPP_
+#endif // COAP_LIBCOAP_HPP_

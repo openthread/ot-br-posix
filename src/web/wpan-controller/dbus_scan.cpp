@@ -43,12 +43,12 @@ WpanNetworkInfo DBusScan::mAvailableNetworks[OT_SCANNED_NET_BUFFER_SIZE];
 
 int DBusScan::ProcessReply(void)
 {
-    int               ret = 0;
-    const char       *method = "NetScanStart";
-    DBusMessage      *messsage = NULL;
-    DBusMessage      *reply = NULL;
-    DBusConnection   *dbusConnection = NULL;
-    DBusPendingCall  *pending = NULL;
+    int               ret                            = 0;
+    const char *      method                         = "NetScanStart";
+    DBusMessage *     messsage                       = NULL;
+    DBusMessage *     reply                          = NULL;
+    DBusConnection *  dbusConnection                 = NULL;
+    DBusPendingCall * pending                        = NULL;
     static const char dbusObjectManagerMatchString[] = "type='signal'";
     DBusMessageIter   iter;
     DBusError         error;
@@ -64,16 +64,13 @@ int DBusScan::ProcessReply(void)
     dbus_connection_add_filter(dbusConnection, &DbusBeaconHandler, NULL, NULL);
     SetMethod(method);
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
-    dbus_message_append_args(messsage, DBUS_TYPE_UINT32, &mChannelMask,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_UINT32, &mChannelMask, DBUS_TYPE_INVALID);
 
     VerifyOrExit((pending = GetPending()) != NULL, ret = kWpantundStatus_Failure);
-    while ((dbus_connection_get_dispatch_status(dbusConnection)
-            == DBUS_DISPATCH_DATA_REMAINS)
-           || dbus_connection_has_messages_to_send(dbusConnection)
-           || !dbus_pending_call_get_completed(pending))
+    while ((dbus_connection_get_dispatch_status(dbusConnection) == DBUS_DISPATCH_DATA_REMAINS) ||
+           dbus_connection_has_messages_to_send(dbusConnection) || !dbus_pending_call_get_completed(pending))
     {
-        dbus_connection_read_write_dispatch(dbusConnection, 5000  /*ms*/);
+        dbus_connection_read_write_dispatch(dbusConnection, 5000 /*ms*/);
     }
     reply = dbus_pending_call_steal_reply(pending);
     dbus_message_iter_init(reply, &iter);
@@ -90,14 +87,12 @@ exit:
     return ret;
 }
 
-DBusHandlerResult DBusScan::DbusBeaconHandler(DBusConnection *aConnection,
-                                              DBusMessage *aMessage, void *aUserData)
+DBusHandlerResult DBusScan::DbusBeaconHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aUserData)
 {
     DBusMessageIter iter;
     WpanNetworkInfo networkInfo;
 
-    if (!dbus_message_is_signal(aMessage, WPANTUND_DBUS_APIv1_INTERFACE,
-                                WPANTUND_IF_SIGNAL_NET_SCAN_BEACON))
+    if (!dbus_message_is_signal(aMessage, WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_SIGNAL_NET_SCAN_BEACON))
     {
         return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     }
@@ -119,8 +114,7 @@ DBusHandlerResult DBusScan::DbusBeaconHandler(DBusConnection *aConnection,
     return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
-                                       DBusMessageIter *aIter)
+int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo, DBusMessageIter *aIter)
 {
     int             ret = 0;
     DBusMessageIter outerIter;
@@ -134,16 +128,14 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
 
     memset(aNetworkInfo, 0, sizeof(*aNetworkInfo));
 
-    for ( ; dbus_message_iter_get_arg_type(aIter) != DBUS_TYPE_INVALID;
-          dbus_message_iter_next(aIter))
+    for (; dbus_message_iter_get_arg_type(aIter) != DBUS_TYPE_INVALID; dbus_message_iter_next(aIter))
     {
         DBusMessageIter valueIter;
-        char           *key = NULL;
+        char *          key = NULL;
 
         if (dbus_message_iter_get_arg_type(aIter) != DBUS_TYPE_DICT_ENTRY)
         {
-            otbrLog(OTBR_LOG_ERR, "error: Bad type for network (%c)",
-                    dbus_message_iter_get_arg_type(aIter));
+            otbrLog(OTBR_LOG_ERR, "error: Bad type for network (%c)", dbus_message_iter_get_arg_type(aIter));
             ret = ERRORCODE_UNKNOWN;
             return ret;
         }
@@ -152,8 +144,7 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
 
         if (dbus_message_iter_get_arg_type(&dictIter) != DBUS_TYPE_STRING)
         {
-            otbrLog(OTBR_LOG_ERR, "error: Bad type for network list (%c)",
-                    dbus_message_iter_get_arg_type(&dictIter));
+            otbrLog(OTBR_LOG_ERR, "error: Bad type for network list (%c)", dbus_message_iter_get_arg_type(&dictIter));
             ret = ERRORCODE_UNKNOWN;
             return ret;
         }
@@ -164,8 +155,7 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
 
         if (dbus_message_iter_get_arg_type(&dictIter) != DBUS_TYPE_VARIANT)
         {
-            otbrLog(OTBR_LOG_ERR, "error: Bad type for network list (%c)",
-                    dbus_message_iter_get_arg_type(&dictIter));
+            otbrLog(OTBR_LOG_ERR, "error: Bad type for network list (%c)", dbus_message_iter_get_arg_type(&dictIter));
             ret = ERRORCODE_UNKNOWN;
             return ret;
         }
@@ -176,8 +166,7 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
         {
             char *networkName = NULL;
             dbus_message_iter_get_basic(&valueIter, &networkName);
-            snprintf(aNetworkInfo->mNetworkName,
-                     sizeof(aNetworkInfo->mNetworkName), "%s", networkName);
+            snprintf(aNetworkInfo->mNetworkName, sizeof(aNetworkInfo->mNetworkName), "%s", networkName);
         }
         else if (strcmp(key, kWPANTUNDProperty_NCPChannel) == 0)
         {
@@ -187,11 +176,9 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
         {
             dbus_message_iter_get_basic(&valueIter, &aNetworkInfo->mPanId);
         }
-        else if (strcmp(key, kWPANTUNDProperty_NestLabs_NetworkAllowingJoin)
-                 == 0)
+        else if (strcmp(key, kWPANTUNDProperty_NestLabs_NetworkAllowingJoin) == 0)
         {
-            dbus_message_iter_get_basic(&valueIter,
-                                        &aNetworkInfo->mAllowingJoin);
+            dbus_message_iter_get_basic(&valueIter, &aNetworkInfo->mAllowingJoin);
         }
         else if (strcmp(key, "RSSI") == 0)
         {
@@ -207,10 +194,9 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
             dbus_message_iter_recurse(&valueIter, &sub_iter);
             if (dbus_message_iter_get_arg_type(&sub_iter) == DBUS_TYPE_BYTE)
             {
-                const uint8_t *value = NULL;
+                const uint8_t *value     = NULL;
                 int            nelements = 0;
-                dbus_message_iter_get_fixed_array(&sub_iter, &value,
-                                                  &nelements);
+                dbus_message_iter_get_fixed_array(&sub_iter, &value, &nelements);
                 if (nelements == 8)
                 {
                     memcpy(aNetworkInfo->mHardwareAddress, value, nelements);
@@ -221,5 +207,5 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo,
     return ret;
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

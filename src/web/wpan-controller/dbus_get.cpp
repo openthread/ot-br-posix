@@ -38,8 +38,7 @@
 namespace ot {
 namespace Dbus {
 
-static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
-                             bool aBare)
+static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent, bool aBare)
 {
     DBusMessageIter subIter;
 
@@ -53,9 +52,8 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
         break;
     case DBUS_TYPE_ARRAY:
         dbus_message_iter_recurse(aIter, &subIter);
-        if (dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_BYTE
-            || dbus_message_iter_get_arg_type(&subIter)
-            == DBUS_TYPE_INVALID)
+        if (dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_BYTE ||
+            dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_INVALID)
         {
             strcat(aOutput, "[");
             aIndent = 0;
@@ -65,12 +63,10 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
             strcat(aOutput, "[");
         }
 
-        for ( ; dbus_message_iter_get_arg_type(&subIter) != DBUS_TYPE_INVALID;
-              dbus_message_iter_next(&subIter))
+        for (; dbus_message_iter_get_arg_type(&subIter) != DBUS_TYPE_INVALID; dbus_message_iter_next(&subIter))
         {
             DumpInfoFromIter(aOutput, &subIter, aIndent + 1,
-                             dbus_message_iter_get_arg_type(&subIter)
-                             == DBUS_TYPE_BYTE);
+                             dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_BYTE);
         }
         for (int i = 0; i < aIndent; i++)
         {
@@ -152,15 +148,13 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
         uint64_t v;
         char     temp[19];
         dbus_message_iter_get_basic(aIter, &v);
-        snprintf(temp, 19, "0x%016llX", (unsigned long long) v);
+        snprintf(temp, 19, "0x%016llX", (unsigned long long)v);
         strcat(aOutput, temp);
         break;
     }
     default:
         char temp[100];
-        snprintf(temp, 100, "<%s>",
-                 dbus_message_type_to_string(
-                     dbus_message_iter_get_arg_type(aIter)));
+        snprintf(temp, 100, "<%s>", dbus_message_type_to_string(dbus_message_iter_get_arg_type(aIter)));
         strcat(aOutput, temp);
         break;
     }
@@ -170,17 +164,16 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
 
 int DBusGet::ProcessReply(void)
 {
-    int          ret = 0;
-    const char  *method = "PropGet";
+    int          ret      = 0;
+    const char * method   = "PropGet";
     DBusMessage *messsage = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply    = NULL;
 
     VerifyOrExit(GetConnection() != NULL, ret = kWpantundStatus_InvalidConnection);
     SetMethod(method);
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
-    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyName,
-                             DBUS_TYPE_INVALID);
-    VerifyOrExit((reply = GetReply()) != NULL, ret =  kWpantundStatus_InvalidReply);
+    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyName, DBUS_TYPE_INVALID);
+    VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
     dbus_message_iter_init(reply, &mIter);
     // Get return code
     dbus_message_iter_get_basic(&mIter, &ret);
@@ -232,8 +225,7 @@ int DBusGet::GetAllPropertyNames(void)
     ProcessReply();
     dbus_message_iter_recurse(&mIter, &listIter);
 
-    for ( ; dbus_message_iter_get_arg_type(&listIter) == DBUS_TYPE_STRING;
-          dbus_message_iter_next(&listIter))
+    for (; dbus_message_iter_get_arg_type(&listIter) == DBUS_TYPE_STRING; dbus_message_iter_next(&listIter))
     {
         char *pName;
         dbus_message_iter_get_basic(&listIter, &pName);
@@ -247,8 +239,7 @@ void DBusGet::GetAllPropertyValues(int propCnt)
 {
     for (int i = 0; i < propCnt; i++)
     {
-        strncpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name),
-                sizeof(mPropertyList[i].value));
+        strncpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name), sizeof(mPropertyList[i].value));
     }
 }
 
@@ -259,8 +250,7 @@ PropertyNameValue *DBusGet::GetPropertyList(void)
     propCnt = GetAllPropertyNames();
     GetAllPropertyValues(propCnt);
     return mPropertyList;
-
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

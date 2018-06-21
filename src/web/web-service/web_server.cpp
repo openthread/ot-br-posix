@@ -59,7 +59,10 @@
 namespace ot {
 namespace Web {
 
-WebServer::WebServer(void) : mServer(new HttpServer()) {}
+WebServer::WebServer(void)
+    : mServer(new HttpServer())
+{
+}
 
 WebServer::~WebServer(void)
 {
@@ -88,46 +91,35 @@ void WebServer::StartWebServer(const char *aIfName, uint16_t aPort)
     ResponseGetStatus();
     ResponseGetAvailableNetwork();
     DefaultHttpResponse();
-    std::thread ServerThread([this]() {
-                mServer->start();
-            });
+    std::thread ServerThread([this]() { mServer->start(); });
     ServerThread.join();
 }
 
-void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod,
-                                  HttpRequestCallback aCallback)
+void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback)
 {
-    mServer->resource[aUrl][aMethod] =
-        [aCallback, this](std::shared_ptr<HttpServer::Response> response,
-                          std::shared_ptr<HttpServer::Request> request)
+    mServer->resource[aUrl][aMethod] = [aCallback, this](std::shared_ptr<HttpServer::Response> response,
+                                                         std::shared_ptr<HttpServer::Request>  request) {
+        try
         {
-            try
+            std::string httpResponse;
+            if (aCallback != NULL)
             {
-                std::string httpResponse;
-                if (aCallback != NULL)
-                {
-                    httpResponse = aCallback(request->content.string(), this);
-                }
+                httpResponse = aCallback(request->content.string(), this);
+            }
 
-                *response << OT_RESPONSE_SUCCESS_STATUS
-                          << OT_RESPONSE_HEADER_LENGTH
-                          << httpResponse.length()
-                          << OT_RESPONSE_PLACEHOLD
-                          << httpResponse;
-            }
-            catch (std::exception & e)
-            {
-                *response << OT_RESPONSE_FAILURE_STATUS
-                          << OT_RESPONSE_HEADER_LENGTH
-                          << strlen(e.what())
-                          << OT_RESPONSE_PLACEHOLD
-                          << e.what();
-            }
-        };
+            *response << OT_RESPONSE_SUCCESS_STATUS << OT_RESPONSE_HEADER_LENGTH << httpResponse.length()
+                      << OT_RESPONSE_PLACEHOLD << httpResponse;
+        } catch (std::exception &e)
+        {
+            *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << strlen(e.what())
+                      << OT_RESPONSE_PLACEHOLD << e.what();
+        }
+    };
 }
 
-void DefaultResourceSend(const HttpServer &aServer, const std::shared_ptr<HttpServer::Response> &aResponse,
-                         const std::shared_ptr<std::ifstream> &aIfStream)
+void DefaultResourceSend(const HttpServer &                           aServer,
+                         const std::shared_ptr<HttpServer::Response> &aResponse,
+                         const std::shared_ptr<std::ifstream> &       aIfStream)
 {
     static std::vector<char> buffer(OT_BUFFER_SIZE); // Safe when server is running on one thread
 
@@ -138,93 +130,76 @@ void DefaultResourceSend(const HttpServer &aServer, const std::shared_ptr<HttpSe
         aResponse->write(&buffer[0], readLength);
         if (readLength == static_cast<std::streamsize>(buffer.size()))
         {
-            aServer.send(aResponse, [&aServer, aResponse, aIfStream](const boost::system::error_code &ec)
-                    {
-                        if (!ec)
-                        {
-                            DefaultResourceSend(aServer, aResponse, aIfStream);
-                        }
-                        else
-                        {
-                            std::cerr << "Connection interrupted" << std::endl;
-                        }
-                    });
+            aServer.send(aResponse, [&aServer, aResponse, aIfStream](const boost::system::error_code &ec) {
+                if (!ec)
+                {
+                    DefaultResourceSend(aServer, aResponse, aIfStream);
+                }
+                else
+                {
+                    std::cerr << "Connection interrupted" << std::endl;
+                }
+            });
         }
     }
 }
 
 void WebServer::DefaultHttpResponse(void)
 {
-    mServer->default_resource[OT_REQUEST_METHOD_GET] =
-        [this](std::shared_ptr<HttpServer::Response> response, std::shared_ptr<HttpServer::Request> request)
+    mServer->default_resource[OT_REQUEST_METHOD_GET] = [this](std::shared_ptr<HttpServer::Response> response,
+                                                              std::shared_ptr<HttpServer::Request>  request) {
+        try
         {
-            try
+            auto webRootPath = boost::filesystem::canonical(WEB_FILE_PATH);
+            auto path        = boost::filesystem::canonical(webRootPath / request->path);
+            // Check if path is within webRootPath
+            if (std::distance(webRootPath.begin(), webRootPath.end()) > std::distance(path.begin(), path.end()) ||
+                !std::equal(webRootPath.begin(), webRootPath.end(), path.begin()))
             {
-                auto webRootPath =
-                    boost::filesystem::canonical(WEB_FILE_PATH);
-                auto path = boost::filesystem::canonical(
-                    webRootPath / request->path);
-                //Check if path is within webRootPath
-                if (std::distance(webRootPath.begin(),
-                                  webRootPath.end()) > std::distance(path.begin(), path.end()) ||
-                    !std::equal(webRootPath.begin(), webRootPath.end(),
-                                path.begin()))
-                {
-                    throw std::invalid_argument("path must be within root path");
-                }
-                if (boost::filesystem::is_directory(path))
-                {
-                    path /= "index.html";
-                }
-                if (!(boost::filesystem::exists(path) &&
-                      boost::filesystem::is_regular_file(path)))
-                {
-                    throw std::invalid_argument("file does not exist");
-                }
-
-                std::string cacheControl, etag;
-
-                auto ifs = std::make_shared<std::ifstream>();
-                ifs->open(
-                    path.string(), std::ifstream::in | std::ios::binary | std::ios::ate);
-                std::string extension = boost::filesystem::extension(path.string());
-                std::string style = "";
-                if (extension == ".css")
-                {
-                    style = OT_RESPONSE_HEADER_CSS_TYPE;
-                }
-
-                if (*ifs)
-                {
-                    auto length = ifs->tellg();
-                    ifs->seekg(0, std::ios::beg);
-
-                    *response << OT_RESPONSE_SUCCESS_STATUS
-                              << cacheControl << etag
-                              << OT_RESPONSE_HEADER_LENGTH
-                              << length
-                              << style
-                              << OT_RESPONSE_PLACEHOLD;
-
-                    DefaultResourceSend(*mServer, response, ifs);
-                }
-                else
-                {
-                    throw std::invalid_argument("could not read file");
-                }
-
+                throw std::invalid_argument("path must be within root path");
             }
-            catch (const std::exception &e)
+            if (boost::filesystem::is_directory(path))
             {
-                std::string content = "Could not open path " + request->path + ": " +
-                                      e.what();
-                *response << OT_RESPONSE_FAILURE_STATUS
-                          << OT_RESPONSE_HEADER_LENGTH
-                          << content.length()
-                          << OT_RESPONSE_PLACEHOLD
-                          << content;
+                path /= "index.html";
             }
-        };
+            if (!(boost::filesystem::exists(path) && boost::filesystem::is_regular_file(path)))
+            {
+                throw std::invalid_argument("file does not exist");
+            }
+
+            std::string cacheControl, etag;
+
+            auto ifs = std::make_shared<std::ifstream>();
+            ifs->open(path.string(), std::ifstream::in | std::ios::binary | std::ios::ate);
+            std::string extension = boost::filesystem::extension(path.string());
+            std::string style     = "";
+            if (extension == ".css")
+            {
+                style = OT_RESPONSE_HEADER_CSS_TYPE;
+            }
+
+            if (*ifs)
+            {
+                auto length = ifs->tellg();
+                ifs->seekg(0, std::ios::beg);
+
+                *response << OT_RESPONSE_SUCCESS_STATUS << cacheControl << etag << OT_RESPONSE_HEADER_LENGTH << length
+                          << style << OT_RESPONSE_PLACEHOLD;
+
+                DefaultResourceSend(*mServer, response, ifs);
+            }
+            else
+            {
+                throw std::invalid_argument("could not read file");
+            }
+
+        } catch (const std::exception &e)
+        {
+            std::string content = "Could not open path " + request->path + ": " + e.what();
+            *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << content.length()
+                      << OT_RESPONSE_PLACEHOLD << content;
+        }
+    };
 }
 
 std::string WebServer::HandleJoinNetworkRequest(const std::string &aJoinRequest, void *aUserData)
@@ -263,7 +238,7 @@ std::string WebServer::HandleGetStatusRequest(const std::string &aGetStatusReque
 }
 
 std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest,
-                                                         void *aUserData)
+                                                         void *             aUserData)
 {
     WebServer *webServer = static_cast<WebServer *>(aUserData);
 
@@ -322,15 +297,15 @@ std::string WebServer::HandleDeletePrefixRequest(const std::string &aDeletePrefi
 
 std::string WebServer::HandleGetStatusRequest(const std::string &aGetStatusRequest)
 {
-    (void) aGetStatusRequest;
+    (void)aGetStatusRequest;
     return mWpanService.HandleStatusRequest();
 }
 
 std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest)
 {
-    (void) aGetAvailableNetworkRequest;
+    (void)aGetAvailableNetworkRequest;
     return mWpanService.HandleAvailableNetworkRequest();
 }
 
-} //namespace Web
-} //namespace ot
+} // namespace Web
+} // namespace ot

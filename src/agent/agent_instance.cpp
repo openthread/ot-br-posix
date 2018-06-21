@@ -42,10 +42,12 @@ namespace ot {
 
 namespace BorderRouter {
 
-AgentInstance::AgentInstance(const char *aIfName) :
-    mNcp(Ncp::Controller::Create(aIfName)),
-    mCoap(Coap::Agent::Create(SendCoap, this)),
-    mBorderAgent(mNcp, mCoap) {}
+AgentInstance::AgentInstance(const char *aIfName)
+    : mNcp(Ncp::Controller::Create(aIfName))
+    , mCoap(Coap::Agent::Create(SendCoap, this))
+    , mBorderAgent(mNcp, mCoap)
+{
+}
 
 otbrError AgentInstance::Init(void)
 {
@@ -68,7 +70,10 @@ exit:
     return error;
 }
 
-void AgentInstance::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+void AgentInstance::UpdateFdSet(fd_set & aReadFdSet,
+                                fd_set & aWriteFdSet,
+                                fd_set & aErrorFdSet,
+                                int &    aMaxFd,
                                 timeval &aTimeout)
 {
     mNcp->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd);
@@ -86,17 +91,20 @@ void AgentInstance::FeedCoap(void *aContext, int aEvent, va_list aArguments)
     assert(aEvent == Ncp::kEventTmfProxyStream);
 
     AgentInstance *agentInstance = static_cast<AgentInstance *>(aContext);
-    const uint8_t *buffer = va_arg(aArguments, const uint8_t *);
-    uint16_t       length = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    uint16_t       locator = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    uint16_t       port = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    const uint8_t *buffer        = va_arg(aArguments, const uint8_t *);
+    uint16_t       length        = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    uint16_t       locator       = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    uint16_t       port          = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
     Ip6Address     addr(locator);
 
     agentInstance->mCoap->Input(buffer, length, addr.m8, port);
 }
 
-ssize_t AgentInstance::SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                                void *aContext)
+ssize_t AgentInstance::SendCoap(const uint8_t *aBuffer,
+                                uint16_t       aLength,
+                                const uint8_t *aIp6,
+                                uint16_t       aPort,
+                                void *         aContext)
 {
     return static_cast<AgentInstance *>(aContext)->SendCoap(aBuffer, aLength, aIp6, aPort);
 }

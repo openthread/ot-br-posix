@@ -42,7 +42,6 @@
 #include <stdint.h>
 #include <sys/select.h>
 
-#include "common/types.hpp"
 #include "ncp.hpp"
 
 namespace ot {
@@ -152,19 +151,20 @@ private:
      */
     typedef std::map<DBusWatch *, bool> WatchMap;
 
-    static DBusHandlerResult HandlePropertyChangedSignal(DBusConnection *aConnection, DBusMessage *aMessage,
-                                                         void *aContext);
-    DBusHandlerResult HandlePropertyChangedSignal(DBusMessage &aMessage);
+    static DBusHandlerResult HandlePropertyChangedSignal(DBusConnection *aConnection,
+                                                         DBusMessage *   aMessage,
+                                                         void *          aContext);
+    DBusHandlerResult        HandlePropertyChangedSignal(DBusMessage &aMessage);
 
     DBusMessage *RequestProperty(const char *aKey);
-    otbrError GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize);
-    otbrError ParseEvent(const char *aKey, DBusMessageIter *aIter);
+    otbrError    GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize);
+    otbrError    ParseEvent(const char *aKey, DBusMessageIter *aIter);
 
     otbrError TmfProxyEnable(dbus_bool_t aEnable);
 
     static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
-    static void RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
-    static void ToggleDBusWatch(struct DBusWatch *aWatch, void *aContext);
+    static void        RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
+    static void        ToggleDBusWatch(struct DBusWatch *aWatch, void *aContext);
 
     char            mInterfaceDBusName[DBUS_MAXIMUM_NAME_LENGTH + 1];
     char            mInterfaceDBusPath[DBUS_MAXIMUM_NAME_LENGTH + 1];
@@ -174,10 +174,10 @@ private:
     WatchMap        mWatches;
 };
 
-} // Ncp
+} // namespace Ncp
 
 } // namespace BorderRouter
 
 } // namespace ot
 
-#endif  //  NCP_WPANTUND_HPP_
+#endif //  NCP_WPANTUND_HPP_

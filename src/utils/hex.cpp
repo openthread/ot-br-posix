@@ -45,10 +45,10 @@ namespace Utils {
 int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength)
 {
     size_t      hexLength = strlen(aHex);
-    const char *hexEnd = aHex + hexLength;
-    uint8_t    *cur = aBytes;
-    uint8_t     numChars = hexLength & 1;
-    uint8_t     byte = 0;
+    const char *hexEnd    = aHex + hexLength;
+    uint8_t *   cur       = aBytes;
+    uint8_t     numChars  = hexLength & 1;
+    uint8_t     byte      = 0;
 
     if ((hexLength + 1) / 2 > aBytesLength)
     {
@@ -80,8 +80,8 @@ int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength)
         if (numChars >= 2)
         {
             numChars = 0;
-            *cur++ = byte;
-            byte = 0;
+            *cur++   = byte;
+            byte     = 0;
         }
         else
         {

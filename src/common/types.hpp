@@ -104,10 +104,7 @@ public:
      * @returns RLOC16 or ALOC16.
      *
      */
-    uint16_t ToLocator(void) const
-    {
-        return static_cast<uint16_t>(m8[14] << 8 | m8[15]);
-    }
+    uint16_t ToLocator(void) const { return static_cast<uint16_t>(m8[14] << 8 | m8[15]); }
 
     union
     {
@@ -120,4 +117,4 @@ public:
 
 } // namespace ot
 
-#endif  // TYPES_HPP_
+#endif // TYPES_HPP_

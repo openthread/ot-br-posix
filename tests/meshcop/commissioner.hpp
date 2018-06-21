@@ -31,49 +31,47 @@
  *   This is a common header for the various commissioner source files.
  */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <ctype.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <syslog.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <syslog.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
-#include <mbedtls/net_sockets.h>
-#include <mbedtls/debug.h>
-#include <mbedtls/ssl.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecjpake.h>
-#include <mbedtls/error.h>
 #include <mbedtls/certs.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/debug.h>
+#include <mbedtls/ecjpake.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/error.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ssl.h>
 #include <mbedtls/timing.h>
 
 #include "agent/coap.hpp"
 #include "agent/dtls.hpp"
 #include "agent/uris.hpp"
-#include "common/tlv.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/tlv.hpp"
 #include "utils/hex.hpp"
 #include "utils/steeringdata.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
-
 using namespace ot;
 using namespace ot::Utils;
 using namespace ot::BorderRouter;
-
 
 #define MBEDTLS_DEBUG_C
 #define DEBUG_LEVEL 1
@@ -113,8 +111,6 @@ enum
 
 };
 
-
-
 /**
  * Commissioner State
  */
@@ -130,7 +126,6 @@ enum
     kStateError,
 };
 
-
 /**
  * Commissioner TLV types
  */
@@ -138,7 +133,6 @@ enum
 {
     kJoinerDtlsEncapsulation
 };
-
 
 /**
  * Commissioner Context.
@@ -173,9 +167,8 @@ struct Context
     /** all things for the border agent */
     struct br_agent
     {
-
         /** network port, in form mbed likes it (ascii) */
-        char mPort_ascii[ 7 ];
+        char mPort_ascii[7];
 
         /** network address, in form mbed likes it (ascii) */
         char mAddress_ascii[64];
@@ -184,29 +177,27 @@ struct Context
         /* Note: xpanid is used to calculate the PSKc */
         struct
         {
-            char    ascii[  (kXpanidLength * 2) + 1 ];
-            uint8_t bin  [   kXpanidLength ];
+            char    ascii[(kXpanidLength * 2) + 1];
+            uint8_t bin[kXpanidLength];
         } mXpanid;
 
         /** network name from command line */
         /* Note: networkname is used to calculate the PSKc */
-        char mNetworkName[ kNetworkNameLenMax + 1 ];
+        char mNetworkName[kNetworkNameLenMax + 1];
 
         /** border router agent pass phrase */
         /* Note: passphrase is used to calculate the PSKc */
-        char mPassPhrase[ kBorderRouterPassPhraseLen + 1 ];
-
+        char mPassPhrase[kBorderRouterPassPhraseLen + 1];
 
         /** the PSKc used with the agent */
         struct
         {
-
             /* this class does the calculation */
             Psk::Pskc mTool;
 
             /** ascii & binary of PSKc, either from calculation or cmdline */
-            char    ascii[ (OT_PSKC_LENGTH * 2) + 1 ];
-            uint8_t bin[ OT_PSKC_LENGTH ];
+            char    ascii[(OT_PSKC_LENGTH * 2) + 1];
+            uint8_t bin[OT_PSKC_LENGTH];
         } mPSKc;
 
     } mAgent;
@@ -234,22 +225,20 @@ struct Context
     } mCOMM_KA;
 
     /** Total timeout (envelope) of the commissioning test */
-    struct               timeval mEnvelopeStartTv;
-    int                          mEnvelopeTimeout;
+    struct timeval mEnvelopeStartTv;
+    int            mEnvelopeTimeout;
 
     /** Commissioner state */
     int mState;
 
-
     /** All things about the joiner */
     struct joiner
     {
-
         /** the EUI64 of the Joiner or HASHMAC, either from cmdline or computed */
         struct
         {
-            char    ascii[ (kEui64Len * 2) + 1 ];
-            uint8_t bin[ kEui64Len ];
+            char    ascii[(kEui64Len * 2) + 1];
+            uint8_t bin[kEui64Len];
         } mEui64, mHashMac;
 
         /** Set to true/false via cmdline param for test purposes. */
@@ -272,7 +261,7 @@ struct Context
 
         /** This is the PSKd from the command line */
         /* this is the shared string used by the device */
-        char mPSKd_ascii[ kPSKdLength + 1 ];
+        char mPSKd_ascii[kPSKdLength + 1];
 
         /*
          * NOTE: The simplist barcode would contain:

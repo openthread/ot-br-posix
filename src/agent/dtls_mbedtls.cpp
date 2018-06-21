@@ -117,13 +117,9 @@ void Server::Destroy(Server *aServer)
 
 otbrError MbedtlsServer::Start(void)
 {
-    otbrError        ret = OTBR_ERROR_NONE;
-    int              error = 0;
-    static const int ciphersuites[] =
-    {
-        MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8,
-        0
-    };
+    otbrError        ret            = OTBR_ERROR_NONE;
+    int              error          = 0;
+    static const int ciphersuites[] = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
 
     mbedtls_ssl_config_init(&mConf);
     mbedtls_ssl_cookie_init(&mCookie);
@@ -136,12 +132,9 @@ otbrError MbedtlsServer::Start(void)
     // Allow all debug message here and filter in MbedtlsDebug().
     mbedtls_debug_set_threshold(4);
 
-    SuccessOrExit(error = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed,
-                                                mSeedLength));
+    SuccessOrExit(error = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed, mSeedLength));
 
-    SuccessOrExit(error = mbedtls_ssl_config_defaults(&mConf,
-                                                      MBEDTLS_SSL_IS_SERVER,
-                                                      MBEDTLS_SSL_TRANSPORT_DATAGRAM,
+    SuccessOrExit(error = mbedtls_ssl_config_defaults(&mConf, MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_DATAGRAM,
                                                       MBEDTLS_SSL_PRESET_DEFAULT));
 
     mbedtls_ssl_conf_rng(&mConf, mbedtls_ctr_drbg_random, &mCtrDrbg);
@@ -157,8 +150,7 @@ otbrError MbedtlsServer::Start(void)
 
     SuccessOrExit(error = mbedtls_ssl_cookie_setup(&mCookie, mbedtls_ctr_drbg_random, &mCtrDrbg));
 
-    mbedtls_ssl_conf_dtls_cookies(&mConf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check,
-                                  &mCookie);
+    mbedtls_ssl_conf_dtls_cookies(&mConf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check, &mCookie);
 
     SuccessOrExit(ret = Bind());
 
@@ -181,7 +173,7 @@ otbrError MbedtlsServer::Bind(void)
 
     memset(&sin6, 0, sizeof(sin6));
     sin6.sin6_family = AF_INET6;
-    sin6.sin6_port = htons(mPort);
+    sin6.sin6_port   = htons(mPort);
 
     VerifyOrExit((mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1);
     // This option enables retrieving the original destination IPv6 address.
@@ -210,7 +202,7 @@ void MbedtlsSession::SetState(State aState)
 
 void MbedtlsSession::SetDataHandler(DataHandler aDataHandler, void *aContext)
 {
-    mContext = aContext;
+    mContext     = aContext;
     mDataHandler = aDataHandler;
 }
 
@@ -221,8 +213,7 @@ ssize_t MbedtlsSession::Write(const uint8_t *aBuffer, uint16_t aLength)
     do
     {
         ret = mbedtls_ssl_write(&mSsl, aBuffer, aLength);
-    }
-    while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
     if (ret < 0)
     {
@@ -236,7 +227,8 @@ void MbedtlsSession::Close(void)
 {
     VerifyOrExit(mState != kStateError && mState != kStateEnd);
 
-    while (mbedtls_ssl_close_notify(&mSsl) == MBEDTLS_ERR_SSL_WANT_WRITE) ;
+    while (mbedtls_ssl_close_notify(&mSsl) == MBEDTLS_ERR_SSL_WANT_WRITE)
+        ;
     SetState(kStateEnd);
 
 exit:
@@ -287,8 +279,7 @@ int MbedtlsSession::Read(void)
         {
             mDataHandler(buffer, (uint16_t)ret, mContext);
         }
-    }
-    while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
     if (ret <= 0)
     {
@@ -323,8 +314,12 @@ int MbedtlsSession::Read(void)
     return ret;
 }
 
-int MbedtlsSession::ExportKeys(void *aContext, const unsigned char *aMasterSecret, const unsigned char *aKeyBlock,
-                               size_t aMacLength, size_t aKeyLength, size_t aIvLength)
+int MbedtlsSession::ExportKeys(void *               aContext,
+                               const unsigned char *aMasterSecret,
+                               const unsigned char *aKeyBlock,
+                               size_t               aMacLength,
+                               size_t               aKeyLength,
+                               size_t               aIvLength)
 {
     mbedtls_sha256_context sha256;
 
@@ -337,18 +332,21 @@ int MbedtlsSession::ExportKeys(void *aContext, const unsigned char *aMasterSecre
     return 0;
 }
 
-MbedtlsSession::MbedtlsSession(MbedtlsServer &aServer, const mbedtls_net_context &aNet,
+MbedtlsSession::MbedtlsSession(MbedtlsServer &            aServer,
+                               const mbedtls_net_context &aNet,
                                const struct sockaddr_in6 &aRemoteSock,
-                               const sockaddr_in6 &aLocalSock) :
-    mNet(aNet),
-    mRemoteSock(aRemoteSock),
-    mLocalSock(aLocalSock),
-    mServer(aServer) {}
+                               const sockaddr_in6 &       aLocalSock)
+    : mNet(aNet)
+    , mRemoteSock(aRemoteSock)
+    , mLocalSock(aLocalSock)
+    , mServer(aServer)
+{
+}
 
 otbrError MbedtlsSession::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
-    int       rval = 0;
+    int       rval  = 0;
 
     mbedtls_ssl_init(&mSsl);
     SuccessOrExit(rval = mbedtls_ssl_setup(&mSsl, &mServer.mConf));
@@ -357,9 +355,8 @@ otbrError MbedtlsSession::Init(void)
 
     SuccessOrExit(rval = mbedtls_ssl_session_reset(&mSsl));
     SuccessOrExit(rval = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, mServer.mPSKLength));
-    SuccessOrExit(rval = mbedtls_ssl_set_client_transport_id(&mSsl,
-                                                             reinterpret_cast<const unsigned char *>(&mRemoteSock),
-                                                             sizeof(mRemoteSock)));
+    SuccessOrExit(rval = mbedtls_ssl_set_client_transport_id(
+                      &mSsl, reinterpret_cast<const unsigned char *>(&mRemoteSock), sizeof(mRemoteSock)));
     mbedtls_ssl_set_bio(&mSsl, this, SendMbedtls, ReadMbedtls, NULL);
 
     mState = kStateHandshaking;
@@ -382,7 +379,7 @@ int MbedtlsSession::ReadMbedtls(unsigned char *aBuffer, size_t aLength)
 int MbedtlsSession::SendMbedtls(const unsigned char *aBuffer, size_t aLength)
 {
     int  opt = 1;
-    int &fd = mNet.fd;
+    int &fd  = mNet.fd;
     int  ret = 0;
 
     VerifyOrExit((fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) != -1, ret = -1);
@@ -411,7 +408,6 @@ int MbedtlsSession::Handshake(void)
 
     SetState(kStateReady);
 
-
 exit:
 
     if (ret)
@@ -435,14 +431,16 @@ exit:
     return ret;
 }
 
-void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+void MbedtlsServer::UpdateFdSet(fd_set & aReadFdSet,
+                                fd_set & aWriteFdSet,
+                                fd_set & aErrorFdSet,
+                                int &    aMaxFd,
                                 timeval &aTimeout)
 {
-    unsigned long now = GetNow();
+    unsigned long now     = GetNow();
     unsigned long timeout = GetTimestamp(aTimeout);
 
-    for (SessionSet::iterator it = mSessions.begin();
-         it != mSessions.end(); )
+    for (SessionSet::iterator it = mSessions.begin(); it != mSessions.end();)
     {
         MbedtlsSession *session = *it;
 
@@ -453,8 +451,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
             delete session;
             it = mSessions.erase(it);
         }
-        else if (session->GetState() == Session::kStateReady ||
-                 session->GetState() == Session::kStateHandshaking)
+        else if (session->GetState() == Session::kStateReady || session->GetState() == Session::kStateHandshaking)
         {
             int fd = session->GetFd();
 
@@ -491,7 +488,7 @@ void MbedtlsServer::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set 
         }
     }
 
-    aTimeout.tv_sec = timeout / 1000;
+    aTimeout.tv_sec  = timeout / 1000;
     aTimeout.tv_usec = (timeout % 1000) * 1000;
 
     (void)aWriteFdSet;
@@ -527,14 +524,14 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
     memset(&src, 0, sizeof(src));
     memset(&dst, 0, sizeof(dst));
     memset(&msghdr, 0, sizeof(msghdr));
-    msghdr.msg_name = &src;
+    msghdr.msg_name    = &src;
     msghdr.msg_namelen = sizeof(src);
     memset(&iov, 0, sizeof(iov));
-    iov[0].iov_base = packet;
-    iov[0].iov_len = kMaxSizeOfPacket;
-    msghdr.msg_iov = iov;
-    msghdr.msg_iovlen = 1;
-    msghdr.msg_control = control;
+    iov[0].iov_base       = packet;
+    iov[0].iov_len        = kMaxSizeOfPacket;
+    msghdr.msg_iov        = iov;
+    msghdr.msg_iovlen     = 1;
+    msghdr.msg_control    = control;
     msghdr.msg_controllen = sizeof(control);
 
     VerifyOrExit(recvmsg(mSocket, &msghdr, MSG_PEEK) > 0);
@@ -546,19 +543,16 @@ void MbedtlsServer::ProcessServer(const fd_set &aReadFdSet, const fd_set &aWrite
             const struct in6_pktinfo *pktinfo = reinterpret_cast<const struct in6_pktinfo *>(CMSG_DATA(cmsg));
             memcpy(dst.sin6_addr.s6_addr, pktinfo->ipi6_addr.s6_addr, sizeof(dst.sin6_addr));
             dst.sin6_family = AF_INET6;
-            dst.sin6_port = ntohs(mPort);
+            dst.sin6_port   = ntohs(mPort);
             break;
         }
     }
 
-    VerifyOrExit(memcmp(dst.sin6_addr.s6_addr, in6addr_any.s6_addr, sizeof(dst.sin6_addr)) != 0,
-                 errno = EDESTADDRREQ);
+    VerifyOrExit(memcmp(dst.sin6_addr.s6_addr, in6addr_any.s6_addr, sizeof(dst.sin6_addr)) != 0, errno = EDESTADDRREQ);
 
     // TODO Should check if this client has an existing session.
     {
-        mbedtls_net_context net = {
-            mSocket
-        };
+        mbedtls_net_context net = {mSocket};
 
         MbedtlsSession *session = new MbedtlsSession(*this, net, src, dst);
 
@@ -592,12 +586,10 @@ exit:
 
 void MbedtlsServer::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    for (SessionSet::iterator it = mSessions.begin();
-         it != mSessions.end();
-         ++it)
+    for (SessionSet::iterator it = mSessions.begin(); it != mSessions.end(); ++it)
     {
         MbedtlsSession *session = *it;
-        int             fd = session->GetFd();
+        int             fd      = session->GetFd();
 
         if (FD_ISSET(fd, &aReadFdSet))
         {
@@ -623,7 +615,7 @@ otbrError MbedtlsServer::SetPSK(const uint8_t *aPSK, uint8_t aLength)
 
     memcpy(mPSK, aPSK, aLength);
     mPSKLength = aLength;
-    ret = OTBR_ERROR_NONE;
+    ret        = OTBR_ERROR_NONE;
 
 exit:
     return ret;
@@ -662,7 +654,7 @@ otbrError MbedtlsServer::SetSeed(const uint8_t *aSeed, uint16_t aLength)
 
     memcpy(mSeed, aSeed, aLength);
     mSeedLength = aLength;
-    ret = OTBR_ERROR_NONE;
+    ret         = OTBR_ERROR_NONE;
 
 exit:
     return ret;

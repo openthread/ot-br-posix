@@ -48,12 +48,11 @@ class DBusIfname : public DBusBase
 {
 public:
     char *GetDBusName(void);
-    int ProcessReply(void);
+    int   ProcessReply(void);
 
 private:
-
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  //DBUS_IFNAME_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_IFNAME_HPP

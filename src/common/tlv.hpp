@@ -54,17 +54,13 @@ public:
      * @returns The Tlv type.
      *
      */
-    uint8_t GetType(void) const {
-        return mType;
-    }
+    uint8_t GetType(void) const { return mType; }
 
     /**
      * This method sets the Tlv type.
      *
      */
-    void SetType(uint8_t aType) {
-        mType = aType;
-    }
+    void SetType(uint8_t aType) { mType = aType; }
 
     /**
      * This method returns the Tlv length.
@@ -72,18 +68,19 @@ public:
      * @returns The Tlv length.
      *
      */
-    uint16_t GetLength(void) const {
-        return (mLength != kLengthEscape ? mLength :
-                static_cast<uint16_t>((&mLength)[1] << 8 | (&mLength)[2]));
+    uint16_t GetLength(void) const
+    {
+        return (mLength != kLengthEscape ? mLength : static_cast<uint16_t>((&mLength)[1] << 8 | (&mLength)[2]));
     }
 
     /**
      * This method sets the length.
      */
-    void SetLength(uint16_t aLength) {
+    void SetLength(uint16_t aLength)
+    {
         if (aLength >= kLengthEscape)
         {
-            mLength = kLengthEscape;
+            mLength       = kLengthEscape;
             (&mLength)[1] = (aLength >> 8);
             (&mLength)[2] = (aLength & 0xff);
         }
@@ -99,9 +96,10 @@ public:
      * @returns The Tlv value.
      *
      */
-    const void *GetValue(void) const {
+    const void *GetValue(void) const
+    {
         return reinterpret_cast<const uint8_t *>(this) + sizeof(mType) +
-               (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t)  + sizeof(mLength)));
+               (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t) + sizeof(mLength)));
     }
 
     /**
@@ -110,7 +108,8 @@ public:
      * @returns The uint16_t value.
      *
      */
-    uint16_t GetValueUInt16(void) const {
+    uint16_t GetValueUInt16(void) const
+    {
         const uint8_t *p = static_cast<const uint8_t *>(GetValue());
 
         return static_cast<uint16_t>(p[0] << 8 | p[1]);
@@ -122,24 +121,24 @@ public:
      * @returns The uint8_t value.
      *
      */
-    uint8_t GetValueUInt8(void) const {
-        return *static_cast<const uint8_t *>(GetValue());
-    }
+    uint8_t GetValueUInt8(void) const { return *static_cast<const uint8_t *>(GetValue()); }
 
     /**
      * This method sets uint16_t as the value.
      */
-    void SetValue(uint16_t aValue) {
+    void SetValue(uint16_t aValue)
+    {
         SetLength(sizeof(aValue));
         uint8_t *value = static_cast<uint8_t *>(GetValue());
-        value[0] = (aValue >> 8);
-        value[1] = (aValue & 0xff);
+        value[0]       = (aValue >> 8);
+        value[1]       = (aValue & 0xff);
     }
 
     /**
      * This method sets uint8_t as the value.
      */
-    void SetValue(uint8_t aValue) {
+    void SetValue(uint8_t aValue)
+    {
         SetLength(sizeof(aValue));
         *static_cast<uint8_t *>(GetValue()) = aValue;
     }
@@ -159,7 +158,8 @@ public:
      * @returns A pointer to the next Tlv.
      *
      */
-    const Tlv *GetNext(void) const {
+    const Tlv *GetNext(void) const
+    {
         return reinterpret_cast<const Tlv *>(static_cast<const uint8_t *>(GetValue()) + GetLength());
     }
 
@@ -169,14 +169,13 @@ public:
      * @returns A pointer to the next Tlv.
      *
      */
-    Tlv *GetNext(void) {
-        return reinterpret_cast<Tlv *>(static_cast<uint8_t *>(GetValue()) + GetLength());
-    }
+    Tlv *GetNext(void) { return reinterpret_cast<Tlv *>(static_cast<uint8_t *>(GetValue()) + GetLength()); }
 
 private:
-    void *GetValue(void) {
+    void *GetValue(void)
+    {
         return reinterpret_cast<uint8_t *>(this) + sizeof(mType) +
-               (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t)  + sizeof(mLength)));
+               (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t) + sizeof(mLength)));
     }
     uint8_t mType;
     uint8_t mLength;
@@ -201,4 +200,4 @@ enum
 
 } // namespace ot
 
-#endif  // TLV_HPP_
+#endif // TLV_HPP_

@@ -35,6 +35,7 @@
 #define NCP_HPP_
 
 #include "common/event_emitter.hpp"
+#include "common/types.hpp"
 
 namespace ot {
 
@@ -105,8 +106,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO        Failed to send the packet.
      *
      */
-    virtual otbrError TmfProxySend(const uint8_t *aBuffer, uint16_t aLength,
-                                   uint16_t aLocator, uint16_t aPort) = 0;
+    virtual otbrError TmfProxySend(const uint8_t *aBuffer, uint16_t aLength, uint16_t aLocator, uint16_t aPort) = 0;
 
     /**
      * This method updates the fd_set to poll.
@@ -169,10 +169,10 @@ public:
     virtual ~Controller(void) {}
 };
 
-} // Ncp
+} // namespace Ncp
 
 } // namespace BorderRouter
 
 } // namespace ot
 
-#endif  // NCP_HPP_
+#endif // NCP_HPP_

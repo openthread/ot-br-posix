@@ -37,9 +37,9 @@
 #include <vector>
 
 #include <netinet/in.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern "C" {
 
@@ -53,14 +53,14 @@ extern "C" {
 #include <mbedtls/platform.h>
 #endif
 
-#include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/debug.h>
 #include <mbedtls/ecjpake.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/error.h>
+#include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_cookie.h>
-#include <mbedtls/net_sockets.h>
-#include <mbedtls/error.h>
-#include <mbedtls/debug.h>
 #include <mbedtls/timing.h>
 
 #if defined(MBEDTLS_SSL_CACHE_C)
@@ -69,8 +69,8 @@ extern "C" {
 
 } // extern "C"
 
-#include "common/types.hpp"
 #include "dtls.hpp"
+#include "common/types.hpp"
 
 namespace ot {
 
@@ -113,7 +113,8 @@ public:
      * @param[in]   aLocalSock  A reference to the local sockaddr of this session.
      *
      */
-    MbedtlsSession(MbedtlsServer &aServer, const mbedtls_net_context &aNet,
+    MbedtlsSession(MbedtlsServer &            aServer,
+                   const mbedtls_net_context &aNet,
                    const struct sockaddr_in6 &aRemoteSock,
                    const struct sockaddr_in6 &aLocalSock);
 
@@ -129,7 +130,7 @@ public:
     otbrError Init(void);
 
     ssize_t Write(const uint8_t *aBuffer, uint16_t aLength);
-    void SetDataHandler(DataHandler aDataHandler, void *aContext);
+    void    SetDataHandler(DataHandler aDataHandler, void *aContext);
 
     /**
      * This method returns the current state of this session.
@@ -181,11 +182,15 @@ private:
         kKekSize        = 32,    ///< Size of KEK.
     };
 
-    static int ExportKeys(void *aContext, const unsigned char *aMasterSecret, const unsigned char *aKeyBlock,
-                          size_t aMacLength, size_t aKeyLength, size_t aIvLength);
-    int Handshake(void);
-    int Read(void);
-    void SetState(State aState);
+    static int ExportKeys(void *               aContext,
+                          const unsigned char *aMasterSecret,
+                          const unsigned char *aKeyBlock,
+                          size_t               aMacLength,
+                          size_t               aKeyLength,
+                          size_t               aIvLength);
+    int        Handshake(void);
+    int        Read(void);
+    void       SetState(State aState);
     static int SendMbedtls(void *aContext, const unsigned char *aBuffer, size_t aLength)
     {
         return static_cast<MbedtlsSession *>(aContext)->SendMbedtls(aBuffer, aLength);
@@ -202,14 +207,14 @@ private:
     mbedtls_timing_delay_context mTimer;
     mbedtls_ssl_context          mSsl;
 
-    DataHandler                  mDataHandler;
-    void                        *mContext;
-    State                        mState;
-    sockaddr_in6                 mRemoteSock;
-    sockaddr_in6                 mLocalSock;
-    MbedtlsServer               &mServer;
-    unsigned long                mExpiration;
-    uint8_t                      mKek[kKekSize];
+    DataHandler    mDataHandler;
+    void *         mContext;
+    State          mState;
+    sockaddr_in6   mRemoteSock;
+    sockaddr_in6   mLocalSock;
+    MbedtlsServer &mServer;
+    unsigned long  mExpiration;
+    uint8_t        mKek[kKekSize];
 };
 
 /**
@@ -229,14 +234,15 @@ public:
      * @param[in]   aContext            A pointer to application-specific context.
      *
      */
-    MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext) :
-        mSocket(-1),
-        mPort(aPort),
-        mStateHandler(aStateHandler),
-        mContext(aContext) {}
+    MbedtlsServer(uint16_t aPort, StateHandler aStateHandler, void *aContext)
+        : mSocket(-1)
+        , mPort(aPort)
+        , mStateHandler(aStateHandler)
+        , mContext(aContext)
+    {
+    }
 
     ~MbedtlsServer(void);
-
 
     /**
      * This method starts the DTLS service.
@@ -302,24 +308,24 @@ private:
         kMaxSizeOfPSK = 32, ///< Max size of PSK in bytes.
     };
 
-    void HandleSessionState(Session &aSession, Session::State aState);
-    void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void      HandleSessionState(Session &aSession, Session::State aState);
+    void      ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
     otbrError Bind(void);
 
-    SessionSet                mSessions;
-    int                       mSocket;
-    uint16_t                  mPort;
-    StateHandler              mStateHandler;
-    void                     *mContext;
-    uint8_t                   mSeed[MBEDTLS_CTR_DRBG_MAX_SEED_INPUT];
-    uint16_t                  mSeedLength;
-    uint8_t                   mPSK[kMaxSizeOfPSK];
-    uint8_t                   mPSKLength;
+    SessionSet   mSessions;
+    int          mSocket;
+    uint16_t     mPort;
+    StateHandler mStateHandler;
+    void *       mContext;
+    uint8_t      mSeed[MBEDTLS_CTR_DRBG_MAX_SEED_INPUT];
+    uint16_t     mSeedLength;
+    uint8_t      mPSK[kMaxSizeOfPSK];
+    uint8_t      mPSKLength;
 
-    mbedtls_ssl_cookie_ctx    mCookie;
-    mbedtls_entropy_context   mEntropy;
-    mbedtls_ctr_drbg_context  mCtrDrbg;
-    mbedtls_ssl_config        mConf;
+    mbedtls_ssl_cookie_ctx   mCookie;
+    mbedtls_entropy_context  mEntropy;
+    mbedtls_ctr_drbg_context mCtrDrbg;
+    mbedtls_ssl_config       mConf;
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context mCache;
 #endif
@@ -335,4 +341,4 @@ private:
 
 } // namespace ot
 
-#endif  //DTLS_MBEDTLS_HPP_
+#endif // DTLS_MBEDTLS_HPP_

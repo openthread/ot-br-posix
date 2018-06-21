@@ -38,15 +38,14 @@
  *  @returns A @aAlignType pointer to aligned memory.
  *
  */
-#define OTBR_ALIGNED(aMem, aAlignType)                                      \
-    reinterpret_cast<aAlignType>(((reinterpret_cast<unsigned long>(aMem) + sizeof(aAlignType) - 1) / \
-                                  sizeof(aAlignType)) * sizeof(aAlignType))
+#define OTBR_ALIGNED(aMem, aAlignType) \
+    reinterpret_cast<aAlignType>(      \
+        ((reinterpret_cast<unsigned long>(aMem) + sizeof(aAlignType) - 1) / sizeof(aAlignType)) * sizeof(aAlignType))
 
 #ifndef CONTAINING_RECORD
 #define BASE 0x1
-#define myoffsetof(s, m) (((size_t)&(((s *)BASE)->m)) - BASE)
-#define CONTAINING_RECORD(address, type, field) \
-    ((type *)((uint8_t *)(address) - myoffsetof(type, field)))
+#define myoffsetof(s, m) (((size_t) & (((s *)BASE)->m)) - BASE)
+#define CONTAINING_RECORD(address, type, field) ((type *)((uint8_t *)(address)-myoffsetof(type, field)))
 #endif /* CONTAINING_RECORD */
 
 /**
@@ -57,13 +56,13 @@
  *  @param[in]  aStatus     A scalar status to be evaluated against zero (0).
  *
  */
-#define SuccessOrExit(aStatus)                      \
-    do                                              \
-    {                                               \
-        if ((aStatus) != 0)                         \
-        {                                           \
-            goto exit;                              \
-        }                                           \
+#define SuccessOrExit(aStatus) \
+    do                         \
+    {                          \
+        if ((aStatus) != 0)    \
+        {                      \
+            goto exit;         \
+        }                      \
     } while (false)
 
 /**
@@ -76,14 +75,14 @@
  *                          assertion fails.
  *
  */
-#define VerifyOrExit(aCondition, ...)                 \
-    do                                                \
-    {                                                 \
-        if (!(aCondition))                            \
-        {                                             \
-            __VA_ARGS__;                              \
-            goto exit;                                \
-        }                                             \
+#define VerifyOrExit(aCondition, ...) \
+    do                                \
+    {                                 \
+        if (!(aCondition))            \
+        {                             \
+            __VA_ARGS__;              \
+            goto exit;                \
+        }                             \
     } while (false)
 
 /**
@@ -98,11 +97,11 @@
  *                          when the assertion fails.
  *
  */
-#define ExitNow(...)                            \
-    do                                          \
-    {                                           \
-        __VA_ARGS__;                            \
-        goto exit;                              \
+#define ExitNow(...) \
+    do               \
+    {                \
+        __VA_ARGS__; \
+        goto exit;   \
     } while (false)
 
 #endif // CODE_UTILS_HPP_

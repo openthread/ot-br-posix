@@ -45,7 +45,7 @@ int DBusIfname::ProcessReply(void)
     int             ret = 0;
     DBusMessageIter iter;
     DBusMessageIter listIter;
-    DBusMessage    *reply;
+    DBusMessage *   reply;
 
     VerifyOrExit(GetConnection() != NULL, ret = kWpantundStatus_InvalidConnection);
     SetDestination("com.nestlabs.WPANTunnelDriver");
@@ -60,19 +60,18 @@ int DBusIfname::ProcessReply(void)
     VerifyOrExit(dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY);
 
     dbus_message_iter_recurse(&iter, &listIter);
-    for ( ; dbus_message_iter_get_arg_type(&listIter) == DBUS_TYPE_ARRAY;
-          dbus_message_iter_next(&listIter))
+    for (; dbus_message_iter_get_arg_type(&listIter) == DBUS_TYPE_ARRAY; dbus_message_iter_next(&listIter))
     {
         DBusMessageIter aItemIter;
-        char           *aItemInterfaceName = NULL;
-        char           *aItemDBusName = NULL;
+        char *          aItemInterfaceName = NULL;
+        char *          aItemDBusName      = NULL;
 
         dbus_message_iter_recurse(&listIter, &aItemIter);
         dbus_message_iter_get_basic(&aItemIter, &aItemInterfaceName);
         dbus_message_iter_next(&aItemIter);
         dbus_message_iter_get_basic(&aItemIter, &aItemDBusName);
-        if ((NULL != aItemInterfaceName) && (NULL != aItemDBusName)
-            && (strcmp(aItemInterfaceName, mInterfaceName) == 0))
+        if ((NULL != aItemInterfaceName) && (NULL != aItemDBusName) &&
+            (strcmp(aItemInterfaceName, mInterfaceName) == 0))
         {
             strncpy(mDBusName, aItemDBusName, DBUS_MAXIMUM_NAME_LENGTH);
             break;
@@ -88,5 +87,5 @@ char *DBusIfname::GetDBusName(void)
     return mDBusName;
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

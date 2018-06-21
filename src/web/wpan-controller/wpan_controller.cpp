@@ -61,17 +61,14 @@ int WPANController::Scan(void)
 
     scannedNetwork.SetChannelMask(0);
     scannedNetwork.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, mIfName);
     scannedNetwork.SetPath(path);
     scannedNetwork.SetDestination(GetDBusInterfaceName());
     scannedNetwork.SetInterface(WPANTUND_DBUS_APIv1_INTERFACE);
     VerifyOrExit((ret = scannedNetwork.ProcessReply()) == 0);
 
-    VerifyOrExit((mScannedNetworkCount = scannedNetwork.GetNetworksCount()) > 0,
-                 ret = kWpantundStatus_NetworkNotFound);
-    memcpy(mScannedNetworks, scannedNetwork.GetNetworks(),
-           mScannedNetworkCount * sizeof(Dbus::WpanNetworkInfo));
+    VerifyOrExit((mScannedNetworkCount = scannedNetwork.GetNetworksCount()) > 0, ret = kWpantundStatus_NetworkNotFound);
+    memcpy(mScannedNetworks, scannedNetwork.GetNetworks(), mScannedNetworkCount * sizeof(Dbus::WpanNetworkInfo));
 exit:
     return ret;
 }
@@ -88,9 +85,8 @@ int WPANController::GetScanNetworksInfoCount(void) const
 
 const char *WPANController::GetDBusInterfaceName(void) const
 {
-
     DBusIfname dbusIfName;
-    char      *destination;
+    char *     destination;
     int        ret = kWpantundStatus_Ok;
 
     dbusIfName.SetInterfaceName(mIfName);
@@ -107,8 +103,7 @@ int WPANController::Leave(void)
 
     leaveNetwork.SetDestination(GetDBusInterfaceName());
     leaveNetwork.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, mIfName);
     leaveNetwork.SetPath(path);
     leaveNetwork.SetInterface(WPANTUND_DBUS_APIv1_INTERFACE);
     return leaveNetwork.ProcessReply();
@@ -126,8 +121,7 @@ int WPANController::Form(const char *aNetworkName, uint16_t aChannel)
     formNetwork.SetChannelMask(aChannel);
     formNetwork.SetInterfaceName(mIfName);
     formNetwork.SetNodeType(OT_ROUTER_ROLE);
-    snprintf(path, sizeof(path), "%s/%s", WPAN_TUNNEL_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPAN_TUNNEL_DBUS_PATH, mIfName);
     formNetwork.SetPath(path);
     formNetwork.SetDestination(GetDBusInterfaceName());
     formNetwork.SetInterface(WPAN_TUNNEL_DBUS_INTERFACE);
@@ -136,10 +130,7 @@ exit:
     return ret;
 }
 
-int WPANController::Join(const char *aNetworkName,
-                         uint16_t aChannel,
-                         uint64_t aExtPanId,
-                         uint16_t aPanId)
+int WPANController::Join(const char *aNetworkName, uint16_t aChannel, uint64_t aExtPanId, uint16_t aPanId)
 {
     int      ret = 0;
     DBusJoin joinNetwork;
@@ -149,8 +140,7 @@ int WPANController::Join(const char *aNetworkName,
     joinNetwork.SetNetworkName(aNetworkName);
     joinNetwork.SetNodeType(OT_ROUTER_ROLE);
     joinNetwork.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPAN_TUNNEL_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPAN_TUNNEL_DBUS_PATH, mIfName);
     joinNetwork.SetPath(path);
     VerifyOrExit((aChannel <= 26 && aChannel >= 11), ret = kWpantundStatus_InvalidArgument);
     joinNetwork.SetChannel(aChannel);
@@ -173,8 +163,7 @@ const char *WPANController::Get(const char *aPropertyName) const
 
     VerifyOrExit(aPropertyName != NULL, ret = kWpantundStatus_InvalidArgument);
     getProp.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, mIfName);
     getProp.SetInterface(WPANTUND_DBUS_APIv1_INTERFACE);
     getProp.SetPath(path);
     getProp.SetDestination(GetDBusInterfaceName());
@@ -195,8 +184,7 @@ int WPANController::Set(uint8_t aType, const char *aPropertyName, const char *aP
     int     ret = kWpantundStatus_Ok;
     char    path[DBUS_MAXIMUM_NAME_LENGTH + 1];
 
-    VerifyOrExit((aType == kPropertyType_String || aType == kPropertyType_Data),
-                 ret = kWpantundStatus_InvalidArgument);
+    VerifyOrExit((aType == kPropertyType_String || aType == kPropertyType_Data), ret = kWpantundStatus_InvalidArgument);
     setProp.SetPropertyType(aType);
     VerifyOrExit(aPropertyName != NULL, ret = kWpantundStatus_InvalidArgument);
     setProp.SetPropertyName(aPropertyName);
@@ -204,8 +192,7 @@ int WPANController::Set(uint8_t aType, const char *aPropertyName, const char *aP
     setProp.SetPropertyValue(aPropertyValue);
     setProp.SetDestination(GetDBusInterfaceName());
     setProp.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, mIfName);
     setProp.SetPath(path);
     setProp.SetInterface(WPANTUND_DBUS_APIv1_INTERFACE);
     ret = setProp.ProcessReply();
@@ -224,8 +211,7 @@ int WPANController::AddGateway(const char *aPrefix, bool aIsDefaultRoute)
     gateway.SetPrefix(aPrefix);
     gateway.SetDestination(GetDBusInterfaceName());
     gateway.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, mIfName);
     gateway.SetPath(path);
     gateway.SetInterface(WPANTUND_DBUS_APIv1_INTERFACE);
     ret = gateway.ProcessReply();
@@ -246,8 +232,7 @@ int WPANController::RemoveGateway(const char *aPrefix)
     gateway.SetPreferredLifetime(0);
     gateway.SetDestination(GetDBusInterfaceName());
     gateway.SetInterfaceName(mIfName);
-    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH,
-             mIfName);
+    snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, mIfName);
     gateway.SetPath(path);
     gateway.SetInterface(WPANTUND_DBUS_APIv1_INTERFACE);
     ret = gateway.ProcessReply();
@@ -260,5 +245,5 @@ void WPANController::SetInterfaceName(const char *aIfName)
     strncpy(mIfName, aIfName, sizeof(mIfName));
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot
