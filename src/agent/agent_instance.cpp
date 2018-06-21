@@ -44,8 +44,7 @@ namespace BorderRouter {
 
 AgentInstance::AgentInstance(const char *aIfName)
     : mNcp(Ncp::Controller::Create(aIfName))
-    , mCoap(Coap::Agent::Create(SendCoap, this))
-    , mBorderAgent(mNcp, mCoap)
+    , mBorderAgent(mNcp)
 {
 }
 
@@ -54,10 +53,6 @@ otbrError AgentInstance::Init(void)
     otbrError error = OTBR_ERROR_NONE;
 
     SuccessOrExit(error = mNcp->Init());
-
-    mNcp->On(Ncp::kEventTmfProxyStream, FeedCoap, this);
-
-    SuccessOrExit(error = mNcp->TmfProxyStart());
 
     SuccessOrExit(error = mBorderAgent.Start());
 
@@ -86,49 +81,8 @@ void AgentInstance::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet,
     mBorderAgent.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
 }
 
-void AgentInstance::FeedCoap(void *aContext, int aEvent, va_list aArguments)
-{
-    assert(aEvent == Ncp::kEventTmfProxyStream);
-
-    AgentInstance *agentInstance = static_cast<AgentInstance *>(aContext);
-    const uint8_t *buffer        = va_arg(aArguments, const uint8_t *);
-    uint16_t       length        = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    uint16_t       locator       = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    uint16_t       port          = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    Ip6Address     addr(locator);
-
-    agentInstance->mCoap->Input(buffer, length, addr.m8, port);
-}
-
-ssize_t AgentInstance::SendCoap(const uint8_t *aBuffer,
-                                uint16_t       aLength,
-                                const uint8_t *aIp6,
-                                uint16_t       aPort,
-                                void *         aContext)
-{
-    return static_cast<AgentInstance *>(aContext)->SendCoap(aBuffer, aLength, aIp6, aPort);
-}
-
-ssize_t AgentInstance::SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort)
-{
-    const Ip6Address *addr = reinterpret_cast<const Ip6Address *>(aIp6);
-    uint16_t          rloc = addr->ToLocator();
-
-    mNcp->TmfProxySend(aBuffer, aLength, rloc, aPort);
-    return aLength;
-}
-
 AgentInstance::~AgentInstance(void)
 {
-    otbrError error = OTBR_ERROR_NONE;
-
-    Coap::Agent::Destroy(mCoap);
-
-    if ((error = mNcp->TmfProxyStop()))
-    {
-        otbrLog(OTBR_LOG_ERR, "Failed to stop TMF proxy: %d!", error);
-    }
-
     Ncp::Controller::Destroy(mNcp);
 }
 

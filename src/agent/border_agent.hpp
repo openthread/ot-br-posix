@@ -36,7 +36,6 @@
 
 #include <stdint.h>
 
-#include "coap.hpp"
 #include "dtls.hpp"
 #include "mdns.hpp"
 #include "ncp.hpp"
@@ -65,10 +64,9 @@ public:
      * The constructor to initialize the Thread border agent.
      *
      * @param[in]   aNcp            A pointer to the NCP controller.
-     * @param[in]   aCoap           A pointer to the TMF agent.
      *
      */
-    BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap);
+    BorderAgent(Ncp::Controller *aNcp);
 
     ~BorderAgent(void);
 
@@ -105,73 +103,18 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
-    static void    FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
-    static ssize_t SendCoaps(const uint8_t *aBuffer,
-                             uint16_t       aLength,
-                             const uint8_t *aIp6,
-                             uint16_t       aPort,
-                             void *         aContext);
-
-    static void HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState, void *aContext)
-    {
-        static_cast<BorderAgent *>(aContext)->HandleDtlsSessionState(aSession, aState);
-    }
-    void HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState);
-
-    static void HandleRelayReceive(const Coap::Resource &aResource,
-                                   const Coap::Message & aMessage,
-                                   Coap::Message &       aResponse,
-                                   const uint8_t *       aIp6,
-                                   uint16_t              aPort,
-                                   void *                aContext)
-    {
-        (void)aResource;
-        (void)aResponse;
-        static_cast<BorderAgent *>(aContext)->HandleRelayReceive(aMessage, aIp6, aPort);
-    }
-    void HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
-
-    static void HandleRelayTransmit(const Coap::Resource &aResource,
-                                    const Coap::Message & aMessage,
-                                    Coap::Message &       aResponse,
-                                    const uint8_t *       aIp6,
-                                    uint16_t              aPort,
-                                    void *                aContext)
-    {
-        (void)aResource;
-        (void)aResponse;
-        static_cast<BorderAgent *>(aContext)->HandleRelayTransmit(aMessage, aIp6, aPort);
-    }
-    void HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort);
-
-    static void ForwardCommissionerRequest(const Coap::Resource &aResource,
-                                           const Coap::Message & aMessage,
-                                           Coap::Message &       aResponse,
-                                           const uint8_t *       aIp6,
-                                           uint16_t              aPort,
-                                           void *                aContext)
-    {
-        (void)aIp6;
-        (void)aResponse;
-        static_cast<BorderAgent *>(aContext)->ForwardCommissionerRequest(aResource, aMessage, aIp6, aPort);
-    }
-    void ForwardCommissionerRequest(const Coap::Resource &aResource,
-                                    const Coap::Message & aMessage,
-                                    const uint8_t *       aIp6,
-                                    uint16_t              aPort);
-
-    static void ForwardCommissionerResponse(const Coap::Message &aMessage, void *aContext)
-    {
-        static_cast<BorderAgent *>(aContext)->ForwardCommissionerResponse(aMessage);
-    }
-    void ForwardCommissionerResponse(const Coap::Message &aMessage);
+    static void    SendToCommissioner(void *aContext, int aEvent, va_list aArguments);
+    static ssize_t SendToCommissioner(const uint8_t *aBuffer,
+                                      uint16_t       aLength,
+                                      const uint8_t *aIp6,
+                                      uint16_t       aPort,
+                                      void *         aContext);
 
     static void HandleMdnsState(void *aContext, Mdns::State aState)
     {
         static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
     }
     void HandleMdnsState(Mdns::State aState);
-
     void PublishService(void);
     void StartPublishService(void);
     void StopPublishService(void);
@@ -186,30 +129,14 @@ private:
     static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
     static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
 
-    Coap::Resource mActiveGet;
-    Coap::Resource mActiveSet;
-    Coap::Resource mPendingGet;
-    Coap::Resource mPendingSet;
-
-    // Border agent resources for external commissioner.
-    Coap::Resource mCommissionerPetitionHandler;
-    Coap::Resource mCommissionerKeepAliveHandler;
-    Coap::Resource mCommissionerSetHandler;
-    Coap::Resource mCommissionerRelayTransmitHandler;
-
-    // Border agent resources for Thread network.
-    Coap::Resource mCommissionerRelayReceiveHandler;
-
-    Coap::Agent *    mCoap;
-    Dtls::Server *   mDtlsServer;
-    Dtls::Session *  mDtlsSession;
-    Coap::Agent *    mCoaps;
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
 
     uint8_t mExtPanId[kSizeExtPanId];
     char    mNetworkName[kSizeNetworkName + 1];
     bool    mThreadStarted;
+
+    int mSocket;
 };
 
 /**

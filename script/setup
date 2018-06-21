@@ -55,13 +55,13 @@ main()
     nat64_uninstall
     dns64_uninstall
     ipforward_uninstall
-    
+
     ipforward_install
     nat64_install
     dns64_install
     network_manager_install
     wpantund_install
-    dhcpv6_pd_install    
+    dhcpv6_pd_install
     otbr_install
     . $AFTER_HOOK
 }

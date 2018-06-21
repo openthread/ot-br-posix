@@ -35,6 +35,7 @@
 #define DTLS_HPP_
 
 #include <sys/select.h>
+#include <unistd.h>
 
 #include "common/types.hpp"
 

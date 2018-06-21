@@ -82,6 +82,9 @@
 
 #define WPANTUND_IF_CMD_JOINER_ADD            "JoinerAdd"
 
+#define WPANTUND_IF_CMD_PEEK                  "Peek"
+#define WPANTUND_IF_CMD_POKE                  "Poke"
+
 // ============================================================================
 // NestLabs Internal API Interface
 
