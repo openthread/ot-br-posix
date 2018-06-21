@@ -59,24 +59,24 @@ struct PropertyNameValue
 class DBusGet : public DBusBase
 {
 public:
-    int ProcessReply(void);
-    void SetPropertyName(const char *aPropertyName) { mPropertyName = aPropertyName; }
-    const char *GetPropertyName(void) { return mPropertyName; }
-    const char *GetPropertyValue(const char *aPropertyName);
+    int                ProcessReply(void);
+    void               SetPropertyName(const char *aPropertyName) { mPropertyName = aPropertyName; }
+    const char *       GetPropertyName(void) { return mPropertyName; }
+    const char *       GetPropertyValue(const char *aPropertyName);
     PropertyNameValue *GetPropertyList(void);
 
 private:
-    int GetAllPropertyNames(void);
+    int  GetAllPropertyNames(void);
     void GetAllPropertyValues(int aPropCnt);
 
-    DBusMessageIter   mIter;
+    DBusMessageIter mIter;
 
-    const char       *mPropertyName;
-    char              mPropertyValue[OT_PROPERTY_VALUE_SIZE];
+    const char *mPropertyName;
+    char        mPropertyValue[OT_PROPERTY_VALUE_SIZE];
 
     PropertyNameValue mPropertyList[OT_LIST_MAX_LENGTH];
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  //DBUS_GET_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_GET_HPP

@@ -37,7 +37,6 @@ namespace ot {
 
 namespace BorderRouter {
 
-
 /**
  * This method returns the timestamp in miniseconds of @aTime.
  *
@@ -57,7 +56,8 @@ inline unsigned long GetTimestamp(const timeval &aTime)
  * @returns Current timestamp in miniseconds.
  *
  */
-inline unsigned long GetNow(void) {
+inline unsigned long GetNow(void)
+{
     timeval now;
 
     gettimeofday(&now, NULL);
@@ -68,4 +68,4 @@ inline unsigned long GetNow(void) {
 
 } // namespace ot
 
-#endif  // TIME_HPP_
+#endif // TIME_HPP_

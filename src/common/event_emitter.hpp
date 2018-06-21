@@ -29,8 +29,8 @@
 #ifndef EVENT_EMITTER_HPP_
 #define EVENT_EMITTER_HPP_
 
-#include <map>
 #include <list>
+#include <map>
 
 #include <stdarg.h>
 
@@ -55,7 +55,6 @@ class EventEmitter
     typedef void (*Callback)(void *aContext, int aEvent, va_list aArguments);
 
 public:
-
     /**
      * This method register an event handler for @p aEvent.
      *
@@ -85,15 +84,14 @@ public:
     void Emit(int aEvent, ...);
 
 private:
-
-    typedef std::pair<Callback, void *>  Handler;
-    typedef std::list<Handler>           Handlers;
-    typedef std::map<int, Handlers>      Events;
-    Events mEvents;
+    typedef std::pair<Callback, void *> Handler;
+    typedef std::list<Handler>          Handlers;
+    typedef std::map<int, Handlers>     Events;
+    Events                              mEvents;
 };
 
 } // namespace BorderRouter
 
 } // namespace ot
 
-#endif  // EVENT_EMITTER_HPP_
+#endif // EVENT_EMITTER_HPP_

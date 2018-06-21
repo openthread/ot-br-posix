@@ -27,13 +27,13 @@
  */
 
 /* length of an EUI64 in bytes */
-#define LEN_BIN_EUI64       (64 / 8)
+#define LEN_BIN_EUI64 (64 / 8)
 /* length of EUI64 in ascii form */
 
 #include "steeringdata.hpp"
-#include <stdio.h>
-#include "hex.hpp"
 #include "crc16.hpp"
+#include "hex.hpp"
+#include <stdio.h>
 #include <string.h>
 
 namespace ot {
@@ -70,12 +70,10 @@ void SteeringData::ComputeBloomFilter(const uint8_t *aExtAddress)
     SetBit(ansi.Get() % GetNumBits());
 }
 
-
-
 bool SteeringData::ComputeBloomFilterAscii(const char *ascii_eui64)
 {
     int     r;
-    uint8_t bin_eui[ LEN_BIN_EUI64 ];
+    uint8_t bin_eui[LEN_BIN_EUI64];
 
     /* Test 1: simple check for length */
     if ((LEN_BIN_EUI64 * 2) != strlen(ascii_eui64))
@@ -96,4 +94,4 @@ bool SteeringData::ComputeBloomFilterAscii(const char *ascii_eui64)
     return true;
 }
 
-} // namespace
+} // namespace ot

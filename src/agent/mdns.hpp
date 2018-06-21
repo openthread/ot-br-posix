@@ -137,7 +137,10 @@ public:
      *                                  pending process in less than its current value.
      *
      */
-    virtual void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+    virtual void UpdateFdSet(fd_set & aReadFdSet,
+                             fd_set & aWriteFdSet,
+                             fd_set & aErrorFdSet,
+                             int &    aMaxFd,
                              timeval &aTimeout) = 0;
 
     virtual ~Publisher(void) {}
@@ -154,8 +157,11 @@ public:
      * @returns A pointer to the newly created MDNS publisher.
      *
      */
-    static Publisher *Create(int aProtocol, const char *aHost, const char *aDomain, StateHandler aHandler,
-                             void *aContext);
+    static Publisher *Create(int          aProtocol,
+                             const char * aHost,
+                             const char * aDomain,
+                             StateHandler aHandler,
+                             void *       aContext);
 
     /**
      * This function destroies the MDNS publisher.
@@ -176,4 +182,4 @@ public:
 
 } // namespace ot
 
-#endif  // MDNS_HPP_
+#endif // MDNS_HPP_

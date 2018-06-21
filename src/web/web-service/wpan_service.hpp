@@ -34,16 +34,16 @@
 #ifndef WPAN_SERVICE
 #define WPAN_SERVICE
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
 #include "../pskc-generator/pskc.hpp"
-#include "../wpan-controller/wpan_controller.hpp"
 #include "../utils/encoding.hpp"
+#include "../wpan-controller/wpan_controller.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 
@@ -70,7 +70,6 @@ namespace Web {
 class WpanService
 {
 public:
-
     /**
      * This method handles the http request to join network.
      *
@@ -149,16 +148,15 @@ public:
     int GetWpanServiceStatus(std::string &aNetworkName, std::string &aExtPanId) const;
 
 private:
-
     ot::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
     int                       mNetworksCount;
     char                      mIfName[IFNAMSIZ];
     std::string               mNetworkName;
     std::string               mExtPanId;
-    const char               *mResponseSuccess = "successful";
-    const char               *mResponseFail = "failed";
-    const char               *mServiceUp = "up";
-    const char               *mServiceDown = "down";
+    const char *              mResponseSuccess = "successful";
+    const char *              mResponseFail    = "failed";
+    const char *              mServiceUp       = "up";
+    const char *              mServiceDown     = "down";
 
     enum
     {
@@ -176,10 +174,9 @@ private:
         kPropertyType_String = 0,
         kPropertyType_Data,
     };
-
 };
 
-} //namespace Web
-} //namespace ot
+} // namespace Web
+} // namespace ot
 
 #endif

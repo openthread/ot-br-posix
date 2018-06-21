@@ -47,10 +47,12 @@ struct TestContext
     bool         mResponseHandled;
 };
 
-void TestRequestHandler(const Coap::Resource &aResource, const Coap::Message &aRequest, Coap::Message &aResponse,
-                        const uint8_t *aIp6,
-                        uint16_t aPort,
-                        void *aContext)
+void TestRequestHandler(const Coap::Resource &aResource,
+                        const Coap::Message & aRequest,
+                        Coap::Message &       aResponse,
+                        const uint8_t *       aIp6,
+                        uint16_t              aPort,
+                        void *                aContext)
 {
     TestContext &context = *static_cast<TestContext *>(aContext);
 
@@ -72,8 +74,7 @@ void TestResponseHandler(const Coap::Message &aMessage, void *aContext)
     (void)aMessage;
 }
 
-ssize_t TestNetworkSender(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                          void *aContext)
+ssize_t TestNetworkSender(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort, void *aContext)
 {
     TestContext &context = *static_cast<TestContext *>(aContext);
 
@@ -126,21 +127,19 @@ TEST(Coap, TestRequest)
     socklen_t sin6len = sizeof(context.mSockName);
     memset(&context.mSockName, 0, sizeof(context.mSockName));
     context.mSockName.sin6_family = AF_INET6;
-    context.mSockName.sin6_addr = in6addr_any;
-    context.mSockName.sin6_port = 0;
-    CHECK_EQUAL(0, bind(context.mSocket,
-                        reinterpret_cast<struct sockaddr *>(&context.mSockName), sizeof(context.mSockName)));
+    context.mSockName.sin6_addr   = in6addr_any;
+    context.mSockName.sin6_port   = 0;
+    CHECK_EQUAL(
+        0, bind(context.mSocket, reinterpret_cast<struct sockaddr *>(&context.mSockName), sizeof(context.mSockName)));
     getsockname(context.mSocket, reinterpret_cast<struct sockaddr *>(&context.mSockName), &sin6len);
 
-    context.mAgent = agent;
-    context.mRequestHandled = false;
+    context.mAgent           = agent;
+    context.mRequestHandled  = false;
     context.mResponseHandled = false;
 
     CHECK_EQUAL(OTBR_ERROR_NONE, agent->AddResource(resource));
-    Coap::Message *message = agent->NewMessage(Coap::kTypeConfirmable,
-                                               Coap::kCodePost,
-                                               reinterpret_cast<const uint8_t *>(&token),
-                                               sizeof(token));
+    Coap::Message *message = agent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
+                                               reinterpret_cast<const uint8_t *>(&token), sizeof(token));
     message->SetPath("cool");
 
     agent->Send(*message, NULL, 0, TestResponseHandler, &context);

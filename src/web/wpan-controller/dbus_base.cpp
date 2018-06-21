@@ -37,7 +37,6 @@
 #include "dbus_base.hpp"
 #include "wpan_controller.hpp"
 
-
 #define OT_DEFAULT_TIMEOUT_IN_MILLISECONDS 60 * 1000
 
 namespace ot {
@@ -67,13 +66,11 @@ DBusMessage *DBusBase::GetMessage(void)
 {
     int ret = kWpantundStatus_Ok;
 
-    VerifyOrExit(strnlen(mDestination, sizeof(mDestination)) != 0,
-                 ret = kWpantundStatus_InvalidArgument);
+    VerifyOrExit(strnlen(mDestination, sizeof(mDestination)) != 0, ret = kWpantundStatus_InvalidArgument);
     VerifyOrExit(mPath != NULL, ret = kWpantundStatus_InvalidArgument);
     VerifyOrExit(mIface != NULL, ret = kWpantundStatus_InvalidArgument);
     VerifyOrExit(mMethod != NULL, ret = kWpantundStatus_InvalidArgument);
-    mMessage = dbus_message_new_method_call(mDestination, mPath, mIface,
-                                            mMethod);
+    mMessage = dbus_message_new_method_call(mDestination, mPath, mIface, mMethod);
     VerifyOrExit(mMessage != NULL, ret = kWpantundStatus_InvalidMessage);
 
 exit:
@@ -90,8 +87,8 @@ DBusMessage *DBusBase::GetReply(void)
     DBusError error;
 
     dbus_error_init(&error);
-    mReply = dbus_connection_send_with_reply_and_block(mConnection, mMessage,
-                                                       OT_DEFAULT_TIMEOUT_IN_MILLISECONDS, &error);
+    mReply =
+        dbus_connection_send_with_reply_and_block(mConnection, mMessage, OT_DEFAULT_TIMEOUT_IN_MILLISECONDS, &error);
 
     VerifyOrExit(mReply != NULL, ret = kWpantundStatus_InvalidReply);
 
@@ -265,5 +262,5 @@ exit:
     }
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

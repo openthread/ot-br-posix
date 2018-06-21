@@ -42,10 +42,10 @@ namespace Dbus {
 
 int DBusForm::ProcessReply(void)
 {
-    int          ret = 0;
-    const char  *method = "Form";
+    int          ret      = 0;
+    const char * method   = "Form";
     DBusMessage *messsage = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply    = NULL;
     DBusError    error;
 
     dbus_error_init(&error);
@@ -55,13 +55,11 @@ int DBusForm::ProcessReply(void)
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
     VerifyOrExit(mNetworkName != NULL, ret = kWpantundStatus_InvalidArgument);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mNetworkName,
-                             DBUS_TYPE_INT16, &mNodeType, DBUS_TYPE_UINT32, &mChannelMask,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mNetworkName, DBUS_TYPE_INT16, &mNodeType, DBUS_TYPE_UINT32,
+                             &mChannelMask, DBUS_TYPE_INVALID);
 
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
-    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
-                          DBUS_TYPE_INVALID);
+    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
 
 exit:
     if (dbus_error_is_set(&error))
@@ -73,5 +71,5 @@ exit:
     return ret;
 }
 
-} //namespace Dbus
-} //ot
+} // namespace Dbus
+} // namespace ot

@@ -44,13 +44,13 @@ namespace Dbus {
 class DBusBase
 {
 public:
-    DBusConnection *GetConnection(void);
-    DBusMessage *GetMessage(void);
-    DBusMessage *GetReply(void);
+    DBusConnection * GetConnection(void);
+    DBusMessage *    GetMessage(void);
+    DBusMessage *    GetReply(void);
     DBusPendingCall *GetPending(void);
-    int ProcessReply(void);
-    char *GetDBusName(void);
-    void free(void);
+    int              ProcessReply(void);
+    char *           GetDBusName(void);
+    void             free(void);
 
     void SetDestination(const char *aDestination);
     void SetInterface(const char *aIface);
@@ -63,17 +63,17 @@ public:
     char mInterfaceName[DBUS_MAXIMUM_NAME_LENGTH + 1];
 
 private:
-    DBusConnection  *mConnection;
-    DBusMessage     *mMessage;
-    DBusMessage     *mReply;
+    DBusConnection * mConnection;
+    DBusMessage *    mMessage;
+    DBusMessage *    mReply;
     DBusPendingCall *mPending;
 
-    const char      *mMethod;
-    char             mDestination[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    char             mPath[DBUS_MAXIMUM_NAME_LENGTH + 1];
-    char             mIface[DBUS_MAXIMUM_NAME_LENGTH + 1];
+    const char *mMethod;
+    char        mDestination[DBUS_MAXIMUM_NAME_LENGTH + 1];
+    char        mPath[DBUS_MAXIMUM_NAME_LENGTH + 1];
+    char        mIface[DBUS_MAXIMUM_NAME_LENGTH + 1];
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  // DBUS_BASE_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_BASE_HPP

@@ -34,8 +34,8 @@
 #include "mdns_avahi.hpp"
 
 #include <avahi-common/alternative.h>
-#include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
+#include <avahi-common/malloc.h>
 #include <avahi-common/timeval.h>
 #include <errno.h>
 #include <stdio.h>
@@ -48,12 +48,12 @@
 #include "common/time.hpp"
 
 AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
-                           AvahiTimeoutCallback aCallback,
-                           void *aContext,
-                           void *aPoller) :
-    mCallback(aCallback),
-    mContext(aContext),
-    mPoller(aPoller)
+                           AvahiTimeoutCallback  aCallback,
+                           void *                aContext,
+                           void *                aPoller)
+    : mCallback(aCallback)
+    , mContext(aContext)
+    , mPoller(aPoller)
 {
     if (aTimeout)
     {
@@ -73,19 +73,22 @@ namespace Mdns {
 
 Poller::Poller(void)
 {
-    mAvahiPoller.userdata = this;
-    mAvahiPoller.watch_new = WatchNew;
-    mAvahiPoller.watch_update = WatchUpdate;
+    mAvahiPoller.userdata         = this;
+    mAvahiPoller.watch_new        = WatchNew;
+    mAvahiPoller.watch_update     = WatchUpdate;
     mAvahiPoller.watch_get_events = WatchGetEvents;
-    mAvahiPoller.watch_free = WatchFree;
+    mAvahiPoller.watch_free       = WatchFree;
 
-    mAvahiPoller.timeout_new = TimeoutNew;
+    mAvahiPoller.timeout_new    = TimeoutNew;
     mAvahiPoller.timeout_update = TimeoutUpdate;
-    mAvahiPoller.timeout_free = TimeoutFree;
+    mAvahiPoller.timeout_free   = TimeoutFree;
 }
 
-AvahiWatch *Poller::WatchNew(const struct AvahiPoll *aPoller, int aFd, AvahiWatchEvent aEvent,
-                             AvahiWatchCallback aCallback, void *aContext)
+AvahiWatch *Poller::WatchNew(const struct AvahiPoll *aPoller,
+                             int                     aFd,
+                             AvahiWatchEvent         aEvent,
+                             AvahiWatchCallback      aCallback,
+                             void *                  aContext)
 {
     return reinterpret_cast<Poller *>(aPoller->userdata)->WatchNew(aFd, aEvent, aCallback, aContext);
 }
@@ -127,8 +130,10 @@ void Poller::WatchFree(AvahiWatch &aWatch)
     }
 }
 
-AvahiTimeout *Poller::TimeoutNew(const AvahiPoll *aPoller, const struct timeval *aTimeout,
-                                 AvahiTimeoutCallback aCallback, void *aContext)
+AvahiTimeout *Poller::TimeoutNew(const AvahiPoll *     aPoller,
+                                 const struct timeval *aTimeout,
+                                 AvahiTimeoutCallback  aCallback,
+                                 void *                aContext)
 {
     assert(aPoller && aCallback);
     return static_cast<Poller *>(aPoller->userdata)->TimeoutNew(aTimeout, aCallback, aContext);
@@ -170,12 +175,11 @@ void Poller::TimeoutFree(AvahiTimeout &aTimer)
     }
 }
 
-void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
-                         timeval &aTimeout)
+void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout)
 {
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
-        int             fd = (*it)->mFd;
+        int             fd     = (*it)->mFd;
         AvahiWatchEvent events = (*it)->mEvents;
 
         if (AVAHI_WATCH_IN & events)
@@ -220,7 +224,7 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
         if (static_cast<long>(timeout - now) <= 0)
         {
             aTimeout.tv_usec = 0;
-            aTimeout.tv_sec = 0;
+            aTimeout.tv_sec  = 0;
             break;
         }
         else
@@ -229,7 +233,7 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
             int usec;
 
             timeout -= now;
-            sec = timeout / 1000;
+            sec  = timeout / 1000;
             usec = (timeout % 1000) * 1000;
 
             if (sec < aTimeout.tv_sec)
@@ -253,7 +257,7 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
 
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
-        int             fd = (*it)->mFd;
+        int             fd     = (*it)->mFd;
         AvahiWatchEvent events = (*it)->mEvents;
 
         (*it)->mHappened = 0;
@@ -302,16 +306,20 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
     }
 }
 
-PublisherAvahi::PublisherAvahi(int aProtocol, const char *aHost, const char *aDomain, StateHandler aHandler,
-                               void *aContext) :
-    mClient(NULL),
-    mGroup(NULL),
-    mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6 : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC),
-    mHost(NULL),
-    mDomain(NULL),
-    mState(kStateIdle),
-    mStateHandler(aHandler),
-    mContext(aContext)
+PublisherAvahi::PublisherAvahi(int          aProtocol,
+                               const char * aHost,
+                               const char * aDomain,
+                               StateHandler aHandler,
+                               void *       aContext)
+    : mClient(NULL)
+    , mGroup(NULL)
+    , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
+                                      : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
+    , mHost(NULL)
+    , mDomain(NULL)
+    , mState(kStateIdle)
+    , mStateHandler(aHandler)
+    , mContext(aContext)
 {
     if (aHost)
     {
@@ -339,11 +347,10 @@ PublisherAvahi::~PublisherAvahi(void)
 
 otbrError PublisherAvahi::Start(void)
 {
-    otbrError ret = OTBR_ERROR_NONE;
+    otbrError ret   = OTBR_ERROR_NONE;
     int       error = 0;
 
-    mClient = avahi_client_new(mPoller.GetAvahiPoll(), AVAHI_CLIENT_NO_FAIL,
-                               HandleClientState, this, &error);
+    mClient = avahi_client_new(mPoller.GetAvahiPoll(), AVAHI_CLIENT_NO_FAIL, HandleClientState, this, &error);
 
     if (error)
     {
@@ -377,8 +384,8 @@ void PublisherAvahi::Stop(void)
     {
         avahi_client_free(mClient);
         mClient = NULL;
-        mGroup = NULL;
-        mState = kStateIdle;
+        mGroup  = NULL;
+        mState  = kStateIdle;
         mStateHandler(mContext, mState);
     }
 }
@@ -469,7 +476,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
          * again with the new host name. */
         otbrLog(OTBR_LOG_ERR, "Client collision: %s", avahi_strerror(avahi_client_errno(aClient)));
 
-    // fall through
+        // fall through
 
     case AVAHI_CLIENT_S_REGISTERING:
         /* The server records are now being established. This
@@ -492,7 +499,10 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
     }
 }
 
-void PublisherAvahi::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+void PublisherAvahi::UpdateFdSet(fd_set & aReadFdSet,
+                                 fd_set & aWriteFdSet,
+                                 fd_set & aErrorFdSet,
+                                 int &    aMaxFd,
                                  timeval &aTimeout)
 {
     mPoller.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
@@ -505,7 +515,7 @@ void PublisherAvahi::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet
 
 otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
 {
-    otbrError ret = OTBR_ERROR_ERRNO;
+    otbrError ret   = OTBR_ERROR_ERRNO;
     int       error = 0;
     // aligned with AvahiStringList
     AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
@@ -521,32 +531,30 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
     {
         int         rval;
-        const char *value = va_arg(args, const char *);
+        const char *value  = va_arg(args, const char *);
         size_t      needed = sizeof(AvahiStringList) + strlen(name) + strlen(value);
 
         VerifyOrExit(used + needed < sizeof(buffer), errno = EMSGSIZE);
         curr->next = last;
-        last = curr;
-        rval = sprintf(reinterpret_cast<char *>(curr->text), "%s=%s", name, value);
+        last       = curr;
+        rval       = sprintf(reinterpret_cast<char *>(curr->text), "%s=%s", name, value);
         assert(rval > 0);
         curr->size = static_cast<size_t>(rval);
         {
             const uint8_t *next = curr->text + curr->size;
-            curr = OTBR_ALIGNED(next, AvahiStringList *);
+            curr                = OTBR_ALIGNED(next, AvahiStringList *);
         }
         used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(buffer));
     }
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {
-        if (!strncmp(it->mName, aName, sizeof(it->mName)) &&
-            !strncmp(it->mType, aType, sizeof(it->mType)) &&
+        if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)) &&
             it->mPort == aPort)
         {
             otbrLog(OTBR_LOG_INFO, "MDNS updating service %s...", aName);
-            error = avahi_entry_group_update_service_txt_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol,
-                                                                static_cast<AvahiPublishFlags>(0), aName, aType,
-                                                                mDomain, last);
+            error = avahi_entry_group_update_service_txt_strlst(
+                mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0), aName, aType, mDomain, last);
             SuccessOrExit(error);
             ret = OTBR_ERROR_NONE;
             ExitNow();
@@ -554,9 +562,8 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     }
 
     otbrLog(OTBR_LOG_INFO, "MDNS creating service %s...", aName);
-    error = avahi_entry_group_add_service_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol,
-                                                 static_cast<AvahiPublishFlags>(0), aName, aType, mDomain,
-                                                 mHost, aPort, last);
+    error = avahi_entry_group_add_service_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0),
+                                                 aName, aType, mDomain, mHost, aPort, last);
     SuccessOrExit(error);
 
     {

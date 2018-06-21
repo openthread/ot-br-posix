@@ -1,8 +1,8 @@
 #include <cstdio>
 
 #include "common/code_utils.hpp"
-#include "utils/hex.hpp"
 #include "pskc-generator/pskc.hpp"
+#include "utils/hex.hpp"
 
 /**
  * Constants.
@@ -41,9 +41,9 @@ int printPSKc(const char *aPassphrase, const char *aExtPanId, const char *aNetwo
     VerifyOrExit(length == kSizeExtPanId * 2, printf("EXTPANID length must be %d bytes.\n", kSizeExtPanId));
     for (size_t i = 0; i < length; i++)
     {
-        VerifyOrExit((aExtPanId[i] <= '9' && aExtPanId[i] >= '0') ||
-                     (aExtPanId[i] <= 'f' && aExtPanId[i] >= 'a') ||
-                     (aExtPanId[i] <= 'F' && aExtPanId[i] >= 'A'), printf("EXTPANID must be encoded in hex.\n"));
+        VerifyOrExit((aExtPanId[i] <= '9' && aExtPanId[i] >= '0') || (aExtPanId[i] <= 'f' && aExtPanId[i] >= 'a') ||
+                         (aExtPanId[i] <= 'F' && aExtPanId[i] >= 'A'),
+                     printf("EXTPANID must be encoded in hex.\n"));
     }
     ot::Utils::Hex2Bytes(aExtPanId, extpanid, sizeof(extpanid));
 

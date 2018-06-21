@@ -52,7 +52,7 @@ void EventEmitter::Off(int aEvent, Callback aCallback, void *aContext)
         return;
     }
 
-    Handler   handler = Handler(aCallback, aContext);
+    Handler   handler  = Handler(aCallback, aContext);
     Handlers &handlers = mEvents[aEvent];
 
     for (Handlers::iterator it = handlers.begin(); it != handlers.end(); ++it)

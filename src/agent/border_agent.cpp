@@ -40,13 +40,13 @@
 #include <string.h>
 
 #include "border_agent.hpp"
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
-#include "common/types.hpp"
-#include "common/tlv.hpp"
 #include "dtls.hpp"
 #include "ncp.hpp"
 #include "uris.hpp"
+#include "common/code_utils.hpp"
+#include "common/logging.hpp"
+#include "common/tlv.hpp"
+#include "common/types.hpp"
 #include "utils/hex.hpp"
 
 namespace ot {
@@ -87,11 +87,11 @@ enum
 void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
 {
     uint8_t        tokenLength = 0;
-    const uint8_t *token = aMessage.GetToken(tokenLength);
-    uint16_t       length = 0;
-    const uint8_t *payload = NULL;
+    const uint8_t *token       = aMessage.GetToken(tokenLength);
+    uint16_t       length      = 0;
+    const uint8_t *payload     = NULL;
 
-    Coap::Code     code = aMessage.GetCode();
+    Coap::Code     code    = aMessage.GetCode();
     Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, code, token, tokenLength);
 
     otbrLog(OTBR_LOG_INFO, "Forwarding CommissionerResponse ...");
@@ -103,20 +103,19 @@ void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
     mCoaps->FreeMessage(message);
 }
 
-void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, const Coap::Message &aMessage,
-                                             const uint8_t *aIp6, uint16_t aPort)
+void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource,
+                                             const Coap::Message & aMessage,
+                                             const uint8_t *       aIp6,
+                                             uint16_t              aPort)
 {
     uint8_t        tokenLength = 0;
-    const uint8_t *token = aMessage.GetToken(tokenLength);
-    const char    *path = aResource.mPath;
+    const uint8_t *token       = aMessage.GetToken(tokenLength);
+    const char *   path        = aResource.mPath;
 
-    Coap::Message *message = mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
-                                               token, tokenLength);
+    Coap::Message *message = mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost, token, tokenLength);
     Ip6Address     addr(kAloc16Leader);
-    uint16_t       length = 0;
+    uint16_t       length  = 0;
     const uint8_t *payload = aMessage.GetPayload(length);
-
-
 
     otbrLog(OTBR_LOG_INFO, "Forwarding request %s...", path);
 
@@ -145,12 +144,11 @@ void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource, co
 void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort)
 {
     uint8_t        tokenLength = 0;
-    const uint8_t *token = aMessage.GetToken(tokenLength);
-    uint16_t       length = 0;
-    const uint8_t *payload = aMessage.GetPayload(length);
+    const uint8_t *token       = aMessage.GetToken(tokenLength);
+    uint16_t       length      = 0;
+    const uint8_t *payload     = aMessage.GetPayload(length);
 
-    Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
-                                                token, tokenLength);
+    Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost, token, tokenLength);
     otbrLog(OTBR_LOG_INFO, "Handle Relay receive ...");
 
     message->SetPath(OT_URI_PATH_RELAY_RX);
@@ -165,14 +163,14 @@ void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_
 
 void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort)
 {
-    uint16_t       length = 0;
+    uint16_t       length  = 0;
     const uint8_t *payload = aMessage.GetPayload(length);
-    uint16_t       rloc = kInvalidLocator;
+    uint16_t       rloc    = kInvalidLocator;
 
     otbrDump(OTBR_LOG_DEBUG, "Relay transmit:", payload, length);
 
     for (const Tlv *tlv = reinterpret_cast<const Tlv *>(payload); tlv < reinterpret_cast<const Tlv *>(payload + length);
-         tlv = tlv->GetNext())
+         tlv            = tlv->GetNext())
     {
         if (tlv->GetType() == kJoinerRouterLocator)
         {
@@ -190,10 +188,8 @@ void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8
     {
         Ip6Address     addr(rloc);
         uint8_t        tokenLength = 0;
-        const uint8_t *token = aMessage.GetToken(tokenLength);
-        Coap::Message *message = mCoap->NewMessage(Coap::kTypeNonConfirmable,
-                                                   Coap::kCodePost,
-                                                   token, tokenLength);
+        const uint8_t *token       = aMessage.GetToken(tokenLength);
+        Coap::Message *message     = mCoap->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost, token, tokenLength);
 
         message->SetPath(OT_URI_PATH_RELAY_TX);
         message->SetPayload(payload, length);
@@ -209,22 +205,24 @@ exit:
     return;
 }
 
-BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap) :
-    mActiveGet(OT_URI_PATH_ACTIVE_GET, ForwardCommissionerRequest, this),
-    mActiveSet(OT_URI_PATH_ACTIVE_SET, ForwardCommissionerRequest, this),
-    mPendingGet(OT_URI_PATH_PENDING_GET, ForwardCommissionerRequest, this),
-    mPendingSet(OT_URI_PATH_PENDING_SET, ForwardCommissionerRequest, this),
-    mCommissionerPetitionHandler(OT_URI_PATH_COMMISSIONER_PETITION, ForwardCommissionerRequest, this),
-    mCommissionerKeepAliveHandler(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this),
-    mCommissionerSetHandler(OT_URI_PATH_COMMISSIONER_SET, ForwardCommissionerRequest, this),
-    mCommissionerRelayTransmitHandler(OT_URI_PATH_RELAY_TX, HandleRelayTransmit, this),
-    mCommissionerRelayReceiveHandler(OT_URI_PATH_RELAY_RX, BorderAgent::HandleRelayReceive, this),
-    mCoap(aCoap),
-    mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this)),
-    mCoaps(Coap::Agent::Create(SendCoaps, this)),
-    mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this)),
-    mNcp(aNcp),
-    mThreadStarted(false) {}
+BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap)
+    : mActiveGet(OT_URI_PATH_ACTIVE_GET, ForwardCommissionerRequest, this)
+    , mActiveSet(OT_URI_PATH_ACTIVE_SET, ForwardCommissionerRequest, this)
+    , mPendingGet(OT_URI_PATH_PENDING_GET, ForwardCommissionerRequest, this)
+    , mPendingSet(OT_URI_PATH_PENDING_SET, ForwardCommissionerRequest, this)
+    , mCommissionerPetitionHandler(OT_URI_PATH_COMMISSIONER_PETITION, ForwardCommissionerRequest, this)
+    , mCommissionerKeepAliveHandler(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this)
+    , mCommissionerSetHandler(OT_URI_PATH_COMMISSIONER_SET, ForwardCommissionerRequest, this)
+    , mCommissionerRelayTransmitHandler(OT_URI_PATH_RELAY_TX, HandleRelayTransmit, this)
+    , mCommissionerRelayReceiveHandler(OT_URI_PATH_RELAY_RX, BorderAgent::HandleRelayReceive, this)
+    , mCoap(aCoap)
+    , mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
+    , mCoaps(Coap::Agent::Create(SendCoaps, this))
+    , mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
+    , mNcp(aNcp)
+    , mThreadStarted(false)
+{
+}
 
 otbrError BorderAgent::Start(void)
 {
@@ -311,8 +309,11 @@ void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session:
     }
 }
 
-ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                               void *aContext)
+ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer,
+                               uint16_t       aLength,
+                               const uint8_t *aIp6,
+                               uint16_t       aPort,
+                               void *         aContext)
 {
     // TODO verify the ip and port
     (void)aIp6;
@@ -327,7 +328,10 @@ void BorderAgent::FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aCon
     borderAgent->mCoaps->Input(aBuffer, aLength, NULL, 0);
 }
 
-void BorderAgent::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
+void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
+                              fd_set & aWriteFdSet,
+                              fd_set & aErrorFdSet,
+                              int &    aMaxFd,
                               timeval &aTimeout)
 {
     mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
@@ -360,8 +364,8 @@ void BorderAgent::PublishService(void)
 
     char xpanid[sizeof(mExtPanId) * 2 + 1];
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
-    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn",
-                               mNetworkName, "xp", xpanid, NULL);
+    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
+                               xpanid, NULL);
 }
 
 void BorderAgent::StartPublishService(void)

@@ -54,20 +54,17 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     ot::Dbus::WPANController wpanController;
 
     VerifyOrExit(reader.parse(aJoinRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    index = root["index"].asUInt();
-    networkKey = root["networkKey"].asString();
-    prefix = root["prefix"].asString();
+    index        = root["index"].asUInt();
+    networkKey   = root["networkKey"].asString();
+    prefix       = root["prefix"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-    VerifyOrExit(wpanController.Set(kPropertyType_Data,
-                                    "NetworkKey",
-                                    networkKey.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
+    VerifyOrExit(wpanController.Set(kPropertyType_Data, "NetworkKey", networkKey.c_str()) ==
+                     ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(wpanController.Join(mNetworks[index].mNetworkName,
-                                     mNetworks[index].mChannel,
+    VerifyOrExit(wpanController.Join(mNetworks[index].mNetworkName, mNetworks[index].mChannel,
                                      mNetworks[index].mExtPanId,
                                      mNetworks[index].mPanId) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_JoinFailed);
@@ -90,7 +87,6 @@ exit:
     return response;
 }
 
-
 std::string WpanService::HandleFormNetworkRequest(const std::string &aFormRequest)
 {
     Json::Value              root;
@@ -112,38 +108,33 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     int                      ret = ot::Dbus::kWpantundStatus_Ok;
 
     VerifyOrExit(reader.parse(aFormRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    networkKey = root["networkKey"].asString();
-    prefix = root["prefix"].asString();
-    channel = root["channel"].asUInt();
-    networkName = root["networkName"].asString();
-    passphrase = root["passphrase"].asString();
-    panId = root["panId"].asString();
-    extPanId = root["extPanId"].asString();
+    networkKey   = root["networkKey"].asString();
+    prefix       = root["prefix"].asString();
+    channel      = root["channel"].asUInt();
+    networkName  = root["networkName"].asString();
+    passphrase   = root["passphrase"].asString();
+    panId        = root["panId"].asString();
+    extPanId     = root["extPanId"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_LeaveFailed);
+    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
 
-    VerifyOrExit(wpanController.Set(kPropertyType_Data,
-                                    kWPANTUNDProperty_NetworkKey,
-                                    networkKey.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(kPropertyType_Data, kWPANTUNDProperty_NetworkKey, networkKey.c_str()) ==
+                     ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
 
-    VerifyOrExit(wpanController.Set(kPropertyType_String,
-                                    kWPANTUNDProperty_NetworkPANID,
-                                    panId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(kPropertyType_String, kWPANTUNDProperty_NetworkPANID, panId.c_str()) ==
+                     ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(wpanController.Set(kPropertyType_Data,
-                                    kWPANTUNDProperty_NetworkXPANID,
-                                    extPanId.c_str()) == ot::Dbus::kWpantundStatus_Ok,
+    VerifyOrExit(wpanController.Set(kPropertyType_Data, kWPANTUNDProperty_NetworkXPANID, extPanId.c_str()) ==
+                     ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
     ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
-    ot::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(),
-                                         passphrase.c_str()), OT_PSKC_MAX_LENGTH, pskcStr);
-    VerifyOrExit(wpanController.Set(kPropertyType_Data,
-                                    kWPANTUNDProperty_NetworkPSKc,
-                                    pskcStr) == ot::Dbus::kWpantundStatus_Ok,
+    ot::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(), passphrase.c_str()), OT_PSKC_MAX_LENGTH,
+                         pskcStr);
+    VerifyOrExit(wpanController.Set(kPropertyType_Data, kWPANTUNDProperty_NetworkPSKc, pskcStr) ==
+                     ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
 
     VerifyOrExit(wpanController.Form(networkName.c_str(), channel) == ot::Dbus::kWpantundStatus_Ok,
@@ -156,7 +147,7 @@ exit:
     root.clear();
 
     root["result"] = mResponseSuccess;
-    root["error"] = ret;
+    root["error"]  = ret;
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
@@ -165,7 +156,6 @@ exit:
     response = jsonWriter.write(root);
     return response;
 }
-
 
 std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixRequest)
 {
@@ -179,7 +169,7 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
     int                      ret = ot::Dbus::kWpantundStatus_Ok;
 
     VerifyOrExit(reader.parse(aAddPrefixRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    prefix = root["prefix"].asString();
+    prefix       = root["prefix"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
     wpanController.SetInterfaceName(mIfName);
@@ -190,7 +180,7 @@ exit:
     root.clear();
 
     root["result"] = mResponseSuccess;
-    root["error"] = ret;
+    root["error"]  = ret;
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
@@ -245,46 +235,46 @@ std::string WpanService::HandleStatusRequest()
         propertyValue = wpanController.Get(kWPANTUNDProperty_NCPState);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NCPState] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_DaemonEnabled);
+        propertyValue                           = wpanController.Get(kWPANTUNDProperty_DaemonEnabled);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_DaemonEnabled] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NCPVersion);
+        propertyValue                                = wpanController.Get(kWPANTUNDProperty_NCPVersion);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NCPVersion] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_DaemonVersion);
+        propertyValue                             = wpanController.Get(kWPANTUNDProperty_DaemonVersion);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_DaemonVersion] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_ConfigNCPDriverName);
+        propertyValue                                = wpanController.Get(kWPANTUNDProperty_ConfigNCPDriverName);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_ConfigNCPDriverName] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NCPHardwareAddress);
+        propertyValue                                      = wpanController.Get(kWPANTUNDProperty_NCPHardwareAddress);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NCPHardwareAddress] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NCPChannel);
+        propertyValue                                     = wpanController.Get(kWPANTUNDProperty_NCPChannel);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NCPChannel] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NetworkNodeType);
+        propertyValue                             = wpanController.Get(kWPANTUNDProperty_NetworkNodeType);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NetworkNodeType] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NetworkName);
+        propertyValue                                  = wpanController.Get(kWPANTUNDProperty_NetworkName);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NetworkName] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NetworkXPANID);
+        propertyValue                              = wpanController.Get(kWPANTUNDProperty_NetworkXPANID);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NetworkXPANID] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_NetworkPANID);
+        propertyValue                                = wpanController.Get(kWPANTUNDProperty_NetworkPANID);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_NetworkPANID] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_IPv6LinkLocalAddress);
+        propertyValue                               = wpanController.Get(kWPANTUNDProperty_IPv6LinkLocalAddress);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_IPv6LinkLocalAddress] = propertyValue;
         propertyValue = wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalAddress);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_IPv6MeshLocalAddress] = propertyValue;
-        propertyValue = wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalPrefix);
+        propertyValue                                       = wpanController.Get(kWPANTUNDProperty_IPv6MeshLocalPrefix);
         VerifyOrExit(propertyValue.length() > 0, ret = kWpanStatus_GetPropertyFailed);
         networkInfo[kWPANTUNDProperty_IPv6MeshLocalPrefix] = propertyValue;
-        networkInfo["mDNS service"] = mServiceUp;
+        networkInfo["mDNS service"]                        = mServiceUp;
         break;
 
     case kWpanStatus_Offline:
@@ -294,7 +284,7 @@ std::string WpanService::HandleStatusRequest()
 
     case kWpanStatus_Down:
     default:
-        networkInfo["wpantund"] = mServiceDown;
+        networkInfo["wpantund"]     = mServiceDown;
         networkInfo["WPAN service"] = kWPANTUNDStateUninitialized;
         networkInfo["mDNS service"] = mServiceDown;
         break;
@@ -308,7 +298,7 @@ exit:
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
     }
     root["error"] = ret;
-    response = jsonWriter.write(root);
+    response      = jsonWriter.write(root);
     return response;
 }
 
@@ -321,17 +311,15 @@ std::string WpanService::HandleAvailableNetworkRequest()
     int                      ret = ot::Dbus::kWpantundStatus_Ok;
 
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Scan() == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_ScanFailed);
+    VerifyOrExit(wpanController.Scan() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_ScanFailed);
     mNetworksCount = wpanController.GetScanNetworksInfoCount();
     VerifyOrExit(mNetworksCount > 0, ret = ot::Dbus::kWpantundStatus_NetworkNotFound);
-    memcpy(mNetworks, wpanController.GetScanNetworksInfo(),
-           mNetworksCount * sizeof(ot::Dbus::WpanNetworkInfo));
+    memcpy(mNetworks, wpanController.GetScanNetworksInfo(), mNetworksCount * sizeof(ot::Dbus::WpanNetworkInfo));
 
     for (int i = 0; i < mNetworksCount; i++)
     {
         char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1], panId[OT_PANID_LENGTH * 2 + 3],
-             hardwareAddress[OT_HARDWARE_ADDRESS_LENGTH * 2 + 1];
+            hardwareAddress[OT_HARDWARE_ADDRESS_LENGTH * 2 + 1];
         ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(mNetworks[i].mExtPanId), extPanId);
         ot::Utils::Bytes2Hex(mNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", mNetworks[i].mPanId);
@@ -349,14 +337,14 @@ exit:
         otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
     }
     root["error"] = ret;
-    response = jsonWriter.write(root);
+    response      = jsonWriter.write(root);
     return response;
 }
 
 int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aExtPanId) const
 {
     std::string              wpantundState = "";
-    int                      status = kWpanStatus_OK;
+    int                      status        = kWpanStatus_OK;
     ot::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(mIfName);
@@ -370,8 +358,8 @@ int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aE
     if (wpantundState == kWPANTUNDStateAssociated)
     {
         aNetworkName = wpanController.Get(kWPANTUNDProperty_NetworkName);
-        aExtPanId = wpanController.Get(kWPANTUNDProperty_NetworkXPANID);
-        aExtPanId = aExtPanId.substr(OT_HEX_PREFIX_LENGTH);
+        aExtPanId    = wpanController.Get(kWPANTUNDProperty_NetworkXPANID);
+        aExtPanId    = aExtPanId.substr(OT_HEX_PREFIX_LENGTH);
     }
     else if (wpantundState.find(kWPANTUNDStateOffline) != std::string::npos)
     {
@@ -390,5 +378,5 @@ exit:
     return status;
 }
 
-} //namespace Web
-} //namespace ot
+} // namespace Web
+} // namespace ot

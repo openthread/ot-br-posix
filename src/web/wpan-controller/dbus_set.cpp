@@ -41,10 +41,10 @@ namespace Dbus {
 
 int DBusSet::ProcessReply(void)
 {
-    int          ret = 0;
-    const char  *method = "PropSet";
+    int          ret      = 0;
+    const char * method   = "PropSet";
     DBusMessage *messsage = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply    = NULL;
     DBusError    error;
 
     dbus_error_init(&error);
@@ -53,22 +53,18 @@ int DBusSet::ProcessReply(void)
 
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyName,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyName, DBUS_TYPE_INVALID);
 
     if (mPropertyType == kPropertyType_String)
     {
-        dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyValue,
-                                 DBUS_TYPE_INVALID);
+        dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mPropertyValue, DBUS_TYPE_INVALID);
     }
     else if (mPropertyType == kPropertyType_Data)
     {
-        char propertyValueBytes[OT_SET_MAX_DATA_SIZE];
-        int  length = ot::Utils::Hex2Bytes(mPropertyValue, (uint8_t *)propertyValueBytes,
-                                           strlen(mPropertyValue));
-        char *cur = propertyValueBytes;
-        dbus_message_append_args(messsage, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE,
-                                 &cur, length, DBUS_TYPE_INVALID);
+        char  propertyValueBytes[OT_SET_MAX_DATA_SIZE];
+        int   length = ot::Utils::Hex2Bytes(mPropertyValue, (uint8_t *)propertyValueBytes, strlen(mPropertyValue));
+        char *cur    = propertyValueBytes;
+        dbus_message_append_args(messsage, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &cur, length, DBUS_TYPE_INVALID);
     }
     else
     {
@@ -76,8 +72,7 @@ int DBusSet::ProcessReply(void)
     }
 
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
-    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
-                          DBUS_TYPE_INVALID);
+    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
 
 exit:
     if (dbus_error_is_set(&error))
@@ -89,5 +84,5 @@ exit:
     return ret;
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

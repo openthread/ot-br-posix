@@ -88,4 +88,4 @@ private:
 
 } // namespace ot
 
-#endif  // CRC16_HPP_
+#endif // CRC16_HPP_

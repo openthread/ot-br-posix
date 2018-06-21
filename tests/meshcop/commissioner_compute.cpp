@@ -33,7 +33,6 @@
 
 #include "commissioner.hpp"
 
-
 /** the hashmac is used in the steering data */
 bool CommissionerComputeHashMac(void)
 {
@@ -52,16 +51,13 @@ bool CommissionerComputeHashMac(void)
     }
     else
     {
-
         if (gContext.mJoiner.mEui64.ascii[0] == 0)
         {
             CommissionerUtilsFail("MISSING EUI64 address\n");
             return false;
         }
 
-        r =  Hex2Bytes(gContext.mJoiner.mEui64.ascii,
-                       gContext.mJoiner.mEui64.bin,
-                       sizeof(gContext.mJoiner.mEui64.bin));
+        r = Hex2Bytes(gContext.mJoiner.mEui64.ascii, gContext.mJoiner.mEui64.bin, sizeof(gContext.mJoiner.mEui64.bin));
         if (r != 8)
         {
             CommissionerUtilsFail("eui64 wrong length, or non-hex data\n");
@@ -69,9 +65,7 @@ bool CommissionerComputeHashMac(void)
         }
         mbedtls_sha256_init(&sha256);
         mbedtls_sha256_starts(&sha256, 0);
-        mbedtls_sha256_update(&sha256,
-                              gContext.mJoiner.mEui64.bin,
-                              sizeof(gContext.mJoiner.mEui64.bin));
+        mbedtls_sha256_update(&sha256, gContext.mJoiner.mEui64.bin, sizeof(gContext.mJoiner.mEui64.bin));
 
         mbedtls_sha256_finish(&sha256, hash_result);
         /* Bytes 0..7, is the new data */
@@ -80,9 +74,7 @@ bool CommissionerComputeHashMac(void)
         gContext.mJoiner.mHashMac.bin[0] |= 2;
         /* we now have the HASHMAC value */
         /* convert to ascii */
-        Bytes2Hex(gContext.mJoiner.mHashMac.bin,
-                  8,
-                  gContext.mJoiner.mHashMac.ascii);
+        Bytes2Hex(gContext.mJoiner.mHashMac.bin, 8, gContext.mJoiner.mHashMac.ascii);
     }
     otbrLog(OTBR_LOG_INFO, "hash-mac: %s", gContext.mJoiner.mHashMac.ascii);
 
@@ -90,11 +82,9 @@ bool CommissionerComputeHashMac(void)
     return true;
 }
 
-
 /** compute preshared key for commissioner */
 bool CommissionerComputePskc(void)
 {
-
     const uint8_t *pKey;
 
     /* do we need to do this? */
@@ -104,7 +94,6 @@ bool CommissionerComputePskc(void)
     }
     else
     {
-
         otbrLog(OTBR_LOG_INFO, "xpanid: %s", gContext.mAgent.mXpanid.ascii);
         if (gContext.mAgent.mXpanid.ascii[0] == 0)
         {
@@ -127,8 +116,7 @@ bool CommissionerComputePskc(void)
         }
 
         otbrLog(OTBR_LOG_INFO, "note: calculating PSKc");
-        pKey = gContext.mAgent.mPSKc.mTool.ComputePskc(gContext.mAgent.mXpanid.bin,
-                                                       gContext.mAgent.mNetworkName,
+        pKey = gContext.mAgent.mPSKc.mTool.ComputePskc(gContext.mAgent.mXpanid.bin, gContext.mAgent.mNetworkName,
                                                        gContext.mAgent.mPassPhrase);
 
         memcpy(gContext.mAgent.mPSKc.bin, pKey, OT_PSKC_LENGTH);
@@ -166,9 +154,7 @@ bool CommissionerComputeSteering(void)
         gContext.mJoiner.mSteeringData.Clear();
         gContext.mJoiner.mSteeringData.ComputeBloomFilter(gContext.mJoiner.mHashMac.bin);
 
-
-    }
-    while (0);
+    } while (0);
 
     /* log result */
     if (ok)

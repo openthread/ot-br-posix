@@ -33,7 +33,7 @@
 #include "common/event_emitter.hpp"
 
 static int   sCounter = 0;
-static int   sEvent = 0;
+static int   sEvent   = 0;
 static void *sContext = NULL;
 
 static void HandleSingleEvent(void *aContext, int aEvent, va_list aArguments)
@@ -82,9 +82,7 @@ static void HandleTestCallSequenceEvent(void *aContext, int aEvent, va_list aArg
     (void)aArguments;
 }
 
-TEST_GROUP(EventEmitter)
-{
-};
+TEST_GROUP(EventEmitter){};
 
 TEST(EventEmitter, TestSingleHandler)
 {
@@ -93,7 +91,7 @@ TEST(EventEmitter, TestSingleHandler)
     ee.On(event, HandleSingleEvent, NULL);
 
     sContext = NULL;
-    sEvent = event;
+    sEvent   = event;
     sCounter = 0;
 
     ee.Emit(event);
@@ -109,7 +107,7 @@ TEST(EventEmitter, TestDoubleHandler)
     ee.On(event, HandleSingleEvent, NULL);
 
     sContext = NULL;
-    sEvent = event;
+    sEvent   = event;
     sCounter = 0;
 
     ee.Emit(event);
@@ -129,7 +127,7 @@ TEST(EventEmitter, TestDifferentContext)
     ee.On(event, HandleTestDifferentContextEvent, &context2);
 
     sContext = NULL;
-    sEvent = event;
+    sEvent   = event;
     sCounter = 0;
 
     ee.Emit(event, &context1, &context2);
@@ -149,7 +147,7 @@ TEST(EventEmitter, TestCallSequence)
     ee.On(event, HandleTestCallSequenceEvent, &context2);
 
     sContext = NULL;
-    sEvent = event;
+    sEvent   = event;
     sCounter = 0;
 
     ee.Emit(event);
@@ -166,7 +164,7 @@ TEST(EventEmitter, TestRemoveHandler)
     ee.On(event, HandleSingleEvent, NULL);
 
     sContext = NULL;
-    sEvent = event;
+    sEvent   = event;
     sCounter = 0;
 
     ee.Emit(event);

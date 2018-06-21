@@ -28,30 +28,29 @@
 
 #include "logging.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <sys/time.h>
+#include <syslog.h>
 
 #include "time.hpp"
 
-static int        sLevel = LOG_INFO;
+static int        sLevel      = LOG_INFO;
 static const char kHexChars[] = "0123456789abcdef";
 
 static unsigned long sMsecsStart;
 static bool          sLogCol0 = true; /* we start at col0 */
-static FILE         *sLogFp;
+static FILE *        sLogFp;
 static bool          sSyslogEnabled = true;
-static bool          sSyslogOpened = false;
+static bool          sSyslogOpened  = false;
 
 #define LOGFLAG_syslog 1
-#define LOGFLAG_file   2
+#define LOGFLAG_file 2
 
 /** Set/Clear syslog enable flag */
 void otbrLogEnableSyslog(bool b)
@@ -114,7 +113,6 @@ static int LogCheck(int aLevel)
     return r;
 }
 
-
 /** return the time, in milliseconds since application start */
 static unsigned long GetMsecsNow(void)
 {
@@ -123,7 +121,6 @@ static unsigned long GetMsecsNow(void)
     now -= sMsecsStart;
     return now;
 }
-
 
 /** Write this string to the private log file, inserting the timestamp at column 0 */
 static void LogString(const char *cp)
@@ -177,7 +174,6 @@ static void LogPrintf(const char *fmt, ...)
     va_end(ap);
 }
 
-
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, int aLevel)
 {
@@ -214,7 +210,6 @@ void otbrLogv(int aLevel, const char *aFormat, va_list ap)
 
     r = LogCheck(aLevel);
 
-
     if (r & LOGFLAG_file)
     {
         va_list cpy;
@@ -247,7 +242,6 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
         return;
     }
 
-
     /* break hex dumps into 16byte lines
      * In the form ADDR: XX XX XX XX ...
      */
@@ -261,7 +255,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
         char   hex[16 * 3 + 1];
 
         addr = addr + 16;
-        p8 = (const uint8_t *)(aMemory) + addr;
+        p8   = (const uint8_t *)(aMemory) + addr;
 
         /* truncate line to max 16 bytes */
         this_size = aSize;

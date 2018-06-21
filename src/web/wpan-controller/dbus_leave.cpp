@@ -40,10 +40,10 @@ namespace Dbus {
 
 int DBusLeave::ProcessReply(void)
 {
-    int          ret = 0;
-    const char  *method = "Leave";
+    int          ret      = 0;
+    const char * method   = "Leave";
     DBusMessage *messsage = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply    = NULL;
     DBusError    error;
 
     dbus_error_init(&error);
@@ -51,8 +51,7 @@ int DBusLeave::ProcessReply(void)
     SetMethod(method);
     VerifyOrExit((messsage = GetMessage()) != NULL, ret = kWpantundStatus_InvalidMessage);
     VerifyOrExit((reply = GetReply()) != NULL, ret = kWpantundStatus_InvalidReply);
-    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
-                          DBUS_TYPE_INVALID);
+    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
 exit:
     if (dbus_error_is_set(&error))
     {
@@ -63,5 +62,5 @@ exit:
     return ret;
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

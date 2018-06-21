@@ -40,10 +40,10 @@ namespace Dbus {
 
 int DBusJoin::ProcessReply(void)
 {
-    int          ret = 0;
-    const char  *method = "Join";
+    int          ret      = 0;
+    const char * method   = "Join";
     DBusMessage *messsage = NULL;
-    DBusMessage *reply = NULL;
+    DBusMessage *reply    = NULL;
     DBusError    error;
 
     dbus_error_init(&error);
@@ -57,24 +57,18 @@ int DBusJoin::ProcessReply(void)
     VerifyOrExit(mExtPanId != 0, ret = kWpantundStatus_InvalidArgument);
     VerifyOrExit(mPanId != 0, ret = kWpantundStatus_InvalidArgument);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mNetworkName,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_STRING, &mNetworkName, DBUS_TYPE_INVALID);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_INT16, &mNodeType,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_INT16, &mNodeType, DBUS_TYPE_INVALID);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_UINT64, &mExtPanId,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_UINT64, &mExtPanId, DBUS_TYPE_INVALID);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_UINT16, &mPanId,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_UINT16, &mPanId, DBUS_TYPE_INVALID);
 
-    dbus_message_append_args(messsage, DBUS_TYPE_BYTE, &mChannel,
-                             DBUS_TYPE_INVALID);
+    dbus_message_append_args(messsage, DBUS_TYPE_BYTE, &mChannel, DBUS_TYPE_INVALID);
 
     VerifyOrExit((reply = GetReply()) != NULL);
-    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret,
-                          DBUS_TYPE_INVALID);
+    dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &ret, DBUS_TYPE_INVALID);
 
 exit:
     if (dbus_error_is_set(&error))
@@ -86,5 +80,5 @@ exit:
     return ret;
 }
 
-} //namespace Dbus
-} //namespace ot
+} // namespace Dbus
+} // namespace ot

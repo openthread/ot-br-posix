@@ -38,8 +38,8 @@
 
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
-#include <avahi-common/watch.h>
 #include <avahi-common/domain.h>
+#include <avahi-common/watch.h>
 #include <sys/select.h>
 
 #include "mdns.hpp"
@@ -63,8 +63,8 @@ struct AvahiWatch
     AvahiWatchEvent    mEvents;   ///< The interested events.
     int                mHappened; ///< The events happened.
     AvahiWatchCallback mCallback; ///< The function to be called when interested events happened on mFd.
-    void              *mContext;  ///< A pointer to application-specific context.
-    void              *mPoller;   ///< The poller created this watch.
+    void *             mContext;  ///< A pointer to application-specific context.
+    void *             mPoller;   ///< The poller created this watch.
 
     /**
      * The constructor to initialize an Avahi watch.
@@ -76,16 +76,14 @@ struct AvahiWatch
      * @param[in]   aPoller     The Poller this watcher belongs to.
      *
      */
-    AvahiWatch(int aFd,
-               AvahiWatchEvent aEvents,
-               AvahiWatchCallback aCallback,
-               void *aContext,
-               void *aPoller) :
-        mFd(aFd),
-        mEvents(aEvents),
-        mCallback(aCallback),
-        mContext(aContext),
-        mPoller(aPoller) {}
+    AvahiWatch(int aFd, AvahiWatchEvent aEvents, AvahiWatchCallback aCallback, void *aContext, void *aPoller)
+        : mFd(aFd)
+        , mEvents(aEvents)
+        , mCallback(aCallback)
+        , mContext(aContext)
+        , mPoller(aPoller)
+    {
+    }
 };
 
 /**
@@ -96,8 +94,8 @@ struct AvahiTimeout
 {
     unsigned long        mTimeout;  ///< Absolute time when this timer timeout.
     AvahiTimeoutCallback mCallback; ///< The function to be called when timeout.
-    void                *mContext;  ///< The pointer to application-specific context.
-    void                *mPoller;   ///< The poller created this timer.
+    void *               mContext;  ///< The pointer to application-specific context.
+    void *               mPoller;   ///< The poller created this timer.
 
     /**
      * The constructor to initialize an AvahiTimeout.
@@ -108,10 +106,7 @@ struct AvahiTimeout
      * @param[in]   aPoller     The Poller this timeout belongs to.
      *
      */
-    AvahiTimeout(const struct timeval *aTimeout,
-                 AvahiTimeoutCallback aCallback,
-                 void *aContext,
-                 void *aPoller);
+    AvahiTimeout(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext, void *aPoller);
 };
 
 namespace ot {
@@ -143,8 +138,7 @@ public:
      * @param[inout]    aTimeout        A reference to the timeout.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
-                     timeval &aTimeout);
+    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
     /**
      * This method performs avahi poll processing.
@@ -165,23 +159,27 @@ public:
     const AvahiPoll *GetAvahiPoll(void) const { return &mAvahiPoller; }
 
 private:
-    typedef std::vector<AvahiWatch *> Watches;
+    typedef std::vector<AvahiWatch *>   Watches;
     typedef std::vector<AvahiTimeout *> Timers;
 
-    static AvahiWatch *WatchNew(const struct AvahiPoll *aPoller, int aFd, AvahiWatchEvent aEvent,
-                                AvahiWatchCallback aCallback, void *aContext);
-    AvahiWatch *WatchNew(int aFd, AvahiWatchEvent aEvent, AvahiWatchCallback aCallback, void *aContext);
-    static void WatchUpdate(AvahiWatch *aWatch, AvahiWatchEvent aEvent);
+    static AvahiWatch *    WatchNew(const struct AvahiPoll *aPoller,
+                                    int                     aFd,
+                                    AvahiWatchEvent         aEvent,
+                                    AvahiWatchCallback      aCallback,
+                                    void *                  aContext);
+    AvahiWatch *           WatchNew(int aFd, AvahiWatchEvent aEvent, AvahiWatchCallback aCallback, void *aContext);
+    static void            WatchUpdate(AvahiWatch *aWatch, AvahiWatchEvent aEvent);
     static AvahiWatchEvent WatchGetEvents(AvahiWatch *aWatch);
-    static void WatchFree(AvahiWatch *aWatch);
-    void WatchFree(AvahiWatch &aWatch);
-    static AvahiTimeout *TimeoutNew(const AvahiPoll *aPoller, const struct timeval *aTimeout,
-                                    AvahiTimeoutCallback aCallback, void *aContext);
-    AvahiTimeout *TimeoutNew(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext);
-    static void TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout);
-    static void TimeoutFree(AvahiTimeout *aTimer);
-    void TimeoutFree(AvahiTimeout &aTimer);
-
+    static void            WatchFree(AvahiWatch *aWatch);
+    void                   WatchFree(AvahiWatch &aWatch);
+    static AvahiTimeout *  TimeoutNew(const AvahiPoll *     aPoller,
+                                      const struct timeval *aTimeout,
+                                      AvahiTimeoutCallback  aCallback,
+                                      void *                aContext);
+    AvahiTimeout *         TimeoutNew(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext);
+    static void            TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout);
+    static void            TimeoutFree(AvahiTimeout *aTimer);
+    void                   TimeoutFree(AvahiTimeout &aTimer);
 
     Watches   mWatches;
     Timers    mTimers;
@@ -271,8 +269,7 @@ public:
      * @param[inout]    aTimeout        A reference to the timeout.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd,
-                     timeval &aTimeout);
+    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
 private:
     enum
@@ -294,22 +291,22 @@ private:
     typedef std::vector<Service> Services;
 
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
-    void HandleClientState(AvahiClient *aClient, AvahiClientState aState);
+    void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    void CreateGroup(AvahiClient *aClient);
+    void        CreateGroup(AvahiClient *aClient);
     static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
-    void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
 
     Services         mServices;
-    AvahiClient     *mClient;
+    AvahiClient *    mClient;
     AvahiEntryGroup *mGroup;
     Poller           mPoller;
     int              mProtocol;
-    char            *mHost;
-    char            *mDomain;
+    char *           mHost;
+    char *           mDomain;
     State            mState;
     StateHandler     mStateHandler;
-    void            *mContext;
+    void *           mContext;
 };
 
 } // namespace Mdns

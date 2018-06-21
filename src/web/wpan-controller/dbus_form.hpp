@@ -42,46 +42,21 @@
 #include "dbus_base.hpp"
 #include "wpan_controller.hpp"
 
-
 namespace ot {
 namespace Dbus {
 
 class DBusForm : public DBusBase
 {
 public:
-    const char *GetNetworkName(void)
-    {
-        return mNetworkName;
-    }
-    const char *GetUlaPrefix(void)
-    {
-        return mUlaPrefix;
-    }
-    uint16_t GetNodeType(void)
-    {
-        return mNodeType;
-    }
-    uint32_t GetChannelMask(void)
-    {
-        return mChannelMask;
-    }
+    const char *GetNetworkName(void) { return mNetworkName; }
+    const char *GetUlaPrefix(void) { return mUlaPrefix; }
+    uint16_t    GetNodeType(void) { return mNodeType; }
+    uint32_t    GetChannelMask(void) { return mChannelMask; }
 
-    void SetNetworkName(const char *aNetworkName)
-    {
-        mNetworkName = aNetworkName;
-    }
-    void SetUlaPrefix(const char *aUlaPrefix)
-    {
-        mUlaPrefix = aUlaPrefix;
-    }
-    void SetNodeType(uint16_t aNodeType)
-    {
-        mNodeType = aNodeType;
-    }
-    void SetChannelMask(uint32_t aChannelMask)
-    {
-        mChannelMask = 1 << aChannelMask;
-    }
+    void SetNetworkName(const char *aNetworkName) { mNetworkName = aNetworkName; }
+    void SetUlaPrefix(const char *aUlaPrefix) { mUlaPrefix = aUlaPrefix; }
+    void SetNodeType(uint16_t aNodeType) { mNodeType = aNodeType; }
+    void SetChannelMask(uint32_t aChannelMask) { mChannelMask = 1 << aChannelMask; }
 
     int ProcessReply(void);
 
@@ -92,6 +67,6 @@ private:
     uint32_t    mChannelMask;
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  //DBUS_FORM_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_FORM_HPP

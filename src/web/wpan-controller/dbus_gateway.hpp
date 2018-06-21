@@ -52,36 +52,18 @@ class DBusGateway : public DBusBase
 public:
     DBusGateway(void);
 
-    int ProcessReply(void);
-    void SetDefaultRoute(dbus_bool_t aDefaultRoute)
-    {
-        mDefaultRoute = aDefaultRoute;
-    }
-    void SetValidLifeTime(uint32_t aValidLifetime)
-    {
-        mValidLifetime = aValidLifetime;
-    }
-    void SetPreferredLifetime(uint32_t aPreferredLifetime)
-    {
-        mPreferredLifetime = aPreferredLifetime;
-    }
-    void SetPrefix(const char *aPrefix)
-    {
-        mPrefix = aPrefix;
-    }
+    int  ProcessReply(void);
+    void SetDefaultRoute(dbus_bool_t aDefaultRoute) { mDefaultRoute = aDefaultRoute; }
+    void SetValidLifeTime(uint32_t aValidLifetime) { mValidLifetime = aValidLifetime; }
+    void SetPreferredLifetime(uint32_t aPreferredLifetime) { mPreferredLifetime = aPreferredLifetime; }
+    void SetPrefix(const char *aPrefix) { mPrefix = aPrefix; }
     void SetAddressString(const char *aAddressString)
     {
         strncpy(mAddressString, aAddressString, strlen(aAddressString));
         mAddressString[strlen(aAddressString)] = '\0';
     }
-    void SetPrefixBytes(uint8_t *aPrefixBytes)
-    {
-        memcpy(mPrefixBytes, aPrefixBytes, sizeof(mPrefixBytes));
-    }
-    void SetAddr(uint8_t *aAddr)
-    {
-        mAddr = aAddr;
-    }
+    void SetPrefixBytes(uint8_t *aPrefixBytes) { memcpy(mPrefixBytes, aPrefixBytes, sizeof(mPrefixBytes)); }
+    void SetAddr(uint8_t *aAddr) { mAddr = aAddr; }
 
 private:
     dbus_bool_t mDefaultRoute;
@@ -91,9 +73,9 @@ private:
     uint8_t     mPrefixLength;
     char        mAddressString[OT_INET6_ADDR_STR_LENGTH];
     uint8_t     mPrefixBytes[16];
-    uint8_t    *mAddr;
+    uint8_t *   mAddr;
 };
 
-} //namespace Dbus
-} //namespace ot
-#endif  //DBUS_GATEWAY_HPP
+} // namespace Dbus
+} // namespace ot
+#endif // DBUS_GATEWAY_HPP

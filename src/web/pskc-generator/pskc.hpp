@@ -57,7 +57,6 @@ enum
 class Pskc
 {
 public:
-
     /**
      * This method computes the PSKc.
      *
@@ -78,7 +77,7 @@ private:
     uint8_t  mPskc[OT_PSKC_LENGTH];
 };
 
-} //namespace Psk
-} //namespace ot
+} // namespace Psk
+} // namespace ot
 
-#endif  //PSKC_HPP
+#endif // PSKC_HPP

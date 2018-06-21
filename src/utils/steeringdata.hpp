@@ -31,12 +31,11 @@
  *   This file provides commissioner steering data calculations
  */
 
-
 #ifndef STEERINGDATA_HPP
 #define STEERINGDATA_HPP
 
-#include <stdint.h> /* c99 types */
 #include <stddef.h> /* size_t */
+#include <stdint.h> /* c99 types */
 #include <string.h> /* memset */
 
 namespace ot {
@@ -48,7 +47,6 @@ namespace ot {
 class SteeringData
 {
 public:
-
     /**
      * Sets the length of the steering data
      */
@@ -63,8 +61,11 @@ public:
      * Init the steering data.
      *
      */
-    void Init(void) { SetLength(16); Clear(); }
-
+    void Init(void)
+    {
+        SetLength(16);
+        Clear();
+    }
 
     /**
      * This method sets all bits in the Bloom Filter to zero.
@@ -85,7 +86,8 @@ public:
      * @retval FALSE  If the SteeringData doesn't allow any Joiner.
      *
      */
-    bool DoesAllowAny(void) {
+    bool DoesAllowAny(void)
+    {
         bool rval = true;
 
         for (uint8_t i = 0; i < GetLength(); i++)
@@ -117,7 +119,8 @@ public:
      * @retval FALSE  If bit @p aBit is not set.
      *
      */
-    bool GetBit(uint8_t aBit) {
+    bool GetBit(uint8_t aBit)
+    {
         int b;
         int m;
 
@@ -132,7 +135,8 @@ public:
      * @param[in]  aBit  The bit offset.
      *
      */
-    void ClearBit(uint8_t aBit) {
+    void ClearBit(uint8_t aBit)
+    {
         int b;
         int m;
 
@@ -147,7 +151,8 @@ public:
      * @param[in]  aBit  The bit offset.
      *
      */
-    void SetBit(uint8_t aBit) {
+    void SetBit(uint8_t aBit)
+    {
         int b;
         int m;
 

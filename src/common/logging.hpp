@@ -29,9 +29,9 @@
 #ifndef LOGGING_HPP_
 #define LOGGING_HPP_
 
-#include <stddef.h>
-#include <stdarg.h>
 #include "types.hpp"
+#include <stdarg.h>
+#include <stddef.h>
 
 /**
  * Logging level, which is identical to syslog
@@ -56,7 +56,6 @@ enum
  */
 
 void otbrLogSetLevel(int aLevel);
-
 
 /**
  * Get current log level

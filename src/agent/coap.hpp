@@ -92,7 +92,7 @@ enum Code
 class Message
 {
 public:
-    virtual ~Message(void) {};
+    virtual ~Message(void){};
 
     /**
      * This method returns the CoAP code of this message.
@@ -191,10 +191,12 @@ typedef struct Resource Resource;
  * @param[in]   aContext        A pointer to application-specific context.
  *
  */
-typedef void (*RequestHandler)(const Resource &aResource, const Message &aRequest, Message &aResponse,
-                               const uint8_t *aIp6,
-                               uint16_t aPort,
-                               void *aContext);
+typedef void (*RequestHandler)(const Resource &aResource,
+                               const Message & aRequest,
+                               Message &       aResponse,
+                               const uint8_t * aIp6,
+                               uint16_t        aPort,
+                               void *          aContext);
 
 /**
  * This function pointer is called when a CoAP response received.
@@ -210,8 +212,8 @@ typedef void (*ResponseHandler)(const Message &aMessage, void *aContext);
  */
 struct Resource
 {
-    void          *mContext; ///< A pointer to application-specific context.
-    const char    *mPath;    ///< The CoAP Uri Path.
+    void *         mContext; ///< A pointer to application-specific context.
+    const char *   mPath;    ///< The CoAP Uri Path.
     RequestHandler mHandler; ///< The function to handle request to mPath.
 
     /**
@@ -222,10 +224,12 @@ struct Resource
      * @param[in]   aContext        A pointer to application-specific context.
      *
      */
-    Resource(const char *aPath, RequestHandler aHandler, void *aContext) :
-        mContext(aContext),
-        mPath(aPath),
-        mHandler(aHandler) {}
+    Resource(const char *aPath, RequestHandler aHandler, void *aContext)
+        : mContext(aContext)
+        , mPath(aPath)
+        , mHandler(aHandler)
+    {
+    }
 };
 
 /**
@@ -247,8 +251,8 @@ public:
      * @returns number of bytes successfully sended, a negative value indicates failure.
      *
      */
-    typedef ssize_t (*NetworkSender)(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort,
-                                     void *aContext);
+    typedef ssize_t (
+        *NetworkSender)(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort, void *aContext);
 
     /**
      * This method processes this CoAP message in @p aBuffer, which can be a request or response.
@@ -272,8 +276,7 @@ public:
      * @returns The newly CoAP message.
      *
      */
-    virtual Message *NewMessage(Type aType, Code aCode, const uint8_t *aToken,
-                                uint8_t aTokenLength) = 0;
+    virtual Message *NewMessage(Type aType, Code aCode, const uint8_t *aToken, uint8_t aTokenLength) = 0;
 
     /**
      * This method frees a CoAP message.
@@ -319,8 +322,11 @@ public:
      *                                  - EMSGSIZE No space for response handler.
      *
      */
-    virtual otbrError Send(Message &aMessage, const uint8_t *aIp6, uint16_t aPort, ResponseHandler aHandler,
-                           void *aContext) = 0;
+    virtual otbrError Send(Message &       aMessage,
+                           const uint8_t * aIp6,
+                           uint16_t        aPort,
+                           ResponseHandler aHandler,
+                           void *          aContext) = 0;
 
     /**
      * This method creates a CoAP agent.
@@ -353,4 +359,4 @@ public:
 
 } // namespace ot
 
-#endif  // COAP_HPP_
+#endif // COAP_HPP_

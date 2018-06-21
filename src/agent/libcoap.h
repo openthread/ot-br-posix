@@ -44,11 +44,11 @@ typedef struct coap_packet_t
     coap_address_t         dst; /**< the packet's destination address */
     const coap_endpoint_t *interface;
 
-    int                    ifindex;
-    void                  *session;                  /**< opaque session data */
+    int   ifindex;
+    void *session; /**< opaque session data */
 
-    size_t                 length;                   /**< length of payload */
-    unsigned char          payload[MAX_COAP_PACKET]; /**< payload */
+    size_t        length;                   /**< length of payload */
+    unsigned char payload[MAX_COAP_PACKET]; /**< payload */
 } coap_packet_t;
 
 /// @endcond
