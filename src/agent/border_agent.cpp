@@ -54,7 +54,8 @@ namespace ot {
 
 namespace BorderRouter {
 
-const char kBorderAgentServiceType[] = "_meshcop._udp";
+static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
+static const size_t kMaxSizeOfPacket = 1500; ///< Max size of packet in bytes.
 
 /**
  * Locators
@@ -73,20 +74,6 @@ enum
 enum
 {
     kBorderAgentUdpPort = 49191, ///< Thread commissioning port.
-};
-
-enum
-{
-    kMaxSizeOfPacket = 1500, ///< Max size of packet in bytes.
-};
-
-/**
- * TLV types
- *
- */
-enum
-{
-    kJoinerRouterLocator = 20, ///< meshcop Joiner Router Locator TLV
 };
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)

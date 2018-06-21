@@ -132,11 +132,10 @@ private:
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
 
+    int     mSocket;
     uint8_t mExtPanId[kSizeExtPanId];
     char    mNetworkName[kSizeNetworkName + 1];
     bool    mThreadStarted;
-
-    int mSocket;
 };
 
 /**
