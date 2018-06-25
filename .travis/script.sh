@@ -99,7 +99,7 @@ script-check)
     ;;
 
 raspbian-gcc)
-    IMAGE_FILE=2017-04-10-raspbian-jessie-lite.img
+    IMAGE_FILE=$IMAGE_NAME.img
     STAGE_DIR=/tmp/raspbian
     IMAGE_DIR=/media/rpi
 

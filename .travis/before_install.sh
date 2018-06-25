@@ -110,7 +110,7 @@ linux)
 
         git clone --depth 1 https://github.com/ryankurte/docker-rpi-emu.git
 
-        IMAGE_FILE=2017-04-10-raspbian-jessie-lite.img
+        IMAGE_FILE=$IMAGE_NAME.img
         [ -f $TOOLS_HOME/images/$IMAGE_FILE ] || {
             # unit MB
             EXPAND_SIZE=1024
@@ -118,8 +118,8 @@ linux)
             [ -d $TOOLS_HOME/images ] || mkdir -p $TOOLS_HOME/images
 
             (cd /tmp &&
-                curl -LO http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip &&
-                unzip 2017-04-10-raspbian-jessie-lite.zip &&
+                curl -LO $IMAGE_URL &&
+                unzip $IMAGE_NAME.zip &&
                 dd if=/dev/zero bs=1048576 count=$EXPAND_SIZE >> $IMAGE_FILE &&
                 mv $IMAGE_FILE $TOOLS_HOME/images/$IMAGE_FILE)
 
