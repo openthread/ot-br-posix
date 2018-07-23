@@ -15,7 +15,7 @@
             <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="networkKey" ng-model="thread.networkKey">
             <div ng-messages="joinForm.networkKey.$error">
               <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
-                Network Key must be hexadecimal digits and 32 charactors long.
+                Network Key must be hexadecimal digits and 32 characters long.
               </div>
             </div>
           </md-input-container>
