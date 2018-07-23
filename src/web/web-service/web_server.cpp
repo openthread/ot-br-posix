@@ -79,8 +79,12 @@ void WebServer::Init()
     }
 }
 
-void WebServer::StartWebServer(const char *aIfName, uint16_t aPort)
+void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)
 {
+    if (aListenAddr != NULL)
+    {
+        mServer->config.address = aListenAddr;
+    }
     mServer->config.port = aPort;
     mWpanService.SetInterfaceName(aIfName);
     Init();
