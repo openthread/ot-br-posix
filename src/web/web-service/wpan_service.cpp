@@ -61,7 +61,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
 
     wpanController.SetInterfaceName(mIfName);
     VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-    VerifyOrExit(wpanController.Set(kPropertyType_Data, "NetworkKey", networkKey.c_str()) ==
+    VerifyOrExit(wpanController.Set(kPropertyType_Data, "Network:Key", networkKey.c_str()) ==
                      ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(wpanController.Join(mNetworks[index].mNetworkName, mNetworks[index].mChannel,
