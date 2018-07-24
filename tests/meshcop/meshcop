@@ -30,14 +30,13 @@
 IS_SUCCESS=false
 
 # Get our starting directory and remember it
-THIS_DIR=`pwd`
+THIS_DIR="$(pwd)"
 echo "cwd: ${THIS_DIR}"
 echo "top_srcdir: ${top_srcdir}"
 echo "top_builddir: ${top_builddir}"
 
 # TRAVIS sets this variable
-if [ -z $TRAVIS ]
-then
+if test -z "$TRAVIS"; then
     # If not, then set it for us
     # for example you might be debugging
     # or running this script manually
@@ -81,8 +80,7 @@ echo "ABS_BLD=${ABS_BLD}"
 
 # Verify things are present
 _f=${ABS_SRC}/src/agent/main.cpp
-if [ ! -f $_f ]
-then
+if test ! -f "$_f"; then
     echo "Missing: $_f"
     exit 1
 fi
@@ -96,16 +94,14 @@ OTBR_AGENT_EXE=$ABS_BLD/src/agent/$_otbr_agent
 
 
 # Verify that the ageint is present, and it is executable
-if [ ! -x $OTBR_AGENT_EXE ]
-then
+if test ! -x "$OTBR_AGENT_EXE"; then
     echo "Missing otbr-agent: $OTBR_AGENT_EXE ..."
     exit 1
 fi
 
 # We will be creating alot of log information
 # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
-if [ -f /etc/logrotate.conf ]
-then
+if test -f /etc/logrotate.conf; then
     sudo logrotate -f /etc/logrotate.conf
 fi
 
@@ -143,8 +139,7 @@ _otbr_commissioner=otbr-commissioner
 OTBR_COMMISSIONER_EXE=./$_otbr_commissioner
 
 # It should be built already
-if [ ! -x $OTBR_COMMISSIONER_EXE ]
-then
+if test ! -x $OTBR_COMMISSIONER_EXE; then
     EXIT_MESSAGE="Missing otbr-commissioner: $OTBR_COMMISSIONER_EXE"
     echo $EXIT_MESSAGE
     exit 1
@@ -163,7 +158,7 @@ output_logs()
 {
     # Capture the exit code so we can return it below
     EXITCODE=$?
-    
+
     write_syslog "EXIT ${EXITCODE} - output logs"
     # These may or may not have problems executing..
     # So disable the simple exit flag.
@@ -283,20 +278,19 @@ TUN_NAME=wpan9
 test_setup()
 {
     # Clean up old stuff
-    [ ! -d $STAGE_DIR ] || rm -rf $STAGE_DIR
-    [ ! -d $BUILD_DIR ] || rm -rf $BUILD_DIR
+    test ! -d $STAGE_DIR || rm -rf $STAGE_DIR
+    test ! -d $BUILD_DIR || rm -rf $BUILD_DIR
     mkdir -p $STAGE_DIR
     mkdir -p $BUILD_DIR
 
 
     _f=$ABS_SRC/src/agent/otbr-agent.conf
-    if [ ! -f $_f ]
-    then
-	EXIT_MESSAGE="Missing: $_f"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -f $_f; then
+        EXIT_MESSAGE="Missing: $_f"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
-    
+
     sudo cp $_f /etc/dbus-1/system.d
 }
 
@@ -306,7 +300,7 @@ checkout_wpantund()
 
     # git only checks out to empty directories..
     rm -rf $BUILD_DIR/wpantund
-    
+
     cd $BUILD_DIR
     git clone --depth 1 https://github.com/openthread/wpantund.git
 
@@ -320,7 +314,7 @@ checkout_wpantund()
 configure_wpantund()
 {
     set -e
-    
+
     cd ${BUILD_DIR}/wpantund
     set -x
     ./configure --prefix=/usr --sysconf=/etc --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel
@@ -333,30 +327,26 @@ compile_wpantund()
     make -C ${BUILD_DIR}/wpantund all
     make -C ${BUILD_DIR}/wpantund install DESTDIR=$STAGE_DIR
 
-    if [ ! -x $WPANTUND_EXE ]
-    then
-	EXIT_MESSAGE="Build failed, cannot find $WPANTUND_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $WPANTUND_EXE; then
+        EXIT_MESSAGE="Build failed, cannot find $WPANTUND_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
 
     _f=$STAGE_DIR/etc/dbus-1/system.d/wpantund.conf
-    if [ ! -f $_f ]
-    then
-	EXIT_MESSAGE="Missing: $_f"
-	echo $EXIT_MESAGE
-	exit 1
+    if test ! -f $_f; then
+        EXIT_MESSAGE="Missing: $_f"
+        echo $EXIT_MESAGE
+        exit 1
     fi
     sudo cp $_f /etc/dbus-1/system.d
 
-    if [ -x /usr/sbin/service ]
-    then
-	# tell dbus to reload, we have changed/added a configuration file
-	sudo service dbus reload
+    if test -x /usr/sbin/service; then
+        # tell dbus to reload, we have changed/added a configuration file
+        sudo service dbus reload
     else
-	write_syslog "WARNING: Do not know how to tell dbus to re-load config files"
+        write_syslog "WARNING: Do not know how to tell dbus to re-load config files"
     fi
-    
 }
 
 recompile_wpantund()
@@ -408,7 +398,7 @@ configure_openthread()
     LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_CLI=1"
     LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_COAP=1"
     LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_ICMP=1"
-    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_IP6=1" 
+    LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_IP6=1"
     LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_MAC=1"
     LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_MEM=1"
     LOG_FLAGS="$LOG_FLAGS  -DOPENTHREAD_CONFIG_LOG_MLE=1"
@@ -426,15 +416,16 @@ configure_openthread()
 
     cd ${BUILD_DIR}/openthread
 
-    # TODO: Should we test with 
-    ./configure --prefix=/usr                     \
+    # TODO: Should we test with
+    ./configure --prefix=/usr             \
 		--disable-docs                    \
-		--enable-tmf-proxy                \
+		--enable-border-agent             \
 		--enable-border-router            \
-		--enable-cli-app=both             \
-		--enable-ncp-app=ftd              \
-		--enable-joiner                   \
+		--enable-cli-app=ftd              \
 		--enable-debug                    \
+		--enable-joiner                   \
+		--enable-ncp-app=ftd              \
+		--enable-udp-proxy                \
 		--with-examples=posix             \
 		--with-ncp-bus=uart               \
 		--with-platform-info=POSIX
@@ -445,32 +436,28 @@ configure_openthread()
 leader_start()
 {
     set -e
-    if [ ! -x $NCP_EXE ]
-    then
-	EXIT_MESSAGE="Missing ncp: $NCP_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $NCP_EXE; then
+        EXIT_MESSAGE="Missing ncp: $NCP_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
 
-    if [ ! -x $CLI_EXE ]
-    then
-	EXIT_MESSAGE="Missing cli: $CLI_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $CLI_EXE; then
+        EXIT_MESSAGE="Missing cli: $CLI_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
 
-    if [ ! -x $WPANCTL_EXE ]
-    then
-	EXIT_MESSAGE="Missing wpanctl: $WPANCTL_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $WPANCTL_EXE; then
+        EXIT_MESSAGE="Missing wpanctl: $WPANCTL_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
 
-    if [ ! -x $WPANTUND_EXE ]
-    then
-	EXIT_MESSAGE="Missing wpantund: $WPANTUND_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $WPANTUND_EXE; then
+        EXIT_MESSAGE="Missing wpantund: $WPANTUND_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
 
     # These might not exit cleanly
@@ -486,7 +473,7 @@ leader_start()
     # Do this within a private script as root.
     sudo sh -s <<EOF
     cd /tmp
-    set -e 
+    set -e
     # We specifically put this in the background
     set -x
     $WPANTUND_EXE -d 5 -I $TUN_NAME -s "system:$NCP_EXE $LEADER_NODE_NUMBER" &
@@ -509,20 +496,18 @@ EOF
     # These should be running now
     # And should not have crashed!
     pidof $_wpantund
-    if [ $? != 0 ]
-    then
-	EXIT_MESSAGE="LEADER: Failed to start wpantund"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test $? != 0; then
+        EXIT_MESSAGE="LEADER: Failed to start wpantund"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
     pidof $_ot_ncp_xxx
-    if [ $? != 0 ]
-    then
-	EXIT_MESSAGE="LEADER: Failed to start $_ot_ncp_xxx"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test $? != 0; then
+        EXIT_MESSAGE="LEADER: Failed to start $_ot_ncp_xxx"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
-    
+
     write_syslog "LEADER: start complete"
 }
 
@@ -530,11 +515,10 @@ EOF
 ba_start()
 {
     set -e
-    if [ ! -x $OTBR_AGENT_EXE ]
-    then
-	EXIT_MESSAGE="Missing: otbr-agent: $OTBR_AGENT_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $OTBR_AGENT_EXE; then
+        EXIT_MESSAGE="Missing: otbr-agent: $OTBR_AGENT_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
     set +e
     write_syslog "AGENT: kill old"
@@ -551,13 +535,12 @@ ba_start()
     sleep 10
 
     pidof $_otbr_agent
-    if [ $? != 0 ]
-    then
-	EXIT_MESSAGE="AGENT: failed to start"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test $? != 0; then
+        EXIT_MESSAGE="AGENT: failed to start"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
-    
+
     write_syslog "AGENT: start complete"
 }
 
@@ -565,13 +548,12 @@ commissioner_start()
 {
     set -e
 
-    if [ ! -x $OTBR_COMMISSIONER_EXE ]
-    then
-	EXIT_MESSAGE="Missing otbr-commissioner: $OTBR_COMMISSIONER_EXE"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test ! -x $OTBR_COMMISSIONER_EXE; then
+        EXIT_MESSAGE="Missing otbr-commissioner: $OTBR_COMMISSIONER_EXE"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
-    
+
     write_syslog "COMMISSIONER: kill old"
     set +e
     sudo killall $_otbr_commissioner
@@ -585,7 +567,7 @@ commissioner_start()
     #ARGS="$ARGS --log-filename $OT_COMMISSIONER_LOG_FILE"
 
     rm -f $OT_COMMISSIONER_LOG_FILE
-    
+
     # And network parameters
     ARGS="$ARGS --network-name      $OT_NETWORK_NAME"
     ARGS="$ARGS --xpanid            $OT_XPANID"
@@ -619,11 +601,10 @@ commissioner_start()
     # Is it still running or did it die?
     set +x
     pidof $_otbr_commissioner
-    if [ $? != 0 ]
-    then
-	EXIT_MESSAGE="COMMISSIONER: failed to start"
-	echo $EXIT_MESSAGE
-	exit 1
+    if test $? != 0; then
+        EXIT_MESSAGE="COMMISSIONER: failed to start"
+        echo $EXIT_MESSAGE
+        exit 1
     fi
     #
     # It takes about 8 to 10 seconds for the DTLS handshake to complete.
@@ -667,8 +648,7 @@ expect {
   }
 }
 EOF
-    if [ $1 != 0 ]
-    then
+    if test "$?" != '0'; then
 	EXIT_MESSAGE="JOINER FAILED"
 	echo $EXIT_MESSAGE
 	exit 1
@@ -699,7 +679,7 @@ test_teardown()
 }
 
 test_setup
-    
+
 # These are broken-out so that during debug you can comment out parts
 # and re-run this script multiple times script and not have your
 # test code get erased ...

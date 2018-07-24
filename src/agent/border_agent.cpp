@@ -33,6 +33,7 @@
 
 #include "border_agent.hpp"
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -71,8 +72,12 @@ enum
  */
 enum
 {
-    kCoapUdpPort        = 61631, ///< Thread management UDP port.
     kBorderAgentUdpPort = 49191, ///< Thread commissioning port.
+};
+
+enum
+{
+    kMaxSizeOfPacket = 1500, ///< Max size of packet in bytes.
 };
 
 /**
@@ -84,141 +89,8 @@ enum
     kJoinerRouterLocator = 20, ///< meshcop Joiner Router Locator TLV
 };
 
-void BorderAgent::ForwardCommissionerResponse(const Coap::Message &aMessage)
-{
-    uint8_t        tokenLength = 0;
-    const uint8_t *token       = aMessage.GetToken(tokenLength);
-    uint16_t       length      = 0;
-    const uint8_t *payload     = NULL;
-
-    Coap::Code     code    = aMessage.GetCode();
-    Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, code, token, tokenLength);
-
-    otbrLog(OTBR_LOG_INFO, "Forwarding CommissionerResponse ...");
-
-    payload = aMessage.GetPayload(length);
-    message->SetPayload(payload, length);
-
-    mCoaps->Send(*message, NULL, 0, NULL, NULL);
-    mCoaps->FreeMessage(message);
-}
-
-void BorderAgent::ForwardCommissionerRequest(const Coap::Resource &aResource,
-                                             const Coap::Message & aMessage,
-                                             const uint8_t *       aIp6,
-                                             uint16_t              aPort)
-{
-    uint8_t        tokenLength = 0;
-    const uint8_t *token       = aMessage.GetToken(tokenLength);
-    const char *   path        = aResource.mPath;
-
-    Coap::Message *message = mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost, token, tokenLength);
-    Ip6Address     addr(kAloc16Leader);
-    uint16_t       length  = 0;
-    const uint8_t *payload = aMessage.GetPayload(length);
-
-    otbrLog(OTBR_LOG_INFO, "Forwarding request %s...", path);
-
-    if (!strcmp(OT_URI_PATH_COMMISSIONER_PETITION, path))
-    {
-        path = OT_URI_PATH_LEADER_PETITION;
-    }
-    else if (!strcmp(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, path))
-    {
-        path = OT_URI_PATH_LEADER_KEEP_ALIVE;
-    }
-
-    message->SetPath(path);
-
-    message->SetPayload(payload, length);
-
-    otbrDump(OTBR_LOG_DEBUG, "    Payload:", payload, length);
-
-    mCoap->Send(*message, addr.m8, kCoapUdpPort, BorderAgent::ForwardCommissionerResponse, this);
-    mCoap->FreeMessage(message);
-
-    (void)aIp6;
-    (void)aPort;
-}
-
-void BorderAgent::HandleRelayReceive(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort)
-{
-    uint8_t        tokenLength = 0;
-    const uint8_t *token       = aMessage.GetToken(tokenLength);
-    uint16_t       length      = 0;
-    const uint8_t *payload     = aMessage.GetPayload(length);
-
-    Coap::Message *message = mCoaps->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost, token, tokenLength);
-    otbrLog(OTBR_LOG_INFO, "Handle Relay receive ...");
-
-    message->SetPath(OT_URI_PATH_RELAY_RX);
-    message->SetPayload(payload, length);
-
-    mCoaps->Send(*message, NULL, 0, NULL, NULL);
-    mCoaps->FreeMessage(message);
-
-    (void)aIp6;
-    (void)aPort;
-}
-
-void BorderAgent::HandleRelayTransmit(const Coap::Message &aMessage, const uint8_t *aIp6, uint16_t aPort)
-{
-    uint16_t       length  = 0;
-    const uint8_t *payload = aMessage.GetPayload(length);
-    uint16_t       rloc    = kInvalidLocator;
-
-    otbrDump(OTBR_LOG_DEBUG, "Relay transmit:", payload, length);
-
-    for (const Tlv *tlv = reinterpret_cast<const Tlv *>(payload); tlv < reinterpret_cast<const Tlv *>(payload + length);
-         tlv            = tlv->GetNext())
-    {
-        if (tlv->GetType() == kJoinerRouterLocator)
-        {
-            rloc = tlv->GetValueUInt16();
-            break;
-        }
-    }
-
-    if (rloc == kInvalidLocator)
-    {
-        otbrLog(OTBR_LOG_ERR, "Joiner Router Locator not found!");
-        ExitNow();
-    }
-
-    {
-        Ip6Address     addr(rloc);
-        uint8_t        tokenLength = 0;
-        const uint8_t *token       = aMessage.GetToken(tokenLength);
-        Coap::Message *message     = mCoap->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost, token, tokenLength);
-
-        message->SetPath(OT_URI_PATH_RELAY_TX);
-        message->SetPayload(payload, length);
-        mCoap->Send(*message, addr.m8, kCoapUdpPort, NULL, NULL);
-        mCoap->FreeMessage(message);
-    }
-
-exit:
-
-    (void)aIp6;
-    (void)aPort;
-
-    return;
-}
-
-BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap)
-    : mActiveGet(OT_URI_PATH_ACTIVE_GET, ForwardCommissionerRequest, this)
-    , mActiveSet(OT_URI_PATH_ACTIVE_SET, ForwardCommissionerRequest, this)
-    , mPendingGet(OT_URI_PATH_PENDING_GET, ForwardCommissionerRequest, this)
-    , mPendingSet(OT_URI_PATH_PENDING_SET, ForwardCommissionerRequest, this)
-    , mCommissionerPetitionHandler(OT_URI_PATH_COMMISSIONER_PETITION, ForwardCommissionerRequest, this)
-    , mCommissionerKeepAliveHandler(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE, ForwardCommissionerRequest, this)
-    , mCommissionerSetHandler(OT_URI_PATH_COMMISSIONER_SET, ForwardCommissionerRequest, this)
-    , mCommissionerRelayTransmitHandler(OT_URI_PATH_RELAY_TX, HandleRelayTransmit, this)
-    , mCommissionerRelayReceiveHandler(OT_URI_PATH_RELAY_RX, BorderAgent::HandleRelayReceive, this)
-    , mCoap(aCoap)
-    , mDtlsServer(Dtls::Server::Create(kBorderAgentUdpPort, HandleDtlsSessionState, this))
-    , mCoaps(Coap::Agent::Create(SendCoaps, this))
-    , mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
+BorderAgent::BorderAgent(Ncp::Controller *aNcp)
+    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
     , mNcp(aNcp)
     , mThreadStarted(false)
 {
@@ -226,39 +98,28 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp, Coap::Agent *aCoap)
 
 otbrError BorderAgent::Start(void)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otbrError           error = OTBR_ERROR_NONE;
+    struct sockaddr_in6 sin6;
 
-    SuccessOrExit(error = mCoaps->AddResource(mActiveGet));
-    SuccessOrExit(error = mCoaps->AddResource(mActiveSet));
-    SuccessOrExit(error = mCoaps->AddResource(mPendingGet));
-    SuccessOrExit(error = mCoaps->AddResource(mPendingSet));
+    memset(&sin6, 0, sizeof(sin6));
+    sin6.sin6_family = AF_INET6;
+    sin6.sin6_port   = htons(kBorderAgentUdpPort);
 
-    SuccessOrExit(error = mCoaps->AddResource(mCommissionerPetitionHandler));
-    SuccessOrExit(error = mCoaps->AddResource(mCommissionerKeepAliveHandler));
-    SuccessOrExit(error = mCoaps->AddResource(mCommissionerSetHandler));
-    SuccessOrExit(error = mCoaps->AddResource(mCommissionerRelayTransmitHandler));
-
-    SuccessOrExit(error = mCoap->AddResource(mCommissionerRelayReceiveHandler));
+    mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    VerifyOrExit(mSocket != -1, error = OTBR_ERROR_ERRNO);
+    SuccessOrExit(bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)));
 
     mNetworkName[sizeof(mNetworkName) - 1] = '\0';
 
     mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
     mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
-    mNcp->On(Ncp::kEventPSKc, HandlePSKcChanged, this);
 
-    mNcp->RequestEvent(Ncp::kEventPSKc);
     mNcp->RequestEvent(Ncp::kEventNetworkName);
     mNcp->RequestEvent(Ncp::kEventExtPanId);
     mNcp->RequestEvent(Ncp::kEventThreadState);
 
-    {
-        const uint8_t *eui64 = mNcp->GetEui64();
-        VerifyOrExit(eui64 != NULL, error = OTBR_ERROR_ERRNO);
-        mDtlsServer->SetSeed(eui64, kSizeEui64);
-    }
-
-    SuccessOrExit(error = mDtlsServer->Start());
+    mNcp->On(Ncp::kEventUdpProxyStream, SendToCommissioner, this);
 
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -271,8 +132,6 @@ exit:
 
 BorderAgent::~BorderAgent(void)
 {
-    Dtls::Server::Destroy(mDtlsServer);
-    Coap::Agent::Destroy(mCoaps);
 }
 
 void BorderAgent::HandleMdnsState(Mdns::State aState)
@@ -288,44 +147,33 @@ void BorderAgent::HandleMdnsState(Mdns::State aState)
     }
 }
 
-void BorderAgent::HandleDtlsSessionState(Dtls::Session &aSession, Dtls::Session::State aState)
+void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArguments)
 {
-    switch (aState)
+    struct sockaddr_in6 sin6;
+    const uint8_t *     packet   = va_arg(aArguments, const uint8_t *);
+    uint16_t            length   = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    uint16_t            peerPort = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    const in6_addr *    addr     = va_arg(aArguments, const in6_addr *);
+    uint16_t            sockPort = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+
+    assert(aEvent == Ncp::kEventUdpProxyStream);
+    VerifyOrExit(sockPort == kBorderAgentUdpPort);
+
+    memset(&sin6, 0, sizeof(sin6));
+    sin6.sin6_family = AF_INET6;
+    memcpy(sin6.sin6_addr.s6_addr, addr->s6_addr, sizeof(sin6.sin6_addr));
+    sin6.sin6_port = htons(peerPort);
+
     {
-    case Dtls::Session::kStateReady:
-        aSession.SetDataHandler(FeedCoaps, this);
-        mDtlsSession = &aSession;
-        break;
-
-    case Dtls::Session::kStateEnd:
-    case Dtls::Session::kStateError:
-    case Dtls::Session::kStateExpired:
-        mDtlsSession = NULL;
-        otbrLog(OTBR_LOG_WARNING, "DTLS session ended.");
-        break;
-
-    default:
-        break;
+        ssize_t sent = sendto(static_cast<BorderAgent *>(aContext)->mSocket, packet, length, 0,
+                              reinterpret_cast<const sockaddr *>(&sin6), sizeof(sin6));
+        VerifyOrExit(sent == static_cast<ssize_t>(length), perror("send to commissioner"));
     }
-}
 
-ssize_t BorderAgent::SendCoaps(const uint8_t *aBuffer,
-                               uint16_t       aLength,
-                               const uint8_t *aIp6,
-                               uint16_t       aPort,
-                               void *         aContext)
-{
-    // TODO verify the ip and port
-    (void)aIp6;
-    (void)aPort;
-    return static_cast<BorderAgent *>(aContext)->mDtlsSession->Write(aBuffer, aLength);
-}
+    otbrLog(OTBR_LOG_INFO, "Sent to commissioner");
 
-void BorderAgent::FeedCoaps(const uint8_t *aBuffer, uint16_t aLength, void *aContext)
-{
-    BorderAgent *borderAgent = static_cast<BorderAgent *>(aContext);
-
-    borderAgent->mCoaps->Input(aBuffer, aLength, NULL, 0);
+exit:
+    return;
 }
 
 void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
@@ -334,28 +182,37 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
-    mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
-    if (mPublisher->IsStarted())
+    (void)aWriteFdSet;
+    (void)aErrorFdSet;
+    (void)aTimeout;
+
+    FD_SET(mSocket, &aReadFdSet);
+
+    if (mSocket > aMaxFd)
     {
-        mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+        aMaxFd = mSocket;
     }
 }
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    mDtlsServer->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
-    if (mPublisher->IsStarted())
-    {
-        mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
-    }
-}
+    uint8_t             packet[kMaxSizeOfPacket];
+    struct sockaddr_in6 sin6;
+    ssize_t             len     = sizeof(packet);
+    socklen_t           socklen = sizeof(sin6);
 
-void BorderAgent::HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments)
-{
-    assert(aEvent == Ncp::kEventPSKc);
+    (void)aWriteFdSet;
+    (void)aErrorFdSet;
 
-    const uint8_t *pskc = va_arg(aArguments, const uint8_t *);
-    static_cast<BorderAgent *>(aContext)->mDtlsServer->SetPSK(pskc, kSizePSKc);
+    VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet));
+
+    len = recvfrom(mSocket, packet, sizeof(packet), 0, reinterpret_cast<struct sockaddr *>(&sin6), &socklen);
+    VerifyOrExit(len > 0);
+
+    mNcp->UdpProxySend(packet, static_cast<uint16_t>(len), ntohs(sin6.sin6_port), sin6.sin6_addr, kBorderAgentUdpPort);
+
+exit:
+    return;
 }
 
 void BorderAgent::PublishService(void)

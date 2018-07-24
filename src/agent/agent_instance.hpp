@@ -40,7 +40,6 @@
 #include <sys/types.h>
 
 #include "border_agent.hpp"
-#include "coap.hpp"
 #include "ncp.hpp"
 
 namespace ot {
@@ -97,16 +96,7 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
-    static ssize_t SendCoap(const uint8_t *aBuffer,
-                            uint16_t       aLength,
-                            const uint8_t *aIp6,
-                            uint16_t       aPort,
-                            void *         aContext);
-    static void    FeedCoap(void *aContext, int aEvent, va_list aArguments);
-    ssize_t        SendCoap(const uint8_t *aBuffer, uint16_t aLength, const uint8_t *aIp6, uint16_t aPort);
-
     Ncp::Controller *mNcp;
-    Coap::Agent *    mCoap;
     BorderAgent      mBorderAgent;
 };
 

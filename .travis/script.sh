@@ -117,6 +117,7 @@ raspbian-gcc)
         mount -t sysfs none /sys
         chown -R pi:pi /home/pi/repo
         cd /home/pi/repo
+        apt-get update
         apt-get install -y git
         su -m -c 'git config --global pack.threads 1' pi
         su -m -c 'script/bootstrap' pi
