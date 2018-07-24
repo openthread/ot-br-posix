@@ -51,7 +51,6 @@ nat64_install()
     sudo sed -i 's/^IPV6_TUN_ADDR=""/IPV6_TUN_ADDR="'$TAYGA_IPV6_ADDR'"/' $TAYGA_DEFAULT
     sudo sed -i 's/^prefix /##prefix /' $TAYGA_CONF
     sudo sed -i 's/^# prefix 64:ff9b::\/96/prefix 64:ff9b::\/96/' $TAYGA_CONF
-    sudo sed -i '/^#ipv6-addr/a ipv6-addr '$TAYGA_IPV6_ADDR $TAYGA_CONF
     sudo tee $NAT44_SERVICE <<EOF
 #! /bin/sh
 #
@@ -135,7 +134,6 @@ nat64_uninstall()
     sudo sed -i 's/^IPV6_TUN_ADDR="'$TAYGA_IPV6_ADDR'"/IPV6_TUN_ADDR=""/' $TAYGA_DEFAULT
     sudo sed -i 's/^prefix 64:ff9b::\/96/# prefix 64:ff9b::\/96/' $TAYGA_CONF
     sudo sed -i 's/^##prefix /prefix /' $TAYGA_CONF
-    sudo sed -i '/^ipv6-addr '$TAYGA_IPV6_ADDR'/d' $TAYGA_CONF
 
     if have systemctl; then
         sudo systemctl disable otbr-nat44 || true
