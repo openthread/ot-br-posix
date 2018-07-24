@@ -33,7 +33,6 @@
 TAYGA_DEFAULT=/etc/default/tayga
 TAYGA_CONF=/etc/tayga.conf
 TAYGA_IPV4_ADDR=192.168.255.1
-TAYGA_IPV6_ADDR=fdaa:bb:1::1
 NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES=eth0
 
@@ -48,10 +47,8 @@ nat64_install()
     test -f $TAYGA_DEFAULT -a -f $TAYGA_CONF || die 'Cannot find tayga configuration file!'
     sudo sed -i 's/^RUN="no"/RUN="yes"/' $TAYGA_DEFAULT
     sudo sed -i 's/^IPV4_TUN_ADDR=""/IPV4_TUN_ADDR="'$TAYGA_IPV4_ADDR'"/' $TAYGA_DEFAULT
-    sudo sed -i 's/^IPV6_TUN_ADDR=""/IPV6_TUN_ADDR="'$TAYGA_IPV6_ADDR'"/' $TAYGA_DEFAULT
     sudo sed -i 's/^prefix /##prefix /' $TAYGA_CONF
     sudo sed -i 's/^# prefix 64:ff9b::\/96/prefix 64:ff9b::\/96/' $TAYGA_CONF
-    sudo sed -i '/^#ipv6-addr/a ipv6-addr '$TAYGA_IPV6_ADDR $TAYGA_CONF
     sudo tee $NAT44_SERVICE <<EOF
 #! /bin/sh
 #
@@ -132,10 +129,8 @@ nat64_uninstall()
     nat64_stop
     sudo sed -i 's/^RUN="yes"/RUN="no"/' $TAYGA_DEFAULT
     sudo sed -i 's/^IPV4_TUN_ADDR="'$TAYGA_IPV4_ADDR'"/IPV4_TUN_ADDR=""/' $TAYGA_DEFAULT
-    sudo sed -i 's/^IPV6_TUN_ADDR="'$TAYGA_IPV6_ADDR'"/IPV6_TUN_ADDR=""/' $TAYGA_DEFAULT
     sudo sed -i 's/^prefix 64:ff9b::\/96/# prefix 64:ff9b::\/96/' $TAYGA_CONF
     sudo sed -i 's/^##prefix /prefix /' $TAYGA_CONF
-    sudo sed -i '/^ipv6-addr '$TAYGA_IPV6_ADDR'/d' $TAYGA_CONF
 
     if have systemctl; then
         sudo systemctl disable otbr-nat44 || true
