@@ -94,7 +94,8 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     Json::Reader             reader;
     std::string              response;
     ot::Psk::Pskc            psk;
-    char                     pskcStr[OT_PSKC_MAX_LENGTH * 2];
+    char                     pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1]; // for manipulating with strlen
+    pskcStr[OT_PSKC_MAX_LENGTH * 2] = 0;
     uint8_t                  extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
     ot::Dbus::WPANController wpanController;
     std::string              networkKey;
