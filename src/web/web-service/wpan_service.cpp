@@ -89,12 +89,12 @@ exit:
 
 std::string WpanService::HandleFormNetworkRequest(const std::string &aFormRequest)
 {
-    Json::Value              root;
-    Json::FastWriter         jsonWriter;
-    Json::Reader             reader;
-    std::string              response;
-    ot::Psk::Pskc            psk;
-    char                     pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1]; // for manipulating with strlen
+    Json::Value      root;
+    Json::FastWriter jsonWriter;
+    Json::Reader     reader;
+    std::string      response;
+    ot::Psk::Pskc    psk;
+    char             pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1]; // for manipulating with strlen
     pskcStr[OT_PSKC_MAX_LENGTH * 2] = 0;
     uint8_t                  extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
     ot::Dbus::WPANController wpanController;
