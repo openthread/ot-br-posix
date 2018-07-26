@@ -94,7 +94,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     Json::Reader             reader;
     std::string              response;
     ot::Psk::Pskc            psk;
-    char                     pskcStr[OT_PSKC_MAX_LENGTH * 2];
+    char                     pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1];
     uint8_t                  extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
     ot::Dbus::WPANController wpanController;
     std::string              networkKey;
@@ -107,6 +107,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     bool                     defaultRoute;
     int                      ret = ot::Dbus::kWpantundStatus_Ok;
 
+    pskcStr[OT_PSKC_MAX_LENGTH * 2] = '\0'; // for manipulating with strlen
     VerifyOrExit(reader.parse(aFormRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
     networkKey   = root["networkKey"].asString();
     prefix       = root["prefix"].asString();
