@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,12 +27,4 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
-
-SUBDIRS         = \
-    meshcop       \
-    mdns          \
-    unit          \
-    $(NULL)
-
-include $(abs_top_nlbuild_autotools_dir)/automake/post.am
+NO_CLEAN=1 OT_CLI='ot-cli-mtd' "$(dirname "$0")/meshcop"

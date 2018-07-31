@@ -43,41 +43,40 @@
 class argcargv;
 
 /* option entry in our table */
-struct argcargv_opt {
+struct argcargv_opt
+{
     const char *name;
     void (*handler)(argcargv *);
     const char *valuehelp;
     const char *helptext;
 };
 
-class argcargv {
+class argcargv
+{
 public:
-
     /** Constructor */
-    argcargv( int argc, char **argv );
+    argcargv(int argc, char **argv);
 
     /** pseudo globals for argc & argv parsing */
-    int mARGC;     /* analogous to argc */
-    char **mARGV;  /* analogous to argv */
-    int mARGx;     /**< current argument */
+    int    mARGC; /* analogous to argc */
+    char **mARGV; /* analogous to argv */
+    int    mARGx; /**< current argument */
 
-    enum {
-	max_opts = 40
+    enum
+    {
+        max_opts = 40
     };
     struct argcargv_opt mOpts[max_opts];
 
     /** print usage error message and exit */
-    void usage( const char *fmt,...);
+    void usage(const char *fmt, ...);
 
     /** add an option to be parsed */
-    void add_option( const char *name,
-		     void (*handler)( argcargv *pThis ),
-		     const char *valuehelp,
-		     const char *help );
-    
-    /** 
+    void add_option(const char *name, void (*handler)(argcargv *pThis), const char *valuehelp, const char *help);
+
+    /**
      * fetch/parse a string parameter
-     * 
+     *
      * @param puthere[out] holds parameter string
      * @param maxlen[in]   size of the puthere buffer, including space for null
      */
@@ -94,7 +93,7 @@ public:
      *
      * Then there must be exactly 8 hex digits in the command line parameter
      */
-    void        hex_param(char *ascii_puthere, uint8_t *bin_puthere, int sizeof_bin );
+    void hex_param(char *ascii_puthere, uint8_t *bin_puthere, int sizeof_bin);
 
     /**
      * Parse a numeric parameter from the command line
@@ -103,10 +102,9 @@ public:
      *
      * @returns value from command line as an integer
      */
-    int         num_param(void);
+    int num_param(void);
 
-
-    /** 
+    /**
      *  This parses a single command line parameter
      *
      * @returns 0 if there are more parameters to parse
@@ -114,12 +112,12 @@ public:
      *
      * This does not handle positional parameters.
      */
-    int         parse_args(void);
+    int parse_args(void);
 };
 
 /**
  * Called from main() to parse the commissioner test app command line parameters.
  */
-void commissioner_argcargv( int argc, char **argv );
+void commissioner_argcargv(int argc, char **argv);
 
 #endif

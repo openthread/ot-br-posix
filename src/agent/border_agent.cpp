@@ -54,8 +54,8 @@ namespace ot {
 
 namespace BorderRouter {
 
-static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
-static const size_t kMaxSizeOfPacket = 1500; ///< Max size of packet in bytes.
+static const char   kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
+static const size_t kMaxSizeOfPacket          = 1500;            ///< Max size of packet in bytes.
 
 /**
  * Locators

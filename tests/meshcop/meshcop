@@ -34,15 +34,16 @@
 set -e
 
 # Get our starting directory and remember it
-readonly THIS_DIR="$(cd "$(dirname $0)" && pwd)"
+readonly ORIGIN_PWD="$(pwd)"
+readonly SCRIPT_DIR="$(cd "$(dirname $0)" && pwd)"
 
 #---------------------------------------
 # Configurations
 #---------------------------------------
 readonly OT_NCP="${OT_NCP:-ot-ncp-ftd}"
 readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
-readonly ABS_TOP_BUILDDIR="$(cd ${THIS_DIR}/${top_builddir:-../../} && pwd)"
-readonly ABS_TOP_SRCDIR="$(cd ${THIS_DIR}/${top_srcdir:-../../} && pwd)"
+readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
+readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly NO_CLEAN="${NO_CLEAN:-0}"
 
 #----------------------------------------
@@ -61,7 +62,7 @@ readonly WPANCTL_EXE="${STAGE_DIR}/usr/bin/${WPANCTL}"
 readonly WPANTUND_EXE="${STAGE_DIR}/usr/sbin/${WPANTUND}"
 readonly NCP_EXE="${STAGE_DIR}/usr/bin/${OT_NCP}"
 readonly CLI_EXE="${STAGE_DIR}/usr/bin/${OT_CLI}"
-readonly OTBR_COMMISSIONER_EXE="${THIS_DIR}/${OTBR_COMMISSIONER}"
+readonly OTBR_COMMISSIONER_EXE="${ABS_TOP_BUILDDIR}/tests/meshcop/${OTBR_COMMISSIONER}"
 readonly OTBR_AGENT_EXE="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 
@@ -92,7 +93,7 @@ readonly OT_AGENT_IPPORT=49191
 # The TUN device for wpantund.
 readonly TUN_NAME=wpan9
 
-echo "THIS_DIR: ${THIS_DIR}"
+echo "ORIGIN_PWD: ${ORIGIN_PWD}"
 echo "TEST_BASE: ${TEST_BASE}"
 echo "ABS_TOP_SRCDIR=${ABS_TOP_SRCDIR}"
 echo "ABS_TOP_BUILDDIR=${ABS_TOP_BUILDDIR}"
@@ -163,9 +164,9 @@ output_logs()
   # Wait 5 seconds for the "logs to flush"
   sleep 5
 
-  cd "${THIS_DIR}"
+  cd "${ORIGIN_PWD}"
   echo 'START_LOG: SYSLOG ==================='
-  cat /var/log/syslog  | tee  complete-syslog.log
+  cat /var/log/syslog | tee complete-syslog.log
   echo 'START_LOG: BR-AGENT ================='
   cat /var/log/syslog | grep "${OTBR_AGENT}" | tee otbr-agent.log
   echo 'START_LOG: OTBR-COMISSIONER ========='
@@ -187,9 +188,10 @@ build_dependencies()
   if [[ "${NO_CLEAN}" != 1 ]]; then
     [[ ! -d "${STAGE_DIR}" ]] || rm -rf "${STAGE_DIR}"
     [[ ! -d "${BUILD_DIR}" ]] || rm -rf "${BUILD_DIR}"
-    mkdir -p "${STAGE_DIR}"
-    mkdir -p "${BUILD_DIR}"
   fi
+
+  [[ -d "${STAGE_DIR}" ]] || mkdir -p "${STAGE_DIR}"
+  [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
 
   # These are broken-out so that during debug you can comment out parts
   # and re-run this script multiple times script and not have your
@@ -237,7 +239,6 @@ test_teardown()
   write_syslog "EXIT ${EXITCODE} - output logs"
 
   sudo killall "${WPANTUND}" || true
-  sudo killall "${WPANCTL}" || true
   sudo killall "${OTBR_AGENT}" || true
   sudo killall "${OTBR_COMMISSIONER}" || true
   sudo killall "${OT_NCP}" || true
@@ -307,8 +308,7 @@ checkout_openthread()
 {
   cd "${BUILD_DIR}"
 
-  #[[ -d 'openthread' ]] || git clone --depth 1 https://github.com/openthread/openthread.git
-  [[ -d 'openthread' ]] || git clone --depth 1 -b commissioner-udp-proxy https://github.com/bukepo/openthread.git
+  [[ -d 'openthread' ]] || git clone --depth 1 https://github.com/openthread/openthread.git
 }
 
 compile_openthread()
@@ -434,7 +434,7 @@ ba_start()
   write_syslog "AGENT: starting"
 
   # we launch this in the background
-  (cd "${THIS_DIR}" && sudo "${OTBR_AGENT_EXE}" -I "${TUN_NAME}" &)
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_EXE}" -I "${TUN_NAME}" &)
   # wait for it to complete
   sleep 10
 
@@ -476,7 +476,7 @@ commissioner_start()
 
   # Launch the commissioner in the background
   set -x
-  (cd "${THIS_DIR}" && "${OTBR_COMMISSIONER_EXE}" ${args} &)
+  (cd "${ORIGIN_PWD}" && "${OTBR_COMMISSIONER_EXE}" ${args} &)
   set +x
 
   # Wait for it to launch and get started.
@@ -531,7 +531,6 @@ EOF
 main()
 {
   test_setup
-
   leader_start
   ba_start
   commissioner_start
