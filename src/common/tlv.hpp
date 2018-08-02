@@ -196,9 +196,10 @@ enum
     kJoinerRouterKek         = 21,
 };
 
-enum {
+enum
+{
     kPetitionAccepted = 1,
-    kPetitionPending = 0,
+    kPetitionPending  = 0,
     kPetitionRejected = -1,
 };
 
