@@ -28,9 +28,12 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-noinst_PROGRAMS = otbr-commissioner
+check_PROGRAMS = otbr-commissioner
 
-noinst_HEADERS = commissioner.hpp
+noinst_HEADERS                                        = \
+    commissioner.hpp                                    \
+    commissioner_argcargv.hpp                           \
+    $(NULL)
 
 otbr_commissioner_SOURCES                             = \
     commissioner_argcargv.cpp                           \
@@ -60,10 +63,10 @@ otbr_commissioner_LDFLAGS                             = \
     -static                                             \
     $(NULL)
 
-EXTRA_DIST                                            = \
+dist_check_SCRIPTS                                    = \
     meshcop                                             \
-    commissioner.hpp                                    \
-    commissioner_argcargv.hpp                           \
+    meshcop_ftd                                         \
+    meshcop_mtd                                         \
     $(NULL)
 
 TESTS_ENVIRONMENT                                     = \
@@ -72,10 +75,12 @@ TESTS_ENVIRONMENT                                     = \
     top_builddir='$(top_builddir)'                      \
     top_srcdir='$(top_srcdir)'                          \
     VERBOSE=1                                           \
-    LD_LIBRARY_PATH=$(top_builddir)/third_party/cppcms/repo \
     ;
 
-TESTS = meshcop
+TESTS =                                                 \
+    meshcop_ftd                                         \
+    meshcop_mtd                                         \
+    $(NULL)
 
 clean-local:
 	rm -f *.log

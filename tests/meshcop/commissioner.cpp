@@ -358,11 +358,12 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
             break;
 
         default:
-            otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: ignore-tilv: %d", tlvType);
+            otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: ignore-tlv: %d", tlvType);
             break;
         }
         tlv = tlv->GetNext();
     }
+
     otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: complete");
 }
 
