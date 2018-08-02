@@ -337,8 +337,9 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
 
     while (LengthOf(payload, tlv) < length)
     {
-        tlvType      = tlv->GetType();
         int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
+
+        tlvType = tlv->GetType();
         switch (tlvType)
         {
         case Meshcop::kState:
@@ -423,14 +424,7 @@ static int CommissionerPetition(Context &aContext)
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: complete");
 
-    if (aContext.mState == kStateAccepted)
-    {
-        return 0;
-    }
-    else
-    {
-        return -1;
-    }
+    return aContext.mState == kStateAccepted ? 0 : -1;
 }
 
 /** This handles the commissioner data set response, ie: response to the steering data etc */
@@ -838,7 +832,7 @@ int CommissionerServe(Context &aContext)
 exit:
     otbrLog(OTBR_LOG_INFO, "CommissionerServe: result=%d", ret);
 
-    return ret;
+    return aContext.mState == kStateDone ? 0 : -1;
 }
 
 /** this runs a commissioning session end to end */
