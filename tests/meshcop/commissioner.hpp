@@ -31,6 +31,9 @@
  *   This is a common header for the various commissioner source files.
  */
 
+#ifndef OTBR_COMMISSIONER_H_
+#define OTBR_COMMISSIONER_H_
+
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -88,6 +91,12 @@ enum
     /* max size of a network packet */
     kSizeMaxPacket = 1500,
 
+    /* delay between failed attempts to petition */
+    kPetitionAttemptDelay = 5,
+
+    /* max retry for petition */
+    kPetitionMaxRetry = 2,
+
     /* Default size of steering data */
     kSteeringDefaultLength = 15,
 
@@ -119,6 +128,7 @@ enum
     kStateInvalid,
     kStateConnected,
     kStateAccepted,
+    kStateRejected,
     kStateReady,
     kStateAuthenticated,
     kStateFinalized,
@@ -296,3 +306,5 @@ void CommissionerCmdLineSelfTest(argcargv *pThis);
 
 /** Print/log an error message and exit */
 void CommissionerUtilsFail(const char *fmt, ...);
+
+#endif
