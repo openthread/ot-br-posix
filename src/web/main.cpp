@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
 
     server = new ot::Web::WebServer();
-    server->StartWebServer(interfaceName, kDefaultListenAddr, port);
+    server->StartWebServer(interfaceName, httpListenAddr, port);
 
     otbrLogDeinit();
 
