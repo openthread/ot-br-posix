@@ -50,7 +50,7 @@
 
 static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
-static const char kDefaultListenAddr[]    = "127.0.0.1";
+static const char kDefaultListenAddr[]    = "0.0.0.0";
 
 void PrintVersion(void)
 {
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     if (httpListenAddr == NULL)
     {
         httpListenAddr = kDefaultListenAddr;
-        printf("litenAddress not specified, using default %s\n", httpListenAddr);
+        printf("listenAddr not specified, using default %s\n", httpListenAddr);
     }
 
     if (httpPort == NULL)
