@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -28,30 +28,68 @@
 #
 
 #
-# This script tests publishing multiple services.
+# This script includes common utils for testing mdns
 #
 
-set -x
-set -e
+readonly DNS_SD_RESULT=result
 
-. "$(dirname "$0")/test_init"
-
-main()
+on_exit()
 {
+    readonly EXIT_CODE=$?
 
-    ./otbr-test-mdns m & PID=$!
-    trap on_exit INT TERM EXIT
+    kill "$PID"
+    [[ -e "${DNS_SD_RESULT}" ]] || rm "${DNS_SD_RESULT}" || true
 
-    sleep 2
-
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
-        # dns-sd will not exit
-        dns_sd_check MultipleService1 _meshcop._udp 'nn=cool1 xp=1122334455667788'
-        dns_sd_check MultipleService2 _meshcop._udp 'nn=cool2 xp=1122334455667788'
-    else
-        avahi_check 'IPv6;MultipleService1;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool1"'
-        avahi_check 'IPv6;MultipleService2;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool2"'
-    fi
+    exit $EXIT_CODE
 }
 
-main "$@"
+#######################################
+# Check if a service is regisered
+#
+# Arguments:
+#   $1  Name
+#   $2  Type
+#   $3  Text record
+#
+# Returns:
+#   0           Registered
+#   otherwise   Not registered
+#######################################
+dns_sd_check()
+{
+    local ret
+
+    ret=0
+
+    # dns-sd will not exit
+    dns-sd -L "$1" "$2" local 2>&1 > "${DNS_SD_RESULT}" & DNS_SD_PID=$!
+    sleep 1
+    kill "${DNS_SD_PID}"
+
+    cat "${DNS_SD_RESULT}"
+    grep -q "$3" "${DNS_SD_RESULT}" || ret=1
+
+    return ${ret}
+}
+
+#######################################
+# Check if a service is regisered
+#
+# Arguments:
+#   $1  Expected avahi query result string
+#
+# Returns:
+#   0           Registered
+#   otherwise   Not registered
+#######################################
+avahi_check()
+{
+    local ret
+
+    ret=0
+
+    avahi-browse -aprt
+    avahi-browse -aprt | grep -q "$1" || ret=1
+
+    return ${ret}
+}

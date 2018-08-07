@@ -305,6 +305,25 @@ AC_MSG_NOTICE([checking required package dependencies])
 
 # NL_WITH_PACKAGE(...)
 
+AC_ARG_WITH(mdns,
+  AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, mDNSResponder @<:@default=avahi@:>@.]),
+  [with_mdns=${withval}],
+  [with_mdns=avahi]
+)
+
+case "${with_mdns}" in
+avahi)
+  AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_AVAHI], [1], [Define to 1 if you want to choose avahi to provide mdns])
+  ;;
+mDNSResponder)
+  AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_MDNSSD], [1], [Define to 1 if you want to choose mDNSResponder to provide mdns])
+  ;;
+*)
+  AC_MSG_ERROR([Invalid value ${with_mdns} for --with-mdns])
+esac
+AM_CONDITIONAL([OTBR_ENABLE_MDNS_AVAHI], [test "${with_mdns}" = "avahi"])
+AM_CONDITIONAL([OTBR_ENABLE_MDNS_MDNSSD], [test "${with_mdns}" = "mDNSResponder"])
+
 # Check if ctags is present.
 
 AC_MSG_CHECKING([checking if Exuberant Ctags is available])
@@ -462,6 +481,7 @@ AC_MSG_NOTICE([
   Build optimized libraries                 : ${nl_cv_build_optimized}
   Build coverage libraries                  : ${nl_cv_build_coverage}
   Build coverage reports                    : ${nl_cv_build_coverage_reports}
+  MDNS implementation                       : ${with_mdns}
   Lcov                                      : ${LCOV:--}
   Genhtml                                   : ${GENHTML:--}
   Build tests                               : ${nl_cv_build_tests}

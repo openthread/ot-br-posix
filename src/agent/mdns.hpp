@@ -34,6 +34,8 @@
 #ifndef MDNS_HPP_
 #define MDNS_HPP_
 
+#include <sys/select.h>
+
 #include "common/types.hpp"
 
 namespace ot {

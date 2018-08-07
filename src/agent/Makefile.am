@@ -57,7 +57,6 @@ libotbr_agent_la_SOURCES                                      = \
     border_agent.cpp                                            \
     coap_libcoap.cpp                                            \
     dtls_mbedtls.cpp                                            \
-    mdns_avahi.cpp                                              \
     ncp_wpantund.cpp                                            \
     $(NULL)
 
@@ -68,8 +67,6 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
     $(top_builddir)/src/utils/libutils.la                       \
-    -lavahi-common                                              \
-    -lavahi-client                                              \
     $(DBUS_LIBS)                                                \
     $(NULL)
 
@@ -94,6 +91,27 @@ libotbr_agent_la_CPPFLAGS                                                  = \
     $(DBUS_CFLAGS)                                                           \
     $(NULL)
 
+if OTBR_ENABLE_MDNS_AVAHI
+libotbr_agent_la_SOURCES                                     += \
+    mdns_avahi.cpp                                              \
+    $(NULL)
+
+libotbr_agent_la_LDFLAGS                                     += \
+    -lavahi-common                                              \
+    -lavahi-client                                              \
+    $(NULL)
+endif
+
+if OTBR_ENABLE_MDNS_MDNSSD
+libotbr_agent_la_SOURCES                                     += \
+    mdns_mdnssd.cpp                                             \
+    $(NULL)
+
+libotbr_agent_la_LDFLAGS                                     += \
+    -ldns_sd                                                    \
+    $(NULL)
+endif
+
 noinst_HEADERS        = \
     agent_instance.hpp  \
     border_agent.hpp    \
@@ -103,6 +121,7 @@ noinst_HEADERS        = \
     dtls_mbedtls.hpp    \
     mdns.hpp            \
     mdns_avahi.hpp      \
+    mdns_mdnssd.hpp     \
     ncp.hpp             \
     ncp_wpantund.hpp    \
     libcoap.h           \

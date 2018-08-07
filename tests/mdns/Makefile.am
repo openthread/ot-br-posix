@@ -28,7 +28,7 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-noinst_PROGRAMS = otbr-test-mdns
+check_PROGRAMS = otbr-test-mdns
 
 otbr_test_mdns_SOURCES                                 = \
     main.cpp                                             \
@@ -46,7 +46,8 @@ otbr_test_mdns_LDFLAGS                                 = \
     -static                                              \
     $(NULL)
 
-EXTRA_DIST                                             = \
+dist_check_SCRIPTS                                     = \
+    test_init                                            \
     test-single                                          \
     test-multiple                                        \
     test-update                                          \
