@@ -198,9 +198,9 @@ enum
 
 enum
 {
-    kPetitionAccepted = 1,
-    kPetitionPending  = 0,
-    kPetitionRejected = -1,
+    kStateAccepted = 1,
+    kStatePending  = 0,
+    kStateRejected = -1,
 };
 
 } // namespace Meshcop

@@ -345,11 +345,11 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
         case Meshcop::kState:
             switch (state)
             {
-            case Meshcop::kPetitionAccepted:
+            case Meshcop::kStateAccepted:
                 otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 context.mState = kStateAccepted;
                 break;
-            case Meshcop::kPetitionRejected:
+            case Meshcop::kStateRejected:
                 otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 context.mState = kStateRejected;
                 break;
