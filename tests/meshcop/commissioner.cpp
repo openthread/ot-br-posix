@@ -337,21 +337,28 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
 
     while (LengthOf(payload, tlv) < length)
     {
+        int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
+
         tlvType = tlv->GetType();
         switch (tlvType)
         {
         case Meshcop::kState:
-            if (tlv->GetValueUInt8())
+            switch (state)
             {
+            case Meshcop::kStateAccepted:
                 otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 context.mState = kStateAccepted;
-            }
-            else
-            {
-                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: rejected");
+                break;
+            case Meshcop::kStateRejected:
+                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
+                context.mState = kStateRejected;
+                break;
+            default:
+                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=%d", state);
+                context.mState = kStateInvalid;
+                break;
             }
             break;
-
         case Meshcop::kCommissionerSessionId:
             context.mCommissionerSessionId = tlv->GetValueUInt16();
             otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: session-id=%d", context.mCommissionerSessionId);
@@ -371,6 +378,7 @@ static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aCon
 static int CommissionerPetition(Context &aContext)
 {
     int     ret;
+    int     retryCount = 0;
     uint8_t buffer[kSizeMaxPacket];
     Tlv *   tlv = reinterpret_cast<Tlv *>(buffer);
 
@@ -378,42 +386,46 @@ static int CommissionerPetition(Context &aContext)
     uint16_t       token = ++aContext.mCoapToken;
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: start");
-    token   = htons(token);
-    message = aContext.mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
-                                         reinterpret_cast<const uint8_t *>(&token), sizeof(token));
-    tlv->SetType(Meshcop::kCommissionerId);
-    tlv->SetValue(kCommissionerId, sizeof(kCommissionerId) - 1);
-    tlv = tlv->GetNext();
-
-    message->SetPath("c/cp");
-    message->SetPayload(buffer, LengthOf(buffer, tlv));
-    otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
-    aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerPetition, &aContext);
-    aContext.mCoap->FreeMessage(message);
-
-    do
+    while ((aContext.mState == kStateConnected || aContext.mState == kStateRejected) && retryCount < kPetitionMaxRetry)
     {
-        ret = mbedtls_ssl_read(aContext.mSsl, buffer, sizeof(buffer));
-        if (ret > 0)
+        if (aContext.mState == kStateRejected)
         {
-            aContext.mCoap->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
-            switch (aContext.mState)
-            {
-            case kStateAccepted:
-                ret = 0;
-                break;
-            case kStateConnected:
-                ret = MBEDTLS_ERR_SSL_WANT_READ;
-                break;
-            default:
-                ret = -1;
-                break;
-            }
+            sleep(kPetitionAttemptDelay);
+            retryCount++;
         }
-    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+        token   = htons(token);
+        message = aContext.mCoap->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
+                                             reinterpret_cast<const uint8_t *>(&token), sizeof(token));
+        tlv->SetType(Meshcop::kCommissionerId);
+        tlv->SetValue(kCommissionerId, sizeof(kCommissionerId));
+        tlv = tlv->GetNext();
+
+        message->SetPath("c/cp");
+        message->SetPayload(buffer, LengthOf(buffer, tlv));
+        otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
+        aContext.mCoap->Send(*message, NULL, 0, HandleCommissionerPetition, &aContext);
+        aContext.mCoap->FreeMessage(message);
+
+        do
+        {
+            ret = mbedtls_ssl_read(aContext.mSsl, buffer, sizeof(buffer));
+            if (ret > 0)
+            {
+                aContext.mCoap->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
+                switch (aContext.mState)
+                {
+                case kStateConnected:
+                    ret = MBEDTLS_ERR_SSL_WANT_READ;
+                default:
+                    break;
+                }
+            }
+        } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+    }
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: complete");
-    return ret;
+
+    return aContext.mState == kStateAccepted ? 0 : -1;
 }
 
 /** This handles the commissioner data set response, ie: response to the steering data etc */
@@ -821,7 +833,7 @@ int CommissionerServe(Context &aContext)
 exit:
     otbrLog(OTBR_LOG_INFO, "CommissionerServe: result=%d", ret);
 
-    return ret;
+    return aContext.mState == kStateDone ? 0 : -1;
 }
 
 /** this runs a commissioning session end to end */

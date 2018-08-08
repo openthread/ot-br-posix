@@ -196,6 +196,13 @@ enum
     kJoinerRouterKek         = 21,
 };
 
+enum
+{
+    kStateAccepted = 1,
+    kStatePending  = 0,
+    kStateRejected = -1,
+};
+
 } // namespace Meshcop
 
 } // namespace ot
