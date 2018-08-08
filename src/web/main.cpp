@@ -50,6 +50,7 @@
 
 static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
+static const char kDefaultListenAddr[]    = "0.0.0.0";
 
 void PrintVersion(void)
 {
@@ -58,23 +59,26 @@ void PrintVersion(void)
 
 int main(int argc, char **argv)
 {
-    const char *interfaceName = NULL;
-    const char *httpPort      = NULL;
-    int         logLevel      = OTBR_LOG_INFO;
-    int         ret           = 0;
+    const char *interfaceName  = NULL;
+    const char *httpListenAddr = NULL;
+    const char *httpPort       = NULL;
+    int         logLevel       = OTBR_LOG_INFO;
+    int         ret            = 0;
     int         opt;
     uint16_t    port = OT_HTTP_PORT;
 
     ot::Web::WebServer *server = NULL;
 
-    while ((opt = getopt(argc, argv, "d:I:p:v")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:v:a")) != -1)
     {
         switch (opt)
         {
+        case 'a':
+            httpListenAddr = optarg;
+            break;
         case 'd':
             logLevel = atoi(optarg);
             break;
-
         case 'I':
             interfaceName = optarg;
             break;
@@ -91,7 +95,8 @@ int main(int argc, char **argv)
             break;
 
         default:
-            fprintf(stderr, "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-v]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-a listenAddress] [-v]\n",
+                    argv[0]);
             ExitNow(ret = -1);
             break;
         }
@@ -103,6 +108,12 @@ int main(int argc, char **argv)
         printf("interfaceName not specified, using default %s\n", interfaceName);
     }
 
+    if (httpListenAddr == NULL)
+    {
+        httpListenAddr = kDefaultListenAddr;
+        printf("listenAddr not specified, using default %s\n", httpListenAddr);
+    }
+
     if (httpPort == NULL)
     {
         printf("http port not specified, using default %d\n", port);
@@ -112,7 +123,7 @@ int main(int argc, char **argv)
     otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
 
     server = new ot::Web::WebServer();
-    server->StartWebServer(interfaceName, port);
+    server->StartWebServer(interfaceName, httpListenAddr, port);
 
     otbrLogDeinit();
 

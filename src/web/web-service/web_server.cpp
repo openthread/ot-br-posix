@@ -79,8 +79,12 @@ void WebServer::Init()
     }
 }
 
-void WebServer::StartWebServer(const char *aIfName, uint16_t aPort)
+void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)
 {
+    if (aListenAddr != NULL)
+    {
+        mServer->config.address = aListenAddr;
+    }
     mServer->config.port = aPort;
     mWpanService.SetInterfaceName(aIfName);
     Init();
@@ -195,7 +199,7 @@ void WebServer::DefaultHttpResponse(void)
 
         } catch (const std::exception &e)
         {
-            std::string content = "Could not open path " + request->path + ": " + e.what();
+            std::string content = "Could not open path";
             *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << content.length()
                       << OT_RESPONSE_PLACEHOLD << content;
         }
