@@ -34,6 +34,9 @@
 #ifndef TLV_HPP_
 #define TLV_HPP_
 
+#include <stdint.h>
+#include <string.h>
+
 namespace ot {
 
 /**
@@ -76,9 +79,9 @@ public:
     /**
      * This method sets the length.
      */
-    void SetLength(uint16_t aLength)
+    void SetLength(uint16_t aLength, bool forceExtended = false)
     {
-        if (aLength >= kLengthEscape)
+        if (aLength >= kLengthEscape || forceExtended)
         {
             mLength       = kLengthEscape;
             (&mLength)[1] = (aLength >> 8);
@@ -128,7 +131,7 @@ public:
      */
     void SetValue(uint16_t aValue)
     {
-        SetLength(sizeof(aValue));
+        SetLength(sizeof(aValue), false);
         uint8_t *value = static_cast<uint8_t *>(GetValue());
         value[0]       = (aValue >> 8);
         value[1]       = (aValue & 0xff);
@@ -139,16 +142,16 @@ public:
      */
     void SetValue(uint8_t aValue)
     {
-        SetLength(sizeof(aValue));
+        SetLength(sizeof(aValue), false);
         *static_cast<uint8_t *>(GetValue()) = aValue;
     }
 
     /**
      * This method copies the value.
      */
-    void SetValue(const void *aValue, uint16_t aLength)
+    void SetValue(const void *aValue, uint16_t aLength, bool forceExtended = false)
     {
-        SetLength(aLength);
+        SetLength(aLength, forceExtended);
         memcpy(GetValue(), aValue, aLength);
     }
 
@@ -170,6 +173,24 @@ public:
      *
      */
     Tlv *GetNext(void) { return reinterpret_cast<Tlv *>(static_cast<uint8_t *>(GetValue()) + GetLength()); }
+
+    void SetUdpSourcePort(uint16_t srcPort)
+    {
+        uint16_t *value = reinterpret_cast<uint16_t *>(GetValue());
+        *value          = srcPort;
+    }
+
+    void SetUdpDestionationPort(uint16_t destPort)
+    {
+        uint16_t *value = reinterpret_cast<uint16_t *>(GetValue());
+        value[1]        = destPort;
+    }
+
+    void SetUdpPayload(const void *payload, size_t len)
+    {
+        uint8_t *value = reinterpret_cast<uint8_t *>(GetValue()) + 2 * sizeof(uint16_t);
+        memcpy(value, payload, len);
+    }
 
 private:
     void *GetValue(void)
@@ -194,6 +215,15 @@ enum
     kJoinerIid               = 19,
     kJoinerRouterLocator     = 20,
     kJoinerRouterKek         = 21,
+    kUdpEncapusulationType   = 48,
+    kIPv6AddressType         = 49,
+};
+
+enum
+{
+    kPetitionAccepted = 1,
+    kPetitionPending  = 0,
+    kPetitionRejected = -1,
 };
 
 } // namespace Meshcop
