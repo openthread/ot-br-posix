@@ -516,35 +516,8 @@ int BorderAgentDtlsSession::CommissionerSet()
     printf("COMMISSIONER_SET.req: session-id=%d\n", mCommissionerSessionId);
     tlv = tlv->GetNext();
 
-    {
-        steeringData.Init();
-        /* given ascii eui64, compute hashmac */
-        mbedtls_sha256_context sha256;
-        uint8_t                hash_result[32];
-        char                   eui64[] = "18b4300000000008";
-        uint8_t                eui64bin[kEui64Len];
-        uint8_t                hashbin[kEui64Len];
-
-        /* convert ascii EUI64 into BIN EUI64 */
-        Utils::Hex2Bytes(eui64, eui64bin, sizeof(eui64bin));
-        mbedtls_sha256_init(&sha256);
-        mbedtls_sha256_starts(&sha256, 0);
-        mbedtls_sha256_update(&sha256, eui64bin, sizeof(eui64bin));
-
-        mbedtls_sha256_finish(&sha256, hash_result);
-        /* Bytes 0..7, is the new data */
-        memcpy(hashbin, hash_result, 8);
-        /* Set the locally admin bit, byte 0, bit 1 */
-        hashbin[0] |= 2;
-        for (int i = 0; i < 8; i++)
-        {
-            printf("%02x ", hashbin[i]);
-        }
-        printf("\n");
-
-        steeringData.Clear();
-        steeringData.ComputeBloomFilter(hashbin);
-    }
+    steeringData.Init();
+    steeringData.Set();
 
     tlv->SetType(Meshcop::kSteeringData);
     tlv->SetValue(steeringData.GetDataPointer(), steeringData.GetLength());
