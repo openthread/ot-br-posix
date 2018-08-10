@@ -1,3 +1,4 @@
+#include "addr_utils.hpp"
 #include "border_agent_session.hpp"
 #include "stdlib.h"
 #include "string.h"
@@ -163,7 +164,7 @@ int BorderAgentDtlsSession::DtlsHandShake(const sockaddr_in &aAgentAddr)
     char portAscii[10];
 
     mbedtls_debug_set_threshold(4);
-    utils::get_ip_str(reinterpret_cast<const sockaddr *>(&aAgentAddr), addressAscii, sizeof(addressAscii));
+    get_ip_str(reinterpret_cast<const sockaddr *>(&aAgentAddr), addressAscii, sizeof(addressAscii));
     sprintf(portAscii, "%d", ntohs(aAgentAddr.sin_port));
 
     mbedtls_net_init(&mSslClientFd);
@@ -307,11 +308,11 @@ void BorderAgentDtlsSession::HandleCommissionerPetition(const Coap::Message &aMe
         case Meshcop::kState:
             switch (state)
             {
-            case Meshcop::kPetitionAccepted:
+            case kStateAccepted:
                 otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 session->mCommissionState = kStateAccepted;
                 break;
-            case Meshcop::kPetitionRejected:
+            case kStateRejected:
                 otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 session->mCommissionState = kStateRejected;
                 break;

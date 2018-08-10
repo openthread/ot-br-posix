@@ -33,7 +33,7 @@ bin_PROGRAMS = commission-test tmf-client
 commission_test_SOURCES                             =  \
     border_agent_session.cpp                           \
     main.cpp                            			   \
-    utils.cpp                            			   \
+    addr_utils.cpp                            			   \
     $(NULL)
 
 commission_test_CPPFLAGS                            =   \
@@ -59,7 +59,7 @@ commission_test_LDFLAGS                             =   \
 tmf_client_SOURCES                             =        \
     tmf_client.cpp                           			\
     commissioner_proxy.cpp                           	\
-    utils.cpp                            				\
+    addr_utils.cpp                            				\
     $(NULL)
 
 tmf_client_CPPFLAGS                            = 		\

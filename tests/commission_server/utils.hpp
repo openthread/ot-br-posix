@@ -26,14 +26,6 @@ template <typename T> T max(const T &lhs, const T &rhs)
     return lhs > rhs ? lhs : rhs;
 }
 
-inline uint16_t toRloc16(uint8_t routerID, uint16_t childID)
-{
-    uint16_t rloc16 = routerID;
-    return (rloc16 << 10) | childID;
-}
-
-char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen);
-
 } // namespace utils
 } // namespace BorderRouter
 } // namespace ot

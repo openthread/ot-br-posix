@@ -60,16 +60,6 @@ struct NetworkInfo
     std::vector<LinkInfo> links;
 };
 
-struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint16_t aRloc16);
-
-struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint8_t aRouterID, uint16_t aChildID);
-
-struct in6_addr FindRloc16Address(const std::vector<struct in6_addr> &aAddrs);
-
-struct in6_addr FindMLEIDAddress(const std::vector<struct in6_addr> &aAddrs);
-
-struct in6_addr GetRlocPrefix(const std::vector<struct in6_addr> &aAddrs);
-
 class TmfClient
 {
 public:
@@ -99,6 +89,8 @@ private:
     void QueryDiagnosticData(const struct in6_addr &aDestAddr,
                              uint8_t                aQueryType);
 
+    NodeInfo GetNodeInfo(const struct in6_addr& aAddr);
+    std::vector<NodeInfo> GetChildNodes(const struct in6_addr &rlocPrefix, uint8_t routerID);
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,
@@ -119,8 +111,6 @@ private:
     
     static const uint16_t kTmfPort;
     static const char     kDiagUri[];
-    static const uint8_t  kLociid[];
-
 };
 
 } // namespace BorderRouter

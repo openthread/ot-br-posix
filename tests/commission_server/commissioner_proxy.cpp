@@ -18,7 +18,6 @@ ssize_t CommissionerProxy::SendCoapProxy(const uint8_t *aBuffer,
                                          void *         aContext)
 {
     CommissionerProxy *proxy = reinterpret_cast<CommissionerProxy *>(aContext);
-    printf("Write to client fd %d size %u\n", proxy->mClientFd, aLength);
     (void)aIp6;
     (void)aPort;
     return write(proxy->mClientFd, aBuffer, aLength);
@@ -81,7 +80,6 @@ int CommissionerProxy::BindProxyUdpSocket(uint16_t aSourcePort)
 
 int CommissionerProxy::Write(const struct sockaddr_in6 &destAddress, const void *buf, size_t len)
 {
-    printf("Commissioner Proxy write\n");
     uint16_t token         = ++mCoapToken;
     token                  = htons(token);
     Coap::Message *message = mCoapAgent->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
@@ -106,7 +104,6 @@ int CommissionerProxy::Write(const struct sockaddr_in6 &destAddress, const void 
     tlv = tlv->GetNext();
     message->SetPath(kmUdpTxUrl);
     message->SetPayload(buffer, utils::LengthOf(buffer, tlv));
-    printf("Coap agent send\n");
     mCoapAgent->Send(*message, NULL, 0, NULL, this);
     mCoapAgent->FreeMessage(message);
     return len;
