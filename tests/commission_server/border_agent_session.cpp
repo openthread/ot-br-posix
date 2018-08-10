@@ -4,17 +4,20 @@
 #include "string.h"
 #include "utils.hpp"
 #include <vector>
+#include "agent/uris.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
+#include "utils/hex.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-const uint8_t BorderAgentDtlsSession::kSeed[]           = "Commissioner";
-const int     BorderAgentDtlsSession::kCipherSuites[]   = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
-const char    BorderAgentDtlsSession::kCommissionerId[] = "OpenThread";
+const uint16_t BorderAgentDtlsSession::kPortJoinerSession = 49192;
+const uint8_t  BorderAgentDtlsSession::kSeed[]            = "Commissioner";
+const int      BorderAgentDtlsSession::kCipherSuites[]    = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
+const char     BorderAgentDtlsSession::kCommissionerId[]  = "OpenThread";
 
 static void my_debug(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -63,11 +66,20 @@ static int export_keys(void *               aContext,
 
 BorderAgentDtlsSession::BorderAgentDtlsSession(const uint8_t *aXpanidBin,
                                                const char *   aNetworkName,
-                                               const char *   aPassphrase)
+                                               const char *   aPassphrase,
+                                               const char *   aPskdAscii)
+    : mRelayReceiveHandler(OT_URI_PATH_RELAY_RX, BorderAgentDtlsSession::HandleRelayReceive, this)
+    , mJoinerSession(kPortJoinerSession, aPskdAscii)
 {
     Psk::Pskc      pskc;
     const uint8_t *pskcBin = pskc.ComputePskc(aXpanidBin, aNetworkName, aPassphrase);
     memcpy(mPskcBin, pskcBin, sizeof(mPskcBin));
+    mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0);
+    sockaddr_in addr;
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port        = htons(kPortJoinerSession);
+    connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
 }
 
 int BorderAgentDtlsSession::Connect(const sockaddr_in &aAgentAddr)
@@ -94,6 +106,9 @@ void BorderAgentDtlsSession::UpdateFdSet(fd_set & aReadFdSet,
     }
     FD_SET(mSslClientFd.fd, &aReadFdSet);
     aMaxFd = utils::max(mSslClientFd.fd, aMaxFd);
+    FD_SET(mJoinerSessionClientFd, &aReadFdSet);
+    aMaxFd = utils::max(mJoinerSessionClientFd, aMaxFd);
+    mJoinerSession.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
     (void)aTimeout;
     (void)aWriteFdSet;
     (void)aErrorFdSet;
@@ -101,6 +116,7 @@ void BorderAgentDtlsSession::UpdateFdSet(fd_set & aReadFdSet,
 
 void BorderAgentDtlsSession::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
+    mJoinerSession.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
     std::vector<int> closedClientFds;
     if (FD_ISSET(mListenFd, &aReadFdSet))
     {
@@ -116,6 +132,7 @@ void BorderAgentDtlsSession::Process(const fd_set &aReadFdSet, const fd_set &aWr
             perror("accept");
         }
     }
+
     for (std::set<int>::iterator iter = mClientFds.begin(); iter != mClientFds.end(); iter++)
     {
         int clientFd = *iter;
@@ -141,16 +158,36 @@ void BorderAgentDtlsSession::Process(const fd_set &aReadFdSet, const fd_set &aWr
         mClientFds.erase(closedClientFds[i]);
         close(closedClientFds[i]);
     }
+
     if (FD_ISSET(mSslClientFd.fd, &aReadFdSet))
     {
         int n = mbedtls_ssl_read(&mSsl, mIOBuffer, sizeof(mIOBuffer));
         if (n > 0)
         {
+            printf("Get dtls input\n");
+            mCoapAgent->Input(mIOBuffer, n, NULL, 0);
             for (std::set<int>::iterator iter = mClientFds.begin(); iter != mClientFds.end(); iter++)
             {
                 int clientFd = *iter;
                 write(clientFd, mIOBuffer, n);
             }
+        }
+    }
+
+    if (FD_ISSET(mJoinerSessionClientFd, &aReadFdSet))
+    {
+        struct sockaddr_in from_addr;
+        socklen_t          addrlen;
+        ssize_t n = recvfrom(mJoinerSessionClientFd, mIOBuffer, sizeof(mIOBuffer), 0, (struct sockaddr *)(&from_addr),
+                             &addrlen);
+        if (n > 0)
+        {
+            {
+                char buf[100];
+                get_ip_str((struct sockaddr *)(&from_addr), buf, sizeof(buf));
+                otbrLog(OTBR_LOG_INFO, "relay from: %s\n", buf);
+            }
+            SendRelayTransmit(mIOBuffer, n);
         }
     }
     (void)aWriteFdSet;
@@ -209,11 +246,13 @@ exit:
 
 int BorderAgentDtlsSession::BecomeCommissioner()
 {
-    int          ret;
-    int          coapToken = rand();
-    Coap::Agent *coapAgent = Coap::Agent::Create(SendCoap, this);
-    mCommissionState       = kStateConnected;
-    SuccessOrExit(ret = CommissionerPetition(coapAgent, coapToken));
+    int ret;
+    mCoapAgent = Coap::Agent::Create(SendCoap, this);
+    mCoapToken = rand();
+    SuccessOrExit(ret = mCoapAgent->AddResource(mRelayReceiveHandler));
+    mCommissionState = kStateConnected;
+    SuccessOrExit(ret = CommissionerPetition());
+    SuccessOrExit(ret = CommissionerSet());
 exit:
     return ret;
 }
@@ -230,7 +269,7 @@ ssize_t BorderAgentDtlsSession::SendCoap(const uint8_t *aBuffer,
     return mbedtls_ssl_write(&session->mSsl, aBuffer, aLength);
 }
 
-int BorderAgentDtlsSession::CommissionerPetition(Coap::Agent *aCoapAgent, int &aCoapToken)
+int BorderAgentDtlsSession::CommissionerPetition()
 {
     int     ret;
     int     retryCount = 0;
@@ -238,7 +277,7 @@ int BorderAgentDtlsSession::CommissionerPetition(Coap::Agent *aCoapAgent, int &a
     Tlv *   tlv = reinterpret_cast<Tlv *>(buffer);
 
     Coap::Message *message;
-    uint16_t       token = ++aCoapToken;
+    uint16_t       token = ++mCoapToken;
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: start");
     while ((mCommissionState == kStateConnected || mCommissionState == kStateRejected) &&
@@ -250,7 +289,7 @@ int BorderAgentDtlsSession::CommissionerPetition(Coap::Agent *aCoapAgent, int &a
             retryCount++;
         }
         token   = htons(token);
-        message = aCoapAgent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
+        message = mCoapAgent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
                                          reinterpret_cast<const uint8_t *>(&token), sizeof(token));
         tlv->SetType(Meshcop::kCommissionerId);
         tlv->SetValue(kCommissionerId, sizeof(kCommissionerId));
@@ -259,15 +298,15 @@ int BorderAgentDtlsSession::CommissionerPetition(Coap::Agent *aCoapAgent, int &a
         message->SetPath("c/cp");
         message->SetPayload(buffer, utils::LengthOf(buffer, tlv));
         otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
-        aCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
-        aCoapAgent->FreeMessage(message);
+        mCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
+        mCoapAgent->FreeMessage(message);
 
         do
         {
             ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
             if (ret > 0)
             {
-                aCoapAgent->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
+                mCoapAgent->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
                 switch (mCommissionState)
                 {
                 case kStateConnected:
@@ -283,6 +322,124 @@ int BorderAgentDtlsSession::CommissionerPetition(Coap::Agent *aCoapAgent, int &a
 
     ret = mCommissionState == kStateAccepted ? 0 : -1;
     return ret;
+}
+
+void BorderAgentDtlsSession::HandleRelayReceive(const Coap::Resource &aResource,
+                                                const Coap::Message & aMessage,
+                                                Coap::Message &       aResponse,
+                                                const uint8_t *       aIp6,
+                                                uint16_t              aPort,
+                                                void *                aContext)
+{
+    int                     ret = 0;
+    int                     tlvType;
+    uint16_t                length;
+    BorderAgentDtlsSession *session = reinterpret_cast<BorderAgentDtlsSession *>(aContext);
+    const uint8_t *         payload = aMessage.GetPayload(length);
+
+    for (const Tlv *requestTlv = reinterpret_cast<const Tlv *>(payload); utils::LengthOf(payload, requestTlv) < length;
+         requestTlv            = requestTlv->GetNext())
+    {
+        tlvType = requestTlv->GetType();
+        switch (tlvType)
+        {
+        case Meshcop::kJoinerDtlsEncapsulation:
+            struct sockaddr_in addr;
+            memset(&addr, 0, sizeof(addr));
+            addr.sin_family = AF_INET;
+            addr.sin_port   = htons(kPortJoinerSession);
+
+            printf("Encapsulation: %d bytes for port: %d\n", requestTlv->GetLength(), kPortJoinerSession);
+            otbrLog(OTBR_LOG_INFO, "Encapsulation: %d bytes for port: %d", requestTlv->GetLength(), kPortJoinerSession);
+            {
+                char buf[100];
+                get_ip_str((struct sockaddr *)&addr, buf, sizeof(buf));
+                otbrLog(OTBR_LOG_INFO, "DEST: %s", buf);
+            }
+            ret = send(session->mJoinerSessionClientFd, requestTlv->GetValue(), requestTlv->GetLength(), 0);
+            if (ret < 0)
+            {
+                otbrLog(OTBR_LOG_ERR, "relay receive, sendto() fails with %d", errno);
+            }
+            VerifyOrExit(ret != -1, ret = errno);
+            break;
+
+        case Meshcop::kJoinerUdpPort:
+            session->mJoinerUdpPort = requestTlv->GetValueUInt16();
+            otbrLog(OTBR_LOG_INFO, "JoinerPort: %d", session->mJoinerUdpPort);
+            break;
+
+        case Meshcop::kJoinerIid:
+            memcpy(session->mJoinerIid, requestTlv->GetValue(), sizeof(session->mJoinerIid));
+            break;
+
+        case Meshcop::kJoinerRouterLocator:
+            session->mJoinerRouterLocator = requestTlv->GetValueUInt16();
+            otbrLog(OTBR_LOG_INFO, "Router locator: %d", session->mJoinerRouterLocator);
+            break;
+
+        default:
+            otbrLog(OTBR_LOG_INFO, "skip tlv type: %d", tlvType);
+            break;
+        }
+    }
+
+exit:
+
+    (void)aResource;
+    (void)aResponse;
+    (void)aIp6;
+    (void)aPort;
+
+    return;
+}
+
+int BorderAgentDtlsSession::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
+{
+    uint8_t payload[kSizeMaxPacket];
+    Tlv *   responseTlv = reinterpret_cast<Tlv *>(payload);
+
+    responseTlv->SetType(Meshcop::kJoinerDtlsEncapsulation);
+    responseTlv->SetValue(aBuf, static_cast<uint16_t>(aLength));
+    responseTlv = responseTlv->GetNext();
+
+    responseTlv->SetType(Meshcop::kJoinerUdpPort);
+    responseTlv->SetValue(mJoinerUdpPort);
+    responseTlv = responseTlv->GetNext();
+
+    responseTlv->SetType(Meshcop::kJoinerIid);
+    responseTlv->SetValue(mJoinerIid, sizeof(mJoinerIid));
+    responseTlv = responseTlv->GetNext();
+
+    responseTlv->SetType(Meshcop::kJoinerRouterLocator);
+    responseTlv->SetValue(mJoinerRouterLocator);
+    responseTlv = responseTlv->GetNext();
+
+    if (mJoinerSession.NeedAppendKek())
+    {
+        uint8_t kek[JoinerSession::kKekSize];
+        mJoinerSession.GetKek(kek, sizeof(kek));
+        mJoinerSession.MarkKekSent();
+        otbrLog(OTBR_LOG_INFO, "realy: KEK state");
+        responseTlv->SetType(Meshcop::kJoinerRouterKek);
+        responseTlv->SetValue(kek, sizeof(kek));
+        responseTlv = responseTlv->GetNext();
+    }
+
+    {
+        Coap::Message *message;
+        uint16_t       token = mCoapToken;
+
+        message = mCoapAgent->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
+                                         reinterpret_cast<const uint8_t *>(&token), sizeof(token));
+        message->SetPath("c/tx");
+        message->SetPayload(payload, utils::LengthOf(payload, responseTlv));
+        otbrLog(OTBR_LOG_INFO, "RELAY_tx.req: send");
+        mCoapAgent->Send(*message, NULL, 0, NULL, this);
+        mCoapAgent->FreeMessage(message);
+    }
+
+    return aLength;
 }
 
 /** handle c/cp response */
@@ -324,6 +481,7 @@ void BorderAgentDtlsSession::HandleCommissionerPetition(const Coap::Message &aMe
             break;
         case Meshcop::kCommissionerSessionId:
             session->mCommissionerSessionId = tlv->GetValueUInt16();
+            printf("COMM_PET.rsp: session-id=%d\n", session->mCommissionerSessionId);
             otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: session-id=%d", session->mCommissionerSessionId);
             break;
 
@@ -335,6 +493,138 @@ void BorderAgentDtlsSession::HandleCommissionerPetition(const Coap::Message &aMe
     }
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: complete");
+}
+
+int BorderAgentDtlsSession::CommissionerSet()
+{
+    int          ret   = 0;
+    uint16_t     token = ++mCoapToken;
+    uint8_t      buffer[kSizeMaxPacket];
+    SteeringData steeringData;
+    Tlv *        tlv = reinterpret_cast<Tlv *>(buffer);
+
+    Coap::Message *message;
+
+    otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: start");
+    token   = htons(token);
+    message = mCoapAgent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost, reinterpret_cast<const uint8_t *>(&token),
+                                     sizeof(token));
+
+    tlv->SetType(Meshcop::kCommissionerSessionId);
+    tlv->SetValue(mCommissionerSessionId);
+    otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: session-id=%d", mCommissionerSessionId);
+    printf("COMMISSIONER_SET.req: session-id=%d\n", mCommissionerSessionId);
+    tlv = tlv->GetNext();
+
+    {
+        steeringData.Init();
+        /* given ascii eui64, compute hashmac */
+        mbedtls_sha256_context sha256;
+        uint8_t                hash_result[32];
+        char                   eui64[] = "18b4300000000008";
+        uint8_t                eui64bin[kEui64Len];
+        uint8_t                hashbin[kEui64Len];
+
+        /* convert ascii EUI64 into BIN EUI64 */
+        Utils::Hex2Bytes(eui64, eui64bin, sizeof(eui64bin));
+        mbedtls_sha256_init(&sha256);
+        mbedtls_sha256_starts(&sha256, 0);
+        mbedtls_sha256_update(&sha256, eui64bin, sizeof(eui64bin));
+
+        mbedtls_sha256_finish(&sha256, hash_result);
+        /* Bytes 0..7, is the new data */
+        memcpy(hashbin, hash_result, 8);
+        /* Set the locally admin bit, byte 0, bit 1 */
+        hashbin[0] |= 2;
+        for (int i = 0; i < 8; i++)
+        {
+            printf("%02x ", hashbin[i]);
+        }
+        printf("\n");
+
+        steeringData.Clear();
+        steeringData.ComputeBloomFilter(hashbin);
+    }
+
+    tlv->SetType(Meshcop::kSteeringData);
+    tlv->SetValue(steeringData.GetDataPointer(), steeringData.GetLength());
+    tlv = tlv->GetNext();
+
+    message->SetPath("c/cs");
+    otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: coap-uri: %s", "c/cs");
+    message->SetPayload(buffer, utils::LengthOf(buffer, tlv));
+    otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: sent");
+    mCoapAgent->Send(*message, NULL, 0, HandleCommissionerSet, this);
+    mCoapAgent->FreeMessage(message);
+
+    do
+    {
+        ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
+        if (ret > 0)
+        {
+            mCoapAgent->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
+            switch (mCommissionState)
+            {
+            case kStateReady:
+                ret = 0;
+                break;
+
+            case kStateAccepted:
+                ret = MBEDTLS_ERR_SSL_WANT_READ;
+                break;
+
+            default:
+                break;
+            }
+        }
+    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+
+    return ret;
+}
+
+void BorderAgentDtlsSession::HandleCommissionerSet(const Coap::Message &aMessage, void *aContext)
+{
+    uint16_t                length;
+    int                     tlvType;
+    const Tlv *             tlv;
+    const uint8_t *         payload;
+    BorderAgentDtlsSession *session = reinterpret_cast<BorderAgentDtlsSession *>(aContext);
+
+    otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: start");
+    payload = (aMessage.GetPayload(length));
+    tlv     = reinterpret_cast<const Tlv *>(payload);
+
+    while (utils::LengthOf(payload, tlv) < length)
+    {
+        tlvType = tlv->GetType();
+        switch (tlvType)
+        {
+        case Meshcop::kState:
+            if (tlv->GetValueUInt8())
+            {
+                session->mCommissionState = kStateReady;
+                otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: state=ready");
+            }
+            else
+            {
+                otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: state=NOT-ready");
+            }
+            break;
+
+        case Meshcop::kCommissionerSessionId:
+            session->mCommissionerSessionId = tlv->GetValueUInt16();
+            printf("COMMISSIONER_SET.rsp: session-id=%d\n", session->mCommissionerSessionId);
+            otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: session-id=%d", session->mCommissionerSessionId);
+            break;
+
+        default:
+            otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: ignore-tlv=%d", tlvType);
+            break;
+        }
+        tlv = tlv->GetNext();
+    }
+    printf("COMMISSIONER_SET.rsp: complete\n");
+    otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: complete");
 }
 
 int BorderAgentDtlsSession::SetupProxyServer()
@@ -357,6 +647,8 @@ exit:
 void BorderAgentDtlsSession::ShutDownPorxyServer()
 {
     close(mListenFd);
+    close(mJoinerSessionClientFd);
+    Coap::Agent::Destroy(mCoapAgent);
 }
 
 void BorderAgentDtlsSession::BorderAgentDtlsSession::Disconnect()

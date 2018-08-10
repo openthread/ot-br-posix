@@ -9,13 +9,14 @@ int main()
 {
     const char networkName[] = "OpenThreadDemo";
     const char passPhrase[]  = "123456";
+    const char joinerPassPhrase[]  = "ABCDEF";
     const char xpanidAscii[] = "1111111122222222";
     uint8_t    xpanidBin[kXpanidLength];
 
     otbrLogInit("Commission server", OTBR_LOG_ERR);
 
     ot::Utils::Hex2Bytes(xpanidAscii, xpanidBin, sizeof(xpanidBin));
-    BorderAgentDtlsSession s(xpanidBin, networkName, passPhrase);
+    BorderAgentDtlsSession s(xpanidBin, networkName, passPhrase, joinerPassPhrase);
     sockaddr_in            addr;
     addr.sin_family = AF_INET;
     addr.sin_port   = htons(49191);

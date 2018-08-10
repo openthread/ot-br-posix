@@ -32,6 +32,7 @@ bin_PROGRAMS = commission-test tmf-client
 
 commission_test_SOURCES                             =  \
     border_agent_session.cpp                           \
+    joiner_session.cpp                           \
     main.cpp                            			   \
     addr_utils.cpp                            			   \
     $(NULL)

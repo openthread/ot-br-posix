@@ -11,6 +11,7 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 #include "commission_common.hpp"
+#include "joiner_session.hpp"
 #include <mbedtls/certs.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/debug.h>
@@ -20,8 +21,9 @@
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/timing.h>
-#include <web/pskc-generator/pskc.hpp>
 #include <set>
+#include <web/pskc-generator/pskc.hpp>
+#include "utils/steeringdata.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -29,7 +31,10 @@ namespace BorderRouter {
 class BorderAgentDtlsSession
 {
 public:
-    BorderAgentDtlsSession(const uint8_t *aXpanidBin, const char *aNetworkName, const char *aPassphrase);
+    BorderAgentDtlsSession(const uint8_t *aXpanidBin,
+                           const char *   aNetworkName,
+                           const char *   aPassphrase,
+                           const char *   aPskdAscii);
 
     int Connect(const sockaddr_in &aAgentAddr);
 
@@ -68,17 +73,25 @@ private:
 
     int DtlsHandShake(const sockaddr_in &aAgentAddr);
     int BecomeCommissioner();
-    int CommissionerPetition(Coap::Agent *aCoapAgent, int &aCoapToken);
+    int CommissionerPetition();
+    int CommissionerSet();
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,
                             const uint8_t *aIp6,
                             uint16_t       aPort,
                             void *         aContext);
-    static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
+    static void    HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
+    static void    HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
+    static void    HandleRelayReceive(const Coap::Resource &aResource,
+                                      const Coap::Message & aMessage,
+                                      Coap::Message &       aResponse,
+                                      const uint8_t *       aIp6,
+                                      uint16_t              aPort,
+                                      void *                aContext);
+    int            SendRelayTransmit(uint8_t *aBuf, size_t aLength);
 
-    uint8_t mPskcBin[OT_PSKC_LENGTH];
-    uint16_t mCommissionerSessionId;
+    ssize_t ReadFullPacket(int aFd, void *aBuf, size_t aSize);
 
     mbedtls_net_context          mSslClientFd;
     mbedtls_ssl_context          mSsl;
@@ -87,20 +100,35 @@ private:
     mbedtls_ssl_config           mSslConf;
     mbedtls_timing_delay_context mTimer;
 
-    int mListenFd;
+    Coap::Agent *mCoapAgent;
+    int          mCoapToken;
+    Coap::Resource mRelayReceiveHandler;
+
+    uint8_t  mPskcBin[OT_PSKC_LENGTH];
+    uint16_t mCommissionerSessionId;
+
+    int           mListenFd;
     std::set<int> mClientFds;
 
     uint8_t mIOBuffer[kSizeMaxPacket];
 
-    static const uint8_t kSeed[];
-    static const int     kCipherSuites[];
-    static const char    kCommissionerId[];
+    JoinerSession mJoinerSession;
+    int           mJoinerSessionClientFd;
+    uint16_t      mJoinerUdpPort;
+    uint8_t       mJoinerIid[8];
+    uint16_t      mJoinerRouterLocator;
 
-    enum {
+    static const uint16_t kPortJoinerSession;
+    static const uint8_t  kSeed[];
+    static const int      kCipherSuites[];
+    static const char     kCommissionerId[];
+
+    enum
+    {
         kStateConnected,
         kStateAccepted,
         kStateRejected,
-        kStateDone,
+        kStateReady,
         kStateInvalid,
     } mCommissionState;
 };
