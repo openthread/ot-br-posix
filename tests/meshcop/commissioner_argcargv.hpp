@@ -31,8 +31,17 @@
  *   The file is the header for the command line params for the commissioner test app.
  */
 
-#if !defined(COMMISSIONER_HPP_H)
-#define COMMISSIONER_HPP_H
+#ifndef OTBR_COMMISSIONER_HPP_H_
+#define OTBR_COMMISSIONER_HPP_H_
+
+#include <stdint.h>
+#include <cstring>
+#include "commission_common.hpp"
+#include "web/pskc-generator/pskc.hpp"
+
+
+namespace ot {
+namespace BorderRouter {
 
 /**
  * Simple class to handle command line parameters
@@ -42,11 +51,45 @@
 /* forward */
 class argcargv;
 
+struct CommissionerArgs {
+    char mAgentPort_ascii[7];
+    char mAgentAddress_ascii[64]; 
+
+    char mJoinerHashmac_ascii[kEui64Len*2 + 1];
+    uint8_t mJoinerHashmac_bin[kEui64Len];
+    bool mHasJoinerHashMac;
+    char mJoinerEui64_ascii[kEui64Len*2 + 1];
+    uint8_t mJoinerEui64_bin[kEui64Len];
+    bool mAllowAllJoiners;
+
+    char mJoinerPSKd_ascii[kPSKdLength + 1];
+    int mSteeringLength;
+
+    bool mNeedSendCommKA;
+    int mSendCommKATxRate; 
+    int mEnvelopeTimeout; 
+
+    char mPSKc_ascii[2*OT_PSKC_LENGTH + 1];
+    uint8_t mPSKc_bin[OT_PSKC_LENGTH];
+    bool mHasPSKc;
+    char mXpanid_ascii[kXpanidLength * 2 + 1];
+    uint8_t mXpanid_bin[kXpanidLength];
+    char mNetworkName[kNetworkNameLenMax + 1];
+    char mPassPhrase[kBorderRouterPassPhraseLen + 1];
+
+    bool mNeedComputePSKc;
+    bool mNeedComputeJoinerHashMac;
+    bool mNeedComputeJoinerSteering;
+    bool mNeedCommissionDevice;
+
+    int mDebugLevel;
+};
+
 /* option entry in our table */
 struct argcargv_opt
 {
     const char *name;
-    void (*handler)(argcargv *);
+    void (*handler)(argcargv *, CommissionerArgs *);
     const char *valuehelp;
     const char *helptext;
 };
@@ -62,6 +105,9 @@ public:
     char **mARGV; /* analogous to argv */
     int    mARGx; /**< current argument */
 
+    /** Result **/
+    CommissionerArgs args;
+
     enum
     {
         max_opts = 40
@@ -72,7 +118,7 @@ public:
     void usage(const char *fmt, ...);
 
     /** add an option to be parsed */
-    void add_option(const char *name, void (*handler)(argcargv *pThis), const char *valuehelp, const char *help);
+    void add_option(const char *name, void (*handler)(argcargv *pThis, CommissionerArgs *args), const char *valuehelp, const char *help);
 
     /**
      * fetch/parse a string parameter
@@ -118,6 +164,9 @@ public:
 /**
  * Called from main() to parse the commissioner test app command line parameters.
  */
-void commissioner_argcargv(int argc, char **argv);
+CommissionerArgs commissioner_argcargv(int argc, char **argv);
+
+} // namespace BorderRouter
+} // namespace ot
 
 #endif

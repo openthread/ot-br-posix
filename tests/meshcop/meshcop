@@ -421,6 +421,15 @@ leader_start()
   echo 'Waiting for wpantund to fully start'
   sleep 10
 
+  echo "----------------------------------"
+  echo ${OT_PSKC}
+  echo ${OT_MASTER_KEY}
+  echo ${OT_PANID}
+  echo ${OT_XPANID}
+  echo ${OT_NETWORK_NAME}
+  echo ${OT_CHANNEL}
+  echo "----------------------------------"
+
   set -x
   sudo "${wpanctl}" -I "${TUN_NAME}" set Daemon:AutoAssociateAfterReset false
   sudo "${wpanctl}" -I "${TUN_NAME}" leave
@@ -432,8 +441,8 @@ leader_start()
   set +x
 
   # These should be running now and should not have crashed!
-  pidof "${WPANTUND}" || die "LEADER: Failed to start wpantund"
-  pidof "${OT_NCP}" || die "LEADER: Failed to start ${OT_NCP}"
+  pidof "${WPANTUND}" || echo "LEADER: Failed to start wpantund"
+  pidof "${OT_NCP}" || echo "LEADER: Failed to start ${OT_NCP}"
 
   write_syslog "LEADER: start complete"
 }

@@ -13,6 +13,7 @@ JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAsci
     , mJoinerFinalizeHandler(OT_URI_PATH_JOINER_FINALIZE, HandleJoinerFinalize, this)
     , mNeedAppendKek(false)
 {
+    printf("pskd length %zu\n", strlen(aPskdAscii));
     mDtlsServer->SetPSK((const uint8_t *)aPskdAscii, strlen(aPskdAscii));
     mDtlsServer->Start();
     mCoapAgent->AddResource(mJoinerFinalizeHandler);
@@ -117,19 +118,23 @@ void JoinerSession::UpdateFdSet(fd_set & aReadFdSet,
     mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
 }
 
-bool JoinerSession::NeedAppendKek() {
+bool JoinerSession::NeedAppendKek()
+{
     return mNeedAppendKek;
 }
 
-void JoinerSession::MarkKekSent() {
+void JoinerSession::MarkKekSent()
+{
     mNeedAppendKek = false;
 }
 
-void JoinerSession::GetKek(uint8_t *aBuf, size_t aBufSize) {
+void JoinerSession::GetKek(uint8_t *aBuf, size_t aBufSize)
+{
     memcpy(aBuf, mKek, utils::min(sizeof(mKek), aBufSize));
 }
 
-JoinerSession::~JoinerSession() {
+JoinerSession::~JoinerSession()
+{
     Dtls::Server::Destroy(mDtlsServer);
     Coap::Agent::Destroy(mCoapAgent);
 }
