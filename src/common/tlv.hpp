@@ -174,24 +174,6 @@ public:
      */
     Tlv *GetNext(void) { return reinterpret_cast<Tlv *>(static_cast<uint8_t *>(GetValue()) + GetLength()); }
 
-    void SetUdpSourcePort(uint16_t srcPort)
-    {
-        uint16_t *value = reinterpret_cast<uint16_t *>(GetValue());
-        *value          = srcPort;
-    }
-
-    void SetUdpDestionationPort(uint16_t destPort)
-    {
-        uint16_t *value = reinterpret_cast<uint16_t *>(GetValue());
-        value[1]        = destPort;
-    }
-
-    void SetUdpPayload(const void *payload, size_t len)
-    {
-        uint8_t *value = reinterpret_cast<uint8_t *>(GetValue()) + 2 * sizeof(uint16_t);
-        memcpy(value, payload, len);
-    }
-
 private:
     void *GetValue(void)
     {
