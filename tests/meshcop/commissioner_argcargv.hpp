@@ -34,11 +34,10 @@
 #ifndef OTBR_COMMISSIONER_HPP_H_
 #define OTBR_COMMISSIONER_HPP_H_
 
-#include <stdint.h>
-#include <cstring>
 #include "commission_common.hpp"
+#include <cstring>
+#include <stdint.h>
 #include "web/pskc-generator/pskc.hpp"
-
 
 namespace ot {
 namespace BorderRouter {
@@ -51,31 +50,32 @@ namespace BorderRouter {
 /* forward */
 class argcargv;
 
-struct CommissionerArgs {
+struct CommissionerArgs
+{
     char mAgentPort_ascii[7];
-    char mAgentAddress_ascii[64]; 
+    char mAgentAddress_ascii[64];
 
-    char mJoinerHashmac_ascii[kEui64Len*2 + 1];
+    char    mJoinerHashmac_ascii[kEui64Len * 2 + 1];
     uint8_t mJoinerHashmac_bin[kEui64Len];
-    bool mHasJoinerHashMac;
-    char mJoinerEui64_ascii[kEui64Len*2 + 1];
+    bool    mHasJoinerHashMac;
+    char    mJoinerEui64_ascii[kEui64Len * 2 + 1];
     uint8_t mJoinerEui64_bin[kEui64Len];
-    bool mAllowAllJoiners;
+    bool    mAllowAllJoiners;
 
     char mJoinerPSKd_ascii[kPSKdLength + 1];
-    int mSteeringLength;
+    int  mSteeringLength;
 
     bool mNeedSendCommKA;
-    int mSendCommKATxRate; 
-    int mEnvelopeTimeout; 
+    int  mSendCommKATxRate;
+    int  mEnvelopeTimeout;
 
-    char mPSKc_ascii[2*OT_PSKC_LENGTH + 1];
+    char    mPSKc_ascii[2 * OT_PSKC_LENGTH + 1];
     uint8_t mPSKc_bin[OT_PSKC_LENGTH];
-    bool mHasPSKc;
-    char mXpanid_ascii[kXpanidLength * 2 + 1];
+    bool    mHasPSKc;
+    char    mXpanid_ascii[kXpanidLength * 2 + 1];
     uint8_t mXpanid_bin[kXpanidLength];
-    char mNetworkName[kNetworkNameLenMax + 1];
-    char mPassPhrase[kBorderRouterPassPhraseLen + 1];
+    char    mNetworkName[kNetworkNameLenMax + 1];
+    char    mPassPhrase[kBorderRouterPassPhraseLen + 1];
 
     bool mNeedComputePSKc;
     bool mNeedComputeJoinerHashMac;
@@ -118,7 +118,10 @@ public:
     void usage(const char *fmt, ...);
 
     /** add an option to be parsed */
-    void add_option(const char *name, void (*handler)(argcargv *pThis, CommissionerArgs *args), const char *valuehelp, const char *help);
+    void add_option(const char *name,
+                    void (*handler)(argcargv *pThis, CommissionerArgs *args),
+                    const char *valuehelp,
+                    const char *help);
 
     /**
      * fetch/parse a string parameter

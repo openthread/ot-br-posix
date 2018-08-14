@@ -1,10 +1,10 @@
 #ifndef OTBR_UTILS_HPP_
 #define OTBR_UTILS_HPP_
 
-#include <cstdio> 
-#include <stdint.h> 
 #include <arpa/inet.h>
+#include <cstdio>
 #include <errno.h>
+#include <stdint.h>
 #include <sys/socket.h>
 
 namespace ot {

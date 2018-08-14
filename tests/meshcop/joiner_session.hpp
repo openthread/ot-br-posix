@@ -52,32 +52,32 @@ public:
     ~JoinerSession();
 
     static const size_t kKekSize = 32;
+
 private:
     JoinerSession(const JoinerSession &);
     JoinerSession &operator=(const JoinerSession &);
 
-    static void HandleSessionChange(Dtls::Session &aSession, Dtls::Session::State aState, void *aContext);
+    static void    HandleSessionChange(Dtls::Session &aSession, Dtls::Session::State aState, void *aContext);
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,
                             const uint8_t *aIp6,
                             uint16_t       aPort,
                             void *         aContext);
-    static void FeedCoap(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
-    static void HandleJoinerFinalize(const Coap::Resource &aResource,
-                          const Coap::Message & aRequest,
-                          Coap::Message &       aResponse,
-                          const uint8_t *       aIp6,
-                          uint16_t              aPort,
-                          void *                aContext);
-
+    static void    FeedCoap(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
+    static void    HandleJoinerFinalize(const Coap::Resource &aResource,
+                                        const Coap::Message & aRequest,
+                                        Coap::Message &       aResponse,
+                                        const uint8_t *       aIp6,
+                                        uint16_t              aPort,
+                                        void *                aContext);
 
     uint8_t mKek[32];
 
-    Dtls::Server *mDtlsServer;
+    Dtls::Server * mDtlsServer;
     Dtls::Session *mDtlsSession;
-    Coap::Agent * mCoapAgent;
+    Coap::Agent *  mCoapAgent;
     Coap::Resource mJoinerFinalizeHandler;
-    bool mNeedAppendKek;
+    bool           mNeedAppendKek;
 };
 
 } // namespace BorderRouter

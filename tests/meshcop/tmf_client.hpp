@@ -12,7 +12,8 @@
 namespace ot {
 namespace BorderRouter {
 
-enum {
+enum
+{
     kTypeListTlvType = 0x12,
     kLeaderDataType  = 0x06,
     kAddressListType = 0x08,
@@ -81,15 +82,11 @@ private:
     TmfClient(const TmfClient &);
     TmfClient &operator=(const TmfClient &);
 
-    size_t PostCoapAndWaitForResponse(sockaddr_in6 aDestAddr,
-                                      const char * aUri,
-                                      uint8_t *    aPayload,
-                                      size_t       aLength);
+    size_t PostCoapAndWaitForResponse(sockaddr_in6 aDestAddr, const char *aUri, uint8_t *aPayload, size_t aLength);
 
-    void QueryDiagnosticData(const struct in6_addr &aDestAddr,
-                             uint8_t                aQueryType);
+    void QueryDiagnosticData(const struct in6_addr &aDestAddr, uint8_t aQueryType);
 
-    NodeInfo GetNodeInfo(const struct in6_addr& aAddr);
+    NodeInfo              GetNodeInfo(const struct in6_addr &aAddr);
     std::vector<NodeInfo> GetChildNodes(const struct in6_addr &rlocPrefix, uint8_t routerID);
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
@@ -108,7 +105,7 @@ private:
 
     CommissionerProxy * mProxy;
     struct sockaddr_in6 mDestAddr;
-    
+
     static const uint16_t kTmfPort;
     static const char     kDiagUri[];
 };

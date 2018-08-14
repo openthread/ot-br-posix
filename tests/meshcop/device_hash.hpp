@@ -11,7 +11,7 @@ void ComputePskc(const uint8_t *aExtPanIdBin, const char *aNetworkName, const ch
 void ComputeHashMac(uint8_t *aEui64Bin, uint8_t *aHashMacOutBuf);
 SteeringData ComputeSteeringData(uint8_t length, bool aAllowAny, uint8_t *aEui64Bin);
 
-}
-}
+} // namespace BorderRouter
+} // namespace ot
 
 #endif
