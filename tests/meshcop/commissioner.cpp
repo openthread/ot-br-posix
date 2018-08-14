@@ -99,13 +99,6 @@ void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
                                int &    aMaxFd,
                                timeval &aTimeout)
 {
-    FD_SET(mListenFd, &aReadFdSet);
-    aMaxFd = utils::max(mListenFd, aMaxFd);
-    for (std::set<int>::iterator iter = mClientFds.begin(); iter != mClientFds.end(); iter++)
-    {
-        FD_SET(*iter, &aReadFdSet);
-        aMaxFd = utils::max(*iter, aMaxFd);
-    }
     FD_SET(mSslClientFd.fd, &aReadFdSet);
     aMaxFd = utils::max(mSslClientFd.fd, aMaxFd);
     FD_SET(mJoinerSessionClientFd, &aReadFdSet);
@@ -121,46 +114,6 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
     std::vector<int> closedClientFds;
     timeval          nowTime;
     mJoinerSession.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
-    if (FD_ISSET(mListenFd, &aReadFdSet))
-    {
-        sockaddr  clientAddr;
-        socklen_t clientAddrlen;
-        int       newClientFd = accept(mListenFd, reinterpret_cast<struct sockaddr *>(&clientAddr), &clientAddrlen);
-        if (newClientFd >= 0)
-        {
-            mClientFds.insert(newClientFd);
-        }
-        else
-        {
-            perror("accept");
-        }
-    }
-
-    for (std::set<int>::iterator iter = mClientFds.begin(); iter != mClientFds.end(); iter++)
-    {
-        int clientFd = *iter;
-        if (FD_ISSET(clientFd, &aReadFdSet))
-        {
-            ssize_t n = read(clientFd, mIOBuffer, sizeof(mIOBuffer));
-            if (n > 0)
-            {
-                mbedtls_ssl_write(&mSsl, mIOBuffer, n);
-            }
-            else if (n == 0)
-            {
-                closedClientFds.push_back(clientFd);
-            }
-            else
-            {
-                otbrLog(OTBR_LOG_ERR, "read from client error", strerror(errno));
-            }
-        }
-    }
-    for (size_t i = 0; i < closedClientFds.size(); i++)
-    {
-        mClientFds.erase(closedClientFds[i]);
-        close(closedClientFds[i]);
-    }
 
     if (FD_ISSET(mSslClientFd.fd, &aReadFdSet))
     {
@@ -169,11 +122,6 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         {
             printf("Get dtls input\n");
             mCoapAgent->Input(mIOBuffer, n, NULL, 0);
-            for (std::set<int>::iterator iter = mClientFds.begin(); iter != mClientFds.end(); iter++)
-            {
-                int clientFd = *iter;
-                (void)write(clientFd, mIOBuffer, n);
-            }
         }
     }
 
@@ -713,30 +661,6 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
     otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: complete");
 }
 
-int Commissioner::SetupProxyServer()
-{
-    int         ret;
-    int         optval = 1;
-    sockaddr_in addr;
-    mListenFd            = -1;
-    addr.sin_family      = AF_INET;
-    addr.sin_port        = htons(FORWARD_PORT);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    mListenFd            = socket(AF_INET, SOCK_STREAM, 0);
-    setsockopt(mListenFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-    SuccessOrExit(ret = bind(mListenFd, (struct sockaddr *)&addr, sizeof(addr)));
-    SuccessOrExit(ret = listen(mListenFd, 10)); // backlog = 10
-exit:
-    return ret;
-}
-
-void Commissioner::ShutDownPorxyServer()
-{
-    close(mListenFd);
-    close(mJoinerSessionClientFd);
-    Coap::Agent::Destroy(mCoapAgent);
-}
-
 void Commissioner::Commissioner::Disconnect()
 {
     int ret;
@@ -751,6 +675,9 @@ void Commissioner::Commissioner::Disconnect()
     mbedtls_ssl_config_free(&mSslConf);
     mbedtls_ctr_drbg_free(&mDrbg);
     mbedtls_entropy_free(&mEntropy);
+
+    close(mJoinerSessionClientFd);
+    Coap::Agent::Destroy(mCoapAgent);
 }
 
 } // namespace BorderRouter

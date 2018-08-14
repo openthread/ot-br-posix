@@ -72,8 +72,7 @@ int main(int argc, char **argv)
         addr.sin_port   = htons(atoi(args.mAgentPort_ascii));
         inet_pton(AF_INET, args.mAgentAddress_ascii, &addr.sin_addr);
         commissioner.Connect(addr);
-        commissioner.SetupProxyServer();
-        while (true)
+        while (commissioner.IsCommissioner())
         {
             int            maxFd   = -1;
             struct timeval timeout = {10, 0};
@@ -95,7 +94,6 @@ int main(int argc, char **argv)
             commissioner.Process(readFdSet, writeFdSet, errorFdSet);
         }
         commissioner.Disconnect();
-        commissioner.ShutDownPorxyServer();
     }
     return 0;
 }

@@ -38,10 +38,6 @@ public:
 
     void Disconnect();
 
-    int SetupProxyServer();
-
-    void ShutDownPorxyServer();
-
     /**
      * This method updates the fd_set and timeout for mainloop. @p aTimeout should
      * only be updated if session has pending process in less than its current value.
@@ -108,9 +104,6 @@ private:
 
     uint8_t  mPskcBin[OT_PSKC_LENGTH];
     uint16_t mCommissionerSessionId;
-
-    int           mListenFd;
-    std::set<int> mClientFds;
 
     uint8_t mIOBuffer[kSizeMaxPacket];
 

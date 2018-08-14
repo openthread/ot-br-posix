@@ -35,10 +35,8 @@ noinst_HEADERS 										  = \
 	commission_common.hpp 							    \
 	commissioner.hpp 								    \
 	commissioner_argcargv.hpp 							\
-	commissioner_proxy.hpp 								\
 	device_hash.hpp 									\
 	joiner_session.hpp 									\
-	tmf_client.hpp 										\
 	utils.hpp 											
 
 otbr_commissioner_SOURCES                             = \
