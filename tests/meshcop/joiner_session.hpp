@@ -48,6 +48,13 @@ namespace BorderRouter {
 class JoinerSession
 {
 public:
+    /**
+     * The constructor to initialize JoinerSession
+     *
+     * @param[in]    aInternalServerPort    port for internal dtls server to listen to
+     * @param[in]    aPskdAscii             ascii form of pskd
+     *
+     */
     JoinerSession(uint16_t aInternalServerPort, const char *aPskdAscii);
 
     /**
@@ -73,15 +80,32 @@ public:
      */
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
+    /**
+     * This method returns whether the underlying relay service should append kek after dtls encapsulation
+     * @returns whether the underlying relay service should append kek after dtls encapsulation
+     */
     bool NeedAppendKek();
 
+    /**
+     * This method is used by the underlying relay service to notify key has been appended
+     */
     void MarkKekSent();
 
+    /**
+     * This method copies to the key encrypted key(KEK) to buffer provided
+     * @param[out] aBuf         output buffer to copy kek to
+     * @param[in]  aBufSize     size of output buffer
+     */
     void GetKek(uint8_t *aBuf, size_t aBufSize);
 
-    ssize_t Write(const uint8_t *aBuffer, uint16_t aLength);
-
-    ssize_t RecvFrom(void *aBuf, size_t aSize, struct sockaddr *aFromAddr, size_t &aAddrlen);
+    /**
+     * This method writes data to joiner session, the data will be relayed to dtls server
+     * @param[in]  aBuf         data buffer to write
+     * @param[in]  aLength      data length to write
+     * @returns on success returns a non-negative number representing the number written,
+     *          on failure returns a negative errorno
+     */
+    ssize_t Write(const uint8_t *aBuf, uint16_t aLength);
 
     ~JoinerSession();
 

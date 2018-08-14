@@ -65,11 +65,26 @@ namespace BorderRouter {
 class Commissioner
 {
 public:
+    /**
+     * The constructor to initialize Commissioner
+     *
+     * @param[in]    aPskcBin           binary form of pskc
+     * @param[in]    aPskdAscii         ascii form of pskd
+     * @param[in]    aSteeringData      steering data to filter joiner
+     * @param[in]    aKeepAliveRate     send keep alive packet ever aKeepAliveRate seconds
+     *
+     */
     Commissioner(const uint8_t *     aPskcBin,
                  const char *        aPskdAscii,
                  const SteeringData &aSteeringData,
                  int                 aKeepAliveRate);
-
+    /**
+     * This method connects commissioner to otbr-agent
+     *
+     * @param[in]    aAgentAddr    address of otbr-agent
+     * @returns on success returns zero
+     *
+     */
     int Connect(const sockaddr_in &aAgentAddr);
 
     /**
@@ -95,6 +110,12 @@ public:
      */
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
+    /**
+     * This method returns whether we have become a commissioner
+     *
+     * @returns true when ready to commission, false when handshake failed or rejected by leader
+     *
+     */
     bool IsCommissioner();
 
     ~Commissioner();

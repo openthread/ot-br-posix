@@ -59,24 +59,24 @@ uint16_t ToRloc16(uint8_t routerID, uint16_t childID)
 }
 
 #define IPSTR_BUFSIZE (((INET6_ADDRSTRLEN > INET_ADDRSTRLEN) ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1)
-char *GetIPString(const struct sockaddr *sa, char *s, size_t maxlen)
+char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
 {
-    switch (sa->sa_family)
+    switch (aAddr->sa_family)
     {
     case AF_INET:
-        inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr), s, maxlen);
+        inet_ntop(AF_INET, &(((struct sockaddr_in *)aAddr)->sin_addr), aOutBuf, aLength);
         break;
 
     case AF_INET6:
-        inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr), s, maxlen);
+        inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)aAddr)->sin6_addr), aOutBuf, aLength);
         break;
 
     default:
-        strncpy(s, "Unknown AF", maxlen);
+        strncpy(aOutBuf, "Unknown AF", aLength);
         return NULL;
     }
 
-    return s;
+    return aOutBuf;
 }
 
 struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint16_t aRloc16)

@@ -40,9 +40,36 @@
 namespace ot {
 namespace BorderRouter {
 
+/**
+ * This method computes pskc from network parameter
+ *
+ * @param[in]    aExtPanIdBin      extended pan id in binary form
+ * @param[in]    aNetworkName      network name in string form
+ * @param[in]    aPassPhrase       commissioner passphrase in string form
+ * @param[out]   aPskcOutBuf       output buffer for pskc
+ *
+ */
 void ComputePskc(const uint8_t *aExtPanIdBin, const char *aNetworkName, const char *aPassphrase, uint8_t *aPskcOutBuf);
+
+/**
+ * This method computes joiner hash mac from its eui64
+ *
+ * @param[in]    aEui64Bin          eui64 of joiner in binary form
+ * @param[out]   aHashMacOutBuf     output buffer for hash mac
+ *
+ */
 void ComputeHashMac(uint8_t *aEui64Bin, uint8_t *aHashMacOutBuf);
-SteeringData ComputeSteeringData(uint8_t length, bool aAllowAny, uint8_t *aEui64Bin);
+
+/**
+ * This method computes steering data to filter joiner
+ *
+ * @param[in]    aLength        steering data length
+ * @param[in]    aAllowAny      whether to allow any joiner to join, if set to true, aEui64Bin will bo of no use
+ * @param[in]    aEui64Bin      eui64 of the joiner we want to commission
+ * @returns the steering data
+ *
+ */
+SteeringData ComputeSteeringData(uint8_t aLength, bool aAllowAny, uint8_t *aEui64Bin);
 
 } // namespace BorderRouter
 } // namespace ot

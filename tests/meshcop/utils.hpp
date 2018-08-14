@@ -44,16 +44,34 @@ namespace ot {
 namespace BorderRouter {
 namespace utils {
 
+/**
+ * This method computes number of bytes between start and end pointer
+ *
+ * @param[in]    aStart         start pointer
+ * @param[in]    aEnd           end pointer
+ * @returns number of bytes within
+ *
+ */
 inline uint16_t LengthOf(const void *aStart, const void *aEnd)
 {
     return static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart);
 }
 
+/**
+ * This method returns max of two parameters
+ * @returns max of two parameters
+ *
+ */
 template <typename T> T Min(const T &lhs, const T &rhs)
 {
     return lhs < rhs ? lhs : rhs;
 }
 
+/**
+ * This method returns min of two parameters
+ * @returns min of two parameters
+ *
+ */
 template <typename T> T Max(const T &lhs, const T &rhs)
 {
     return lhs > rhs ? lhs : rhs;

@@ -6,9 +6,8 @@
  *    modification, are permitted provided that the following conditions are met:
  *    1. Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- *    2. Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
+ *    2. Redistributions in binary form must reproduce the above copyright *       notice, this list of conditions and
+ * the following disclaimer in the documentation and/or other materials provided with the distribution.
  *    3. Neither the name of the copyright holder nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
@@ -76,12 +75,12 @@ void ComputeHashMac(uint8_t *aEui64Bin, uint8_t *aHashMacOutBuf)
     aHashMacOutBuf[0] |= 2;
 }
 
-SteeringData ComputeSteeringData(uint8_t length, bool aAllowAny, uint8_t *aEui64Bin)
+SteeringData ComputeSteeringData(uint8_t aLength, bool aAllowAny, uint8_t *aEui64Bin)
 {
     SteeringData data;
 
     data.Init();
-    data.SetLength(length);
+    data.SetLength(aLength);
     data.Clear();
     if (aAllowAny)
     {
