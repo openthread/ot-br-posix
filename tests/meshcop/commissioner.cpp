@@ -431,12 +431,12 @@ void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, voi
         case Meshcop::kState:
             switch (state)
             {
-            case kStateAccepted:
+            case Meshcop::kStateAccepted:
                 otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 commissioner->mCommissionState = kStateAccepted;
                 break;
-            case kStateRejected:
-                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
+            case Meshcop::kStateRejected:
+                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=rejected");
                 commissioner->mCommissionState = kStateRejected;
                 break;
             default:
@@ -550,12 +550,12 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
         case Meshcop::kState:
             switch (state)
             {
-            case kStateAccepted:
+            case Meshcop::kStateAccepted:
                 otbrLog(OTBR_LOG_INFO, "COMM_SET.rsp: state=accepted");
                 commissioner->mCommissionState = kStateReady;
                 break;
-            case kStateRejected:
-                otbrLog(OTBR_LOG_INFO, "COMM_SET.rsp: state=accepted");
+            case Meshcop::kStateRejected:
+                otbrLog(OTBR_LOG_INFO, "COMM_SET.rsp: state=rejected");
                 commissioner->mCommissionState = kStateRejected;
                 break;
             default:
@@ -638,11 +638,11 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
         case Meshcop::kState:
             switch (state)
             {
-            case kStateAccepted:
+            case Meshcop::kStateAccepted:
                 otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=accepted");
                 commissioner->mCommissionState = kStateReady;
                 break;
-            case kStateRejected:
+            case Meshcop::kStateRejected:
                 otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=accepted");
                 commissioner->mCommissionState = kStateRejected;
                 break;
