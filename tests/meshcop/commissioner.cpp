@@ -33,9 +33,9 @@
 
 #include "addr_utils.hpp"
 #include "commissioner.hpp"
+#include "commissioner_utils.hpp"
 #include "stdlib.h"
 #include "string.h"
-#include "utils.hpp"
 #include <vector>
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"

@@ -31,8 +31,8 @@
  *   The file is the header for the command line params for the commissioner test app.
  */
 
-#ifndef OTBR_COMMISSIONER_HPP_H_
-#define OTBR_COMMISSIONER_HPP_H_
+#ifndef OTBR_COMMISSIONER_ARGCARGV_HPP_
+#define OTBR_COMMISSIONER_ARGCARGV_HPP_
 
 #include "commissioner_common.hpp"
 #include <cstring>
@@ -170,4 +170,4 @@ CommissionerArgs ParseArgs(int aArgc, char **aArgv);
 } // namespace BorderRouter
 } // namespace ot
 
-#endif
+#endif // OTBR_COMMISSIONER_ARGCARGV_HPP_

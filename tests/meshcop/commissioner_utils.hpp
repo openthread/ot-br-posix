@@ -31,8 +31,8 @@
  *   The file is some small utility functions for commissioner code
  */
 
-#ifndef OTBR_UTILS_HPP_
-#define OTBR_UTILS_HPP_
+#ifndef OTBR_COMMISSIONER_UTILS_HPP_
+#define OTBR_COMMISSIONER_UTILS_HPP_
 
 #include <arpa/inet.h>
 #include <cstdio>
@@ -81,4 +81,4 @@ template <typename T> T Max(const T &lhs, const T &rhs)
 } // namespace BorderRouter
 } // namespace ot
 
-#endif
+#endif // OTBR_COMMISSIONER_UTILS_HPP_

@@ -31,8 +31,8 @@
  *   The file is the header for the dtls session class to communicate with the joiner
  */
 
-#ifndef OTBR_JOINER_SESSION_H_
-#define OTBR_JOINER_SESSION_H_
+#ifndef OTBR_JOINER_SESSION_HPP_
+#define OTBR_JOINER_SESSION_HPP_
 
 #include "commissioner_common.hpp"
 #include <arpa/inet.h>
@@ -139,4 +139,4 @@ private:
 } // namespace BorderRouter
 } // namespace ot
 
-#endif
+#endif // OTBR_JOINER_SESSION_HPP_

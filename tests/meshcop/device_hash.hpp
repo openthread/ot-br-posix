@@ -31,8 +31,8 @@
  *   The file is the header for the hash functions for joiner and commissioner device
  */
 
-#ifndef OTBR_DEVICE_HASH_H_
-#define OTBR_DEVICE_HASH_H_
+#ifndef OTBR_DEVICE_HASH_HPP_
+#define OTBR_DEVICE_HASH_HPP_
 
 #include <stdint.h>
 #include "utils/steeringdata.hpp"
@@ -74,4 +74,4 @@ SteeringData ComputeSteeringData(uint8_t aLength, bool aAllowAny, uint8_t *aEui6
 } // namespace BorderRouter
 } // namespace ot
 
-#endif
+#endif // OTBR_DEVICE_HASH_HPP_

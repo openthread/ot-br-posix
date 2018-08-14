@@ -31,8 +31,8 @@
  *   The file is the header for the address manipulation utilities for the commissioner test app.
  */
 
-#ifndef OTBR_ADDR_UTILS_H_
-#define OTBR_ADDR_UTILS_H_
+#ifndef OTBR_ADDR_UTILS_HPP_
+#define OTBR_ADDR_UTILS_HPP_
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -123,4 +123,4 @@ struct in6_addr ToRlocPrefix(const struct in6_addr &aRlocAddr);
 } // namespace BorderRouter
 } // namespace ot
 
-#endif
+#endif // OTBR_ADDR_UTILS_HPP_

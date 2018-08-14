@@ -94,4 +94,4 @@ enum
 } // namespace BorderRouter
 } // namespace ot
 
-#endif
+#endif // OTBR_COMMISSION_COMMON_H_

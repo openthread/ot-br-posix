@@ -31,8 +31,8 @@
  *   The file is the header for the commissioner class
  */
 
-#ifndef OTBR_BORDER_AGENT_SESSION_H_
-#define OTBR_BORDER_AGENT_SESSION_H_
+#ifndef OTBR_COMMISSIONER_HPP_
+#define OTBR_COMMISSIONER_HPP_
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -197,4 +197,5 @@ private:
 
 } // namespace BorderRouter
 } // namespace ot
-#endif
+
+#endif // OTBR_COMMISSIONER_HPP_
