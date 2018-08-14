@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2018, The OpenThread Authors.
+ *    Copyright (c) 2017-2018, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #ifndef OTBR_COMMISSIONER_HPP_H_
 #define OTBR_COMMISSIONER_HPP_H_
 
-#include "commission_common.hpp"
+#include "commissioner_common.hpp"
 #include <cstring>
 #include <stdint.h>
 #include "web/pskc-generator/pskc.hpp"
@@ -42,13 +42,7 @@
 namespace ot {
 namespace BorderRouter {
 
-/**
- * Simple class to handle command line parameters
- * To avoid the use of "getopt_long()" we have this.
- */
-
-/* forward */
-class argcargv;
+class ArgcArgv;
 
 struct CommissionerArgs
 {
@@ -86,19 +80,23 @@ struct CommissionerArgs
 };
 
 /* option entry in our table */
-struct argcargv_opt
+struct ArgcArgvOpt
 {
     const char *name;
-    void (*handler)(argcargv *, CommissionerArgs *);
+    void (*handler)(ArgcArgv *, CommissionerArgs *);
     const char *valuehelp;
     const char *helptext;
 };
 
-class argcargv
+/**
+ * Simple class to handle command line parameters
+ * To avoid the use of "getopt_long()" we have this.
+ */
+class ArgcArgv
 {
 public:
     /** Constructor */
-    argcargv(int argc, char **argv);
+    ArgcArgv(int argc, char **argv);
 
     /** pseudo globals for argc & argv parsing */
     int    mARGC; /* analogous to argc */
@@ -112,16 +110,16 @@ public:
     {
         max_opts = 40
     };
-    struct argcargv_opt mOpts[max_opts];
+    struct ArgcArgvOpt mOpts[max_opts];
 
     /** print usage error message and exit */
     void usage(const char *fmt, ...);
 
     /** add an option to be parsed */
-    void add_option(const char *name,
-                    void (*handler)(argcargv *pThis, CommissionerArgs *args),
-                    const char *valuehelp,
-                    const char *help);
+    void AddOption(const char *name,
+                   void (*handler)(ArgcArgv *pThis, CommissionerArgs *args),
+                   const char *valuehelp,
+                   const char *help);
 
     /**
      * fetch/parse a string parameter
@@ -129,7 +127,7 @@ public:
      * @param puthere[out] holds parameter string
      * @param maxlen[in]   size of the puthere buffer, including space for null
      */
-    const char *str_param(char *puthere, size_t maxlen);
+    const char *StrParam(char *puthere, size_t maxlen);
 
     /**
      * Parse a hex encoded string from the command line.
@@ -142,7 +140,7 @@ public:
      *
      * Then there must be exactly 8 hex digits in the command line parameter
      */
-    void hex_param(char *ascii_puthere, uint8_t *bin_puthere, int sizeof_bin);
+    void HexParam(char *ascii_puthere, uint8_t *bin_puthere, int sizeof_bin);
 
     /**
      * Parse a numeric parameter from the command line
@@ -151,7 +149,7 @@ public:
      *
      * @returns value from command line as an integer
      */
-    int num_param(void);
+    int NumParam(void);
 
     /**
      *  This parses a single command line parameter
@@ -161,13 +159,13 @@ public:
      *
      * This does not handle positional parameters.
      */
-    int parse_args(void);
+    int ParseArgs(void);
 };
 
 /**
  * Called from main() to parse the commissioner test app command line parameters.
  */
-CommissionerArgs commissioner_argcargv(int argc, char **argv);
+CommissionerArgs ParseArgs(int argc, char **argv);
 
 } // namespace BorderRouter
 } // namespace ot

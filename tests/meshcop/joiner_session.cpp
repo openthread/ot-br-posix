@@ -46,7 +46,6 @@ JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAsci
     , mJoinerFinalizeHandler(OT_URI_PATH_JOINER_FINALIZE, HandleJoinerFinalize, this)
     , mNeedAppendKek(false)
 {
-    printf("pskd length %zu\n", strlen(aPskdAscii));
     mDtlsServer->SetPSK((const uint8_t *)aPskdAscii, strlen(aPskdAscii));
     mDtlsServer->Start();
     mCoapAgent->AddResource(mJoinerFinalizeHandler);
@@ -54,11 +53,11 @@ JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAsci
 
 void JoinerSession::HandleSessionChange(Dtls::Session &aSession, Dtls::Session::State aState, void *aContext)
 {
-    JoinerSession *joinerSession = reinterpret_cast<JoinerSession *>(aContext);
+    JoinerSession *joinerSession = static_cast<JoinerSession *>(aContext);
+
     switch (aState)
     {
     case Dtls::Session::kStateReady:
-        printf("Session ready\n");
         memcpy(joinerSession->mKek, aSession.GetKek(), sizeof(joinerSession->mKek));
         aSession.SetDataHandler(JoinerSession::FeedCoap, joinerSession);
         joinerSession->mDtlsSession = &aSession;
@@ -83,7 +82,7 @@ ssize_t JoinerSession::SendCoap(const uint8_t *aBuffer,
                                 void *         aContext)
 {
     ssize_t        ret           = 0;
-    JoinerSession *joinerSession = reinterpret_cast<JoinerSession *>(aContext);
+    JoinerSession *joinerSession = static_cast<JoinerSession *>(aContext);
 
     if (joinerSession->mDtlsSession)
     {
@@ -103,8 +102,7 @@ ssize_t JoinerSession::SendCoap(const uint8_t *aBuffer,
 
 void JoinerSession::FeedCoap(const uint8_t *aBuffer, uint16_t aLength, void *aContext)
 {
-    printf("Feed to coap\n");
-    JoinerSession *joinerSession = reinterpret_cast<JoinerSession *>(aContext);
+    JoinerSession *joinerSession = static_cast<JoinerSession *>(aContext);
     joinerSession->mCoapAgent->Input(aBuffer, aLength, NULL, 1);
 }
 
@@ -115,11 +113,10 @@ void JoinerSession::HandleJoinerFinalize(const Coap::Resource &aResource,
                                          uint16_t              aPort,
                                          void *                aContext)
 {
-    JoinerSession *joinerSession = reinterpret_cast<JoinerSession *>(aContext);
+    JoinerSession *joinerSession = static_cast<JoinerSession *>(aContext);
     uint8_t        payload[10];
     Tlv *          responseTlv = reinterpret_cast<Tlv *>(payload);
 
-    printf("HandleJoinerFinalize, STATE = 1\n");
     otbrLog(OTBR_LOG_INFO, "HandleJoinerFinalize, STATE = 1\n");
     joinerSession->mNeedAppendKek = true;
 
@@ -163,7 +160,7 @@ void JoinerSession::MarkKekSent()
 
 void JoinerSession::GetKek(uint8_t *aBuf, size_t aBufSize)
 {
-    memcpy(aBuf, mKek, utils::min(sizeof(mKek), aBufSize));
+    memcpy(aBuf, mKek, utils::Min(sizeof(mKek), aBufSize));
 }
 
 JoinerSession::~JoinerSession()

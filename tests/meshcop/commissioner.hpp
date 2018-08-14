@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2018, The OpenThread Authors.
+ *    Copyright (c) 2017-2018, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
-#include "commission_common.hpp"
+#include "commissioner_common.hpp"
 #include "joiner_session.hpp"
 #include <mbedtls/certs.h>
 #include <mbedtls/ctr_drbg.h>
@@ -65,11 +65,12 @@ namespace BorderRouter {
 class Commissioner
 {
 public:
-    Commissioner(const uint8_t *aPskcBin, const char *aPskdAscii, const SteeringData &aSteeringData, int keepAliveRate);
+    Commissioner(const uint8_t *     aPskcBin,
+                 const char *        aPskdAscii,
+                 const SteeringData &aSteeringData,
+                 int                 aKeepAliveRate);
 
     int Connect(const sockaddr_in &aAgentAddr);
-
-    void Disconnect();
 
     /**
      * This method updates the fd_set and timeout for mainloop. @p aTimeout should
@@ -95,6 +96,8 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
     bool IsCommissioner();
+
+    ~Commissioner();
 
 private:
     Commissioner(const Commissioner &);
@@ -124,12 +127,22 @@ private:
 
     ssize_t ReadFullPacket(int aFd, void *aBuf, size_t aSize);
 
+    enum
+    {
+        kStateConnected,
+        kStateAccepted,
+        kStateRejected,
+        kStateReady,
+        kStateInvalid,
+    } mCommissionState;
+
     mbedtls_net_context          mSslClientFd;
     mbedtls_ssl_context          mSsl;
     mbedtls_entropy_context      mEntropy;
     mbedtls_ctr_drbg_context     mDrbg;
     mbedtls_ssl_config           mSslConf;
     mbedtls_timing_delay_context mTimer;
+    bool                         mDtlsInitDone;
 
     Coap::Agent *  mCoapAgent;
     int            mCoapToken;
@@ -137,8 +150,6 @@ private:
 
     uint8_t  mPskcBin[OT_PSKC_LENGTH];
     uint16_t mCommissionerSessionId;
-
-    uint8_t mIOBuffer[kSizeMaxPacket];
 
     JoinerSession mJoinerSession;
     int           mJoinerSessionClientFd;
@@ -149,22 +160,18 @@ private:
 
     int     mKeepAliveRate;
     timeval mLastKeepAliveTime;
-    int     keepAliveTxCount;
-    int     keepAliveRxCount;
+    int     mKeepAliveTxCount;
+    int     mKeepAliveRxCount;
 
     static const uint16_t kPortJoinerSession;
     static const uint8_t  kSeed[];
     static const int      kCipherSuites[];
     static const char     kCommissionerId[];
-
-    enum
-    {
-        kStateConnected,
-        kStateAccepted,
-        kStateRejected,
-        kStateReady,
-        kStateInvalid,
-    } mCommissionState;
+    static const char     kCommPetURI[];
+    static const char     kCommSetURI[];
+    static const char     kCommKaURI[];
+    static const char     kRelayRxURI[];
+    static const char     kRelayTxURI[];
 };
 
 } // namespace BorderRouter

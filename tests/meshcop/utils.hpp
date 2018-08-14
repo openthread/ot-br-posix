@@ -49,12 +49,12 @@ inline uint16_t LengthOf(const void *aStart, const void *aEnd)
     return static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart);
 }
 
-template <typename T> T min(const T &lhs, const T &rhs)
+template <typename T> T Min(const T &lhs, const T &rhs)
 {
     return lhs < rhs ? lhs : rhs;
 }
 
-template <typename T> T max(const T &lhs, const T &rhs)
+template <typename T> T Max(const T &lhs, const T &rhs)
 {
     return lhs > rhs ? lhs : rhs;
 }

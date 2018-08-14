@@ -42,9 +42,9 @@
 namespace ot {
 namespace BorderRouter {
 
-uint16_t toRloc16(uint8_t routerID, uint16_t childID);
+uint16_t ToRloc16(uint8_t routerID, uint16_t childID);
 
-char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen);
+char *GetIPString(const struct sockaddr *sa, char *s, size_t maxlen);
 
 struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint16_t aRloc16);
 

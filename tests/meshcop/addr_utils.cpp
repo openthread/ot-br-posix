@@ -41,14 +41,25 @@ static const uint8_t kLociid[] = {
     0x00, 0x00, 0x00, 0xff, 0xfe, 0x00,
 };
 
-uint16_t toRloc16(uint8_t routerID, uint16_t childID)
+enum
+{
+    kRlocRouterIDBitOffset = 10,
+    kRlocAddrUint16Offset  = 7,
+    kRlocAddrUint8Offset   = 14,
+    kAlocRouterByte        = 0xfc,
+    kIidAddrUint8Offset    = 8,
+    kUlaPrefix             = 0xfd,
+};
+
+uint16_t ToRloc16(uint8_t routerID, uint16_t childID)
 {
     uint16_t rloc16 = routerID;
-    return (rloc16 << 10) | childID;
+
+    return (rloc16 << kRlocRouterIDBitOffset) | childID;
 }
 
 #define IPSTR_BUFSIZE (((INET6_ADDRSTRLEN > INET_ADDRSTRLEN) ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1)
-char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
+char *GetIPString(const struct sockaddr *sa, char *s, size_t maxlen)
 {
     switch (sa->sa_family)
     {
@@ -70,24 +81,27 @@ char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
 
 struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint16_t aRloc16)
 {
-    in6_addr addr                          = aPrefix;
-    reinterpret_cast<uint16_t *>(&addr)[7] = htons(aRloc16);
+    in6_addr addr = aPrefix;
+
+    reinterpret_cast<uint16_t *>(&addr)[kRlocAddrUint16Offset] = htons(aRloc16);
     return addr;
 }
 
 struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint8_t aRouterID, uint16_t aChildID)
 {
-    return ConcatRloc16Address(aPrefix, toRloc16(aRouterID, aChildID));
+    return ConcatRloc16Address(aPrefix, ToRloc16(aRouterID, aChildID));
 }
 
 struct in6_addr FindRloc16Address(const std::vector<struct in6_addr> &aAddrs)
 {
     struct in6_addr foundAddr;
+
     memset(&foundAddr, 0, sizeof(in6_addr));
     for (size_t i = 0; i < aAddrs.size(); i++)
     {
         const uint8_t *buf = reinterpret_cast<const uint8_t *>(&aAddrs[i]);
-        if (!memcmp(&buf[8], &kLociid[0], sizeof(kLociid)) && buf[14] != 0xfc)
+        if (!memcmp(&buf[kIidAddrUint8Offset], &kLociid[0], sizeof(kLociid)) &&
+            buf[kRlocAddrUint8Offset] != kAlocRouterByte)
         {
             foundAddr = aAddrs[i];
         }
@@ -98,11 +112,12 @@ struct in6_addr FindRloc16Address(const std::vector<struct in6_addr> &aAddrs)
 struct in6_addr FindMLEIDAddress(const std::vector<struct in6_addr> &aAddrs)
 {
     struct in6_addr foundAddr;
+
     memset(&foundAddr, 0, sizeof(in6_addr));
     for (size_t i = 0; i < aAddrs.size(); i++)
     {
         const uint8_t *buf = reinterpret_cast<const uint8_t *>(&aAddrs[i]);
-        if (buf[0] == 0xfd && memcmp(&buf[8], &kLociid[0], sizeof(kLociid)))
+        if (buf[0] == kUlaPrefix && memcmp(&buf[kIidAddrUint8Offset], &kLociid[0], sizeof(kLociid)))
         {
             foundAddr = aAddrs[i];
         }
@@ -113,13 +128,15 @@ struct in6_addr FindMLEIDAddress(const std::vector<struct in6_addr> &aAddrs)
 struct in6_addr GetRlocPrefix(const std::vector<struct in6_addr> &aAddrs)
 {
     struct in6_addr rlocAddr = FindRloc16Address(aAddrs);
+
     return ToRlocPrefix(rlocAddr);
 }
 
 struct in6_addr ToRlocPrefix(const struct in6_addr &aRlocAddr)
 {
-    struct in6_addr prefix                   = aRlocAddr;
-    reinterpret_cast<uint16_t *>(&prefix)[7] = 0;
+    struct in6_addr prefix = aRlocAddr;
+
+    reinterpret_cast<uint16_t *>(&prefix)[kRlocAddrUint16Offset] = 0;
     return prefix;
 }
 

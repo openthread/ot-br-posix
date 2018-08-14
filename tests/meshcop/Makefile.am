@@ -32,7 +32,7 @@ bin_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
     addr_utils.hpp                                      \
-    commission_common.hpp                               \
+    commissioner_common.hpp                             \
     commissioner.hpp                                    \
     commissioner_argcargv.hpp                           \
     device_hash.hpp                                     \

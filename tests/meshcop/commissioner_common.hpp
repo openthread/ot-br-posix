@@ -34,6 +34,9 @@
 #ifndef OTBR_COMMISSION_COMMON_H_
 #define OTBR_COMMISSION_COMMON_H_
 
+namespace ot {
+namespace BorderRouter {
+
 /**
  * Constants
  */
@@ -69,8 +72,26 @@ enum
     /* Spec is not specific about this items max length, so we choose 64 */
     kBorderRouterPassPhraseLen = 64,
 
+    /* String buffer size for ip address */
+    kIPAddrNameBufSize = 100,
+
+    /* String buffer size for port */
+    kPortNameBufSize = 6,
+
+    /* mbed debug print threshold */
+    kMBedDebugDefaultThreshold = 4,
+
+    /* dtls handshake min timeout */
+    kMbedDtlsHandshakeMinTimeout = 8000,
+
+    /* dtls handshake min timeout */
+    kMbedDtlsHandshakeMaxTimeout = 60000,
+
+    /* key encrypted key(KEK) size */
+    kKEKSize = 32,
 };
 
-#define FORWARD_PORT 23581
+} // namespace BorderRouter
+} // namespace ot
 
 #endif

@@ -34,6 +34,7 @@
 #ifndef OTBR_JOINER_SESSION_H_
 #define OTBR_JOINER_SESSION_H_
 
+#include "commissioner_common.hpp"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sys/socket.h>
@@ -84,8 +85,6 @@ public:
 
     ~JoinerSession();
 
-    static const size_t kKekSize = 32;
-
 private:
     JoinerSession(const JoinerSession &);
     JoinerSession &operator=(const JoinerSession &);
@@ -104,7 +103,7 @@ private:
                                         uint16_t              aPort,
                                         void *                aContext);
 
-    uint8_t mKek[32];
+    uint8_t mKek[kKEKSize];
 
     Dtls::Server * mDtlsServer;
     Dtls::Session *mDtlsSession;

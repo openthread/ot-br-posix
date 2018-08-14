@@ -32,7 +32,7 @@
  */
 
 #include "device_hash.hpp"
-#include "commission_common.hpp"
+#include "commissioner_common.hpp"
 #include "web/pskc-generator/pskc.hpp"
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -57,6 +57,7 @@ void ComputePskc(const uint8_t *aExtPanIdBin, const char *aNetworkName, const ch
 {
     ot::Psk::Pskc  pskc;
     const uint8_t *pskcBin = pskc.ComputePskc(aExtPanIdBin, aNetworkName, aPassphrase);
+
     memcpy(aPskcOutBuf, pskcBin, OT_PSKC_LENGTH);
 }
 
@@ -64,6 +65,7 @@ void ComputeHashMac(uint8_t *aEui64Bin, uint8_t *aHashMacOutBuf)
 {
     mbedtls_sha256_context sha256;
     uint8_t                hash_result[32];
+
     mbedtls_sha256_init(&sha256);
     mbedtls_sha256_starts(&sha256, 0);
     mbedtls_sha256_update(&sha256, aEui64Bin, kEui64Len);
@@ -77,6 +79,7 @@ void ComputeHashMac(uint8_t *aEui64Bin, uint8_t *aHashMacOutBuf)
 SteeringData ComputeSteeringData(uint8_t length, bool aAllowAny, uint8_t *aEui64Bin)
 {
     SteeringData data;
+
     data.Init();
     data.SetLength(length);
     data.Clear();
@@ -87,8 +90,8 @@ SteeringData ComputeSteeringData(uint8_t length, bool aAllowAny, uint8_t *aEui64
     else
     {
         uint8_t hashMacBin[kEui64Len];
+
         ComputeHashMac(aEui64Bin, hashMacBin);
-        data.Clear();
         data.ComputeBloomFilter(hashMacBin);
     }
     return data;
