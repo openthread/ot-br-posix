@@ -30,22 +30,23 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 bin_PROGRAMS = otbr-commissioner
 
-noinst_HEADERS 										  = \
-	addr_utils.hpp										\
-	commission_common.hpp 							    \
-	commissioner.hpp 								    \
-	commissioner_argcargv.hpp 							\
-	device_hash.hpp 									\
-	joiner_session.hpp 									\
-	utils.hpp 											
+noinst_HEADERS                                        = \
+    addr_utils.hpp                                      \
+    commission_common.hpp                               \
+    commissioner.hpp                                    \
+    commissioner_argcargv.hpp                           \
+    device_hash.hpp                                     \
+    joiner_session.hpp                                  \
+    utils.hpp                                           \
+    $(NULL)
 
 otbr_commissioner_SOURCES                             = \
-    addr_utils.cpp                           \
-    commissioner.cpp                           \
+    addr_utils.cpp                                      \
+    commissioner.cpp                                    \
     commissioner_argcargv.cpp                           \
-    joiner_session.cpp                           \
-    main.cpp                            \
-    device_hash.cpp                            \
+    joiner_session.cpp                                  \
+    main.cpp                                            \
+    device_hash.cpp                                     \
     $(NULL)
 
 otbr_commissioner_CPPFLAGS                            = \
