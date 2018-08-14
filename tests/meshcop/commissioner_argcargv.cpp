@@ -241,7 +241,7 @@ static void handle_steering_length(ArgcArgv *pThis, CommissionerArgs *args)
 /** Handle border router ip address on command line */
 static void handle_ip_addr(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->StrParam(args->mAgentAddress_ascii, sizeof(args->mXpanid_ascii));
+    pThis->StrParam(args->mAgentAddress_ascii, sizeof(args->mXpanidAscii));
 }
 
 /** Handle border router ip port on command line */
@@ -253,13 +253,13 @@ static void handle_ip_port(ArgcArgv *pThis, CommissionerArgs *args)
 /** Handle hex encoded HASHMAC on command line */
 static void handle_hashmac(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->HexParam(args->mJoinerHashmac_ascii, args->mJoinerHashmac_bin, sizeof(args->mJoinerHashmac_bin));
+    pThis->HexParam(args->mJoinerHashmacAscii, args->mJoinerHashmacBin, sizeof(args->mJoinerHashmacBin));
 }
 
 /** Handle joining device EUI64 on the command line */
 static void handle_eui64(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->HexParam(args->mJoinerEui64_ascii, args->mJoinerEui64_bin, sizeof(args->mJoinerEui64_bin));
+    pThis->HexParam(args->mJoinerEui64Ascii, args->mJoinerEui64Bin, sizeof(args->mJoinerEui64Bin));
 }
 
 /** Handle the preshared joining credential for the joining device on the command line */
@@ -268,12 +268,13 @@ static void handle_pskd(ArgcArgv *pThis, CommissionerArgs *args)
     const char *whybad;
     int         ch;
     int         len, x;
+    char        pskdAscii[kPSKdLength + 1];
 
     /* assume not bad */
     whybad = NULL;
 
     /* get the parameter */
-    pThis->StrParam(args->mJoinerPSKd_ascii, sizeof(args->mJoinerPSKd_ascii));
+    pThis->StrParam(pskdAscii, sizeof(pskdAscii));
 
     /*
      * Problem: Should we "base32" decode this per the specification?
@@ -295,7 +296,7 @@ static void handle_pskd(ArgcArgv *pThis, CommissionerArgs *args)
      * Thus 10 digits + 22 letters = 32 symbols.
      * Thus, "base32" encoding using the above.
      */
-    len = strlen(args->mJoinerPSKd_ascii);
+    len = strlen(pskdAscii);
     if ((len < 6) || (len > 32))
     {
         whybad = "invalid length (range: 6..32)";
@@ -304,7 +305,7 @@ static void handle_pskd(ArgcArgv *pThis, CommissionerArgs *args)
     {
         for (x = 0; x < len; x++)
         {
-            ch = args->mJoinerPSKd_ascii[x];
+            ch = pskdAscii[x];
 
             switch (ch)
             {
@@ -334,7 +335,11 @@ static void handle_pskd(ArgcArgv *pThis, CommissionerArgs *args)
 
     if (whybad)
     {
-        pThis->usage("Illegal PSKd: \"%s\", %s\n", args->mJoinerPSKd_ascii, whybad);
+        pThis->usage("Illegal PSKd: \"%s\", %s\n", pskdAscii, whybad);
+    }
+    else
+    {
+        memcpy(args->mJoinerPSKdAscii, pskdAscii, sizeof(pskdAscii));
     }
 }
 
@@ -343,7 +348,7 @@ static void handle_pskd(ArgcArgv *pThis, CommissionerArgs *args)
  */
 static void handle_pskc_bin(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->HexParam(args->mPSKc_ascii, args->mPSKc_bin, sizeof(args->mPSKc_bin));
+    pThis->HexParam(args->mPSKcAscii, args->mPSKcBin, sizeof(args->mPSKcBin));
     args->mHasPSKc = true;
     // otbrLog(OTBR_LOG_INFO, "PSKC on command line is: %s\n", gContext.mAgent.mPSKc.ascii);
 }
@@ -351,7 +356,7 @@ static void handle_pskc_bin(ArgcArgv *pThis, CommissionerArgs *args)
 /** handle the xpanid command line parameter */
 static void handle_xpanid(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->HexParam(args->mXpanid_ascii, args->mXpanid_bin, sizeof(args->mXpanid_bin));
+    pThis->HexParam(args->mXpanidAscii, args->mXpanidBin, sizeof(args->mXpanidBin));
 }
 
 /* handle the networkname command line parameter */

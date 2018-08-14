@@ -53,11 +53,11 @@ int main(int argc, char **argv)
 
     if (args.mHasPSKc)
     {
-        memcpy(pskcBin, args.mPSKc_bin, sizeof(pskcBin));
+        memcpy(pskcBin, args.mPSKcBin, sizeof(pskcBin));
     }
     else
     {
-        ComputePskc(args.mXpanid_bin, args.mNetworkName, args.mPassPhrase, pskcBin);
+        ComputePskc(args.mXpanidBin, args.mNetworkName, args.mPassPhrase, pskcBin);
     }
 
     if (args.mNeedComputePSKc)
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         exit(EXIT_SUCCESS);
     }
 
-    steeringData = ComputeSteeringData(args.mSteeringLength, args.mAllowAllJoiners, args.mJoinerEui64_bin);
+    steeringData = ComputeSteeringData(args.mSteeringLength, args.mAllowAllJoiners, args.mJoinerEui64Bin);
     if (args.mNeedComputeJoinerSteering || args.mNeedComputeJoinerHashMac)
     {
         uint8_t hashMacBin[kEui64Len];
@@ -79,8 +79,8 @@ int main(int argc, char **argv)
 
         eui64Ascii[2 * kEui64Len]   = '\0';
         hashMacAscii[2 * kEui64Len] = '\0';
-        ComputeHashMac(args.mJoinerEui64_bin, hashMacBin);
-        Utils::Bytes2Hex(args.mJoinerEui64_bin, kEui64Len, eui64Ascii);
+        ComputeHashMac(args.mJoinerEui64Bin, hashMacBin);
+        Utils::Bytes2Hex(args.mJoinerEui64Bin, kEui64Len, eui64Ascii);
         Utils::Bytes2Hex(hashMacBin, kEui64Len, hashMacAscii);
         fprintf(stdout, "eiu64: %s\n", eui64Ascii);
         fprintf(stdout, "hashmac: %s\n", hashMacAscii);
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
             kaRate = 0;
         }
         srand(time(0));
-        Commissioner commissioner(pskcBin, args.mJoinerPSKd_ascii, steeringData, kaRate);
+        Commissioner commissioner(pskcBin, args.mJoinerPSKdAscii, steeringData, kaRate);
         sockaddr_in  addr;
         addr.sin_family = AF_INET;
         addr.sin_port   = htons(atoi(args.mAgentPort_ascii));
@@ -129,7 +129,6 @@ int main(int argc, char **argv)
             rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
             if ((rval < 0) && (errno != EINTR))
             {
-                rval = OTBR_ERROR_ERRNO;
                 otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
                 break;
             }

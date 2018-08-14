@@ -49,25 +49,25 @@ struct CommissionerArgs
     char mAgentPort_ascii[7];
     char mAgentAddress_ascii[64];
 
-    char    mJoinerHashmac_ascii[kEui64Len * 2 + 1];
-    uint8_t mJoinerHashmac_bin[kEui64Len];
+    char    mJoinerHashmacAscii[kEui64Len * 2 + 1];
+    uint8_t mJoinerHashmacBin[kEui64Len];
     bool    mHasJoinerHashMac;
-    char    mJoinerEui64_ascii[kEui64Len * 2 + 1];
-    uint8_t mJoinerEui64_bin[kEui64Len];
+    char    mJoinerEui64Ascii[kEui64Len * 2 + 1];
+    uint8_t mJoinerEui64Bin[kEui64Len];
     bool    mAllowAllJoiners;
 
-    char mJoinerPSKd_ascii[kPSKdLength + 1];
+    char mJoinerPSKdAscii[kPSKdLength + 1];
     int  mSteeringLength;
 
     bool mNeedSendCommKA;
     int  mSendCommKATxRate;
     int  mEnvelopeTimeout;
 
-    char    mPSKc_ascii[2 * OT_PSKC_LENGTH + 1];
-    uint8_t mPSKc_bin[OT_PSKC_LENGTH];
+    char    mPSKcAscii[2 * OT_PSKC_LENGTH + 1];
+    uint8_t mPSKcBin[OT_PSKC_LENGTH];
     bool    mHasPSKc;
-    char    mXpanid_ascii[kXpanidLength * 2 + 1];
-    uint8_t mXpanid_bin[kXpanidLength];
+    char    mXpanidAscii[kXpanidLength * 2 + 1];
+    uint8_t mXpanidBin[kXpanidLength];
     char    mNetworkName[kNetworkNameLenMax + 1];
     char    mPassPhrase[kBorderRouterPassPhraseLen + 1];
 
@@ -96,7 +96,7 @@ class ArgcArgv
 {
 public:
     /** Constructor */
-    ArgcArgv(int argc, char **argv);
+    ArgcArgv(int aArgc, char **aArgv);
 
     /** pseudo globals for argc & argv parsing */
     int    mARGC; /* analogous to argc */
@@ -113,13 +113,13 @@ public:
     struct ArgcArgvOpt mOpts[max_opts];
 
     /** print usage error message and exit */
-    void usage(const char *fmt, ...);
+    void usage(const char *aFmt, ...);
 
     /** add an option to be parsed */
-    void AddOption(const char *name,
-                   void (*handler)(ArgcArgv *pThis, CommissionerArgs *args),
-                   const char *valuehelp,
-                   const char *help);
+    void AddOption(const char *aName,
+                   void (*aHandler)(ArgcArgv *aThis, CommissionerArgs *aArgs),
+                   const char *aValuehelp,
+                   const char *aHelp);
 
     /**
      * fetch/parse a string parameter
@@ -127,7 +127,7 @@ public:
      * @param puthere[out] holds parameter string
      * @param maxlen[in]   size of the puthere buffer, including space for null
      */
-    const char *StrParam(char *puthere, size_t maxlen);
+    const char *StrParam(char *aPuthere, size_t aMaxlen);
 
     /**
      * Parse a hex encoded string from the command line.
@@ -140,7 +140,7 @@ public:
      *
      * Then there must be exactly 8 hex digits in the command line parameter
      */
-    void HexParam(char *ascii_puthere, uint8_t *bin_puthere, int sizeof_bin);
+    void HexParam(char *aAsciiPuthere, uint8_t *aBinPuthere, int aSizeofBin);
 
     /**
      * Parse a numeric parameter from the command line

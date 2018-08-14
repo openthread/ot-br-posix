@@ -383,7 +383,6 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
 
     while (utils::LengthOf(payload, tlv) < length)
     {
-        tlvType      = tlv->GetType();
         int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
 
         tlvType = tlv->GetType();
@@ -532,7 +531,6 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
     while (utils::LengthOf(payload, tlv) < length)
     {
         int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
-        tlvType      = tlv->GetType();
 
         tlvType = tlv->GetType();
         switch (tlvType)
