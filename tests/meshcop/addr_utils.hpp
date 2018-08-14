@@ -45,12 +45,12 @@ namespace BorderRouter {
 /**
  * This method computes rloc16 given router id and child id
  *
- * @param[in]    routerID      router id of thread node
- * @param[in]    childID       child id of thread node, for router itself use zero
+ * @param[in]    aRouterID     router id of thread node
+ * @param[in]    aChildID      child id of thread node, for router itself use zero
  * @returns rloc16 of node
  *
  */
-uint16_t ToRloc16(uint8_t routerID, uint16_t childID);
+uint16_t ToRloc16(uint8_t aRouterID, uint16_t aChildID);
 
 /**
  * This method prints sockaddr struct to a string buffer

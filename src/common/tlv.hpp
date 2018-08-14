@@ -79,9 +79,9 @@ public:
     /**
      * This method sets the length.
      */
-    void SetLength(uint16_t aLength, bool forceExtended = false)
+    void SetLength(uint16_t aLength, bool aForceExtended = false)
     {
-        if (aLength >= kLengthEscape || forceExtended)
+        if (aLength >= kLengthEscape || aForceExtended)
         {
             mLength       = kLengthEscape;
             (&mLength)[1] = (aLength >> 8);
@@ -149,9 +149,9 @@ public:
     /**
      * This method copies the value.
      */
-    void SetValue(const void *aValue, uint16_t aLength, bool forceExtended = false)
+    void SetValue(const void *aValue, uint16_t aLength, bool aForceExtended = false)
     {
-        SetLength(aLength, forceExtended);
+        SetLength(aLength, aForceExtended);
         memcpy(GetValue(), aValue, aLength);
     }
 

@@ -51,11 +51,11 @@ enum
     kUlaPrefix             = 0xfd,
 };
 
-uint16_t ToRloc16(uint8_t routerID, uint16_t childID)
+uint16_t ToRloc16(uint8_t aRouterID, uint16_t aChildID)
 {
-    uint16_t rloc16 = routerID;
+    uint16_t rloc16 = aRouterID;
 
-    return (rloc16 << kRlocRouterIDBitOffset) | childID;
+    return (rloc16 << kRlocRouterIDBitOffset) | aChildID;
 }
 
 #define IPSTR_BUFSIZE (((INET6_ADDRSTRLEN > INET_ADDRSTRLEN) ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1)

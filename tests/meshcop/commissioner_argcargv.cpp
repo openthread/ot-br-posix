@@ -506,9 +506,9 @@ static void handle_no_syslog(ArgcArgv *pThis, CommissionerArgs *args)
 }
 
 /** Called by main(), to process commissioner command line arguments */
-CommissionerArgs ParseArgs(int argc, char **argv)
+CommissionerArgs ParseArgs(int aArgc, char **aArgv)
 {
-    ArgcArgv args(argc, argv);
+    ArgcArgv args(aArgc, aArgv);
 
     // default value
     args.args.mEnvelopeTimeout           = 5 * 60; // 5 minutes;
@@ -547,7 +547,7 @@ CommissionerArgs ParseArgs(int argc, char **argv)
     args.AddOption("--commission-device", handle_commission_device, "", "Enable device commissioning");
 
     args.AddOption("--debug-level", handle_debug_level, "NUMBER", "Enable debug output at level VALUE (higher=more)");
-    if (argc == 1)
+    if (aArgc == 1)
     {
         args.usage("No parameters!\n");
     }

@@ -165,7 +165,7 @@ public:
 /**
  * Called from main() to parse the commissioner test app command line parameters.
  */
-CommissionerArgs ParseArgs(int argc, char **argv);
+CommissionerArgs ParseArgs(int aArgc, char **aArgv);
 
 } // namespace BorderRouter
 } // namespace ot
