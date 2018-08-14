@@ -69,8 +69,6 @@ src/web/otbr-web.service
 tests/mdns/otbr-test-mdns
 tests/meshcop/otbr-commissioner
 tests/testdriver
-tests/commission_server/tmf-client
-tests/commission_server/commission-test
 
 # all things here.
 third_party/mbedtls/repo
