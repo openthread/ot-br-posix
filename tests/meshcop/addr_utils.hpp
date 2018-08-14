@@ -47,6 +47,7 @@ namespace BorderRouter {
  *
  * @param[in]    aRouterID     router id of thread node
  * @param[in]    aChildID      child id of thread node, for router itself use zero
+ *
  * @returns rloc16 of node
  *
  */
@@ -58,6 +59,7 @@ uint16_t ToRloc16(uint8_t aRouterID, uint16_t aChildID);
  * @param[in]    aAddr         address to print
  * @param[out]   aOutBuf       output buffer
  * @param[in]    aLength       length of output buffer
+ *
  * @returns same pointer as aOutBuf with string serialized in it
  *
  */
@@ -68,6 +70,7 @@ char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength);
  *
  * @param[in]    aPrefix       thread network mle prefix
  * @param[out]   aRloc16       rloc16 of thread node
+ *
  * @returns the ipv6 routing locator address of node
  *
  */
@@ -79,6 +82,7 @@ struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint16_t aRloc16);
  * @param[in]    aPrefix       thread network mle prefix
  * @param[in]    routerID      router id of thread node
  * @param[in]    childID       child id of thread node, for router itself use zero
+ *
  * @returns the ipv6 routing locator address of node
  *
  */
@@ -88,6 +92,7 @@ struct in6_addr ConcatRloc16Address(const in6_addr &aPrefix, uint8_t aRouterID, 
  * This method finds RLOC ipv6 address from address list of a thread node
  *
  * @param[in]    aAddrs        address list of a thread node
+ *
  * @returns the ipv6 routing locator address of node
  *
  */
@@ -97,6 +102,7 @@ struct in6_addr FindRloc16Address(const std::vector<struct in6_addr> &aAddrs);
  * This method finds ML-EID ipv6 address from address list of a thread node
  *
  * @param[in]    aAddrs        address list of a thread node
+ *
  * @returns the ML-EID ipv6 address of node
  *
  */
@@ -106,6 +112,7 @@ struct in6_addr FindMLEIDAddress(const std::vector<struct in6_addr> &aAddrs);
  * This method finds mesh prefix for rloc16 from address list of a thread node
  *
  * @param[in]    aAddrs        address list of a thread node
+ *
  * @returns mesh prefix for rloc16
  *
  */
@@ -115,6 +122,7 @@ struct in6_addr GetRlocPrefix(const std::vector<struct in6_addr> &aAddrs);
  * This method strips mesh prefix for rloc16 from routing locator address
  *
  * @param[in]    aRlocAddr      routing locator address
+ *
  * @returns mesh prefix for rloc16
  *
  */

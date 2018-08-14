@@ -435,9 +435,6 @@ void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
     FD_SET(mJoinerSessionClientFd, &aReadFdSet);
     aMaxFd = utils::Max(mJoinerSessionClientFd, aMaxFd);
     mJoinerSession.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
-    (void)aTimeout;
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
 }
 
 void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
@@ -466,7 +463,7 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         if (n > 0)
         {
             {
-                char buf[100];
+                char buf[kIPAddrNameBufSize];
                 GetIPString((struct sockaddr *)(&from_addr), buf, sizeof(buf));
                 otbrLog(OTBR_LOG_INFO, "relay from: %s\n", buf);
             }
@@ -581,18 +578,6 @@ void Commissioner::HandleRelayReceive(const Coap::Resource &aResource,
         switch (tlvType)
         {
         case Meshcop::kJoinerDtlsEncapsulation:
-            struct sockaddr_in addr;
-
-            memset(&addr, 0, sizeof(addr));
-            addr.sin_family = AF_INET;
-            addr.sin_port   = htons(kPortJoinerSession);
-
-            otbrLog(OTBR_LOG_INFO, "Encapsulation: %d bytes for port: %d", requestTlv->GetLength(), kPortJoinerSession);
-            {
-                char buf[100];
-                GetIPString((struct sockaddr *)&addr, buf, sizeof(buf));
-                otbrLog(OTBR_LOG_INFO, "DEST: %s", buf);
-            }
             ret = send(commissioner->mJoinerSessionClientFd, requestTlv->GetValue(), requestTlv->GetLength(), 0);
             if (ret < 0)
             {

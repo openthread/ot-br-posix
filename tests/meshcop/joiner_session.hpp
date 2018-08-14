@@ -102,6 +102,7 @@ public:
      * This method writes data to joiner session, the data will be relayed to dtls server
      * @param[in]  aBuf         data buffer to write
      * @param[in]  aLength      data length to write
+     *
      * @returns on success returns a non-negative number representing the number written,
      *          on failure returns a negative errorno
      */

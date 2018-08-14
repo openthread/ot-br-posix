@@ -66,6 +66,7 @@ void ComputeHashMac(uint8_t *aEui64Bin, uint8_t *aHashMacOutBuf);
  * @param[in]    aLength        steering data length
  * @param[in]    aAllowAny      whether to allow any joiner to join, if set to true, aEui64Bin will bo of no use
  * @param[in]    aEui64Bin      eui64 of the joiner we want to commission
+ *
  * @returns the steering data
  *
  */

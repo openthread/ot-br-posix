@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMISSION_COMMON_H_
 #define OTBR_COMMISSION_COMMON_H_
 
+#include "netinet/in.h"
+
 namespace ot {
 namespace BorderRouter {
 
@@ -42,53 +44,37 @@ namespace BorderRouter {
  */
 enum
 {
-    /* max size of a network packet */
-    kSizeMaxPacket = 1500,
+    kSizeMaxPacket = 1500, ///< max size of a network packet
 
-    /* delay between failed attempts to petition */
-    kPetitionAttemptDelay = 5,
+    kPetitionAttemptDelay = 5, ///< delay between failed attempts to petition
 
-    /* max retry for petition */
-    kPetitionMaxRetry = 2,
+    kPetitionMaxRetry = 2, ///< max retry for petition
 
-    /* Default size of steering data */
-    kSteeringDefaultLength = 15,
+    kSteeringDefaultLength = 15, ///< Default size of steering data
 
-    /* how long is an EUI64 in bytes */
-    kEui64Len = (64 / 8),
+    kEui64Len = (64 / 8), ///< how long is an EUI64 in bytes
 
-    /* how long is a PSKd in bytes */
-    kPSKdLength = 32,
+    kPSKdLength = 32, ///< how long is a PSKd in bytes
 
-    /* What port does our internal server use? */
-    kPortJoinerSession = 49192,
+    kPortJoinerSession = 49192, ///< What port does our internal server use?
 
-    /* 64bit xpanid length in bytes */
-    kXpanidLength = (64 / 8), /* 64bits */
+    kXpanidLength = (64 / 8), ///< 64bit xpanid length in bytes
 
-    /* specification: 8.10.4 */
-    kNetworkNameLenMax = 16,
+    kNetworkNameLenMax = 16, ///< specification: 8.10.4
 
-    /* Spec is not specific about this items max length, so we choose 64 */
-    kBorderRouterPassPhraseLen = 64,
+    kBorderRouterPassPhraseLen = 64, ///< Spec is not specific about this items max length, so we choose 64
 
-    /* String buffer size for ip address */
-    kIPAddrNameBufSize = 100,
+    kIPAddrNameBufSize = INET6_ADDRSTRLEN + 1, ///< String buffer size for ip address
 
-    /* String buffer size for port */
-    kPortNameBufSize = 6,
+    kPortNameBufSize = 6, ///< String buffer size for port
 
-    /* mbed debug print threshold */
-    kMBedDebugDefaultThreshold = 4,
+    kMBedDebugDefaultThreshold = 4, ///< mbed debug print threshold
 
-    /* dtls handshake min timeout */
-    kMbedDtlsHandshakeMinTimeout = 8000,
+    kMbedDtlsHandshakeMinTimeout = 8000, ///< dtls handshake min timeout
 
-    /* dtls handshake min timeout */
-    kMbedDtlsHandshakeMaxTimeout = 60000,
+    kMbedDtlsHandshakeMaxTimeout = 60000, ///< dtls handshake min timeout
 
-    /* key encrypted key(KEK) size */
-    kKEKSize = 32,
+    kKEKSize = 32, ///< key encrypted key(KEK) size
 };
 
 } // namespace BorderRouter

@@ -82,6 +82,7 @@ public:
      * This method connects commissioner to otbr-agent
      *
      * @param[in]    aAgentAddr    address of otbr-agent
+     *
      * @returns on success returns zero
      *
      */

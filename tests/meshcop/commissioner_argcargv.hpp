@@ -46,8 +46,8 @@ class ArgcArgv;
 
 struct CommissionerArgs
 {
-    char mAgentPort_ascii[7];
-    char mAgentAddress_ascii[64];
+    char mAgentPort_ascii[kPortNameBufSize];
+    char mAgentAddress_ascii[kIPAddrNameBufSize];
 
     char    mJoinerHashmacAscii[kEui64Len * 2 + 1];
     uint8_t mJoinerHashmacBin[kEui64Len];
