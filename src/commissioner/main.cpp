@@ -99,6 +99,8 @@ int main(int argc, char **argv)
             {
                 otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
                 break;
+            } else if (rval < 0 && errno == EINTR) {
+                break;
             }
             commissioner.Process(readFdSet, writeFdSet, errorFdSet);
             if (commissioner.IsCommissionerAccepted() && !joinerSetDone)

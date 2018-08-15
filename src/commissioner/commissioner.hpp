@@ -172,6 +172,7 @@ private:
     Commissioner(const Commissioner &);
     Commissioner &operator=(const Commissioner &);
 
+    int  SetupProxyServer();
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
     void CommissionerKeepAlive(void);
 
@@ -194,7 +195,16 @@ private:
                                    const uint8_t *       aIp6,
                                    uint16_t              aPort,
                                    void *                aContext);
-    int         SendRelayTransmit(uint8_t *aBuf, size_t aLength);
+
+    int SendRelayTransmit(uint8_t *aBuf, size_t aLength);
+
+    static void HandleUDPRx(const Coap::Resource &aResource,
+                            const Coap::Message & aPost,
+                            Coap::Message &       aResponse,
+                            const uint8_t *       aIp6,
+                            uint16_t              aPort,
+                            void *                aContext);
+    int         SendUdpTx(uint8_t *aBuf, size_t aLength, uint16_t aFromPort);
 
     mbedtls_net_context          mSslClientFd;
     mbedtls_ssl_context          mSsl;
@@ -207,6 +217,7 @@ private:
     Coap::Agent *  mCoapAgent;
     int            mCoapToken;
     Coap::Resource mRelayReceiveHandler;
+    Coap::Resource mUdpRxHandler;
 
     uint8_t  mPskcBin[OT_PSKC_LENGTH];
     int      mPetitionRetryCount;
@@ -223,7 +234,9 @@ private:
     int     mKeepAliveTxCount;
     int     mKeepAliveRxCount;
 
-    static const uint16_t kPortJoinerSession;
+    int mUdpListenFd;
+
+    static const uint16_t kJoinerSessionPort;
     static const uint8_t  kSeed[];
     static const int      kCipherSuites[];
     static const char     kCommissionerId[];

@@ -45,12 +45,13 @@
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
 #include "utils/hex.hpp"
+#include "udp_encapsulation_tlv.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-const uint16_t Commissioner::kPortJoinerSession      = 49192;
+const uint16_t Commissioner::kJoinerSessionPort = 49192;
 const uint8_t  Commissioner::kSeed[]                 = "Commissioner";
 const int      Commissioner::kCipherSuites[]         = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
 const char     Commissioner::kCommissionerId[]       = "OpenThread";
@@ -102,6 +103,7 @@ static int DummyKeyExport(void *               aContext,
 Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     : mDtlsInitDone(false)
     , mRelayReceiveHandler(OT_URI_PATH_RELAY_RX, Commissioner::HandleRelayReceive, this)
+    , mUdpRxHandler(OT_URI_PATH_UDP_RX, Commissioner::HandleUDPRx, this)
     , mPetitionRetryCount(0)
     , mJoinerSession(NULL)
     , mKeepAliveRate(aKeepAliveRate)
@@ -111,13 +113,18 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     memcpy(mPskcBin, aPskcBin, sizeof(mPskcBin));
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    addr.sin_port        = htons(kPortJoinerSession);
-    mCoapAgent           = Coap::Agent::Create(SendCoap, this);
-    mCoapToken           = rand();
+    addr.sin_port        = htons(kJoinerSessionPort);
+    mCoapAgent = Coap::Agent::Create(SendCoap, this);
+    mCoapToken = rand();
     mCoapAgent->AddResource(mRelayReceiveHandler);
+    mCoapAgent->AddResource(mUdpRxHandler);
     mCommissionState = kStateInvalid;
     VerifyOrExit((mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0)) > 0);
     SuccessOrExit(connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
+    if (SetupProxyServer() != 0)
+    {
+        otbrLog(OTBR_LOG_ERR, "Fail to bind to udp proxy listen");
+    }
 exit:
     return;
 }
@@ -130,6 +137,23 @@ void Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeri
     }
     mJoinerSession = new JoinerSession(kPortJoinerSession, aPskdAscii);
     CommissionerSet(aSteeringData);
+}
+
+int Commissioner::SetupProxyServer()
+{
+    int ret;
+    int         optval = 1;
+    sockaddr_in addr;
+    mUdpListenFd         = -1;
+    addr.sin_family      = AF_INET;
+    addr.sin_port        = htons(kCommissionerProxyPort);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    mUdpListenFd         = socket(AF_INET, SOCK_DGRAM, 0);
+    setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+    SuccessOrExit(ret = bind(mUdpListenFd, (struct sockaddr *)&addr, sizeof(addr)));
+exit:
+    return ret;
 }
 
 ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
@@ -410,6 +434,8 @@ void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
     {
         mJoinerSession->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
     }
+    FD_SET(mUdpListenFd, &aReadFdSet);
+    aMaxFd = Utils::Max(mUdpListenFd, aMaxFd);
 }
 
 void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
@@ -448,6 +474,21 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
             SendRelayTransmit(buffer, n);
         }
     }
+
+    if (FD_ISSET(mUdpListenFd, &aReadFdSet))
+    {
+        struct sockaddr_in from_addr;
+        socklen_t          addrlen;
+        ssize_t n = recvfrom(mUdpListenFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
+        if (n > 0)
+        {
+            SendUdpTx(buffer, n, ntohs(from_addr.sin_port));
+        } else {
+            printf("Errno %d\n", errno);
+            perror("wtf");
+        }
+    }
+
     gettimeofday(&nowTime, NULL);
     if (mCommissionState == kStateAccepted && mKeepAliveRate > 0 &&
         nowTime.tv_sec - mLastKeepAliveTime.tv_sec > mKeepAliveRate)
@@ -644,6 +685,75 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
     return aLength;
 }
 
+void Commissioner::HandleUDPRx(const Coap::Resource &aResource,
+                               const Coap::Message & aMessage,
+                               Coap::Message &       aResponse,
+                               const uint8_t *       aIp6,
+                               uint16_t              aPort,
+                               void *                aContext)
+{
+    Commissioner * commissioner = static_cast<Commissioner *>(aContext);
+    int            tlvType;
+    uint16_t       length;
+    const uint8_t *payload = aMessage.GetPayload(length);
+    uint16_t       destPort;
+    sockaddr_in    addr;
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    for (const Tlv *requestTlv = reinterpret_cast<const Tlv *>(payload); Utils::LengthOf(payload, requestTlv) < length;
+         requestTlv            = requestTlv->GetNext())
+    {
+        tlvType = requestTlv->GetType();
+        if (tlvType == Meshcop::kUdpEncapsulation)
+        {
+            const UdpEncapsulationTlv *udpTlv = static_cast<const UdpEncapsulationTlv *>(requestTlv);
+            destPort                          = udpTlv->GetUdpDestionationPort();
+        }
+    }
+    addr.sin_port = htons(destPort);
+    VerifyOrExit(sendto(commissioner->mUdpListenFd, payload, length, 0, reinterpret_cast<sockaddr *>(&addr),
+                        sizeof(addr)) == length);
+
+exit:
+    (void)aResource;
+    (void)aResponse;
+    (void)aIp6;
+    (void)aPort;
+
+    return;
+}
+
+int Commissioner::SendUdpTx(uint8_t *aBuf, size_t aLength, uint16_t aFromPort)
+{
+    printf("Get udp data from client size %zu\n", aLength);
+    for (size_t i = 0; i < aLength; i++) {
+        printf("%02x ", aBuf[i]);
+    }
+    printf("\n");
+    uint16_t token         = ++mCoapToken;
+    token                  = htons(token);
+    Coap::Message *message = mCoapAgent->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
+                                                    reinterpret_cast<const uint8_t *>(&token), sizeof(token));
+
+    for (Tlv *requestTlv = reinterpret_cast<Tlv *>(aBuf); Utils::LengthOf(aBuf, requestTlv) < aLength;
+         requestTlv      = requestTlv->GetNext())
+    {
+        int tlvType = requestTlv->GetType();
+        if (tlvType == Meshcop::kUdpEncapsulation)
+        {
+            UdpEncapsulationTlv *udpTlv = static_cast<UdpEncapsulationTlv *>(requestTlv);
+            udpTlv->SetUdpSourcePort(aFromPort);
+        }
+    }
+
+    message->SetPath(OT_URI_PATH_UDP_TX);
+    message->SetPayload(aBuf, aLength);
+    mCoapAgent->Send(*message, NULL, 0, NULL, this);
+    mCoapAgent->FreeMessage(message);
+    return aLength;
+}
+
 Commissioner::~Commissioner()
 {
     if (mDtlsInitDone)
@@ -669,6 +779,8 @@ Commissioner::~Commissioner()
     }
 
     close(mJoinerSessionClientFd);
+    mCoapAgent->RemoveResource(mUdpRxHandler);
+    mCoapAgent->RemoveResource(mRelayReceiveHandler);
     Coap::Agent::Destroy(mCoapAgent);
 }
 

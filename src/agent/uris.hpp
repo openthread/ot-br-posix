@@ -274,6 +274,22 @@ namespace ot {
  */
 #define OT_URI_PATH_DIAGNOSTIC_RESET "d/dr"
 
+/**
+ * @def OT_URI_PATH_UDP_RX
+ *
+ * The URI Path for UDP proxy receive
+ *
+ */
+#define OT_URI_PATH_UDP_RX "c/ur"
+
+/**
+ * @def OT_URI_PATH_UDP_TX
+ *
+ * The URI Path for UDP proxy send
+ *
+ */
+#define OT_URI_PATH_UDP_TX "c/ut"
+
 } // namespace ot
 
 #endif // THREAD_URIS_HPP_

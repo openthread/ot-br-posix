@@ -28,59 +28,68 @@
 
 /**
  * @file
- *   The file is the header for the command line params for the commissioner test app.
+ *   The file is the header for the udp encapsulation tlv
  */
 
-#ifndef OTBR_COMMISSION_COMMON_H_
-#define OTBR_COMMISSION_COMMON_H_
+#ifndef OTBR_UDP_ENCAPSULATION_TLV_HPP_
+#define OTBR_UDP_ENCAPSULATION_TLV_HPP_
 
-#include "netinet/in.h"
+#include "arpa/inet.h"
+#include "common/tlv.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-/**
- * Constants
- */
-enum
+class UdpEncapsulationTlv : public Tlv
 {
-    kSizeMaxPacket = 1500, ///< max size of a network packet
+public:
+    uint16_t GetUdpSourcePort() const { return ntohs(mSourcePort); }
 
-    kPetitionAttemptDelay = 5, ///< delay between failed attempts to petition
+    uint16_t GetUdpDestionationPort() const { return ntohs(mDestPort); }
 
-    kPetitionMaxRetry = 2, ///< max retry for petition
+    const uint8_t *GetUdpPayload() const
+    {
+        return reinterpret_cast<const uint8_t *>(this) + sizeof(UdpEncapsulationTlv);
+    }
 
-    kSteeringDefaultLength = 15, ///< Default size of steering data
+    uint8_t GetUdpPayloadLength() const
+    {
+        uint8_t portDataLength = 2 * sizeof(uint16_t);
+        if (GetLength() < portDataLength)
+        {
+            return 0;
+        }
+        else
+        {
+            return GetLength() - portDataLength;
+        }
+    }
 
-    kEui64Len = (64 / 8), ///< how long is an EUI64 in bytes
+    void SetUdpSourcePort(uint16_t aSrcPort)
+    {
+        mSourcePort = htons(aSrcPort);
+    }
 
-    kPSKcLength = 16, ///< how long is a PSKc in bytes
-    kPSKdLength = 32, ///< how long is a PSKd in bytes
+    void SetUdpDestionationPort(uint16_t aDestPort)
+    {
+        mDestPort = htons(aDestPort);
+    }
 
-    kPortJoinerSession = 49192, ///< What port does our internal server use?
+    void SetUdpPayload(const void *aPayload, size_t aLength)
+    {
+        uint8_t tlvLength = aLength + sizeof(mSourcePort) + sizeof(mDestPort);
+        SetLength(tlvLength, true);
 
-    kXPanIdLength = (64 / 8), ///< 64bit xpanid length in bytes
+        memcpy(reinterpret_cast<uint8_t *>(this) + sizeof(UdpEncapsulationTlv), aPayload, aLength);
+    }
 
-    kNetworkNameLenMax = 16, ///< specification: 8.10.4
-
-    kBorderRouterPassPhraseLen = 64, ///< Spec is not specific about this items max length, so we choose 64
-
-    kIPAddrNameBufSize = INET6_ADDRSTRLEN, ///< String buffer size for ip address
-
-    kPortNameBufSize = 6, ///< String buffer size for port
-
-    kMBedDebugDefaultThreshold = 4, ///< mbed debug print threshold
-
-    kMbedDtlsHandshakeMinTimeout = 8000, ///< dtls handshake min timeout
-
-    kMbedDtlsHandshakeMaxTimeout = 60000, ///< dtls handshake min timeout
-
-    kKEKSize = 32, ///< key encrypted key(KEK) size
-
-    kCommissionerProxyPort = 31542, ///< port commissioner use to proxy
+private:
+    uint16_t mLengthExtended;
+    uint16_t mSourcePort;
+    uint16_t mDestPort;
 };
 
 } // namespace BorderRouter
 } // namespace ot
 
-#endif // OTBR_COMMISSION_COMMON_H_
+#endif // OTBR_UDP_ENCAPSULATION_TLV_HPP_

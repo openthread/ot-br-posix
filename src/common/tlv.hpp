@@ -177,11 +177,12 @@ public:
     Tlv *GetNext(void) { return reinterpret_cast<Tlv *>(static_cast<uint8_t *>(GetValue()) + GetLength()); }
 
 private:
-    void *GetValue(void)
+    void *GetValue()
     {
         return reinterpret_cast<uint8_t *>(this) + sizeof(mType) +
                (mLength != kLengthEscape ? sizeof(mLength) : (sizeof(uint16_t) + sizeof(mLength)));
     }
+
     uint8_t mType;
     uint8_t mLength;
 };
