@@ -4,7 +4,7 @@
 
 # OpenThread Border Router
 
-Per the [Thread 1.1.1 Specification](http://threadgroup.org/ThreadSpec), a Border Router connects a 802.15.4 network to networks at different layers, such as WiFi or Ethernet.  A Thread network requires a Border Router to connect to other networks.
+Per the [Thread 1.1.1 Specification](http://threadgroup.org/ThreadSpec), a Thread Border Router connects a Thread network to other IP-based networks, such as Wi-Fi or Ethernet. A Thread network requires a Border Router to connect to other networks.
 
 A Thread Border Router minimally supports the following functions:
 
@@ -15,10 +15,10 @@ OpenThread's implementation of a Border Router is called OpenThread Border Route
 
 -  Web UI for configuration and management
 -  Thread Border Agent to support an External Commissioner
+-  DHCPv6 Prefix Delegation to obtain IPv6 prefixes for a Thread network
 -  NAT64 for connecting to IPv4 networks
+-  DNS64 to allow Thread devices to initiate communications by name to an IPv4-only server
 -  Thread interface driver using [wpantund](https://github.com/openthread/wpantund)
-
-> **Note:** This is an early MVP release of OpenThread Border Router that will be improved over time.
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
