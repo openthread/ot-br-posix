@@ -45,7 +45,7 @@ main()
     if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
-        avahi_check 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
+        avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
     fi
 
     # stop service
@@ -54,7 +54,7 @@ main()
     if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
         ! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
-        ! avahi_check 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
+        ! avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
     fi
 
     # start service
@@ -63,7 +63,7 @@ main()
     if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
-        avahi_check 'IPv6;SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
+        avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
     fi
 }
 
