@@ -77,7 +77,7 @@ enum
 
     kKEKSize = 32, ///< key encrypted key(KEK) size
 
-    kCommissionerProxyPort = 31542, ///< port commissioner use to proxy
+    kCommissionerProxyPort = 42873, ///< port commissioner use to proxy
 };
 
 } // namespace BorderRouter
