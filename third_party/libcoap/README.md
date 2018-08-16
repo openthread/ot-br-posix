@@ -2,19 +2,18 @@
 
 ## URL
 
-https://github.com/obgm/libcoap
+https://github.com/obgm/libcoap/archive/bsd-licensed.tar.gz
 
 ## Version
 
-4.1.2
+4.2.0
 
 ## License
 
-GNU General Public License (GPL), Version 2 or higher, OR the simplified BSD license.
+simplified BSD license.
 
 ## License File
 
-[LICENSE](repo/LICENSE.GPL)
 [LICENSE](repo/LICENSE.BSD)
 
 ## Description
