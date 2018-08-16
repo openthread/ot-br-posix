@@ -463,10 +463,10 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
     if (FD_ISSET(mJoinerSessionClientFd, &aReadFdSet))
     {
         struct sockaddr_in from_addr;
-        socklen_t          addrlen;
-        ssize_t            n =
-            recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
+        socklen_t          addrlen = sizeof(from_addr);
 
+        ssize_t n =
+            recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
         if (n > 0)
         {
             {

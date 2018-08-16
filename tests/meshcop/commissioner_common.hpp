@@ -64,7 +64,7 @@ enum
 
     kBorderRouterPassPhraseLen = 64, ///< Spec is not specific about this items max length, so we choose 64
 
-    kIPAddrNameBufSize = INET6_ADDRSTRLEN + 1, ///< String buffer size for ip address
+    kIPAddrNameBufSize = INET6_ADDRSTRLEN, ///< String buffer size for ip address
 
     kPortNameBufSize = 6, ///< String buffer size for port
 
