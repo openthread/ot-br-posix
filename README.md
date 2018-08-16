@@ -25,8 +25,8 @@ More information about Thread can be found at [threadgroup.org](http://threadgro
 
 [otbr-travis]: https://travis-ci.org/openthread/borderrouter
 [otbr-travis-svg]: https://travis-ci.org/openthread/borderrouter.svg?branch=master
-[otbr-codecov]: https://codecov.io/gh/bukepo/borderrouter
-[otbr-codecov-svg]: https://codecov.io/gh/bukepo/borderrouter/branch/codecov/graph/badge.svg
+[otbr-codecov]: https://codecov.io/gh/openthread/borderrouter
+[otbr-codecov-svg]: https://codecov.io/gh/openthread/borderrouter/branch/master/graph/badge.svg
 
 ## Getting started
 
