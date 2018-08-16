@@ -49,7 +49,7 @@ posix-check)
     export LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib"
     ./bootstrap
     ./configure
-    distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv {} '$(pwd)/{}' \\;;find . -type f"
+    distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
     if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
         sudo service avahi-daemon stop
         sudo mdnsd
