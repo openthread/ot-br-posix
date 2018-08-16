@@ -31,12 +31,14 @@
  *   The file implements the commissioner class
  */
 
+#include <vector>
+
+#include <stdlib.h>
+#include <string.h>
+
 #include "addr_utils.hpp"
 #include "commissioner.hpp"
 #include "commissioner_utils.hpp"
-#include "stdlib.h"
-#include "string.h"
-#include <vector>
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
@@ -46,15 +48,17 @@
 namespace ot {
 namespace BorderRouter {
 
-const uint16_t Commissioner::kPortJoinerSession = 49192;
-const uint8_t  Commissioner::kSeed[]            = "Commissioner";
-const int      Commissioner::kCipherSuites[]    = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
-const char     Commissioner::kCommissionerId[]  = "OpenThread";
-const char     Commissioner::kCommPetURI[]      = "c/cp";
-const char     Commissioner::kCommSetURI[]      = "c/cs";
-const char     Commissioner::kCommKaURI[]       = "c/ca";
-const char     Commissioner::kRelayRxURI[]      = "c/rx";
-const char     Commissioner::kRelayTxURI[]      = "c/tx";
+const uint16_t Commissioner::kPortJoinerSession      = 49192;
+const uint8_t  Commissioner::kSeed[]                 = "Commissioner";
+const int      Commissioner::kCipherSuites[]         = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
+const char     Commissioner::kCommissionerId[]       = "OpenThread";
+const char     Commissioner::kCommPetURI[]           = "c/cp";
+const char     Commissioner::kCommSetURI[]           = "c/cs";
+const char     Commissioner::kCommKaURI[]            = "c/ca";
+const char     Commissioner::kRelayRxURI[]           = "c/rx";
+const char     Commissioner::kRelayTxURI[]           = "c/tx";
+const int      Commissioner::kCoapResponseWaitSecond = 10;
+const int      Commissioner::kCoapResponseRetryTime  = 2;
 
 static void MBedDebugPrint(void *ctx, int level, const char *file, int line, const char *str)
 {
@@ -133,6 +137,42 @@ ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
     (void)aPort;
 }
 
+int Commissioner::TryReadCoapResponse(uint8_t *             aBuf,
+                                      size_t                aLength,
+                                      const struct timeval &aTimeout,
+                                      int                   aRetryTime,
+                                      CommissionState       aTargetState)
+{
+    int retryTime = 0;
+    int ret;
+
+    while (retryTime < aRetryTime)
+    {
+        timeval timeout = aTimeout;
+        fd_set  readFdSet;
+
+        FD_ZERO(&readFdSet);
+        FD_SET(mSslClientFd.fd, &readFdSet);
+        VerifyOrExit((ret = select(mSslClientFd.fd + 1, &readFdSet, NULL, NULL, &timeout)) > 0);
+        VerifyOrExit((ret = mbedtls_ssl_read(&mSsl, aBuf, aLength)) > 0);
+        mCoapAgent->Input(aBuf, static_cast<uint16_t>(ret), NULL, 0);
+        if (mCommissionState == aTargetState)
+        {
+            ret = 0;
+            break;
+        }
+        retryTime++;
+    }
+
+    // retry failed finally
+    if (retryTime >= aRetryTime)
+    {
+        ret = -1;
+    }
+exit:
+    return ret;
+}
+
 int Commissioner::Connect(const sockaddr_in &aAgentAddr)
 {
     int ret;
@@ -190,6 +230,7 @@ int Commissioner::DtlsHandShake(const sockaddr_in &aAgentAddr)
         otbrLog(OTBR_LOG_ERR, "Handshake fails");
         goto exit;
     }
+    mCommissionState = kStateConnected;
 exit:
     return ret;
 }
@@ -199,7 +240,6 @@ int Commissioner::BecomeCommissioner()
     int ret;
 
     SuccessOrExit(ret = mCoapAgent->AddResource(mRelayReceiveHandler));
-    mCommissionState = kStateConnected;
     SuccessOrExit(ret = CommissionerPetition());
     SuccessOrExit(ret = CommissionerSet());
 exit:
@@ -208,7 +248,7 @@ exit:
 
 int Commissioner::CommissionerPetition()
 {
-    int     ret;
+    int     ret        = -1;
     int     retryCount = 0;
     uint8_t buffer[kSizeMaxPacket];
     Tlv *   tlv = reinterpret_cast<Tlv *>(buffer);
@@ -220,6 +260,7 @@ int Commissioner::CommissionerPetition()
     while ((mCommissionState == kStateConnected || mCommissionState == kStateRejected) &&
            retryCount < kPetitionMaxRetry)
     {
+        struct timeval timeout = {kCoapResponseWaitSecond, 0};
         if (mCommissionState == kStateRejected)
         {
             sleep(kPetitionAttemptDelay);
@@ -238,26 +279,11 @@ int Commissioner::CommissionerPetition()
         mCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
         mCoapAgent->FreeMessage(message);
 
-        do
-        {
-            ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
-            if (ret > 0)
-            {
-                mCoapAgent->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
-                switch (mCommissionState)
-                {
-                case kStateConnected:
-                    ret = MBEDTLS_ERR_SSL_WANT_READ;
-                default:
-                    break;
-                }
-            }
-        } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+        ret = TryReadCoapResponse(buffer, sizeof(buffer), timeout, kCoapResponseRetryTime, kStateAccepted);
     }
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: complete");
 
-    ret = mCommissionState == kStateAccepted ? 0 : -1;
     return ret;
 }
 
@@ -316,10 +342,11 @@ void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, voi
 
 int Commissioner::CommissionerSet()
 {
-    int      ret   = 0;
-    uint16_t token = ++mCoapToken;
-    uint8_t  buffer[kSizeMaxPacket];
-    Tlv *    tlv = reinterpret_cast<Tlv *>(buffer);
+    int            ret   = 0;
+    uint16_t       token = ++mCoapToken;
+    uint8_t        buffer[kSizeMaxPacket];
+    Tlv *          tlv     = reinterpret_cast<Tlv *>(buffer);
+    struct timeval timeout = {kCoapResponseWaitSecond, 0};
 
     Coap::Message *message;
 
@@ -344,27 +371,7 @@ int Commissioner::CommissionerSet()
     mCoapAgent->Send(*message, NULL, 0, HandleCommissionerSet, this);
     mCoapAgent->FreeMessage(message);
 
-    do
-    {
-        ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
-        if (ret > 0)
-        {
-            mCoapAgent->Input(buffer, static_cast<uint16_t>(ret), NULL, 0);
-            switch (mCommissionState)
-            {
-            case kStateReady:
-                ret = 0;
-                break;
-
-            case kStateAccepted:
-                ret = MBEDTLS_ERR_SSL_WANT_READ;
-                break;
-
-            default:
-                break;
-            }
-        }
-    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+    ret = TryReadCoapResponse(buffer, sizeof(buffer), timeout, kCoapResponseRetryTime, kStateReady);
 
     return ret;
 }

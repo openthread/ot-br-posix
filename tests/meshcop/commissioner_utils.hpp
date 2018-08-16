@@ -34,10 +34,11 @@
 #ifndef OTBR_COMMISSIONER_UTILS_HPP_
 #define OTBR_COMMISSIONER_UTILS_HPP_
 
-#include <arpa/inet.h>
-#include <cstdio>
-#include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
+
+#include <arpa/inet.h>
+#include <errno.h>
 #include <sys/socket.h>
 
 namespace ot {

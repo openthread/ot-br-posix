@@ -34,13 +34,14 @@
 #ifndef OTBR_JOINER_SESSION_HPP_
 #define OTBR_JOINER_SESSION_HPP_
 
-#include "commissioner_common.hpp"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sys/socket.h>
-#include <web/pskc-generator/pskc.hpp>
+
+#include "commissioner_common.hpp"
 #include "agent/coap.hpp"
 #include "agent/dtls.hpp"
+#include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {

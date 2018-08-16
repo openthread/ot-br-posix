@@ -31,10 +31,11 @@
  *   The file implements the command line params for the commissioner test app.
  */
 
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "commissioner_argcargv.hpp"
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 

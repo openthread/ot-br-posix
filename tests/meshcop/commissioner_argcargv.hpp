@@ -34,9 +34,10 @@
 #ifndef OTBR_COMMISSIONER_ARGCARGV_HPP_
 #define OTBR_COMMISSIONER_ARGCARGV_HPP_
 
-#include "commissioner_common.hpp"
-#include <cstring>
 #include <stdint.h>
+#include <string.h>
+
+#include "commissioner_common.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
 namespace ot {

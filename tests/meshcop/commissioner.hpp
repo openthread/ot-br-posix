@@ -37,14 +37,12 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sys/socket.h>
-#include "agent/coap.hpp"
+
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
-#include "commissioner_common.hpp"
-#include "joiner_session.hpp"
 #include <mbedtls/certs.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/debug.h>
@@ -54,10 +52,13 @@
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/timing.h>
-#include <set>
 #include <sys/time.h>
-#include <web/pskc-generator/pskc.hpp>
+
+#include "commissioner_common.hpp"
+#include "joiner_session.hpp"
+#include "agent/coap.hpp"
 #include "utils/steeringdata.hpp"
+#include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -122,6 +123,15 @@ public:
     ~Commissioner();
 
 private:
+    enum CommissionState
+    {
+        kStateConnected,
+        kStateAccepted,
+        kStateRejected,
+        kStateReady,
+        kStateInvalid,
+    } mCommissionState;
+
     Commissioner(const Commissioner &);
     Commissioner &operator=(const Commissioner &);
 
@@ -136,27 +146,23 @@ private:
                             const uint8_t *aIp6,
                             uint16_t       aPort,
                             void *         aContext);
-    static void    HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
-    static void    HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
-    static void    HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);
-    static void    HandleRelayReceive(const Coap::Resource &aResource,
-                                      const Coap::Message & aMessage,
-                                      Coap::Message &       aResponse,
-                                      const uint8_t *       aIp6,
-                                      uint16_t              aPort,
-                                      void *                aContext);
-    int            SendRelayTransmit(uint8_t *aBuf, size_t aLength);
 
-    ssize_t ReadFullPacket(int aFd, void *aBuf, size_t aSize);
+    int TryReadCoapResponse(uint8_t *             aBuf,
+                            size_t                aLength,
+                            const struct timeval &aTimeout,
+                            int                   aRetryTime,
+                            CommissionState       aTargetState);
 
-    enum
-    {
-        kStateConnected,
-        kStateAccepted,
-        kStateRejected,
-        kStateReady,
-        kStateInvalid,
-    } mCommissionState;
+    static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);
+    static void HandleRelayReceive(const Coap::Resource &aResource,
+                                   const Coap::Message & aMessage,
+                                   Coap::Message &       aResponse,
+                                   const uint8_t *       aIp6,
+                                   uint16_t              aPort,
+                                   void *                aContext);
+    int         SendRelayTransmit(uint8_t *aBuf, size_t aLength);
 
     mbedtls_net_context          mSslClientFd;
     mbedtls_ssl_context          mSsl;
@@ -194,6 +200,8 @@ private:
     static const char     kCommKaURI[];
     static const char     kRelayRxURI[];
     static const char     kRelayTxURI[];
+    static const int      kCoapResponseWaitSecond;
+    static const int      kCoapResponseRetryTime;
 };
 
 } // namespace BorderRouter

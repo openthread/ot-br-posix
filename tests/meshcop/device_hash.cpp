@@ -30,15 +30,11 @@
  *   The file implements the hash functions for joiner and commissioner device
  */
 
-#include "device_hash.hpp"
-#include "commissioner_common.hpp"
-#include "web/pskc-generator/pskc.hpp"
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
-#include <cstdio>
 #include <mbedtls/certs.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/debug.h>
@@ -48,6 +44,10 @@
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/timing.h>
+
+#include "commissioner_common.hpp"
+#include "device_hash.hpp"
+#include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {

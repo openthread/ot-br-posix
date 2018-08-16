@@ -31,12 +31,13 @@
  *   The file is the entry point for commissioner
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 #include "commissioner.hpp"
 #include "commissioner_argcargv.hpp"
 #include "device_hash.hpp"
-#include "time.h"
-#include <cstdio>
-#include <cstdlib>
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 

@@ -35,6 +35,7 @@
 #define OTBR_DEVICE_HASH_HPP_
 
 #include <stdint.h>
+
 #include "utils/steeringdata.hpp"
 
 namespace ot {
