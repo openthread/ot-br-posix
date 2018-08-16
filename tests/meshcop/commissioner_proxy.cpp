@@ -63,15 +63,10 @@ int CommissionerProxy::SendTo(const struct sockaddr_in6 &aDestAddr, const void *
 
 int CommissionerProxy::RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 &aSrcAddr)
 {
-    int ret, len;
+    int ret = 0, len;
     uint8_t readBuffer[kSizeMaxPacket];
 
-    VerifyOrExit(len = ret = recv(mClientFd, readBuffer, aLength, 0) > 0);
-    printf("Proxy get length %d, buf size %zu\n", len, aLength);
-    for (size_t i = 0; i < 83; i++) {
-        printf("%02x ", ((uint8_t*)readBuffer)[i]);
-    }
-    printf("\n");
+    VerifyOrExit((len = ret = recv(mClientFd, readBuffer, aLength, 0)) > 0);
     for (const Tlv *tlv = reinterpret_cast<const Tlv *>(readBuffer); utils::LengthOf(readBuffer, tlv) < len;
          tlv            = tlv->GetNext())
     {

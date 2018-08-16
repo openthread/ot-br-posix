@@ -107,6 +107,7 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     , mPetitionRetryCount(0)
     , mJoinerSession(NULL)
     , mKeepAliveRate(aKeepAliveRate)
+    , mUdpListenFd(-1)
 {
     sockaddr_in addr;
 
@@ -144,7 +145,6 @@ int Commissioner::SetupProxyServer()
     int ret;
     int         optval = 1;
     sockaddr_in addr;
-    mUdpListenFd         = -1;
     addr.sin_family      = AF_INET;
     addr.sin_port        = htons(kCommissionerProxyPort);
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -461,9 +461,9 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
     {
         struct sockaddr_in from_addr;
         socklen_t          addrlen = sizeof(from_addr);
-
-        ssize_t n =
+        ssize_t            n =
             recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
+
         if (n > 0)
         {
             {
@@ -478,7 +478,8 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
     if (FD_ISSET(mUdpListenFd, &aReadFdSet))
     {
         struct sockaddr_in from_addr;
-        socklen_t          addrlen;
+        socklen_t          addrlen = sizeof(from_addr);
+
         ssize_t n = recvfrom(mUdpListenFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
         if (n > 0)
         {
@@ -779,6 +780,9 @@ Commissioner::~Commissioner()
     }
 
     close(mJoinerSessionClientFd);
+    if (mUdpListenFd > 0) {
+        close(mUdpListenFd);
+    }
     mCoapAgent->RemoveResource(mUdpRxHandler);
     mCoapAgent->RemoveResource(mRelayReceiveHandler);
     Coap::Agent::Destroy(mCoapAgent);
