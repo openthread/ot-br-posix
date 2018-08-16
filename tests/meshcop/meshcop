@@ -45,6 +45,7 @@ readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
 readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly NO_CLEAN="${NO_CLEAN:-0}"
+readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
 
 #----------------------------------------
 # Test constants
@@ -58,12 +59,12 @@ readonly OTBR_COMMISSIONER=otbr-commissioner
 
 readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
-readonly WPANCTL_EXE="${STAGE_DIR}/usr/bin/${WPANCTL}"
-readonly WPANTUND_EXE="${STAGE_DIR}/usr/sbin/${WPANTUND}"
-readonly NCP_EXE="${STAGE_DIR}/usr/bin/${OT_NCP}"
-readonly CLI_EXE="${STAGE_DIR}/usr/bin/${OT_CLI}"
-readonly OTBR_COMMISSIONER_EXE="${ABS_TOP_BUILDDIR}/tests/meshcop/${OTBR_COMMISSIONER}"
-readonly OTBR_AGENT_EXE="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
+readonly WPANCTL_PATH="${STAGE_DIR}/usr/bin/${WPANCTL}"
+readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
+readonly OT_NCP_PATH="${STAGE_DIR}/usr/bin/${OT_NCP}"
+readonly OT_CLI_PATH="${STAGE_DIR}/usr/bin/${OT_CLI}"
+readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/tests/meshcop/${OTBR_COMMISSIONER}"
+readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 
 # The node ids
@@ -196,14 +197,28 @@ build_dependencies()
   # These are broken-out so that during debug you can comment out parts
   # and re-run this script multiple times script and not have your
   # test code get erased ...
-  checkout_wpantund
-  configure_wpantund
-  compile_wpantund
+  if [[ "${IGNORE_INSTALLED}" = 0 ]] && which "${WPANTUND}" && which "${WPANCTL}"; then
+    wpanctl="${WPANCTL}"
+    wpantund="${WPANTUND}"
+  else
+    checkout_wpantund
+    configure_wpantund
+    compile_wpantund
+    wpanctl="${WPANCTL_PATH}"
+    wpantund="${WPANTUND_PATH}"
+  fi
 
   # As above, these steps are broken up
-  checkout_openthread
-  configure_openthread
-  compile_openthread
+  if [[ "${IGNORE_INSTALLED}" = 0 ]] && which "${OT_NCP}" && which "${OT_CLI}"; then
+    ot_ncp="${OT_NCP}"
+    ot_cli="${OT_CLI}"
+  else
+    checkout_openthread
+    configure_openthread
+    compile_openthread
+    ot_ncp="${OT_NCP_PATH}"
+    ot_cli="${OT_CLI_PATH}"
+  fi
 
   write_syslog "TEST: BUILD COMPLETE"
 }
@@ -213,8 +228,8 @@ test_setup()
   # message for general failures
   exit_message="JOINER FAILED"
 
-  executable_or_die "${OTBR_COMMISSIONER_EXE}"
-  executable_or_die "${OTBR_AGENT_EXE}"
+  executable_or_die "${OTBR_COMMISSIONER_PATH}"
+  executable_or_die "${OTBR_AGENT_PATH}"
 
   # Remove flashes
   sudo rm -vrf "${TEST_BASE}/tmp"
@@ -291,8 +306,8 @@ compile_wpantund()
   make -C "${BUILD_DIR}/wpantund" all
   make -C "${BUILD_DIR}/wpantund" install DESTDIR="${STAGE_DIR}"
 
-  executable_or_die "${WPANTUND_EXE}"
-  executable_or_die "${WPANCTL_EXE}"
+  executable_or_die "${WPANTUND_PATH}"
+  executable_or_die "${WPANCTL_PATH}"
 
   sudo cp "${STAGE_DIR}/etc/dbus-1/system.d/wpantund.conf" /etc/dbus-1/system.d
 
@@ -316,8 +331,8 @@ compile_openthread()
   make -C "${BUILD_DIR}/openthread" -j 20 all
   make -C "${BUILD_DIR}/openthread" -j 20 install DESTDIR="${STAGE_DIR}"
 
-  executable_or_die "${NCP_EXE}"
-  executable_or_die "${CLI_EXE}"
+  executable_or_die "${OT_NCP_PATH}"
+  executable_or_die "${OT_CLI_PATH}"
 }
 
 configure_openthread()
@@ -382,7 +397,7 @@ leader_start()
 
   # Using the commissioner app - Compute the PSKc from the above settings.
   set -x
-  readonly OT_PSKC="$(${OTBR_COMMISSIONER_EXE} --disable-syslog \
+  readonly OT_PSKC="$(${OTBR_COMMISSIONER_PATH} --disable-syslog \
     --network-name "${OT_NETWORK_NAME}" --xpanid "${OT_XPANID}" \
     --agent-passphrase "${OT_AGENT_PASSPHRASE}" \
     --compute-pskc | cut -d ' ' -f2)"
@@ -399,21 +414,21 @@ leader_start()
 
   # Do this within a private script as root.
   set -x
-  (cd "${TEST_BASE}" && sudo ${WPANTUND_EXE} -d 5 -I "${TUN_NAME}" \
-    -s "system:${NCP_EXE} ${LEADER_NODE_ID}" &)
+  (cd "${TEST_BASE}" && sudo "${wpantund}" -d 5 -I "${TUN_NAME}" \
+    -s "system:${ot_ncp} ${LEADER_NODE_ID}" &)
   set +x
 
   echo 'Waiting for wpantund to fully start'
   sleep 10
 
   set -x
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" set Daemon:AutoAssociateAfterReset false
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" leave
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" set Network:PSKc --data "${OT_PSKC}"
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" set Network:Key --data "${OT_MASTER_KEY}"
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" set Network:PANID "${OT_PANID}"
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" set Network:XPANID "${OT_XPANID}"
-  sudo "${WPANCTL_EXE}" -I "${TUN_NAME}" form "${OT_NETWORK_NAME}" -c "${OT_CHANNEL}"
+  sudo "${wpanctl}" -I "${TUN_NAME}" set Daemon:AutoAssociateAfterReset false
+  sudo "${wpanctl}" -I "${TUN_NAME}" leave
+  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:PSKc --data "${OT_PSKC}"
+  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:Key --data "${OT_MASTER_KEY}"
+  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:PANID "${OT_PANID}"
+  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:XPANID "${OT_XPANID}"
+  sudo "${wpanctl}" -I "${TUN_NAME}" form "${OT_NETWORK_NAME}" -c "${OT_CHANNEL}"
   set +x
 
   # These should be running now and should not have crashed!
@@ -434,7 +449,7 @@ ba_start()
   write_syslog "AGENT: starting"
 
   # we launch this in the background
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_EXE}" -I "${TUN_NAME}" &)
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" &)
   # wait for it to complete
   sleep 10
 
@@ -476,7 +491,7 @@ commissioner_start()
 
   # Launch the commissioner in the background
   set -x
-  (cd "${ORIGIN_PWD}" && "${OTBR_COMMISSIONER_EXE}" ${args} &)
+  (cd "${ORIGIN_PWD}" && "${OTBR_COMMISSIONER_PATH}" ${args} &)
   set +x
 
   # Wait for it to launch and get started.
@@ -509,7 +524,7 @@ joiner_start()
   write_syslog 'JOINER START'
   expect -f-  <<EOF || die 'JOINER FAILED'
 send "cd ${TEST_BASE}\r\n"
-spawn ${CLI_EXE} ${JOINER_NODE_ID}
+spawn ${ot_cli} ${JOINER_NODE_ID}
 send "ifconfig up\r\n"
 expect "Done"
 send "joiner start ${OT_JOINER_PASSPHRASE}\r\n"
