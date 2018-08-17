@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -28,43 +28,68 @@
 #
 
 #
-# This script tests stop publishing service.
+# This script includes common utils for testing mdns
 #
 
-set -x
-set -e
+readonly DNS_SD_RESULT=result
 
-. "$(dirname "$0")/test_init"
-
-main()
+on_exit()
 {
-    ./otbr-test-mdns k & PID=$!
-    trap on_exit INT TERM EXIT
+    readonly EXIT_CODE=$?
 
-    sleep 2
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
-        dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
-    else
-        avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
-    fi
+    kill "$PID"
+    [[ ! -e "${DNS_SD_RESULT}" ]] || rm "${DNS_SD_RESULT}" || true
 
-    # stop service
-    /bin/kill -USR1 $PID
-    sleep 1
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
-        ! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
-    else
-        ! avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
-    fi
-
-    # start service
-    /bin/kill -USR2 $PID
-    sleep 1
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
-        dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
-    else
-        avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
-    fi
+    exit $EXIT_CODE
 }
 
-main "$@"
+#######################################
+# Check if a service is regisered
+#
+# Arguments:
+#   $1  Name
+#   $2  Type
+#   $3  Text record
+#
+# Returns:
+#   0           Registered
+#   otherwise   Not registered
+#######################################
+dns_sd_check()
+{
+    local ret
+
+    ret=0
+
+    # dns-sd will not exit
+    dns-sd -L "$1" "$2" local 2>&1 > "${DNS_SD_RESULT}" & DNS_SD_PID=$!
+    sleep 1
+    kill "${DNS_SD_PID}"
+
+    cat "${DNS_SD_RESULT}"
+    grep -q "$3" "${DNS_SD_RESULT}" || ret=1
+
+    return ${ret}
+}
+
+#######################################
+# Check if a service is regisered
+#
+# Arguments:
+#   $1  Expected avahi query result string
+#
+# Returns:
+#   0           Registered
+#   otherwise   Not registered
+#######################################
+avahi_check()
+{
+    local ret
+
+    ret=0
+
+    avahi-browse -aprt
+    avahi-browse -aprt | grep -q "$1" || ret=1
+
+    return ${ret}
+}

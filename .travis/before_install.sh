@@ -89,6 +89,14 @@ linux)
         clang-format --version || die
     }
 
+    [ "$WITH_MDNS" != 'mDNSResponder' ] || {
+        SOURCE_NAME=mDNSResponder-878.30.4
+        wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz &&
+        tar xvf $SOURCE_NAME.tar.gz &&
+        cd $SOURCE_NAME/mDNSPosix &&
+        make os=linux && sudo make install os=linux
+    }
+
     # Unittest
     [ $BUILD_TARGET != posix-check ] || [ -f $TOOLS_HOME/usr/lib/libCppUTest.a ] || (cd /tmp &&
         wget https://github.com/cpputest/cpputest/archive/v3.8.tar.gz &&

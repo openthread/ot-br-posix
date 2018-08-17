@@ -143,6 +143,7 @@ void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArgume
     const in6_addr *    addr     = va_arg(aArguments, const in6_addr *);
     uint16_t            sockPort = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
 
+    (void)aEvent;
     assert(aEvent == Ncp::kEventUdpProxyStream);
     VerifyOrExit(sockPort == kBorderAgentUdpPort);
 

@@ -40,7 +40,6 @@
 #include <avahi-client/publish.h>
 #include <avahi-common/domain.h>
 #include <avahi-common/watch.h>
-#include <sys/select.h>
 
 #include "mdns.hpp"
 

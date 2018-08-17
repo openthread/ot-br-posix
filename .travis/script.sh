@@ -48,7 +48,13 @@ posix-check)
     export CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include"
     export LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib"
     ./bootstrap || die
-    ./configure && make distcheck || die
+    if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
+        sudo service avahi-daemon stop
+        sudo mdnsd
+        ./configure && make distcheck DISTCHECK_CONFIGURE_FLAGS='--with-mdns=mDNSResponder'
+    else
+        ./configure && make distcheck
+    fi
     ;;
 
 scan-build)
