@@ -1,13 +1,45 @@
+/*
+ *    Copyright (c) 2018, The OpenThread Authors.
+ *    All rights reserved.
+ *
+ *    Redistribution and use in source and binary forms, with or without
+ *    modification, are permitted provided that the following conditions are met:
+ *    1. Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *    2. Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *    3. Neither the name of the copyright holder nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *    POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * @file
+ *   The file implements tmf client
+ */
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "addr_utils.hpp"
 #include "commissioner_utils.hpp"
 #include "tmf_client.hpp"
 #include "udp_encapsulation_tlv.hpp"
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <jsoncpp/json/json.h>
-#include "common/tlv.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -189,16 +221,21 @@ std::vector<ChildTableEntry> TmfClient::QueryChildTable(const in6_addr &aAddr)
 static std::vector<LinkInfo> ParseRoute64Tlv(const uint8_t *aBuffer)
 {
     const ot::Tlv *tlv = reinterpret_cast<const Tlv *>(aBuffer);
-    assert(tlv->GetType() == kRoute64Type);
     uint16_t         payloadLength = tlv->GetLength();
     const uint8_t *  buf           = reinterpret_cast<const uint8_t *>(tlv->GetValue()) + 1;
     uint8_t          nowRouterId   = 0;
     std::vector<int> connectedRouterIds;
     size_t           remainBufSize = payloadLength - 1;
     size_t           i;
+    std::vector<LinkInfo> linkInfos;
+    const uint8_t * routeDataBuf;
+    uint8_t selfRouteId;
+
+    assert(tlv->GetType() == kRoute64Type);
     for (i = 0; remainBufSize > 0; i++, remainBufSize--)
     {
         uint8_t mask = buf[i];
+
         for (int j = 0; j < 8; j++, nowRouterId++)
         {
             if (mask & 0x80)
@@ -210,9 +247,9 @@ static std::vector<LinkInfo> ParseRoute64Tlv(const uint8_t *aBuffer)
             mask <<= 1;
         }
     }
-    const uint8_t *       routeDataBuf = buf + i;
-    uint8_t               selfRouteId  = 0;
-    std::vector<LinkInfo> linkInfos;
+
+    routeDataBuf = buf + i;
+    selfRouteId  = 0;
     for (size_t j = 0; j < connectedRouterIds.size(); j++)
     {
         uint8_t routeData = routeDataBuf[j];
@@ -333,52 +370,13 @@ NetworkInfo TmfClient::TraverseNetwork(const in6_addr &aAddr)
     return networkInfo;
 }
 
-TmfClient::~TmfClient() {
+TmfClient::~TmfClient()
+{
     Coap::Agent::Destroy(mCoapAgent);
 }
 
 } // namespace BorderRouter
 } // namespace ot
-
-Json::Value DumpNodeInfoToJson(const ot::BorderRouter::NodeInfo &nodeInfo)
-{
-    Json::Value nodeValue;
-    char        nameBuffer[100];
-    nodeValue["rloc16"] = nodeInfo.rloc16;
-    inet_ntop(AF_INET6, &nodeInfo.mleAddr, nameBuffer, sizeof(nameBuffer));
-    nodeValue["mleAddr"] = nameBuffer;
-    return nodeValue;
-}
-
-Json::Value DumpLinkInfoToJson(const ot::BorderRouter::LinkInfo &linkInfo)
-{
-    Json::Value nodeValue;
-    nodeValue["fromRloc16"]      = linkInfo.fromRloc16;
-    nodeValue["toRloc16"]        = linkInfo.toRloc16;
-    nodeValue["routeCost"]       = linkInfo.routeCost;
-    nodeValue["inQualityLevel"]  = linkInfo.inQualityLevel;
-    nodeValue["outQualityLevel"] = linkInfo.outQualityLevel;
-    return nodeValue;
-}
-
-Json::Value DumpNetworkInfoToJson(const ot::BorderRouter::NetworkInfo &networkInfo)
-{
-    Json::Value root;
-    Json::Value nodeList;
-    Json::Value linkList;
-    root["leader"] = DumpNodeInfoToJson(networkInfo.leaderNode);
-    for (size_t i = 0; i < networkInfo.nodes.size(); i++)
-    {
-        nodeList.append(DumpNodeInfoToJson(networkInfo.nodes[i]));
-    }
-    for (size_t i = 0; i < networkInfo.links.size(); i++)
-    {
-        linkList.append(DumpLinkInfoToJson(networkInfo.links[i]));
-    }
-    root["nodes"] = nodeList;
-    root["links"] = linkList;
-    return root;
-}
 
 int main()
 {
@@ -400,7 +398,7 @@ int main()
     ot::BorderRouter::NetworkInfo networkInfo = client.TraverseNetwork(destAddr);
 
     Json::StyledWriter writer;
-    std::string        s  = writer.write(DumpNetworkInfoToJson(networkInfo));
+    std::string        s  = writer.write(ot::BorderRouter::DumpNetworkInfoToJson(networkInfo));
     FILE *             fp = fopen("test.json", "w");
     fprintf(fp, "%s", s.c_str());
     fclose(fp);

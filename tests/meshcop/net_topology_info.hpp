@@ -28,40 +28,70 @@
 
 /**
  * @file
- *   The file is the header of commissioner proxy class
+ *   The file is the header of net topology data structures and utility functions to
+ *   dump them as json
  */
 
-#ifndef OTBR_COMMISSIONER_PROXY_HPP_
-#define OTBR_COMMISSIONER_PROXY_HPP_
+#ifndef OTBR_NET_TOPOLOGY_INFO_HPP_
+#define OTBR_NET_TOPOLOGY_INFO_HPP_
+
+#include <vector>
+
+#include <stdint.h>
 
 #include <arpa/inet.h>
-#include <set>
+#include <errno.h>
+#include <jsoncpp/json/json.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <vector>
-#include "agent/coap.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-class CommissionerProxy
+struct LinkInfo
 {
-public:
-    CommissionerProxy();
-
-    int SendTo(const struct sockaddr_in6 &aDestAddr, const void *aBuf, size_t aLength);
-    int RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 &srcAddr);
-
-    ~CommissionerProxy();
-
-private:
-    CommissionerProxy(const CommissionerProxy &);
-    CommissionerProxy &operator=(const CommissionerProxy &);
-
-    int mClientFd;
+    uint16_t fromRloc16; // in host byte order
+    uint16_t toRloc16;   // in host byte order
+    uint8_t  routeCost;
+    uint8_t  outQualityLevel;
+    uint8_t  inQualityLevel;
 };
+
+#pragma pack(push, 0)
+struct LeaderData
+{
+    uint32_t partitionID;
+    uint8_t  weighting;
+    uint8_t  version;
+    uint8_t  stateVersion;
+    uint8_t  routerID;
+};
+
+struct ChildTableEntry
+{
+    uint8_t  timeOut;
+    uint16_t childID;
+    uint8_t  mode;
+};
+#pragma pack(pop)
+
+struct NodeInfo
+{
+    struct in6_addr mleAddr;
+    uint16_t        rloc16; // in host byte order
+};
+
+struct NetworkInfo
+{
+    NodeInfo              leaderNode;
+    std::vector<NodeInfo> nodes;
+    std::vector<LinkInfo> links;
+};
+
+Json::Value DumpNodeInfoToJson(const ot::BorderRouter::NodeInfo &nodeInfo);
+Json::Value DumpLinkInfoToJson(const ot::BorderRouter::LinkInfo &linkInfo);
+Json::Value DumpNetworkInfoToJson(const ot::BorderRouter::NetworkInfo &networkInfo);
 
 } // namespace BorderRouter
 } // namespace ot
 
-#endif //OTBR_COMMISSIONER_PROXY_HPP_
+#endif // OTBR_NET_TOPOLOGY_INFO_HPP_

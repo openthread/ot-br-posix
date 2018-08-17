@@ -28,40 +28,53 @@
 
 /**
  * @file
- *   The file is the header of commissioner proxy class
+ *   The file is implements utility functions to dump network topology data structure as json
  */
 
-#ifndef OTBR_COMMISSIONER_PROXY_HPP_
-#define OTBR_COMMISSIONER_PROXY_HPP_
-
-#include <arpa/inet.h>
-#include <set>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <vector>
-#include "agent/coap.hpp"
+#include "net_topology_info.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-class CommissionerProxy
+Json::Value DumpNodeInfoToJson(const ot::BorderRouter::NodeInfo &nodeInfo)
 {
-public:
-    CommissionerProxy();
+    Json::Value nodeValue;
+    char        nameBuffer[100];
+    nodeValue["rloc16"] = nodeInfo.rloc16;
+    inet_ntop(AF_INET6, &nodeInfo.mleAddr, nameBuffer, sizeof(nameBuffer));
+    nodeValue["mleAddr"] = nameBuffer;
+    return nodeValue;
+}
 
-    int SendTo(const struct sockaddr_in6 &aDestAddr, const void *aBuf, size_t aLength);
-    int RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 &srcAddr);
+Json::Value DumpLinkInfoToJson(const ot::BorderRouter::LinkInfo &linkInfo)
+{
+    Json::Value nodeValue;
+    nodeValue["fromRloc16"]      = linkInfo.fromRloc16;
+    nodeValue["toRloc16"]        = linkInfo.toRloc16;
+    nodeValue["routeCost"]       = linkInfo.routeCost;
+    nodeValue["inQualityLevel"]  = linkInfo.inQualityLevel;
+    nodeValue["outQualityLevel"] = linkInfo.outQualityLevel;
+    return nodeValue;
+}
 
-    ~CommissionerProxy();
+Json::Value DumpNetworkInfoToJson(const ot::BorderRouter::NetworkInfo &networkInfo)
+{
+    Json::Value root;
+    Json::Value nodeList;
+    Json::Value linkList;
+    root["leader"] = DumpNodeInfoToJson(networkInfo.leaderNode);
+    for (size_t i = 0; i < networkInfo.nodes.size(); i++)
+    {
+        nodeList.append(DumpNodeInfoToJson(networkInfo.nodes[i]));
+    }
+    for (size_t i = 0; i < networkInfo.links.size(); i++)
+    {
+        linkList.append(DumpLinkInfoToJson(networkInfo.links[i]));
+    }
+    root["nodes"] = nodeList;
+    root["links"] = linkList;
+    return root;
+}
 
-private:
-    CommissionerProxy(const CommissionerProxy &);
-    CommissionerProxy &operator=(const CommissionerProxy &);
-
-    int mClientFd;
-};
-
-} // namespace BorderRouter
-} // namespace ot
-
-#endif //OTBR_COMMISSIONER_PROXY_HPP_
+}
+}
