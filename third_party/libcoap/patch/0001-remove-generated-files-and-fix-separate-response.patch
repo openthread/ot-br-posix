@@ -319,7 +319,7 @@ index a549395..2566003 100644
 +   * same token.
 +   */
 +  coap_cancel_all_messages(context, &rcvd->remote,
-+			   rcvd->pdu->hdr->token, 
++			   rcvd->pdu->hdr->token,
 +			   rcvd->pdu->hdr->token_length);
  }
  
