@@ -83,14 +83,12 @@ int CommissionerProxy::SendTo(const struct sockaddr_in6 &aDestAddr, const void *
         tlv = tlv->GetNext();
     }
 
-    printf("Send to size %d\n", utils::LengthOf(buffer, tlv));
     proxyServerAddr.sin_family      = AF_INET;
     proxyServerAddr.sin_port        = htons(kCommissionerProxyPort);
     proxyServerAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     int ret =  sendto(mClientFd, buffer, utils::LengthOf(buffer, tlv), 0,
                   reinterpret_cast<struct sockaddr *>(&proxyServerAddr), sizeof(proxyServerAddr));
-    printf("Sent %d\n", ret);
     return ret;
 }
 
@@ -107,13 +105,11 @@ int CommissionerProxy::RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 
 
         if (tlvType == Meshcop::kIPv6AddressList)
         {
-            printf("Get from address\n");
             assert(tlv->GetLength() == 16); // IPv6 address size
             memcpy(&aSrcAddr.sin6_addr, tlv->GetValue(), sizeof(aSrcAddr.sin6_addr));
         }
         else if (tlvType == Meshcop::kUdpEncapsulation)
         {
-            printf("Get udp encapsulation\n");
             const UdpEncapsulationTlv *udpTlv = static_cast<const UdpEncapsulationTlv*>(tlv);
             size_t   readLength = utils::Min<size_t>(udpTlv->GetUdpPayloadLength(), aLength);
             uint16_t srcPort    = udpTlv->GetUdpSourcePort();

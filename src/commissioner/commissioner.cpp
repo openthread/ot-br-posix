@@ -484,9 +484,6 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         if (n > 0)
         {
             SendUdpTx(buffer, n, ntohs(from_addr.sin_port));
-        } else {
-            printf("Errno %d\n", errno);
-            perror("wtf");
         }
     }
 
@@ -727,11 +724,6 @@ exit:
 
 int Commissioner::SendUdpTx(uint8_t *aBuf, size_t aLength, uint16_t aFromPort)
 {
-    printf("Get udp data from client size %zu\n", aLength);
-    for (size_t i = 0; i < aLength; i++) {
-        printf("%02x ", aBuf[i]);
-    }
-    printf("\n");
     uint16_t token         = ++mCoapToken;
     token                  = htons(token);
     Coap::Message *message = mCoapAgent->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
