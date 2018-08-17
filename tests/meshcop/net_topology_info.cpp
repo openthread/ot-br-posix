@@ -76,5 +76,5 @@ Json::Value DumpNetworkInfoToJson(const ot::BorderRouter::NetworkInfo &networkIn
     return root;
 }
 
-}
-}
+} // namespace BorderRouter
+} // namespace ot

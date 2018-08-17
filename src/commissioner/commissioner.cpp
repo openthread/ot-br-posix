@@ -41,17 +41,17 @@
 #include "commissioner.hpp"
 #include "commissioner_utils.hpp"
 #include "agent/uris.hpp"
+#include "udp_encapsulation_tlv.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
 #include "utils/hex.hpp"
-#include "udp_encapsulation_tlv.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-const uint16_t Commissioner::kJoinerSessionPort = 49192;
+const uint16_t Commissioner::kJoinerSessionPort      = 49192;
 const uint8_t  Commissioner::kSeed[]                 = "Commissioner";
 const int      Commissioner::kCipherSuites[]         = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
 const char     Commissioner::kCommissionerId[]       = "OpenThread";
@@ -142,7 +142,7 @@ void Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeri
 
 int Commissioner::SetupProxyServer()
 {
-    int ret;
+    int         ret;
     int         optval = 1;
     sockaddr_in addr;
     addr.sin_family      = AF_INET;
@@ -772,7 +772,8 @@ Commissioner::~Commissioner()
     }
 
     close(mJoinerSessionClientFd);
-    if (mUdpListenFd > 0) {
+    if (mUdpListenFd > 0)
+    {
         close(mUdpListenFd);
     }
     mCoapAgent->RemoveResource(mUdpRxHandler);

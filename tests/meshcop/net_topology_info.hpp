@@ -87,8 +87,34 @@ struct NetworkInfo
     std::vector<LinkInfo> links;
 };
 
+/**
+ * This method dumps thread node information to json
+ *
+ * @param[in]    nodeInfo   thread node information
+ *
+ * @returns json serialization result
+ *
+ */
 Json::Value DumpNodeInfoToJson(const ot::BorderRouter::NodeInfo &nodeInfo);
+
+/**
+ * This method dumps thread link information to json
+ *
+ * @param[in]    nodeInfo   thread link information
+ *
+ * @returns json serialization result
+ *
+ */
 Json::Value DumpLinkInfoToJson(const ot::BorderRouter::LinkInfo &linkInfo);
+
+/**
+ * This method dumps thread network topology information to json
+ *
+ * @param[in]    nodeInfo   thread network topology information
+ *
+ * @returns json serialization result
+ *
+ */
 Json::Value DumpNetworkInfoToJson(const ot::BorderRouter::NetworkInfo &networkInfo);
 
 } // namespace BorderRouter

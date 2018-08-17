@@ -58,18 +58,72 @@ enum
 class TmfClient
 {
 public:
-    TmfClient(CommissionerProxy *proxy);
+    /**
+     * The constructor to initialize Tmf client
+     *
+     * @param[in]    aProxy         proxy to send and receive data through
+     *
+     */
+    TmfClient(CommissionerProxy *aProxy);
 
+    /**
+     * This method queries node information(mle address and rloc16) from thread node
+     *
+     * @param[in]    aAddr          thread node address
+     *
+     * @returns thread node information
+     *
+     */
     NodeInfo QueryNodeInfo(const in6_addr &aAddr);
 
+    /**
+     * This method queries all ipv6 addresses of a thread node
+     *
+     * @param[in]    aAddr          thread node address
+     *
+     * @returns all ipv6 addresses of node
+     *
+     */
     std::vector<struct in6_addr> QueryAllV6Addresses(const in6_addr &aAddr);
 
+    /**
+     * This method queries thread network leader data
+     *
+     * @param[in]    aAddr          thread node address
+     *
+     * @returns leader data of the network this node belongs to
+     *
+     */
     LeaderData QueryLeaderData(const in6_addr &aAddr);
 
+    /**
+     * This method queries all childs of a thread router
+     *
+     * @param[in]    aAddr          router node address
+     *
+     * @returns vector of all child information of this router
+     *
+     */
     std::vector<ChildTableEntry> QueryChildTable(const in6_addr &aAddr);
 
+    /**
+     * This method queries routing information from thread router node
+     *
+     * @param[in]    aAddr          router node address
+     *
+     * @returns vector of links established from this router
+     *
+     */
     std::vector<LinkInfo> QueryRouteInfo(const in6_addr &aAddr);
 
+    /**
+     * This method conducts a search over the thread network to extract topology
+     *
+     * @param[in]    aAddr          any node address in thread network
+     *
+     * @returns topology information of the network this node belongs to
+     *
+     */
     NetworkInfo TraverseNetwork(const in6_addr &aAddr);
 
     ~TmfClient();

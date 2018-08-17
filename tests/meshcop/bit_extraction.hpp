@@ -41,7 +41,7 @@ public:
     static typename BitTrait<end>::ValueType ExtractBitsFromZero(const uint8_t *aBuf);
 };
 
-template <size_t end> class Extractor<end, Condition<(end<8)> >
+template <size_t end> class Extractor<end, Condition<(end < 8)> >
 {
 public:
     static typename BitTrait<end>::ValueType ExtractBitsFromZero(const uint8_t *aBuf) { return (aBuf[0] >> (8 - end)); }
@@ -59,6 +59,17 @@ public:
     }
 };
 
+/**
+ * This method extracts bits within range [begin, end) from buffer
+ * to varaible with proper bit width, in original byte order
+ *
+ * @param[in]   begin         Template parameter, start bit position, need to be compile-time constant
+ * @param[in]   end           Template parameter, end bit position, need to be compile-time constant
+ * @param[in]   aBuf          Buffer to extract bit from
+ *
+ * @returns value extracted from bit range, type will be the smallest unsigned type to fit the bit width
+ *
+ */
 template <size_t begin, size_t end> typename BitTrait<end - begin>::ValueType ExtractBits(const uint8_t *aBuf)
 {
     static const uint8_t masks[] = {0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};

@@ -36,24 +36,25 @@
 #include <string.h>
 
 #include "addr_utils.hpp"
+#include "bit_extraction.hpp"
 #include "commissioner_utils.hpp"
 #include "tmf_client.hpp"
 #include "udp_encapsulation_tlv.hpp"
-#include "bit_extraction.hpp"
 
 namespace ot {
 namespace BorderRouter {
 
-enum {
+enum
+{
     kChildTimeoutBeginBit = 0,
-    kChildTimeoutEndBit = 5,
-    kChildIdBeginBit = 7,
-    kChildIdEndBit = 16,
-    kSelfRouteData = 0x01,
-    kOutQualityBeginBit = 0,
-    kInQaulityBeginBit = 2,
-    kRouteCostBeginBit = 4,
-    kRouteCostEndBit = 8,
+    kChildTimeoutEndBit   = 5,
+    kChildIdBeginBit      = 7,
+    kChildIdEndBit        = 16,
+    kSelfRouteData        = 0x01,
+    kOutQualityBeginBit   = 0,
+    kInQaulityBeginBit    = 2,
+    kRouteCostBeginBit    = 4,
+    kRouteCostEndBit      = 8,
 };
 
 const uint16_t TmfClient::kTmfPort   = 61631;
@@ -94,10 +95,10 @@ void TmfClient::HandleCoapResponse(const Coap::Message &aMessage, void *aContext
 
 size_t TmfClient::PostCoapAndWaitForResponse(sockaddr_in6 dest, const char *uri, uint8_t *payload, size_t length)
 {
-    int      ret;
-    uint8_t  buffer[kSizeMaxPacket];
+    int          ret;
+    uint8_t      buffer[kSizeMaxPacket];
     sockaddr_in6 srcAddr;
-    uint16_t token         = ++mCoapToken;
+    uint16_t     token     = ++mCoapToken;
     token                  = htons(token);
     Coap::Message *message = mCoapAgent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
                                                     reinterpret_cast<const uint8_t *>(&token), sizeof(token));
@@ -129,9 +130,9 @@ size_t TmfClient::PostCoapAndWaitForResponse(sockaddr_in6 dest, const char *uri,
 
 void TmfClient::QueryDiagnosticData(const struct in6_addr &destAddr, uint8_t queryType)
 {
-    uint8_t requestBuffer[kSizeMaxPacket];
+    uint8_t      requestBuffer[kSizeMaxPacket];
     sockaddr_in6 dest;
-    Tlv *   tlv = reinterpret_cast<Tlv *>(requestBuffer);
+    Tlv *        tlv = reinterpret_cast<Tlv *>(requestBuffer);
 
     dest.sin6_addr = destAddr;
     dest.sin6_port = htons(kTmfPort);
@@ -144,13 +145,13 @@ void TmfClient::QueryDiagnosticData(const struct in6_addr &destAddr, uint8_t que
 static std::vector<struct in6_addr> ParseAddressesTLV(const uint8_t *aBuffer)
 {
     std::vector<struct in6_addr> addresses;
-    const ot::Tlv *              tlv = reinterpret_cast<const Tlv *>(aBuffer);
-    uint16_t payloadLength = tlv->GetLength();
-    size_t                 addrCount = payloadLength / sizeof(struct in6_addr);
+    const ot::Tlv *              tlv           = reinterpret_cast<const Tlv *>(aBuffer);
+    uint16_t                     payloadLength = tlv->GetLength();
+    size_t                       addrCount     = payloadLength / sizeof(struct in6_addr);
 
     assert(tlv->GetType() == kAddressListType);
     assert(payloadLength % sizeof(struct in6_addr) == 0);
-    const struct in6_addr *payload   = reinterpret_cast<const struct in6_addr *>(tlv->GetValue());
+    const struct in6_addr *payload = reinterpret_cast<const struct in6_addr *>(tlv->GetValue());
     for (size_t i = 0; i < addrCount; i++)
     {
         addresses.push_back(payload[i]);
@@ -190,9 +191,9 @@ static std::vector<ChildTableEntry> ParseChildTableTlv(const uint8_t *aBuffer)
     std::vector<struct in6_addr> addresses;
     const ot::Tlv *              tlv = reinterpret_cast<const Tlv *>(aBuffer);
     assert(tlv->GetType() == kChildTableType);
-    uint16_t payloadLength = tlv->GetLength();
-    size_t                       childCount = payloadLength / kChildTableEntrySize;
-    const uint8_t *              payload    = reinterpret_cast<const uint8_t *>(tlv->GetValue());
+    uint16_t                     payloadLength = tlv->GetLength();
+    size_t                       childCount    = payloadLength / kChildTableEntrySize;
+    const uint8_t *              payload       = reinterpret_cast<const uint8_t *>(tlv->GetValue());
     std::vector<ChildTableEntry> childTable;
 
     childTable.reserve(childCount);
@@ -201,9 +202,9 @@ static std::vector<ChildTableEntry> ParseChildTableTlv(const uint8_t *aBuffer)
         ChildTableEntry entry;
         const uint8_t * nowEntry = payload + i * kChildTableEntrySize;
 
-        entry.timeOut            = ExtractBits<kChildTimeoutBeginBit, kChildTimeoutEndBit>(nowEntry);
-        entry.childID            = ExtractBits<kChildIdBeginBit, kChildIdEndBit>(nowEntry);
-        entry.mode               = nowEntry[2];
+        entry.timeOut = ExtractBits<kChildTimeoutBeginBit, kChildTimeoutEndBit>(nowEntry);
+        entry.childID = ExtractBits<kChildIdBeginBit, kChildIdEndBit>(nowEntry);
+        entry.mode    = nowEntry[2];
         childTable.push_back(entry);
     }
     return childTable;
@@ -323,7 +324,7 @@ NetworkInfo TmfClient::TraverseNetwork(const in6_addr &aAddr)
     struct in6_addr       rlocPrefix       = GetRlocPrefix(addresses);
     struct in6_addr       leaderRloc16Addr = ConcatRloc16Address(rlocPrefix, leaderData.routerID, 0);
 
-    networkInfo.leaderNode                 = GetNodeInfo(leaderRloc16Addr);
+    networkInfo.leaderNode = GetNodeInfo(leaderRloc16Addr);
     frontierRouterIDs.push_back(leaderData.routerID);
     visitedIDs.insert(leaderData.routerID);
     while (!frontierRouterIDs.empty())
@@ -337,7 +338,7 @@ NetworkInfo TmfClient::TraverseNetwork(const in6_addr &aAddr)
             uint8_t               routerID       = frontierRouterIDs[i];
             struct in6_addr       routerRlocAddr = ConcatRloc16Address(rlocPrefix, routerID, 0);
 
-            NodeInfo              routerNode     = GetNodeInfo(routerRlocAddr);
+            NodeInfo routerNode = GetNodeInfo(routerRlocAddr);
             networkInfo.nodes.push_back(routerNode);
 
             childNodes = GetChildNodes(rlocPrefix, routerID);

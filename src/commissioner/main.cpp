@@ -102,7 +102,9 @@ int main(int argc, char **argv)
             {
                 otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
                 break;
-            } else if (rval < 0 && errno == EINTR) {
+            }
+            else if (rval < 0 && errno == EINTR)
+            {
                 printf("Gracefully exit\n");
                 break;
             }

@@ -31,14 +31,14 @@
  *   The file is the header of commissioner proxy class
  */
 
-#include "commissioner_common.hpp"
 #include "commissioner_proxy.hpp"
+#include "commissioner_common.hpp"
 #include "commissioner_utils.hpp"
+#include "udp_encapsulation_tlv.hpp"
 #include <boost/bind/bind.hpp>
 #include <cassert>
-#include "common/logging.hpp"
 #include "common/code_utils.hpp"
-#include "udp_encapsulation_tlv.hpp"
+#include "common/logging.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -87,14 +87,14 @@ int CommissionerProxy::SendTo(const struct sockaddr_in6 &aDestAddr, const void *
     proxyServerAddr.sin_port        = htons(kCommissionerProxyPort);
     proxyServerAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    int ret =  sendto(mClientFd, buffer, utils::LengthOf(buffer, tlv), 0,
-                  reinterpret_cast<struct sockaddr *>(&proxyServerAddr), sizeof(proxyServerAddr));
+    int ret = sendto(mClientFd, buffer, utils::LengthOf(buffer, tlv), 0,
+                     reinterpret_cast<struct sockaddr *>(&proxyServerAddr), sizeof(proxyServerAddr));
     return ret;
 }
 
 int CommissionerProxy::RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 &aSrcAddr)
 {
-    int ret = 0, len;
+    int     ret = 0, len;
     uint8_t readBuffer[kSizeMaxPacket];
 
     VerifyOrExit((len = ret = recv(mClientFd, readBuffer, aLength, 0)) > 0);
@@ -110,11 +110,11 @@ int CommissionerProxy::RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 
         }
         else if (tlvType == Meshcop::kUdpEncapsulation)
         {
-            const UdpEncapsulationTlv *udpTlv = static_cast<const UdpEncapsulationTlv*>(tlv);
-            size_t   readLength = utils::Min<size_t>(udpTlv->GetUdpPayloadLength(), aLength);
-            uint16_t srcPort    = udpTlv->GetUdpSourcePort();
-            aSrcAddr.sin6_port = srcPort;
-            const uint8_t *udpPayload      = udpTlv->GetUdpPayload();
+            const UdpEncapsulationTlv *udpTlv     = static_cast<const UdpEncapsulationTlv *>(tlv);
+            size_t                     readLength = utils::Min<size_t>(udpTlv->GetUdpPayloadLength(), aLength);
+            uint16_t                   srcPort    = udpTlv->GetUdpSourcePort();
+            aSrcAddr.sin6_port                    = srcPort;
+            const uint8_t *udpPayload             = udpTlv->GetUdpPayload();
             memcpy(aBuf, udpPayload, readLength);
             ret = readLength;
         }

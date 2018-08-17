@@ -47,10 +47,33 @@ namespace BorderRouter {
 class CommissionerProxy
 {
 public:
+    /**
+     * The constructor to initialize Commissioner proxy
+     *
+     */
     CommissionerProxy();
 
+    /**
+     * This method send data through commission proxy
+     *
+     * @param[in]   aDestAddr       Destination address to send data to
+     * @param[in]   aBuf            Buffer of data
+     * @param[in]   aLength         length to send
+     *
+     * @returns upon success returns number of bytes sent, upon failure a negative value
+     */
     int SendTo(const struct sockaddr_in6 &aDestAddr, const void *aBuf, size_t aLength);
-    int RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 &srcAddr);
+
+    /**
+     * This method receives data from commission proxy
+     *
+     * @param[out]  aBuf            Buffer of data
+     * @param[in]   aLength         Length of buffer
+     * @param[out]  aSrcAddr        source address of packet
+     *
+     * @returns upon success returns number of bytes read, upon failure a negative value
+     */
+    int RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 &aSrcAddr);
 
     ~CommissionerProxy();
 
@@ -64,4 +87,4 @@ private:
 } // namespace BorderRouter
 } // namespace ot
 
-#endif //OTBR_COMMISSIONER_PROXY_HPP_
+#endif // OTBR_COMMISSIONER_PROXY_HPP_

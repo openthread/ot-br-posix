@@ -65,15 +65,9 @@ public:
         }
     }
 
-    void SetUdpSourcePort(uint16_t aSrcPort)
-    {
-        mSourcePort = htons(aSrcPort);
-    }
+    void SetUdpSourcePort(uint16_t aSrcPort) { mSourcePort = htons(aSrcPort); }
 
-    void SetUdpDestionationPort(uint16_t aDestPort)
-    {
-        mDestPort = htons(aDestPort);
-    }
+    void SetUdpDestionationPort(uint16_t aDestPort) { mDestPort = htons(aDestPort); }
 
     void SetUdpPayload(const void *aPayload, size_t aLength)
     {
