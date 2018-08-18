@@ -9,6 +9,8 @@ cache:
 
 before_install: .travis/before_install.sh
 script: .travis/script.sh
+after_success: bash <(curl -s https://codecov.io/bash)
+
 matrix:
   include:
     - env: BUILD_TARGET="pretty-check"

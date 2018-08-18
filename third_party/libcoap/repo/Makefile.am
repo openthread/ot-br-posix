@@ -29,7 +29,7 @@ EXTRA_DIST = \
 
 AM_CFLAGS = -I$(top_builddir)/include/coap -I$(top_srcdir)/include/coap $(WARNING_CFLAGS) -std=c99
 
-SUBDIRS = . $(DOC_DIR) tests examples
+SUBDIRS = . doc tests examples
 
 ## Define a libtool archive target "libcoap-@LIBCOAP_API_VERSION@.la", with
 ## @LIBCOAP_API_VERSION@ substituted into the generated Makefile at configure
@@ -173,6 +173,8 @@ distclean-local:
 
 ## Ensure we have actual *.{map,sym} files if we create a release tarball.
 dist-local: update-map-file
+
+$(lib_LTLIBRARIES): libcoap-$(LIBCOAP_API_VERSION).map libcoap-$(LIBCOAP_API_VERSION).sym
 
 ## Finaly some phony targets, just to ensure those targets are always buildable
 ## no matter if the user has created same called files.
