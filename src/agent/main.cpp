@@ -31,6 +31,7 @@
 #endif
 
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +48,11 @@ static const char kDefaultInterfaceName[] = "wpan0";
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 
+static void HandleSignal(int aSignal)
+{
+    signal(aSignal, SIG_DFL);
+}
+
 int Mainloop(const char *aInterfaceName)
 {
     int rval = EXIT_FAILURE;
@@ -55,6 +61,9 @@ int Mainloop(const char *aInterfaceName)
     SuccessOrExit(instance.Init());
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
+
+    // allow quitting elegantly
+    signal(SIGTERM, HandleSignal);
 
     while (true)
     {
@@ -71,7 +80,7 @@ int Mainloop(const char *aInterfaceName)
         instance.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
         rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
 
-        if ((rval < 0) && (errno != EINTR))
+        if (rval < 0)
         {
             rval = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
