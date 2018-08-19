@@ -550,61 +550,6 @@ exit:
     return ret;
 }
 
-otbrError ControllerWpantund::GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize)
-{
-    otbrError    ret   = OTBR_ERROR_ERRNO;
-    DBusMessage *reply = NULL;
-    DBusError    error;
-
-    dbus_error_init(&error);
-    VerifyOrExit(reply = RequestProperty(aKey));
-
-    {
-        uint8_t *buffer = NULL;
-        int      count  = 0;
-        uint32_t status = 0;
-
-        VerifyOrExit(dbus_message_get_args(reply, &error, DBUS_TYPE_INT32, &status, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE,
-                                           &buffer, &count, DBUS_TYPE_INVALID),
-                     errno = EINVAL);
-
-        assert(!dbus_error_is_set(&error));
-        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EINVAL);
-
-        aSize = static_cast<size_t>(count);
-        memcpy(aBuffer, buffer, aSize);
-    }
-
-    ret = OTBR_ERROR_NONE;
-
-exit:
-
-    if (dbus_error_is_set(&error))
-    {
-        HandleDBusError(error);
-    }
-
-    if (reply)
-    {
-        dbus_message_unref(reply);
-    }
-
-    return ret;
-}
-
-const uint8_t *ControllerWpantund::GetEui64(void)
-{
-    const uint8_t *ret  = NULL;
-    size_t         size = 0;
-
-    SuccessOrExit(GetProperty(kWPANTUNDProperty_NCPHardwareAddress, mEui64, size));
-    assert(size == kSizeEui64);
-    ret = mEui64;
-
-exit:
-    return ret;
-}
-
 Controller *Controller::Create(const char *aInterfaceName)
 {
     return new ControllerWpantund(aInterfaceName);

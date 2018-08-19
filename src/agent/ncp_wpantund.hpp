@@ -110,16 +110,6 @@ public:
     virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
     /**
-     * This method retrieves the Eui64.
-     *
-     * @returns The hardware address.
-     *
-     * @retval  NULL    Failed to get EUI64, error code set in errno.
-     *
-     */
-    virtual const uint8_t *GetEui64(void);
-
-    /**
      * This method request the event.
      *
      * @param[in]   aEvent              The event id to request.
@@ -143,7 +133,6 @@ private:
     DBusHandlerResult        HandlePropertyChangedSignal(DBusMessage &aMessage);
 
     DBusMessage *RequestProperty(const char *aKey);
-    otbrError    GetProperty(const char *aKey, uint8_t *aBuffer, size_t &aSize);
     otbrError    ParseEvent(const char *aKey, DBusMessageIter *aIter);
 
     otbrError UpdateInterfaceDBusPath();
