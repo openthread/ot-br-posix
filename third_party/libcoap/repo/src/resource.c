@@ -105,7 +105,7 @@ coap_free_subscription(coap_subscription_t *subscription) {
  
 static int
 match(const str *text, const str *pattern, int match_prefix, int match_substring) {
-  assert(text); assert(pattern);
+  assert(text); assert(pattern); assert(pattern->s);
   
   if (text->length < pattern->length)
     return 0;
