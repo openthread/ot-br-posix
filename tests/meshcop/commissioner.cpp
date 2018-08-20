@@ -108,6 +108,7 @@ Commissioner::Commissioner(const uint8_t *     aPskcBin,
                            int                 aKeepAliveRate)
     : mDtlsInitDone(false)
     , mRelayReceiveHandler(kRelayRxURI, Commissioner::HandleRelayReceive, this)
+    , mPetitionRetryCount(0)
     , mJoinerSession(kPortJoinerSession, aPskdAscii)
     , mSteeringData(aSteeringData)
     , mKeepAliveRate(aKeepAliveRate)
@@ -121,6 +122,8 @@ Commissioner::Commissioner(const uint8_t *     aPskcBin,
     connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
     mCoapAgent = Coap::Agent::Create(SendCoap, this);
     mCoapToken = rand();
+    mCoapAgent->AddResource(mRelayReceiveHandler);
+    mCommissionState = kStateInvalid;
 }
 
 ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
@@ -137,53 +140,7 @@ ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
     (void)aPort;
 }
 
-int Commissioner::TryReadCoapResponse(uint8_t *             aBuf,
-                                      size_t                aLength,
-                                      const struct timeval &aTimeout,
-                                      int                   aRetryTime,
-                                      CommissionState       aTargetState)
-{
-    int retryTime = 0;
-    int ret;
-
-    while (retryTime < aRetryTime)
-    {
-        timeval timeout = aTimeout;
-        fd_set  readFdSet;
-
-        FD_ZERO(&readFdSet);
-        FD_SET(mSslClientFd.fd, &readFdSet);
-        VerifyOrExit((ret = select(mSslClientFd.fd + 1, &readFdSet, NULL, NULL, &timeout)) > 0);
-        VerifyOrExit((ret = mbedtls_ssl_read(&mSsl, aBuf, aLength)) > 0);
-        mCoapAgent->Input(aBuf, static_cast<uint16_t>(ret), NULL, 0);
-        if (mCommissionState == aTargetState)
-        {
-            ret = 0;
-            break;
-        }
-        retryTime++;
-    }
-
-    // retry failed finally
-    if (retryTime >= aRetryTime)
-    {
-        ret = -1;
-    }
-exit:
-    return ret;
-}
-
-int Commissioner::Connect(const sockaddr_in &aAgentAddr)
-{
-    int ret;
-
-    SuccessOrExit(ret = DtlsHandShake(aAgentAddr));
-    SuccessOrExit(ret = BecomeCommissioner());
-exit:
-    return ret;
-}
-
-int Commissioner::DtlsHandShake(const sockaddr_in &aAgentAddr)
+int Commissioner::InitDtls(const sockaddr_in &aAgentAddr)
 {
     int  ret;
     char addressAscii[kIPAddrNameBufSize];
@@ -219,38 +176,22 @@ int Commissioner::DtlsHandShake(const sockaddr_in &aAgentAddr)
 
     mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mPskcBin, OT_PSKC_LENGTH);
 
-    otbrLog(OTBR_LOG_INFO, "connect: perform handshake");
-    do
-    {
-        ret = mbedtls_ssl_handshake(&mSsl);
-    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+exit:
+    return ret;
+}
 
-    if (ret != 0)
-    {
-        otbrLog(OTBR_LOG_ERR, "Handshake fails");
-    }
-    else
+int Commissioner::TryDtlsHandshake()
+{
+    int ret = mbedtls_ssl_handshake(&mSsl);
+    if (ret == 0)
     {
         mCommissionState = kStateConnected;
     }
-exit:
     return ret;
 }
 
-int Commissioner::BecomeCommissioner()
+void Commissioner::CommissionerPetition()
 {
-    int ret;
-
-    SuccessOrExit(ret = mCoapAgent->AddResource(mRelayReceiveHandler));
-    SuccessOrExit(ret = CommissionerPetition());
-    SuccessOrExit(ret = CommissionerSet());
-exit:
-    return ret;
-}
-
-int Commissioner::CommissionerPetition()
-{
-    int     ret        = -1;
     int     retryCount = 0;
     uint8_t buffer[kSizeMaxPacket];
     Tlv *   tlv = reinterpret_cast<Tlv *>(buffer);
@@ -259,34 +200,25 @@ int Commissioner::CommissionerPetition()
     uint16_t       token = ++mCoapToken;
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: start");
-    while ((mCommissionState == kStateConnected || mCommissionState == kStateRejected) &&
-           retryCount < kPetitionMaxRetry)
+    if (mCommissionState == kStateRejected)
     {
-        struct timeval timeout = {kCoapResponseWaitSecond, 0};
-        if (mCommissionState == kStateRejected)
-        {
-            sleep(kPetitionAttemptDelay);
-            retryCount++;
-        }
-        token   = htons(token);
-        message = mCoapAgent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
-                                         reinterpret_cast<const uint8_t *>(&token), sizeof(token));
-        tlv->SetType(Meshcop::kCommissionerId);
-        tlv->SetValue(kCommissionerId, sizeof(kCommissionerId));
-        tlv = tlv->GetNext();
-
-        message->SetPath(kCommPetURI);
-        message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
-        otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
-        mCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
-        mCoapAgent->FreeMessage(message);
-
-        ret = TryReadCoapResponse(buffer, sizeof(buffer), timeout, kCoapResponseRetryTime, kStateAccepted);
+        sleep(kPetitionAttemptDelay);
+        retryCount++;
     }
+    token   = htons(token);
+    message = mCoapAgent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost, reinterpret_cast<const uint8_t *>(&token),
+                                     sizeof(token));
+    tlv->SetType(Meshcop::kCommissionerId);
+    tlv->SetValue(kCommissionerId, sizeof(kCommissionerId));
+    tlv = tlv->GetNext();
+
+    message->SetPath(kCommPetURI);
+    message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
+    otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
+    mCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
+    mCoapAgent->FreeMessage(message);
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: complete");
-
-    return ret;
 }
 
 /** handle c/cp response */
@@ -340,16 +272,15 @@ void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, voi
 
     gettimeofday(&commissioner->mLastKeepAliveTime, NULL);
     otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: complete");
+
+    commissioner->CommissionerResponseNext();
 }
 
-int Commissioner::CommissionerSet()
+void Commissioner::CommissionerSet(const SteeringData &aSteeringData)
 {
-    int            ret   = 0;
     uint16_t       token = ++mCoapToken;
     uint8_t        buffer[kSizeMaxPacket];
-    Tlv *          tlv     = reinterpret_cast<Tlv *>(buffer);
-    struct timeval timeout = {kCoapResponseWaitSecond, 0};
-
+    Tlv *          tlv = reinterpret_cast<Tlv *>(buffer);
     Coap::Message *message;
 
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: start");
@@ -363,7 +294,7 @@ int Commissioner::CommissionerSet()
     tlv = tlv->GetNext();
 
     tlv->SetType(Meshcop::kSteeringData);
-    tlv->SetValue(mSteeringData.GetDataPointer(), mSteeringData.GetLength());
+    tlv->SetValue(aSteeringData.GetDataPointer(), aSteeringData.GetLength());
     tlv = tlv->GetNext();
 
     message->SetPath(kCommSetURI);
@@ -372,10 +303,6 @@ int Commissioner::CommissionerSet()
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: sent");
     mCoapAgent->Send(*message, NULL, 0, HandleCommissionerSet, this);
     mCoapAgent->FreeMessage(message);
-
-    ret = TryReadCoapResponse(buffer, sizeof(buffer), timeout, kCoapResponseRetryTime, kStateReady);
-
-    return ret;
 }
 
 void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aContext)
@@ -426,11 +353,34 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
         tlv = tlv->GetNext();
     }
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.rsp: complete");
+
+    commissioner->CommissionerResponseNext();
 }
 
-bool Commissioner::IsCommissioner()
+void Commissioner::CommissionerResponseNext()
 {
-    return mCommissionState == kStateReady;
+    if (mCommissionState == kStateAccepted)
+    {
+        CommissionerSet(mSteeringData);
+    }
+    else if (mCommissionState != kStateReady)
+    {
+        if (mCommissionState != kStateInvalid && mPetitionRetryCount < kPetitionMaxRetry)
+        {
+            mPetitionRetryCount++;
+            CommissionerPetition();
+        }
+        else
+        {
+            mCommissionState    = kStateInvalid;
+            mPetitionRetryCount = 0;
+        }
+    }
+}
+
+bool Commissioner::Valid()
+{
+    return mCommissionState != kStateInvalid;
 }
 
 void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
@@ -480,12 +430,11 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         }
     }
     gettimeofday(&nowTime, NULL);
-    if (mKeepAliveRate > 0 && nowTime.tv_sec - mLastKeepAliveTime.tv_sec > mKeepAliveRate)
+    if ((mCommissionState == kStateReady || mCommissionState == kStateAccepted) && mKeepAliveRate > 0 &&
+        nowTime.tv_sec - mLastKeepAliveTime.tv_sec > mKeepAliveRate)
     {
         CommissionerKeepAlive();
     }
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
 }
 
 void Commissioner::CommissionerKeepAlive()
@@ -549,8 +498,9 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
                 commissioner->mCommissionState = kStateReady;
                 break;
             case Meshcop::kStateRejected:
-                otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=accepted");
-                commissioner->mCommissionState = kStateRejected;
+                otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=rejected");
+                // state rejected is only used to retry petition
+                commissioner->mCommissionState = kStateInvalid;
                 break;
             default:
                 otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=%d", state);
@@ -565,6 +515,8 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
         tlv = tlv->GetNext();
     }
     otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: complete");
+
+    commissioner->CommissionerResponseNext();
 }
 
 void Commissioner::HandleRelayReceive(const Coap::Resource &aResource,

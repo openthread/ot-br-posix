@@ -44,7 +44,7 @@ namespace ot {
 namespace BorderRouter {
 
 /**
- * This method prints sockaddr struct to a string buffer
+ * This function prints sockaddr struct to a string buffer
  *
  * @param[in]    aAddr         address to print
  * @param[out]   aOutBuf       output buffer

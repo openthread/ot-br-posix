@@ -71,7 +71,7 @@ public:
      *
      * @param[in]    aPskcBin           binary form of pskc
      * @param[in]    aPskdAscii         ascii form of pskd
-     * @param[in]    aSteeringData      steering data to filter joiner
+     * @param[in]    aSteeringData      default steering data to filter joiner
      * @param[in]    aKeepAliveRate     send keep alive packet ever aKeepAliveRate seconds
      *
      */
@@ -79,19 +79,10 @@ public:
                  const char *        aPskdAscii,
                  const SteeringData &aSteeringData,
                  int                 aKeepAliveRate);
-    /**
-     * This method connects commissioner to otbr-agent
-     *
-     * @param[in]    aAgentAddr    address of otbr-agent
-     *
-     * @returns on success returns zero
-     *
-     */
-    int Connect(const sockaddr_in &aAgentAddr);
 
     /**
-     * This method updates the fd_set and timeout for mainloop. @p aTimeout should
-     * only be updated if session has pending process in less than its current value.
+     * This method updates the fd_set and timeout for mainloop.
+     * @p aTimeout should only be updated if session has pending process in less than its current value.
      *
      * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
      * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
@@ -113,12 +104,46 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
     /**
-     * This method returns whether we have become a commissioner
+     * This method returns whether the commissioner is valid
      *
-     * @returns true when ready to commission, false when handshake failed or rejected by leader
+     * @returns true when commissioner valid, false when uninitialized, rejected or unkown error
      *
      */
-    bool IsCommissioner();
+    bool Valid();
+
+    /**
+     * This method initialize the dtls session
+     *
+     * @param[in]   aAgentAddr      Address of border agent
+     *
+     * @returns 0 on success, MBEDTLS_ERR_XXX on failure
+     *
+     */
+    int InitDtls(const sockaddr_in &aAgentAddr);
+
+    /**
+     * This method initialize the dtls session
+     *
+     * @returns 0 on success,
+     *          MBEDTLS_ERR_SSL_WANT_READ or MBEDTLS_ERR_SSL_WANT_WRITE for pending, in which case
+     *          you need to call this method again,
+     *          or other SSL error code on failure
+     */
+    int TryDtlsHandshake();
+
+    /**
+     * This method sends commissioner petition coap request
+     *
+     */
+    void CommissionerPetition();
+
+    /**
+     * This method sends commissioner set coap request
+     *
+     * @param[in]    aSteeringData      steering data to filter joiner, overrrides data from constructor
+     *
+     */
+    void CommissionerSet(const SteeringData &aSteeringData);
 
     ~Commissioner();
 
@@ -136,9 +161,6 @@ private:
     Commissioner &operator=(const Commissioner &);
 
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
-    int  BecomeCommissioner();
-    int  CommissionerPetition();
-    int  CommissionerSet();
     void CommissionerKeepAlive();
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
@@ -147,15 +169,11 @@ private:
                             uint16_t       aPort,
                             void *         aContext);
 
-    int TryReadCoapResponse(uint8_t *             aBuf,
-                            size_t                aLength,
-                            const struct timeval &aTimeout,
-                            int                   aRetryTime,
-                            CommissionState       aTargetState);
-
     static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
     static void HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
     static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);
+    void        CommissionerResponseNext();
+
     static void HandleRelayReceive(const Coap::Resource &aResource,
                                    const Coap::Message & aMessage,
                                    Coap::Message &       aResponse,
@@ -177,6 +195,7 @@ private:
     Coap::Resource mRelayReceiveHandler;
 
     uint8_t  mPskcBin[OT_PSKC_LENGTH];
+    int      mPetitionRetryCount;
     uint16_t mCommissionerSessionId;
 
     JoinerSession mJoinerSession;

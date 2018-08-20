@@ -81,7 +81,7 @@ template <typename T> T Max(const T &lhs, const T &rhs)
     return lhs > rhs ? lhs : rhs;
 }
 
-} // namespace utils
+} // namespace Utils
 } // namespace BorderRouter
 } // namespace ot
 

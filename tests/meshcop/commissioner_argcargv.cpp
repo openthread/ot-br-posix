@@ -42,7 +42,7 @@
 namespace ot {
 namespace BorderRouter {
 
-/** see: commissioner_ArgcArgv.hpp, processes 1 command line parameter */
+/** see: commissioner_argcargv.hpp, processes 1 command line parameter */
 int ArgcArgv::ParseArgs(void)
 {
     const char *              arg;
@@ -84,7 +84,7 @@ int ArgcArgv::ParseArgs(void)
     return 0;
 }
 
-/** see: commissioner_ArgcArgv.hpp, fetch an --ARG STRING pair, storing the result */
+/** see: commissioner_argcargv.hpp, fetch an --ARG STRING pair, storing the result */
 const char *ArgcArgv::StrParam(char *puthere, size_t bufsiz)
 {
     const char *cp;
@@ -114,7 +114,7 @@ const char *ArgcArgv::StrParam(char *puthere, size_t bufsiz)
     return cp;
 }
 
-/** see: commissioner_ArgcArgv.hpp, fetch an --ARG HEXSTRING pair, and decode the hex string storing the result */
+/** see: commissioner_argcargv.hpp, fetch an --ARG HEXSTRING pair, and decode the hex string storing the result */
 void ArgcArgv::HexParam(char *ascii_puthere, uint8_t *bin_puthere, int bin_len)
 {
     int n;
@@ -130,7 +130,7 @@ void ArgcArgv::HexParam(char *ascii_puthere, uint8_t *bin_puthere, int bin_len)
     }
 }
 
-/** see: commissioner_ArgcArgv.hpp, fetch an --ARG NUMBER pair, returns the numeric value */
+/** see: commissioner_argcargv.hpp, fetch an --ARG NUMBER pair, returns the numeric value */
 int ArgcArgv::NumParam(void)
 {
     const char *s;
@@ -149,7 +149,7 @@ int ArgcArgv::NumParam(void)
     return v;
 }
 
-/** see: commissioner_ArgcArgv.hpp, constructor for the commissioner argc/argv parser */
+/** see: commissioner_argcargv.hpp, constructor for the commissioner argc/argv parser */
 ArgcArgv::ArgcArgv(int argc, char **argv)
 {
     mARGC = argc;
@@ -159,7 +159,7 @@ ArgcArgv::ArgcArgv(int argc, char **argv)
     memset(&(mOpts[0]), 0, sizeof(mOpts));
 }
 
-/** see: commissioner_ArgcArgv.hpp, add an option to be decoded and its handler */
+/** see: commissioner_argcargv.hpp, add an option to be decoded and its handler */
 void ArgcArgv::AddOption(const char *name,
                          void (*handler)(ArgcArgv *pThis, CommissionerArgs *args),
                          const char *valuehelp,
@@ -191,7 +191,7 @@ void ArgcArgv::AddOption(const char *name,
     opt->valuehelp = valuehelp;
 }
 
-/** see: commissioner_ArgcArgv.hpp, print error message & application usage */
+/** see: commissioner_argcargv.hpp, print error message & application usage */
 void ArgcArgv::usage(const char *fmt, ...)
 {
     va_list ap;

@@ -100,7 +100,9 @@ int main(int argc, char **argv)
 
     if (args.mNeedCommissionDevice)
     {
-        int kaRate = args.mSendCommKATxRate;
+        int         kaRate = args.mSendCommKATxRate;
+        sockaddr_in addr;
+        int         ret;
 
         if (!args.mNeedSendCommKA)
         {
@@ -108,12 +110,16 @@ int main(int argc, char **argv)
         }
         srand(time(0));
         Commissioner commissioner(pskcBin, args.mJoinerPSKdAscii, steeringData, kaRate);
-        sockaddr_in  addr;
         addr.sin_family = AF_INET;
         addr.sin_port   = htons(atoi(args.mAgentPort_ascii));
         inet_pton(AF_INET, args.mAgentAddress_ascii, &addr.sin_addr);
-        commissioner.Connect(addr);
-        while (commissioner.IsCommissioner())
+        commissioner.InitDtls(addr);
+        do
+        {
+            ret = commissioner.TryDtlsHandshake();
+        } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+        commissioner.CommissionerPetition();
+        while (commissioner.Valid())
         {
             int            maxFd   = -1;
             struct timeval timeout = {10, 0};
