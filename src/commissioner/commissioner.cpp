@@ -38,12 +38,11 @@
 #include <string.h>
 
 #include "commissioner.hpp"
-#include "utils/misc.hpp"
 #include "agent/uris.hpp"
-#include "udp_encapsulation_tlv.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
+#include "common/udp_encapsulation_tlv.hpp"
 #include "utils/addr.hpp"
 #include "utils/hex.hpp"
 #include "utils/misc.hpp"
@@ -116,8 +115,8 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port        = htons(kJoinerSessionPort);
-    mCoapAgent = Coap::Agent::Create(SendCoap, this);
-    mCoapToken = rand();
+    mCoapAgent           = Coap::Agent::Create(SendCoap, this);
+    mCoapToken           = rand();
     mCoapAgent->AddResource(mRelayReceiveHandler);
     mCoapAgent->AddResource(mUdpRxHandler);
     mCommissionState = kStateInvalid;

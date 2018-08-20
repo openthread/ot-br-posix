@@ -42,6 +42,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
+#include "utils/misc.hpp"
 
 using namespace ot;
 using namespace ot::BorderRouter;
@@ -64,12 +65,19 @@ int main(int argc, char **argv)
 
     srand(time(0));
 
+    if (args.mNeedCommissionDevice)
     {
-        Commissioner commissioner(args.mPSKc, args.mKeepAliveInterval);
-        bool         joinerSetDone = false;
+        int  kaRate = args.mSendCommKATxRate;
+        int  ret;
+        bool joinerSetDone = false;
 
-        commissioner.InitDtls(args.mAgentHost, args.mAgentPort);
-
+        if (!args.mNeedSendCommKA)
+        {
+            kaRate = 0;
+        }
+        srand(time(0));
+        Commissioner commissioner(pskcBin, kaRate);
+        commissioner.InitDtls(args.mAgentAddress_ascii, args.mAgentPort_ascii);
         do
         {
             ret = commissioner.TryDtlsHandshake();

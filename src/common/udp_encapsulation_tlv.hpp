@@ -28,52 +28,60 @@
 
 /**
  * @file
- *   The file provides a utility to extract net topology given ipv6 address of a thread node
+ *   The file is the header for the udp encapsulation tlv
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef OTBR_UDP_ENCAPSULATION_TLV_HPP_
+#define OTBR_UDP_ENCAPSULATION_TLV_HPP_
 
-#include "commissioner_proxy.hpp"
-#include "tmf_client.hpp"
+#include "arpa/inet.h"
+#include "common/tlv.hpp"
 
-using namespace ot;
-using namespace ot::BorderRouter;
+namespace ot {
 
-int main(int argc, char *argv[])
+class UdpEncapsulationTlv : public Tlv
 {
-    CommissionerProxy  p;
-    TmfClient          client(&p);
-    Json::StyledWriter writer;
-    struct in6_addr    destAddr;
+public:
+    uint16_t GetUdpSourcePort() const { return ntohs(mSourcePort); }
 
-    if (argc != 3)
+    uint16_t GetUdpDestionationPort() const { return ntohs(mDestPort); }
+
+    const uint8_t *GetUdpPayload() const
     {
-        printf("Usage: tmf_client node_address save_file_name");
+        return reinterpret_cast<const uint8_t *>(this) + sizeof(UdpEncapsulationTlv);
     }
-    else
+
+    uint8_t GetUdpPayloadLength() const
     {
-        srand(time(0));
-        inet_pton(AF_INET6, argv[1], &destAddr);
+        uint8_t portDataLength = 2 * sizeof(uint16_t);
+        if (GetLength() < portDataLength)
         {
-            std::vector<struct in6_addr> addrs = client.QueryAllV6Addresses(destAddr);
-
-            for (size_t i = 0; i < addrs.size(); i++)
-            {
-                char nameBuffer[100];
-                inet_ntop(AF_INET6, &addrs[i], nameBuffer, sizeof(nameBuffer));
-                printf("Addr %s\n", nameBuffer);
-            }
+            return 0;
         }
-
+        else
         {
-            NetworkInfo networkInfo = client.TraverseNetwork(destAddr);
-
-            std::string s  = writer.write(DumpNetworkInfoToJson(networkInfo));
-            FILE *      fp = fopen(argv[2], "w");
-            fprintf(fp, "%s", s.c_str());
-            fclose(fp);
+            return GetLength() - portDataLength;
         }
     }
-    return 0;
-}
+
+    void SetUdpSourcePort(uint16_t aSrcPort) { mSourcePort = htons(aSrcPort); }
+
+    void SetUdpDestionationPort(uint16_t aDestPort) { mDestPort = htons(aDestPort); }
+
+    void SetUdpPayload(const void *aPayload, size_t aLength)
+    {
+        uint8_t tlvLength = aLength + sizeof(mSourcePort) + sizeof(mDestPort);
+        SetLength(tlvLength, true);
+
+        memcpy(reinterpret_cast<uint8_t *>(this) + sizeof(UdpEncapsulationTlv), aPayload, aLength);
+    }
+
+private:
+    uint16_t mLengthExtended;
+    uint16_t mSourcePort;
+    uint16_t mDestPort;
+};
+
+} // namespace ot
+
+#endif // OTBR_UDP_ENCAPSULATION_TLV_HPP_

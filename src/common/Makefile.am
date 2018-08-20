@@ -33,6 +33,7 @@ noinst_HEADERS                                        = \
     event_emitter.hpp                                   \
     time.hpp                                            \
     tlv.hpp                                             \
+    udp_encapsulation_tlv.hpp                           \
     types.hpp                                           \
     logging.hpp                                         \
     $(NULL)

@@ -32,10 +32,10 @@
  */
 
 #include "joiner_session.hpp"
-#include "utils/misc.hpp"
 #include "agent/uris.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
+#include "utils/misc.hpp"
 
 namespace ot {
 namespace BorderRouter {
