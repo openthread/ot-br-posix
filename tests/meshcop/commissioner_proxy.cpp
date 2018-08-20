@@ -32,7 +32,7 @@
  */
 
 #include "commissioner_proxy.hpp"
-#include "commissioner_common.hpp"
+#include "commissioner_constants.hpp"
 #include "commissioner_utils.hpp"
 #include "udp_encapsulation_tlv.hpp"
 #include <boost/bind/bind.hpp>
@@ -87,7 +87,7 @@ int CommissionerProxy::SendTo(const struct sockaddr_in6 &aDestAddr, const void *
     proxyServerAddr.sin_port        = htons(kCommissionerProxyPort);
     proxyServerAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-    int ret = sendto(mClientFd, buffer, utils::LengthOf(buffer, tlv), 0,
+    int ret = sendto(mClientFd, buffer, Utils::LengthOf(buffer, tlv), 0,
                      reinterpret_cast<struct sockaddr *>(&proxyServerAddr), sizeof(proxyServerAddr));
     return ret;
 }
@@ -98,7 +98,7 @@ int CommissionerProxy::RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 
     uint8_t readBuffer[kSizeMaxPacket];
 
     VerifyOrExit((len = ret = recv(mClientFd, readBuffer, aLength, 0)) > 0);
-    for (const Tlv *tlv = reinterpret_cast<const Tlv *>(readBuffer); utils::LengthOf(readBuffer, tlv) < len;
+    for (const Tlv *tlv = reinterpret_cast<const Tlv *>(readBuffer); Utils::LengthOf(readBuffer, tlv) < len;
          tlv            = tlv->GetNext())
     {
         int tlvType = tlv->GetType();
@@ -111,7 +111,7 @@ int CommissionerProxy::RecvFrom(void *aBuf, size_t aLength, struct sockaddr_in6 
         else if (tlvType == Meshcop::kUdpEncapsulation)
         {
             const UdpEncapsulationTlv *udpTlv     = static_cast<const UdpEncapsulationTlv *>(tlv);
-            size_t                     readLength = utils::Min<size_t>(udpTlv->GetUdpPayloadLength(), aLength);
+            size_t                     readLength = Utils::Min<size_t>(udpTlv->GetUdpPayloadLength(), aLength);
             uint16_t                   srcPort    = udpTlv->GetUdpSourcePort();
             aSrcAddr.sin6_port                    = srcPort;
             const uint8_t *udpPayload             = udpTlv->GetUdpPayload();

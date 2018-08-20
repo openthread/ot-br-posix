@@ -86,7 +86,7 @@ void TmfClient::HandleCoapResponse(const Coap::Message &aMessage, void *aContext
     uint16_t       length;
     const uint8_t *payload    = aMessage.GetPayload(length);
     TmfClient *    client     = static_cast<TmfClient *>(aContext);
-    size_t         copyLength = utils::Min<size_t>(sizeof(client->mResponseBuffer), length);
+    size_t         copyLength = Utils::Min<size_t>(sizeof(client->mResponseBuffer), length);
 
     memcpy(client->mResponseBuffer, payload, copyLength);
     client->mResponseSize    = copyLength;
@@ -139,7 +139,7 @@ void TmfClient::QueryDiagnosticData(const struct in6_addr &destAddr, uint8_t que
     tlv->SetType(kTypeListTlvType);
     tlv->SetValue(queryType);
     tlv = tlv->GetNext();
-    PostCoapAndWaitForResponse(dest, kDiagUri, requestBuffer, utils::LengthOf(requestBuffer, tlv));
+    PostCoapAndWaitForResponse(dest, kDiagUri, requestBuffer, Utils::LengthOf(requestBuffer, tlv));
 }
 
 static std::vector<struct in6_addr> ParseAddressesTLV(const uint8_t *aBuffer)

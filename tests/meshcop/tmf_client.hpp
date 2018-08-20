@@ -38,7 +38,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 
-#include "commissioner_common.hpp"
+#include "commissioner_constants.hpp"
 #include "commissioner_proxy.hpp"
 #include "net_topology_info.hpp"
 #include "agent/coap.hpp"
