@@ -126,7 +126,7 @@ void JoinerSession::HandleJoinerFinalize(const Coap::Resource &aResource,
 
     // Piggyback response
     aResponse.SetCode(Coap::kCodeChanged);
-    aResponse.SetPayload(payload, utils::LengthOf(payload, responseTlv));
+    aResponse.SetPayload(payload, Utils::LengthOf(payload, responseTlv));
 
     (void)aResource;
     (void)aRequest;
@@ -160,7 +160,7 @@ void JoinerSession::MarkKekSent()
 
 void JoinerSession::GetKek(uint8_t *aBuf, size_t aBufSize)
 {
-    memcpy(aBuf, mKek, utils::Min(sizeof(mKek), aBufSize));
+    memcpy(aBuf, mKek, Utils::Min(sizeof(mKek), aBufSize));
 }
 
 JoinerSession::~JoinerSession()

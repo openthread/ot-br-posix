@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "commissioner_common.hpp"
+#include "commissioner_constants.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
 namespace ot {

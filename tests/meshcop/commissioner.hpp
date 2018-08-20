@@ -54,7 +54,7 @@
 #include <mbedtls/timing.h>
 #include <sys/time.h>
 
-#include "commissioner_common.hpp"
+#include "commissioner_constants.hpp"
 #include "joiner_session.hpp"
 #include "agent/coap.hpp"
 #include "utils/steeringdata.hpp"

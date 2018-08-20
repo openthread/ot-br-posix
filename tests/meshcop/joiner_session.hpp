@@ -38,7 +38,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 
-#include "commissioner_common.hpp"
+#include "commissioner_constants.hpp"
 #include "agent/coap.hpp"
 #include "agent/dtls.hpp"
 #include "web/pskc-generator/pskc.hpp"

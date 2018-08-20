@@ -228,9 +228,11 @@ int Commissioner::DtlsHandShake(const sockaddr_in &aAgentAddr)
     if (ret != 0)
     {
         otbrLog(OTBR_LOG_ERR, "Handshake fails");
-        goto exit;
     }
-    mCommissionState = kStateConnected;
+    else
+    {
+        mCommissionState = kStateConnected;
+    }
 exit:
     return ret;
 }
@@ -274,7 +276,7 @@ int Commissioner::CommissionerPetition()
         tlv = tlv->GetNext();
 
         message->SetPath(kCommPetURI);
-        message->SetPayload(buffer, utils::LengthOf(buffer, tlv));
+        message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
         otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
         mCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
         mCoapAgent->FreeMessage(message);
@@ -300,7 +302,7 @@ void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, voi
     payload = aMessage.GetPayload(length);
     tlv     = reinterpret_cast<const Tlv *>(payload);
 
-    while (utils::LengthOf(payload, tlv) < length)
+    while (Utils::LengthOf(payload, tlv) < length)
     {
         int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
 
@@ -366,7 +368,7 @@ int Commissioner::CommissionerSet()
 
     message->SetPath(kCommSetURI);
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: coap-uri: %s", "c/cs");
-    message->SetPayload(buffer, utils::LengthOf(buffer, tlv));
+    message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: sent");
     mCoapAgent->Send(*message, NULL, 0, HandleCommissionerSet, this);
     mCoapAgent->FreeMessage(message);
@@ -388,7 +390,7 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
     payload = (aMessage.GetPayload(length));
     tlv     = reinterpret_cast<const Tlv *>(payload);
 
-    while (utils::LengthOf(payload, tlv) < length)
+    while (Utils::LengthOf(payload, tlv) < length)
     {
         int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
 
@@ -438,9 +440,9 @@ void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
                                timeval &aTimeout)
 {
     FD_SET(mSslClientFd.fd, &aReadFdSet);
-    aMaxFd = utils::Max(mSslClientFd.fd, aMaxFd);
+    aMaxFd = Utils::Max(mSslClientFd.fd, aMaxFd);
     FD_SET(mJoinerSessionClientFd, &aReadFdSet);
-    aMaxFd = utils::Max(mJoinerSessionClientFd, aMaxFd);
+    aMaxFd = Utils::Max(mJoinerSessionClientFd, aMaxFd);
     mJoinerSession.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
 }
 
@@ -505,7 +507,7 @@ void Commissioner::CommissionerKeepAlive()
     tlv = tlv->GetNext();
 
     message->SetPath(kCommKaURI);
-    message->SetPayload(buffer, utils::LengthOf(buffer, tlv));
+    message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
 
     otbrLog(OTBR_LOG_INFO, "COMM_KA.req: send");
     gettimeofday(&mLastKeepAliveTime, NULL);
@@ -532,7 +534,7 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
     payload = (aMessage.GetPayload(length));
     tlv     = reinterpret_cast<const Tlv *>(payload);
 
-    while (utils::LengthOf(payload, tlv) < length)
+    while (Utils::LengthOf(payload, tlv) < length)
     {
         int8_t state = static_cast<int8_t>(tlv->GetValueUInt8());
 
@@ -578,7 +580,7 @@ void Commissioner::HandleRelayReceive(const Coap::Resource &aResource,
     Commissioner * commissioner = static_cast<Commissioner *>(aContext);
     const uint8_t *payload      = aMessage.GetPayload(length);
 
-    for (const Tlv *requestTlv = reinterpret_cast<const Tlv *>(payload); utils::LengthOf(payload, requestTlv) < length;
+    for (const Tlv *requestTlv = reinterpret_cast<const Tlv *>(payload); Utils::LengthOf(payload, requestTlv) < length;
          requestTlv            = requestTlv->GetNext())
     {
         tlvType = requestTlv->GetType();
@@ -663,7 +665,7 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
         message = mCoapAgent->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
                                          reinterpret_cast<const uint8_t *>(&token), sizeof(token));
         message->SetPath(kRelayTxURI);
-        message->SetPayload(payload, utils::LengthOf(payload, responseTlv));
+        message->SetPayload(payload, Utils::LengthOf(payload, responseTlv));
         otbrLog(OTBR_LOG_INFO, "RELAY_tx.req: send");
         mCoapAgent->Send(*message, NULL, 0, NULL, this);
         mCoapAgent->FreeMessage(message);

@@ -46,7 +46,7 @@ namespace BorderRouter {
  *
  * @param[in]    aExtPanIdBin      extended pan id in binary form
  * @param[in]    aNetworkName      network name in string form
- * @param[in]    aPassPhrase       commissioner passphrase in string form
+ * @param[in]    aPassphrase       commissioner passphrase in string form
  * @param[out]   aPskcOutBuf       output buffer for pskc
  *
  */

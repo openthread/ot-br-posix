@@ -43,7 +43,7 @@
 
 namespace ot {
 namespace BorderRouter {
-namespace utils {
+namespace Utils {
 
 /**
  * This method computes number of bytes between start and end pointer

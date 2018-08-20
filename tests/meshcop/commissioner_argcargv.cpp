@@ -351,7 +351,6 @@ static void handle_pskc_bin(ArgcArgv *pThis, CommissionerArgs *args)
 {
     pThis->HexParam(args->mPSKcAscii, args->mPSKcBin, sizeof(args->mPSKcBin));
     args->mHasPSKc = true;
-    // otbrLog(OTBR_LOG_INFO, "PSKC on command line is: %s\n", gContext.mAgent.mPSKc.ascii);
 }
 
 /** handle the xpanid command line parameter */
@@ -388,9 +387,6 @@ static void handle_compute_pskc(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)pThis;
     args->mNeedComputePSKc = true;
-    /* we print this in a way scripts can easily parse */
-    // fprintf(stdout, "PSKc: %s\n", gContext.mAgent.mPSKc.ascii);
-    // exit(EXIT_SUCCESS);
 }
 
 /** commandline handling for flag that says we commission (not test) */
@@ -405,11 +401,6 @@ static void handle_compute_hashmac(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)pThis;
     args->mNeedComputeJoinerHashMac = true;
-
-    /* print so scripts can easily parse */
-    // fprintf(stdout, "eiu64: %s\n", gContext.mJoiner.mEui64.ascii);
-    // fprintf(stdout, "hashmac: %s\n", gContext.mJoiner.mHashMac.ascii);
-    // exit(EXIT_SUCCESS);
 }
 
 /** compute steering based on command line */
@@ -417,18 +408,6 @@ static void handle_compute_steering(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)pThis;
     args->mNeedComputeJoinerSteering = true;
-
-    // CommissionerComputeSteering();
-
-    ///* print so scripts can easily parse */
-    // fprintf(stdout, "eiu64: %s\n", gContext.mJoiner.mEui64.ascii);
-    // fprintf(stdout, "hashmac: %s\n", gContext.mJoiner.mHashMac.ascii);
-    // fprintf(stdout, "steering-len: %d\n", gContext.mJoiner.mSteeringData.GetLength());
-    // fprintf(stdout, "steering-hex: %s\n",
-    //        CommissionerUtilsHexString(gContext.mJoiner.mSteeringData.GetDataPointer(),
-    //                                   gContext.mJoiner.mSteeringData.GetLength()));
-
-    // exit(EXIT_SUCCESS);
 }
 
 /** handle debug level on command line */

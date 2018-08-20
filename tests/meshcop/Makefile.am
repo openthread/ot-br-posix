@@ -34,7 +34,7 @@ noinst_HEADERS                                        = \
     addr_utils.hpp                                      \
     commissioner.hpp                                    \
     commissioner_argcargv.hpp                           \
-    commissioner_common.hpp                             \
+    commissioner_constants.hpp                          \
     commissioner_utils.hpp                              \
     device_hash.hpp                                     \
     joiner_session.hpp                                  \
