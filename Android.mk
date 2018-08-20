@@ -43,11 +43,11 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/third_party/wpantund/repo/src/wpanctl \
     $(LOCAL_PATH)/third_party/wpantund/repo/third_party/assert-macros \
     $(LOCAL_PATH)/third_party/wpantund/repo/third_party/openthread/src/ncp \
-	$(NULL)
+    $(NULL)
 
 LOCAL_CFLAGS := \
     -DPACKAGE_VERSION=\"0.01.00\" \
-	$(NULL)
+    $(NULL)
 
 LOCAL_SRC_FILES := \
     third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
@@ -56,10 +56,10 @@ LOCAL_SRC_FILES := \
     src/agent/mdns_mdnssd.cpp \
     src/agent/main.cpp \
     src/agent/ncp_wpantund.cpp \
-	src/common/event_emitter.cpp \
-	src/common/logging.cpp \
-	src/utils/hex.cpp \
-	$(NULL)
+    src/common/event_emitter.cpp \
+    src/common/logging.cpp \
+    src/utils/hex.cpp \
+    $(NULL)
 
 LOCAL_SHARED_LIBRARIES := libdbus libmdnssd
 
