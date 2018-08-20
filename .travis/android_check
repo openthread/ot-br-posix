@@ -825,6 +825,8 @@ main()
     prepare_dbus
     prepare_libmdnssd
 
+    make showcommands libdbus
+    make showcommands libmdnssd
     make showcommands otbr-agent
 
     test -f out/target/product/generic/system/bin/otbr-agent
