@@ -787,7 +787,7 @@ prepare_libmdnssd()
 
     wget "https://opensource.apple.com/tarballs/mDNSResponder/$MDNSRESPONDER_SOURCE.tar.gz"
     tar xvf "$MDNSRESPONDER_SOURCE.tar.gz"
-    cat > "${MDNSRESPONDER_SOURCE}/mDNSShared/Android.mk" <<EOF
+    cat > "${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
 
 include \$(CLEAR_VARS)
@@ -825,8 +825,6 @@ main()
     prepare_dbus
     prepare_libmdnssd
 
-    make showcommands libdbus
-    make showcommands libmdnssd
     make showcommands otbr-agent
 
     test -f out/target/product/generic/system/bin/otbr-agent
