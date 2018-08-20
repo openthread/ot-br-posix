@@ -83,14 +83,14 @@ int main(int argc, char **argv)
         ComputeHashMac(args.mJoinerEui64Bin, hashMacBin);
         Utils::Bytes2Hex(args.mJoinerEui64Bin, kEui64Len, eui64Ascii);
         Utils::Bytes2Hex(hashMacBin, kEui64Len, hashMacAscii);
-        fprintf(stdout, "eiu64: %s\n", eui64Ascii);
+        fprintf(stdout, "eui64: %s\n", eui64Ascii);
         fprintf(stdout, "hashmac: %s\n", hashMacAscii);
         if (args.mNeedComputeJoinerSteering)
         {
             char *steeringDataAscii = new char[2 * steeringData.GetLength() + 1];
 
             steeringDataAscii[2 * steeringData.GetLength()] = 0;
-            Utils::Bytes2Hex(steeringData.GetDataPointer(), steeringData.GetLength(), steeringDataAscii);
+            Utils::Bytes2Hex(steeringData.GetData(), steeringData.GetLength(), steeringDataAscii);
             fprintf(stdout, "steering-len: %d\n", steeringData.GetLength());
             fprintf(stdout, "steering-hex: %s\n", steeringDataAscii);
             delete[] steeringDataAscii;
@@ -118,8 +118,11 @@ int main(int argc, char **argv)
         {
             ret = commissioner.TryDtlsHandshake();
         } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
-        commissioner.CommissionerPetition();
-        while (commissioner.Valid())
+        if (commissioner.IsValid())
+        {
+            commissioner.CommissionerPetition();
+        }
+        while (commissioner.IsValid())
         {
             int            maxFd   = -1;
             struct timeval timeout = {10, 0};

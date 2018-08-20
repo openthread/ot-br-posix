@@ -60,9 +60,9 @@ inline uint16_t LengthOf(const void *aStart, const void *aEnd)
 }
 
 /**
- * This method returns max of two parameters
+ * This method returns min of two parameters
  *
- * @returns max of two parameters
+ * @returns min of two parameters
  *
  */
 template <typename T> T Min(const T &lhs, const T &rhs)
@@ -71,9 +71,9 @@ template <typename T> T Min(const T &lhs, const T &rhs)
 }
 
 /**
- * This method returns min of two parameters
+ * This method returns max of two parameters
  *
- * @returns min of two parameters
+ * @returns max of two parameters
  *
  */
 template <typename T> T Max(const T &lhs, const T &rhs)

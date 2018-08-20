@@ -193,7 +193,7 @@ public:
      * This method returns a pointer to the steering data.
      * @sa GetByteCount() to determine the length
      */
-    const uint8_t *GetDataPointer(void) const { return &mSteeringData[0]; }
+    const uint8_t *GetData(void) const { return &mSteeringData[0]; }
 
 private:
     /* SPEC states steering ata can be upto 16 bytes long */

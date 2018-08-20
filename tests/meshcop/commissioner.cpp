@@ -39,6 +39,7 @@
 #include "addr_utils.hpp"
 #include "commissioner.hpp"
 #include "commissioner_utils.hpp"
+#include "agent/uris.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
@@ -52,11 +53,6 @@ const uint16_t Commissioner::kPortJoinerSession      = 49192;
 const uint8_t  Commissioner::kSeed[]                 = "Commissioner";
 const int      Commissioner::kCipherSuites[]         = {MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8, 0};
 const char     Commissioner::kCommissionerId[]       = "OpenThread";
-const char     Commissioner::kCommPetURI[]           = "c/cp";
-const char     Commissioner::kCommSetURI[]           = "c/cs";
-const char     Commissioner::kCommKaURI[]            = "c/ca";
-const char     Commissioner::kRelayRxURI[]           = "c/rx";
-const char     Commissioner::kRelayTxURI[]           = "c/tx";
 const int      Commissioner::kCoapResponseWaitSecond = 10;
 const int      Commissioner::kCoapResponseRetryTime  = 2;
 
@@ -107,23 +103,26 @@ Commissioner::Commissioner(const uint8_t *     aPskcBin,
                            const SteeringData &aSteeringData,
                            int                 aKeepAliveRate)
     : mDtlsInitDone(false)
-    , mRelayReceiveHandler(kRelayRxURI, Commissioner::HandleRelayReceive, this)
+    , mRelayReceiveHandler(OT_URI_PATH_RELAY_RX, Commissioner::HandleRelayReceive, this)
     , mPetitionRetryCount(0)
     , mJoinerSession(kPortJoinerSession, aPskdAscii)
     , mSteeringData(aSteeringData)
     , mKeepAliveRate(aKeepAliveRate)
 {
-    memcpy(mPskcBin, aPskcBin, sizeof(mPskcBin));
-    mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in addr;
+
+    memcpy(mPskcBin, aPskcBin, sizeof(mPskcBin));
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port        = htons(kPortJoinerSession);
-    connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
-    mCoapAgent = Coap::Agent::Create(SendCoap, this);
-    mCoapToken = rand();
+    mCoapAgent           = Coap::Agent::Create(SendCoap, this);
+    mCoapToken           = rand();
     mCoapAgent->AddResource(mRelayReceiveHandler);
     mCommissionState = kStateInvalid;
+    VerifyOrExit((mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0)) > 0);
+    SuccessOrExit(connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
+exit:
+    return;
 }
 
 ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
@@ -187,6 +186,10 @@ int Commissioner::TryDtlsHandshake()
     {
         mCommissionState = kStateConnected;
     }
+    else if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+    {
+        mCommissionState = kStateInvalid;
+    }
     return ret;
 }
 
@@ -212,7 +215,7 @@ void Commissioner::CommissionerPetition()
     tlv->SetValue(kCommissionerId, sizeof(kCommissionerId));
     tlv = tlv->GetNext();
 
-    message->SetPath(kCommPetURI);
+    message->SetPath(OT_URI_PATH_COMMISSIONER_PETITION);
     message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: send");
     mCoapAgent->Send(*message, NULL, 0, HandleCommissionerPetition, this);
@@ -294,10 +297,10 @@ void Commissioner::CommissionerSet(const SteeringData &aSteeringData)
     tlv = tlv->GetNext();
 
     tlv->SetType(Meshcop::kSteeringData);
-    tlv->SetValue(aSteeringData.GetDataPointer(), aSteeringData.GetLength());
+    tlv->SetValue(aSteeringData.GetData(), aSteeringData.GetLength());
     tlv = tlv->GetNext();
 
-    message->SetPath(kCommSetURI);
+    message->SetPath(OT_URI_PATH_COMMISSIONER_SET);
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: coap-uri: %s", "c/cs");
     message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
     otbrLog(OTBR_LOG_INFO, "COMMISSIONER_SET.req: sent");
@@ -363,7 +366,7 @@ void Commissioner::CommissionerResponseNext()
     {
         CommissionerSet(mSteeringData);
     }
-    else if (mCommissionState != kStateReady)
+    else if (mCommissionState == kStateConnected || mCommissionState == kStateRejected)
     {
         if (mCommissionState != kStateInvalid && mPetitionRetryCount < kPetitionMaxRetry)
         {
@@ -378,7 +381,7 @@ void Commissioner::CommissionerResponseNext()
     }
 }
 
-bool Commissioner::Valid()
+bool Commissioner::IsValid()
 {
     return mCommissionState != kStateInvalid;
 }
@@ -448,14 +451,14 @@ void Commissioner::CommissionerKeepAlive()
                                      reinterpret_cast<const uint8_t *>(&mCoapToken), sizeof(mCoapToken));
 
     tlv->SetType(Meshcop::kState);
-    tlv->SetValue(static_cast<uint8_t>(1));
+    tlv->SetValue(static_cast<uint8_t>(Meshcop::kStateAccepted));
     tlv = tlv->GetNext();
 
     tlv->SetType(Meshcop::kCommissionerSessionId);
     tlv->SetValue(mCommissionerSessionId);
     tlv = tlv->GetNext();
 
-    message->SetPath(kCommKaURI);
+    message->SetPath(OT_URI_PATH_COMMISSIONER_KEEP_ALIVE);
     message->SetPayload(buffer, Utils::LengthOf(buffer, tlv));
 
     otbrLog(OTBR_LOG_INFO, "COMM_KA.req: send");
@@ -604,7 +607,7 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
 
         mJoinerSession.GetKek(kek, sizeof(kek));
         mJoinerSession.MarkKekSent();
-        otbrLog(OTBR_LOG_INFO, "realy: KEK state");
+        otbrLog(OTBR_LOG_INFO, "relay: KEK state");
         responseTlv->SetType(Meshcop::kJoinerRouterKek);
         responseTlv->SetValue(kek, sizeof(kek));
         responseTlv = responseTlv->GetNext();
@@ -612,11 +615,11 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
 
     {
         Coap::Message *message;
-        uint16_t       token = mCoapToken;
+        uint16_t       token = ++mCoapToken;
 
         message = mCoapAgent->NewMessage(Coap::kTypeNonConfirmable, Coap::kCodePost,
                                          reinterpret_cast<const uint8_t *>(&token), sizeof(token));
-        message->SetPath(kRelayTxURI);
+        message->SetPath(OT_URI_PATH_RELAY_TX);
         message->SetPayload(payload, Utils::LengthOf(payload, responseTlv));
         otbrLog(OTBR_LOG_INFO, "RELAY_tx.req: send");
         mCoapAgent->Send(*message, NULL, 0, NULL, this);

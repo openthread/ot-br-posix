@@ -103,7 +103,7 @@ ssize_t JoinerSession::SendCoap(const uint8_t *aBuffer,
 void JoinerSession::FeedCoap(const uint8_t *aBuffer, uint16_t aLength, void *aContext)
 {
     JoinerSession *joinerSession = static_cast<JoinerSession *>(aContext);
-    joinerSession->mCoapAgent->Input(aBuffer, aLength, NULL, 1);
+    joinerSession->mCoapAgent->Input(aBuffer, aLength, NULL, 0);
 }
 
 void JoinerSession::HandleJoinerFinalize(const Coap::Resource &aResource,
@@ -117,11 +117,10 @@ void JoinerSession::HandleJoinerFinalize(const Coap::Resource &aResource,
     uint8_t        payload[10];
     Tlv *          responseTlv = reinterpret_cast<Tlv *>(payload);
 
-    otbrLog(OTBR_LOG_INFO, "HandleJoinerFinalize, STATE = 1\n");
     joinerSession->mNeedAppendKek = true;
 
     responseTlv->SetType(Meshcop::kState);
-    responseTlv->SetValue(static_cast<uint8_t>(1));
+    responseTlv->SetValue(static_cast<uint8_t>(Meshcop::kStateAccepted));
     responseTlv = responseTlv->GetNext();
 
     // Piggyback response

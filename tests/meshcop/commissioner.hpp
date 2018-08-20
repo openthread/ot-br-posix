@@ -72,7 +72,7 @@ public:
      * @param[in]    aPskcBin           binary form of pskc
      * @param[in]    aPskdAscii         ascii form of pskd
      * @param[in]    aSteeringData      default steering data to filter joiner
-     * @param[in]    aKeepAliveRate     send keep alive packet ever aKeepAliveRate seconds
+     * @param[in]    aKeepAliveRate     send keep alive packet every aKeepAliveRate seconds
      *
      */
     Commissioner(const uint8_t *     aPskcBin,
@@ -106,10 +106,10 @@ public:
     /**
      * This method returns whether the commissioner is valid
      *
-     * @returns true when commissioner valid, false when uninitialized, rejected or unkown error
+     * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool Valid();
+    bool IsValid();
 
     /**
      * This method initialize the dtls session
@@ -150,11 +150,11 @@ public:
 private:
     enum CommissionState
     {
-        kStateConnected,
-        kStateAccepted,
-        kStateRejected,
-        kStateReady,
-        kStateInvalid,
+        kStateInvalid = 0, ///< uninitialized, encounter network error or petition exceeds max retry
+        kStateConnected,   ///< dtls connection setup done
+        kStateAccepted,    ///< commissioner petition succeeded
+        kStateRejected,    ///< rejected by leader, still retrying petition
+        kStateReady,       ///< steering data sent, ready to accept joiners
     } mCommissionState;
 
     Commissioner(const Commissioner &);
@@ -214,11 +214,6 @@ private:
     static const uint8_t  kSeed[];
     static const int      kCipherSuites[];
     static const char     kCommissionerId[];
-    static const char     kCommPetURI[];
-    static const char     kCommSetURI[];
-    static const char     kCommKaURI[];
-    static const char     kRelayRxURI[];
-    static const char     kRelayTxURI[];
     static const int      kCoapResponseWaitSecond;
     static const int      kCoapResponseRetryTime;
 };

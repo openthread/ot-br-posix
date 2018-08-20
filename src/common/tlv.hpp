@@ -198,7 +198,7 @@ enum
     kJoinerRouterLocator     = 20,
     kJoinerRouterKek         = 21,
     kUdpEncapsulation        = 48,
-    kIPv6AddressList         = 49,
+    kIPv6Address             = 49,
 };
 
 enum
