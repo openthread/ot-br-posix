@@ -37,15 +37,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "addr_utils.hpp"
 #include "commissioner.hpp"
-#include "commissioner_utils.hpp"
+#include "utils/misc.hpp"
 #include "agent/uris.hpp"
 #include "udp_encapsulation_tlv.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
+#include "utils/addr.hpp"
 #include "utils/hex.hpp"
+#include "utils/misc.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
@@ -468,7 +469,7 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         {
             {
                 char buf[kIPAddrNameBufSize];
-                GetIPString((struct sockaddr *)(&from_addr), buf, sizeof(buf));
+                Utils::GetIPString((struct sockaddr *)(&from_addr), buf, sizeof(buf));
                 otbrLog(OTBR_LOG_INFO, "relay from: %s\n", buf);
             }
             SendRelayTransmit(buffer, n);

@@ -31,14 +31,13 @@
  *   The file is the implementation of the address manipulation utilities for the commissioner test app.
  */
 
-#include "addr_utils.hpp"
-
+#include "addr.hpp"
 #include <string.h>
 
 #include <arpa/inet.h>
 
 namespace ot {
-namespace BorderRouter {
+namespace Utils {
 
 static const uint8_t kLociidPrefix[] = {
     0x00, 0x00, 0x00, 0xff, 0xfe, 0x00,
@@ -61,8 +60,6 @@ uint16_t ToRloc16(uint8_t aRouterId, uint16_t aChildId)
     return (rloc16 << kRlocRouterIDBitOffset) | aChildId;
 }
 
-#define IPSTR_BUFSIZE (((INET6_ADDRSTRLEN > INET_ADDRSTRLEN) ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1)
->>>>>>> a08ac5d... [add-udp-proxy-server] udp proxy server and tmf client
 char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
 {
     switch (aAddr->sa_family)
@@ -144,5 +141,5 @@ struct in6_addr ToRlocPrefix(const struct in6_addr &aRlocAddr)
     return prefix;
 }
 
-} // namespace BorderRouter
+} // namespace Utils
 } // namespace ot

@@ -31,7 +31,6 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 bin_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
-    addr_utils.hpp                                      \
     commissioner.hpp                                    \
     commissioner_argcargv.hpp                           \
     commissioner_constants.hpp                          \
@@ -40,7 +39,6 @@ noinst_HEADERS                                        = \
     $(NULL)
 
 otbr_commissioner_SOURCES                             = \
-    addr_utils.cpp                                      \
     commissioner.cpp                                    \
     commissioner_argcargv.cpp                           \
     joiner_session.cpp                                  \

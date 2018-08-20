@@ -32,7 +32,7 @@
  */
 
 #include "joiner_session.hpp"
-#include "commissioner_utils.hpp"
+#include "utils/misc.hpp"
 #include "agent/uris.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"

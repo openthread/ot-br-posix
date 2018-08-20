@@ -33,7 +33,7 @@
 
 #include "commissioner_proxy.hpp"
 #include "commissioner_constants.hpp"
-#include "commissioner_utils.hpp"
+#include "utils/misc.hpp"
 #include "udp_encapsulation_tlv.hpp"
 #include <boost/bind/bind.hpp>
 #include <cassert>

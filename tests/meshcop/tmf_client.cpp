@@ -35,11 +35,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "addr_utils.hpp"
 #include "bit_extraction.hpp"
-#include "commissioner_utils.hpp"
 #include "tmf_client.hpp"
 #include "udp_encapsulation_tlv.hpp"
+#include "utils/addr.hpp"
+#include "utils/misc.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -264,7 +264,7 @@ static std::vector<LinkInfo> ParseRoute64Tlv(const uint8_t *aBuffer)
 
             if (routeCost != 0)
             {
-                info.toRloc16        = ToRloc16(connectedRouterIds[j], 0);
+                info.toRloc16        = Utils::ToRloc16(connectedRouterIds[j], 0);
                 info.outQualityLevel = ExtractBits<kOutQualityBeginBit, kInQaulityBeginBit>(&routeData);
                 info.inQualityLevel  = ExtractBits<kInQaulityBeginBit, kRouteCostBeginBit>(&routeData);
                 linkInfos.push_back(info);
@@ -273,7 +273,7 @@ static std::vector<LinkInfo> ParseRoute64Tlv(const uint8_t *aBuffer)
     }
     for (i = 0; i < linkInfos.size(); i++)
     {
-        linkInfos[i].fromRloc16 = ToRloc16(selfRouteId, 0);
+        linkInfos[i].fromRloc16 = Utils::ToRloc16(selfRouteId, 0);
     }
     return linkInfos;
 }
@@ -292,8 +292,8 @@ NodeInfo TmfClient::GetNodeInfo(const struct in6_addr &aAddr)
     struct in6_addr              rlocAddr;
 
     addresses        = QueryAllV6Addresses(aAddr);
-    mleAddr          = FindMLEIDAddress(addresses);
-    rlocAddr         = FindRloc16Address(addresses);
+    mleAddr          = Utils::FindMLEIDAddress(addresses);
+    rlocAddr         = Utils::FindRloc16Address(addresses);
     nodeInfo.rloc16  = ntohs(reinterpret_cast<uint16_t *>(&rlocAddr)[7]);
     nodeInfo.mleAddr = mleAddr;
     return nodeInfo;
@@ -301,13 +301,13 @@ NodeInfo TmfClient::GetNodeInfo(const struct in6_addr &aAddr)
 
 std::vector<NodeInfo> TmfClient::GetChildNodes(const struct in6_addr &rlocPrefix, uint8_t routerID)
 {
-    struct in6_addr              aRlocAddr  = ConcatRloc16Address(rlocPrefix, routerID, 0);
+    struct in6_addr              aRlocAddr  = Utils::ConcatRloc16Address(rlocPrefix, routerID, 0);
     std::vector<ChildTableEntry> childTable = QueryChildTable(aRlocAddr);
     std::vector<NodeInfo>        nodeInfos;
 
     for (size_t i = 0; i < childTable.size(); i++)
     {
-        NodeInfo nodeInfo = GetNodeInfo(ConcatRloc16Address(rlocPrefix, routerID, childTable[i].childID));
+        NodeInfo nodeInfo = GetNodeInfo(Utils::ConcatRloc16Address(rlocPrefix, routerID, childTable[i].childID));
 
         nodeInfos.push_back(nodeInfo);
     }
@@ -321,8 +321,8 @@ NetworkInfo TmfClient::TraverseNetwork(const in6_addr &aAddr)
     NetworkInfo           networkInfo;
     LeaderData            leaderData       = QueryLeaderData(aAddr);
     std::vector<in6_addr> addresses        = QueryAllV6Addresses(aAddr);
-    struct in6_addr       rlocPrefix       = GetRlocPrefix(addresses);
-    struct in6_addr       leaderRloc16Addr = ConcatRloc16Address(rlocPrefix, leaderData.routerID, 0);
+    struct in6_addr       rlocPrefix       = Utils::GetRlocPrefix(addresses);
+    struct in6_addr       leaderRloc16Addr = Utils::ConcatRloc16Address(rlocPrefix, leaderData.routerID, 0);
 
     networkInfo.leaderNode = GetNodeInfo(leaderRloc16Addr);
     frontierRouterIDs.push_back(leaderData.routerID);
@@ -336,7 +336,7 @@ NetworkInfo TmfClient::TraverseNetwork(const in6_addr &aAddr)
             std::vector<LinkInfo> routerLinks;
             std::vector<NodeInfo> childNodes;
             uint8_t               routerID       = frontierRouterIDs[i];
-            struct in6_addr       routerRlocAddr = ConcatRloc16Address(rlocPrefix, routerID, 0);
+            struct in6_addr       routerRlocAddr = Utils::ConcatRloc16Address(rlocPrefix, routerID, 0);
 
             NodeInfo routerNode = GetNodeInfo(routerRlocAddr);
             networkInfo.nodes.push_back(routerNode);

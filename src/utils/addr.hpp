@@ -37,7 +37,7 @@
 #include <sys/socket.h>
 
 namespace ot {
-namespace BorderRouter {
+namespace Utils {
 
 /**
  * This function computes rloc16 given router id and child id
@@ -125,7 +125,7 @@ struct in6_addr GetRlocPrefix(const std::vector<struct in6_addr> &aAddrs);
  */
 struct in6_addr ToRlocPrefix(const struct in6_addr &aRlocAddr);
 
-} // namespace BorderRouter
+} // namespace Utils
 } // namespace ot
 
 #endif // OTBR_ADDR_UTILS_HPP_

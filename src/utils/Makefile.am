@@ -31,6 +31,7 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 noinst_LTLIBRARIES = libutils.la
 
 libutils_la_SOURCES = \
+    addr.cpp          \
     crc16.cpp         \
     hex.cpp           \
     steering_data.cpp \
@@ -40,10 +41,12 @@ libutils_la_CPPFLAGS                                    = \
     -I$(top_srcdir)/third_party/mbedtls/repo/include      \
     $(NULL)
 
-noinst_HEADERS      = \
-    crc16.hpp         \
-    hex.hpp           \
-    steering_data.hpp \
+noinst_HEADERS     = \
+    addr.hpp         \
+    crc16.hpp        \
+    hex.hpp          \
+    misc.hpp         \
+    steeringdata.hpp \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am
