@@ -50,9 +50,11 @@ prepare_build_system()
     (mkdir build-arm64 && cd build-arm64 && git init && git pull --depth 1 https://android.googlesource.com/platform/build "${ARM64_COMMIT}")
     cp -vr build-arm64/core/combo/TARGET_linux-arm64.mk build/core/combo
     cp -vr build-arm64/core/combo/arch/arm64 build/core/combo/arch
-    cp -vr build-arm64/target/board/generic_arm64 build/board
+    cp -vr build-arm64/target/board/generic_arm64 build/target/board
     cp -vr build-arm64/target/product/aosp_arm64.mk build/target/product
-    sed -i '/vbox_x86.mk/aosp_arm64.mk/g' build/target/product/AndroidProducts.mk
+    sed -i 's/vbox_x86.mk/aosp_arm64.mk/g' build/target/product/AndroidProducts.mk
+    sed -i 's/aosp_base_telephony/generic_no_telephony/g;/device.mk/d;/emulator.mk/d' build/target/product/aosp_arm64.mk
+    sed -i 's/PRIVATE_TARGET_CRTBEGIN_DYNAMIC_O/TARGET_CRTBEGIN_DYNAMIC_O/g;s/PRIVATE_TARGET_GLOBAL_LD_DIRS/TARGET_GLOBAL_LD_DIRS/g' build/core/combo/TARGET_linux-arm64.mk
     rm -rf build-arm64
 
     ln -s build/core/main.mk Makefile
@@ -72,8 +74,8 @@ EOF
     export PATH=$(pwd)/bin:$PATH
 
     # Files for building ndk
-    mkdir -p system/core/include/arch/linux-arm
-    touch system/core/include/arch/linux-arm/AndroidConfig.h
+    mkdir -p system/core/include/arch/linux-arm64
+    touch system/core/include/arch/linux-arm64/AndroidConfig.h
 
     mkdir -p system/core/include/arch/linux-x86
     touch system/core/include/arch/linux-x86/AndroidConfig.h
@@ -81,23 +83,24 @@ EOF
     ANDROID_NDK_PATH=$(dirname $(which sdkmanager))/../../ndk-bundle
     mkdir -p bionic/libc/
     cp -r $ANDROID_NDK_PATH/sysroot/usr/include bionic/libc/include
-    mv bionic/libc/include/arm-linux-androideabi/asm bionic/libc/include/asm
+    mkdir -p bionic/libc/arch-arm64
+    mv bionic/libc/include/aarch64-linux-android bionic/libc/arch-arm64/include
 
-    mkdir -p out/target/product/generic/obj/
-    cp -r $ANDROID_NDK_PATH/platforms/android-27/arch-arm/usr/lib out/target/product/generic/obj/
+    mkdir -p out/target/product/generic_arm64/obj/
+    cp -r $ANDROID_NDK_PATH/platforms/android-27/arch-arm64/usr/lib out/target/product/generic_arm64/obj/
 
     mkdir -p bionic/libstdc++
     cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/include bionic/libstdc++
-    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include/* bionic/libstdc++/include
+    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a/include/* bionic/libstdc++/include
     # The default libstdc++.so does not contain full stl implementation, see https://developer.android.com/ndk/guides/cpp-support
-    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libgnustl_shared.so out/target/product/generic/obj/lib/libstdc++.so
+    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a/libgnustl_shared.so out/target/product/generic_arm64/obj/lib/libstdc++.so
 
     # Build spec
     cat > buildspec.mk <<EOF
-TARGET_PRODUCT := generic
+TARGET_PRODUCT := aosp_arm64
 TARGET_BUILD_VARIANT := eng
 TARGET_BUILD_TYPE := release
-TARGET_TOOLS_PREFIX := $ANDROID_NDK_PATH/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-
+TARGET_TOOLS_PREFIX := $ANDROID_NDK_PATH/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-
 EOF
 }
 
@@ -272,7 +275,7 @@ main()
 
     make showcommands otbr-agent
 
-    test -f out/target/product/generic/system/bin/otbr-agent
+    test -f out/target/product/generic_arm64/system/bin/otbr-agent
 }
 
 main "$@"
