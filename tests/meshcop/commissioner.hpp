@@ -169,6 +169,8 @@ private:
                             uint16_t       aPort,
                             void *         aContext);
 
+    static void LogMeshcopState(const char *aPrefix, int8_t aState);
+
     static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
     static void HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
     static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);

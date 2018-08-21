@@ -224,6 +224,22 @@ void Commissioner::CommissionerPetition()
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: complete");
 }
 
+void Commissioner::LogMeshcopState(const char *aPrefix, int8_t aState)
+{
+    switch (aState)
+    {
+    case Meshcop::kStateAccepted:
+        otbrLog(OTBR_LOG_INFO, "%s: state=accepted", aPrefix);
+        break;
+    case Meshcop::kStateRejected:
+        otbrLog(OTBR_LOG_INFO, "%s: state=rejected", aPrefix);
+        break;
+    default:
+        otbrLog(OTBR_LOG_INFO, "%s: state=%d", aPrefix, aState);
+        break;
+    }
+}
+
 /** handle c/cp response */
 void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext)
 {
@@ -245,18 +261,16 @@ void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, voi
         switch (tlvType)
         {
         case Meshcop::kState:
+            LogMeshcopState("COMM_PET.rsp", state);
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=accepted");
                 commissioner->mCommissionState = kStateAccepted;
                 break;
             case Meshcop::kStateRejected:
-                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=rejected");
                 commissioner->mCommissionState = kStateRejected;
                 break;
             default:
-                otbrLog(OTBR_LOG_INFO, "COMM_PET.rsp: state=%d", state);
                 commissioner->mCommissionState = kStateInvalid;
                 break;
             }
@@ -328,18 +342,16 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
         switch (tlvType)
         {
         case Meshcop::kState:
+            LogMeshcopState("COMM_SET.rsp", state);
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                otbrLog(OTBR_LOG_INFO, "COMM_SET.rsp: state=accepted");
                 commissioner->mCommissionState = kStateReady;
                 break;
             case Meshcop::kStateRejected:
-                otbrLog(OTBR_LOG_INFO, "COMM_SET.rsp: state=rejected");
                 commissioner->mCommissionState = kStateRejected;
                 break;
             default:
-                otbrLog(OTBR_LOG_INFO, "COMM_SET.rsp: state=%d", state);
                 commissioner->mCommissionState = kStateInvalid;
                 break;
             }
@@ -494,19 +506,16 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
         switch (tlvType)
         {
         case Meshcop::kState:
+            LogMeshcopState("COMM_KA.rsp", state);
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=accepted");
                 commissioner->mCommissionState = kStateReady;
                 break;
             case Meshcop::kStateRejected:
-                otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=rejected");
-                // state rejected is only used to retry petition
-                commissioner->mCommissionState = kStateInvalid;
+                commissioner->mCommissionState = kStateRejected;
                 break;
             default:
-                otbrLog(OTBR_LOG_INFO, "COMM_KA.rsp: state=%d", state);
                 commissioner->mCommissionState = kStateInvalid;
                 break;
             }
