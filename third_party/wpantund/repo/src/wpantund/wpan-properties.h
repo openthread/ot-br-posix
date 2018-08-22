@@ -106,6 +106,7 @@
 #define kWPANTUNDProperty_ThreadChildTable                      "Thread:ChildTable"
 #define kWPANTUNDProperty_ThreadChildTableAsValMap              "Thread:ChildTable:AsValMap"
 #define kWPANTUNDProperty_ThreadChildTableAddresses             "Thread:ChildTable:Addresses"
+#define kWPANTUNDProperty_ThreadChildTimeout                    "Thread:ChildTimeout"
 #define kWPANTUNDProperty_ThreadNeighborTable                   "Thread:NeighborTable"
 #define kWPANTUNDProperty_ThreadNeighborTableAsValMap           "Thread:NeighborTable:AsValMap"
 #define kWPANTUNDProperty_ThreadNeighborTableErrorRates         "Thread:NeighborTable:ErrorRates"
@@ -116,7 +117,6 @@
 #define kWPANTUNDProperty_ThreadStableNetworkData               "Thread:StableNetworkData"
 #define kWPANTUNDProperty_ThreadStableNetworkDataVersion        "Thread:StableNetworkDataVersion"
 #define kWPANTUNDProperty_ThreadPreferredRouterID               "Thread:PreferredRouterID"
-#define kWPANTUNDProperty_ThreadCommissionerEnabled             "Thread:Commissioner:Enabled"
 #define kWPANTUNDProperty_ThreadDeviceMode                      "Thread:DeviceMode"
 #define kWPANTUNDProperty_ThreadOffMeshRoutes                   "Thread:OffMeshRoutes"
 #define kWPANTUNDProperty_ThreadOnMeshPrefixes                  "Thread:OnMeshPrefixes"
@@ -147,6 +147,7 @@
 #define kWPANTUNDProperty_DatasetSecPolicyKeyRotation           "Dataset:SecPolicy:KeyRotation"
 #define kWPANTUNDProperty_DatasetSecPolicyFlags                 "Dataset:SecPolicy:Flags"
 #define kWPANTUNDProperty_DatasetRawTlvs                        "Dataset:RawTlvs"
+#define kWPANTUNDProperty_DatasetDestIpAddress                  "Dataset:DestIpAddress"
 
 #define kWPANTUNDProperty_DatasetAllFileds                      "Dataset:AllFields"
 #define kWPANTUNDProperty_DatasetAllFileds_AltString            "Dataset"
@@ -156,10 +157,12 @@
 #define kWPANTUNDDatasetCommand_Erase                           "Erase"
 #define kWPANTUNDDatasetCommand_GetActive                       "GetActive"
 #define kWPANTUNDDatasetCommand_SetActive                       "SetActive"
-#define kWPANTUNDDatasetCommand_MgmtSendActive                  "MgmtSendActive"
+#define kWPANTUNDDatasetCommand_SendMgmtGetActive               "SendMgmtGetActive"
+#define kWPANTUNDDatasetCommand_SendMgmtSetActive               "SendMgmtSetActive"
 #define kWPANTUNDDatasetCommand_GetPending                      "GetPending"
 #define kWPANTUNDDatasetCommand_SetPending                      "SetPending"
-#define kWPANTUNDDatasetCommand_MgmtSendPending                 "MgmtSendPending"
+#define kWPANTUNDDatasetCommand_SendMgmtGetPending              "SendMgmtGetPending"
+#define kWPANTUNDDatasetCommand_SendMgmtSetPending              "SendMgmtSetPending"
 
 #define kWPANTUNDProperty_OpenThreadLogLevel                    "OpenThread:LogLevel"
 #define kWPANTUNDProperty_OpenThreadSteeringDataAddress         "OpenThread:SteeringData:Address"
@@ -189,6 +192,9 @@
 #define kWPANTUNDProperty_JamDetectionBusyPeriod                "JamDetection:BusyPeriod"
 #define kWPANTUNDProperty_JamDetectionDebugHistoryBitmap        "JamDetection:Debug:HistoryBitmap"
 
+#define kWPANTUNDProperty_ChildSupervisionInterval              "ChildSupervision:Interval"
+#define kWPANTUNDProperty_ChildSupervisionCheckTimeout          "ChildSupervision:CheckTimeout"
+
 #define kWPANTUNDProperty_ChannelMonitorSampleInterval          "ChannelMonitor:SampleInterval"
 #define kWPANTUNDProperty_ChannelMonitorRssiThreshold           "ChannelMonitor:RssiThreshold"
 #define kWPANTUNDProperty_ChannelMonitorSampleWindow            "ChannelMonitor:SampleWindow"
@@ -207,6 +213,20 @@
 #define kWPANTUNDProperty_TmfProxyEnabled                       "TmfProxy:Enabled"
 #define kWPANTUNDProperty_TmfProxyStream                        "TmfProxy:Stream"
 #define kWPANTUNDProperty_UdpProxyStream                        "UdpProxy:Stream"
+
+#define kWPANTUNDProperty_CommissionerState                     "Commissioner:State"
+#define kWPANTUNDProperty_CommissionerProvisioningUrl           "Commissioner:ProvisioningUrl"
+#define kWPANTUNDProperty_CommissionerSessionId                 "Commissioner:SessionId"
+#define kWPANTUNDProperty_CommissionerEnergyScanResult          "Commissioner:EnergyScanResult"
+#define kWPANTUNDProperty_CommissionerPanIdConflictResult       "Commissioner:PanIdConflictResult"
+#define kWPANTUNDProperty_CommissionerSendMgmtGet               "Commissioner:Send:MgmtGet"
+#define kWPANTUNDProperty_CommissionerSendMgmtSet               "Commissioner:Send:MgmtSet"
+
+#define kWPANTUNDCommissionerState_Disabled                     "disabled"
+#define kWPANTUNDCommissionerState_Petition                     "petition"
+#define kWPANTUNDCommissionerState_Active                       "active"
+
+#define kWPANTUNDProperty_ThreadJoinerState                     "Thread:Joiner:State"
 
 #define kWPANTUNDProperty_NestLabs_NetworkAllowingJoin          "com.nestlabs.internal:Network:AllowingJoin"
 #define kWPANTUNDProperty_NestLabs_NetworkPassthruPort          "com.nestlabs.internal:Network:PassthruPort"
@@ -305,6 +325,12 @@
 #define kWPANTUNDValueMapKey_AddressCacheTable_Address          "Address"
 #define kWPANTUNDValueMapKey_AddressCacheTable_RLOC16           "RLOC16"
 #define kWPANTUNDValueMapKey_AddressCacheTable_Age              "Age"
+
+#define kWPANTUNDValueMapKey_CommrEnergyScanResult_ChannelMask  "ChannelMask"
+#define kWPANTUNDValueMapKey_CommrEnergyScanResult_Data         "Data"
+
+#define kWPANTUNDValueMapKey_CommrPanIdConflict_ChannelMask     "ChannelMask"
+#define kWPANTUNDValueMapKey_CommrPanIdConflict_PanId           "PanId"
 
 #define kWPANTUNDValueMapKey_NetworkTopology_ExtAddress         "ExtAddress"
 #define kWPANTUNDValueMapKey_NetworkTopology_RLOC16             "RLOC16"
