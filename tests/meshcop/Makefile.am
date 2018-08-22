@@ -71,6 +71,9 @@ dist_check_SCRIPTS                                    = \
 
 TESTS_ENVIRONMENT                                     = \
     export                                              \
+    CFLAGS=''                                           \
+    CPPFLAGS=''                                         \
+    LDFLAGS=''                                          \
     MAKE=$(MAKE)                                        \
     top_builddir='$(top_builddir)'                      \
     top_srcdir='$(top_srcdir)'                          \

@@ -9,6 +9,8 @@ cache:
 
 before_install: .travis/before_install.sh
 script: .travis/script.sh
+after_success: bash <(curl -s https://codecov.io/bash)
+
 matrix:
   include:
     - env: BUILD_TARGET="pretty-check"
@@ -28,7 +30,7 @@ matrix:
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux
-    - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mdnssd
+    - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: gcc
       os: linux
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2017-04-10-raspbian-jessie-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip

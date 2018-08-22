@@ -51,13 +51,15 @@ pretty-check)
 posix-check)
     export CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include"
     export LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib"
-    ./bootstrap || die
+    ./bootstrap
+    ./configure
+    distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
     if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
         sudo service avahi-daemon stop
         sudo mdnsd
-        ./configure && make distcheck DISTCHECK_CONFIGURE_FLAGS='--with-mdns=mDNSResponder'
+        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage --with-mdns=mDNSResponder' distcleancheck_listfiles="${distcleancheck_listfiles}"
     else
-        ./configure && make distcheck
+        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage' distcleancheck_listfiles="${distcleancheck_listfiles}"
     fi
     ;;
 

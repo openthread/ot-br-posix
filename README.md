@@ -1,4 +1,5 @@
-[![Build Status][ot-travis-svg]][ot-travis]
+[![Build Status][otbr-travis-svg]][otbr-travis]
+[![Coverage Status][otbr-codecov-svg]][otbr-codecov]
 
 ---
 
@@ -22,8 +23,10 @@ OpenThread's implementation of a Border Router is called OpenThread Border Route
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
-[ot-travis]: https://travis-ci.org/openthread/borderrouter
-[ot-travis-svg]: https://travis-ci.org/openthread/borderrouter.svg?branch=master
+[otbr-travis]: https://travis-ci.org/openthread/borderrouter
+[otbr-travis-svg]: https://travis-ci.org/openthread/borderrouter.svg?branch=master
+[otbr-codecov]: https://codecov.io/gh/openthread/borderrouter
+[otbr-codecov-svg]: https://codecov.io/gh/openthread/borderrouter/branch/master/graph/badge.svg
 
 ## Getting started
 
