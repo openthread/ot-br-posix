@@ -112,13 +112,14 @@ int main(int argc, char **argv)
         int         kaRate = args.mSendCommKATxRate;
         sockaddr_in addr;
         int         ret;
+        bool        joinerSetDone = false;
 
         if (!args.mNeedSendCommKA)
         {
             kaRate = 0;
         }
         srand(time(0));
-        Commissioner commissioner(pskcBin, args.mJoinerPSKdAscii, steeringData, kaRate);
+        Commissioner commissioner(pskcBin, kaRate);
         addr.sin_family = AF_INET;
         addr.sin_port   = htons(atoi(args.mAgentPort_ascii));
         inet_pton(AF_INET, args.mAgentAddress_ascii, &addr.sin_addr);
@@ -152,6 +153,11 @@ int main(int argc, char **argv)
                 break;
             }
             commissioner.Process(readFdSet, writeFdSet, errorFdSet);
+            if (commissioner.IsCommissionerAccepted() && !joinerSetDone)
+            {
+                commissioner.SetJoiner(args.mJoinerPSKdAscii, steeringData);
+                joinerSetDone = true;
+            }
         }
     }
     return 0;
