@@ -61,6 +61,12 @@ linux)
         exit 0
     }
 
+    [ $BUILD_TARGET != android-check ] || {
+        sudo apt-get install -y gcc-multilib g++-multilib
+        echo y | sdkmanager "ndk-bundle"
+        exit 0
+    }
+
     # Common dependencies
     sudo apt-get install -y      \
         libdbus-1-dev            \

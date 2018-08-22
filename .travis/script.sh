@@ -38,6 +38,10 @@ die() {
 }
 
 case $BUILD_TARGET in
+android-check)
+    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/android_check")
+    ;;
+
 pretty-check)
     export PATH=$TOOLS_HOME/usr/bin:$PATH || die
     ./bootstrap || die
