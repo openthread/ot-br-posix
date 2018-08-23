@@ -83,7 +83,7 @@ void PublishSingleService(void *aContext, Mdns::State aState)
 
     if (aState == Mdns::kStateReady)
     {
-        assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp", "nn",
+        assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp.", "nn",
                                                                       "cool", "xp", "1122334455667788", NULL));
     }
 }
@@ -94,9 +94,9 @@ void PublishMultipleServices(void *aContext, Mdns::State aState)
 
     if (aState == Mdns::kStateReady)
     {
-        assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp", "nn",
+        assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp.", "nn",
                                                                       "cool1", "xp", "1122334455667788", NULL));
-        assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12346, "MultipleService2", "_meshcop._udp", "nn",
+        assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12346, "MultipleService2", "_meshcop._udp.", "nn",
                                                                       "cool2", "xp", "1122334455667788", NULL));
     }
 }
@@ -109,13 +109,15 @@ void PublishUpdateServices(void *aContext, Mdns::State aState)
     {
         if (!sContext.mUpdate)
         {
-            assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp", "nn",
-                                                                          "cool", "xp", "1122334455667788", NULL));
+            assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.",
+                                                                          "nn", "cool", "xp", "1122334455667788",
+                                                                          NULL));
         }
         else
         {
-            assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp", "nn",
-                                                                          "coolcool", "xp", "8877665544332211", NULL));
+            assert(OTBR_ERROR_NONE == sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.",
+                                                                          "nn", "coolcool", "xp", "8877665544332211",
+                                                                          NULL));
         }
     }
 }

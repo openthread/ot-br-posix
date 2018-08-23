@@ -132,6 +132,9 @@ public:
     void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
 private:
+    void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
+    void RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
+
     static void HandleServiceRegisterResult(DNSServiceRef         aService,
                                             const DNSServiceFlags aFlags,
                                             DNSServiceErrorType   aError,
@@ -153,21 +156,22 @@ private:
         kMaxSizeOfHost        = 128,
         kMaxSizeOfDomain      = kDNSServiceMaxDomainName,
         kMaxSizeOfServiceType = 64,
+        kMaxTextRecordSize    = 255,
     };
 
     struct Service
     {
         char          mName[kMaxSizeOfServiceName];
         char          mType[kMaxSizeOfServiceType];
-        DNSServiceRef mClient;
+        DNSServiceRef mService;
     };
 
     typedef std::vector<Service> Services;
 
     Services     mServices;
     int          mProtocol;
-    char *       mHost;
-    char *       mDomain;
+    const char * mHost;
+    const char * mDomain;
     State        mState;
     StateHandler mStateHandler;
     void *       mContext;
