@@ -40,7 +40,7 @@ override CFLAGS                   := $(filter-out -pedantic-errors -Werror,$(CFL
 override CXXFLAGS                 := $(filter-out -Werror,$(CXXFLAGS))
 
 libwpanctl_la_SOURCES              = \
-	repo/src/util/string-utils.c     \
+    repo/src/util/string-utils.c     \
     repo/src/wpanctl/wpanctl-utils.c \
     $(NULL)
 
