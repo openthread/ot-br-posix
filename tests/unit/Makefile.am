@@ -36,6 +36,7 @@ unittest_SOURCES           = \
     test_event_emitter.cpp   \
     test_pskc.cpp            \
     test_logging.cpp         \
+    test_mdns_mdnssd.cpp     \
     $(NULL)
 
 unittest_CPPFLAGS                                             = \
