@@ -34,8 +34,6 @@
 #ifndef OTBR_JOINER_SESSION_HPP_
 #define OTBR_JOINER_SESSION_HPP_
 
-#include <arpa/inet.h>
-#include <errno.h>
 #include <sys/socket.h>
 
 #include "commissioner_constants.hpp"
@@ -85,12 +83,12 @@ public:
      * This method returns whether the underlying relay service should append kek after dtls encapsulation
      * @returns whether the underlying relay service should append kek after dtls encapsulation
      */
-    bool NeedAppendKek();
+    bool NeedAppendKek(void);
 
     /**
      * This method is used by the underlying relay service to notify key has been appended
      */
-    void MarkKekSent();
+    void MarkKekSent(void);
 
     /**
      * This method copies to the key encrypted key(KEK) to buffer provided

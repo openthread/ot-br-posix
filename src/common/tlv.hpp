@@ -131,10 +131,11 @@ public:
      */
     void SetValue(uint16_t aValue)
     {
-        SetLength(sizeof(aValue), false);
         uint8_t *value = static_cast<uint8_t *>(GetValue());
-        value[0]       = (aValue >> 8);
-        value[1]       = (aValue & 0xff);
+
+        SetLength(sizeof(aValue), false);
+        value[0] = (aValue >> 8);
+        value[1] = (aValue & 0xff);
     }
 
     /**

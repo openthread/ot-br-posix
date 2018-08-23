@@ -147,12 +147,12 @@ void JoinerSession::UpdateFdSet(fd_set & aReadFdSet,
     mDtlsServer->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
 }
 
-bool JoinerSession::NeedAppendKek()
+bool JoinerSession::NeedAppendKek(void)
 {
     return mNeedAppendKek;
 }
 
-void JoinerSession::MarkKekSent()
+void JoinerSession::MarkKekSent(void)
 {
     mNeedAppendKek = false;
 }

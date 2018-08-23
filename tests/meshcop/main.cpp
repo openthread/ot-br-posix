@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     SteeringData     steeringData;
     CommissionerArgs args = ParseArgs(argc, argv);
 
-    otbrLogInit("Commission server", OTBR_LOG_ERR);
+    otbrLogInit("Commission server", OTBR_LOG_INFO);
 
     if (args.mHasPSKc)
     {

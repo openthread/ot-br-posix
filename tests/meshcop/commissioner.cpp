@@ -179,7 +179,7 @@ exit:
     return ret;
 }
 
-int Commissioner::TryDtlsHandshake()
+int Commissioner::TryDtlsHandshake(void)
 {
     int ret = mbedtls_ssl_handshake(&mSsl);
     if (ret == 0)
@@ -193,7 +193,7 @@ int Commissioner::TryDtlsHandshake()
     return ret;
 }
 
-void Commissioner::CommissionerPetition()
+void Commissioner::CommissionerPetition(void)
 {
     int     retryCount = 0;
     uint8_t buffer[kSizeMaxPacket];
@@ -372,7 +372,7 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
     commissioner->CommissionerResponseNext();
 }
 
-void Commissioner::CommissionerResponseNext()
+void Commissioner::CommissionerResponseNext(void)
 {
     if (mCommissionState == kStateAccepted)
     {
@@ -393,7 +393,7 @@ void Commissioner::CommissionerResponseNext()
     }
 }
 
-bool Commissioner::IsValid()
+bool Commissioner::IsValid(void) const
 {
     return mCommissionState != kStateInvalid;
 }
@@ -452,7 +452,7 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
     }
 }
 
-void Commissioner::CommissionerKeepAlive()
+void Commissioner::CommissionerKeepAlive(void)
 {
     uint8_t        buffer[kSizeMaxPacket];
     Tlv *          tlv = reinterpret_cast<Tlv *>(buffer);

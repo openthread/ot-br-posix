@@ -109,7 +109,7 @@ public:
      * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool IsValid();
+    bool IsValid(void) const;
 
     /**
      * This method initialize the dtls session
@@ -129,13 +129,13 @@ public:
      *          you need to call this method again,
      *          or other SSL error code on failure
      */
-    int TryDtlsHandshake();
+    int TryDtlsHandshake(void);
 
     /**
      * This method sends commissioner petition coap request
      *
      */
-    void CommissionerPetition();
+    void CommissionerPetition(void);
 
     /**
      * This method sends commissioner set coap request
@@ -161,7 +161,7 @@ private:
     Commissioner &operator=(const Commissioner &);
 
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
-    void CommissionerKeepAlive();
+    void CommissionerKeepAlive(void);
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,
@@ -174,7 +174,7 @@ private:
     static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
     static void HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
     static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);
-    void        CommissionerResponseNext();
+    void        CommissionerResponseNext(void);
 
     static void HandleRelayReceive(const Coap::Resource &aResource,
                                    const Coap::Message & aMessage,
