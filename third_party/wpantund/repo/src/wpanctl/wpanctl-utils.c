@@ -25,12 +25,14 @@
 #include "string-utils.h"
 #include "wpanctl-utils.h"
 #include "wpan-dbus-v0.h"
+#include "wpan-dbus-v1.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #ifdef __APPLE__
 char gInterfaceName[32] = "utun2";
@@ -321,6 +323,83 @@ bail:
 }
 
 int
+parse_prefix(const char *prefix_str, uint8_t *prefix)
+{
+	int ret = ERRORCODE_OK;
+
+	// The prefix could either be specified like an IPv6 address, or
+	// specified as a bunch of hex numbers. Presence of a colon (':')
+	// is used to differentiate.
+
+	if (strstr(prefix_str,":")) {
+		uint8_t address[INET6_ADDRSTRLEN];
+
+		int bits = inet_pton(AF_INET6, prefix_str, address);
+
+		if (bits < 0) {
+			ret = ERRORCODE_BADARG;
+			goto bail;
+		}
+
+		memcpy(prefix, address, WPANCTL_PREFIX_SIZE);
+
+	} else {
+
+		if (parse_string_into_data(prefix, WPANCTL_PREFIX_SIZE, prefix_str) <= 0) {
+			ret = ERRORCODE_BADARG;
+		}
+	}
+
+bail:
+	return ret;
+}
+
+const char *
+parse_node_type(const char *type_str)
+{
+	const char *node_type = kWPANTUNDNodeType_Unknown;
+
+	if (!strcasecmp(type_str, "router")
+		|| !strcasecmp(type_str, "r")
+		|| !strcasecmp(type_str, "2")
+		|| !strcasecmp(type_str, kWPANTUNDNodeType_Router)
+		|| !strcasecmp(type_str, kWPANTUNDNodeType_Leader)
+		|| !strcasecmp(type_str, kWPANTUNDNodeType_Commissioner)
+	) {
+		node_type = kWPANTUNDNodeType_Router;
+
+	} else if (!strcasecmp(type_str, "end-device")
+		|| !strcasecmp(type_str, "enddevice")
+		|| !strcasecmp(type_str, "end")
+		|| !strcasecmp(type_str, "ed")
+		|| !strcasecmp(type_str, "e")
+		|| !strcasecmp(type_str, "3")
+		|| !strcasecmp(type_str, kWPANTUNDNodeType_EndDevice)
+	) {
+		node_type = kWPANTUNDNodeType_EndDevice;
+
+	} else if (!strcasecmp(type_str, "sleepy-end-device")
+		|| !strcasecmp(type_str, "sleepy")
+		|| !strcasecmp(type_str, "sed")
+		|| !strcasecmp(type_str, "s")
+		|| !strcasecmp(type_str, "4")
+		|| !strcasecmp(type_str, kWPANTUNDNodeType_SleepyEndDevice)
+	) {
+		node_type = kWPANTUNDNodeType_SleepyEndDevice;
+
+	} else if (!strcasecmp(type_str, "lurker")
+		|| !strcasecmp(type_str, "nl-lurker")
+		|| !strcasecmp(type_str, "l")
+		|| !strcasecmp(type_str, "6")
+		|| !strcasecmp(type_str, kWPANTUNDNodeType_NestLurker)
+	) {
+		node_type = kWPANTUNDNodeType_NestLurker;
+	}
+
+	return node_type;
+}
+
+int
 lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 {
 	int ret = kWPANTUNDStatus_InterfaceNotFound;
@@ -334,13 +413,7 @@ lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 
 	memset(dbus_bus_name, 0, DBUS_MAXIMUM_NAME_LENGTH+1);
 
-	connection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-
-	if (!connection) {
-		dbus_error_free(&error);
-		dbus_error_init(&error);
-		connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-	}
+	connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
 	require_string(connection != NULL, bail, error.message);
 
@@ -571,4 +644,115 @@ node_type_int2str(uint16_t node_type)
 	}
 
 	return "unknown";
+}
+
+const char *
+joiner_state_int2str(uint8_t state)
+{
+    const char *ret = "idle";
+
+    switch (state)
+    {
+    case JOINER_STATE_IDLE:
+        ret = "idle";
+        break;
+
+    case JOINER_STATE_DISCOVER:
+        ret = "discover";
+        break;
+
+    case JOINER_STATE_CONNECT:
+        ret = "connect";
+        break;
+
+    case JOINER_STATE_CONNECTED:
+        ret = "connected";
+        break;
+
+    case JOINER_STATE_ENTRUST:
+        ret = "entrust";
+        break;
+
+    case JOINER_STATE_JOINED:
+        ret = "joined";
+        break;
+
+    default:
+        break;
+    }
+
+    return ret;
+}
+
+int
+create_new_wpan_dbus_message(DBusMessage **message, const char *dbus_command)
+{
+	int ret = 0;
+	char path[DBUS_MAXIMUM_NAME_LENGTH + 1];
+	char interface_dbus_name[DBUS_MAXIMUM_NAME_LENGTH + 1];
+
+	assert(*message == NULL);
+
+	ret = lookup_dbus_name_from_interface(interface_dbus_name, gInterfaceName);
+	require_quiet(ret == 0, bail);
+
+	snprintf(path, sizeof(path), "%s/%s", WPANTUND_DBUS_PATH, gInterfaceName);
+	*message = dbus_message_new_method_call(interface_dbus_name, path, WPANTUND_DBUS_APIv1_INTERFACE, dbus_command);
+
+	if (*message == NULL) {
+		ret = ERRORCODE_ALLOC;
+	}
+
+bail:
+	return ret;
+}
+
+void
+append_dbus_dict_entry_basic(DBusMessageIter *dict_iter, const char *key, char dbus_basic_type, void *value)
+{
+	DBusMessageIter entry_iter;
+	DBusMessageIter value_iter;
+	char dbus_signature[2] = { dbus_basic_type, '\0' };
+
+	dbus_message_iter_open_container(dict_iter, DBUS_TYPE_DICT_ENTRY, NULL, &entry_iter);
+
+	// Append dictionary key as String
+	dbus_message_iter_append_basic(&entry_iter, DBUS_TYPE_STRING, &key);
+
+	// Append dictionary value as Variant with the given basic type
+	dbus_message_iter_open_container(&entry_iter, DBUS_TYPE_VARIANT, dbus_signature, &value_iter);
+	dbus_message_iter_append_basic(&value_iter, dbus_basic_type, value);
+	dbus_message_iter_close_container(&entry_iter, &value_iter);
+
+	dbus_message_iter_close_container(dict_iter, &entry_iter);
+}
+
+void
+append_dbus_dict_entry_byte_array(DBusMessageIter *dict_iter, const char *key, const uint8_t *data, int data_len)
+{
+	DBusMessageIter entry_iter;
+	DBusMessageIter value_iter;
+	DBusMessageIter array_iter;
+
+	dbus_message_iter_open_container(dict_iter, DBUS_TYPE_DICT_ENTRY, NULL, &entry_iter);
+
+	// Append dictionary key as String
+	dbus_message_iter_append_basic(&entry_iter, DBUS_TYPE_STRING, &key);
+
+	// Append dictionary value as Variant with type Array of Bytes
+	dbus_message_iter_open_container(
+		&entry_iter,
+		DBUS_TYPE_VARIANT,
+		DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_BYTE_AS_STRING,
+		&value_iter
+	);
+
+	// Append byte array
+	dbus_message_iter_open_container(&value_iter, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE_AS_STRING, &array_iter);
+	dbus_message_iter_append_fixed_array(&array_iter, DBUS_TYPE_BYTE, &data, data_len);
+	dbus_message_iter_close_container(&value_iter, &array_iter);
+
+	dbus_message_iter_close_container(&entry_iter, &value_iter);
+
+	dbus_message_iter_close_container(dict_iter, &entry_iter);
 }

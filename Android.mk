@@ -50,6 +50,7 @@ LOCAL_CFLAGS := \
     $(NULL)
 
 LOCAL_SRC_FILES := \
+    third_party/wpantund/repo/src/util/string-utils.c \
     third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
     src/agent/agent_instance.cpp \
     src/agent/border_agent.cpp \
