@@ -54,8 +54,8 @@ namespace ot {
 
 namespace BorderRouter {
 
-static const char   kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
-static const size_t kMaxSizeOfPacket          = 1500;            ///< Max size of packet in bytes.
+static const char   kBorderAgentServiceType[] = "_meshcop._udp."; ///< Border agent service type of mDNS
+static const size_t kMaxSizeOfPacket          = 1500;             ///< Max size of packet in bytes.
 
 /**
  * Locators
@@ -205,9 +205,9 @@ exit:
 
 void BorderAgent::PublishService(void)
 {
-    assert(mNetworkName[0] != '\0');
-
     char xpanid[sizeof(mExtPanId) * 2 + 1];
+
+    assert(mNetworkName[0] != '\0');
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
     mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
                                xpanid, NULL);

@@ -315,34 +315,16 @@ PublisherAvahi::PublisherAvahi(int          aProtocol,
     , mGroup(NULL)
     , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
                                       : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
-    , mHost(NULL)
-    , mDomain(NULL)
+    , mHost(aHost)
+    , mDomain(aDomain)
     , mState(kStateIdle)
     , mStateHandler(aHandler)
     , mContext(aContext)
 {
-    if (aHost)
-    {
-        mHost = strndup(aHost, kMaxSizeOfHost);
-    }
-
-    if (aDomain)
-    {
-        mDomain = strndup(aDomain, kMaxSizeOfDomain);
-    }
 }
 
 PublisherAvahi::~PublisherAvahi(void)
 {
-    if (mHost)
-    {
-        free(mHost);
-    }
-
-    if (mDomain)
-    {
-        free(mDomain);
-    }
 }
 
 otbrError PublisherAvahi::Start(void)

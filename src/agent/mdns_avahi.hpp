@@ -301,8 +301,8 @@ private:
     AvahiEntryGroup *mGroup;
     Poller           mPoller;
     int              mProtocol;
-    char *           mHost;
-    char *           mDomain;
+    const char *     mHost;
+    const char *     mDomain;
     State            mState;
     StateHandler     mStateHandler;
     void *           mContext;
