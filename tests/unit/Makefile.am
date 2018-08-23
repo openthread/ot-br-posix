@@ -36,8 +36,13 @@ unittest_SOURCES           = \
     test_event_emitter.cpp   \
     test_pskc.cpp            \
     test_logging.cpp         \
+    $(NULL)
+
+if OTBR_ENABLE_MDNS_MDNSSD
+unittest_SOURCES          += \
     test_mdns_mdnssd.cpp     \
     $(NULL)
+endif
 
 unittest_CPPFLAGS                                             = \
     -I$(top_srcdir)/src                                         \
