@@ -49,7 +49,7 @@ nat64_install()
     sudo sed -i 's/^RUN="no"/RUN="yes"/' $TAYGA_DEFAULT
     sudo sed -i 's/^IPV4_TUN_ADDR=""/IPV4_TUN_ADDR="'$TAYGA_IPV4_ADDR'"/' $TAYGA_DEFAULT
     sudo sed -i 's/^prefix /##prefix /' $TAYGA_CONF
-    sudo sed -i 's/^# prefix 64:ff9b::\/96/prefix 64:ff9b::\/96/' $TAYGA_CONF
+    sudo sed -i 's/^# prefix 64:ff9b::\/96/prefix 2001:db8:1:ffff::\/96/' $TAYGA_CONF
     sudo sed -i '/^#ipv6-addr/a ipv6-addr '$TAYGA_IPV6_ADDR $TAYGA_CONF
     sudo tee $NAT44_SERVICE <<EOF
 #! /bin/sh
