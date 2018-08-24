@@ -112,8 +112,7 @@ script-check)
     ping6 -c 1  ::1 || die 'ipv6 failed'
     sudo ip -6 route list
     sudo iptables -t nat -L
-    traceroute  2001:db8:1:ffff::127.0.0.1
-    traceroute  2001:db8:1:ffff::8.8.8.8
+    sudo ifconfig
     ping6 -c 1  2001:db8:1:ffff::8.8.8.8 || die 'Nat64 net avaibility failed'
     kill $SERVICES_PID || die 'Failed to stop services!'
     sudo killall otbr-web || true
