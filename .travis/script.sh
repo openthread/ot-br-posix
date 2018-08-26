@@ -73,13 +73,9 @@ scan-build)
     ;;
 
 script-check)
-    cat /proc/sys/net/ipv6/conf/all/forwarding
-    echo '++++++++++++++++++++++++++++++++++++++++++++'
-    cat /proc/sys/net/ipv6/conf/all/forwarding | grep 1 || die
-    cat /proc/sys/net/ipv6/conf/all/disable_ipv6 | grep 0 || die
     RELEASE=1 ./script/bootstrap || die 'Failed to bootstrap for release!'
     ./script/bootstrap || die 'Failed to bootstrap for development!'
-    export NAT64=1; ./script/setup || die 'Failed to setup!'
+    NAT64=1 ./script/setup || die 'Failed to setup!'
     SOCAT_OUTPUT=/tmp/ot-socat
 
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
@@ -99,21 +95,12 @@ script-check)
 
     ot-ncp-ftd 1 > $DEVICE_PTY < $DEVICE_PTY &
     ./script/console & SERVICES_PID=$!
+    sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 10
     netstat -an | grep 49191 || die 'Service otbr-agent not ready!'
     netstat -an | grep 80 || die 'Service otbr-web not ready!'
-    cat /etc/tayga.conf
-    cat /etc/default/tayga
-    sudo service tayga start
-    sudo service otbr-nat44 start
-    sudo service tayga status
     pidof tayga || die 'tayga not running'
-    ping6 -c 1  ::1 || die 'ipv6 failed'
-    sudo ip -6 route list
-    sudo iptables -t nat -L
-    sudo ifconfig
-    ping6 -c 1  2001:db8:1:ffff::8.8.8.8 || die 'Nat64 net avaibility failed'
     kill $SERVICES_PID || die 'Failed to stop services!'
     sudo killall otbr-web || true
     sudo killall otbr-agent || true

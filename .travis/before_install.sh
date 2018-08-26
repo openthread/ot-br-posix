@@ -59,6 +59,7 @@ linux)
         sudo apt-get install socat
         echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
         echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
+        echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
         # Skip installing build dependencies when checking script
         exit 0
     }
