@@ -261,12 +261,7 @@ otbrError ControllerWpantund::Init(void)
     char      dbusName[DBUS_MAXIMUM_NAME_LENGTH];
 
     dbus_error_init(&error);
-    mDBus = dbus_bus_get(DBUS_BUS_STARTER, &error);
-    if (!mDBus)
-    {
-        dbus_error_free(&error);
-        mDBus = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-    }
+    mDBus = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
     VerifyOrExit(mDBus != NULL);
 
     VerifyOrExit(dbus_bus_register(mDBus, &error));

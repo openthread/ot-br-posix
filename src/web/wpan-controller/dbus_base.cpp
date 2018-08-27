@@ -47,13 +47,7 @@ DBusConnection *DBusBase::GetConnection(void)
     DBusError error;
 
     dbus_error_init(&error);
-    mConnection = dbus_bus_get(DBUS_BUS_STARTER, &error);
-    if (!mConnection)
-    {
-        dbus_error_free(&error);
-        dbus_error_init(&error);
-        mConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-    }
+    mConnection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
     if (dbus_error_is_set(&error))
     {
         otbrLog(OTBR_LOG_ERR, "connection error: %s", error.message);
