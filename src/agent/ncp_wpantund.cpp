@@ -370,6 +370,9 @@ exit:
 
 void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd)
 {
+    DBusWatch *  watch = NULL;
+    unsigned int flags;
+    int          fd;
     for (WatchMap::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
         if (!it->second)
@@ -377,9 +380,9 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
             continue;
         }
 
-        DBusWatch *  watch = it->first;
-        unsigned int flags = dbus_watch_get_flags(watch);
-        int          fd    = dbus_watch_get_unix_fd(watch);
+        watch = it->first;
+        flags = dbus_watch_get_flags(watch);
+        fd    = dbus_watch_get_unix_fd(watch);
 
         if (fd < 0)
         {
@@ -407,6 +410,10 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
 
 void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
+    DBusWatch *  watch = NULL;
+    unsigned int flags;
+    int          fd;
+
     for (WatchMap::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
         if (!it->second)
@@ -414,9 +421,9 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
             continue;
         }
 
-        DBusWatch *  watch = it->first;
-        unsigned int flags = dbus_watch_get_flags(watch);
-        int          fd    = dbus_watch_get_unix_fd(watch);
+        watch = it->first;
+        flags = dbus_watch_get_flags(watch);
+        fd    = dbus_watch_get_unix_fd(watch);
 
         if (fd < 0)
         {
@@ -444,39 +451,6 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
     while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_get_dispatch_status(mDBus) &&
            dbus_connection_read_write_dispatch(mDBus, 0))
         ;
-}
-
-DBusMessage *ControllerWpantund::RequestProperty(const char *aKey)
-{
-    DBusMessage *message = NULL;
-    DBusMessage *reply   = NULL;
-    const int    timeout = DEFAULT_TIMEOUT_IN_SECONDS * 1000;
-    DBusError    error;
-
-    dbus_error_init(&error);
-    VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath,
-                                                         WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_CMD_PROP_GET)) !=
-                     NULL,
-                 errno = ENOMEM);
-
-    VerifyOrExit(dbus_message_append_args(message, DBUS_TYPE_STRING, &aKey, DBUS_TYPE_INVALID), errno = EINVAL);
-
-    reply = dbus_connection_send_with_reply_and_block(mDBus, message, timeout, &error);
-
-exit:
-
-    if (dbus_error_is_set(&error))
-    {
-        HandleDBusError(error);
-        errno = EREMOTEIO;
-    }
-
-    if (message)
-    {
-        dbus_message_unref(message);
-    }
-
-    return reply;
 }
 
 otbrError ControllerWpantund::RequestEvent(int aEvent)

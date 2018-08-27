@@ -132,8 +132,7 @@ private:
                                                          void *          aContext);
     DBusHandlerResult        HandlePropertyChangedSignal(DBusMessage &aMessage);
 
-    DBusMessage *RequestProperty(const char *aKey);
-    otbrError    ParseEvent(const char *aKey, DBusMessageIter *aIter);
+    otbrError ParseEvent(const char *aKey, DBusMessageIter *aIter);
 
     otbrError UpdateInterfaceDBusPath();
 
