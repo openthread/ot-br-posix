@@ -183,32 +183,13 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
             }
 #endif
         }
-        else if (DBUS_TYPE_ARRAY == dbus_message_iter_get_arg_type(aIter))
+        else
         {
-            const uint8_t * bytes = NULL;
-            int             count = 0;
-            DBusMessageIter subIter;
-
-            dbus_message_iter_recurse(aIter, &subIter);
-            dbus_message_iter_get_fixed_array(&subIter, &bytes, &count);
-            VerifyOrExit(count == kSizeExtPanId, ret = OTBR_ERROR_DBUS);
-            memcpy(&xpanid, bytes, sizeof(xpanid));
+            assert(false);
         }
 
         otbrLog(OTBR_LOG_INFO, "xpanid %llu...", xpanid);
         EventEmitter::Emit(kEventExtPanId, reinterpret_cast<uint8_t *>(&xpanid));
-    }
-    else if (!strcmp(aKey, kWPANTUNDProperty_NetworkPSKc))
-    {
-        const uint8_t * pskc  = NULL;
-        int             count = 0;
-        DBusMessageIter subIter;
-
-        dbus_message_iter_recurse(aIter, &subIter);
-        dbus_message_iter_get_fixed_array(&subIter, &pskc, &count);
-        VerifyOrExit(count == kSizePSKc, ret = OTBR_ERROR_DBUS);
-
-        EventEmitter::Emit(kEventPSKc, pskc);
     }
 
 exit:
