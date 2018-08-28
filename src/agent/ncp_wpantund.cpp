@@ -373,6 +373,7 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
     DBusWatch *  watch = NULL;
     unsigned int flags;
     int          fd;
+
     for (WatchMap::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
         if (!it->second)

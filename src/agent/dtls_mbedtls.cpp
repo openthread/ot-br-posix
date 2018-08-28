@@ -60,7 +60,6 @@ static int FromOtbrLogLevel(void)
     case OTBR_LOG_ALERT:
     case OTBR_LOG_CRIT:
         // 0 No debug
-        level = 0;
         break;
     case OTBR_LOG_ERR:
         // 1 Error
@@ -97,7 +96,6 @@ static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLin
     {
     // 0 No debug
     case 0:
-        level = 0;
         break;
     // 1 Error
     case 1:
@@ -120,7 +118,7 @@ static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLin
         break;
     }
 
-    if (level > 0)
+    if (level != 0)
     {
         otbrLog(aLevel, "%s:%04d: %s", aFile, aLine, aMessage);
     }
