@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <signal.h>
+
 #include "commissioner.hpp"
 #include "commissioner_argcargv.hpp"
 #include "device_hash.hpp"
@@ -43,6 +45,11 @@
 
 using namespace ot;
 using namespace ot::BorderRouter;
+
+static void HandleSignal(int aSignal)
+{
+    signal(aSignal, SIG_DFL);
+}
 
 int main(int argc, char **argv)
 {
@@ -98,6 +105,8 @@ int main(int argc, char **argv)
         exit(EXIT_SUCCESS);
     }
 
+    signal(SIGTERM, HandleSignal);
+
     if (args.mNeedCommissionDevice)
     {
         int         kaRate = args.mSendCommKATxRate;
@@ -137,7 +146,7 @@ int main(int argc, char **argv)
             FD_ZERO(&errorFdSet);
             commissioner.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
             rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
-            if ((rval < 0) && (errno != EINTR))
+            if (rval < 0)
             {
                 otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
                 break;

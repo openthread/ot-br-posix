@@ -28,7 +28,7 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-bin_PROGRAMS = otbr-commissioner
+check_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
     addr_utils.hpp                                      \
