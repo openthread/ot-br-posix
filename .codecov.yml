@@ -1,2 +1,6 @@
+coverage:
+  status:
+    patch: off
+
 ignore:
   - "third_party/*"
