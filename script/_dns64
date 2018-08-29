@@ -64,6 +64,7 @@ dns64_update_resolvconf()
 dns64_install()
 {
     with NAT64 && with DNS64 || return 0
+    [ ! -f /.dockerenv ] || return 0
 
     test -f $BIND_CONF_OPTIONS || die 'Cannot find bind9 configuration file!'
     sudo sed -i '/^};/i\\tallow-recursion { any; };' $BIND_CONF_OPTIONS
@@ -83,6 +84,7 @@ dns64_install()
 dns64_uninstall()
 {
     with NAT64 && with DNS64 || return 0
+    [ ! -f /.dockerenv ] || return 0
 
     dns64_stop
     sudo sed -i '/^\tallow-recursion/d' $BIND_CONF_OPTIONS
@@ -101,6 +103,7 @@ dns64_uninstall()
 dns64_start()
 {
     with NAT64 && with DNS64 || return 0
+    [ ! -f /.dockerenv ] || return 0
 
     if have systemctl; then
         sudo systemctl start bind9 || die 'Failed to start bind9!'
@@ -110,6 +113,7 @@ dns64_start()
 dns64_stop()
 {
     with NAT64 && with DNS64 || return 0
+    [ ! -f /.dockerenv ] || return 0
 
     if have systemctl; then
         sudo systemctl stop bind9 || true
