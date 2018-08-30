@@ -7,7 +7,6 @@ ADD . /app/borderrouter
 RUN apt-get -y update
 
 RUN apt-get install -y \
-                    git \
                     lsb-core \
                     sudo \
                     wget \
@@ -17,6 +16,10 @@ RUN apt-get install -y \
 
 RUN cd /app/borderrouter && ./script/bootstrap && ./bootstrap
 
-RUN cd /app/borderrouter && ./configure && make -j8 && make install
+RUN cd /app/borderrouter && ./configure --with-dbusconfdir="/etc/" && make -j8 && make install
 
 RUN cd /app/borderrouter && export NAT64=1 && ./script/setup
+
+ENTRYPOINT ["/app/borderrouter/script/docker_entrypoint.sh"]
+
+CMD ["top"]
