@@ -311,7 +311,7 @@ void Commissioner::CommissionerSet(const SteeringData &aSteeringData)
     tlv = tlv->GetNext();
 
     tlv->SetType(Meshcop::kSteeringData);
-    tlv->SetValue(aSteeringData.GetData(), aSteeringData.GetLength());
+    tlv->SetValue(aSteeringData.GetBloomFilter(), aSteeringData.GetLength());
     tlv = tlv->GetNext();
 
     message->SetPath(OT_URI_PATH_COMMISSIONER_SET);

@@ -446,6 +446,7 @@ src/utils/Makefile
 tests/Makefile
 tests/mdns/Makefile
 tests/meshcop/Makefile
+tests/tools/Makefile
 tests/unit/Makefile
 tools/Makefile
 doc/Makefile

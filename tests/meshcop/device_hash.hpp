@@ -36,7 +36,7 @@
 
 #include <stdint.h>
 
-#include "utils/steeringdata.hpp"
+#include "utils/steering_data.hpp"
 
 namespace ot {
 namespace BorderRouter {

@@ -80,9 +80,7 @@ SteeringData ComputeSteeringData(uint8_t aLength, bool aAllowAny, uint8_t *aEui6
 {
     SteeringData data;
 
-    data.Init();
-    data.SetLength(aLength);
-    data.Clear();
+    data.Init(aLength);
     if (aAllowAny)
     {
         data.Set();

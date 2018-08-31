@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2017-2018, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -26,72 +26,55 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* length of an EUI64 in bytes */
-#define LEN_BIN_EUI64 (64 / 8)
-/* length of EUI64 in ascii form */
+#include "steering_data.hpp"
 
-#include "steeringdata.hpp"
+#include <assert.h>
+#include <mbedtls/sha256.h>
+
 #include "crc16.hpp"
-#include "hex.hpp"
-#include <stdio.h>
-#include <string.h>
 
 namespace ot {
 
-bool SteeringData::IsCleared(void)
+void SteeringData::Init(uint8_t aLength)
 {
-    bool rval = true;
+    assert(aLength <= kMaxSizeOfBloomFilter);
 
-    for (uint8_t i = 0; i < GetLength(); i++)
-    {
-        if (mSteeringData[i] != 0)
-        {
-            rval = false;
-            break;
-        }
-    }
+    mLength = aLength;
 
-    return rval;
+    Clear();
 }
 
-void SteeringData::ComputeBloomFilter(const uint8_t *aExtAddress)
+void SteeringData::ComputeJoinerId(const uint8_t *aEui64, uint8_t *aJoinerId)
 {
-    Crc16 ccitt(Crc16::kCcitt);
-    Crc16 ansi(Crc16::kAnsi);
+    const size_t           kSizeHashSha256Output = 32;
+    const size_t           kSizeEui64            = 8;
+    uint8_t                hash[kSizeHashSha256Output];
+    mbedtls_sha256_context sha256;
 
-    for (size_t j = 0; j < (64 / 8); j++)
+    mbedtls_sha256_init(&sha256);
+    mbedtls_sha256_starts(&sha256, 0);
+    mbedtls_sha256_update(&sha256, aEui64, kSizeEui64);
+    mbedtls_sha256_finish(&sha256, hash);
+
+    memcpy(aJoinerId, hash, kSizeJoinerId);
+    aJoinerId[0] |= 2;
+}
+
+void SteeringData::ComputeBloomFilter(const uint8_t *aJoinerId)
+{
+    Crc16          ccitt(Crc16::kCcitt);
+    Crc16          ansi(Crc16::kAnsi);
+    const uint16_t numBits = mLength * 8;
+
+    for (size_t i = 0; i < kSizeJoinerId; i++)
     {
-        uint8_t byte = aExtAddress[j];
+        uint8_t byte = aJoinerId[i];
         ccitt.Update(byte);
         ansi.Update(byte);
     }
 
-    SetBit(ccitt.Get() % GetNumBits());
-    SetBit(ansi.Get() % GetNumBits());
-}
-
-bool SteeringData::ComputeBloomFilterAscii(const char *ascii_eui64)
-{
-    int     r;
-    uint8_t bin_eui[LEN_BIN_EUI64];
-
-    /* Test 1: simple check for length */
-    if ((LEN_BIN_EUI64 * 2) != strlen(ascii_eui64))
-    {
-        return false;
-    }
-
-    /* convert string as hex bytes */
-    r = ot::Utils::Hex2Bytes(ascii_eui64, bin_eui, sizeof(bin_eui));
-
-    /* how many did we get? */
-    if (r != LEN_BIN_EUI64)
-    {
-        return false;
-    }
-
-    ComputeBloomFilter(bin_eui);
-    return true;
+    SetBit(ccitt.Get() % numBits);
+    SetBit(ansi.Get() % numBits);
 }
 
 } // namespace ot

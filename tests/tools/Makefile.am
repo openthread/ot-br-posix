@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -28,11 +28,20 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-SUBDIRS         = \
-    mdns          \
-    meshcop       \
-    tools         \
-    unit          \
+dist_check_SCRIPTS   = \
+    test-pskc          \
+    test-steering-data \
     $(NULL)
+
+TESTS                = \
+    test-pskc          \
+    test-steering-data \
+    $(NULL)
+
+TESTS_ENVIRONMENT                = \
+    export                         \
+    top_builddir='$(top_builddir)' \
+    VERBOSE=1                      \
+    ;
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am
