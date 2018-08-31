@@ -448,8 +448,12 @@ ba_start()
   sudo killall "${OTBR_AGENT}" || true
   write_syslog "AGENT: starting"
 
+  # check version
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -v)
+  # check invalid arguments
+  (cd "${ORIGIN_PWD}" && ! sudo "${OTBR_AGENT_PATH}" -x)
   # we launch this in the background
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" &)
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -d 6&)
   # wait for it to complete
   sleep 10
 

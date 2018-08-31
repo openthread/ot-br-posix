@@ -737,6 +737,7 @@ int CommissionerServe(Context &aContext)
 
     otbrLog(OTBR_LOG_INFO, "commissioner-serve: device-pskd=%s", aContext.mJoiner.mPSKd_ascii);
     aContext.mDtlsServer->SetPSK((const uint8_t *)aContext.mJoiner.mPSKd_ascii, strlen(aContext.mJoiner.mPSKd_ascii));
+    aContext.mDtlsServer->SetSeed(kSeed, sizeof(kSeed));
     aContext.mDtlsServer->Start();
 
     if (aContext.mCOMM_KA.mDisabled)

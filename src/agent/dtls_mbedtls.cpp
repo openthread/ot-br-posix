@@ -50,59 +50,78 @@ namespace BorderRouter {
 
 namespace Dtls {
 
-static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLine, const char *aMessage)
+static int FromOtbrLogLevel(void)
 {
-    // Debug levels of mbedtls from mbedtls documentation.
-    //
-    // 0 No debug
-    // 1 Error
-    // 2 State change
-    // 3 Informational
-    // 4 Verbose
-    switch (aLevel)
+    int level = 0;
+
+    switch (otbrLogGetLevel())
     {
-    case 1:
-        aLevel = OTBR_LOG_ERR;
+    case OTBR_LOG_EMERG:
+    case OTBR_LOG_ALERT:
+    case OTBR_LOG_CRIT:
+        // 0 No debug
         break;
-    case 2:
-        aLevel = OTBR_LOG_WARNING;
+    case OTBR_LOG_ERR:
+        // 1 Error
+        level = 1;
         break;
-    case 3:
-        aLevel = OTBR_LOG_INFO;
+    case OTBR_LOG_WARNING:
+        // 2 State change
+        level = 2;
         break;
-    case 4:
-        aLevel = OTBR_LOG_DEBUG;
+    case OTBR_LOG_NOTICE:
+    case OTBR_LOG_INFO:
+        // 3 Informational
+        level = 3;
+        break;
+    case OTBR_LOG_DEBUG:
+        // 4 Verbose
+        level = 4;
         break;
     default:
-        aLevel = OTBR_LOG_DEBUG;
+        assert(false);
         break;
     }
-    char buf[100];
-    /* mbed inserts a EOL
-     * And so does the otbrLog()
-     * remove that here.
-     */
 
-    /* make a copy because we modify it */
-    strncpy(buf, aMessage, sizeof(buf) - 1);
-    /* force termination */
-    buf[sizeof(buf) - 1] = 0;
+    return level;
+}
 
-    /* now remove the extra cr/lf */
-    char *cp;
-    cp = strchr(buf, '\n');
-    if (cp)
-    {
-        *cp = 0;
-    }
-    cp = strchr(buf, '\r');
-    if (cp)
-    {
-        *cp = 0;
-    }
+static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLine, const char *aMessage)
+{
+    int level = 0;
 
-    otbrLog(aLevel, "%s:%04d: %s", aFile, aLine, buf);
     (void)aContext;
+
+    switch (aLevel)
+    {
+    // 0 No debug
+    case 0:
+        break;
+    // 1 Error
+    case 1:
+        level = OTBR_LOG_ERR;
+        break;
+    // 2 State change
+    case 2:
+        level = OTBR_LOG_WARNING;
+        break;
+    // 3 Informational
+    case 3:
+        level = OTBR_LOG_INFO;
+        break;
+    // 4 Verbose
+    case 4:
+        level = OTBR_LOG_DEBUG;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+
+    if (level != 0)
+    {
+        otbrLog(aLevel, "%s:%04d: %s", aFile, aLine, aMessage);
+    }
 }
 
 Server *Server::Create(uint16_t aPort, StateHandler aStateHandler, void *aContext)
@@ -130,7 +149,7 @@ otbrError MbedtlsServer::Start(void)
     mbedtls_ctr_drbg_init(&mCtrDrbg);
 
     // Allow all debug message here and filter in MbedtlsDebug().
-    mbedtls_debug_set_threshold(4);
+    mbedtls_debug_set_threshold(FromOtbrLogLevel());
 
     SuccessOrExit(error = mbedtls_ctr_drbg_seed(&mCtrDrbg, mbedtls_entropy_func, &mEntropy, mSeed, mSeedLength));
 
