@@ -7,8 +7,15 @@ source /otbr/otbr_config
 [ -n "$TUN_INTERFACE_NAME" ] || TUN_INTERFACE_NAME="wpan0"
 [ -n "$AUTO_PREFIX_DEFAULT_ROUTE" ] || AUTO_PREFIX_DEFAULT_ROUTE=true
 [ -n "$AUTO_PREFIX_SLAAC" ] || AUTO_PREFIX_SLACC=true
+[ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
+
+NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
+
+sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
+sed -i "s/dns64/dns64 $NAT64_PREFIX/" /etc/bind/named.conf.options
 
 service dbus start
+service bind9 start
 service tayga start 
 wpantund \
     -o Config:NCP:SocketPath "$NCP_PATH" \
@@ -16,11 +23,7 @@ wpantund \
     -o Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_DEFAULT_ROUTE \
     -o IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLACC &
 
-echo "wpantund done"
-
 sleep 5
-
-echo "start otbr agent"
 
 /usr/local/sbin/otbr-agent -I $TUN_INTERFACE_NAME &
 
