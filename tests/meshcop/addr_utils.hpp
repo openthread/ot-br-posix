@@ -34,10 +34,6 @@
 #ifndef OTBR_ADDR_UTILS_HPP_
 #define OTBR_ADDR_UTILS_HPP_
 
-#include <vector>
-
-#include <arpa/inet.h>
-#include <errno.h>
 #include <sys/socket.h>
 
 namespace ot {

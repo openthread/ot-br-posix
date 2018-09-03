@@ -32,12 +32,14 @@
  */
 
 #include "addr_utils.hpp"
+
 #include <string.h>
+
+#include <arpa/inet.h>
 
 namespace ot {
 namespace BorderRouter {
 
-#define IPSTR_BUFSIZE (((INET6_ADDRSTRLEN > INET_ADDRSTRLEN) ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN) + 1)
 char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
 {
     switch (aAddr->sa_family)

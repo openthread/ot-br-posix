@@ -56,7 +56,7 @@ const char     Commissioner::kCommissionerId[]       = "OpenThread";
 const int      Commissioner::kCoapResponseWaitSecond = 10;
 const int      Commissioner::kCoapResponseRetryTime  = 2;
 
-static void MBedDebugPrint(void *ctx, int level, const char *file, int line, const char *str)
+static void MBedDebugPrint(void *aCtx, int aLevel, const char *aFile, int aLine, const char *aStr)
 {
     char buf[100];
     /* mbed inserts EOL and so does otbrLog()
@@ -64,7 +64,7 @@ static void MBedDebugPrint(void *ctx, int level, const char *file, int line, con
      */
     char *cp;
 
-    strncpy(buf, str, sizeof(buf));
+    strncpy(buf, aStr, sizeof(buf));
     cp = strchr(buf, '\n');
     if (cp)
     {
@@ -75,10 +75,10 @@ static void MBedDebugPrint(void *ctx, int level, const char *file, int line, con
     {
         *cp = 0;
     }
-    otbrLog(OTBR_LOG_INFO, "%s:%d: %s", file, line, buf);
+    otbrLog(OTBR_LOG_INFO, "%s:%d: %s", aFile, aLine, buf);
 
-    (void)level;
-    (void)ctx;
+    (void)aLevel;
+    (void)aCtx;
 }
 
 /** dummy function for mbed */
