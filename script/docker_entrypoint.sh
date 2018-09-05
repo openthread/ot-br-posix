@@ -13,8 +13,7 @@
 #  3. Neither the name of the copyright holder nor the
 #     names of its contributors may be used to endorse or promote products
 #     derived from this software without specific prior written permission.
-#
-#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# #  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 #  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 #  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 #  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
@@ -84,19 +83,22 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*{/dns64 $NAT64_PREFIX {/" /etc/bind/named.conf.options
 
+echo "Config:NCP:SocketPath \"$NCP_PATH\"" > /etc/wpantund.conf
+echo "Config:TUN:InterfaceName $TUN_INTERFACE_NAME " >> /etc/wpantund.conf
+echo "Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_ROUTE" >> /etc/wpantund.conf
+echo "IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC" >> /etc/wpantund.conf
+
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME\"" > /etc/default/otbr-agent
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -p 80\"" > /etc/default/otbr-web
+
 service dbus start
 service bind9 start
 service tayga start 
-wpantund \
-    -o Config:NCP:SocketPath "$NCP_PATH" \
-    -o Config:TUN:InterfaceName $TUN_INTERFACE_NAME \
-    -o Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_ROUTE \
-    -o IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC &
+service wpantund start
 
 sleep 5
 
-/usr/local/sbin/otbr-agent -I $TUN_INTERFACE_NAME &
-
-/usr/local/sbin/otbr-web -I $TUN_INTERFACE_NAME -p 80 &
+service otbr-agent start
+service otbr-web start
 
 wait

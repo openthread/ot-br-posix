@@ -1,3 +1,4 @@
+#!/bin/sh
 #  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
@@ -24,25 +25,71 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+### BEGIN INIT INFO
+# Provides:          otbr-agent
+# Required-Start:    wpantund
+# Required-Stop:
+# Should-Start:      
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: thread border agent
+# Description: otbr-agent provides a proxy to access thread device attached to border router
+### END INIT INFO
 
-FROM ubuntu
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-WORKDIR /app/borderrouter
+AGENT_BIN=@sbindir@/otbr-agent
+AGENT_CONF=@sysconfdir@/default/otbr-agent
+AGENT_PID_FILE=/var/run/otbr-agent.pid
 
-ADD . /app/borderrouter
+. /lib/lsb/init-functions
+. /lib/init/vars.sh
 
-RUN apt-get -y update
+if [ -f $AGENT_CONF ]; then
+    . $AGENT_CONF
+fi
 
-RUN apt-get install -y sudo lsb-core
+start_agent() 
+{
+    start-stop-daemon --start --quiet\
+        --pidfile $AGENT_PID_FILE --make-pidfile\
+        -b --exec $AGENT_BIN -- $OTBR_AGENT_OPTS
+}
 
-RUN cd /app/borderrouter && NAT64=1 ./script/bootstrap && ./bootstrap
+stop_agent()
+{
+    start-stop-daemon --stop --quiet\
+        --pidfile $AGENT_PID_FILE --remove-pidfile
+}
 
-RUN cd /app/borderrouter && ./configure --with-dbusconfdir="/etc/" --sysconfdir="/etc/" && make -j8 && make install
+set -e
 
-RUN cd /app/borderrouter && NAT64=1 ./script/setup
+case "$1" in
+    start)
+        start_agent
+        ;;
+    restart|reload|force-reload)
+        stop_agent
+        start_agent
+        ;;
+    stop|force-stop)
+        stop_agent
+        ;;
+    status)
+        if [ -f $AGENT_PID_FILE ] ;  then
+            log_progress_msg "otbr-agent running"
+            log_end_msg 0
+        else
+            log_progress_msg "otbr-agent not running"
+            log_end_msg 1
+            exit 1
+        fi
+        ;;
+    *)
+        echo "unkown comand" >&2
+        exit 3
+        ;;
+esac
 
-RUN chmod 644 /etc/bind/named.conf.options
-
-ENTRYPOINT ["/app/borderrouter/script/docker_entrypoint.sh"]
-
-EXPOSE 80
+exit 0
