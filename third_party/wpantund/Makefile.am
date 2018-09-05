@@ -76,7 +76,6 @@ if OTBR_HAS_SYSTEMCTL
 systemddir=$(sysconfdir)/systemd/system
 systemd_DATA                        = \
     wpantund.service                  \
-    wpantund.init                  	  \
     $(NULL)
 
 .PHONY: $(systemd_DATA)
