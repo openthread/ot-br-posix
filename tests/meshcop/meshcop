@@ -376,7 +376,7 @@ configure_openthread()
     --enable-border-router \
     --enable-cli \
     --enable-debug \
-    --enable-ftd \ 
+    --enable-ftd \
     --enable-joiner \
     --enable-mtd \
     --enable-ncp \
