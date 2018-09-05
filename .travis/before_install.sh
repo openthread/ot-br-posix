@@ -47,12 +47,13 @@ linux)
             cd openthread &&
             ./bootstrap &&
             ./configure --prefix=/usr       \
-                --enable-ncp-app=ftd        \
+                --enable-ftd                \
+                --enable-ncp                \
                 --with-ncp-bus=uart         \
                 --with-examples=posix       \
                 --with-platform-info=POSIX  \
                 --enable-border-router      \
-                --enable-tmf-proxy          \
+                --enable-udp-proxy          \
                 $NULL &&
             make && sudo make install) || die 'Failed to build OpenThread!'
         which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
