@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2018, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,38 +28,37 @@
 
 /**
  * @file
- *   Misc functions used by commissioning test app
+ *   The file is the implementation of the address manipulation utilities for the commissioner test app.
  */
 
-#include "commissioner.hpp"
+#include "addr_utils.hpp"
 
-/** return a hex string to print for logging */
-const char *CommissionerUtilsHexString(const uint8_t *pBytes, int n)
+#include <string.h>
+
+#include <arpa/inet.h>
+
+namespace ot {
+namespace BorderRouter {
+
+char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
 {
-    static char buf[80 + 1];
-
-    if (n > 40)
+    switch (aAddr->sa_family)
     {
-        n = 40;
+    case AF_INET:
+        inet_ntop(AF_INET, &((reinterpret_cast<const struct sockaddr_in *>(aAddr))->sin_addr), aOutBuf, aLength);
+        break;
+
+    case AF_INET6:
+        inet_ntop(AF_INET6, &((reinterpret_cast<const struct sockaddr_in6 *>(aAddr))->sin6_addr), aOutBuf, aLength);
+        break;
+
+    default:
+        strncpy(aOutBuf, "Unknown AF", aLength);
+        return NULL;
     }
 
-    Bytes2Hex(pBytes, n, buf);
-    return buf;
+    return aOutBuf;
 }
 
-/* die and exit */
-void CommissionerUtilsFail(const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    otbrLogv(OTBR_LOG_ERR, fmt, ap);
-    va_end(ap);
-
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    fflush(stderr);
-
-    exit(EXIT_FAILURE);
-}
+} // namespace BorderRouter
+} // namespace ot

@@ -31,16 +31,22 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 check_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
+    addr_utils.hpp                                      \
     commissioner.hpp                                    \
     commissioner_argcargv.hpp                           \
+    commissioner_constants.hpp                          \
+    commissioner_utils.hpp                              \
+    device_hash.hpp                                     \
+    joiner_session.hpp                                  \
     $(NULL)
 
 otbr_commissioner_SOURCES                             = \
-    commissioner_argcargv.cpp                           \
-    commissioner_compute.cpp                            \
+    addr_utils.cpp                                      \
     commissioner.cpp                                    \
-    commissioner_selftest.cpp                           \
-    commissioner_utils.cpp                              \
+    commissioner_argcargv.cpp                           \
+    device_hash.cpp                                     \
+    joiner_session.cpp                                  \
+    main.cpp                                            \
     $(NULL)
 
 otbr_commissioner_CPPFLAGS                            = \

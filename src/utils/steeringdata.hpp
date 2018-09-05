@@ -55,7 +55,7 @@ public:
     /**
      * Returns the length of the steering data.
      */
-    uint8_t GetLength(void) { return mLength; }
+    uint8_t GetLength(void) const { return mLength; }
 
     /**
      * Init the steering data.
@@ -108,7 +108,7 @@ public:
      * @returns The number of bits in the Bloom Filter.
      *
      */
-    uint8_t GetNumBits(void) { return GetLength() * 8; }
+    uint8_t GetNumBits(void) const { return GetLength() * 8; }
 
     /**
      * This method indicates whether or not bit @p aBit is set.
@@ -119,7 +119,7 @@ public:
      * @retval FALSE  If bit @p aBit is not set.
      *
      */
-    bool GetBit(uint8_t aBit)
+    bool GetBit(uint8_t aBit) const
     {
         int b;
         int m;
@@ -193,7 +193,7 @@ public:
      * This method returns a pointer to the steering data.
      * @sa GetByteCount() to determine the length
      */
-    const uint8_t *GetDataPointer(void) { return &mSteeringData[0]; }
+    const uint8_t *GetData(void) const { return &mSteeringData[0]; }
 
 private:
     /* SPEC states steering ata can be upto 16 bytes long */

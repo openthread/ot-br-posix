@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2017-2018, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,21 +28,15 @@
 
 /**
  * @file
- *   This is a common header for the various commissioner source files.
+ *   The file is the header for the commissioner class
  */
 
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifndef OTBR_COMMISSIONER_HPP_
+#define OTBR_COMMISSIONER_HPP_
 
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <syslog.h>
 
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
@@ -58,241 +52,175 @@
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/timing.h>
+#include <sys/time.h>
 
+#include "commissioner_constants.hpp"
+#include "joiner_session.hpp"
 #include "agent/coap.hpp"
-#include "agent/dtls.hpp"
-#include "agent/uris.hpp"
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
-#include "common/tlv.hpp"
-#include "utils/hex.hpp"
 #include "utils/steeringdata.hpp"
 #include "web/pskc-generator/pskc.hpp"
 
-using namespace ot;
-using namespace ot::Utils;
-using namespace ot::BorderRouter;
+namespace ot {
+namespace BorderRouter {
 
-#define MBEDTLS_DEBUG_C
-#define DEBUG_LEVEL 1
-
-#define SYSLOG_IDENT "otbr-commissioner"
-
-#include "commissioner_argcargv.hpp"
-
-/**
- * Constants
- */
-enum
+class Commissioner
 {
-    /* max size of a network packet */
-    kSizeMaxPacket = 1500,
+public:
+    /**
+     * The constructor to initialize Commissioner
+     *
+     * @param[in]    aPskcBin           binary form of pskc
+     * @param[in]    aPskdAscii         ascii form of pskd
+     * @param[in]    aSteeringData      default steering data to filter joiner
+     * @param[in]    aKeepAliveRate     send keep alive packet every aKeepAliveRate seconds
+     *
+     */
+    Commissioner(const uint8_t *     aPskcBin,
+                 const char *        aPskdAscii,
+                 const SteeringData &aSteeringData,
+                 int                 aKeepAliveRate);
 
-    /* Default size of steering data */
-    kSteeringDefaultLength = 15,
+    /**
+     * This method updates the fd_set and timeout for mainloop.
+     * @p aTimeout should only be updated if session has pending process in less than its current value.
+     *
+     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
+     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
+     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
+     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
+     * @param[inout]    aTimeout        A reference to the timeout.
+     *
+     */
+    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
-    /* how long is an EUI64 in bytes */
-    kEui64Len = (64 / 8),
+    /**
+     * This method performs the session processing.
+     *
+     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
+     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
+     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
+     *
+     */
+    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
-    /* how long is a PSKd in bytes */
-    kPSKdLength = 32,
+    /**
+     * This method returns whether the commissioner is valid
+     *
+     * @returns inner commisioner state is not kStateInvalid
+     *
+     */
+    bool IsValid(void) const;
 
-    /* What port does our internal server use? */
-    kPortJoinerSession = 49192,
+    /**
+     * This method initialize the dtls session
+     *
+     * @param[in]   aAgentAddr      Address of border agent
+     *
+     * @returns 0 on success, MBEDTLS_ERR_XXX on failure
+     *
+     */
+    int InitDtls(const sockaddr_in &aAgentAddr);
 
-    /* 64bit xpanid length in bytes */
-    kXpanidLength = (64 / 8), /* 64bits */
+    /**
+     * This method initialize the dtls session
+     *
+     * @returns 0 on success,
+     *          MBEDTLS_ERR_SSL_WANT_READ or MBEDTLS_ERR_SSL_WANT_WRITE for pending, in which case
+     *          you need to call this method again,
+     *          or other SSL error code on failure
+     */
+    int TryDtlsHandshake(void);
 
-    /* specification: 8.10.4 */
-    kNetworkNameLenMax = 16,
+    /**
+     * This method sends commissioner petition coap request
+     *
+     */
+    void CommissionerPetition(void);
 
-    /* Spec is not specific about this items max length, so we choose 64 */
-    kBorderRouterPassPhraseLen = 64,
+    /**
+     * This method sends commissioner set coap request
+     *
+     * @param[in]    aSteeringData      steering data to filter joiner, overrrides data from constructor
+     *
+     */
+    void CommissionerSet(const SteeringData &aSteeringData);
 
-};
+    ~Commissioner();
 
-/**
- * Commissioner State
- */
-enum
-{
-    kStateInvalid,
-    kStateConnected,
-    kStateAccepted,
-    kStateReady,
-    kStateAuthenticated,
-    kStateFinalized,
-    kStateDone,
-    kStateError,
-};
+private:
+    enum CommissionState
+    {
+        kStateInvalid = 0, ///< uninitialized, encounter network error or petition exceeds max retry
+        kStateConnected,   ///< dtls connection setup done
+        kStateAccepted,    ///< commissioner petition succeeded
+        kStateRejected,    ///< rejected by leader, still retrying petition
+        kStateReady,       ///< steering data sent, ready to accept joiners
+    } mCommissionState;
 
-/**
- * Commissioner TLV types
- */
-enum
-{
-    kJoinerDtlsEncapsulation
-};
+    Commissioner(const Commissioner &);
+    Commissioner &operator=(const Commissioner &);
 
-/**
- * Commissioner Context.
- */
-struct Context
-{
-    /** Set to true if we should commission the device */
-    bool commission_device;
+    int  DtlsHandShake(const sockaddr_in &aAgentAddr);
+    void CommissionerKeepAlive(void);
 
-    /** coap instance to talk to agent & device */
-    Coap::Agent *mCoap;
+    static ssize_t SendCoap(const uint8_t *aBuffer,
+                            uint16_t       aLength,
+                            const uint8_t *aIp6,
+                            uint16_t       aPort,
+                            void *         aContext);
 
-    /** dtls info for talking to agent & joiner */
-    Dtls::Server *mDtlsServer;
+    static void LogMeshcopState(const char *aPrefix, int8_t aState);
 
-    /* the session info for agent & joiner */
-    Dtls::Session *mSession;
+    static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);
+    void        CommissionerResponseNext(void);
 
-    /* dtls context information */
-    mbedtls_ssl_context *mSsl;
-    mbedtls_net_context *mNet;
+    static void HandleRelayReceive(const Coap::Resource &aResource,
+                                   const Coap::Message & aMessage,
+                                   Coap::Message &       aResponse,
+                                   const uint8_t *       aIp6,
+                                   uint16_t              aPort,
+                                   void *                aContext);
+    int         SendRelayTransmit(uint8_t *aBuf, size_t aLength);
 
-    /* Socket we are using with the agent */
-    int mSocket;
+    mbedtls_net_context          mSslClientFd;
+    mbedtls_ssl_context          mSsl;
+    mbedtls_entropy_context      mEntropy;
+    mbedtls_ctr_drbg_context     mDrbg;
+    mbedtls_ssl_config           mSslConf;
+    mbedtls_timing_delay_context mTimer;
+    bool                         mDtlsInitDone;
 
-    /* this generates our coap tokens */
-    uint16_t mCoapToken;
+    Coap::Agent *  mCoapAgent;
+    int            mCoapToken;
+    Coap::Resource mRelayReceiveHandler;
 
-    /* this is the commissioner session id */
+    uint8_t  mPskcBin[OT_PSKC_LENGTH];
+    int      mPetitionRetryCount;
     uint16_t mCommissionerSessionId;
 
-    /** all things for the border agent */
-    struct br_agent
-    {
-        /** network port, in form mbed likes it (ascii) */
-        char mPort_ascii[7];
+    JoinerSession mJoinerSession;
+    int           mJoinerSessionClientFd;
+    uint16_t      mJoinerUdpPort;
+    uint8_t       mJoinerIid[8];
+    uint16_t      mJoinerRouterLocator;
+    SteeringData  mSteeringData;
 
-        /** network address, in form mbed likes it (ascii) */
-        char mAddress_ascii[64];
+    int     mKeepAliveRate;
+    timeval mLastKeepAliveTime;
+    int     mKeepAliveTxCount;
+    int     mKeepAliveRxCount;
 
-        /** xpanid from command line & binary form */
-        /* Note: xpanid is used to calculate the PSKc */
-        struct
-        {
-            char    ascii[(kXpanidLength * 2) + 1];
-            uint8_t bin[kXpanidLength];
-        } mXpanid;
-
-        /** network name from command line */
-        /* Note: networkname is used to calculate the PSKc */
-        char mNetworkName[kNetworkNameLenMax + 1];
-
-        /** border router agent pass phrase */
-        /* Note: passphrase is used to calculate the PSKc */
-        char mPassPhrase[kBorderRouterPassPhraseLen + 1];
-
-        /** the PSKc used with the agent */
-        struct
-        {
-            /* this class does the calculation */
-            Psk::Pskc mTool;
-
-            /** ascii & binary of PSKc, either from calculation or cmdline */
-            char    ascii[(OT_PSKC_LENGTH * 2) + 1];
-            uint8_t bin[OT_PSKC_LENGTH];
-        } mPSKc;
-
-    } mAgent;
-
-    /** Kek with the joiner operation */
-    uint8_t mKek[32];
-
-    struct comm_ka
-    {
-        /** last time a COMM_KA message was sent */
-        struct timeval mLastTxTv;
-
-        /** last time a COMM_KA.rsp was received */
-        struct timeval mLastRxTv;
-
-        /** how often should these be sent in seconds */
-        int mTxRate;
-
-        /** How many have been sent & recieved */
-        int mTxCnt;
-        int mRxCnt;
-
-        /** are these disabled? (for test purposes) */
-        bool mDisabled;
-    } mCOMM_KA;
-
-    /** Total timeout (envelope) of the commissioning test */
-    struct timeval mEnvelopeStartTv;
-    int            mEnvelopeTimeout;
-
-    /** Commissioner state */
-    int mState;
-
-    /** All things about the joiner */
-    struct joiner
-    {
-        /** the EUI64 of the Joiner or HASHMAC, either from cmdline or computed */
-        struct
-        {
-            char    ascii[(kEui64Len * 2) + 1];
-            uint8_t bin[kEui64Len];
-        } mEui64, mHashMac;
-
-        /** Set to true/false via cmdline param for test purposes. */
-        bool mAllowAny;
-
-        /** Computed steering data based on hashmac */
-        SteeringData mSteeringData;
-
-        /** UDP port of the joiner */
-        uint16_t mUdpPort;
-
-        /** Interface id of the joiner device */
-        uint8_t mIid[8];
-
-        /** the router we are using to talk to the joiner */
-        uint16_t mRouterLocator;
-
-        /** the port we are using */
-        uint16_t mPortSession;
-
-        /** This is the PSKd from the command line */
-        /* this is the shared string used by the device */
-        char mPSKd_ascii[kPSKdLength + 1];
-
-        /*
-         * NOTE: The simplist barcode would contain:
-         *
-         *    v=1&&eui=_EUI64_ASCII_&&cc=PSKdASCIITEXT
-         *
-         * Example:
-         *
-         *    v=1&&eui=00124b000f6e649d&&cc=MYPASSPHRASE
-         *
-         */
-    } mJoiner;
+    static const uint16_t kPortJoinerSession;
+    static const uint8_t  kSeed[];
+    static const int      kCipherSuites[];
+    static const char     kCommissionerId[];
+    static const int      kCoapResponseWaitSecond;
+    static const int      kCoapResponseRetryTime;
 };
 
-/* the single global commissioning context */
-extern struct Context gContext;
+} // namespace BorderRouter
+} // namespace ot
 
-/* compute the hashmac of a joiner */
-bool CommissionerComputeHashMac(void);
-
-/** Compute steering data */
-bool CommissionerComputeSteering(void);
-
-/** compute pskc */
-bool CommissionerComputePskc(void);
-
-/* return a small string with this data as hex for logging purposes */
-const char *CommissionerUtilsHexString(const uint8_t *pBytes, int n);
-
-/** command line self test handler */
-void CommissionerCmdLineSelfTest(argcargv *pThis);
-
-/** Print/log an error message and exit */
-void CommissionerUtilsFail(const char *fmt, ...);
+#endif // OTBR_COMMISSIONER_HPP_

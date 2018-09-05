@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2017-2018, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -31,17 +31,22 @@
  *   The file implements the command line params for the commissioner test app.
  */
 
-#include "commissioner.hpp"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-using namespace ot;
-using namespace ot::Utils;
-using namespace ot::BorderRouter;
+#include "commissioner_argcargv.hpp"
+#include "common/logging.hpp"
+#include "utils/hex.hpp"
+
+namespace ot {
+namespace BorderRouter {
 
 /** see: commissioner_argcargv.hpp, processes 1 command line parameter */
-int argcargv::parse_args(void)
+int ArgcArgv::ParseArgs(void)
 {
-    const char *               arg;
-    const struct argcargv_opt *opt;
+    const char *              arg;
+    const struct ArgcArgvOpt *opt;
 
     /* Done? */
     if (mARGx >= mARGC)
@@ -75,12 +80,12 @@ int argcargv::parse_args(void)
         usage("Unknown option: %s", arg);
     }
 
-    (*(opt->handler))(this);
+    (*(opt->handler))(this, &args);
     return 0;
 }
 
 /** see: commissioner_argcargv.hpp, fetch an --ARG STRING pair, storing the result */
-const char *argcargv::str_param(char *puthere, size_t bufsiz)
+const char *ArgcArgv::StrParam(char *puthere, size_t bufsiz)
 {
     const char *cp;
     size_t      len;
@@ -110,13 +115,13 @@ const char *argcargv::str_param(char *puthere, size_t bufsiz)
 }
 
 /** see: commissioner_argcargv.hpp, fetch an --ARG HEXSTRING pair, and decode the hex string storing the result */
-void argcargv::hex_param(char *ascii_puthere, uint8_t *bin_puthere, int bin_len)
+void ArgcArgv::HexParam(char *ascii_puthere, uint8_t *bin_puthere, int bin_len)
 {
     int n;
 
-    str_param(ascii_puthere, (bin_len * 2) + 1);
+    StrParam(ascii_puthere, (bin_len * 2) + 1);
 
-    n = Hex2Bytes(ascii_puthere, bin_puthere, bin_len);
+    n = Utils::Hex2Bytes(ascii_puthere, bin_puthere, bin_len);
 
     /* hex strings must be *complete* */
     if (n != bin_len)
@@ -126,14 +131,14 @@ void argcargv::hex_param(char *ascii_puthere, uint8_t *bin_puthere, int bin_len)
 }
 
 /** see: commissioner_argcargv.hpp, fetch an --ARG NUMBER pair, returns the numeric value */
-int argcargv::num_param(void)
+int ArgcArgv::NumParam(void)
 {
     const char *s;
     char *      ep;
     int         v;
 
     /* fetch as string */
-    s = str_param(NULL, 100);
+    s = StrParam(NULL, 100);
 
     /* then convert */
     v = strtol(s, &ep, 0);
@@ -145,7 +150,7 @@ int argcargv::num_param(void)
 }
 
 /** see: commissioner_argcargv.hpp, constructor for the commissioner argc/argv parser */
-argcargv::argcargv(int argc, char **argv)
+ArgcArgv::ArgcArgv(int argc, char **argv)
 {
     mARGC = argc;
     mARGV = argv;
@@ -155,13 +160,13 @@ argcargv::argcargv(int argc, char **argv)
 }
 
 /** see: commissioner_argcargv.hpp, add an option to be decoded and its handler */
-void argcargv::add_option(const char *name,
-                          void (*handler)(argcargv *pThis),
-                          const char *valuehelp,
-                          const char *helptext)
+void ArgcArgv::AddOption(const char *name,
+                         void (*handler)(ArgcArgv *pThis, CommissionerArgs *args),
+                         const char *valuehelp,
+                         const char *helptext)
 {
-    struct argcargv_opt *opt;
-    int                  x;
+    struct ArgcArgvOpt *opt;
+    int                 x;
 
     for (x = 0; x < max_opts; x++)
     {
@@ -173,7 +178,7 @@ void argcargv::add_option(const char *name,
     }
     if (x >= max_opts)
     {
-        CommissionerUtilsFail("internal error: Too many cmdline opts!\n");
+        otbrLog(OTBR_LOG_ERR, "internal error: Too many cmdline opts!\n");
     }
 
     opt->name     = name;
@@ -187,7 +192,7 @@ void argcargv::add_option(const char *name,
 }
 
 /** see: commissioner_argcargv.hpp, print error message & application usage */
-void argcargv::usage(const char *fmt, ...)
+void ArgcArgv::usage(const char *fmt, ...)
 {
     va_list ap;
 
@@ -201,7 +206,7 @@ void argcargv::usage(const char *fmt, ...)
     fprintf(stderr, "Where OPTIONS are:\n");
     fprintf(stderr, "\n");
 
-    struct argcargv_opt *opt;
+    struct ArgcArgvOpt *opt;
 
     for (opt = &mOpts[0]; opt->name; opt++)
     {
@@ -221,79 +226,56 @@ void argcargv::usage(const char *fmt, ...)
 }
 
 /** Handle commissioner steering data length command line parameter */
-static void handle_steering_length(argcargv *pThis)
+static void handle_steering_length(ArgcArgv *pThis, CommissionerArgs *args)
 {
     int v;
 
-    v = pThis->num_param();
+    v = pThis->NumParam();
     if ((v < 1) || (v > 16))
     {
         pThis->usage("invalid steering length: %d", v);
     }
 
-    gContext.mJoiner.mSteeringData.SetLength(v);
+    args->mSteeringLength = v;
 }
 
 /** Handle border router ip address on command line */
-static void handle_ip_addr(argcargv *pThis)
+static void handle_ip_addr(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->str_param(gContext.mAgent.mAddress_ascii, sizeof(gContext.mAgent.mAddress_ascii));
+    pThis->StrParam(args->mAgentAddress_ascii, sizeof(args->mXpanidAscii));
 }
 
 /** Handle border router ip port on command line */
-static void handle_ip_port(argcargv *pThis)
+static void handle_ip_port(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->str_param(gContext.mAgent.mPort_ascii, sizeof(gContext.mAgent.mPort_ascii));
+    pThis->StrParam(args->mAgentPort_ascii, sizeof(args->mAgentPort_ascii));
 }
 
 /** Handle hex encoded HASHMAC on command line */
-static void handle_hashmac(argcargv *pThis)
+static void handle_hashmac(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    bool ok;
-
-    pThis->hex_param(gContext.mJoiner.mHashMac.ascii, gContext.mJoiner.mHashMac.bin,
-                     sizeof(gContext.mJoiner.mHashMac.bin));
-
-    /* once hash mac is know, we can compute the steering data
-     * We assume we have the xpanid & network name.
-     */
-    ok = CommissionerComputeSteering();
-    if (!ok)
-    {
-        pThis->usage("Invalid HASHMAC: %s\n", gContext.mJoiner.mHashMac.ascii);
-    }
+    pThis->HexParam(args->mJoinerHashmacAscii, args->mJoinerHashmacBin, sizeof(args->mJoinerHashmacBin));
 }
 
 /** Handle joining device EUI64 on the command line */
-static void handle_eui64(argcargv *pThis)
+static void handle_eui64(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    bool ok;
-
-    pThis->hex_param(gContext.mJoiner.mEui64.ascii, gContext.mJoiner.mEui64.bin, sizeof(gContext.mJoiner.mEui64.bin));
-
-    /* once we have this, we can calculate the HASHMAC
-     * and the steering data.
-     */
-    ok = CommissionerComputeHashMac();
-    ok = ok && CommissionerComputeSteering();
-    if (!ok)
-    {
-        pThis->usage("Invalid EUI64: %s\n", gContext.mJoiner.mEui64.ascii);
-    }
+    pThis->HexParam(args->mJoinerEui64Ascii, args->mJoinerEui64Bin, sizeof(args->mJoinerEui64Bin));
 }
 
 /** Handle the preshared joining credential for the joining device on the command line */
-static void handle_pskd(argcargv *pThis)
+static void handle_pskd(ArgcArgv *pThis, CommissionerArgs *args)
 {
     const char *whybad;
     int         ch;
     int         len, x;
+    char        pskdAscii[kPSKdLength + 1];
 
     /* assume not bad */
     whybad = NULL;
 
     /* get the parameter */
-    pThis->str_param(gContext.mJoiner.mPSKd_ascii, sizeof(gContext.mJoiner.mPSKd_ascii));
+    pThis->StrParam(pskdAscii, sizeof(pskdAscii));
 
     /*
      * Problem: Should we "base32" decode this per the specification?
@@ -315,7 +297,7 @@ static void handle_pskd(argcargv *pThis)
      * Thus 10 digits + 22 letters = 32 symbols.
      * Thus, "base32" encoding using the above.
      */
-    len = strlen(gContext.mJoiner.mPSKd_ascii);
+    len = strlen(pskdAscii);
     if ((len < 6) || (len > 32))
     {
         whybad = "invalid length (range: 6..32)";
@@ -324,7 +306,7 @@ static void handle_pskd(argcargv *pThis)
     {
         for (x = 0; x < len; x++)
         {
-            ch = gContext.mJoiner.mPSKd_ascii[x];
+            ch = pskdAscii[x];
 
             switch (ch)
             {
@@ -354,100 +336,87 @@ static void handle_pskd(argcargv *pThis)
 
     if (whybad)
     {
-        pThis->usage("Illegal PSKd: \"%s\", %s\n", gContext.mJoiner.mPSKd_ascii, whybad);
+        pThis->usage("Illegal PSKd: \"%s\", %s\n", pskdAscii, whybad);
+    }
+    else
+    {
+        memcpy(args->mJoinerPSKdAscii, pskdAscii, sizeof(pskdAscii));
     }
 }
 
 /** Handle a pre-computed border agent preshared key, the PSKc
  * This is derived from the Networkname, Xpanid & passphrase
  */
-static void handle_pskc_bin(argcargv *pThis)
+static void handle_pskc_bin(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->hex_param(gContext.mAgent.mPSKc.ascii, gContext.mAgent.mPSKc.bin, sizeof(gContext.mAgent.mPSKc.bin));
-    otbrLog(OTBR_LOG_INFO, "PSKC on command line is: %s\n", gContext.mAgent.mPSKc.ascii);
+    pThis->HexParam(args->mPSKcAscii, args->mPSKcBin, sizeof(args->mPSKcBin));
+    args->mHasPSKc = true;
 }
 
 /** handle the xpanid command line parameter */
-static void handle_xpanid(argcargv *pThis)
+static void handle_xpanid(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->hex_param(gContext.mAgent.mXpanid.ascii, gContext.mAgent.mXpanid.bin, sizeof(gContext.mAgent.mXpanid.bin));
+    pThis->HexParam(args->mXpanidAscii, args->mXpanidBin, sizeof(args->mXpanidBin));
 }
 
 /* handle the networkname command line parameter */
-static void handle_netname(argcargv *pThis)
+static void handle_netname(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->str_param(gContext.mAgent.mNetworkName, sizeof(gContext.mAgent.mNetworkName));
+    pThis->StrParam(args->mNetworkName, sizeof(args->mNetworkName));
 }
 
 /** handle the border router pass phrase command line parameter */
-static void handle_agent_passphrase(argcargv *pThis)
+static void handle_agent_passphrase(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->str_param(gContext.mAgent.mPassPhrase, sizeof(gContext.mAgent.mPassPhrase));
+    pThis->StrParam(args->mPassPhrase, sizeof(args->mPassPhrase));
 }
 
 /** Handle log fileanme on the command line */
-static void handle_log_filename(argcargv *pThis)
+static void handle_log_filename(ArgcArgv *pThis, CommissionerArgs *args)
 {
+    (void)args;
     char filename[PATH_MAX];
 
-    pThis->str_param(filename, sizeof(filename));
+    pThis->StrParam(filename, sizeof(filename));
 
     otbrLogSetFilename(filename);
 }
 
 /** compute the pskc from command line params */
-static void handle_compute_pskc(argcargv *pThis)
+static void handle_compute_pskc(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    (void)(pThis);
-    CommissionerComputePskc();
-    /* we print this in a way scripts can easily parse */
-    fprintf(stdout, "PSKc: %s\n", gContext.mAgent.mPSKc.ascii);
-    exit(EXIT_SUCCESS);
+    (void)pThis;
+    args->mNeedComputePSKc = true;
 }
 
 /** commandline handling for flag that says we commission (not test) */
-static void handle_commission_device(argcargv *pThis)
+static void handle_commission_device(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    (void)(pThis);
-    gContext.commission_device = true;
+    (void)pThis;
+    args->mNeedCommissionDevice = true;
 }
 
 /** compute hashmac of EUI64 on command line */
-static void handle_compute_hashmac(argcargv *pThis)
+static void handle_compute_hashmac(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)pThis;
-
-    CommissionerComputeHashMac();
-    /* print so scripts can easily parse */
-    fprintf(stdout, "eiu64: %s\n", gContext.mJoiner.mEui64.ascii);
-    fprintf(stdout, "hashmac: %s\n", gContext.mJoiner.mHashMac.ascii);
-    exit(EXIT_SUCCESS);
+    args->mNeedComputeJoinerHashMac = true;
 }
 
 /** compute steering based on command line */
-static void handle_compute_steering(argcargv *pThis)
+static void handle_compute_steering(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)pThis;
-
-    CommissionerComputeSteering();
-
-    /* print so scripts can easily parse */
-    fprintf(stdout, "eiu64: %s\n", gContext.mJoiner.mEui64.ascii);
-    fprintf(stdout, "hashmac: %s\n", gContext.mJoiner.mHashMac.ascii);
-    fprintf(stdout, "steering-len: %d\n", gContext.mJoiner.mSteeringData.GetLength());
-    fprintf(stdout, "steering-hex: %s\n",
-            CommissionerUtilsHexString(gContext.mJoiner.mSteeringData.GetDataPointer(),
-                                       gContext.mJoiner.mSteeringData.GetLength()));
-
-    exit(EXIT_SUCCESS);
+    args->mNeedComputeJoinerSteering = true;
 }
 
 /** handle debug level on command line */
-static void handle_debug_level(argcargv *pThis)
+static void handle_debug_level(ArgcArgv *pThis, CommissionerArgs *args)
 {
+    (void)args;
     int n;
 
-    n = pThis->num_param();
+    n = pThis->NumParam();
     if (n < OTBR_LOG_EMERG)
     {
         pThis->usage("invalid log level, must be >= %d\n", OTBR_LOG_EMERG);
@@ -460,35 +429,25 @@ static void handle_debug_level(argcargv *pThis)
 }
 
 /** handle steering allow any on command line */
-static void handle_allow_all_joiners(argcargv *pThis)
+static void handle_allow_all_joiners(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)(pThis);
-    bool ok;
-
-    gContext.mJoiner.mAllowAny = true;
-    /* once we have this, we can calculate the HASHMAC
-     * and the steering data.
-     */
-    ok = CommissionerComputeSteering();
-    if (!ok)
-    {
-        CommissionerUtilsFail("Cannot compute steering\n");
-    }
+    args->mAllowAllJoiners = true;
 }
 
 /** user wants to disable COMM_KA transmissions for test purposes */
-static void handle_comm_ka_disabled(argcargv *pThis)
+static void handle_comm_ka_disabled(ArgcArgv *pThis, CommissionerArgs *args)
 {
     (void)(pThis);
-    gContext.mCOMM_KA.mDisabled = true;
+    args->mNeedSendCommKA = false;
 }
 
 /** user wants to adjust COMM_KA transmission rate */
-static void handle_comm_ka_rate(argcargv *pThis)
+static void handle_comm_ka_rate(ArgcArgv *pThis, CommissionerArgs *args)
 {
     int n;
 
-    n = pThis->num_param();
+    n = pThis->NumParam();
     /* sanity... */
 
     /* note: 86400 = 1 day in seconds */
@@ -496,11 +455,11 @@ static void handle_comm_ka_rate(argcargv *pThis)
     {
         pThis->usage("comm-ka rate must be (n>3) && (n < 86400), not: %d\n", n);
     }
-    gContext.mCOMM_KA.mTxRate = n;
+    args->mSendCommKATxRate = n;
 }
 
 /** Adjust total envelope timeout for test automation reasons */
-static void handle_comm_envelope_timeout(argcargv *pThis)
+static void handle_comm_envelope_timeout(ArgcArgv *pThis, CommissionerArgs *args)
 {
     int n;
 
@@ -509,58 +468,74 @@ static void handle_comm_envelope_timeout(argcargv *pThis)
      * nothing will stop... and test scripts run forever!
      */
 
-    n = pThis->num_param();
+    n = pThis->NumParam();
     /* between 1 second and 1 day.. */
     if ((n < 1) || (n > (86400)))
     {
         pThis->usage("Invalid envelope time, range: 1 <= n <= 86400, not %d\n", n);
     }
-    gContext.mEnvelopeTimeout = n;
+    args->mEnvelopeTimeout = n;
 }
 
 /* handle disabling syslog on command line */
-static void handle_no_syslog(argcargv *pThis)
+static void handle_no_syslog(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    (void)(pThis);
+    (void)args;
+    (void)pThis;
     otbrLogEnableSyslog(false);
 }
 
 /** Called by main(), to process commissioner command line arguments */
-void commissioner_argcargv(int argc, char **argv)
+CommissionerArgs ParseArgs(int aArgc, char **aArgv)
 {
-    argcargv args(argc, argv);
+    ArgcArgv args(aArgc, aArgv);
 
-    args.add_option("--selftest", CommissionerCmdLineSelfTest, "", "perform internal selftests");
-    args.add_option("--joiner-eui64", handle_eui64, "VALUE", "joiner EUI64 value");
-    args.add_option("--hashmac", handle_hashmac, "VALUE", "joiner HASHMAC value");
-    args.add_option("--agent-passphrase", handle_agent_passphrase, "VALUE", "Pass phrase for agent");
-    args.add_option("--network-name", handle_netname, "VALUE", "UTF8 encoded network name");
-    args.add_option("--xpanid", handle_xpanid, "VALUE", "xpanid in hex");
-    args.add_option("--pskc-bin", handle_pskc_bin, "VALUE", "Precomputed PSKc in hex notation");
-    args.add_option("--joiner-passphrase", handle_pskd, "VALUE", "PSKd for joiner");
-    args.add_option("--steering-length", handle_steering_length, "NUMBER", "Length of steering data 1..15");
-    args.add_option("--allow-all-joiners", handle_allow_all_joiners, "", "Allow any device to join");
-    args.add_option("--agent-addr", handle_ip_addr, "VALUE", "ip address of border router agent");
-    args.add_option("--agent-port", handle_ip_port, "VALUE", "ip port used by border router agent");
-    args.add_option("--log-filename", handle_log_filename, "FILENAME", "set logfilename");
-    args.add_option("--compute-pskc", handle_compute_pskc, "", "compute and print the pskc from parameters");
-    args.add_option("--compute-hashmac", handle_compute_hashmac, "",
-                    "compute and print the hashmac of the given eui64");
-    args.add_option("--compute-steering", handle_compute_steering, "", "compute and print steering data");
-    args.add_option("--comm-ka-disabled", handle_comm_ka_disabled, "", "Disable COMM_KA transmissions");
-    args.add_option("--comm-ka-rate", handle_comm_ka_rate, "", "Set COMM_KA transmission rate");
-    args.add_option("--disable-syslog", handle_no_syslog, "", "Disable log via syslog");
-    args.add_option("--comm-envelope-timeout", handle_comm_envelope_timeout, "VALUE",
-                    "Set the total envelope timeout for commissioning");
+    // default value
+    args.args.mEnvelopeTimeout           = 5 * 60; // 5 minutes;
+    args.args.mAllowAllJoiners           = false;
+    args.args.mNeedSendCommKA            = true;
+    args.args.mSendCommKATxRate          = 15; // send keep alive every 15 seconds;
+    args.args.mSteeringLength            = kSteeringDefaultLength;
+    args.args.mNeedComputePSKc           = false;
+    args.args.mNeedComputeJoinerSteering = false;
+    args.args.mNeedComputeJoinerHashMac  = false;
+    args.args.mNeedCommissionDevice      = true;
+    args.args.mHasPSKc                   = false;
 
-    args.add_option("--commission-device", handle_commission_device, "", "Enable device commissioning");
+    // args.add_option("--selftest", CommissionerCmdLineSelfTest, "", "perform internal selftests");
+    args.AddOption("--joiner-eui64", handle_eui64, "VALUE", "joiner EUI64 value");
+    args.AddOption("--hashmac", handle_hashmac, "VALUE", "joiner HASHMAC value");
+    args.AddOption("--agent-passphrase", handle_agent_passphrase, "VALUE", "Pass phrase for agent");
+    args.AddOption("--network-name", handle_netname, "VALUE", "UTF8 encoded network name");
+    args.AddOption("--xpanid", handle_xpanid, "VALUE", "xpanid in hex");
+    args.AddOption("--pskc-bin", handle_pskc_bin, "VALUE", "Precomputed PSKc in hex notation");
+    args.AddOption("--joiner-passphrase", handle_pskd, "VALUE", "PSKd for joiner");
+    args.AddOption("--steering-length", handle_steering_length, "NUMBER", "Length of steering data 1..15");
+    args.AddOption("--allow-all-joiners", handle_allow_all_joiners, "", "Allow any device to join");
+    args.AddOption("--agent-addr", handle_ip_addr, "VALUE", "ip address of border router agent");
+    args.AddOption("--agent-port", handle_ip_port, "VALUE", "ip port used by border router agent");
+    args.AddOption("--log-filename", handle_log_filename, "FILENAME", "set logfilename");
+    args.AddOption("--compute-pskc", handle_compute_pskc, "", "compute and print the pskc from parameters");
+    args.AddOption("--compute-hashmac", handle_compute_hashmac, "", "compute and print the hashmac of the given eui64");
+    args.AddOption("--compute-steering", handle_compute_steering, "", "compute and print steering data");
+    args.AddOption("--comm-ka-disabled", handle_comm_ka_disabled, "", "Disable COMM_KA transmissions");
+    args.AddOption("--comm-ka-rate", handle_comm_ka_rate, "", "Set COMM_KA transmission rate");
+    args.AddOption("--disable-syslog", handle_no_syslog, "", "Disable log via syslog");
+    args.AddOption("--comm-envelope-timeout", handle_comm_envelope_timeout, "VALUE",
+                   "Set the total envelope timeout for commissioning");
 
-    args.add_option("--debug-level", handle_debug_level, "NUMBER", "Enable debug output at level VALUE (higher=more)");
-    if (argc == 1)
+    args.AddOption("--commission-device", handle_commission_device, "", "Enable device commissioning");
+
+    args.AddOption("--debug-level", handle_debug_level, "NUMBER", "Enable debug output at level VALUE (higher=more)");
+    if (aArgc == 1)
     {
         args.usage("No parameters!\n");
     }
     /* parse the args */
-    while (args.parse_args() != -1)
+    while (args.ParseArgs() != -1)
         ;
+    return args.args;
 }
+
+} // namespace BorderRouter
+} // namespace ot

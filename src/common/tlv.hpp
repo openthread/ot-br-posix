@@ -34,6 +34,9 @@
 #ifndef TLV_HPP_
 #define TLV_HPP_
 
+#include <stdint.h>
+#include <string.h>
+
 namespace ot {
 
 /**
@@ -76,9 +79,9 @@ public:
     /**
      * This method sets the length.
      */
-    void SetLength(uint16_t aLength)
+    void SetLength(uint16_t aLength, bool aForceExtended = false)
     {
-        if (aLength >= kLengthEscape)
+        if (aLength >= kLengthEscape || aForceExtended)
         {
             mLength       = kLengthEscape;
             (&mLength)[1] = (aLength >> 8);
@@ -128,10 +131,12 @@ public:
      */
     void SetValue(uint16_t aValue)
     {
-        SetLength(sizeof(aValue));
-        uint8_t *value = static_cast<uint8_t *>(GetValue());
-        value[0]       = (aValue >> 8);
-        value[1]       = (aValue & 0xff);
+        uint8_t *value;
+
+        SetLength(sizeof(aValue), false);
+        value    = static_cast<uint8_t *>(GetValue());
+        value[0] = (aValue >> 8);
+        value[1] = (aValue & 0xff);
     }
 
     /**
@@ -139,16 +144,16 @@ public:
      */
     void SetValue(uint8_t aValue)
     {
-        SetLength(sizeof(aValue));
+        SetLength(sizeof(aValue), false);
         *static_cast<uint8_t *>(GetValue()) = aValue;
     }
 
     /**
      * This method copies the value.
      */
-    void SetValue(const void *aValue, uint16_t aLength)
+    void SetValue(const void *aValue, uint16_t aLength, bool aForceExtended = false)
     {
-        SetLength(aLength);
+        SetLength(aLength, aForceExtended);
         memcpy(GetValue(), aValue, aLength);
     }
 
@@ -194,6 +199,15 @@ enum
     kJoinerIid               = 19,
     kJoinerRouterLocator     = 20,
     kJoinerRouterKek         = 21,
+    kUdpEncapsulation        = 48,
+    kIPv6Address             = 49,
+};
+
+enum
+{
+    kStateAccepted = 1,
+    kStatePending  = 0,
+    kStateRejected = -1,
 };
 
 } // namespace Meshcop
