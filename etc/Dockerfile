@@ -37,7 +37,7 @@ RUN apt-get install -y sudo lsb-core
 
 RUN cd /app/borderrouter && NAT64=1 ./script/bootstrap && ./bootstrap
 
-RUN cd /app/borderrouter && ./configure --with-dbusconfdir="/etc/" --sysconfdir="/etc/" && make -j8 && make install
+RUN cd /app/borderrouter && ./configure --prefix="/usr" --with-dbusconfdir="/etc/" --sysconfdir="/etc/" && make -j8 && make install
 
 RUN cd /app/borderrouter && NAT64=1 ./script/setup
 
