@@ -374,10 +374,12 @@ configure_openthread()
     --disable-docs \
     --enable-border-agent \
     --enable-border-router \
-    --enable-cli-app=both \
+    --enable-cli \
     --enable-debug \
+    --enable-ftd \
     --enable-joiner \
-    --enable-ncp-app=ftd \
+    --enable-mtd \
+    --enable-ncp \
     --enable-udp-proxy \
     --with-examples=posix \
     --with-ncp-bus=uart \
