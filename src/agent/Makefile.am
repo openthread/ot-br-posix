@@ -149,17 +149,14 @@ initddir=$(sysconfdir)/init.d
 
 defaultdir=$(sysconfdir)/default
 
-uninstall-local: uninstall-default uninstall-initd
-
 install-data-local: $(DESTDIR)$(defaultdir)/otbr-agent $(DESTDIR)$(initddir)/otbr-agent
 
-uninstall-default:
-	-rm $(DESTDIR)$(defaultdir)/otbr-agent
-
 if OTBR_HAS_SYSTEMCTL
-uninstall-initd: ;
+uninstall-local:
+	-rm $(DESTDIR)$(defaultdir)/otbr-agent
 else
-uninstall-initd:
+uninstall-local:
+	-rm $(DESTDIR)$(defaultdir)/otbr-agent
 	-rm $(DESTDIR)$(initddir)/otbr-agent
 endif
 

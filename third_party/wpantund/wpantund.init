@@ -47,7 +47,7 @@ WPANTUND_PID_FILE=/var/run/wpantund.pid
 
 start_wpantund() 
 {
-    start-stop-daemon --start --quiet\
+    start-stop-daemon --start --quiet \
         --pidfile $WPANTUND_PID_FILE --make-pidfile\
         -b --exec $WPANTUND_BIN -- -c /etc/wpantund.conf
     # wait 5 seconds to setup dbus and tunnel interface
@@ -56,7 +56,7 @@ start_wpantund()
 
 stop_wpantund()
 {
-    start-stop-daemon --stop --quiet\
+    start-stop-daemon --stop --quiet \
         --pidfile $WPANTUND_PID_FILE --remove-pidfile
 }
 
@@ -74,7 +74,7 @@ case "$1" in
         stop_wpantund
         ;;
     status)
-        if [ -f $WPANTUND_PID_FILE ] ;  then
+        if [ -f $WPANTUND_PID_FILE ] ; then
             log_progress_msg "wpantund running"
             log_end_msg 0
         else
@@ -84,7 +84,7 @@ case "$1" in
         fi
         ;;
     *)
-        echo "unkown comand" >&2
+        echo "unkown command" >&2
         exit 3
         ;;
 esac
