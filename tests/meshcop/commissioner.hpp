@@ -124,14 +124,6 @@ public:
     bool IsCommissionerAccepted();
 
     /**
-     * This method returns whether the commissioner petition succeeded
-     *
-     * @returns inner commisioner state is kStateAccepted
-     *
-     */
-    bool IsCommissionerAccepted();
-
-    /**
      * This method initialize the dtls session
      *
      * @param[in]   aAgentAddr      Address of border agent
