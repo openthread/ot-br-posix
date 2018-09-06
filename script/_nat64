@@ -38,7 +38,7 @@ WLAN_IFNAMES=eth0
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
-without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
+#without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
 
 nat64_install()
 {
@@ -147,7 +147,9 @@ nat64_start()
 {
     with NAT64 || return 0
 
-    if have systemctl; then
+    if [ -f /.dockerenv ]; then
+        service tayga start || die 'Failed to start tayga'
+    elif have systemctl; then
         sudo systemctl start tayga || die 'Failed to start tayga!'
         sudo systemctl start otbr-nat44 || die 'Failed to start NAT44!'
     fi
@@ -157,7 +159,9 @@ nat64_stop()
 {
     with NAT64 || return 0
 
-    if have systemctl; then
+    if [ -f /.dockerenv ]; then
+        service tayga stop || true
+    elif have systemctl; then
         sudo systemctl stop tayga || true
         sudo systemctl stop otbr-nat44 || true
     fi
