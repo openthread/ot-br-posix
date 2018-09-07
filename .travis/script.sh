@@ -75,7 +75,7 @@ scan-build)
 script-check)
     RELEASE=1 ./script/bootstrap || die 'Failed to bootstrap for release!'
     ./script/bootstrap || die 'Failed to bootstrap for development!'
-    ./script/setup || die 'Failed to setup!'
+    NAT64=1 ./script/setup || die 'Failed to setup!'
     SOCAT_OUTPUT=/tmp/ot-socat
 
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
@@ -95,14 +95,17 @@ script-check)
 
     ot-ncp-ftd 1 > $DEVICE_PTY < $DEVICE_PTY &
     ./script/console & SERVICES_PID=$!
+    sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 10
     netstat -an | grep 49191 || die 'Service otbr-agent not ready!'
     netstat -an | grep 80 || die 'Service otbr-web not ready!'
+    pidof tayga || die 'tayga not running'
     kill $SERVICES_PID || die 'Failed to stop services!'
     sudo killall otbr-web || true
     sudo killall otbr-agent || true
     sudo killall wpantund || true
+    sudo service tayga stop || true
     killall ot-ncp-ftd || die 'Failed to end OpenThread!'
     killall socat || die 'Failed to end socat!'
     jobs

@@ -58,6 +58,9 @@ linux)
             make && sudo make install) || die 'Failed to build OpenThread!'
         which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
         sudo apt-get install socat
+        echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+        echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
+        echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
         # Skip installing build dependencies when checking script
         exit 0
     }
