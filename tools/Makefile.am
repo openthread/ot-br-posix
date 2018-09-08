@@ -28,7 +28,7 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-noinst_PROGRAMS = pskc
+noinst_PROGRAMS = pskc steering-data
 
 pskc_SOURCES                                              = \
     pskc.cpp                                                \
@@ -47,6 +47,26 @@ pskc_LDADD                                                = \
     $(NULL)
 
 pskc_LDFLAGS                                              = \
+    -static                                                 \
+    $(NULL)
+
+steering_data_SOURCES                                     = \
+    steering_data.cpp                                       \
+    $(NULL)
+
+steering_data_CPPFLAGS                                    = \
+    -I$(top_srcdir)/src                                     \
+    -I$(top_srcdir)/src/agent                               \
+    -I$(top_srcdir)/src/web                                 \
+    -I$(top_srcdir)/third_party/mbedtls/repo/include        \
+    $(NULL)
+
+steering_data_LDADD                                       = \
+    $(top_builddir)/src/agent/libotbr-agent.la              \
+    $(top_builddir)/src/web/libotbr-web.la                  \
+    $(NULL)
+
+steering_data_LDFLAGS                                     = \
     -static                                                 \
     $(NULL)
 

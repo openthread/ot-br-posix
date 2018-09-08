@@ -97,7 +97,7 @@ int main(int argc, char **argv)
             char *steeringDataAscii = new char[2 * steeringData.GetLength() + 1];
 
             steeringDataAscii[2 * steeringData.GetLength()] = 0;
-            Utils::Bytes2Hex(steeringData.GetData(), steeringData.GetLength(), steeringDataAscii);
+            Utils::Bytes2Hex(steeringData.GetBloomFilter(), steeringData.GetLength(), steeringDataAscii);
             fprintf(stdout, "steering-len: %d\n", steeringData.GetLength());
             fprintf(stdout, "steering-hex: %s\n", steeringDataAscii);
             delete[] steeringDataAscii;
