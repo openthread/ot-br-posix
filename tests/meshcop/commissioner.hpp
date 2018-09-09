@@ -126,12 +126,13 @@ public:
     /**
      * This method initialize the dtls session
      *
-     * @param[in]   aAgentAddr      Address of border agent
+     * @param[in]   aHost      Address of border agent service
+     * @param[in]   aPort      Port of border agent service
      *
      * @returns 0 on success, MBEDTLS_ERR_XXX on failure
      *
      */
-    int InitDtls(const sockaddr_in &aAgentAddr);
+    int InitDtls(const char *aHost, const char *aPort);
 
     /**
      * This method initialize the dtls session

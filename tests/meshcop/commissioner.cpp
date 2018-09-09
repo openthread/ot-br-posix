@@ -145,16 +145,16 @@ ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
     (void)aPort;
 }
 
-int Commissioner::InitDtls(const sockaddr_in &aAgentAddr)
+int Commissioner::InitDtls(const char *aHost, const char *aPort)
 {
     int  ret;
     char addressAscii[kIPAddrNameBufSize];
     char portAscii[kPortNameBufSize];
 
     mbedtls_debug_set_threshold(kMBedDebugDefaultThreshold);
-    GetIPString(reinterpret_cast<const sockaddr *>(&aAgentAddr), addressAscii, sizeof(addressAscii));
-    sprintf(portAscii, "%d", ntohs(aAgentAddr.sin_port));
 
+    strcpy(addressAscii, aHost);
+    strcpy(portAscii, aPort);
     mbedtls_net_init(&mSslClientFd);
     mbedtls_ssl_init(&mSsl);
     mbedtls_ssl_config_init(&mSslConf);
