@@ -41,12 +41,12 @@ libutils_la_CPPFLAGS                                    = \
     -I$(top_srcdir)/third_party/mbedtls/repo/include      \
     $(NULL)
 
-noinst_HEADERS     = \
-    addr.hpp         \
-    crc16.hpp        \
-    hex.hpp          \
-    misc.hpp         \
-    steeringdata.hpp \
+noinst_HEADERS     =  \
+    addr.hpp          \
+    crc16.hpp         \
+    hex.hpp           \
+    misc.hpp          \
+    steering_data.hpp \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am
