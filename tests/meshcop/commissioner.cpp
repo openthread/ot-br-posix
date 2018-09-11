@@ -395,16 +395,6 @@ void Commissioner::CommissionerResponseNext(void)
     }
 }
 
-bool Commissioner::IsValid(void) const
-{
-    return mCommissionState != kStateInvalid;
-}
-
-bool Commissioner::IsCommissionerAccepted()
-{
-    return mCommissionState == kStateAccepted;
-}
-
 void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
                                fd_set & aWriteFdSet,
                                fd_set & aErrorFdSet,

@@ -113,7 +113,7 @@ public:
      * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool IsValid(void) const;
+    bool IsValid(void) const { return mCommissionState != kStateInvalid; }
 
     /**
      * This method returns whether the commissioner petition succeeded
@@ -121,7 +121,7 @@ public:
      * @returns inner commisioner state is kStateAccepted
      *
      */
-    bool IsCommissionerAccepted();
+    bool IsCommissionerAccepted(void) const { return mCommissionState == kStateAccepted; }
 
     /**
      * This method initialize the dtls session
