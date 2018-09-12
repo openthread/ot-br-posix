@@ -87,7 +87,7 @@ case "$1" in
         fi
         ;;
     *)
-        echo "unkown command" >&2
+        echo "unknown command" >&2
         exit 3
         ;;
 esac
