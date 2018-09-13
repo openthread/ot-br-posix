@@ -70,15 +70,19 @@ public:
      * The constructor to initialize Commissioner
      *
      * @param[in]    aPskcBin           binary form of pskc
-     * @param[in]    aPskdAscii         ascii form of pskd
-     * @param[in]    aSteeringData      default steering data to filter joiner
      * @param[in]    aKeepAliveRate     send keep alive packet every aKeepAliveRate seconds
      *
      */
-    Commissioner(const uint8_t *     aPskcBin,
-                 const char *        aPskdAscii,
-                 const SteeringData &aSteeringData,
-                 int                 aKeepAliveRate);
+    Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate);
+
+    /**
+     * This method sets the joiner to join the thread network
+     *
+     * @param[in]    aPskdAscii         ascii form of pskd
+     * @param[in]    aSteeringData      steering data to filter joiner
+     *
+     */
+    void SetJoiner(const char *aPskdAscii, const SteeringData &aSteeringData);
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -109,7 +113,15 @@ public:
      * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool IsValid(void) const;
+    bool IsValid(void) const { return mCommissionState != kStateInvalid; }
+
+    /**
+     * This method returns whether the commissioner petition succeeded
+     *
+     * @returns inner commisioner state is kStateAccepted
+     *
+     */
+    bool IsCommissionerAccepted(void) const { return mCommissionState == kStateAccepted; }
 
     /**
      * This method initialize the dtls session
@@ -154,7 +166,6 @@ private:
         kStateConnected,   ///< dtls connection setup done
         kStateAccepted,    ///< commissioner petition succeeded
         kStateRejected,    ///< rejected by leader, still retrying petition
-        kStateReady,       ///< steering data sent, ready to accept joiners
     } mCommissionState;
 
     Commissioner(const Commissioner &);
@@ -200,12 +211,11 @@ private:
     int      mPetitionRetryCount;
     uint16_t mCommissionerSessionId;
 
-    JoinerSession mJoinerSession;
-    int           mJoinerSessionClientFd;
-    uint16_t      mJoinerUdpPort;
-    uint8_t       mJoinerIid[8];
-    uint16_t      mJoinerRouterLocator;
-    SteeringData  mSteeringData;
+    JoinerSession *mJoinerSession;
+    int            mJoinerSessionClientFd;
+    uint16_t       mJoinerUdpPort;
+    uint8_t        mJoinerIid[8];
+    uint16_t       mJoinerRouterLocator;
 
     int     mKeepAliveRate;
     timeval mLastKeepAliveTime;

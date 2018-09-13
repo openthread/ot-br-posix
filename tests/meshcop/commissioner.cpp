@@ -98,15 +98,11 @@ static int DummyKeyExport(void *               aContext,
     return 0;
 }
 
-Commissioner::Commissioner(const uint8_t *     aPskcBin,
-                           const char *        aPskdAscii,
-                           const SteeringData &aSteeringData,
-                           int                 aKeepAliveRate)
+Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     : mDtlsInitDone(false)
     , mRelayReceiveHandler(OT_URI_PATH_RELAY_RX, Commissioner::HandleRelayReceive, this)
     , mPetitionRetryCount(0)
-    , mJoinerSession(kPortJoinerSession, aPskdAscii)
-    , mSteeringData(aSteeringData)
+    , mJoinerSession(NULL)
     , mKeepAliveRate(aKeepAliveRate)
 {
     sockaddr_in addr;
@@ -123,6 +119,16 @@ Commissioner::Commissioner(const uint8_t *     aPskcBin,
     SuccessOrExit(connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
 exit:
     return;
+}
+
+void Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeringData)
+{
+    if (mJoinerSession)
+    {
+        delete mJoinerSession;
+    }
+    mJoinerSession = new JoinerSession(kPortJoinerSession, aPskdAscii);
+    CommissionerSet(aSteeringData);
 }
 
 ssize_t Commissioner::SendCoap(const uint8_t *aBuffer,
@@ -346,7 +352,7 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                commissioner->mCommissionState = kStateReady;
+                commissioner->mCommissionState = kStateAccepted;
                 break;
             case Meshcop::kStateRejected:
                 commissioner->mCommissionState = kStateRejected;
@@ -374,11 +380,7 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
 
 void Commissioner::CommissionerResponseNext(void)
 {
-    if (mCommissionState == kStateAccepted)
-    {
-        CommissionerSet(mSteeringData);
-    }
-    else if (mCommissionState == kStateConnected || mCommissionState == kStateRejected)
+    if (mCommissionState == kStateConnected || mCommissionState == kStateRejected)
     {
         if (mCommissionState != kStateInvalid && mPetitionRetryCount < kPetitionMaxRetry)
         {
@@ -393,11 +395,6 @@ void Commissioner::CommissionerResponseNext(void)
     }
 }
 
-bool Commissioner::IsValid(void) const
-{
-    return mCommissionState != kStateInvalid;
-}
-
 void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
                                fd_set & aWriteFdSet,
                                fd_set & aErrorFdSet,
@@ -408,7 +405,10 @@ void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
     aMaxFd = Utils::Max(mSslClientFd.fd, aMaxFd);
     FD_SET(mJoinerSessionClientFd, &aReadFdSet);
     aMaxFd = Utils::Max(mJoinerSessionClientFd, aMaxFd);
-    mJoinerSession.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    if (mJoinerSession)
+    {
+        mJoinerSession->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    }
 }
 
 void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
@@ -416,7 +416,10 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
     uint8_t buffer[kSizeMaxPacket];
     timeval nowTime;
 
-    mJoinerSession.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    if (mJoinerSession)
+    {
+        mJoinerSession->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    }
     if (FD_ISSET(mSslClientFd.fd, &aReadFdSet))
     {
         int n = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
@@ -445,7 +448,7 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         }
     }
     gettimeofday(&nowTime, NULL);
-    if ((mCommissionState == kStateReady || mCommissionState == kStateAccepted) && mKeepAliveRate > 0 &&
+    if (mCommissionState == kStateAccepted && mKeepAliveRate > 0 &&
         nowTime.tv_sec - mLastKeepAliveTime.tv_sec > mKeepAliveRate)
     {
         CommissionerKeepAlive();
@@ -510,7 +513,7 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                commissioner->mCommissionState = kStateReady;
+                commissioner->mCommissionState = kStateAccepted;
                 break;
             case Meshcop::kStateRejected:
                 commissioner->mCommissionState = kStateRejected;
@@ -610,12 +613,12 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
     responseTlv->SetValue(mJoinerRouterLocator);
     responseTlv = responseTlv->GetNext();
 
-    if (mJoinerSession.NeedAppendKek())
+    if (mJoinerSession->NeedAppendKek())
     {
         uint8_t kek[kKEKSize];
 
-        mJoinerSession.GetKek(kek, sizeof(kek));
-        mJoinerSession.MarkKekSent();
+        mJoinerSession->GetKek(kek, sizeof(kek));
+        mJoinerSession->MarkKekSent();
         otbrLog(OTBR_LOG_INFO, "relay: KEK state");
         responseTlv->SetType(Meshcop::kJoinerRouterKek);
         responseTlv->SetValue(kek, sizeof(kek));
@@ -655,6 +658,11 @@ Commissioner::~Commissioner()
         mbedtls_ssl_config_free(&mSslConf);
         mbedtls_ctr_drbg_free(&mDrbg);
         mbedtls_entropy_free(&mEntropy);
+    }
+
+    if (mJoinerSession)
+    {
+        delete mJoinerSession;
     }
 
     close(mJoinerSessionClientFd);
