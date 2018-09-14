@@ -170,7 +170,7 @@ $(DESTDIR)$(initddir)/otbr-agent: ;
 else
 $(DESTDIR)$(initddir)/otbr-agent: otbr-agent.init
 	test -d $(DESTDIR)$(initddir) || mkdir -p $(DESTDIR)$(initddir)
-	$(INSTALL) -m 755 $(srcdir)/otbr-agent.init $(DESTDIR)$(initddir)/otbr-agent
+	$(INSTALL) -m 755 ./otbr-agent.init $(DESTDIR)$(initddir)/otbr-agent
 endif
 
 if OTBR_HAS_SYSTEMCTL
@@ -191,7 +191,7 @@ endif
 
 CLEANFILES                = \
     otbr-agent.service      \
-    otbr-agent.init      	\
+    otbr-agent.init         \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

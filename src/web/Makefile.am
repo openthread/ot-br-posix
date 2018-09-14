@@ -176,14 +176,17 @@ uninstall-local:
 
 $(DESTDIR)$(initddir)/otbr-web: otbr-web.init
 	test -d $(DESTDIR)$(initddir) || mkdir -p $(DESTDIR)$(initddir)
-	$(INSTALL) -m 755 $(srcdir)/otbr-web.init $(DESTDIR)$(initddir)/otbr-web
+	$(INSTALL) -m 755 ./otbr-web.init $(DESTDIR)$(initddir)/otbr-web
 
 .PHONY: obtr-web.init
 otbr-web.init: %: %.in
+	pwd
 	$(SED)                                  \
 	-e 's,[@]sbindir[@],$(sbindir),g'       \
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
 	< "$<" > "$@"
+	ls
+	ls $(srcdir)
 
 endif
 

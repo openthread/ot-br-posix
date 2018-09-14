@@ -52,14 +52,14 @@ fi
 
 start_web() 
 {
-    start-stop-daemon --start --quiet\
-        --pidfile $OTBR_WEB_PID_FILE --make-pidfile\
+    start-stop-daemon --start --quiet \
+        --pidfile $OTBR_WEB_PID_FILE --make-pidfile \
         -b --exec $OTBR_WEB_BIN -- $OTBR_WEB_OPTS
 }
 
 stop_web()
 {
-    start-stop-daemon --stop --quiet\
+    start-stop-daemon --stop --quiet \
         --pidfile $OTBR_WEB_PID_FILE --remove-pidfile
 }
 

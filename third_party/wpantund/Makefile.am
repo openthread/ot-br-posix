@@ -21,7 +21,7 @@
 #  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 #  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 #  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
@@ -30,6 +30,7 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 EXTRA_DIST                         = \
     wpantund.service.in              \
+    wpantund.init                    \
     $(NULL)
 
 noinst_LTLIBRARIES = libwpanctl.la
@@ -94,7 +95,7 @@ install-data-local: $(DESTDIR)$(initddir)/wpantund
 uninstall-local:
 	-rm $(DESTDIR)$(initddir)/wpantund
 
-$(DESTDIR)$(initddir)/wpantund: wpantund.init
+$(DESTDIR)$(initddir)/wpantund:
 	test -d $(DESTDIR)$(initddir) || mkdir -p $(DESTDIR)$(initddir)
 	$(INSTALL) -m 755 $(srcdir)/wpantund.init $(DESTDIR)$(initddir)/wpantund
 

@@ -48,7 +48,7 @@ WPANTUND_PID_FILE=/var/run/wpantund.pid
 start_wpantund() 
 {
     start-stop-daemon --start --quiet \
-        --pidfile $WPANTUND_PID_FILE --make-pidfile\
+        --pidfile $WPANTUND_PID_FILE --make-pidfile \
         -b --exec $WPANTUND_BIN -- -c /etc/wpantund.conf
     # wait 5 seconds to setup dbus and tunnel interface
     sleep 5

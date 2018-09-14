@@ -52,14 +52,14 @@ fi
 
 start_agent() 
 {
-    start-stop-daemon --start --quiet\
-        --pidfile $AGENT_PID_FILE --make-pidfile\
+    start-stop-daemon --start --quiet \
+        --pidfile $AGENT_PID_FILE --make-pidfile \
         -b --exec $AGENT_BIN -- $OTBR_AGENT_OPTS
 }
 
 stop_agent()
 {
-    start-stop-daemon --stop --quiet\
+    start-stop-daemon --stop --quiet \
         --pidfile $AGENT_PID_FILE --remove-pidfile
 }
 
