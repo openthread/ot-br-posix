@@ -42,16 +42,36 @@ namespace ot {
 class UdpEncapsulationTlv : public Tlv
 {
 public:
-    uint16_t GetUdpSourcePort() const { return ntohs(mSourcePort); }
+    /**
+     * This method returns udp source port entry in tlv
+     *
+     * @returns udp source port entry in tlv
+     */
+    uint16_t GetUdpSourcePort(void) const { return ntohs(mSourcePort); }
 
-    uint16_t GetUdpDestionationPort() const { return ntohs(mDestPort); }
+    /**
+     * This method returns udp destination port entry in tlv
+     *
+     * @ returns udp destination port entry in tlv
+     */
+    uint16_t GetUdpDestionationPort(void) const { return ntohs(mDestPort); }
 
-    const uint8_t *GetUdpPayload() const
+    /**
+     * This method returns udp payload entry in tlv
+     *
+     * @returns udp payload entry in tlv
+     */
+    const uint8_t *GetUdpPayload(void) const
     {
         return reinterpret_cast<const uint8_t *>(this) + sizeof(UdpEncapsulationTlv);
     }
 
-    uint8_t GetUdpPayloadLength() const
+    /**
+     * This method returns udp payload length in tlv
+     *
+     * @returns udp payload length in tlv
+     */
+    uint8_t GetUdpPayloadLength(void) const
     {
         uint8_t portDataLength = 2 * sizeof(uint16_t);
         if (GetLength() < portDataLength)
@@ -64,10 +84,26 @@ public:
         }
     }
 
+    /**
+     * This method sets udp source port entry in tlv
+     *
+     * @param[in]    aSrcPort   source udp port
+     */
     void SetUdpSourcePort(uint16_t aSrcPort) { mSourcePort = htons(aSrcPort); }
 
+    /**
+     * This method sets udp destination port entry in tlv
+     *
+     * @param[in]    aDestPort  destination udp port
+     */
     void SetUdpDestionationPort(uint16_t aDestPort) { mDestPort = htons(aDestPort); }
 
+    /**
+     * This method sets udp payload entry in tlv
+     *
+     * @param[in]    aPayload   udp payload data buffer
+     * @param[in]    aLength    udp payload length
+     */
     void SetUdpPayload(const void *aPayload, size_t aLength)
     {
         uint8_t tlvLength = aLength + sizeof(mSourcePort) + sizeof(mDestPort);
