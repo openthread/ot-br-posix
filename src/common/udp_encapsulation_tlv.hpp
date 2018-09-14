@@ -71,17 +71,10 @@ public:
      *
      * @returns udp payload length in tlv
      */
-    uint8_t GetUdpPayloadLength(void) const
+    uint16_t GetUdpPayloadLength(void) const
     {
         uint8_t portDataLength = 2 * sizeof(uint16_t);
-        if (GetLength() < portDataLength)
-        {
-            return 0;
-        }
-        else
-        {
-            return GetLength() - portDataLength;
-        }
+        return GetLength() < portDataLength ? 0 : GetLength() - portDataLength;
     }
 
     /**
@@ -113,7 +106,7 @@ public:
     }
 
 private:
-    uint16_t mLengthExtended;
+    uint16_t mExtendedLength;
     uint16_t mSourcePort;
     uint16_t mDestPort;
 };

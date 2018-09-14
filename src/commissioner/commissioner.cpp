@@ -103,7 +103,7 @@ static int DummyKeyExport(void *               aContext,
 Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     : mDtlsInitDone(false)
     , mRelayReceiveHandler(OT_URI_PATH_RELAY_RX, Commissioner::HandleRelayReceive, this)
-    , mUdpRxHandler(OT_URI_PATH_UDP_RX, Commissioner::HandleUDPRx, this)
+    , mUdpRxHandler(OT_URI_PATH_UDP_RX, Commissioner::HandleUdpRx, this)
     , mPetitionRetryCount(0)
     , mJoinerSession(NULL)
     , mKeepAliveRate(aKeepAliveRate)
@@ -140,7 +140,7 @@ void Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeri
     CommissionerSet(aSteeringData);
 }
 
-int Commissioner::SetupProxyServer()
+int Commissioner::SetupProxyServer(void)
 {
     int         ret;
     int         optval = 1;
@@ -151,7 +151,7 @@ int Commissioner::SetupProxyServer()
     mUdpListenFd         = socket(AF_INET, SOCK_DGRAM, 0);
     setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
-    SuccessOrExit(ret = bind(mUdpListenFd, (struct sockaddr *)&addr, sizeof(addr)));
+    SuccessOrExit(ret = bind(mUdpListenFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
 exit:
     return ret;
 }
@@ -459,16 +459,16 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
 
     if (FD_ISSET(mJoinerSessionClientFd, &aReadFdSet))
     {
-        struct sockaddr_in from_addr;
-        socklen_t          addrlen = sizeof(from_addr);
+        struct sockaddr_in fromAddr;
+        socklen_t          addrlen = sizeof(fromAddr);
         ssize_t            n =
-            recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
+            recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&fromAddr), &addrlen);
 
         if (n > 0)
         {
             {
                 char buf[kIPAddrNameBufSize];
-                Utils::GetIPString((struct sockaddr *)(&from_addr), buf, sizeof(buf));
+                Utils::GetIPString((struct sockaddr *)(&fromAddr), buf, sizeof(buf));
                 otbrLog(OTBR_LOG_INFO, "relay from: %s\n", buf);
             }
             SendRelayTransmit(buffer, n);
@@ -477,13 +477,13 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
 
     if (FD_ISSET(mUdpListenFd, &aReadFdSet))
     {
-        struct sockaddr_in from_addr;
-        socklen_t          addrlen = sizeof(from_addr);
+        struct sockaddr_in fromAddr;
+        socklen_t          addrlen = sizeof(fromAddr);
 
-        ssize_t n = recvfrom(mUdpListenFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&from_addr), &addrlen);
+        ssize_t n = recvfrom(mUdpListenFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&fromAddr), &addrlen);
         if (n > 0)
         {
-            SendUdpTx(buffer, n, ntohs(from_addr.sin_port));
+            SendUdpTx(buffer, n, ntohs(fromAddr.sin_port));
         }
     }
 
@@ -632,13 +632,13 @@ exit:
     return;
 }
 
-int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
+int Commissioner::SendRelayTransmit(const uint8_t *aBuffer, size_t aLength)
 {
     uint8_t payload[kSizeMaxPacket];
     Tlv *   responseTlv = reinterpret_cast<Tlv *>(payload);
 
     responseTlv->SetType(Meshcop::kJoinerDtlsEncapsulation);
-    responseTlv->SetValue(aBuf, static_cast<uint16_t>(aLength));
+    responseTlv->SetValue(aBuffer, static_cast<uint16_t>(aLength));
     responseTlv = responseTlv->GetNext();
 
     responseTlv->SetType(Meshcop::kJoinerUdpPort);
@@ -683,7 +683,7 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
     return aLength;
 }
 
-void Commissioner::HandleUDPRx(const Coap::Resource &aResource,
+void Commissioner::HandleUdpRx(const Coap::Resource &aResource,
                                const Coap::Message & aMessage,
                                Coap::Message &       aResponse,
                                const uint8_t *       aIp6,

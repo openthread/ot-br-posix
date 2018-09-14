@@ -45,19 +45,14 @@ static const uint8_t kLociidPrefix[] = {
 
 enum
 {
-    kRlocRouterIDBitOffset = 10,
-    kRlocAddrUint16Offset  = 7,
-    kRlocAddrUint8Offset   = 14,
-    kAlocRouterByte        = 0xfc,
-    kIidAddrUint8Offset    = 8,
-    kUlaPrefix             = 0xfd,
+    kRlocRouterIdBitOffset = 10,
 };
 
 uint16_t ToRloc16(uint8_t aRouterId, uint16_t aChildId)
 {
     uint16_t rloc16 = aRouterId;
 
-    return (rloc16 << kRlocRouterIDBitOffset) | aChildId;
+    return (rloc16 << kRlocRouterIdBitOffset) | aChildId;
 }
 
 char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)

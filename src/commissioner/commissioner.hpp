@@ -172,7 +172,7 @@ private:
     Commissioner(const Commissioner &);
     Commissioner &operator=(const Commissioner &);
 
-    int  SetupProxyServer();
+    int  SetupProxyServer(void);
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
     void CommissionerKeepAlive(void);
 
@@ -196,9 +196,9 @@ private:
                                    uint16_t              aPort,
                                    void *                aContext);
 
-    int SendRelayTransmit(uint8_t *aBuf, size_t aLength);
+    int SendRelayTransmit(const uint8_t *aBuffer, size_t aLength);
 
-    static void HandleUDPRx(const Coap::Resource &aResource,
+    static void HandleUdpRx(const Coap::Resource &aResource,
                             const Coap::Message & aPost,
                             Coap::Message &       aResponse,
                             const uint8_t *       aIp6,
