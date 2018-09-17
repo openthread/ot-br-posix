@@ -242,7 +242,7 @@ static void handle_steering_length(ArgcArgv *pThis, CommissionerArgs *args)
 /** Handle border router ip address on command line */
 static void handle_ip_addr(ArgcArgv *pThis, CommissionerArgs *args)
 {
-    pThis->StrParam(args->mAgentAddress_ascii, sizeof(args->mXpanidAscii));
+    pThis->StrParam(args->mAgentAddress_ascii, sizeof(args->mAgentAddress_ascii));
 }
 
 /** Handle border router ip port on command line */

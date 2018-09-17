@@ -109,10 +109,9 @@ int main(int argc, char **argv)
 
     if (args.mNeedCommissionDevice)
     {
-        int         kaRate = args.mSendCommKATxRate;
-        sockaddr_in addr;
-        int         ret;
-        bool        joinerSetDone = false;
+        int  kaRate = args.mSendCommKATxRate;
+        int  ret;
+        bool joinerSetDone = false;
 
         if (!args.mNeedSendCommKA)
         {
@@ -120,10 +119,7 @@ int main(int argc, char **argv)
         }
         srand(time(0));
         Commissioner commissioner(pskcBin, kaRate);
-        addr.sin_family = AF_INET;
-        addr.sin_port   = htons(atoi(args.mAgentPort_ascii));
-        inet_pton(AF_INET, args.mAgentAddress_ascii, &addr.sin_addr);
-        commissioner.InitDtls(addr);
+        commissioner.InitDtls(args.mAgentAddress_ascii, args.mAgentPort_ascii);
         do
         {
             ret = commissioner.TryDtlsHandshake();
