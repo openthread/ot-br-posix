@@ -359,6 +359,7 @@ MbedtlsSession::MbedtlsSession(MbedtlsServer &            aServer,
     , mRemoteSock(aRemoteSock)
     , mLocalSock(aLocalSock)
     , mServer(aServer)
+    , mIsTimerSet(false)
 {
 }
 
@@ -395,12 +396,12 @@ int MbedtlsSession::GetDelay(void) const
 
     if (mIsTimerSet)
     {
-        if (static_cast<long>(mIntermediate - now) < 0)
+        if (static_cast<long>(mIntermediate - now) <= 0)
         {
             ret = 1;
         }
 
-        if (static_cast<long>(mFinal - now) < 0)
+        if (static_cast<long>(mFinal - now) <= 0)
         {
             ret = 2;
         }
