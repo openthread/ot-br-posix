@@ -203,6 +203,11 @@ private:
     }
     int ReadMbedtls(unsigned char *aBuffer, size_t aLength);
 
+    static void SetDelay(void *aContext, uint32_t aIntermediate, uint32_t aFinal);
+    void        SetDelay(uint32_t aIntermediate, uint32_t aFinal);
+    static int  GetDelay(void *aContext);
+    int         GetDelay(void) const;
+
     mbedtls_net_context          mNet;
     mbedtls_timing_delay_context mTimer;
     mbedtls_ssl_context          mSsl;
@@ -215,6 +220,9 @@ private:
     MbedtlsServer &mServer;
     unsigned long  mExpiration;
     uint8_t        mKek[kKekSize];
+    unsigned long  mIntermediate;
+    unsigned long  mFinal;
+    bool           mIsTimerSet;
 };
 
 /**
@@ -308,8 +316,9 @@ private:
         kMaxSizeOfPSK = 32, ///< Max size of PSK in bytes.
     };
 
-    void      HandleSessionState(Session &aSession, Session::State aState);
-    void      ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void HandleSessionState(Session &aSession, Session::State aState);
+    void ProcessServer(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+
     otbrError Bind(void);
 
     SessionSet   mSessions;

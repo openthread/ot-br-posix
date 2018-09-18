@@ -362,6 +362,57 @@ MbedtlsSession::MbedtlsSession(MbedtlsServer &            aServer,
 {
 }
 
+void MbedtlsSession::SetDelay(void *aContext, uint32_t aIntermediate, uint32_t aFinal)
+{
+    static_cast<MbedtlsSession *>(aContext)->SetDelay(aIntermediate, aFinal);
+}
+
+void MbedtlsSession::SetDelay(uint32_t aIntermediate, uint32_t aFinal)
+{
+    unsigned long now = GetNow();
+
+    if (aFinal != 0)
+    {
+        mIntermediate = now + aIntermediate;
+        mFinal        = now + aFinal;
+        mIsTimerSet   = true;
+    }
+    else
+    {
+        mIsTimerSet = false;
+    }
+}
+
+int MbedtlsSession::GetDelay(void *aContext)
+{
+    return static_cast<MbedtlsSession *>(aContext)->GetDelay();
+}
+
+int MbedtlsSession::GetDelay(void) const
+{
+    int           ret = 0;
+    unsigned long now = GetNow();
+
+    if (mIsTimerSet)
+    {
+        if (static_cast<long>(mIntermediate - now) < 0)
+        {
+            ret = 1;
+        }
+
+        if (static_cast<long>(mFinal - now) < 0)
+        {
+            ret = 2;
+        }
+    }
+    else
+    {
+        ret = -1;
+    }
+
+    return ret;
+}
+
 otbrError MbedtlsSession::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
@@ -370,7 +421,7 @@ otbrError MbedtlsSession::Init(void)
     mbedtls_ssl_init(&mSsl);
     SuccessOrExit(rval = mbedtls_ssl_setup(&mSsl, &mServer.mConf));
 
-    mbedtls_ssl_set_timer_cb(&mSsl, &mTimer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
+    mbedtls_ssl_set_timer_cb(&mSsl, this, SetDelay, GetDelay);
 
     SuccessOrExit(rval = mbedtls_ssl_session_reset(&mSsl));
     SuccessOrExit(rval = mbedtls_ssl_set_hs_ecjpake_password(&mSsl, mServer.mPSK, mServer.mPSKLength));
