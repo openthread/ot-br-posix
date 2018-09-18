@@ -28,47 +28,6 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-check_PROGRAMS = otbr-commissioner
-
-noinst_HEADERS                                        = \
-    addr_utils.hpp                                      \
-    commissioner.hpp                                    \
-    commissioner_argcargv.hpp                           \
-    commissioner_constants.hpp                          \
-    commissioner_utils.hpp                              \
-    device_hash.hpp                                     \
-    joiner_session.hpp                                  \
-    $(NULL)
-
-otbr_commissioner_SOURCES                             = \
-    addr_utils.cpp                                      \
-    commissioner.cpp                                    \
-    commissioner_argcargv.cpp                           \
-    device_hash.cpp                                     \
-    joiner_session.cpp                                  \
-    main.cpp                                            \
-    $(NULL)
-
-otbr_commissioner_CPPFLAGS                            = \
-    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'           \
-    -I$(top_srcdir)/third_party/mbedtls/repo/configs    \
-    -I$(top_srcdir)/third_party/mbedtls/repo/include    \
-    -I$(top_srcdir)/src                                 \
-    -I$(top_srcdir)/src/agent                           \
-    -I$(top_srcdir)/src/web                             \
-    $(NULL)
-
-otbr_commissioner_LDADD                               = \
-    $(top_builddir)/src/agent/libotbr-agent.la          \
-    $(top_builddir)/src/utils/libutils.la               \
-    $(top_builddir)/src/web/libotbr-web.la              \
-    $(top_builddir)/src/common/libotbr-logging.la       \
-    $(NULL)
-
-otbr_commissioner_LDFLAGS                             = \
-    -static                                             \
-    $(NULL)
-
 dist_check_SCRIPTS                                    = \
     meshcop                                             \
     meshcop_ftd                                         \

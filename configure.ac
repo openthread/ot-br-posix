@@ -440,9 +440,10 @@ third_party/angular-material/Makefile
 include/Makefile
 src/Makefile
 src/agent/Makefile
-src/web/Makefile
+src/commissioner/Makefile
 src/common/Makefile
 src/utils/Makefile
+src/web/Makefile
 tests/Makefile
 tests/mdns/Makefile
 tests/meshcop/Makefile

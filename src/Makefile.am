@@ -32,9 +32,10 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 DIST_SUBDIRS                                         = \
     agent                                              \
-    web                                                \
+    commissioner                                       \
     common                                             \
     utils                                              \
+    web                                                \
     $(NULL)
 
 # Always build (e.g. for 'make all') these subdirectories.
@@ -44,6 +45,7 @@ SUBDIRS                                              = \
     utils                                              \
     agent                                              \
     web                                                \
+    commissioner                                       \
     $(NULL)
 
 
@@ -51,9 +53,10 @@ SUBDIRS                                              = \
 
 PRETTY_SUBDIRS                                       = \
     agent                                              \
-    web                                                \
+    commissioner                                       \
     common                                             \
     utils                                              \
+    web                                                \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

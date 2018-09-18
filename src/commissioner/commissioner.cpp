@@ -33,6 +33,7 @@
 
 #include <vector>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -612,6 +613,8 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
     responseTlv->SetType(Meshcop::kJoinerRouterLocator);
     responseTlv->SetValue(mJoinerRouterLocator);
     responseTlv = responseTlv->GetNext();
+
+    assert(mJoinerSession != NULL);
 
     if (mJoinerSession->NeedAppendKek())
     {
