@@ -86,11 +86,14 @@ static int FromOtbrLogLevel(void)
     return level;
 }
 
-static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLine, const char *aMessage)
+void MbedtlsServer::MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLine, const char *aMessage)
+{
+    static_cast<MbedtlsServer *>(aContext)->MbedtlsDebug(aLevel, aFile, aLine, aMessage);
+}
+
+void MbedtlsServer::MbedtlsDebug(int aLevel, const char *aFile, int aLine, const char *aMessage)
 {
     int level = 0;
-
-    (void)aContext;
 
     switch (aLevel)
     {
@@ -120,7 +123,7 @@ static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLin
 
     if (level != 0)
     {
-        otbrLog(aLevel, "%s:%04d: %s", aFile, aLine, aMessage);
+        otbrLog(aLevel, "DTLS[:%hu] %s:%04d: %s", mPort, aFile, aLine, aMessage);
     }
 }
 
