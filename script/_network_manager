@@ -115,6 +115,10 @@ start_dnsmasq()
 {
     log "Starting 'dnsmasq' on the interface: '\${IFNAME}'"
     /usr/sbin/dnsmasq -i \${IFNAME} -a \${ROUTER_IP} -b -z -K -F\${DHCP_START},\${DHCP_END},24h -p0 -O3,\${ROUTER_IP} -O6,\${DNS1},\${DNS2}
+    if [ \$? = 2 ]; then
+        # disable dns service
+        /usr/sbin/dnsmasq -p 0 -i \${IFNAME} -a \${ROUTER_IP} -b -z -K -F\${DHCP_START},\${DHCP_END},24h -p0 -O3,\${ROUTER_IP} -O6,\${DNS1},\${DNS2}
+    fi
 }
 
 kill_dnsmasq()
