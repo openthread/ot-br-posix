@@ -63,7 +63,7 @@ readonly WPANCTL_PATH="${STAGE_DIR}/usr/bin/${WPANCTL}"
 readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
 readonly OT_NCP_PATH="${STAGE_DIR}/usr/bin/${OT_NCP}"
 readonly OT_CLI_PATH="${STAGE_DIR}/usr/bin/${OT_CLI}"
-readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/tests/meshcop/${OTBR_COMMISSIONER}"
+readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 
