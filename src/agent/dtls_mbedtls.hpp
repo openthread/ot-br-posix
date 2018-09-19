@@ -321,6 +321,9 @@ private:
 
     otbrError Bind(void);
 
+    static void MbedtlsDebug(void *aContext, int aLevel, const char *aFile, int aLine, const char *aMessage);
+    void        MbedtlsDebug(int aLevel, const char *aFile, int aLine, const char *aMessage);
+
     SessionSet   mSessions;
     int          mSocket;
     uint16_t     mPort;
