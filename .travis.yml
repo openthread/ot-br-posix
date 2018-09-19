@@ -22,11 +22,7 @@ matrix:
           packages:
             - clang-5.0
     - env: BUILD_TARGET="android-check" VERBOSE=1
-      language: android
-      android:
-        components:
-          - tools
-          - platform-tools
+      os: linux
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux

@@ -39,7 +39,7 @@ die() {
 
 case $BUILD_TARGET in
 android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/android_check")
+    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
     ;;
 
 pretty-check)
