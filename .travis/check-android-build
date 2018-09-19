@@ -80,7 +80,7 @@ EOF
     mkdir -p system/core/include/arch/linux-x86
     touch system/core/include/arch/linux-x86/AndroidConfig.h
 
-    ANDROID_NDK_PATH=$(dirname $(which sdkmanager))/../../ndk-bundle
+    ANDROID_NDK_PATH=$HOME/ndk-bundle
     mkdir -p bionic/libc/
     cp -r $ANDROID_NDK_PATH/sysroot/usr/include bionic/libc/include
     mkdir -p bionic/libc/arch-arm64
