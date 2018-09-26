@@ -38,7 +38,7 @@ otbr_uninstall()
     fi
     sudo killall otbr-web otbr-agent || true
 
-    test ! -f config.status || sudo make uninstall
+    test ! -f config.status || sudo make uninstall || true
     if have systemctl; then
         sudo systemctl daemon-reload
     fi
