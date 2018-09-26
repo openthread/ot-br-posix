@@ -1,6 +1,9 @@
 coverage:
   status:
     patch: off
+    project:
+      default:
+        threshold: 1%
 
 ignore:
   - "third_party/*"
