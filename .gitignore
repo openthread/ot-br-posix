@@ -60,10 +60,12 @@ include/otbr-config.h.in
 # Border router agent
 src/agent/otbr-agent
 src/agent/otbr-agent.service
+src/agent/otbr-agent.init
 
 # Border router web service
 src/web/otbr-web
 src/web/otbr-web.service
+src/web/otbr-web.init
 
 # Test code.
 tests/mdns/otbr-test-mdns

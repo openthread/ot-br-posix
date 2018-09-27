@@ -30,6 +30,7 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 EXTRA_DIST                         = \
     wpantund.service.in              \
+    wpantund.init                    \
     $(NULL)
 
 noinst_LTLIBRARIES = libwpanctl.la
@@ -71,6 +72,8 @@ noinst_HEADERS                                     = \
     repo/third_party/openthread/src/ncp/spinel.h     \
     $(NULL)
 
+if OTBR_HAS_SYSTEMCTL
+
 systemddir=$(sysconfdir)/systemd/system
 systemd_DATA                        = \
     wpantund.service                  \
@@ -82,6 +85,21 @@ $(systemd_DATA): %: %.in
 	-e 's,[@]sbindir[@],$(sbindir),g'       \
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
 	< "$<" > "$@"
+
+else
+
+initddir=$(sysconfdir)/init.d
+
+install-data-local: $(DESTDIR)$(initddir)/wpantund
+
+uninstall-local:
+	-rm $(DESTDIR)$(initddir)/wpantund
+
+$(DESTDIR)$(initddir)/wpantund:
+	test -d $(DESTDIR)$(initddir) || mkdir -p $(DESTDIR)$(initddir)
+	$(INSTALL) -m 755 $(srcdir)/wpantund.init $(DESTDIR)$(initddir)/wpantund
+
+endif
 
 CLEANFILES                = \
     wpantund.service        \

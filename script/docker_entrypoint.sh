@@ -82,21 +82,19 @@ echo "AUTO_PREFIX_SLAAC:" $AUTO_PREFIX_SLAAC
 NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
-sed -i "s/dns64.*{/dns64 $NAT64_PREFIX {/" /etc/bind/named.conf.options
+sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
 
-service dbus start
-service bind9 start
-service tayga start 
-wpantund \
-    -o Config:NCP:SocketPath "$NCP_PATH" \
-    -o Config:TUN:InterfaceName $TUN_INTERFACE_NAME \
-    -o Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_ROUTE \
-    -o IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC &
+echo "Config:NCP:SocketPath \"$NCP_PATH\"" > /etc/wpantund.conf
+echo "Config:TUN:InterfaceName $TUN_INTERFACE_NAME " >> /etc/wpantund.conf
+echo "Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_ROUTE" >> /etc/wpantund.conf
+echo "IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC" >> /etc/wpantund.conf
 
-sleep 5
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME\"" > /etc/default/otbr-agent
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -p 80\"" > /etc/default/otbr-web
 
-/usr/local/sbin/otbr-agent -I $TUN_INTERFACE_NAME &
+NAT64=1 DNS64=1 /app/borderrouter/script/server
 
-/usr/local/sbin/otbr-web -I $TUN_INTERFACE_NAME -p 80 &
-
-wait
+while [ $? = 0 ]
+do
+    sleep 60
+done

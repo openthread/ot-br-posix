@@ -377,6 +377,8 @@ else
 fi
 AC_SUBST(DBUS_DATADIR)
 
+AM_CONDITIONAL([OTBR_HAS_SYSTEMCTL], [test -x "$(command -v systemctl)"])
+
 #
 # Check for headers
 #

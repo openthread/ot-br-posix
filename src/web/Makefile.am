@@ -148,7 +148,10 @@ EXTRA_DIST                                                     = \
     $(img_DATA)                                                  \
     $(html_DATA)                                                 \
     otbr-web.service.in                                          \
+    otbr-web.init.in                                             \
     $(NULL)
+
+if OTBR_HAS_SYSTEMCTL
 
 systemddir=$(sysconfdir)/systemd/system
 systemd_DATA                        = \
@@ -162,8 +165,34 @@ $(systemd_DATA): %: %.in
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
 	< "$<" > "$@"
 
+else
+
+initddir=$(sysconfdir)/init.d
+
+install-data-local: $(DESTDIR)$(initddir)/otbr-web
+
+uninstall-local:
+	-rm $(DESTDIR)$(initddir)/otbr-web
+
+$(DESTDIR)$(initddir)/otbr-web: otbr-web.init
+	test -d $(DESTDIR)$(initddir) || mkdir -p $(DESTDIR)$(initddir)
+	$(INSTALL) -m 755 ./otbr-web.init $(DESTDIR)$(initddir)/otbr-web
+
+.PHONY: obtr-web.init
+otbr-web.init: %: %.in
+	pwd
+	$(SED)                                  \
+	-e 's,[@]sbindir[@],$(sbindir),g'       \
+	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
+	< "$<" > "$@"
+	ls
+	ls $(srcdir)
+
+endif
+
 CLEANFILES                = \
     otbr-web.service        \
+    otbr-web.init           \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

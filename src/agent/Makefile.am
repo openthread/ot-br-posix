@@ -132,37 +132,66 @@ EXTRA_DIST                = \
     otbr-agent.conf         \
     otbr-agent.default      \
     otbr-agent.service.in   \
+    otbr-agent.init.in      \
     $(NULL)
 
 dbusconfdir = $(DBUS_CONFDIR)
 dbusconf_DATA = otbr-agent.conf
 
+if OTBR_HAS_SYSTEMCTL
 systemddir=$(sysconfdir)/systemd/system
 systemd_DATA                        = \
     otbr-agent.service                \
     $(NULL)
+endif
+
+initddir=$(sysconfdir)/init.d
 
 defaultdir=$(sysconfdir)/default
 
-install-data-local: $(DESTDIR)$(defaultdir)/otbr-agent
+install-data-local: $(DESTDIR)$(defaultdir)/otbr-agent $(DESTDIR)$(initddir)/otbr-agent
+
+if OTBR_HAS_SYSTEMCTL
+uninstall-local:
+	-rm $(DESTDIR)$(defaultdir)/otbr-agent
+else
+uninstall-local:
+	-rm $(DESTDIR)$(defaultdir)/otbr-agent
+	-rm $(DESTDIR)$(initddir)/otbr-agent
+endif
 
 # Do not overwrite existing configuration file
 $(DESTDIR)$(defaultdir)/otbr-agent: otbr-agent.default
 	test -d $(DESTDIR)$(defaultdir) || mkdir -p $(DESTDIR)$(defaultdir)
 	$(INSTALL_DATA) $(srcdir)/otbr-agent.default $(DESTDIR)$(defaultdir)/otbr-agent
 
-uninstall-local:
-	-rm $(DESTDIR)$(defaultdir)/otbr-agent
+if OTBR_HAS_SYSTEMCTL
+$(DESTDIR)$(initddir)/otbr-agent: ;
+else
+$(DESTDIR)$(initddir)/otbr-agent: otbr-agent.init
+	test -d $(DESTDIR)$(initddir) || mkdir -p $(DESTDIR)$(initddir)
+	$(INSTALL) -m 755 ./otbr-agent.init $(DESTDIR)$(initddir)/otbr-agent
+endif
 
+if OTBR_HAS_SYSTEMCTL
 .PHONY: $(systemd_DATA)
 $(systemd_DATA): %: %.in
 	$(SED)                                  \
 	-e 's,[@]sbindir[@],$(sbindir),g'       \
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
 	< "$<" > "$@"
+else
+.PHONY: otbr-agent.init
+otbr-agent.init: %: %.in
+	$(SED)                                  \
+	-e 's,[@]sbindir[@],$(sbindir),g'       \
+	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
+	< "$<" > "$@"
+endif
 
 CLEANFILES                = \
     otbr-agent.service      \
+    otbr-agent.init         \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

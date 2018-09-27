@@ -1,3 +1,4 @@
+#!/bin/sh
 #  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
@@ -24,23 +25,71 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+### BEGIN INIT INFO
+# Provides:          otbr-web
+# Required-Start:    wpantund otbr-agent
+# Required-Stop:
+# Should-Start:      
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: web server for boreder router
+# Description: otbr-web provides a web gui for boder router
+### END INIT INFO
 
-FROM ubuntu
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-WORKDIR /app/borderrouter
+OTBR_WEB_BIN=@sbindir@/otbr-web
+OTBR_WEB_CONF=@sysconfdir@/default/otbr-web
+OTBR_WEB_PID_FILE=/var/run/otbr-web.pid
 
-ADD . /app/borderrouter
+. /lib/lsb/init-functions
+. /lib/init/vars.sh
 
-RUN apt-get -y update
+if [ -f $OTBR_WEB_CONF ]; then
+    . $OTBR_WEB_CONF
+fi
 
-RUN apt-get install -y sudo lsb-core
+start_web() 
+{
+    start-stop-daemon --start --quiet \
+        --pidfile $OTBR_WEB_PID_FILE --make-pidfile \
+        -b --exec $OTBR_WEB_BIN -- $OTBR_WEB_OPTS
+}
 
-RUN cd /app/borderrouter && NAT64=1 ./script/bootstrap
+stop_web()
+{
+    start-stop-daemon --stop --quiet \
+        --pidfile $OTBR_WEB_PID_FILE --remove-pidfile
+}
 
-RUN cd /app/borderrouter && NAT64=1 ./script/setup
+set -e
 
-RUN chmod 644 /etc/bind/named.conf.options
+case "$1" in
+    start)
+        start_web
+        ;;
+    restart|reload|force-reload)
+        stop_web
+        start_web
+        ;;
+    stop|force-stop)
+        stop_web
+        ;;
+    status)
+        if [ -f $OTBR_WEB_PID_FILE ] ;  then
+            log_progress_msg "otbr-web running"
+            log_end_msg 0
+        else
+            log_progress_msg "otbr-web not running"
+            log_end_msg 1
+            exit 1
+        fi
+        ;;
+    *)
+        echo "unknown command" >&2
+        exit 3
+        ;;
+esac
 
-ENTRYPOINT ["/app/borderrouter/script/docker_entrypoint.sh"]
-
-EXPOSE 80
+exit 0
