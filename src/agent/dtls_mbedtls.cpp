@@ -293,15 +293,12 @@ int MbedtlsSession::Read(void)
     uint8_t buffer[kMaxSizeOfPacket];
     int     ret = 0;
 
-    do
-    {
-        ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
+    ret = mbedtls_ssl_read(&mSsl, buffer, sizeof(buffer));
 
-        if (ret > 0)
-        {
-            mDataHandler(buffer, (uint16_t)ret, mContext);
-        }
-    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+    if (ret > 0)
+    {
+        mDataHandler(buffer, (uint16_t)ret, mContext);
+    }
 
     if (ret <= 0)
     {
@@ -326,6 +323,10 @@ int MbedtlsSession::Read(void)
             otbrLog(OTBR_LOG_WARNING, "DTLS read timeout!");
             break;
 
+        case MBEDTLS_ERR_SSL_WANT_READ:
+            ret = 0;
+            break;
+
         default:
             otbrLog(OTBR_LOG_ERR, "DTLS read error: -0x%04x!", -ret);
             SetState(kStateError);
@@ -334,7 +335,7 @@ int MbedtlsSession::Read(void)
     }
 
     return ret;
-}
+} // namespace Dtls
 
 int MbedtlsSession::ExportKeys(void *               aContext,
                                const unsigned char *aMasterSecret,
