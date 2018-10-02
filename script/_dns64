@@ -34,7 +34,7 @@ BIND_CONF_OPTIONS=/etc/bind/named.conf.options
 NAT64_PREFIX=64:ff9b::/96
 
 DNS64_NAMESERVER_ADDR=127.0.0.1
-DNS64_CONF="dns64 `echo $NAT64_PREFIX | tr \"/\" \"\/\"` { clients { any; }; recursive-only yes; };"
+DNS64_CONF="dns64 `echo $NAT64_PREFIX | tr \"/\" \"\/\"` { clients { thread; }; recursive-only yes; };"
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
@@ -66,11 +66,14 @@ dns64_install()
     with NAT64 && with DNS64 || return 0
 
     test -f $BIND_CONF_OPTIONS || die 'Cannot find bind9 configuration file!'
-    sudo sed -i '/^};/i\\tlisten-on-v6 { any; };' $BIND_CONF_OPTIONS
+    sudo sed -i '/^};/i\\tlisten-on-v6 { thread; };' $BIND_CONF_OPTIONS
+    sudo sed -i '/^\tlisten-on-v6 { a/d' $BIND_CONF_OPTIONS
     sudo sed -i '/^};/i\\tallow-query { any; };' $BIND_CONF_OPTIONS
+    sudo sed -i '/^};/i\\tallow-recursion { thread; };' $BIND_CONF_OPTIONS
     sudo sed -i '/^};/i\\tforwarders { 8.8.8.8; 8.8.8.4; };' $BIND_CONF_OPTIONS
     sudo sed -i '/^};/i\\tforward only;' $BIND_CONF_OPTIONS
     sudo sed -i '/^};/i\\t'"$DNS64_CONF" $BIND_CONF_OPTIONS
+    sudo sed -i '1s/^/acl thread {\n\tfe80::\/16;\n\tfd80::\/16;\n\t127.0.0.1;\n};\n\n/' $BIND_CONF_OPTIONS
 
     [ -f /.dockerenv ] || sudo sh -c "echo \"nameserver $DNS64_NAMESERVER_ADDR\" >> $RESOLV_CONF_HEAD"
 
@@ -89,8 +92,13 @@ dns64_uninstall()
     [ ! -f /.dockerenv ] || return 0
 
     dns64_stop
+    sudo sed -i '/^\tlisten-on-v6/d' $BIND_CONF_OPTIONS
+    sudo sed -i '/^\tallow-query/d' $BIND_CONF_OPTIONS
     sudo sed -i '/^\tallow-recursion/d' $BIND_CONF_OPTIONS
+    sudo sed -i '/^\tforward/d' $BIND_CONF_OPTIONS
+    sudo sed -i '/^};/i\\tlisten-on-v6 { any; };' $BIND_CONF_OPTIONS
     sudo sed -i '/^\tdns64/d' $BIND_CONF_OPTIONS
+    sudo sed -i '/^acl/,/^options/{/^options/!d}' $BIND_CONF_OPTIONS
 
     sudo sed -i '/^nameserver '$DNS64_NAMESERVER_ADDR'/d' $RESOLV_CONF_HEAD || true
 
