@@ -136,7 +136,7 @@ void Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeri
     {
         delete mJoinerSession;
     }
-    mJoinerSession = new JoinerSession(kPortJoinerSession, aPskdAscii);
+    mJoinerSession = new JoinerSession(kJoinerSessionPort, aPskdAscii);
     CommissionerSet(aSteeringData);
 }
 
@@ -693,8 +693,8 @@ void Commissioner::HandleUdpRx(const Coap::Resource &aResource,
     Commissioner * commissioner = static_cast<Commissioner *>(aContext);
     int            tlvType;
     uint16_t       length;
-    const uint8_t *payload = aMessage.GetPayload(length);
-    uint16_t       destPort;
+    const uint8_t *payload  = aMessage.GetPayload(length);
+    uint16_t       destPort = 0;
     sockaddr_in    addr;
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
