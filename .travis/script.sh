@@ -63,6 +63,10 @@ raspbian-gcc)
     IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
     ;;
 
+docker-check)
+    docker build -t otbr -f etc/Dockerfile . || die
+    ;;
+
 *)
     die
     ;;
