@@ -65,6 +65,11 @@ raspbian-gcc)
 
 docker-check)
     docker build -t otbr -f etc/Dockerfile . || die
+    docker build -t otbr_dbg -f .travis/TestDockerfile . || die
+    docker run --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" --privileged -p 8080:80 --dns=127.0.0.1 otbr_dbg --ncp-path "system:/app/openthread/output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd 2" &
+    sleep 10
+    sudo lsof -i :8080 || die
+    docker kill $(docker ps -q)
     ;;
 
 *)

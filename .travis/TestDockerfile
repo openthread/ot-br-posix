@@ -1,0 +1,9 @@
+FROM otbr
+
+WORKDIR /app/
+
+RUN git clone https://github.com/openthread/openthread.git
+
+RUN cd /app/openthread && ./bootstrap
+
+RUN cd /app/openthread && make -f examples/Makefile-posix
