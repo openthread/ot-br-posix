@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -30,40 +30,17 @@
 set -e
 set -x
 
-TOOLS_HOME=$HOME/.cache/tools
-
-die() {
-	echo " *** ERROR: " $*
-	exit 1
+main() {
+    ./bootstrap
+    ./configure
+    distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
+    if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
+        sudo service avahi-daemon stop
+        sudo mdnsd
+        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage --with-mdns=mDNSResponder' distcleancheck_listfiles="${distcleancheck_listfiles}"
+    else
+        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage' distcleancheck_listfiles="${distcleancheck_listfiles}"
+    fi
 }
 
-case $BUILD_TARGET in
-android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
-    ;;
-
-pretty-check)
-    export PATH=$TOOLS_HOME/usr/bin:$PATH
-    ./bootstrap && ./configure && make pretty-check || die
-    ;;
-
-posix-check)
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" .travis/check-posix
-    ;;
-
-scan-build)
-    .travis/check-scan-build
-    ;;
-
-script-check)
-    .travis/check-scripts
-    ;;
-
-raspbian-gcc)
-    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
-    ;;
-
-*)
-    die
-    ;;
-esac
+main "$@"

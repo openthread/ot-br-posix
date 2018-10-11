@@ -30,10 +30,8 @@ matrix:
       compiler: gcc
       os: linux
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2017-04-10-raspbian-jessie-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip
-      compiler: gcc
       os: linux
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2018-04-18-raspbian-stretch-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
-      compiler: gcc
       os: linux
     - env: BUILD_TARGET="script-check"
       compiler: gcc
