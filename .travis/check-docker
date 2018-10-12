@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -30,44 +30,30 @@
 set -e
 set -x
 
-TOOLS_HOME=$HOME/.cache/tools
+main() {
+    docker build -t otbr -f etc/Dockerfile .
+    SOCAT_OUTPUT=/tmp/ot-socat
+    socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
+    while true; do
+        if test $(head -n2 $SOCAT_OUTPUT | wc -l) = 2; then
+            DEVICE_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
+            DOCKER_PTY=$(head -n2 $SOCAT_OUTPUT | tail -n1 | grep -o '/dev/.\+')
+            break
+        fi
+        echo 'Waiting for socat ready...'
+        sleep 1
+    done
 
-die() {
-	echo " *** ERROR: " $*
-	exit 1
+    ot-ncp-ftd 1 > $DEVICE_PTY < $DEVICE_PTY &
+
+    docker run --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
+        --privileged -p 8080:80 --dns=127.0.0.1 --volume $DOCKER_PTY:/dev/ttyUSB0 otbr &
+    sleep 10
+    sudo lsof -i :8080
+
+    docker kill $(docker ps -q)
+    killall ot-ncp-ftd
+    killall socat
 }
 
-case $BUILD_TARGET in
-android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
-    ;;
-
-pretty-check)
-    export PATH=$TOOLS_HOME/usr/bin:$PATH
-    ./bootstrap && ./configure && make pretty-check || die
-    ;;
-
-posix-check)
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" .travis/check-posix
-    ;;
-
-scan-build)
-    .travis/check-scan-build
-    ;;
-
-script-check)
-    .travis/check-scripts
-    ;;
-
-raspbian-gcc)
-    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
-    ;;
-
-docker-check)
-    .travis/check-docker
-    ;;
-
-*)
-    die
-    ;;
-esac
+main "$@"
