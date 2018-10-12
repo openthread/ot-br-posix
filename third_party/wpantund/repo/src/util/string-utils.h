@@ -28,14 +28,16 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include <sys/cdefs.h>
 
 #define strcaseequal(x, y)   (strcasecmp(x, y) == 0)
 #define strncaseequal(x, y, n)   (strncasecmp(x, y, n) == 0)
 #define strequal(x, y)   (strcmp(x, y) == 0)
 #define strnequal(x, y, n)   (strncmp(x, y, n) == 0)
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 extern void memcpyrev(void* dest, const void *src, size_t len);
 extern int memcmprev(const void* dest, const void *src, size_t len);
 extern void reverse_bytes(uint8_t *bytes, size_t count);
@@ -66,6 +68,8 @@ uint32_t strtomask_uint32(const char* in_string);
 
 extern bool strtobool(const char* string);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
