@@ -86,7 +86,6 @@ dns64_install()
 dns64_uninstall()
 {
     with NAT64 && with DNS64 || return 0
-    [ ! -f /.dockerenv ] || return 0
 
     dns64_stop
     sudo sed -i '/^\tallow-recursion/d' $BIND_CONF_OPTIONS
@@ -94,7 +93,7 @@ dns64_uninstall()
 
     sudo sed -i '/^nameserver '$DNS64_NAMESERVER_ADDR'/d' $RESOLV_CONF_HEAD || true
 
-    dns64_update_resolvconf
+    [ -f /.dockerenv ] ||  dns64_update_resolvconf
 
     if have systemctl; then
         sudo systemctl stop bind9 || true
