@@ -36,7 +36,6 @@ noinst_HEADERS                                        = \
     commissioner_argcargv.hpp                           \
     commissioner_constants.hpp                          \
     commissioner_utils.hpp                              \
-    device_hash.hpp                                     \
     joiner_session.hpp                                  \
     $(NULL)
 
@@ -44,7 +43,6 @@ otbr_commissioner_SOURCES                             = \
     addr_utils.cpp                                      \
     commissioner.cpp                                    \
     commissioner_argcargv.cpp                           \
-    device_hash.cpp                                     \
     joiner_session.cpp                                  \
     main.cpp                                            \
     $(NULL)

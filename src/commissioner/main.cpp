@@ -39,7 +39,7 @@
 
 #include "commissioner.hpp"
 #include "commissioner_argcargv.hpp"
-#include "device_hash.hpp"
+#include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 
@@ -53,81 +53,33 @@ static void HandleSignal(int aSignal)
 
 int main(int argc, char **argv)
 {
-    uint8_t          pskcBin[OT_PSKC_LENGTH];
-    SteeringData     steeringData;
-    CommissionerArgs args = ParseArgs(argc, argv);
+    otbrError        error;
+    CommissionerArgs args;
+    int              ret = 0;
 
-    otbrLogInit("Commission server", OTBR_LOG_INFO);
+    SuccessOrExit(error = ParseArgs(argc, argv, args));
 
-    if (args.mHasPSKc)
-    {
-        memcpy(pskcBin, args.mPSKcBin, sizeof(pskcBin));
-    }
-    else
-    {
-        ComputePskc(args.mXpanidBin, args.mNetworkName, args.mPassPhrase, pskcBin);
-    }
-
-    if (args.mNeedComputePSKc)
-    {
-        char pskcAscii[2 * OT_PSKC_LENGTH + 1];
-
-        pskcAscii[2 * OT_PSKC_LENGTH] = '\0';
-        Utils::Bytes2Hex(pskcBin, OT_PSKC_LENGTH, pskcAscii);
-        fprintf(stdout, "PSKc: %s\n", pskcAscii);
-        exit(EXIT_SUCCESS);
-    }
-
-    steeringData = ComputeSteeringData(args.mSteeringLength, args.mAllowAllJoiners, args.mJoinerEui64Bin);
-    if (args.mNeedComputeJoinerSteering || args.mNeedComputeJoinerHashMac)
-    {
-        uint8_t hashMacBin[kEui64Len];
-        char    eui64Ascii[2 * kEui64Len + 1];
-        char    hashMacAscii[2 * kEui64Len + 1];
-
-        eui64Ascii[2 * kEui64Len]   = '\0';
-        hashMacAscii[2 * kEui64Len] = '\0';
-        ComputeHashMac(args.mJoinerEui64Bin, hashMacBin);
-        Utils::Bytes2Hex(args.mJoinerEui64Bin, kEui64Len, eui64Ascii);
-        Utils::Bytes2Hex(hashMacBin, kEui64Len, hashMacAscii);
-        fprintf(stdout, "eui64: %s\n", eui64Ascii);
-        fprintf(stdout, "hashmac: %s\n", hashMacAscii);
-        if (args.mNeedComputeJoinerSteering)
-        {
-            char *steeringDataAscii = new char[2 * steeringData.GetLength() + 1];
-
-            steeringDataAscii[2 * steeringData.GetLength()] = 0;
-            Utils::Bytes2Hex(steeringData.GetBloomFilter(), steeringData.GetLength(), steeringDataAscii);
-            fprintf(stdout, "steering-len: %d\n", steeringData.GetLength());
-            fprintf(stdout, "steering-hex: %s\n", steeringDataAscii);
-            delete[] steeringDataAscii;
-        }
-        exit(EXIT_SUCCESS);
-    }
-
+    otbrLogInit("Commissioner", args.mDebugLevel);
     signal(SIGTERM, HandleSignal);
 
-    if (args.mNeedCommissionDevice)
-    {
-        int  kaRate = args.mSendCommKATxRate;
-        int  ret;
-        bool joinerSetDone = false;
+    srand(time(0));
 
-        if (!args.mNeedSendCommKA)
-        {
-            kaRate = 0;
-        }
-        srand(time(0));
-        Commissioner commissioner(pskcBin, kaRate);
-        commissioner.InitDtls(args.mAgentAddress_ascii, args.mAgentPort_ascii);
+    {
+        Commissioner commissioner(args.mPSKc, args.mKeepAliveInterval);
+        bool         joinerSetDone = false;
+
+        commissioner.InitDtls(args.mAgentHost, args.mAgentPort);
+
         do
         {
             ret = commissioner.TryDtlsHandshake();
         } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+
         if (commissioner.IsValid())
         {
             commissioner.CommissionerPetition();
         }
+
         while (commissioner.IsValid())
         {
             int            maxFd   = -1;
@@ -151,10 +103,12 @@ int main(int argc, char **argv)
             commissioner.Process(readFdSet, writeFdSet, errorFdSet);
             if (commissioner.IsCommissionerAccepted() && !joinerSetDone)
             {
-                commissioner.SetJoiner(args.mJoinerPSKdAscii, steeringData);
+                commissioner.SetJoiner(args.mPSKd, args.mSteeringData);
                 joinerSetDone = true;
             }
         }
     }
-    return 0;
+
+exit:
+    return error;
 }
