@@ -50,6 +50,7 @@ main() {
         --privileged -p 8080:80 --dns=127.0.0.1 --volume $DOCKER_PTY:/dev/ttyUSB0 otbr &
     sleep 10
     sudo lsof -i :8080
+    curl "http://127.0.0.1:8080"
 
     docker kill $(docker ps -q)
     killall ot-ncp-ftd
