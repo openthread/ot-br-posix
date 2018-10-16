@@ -20,7 +20,9 @@
 #define wpantund_wpan_error_h
 #include <stddef.h>
 
-__BEGIN_DECLS
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 typedef enum {
 	kWPANTUNDStatus_Ok                            = 0,
@@ -75,6 +77,8 @@ typedef enum {
 
 extern const char* wpantund_status_to_cstr(int status);
 
-__END_DECLS
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
