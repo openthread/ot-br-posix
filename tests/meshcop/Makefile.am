@@ -28,6 +28,27 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+check_PROGRAMS = otbr-test-tmf
+
+noinst_HEADERS                                         = \
+    commissioner_proxy.hpp                               \
+    tmf_client.hpp                                       \
+    $(NULL)
+
+otbr_test_tmf_SOURCES                                  = \
+    main.cpp                                             \
+    commissioner_proxy.cpp                               \
+    tmf_client.cpp                                       \
+    $(NULL)
+
+otbr_test_tmf_CPPFLAGS                                 = \
+    -I$(top_srcdir)/src                                  \
+    $(NULL)
+
+otbr_test_tmf_LDADD                                    = \
+    $(top_builddir)/src/agent/libotbr-agent.la           \
+    $(NULL)
+
 dist_check_SCRIPTS                                    = \
     meshcop                                             \
     meshcop_ftd                                         \

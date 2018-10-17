@@ -56,6 +56,7 @@ readonly WPANTUND=wpantund
 readonly WPANCTL=wpanctl
 readonly OTBR_AGENT=otbr-agent
 readonly OTBR_COMMISSIONER=otbr-commissioner
+readonly OTBR_TMF_CLIENT=otbr-test-tmf
 
 readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
@@ -65,6 +66,7 @@ readonly OT_NCP_PATH="${STAGE_DIR}/usr/bin/${OT_NCP}"
 readonly OT_CLI_PATH="${STAGE_DIR}/usr/bin/${OT_CLI}"
 readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
+readonly OTBR_TMF_CLINET_PATH="${ABS_TOP_BUILDDIR}/tests/meshcop/${OTBR_TMF_CLIENT}"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 
@@ -535,12 +537,19 @@ EOF
   exit_message="JOINER SUCCESS COMPLETE"
 }
 
+tmf_client_start()
+{
+    LEADER_ADDR=$(sudo "${wpanctl}" -I "${TUN_NAME}" get IPv6:MeshLocalAddress | cut -d ' ' -f3 | sed -e 's/"//g')
+    timeout 4 ${OTBR_TMF_CLINET_PATH} ${LEADER_ADDR} || die "TMF client failed"
+}
+
 main()
 {
   test_setup
   leader_start
   ba_start
   commissioner_start
+  tmf_client_start
   joiner_start
 }
 
