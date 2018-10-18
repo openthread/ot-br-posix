@@ -39,3 +39,6 @@ matrix:
     - env: BUILD_TARGET="scan-build"
       os: linux
       compiler: clang
+    - env: BUILD_TARGET="docker-check" VERBOSE=1
+      os: linux
+      compiler: gcc
