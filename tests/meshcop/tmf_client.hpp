@@ -35,7 +35,6 @@
 #define OTBR_TMF_CLIENT_HPP_
 
 #include <arpa/inet.h>
-#include <errno.h>
 #include <sys/socket.h>
 
 #include "commissioner_proxy.hpp"

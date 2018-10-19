@@ -43,7 +43,8 @@
 namespace ot {
 namespace BorderRouter {
 
-CommissionerProxy::CommissionerProxy()
+CommissionerProxy::CommissionerProxy(int aProxyPort)
+    : mProxyPort(aProxyPort)
 {
     sockaddr_in addr;
 
@@ -84,7 +85,7 @@ int CommissionerProxy::SendTo(const struct sockaddr_in6 &aDestAddr, const void *
     }
 
     proxyServerAddr.sin_family      = AF_INET;
-    proxyServerAddr.sin_port        = htons(kCommissionerProxyPort);
+    proxyServerAddr.sin_port        = htons(mProxyPort);
     proxyServerAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     int ret = sendto(mClientFd, buffer, Utils::LengthOf(buffer, tlv), 0,

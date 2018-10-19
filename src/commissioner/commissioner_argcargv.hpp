@@ -55,6 +55,8 @@ struct CommissionerArgs
     int          mKeepAliveInterval;
 
     int mDebugLevel;
+
+    uint16_t mProxyPort;
 };
 
 otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs);

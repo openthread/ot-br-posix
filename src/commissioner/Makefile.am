@@ -34,7 +34,6 @@ noinst_HEADERS                                        = \
     commissioner.hpp                                    \
     commissioner_argcargv.hpp                           \
     commissioner_constants.hpp                          \
-    commissioner_utils.hpp                              \
     joiner_session.hpp                                  \
     $(NULL)
 

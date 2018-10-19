@@ -32,10 +32,12 @@
 
 #include "commissioner_proxy.hpp"
 #include "tmf_client.hpp"
+#include "commissioner/commissioner_constants.hpp"
 
 int main(int argc, char *argv[])
 {
-    ot::BorderRouter::CommissionerProxy proxy;
+    uint16_t                            proxyPort = ot::BorderRouter::kCommissionerProxyPort;
+    ot::BorderRouter::CommissionerProxy proxy(proxyPort);
     ot::BorderRouter::TmfClient         client(&proxy);
     struct in6_addr                     addr;
     std::vector<struct in6_addr>        addrList;

@@ -61,23 +61,14 @@ int main(int argc, char **argv)
     SuccessOrExit(error = ParseArgs(argc, argv, args));
 
     otbrLogInit("Commissioner", args.mDebugLevel);
-    signal(SIGTERM, HandleSignal);
 
     srand(time(0));
 
-    if (args.mNeedCommissionDevice)
     {
-        int  kaRate = args.mSendCommKATxRate;
-        int  ret;
         bool joinerSetDone = false;
 
-        if (!args.mNeedSendCommKA)
-        {
-            kaRate = 0;
-        }
-        srand(time(0));
-        Commissioner commissioner(pskcBin, kaRate);
-        commissioner.InitDtls(args.mAgentAddress_ascii, args.mAgentPort_ascii);
+        Commissioner commissioner(args.mPSKc, args.mKeepAliveInterval);
+        commissioner.InitDtls(args.mAgentHost, args.mAgentPort);
         do
         {
             ret = commissioner.TryDtlsHandshake();
@@ -88,6 +79,10 @@ int main(int argc, char **argv)
             commissioner.CommissionerPetition();
             signal(SIGINT, HandleSignal);
             signal(SIGTERM, HandleSignal);
+            if (commissioner.SetupProxyServer(args.mProxyPort) != 0)
+            {
+                otbrLog(OTBR_LOG_ERR, "Fail to bind to udp proxy listen");
+            }
         }
 
         while (commissioner.IsValid())
@@ -106,7 +101,7 @@ int main(int argc, char **argv)
 
             commissioner.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
             rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
-            if (rval < 0)
+            if (rval < 0 && errno != EINTR)
             {
                 otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
                 break;

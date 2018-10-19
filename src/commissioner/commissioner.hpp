@@ -76,13 +76,25 @@ public:
     Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate);
 
     /**
+     * This method starts udp proxy server
+     *
+     * @param[in]    aCommissionerProxyPort    port for udp proxy
+     *
+     * @returns 0 on success, nonzero otherwise
+     *
+     */
+    int SetupProxyServer(uint16_t aCommissionerProxyPort);
+
+    /**
      * This method sets the joiner to join the thread network
      *
      * @param[in]    aPskdAscii         ascii form of pskd
      * @param[in]    aSteeringData      steering data to filter joiner
      *
+     * @returns 0 on success, nonzero otherwise
+     *
      */
-    void SetJoiner(const char *aPskdAscii, const SteeringData &aSteeringData);
+    int SetJoiner(const char *aPskdAscii, const SteeringData &aSteeringData);
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -172,7 +184,6 @@ private:
     Commissioner(const Commissioner &);
     Commissioner &operator=(const Commissioner &);
 
-    int  SetupProxyServer(void);
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
     void CommissionerKeepAlive(void);
 

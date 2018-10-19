@@ -122,6 +122,7 @@ static void PrintUsage(const char *aProgram, FILE *aStream, int aExitCode)
             "    -i, --keep-alive-interval  NUMBER      Set COMM_KA requests interval\n"
             "    -d, --debug-level          NUMBER      Enable debug output at level VALUE (0~7)\n"
             "    -q, --disable-syslog                   Disable log via syslog\n"
+            "    -u, --proxy-port           NUMBER      udp proxy port\n"
             "    -h, --help                             Print this help\n",
             aProgram);
 
@@ -143,6 +144,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
                                       {"disable-syslog", no_argument, NULL, 'q'},
                                       {"debug-level", required_argument, NULL, 'd'},
                                       {"keep-alive-interval", required_argument, NULL, 'i'},
+                                      {"udp-proxy-port", required_argument, NULL, 'u'},
                                       {"help", no_argument, NULL, 'h'},
                                       {0, 0, 0, 0}};
 
@@ -158,6 +160,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
 
     aArgs.mKeepAliveInterval = 15;
     aArgs.mDebugLevel        = OTBR_LOG_ERR;
+    aArgs.mProxyPort         = kCommissionerProxyPort;
 
     if (aArgc == 1)
     {
@@ -166,7 +169,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
 
     while (true)
     {
-        int option = getopt_long(aArgc, aArgv, "E:D:AC:N:X:H:P:L:l:qd:i:h", options, NULL);
+        int option = getopt_long(aArgc, aArgv, "E:D:AC:N:X:H:P:L:l:qd:i:u:h", options, NULL);
 
         if (option == -1)
         {
@@ -233,6 +236,9 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
         case 'i':
             aArgs.mKeepAliveInterval = atoi(optarg);
             VerifyOrExit(aArgs.mKeepAliveInterval >= 0, fprintf(stderr, "Invalid value for keep alive interval!"));
+            break;
+        case 'u':
+            aArgs.mProxyPort = atoi(optarg);
             break;
         case 'h':
             PrintUsage(aArgv[0], stdout, EXIT_SUCCESS);

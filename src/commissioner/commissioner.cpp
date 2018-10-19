@@ -106,51 +106,54 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     , mUdpRxHandler(OT_URI_PATH_UDP_RX, Commissioner::HandleUdpRx, this)
     , mPetitionRetryCount(0)
     , mJoinerSession(NULL)
+    , mJoinerSessionClientFd(-1)
     , mKeepAliveRate(aKeepAliveRate)
     , mUdpListenFd(-1)
 {
-    sockaddr_in addr;
-
     memcpy(mPskcBin, aPskcBin, sizeof(mPskcBin));
-    addr.sin_family      = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    addr.sin_port        = htons(kJoinerSessionPort);
-    mCoapAgent           = Coap::Agent::Create(SendCoap, this);
-    mCoapToken           = rand();
+    mCoapAgent = Coap::Agent::Create(SendCoap, this);
+    mCoapToken = rand();
     mCoapAgent->AddResource(mRelayReceiveHandler);
     mCoapAgent->AddResource(mUdpRxHandler);
     mCommissionState = kStateInvalid;
-    VerifyOrExit((mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0)) > 0);
-    SuccessOrExit(connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
-    if (SetupProxyServer() != 0)
-    {
-        otbrLog(OTBR_LOG_ERR, "Fail to bind to udp proxy listen");
-    }
-exit:
     return;
 }
 
-void Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeringData)
+int Commissioner::SetJoiner(const char *aPskdAscii, const SteeringData &aSteeringData)
 {
+    int         ret = 0;
+    sockaddr_in addr;
+
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port        = htons(kJoinerSessionPort);
+    VerifyOrExit((mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0)) > 0, ret = -1);
+    VerifyOrExit(connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) == 0,
+                 ret = -1);
+
     if (mJoinerSession)
     {
         delete mJoinerSession;
     }
     mJoinerSession = new JoinerSession(kJoinerSessionPort, aPskdAscii);
+    VerifyOrExit(mJoinerSession != NULL, ret = -1);
     CommissionerSet(aSteeringData);
+exit:
+    return ret;
 }
 
-int Commissioner::SetupProxyServer(void)
+int Commissioner::SetupProxyServer(uint16_t aCommissionerProxyPort)
 {
-    int         ret;
-    int         optval = 1;
+    int ret;
+    int optval = 1;
+
     sockaddr_in addr;
     addr.sin_family      = AF_INET;
-    addr.sin_port        = htons(kCommissionerProxyPort);
+    addr.sin_port        = htons(aCommissionerProxyPort);
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     mUdpListenFd         = socket(AF_INET, SOCK_DGRAM, 0);
-    setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-    setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+    SuccessOrExit(ret = setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)));
+    SuccessOrExit(ret = setsockopt(mUdpListenFd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval)));
     SuccessOrExit(ret = bind(mUdpListenFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
 exit:
     return ret;
@@ -428,14 +431,20 @@ void Commissioner::UpdateFdSet(fd_set & aReadFdSet,
 {
     FD_SET(mSslClientFd.fd, &aReadFdSet);
     aMaxFd = Utils::Max(mSslClientFd.fd, aMaxFd);
-    FD_SET(mJoinerSessionClientFd, &aReadFdSet);
-    aMaxFd = Utils::Max(mJoinerSessionClientFd, aMaxFd);
+    if (mJoinerSessionClientFd > 0)
+    {
+        FD_SET(mJoinerSessionClientFd, &aReadFdSet);
+        aMaxFd = Utils::Max(mJoinerSessionClientFd, aMaxFd);
+    }
     if (mJoinerSession)
     {
         mJoinerSession->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
     }
-    FD_SET(mUdpListenFd, &aReadFdSet);
-    aMaxFd = Utils::Max(mUdpListenFd, aMaxFd);
+    if (mUdpListenFd > 0)
+    {
+        FD_SET(mUdpListenFd, &aReadFdSet);
+        aMaxFd = Utils::Max(mUdpListenFd, aMaxFd);
+    }
 }
 
 void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
@@ -457,12 +466,12 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         }
     }
 
-    if (FD_ISSET(mJoinerSessionClientFd, &aReadFdSet))
+    if (mJoinerSessionClientFd > 0 && FD_ISSET(mJoinerSessionClientFd, &aReadFdSet))
     {
         struct sockaddr_in fromAddr;
         socklen_t          addrlen = sizeof(fromAddr);
-        ssize_t            n =
-            recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&fromAddr), &addrlen);
+        ssize_t            n       = recvfrom(mJoinerSessionClientFd, buffer, sizeof(buffer), 0,
+                             reinterpret_cast<struct sockaddr *>(&fromAddr), &addrlen);
 
         if (n > 0)
         {
@@ -475,12 +484,13 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         }
     }
 
-    if (FD_ISSET(mUdpListenFd, &aReadFdSet))
+    if (mUdpListenFd > 0 && FD_ISSET(mUdpListenFd, &aReadFdSet))
     {
         struct sockaddr_in fromAddr;
         socklen_t          addrlen = sizeof(fromAddr);
 
-        ssize_t n = recvfrom(mUdpListenFd, buffer, sizeof(buffer), 0, (struct sockaddr *)(&fromAddr), &addrlen);
+        ssize_t n =
+            recvfrom(mUdpListenFd, buffer, sizeof(buffer), 0, reinterpret_cast<struct sockaddr *>(&fromAddr), &addrlen);
         if (n > 0)
         {
             SendUdpTx(buffer, n, ntohs(fromAddr.sin_port));
@@ -696,6 +706,8 @@ void Commissioner::HandleUdpRx(const Coap::Resource &aResource,
     const uint8_t *payload  = aMessage.GetPayload(length);
     uint16_t       destPort = 0;
     sockaddr_in    addr;
+
+    VerifyOrExit(commissioner->mUdpListenFd > 0);
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
@@ -771,7 +783,10 @@ Commissioner::~Commissioner()
         delete mJoinerSession;
     }
 
-    close(mJoinerSessionClientFd);
+    if (mJoinerSessionClientFd > 0)
+    {
+        close(mJoinerSessionClientFd);
+    }
     if (mUdpListenFd > 0)
     {
         close(mUdpListenFd);

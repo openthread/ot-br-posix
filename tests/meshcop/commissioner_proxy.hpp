@@ -50,8 +50,10 @@ public:
     /**
      * The constructor to initialize Commissioner proxy
      *
+     * @param[in]  aProxyPort       Proxy port
+     *
      */
-    CommissionerProxy();
+    CommissionerProxy(int aProxyPort);
 
     /**
      * This method send data through commission proxy
@@ -81,7 +83,8 @@ private:
     CommissionerProxy(const CommissionerProxy &);
     CommissionerProxy &operator=(const CommissionerProxy &);
 
-    int mClientFd;
+    int      mClientFd;
+    uint16_t mProxyPort;
 };
 
 } // namespace BorderRouter
