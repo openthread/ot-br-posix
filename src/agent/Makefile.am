@@ -138,9 +138,8 @@ EXTRA_DIST                = \
 dbusconfdir = $(DBUS_CONFDIR)
 dbusconf_DATA = otbr-agent.conf
 
-if OTBR_HAS_SYSTEMCTL
-systemddir=$(sysconfdir)/systemd/system
-systemd_DATA                        = \
+if HAVE_SYSTEMD
+systemdsystemunit_DATA              = \
     otbr-agent.service                \
     $(NULL)
 endif
@@ -151,7 +150,7 @@ defaultdir=$(sysconfdir)/default
 
 install-data-local: $(DESTDIR)$(defaultdir)/otbr-agent $(DESTDIR)$(initddir)/otbr-agent
 
-if OTBR_HAS_SYSTEMCTL
+if HAVE_SYSTEMD
 uninstall-local:
 	-rm $(DESTDIR)$(defaultdir)/otbr-agent
 else
@@ -165,7 +164,7 @@ $(DESTDIR)$(defaultdir)/otbr-agent: otbr-agent.default
 	test -d $(DESTDIR)$(defaultdir) || mkdir -p $(DESTDIR)$(defaultdir)
 	$(INSTALL_DATA) $(srcdir)/otbr-agent.default $(DESTDIR)$(defaultdir)/otbr-agent
 
-if OTBR_HAS_SYSTEMCTL
+if HAVE_SYSTEMD
 $(DESTDIR)$(initddir)/otbr-agent: ;
 else
 $(DESTDIR)$(initddir)/otbr-agent: otbr-agent.init
@@ -173,9 +172,9 @@ $(DESTDIR)$(initddir)/otbr-agent: otbr-agent.init
 	$(INSTALL) -m 755 ./otbr-agent.init $(DESTDIR)$(initddir)/otbr-agent
 endif
 
-if OTBR_HAS_SYSTEMCTL
-.PHONY: $(systemd_DATA)
-$(systemd_DATA): %: %.in
+if HAVE_SYSTEMD
+.PHONY: $(systemdsystemunit_DATA)
+$(systemdsystemunit_DATA): %: %.in
 	$(SED)                                  \
 	-e 's,[@]sbindir[@],$(sbindir),g'       \
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \

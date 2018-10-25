@@ -72,15 +72,13 @@ noinst_HEADERS                                     = \
     repo/third_party/openthread/src/ncp/spinel.h     \
     $(NULL)
 
-if OTBR_HAS_SYSTEMCTL
-
-systemddir=$(sysconfdir)/systemd/system
-systemd_DATA                        = \
+if HAVE_SYSTEMD
+systemdsystemunit_DATA              = \
     wpantund.service                  \
     $(NULL)
 
-.PHONY: $(systemd_DATA)
-$(systemd_DATA): %: %.in
+.PHONY: $(systemdsystemunit_DATA)
+$(systemdsystemunit_DATA): %: %.in
 	$(SED)                                  \
 	-e 's,[@]sbindir[@],$(sbindir),g'       \
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \

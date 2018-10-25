@@ -377,8 +377,6 @@ else
 fi
 AC_SUBST(DBUS_DATADIR)
 
-AM_CONDITIONAL([OTBR_HAS_SYSTEMCTL], [test -x "$(command -v systemctl)"])
-
 #
 # Check for headers
 #
@@ -425,6 +423,14 @@ LIBS="${LIBS} ${NL_COVERAGE_LIBS}"
 # transforming -Wno-error back to -Werror.
 
 NL_RESTORE_WERROR
+
+AC_ARG_WITH([systemdsystemunitdir],
+            AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Path to install systemd unit files.]),
+            [], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+if test -n "${with_systemdsystemunitdir}"; then
+  AC_SUBST([systemdsystemunitdir], [${with_systemdsystemunitdir}])
+fi
+AM_CONDITIONAL(HAVE_SYSTEMD, [test -n "${with_systemdsystemunitdir}"])
 
 #
 # Identify the various makefiles and auto-generated files for the package
