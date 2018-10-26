@@ -40,7 +40,7 @@ install_packages_apt()
                          iproute2 \
                          inetutils-ping \
                          apt-utils
-    sudo apt-get install -y build-essential libtool git
+    sudo apt-get install -y build-essential libtool git automake autoconf
 
     with RELEASE || sudo apt-get install -y cmake
 
