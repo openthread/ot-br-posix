@@ -64,6 +64,7 @@ readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
 readonly OT_NCP_PATH="${STAGE_DIR}/usr/bin/${OT_NCP}"
 readonly OT_CLI_PATH="${STAGE_DIR}/usr/bin/${OT_CLI}"
 readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
+readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 
@@ -194,10 +195,7 @@ build_dependencies()
   [[ -d "${STAGE_DIR}" ]] || mkdir -p "${STAGE_DIR}"
   [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
 
-  # These are broken-out so that during debug you can comment out parts
-  # and re-run this script multiple times script and not have your
-  # test code get erased ...
-  if [[ "${IGNORE_INSTALLED}" = 0 ]] && which "${WPANTUND}" && which "${WPANCTL}"; then
+  if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}" && which "${WPANCTL}"; then
     wpanctl="${WPANCTL}"
     wpantund="${WPANTUND}"
   else
@@ -399,10 +397,7 @@ leader_start()
 
   # Using the commissioner app - Compute the PSKc from the above settings.
   set -x
-  readonly OT_PSKC="$(${OTBR_COMMISSIONER_PATH} --disable-syslog \
-    --network-name "${OT_NETWORK_NAME}" --xpanid "${OT_XPANID}" \
-    --agent-passphrase "${OT_AGENT_PASSPHRASE}" \
-    --compute-pskc | cut -d ' ' -f2)"
+  readonly OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
   set +x
 
   # These might not exit cleanly
@@ -476,24 +471,15 @@ commissioner_start()
   # And network parameters
   args="${args} --network-name      ${OT_NETWORK_NAME}"
   args="${args} --xpanid            ${OT_XPANID}"
-  args="${args} --agent-passphrase  ${OT_AGENT_PASSPHRASE}"
-  # About our joiner.
+  args="${args} --network-password  ${OT_AGENT_PASSPHRASE}"
   args="${args} --joiner-eui64      ${OT_JOINER_EUI64}"
-  args="${args} --joiner-passphrase ${OT_JOINER_PASSPHRASE}"
-  # Where is the agent?
-  args="${args} --agent-addr        ${OT_AGENT_IPADDR}"
+  args="${args} --joiner-pskd       ${OT_JOINER_PASSPHRASE}"
+  args="${args} --agent-host        ${OT_AGENT_IPADDR}"
   args="${args} --agent-port        ${OT_AGENT_IPPORT}"
   #
   # Debug level, full blast (this is test a test on a
   # a remote machine, being able to *SEE* the result helpful
   args="${args} --debug-level 7"
-
-  # All of this should be done in 200 seconds
-  # See note below about COMM_KA
-  args="${args} --comm-envelope-timeout 200"
-
-  # Tell the tool to "commission"
-  args="${args} --commission-device"
 
   # Launch the commissioner in the background
   set -x

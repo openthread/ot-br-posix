@@ -54,11 +54,12 @@ enum
 
     kEui64Len = (64 / 8), ///< how long is an EUI64 in bytes
 
+    kPSKcLength = 16, ///< how long is a PSKc in bytes
     kPSKdLength = 32, ///< how long is a PSKd in bytes
 
     kPortJoinerSession = 49192, ///< What port does our internal server use?
 
-    kXpanidLength = (64 / 8), ///< 64bit xpanid length in bytes
+    kXPanIdLength = (64 / 8), ///< 64bit xpanid length in bytes
 
     kNetworkNameLenMax = 16, ///< specification: 8.10.4
 
