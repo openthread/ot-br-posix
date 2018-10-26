@@ -151,15 +151,13 @@ EXTRA_DIST                                                     = \
     otbr-web.init.in                                             \
     $(NULL)
 
-if OTBR_HAS_SYSTEMCTL
-
-systemddir=$(sysconfdir)/systemd/system
-systemd_DATA                        = \
+if HAVE_SYSTEMD
+systemdsystemunit_DATA              = \
     otbr-web.service                  \
     $(NULL)
 
-.PHONY: $(systemd_DATA)
-$(systemd_DATA): %: %.in
+.PHONY: $(systemdsystemunit_DATA)
+$(systemdsystemunit_DATA): %: %.in
 	$(SED)                                  \
 	-e 's,[@]sbindir[@],$(sbindir),g'       \
 	-e 's,[@]sysconfdir[@],$(sysconfdir),g' \
