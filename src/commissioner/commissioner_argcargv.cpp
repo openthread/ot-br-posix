@@ -106,20 +106,23 @@ exit:
 static void PrintUsage(const char *aProgram, FILE *aStream, int aExitCode)
 {
     fprintf(aStream,
-            "%s"
-            "-E, --joiner-eui64         HEX         Joiner EUI64 value"
-            "-J, --joiner-pskd          STRING      Base32 thread encoded PSK for device"
-            "-A, --allow-all                        Allow all joiners"
-            "-C, --network-password     STRING      Thread network password"
-            "-N, --network-name         STRING      UTF-8 encoded network name"
-            "-X, --xpanid               XPANID      Extended PAN ID in hex"
-            "-L, --steering-length      NUMBER      Length of steering data 1..16"
-            "-H, --agent-addr           STRING      Host of border agent"
-            "-P, --agent-port           NUMBER      UDP port used by border agent"
-            "-l, --log-file             PATH        Log to file"
-            "-i, --keep-alive-interval  NUMBER      Set COMM_KA requests interval"
-            "-q, --disable-syslog                   Disable log via syslog"
-            "-d, --debug-level          NUMBER      Enable debug output at level VALUE (0~7)",
+            "Syntax:\n"
+            "    %s [Options]\n"
+            "Options:\n"
+            "    -H, --agent-host           STRING      Host of border agent\n"
+            "    -P, --agent-port           NUMBER      UDP port used by border agent\n"
+            "    -N, --network-name         STRING      UTF-8 encoded network name\n"
+            "    -C, --network-password     STRING      Thread network password\n"
+            "    -X, --xpanid               HEX         Extended PAN ID in hex\n"
+            "    -A, --allow-all                        Allow all joiners\n"
+            "    -E, --joiner-eui64         HEX         Joiner EUI64 value\n"
+            "    -J, --joiner-pskd          STRING      Base32 thread encoded PSK for the joiner\n"
+            "    -L, --steering-data-length NUMBER      Length of steering data 1..16\n"
+            "    -l, --log-file             PATH        Log to file\n"
+            "    -i, --keep-alive-interval  NUMBER      Set COMM_KA requests interval\n"
+            "    -d, --debug-level          NUMBER      Enable debug output at level VALUE (0~7)\n"
+            "    -q, --disable-syslog                   Disable log via syslog\n"
+            "    -h, --help                             Print this help\n",
             aProgram);
 
     exit(aExitCode);
@@ -140,6 +143,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
                                       {"disable-syslog", no_argument, NULL, 'q'},
                                       {"debug-level", required_argument, NULL, 'd'},
                                       {"keep-alive-interval", required_argument, NULL, 'i'},
+                                      {"help", no_argument, NULL, 'h'},
                                       {0, 0, 0, 0}};
 
     uint8_t     xPanId[kXPanIdLength];
@@ -155,9 +159,14 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
     aArgs.mKeepAliveInterval = 15;
     aArgs.mDebugLevel        = OTBR_LOG_ERR;
 
+    if (aArgc == 1)
+    {
+        ExitNow(PrintUsage(aArgv[0], stdout, EXIT_SUCCESS));
+    }
+
     while (true)
     {
-        int option = getopt_long(aArgc, aArgv, "E:D:AC:N:X:H:P:L:l:qd:i:", options, NULL);
+        int option = getopt_long(aArgc, aArgv, "E:D:AC:N:X:H:P:L:l:qd:i:h", options, NULL);
 
         if (option == -1)
         {
@@ -229,6 +238,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
             PrintUsage(aArgv[0], stdout, EXIT_SUCCESS);
             break;
         case '?':
+            PrintUsage(aArgv[0], stderr, EXIT_FAILURE);
             break;
         default:
             assert(false);
