@@ -29,12 +29,12 @@
 # Provides:          otbr-agent
 # Required-Start:    wpantund
 # Required-Stop:
-# Should-Start:      
+# Should-Start:
 # Should-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: thread border agent
-# Description: otbr-agent provides a proxy to access thread device attached to border router
+# Description: otbr-agent provides services to access thread device attached to border router
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -50,7 +50,7 @@ if [ -f $AGENT_CONF ]; then
     . $AGENT_CONF
 fi
 
-start_agent() 
+start_agent()
 {
     start-stop-daemon --start --quiet \
         --pidfile $AGENT_PID_FILE --make-pidfile \

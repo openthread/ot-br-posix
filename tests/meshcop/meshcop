@@ -378,7 +378,7 @@ configure_openthread()
     --enable-joiner \
     --enable-mtd \
     --enable-ncp \
-    --enable-udp-proxy \
+    --enable-udp-forward \
     --with-examples=posix \
     --with-ncp-bus=uart \
     --with-platform-info=POSIX

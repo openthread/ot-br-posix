@@ -106,7 +106,7 @@ otbrError BorderAgent::Start(void)
     mNcp->RequestEvent(Ncp::kEventExtPanId);
     mNcp->RequestEvent(Ncp::kEventThreadState);
 
-    mNcp->On(Ncp::kEventUdpProxyStream, SendToCommissioner, this);
+    mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
 
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -144,7 +144,7 @@ void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArgume
     uint16_t            sockPort = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
 
     (void)aEvent;
-    assert(aEvent == Ncp::kEventUdpProxyStream);
+    assert(aEvent == Ncp::kEventUdpForwardStream);
     VerifyOrExit(sockPort == kBorderAgentUdpPort);
 
     memset(&sin6, 0, sizeof(sin6));
@@ -197,7 +197,8 @@ void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, c
     len = recvfrom(mSocket, packet, sizeof(packet), 0, reinterpret_cast<struct sockaddr *>(&sin6), &socklen);
     VerifyOrExit(len > 0);
 
-    mNcp->UdpProxySend(packet, static_cast<uint16_t>(len), ntohs(sin6.sin6_port), sin6.sin6_addr, kBorderAgentUdpPort);
+    mNcp->UdpForwardSend(packet, static_cast<uint16_t>(len), ntohs(sin6.sin6_port), sin6.sin6_addr,
+                         kBorderAgentUdpPort);
 
 exit:
     return;

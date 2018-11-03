@@ -60,11 +60,11 @@ namespace Ncp {
  */
 enum
 {
-    kEventExtPanId,       ///< Extended PAN ID arrived.
-    kEventNetworkName,    ///< Network name arrived.
-    kEventPSKc,           ///< PSKc arrived.
-    kEventThreadState,    ///< Thread State.
-    kEventUdpProxyStream, ///< UDP proxy stream arrived.
+    kEventExtPanId,         ///< Extended PAN ID arrived.
+    kEventNetworkName,      ///< Network name arrived.
+    kEventPSKc,             ///< PSKc arrived.
+    kEventThreadState,      ///< Thread State.
+    kEventUdpForwardStream, ///< UDP forward stream arrived.
 };
 
 /**
@@ -84,17 +84,17 @@ public:
     virtual otbrError Init(void) = 0;
 
     /**
-     * This method sends a packet through UDP proxy service.
+     * This method sends a packet through UDP forward service.
      *
      * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
      * @retval  OTBR_ERROR_ERRNO        Failed to send the packet.
      *
      */
-    virtual otbrError UdpProxySend(const uint8_t * aBuffer,
-                                   uint16_t        aLength,
-                                   uint16_t        aPeerPort,
-                                   const in6_addr &aPeerAddr,
-                                   uint16_t        aSockPort) = 0;
+    virtual otbrError UdpForwardSend(const uint8_t * aBuffer,
+                                     uint16_t        aLength,
+                                     uint16_t        aPeerPort,
+                                     const in6_addr &aPeerAddr,
+                                     uint16_t        aSockPort) = 0;
 
     /**
      * This method updates the fd_set to poll.

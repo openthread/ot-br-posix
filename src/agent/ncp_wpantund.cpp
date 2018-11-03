@@ -84,7 +84,7 @@ DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusMessage &a
     if (sender && path && strcmp(sender, mInterfaceDBusName) && strstr(path, mInterfaceName))
     {
         // DBus name of the interface has changed, possibly caused by wpantund restarted,
-        // We have to restart the border agent proxy.
+        // We have to restart the border agent.
         otbrLog(OTBR_LOG_WARNING, "NCP DBus name changed.");
         SuccessOrExit(UpdateInterfaceDBusPath());
     }
@@ -147,7 +147,7 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
         peerPort = buf[--len];
         peerPort |= buf[--len] << 8;
 
-        EventEmitter::Emit(kEventUdpProxyStream, buf, len, peerPort, &peerAddr, sockPort);
+        EventEmitter::Emit(kEventUdpForwardStream, buf, len, peerPort, &peerAddr, sockPort);
     }
     else if (!strcmp(aKey, kWPANTUNDProperty_NCPState))
     {
@@ -290,11 +290,11 @@ ControllerWpantund::~ControllerWpantund(void)
     }
 }
 
-otbrError ControllerWpantund::UdpProxySend(const uint8_t * aBuffer,
-                                           uint16_t        aLength,
-                                           uint16_t        aPeerPort,
-                                           const in6_addr &aPeerAddr,
-                                           uint16_t        aSockPort)
+otbrError ControllerWpantund::UdpForwardSend(const uint8_t * aBuffer,
+                                             uint16_t        aLength,
+                                             uint16_t        aPeerPort,
+                                             const in6_addr &aPeerAddr,
+                                             uint16_t        aSockPort)
 {
     otbrError    ret     = OTBR_ERROR_ERRNO;
     DBusMessage *message = NULL;
@@ -327,7 +327,7 @@ otbrError ControllerWpantund::UdpProxySend(const uint8_t * aBuffer,
     VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
 
     ret = OTBR_ERROR_NONE;
-    otbrDump(OTBR_LOG_INFO, "UdpProxySend success", value, data.size());
+    otbrDump(OTBR_LOG_INFO, "UdpForwardSend success", value, data.size());
 
 exit:
 
@@ -338,7 +338,7 @@ exit:
 
     if (ret != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_INFO, "UdpProxySend failed: ", otbrErrorString(ret));
+        otbrLog(OTBR_LOG_INFO, "UdpForwardSend failed: ", otbrErrorString(ret));
     }
 
     return ret;
