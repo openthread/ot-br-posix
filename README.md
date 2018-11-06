@@ -12,7 +12,13 @@ A Thread Border Router minimally supports the following functions:
 -  End-to-end IP connectivity via routing between Thread devices and other external IP networks
 -  External Thread Commissioning (for example, a mobile phone) to authenticate and join a Thread device to a Thread network
 
-OpenThread's implementation of a Border Router is called OpenThread Border Router (OTBR).  OTBR includes a number of features, including:
+<a href="https://www.threadgroup.org/What-is-Thread#certifiedproducts">
+<img src="/doc/images/certified.svg" alt="Thread Certified Component" width="150px" align="right">
+</a>
+
+OpenThread's implementation of a Border Router is called OpenThread Border Router (OTBR). **OTBR is a Thread Certified Component** on the Raspberry Pi 3B with a Nordic nRF52840 NCP.
+
+OTBR includes a number of features, including:
 
 -  Web UI for configuration and management
 -  Thread Border Agent to support an External Commissioner
@@ -37,6 +43,8 @@ All end-user documentation and guides are located at [openthread.io](https://ope
 - Build and configure OTBR
 
 ...then [openthread.io](https://openthread.io/guides/border_router) is the place for you.
+
+> Note: For users in China, end-user documentation is available at [openthread.google.cn](https://openthread.google.cn/guides/border-router).
 
 If you're interested in contributing to OpenThread Border Router, read on.
 
