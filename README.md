@@ -15,6 +15,7 @@ A Thread Border Router minimally supports the following functions:
 <a href="https://www.threadgroup.org/What-is-Thread#certifiedproducts">
 <img src="/doc/images/certified.svg" alt="Thread Certified Component" width="150px" align="right">
 </a>
+
 OpenThread's implementation of a Border Router is called OpenThread Border Router (OTBR). **OTBR is a Thread Certified Component** on the Raspberry Pi 3B with a Nordic nRF52840 NCP.
 
 OTBR includes a number of features, including:
