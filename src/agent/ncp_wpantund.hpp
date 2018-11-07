@@ -76,17 +76,17 @@ public:
     otbrError Init(void);
 
     /**
-     * This method sends a packet through UDP proxy service.
+     * This method sends a packet through UDP forward service.
      *
      * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
      * @retval  OTBR_ERROR_ERRNO        Failed to send the packet, erro info in errno.
      *
      */
-    virtual otbrError UdpProxySend(const uint8_t * aBuffer,
-                                   uint16_t        aLength,
-                                   uint16_t        aPeerPort,
-                                   const in6_addr &aPeerAddr,
-                                   uint16_t        aSockPort);
+    virtual otbrError UdpForwardSend(const uint8_t * aBuffer,
+                                     uint16_t        aLength,
+                                     uint16_t        aPeerPort,
+                                     const in6_addr &aPeerAddr,
+                                     uint16_t        aSockPort);
 
     /**
      * This method updates the fd_set to poll.
