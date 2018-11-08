@@ -26,6 +26,7 @@ OTBR includes a number of features, including:
 -  NAT64 for connecting to IPv4 networks
 -  DNS64 to allow Thread devices to initiate communications by name to an IPv4-only server
 -  Thread interface driver using [wpantund](https://github.com/openthread/wpantund)
+-  Docker support
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
@@ -36,13 +37,9 @@ More information about Thread can be found at [threadgroup.org](http://threadgro
 
 ## Getting started
 
-All end-user documentation and guides are located at [openthread.io](https://openthread.io/guides/border_router). If you're looking to do things like...
+The quickest way to get started with OTBR is to try the Docker version. Run OTBR in a Docker container on any Linux-based system or a Raspberry Pi 3B, using either a physical or emulated NCP. See the [Docker Support guide on openthread.io](https://openthread.io/guides/border-router/docker) for more info.
 
-- Learn about the OTBR architecture
-- See what platforms support OTBR
-- Build and configure OTBR
-
-...then [openthread.io](https://openthread.io/guides/border_router) is the place for you.
+OTBR also runs directly on supported platforms like the Raspberry Pi 3B. If you're interested in building and configuring OTBR directly, or to learn more about the OTBR architecture, then see the rest of our end-user documentation at [openthread.io](https://openthread.io/guides/border_router).
 
 > Note: For users in China, end-user documentation is available at [openthread.google.cn](https://openthread.google.cn/guides/border-router).
 
