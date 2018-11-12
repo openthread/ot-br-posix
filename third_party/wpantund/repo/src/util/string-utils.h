@@ -37,7 +37,6 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
 extern void memcpyrev(void* dest, const void *src, size_t len);
 extern int memcmprev(const void* dest, const void *src, size_t len);
 extern void reverse_bytes(uint8_t *bytes, size_t count);
