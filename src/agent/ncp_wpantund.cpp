@@ -122,7 +122,7 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
 
         EventEmitter::Emit(kEventPSKc, pskc);
     }
-    else if (!strcmp(aKey, kWPANTUNDProperty_UdpProxyStream))
+    else if (!strcmp(aKey, kWPANTUNDProperty_UdpForwardStream))
     {
         const uint8_t *buf      = NULL;
         uint16_t       peerPort = 0;
@@ -301,7 +301,7 @@ otbrError ControllerWpantund::UdpForwardSend(const uint8_t * aBuffer,
 
     std::vector<uint8_t> data(aLength + sizeof(aPeerPort) + sizeof(aPeerAddr) + sizeof(aSockPort));
     const uint8_t *      value = data.data();
-    const char *         key   = kWPANTUNDProperty_UdpProxyStream;
+    const char *         key   = kWPANTUNDProperty_UdpForwardStream;
 
     memcpy(data.data(), aBuffer, aLength);
     int index       = aLength;

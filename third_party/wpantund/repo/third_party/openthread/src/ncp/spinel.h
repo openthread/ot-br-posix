@@ -99,10 +99,10 @@
 extern "C" {
 #endif
 
-typedef enum {
-    SPINEL_STATUS_OK      = 0, ///< Operation has completed successfully.
-    SPINEL_STATUS_FAILURE = 1, ///< Operation has failed for some undefined reason.
-
+typedef enum
+{
+    SPINEL_STATUS_OK                       = 0,  ///< Operation has completed successfully.
+    SPINEL_STATUS_FAILURE                  = 1,  ///< Operation has failed for some undefined reason.
     SPINEL_STATUS_UNIMPLEMENTED            = 2,  ///< Given operation has not been implemented.
     SPINEL_STATUS_INVALID_ARGUMENT         = 3,  ///< An argument to the operation is invalid.
     SPINEL_STATUS_INVALID_STATE            = 4,  ///< This operation is invalid for the current device state.
@@ -196,28 +196,32 @@ typedef enum {
     SPINEL_STATUS_EXPERIMENTAL__END   = 2097152,
 } spinel_status_t;
 
-typedef enum {
+typedef enum
+{
     SPINEL_NET_ROLE_DETACHED = 0,
     SPINEL_NET_ROLE_CHILD    = 1,
     SPINEL_NET_ROLE_ROUTER   = 2,
     SPINEL_NET_ROLE_LEADER   = 3,
 } spinel_net_role_t;
 
-typedef enum {
+typedef enum
+{
     SPINEL_IPV6_ICMP_PING_OFFLOAD_DISABLED       = 0,
     SPINEL_IPV6_ICMP_PING_OFFLOAD_UNICAST_ONLY   = 1,
     SPINEL_IPV6_ICMP_PING_OFFLOAD_MULTICAST_ONLY = 2,
     SPINEL_IPV6_ICMP_PING_OFFLOAD_ALL            = 3,
 } spinel_ipv6_icmp_ping_offload_mode_t;
 
-typedef enum {
+typedef enum
+{
     SPINEL_SCAN_STATE_IDLE     = 0,
     SPINEL_SCAN_STATE_BEACON   = 1,
     SPINEL_SCAN_STATE_ENERGY   = 2,
     SPINEL_SCAN_STATE_DISCOVER = 3,
 } spinel_scan_state_t;
 
-typedef enum {
+typedef enum
+{
     SPINEL_MCU_POWER_STATE_ON        = 0,
     SPINEL_MCU_POWER_STATE_LOW_POWER = 1,
     SPINEL_MCU_POWER_STATE_OFF       = 2,
@@ -226,7 +230,8 @@ typedef enum {
 // The `spinel_power_state_t` enumeration and `POWER_STATE`
 // property are deprecated. Please use `MCU_POWER_STATE`
 // instead.
-typedef enum {
+typedef enum
+{
     SPINEL_POWER_STATE_OFFLINE    = 0,
     SPINEL_POWER_STATE_DEEP_SLEEP = 1,
     SPINEL_POWER_STATE_STANDBY    = 2,
@@ -234,7 +239,8 @@ typedef enum {
     SPINEL_POWER_STATE_ONLINE     = 4,
 } spinel_power_state_t;
 
-typedef enum {
+typedef enum
+{
     SPINEL_HOST_POWER_STATE_OFFLINE    = 0,
     SPINEL_HOST_POWER_STATE_DEEP_SLEEP = 1,
     SPINEL_HOST_POWER_STATE_RESERVED   = 2,
@@ -265,7 +271,7 @@ enum
 enum
 {
     SPINEL_THREAD_MODE_FULL_NETWORK_DATA   = (1 << 0),
-    SPINEL_THREAD_MODE_FULL_FUNCTION_DEV   = (1 << 1),
+    SPINEL_THREAD_MODE_FULL_THREAD_DEV     = (1 << 1),
     SPINEL_THREAD_MODE_SECURE_DATA_REQUEST = (1 << 2),
     SPINEL_THREAD_MODE_RX_ON_WHEN_IDLE     = (1 << 3),
 };
@@ -377,30 +383,314 @@ enum
 
 enum
 {
-    SPINEL_CMD_NOOP                = 0,
-    SPINEL_CMD_RESET               = 1,
-    SPINEL_CMD_PROP_VALUE_GET      = 2,
-    SPINEL_CMD_PROP_VALUE_SET      = 3,
-    SPINEL_CMD_PROP_VALUE_INSERT   = 4,
-    SPINEL_CMD_PROP_VALUE_REMOVE   = 5,
-    SPINEL_CMD_PROP_VALUE_IS       = 6,
-    SPINEL_CMD_PROP_VALUE_INSERTED = 7,
-    SPINEL_CMD_PROP_VALUE_REMOVED  = 8,
+    /**
+     * No-Operation command (Host -> NCP)
+     *
+     * Encoding: Empty
+     *
+     * Induces the NCP to send a success status back to the host. This is
+     * primarily used for liveliness checks. The command payload for this
+     * command SHOULD be empty.
+     *
+     * There is no error condition for this command.
+     *
+     */
+    SPINEL_CMD_NOOP = 0,
 
-    SPINEL_CMD_NET_SAVE   = 9,
-    SPINEL_CMD_NET_CLEAR  = 10,
-    SPINEL_CMD_NET_RECALL = 11,
+    /**
+     * Reset NCP command (Host -> NCP)
+     *
+     * Encoding: Empty
+     *
+     * Causes the NCP to perform a software reset. Due to the nature of
+     * this command, the TID is ignored. The host should instead wait
+     * for a `CMD_PROP_VALUE_IS` command from the NCP indicating
+     * `PROP_LAST_STATUS` has been set to `STATUS_RESET_SOFTWARE`.
+     *
+     * The command payload for this command SHOULD be empty.
+     *
+     * If an error occurs, the value of `PROP_LAST_STATUS` will be emitted
+     * instead with the value set to the generated status code for the error.
+     *
+     */
+    SPINEL_CMD_RESET = 1,
+
+    /**
+     * Get property value command (Host -> NCP)
+     *
+     * Encoding: `i`
+     *   `i` : Property Id
+     *
+     * Causes the NCP to emit a `CMD_PROP_VALUE_IS` command for the
+     * given property identifier.
+     *
+     * The payload for this command is the property identifier encoded
+     * in the packed unsigned integer format `i`.
+     *
+     * If an error occurs, the value of `PROP_LAST_STATUS` will be emitted
+     * instead with the value set to the generated status code for the error.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_GET = 2,
+
+    /**
+     * Set property value command (Host -> NCP)
+     *
+     * Encoding: `iD`
+     *   `i` : Property Id
+     *   `D` : Value (encoding depends on the property)
+     *
+     * Instructs the NCP to set the given property to the specific given
+     * value, replacing any previous value.
+     *
+     * The payload for this command is the property identifier encoded in the
+     * packed unsigned integer format, followed by the property value. The
+     * exact format of the property value is defined by the property.
+     *
+     * On success a `CMD_PROP_VALUE_IS` command is emitted either for the
+     * given property identifier with the set value, or for `PROP_LAST_STATUS`
+     * with value `LAST_STATUS_OK`.
+     *
+     * If an error occurs, the value of `PROP_LAST_STATUS` will be emitted
+     * with the value set to the generated status code for the error.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_SET = 3,
+
+    /**
+     * Insert value into property command (Host -> NCP)
+     *
+     * Encoding: `iD`
+     *   `i` : Property Id
+     *   `D` : Value (encoding depends on the property)
+     *
+     * Instructs the NCP to insert the given value into a list-oriented
+     * property without removing other items in the list. The resulting order
+     * of items in the list is defined by the individual property being
+     * operated on.
+     *
+     * The payload for this command is the property identifier encoded in the
+     * packed unsigned integer format, followed by the value to be inserted.
+     * The exact format of the value is defined by the property.
+     *
+     * If the type signature of the property consists of a single structure
+     * enclosed by an array `A(t(...))`, then the contents of value MUST
+     * contain the contents of the structure (`...`) rather than the
+     * serialization of the whole item (`t(...)`).  Specifically, the length
+     * of the structure MUST NOT be prepended to value. This helps to
+     * eliminate redundant data.
+     *
+     * On success, either a `CMD_PROP_VALUE_INSERTED` command is emitted for
+     * the given property, or a `CMD_PROP_VALUE_IS` command is emitted of
+     * property `PROP_LAST_STATUS` with value `LAST_STATUS_OK`.
+     *
+     * If an error occurs, the value of `PROP_LAST_STATUS` will be emitted
+     * with the value set to the generated status code for the error.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_INSERT = 4,
+
+    /**
+     * Remove value from property command (Host -> NCP)
+     *
+     * Encoding: `iD`
+     *   `i` : Property Id
+     *   `D` : Value (encoding depends on the property)
+
+     * Instructs the NCP to remove the given value from a list-oriented property,
+     * without affecting other items in the list. The resulting order of items
+     * in the list is defined by the individual property being operated on.
+     *
+     * Note that this command operates by value, not by index!
+     *
+     * The payload for this command is the property identifier encoded in the
+     * packed unsigned integer format, followed by the value to be removed. The
+     * exact format of the value is defined by the property.
+     *
+     * If the type signature of the property consists of a single structure
+     * enclosed by an array `A(t(...))`, then the contents of value MUST contain
+     * the contents of the structure (`...`) rather than the serialization of the
+     * whole item (`t(...)`).  Specifically, the length of the structure MUST NOT
+     * be prepended to `VALUE`. This helps to eliminate redundant data.
+     *
+     * On success, either a `CMD_PROP_VALUE_REMOVED` command is emitted for the
+     * given property, or a `CMD_PROP_VALUE_IS` command is emitted of property
+     * `PROP_LAST_STATUS` with value `LAST_STATUS_OK`.
+     *
+     * If an error occurs, the value of `PROP_LAST_STATUS` will be emitted
+     * with the value set to the generated status code for the error.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_REMOVE = 5,
+
+    /**
+     * Property value notification command (NCP -> Host)
+     *
+     * Encoding: `iD`
+     *   `i` : Property Id
+     *   `D` : Value (encoding depends on the property)
+     *
+     * This command can be sent by the NCP in response to a previous command
+     * from the host, or it can be sent by the NCP in an unsolicited fashion
+     * to notify the host of various state changes asynchronously.
+     *
+     * The payload for this command is the property identifier encoded in the
+     * packed unsigned integer format, followed by the current value of the
+     * given property.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_IS = 6,
+
+    /**
+     * Property value insertion notification command (NCP -> Host)
+     *
+     * Encoding:`iD`
+     *   `i` : Property Id
+     *   `D` : Value (encoding depends on the property)
+     *
+     * This command can be sent by the NCP in response to the
+     * `CMD_PROP_VALUE_INSERT` command, or it can be sent by the NCP in an
+     * unsolicited fashion to notify the host of various state changes
+     * asynchronously.
+     *
+     * The payload for this command is the property identifier encoded in the
+     * packed unsigned integer format, followed by the value that was inserted
+     * into the given property.
+     *
+     * If the type signature of the property specified by property id consists
+     * of a single structure enclosed by an array (`A(t(...))`), then the
+     * contents of value MUST contain the contents of the structure (`...`)
+     * rather than the serialization of the whole item (`t(...)`). Specifically,
+     * the length of the structure MUST NOT be prepended to `VALUE`. This
+     * helps to eliminate redundant data.
+     *
+     * The resulting order of items in the list is defined by the given
+     * property.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_INSERTED = 7,
+
+    /**
+     * Property value removal notification command (NCP -> Host)
+     *
+     * Encoding: `iD`
+     *   `i` : Property Id
+     *   `D` : Value (encoding depends on the property)
+     *
+     * This command can be sent by the NCP in response to the
+     `CMD_PROP_VALUE_REMOVE` command, or it  can be sent by the NCP in an
+     * unsolicited fashion to notify the host of various state changes
+     * asynchronously.
+     *
+     * Note that this command operates by value, not by index!
+     *
+     * The payload for this command is the property identifier encoded in the
+     * packed unsigned integer format described in followed by the value that
+     * was removed from the given property.
+     *
+     * If the type signature of the property specified by property id consists
+     * of a single structure enclosed by an array (`A(t(...))`), then the
+     * contents of value MUST contain the contents of the structure (`...`)
+     * rather than the serialization of the whole item (`t(...)`).  Specifically,
+     * the length of the structure MUST NOT be prepended to `VALUE`. This
+     * helps to eliminate redundant data.
+     *
+     * The resulting order of items in the list is defined by the given
+     * property.
+     *
+     */
+    SPINEL_CMD_PROP_VALUE_REMOVED = 8,
+
+    SPINEL_CMD_NET_SAVE = 9, // Deprecated
+
+    /**
+     * Clear saved network settings command (Host -> NCP)
+     *
+     * Encoding: Empty
+     *
+     * Erases all network credentials and state from non-volatile memory.
+     *
+     * This operation affects non-volatile memory only. The current network
+     * information stored in volatile memory is unaffected.
+     *
+     * The response to this command is always a `CMD_PROP_VALUE_IS` for
+     * `PROP_LAST_STATUS`, indicating the result of the operation.
+     *
+     */
+    SPINEL_CMD_NET_CLEAR = 10,
+
+    SPINEL_CMD_NET_RECALL = 11, // Deprecated
+
+    /**
+     * Host buffer offload is an optional NCP capability that, when
+     * present, allows the NCP to store data buffers on the host processor
+     * that can be recalled at a later time.
+     *
+     * The presence of this feature can be detected by the host by
+     * checking for the presence of the `CAP_HBO`
+     * capability in `PROP_CAPS`.
+     *
+     * This feature is not currently supported on OpenThread.
+     *
+     */
 
     SPINEL_CMD_HBO_OFFLOAD   = 12,
     SPINEL_CMD_HBO_RECLAIM   = 13,
     SPINEL_CMD_HBO_DROP      = 14,
     SPINEL_CMD_HBO_OFFLOADED = 15,
     SPINEL_CMD_HBO_RECLAIMED = 16,
-    SPINEL_CMD_HBO_DROPED    = 17,
+    SPINEL_CMD_HBO_DROPPED   = 17,
 
-    SPINEL_CMD_PEEK     = 18,
+    /**
+     * Peek command (Host -> NCP)
+     *
+     * Encoding: `LU`
+     *   `L` : The address to peek
+     *   `U` : Number of bytes to read
+     *
+     * This command allows the NCP to fetch values from the RAM of the NCP
+     * for debugging purposes. Upon success, `CMD_PEEK_RET` is sent from the
+     * NCP to the host. Upon failure, `PROP_LAST_STATUS` is emitted with
+     * the appropriate error indication.
+     *
+     * The NCP MAY prevent certain regions of memory from being accessed.
+     *
+     * This command requires the capability `CAP_PEEK_POKE` to be present.
+     *
+     */
+    SPINEL_CMD_PEEK = 18,
+
+    /**
+     * Peek return command (NCP -> Host)
+     *
+     * Encoding: `LUD`
+     *   `L` : The address peeked
+     *   `U` : Number of bytes read
+     *   `D` : Memory content
+     *
+     * This command contains the contents of memory that was requested by
+     * a previous call to `CMD_PEEK`.
+     *
+     * This command requires the capability `CAP_PEEK_POKE` to be present.
+     *
+     */
     SPINEL_CMD_PEEK_RET = 19,
-    SPINEL_CMD_POKE     = 20,
+
+    /**
+     * Poke command (Host -> NCP)
+     *
+     * Encoding: `LUD`
+     *   `L` : The address to be poked
+     *   `U` : Number of bytes to write
+     *   `D` : Content to write
+     *
+     * This command writes the bytes to the specified memory address
+     * for debugging purposes.
+     *
+     * This command requires the capability `CAP_PEEK_POKE` to be present.
+     *
+     */
+    SPINEL_CMD_POKE = 20,
 
     SPINEL_CMD_PROP_VALUE_MULTI_GET = 21,
     SPINEL_CMD_PROP_VALUE_MULTI_SET = 22,
@@ -456,6 +746,7 @@ enum
 
     SPINEL_CAP_NET__BEGIN     = 52,
     SPINEL_CAP_NET_THREAD_1_0 = (SPINEL_CAP_NET__BEGIN + 0),
+    SPINEL_CAP_NET_THREAD_1_1 = (SPINEL_CAP_NET__BEGIN + 1),
     SPINEL_CAP_NET__END       = 64,
 
     SPINEL_CAP_OPENTHREAD__BEGIN       = 512,
@@ -468,12 +759,13 @@ enum
     SPINEL_CAP_OPENTHREAD_LOG_METADATA = (SPINEL_CAP_OPENTHREAD__BEGIN + 6),
     SPINEL_CAP_TIME_SYNC               = (SPINEL_CAP_OPENTHREAD__BEGIN + 7),
     SPINEL_CAP_CHILD_SUPERVISION       = (SPINEL_CAP_OPENTHREAD__BEGIN + 8),
+    SPINEL_CAP_POSIX_APP               = (SPINEL_CAP_OPENTHREAD__BEGIN + 9),
     SPINEL_CAP_OPENTHREAD__END         = 640,
 
     SPINEL_CAP_THREAD__BEGIN       = 1024,
     SPINEL_CAP_THREAD_COMMISSIONER = (SPINEL_CAP_THREAD__BEGIN + 0),
     SPINEL_CAP_THREAD_TMF_PROXY    = (SPINEL_CAP_THREAD__BEGIN + 1),
-    SPINEL_CAP_THREAD_UDP_PROXY    = (SPINEL_CAP_THREAD__BEGIN + 2),
+    SPINEL_CAP_THREAD_UDP_FORWARD  = (SPINEL_CAP_THREAD__BEGIN + 2),
     SPINEL_CAP_THREAD_JOINER       = (SPINEL_CAP_THREAD__BEGIN + 3),
     SPINEL_CAP_THREAD__END         = 1152,
 
@@ -516,7 +808,8 @@ enum
  *    Experimental |          2,000,000 - 2,097,151 | Experimental use only
  *
  */
-typedef enum {
+typedef enum
+{
     SPINEL_PROP_LAST_STATUS      = 0,  ///< status [i]
     SPINEL_PROP_PROTOCOL_VERSION = 1,  ///< major, minor [i,i]
     SPINEL_PROP_NCP_VERSION      = 2,  ///< version string [U]
@@ -837,6 +1130,16 @@ typedef enum {
      */
     SPINEL_PROP_CHANNEL_MONITOR_CHANNEL_OCCUPANCY = SPINEL_PROP_PHY_EXT__BEGIN + 10,
 
+    /// Radio caps
+    /** Format: `i` (read-only)
+     *
+     * Data per item is:
+     *
+     *  `i`: Radio Capabilities.
+     *
+     */
+    SPINEL_PROP_RADIO_CAPS = SPINEL_PROP_PHY_EXT__BEGIN + 11,
+
     SPINEL_PROP_PHY_EXT__END = 0x1300,
 
     SPINEL_PROP_MAC__BEGIN             = 0x30,
@@ -1068,6 +1371,7 @@ typedef enum {
 
     /// Thread Child Timeout
     /** Format: `L`
+     *  Unit: Seconds
      *
      *  Used when operating in the Child role.
      */
@@ -1193,7 +1497,7 @@ typedef enum {
     /** Format `dSS`
      * Required capability: `SPINEL_CAP_THREAD_TMF_PROXY`
      *
-     * This property is deprecated. Please see `SPINEL_PROP_THREAD_UDP_PROXY_STREAM`.
+     * This property is deprecated. Please see `SPINEL_PROP_THREAD_UDP_FORWARD_STREAM`.
      *
      */
     SPINEL_PROP_THREAD_TMF_PROXY_STREAM = SPINEL_PROP_THREAD_EXT__BEGIN + 18,
@@ -1460,9 +1764,9 @@ typedef enum {
      */
     SPINEL_PROP_THREAD_ADDRESS_CACHE_TABLE = SPINEL_PROP_THREAD_EXT__BEGIN + 35,
 
-    /// Thread UDP proxy stream
+    /// Thread UDP forward stream
     /** Format `dS6S`
-     * Required capability: `SPINEL_CAP_THREAD_UDP_PROXY`
+     * Required capability: `SPINEL_CAP_THREAD_UDP_FORWARD`
      *
      * This property helps exchange UDP packets with host.
      *
@@ -1472,7 +1776,7 @@ typedef enum {
      *  `S`: Local UDP port
      *
      */
-    SPINEL_PROP_THREAD_UDP_PROXY_STREAM = SPINEL_PROP_THREAD_EXT__BEGIN + 36,
+    SPINEL_PROP_THREAD_UDP_FORWARD_STREAM = SPINEL_PROP_THREAD_EXT__BEGIN + 36,
 
     /// Send MGMT_GET Thread Active Operational Dataset
     /** Format: `A(t(iD))` - Write only
@@ -1594,7 +1898,7 @@ typedef enum {
      *   `D`: Log metadata (optional).
      *
      * Any data after the log string is considered metadata and is OPTIONAL.
-     * Pretense of `SPINEL_CAP_OPENTHREAD_LOG_METADATA` capability
+     * Presence of `SPINEL_CAP_OPENTHREAD_LOG_METADATA` capability
      * indicates that OpenThread log metadata format is used as defined
      * below:
      *
@@ -1983,6 +2287,36 @@ typedef enum {
      *
      */
     SPINEL_PROP_CHILD_SUPERVISION_CHECK_TIMEOUT = SPINEL_PROP_OPENTHREAD__BEGIN + 11,
+
+    // RCP (NCP in radio only mode) version
+    /** Format `U` - Read only
+     *
+     * Required capability: SPINEL_CAP_POSIX_APP
+     *
+     * This property gives the version string of RCP (NCP in radio mode) which is being controlled by the POSIX
+     * application. It is available only in "POSIX Application" configuration (i.e., `OPENTHREAD_ENABLE_POSIX_APP` is
+     * enabled).
+     *
+     */
+    SPINEL_PROP_RCP_VERSION = SPINEL_PROP_OPENTHREAD__BEGIN + 12,
+
+    /// Thread Parent Response info
+    /** Format: `ESccCCCb` - Asynchronous event only
+     *
+     *  `E`: Extended address
+     *  `S`: RLOC16
+     *  `c`: Instant RSSI
+     *  'c': Parent Priority
+     *  `C`: Link Quality3
+     *  `C`: Link Quality2
+     *  `C`: Link Quality1
+     *  'b': Is the node receiving parent response frame attached
+     *
+     * This property sends Parent Response frame information to the Host.
+     * This property is available for FTD build only.
+     *
+     */
+    SPINEL_PROP_PARENT_RESPONSE_INFO = SPINEL_PROP_OPENTHREAD__BEGIN + 13,
 
     SPINEL_PROP_OPENTHREAD__END = 0x2000,
 
@@ -2540,6 +2874,8 @@ SPINEL_API_EXTERN spinel_ssize_t spinel_packed_uint_size(unsigned int value);
 SPINEL_API_EXTERN const char *spinel_next_packed_datatype(const char *pack_format);
 
 // ----------------------------------------------------------------------------
+
+SPINEL_API_EXTERN const char *spinel_command_to_cstr(unsigned int command);
 
 SPINEL_API_EXTERN const char *spinel_prop_key_to_cstr(spinel_prop_key_t prop_key);
 
