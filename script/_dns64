@@ -73,7 +73,7 @@ dns64_install()
     sudo sed -i '/^};/i\\tforwarders { 8.8.8.8; 8.8.8.4; };' $BIND_CONF_OPTIONS
     sudo sed -i '/^};/i\\tforward only;' $BIND_CONF_OPTIONS
     sudo sed -i '/^};/i\\t'"$DNS64_CONF" $BIND_CONF_OPTIONS
-    sudo sed -i '1s/^/acl thread {\n\tfe80::\/16;\n\tfd80::\/16;\n\t127.0.0.1;\n};\n\n/' $BIND_CONF_OPTIONS
+    sudo sed -i '1s/^/acl thread {\n\tfe80::\/16;\n\tfc00::\/7;\n\t127.0.0.1;\n};\n\n/' $BIND_CONF_OPTIONS
 
     [ -f /.dockerenv ] || sudo sh -c "echo \"nameserver $DNS64_NAMESERVER_ADDR\" >> $RESOLV_CONF_HEAD"
 
