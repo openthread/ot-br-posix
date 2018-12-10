@@ -68,7 +68,11 @@ install_packages_apt()
     without NAT64 || sudo apt-get install -y tayga iptables
 
     # dns64
-    without NAT64 || sudo apt-get install -y bind9
+    without DNS64 || {
+        sudo apt-get install -y bind9
+        # Resolvconf cannot be installed inside docker environment
+        [ -f /.dockerenv ] || sudo apt-get install -y resolvconf
+    }
 
     # network-manager
     without NETWORK_MANAGER || sudo apt-get install -y network-manager
