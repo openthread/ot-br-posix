@@ -39,7 +39,7 @@
 #include "commissioner_constants.hpp"
 #include "agent/coap.hpp"
 #include "agent/dtls.hpp"
-#include "web/pskc-generator/pskc.hpp"
+#include "utils/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {

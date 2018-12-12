@@ -28,7 +28,7 @@
 
 #include <CppUTest/TestHarness.h>
 
-#include "pskc-generator/pskc.hpp"
+#include "utils/pskc.hpp"
 
 TEST_GROUP(Pskc)
 {

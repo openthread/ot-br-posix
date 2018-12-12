@@ -34,8 +34,8 @@
 #include <stdio.h>
 
 #include "common/code_utils.hpp"
-#include "pskc-generator/pskc.hpp"
 #include "utils/hex.hpp"
+#include "utils/pskc.hpp"
 
 /**
  * Constants.

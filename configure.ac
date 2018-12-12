@@ -292,6 +292,35 @@ AM_CONDITIONAL([OTBR_BUILD_TESTS], [test "${nl_cv_build_tests}" = "yes"])
 NL_ENABLE_DOCS([auto],[NO])
 
 AM_CONDITIONAL(OTBR_BUILD_DOCS, [test "${nl_cv_build_docs}" = "yes"])
+#
+# Web Service
+#
+
+AC_ARG_ENABLE(web-service,
+    [AS_HELP_STRING([--enable-web-service],[Enable web service @<:@default=yes@:>@.])],
+    [
+        case "${enableval}" in
+
+        no|yes)
+            enable_web_service=${enableval}
+            ;;
+
+        *)
+            AC_MSG_ERROR([Invalid value ${enable_web_service} for --enable-web-service])
+            ;;
+        esac
+    ],
+    [enable_web_service=yes])
+
+if test "$enable_web_service" = "yes"; then
+    OTBR_ENABLE_WEB_SERVICE=1
+else
+    OTBR_ENABLE_WEB_SERVICE=0
+fi
+
+AC_MSG_RESULT(${enable_web_service})
+AC_SUBST(OTBR_ENABLE_WEB_SERVICE)
+AM_CONDITIONAL([OTBR_ENABLE_WEB_SERVICE], [test "${enable_web_service}" = "yes"])
 
 #
 # Checks for libraries and packages.

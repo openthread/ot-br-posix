@@ -33,16 +33,19 @@ noinst_LTLIBRARIES = libutils.la
 libutils_la_SOURCES = \
     crc16.cpp         \
     hex.cpp           \
+    pskc.cpp          \
     steering_data.cpp \
     $(NULL)
 
 libutils_la_CPPFLAGS                                    = \
+    -I$(top_srcdir)/src                                   \
     -I$(top_srcdir)/third_party/mbedtls/repo/include      \
     $(NULL)
 
 noinst_HEADERS      = \
     crc16.hpp         \
     hex.hpp           \
+    pskc.hpp          \
     steering_data.hpp \
     $(NULL)
 
