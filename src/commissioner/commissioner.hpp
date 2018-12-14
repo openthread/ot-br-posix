@@ -57,8 +57,8 @@
 #include "commissioner_constants.hpp"
 #include "joiner_session.hpp"
 #include "agent/coap.hpp"
+#include "utils/pskc.hpp"
 #include "utils/steering_data.hpp"
-#include "web/pskc-generator/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {

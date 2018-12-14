@@ -59,7 +59,6 @@ otbr_commissioner_CPPFLAGS                            = \
 otbr_commissioner_LDADD                               = \
     $(top_builddir)/src/agent/libotbr-agent.la          \
     $(top_builddir)/src/utils/libutils.la               \
-    $(top_builddir)/src/web/libotbr-web.la              \
     $(top_builddir)/src/common/libotbr-logging.la       \
     $(NULL)
 

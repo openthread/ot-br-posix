@@ -44,10 +44,14 @@ SUBDIRS                                              = \
     common                                             \
     utils                                              \
     agent                                              \
-    web                                                \
     commissioner                                       \
     $(NULL)
 
+if OTBR_ENABLE_WEB_SERVICE
+SUBDIRS                                             += \
+    web                                                \
+    $(NULL)
+endif
 
 # Always pretty (e.g. for 'make pretty') these subdirectories.
 

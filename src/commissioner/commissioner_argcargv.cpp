@@ -43,7 +43,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
-#include "web/pskc-generator/pskc.hpp"
+#include "utils/pskc.hpp"
 
 namespace ot {
 namespace BorderRouter {
