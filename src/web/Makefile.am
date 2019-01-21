@@ -28,6 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
+
 # Temporary disable -Werror for the included third party server_http
 
 override CXXFLAGS := $(filter-out -std=gnu++98 -Wshadow -Werror,$(CXXFLAGS))
@@ -56,7 +58,6 @@ libotbr_web_la_LIBADD                                           = \
     -lboost_system                                                \
     -lpthread                                                     \
     -ljsoncpp                                                     \
-    $(top_builddir)/third_party/mbedtls/libmbedtls.la             \
     $(top_builddir)/src/utils/libutils.la                         \
     $(top_builddir)/src/common/libotbr-logging.la                 \
     $(NULL)
@@ -81,20 +82,18 @@ libotbr_web_la_LDFLAGS                                          = \
     $(NULL)
 
 libotbr_web_la_CPPFLAGS                                         = \
-    $(DBUS_CFLAGS)                                                \
     -I$(top_srcdir)/src                                           \
     -I$(top_srcdir)/src/wpan-controller                           \
     -I$(top_srcdir)/src/web-service                               \
     -I$(top_srcdir)/third_party/Simple-web-server/repo/           \
-    -I$(top_srcdir)/third_party/mbedtls/repo/configs              \
-    -I$(top_srcdir)/third_party/mbedtls/repo/include              \
     -I$(top_srcdir)/third_party/wpantund/repo/src                 \
     -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus        \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl         \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund        \
-    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'                     \
     -DWEB_FILE_PATH=\"$(datadir)/border-router/frontend\"         \
     -std=c++11                                                    \
+    $(DBUS_CFLAGS)                                                \
+    $(MBEDTLS_CPPFLAGS)                                           \
     $(NULL)
 
 jsdir = $(datadir)/border-router/frontend/res/js

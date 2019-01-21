@@ -28,6 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
+
 sbin_PROGRAMS=otbr-agent
 
 otbr_agent_SOURCES = \
@@ -62,7 +64,6 @@ libotbr_agent_la_SOURCES                                      = \
 
 libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/third_party/libcoap/repo/libcoap-1.la       \
-    $(top_builddir)/third_party/mbedtls/libmbedtls.la           \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
     $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
@@ -75,9 +76,6 @@ libotbr_agent_la_LDFLAGS = \
     $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
-    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'                                \
-    -I$(top_srcdir)/third_party/mbedtls/repo/configs                         \
-    -I$(top_srcdir)/third_party/mbedtls/repo/include                         \
     -I$(top_builddir)/third_party/libcoap/repo                               \
     -I$(top_srcdir)/src                                                      \
     -I$(top_srcdir)/third_party/libcoap/repo                                 \
@@ -89,6 +87,7 @@ libotbr_agent_la_CPPFLAGS                                                  = \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund                   \
     -I$(top_srcdir)/third_party/wpantund/repo/third_party/openthread/src/ncp \
     $(DBUS_CFLAGS)                                                           \
+    $(MBEDTLS_CPPFLAGS)                                                      \
     $(NULL)
 
 if OTBR_ENABLE_MDNS_AVAHI
