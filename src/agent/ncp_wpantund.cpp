@@ -183,6 +183,15 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
             }
 #endif
         }
+        else if (DBUS_TYPE_ARRAY == dbus_message_iter_get_arg_type(aIter))
+        {
+            int             count;
+            DBusMessageIter subIter;
+
+            dbus_message_iter_recurse(aIter, &subIter);
+            dbus_message_iter_get_fixed_array(&subIter, &xpanid, &count);
+            VerifyOrExit(count == sizeof(xpanid), ret = OTBR_ERROR_DBUS);
+        }
         else
         {
             assert(false);
