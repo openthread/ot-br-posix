@@ -83,7 +83,7 @@ EOF
 }
 
 do_build() {
-    ./configure --prefix= --exec-prefix=/usr --disable-docs --disable-web-service
+    ./configure --prefix= --exec-prefix=/usr --disable-docs
     make -j${BUILD_JOBS}
 }
 

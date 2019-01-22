@@ -44,6 +44,10 @@ otbr_web_LDADD                                             = \
     libotbr-web.la                                           \
 	$(NULL)
 
+otbr_web_LDFLAGS                                           = \
+    -static                                                  \
+	$(NULL)
+
 otbr_web_CPPFLAGS                                          = \
     $(libotbr_web_la_CPPFLAGS)                               \
 	$(NULL)

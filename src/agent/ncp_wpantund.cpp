@@ -194,7 +194,7 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
         }
         else
         {
-            assert(false);
+            ExitNow(ret = OTBR_ERROR_DBUS);
         }
 
         otbrLog(OTBR_LOG_INFO, "xpanid %llu...", xpanid);

@@ -235,9 +235,9 @@ test_setup()
 
   # We will be creating a lot of log information
   # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
-  if [[ -f /etc/logrotate.conf ]]; then
-    sudo logrotate -f /etc/logrotate.conf
-  fi
+  #if [[ -f /etc/logrotate.conf ]]; then
+  #  sudo logrotate -f /etc/logrotate.conf
+  #fi
 
   # From now on - all exits are TRAPPED
   # When they occur, we call the function: output_logs'.
@@ -252,6 +252,7 @@ test_teardown()
 
   sudo killall "${WPANTUND}" || true
   sudo killall "${OTBR_AGENT}" || true
+  sudo killall "${OTBR_WEB}" || true
   sudo killall "${OTBR_COMMISSIONER}" || true
   sudo killall "${OT_NCP}" || true
   sudo killall "${OT_CLI}" || true
@@ -441,8 +442,8 @@ web_start()
   write_syslog "WEB: kill old"
   sudo killall "${OTBR_WEB}" || true
   write_syslog "WEB: starting"
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}"&)
-  sleep 10
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p 8773 -a 127.0.0.1&)
+  sleep 20
 
   pidof ${OTBR_WEB} || die "WEB: failed to start"
   write_syslog "WEB: start complete"
@@ -455,7 +456,7 @@ network_form()
   readonly OT_MASTER_KEY="$(random_masterkey)"
   readonly OT_CHANNEL="$(random_channel)"
 
-  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1/form_network || die "WEB: foram failed"
+  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network || die "WEB: foram failed"
 }
 
 commissioner_start()
@@ -537,6 +538,11 @@ EOF
 
 main()
 {
+  echo "compiling test regex.."
+  g++ --version
+  g++ -std=c++11 ${ABS_TOP_BUILDDIR}/tests/scripts/test_regex.cpp
+  echo "run test regex"
+  ./a.out || die 'regex test failed'
   test_setup
   leader_start
   ba_start
