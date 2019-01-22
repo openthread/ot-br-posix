@@ -51,6 +51,13 @@ posix-check)
     CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" .travis/check-posix
     ;;
 
+meshcop)
+    ./bootstrap
+    ./script/test build
+    OT_CLI="ot-cli-mtd" ./script/test meshcop
+    OT_CLI="ot-cli-ftd" ./script/test meshcop
+    ;;
+
 scan-build)
     .travis/check-scan-build
     ;;

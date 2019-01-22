@@ -44,7 +44,7 @@ readonly OT_NCP="${OT_NCP:-ot-ncp-ftd}"
 readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
 readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
-readonly NO_CLEAN="${NO_CLEAN:-0}"
+readonly NO_CLEAN="${NO_CLEAN:-1}"
 readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
 
 #----------------------------------------

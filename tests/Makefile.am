@@ -30,7 +30,6 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 SUBDIRS         = \
     mdns          \
-    meshcop       \
     tools         \
     unit          \
     $(NULL)
