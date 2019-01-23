@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -30,13 +30,89 @@
 #       This script runs border router tests.
 #
 
-. "$(dirname "$0")"/_initrc
+set -e
+set -o pipefail
 
-main()
-{
-    . $BEFORE_HOOK
-    make distcheck
-    . $AFTER_HOOK
+readonly COLOR_PASS='\033[0;32m'
+readonly COLOR_FAIL='\033[0;31m'
+readonly COLOR_NONE='\033[0m'
+
+readonly BUILD_JOBS=$(getconf _NPROCESSORS_ONLN)
+
+#######################################
+# Run test and print result.
+# Globals:
+#   COLOR_PASS
+#   COLOR_FAIL
+#   COLOR_NONE
+# Arguments:
+#   $@  - Test command
+# Returns:
+#   0           - Test passed.
+#   Otherwise   - Test failed!
+#######################################
+print_result() {
+    local exit_code=0
+
+    if "$@"; then
+        prefix="${COLOR_PASS}PASS${COLOR_NONE}"
+    else
+        exit_code=$?
+        prefix="${COLOR_FAIL}FAIL${COLOR_NONE}"
+    fi
+
+    echo -e "${prefix}" $*
+
+    return ${exit_code}
 }
 
-main
+print_usage() {
+    cat <<EOF
+USAGE: $0 COMMAND
+
+COMMAND:
+    build       Build project for running tests. This can be used to rebuild the project for changes.
+    clean       Clean built files to prepare new build.
+    meshcop     Run MeshCoP tests.
+    help        Print this help.
+
+EXAMPLES:
+    $0 clean build
+EOF
+    exit $1
+}
+
+do_build() {
+    ./configure --prefix= --exec-prefix=/usr --disable-docs --disable-web-service
+    make -j${BUILD_JOBS}
+}
+
+do_clean() {
+    make distclean
+}
+
+main() {
+    if [[ -z "$1" ]]; then
+        print_usage 1
+    fi
+
+    while [[ -n "$1" ]]; do
+        case "$1" in
+            help)
+                print_usage
+                ;;
+            clean)
+                do_clean
+                ;;
+            build)
+                do_build
+                ;;
+            meshcop)
+                print_result ./tests/scripts/meshcop
+                ;;
+        esac
+        shift
+    done
+}
+
+main "$@"

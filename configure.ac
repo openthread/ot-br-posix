@@ -483,7 +483,6 @@ src/utils/Makefile
 src/web/Makefile
 tests/Makefile
 tests/mdns/Makefile
-tests/meshcop/Makefile
 tests/tools/Makefile
 tests/unit/Makefile
 tools/Makefile

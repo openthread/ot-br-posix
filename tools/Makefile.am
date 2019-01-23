@@ -43,7 +43,7 @@ pskc_CPPFLAGS                                             = \
 
 pskc_LDADD                                                = \
     $(top_builddir)/src/agent/libotbr-agent.la              \
-    $(top_builddir)/src/web/libotbr-web.la                  \
+    $(top_builddir)/src/utils/libutils.la                   \
     $(NULL)
 
 pskc_LDFLAGS                                              = \

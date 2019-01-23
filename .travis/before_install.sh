@@ -82,6 +82,7 @@ linux)
         autoconf-archive         \
         doxygen                  \
         ctags                    \
+        expect                   \
         libboost-dev             \
         libboost-filesystem-dev  \
         libboost-system-dev      \
@@ -94,7 +95,6 @@ linux)
 
     [ $BUILD_TARGET != posix-check ] || {
         sudo apt-get install -y  \
-            expect               \
             avahi-daemon         \
             avahi-utils          \
             $NULL
