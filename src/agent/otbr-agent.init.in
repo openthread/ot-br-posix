@@ -37,11 +37,15 @@
 # Description: otbr-agent provides services to access thread device attached to border router
 ### END INIT INFO
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+set -e
 
-AGENT_BIN=@sbindir@/otbr-agent
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="thread border agent"
+NAME=otbr-agent
+DAEMON=@sbindir@/otbr-agent
+PIDFILE=/var/run/otbr-agent.pid
+
 AGENT_CONF=@sysconfdir@/default/otbr-agent
-AGENT_PID_FILE=/var/run/otbr-agent.pid
 
 . /lib/lsb/init-functions
 . /lib/init/vars.sh
@@ -52,18 +56,30 @@ fi
 
 start_agent()
 {
+    if [ -e $PIDFILE ]; then
+        if $0 status > /dev/null ; then
+            log_success_msg "$DESC already started; not starting."
+            return
+        else
+            log_success_msg "Removing stale PID file $PIDFILE."
+            rm -f $PIDFILE
+        fi
+    fi
+
+    log_daemon_msg "Starting $DESC" "$NAME"
     start-stop-daemon --start --quiet \
-        --pidfile $AGENT_PID_FILE --make-pidfile \
-        -b --exec $AGENT_BIN -- $OTBR_AGENT_OPTS
+        --pidfile $PIDFILE --make-pidfile \
+        -b --exec $DAEMON -- $OTBR_AGENT_OPTS
+    log_end_msg $?
 }
 
 stop_agent()
 {
-    start-stop-daemon --stop --quiet \
-        --pidfile $AGENT_PID_FILE --remove-pidfile
+    log_daemon_msg "Stopping $DESC" "$NAME"
+    start-stop-daemon --stop --retry 5 --quiet --oknodo \
+        --pidfile $PIDFILE --remove-pidfile
+    log_end_msg $?
 }
-
-set -e
 
 case "$1" in
     start)
@@ -77,19 +93,10 @@ case "$1" in
         stop_agent
         ;;
     status)
-        if [ -f $AGENT_PID_FILE ] ;  then
-            log_progress_msg "otbr-agent running"
-            log_end_msg 0
-        else
-            log_progress_msg "otbr-agent not running"
-            log_end_msg 1
-            exit 1
-        fi
+        status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
         ;;
     *)
-        echo "unknown command" >&2
-        exit 3
+        log_action_msg "Usage: /etc/init.d/$NAME {start|stop|status|restart|reload|force-reload}"
+        exit 2
         ;;
 esac
-
-exit 0
