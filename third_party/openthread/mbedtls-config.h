@@ -29,20 +29,60 @@
 #ifndef OTBR_MBEDTLS_CONFIG_H_
 #define OTBR_MBEDTLS_CONFIG_H_
 
-#include "openthread-core-config.h"
-#include "repo/third_party/mbedtls/mbedtls-config.h"
-
 #define MBEDTLS_DEBUG_C
+
+/* System support */
+#define MBEDTLS_HAVE_ASM
+
+/* mbed TLS feature support */
+#define MBEDTLS_AES_ROM_TABLES
+#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#define MBEDTLS_ECP_NIST_OPTIM
+#define MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+#define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+#define MBEDTLS_SSL_PROTO_TLS1_2
+#define MBEDTLS_SSL_PROTO_DTLS
+#define MBEDTLS_SSL_DTLS_ANTI_REPLAY
+#define MBEDTLS_SSL_DTLS_HELLO_VERIFY
+#define MBEDTLS_SSL_EXPORT_KEYS
+
+/* mbed TLS modules */
+#define MBEDTLS_AES_C
+#define MBEDTLS_ASN1_PARSE_C
+#define MBEDTLS_ASN1_WRITE_C
+#define MBEDTLS_BIGNUM_C
+#define MBEDTLS_CCM_C
+#define MBEDTLS_CIPHER_C
+#define MBEDTLS_CTR_DRBG_C
+#define MBEDTLS_CMAC_C
+#define MBEDTLS_ECJPAKE_C
+#define MBEDTLS_ECP_C
+#define MBEDTLS_ENTROPY_C
+#define MBEDTLS_HMAC_DRBG_C
+#define MBEDTLS_MD_C
+#define MBEDTLS_OID_C
+#define MBEDTLS_PK_C
+#define MBEDTLS_PK_PARSE_C
+#define MBEDTLS_SHA256_C
+#define MBEDTLS_SSL_COOKIE_C
+#define MBEDTLS_SSL_CLI_C
+#define MBEDTLS_SSL_SRV_C
+#define MBEDTLS_SSL_TLS_C
+
+/* For tests using ssl-opt.sh */
 #define MBEDTLS_NET_C
 #define MBEDTLS_TIMING_C
 
-// Use default memory allocator
-#ifdef MBEDTLS_MEMORY_BUFFER_ALLOC_C
-#undef MBEDTLS_MEMORY_BUFFER_ALLOC_C
-#endif
+/* Save RAM at the expense of ROM */
+#define MBEDTLS_AES_ROM_TABLES
 
-#ifdef MBEDTLS_PLATFORM_MEMORY
-#undef MBEDTLS_PLATFORM_MEMORY
-#endif
+/* Save RAM by adjusting to our exact needs */
+#define MBEDTLS_ECP_MAX_BITS 256
+#define MBEDTLS_MPI_MAX_SIZE 32 // 256 bits is 32 bytes
 
-#endif // OTBR_MBEDTLS_CONFIG_H_
+/* Save ROM and a few bytes of RAM by specifying our own ciphersuite list */
+#define MBEDTLS_SSL_CIPHERSUITES MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8
+
+#include "mbedtls/check_config.h"
+
+#endif /* MBEDTLS_CONFIG_H */

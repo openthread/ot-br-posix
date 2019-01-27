@@ -38,7 +38,7 @@ PRIVATE_OPENTHREAD_CPPFLAGS = \
 OPENTHREAD_CONFIG_FILE = build/posix/otbr/include/openthread-config-generic.h
 
 $(OPENTHREAD_CONFIG_FILE):
-	CPPFLAGS="$(PRIVATE_OPENTHREAD_CPPFLAGS)" make -f $(srcdir)/repo/src/posix/Makefile-posix DISABLE_EXECUTABLE=0 PLATFORM_NETIF=1 PLATFORM_UDP=1 DISABLE_BUILTIN_MBEDTLS=1 TargetTuple=otbr configure
+	CPPFLAGS="$(PRIVATE_OPENTHREAD_CPPFLAGS)" make -f $(srcdir)/repo/src/posix/Makefile-posix BORDER_AGENT=1 BORDER_ROUTER=1 DISABLE_BUILTIN_MBEDTLS=1 DISABLE_EXECUTABLE=0 JOINER=1 PLATFORM_NETIF=1 PLATFORM_UDP=1 TargetTuple=otbr configure
 
 clean-local-openthread:
 	-rm -rf build output

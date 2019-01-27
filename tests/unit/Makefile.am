@@ -28,6 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
+
 check_PROGRAMS = unittest
 
 unittest_SOURCES           = \
@@ -49,6 +51,7 @@ unittest_CPPFLAGS                                             = \
     -I$(top_srcdir)/src/agent                                   \
     -I$(top_srcdir)/src/web                                     \
     -I$(top_srcdir)/third_party/mbedtls/repo/include            \
+    $(MBEDTLS_CPPFLAGS)                                                      \
     $(NULL)
 
 unittest_LDADD                                                = \
