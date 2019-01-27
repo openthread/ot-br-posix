@@ -35,8 +35,13 @@ main() {
     IMAGE_DIR=/media/rpi
 
     [ -d $STAGE_DIR ] || mkdir -p $STAGE_DIR
-    cp -v $IMAGE_FILE $STAGE_DIR/raspbian.img || die
-    git archive -o $STAGE_DIR/repo.tar HEAD || die
+    cp -v $IMAGE_FILE $STAGE_DIR/raspbian.img
+
+    ./bootstrap
+    ./configure
+    rm otbr-*.tar.gz || true
+    make dist
+    mv otbr-*.tar.gz $STAGE_DIR/repo.tar.gz
 
     cat > $STAGE_DIR/check.sh <<EOF
         export LC_ALL=C
@@ -61,13 +66,13 @@ EOF
         sudo ./mount.sh $STAGE_DIR/raspbian.img $IMAGE_DIR &&          \
         sudo mount --bind /dev/pts $IMAGE_DIR/dev/pts &&               \
         sudo mkdir -p $IMAGE_DIR/home/pi/repo &&                       \
-        sudo tar xvf $STAGE_DIR/repo.tar -C $IMAGE_DIR/home/pi/repo && \
+        sudo tar xzvf $STAGE_DIR/repo.tar.gz --strip-components 1 -C $IMAGE_DIR/home/pi/repo && \
         sudo git clone --depth 1 https://github.com/openthread/wpantund.git $IMAGE_DIR/home/pi/repo/._build/wpantund && \
         sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh &&  \
         sudo ./qemu-setup.sh $IMAGE_DIR &&                             \
         sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh &&          \
         sudo ./qemu-cleanup.sh $IMAGE_DIR &&                           \
-        sudo ./unmount.sh $IMAGE_DIR) || die
+        sudo ./unmount.sh $IMAGE_DIR)
 }
 
 main "$@"

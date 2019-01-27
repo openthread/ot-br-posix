@@ -42,6 +42,7 @@ SUBDIRS                                   = \
 EXTRA_DIST                                = \
     .default-version                        \
     bootstrap                               \
+    script                                  \
     $(srcdir)/third_party/nlbuild-autotools \
     $(NULL)
 
