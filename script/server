@@ -42,11 +42,13 @@ main()
     dns64_start || die 'Failed to start DNS64!'
     if have systemctl; then
         systemctl is-active dbus || sudo systemctl start dbus || die 'Failed to start dbus!'
+        systemctl is-active avahi-daemon || sudo systemctl start avahi-daemon || die 'Failed to start avahi!'
         systemctl is-active wpantund || sudo systemctl start wpantund || die 'Failed to start wpantund!'
         systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
         systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
     elif which service; then
         sudo service dbus status || sudo service dbus start  || die 'Failed to start dbus!'
+        sudo service avahi-daemon status || sudo service avahi-daemon start  || die 'Failed to start avahi!'
         sudo service wpantund status || sudo service wpantund start  || die 'Failed to start wpantund!'
         sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
         sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
