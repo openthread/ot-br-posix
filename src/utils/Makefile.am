@@ -28,6 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
+
 noinst_LTLIBRARIES = libutils.la
 
 libutils_la_SOURCES = \
@@ -40,6 +42,11 @@ libutils_la_SOURCES = \
 libutils_la_CPPFLAGS                                    = \
     -I$(top_srcdir)/src                                   \
     -I$(top_srcdir)/third_party/mbedtls/repo/include      \
+    $(MBEDTLS_CPPFLAGS)                                   \
+    $(NULL)
+
+libutils_la_LIBADD                                      = \
+    $(MBEDTLS_LIBS)                                       \
     $(NULL)
 
 noinst_HEADERS      = \

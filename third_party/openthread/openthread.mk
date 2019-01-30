@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2019, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,16 +26,19 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
-
-SUBDIRS                 = \
-    openthread            \
-    wpantund              \
-    libcoap               \
-    Simple-web-server     \
-    mdl                   \
-    angular               \
-    angular-material      \
+OPENTHREAD_CPPFLAGS                                                        = \
+    -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
     $(NULL)
 
-include $(abs_top_nlbuild_autotools_dir)/automake/post.am
+PRIVATE_OPENTHREAD_CPPFLAGS              = \
+    $(CPPFLAGS)                            \
+    -I$(top_srcdir)/third_party/openthread \
+    $(NULL)
+
+OPENTHREAD_CONFIG_FILE = build/posix/otbr/include/openthread-config-generic.h
+
+$(OPENTHREAD_CONFIG_FILE):
+	CPPFLAGS="$(PRIVATE_OPENTHREAD_CPPFLAGS)" make -f $(srcdir)/repo/src/posix/Makefile-posix BORDER_AGENT=1 BORDER_ROUTER=1 DISABLE_BUILTIN_MBEDTLS=1 DISABLE_EXECUTABLE=0 JOINER=1 PLATFORM_NETIF=1 PLATFORM_UDP=1 TargetTuple=otbr configure
+
+clean-local-openthread:
+	-rm -rf build output

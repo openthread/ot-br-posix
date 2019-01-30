@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2019, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,16 +26,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
-
-SUBDIRS                 = \
-    openthread            \
-    wpantund              \
-    libcoap               \
-    Simple-web-server     \
-    mdl                   \
-    angular               \
-    angular-material      \
+MBEDTLS_CPPFLAGS                                                               = \
+    -DMBEDTLS_CONFIG_FILE=\"mbedtls-config.h\"                                   \
+    -I$(top_srcdir)/third_party/openthread                                       \
+    -I$(top_srcdir)/third_party/openthread/repo/include                          \
+    -I$(top_srcdir)/third_party/openthread/repo/src/core                         \
+    -I$(top_srcdir)/third_party/openthread/repo/src/posix/platform               \
+    -I$(top_srcdir)/third_party/openthread/repo/third_party/mbedtls/repo/include \
+    -I$(top_builddir)/third_party/openthread/build/posix/otbr/include/           \
     $(NULL)
 
-include $(abs_top_nlbuild_autotools_dir)/automake/post.am
+MBEDTLS_LIBS = $(top_builddir)/third_party/openthread/libmbedcrypto.la

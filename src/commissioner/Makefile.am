@@ -28,6 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
+
 bin_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
@@ -48,12 +50,10 @@ otbr_commissioner_SOURCES                             = \
     $(NULL)
 
 otbr_commissioner_CPPFLAGS                            = \
-    -DMBEDTLS_CONFIG_FILE='<config-thread.h>'           \
-    -I$(top_srcdir)/third_party/mbedtls/repo/configs    \
-    -I$(top_srcdir)/third_party/mbedtls/repo/include    \
     -I$(top_srcdir)/src                                 \
     -I$(top_srcdir)/src/agent                           \
     -I$(top_srcdir)/src/web                             \
+    $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 
 otbr_commissioner_LDADD                               = \
