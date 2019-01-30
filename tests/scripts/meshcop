@@ -235,9 +235,9 @@ test_setup()
 
   # We will be creating a lot of log information
   # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
-  #if [[ -f /etc/logrotate.conf ]]; then
-  #  sudo logrotate -f /etc/logrotate.conf
-  #fi
+  if [[ -f /etc/logrotate.conf ]]; then
+    sudo logrotate -f /etc/logrotate.conf
+  fi
 
   # From now on - all exits are TRAPPED
   # When they occur, we call the function: output_logs'.
@@ -456,7 +456,7 @@ network_form()
   readonly OT_MASTER_KEY="$(random_masterkey)"
   readonly OT_CHANNEL="$(random_channel)"
 
-  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network || die "WEB: foram failed"
+  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network || die "WEB: form failed"
 }
 
 commissioner_start()
@@ -538,12 +538,6 @@ EOF
 
 main()
 {
-  echo "compiling test regex.."
-  echo $CXX
-  $CXX --version
-  $CXX -std=c++11 ${ABS_TOP_BUILDDIR}/tests/scripts/test_regex.cpp
-  echo "run test regex"
-  #./a.out || die 'regex test failed'
   test_setup
   leader_start
   ba_start

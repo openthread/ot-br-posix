@@ -151,8 +151,6 @@ namespace SimpleWeb {
         class regex_orderable : public REGEX_NS::regex {
             std::string str;
         public:
-            const char *c_str() const { return str.c_str(); }
-
             regex_orderable(const char *regex_cstr) : REGEX_NS::regex(regex_cstr), str(regex_cstr) {}
             regex_orderable(const std::string &regex_str) : REGEX_NS::regex(regex_str), str(regex_str) {}
             bool operator<(const regex_orderable &rhs) const {
@@ -362,25 +360,15 @@ namespace SimpleWeb {
                     return;
                 }
             }
-            fprintf(stderr, "\npath len %zu\n", request->path.size());
-            for (size_t i = 0; i < request->path.size(); i++) {
-                fprintf(stderr, "%02x(%c) ", request->path[i], request->path[i]);
-            }
-            fprintf(stderr, "\n");
-            fprintf(stderr, "%s url %s\n", request->method.c_str(), request->path.c_str());
             //Find path- and method-match, and call write_response
             for(auto &regex_method: resource) {
                 auto it=regex_method.second.find(request->method);
-                fprintf(stderr, "test for method %s\n", regex_method.first.c_str());
                 if(it!=regex_method.second.end()) {
                     REGEX_NS::smatch sm_res;
                     if(REGEX_NS::regex_match(request->path, sm_res, regex_method.first)) {
-                        fprintf(stderr, "match succeeded\n");
                         request->path_match=std::move(sm_res);
                         write_response(socket, request, it->second);
                         return;
-                    } else {
-                        fprintf(stderr, "match failed\n");
                     }
                 }
             }

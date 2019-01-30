@@ -52,7 +52,7 @@ posix-check)
     ;;
 
 meshcop)
-    if [ $(command -v gcc-5) ]; then
+    if gcc-5 --version; then
       export CC=gcc-5
       export CXX=g++-5
     fi
