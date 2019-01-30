@@ -37,11 +37,15 @@
 # Description: otbr-web provides a web gui for boder router
 ### END INIT INFO
 
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+set -e
 
-OTBR_WEB_BIN=@sbindir@/otbr-web
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="thread web interface"
+NAME=otbr-web
+DAEMON=@sbindir@/otbr-web
+PIDFILE=/var/run/otbr-web.pid
+
 OTBR_WEB_CONF=@sysconfdir@/default/otbr-web
-OTBR_WEB_PID_FILE=/var/run/otbr-web.pid
 
 . /lib/lsb/init-functions
 . /lib/init/vars.sh
@@ -52,18 +56,30 @@ fi
 
 start_web() 
 {
+    if [ -e $PIDFILE ]; then
+        if $0 status > /dev/null ; then
+            log_success_msg "$DESC already started; not starting."
+            return
+        else
+            log_success_msg "Removing stale PID file $PIDFILE."
+            rm -f $PIDFILE
+        fi
+    fi
+
+    log_daemon_msg "Starting $DESC" "$NAME"
     start-stop-daemon --start --quiet \
-        --pidfile $OTBR_WEB_PID_FILE --make-pidfile \
-        -b --exec $OTBR_WEB_BIN -- $OTBR_WEB_OPTS
+        --pidfile $PIDFILE --make-pidfile \
+        -b --exec $DAEMON -- $OTBR_WEB_OPTS
+    log_end_msg $?
 }
 
 stop_web()
 {
-    start-stop-daemon --stop --quiet \
-        --pidfile $OTBR_WEB_PID_FILE --remove-pidfile
+    log_daemon_msg "Stopping $DESC" "$NAME"
+    start-stop-daemon --stop --retry 5 --quiet --oknodo \
+        --pidfile $PIDFILE --remove-pidfile
+    log_end_msg $?
 }
-
-set -e
 
 case "$1" in
     start)
@@ -77,19 +93,10 @@ case "$1" in
         stop_web
         ;;
     status)
-        if [ -f $OTBR_WEB_PID_FILE ] ;  then
-            log_progress_msg "otbr-web running"
-            log_end_msg 0
-        else
-            log_progress_msg "otbr-web not running"
-            log_end_msg 1
-            exit 1
-        fi
+        status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
         ;;
     *)
-        echo "unknown command" >&2
-        exit 3
+        log_action_msg "Usage: /etc/init.d/$NAME {start|stop|status|restart|reload|force-reload}"
+        exit 2
         ;;
 esac
-
-exit 0
