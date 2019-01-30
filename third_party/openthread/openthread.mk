@@ -26,12 +26,12 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-OPENTHREAD_CPPFLAGS	= \
+OPENTHREAD_CPPFLAGS                                                        = \
     -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
     $(NULL)
 
-PRIVATE_OPENTHREAD_CPPFLAGS = \
-	$(CPPFLAGS) \
+PRIVATE_OPENTHREAD_CPPFLAGS              = \
+    $(CPPFLAGS)                            \
     -I$(top_srcdir)/third_party/openthread \
     $(NULL)
 

@@ -164,6 +164,7 @@ main()
     . $BEFORE_HOOK
     install_packages
     with RELEASE || install_cpputest
+    git submodule update --init --recursive
     ./bootstrap
     . $AFTER_HOOK
 }
