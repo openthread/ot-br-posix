@@ -38,15 +38,19 @@ sbin_PROGRAMS = otbr-web
 
 otbr_web_SOURCES                                           = \
     main.cpp                                                 \
-	$(NULL)
+    $(NULL)
 
 otbr_web_LDADD                                             = \
     libotbr-web.la                                           \
-	$(NULL)
+    $(NULL)
+
+otbr_web_LDFLAGS                                           = \
+    -static                                                  \
+    $(NULL)
 
 otbr_web_CPPFLAGS                                          = \
     $(libotbr_web_la_CPPFLAGS)                               \
-	$(NULL)
+    $(NULL)
 
 noinst_LTLIBRARIES = libotbr-web.la
 

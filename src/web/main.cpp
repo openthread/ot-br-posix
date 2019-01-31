@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 
     ot::Web::WebServer *server = NULL;
 
-    while ((opt = getopt(argc, argv, "d:I:p:v:a")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:v:a:")) != -1)
     {
         switch (opt)
         {

@@ -53,13 +53,12 @@ readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
 readonly TEST_BASE=/tmp/test-otbr
 
 readonly WPANTUND=wpantund
-readonly WPANCTL=wpanctl
 readonly OTBR_AGENT=otbr-agent
+readonly OTBR_WEB=otbr-web
 readonly OTBR_COMMISSIONER=otbr-commissioner
 
 readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
-readonly WPANCTL_PATH="${STAGE_DIR}/usr/bin/${WPANCTL}"
 readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
 readonly OT_NCP_PATH="${STAGE_DIR}/usr/bin/${OT_NCP}"
 readonly OT_CLI_PATH="${STAGE_DIR}/usr/bin/${OT_CLI}"
@@ -67,6 +66,7 @@ readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COM
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
+readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 
 # The node ids
 readonly LEADER_NODE_ID=1
@@ -195,14 +195,12 @@ build_dependencies()
   [[ -d "${STAGE_DIR}" ]] || mkdir -p "${STAGE_DIR}"
   [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
 
-  if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}" && which "${WPANCTL}"; then
-    wpanctl="${WPANCTL}"
+  if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}"; then
     wpantund="${WPANTUND}"
   else
     checkout_wpantund
     configure_wpantund
     compile_wpantund
-    wpanctl="${WPANCTL_PATH}"
     wpantund="${WPANTUND_PATH}"
   fi
 
@@ -228,6 +226,7 @@ test_setup()
 
   executable_or_die "${OTBR_COMMISSIONER_PATH}"
   executable_or_die "${OTBR_AGENT_PATH}"
+  executable_or_die "${OTBR_WEB_PATH}"
 
   # Remove flashes
   sudo rm -vrf "${TEST_BASE}/tmp"
@@ -253,6 +252,7 @@ test_teardown()
 
   sudo killall "${WPANTUND}" || true
   sudo killall "${OTBR_AGENT}" || true
+  sudo killall "${OTBR_WEB}" || true
   sudo killall "${OTBR_COMMISSIONER}" || true
   sudo killall "${OT_NCP}" || true
   sudo killall "${OT_CLI}" || true
@@ -305,7 +305,6 @@ compile_wpantund()
   make -C "${BUILD_DIR}/wpantund" install DESTDIR="${STAGE_DIR}"
 
   executable_or_die "${WPANTUND_PATH}"
-  executable_or_die "${WPANCTL_PATH}"
 
   sudo cp "${STAGE_DIR}/etc/dbus-1/system.d/wpantund.conf" /etc/dbus-1/system.d
 
@@ -390,16 +389,6 @@ leader_start()
 {
   write_syslog "MESHCOP TEST BEGIN - rotated logs"
 
-  readonly OT_PANID="$(random_panid)"
-  readonly OT_XPANID="$(random_xpanid)"
-  readonly OT_MASTER_KEY="$(random_masterkey)"
-  readonly OT_CHANNEL="$(random_channel)"
-
-  # Using the commissioner app - Compute the PSKc from the above settings.
-  set -x
-  readonly OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
-  set +x
-
   # These might not exit cleanly
   write_syslog "LEADER: killing the old"
 
@@ -417,16 +406,6 @@ leader_start()
 
   echo 'Waiting for wpantund to fully start'
   sleep 10
-
-  set -x
-  sudo "${wpanctl}" -I "${TUN_NAME}" set Daemon:AutoAssociateAfterReset false
-  sudo "${wpanctl}" -I "${TUN_NAME}" leave
-  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:PSKc --data "${OT_PSKC}"
-  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:Key --data "${OT_MASTER_KEY}"
-  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:PANID "${OT_PANID}"
-  sudo "${wpanctl}" -I "${TUN_NAME}" set Network:XPANID "${OT_XPANID}"
-  sudo "${wpanctl}" -I "${TUN_NAME}" form "${OT_NETWORK_NAME}" -c "${OT_CHANNEL}"
-  set +x
 
   # These should be running now and should not have crashed!
   pidof "${WPANTUND}" || die "LEADER: Failed to start wpantund"
@@ -456,6 +435,28 @@ ba_start()
 
   pidof ${OTBR_AGENT} || die "AGENT: failed to start"
   write_syslog "AGENT: start complete"
+}
+
+web_start()
+{
+  write_syslog "WEB: kill old"
+  sudo killall "${OTBR_WEB}" || true
+  write_syslog "WEB: starting"
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p 8773 -a 127.0.0.1&)
+  sleep 20
+
+  pidof ${OTBR_WEB} || die "WEB: failed to start"
+  write_syslog "WEB: start complete"
+}
+
+network_form()
+{
+  readonly OT_PANID="$(random_panid)"
+  readonly OT_XPANID="$(random_xpanid)"
+  readonly OT_MASTER_KEY="$(random_masterkey)"
+  readonly OT_CHANNEL="$(random_channel)"
+
+  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network || die "WEB: form failed"
 }
 
 commissioner_start()
@@ -540,6 +541,8 @@ main()
   test_setup
   leader_start
   ba_start
+  web_start
+  network_form
   commissioner_start
   joiner_start
 }

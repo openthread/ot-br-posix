@@ -52,6 +52,10 @@ posix-check)
     ;;
 
 meshcop)
+    if gcc-5 --version; then
+      export CC=gcc-5
+      export CXX=g++-5
+    fi
     ./bootstrap
     ./script/test build
     OT_CLI="ot-cli-mtd" ./script/test meshcop
