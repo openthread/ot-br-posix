@@ -30,6 +30,8 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 include $(top_srcdir)/third_party/openthread/mbedtls.mk
 
+noinst_LTLIBRARIES = libotbr-commissioner.la
+
 bin_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
@@ -41,26 +43,41 @@ noinst_HEADERS                                        = \
     joiner_session.hpp                                  \
     $(NULL)
 
-otbr_commissioner_SOURCES                             = \
+libotbr_commissioner_la_SOURCES                       = \
     addr_utils.cpp                                      \
     commissioner.cpp                                    \
     commissioner_argcargv.cpp                           \
     joiner_session.cpp                                  \
-    main.cpp                                            \
     $(NULL)
 
-otbr_commissioner_CPPFLAGS                            = \
+libotbr_commissioner_la_CPPFLAGS                      = \
     -I$(top_srcdir)/src                                 \
     -I$(top_srcdir)/src/agent                           \
     -I$(top_srcdir)/src/web                             \
     $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 
-otbr_commissioner_LDADD                               = \
+libotbr_commissioner_la_LIBADD                        = \
     $(top_builddir)/src/agent/libotbr-agent.la          \
     $(top_builddir)/src/utils/libutils.la               \
     $(top_builddir)/src/common/libotbr-logging.la       \
     $(NULL)
+
+libotbr_commissioner_la_LDFLAGS                       = \
+    -static                                             \
+    $(NULL)
+
+otbr_commissioner_SOURCES                             = \
+    main.cpp                                            \
+	$(NULL)
+
+otbr_commissioner_LDADD                               = \
+    libotbr-commissioner.la                             \
+	$(NULL)
+
+otbr_commissioner_CPPFLAGS                            = \
+    $(libotbr_commissioner_la_CPPFLAGS)                 \
+	$(NULL)
 
 otbr_commissioner_LDFLAGS                             = \
     -static                                             \

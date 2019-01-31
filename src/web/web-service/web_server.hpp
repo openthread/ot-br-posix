@@ -95,6 +95,7 @@ private:
     static std::string HandleGetStatusRequest(const std::string &aGetStatusRequest, void *aUserData);
     static std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest,
                                                          void *             aUserData);
+    static std::string HandleCommission(const std::string &aCommissionRequest, void *aUserData);
 
     std::string HandleJoinNetworkRequest(const std::string &aJoinRequest);
     std::string HandleFormNetworkRequest(const std::string &aFormRequest);
@@ -102,6 +103,7 @@ private:
     std::string HandleDeletePrefixRequest(const std::string &aDeletePrefixRequest);
     std::string HandleGetStatusRequest(const std::string &aGetStatusRequest);
     std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest);
+    std::string HandleCommission(const std::string &aCommissionRequest);
 
     void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback);
     void ResponseJoinNetwork(void);
@@ -111,6 +113,7 @@ private:
     void ResponseGetStatus(void);
     void ResponseGetAvailableNetwork(void);
     void DefaultHttpResponse(void);
+    void ResponseCommission(void);
 
     void Init(void);
 

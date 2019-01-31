@@ -105,6 +105,7 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     , mPetitionRetryCount(0)
     , mJoinerSession(NULL)
     , mKeepAliveRate(aKeepAliveRate)
+    , mNumFinializeJoiners(0)
 {
     sockaddr_in addr;
 
@@ -626,6 +627,7 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
         responseTlv->SetType(Meshcop::kJoinerRouterKek);
         responseTlv->SetValue(kek, sizeof(kek));
         responseTlv = responseTlv->GetNext();
+        mNumFinializeJoiners++;
     }
 
     {
@@ -642,6 +644,11 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
     }
 
     return aLength;
+}
+
+int Commissioner::GetNumFinalizedJoiners(void)
+{
+    return mNumFinializeJoiners;
 }
 
 Commissioner::~Commissioner()
