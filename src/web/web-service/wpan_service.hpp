@@ -161,13 +161,13 @@ public:
     /**
      * This method starts commissioner and wait for a device to join
      *
-     * @param[in]  aPskd            Joiner Pskd
-     * @param[in]  aPassPhrase      Network Passphtrase
+     * @param[in]  aPskd                Joiner pskd
+     * @param[in]  aNetworkPassword     Network password
      *
      * @returns The string to the http response of getting available networks.
      *
      */
-    std::string CommissionDevice(const char *aPskd, const char *aPassphrase);
+    std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
     int RunCommission(BorderRouter::CommissionerArgs aArgs);
@@ -199,7 +199,7 @@ private:
         kPropertyType_Data,
     };
 
-    static const char *kLocalHostStr;
+    static const char *kBorderAgentHost;
     static const char *kBorderAgentPort;
 };
 

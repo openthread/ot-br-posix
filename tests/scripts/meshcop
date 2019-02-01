@@ -512,6 +512,12 @@ commissioner_start()
   write_syslog "TEST: Commissioner ready for joiner"
 }
 
+web_commissioner_start()
+{
+  curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "http://127.0.0.1:8773/commission"&
+  sleep 30
+}
+
 joiner_start()
 {
   write_syslog 'JOINER START'
@@ -543,7 +549,11 @@ main()
   ba_start
   web_start
   network_form
-  commissioner_start
+  if [ "${COMMISSIONER_WEB}" ]; then
+    web_commissioner_start
+  else
+    commissioner_start
+  fi
   joiner_start
 }
 

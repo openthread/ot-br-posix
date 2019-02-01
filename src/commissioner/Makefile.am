@@ -69,15 +69,15 @@ libotbr_commissioner_la_LDFLAGS                       = \
 
 otbr_commissioner_SOURCES                             = \
     main.cpp                                            \
-	$(NULL)
+    $(NULL)
 
 otbr_commissioner_LDADD                               = \
     libotbr-commissioner.la                             \
-	$(NULL)
+    $(NULL)
 
 otbr_commissioner_CPPFLAGS                            = \
     $(libotbr_commissioner_la_CPPFLAGS)                 \
-	$(NULL)
+    $(NULL)
 
 otbr_commissioner_LDFLAGS                             = \
     -static                                             \

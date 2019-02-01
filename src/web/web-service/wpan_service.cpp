@@ -38,7 +38,7 @@
 namespace ot {
 namespace Web {
 
-const char *WpanService::kLocalHostStr    = "127.0.0.1";
+const char *WpanService::kBorderAgentHost = "127.0.0.1";
 const char *WpanService::kBorderAgentPort = "49191";
 
 std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinRequest)
@@ -384,15 +384,15 @@ exit:
 
 std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
 {
-    Json::Value root;
-    Json::Reader             reader;
-    int                      ret = ot::Dbus::kWpantundStatus_Ok;
-    std::string pskd;
-    std::string passphrase;
-    std::string response;
+    Json::Value  root;
+    Json::Reader reader;
+    int          ret = ot::Dbus::kWpantundStatus_Ok;
+    std::string  pskd;
+    std::string  passphrase;
+    std::string  response;
 
     VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    pskd = root["pskd"].asString();
+    pskd       = root["pskd"].asString();
     passphrase = root["passphrase"].asString();
 
     response = CommissionDevice(pskd.c_str(), passphrase.c_str());
@@ -405,7 +405,7 @@ exit:
     return response;
 }
 
-std::string WpanService::CommissionDevice(const char *aPskd, const char *aPassphrase)
+std::string WpanService::CommissionDevice(const char *aPskd, const char *aNetworkPassword)
 {
     int                            ret = ot::Dbus::kWpantundStatus_Ok;
     Json::Value                    root, networkInfo;
@@ -418,14 +418,13 @@ std::string WpanService::CommissionDevice(const char *aPskd, const char *aPassph
     VerifyOrExit(serviceStatus == kWpanStatus_OK, ret = Dbus::kWpantundStatus_NetworkNotFound);
     args.mPSKd = aPskd;
 
-    printf("extpanid %s, networkname %s, passphrase %s\n", extPanId.c_str(), networkName.c_str(), aPassphrase);
     {
         ot::Psk::Pskc pskc;
         uint8_t       extPanIdHex[BorderRouter::kXPanIdLength];
         VerifyOrExit(sizeof(extPanIdHex) == Utils::Hex2Bytes(extPanId.c_str(), extPanIdHex, sizeof(extPanIdHex)),
                      ret = Dbus::kWpantundStatus_Failure);
 
-        memcpy(args.mPSKc, pskc.ComputePskc(extPanIdHex, networkName.c_str(), aPassphrase), sizeof(args.mPSKc));
+        memcpy(args.mPSKc, pskc.ComputePskc(extPanIdHex, networkName.c_str(), aNetworkPassword), sizeof(args.mPSKc));
     }
 
     // We allow all joiners for simplicity
@@ -436,9 +435,9 @@ std::string WpanService::CommissionDevice(const char *aPskd, const char *aPassph
     }
 
     args.mKeepAliveInterval = 15;
-    args.mDebugLevel        = OTBR_LOG_ERR;
+    args.mDebugLevel        = OTBR_LOG_EMERG;
 
-    args.mAgentHost = kLocalHostStr;
+    args.mAgentHost = kBorderAgentHost;
     args.mAgentPort = kBorderAgentPort;
 
     RunCommission(args);
