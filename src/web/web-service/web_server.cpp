@@ -46,6 +46,7 @@
 #define OT_GET_NETWORK_PATH "^/get_properties$"
 #define OT_JOIN_NETWORK_PATH "^/join_network$"
 #define OT_SET_NETWORK_PATH "^/settings$"
+#define OT_COMMISSIONER_START_PATH "^/commission$"
 #define OT_REQUEST_METHOD_GET "GET"
 #define OT_REQUEST_METHOD_POST "POST"
 #define OT_RESPONSE_SUCCESS_STATUS "HTTP/1.1 200 OK\r\n"
@@ -94,6 +95,7 @@ void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uin
     ResponseDeleteOnMeshPrefix();
     ResponseGetStatus();
     ResponseGetAvailableNetwork();
+    ResponseCommission();
     DefaultHttpResponse();
     std::thread ServerThread([this]() { mServer->start(); });
     ServerThread.join();
@@ -249,6 +251,13 @@ std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGet
     return webServer->HandleGetAvailableNetworkResponse(aGetAvailableNetworkRequest);
 }
 
+std::string WebServer::HandleCommission(const std::string &aCommissionRequest, void *aUserData)
+{
+    WebServer *webServer = static_cast<WebServer *>(aUserData);
+
+    return webServer->HandleCommission(aCommissionRequest);
+}
+
 void WebServer::ResponseJoinNetwork(void)
 {
     HandleHttpRequest(OT_JOIN_NETWORK_PATH, OT_REQUEST_METHOD_POST, HandleJoinNetworkRequest);
@@ -277,6 +286,11 @@ void WebServer::ResponseGetStatus(void)
 void WebServer::ResponseGetAvailableNetwork(void)
 {
     HandleHttpRequest(OT_AVAILABLE_NETWORK_PATH, OT_REQUEST_METHOD_GET, HandleGetAvailableNetworkResponse);
+}
+
+void WebServer::ResponseCommission(void)
+{
+    HandleHttpRequest(OT_COMMISSIONER_START_PATH, OT_REQUEST_METHOD_POST, HandleCommission);
 }
 
 std::string WebServer::HandleJoinNetworkRequest(const std::string &aJoinRequest)
@@ -309,6 +323,11 @@ std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGet
 {
     (void)aGetAvailableNetworkRequest;
     return mWpanService.HandleAvailableNetworkRequest();
+}
+
+std::string WebServer::HandleCommission(const std::string &aCommissionRequest)
+{
+    return mWpanService.HandleCommission(aCommissionRequest);
 }
 
 } // namespace Web

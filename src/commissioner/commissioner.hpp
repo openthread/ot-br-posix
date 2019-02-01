@@ -158,6 +158,14 @@ public:
      */
     void CommissionerSet(const SteeringData &aSteeringData);
 
+    /**
+     * This method gets number of nodes joined through commissioner
+     *
+     * @returns number of JOIN_FIN.rsp messages sent
+     *
+     */
+    int GetNumFinalizedJoiners(void);
+
     ~Commissioner();
 
 private:
@@ -222,6 +230,8 @@ private:
     timeval mLastKeepAliveTime;
     int     mKeepAliveTxCount;
     int     mKeepAliveRxCount;
+
+    int mNumFinializeJoiners;
 
     static const uint16_t kPortJoinerSession;
     static const uint8_t  kSeed[];

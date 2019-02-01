@@ -38,6 +38,9 @@
 namespace ot {
 namespace Web {
 
+const char *WpanService::kBorderAgentHost = "127.0.0.1";
+const char *WpanService::kBorderAgentPort = "49191";
+
 std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinRequest)
 {
     char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1];
@@ -377,6 +380,121 @@ int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aE
 exit:
 
     return status;
+}
+
+std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
+{
+    Json::Value  root;
+    Json::Reader reader;
+    int          ret = ot::Dbus::kWpantundStatus_Ok;
+    std::string  pskd;
+    std::string  passphrase;
+    std::string  response;
+
+    VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
+    pskd       = root["pskd"].asString();
+    passphrase = root["passphrase"].asString();
+
+    response = CommissionDevice(pskd.c_str(), passphrase.c_str());
+exit:
+    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    {
+        root["result"] = mResponseFail;
+        otbrLog(OTBR_LOG_ERR, "error: %d", ret);
+    }
+    return response;
+}
+
+std::string WpanService::CommissionDevice(const char *aPskd, const char *aNetworkPassword)
+{
+    int                            ret = ot::Dbus::kWpantundStatus_Ok;
+    Json::Value                    root, networkInfo;
+    Json::FastWriter               jsonWriter;
+    ot::Dbus::WPANController       wpanController;
+    std::string                    response, networkName, extPanId, propertyValue;
+    BorderRouter::CommissionerArgs args;
+    int                            serviceStatus = GetWpanServiceStatus(networkName, extPanId);
+
+    VerifyOrExit(serviceStatus == kWpanStatus_OK, ret = Dbus::kWpantundStatus_NetworkNotFound);
+    args.mPSKd = aPskd;
+
+    {
+        ot::Psk::Pskc pskc;
+        uint8_t       extPanIdHex[BorderRouter::kXPanIdLength];
+        VerifyOrExit(sizeof(extPanIdHex) == Utils::Hex2Bytes(extPanId.c_str(), extPanIdHex, sizeof(extPanIdHex)),
+                     ret = Dbus::kWpantundStatus_Failure);
+
+        memcpy(args.mPSKc, pskc.ComputePskc(extPanIdHex, networkName.c_str(), aNetworkPassword), sizeof(args.mPSKc));
+    }
+
+    // We allow all joiners for simplicity
+    {
+        int steeringLength = 1;
+        args.mSteeringData.Init(steeringLength);
+        args.mSteeringData.Set();
+    }
+
+    args.mKeepAliveInterval = 15;
+    args.mDebugLevel        = OTBR_LOG_EMERG;
+
+    args.mAgentHost = kBorderAgentHost;
+    args.mAgentPort = kBorderAgentPort;
+
+    RunCommission(args);
+exit:
+    root["error"] = ret;
+    response      = jsonWriter.write(root);
+
+    return response;
+}
+
+int WpanService::RunCommission(BorderRouter::CommissionerArgs aArgs)
+{
+    BorderRouter::Commissioner commissioner(aArgs.mPSKc, aArgs.mKeepAliveInterval);
+    bool                       joinerSetDone = false;
+    int                        ret;
+
+    commissioner.InitDtls(aArgs.mAgentHost, aArgs.mAgentPort);
+
+    do
+    {
+        ret = commissioner.TryDtlsHandshake();
+    } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+
+    if (commissioner.IsValid())
+    {
+        commissioner.CommissionerPetition();
+    }
+
+    while (commissioner.IsValid() && commissioner.GetNumFinalizedJoiners() == 0)
+    {
+        int            maxFd   = -1;
+        struct timeval timeout = {10, 0};
+        int            rval;
+
+        fd_set readFdSet;
+        fd_set writeFdSet;
+        fd_set errorFdSet;
+
+        FD_ZERO(&readFdSet);
+        FD_ZERO(&writeFdSet);
+        FD_ZERO(&errorFdSet);
+        commissioner.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
+        rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
+        if (rval < 0)
+        {
+            otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
+            break;
+        }
+        commissioner.Process(readFdSet, writeFdSet, errorFdSet);
+        if (commissioner.IsCommissionerAccepted() && !joinerSetDone)
+        {
+            commissioner.SetJoiner(aArgs.mPSKd, aArgs.mSteeringData);
+            joinerSetDone = true;
+        }
+    }
+
+    return commissioner.GetNumFinalizedJoiners();
 }
 
 } // namespace Web

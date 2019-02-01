@@ -62,6 +62,8 @@ libotbr_web_la_LIBADD                                           = \
     -lboost_system                                                \
     -lpthread                                                     \
     -ljsoncpp                                                     \
+    $(top_builddir)/src/commissioner/libotbr-commissioner.la      \
+    $(top_builddir)/src/agent/libotbr-agent.la                    \
     $(top_builddir)/src/utils/libutils.la                         \
     $(top_builddir)/src/common/libotbr-logging.la                 \
     $(NULL)
