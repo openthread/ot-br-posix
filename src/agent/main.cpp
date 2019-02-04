@@ -31,13 +31,17 @@
 #endif
 
 #include <errno.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <openthread-system.h>
+
 #include "agent_instance.hpp"
+#include "ncp.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -48,17 +52,24 @@ static const char kDefaultInterfaceName[] = "wpan0";
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 
+jmp_buf gResetJump;
+
+using namespace ot::BorderRouter;
+
 static void HandleSignal(int aSignal)
 {
     signal(aSignal, SIG_DFL);
 }
 
-int Mainloop(const char *aInterfaceName)
+const char *otSysGetNetif(otInstance *aInstance)
+{
+    (void)aInstance;
+    return "wpan0";
+}
+
+int Mainloop(AgentInstance &aInstance)
 {
     int rval = EXIT_FAILURE;
-
-    ot::BorderRouter::AgentInstance instance(aInterfaceName);
-    SuccessOrExit(instance.Init());
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
@@ -67,30 +78,30 @@ int Mainloop(const char *aInterfaceName)
 
     while (true)
     {
-        fd_set         readFdSet;
-        fd_set         writeFdSet;
-        fd_set         errorFdSet;
-        int            maxFd   = -1;
-        struct timeval timeout = kPollTimeout;
+        otSysMainloopContext mainloop;
 
-        FD_ZERO(&readFdSet);
-        FD_ZERO(&writeFdSet);
-        FD_ZERO(&errorFdSet);
+        mainloop.mMaxFd   = -1;
+        mainloop.mTimeout = kPollTimeout;
 
-        instance.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
-        rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
+        FD_ZERO(&mainloop.mReadFdSet);
+        FD_ZERO(&mainloop.mWriteFdSet);
+        FD_ZERO(&mainloop.mErrorFdSet);
 
-        if (rval < 0)
+        aInstance.UpdateFdSet(mainloop);
+
+        if (select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                   &mainloop.mTimeout) >= 0)
+        {
+            aInstance.Process(mainloop);
+        }
+        else
         {
             rval = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
         }
-
-        instance.Process(readFdSet, writeFdSet, errorFdSet);
     }
 
-exit:
     return rval;
 }
 
@@ -101,10 +112,17 @@ void PrintVersion(void)
 
 int main(int argc, char *argv[])
 {
-    const char *interfaceName = kDefaultInterfaceName;
-    int         logLevel      = OTBR_LOG_INFO;
-    int         opt;
-    int         ret = 0;
+    if (setjmp(gResetJump))
+    {
+        alarm(0);
+        execvp(argv[0], argv);
+    }
+
+    int              logLevel = OTBR_LOG_INFO;
+    int              opt;
+    int              ret           = EXIT_SUCCESS;
+    char *           interfaceName = NULL;
+    Ncp::Controller *ncp           = NULL;
 
     while ((opt = getopt(argc, argv, "d:I:v")) != -1)
     {
@@ -125,15 +143,29 @@ int main(int argc, char *argv[])
 
         default:
             fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", argv[0]);
-            ExitNow(ret = -1);
+            ExitNow(ret = EXIT_FAILURE);
             break;
         }
     }
 
+#if OTBR_ENABLE_NCP_WPANTUND
+    ncp = Ncp::Controller::Create(interfaceName);
+#else
+    VerifyOrExit(optind + 1 < argc, ret = EXIT_FAILURE);
+    ncp = Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
+#endif
+    VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
+
     otbrLogInit(kSyslogIdent, logLevel);
+
     otbrLog(OTBR_LOG_INFO, "Starting border router agent on %s...", interfaceName);
 
-    ret = Mainloop(interfaceName);
+    {
+        AgentInstance instance(ncp);
+
+        SuccessOrExit(ret = instance.Init());
+        SuccessOrExit(ret = Mainloop(instance));
+    }
 
     otbrLogDeinit();
 

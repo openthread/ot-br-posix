@@ -29,11 +29,7 @@
 MBEDTLS_CPPFLAGS                                                               = \
     -DMBEDTLS_CONFIG_FILE=\"mbedtls-config.h\"                                   \
     -I$(top_srcdir)/third_party/openthread                                       \
-    -I$(top_srcdir)/third_party/openthread/repo/include                          \
-    -I$(top_srcdir)/third_party/openthread/repo/src/core                         \
-    -I$(top_srcdir)/third_party/openthread/repo/src/posix/platform               \
     -I$(top_srcdir)/third_party/openthread/repo/third_party/mbedtls/repo/include \
-    -I$(top_builddir)/third_party/openthread/build/posix/otbr/include/           \
     $(NULL)
 
 MBEDTLS_LIBS = $(top_builddir)/third_party/openthread/libmbedcrypto.la

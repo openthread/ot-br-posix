@@ -29,6 +29,7 @@
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 include $(top_srcdir)/third_party/openthread/mbedtls.mk
+include $(top_srcdir)/third_party/openthread/openthread.mk
 
 # Temporary disable -Werror for the included third party server_http
 
@@ -56,8 +57,6 @@ noinst_LTLIBRARIES = libotbr-web.la
 
 libotbr_web_la_LIBADD                                           = \
     $(DBUS_LIBS)                                                  \
-    -lavahi-common                                                \
-    -lavahi-client                                                \
     -lboost_filesystem                                            \
     -lboost_system                                                \
     -lpthread                                                     \
@@ -69,6 +68,13 @@ libotbr_web_la_LIBADD                                           = \
     $(NULL)
 
 libotbr_web_la_SOURCES                                          = \
+    web-service/web_server.cpp                                    \
+    web-service/wpan_service.cpp                                  \
+    $(NULL)
+
+
+if OTBR_ENABLE_NCP_WPANTUND
+libotbr_web_la_SOURCES                                         += \
     wpan-controller/dbus_base.cpp                                 \
     wpan-controller/dbus_join.cpp                                 \
     wpan-controller/dbus_set.cpp                                  \
@@ -79,9 +85,14 @@ libotbr_web_la_SOURCES                                          = \
     wpan-controller/dbus_scan.cpp                                 \
     wpan-controller/dbus_ifname.cpp                               \
     wpan-controller/wpan_controller.cpp                           \
-    web-service/web_server.cpp                                    \
-    web-service/wpan_service.cpp                                  \
     $(NULL)
+endif
+
+if OTBR_ENABLE_NCP_OPENTHREAD
+libotbr_web_la_SOURCES                                         += \
+    web-service/ot_client.cpp                                     \
+    $(NULL)
+endif
 
 libotbr_web_la_LDFLAGS                                          = \
     -static                                                       \
@@ -100,6 +111,7 @@ libotbr_web_la_CPPFLAGS                                         = \
     -std=c++11                                                    \
     $(DBUS_CFLAGS)                                                \
     $(MBEDTLS_CPPFLAGS)                                           \
+    $(OPENTHREAD_CPPFLAGS)                                        \
     $(NULL)
 
 jsdir = $(datadir)/border-router/frontend/res/js
@@ -130,6 +142,7 @@ html_DATA                                                      = \
 
 noinst_HEADERS                                                 = \
     utils/encoding.hpp                                           \
+    web-service/ot_client.hpp                                    \
     web-service/web_server.hpp                                   \
     web-service/wpan_service.hpp                                 \
     wpan-controller/dbus_base.hpp                                \

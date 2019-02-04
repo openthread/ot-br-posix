@@ -79,15 +79,19 @@ enum
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
     : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
     , mNcp(aNcp)
+#if OTBR_ENABLE_NCP_WPANTUND
+    , mSocket(-1)
+#endif
     , mThreadStarted(false)
 {
 }
 
 otbrError BorderAgent::Start(void)
 {
-    otbrError           error = OTBR_ERROR_NONE;
-    struct sockaddr_in6 sin6;
+    otbrError error = OTBR_ERROR_NONE;
 
+#if OTBR_ENABLE_NCP_WPANTUND
+    struct sockaddr_in6 sin6;
     memset(&sin6, 0, sizeof(sin6));
     sin6.sin6_family = AF_INET6;
     sin6.sin6_port   = htons(kBorderAgentUdpPort);
@@ -95,6 +99,9 @@ otbrError BorderAgent::Start(void)
     mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
     VerifyOrExit(mSocket != -1, error = OTBR_ERROR_ERRNO);
     SuccessOrExit(bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)));
+
+    mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
+#endif
 
     mNetworkName[sizeof(mNetworkName) - 1] = '\0';
 
@@ -106,19 +113,21 @@ otbrError BorderAgent::Start(void)
     mNcp->RequestEvent(Ncp::kEventExtPanId);
     mNcp->RequestEvent(Ncp::kEventThreadState);
 
-    mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
+    VerifyOrExit(error == OTBR_ERROR_NONE,
+                 otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %s!", otbrErrorString(error)));
 
 exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %s!", otbrErrorString(error));
-    }
-
     return error;
 }
 
 BorderAgent::~BorderAgent(void)
 {
+#if OTBR_ENABLE_NCP_WPANTUND
+    if (mSocket != -1)
+    {
+        close(mSocket);
+    }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 }
 
 void BorderAgent::HandleMdnsState(Mdns::State aState)
@@ -134,6 +143,7 @@ void BorderAgent::HandleMdnsState(Mdns::State aState)
     }
 }
 
+#if OTBR_ENABLE_NCP_WPANTUND
 void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArguments)
 {
     struct sockaddr_in6 sin6;
@@ -163,6 +173,7 @@ void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArgume
 exit:
     return;
 }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 
 void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               fd_set & aWriteFdSet,
@@ -170,27 +181,33 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
-    (void)aWriteFdSet;
     (void)aErrorFdSet;
+    (void)aMaxFd;
+    (void)aReadFdSet;
     (void)aTimeout;
+    (void)aWriteFdSet;
 
+#if OTBR_ENABLE_NCP_WPANTUND
     FD_SET(mSocket, &aReadFdSet);
 
     if (mSocket > aMaxFd)
     {
         aMaxFd = mSocket;
     }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 }
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
+    (void)aErrorFdSet;
+    (void)aReadFdSet;
+    (void)aWriteFdSet;
+
+#if OTBR_ENABLE_NCP_WPANTUND
     uint8_t             packet[kMaxSizeOfPacket];
     struct sockaddr_in6 sin6;
     ssize_t             len     = sizeof(packet);
     socklen_t           socklen = sizeof(sin6);
-
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
 
     VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet));
 
@@ -201,6 +218,7 @@ void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, c
                          kBorderAgentUdpPort);
 
 exit:
+#endif
     return;
 }
 
@@ -254,8 +272,11 @@ void BorderAgent::HandleThreadChange(void)
 
 void BorderAgent::SetThreadStarted(bool aStarted)
 {
-    mThreadStarted = aStarted;
-    HandleThreadChange();
+    if (aStarted != mThreadStarted)
+    {
+        mThreadStarted = aStarted;
+        HandleThreadChange();
+    }
 }
 
 void BorderAgent::SetNetworkName(const char *aNetworkName)

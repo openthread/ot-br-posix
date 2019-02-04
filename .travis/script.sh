@@ -61,6 +61,7 @@ meshcop)
     OT_CLI="ot-cli-mtd" ./script/test meshcop
     OT_CLI="ot-cli-ftd" ./script/test meshcop
     COMMISSIONER_WEB=1 ./script/test meshcop
+    NCP_CONTROLLER=openthread ./script/test meshcop
     ;;
 
 scan-build)

@@ -103,12 +103,9 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
-    static void    SendToCommissioner(void *aContext, int aEvent, va_list aArguments);
-    static ssize_t SendToCommissioner(const uint8_t *aBuffer,
-                                      uint16_t       aLength,
-                                      const uint8_t *aIp6,
-                                      uint16_t       aPort,
-                                      void *         aContext);
+#if OTBR_ENABLE_NCP_WPANTUND
+    static void SendToCommissioner(void *aContext, int aEvent, va_list aArguments);
+#endif
 
     static void HandleMdnsState(void *aContext, Mdns::State aState)
     {
@@ -132,7 +129,9 @@ private:
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
 
-    int     mSocket;
+#if OTBR_ENABLE_NCP_WPANTUND
+    int mSocket;
+#endif
     uint8_t mExtPanId[kSizeExtPanId];
     char    mNetworkName[kSizeNetworkName + 1];
     bool    mThreadStarted;

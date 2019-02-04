@@ -39,6 +39,8 @@
 #include <sys/select.h>
 #include <sys/types.h>
 
+#include <openthread-system.h>
+
 #include "border_agent.hpp"
 #include "ncp.hpp"
 
@@ -56,10 +58,10 @@ public:
     /**
      * The constructor to initialize the Thread border router agent instance.
      *
-     * @param[in]   aInterfaceName  interface name string.
+     * @param[in]   aNcp  A pointer to the NCP controller.
      *
      */
-    AgentInstance(const char *aInterfaceName);
+    AgentInstance(Ncp::Controller *aNcp);
 
     ~AgentInstance(void);
 
@@ -76,24 +78,18 @@ public:
     /**
      * This method updates the file descriptor sets and timeout for mainloop.
      *
-     * @param[inout]  aReadFdSet   A reference to read file descriptors.
-     * @param[inout]  aWriteFdSet  A reference to write file descriptors.
-     * @param[inout]  aErrorFdSet  A reference to error file descriptors.
-     * @param[inout]  aMaxFd       A reference to the max file descriptor.
-     * @param[inout]  aTimeout     A reference to timeout.
+     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void UpdateFdSet(otSysMainloopContext &aMainloop);
 
     /**
      * This method performs processing.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const otSysMainloopContext &aMainloop);
 
 private:
     Ncp::Controller *mNcp;

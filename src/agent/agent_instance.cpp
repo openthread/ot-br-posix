@@ -42,9 +42,9 @@ namespace ot {
 
 namespace BorderRouter {
 
-AgentInstance::AgentInstance(const char *aIfName)
-    : mNcp(Ncp::Controller::Create(aIfName))
-    , mBorderAgent(mNcp)
+AgentInstance::AgentInstance(Ncp::Controller *aNcp)
+    : mNcp(aNcp)
+    , mBorderAgent(aNcp)
 {
 }
 
@@ -65,20 +65,17 @@ exit:
     return error;
 }
 
-void AgentInstance::UpdateFdSet(fd_set & aReadFdSet,
-                                fd_set & aWriteFdSet,
-                                fd_set & aErrorFdSet,
-                                int &    aMaxFd,
-                                timeval &aTimeout)
+void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
-    mNcp->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd);
-    mBorderAgent.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    mNcp->UpdateFdSet(aMainloop);
+    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
+                             aMainloop.mTimeout);
 }
 
-void AgentInstance::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void AgentInstance::Process(const otSysMainloopContext &aMainloop)
 {
-    mNcp->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
-    mBorderAgent.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    mNcp->Process(aMainloop);
+    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
 }
 
 AgentInstance::~AgentInstance(void)
