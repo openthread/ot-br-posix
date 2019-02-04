@@ -225,7 +225,7 @@ ControllerWpantund::ControllerWpantund(const char *aInterfaceName)
     : mDBus(NULL)
 {
     mInterfaceDBusName[0] = '\0';
-    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
+    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName) - 1);
 }
 
 otbrError ControllerWpantund::UpdateInterfaceDBusPath()
