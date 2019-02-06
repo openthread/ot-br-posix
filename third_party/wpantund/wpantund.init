@@ -44,6 +44,7 @@ DESC="thread network interface"
 NAME=wpantund
 DAEMON=/usr/sbin/wpantund
 PIDFILE=/var/run/wpantund.pid
+LOGFILE=/var/log/wpantund.log
 
 . /lib/lsb/init-functions
 . /lib/init/vars.sh
@@ -61,9 +62,9 @@ start_wpantund()
     fi
 
     log_daemon_msg "Starting $DESC" "$NAME"
-    start-stop-daemon --start --quiet \
+    start-stop-daemon --no-close --start --quiet \
         --pidfile $PIDFILE --make-pidfile \
-        -b --exec $DAEMON -- -c /etc/wpantund.conf
+        -b --exec $DAEMON -- -c /etc/wpantund.conf >> $LOGFILE 2>&1
     log_end_msg $?
 
     # wait 5 seconds to setup dbus and tunnel interface
