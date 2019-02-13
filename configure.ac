@@ -336,7 +336,7 @@ AC_MSG_NOTICE([checking required package dependencies])
 # NL_WITH_PACKAGE(...)
 
 AC_ARG_WITH(ncp,
-  AC_HELP_STRING([--with-ncp=NCP_TYPE], [specify the type of NCP implementation: wpantund, openthread @<:@default=openthread@:>@.]),
+  AC_HELP_STRING([--with-ncp=NCP_TYPE], [specify the type of NCP implementation: wpantund, openthread @<:@default=wpantund@:>@.]),
   [with_ncp=${withval}],
   [with_ncp=openthread]
 )

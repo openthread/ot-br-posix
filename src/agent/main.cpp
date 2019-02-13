@@ -61,12 +61,6 @@ static void HandleSignal(int aSignal)
     signal(aSignal, SIG_DFL);
 }
 
-const char *otSysGetNetif(otInstance *aInstance)
-{
-    (void)aInstance;
-    return "wpan0";
-}
-
 int Mainloop(AgentInstance &aInstance)
 {
     int rval = EXIT_FAILURE;
