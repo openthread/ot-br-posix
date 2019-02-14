@@ -29,6 +29,9 @@ matrix:
     - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: gcc
       os: linux
+    - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=avahi-dbus
+      compiler: gcc
+      os: linux
     - env: BUILD_TARGET="meshcop" VERBOSE=1
       os: linux
       addons:

@@ -34,13 +34,19 @@ main() {
     ./bootstrap
     ./configure
     distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
-    if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
-        sudo service avahi-daemon stop
-        sudo mdnsd
-        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage --with-mdns=mDNSResponder' distcleancheck_listfiles="${distcleancheck_listfiles}"
-    else
-        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage' distcleancheck_listfiles="${distcleancheck_listfiles}"
-    fi
+    case "$WITH_MDNS" in
+        mDNSResponder)
+            sudo service avahi-daemon stop
+            sudo mdnsd
+            make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage --with-mdns=mDNSResponder' distcleancheck_listfiles="${distcleancheck_listfiles}"
+            ;;
+        avahi-dbus)
+            make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage --with-mdns=avahi-dbus' distcleancheck_listfiles="${distcleancheck_listfiles}"
+            ;;
+        *)
+            make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage' distcleancheck_listfiles="${distcleancheck_listfiles}"
+            ;;
+    esac
 }
 
 main "$@"

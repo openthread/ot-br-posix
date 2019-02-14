@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2019, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,40 +28,23 @@
 
 /**
  * @file
- *   This file includes definition for MDNS service.
+ *   This file includes definition for MDNS publisher based on avahi-dbus API.
  */
 
-#ifndef MDNS_HPP_
-#define MDNS_HPP_
+#ifndef MDNS_AVAHI_DBUS_HPP_
+#define MDNS_AVAHI_DBUS_HPP_
 
-#include <sys/select.h>
+#include "mdns.hpp"
 
-#include "common/types.hpp"
+#include <vector>
+
+#include <dbus/dbus.h>
 
 namespace ot {
 
 namespace BorderRouter {
 
 namespace Mdns {
-
-/**
- * MDNS state values.
- *
- */
-enum State
-{
-    kStateIdle,  ///< Unable to publishing service.
-    kStateReady, ///< Ready for publishing service.
-};
-
-/**
- * This function pointer is called when MDNS service state changed.
- *
- * @param[in]   aContext        A pointer to application-specific context.
- * @param[in]   aState          The new state.
- *
- */
-typedef void (*StateHandler)(void *aContext, State aState);
 
 /**
  * @addtogroup border-router-mdns
@@ -76,9 +59,24 @@ typedef void (*StateHandler)(void *aContext, State aState);
  * This interface defines the functionality of MDNS service.
  *
  */
-class Publisher
+class PublisherAvahiDBus : public Publisher
 {
 public:
+    /**
+     * The constructor to initialize a Publisher.
+     *
+     * @param[in]   aProtocol           The protocol used for publishing. IPv4, IPv6 or both.
+     * @param[in]   aHost               The name of host residing the services to be published.
+                                        NULL to use default.
+     * @param[in]   aDomain             The domain of the host. NULL to use default.
+     * @param[in]   aHandler            The function to be called when state changes.
+     * @param[in]   aContext            A pointer to application-specific context.
+     *
+     */
+    PublisherAvahiDBus(int aProtocol, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext);
+
+    virtual ~PublisherAvahiDBus(void);
+
     /**
      * This method starts the MDNS service.
      *
@@ -86,13 +84,13 @@ public:
      * @retval OTBR_ERROR_MDNS  Failed to start MDNS service.
      *
      */
-    virtual otbrError Start(void) = 0;
+    otbrError Start(void);
 
     /**
      * This method stops the MDNS service.
      *
      */
-    virtual void Stop(void) = 0;
+    void Stop(void);
 
     /**
      * This method checks if publisher has been started.
@@ -101,7 +99,7 @@ public:
      * @retval false    Not started.
      *
      */
-    virtual bool IsStarted(void) const = 0;
+    bool IsStarted(void) const;
 
     /**
      * This method publishes or updates a service.
@@ -116,7 +114,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...) = 0;
+    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...);
 
     /**
      * This method performs the MDNS processing.
@@ -126,7 +124,7 @@ public:
      * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
      *
      */
-    virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) = 0;
+    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -139,31 +137,27 @@ public:
      *                                  pending process in less than its current value.
      *
      */
-    virtual void UpdateFdSet(fd_set & aReadFdSet,
-                             fd_set & aWriteFdSet,
-                             fd_set & aErrorFdSet,
-                             int &    aMaxFd,
-                             timeval &aTimeout) = 0;
+    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
 
-    virtual ~Publisher(void) {}
+private:
+    enum
+    {
+        kMaxSizeOfTxtRecord = 128,
+    };
 
-    /**
-     * This function creates a MDNS publisher.
-     *
-     * @param[in]   aProtocol           Protocol to use for publishing. AF_INET6, AF_INET or AF_UNSPEC.
-     * @param[in]   aHost               The host where these services is residing on.
-     * @param[in]   aDomain             The domain to register in.
-     * @param[in]   aHandler            The function to be called when this service state changed.
-     * @param[in]   aContext            A pointer to application-specific context.
-     *
-     * @returns A pointer to the newly created MDNS publisher.
-     *
-     */
-    static Publisher *Create(int          aProtocol,
-                             const char * aHost,
-                             const char * aDomain,
-                             StateHandler aHandler,
-                             void *       aContext);
+    otbrError SendCommit(void);
+
+    std::vector<uint16_t> mServices;
+
+    DBusConnection *mDBus;
+    char            mEntryGroupPath[100];
+
+    int          mProtocol;
+    const char * mDomain;
+    const char * mHost;
+    State        mState;
+    StateHandler mStateHandler;
+    void *       mContext;
 };
 
 /**
@@ -176,4 +170,4 @@ public:
 
 } // namespace ot
 
-#endif // MDNS_HPP_
+#endif // MDNS_AVAHI_DBUS_HPP_

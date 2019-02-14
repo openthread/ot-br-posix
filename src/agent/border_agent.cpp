@@ -119,6 +119,10 @@ exit:
 
 BorderAgent::~BorderAgent(void)
 {
+    if (mPublisher != NULL)
+    {
+        delete mPublisher;
+    }
 }
 
 void BorderAgent::HandleMdnsState(Mdns::State aState)

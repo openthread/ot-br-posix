@@ -580,11 +580,6 @@ Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain
     return new PublisherAvahi(aFamily, aHost, aDomain, aHandler, aContext);
 }
 
-void Publisher::Destroy(Publisher *aPublisher)
-{
-    delete static_cast<PublisherAvahi *>(aPublisher);
-}
-
 } // namespace Mdns
 
 } // namespace BorderRouter

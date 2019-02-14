@@ -101,6 +101,12 @@ libotbr_agent_la_LDFLAGS                                     += \
     $(NULL)
 endif
 
+if OTBR_ENABLE_MDNS_AVAHI_DBUS
+libotbr_agent_la_SOURCES                                     += \
+    mdns_avahi_dbus.cpp                                         \
+    $(NULL)
+endif
+
 if OTBR_ENABLE_MDNS_MDNSSD
 libotbr_agent_la_SOURCES                                     += \
     mdns_mdnssd.cpp                                             \
@@ -120,6 +126,7 @@ noinst_HEADERS        = \
     dtls_mbedtls.hpp    \
     mdns.hpp            \
     mdns_avahi.hpp      \
+    mdns_avahi_dbus.hpp \
     mdns_mdnssd.hpp     \
     ncp.hpp             \
     ncp_wpantund.hpp    \

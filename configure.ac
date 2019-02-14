@@ -335,14 +335,17 @@ AC_MSG_NOTICE([checking required package dependencies])
 # NL_WITH_PACKAGE(...)
 
 AC_ARG_WITH(mdns,
-  AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, mDNSResponder @<:@default=avahi@:>@.]),
+  AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, avahi-dbus, mDNSResponder @<:@default=avahi@:>@.]),
   [with_mdns=${withval}],
   [with_mdns=avahi]
 )
 
 case "${with_mdns}" in
 avahi)
-  AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_AVAHI], [1], [Define to 1 if you want to choose avahi to provide mdns])
+  AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_AVAHI], [1], [Define to 1 if you want to choose avahi C API to provide mdns])
+  ;;
+avahi-dbus)
+  AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_AVAHI_DBUS], [1], [Define to 1 if you want to choose avahi d-bus API to provide mdns])
   ;;
 mDNSResponder)
   AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_MDNSSD], [1], [Define to 1 if you want to choose mDNSResponder to provide mdns])
@@ -351,6 +354,7 @@ mDNSResponder)
   AC_MSG_ERROR([Invalid value ${with_mdns} for --with-mdns])
 esac
 AM_CONDITIONAL([OTBR_ENABLE_MDNS_AVAHI], [test "${with_mdns}" = "avahi"])
+AM_CONDITIONAL([OTBR_ENABLE_MDNS_AVAHI_DBUS], [test "${with_mdns}" = "avahi-dbus"])
 AM_CONDITIONAL([OTBR_ENABLE_MDNS_MDNSSD], [test "${with_mdns}" = "mDNSResponder"])
 
 # Check if ctags is present.

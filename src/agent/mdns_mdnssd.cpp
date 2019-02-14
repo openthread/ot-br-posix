@@ -421,11 +421,6 @@ Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain
     return new PublisherMDnsSd(aFamily, aHost, aDomain, aHandler, aContext);
 }
 
-void Publisher::Destroy(Publisher *aPublisher)
-{
-    delete static_cast<PublisherMDnsSd *>(aPublisher);
-}
-
 } // namespace Mdns
 
 } // namespace BorderRouter

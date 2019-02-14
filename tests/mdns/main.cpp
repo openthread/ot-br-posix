@@ -132,7 +132,7 @@ otbrError TestSingleService(void)
     Mainloop(*pub);
 
 exit:
-    Mdns::Publisher::Destroy(pub);
+    delete pub;
     return ret;
 }
 
@@ -146,7 +146,7 @@ otbrError TestMultipleServices(void)
     Mainloop(*pub);
 
 exit:
-    Mdns::Publisher::Destroy(pub);
+    delete pub;
     return ret;
 }
 
@@ -163,7 +163,7 @@ otbrError TestUpdateService(void)
     Mainloop(*pub);
 
 exit:
-    Mdns::Publisher::Destroy(pub);
+    delete pub;
     return ret;
 }
 
@@ -195,7 +195,7 @@ otbrError TestStopService(void)
     Mainloop(*pub);
 
 exit:
-    Mdns::Publisher::Destroy(pub);
+    delete pub;
     return ret;
 }
 
