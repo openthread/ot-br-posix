@@ -284,6 +284,36 @@
               </form>
             </md-content>
         </div>        
+        <div class="demo-charts mdl-color--white  mdl-cell mdl-cell--12-col mdl-shadow--2dp mdl-grid" ng-show="menu[5].show">
+          <h4>Commission</h4>
+            <md-content layout-padding flex="100">
+              <form name="commissionForm">
+                <div layout="row">
+                  <md-input-container flex="100">
+                    <label>Network Passphrase</label>
+                    <input required name="passphrase" ng-model="commission.passphrase">
+                    <div ng-messages="commissionForm.passphrase.$error">
+                      <div ng-message="required">This is required.</div>
+                    </div>
+                  </md-input-container>
+                </div>
+
+                <div layout="row">
+                  <md-input-container flex="100">
+                    <label>Joiner PSKd</label>
+                    <input required name="pskd" ng-model="commission.pskd">
+                    <div ng-messages="commissionForm.pskd.$error">
+                      <div ng-message="required">This is required.</div>
+                    </div>
+                  </md-input-container>
+                </div>
+
+                <div>
+                  <md-button name="commissionButton" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" type="submit" ng-click="startCommission($event)">Start Commission</md-button>
+                </div>
+              </form>
+            </md-content>
+        </div>
       </div>
     </main>
   </div>

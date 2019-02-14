@@ -76,6 +76,11 @@
                 icon: 'settings',
                 show: false,
             },
+            {
+                title: 'Commission',
+                icon: 'add_circle_outline',
+                show: false,
+            },
         ];
 
         $scope.thread = {
@@ -109,12 +114,11 @@
                              wait a moment and retry it.')
                 .ariaLabel('Alert Dialog Demo')
                 .ok('Okay')
-                .targetEvent(ev)
             );
         };
         $scope.showPanels = function(index) {
             $scope.headerTitle = $scope.menu[index].title;
-            for (var i = 0; i < 5; i++) {
+            for (var i = 0; i < 6; i++) {
                 $scope.menu[i].show = false;
             }
             $scope.menu[index].show = true;
@@ -343,6 +347,25 @@
                 });
             }, function() {
                 $mdDialog.cancel();
+            });
+        };
+
+        $scope.startCommission = function(ev) {
+            var data = {
+                pskd: $scope.commission.pskd,
+                passphrase: $scope.commission.passphrase,
+            };
+            var httpRequest = $http({
+                method: 'POST',
+                url: '/commission',
+                data: data,
+            });
+            
+            ev.path[0].disabled = true;
+            
+            httpRequest.then(function successCallback(response) {
+                $scope.showAlert(event, 'Commission result:', response.data.result);
+                ev.path[0].disabled = false;
             });
         };
     };
