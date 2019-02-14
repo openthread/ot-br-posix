@@ -56,7 +56,8 @@ readonly NCP_CONTROLLER="${NCP_CONTROLLER:-wpantund}"
 print_result() {
     local exit_code=0
 
-    if "$@"; then
+    if "$@" &> test.log; then
+        exit_code=$?
         prefix="${COLOR_PASS}PASS${COLOR_NONE}"
     else
         exit_code=$?
@@ -64,6 +65,11 @@ print_result() {
     fi
 
     echo -e "${prefix}" $*
+
+    # only output log on failure
+    if [[ "${exit_code}" != 0 ]]; then
+        cat test.log
+    fi
 
     return ${exit_code}
 }
