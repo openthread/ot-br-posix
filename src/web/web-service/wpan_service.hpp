@@ -143,7 +143,7 @@ public:
      * @param[in]  aIfName  The pointer to the interface name of wpantund.
      *
      */
-    void SetInterfaceName(const char *aIfName) { strncpy(mIfName, aIfName, sizeof(mIfName)); }
+    void SetInterfaceName(const char *aIfName) { if(strlcpy(mIfName, aIfName, sizeof(mIfName)) >= sizeof(mIfName)) otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mIfName"); }
 
     /**
      * This method gets status of wpan service.

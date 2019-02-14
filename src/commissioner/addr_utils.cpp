@@ -32,6 +32,7 @@
  */
 
 #include "addr_utils.hpp"
+#include "common/logging.hpp"
 
 #include <string.h>
 
@@ -53,7 +54,8 @@ char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
         break;
 
     default:
-        strncpy(aOutBuf, "Unknown AF", aLength);
+        if(strlcpy(aOutBuf, "Unknown AF", aLength) >= aLength)
+            otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for aOutBuf");
         return NULL;
     }
 

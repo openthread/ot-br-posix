@@ -157,7 +157,8 @@ void DBusBase::SetDestination(const char *aDestination)
 
     dbus_error_init(&error);
     VerifyOrExit(aDestination != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mDestination, aDestination, sizeof(mDestination));
+    if(strlcpy(mDestination, aDestination, sizeof(mDestination)) >= sizeof(mDestination))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mDestination");
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -178,7 +179,8 @@ void DBusBase::SetInterface(const char *aIface)
 
     dbus_error_init(&error);
     VerifyOrExit(aIface != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mIface, aIface, sizeof(mIface));
+    if(strlcpy(mIface, aIface, sizeof(mIface)) >= sizeof(mIface))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mIface");
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -203,7 +205,8 @@ void DBusBase::SetInterfaceName(const char *aInterfaceName)
 
     dbus_error_init(&error);
     VerifyOrExit(aInterfaceName != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
+    if(strlcpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName)) >= sizeof(mInterfaceName))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mInterfaceName");
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -223,7 +226,8 @@ void DBusBase::SetPath(const char *aPath)
 
     dbus_error_init(&error);
     VerifyOrExit(aPath != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mPath, aPath, sizeof(mPath));
+    if(strlcpy(mPath, aPath, sizeof(mPath)) >= sizeof(mPath))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mPath");
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -243,7 +247,8 @@ void DBusBase::SetDBusName(const char *aDBusName)
 
     dbus_error_init(&error);
     VerifyOrExit(aDBusName != NULL, ret = kWpantundStatus_InvalidDBusName);
-    strncpy(mDBusName, aDBusName, sizeof(mDBusName));
+    if(strlcpy(mDBusName, aDBusName, sizeof(mDBusName)) >= sizeof(mDBusName))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mDBusName");
 exit:
     if (ret != kWpantundStatus_Ok)
     {

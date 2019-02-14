@@ -229,7 +229,8 @@ int DBusGet::GetAllPropertyNames(void)
     {
         char *pName;
         dbus_message_iter_get_basic(&listIter, &pName);
-        strncpy(mPropertyList[propCnt].name, pName, sizeof(mPropertyList[propCnt].name));
+        if(strlcpy(mPropertyList[propCnt].name, pName, sizeof(mPropertyList[propCnt].name)) >= sizeof(mPropertyList[propCnt].name))
+            otbrLog(OTBR_LOG_ERR, "Buffer truncation detected");
         propCnt++;
     }
     return propCnt;
@@ -239,7 +240,8 @@ void DBusGet::GetAllPropertyValues(int propCnt)
 {
     for (int i = 0; i < propCnt; i++)
     {
-        strncpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name), sizeof(mPropertyList[i].value));
+        if(strlcpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name), sizeof(mPropertyList[i].value)) >= sizeof(mPropertyList[i].value))
+            otbrLog(OTBR_LOG_ERR, "Buffer truncation detected");
     }
 }
 

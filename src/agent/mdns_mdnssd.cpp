@@ -337,8 +337,10 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
     {
         Service service;
 
-        strncpy(service.mName, aName, sizeof(service.mName));
-        strncpy(service.mType, aType, sizeof(service.mType));
+        if(strlcpy(service.mName, aName, sizeof(service.mName)) >= sizeof(service.mName))
+            otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for service.mName");
+        if(strlcpy(service.mType, aType, sizeof(service.mType)) >= sizeof(service.mType))
+            otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for service.mType");
         service.mService = aServiceRef;
         mServices.push_back(service);
     }

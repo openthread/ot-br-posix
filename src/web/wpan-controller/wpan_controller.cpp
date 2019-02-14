@@ -242,7 +242,8 @@ exit:
 
 void WPANController::SetInterfaceName(const char *aIfName)
 {
-    strncpy(mIfName, aIfName, sizeof(mIfName));
+    if(strlcpy(mIfName, aIfName, sizeof(mIfName)) >= sizeof(mIfName))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mIfName");
 }
 
 } // namespace Dbus

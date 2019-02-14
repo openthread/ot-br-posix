@@ -65,7 +65,8 @@ static void MBedDebugPrint(void *aCtx, int aLevel, const char *aFile, int aLine,
      */
     char *cp;
 
-    strncpy(buf, aStr, sizeof(buf));
+    if(strlcpy(buf, aStr, sizeof(buf)) >= sizeof(buf))
+        otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for buf");
     cp = strchr(buf, '\n');
     if (cp)
     {

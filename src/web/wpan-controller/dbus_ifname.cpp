@@ -73,7 +73,8 @@ int DBusIfname::ProcessReply(void)
         if ((NULL != aItemInterfaceName) && (NULL != aItemDBusName) &&
             (strcmp(aItemInterfaceName, mInterfaceName) == 0))
         {
-            strncpy(mDBusName, aItemDBusName, DBUS_MAXIMUM_NAME_LENGTH);
+            if(strlcpy(mDBusName, aItemDBusName, DBUS_MAXIMUM_NAME_LENGTH) >= DBUS_MAXIMUM_NAME_LENGTH)
+                otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mDBusName");
             break;
         }
     }

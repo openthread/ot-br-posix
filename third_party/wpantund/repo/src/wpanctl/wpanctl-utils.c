@@ -471,7 +471,9 @@ lookup_dbus_name_from_interface(char* dbus_bus_name, const char* interface_name)
 				&& (NULL != item_dbus_name)
 				&& (strcmp(item_interface_name, interface_name) == 0)
 			) {
-				strncpy(dbus_bus_name, item_dbus_name, DBUS_MAXIMUM_NAME_LENGTH);
+				if(strlcpy(dbus_bus_name, item_dbus_name, DBUS_MAXIMUM_NAME_LENGTH) >= DBUS_MAXIMUM_NAME_LENGTH)
+                                    fprintf(stderr,
+				            "Buffer truncation detected for dbus_bus_name\n");
 				ret = 0;
 				break;
 			}

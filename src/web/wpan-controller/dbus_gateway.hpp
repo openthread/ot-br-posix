@@ -59,8 +59,8 @@ public:
     void SetPrefix(const char *aPrefix) { mPrefix = aPrefix; }
     void SetAddressString(const char *aAddressString)
     {
-        strncpy(mAddressString, aAddressString, strlen(aAddressString));
-        mAddressString[strlen(aAddressString)] = '\0';
+        if(strlcpy(mAddressString, aAddressString, sizeof(mAddressString)) >= sizeof(mAddressString))
+            otbrLog(OTBR_LOG_ERR, "Buffer truncation detected for mAddressString");
     }
     void SetPrefixBytes(uint8_t *aPrefixBytes) { memcpy(mPrefixBytes, aPrefixBytes, sizeof(mPrefixBytes)); }
     void SetAddr(uint8_t *aAddr) { mAddr = aAddr; }
