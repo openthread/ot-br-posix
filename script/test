@@ -96,6 +96,7 @@ do_build() {
 }
 
 do_clean() {
+    make clean
     make distclean
 }
 

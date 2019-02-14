@@ -469,7 +469,7 @@ commissioner_start()
 web_commissioner_start()
 {
   curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "http://127.0.0.1:8773/commission"&
-  sleep 30
+  sleep 15
 }
 
 joiner_start()
