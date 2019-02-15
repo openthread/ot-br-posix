@@ -31,7 +31,6 @@
 #include <algorithm>
 
 #include <assert.h>
-#include <avahi-client/publish.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,6 +51,18 @@ namespace ot {
 namespace BorderRouter {
 
 namespace Mdns {
+
+enum
+{
+    AVAHI_PROTO_UNSPEC = -1,
+    AVAHI_PROTO_INET   = 0,
+    AVAHI_PROTO_INET6  = 1,
+};
+
+enum
+{
+    AVAHI_IF_UNSPEC = -1
+};
 
 static void HandleDBusError(DBusError &aError)
 {
