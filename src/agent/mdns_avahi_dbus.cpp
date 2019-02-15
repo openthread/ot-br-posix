@@ -30,6 +30,7 @@
 
 #include <algorithm>
 
+#include <assert.h>
 #include <avahi-client/publish.h>
 #include <errno.h>
 #include <stdio.h>
@@ -113,7 +114,10 @@ otbrError PublisherAvahiDBus::Start(void)
     dbus_message_iter_get_basic(&iter, &entryGroupPath);
 
     strcpy(mEntryGroupPath, entryGroupPath);
+
+    mState = kStateReady;
     mStateHandler(mContext, kStateReady);
+    SuccessOrExit(ret = SendCommit());
 
     ret = OTBR_ERROR_NONE;
 
@@ -123,12 +127,26 @@ exit:
         HandleDBusError(error);
     }
 
+    if (reply != NULL)
+    {
+        dbus_message_unref(reply);
+    }
+
     if (message != NULL)
     {
         dbus_message_unref(message);
     }
 
-    // do we need to free the connectioni on failure?
+    if (ret != OTBR_ERROR_NONE)
+    {
+        if (mDBus)
+        {
+            dbus_connection_unref(mDBus);
+            mDBus = NULL;
+        }
+        otbrLog(OTBR_LOG_ERR, "NCP failed to initialize!");
+    }
+
     return ret;
 }
 
@@ -145,9 +163,8 @@ void PublisherAvahiDBus::Stop(void)
 
     if (mEntryGroupPath[0] != '\0')
     {
-        DBusMessage *message = NULL;
-
-        message = dbus_message_new_method_call(kAvahiDBusName, mEntryGroupPath, kAvahiDBusInterfaceEntryGroup, "Free");
+        DBusMessage *message =
+            dbus_message_new_method_call(kAvahiDBusName, mEntryGroupPath, kAvahiDBusInterfaceEntryGroup, "Free");
 
         if (message != NULL)
         {
@@ -157,6 +174,9 @@ void PublisherAvahiDBus::Stop(void)
 
         mEntryGroupPath[0] = '\0';
     }
+
+    mState = kStateIdle;
+    mStateHandler(mContext, mState);
 
 exit:
     return;
@@ -178,14 +198,25 @@ void PublisherAvahiDBus::UpdateFdSet(fd_set & aReadFdSet,
 otbrError PublisherAvahiDBus::SendCommit(void)
 {
     DBusMessage *message = NULL;
+    DBusMessage *reply   = NULL;
     otbrError    ret     = OTBR_ERROR_ERRNO;
+    DBusError    error;
 
     message = dbus_message_new_method_call(kAvahiDBusName, mEntryGroupPath, kAvahiDBusInterfaceEntryGroup, "Commit");
 
-    VerifyOrExit(dbus_connection_send(mDBus, message, NULL), errno = ENOMEM);
+    dbus_error_init(&error);
+    reply = dbus_connection_send_with_reply_and_block(mDBus, message, kDefaultTimeout, &error);
+    VerifyOrExit(!dbus_error_is_set(&error));
+    assert(reply != NULL);
+
     ret = OTBR_ERROR_NONE;
 
 exit:
+    if (reply != NULL)
+    {
+        dbus_message_unref(reply);
+    }
+
     if (message != NULL)
     {
         dbus_message_unref(message);
@@ -203,6 +234,8 @@ otbrError PublisherAvahiDBus::PublishService(uint16_t aPort, const char *aName, 
     otbrError    ret = OTBR_ERROR_DBUS;
 
     va_start(args, aType);
+
+    VerifyOrExit(mState == kStateReady, errno = EAGAIN);
 
     isAdd   = (std::find(mServices.begin(), mServices.end(), aPort) == mServices.end());
     message = dbus_message_new_method_call(kAvahiDBusName, mEntryGroupPath, kAvahiDBusInterfaceEntryGroup,
@@ -256,9 +289,8 @@ otbrError PublisherAvahiDBus::PublishService(uint16_t aPort, const char *aName, 
 
     dbus_error_init(&error);
     reply = dbus_connection_send_with_reply_and_block(mDBus, message, kDefaultTimeout, &error);
-    VerifyOrExit(reply != NULL);
-
-    SuccessOrExit(ret = SendCommit());
+    VerifyOrExit(!dbus_error_is_set(&error));
+    assert(reply != NULL);
 
     mServices.push_back(aPort);
 
