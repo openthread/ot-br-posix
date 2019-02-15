@@ -107,10 +107,9 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
     case DBUS_TYPE_INT16:
     {
         int16_t v;
-        char    temp[5];
+        char    temp[7];
         dbus_message_iter_get_basic(aIter, &v);
-        int vLen = floor(log10(abs(v))) + 2;
-        snprintf(temp, vLen, "%d", v);
+        snprintf(temp, sizeof(temp), "%d", v);
         strcat(aOutput, temp);
         break;
     }
@@ -127,9 +126,9 @@ static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent,
     case DBUS_TYPE_BOOLEAN:
     {
         dbus_bool_t v;
-        char        temp[6];
+        char        temp[7];
         dbus_message_iter_get_basic(aIter, &v);
-        snprintf(temp, 6, "%s", v ? "true" : "false");
+        snprintf(temp, sizeof(temp), "%s", v ? "true" : "false");
         strcat(aOutput, temp);
         break;
     }
