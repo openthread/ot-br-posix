@@ -186,7 +186,7 @@ exit:
     return rval;
 }
 
-bool Client::FactoryReset()
+bool Client::FactoryReset(void)
 {
     const char *result;
     bool        rval = false;
@@ -198,6 +198,7 @@ bool Client::FactoryReset()
     VerifyOrExit(result != NULL);
 
     rval = strstr(result, "OPENTHREAD") != NULL;
+
 exit:
     return rval;
 }
