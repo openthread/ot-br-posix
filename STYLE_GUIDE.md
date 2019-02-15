@@ -122,8 +122,7 @@
 - Names shall not give any idea of type, such as is done with System Hungarian notation.
 - Case
   - C preprocessor symbols should be all uppercase.
-  - All OpenThread names in the C language shall be in *snake case*.
-  - All OpenThread class, namespace, structure, method, function, enumeration, and type names in the C++ language shall be in *upper camel case*.  Exception: the top level OpenThread namespace 'ot'.
+  - All OpenThread class, namespace, structure, method, function, enumeration, and type names in the C/C++ language shall be in *upper camel case*.  Exception: the top level OpenThread namespace 'ot'.
   - All OpenThread instantiated names of instances of classes, namespaces, structures, methods, functions, enumerations, and types as well as method and function parameters in the C++ language shall be in *lower camel case*.
 - Symbol Qualification
   - All OpenThread C public data types and free functions should have `ot` prepended to their name.
@@ -171,7 +170,7 @@
 
 ## Standards
 
-- OpenThread uses and enfores both Python 2 and Python 3.  Support for Python 2 is a result of the fact that some current Linux distributions and Macs are still using 2.x as default.
+- OpenThread uses and enforces both Python 2 and Python 3.  Support for Python 2 is a result of the fact that some current Linux distributions and Macs are still using 2.x as default.
 
 ## Conventions and Best Practices
 
