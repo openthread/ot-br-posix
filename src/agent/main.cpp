@@ -136,7 +136,12 @@ int main(int argc, char *argv[])
             break;
 
         default:
+#if OTBR_ENABLE_NCP_WPANTUND
             fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", argv[0]);
+#else
+            fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] [RADIO_DEVICE] [RADIO_CONFIG]\n",
+                    argv[0]);
+#endif
             ExitNow(ret = EXIT_FAILURE);
             break;
         }
