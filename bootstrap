@@ -37,7 +37,7 @@
 
 # Set this to the relative location of nlbuild-autotools to this script
 
-nlbuild_autotools_stem="third_party/nlbuild-autotools/repo"
+nlbuild_autotools_stem="third_party/openthread/repo/third_party/nlbuild-autotools/repo"
 
 # Establish some key directories
 
