@@ -31,18 +31,10 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef NCP_HPP_
-#define NCP_HPP_
+#ifndef NCP_POSIX_HPP_
+#define NCP_POSIX_HPP_
 
-#if HAVE_CONFIG_H
-#include "otbr-config.h"
-#endif
-
-#include <netinet/in.h>
-#include <openthread-system.h>
-
-#include "common/event_emitter.hpp"
-#include "common/types.hpp"
+#include "ncp.hpp"
 
 namespace ot {
 
@@ -51,57 +43,29 @@ namespace BorderRouter {
 namespace Ncp {
 
 /**
- * @addtogroup border-router-ncp
- *
- * @brief
- *   This module includes definition for NCP service.
- *
- * @{
- */
-
-/**
- * NCP Events definition according to spinel protocol.
- *
- */
-enum
-{
-    kEventExtPanId,         ///< Extended PAN ID arrived.
-    kEventNetworkName,      ///< Network name arrived.
-    kEventPSKc,             ///< PSKc arrived.
-    kEventThreadState,      ///< Thread State.
-    kEventUdpForwardStream, ///< UDP forward stream arrived.
-};
-
-/**
  * This interface defines NCP Controller functionality.
  *
  */
-class Controller : public EventEmitter
+class ControllerOpenThread : public Controller
 {
 public:
+    /**
+     * This constructor initializes this object.
+     *
+     * @param[in]   aInterfaceName  A string of the NCP interface name.
+     * @param[in]   aRadioFile      A string of the NCP device file, which can be serial device or executables.
+     * @param[in]   aRadioConfig    A string of the NCP device parameters.
+     *
+     */
+    ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig);
+
     /**
      * This method initalize the NCP controller.
      *
      * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
-     * @retval  OTBR_ERROR_DBUS     Failed due to dbus error.
      *
      */
-    virtual otbrError Init(void) = 0;
-
-#if OTBR_ENABLE_NCP_WPANTUND
-    /**
-     * This method sends a packet through UDP forward service.
-     *
-     * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
-     * @retval  OTBR_ERROR_ERRNO        Failed to send the packet.
-     *
-     */
-    virtual otbrError UdpForwardSend(const uint8_t * aBuffer,
-                                     uint16_t        aLength,
-                                     uint16_t        aPeerPort,
-                                     const in6_addr &aPeerAddr,
-                                     uint16_t        aSockPort) = 0;
-#endif // OTBR_ENABLE_NCP_WPANTUND
+    virtual otbrError Init(void);
 
     /**
      * This method updates the fd_set to poll.
@@ -109,7 +73,7 @@ public:
      * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    virtual void UpdateFdSet(otSysMainloopContext &aMainloop) = 0;
+    virtual void UpdateFdSet(otSysMainloopContext &aMainloop);
 
     /**
      * This method performs the DTLS processing.
@@ -117,7 +81,7 @@ public:
      * @param[in]       aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    virtual void Process(const otSysMainloopContext &aMainloop) = 0;
+    virtual void Process(const otSysMainloopContext &aMainloop);
 
     /**
      * This method request the event.
@@ -128,27 +92,18 @@ public:
      * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
      *
      */
-    virtual otbrError RequestEvent(int aEvent) = 0;
+    virtual otbrError RequestEvent(int aEvent);
 
-    /**
-     * This method creates a NCP Controller.
-     *
-     * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aRadioFile      A string of the NCP device file, which can be serial device or executables.
-     * @param[in]   aRadioConfig    A string of the NCP device parameters.
-     *
-     */
-    static Controller *Create(const char *aInterfaceName, char *aRadioFile = NULL, char *aRadioConfig = NULL);
+    virtual ~ControllerOpenThread(void);
 
-    /**
-     * This method destroys a NCP Controller.
-     *
-     * @param[in]   aController     A pointer to the NCP contorller.
-     *
-     */
-    static void Destroy(Controller *aController) { delete aController; }
+private:
+    static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
+    {
+        static_cast<ControllerOpenThread *>(aContext)->HandleStateChanged(aFlags);
+    }
+    void HandleStateChanged(otChangedFlags aFlags);
 
-    virtual ~Controller(void) {}
+    otInstance *mInstance;
 };
 
 } // namespace Ncp
@@ -157,4 +112,4 @@ public:
 
 } // namespace ot
 
-#endif // NCP_HPP_
+#endif // NCP_POSIX_HPP_

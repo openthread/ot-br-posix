@@ -39,6 +39,8 @@ readonly COLOR_NONE='\033[0m'
 
 readonly BUILD_JOBS=$(getconf _NPROCESSORS_ONLN)
 
+readonly NCP_CONTROLLER="${NCP_CONTROLLER:-wpantund}"
+
 #######################################
 # Run test and print result.
 # Globals:
@@ -54,7 +56,8 @@ readonly BUILD_JOBS=$(getconf _NPROCESSORS_ONLN)
 print_result() {
     local exit_code=0
 
-    if "$@"; then
+    if "$@" &> test.log; then
+        exit_code=$?
         prefix="${COLOR_PASS}PASS${COLOR_NONE}"
     else
         exit_code=$?
@@ -62,6 +65,11 @@ print_result() {
     fi
 
     echo -e "${prefix}" $*
+
+    # only output log on failure
+    if [[ "${exit_code}" != 0 ]]; then
+        cat test.log
+    fi
 
     return ${exit_code}
 }
@@ -83,11 +91,12 @@ EOF
 }
 
 do_build() {
-    ./configure --prefix= --exec-prefix=/usr --disable-docs
+    ./configure --prefix= --exec-prefix=/usr --disable-docs --with-ncp="${NCP_CONTROLLER}"
     make -j${BUILD_JOBS}
 }
 
 do_clean() {
+    make clean
     make distclean
 }
 

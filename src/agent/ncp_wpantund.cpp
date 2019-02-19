@@ -45,6 +45,8 @@ extern "C" {
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
+#if OTBR_ENABLE_NCP_WPANTUND
+
 namespace ot {
 
 namespace BorderRouter {
@@ -353,7 +355,7 @@ exit:
     return ret;
 }
 
-void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd)
+void ControllerWpantund::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
     DBusWatch *  watch = NULL;
     unsigned int flags;
@@ -377,24 +379,24 @@ void ControllerWpantund::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd
 
         if (flags & DBUS_WATCH_READABLE)
         {
-            FD_SET(fd, &aReadFdSet);
+            FD_SET(fd, &aMainloop.mReadFdSet);
         }
 
         if ((flags & DBUS_WATCH_WRITABLE) && dbus_connection_has_messages_to_send(mDBus))
         {
-            FD_SET(fd, &aWriteFdSet);
+            FD_SET(fd, &aMainloop.mWriteFdSet);
         }
 
-        FD_SET(fd, &aErrorFdSet);
+        FD_SET(fd, &aMainloop.mErrorFdSet);
 
-        if (fd > aMaxFd)
+        if (fd > aMainloop.mMaxFd)
         {
-            aMaxFd = fd;
+            aMainloop.mMaxFd = fd;
         }
     }
 }
 
-void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void ControllerWpantund::Process(const otSysMainloopContext &aMainloop)
 {
     DBusWatch *  watch = NULL;
     unsigned int flags;
@@ -416,17 +418,17 @@ void ControllerWpantund::Process(const fd_set &aReadFdSet, const fd_set &aWriteF
             continue;
         }
 
-        if ((flags & DBUS_WATCH_READABLE) && !FD_ISSET(fd, &aReadFdSet))
+        if ((flags & DBUS_WATCH_READABLE) && !FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
             flags &= static_cast<unsigned int>(~DBUS_WATCH_READABLE);
         }
 
-        if ((flags & DBUS_WATCH_WRITABLE) && !FD_ISSET(fd, &aWriteFdSet))
+        if ((flags & DBUS_WATCH_WRITABLE) && !FD_ISSET(fd, &aMainloop.mWriteFdSet))
         {
             flags &= static_cast<unsigned int>(~DBUS_WATCH_WRITABLE);
         }
 
-        if (FD_ISSET(fd, &aErrorFdSet))
+        if (FD_ISSET(fd, &aMainloop.mErrorFdSet))
         {
             flags |= DBUS_WATCH_ERROR;
         }
@@ -510,14 +512,12 @@ exit:
     return ret;
 }
 
-Controller *Controller::Create(const char *aInterfaceName)
+Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
 {
-    return new ControllerWpantund(aInterfaceName);
-}
+    (void)aRadioFile;
+    (void)aRadioConfig;
 
-void Controller::Destroy(Controller *aController)
-{
-    delete static_cast<ControllerWpantund *>(aController);
+    return new ControllerWpantund(aInterfaceName);
 }
 
 } // namespace Ncp
@@ -525,3 +525,5 @@ void Controller::Destroy(Controller *aController)
 } // namespace BorderRouter
 
 } // namespace ot
+
+#endif // OTBR_ENABLE_NCP_WPANTUND

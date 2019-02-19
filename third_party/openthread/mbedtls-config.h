@@ -31,10 +31,8 @@
 
 #define MBEDTLS_DEBUG_C
 
-/* System support */
 #define MBEDTLS_HAVE_ASM
 
-/* mbed TLS feature support */
 #define MBEDTLS_AES_ROM_TABLES
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #define MBEDTLS_ECP_NIST_OPTIM
@@ -46,7 +44,6 @@
 #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
 #define MBEDTLS_SSL_EXPORT_KEYS
 
-/* mbed TLS modules */
 #define MBEDTLS_AES_C
 #define MBEDTLS_ASN1_PARSE_C
 #define MBEDTLS_ASN1_WRITE_C
@@ -64,25 +61,23 @@
 #define MBEDTLS_PK_C
 #define MBEDTLS_PK_PARSE_C
 #define MBEDTLS_SHA256_C
+#define MBEDTLS_SHA256_SMALLER
 #define MBEDTLS_SSL_COOKIE_C
 #define MBEDTLS_SSL_CLI_C
 #define MBEDTLS_SSL_SRV_C
 #define MBEDTLS_SSL_TLS_C
 
-/* For tests using ssl-opt.sh */
 #define MBEDTLS_NET_C
 #define MBEDTLS_TIMING_C
 
-/* Save RAM at the expense of ROM */
 #define MBEDTLS_AES_ROM_TABLES
 
-/* Save RAM by adjusting to our exact needs */
 #define MBEDTLS_ECP_MAX_BITS 256
-#define MBEDTLS_MPI_MAX_SIZE 32 // 256 bits is 32 bytes
+#define MBEDTLS_MPI_MAX_SIZE 32
+#define MBEDTLS_SSL_MAX_CONTENT_LEN 900
 
-/* Save ROM and a few bytes of RAM by specifying our own ciphersuite list */
 #define MBEDTLS_SSL_CIPHERSUITES MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8
 
 #include "mbedtls/check_config.h"
 
-#endif /* MBEDTLS_CONFIG_H */
+#endif // OTBR_MBEDTLS_CONFIG_H_

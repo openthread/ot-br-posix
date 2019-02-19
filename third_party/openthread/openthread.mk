@@ -28,17 +28,17 @@
 
 OPENTHREAD_CPPFLAGS                                                        = \
     -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
+    -I$(top_srcdir)/third_party/openthread                                   \
+    -I$(top_srcdir)/third_party/openthread/repo/include                      \
+    -I$(top_srcdir)/third_party/openthread/repo/src/posix/platform           \
     $(NULL)
 
-PRIVATE_OPENTHREAD_CPPFLAGS              = \
-    $(CPPFLAGS)                            \
-    -I$(top_srcdir)/third_party/openthread \
+OPENTHREAD_LIBS = \
+    $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-cli-ftd.a \
+    $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-diag.a \
+    $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-ftd.a \
+    $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-posix.a \
     $(NULL)
-
-OPENTHREAD_CONFIG_FILE = build/posix/otbr/include/openthread-config-generic.h
-
-$(OPENTHREAD_CONFIG_FILE):
-	CPPFLAGS="$(PRIVATE_OPENTHREAD_CPPFLAGS)" make -f $(srcdir)/repo/src/posix/Makefile-posix BORDER_AGENT=1 BORDER_ROUTER=1 DISABLE_BUILTIN_MBEDTLS=1 DISABLE_EXECUTABLE=0 JOINER=1 PLATFORM_NETIF=1 PLATFORM_UDP=1 TargetTuple=otbr configure
 
 clean-local-openthread:
 	-rm -rf build output

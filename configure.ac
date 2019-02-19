@@ -292,6 +292,7 @@ AM_CONDITIONAL([OTBR_BUILD_TESTS], [test "${nl_cv_build_tests}" = "yes"])
 NL_ENABLE_DOCS([auto],[NO])
 
 AM_CONDITIONAL(OTBR_BUILD_DOCS, [test "${nl_cv_build_docs}" = "yes"])
+
 #
 # Web Service
 #
@@ -333,6 +334,26 @@ AM_CONDITIONAL([OTBR_ENABLE_WEB_SERVICE], [test "${enable_web_service}" = "yes"]
 AC_MSG_NOTICE([checking required package dependencies])
 
 # NL_WITH_PACKAGE(...)
+
+AC_ARG_WITH(ncp,
+  AC_HELP_STRING([--with-ncp=NCP_TYPE], [specify the type of NCP implementation: wpantund, openthread @<:@default=wpantund@:>@.]),
+  [with_ncp=${withval}],
+  [with_ncp=wpantund]
+)
+
+case "${with_ncp}" in
+openthread)
+  AC_DEFINE_UNQUOTED([OTBR_ENABLE_NCP_OPENTHREAD], [1], [Define to 1 if you want to choose wpantund to manage NCP])
+  ;;
+wpantund)
+  AC_DEFINE_UNQUOTED([OTBR_ENABLE_NCP_WPANTUND], [1], [Define to 1 if you want to choose openthread to manage NCP])
+  ;;
+*)
+  AC_MSG_ERROR([Invalid value ${with_ncp} for --with-ncp])
+esac
+
+AM_CONDITIONAL([OTBR_ENABLE_NCP_OPENTHREAD], [test "${with_ncp}" = "openthread"])
+AM_CONDITIONAL([OTBR_ENABLE_NCP_WPANTUND], [test "${with_ncp}" = "wpantund"])
 
 AC_ARG_WITH(mdns,
   AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, mDNSResponder @<:@default=avahi@:>@.]),

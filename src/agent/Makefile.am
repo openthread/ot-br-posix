@@ -29,6 +29,7 @@
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 include $(top_srcdir)/third_party/openthread/mbedtls.mk
+include $(top_srcdir)/third_party/openthread/openthread.mk
 
 sbin_PROGRAMS=otbr-agent
 
@@ -40,12 +41,25 @@ otbr_agent_LDADD     = \
     libotbr-agent.la   \
     $(NULL)
 
+if OTBR_ENABLE_NCP_OPENTHREAD
+otbr_agent_LDADD    += \
+    $(OPENTHREAD_LIBS) \
+    -lutil             \
+    $(NULL)
+endif
+
+otbr_agent_LDADD    += \
+    $(MBEDTLS_LIBS)    \
+    $(NULL)
+
 otbr_agent_LDFLAGS = \
     -static          \
     $(NULL)
 
-otbr_agent_CPPFLAGS    = \
-    -I$(top_srcdir)/src  \
+otbr_agent_CPPFLAGS         = \
+    -I$(top_srcdir)/src       \
+    $(MBEDTLS_CPPFLAGS)       \
+    $(OPENTHREAD_CPPFLAGS)    \
     $(NULL)
 
 noinst_LTLIBRARIES = libotbr-agent.la
@@ -59,6 +73,7 @@ libotbr_agent_la_SOURCES                                      = \
     border_agent.cpp                                            \
     coap_libcoap.cpp                                            \
     dtls_mbedtls.cpp                                            \
+    ncp_openthread.cpp                                          \
     ncp_wpantund.cpp                                            \
     $(NULL)
 
@@ -69,6 +84,7 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
     $(top_builddir)/src/utils/libutils.la                       \
     $(DBUS_LIBS)                                                \
+    $(MBEDTLS_LIBS)                                             \
     $(NULL)
 
 libotbr_agent_la_LDFLAGS = \
@@ -88,6 +104,7 @@ libotbr_agent_la_CPPFLAGS                                                  = \
     -I$(top_srcdir)/third_party/wpantund/repo/third_party/openthread/src/ncp \
     $(DBUS_CFLAGS)                                                           \
     $(MBEDTLS_CPPFLAGS)                                                      \
+    $(OPENTHREAD_CPPFLAGS)                                                   \
     $(NULL)
 
 if OTBR_ENABLE_MDNS_AVAHI
@@ -122,6 +139,7 @@ noinst_HEADERS        = \
     mdns_avahi.hpp      \
     mdns_mdnssd.hpp     \
     ncp.hpp             \
+    ncp_openthread.hpp  \
     ncp_wpantund.hpp    \
     libcoap.h           \
     uris.hpp            \

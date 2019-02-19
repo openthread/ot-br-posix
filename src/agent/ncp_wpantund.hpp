@@ -70,7 +70,7 @@ public:
      * This method initalize the NCP controller.
      *
      * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
-     * @retval  OTBR_ERROR_DBUS     Failed due to dbus error.
+     * @retval  OTBR_ERROR_NCP      Failed due to NCP's internal error.
      *
      */
     otbrError Init(void);
@@ -97,7 +97,7 @@ public:
      * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
      *
      */
-    virtual void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd);
+    virtual void UpdateFdSet(otSysMainloopContext &aMainloop);
 
     /**
      * This method performs the DTLS processing.
@@ -107,7 +107,7 @@ public:
      * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
      *
      */
-    virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    virtual void Process(const otSysMainloopContext &aMainloop);
 
     /**
      * This method request the event.

@@ -41,11 +41,13 @@ readonly SCRIPT_DIR="$(cd "$(dirname $0)" && pwd)"
 # Configurations
 #---------------------------------------
 readonly OT_NCP="${OT_NCP:-ot-ncp-ftd}"
+readonly OT_RADIO="ot-ncp-radio"
 readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
 readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly NO_CLEAN="${NO_CLEAN:-1}"
 readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
+readonly NCP_CONTROLLER="${NCP_CONTROLLER:-wpantund}"
 
 #----------------------------------------
 # Test constants
@@ -60,11 +62,12 @@ readonly OTBR_COMMISSIONER=otbr-commissioner
 readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
 readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
-readonly OT_NCP_PATH="${STAGE_DIR}/usr/bin/${OT_NCP}"
-readonly OT_CLI_PATH="${STAGE_DIR}/usr/bin/${OT_CLI}"
 readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
+readonly OT_CLI_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_CLI}"
+readonly OT_NCP_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_NCP}"
+readonly OT_RADIO_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_RADIO}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 
@@ -92,8 +95,8 @@ readonly OT_NETWORK_NAME=MyTestNetwork
 readonly OT_AGENT_IPADDR='127.0.0.1'
 readonly OT_AGENT_IPPORT=49191
 
-# The TUN device for wpantund.
-readonly TUN_NAME=wpan9
+# The TUN device for OpenThread border router.
+readonly TUN_NAME=wpan0
 
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"
 echo "TEST_BASE: ${TEST_BASE}"
@@ -195,26 +198,28 @@ build_dependencies()
   [[ -d "${STAGE_DIR}" ]] || mkdir -p "${STAGE_DIR}"
   [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
 
-  if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}"; then
-    wpantund="${WPANTUND}"
-  else
-    checkout_wpantund
-    configure_wpantund
-    compile_wpantund
-    wpantund="${WPANTUND_PATH}"
-  fi
-
   # As above, these steps are broken up
   if [[ "${IGNORE_INSTALLED}" = 0 ]] && which "${OT_NCP}" && which "${OT_CLI}"; then
     ot_ncp="${OT_NCP}"
     ot_cli="${OT_CLI}"
+    ot_radio="${OT_RADIO}"
   else
-    checkout_openthread
-    configure_openthread
     compile_openthread
     ot_ncp="${OT_NCP_PATH}"
     ot_cli="${OT_CLI_PATH}"
+    ot_radio="${OT_RADIO_PATH}"
   fi
+
+  [[ "${DEAMON}" == 1 ]] || {
+    if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}"; then
+      wpantund="${WPANTUND}"
+    else
+      checkout_wpantund
+      configure_wpantund
+      compile_wpantund
+      wpantund="${WPANTUND_PATH}"
+    fi
+  }
 
   write_syslog "TEST: BUILD COMPLETE"
 }
@@ -316,77 +321,17 @@ compile_wpantund()
   fi
 }
 
-checkout_openthread()
-{
-  cd "${BUILD_DIR}"
-
-  [[ -d 'openthread' ]] || git clone --depth 1 https://github.com/openthread/openthread.git
-}
-
 compile_openthread()
 {
-  make -C "${BUILD_DIR}/openthread" -j 20 all
-  make -C "${BUILD_DIR}/openthread" -j 20 install DESTDIR="${STAGE_DIR}"
-
+  (cd "${ABS_TOP_BUILDDIR}/third_party/openthread" && make -f repo/examples/Makefile-posix TargetTuple=otbr)
   executable_or_die "${OT_NCP_PATH}"
   executable_or_die "${OT_CLI_PATH}"
-}
-
-configure_openthread()
-{
-  set -x
-
-  cd "${BUILD_DIR}/openthread"
-
-  if [[ "${NO_CLEAN}" = 1 && -f Makefile ]]; then
-    echo 'Skip configure openthread'
-    return 0
-  fi
-
-  local log_flags
-  # It is helpful to have logs enabled during testing ..
-  log_flags=''
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_DEBG"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_API=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_ARP=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_CLI=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_COAP=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_ICMP=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_IP6=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_MAC=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_MEM=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_MLE=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_NETDATA=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_NETDIAG=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_PKT_DUMP=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_PLATFORM=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_PREPEND_LEVEL=1"
-  log_flags="${log_flags} -DOPENTHREAD_CONFIG_LOG_PREPEND_REGION=1"
-
-  ./bootstrap
-
-  CFLAGS="${CFLAGS} -g -O0 ${log_flags}" CXXFLAGS="${CFLAGS} -g -O0 ${log_flags}" \
-    ./configure \
-    --prefix=/usr \
-    --disable-docs \
-    --enable-border-agent \
-    --enable-border-router \
-    --enable-cli \
-    --enable-debug \
-    --enable-ftd \
-    --enable-joiner \
-    --enable-mtd \
-    --enable-ncp \
-    --enable-udp-forward \
-    --with-examples=posix \
-    --with-ncp-bus=uart \
-    --with-platform-info=POSIX
-
-  set +x
+  executable_or_die "${OT_RADIO_PATH}"
 }
 
 leader_start()
 {
+  [[ "${NCP_CONTROLLER}" != openthread ]] || return 0
   write_syslog "MESHCOP TEST BEGIN - rotated logs"
 
   # These might not exit cleanly
@@ -428,8 +373,16 @@ ba_start()
   (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -v)
   # check invalid arguments
   (cd "${ORIGIN_PWD}" && ! sudo "${OTBR_AGENT_PATH}" -x)
+
   # we launch this in the background
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -d 6&)
+  set -x
+  if [[ "${NCP_CONTROLLER}" = openthread ]]; then
+    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -d 6 ${ot_radio} ${LEADER_NODE_ID}&)
+  else
+    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -d 6&)
+  fi
+  set +x
+
   # wait for it to complete
   sleep 10
 
@@ -443,7 +396,7 @@ web_start()
   sudo killall "${OTBR_WEB}" || true
   write_syslog "WEB: starting"
   (cd "${ORIGIN_PWD}" && sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p 8773 -a 127.0.0.1&)
-  sleep 20
+  sleep 15
 
   pidof ${OTBR_WEB} || die "WEB: failed to start"
   write_syslog "WEB: start complete"
@@ -457,6 +410,7 @@ network_form()
   readonly OT_CHANNEL="$(random_channel)"
 
   curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network || die "WEB: form failed"
+  sleep 15
 }
 
 commissioner_start()
@@ -507,7 +461,7 @@ commissioner_start()
   # By waiting 100 seconds we test that the timeout would have fired
   # And that the COMM_KA process is actually working.
   #
-  sleep 100
+  sleep 10
   write_syslog "TEST: Commissioner COM_KA should be seen by now"
   write_syslog "TEST: Commissioner ready for joiner"
 }
@@ -515,7 +469,7 @@ commissioner_start()
 web_commissioner_start()
 {
   curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "http://127.0.0.1:8773/commission"&
-  sleep 30
+  sleep 15
 }
 
 joiner_start()

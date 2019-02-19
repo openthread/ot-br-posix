@@ -35,6 +35,8 @@ LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/src \
+    $(LOCAL_PATH)/third_party/openthread/repo/include \
+    $(LOCAL_PATH)/third_party/openthread/repo/src/posix/platform \
     $(LOCAL_PATH)/third_party/wpantund \
     $(LOCAL_PATH)/third_party/wpantund/repo/src \
     $(LOCAL_PATH)/third_party/wpantund/repo/src/ipc-dbus \
@@ -47,6 +49,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS := \
     -DPACKAGE_VERSION=\"0.01.00\" \
+    -DOTBR_ENABLE_NCP_WPANTUND=1 \
     $(NULL)
 
 LOCAL_SRC_FILES := \
