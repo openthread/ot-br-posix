@@ -18,9 +18,10 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test
           packages:
-            - clang-5.0
+            - clang-format-6.0
     - env: BUILD_TARGET="android-check" VERBOSE=1
       os: linux
     - env: BUILD_TARGET="posix-check" VERBOSE=1
