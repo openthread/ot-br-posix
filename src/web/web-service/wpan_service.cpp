@@ -69,11 +69,6 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     prefix       = root["prefix"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
-    if (prefix.find('/') == std::string::npos)
-    {
-        prefix += "/64";
-    }
-
 #if OTBR_ENABLE_NCP_WPANTUND
     wpanController.SetInterfaceName(mIfName);
     VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
@@ -87,6 +82,11 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
 #else  // OTBR_ENABLE_NCP_WPANTUND
+    if (prefix.find('/') == std::string::npos)
+    {
+        prefix += "/64";
+    }
+
     VerifyOrExit(client.FactoryReset(), ret = ot::Dbus::kWpantundStatus_LeaveFailed);
     VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("networkname %s", mNetworks[index].mNetworkName) != NULL,
@@ -158,10 +158,6 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     ot::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(), passphrase.c_str()), OT_PSKC_MAX_LENGTH,
                          pskcStr);
 
-    if (prefix.find('/') == std::string::npos)
-    {
-        prefix += "/64";
-    }
 #if OTBR_ENABLE_NCP_WPANTUND
     wpanController.SetInterfaceName(mIfName);
     VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
@@ -186,6 +182,11 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
                  ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
 #else  // OTBR_ENABLE_NCP_WPANTUND
+    if (prefix.find('/') == std::string::npos)
+    {
+        prefix += "/64";
+    }
+
     VerifyOrExit(client.FactoryReset(), ret = ot::Dbus::kWpantundStatus_LeaveFailed);
     VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("networkname %s", networkName.c_str()) != NULL,
