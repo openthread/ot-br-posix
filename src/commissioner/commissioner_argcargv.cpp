@@ -74,7 +74,7 @@ static bool CheckPSKd(const char *aPSKd)
      * Thus 10 digits + 22 letters = 32 symbols.
      * Thus, "base32" encoding using the above.
      */
-    VerifyOrExit((len >= 6) || (len <= 32), whybad = "invalid length (range: 6..32)");
+    VerifyOrExit((len >= 6) || (len <= 32), whybad = "Invalid PSKd length (range: 6..32)");
 
     for (size_t i = 0; i < len; ++i)
     {
@@ -156,6 +156,8 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
     bool        isEui64Set      = false;
     bool        allowAllJoiners = false;
 
+    memset(&aArgs, 0, sizeof(aArgs));
+
     aArgs.mKeepAliveInterval = 15;
     aArgs.mDebugLevel        = OTBR_LOG_ERR;
 
@@ -181,8 +183,8 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
                          fprintf(stderr, "Invalid joiner EUI64!"));
             break;
         case 'D':
-            VerifyOrExit(CheckPSKd(optarg));
             aArgs.mPSKd = optarg;
+            VerifyOrExit(CheckPSKd(aArgs.mPSKd));
             break;
         case 'A':
             allowAllJoiners = true;
@@ -246,6 +248,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
         }
     }
 
+    VerifyOrExit(aArgs.mPSKd != NULL, fprintf(stderr, "Missing joiner PSKd!"));
     VerifyOrExit(networkName != NULL, fprintf(stderr, "Missing network name!"));
     VerifyOrExit(networkPassword != NULL, fprintf(stderr, "Missing network password!"));
     VerifyOrExit(isXPanIdSet, fprintf(stderr, "Missing extended PAN ID!"));

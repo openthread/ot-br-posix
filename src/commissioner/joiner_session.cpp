@@ -46,7 +46,7 @@ JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAsci
     , mJoinerFinalizeHandler(OT_URI_PATH_JOINER_FINALIZE, HandleJoinerFinalize, this)
     , mNeedAppendKek(false)
 {
-    mDtlsServer->SetPSK((const uint8_t *)aPskdAscii, strlen(aPskdAscii));
+    mDtlsServer->SetPSK(reinterpret_cast<const uint8_t *>(aPskdAscii), strlen(aPskdAscii));
     mDtlsServer->Start();
     mCoapAgent->AddResource(mJoinerFinalizeHandler);
 }
