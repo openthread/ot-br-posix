@@ -93,9 +93,6 @@ EOF
 do_build() {
     ./configure --prefix= --exec-prefix=/usr --disable-docs --with-ncp="${NCP_CONTROLLER}"
     make -j${BUILD_JOBS}
-    if [[ "${NCP_CONTROLLER}" = "openthread" ]]; then
-        (cd third_party/openthread && make -f repo/examples/Makefile-posix TargetTuple=otbr)
-    fi
 }
 
 do_clean() {
