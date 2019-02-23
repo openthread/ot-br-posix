@@ -61,6 +61,7 @@ int main(int argc, char **argv)
 
     otbrLogInit("Commissioner", args.mDebugLevel);
     signal(SIGTERM, HandleSignal);
+    signal(SIGINT, HandleSignal);
 
     srand(time(0));
 
