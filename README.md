@@ -30,10 +30,10 @@ OTBR includes a number of features, including:
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
-[otbr-travis]: https://travis-ci.org/openthread/borderrouter
-[otbr-travis-svg]: https://travis-ci.org/openthread/borderrouter.svg?branch=master
-[otbr-codecov]: https://codecov.io/gh/openthread/borderrouter
-[otbr-codecov-svg]: https://codecov.io/gh/openthread/borderrouter/branch/master/graph/badge.svg
+[otbr-travis]: https://travis-ci.org/openthread/ot-br-posix
+[otbr-travis-svg]: https://travis-ci.org/openthread/ot-br-posix.svg?branch=master
+[otbr-codecov]: https://codecov.io/gh/openthread/ot-br-posix
+[otbr-codecov-svg]: https://codecov.io/gh/openthread/ot-br-posix/branch/master/graph/badge.svg
 
 ## Getting started
 
@@ -47,9 +47,9 @@ If you're interested in contributing to OpenThread Border Router, read on.
 
 # Contributing
 
-We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/borderrouter/blob/master/CONTRIBUTING.md) for more information.
+We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/ot-br-posix/blob/master/CONTRIBUTING.md) for more information.
 
-Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/borderrouter/blob/master/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/borderrouter/blob/master/STYLE_GUIDE.md).
+Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/ot-br-posix/blob/master/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/ot-br-posix/blob/master/STYLE_GUIDE.md).
 
 We follow the philosophy of [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all).
 
@@ -59,7 +59,7 @@ OpenThread Border Router follows the [Semantic Versioning guidelines](http://sem
 
 # License
 
-OpenThread Border Router is released under the [BSD 3-Clause license](https://github.com/openthread/borderrouter/blob/master/LICENSE). See the [`LICENSE`](https://github.com/openthread/borderrouter/blob/master/LICENSE) file for more information.
+OpenThread Border Router is released under the [BSD 3-Clause license](https://github.com/openthread/ot-br-posix/blob/master/LICENSE). See the [`LICENSE`](https://github.com/openthread/ot-br-posix/blob/master/LICENSE) file for more information.
 
 Please only use the OpenThread name and marks when accurately referencing this software distribution. Do not use the marks in a way that suggests you are endorsed by or otherwise affiliated with Nest, Google, or The Thread Group.
 
@@ -67,7 +67,7 @@ Please only use the OpenThread name and marks when accurately referencing this s
 
 There are numerous avenues for OpenThread support:
 
-* Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/borderrouter/issues)
+* Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/ot-br-posix/issues)
 * Stack Overflow — [post questions using the `openthread` tag](http://stackoverflow.com/questions/tagged/openthread)
 * Google Groups — [discussion and announcements at openthread-users](https://groups.google.com/forum/#!forum/openthread-users)
 
