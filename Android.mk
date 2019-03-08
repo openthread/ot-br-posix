@@ -57,7 +57,6 @@ LOCAL_SRC_FILES := \
     third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
     src/agent/agent_instance.cpp \
     src/agent/border_agent.cpp \
-    src/agent/mdns_mdnssd.cpp \
     src/agent/main.cpp \
     src/agent/ncp_wpantund.cpp \
     src/common/event_emitter.cpp \
@@ -65,6 +64,14 @@ LOCAL_SRC_FILES := \
     src/utils/hex.cpp \
     $(NULL)
 
-LOCAL_SHARED_LIBRARIES := libdbus libmdnssd
+LOCAL_SHARED_LIBRARIES := libdbus
+
+ifeq ($(WITH_MDNS),mDNSResponder)
+LOCAL_SRC_FILES += \
+    src/agent/mdns_mdnssd.cpp \
+    $(NULL)
+
+LOCAL_SHARED_LIBRARIES += libmdnssd
+endif
 
 include $(BUILD_EXECUTABLE)

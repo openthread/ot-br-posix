@@ -77,7 +77,11 @@ enum
 };
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
     : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
+#else
+    : mPublisher(NULL)
+#endif
     , mNcp(aNcp)
 #if OTBR_ENABLE_NCP_WPANTUND
     , mSocket(-1)
@@ -105,6 +109,7 @@ otbrError BorderAgent::Start(void)
 
     mNetworkName[sizeof(mNetworkName) - 1] = '\0';
 
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
     mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
     mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
@@ -112,6 +117,7 @@ otbrError BorderAgent::Start(void)
     mNcp->RequestEvent(Ncp::kEventNetworkName);
     mNcp->RequestEvent(Ncp::kEventExtPanId);
     mNcp->RequestEvent(Ncp::kEventThreadState);
+#endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
 
     VerifyOrExit(error == OTBR_ERROR_NONE,
                  otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %s!", otbrErrorString(error)));
