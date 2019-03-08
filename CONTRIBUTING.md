@@ -16,15 +16,15 @@ Help us keep OpenThread open and inclusive.  Please read and follow our [Code of
 
 ## Bugs
 
-If you find a bug in the source code, you can help us by [submitting a GitHub Issue](https://github.com/openthread/borderrouter/issues/new).  The best bug reports provide a detailed description of the issue and step-by-step instructions for predictably reproducing the issue.  Even better, you can [submit a Pull Request](#submitting-a-pull-request) with a fix.
+If you find a bug in the source code, you can help us by [submitting a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new).  The best bug reports provide a detailed description of the issue and step-by-step instructions for predictably reproducing the issue.  Even better, you can [submit a Pull Request](#submitting-a-pull-request) with a fix.
 
 ## New Features
 
-You can request a new feature by [submitting a GitHub Issue](https://github.com/openthread/borderrouter/issues/new).
+You can request a new feature by [submitting a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new).
 
 If you would like to implement a new feature, please consider the scope of the new feature:
 
-* *Large feature*: first [submit a GitHub Issue](https://github.com/openthread/borderrouter/issues/new) and communicate your proposal so that the community can review and provide feedback.  Getting early feedback will help ensure your implementation work is accepted by the community.  This will also allow us to better coordinate our efforts and minimize duplicated effort.
+* *Large feature*: first [submit a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new) and communicate your proposal so that the community can review and provide feedback.  Getting early feedback will help ensure your implementation work is accepted by the community.  This will also allow us to better coordinate our efforts and minimize duplicated effort.
 
 * *Small feature*: can be implemented and directly [submitted as a Pull Request](#submitting-a-pull-request).
 
@@ -36,7 +36,7 @@ The OpenThread Project follows the "Fork-and-Pull" model for accepting contribut
 
 Setup your GitHub fork and continuous-integration services:
 
-1. Fork the [OpenThread repository](https://github.com/openthread/borderrouter) by clicking "Fork" on the web UI.
+1. Fork the [OpenThread repository](https://github.com/openthread/ot-br-posix) by clicking "Fork" on the web UI.
 2. Enable [Travis CI](https://travis-ci.org/) and [AppVeyor](https://ci.appveyor.com/) by logging in the respective services with your GitHub account and enabling your newly created fork.  We use Travis CI for Linux-based continuous integration checks and AppVeyor for Windows-based continuous integration checks.  All contributions must pass these checks to be accepted.
 
 Setup your local development environment:
@@ -46,7 +46,7 @@ Setup your local development environment:
 git clone git@github.com:<username>/openthread.git
 
 # Configure upstream alias
-git remote add upstream git@github.com:openthread/borderrouter.git
+git remote add upstream git@github.com:openthread/ot-br-posix.git
 ```
 
 ### Contributor License Agreement (CLA)
@@ -55,7 +55,7 @@ The OpenThread Project requires all contributors to sign a Contributor License A
 
 With each Pull Request, an automated check occurs to verify that you have signed the CLA.  Make sure that you sign the CLA with the same email address associated with your commits (i.e. via the `user.email` Git config as described on GitHub's [Set up Git](https://help.github.com/articles/set-up-git/) page.
 
-NOTE: Only original source code from you and other people that have signed the CLA can be accepted into the repository. This policy does not apply to [third_party](https://github.com/openthread/borderrouter/tree/master/third_party).
+NOTE: Only original source code from you and other people that have signed the CLA can be accepted into the repository. This policy does not apply to [third_party](https://github.com/openthread/ot-br-posix/tree/master/third_party).
 
 
 ### Submitting a Pull Request
