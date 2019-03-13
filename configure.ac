@@ -356,7 +356,7 @@ AM_CONDITIONAL([OTBR_ENABLE_NCP_OPENTHREAD], [test "${with_ncp}" = "openthread"]
 AM_CONDITIONAL([OTBR_ENABLE_NCP_WPANTUND], [test "${with_ncp}" = "wpantund"])
 
 AC_ARG_WITH(mdns,
-  AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, mDNSResponder @<:@default=avahi@:>@.]),
+  AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, mDNSResponder, none @<:@default=avahi@:>@.]),
   [with_mdns=${withval}],
   [with_mdns=avahi]
 )
@@ -367,6 +367,8 @@ avahi)
   ;;
 mDNSResponder)
   AC_DEFINE_UNQUOTED([OTBR_ENABLE_MDNS_MDNSSD], [1], [Define to 1 if you want to choose mDNSResponder to provide mdns])
+  ;;
+none)
   ;;
 *)
   AC_MSG_ERROR([Invalid value ${with_mdns} for --with-mdns])

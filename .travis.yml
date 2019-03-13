@@ -22,6 +22,8 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - clang-format-6.0
+    - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=mDNSResponder
+      os: linux
     - env: BUILD_TARGET="android-check" VERBOSE=1
       os: linux
     - env: BUILD_TARGET="posix-check" VERBOSE=1

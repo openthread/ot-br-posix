@@ -233,8 +233,10 @@ prepare_libmdnssd()
 {
     readonly MDNSRESPONDER_SOURCE=mDNSResponder-878.30.4
 
-    wget "https://opensource.apple.com/tarballs/mDNSResponder/$MDNSRESPONDER_SOURCE.tar.gz"
-    tar xvf "$MDNSRESPONDER_SOURCE.tar.gz"
+    [[ "${WITH_MDNS}" = mDNSResponder ]] || return 0
+
+    wget "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
+    tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz"
     cat > "${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
 
