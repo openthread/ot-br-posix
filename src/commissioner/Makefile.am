@@ -52,15 +52,15 @@ libotbr_commissioner_la_SOURCES                       = \
 
 libotbr_commissioner_la_CPPFLAGS                      = \
     -I$(top_srcdir)/src                                 \
-    -I$(top_srcdir)/src/agent                           \
     -I$(top_srcdir)/src/web                             \
     $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 
 libotbr_commissioner_la_LIBADD                        = \
-    $(top_builddir)/src/agent/libotbr-agent.la          \
-    $(top_builddir)/src/utils/libutils.la               \
+    $(top_builddir)/src/common/libotbr-coap.la          \
+    $(top_builddir)/src/common/libotbr-dtls.la          \
     $(top_builddir)/src/common/libotbr-logging.la       \
+    $(top_builddir)/src/utils/libutils.la               \
     $(NULL)
 
 libotbr_commissioner_la_LDFLAGS                       = \

@@ -56,7 +56,7 @@
 
 #include "commissioner_constants.hpp"
 #include "joiner_session.hpp"
-#include "agent/coap.hpp"
+#include "common/coap.hpp"
 #include "utils/pskc.hpp"
 #include "utils/steering_data.hpp"
 

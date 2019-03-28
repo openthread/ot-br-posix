@@ -44,7 +44,7 @@ pskc_CPPFLAGS                                             = \
     $(NULL)
 
 pskc_LDADD                                                = \
-    $(top_builddir)/src/agent/libotbr-agent.la              \
+    $(top_builddir)/src/common/libotbr-dtls.la              \
     $(top_builddir)/src/utils/libutils.la                   \
     $(NULL)
 
@@ -63,7 +63,7 @@ steering_data_CPPFLAGS                                    = \
     $(NULL)
 
 steering_data_LDADD                                       = \
-    $(top_builddir)/src/agent/libotbr-agent.la              \
+    $(top_builddir)/src/common/libotbr-dtls.la              \
     $(top_builddir)/src/utils/libutils.la                   \
     $(NULL)
 

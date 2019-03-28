@@ -39,10 +39,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
-#include "common/time.hpp"
-#include "common/types.hpp"
+#include "code_utils.hpp"
+#include "logging.hpp"
+#include "time.hpp"
+#include "types.hpp"
 
 namespace ot {
 

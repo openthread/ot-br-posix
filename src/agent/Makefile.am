@@ -28,8 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-include $(top_srcdir)/third_party/openthread/mbedtls.mk
 include $(top_srcdir)/third_party/openthread/openthread.mk
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
 
 sbin_PROGRAMS=otbr-agent
 
@@ -44,12 +44,12 @@ otbr_agent_LDADD     = \
 if OTBR_ENABLE_NCP_OPENTHREAD
 otbr_agent_LDADD    += \
     $(OPENTHREAD_LIBS) \
+    $(MBEDTLS_LIBS)    \
     -lutil             \
     $(NULL)
 endif
 
 otbr_agent_LDADD    += \
-    $(MBEDTLS_LIBS)    \
     $(NULL)
 
 otbr_agent_LDFLAGS = \
@@ -58,7 +58,6 @@ otbr_agent_LDFLAGS = \
 
 otbr_agent_CPPFLAGS         = \
     -I$(top_srcdir)/src       \
-    $(MBEDTLS_CPPFLAGS)       \
     $(OPENTHREAD_CPPFLAGS)    \
     $(NULL)
 
@@ -71,20 +70,16 @@ libotbr_agent_la_CXXFLAGS                                     = \
 libotbr_agent_la_SOURCES                                      = \
     agent_instance.cpp                                          \
     border_agent.cpp                                            \
-    coap_libcoap.cpp                                            \
-    dtls_mbedtls.cpp                                            \
     ncp_openthread.cpp                                          \
     ncp_wpantund.cpp                                            \
     $(NULL)
 
 libotbr_agent_la_LIBADD                                       = \
-    $(top_builddir)/third_party/libcoap/repo/libcoap-1.la       \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
     $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
     $(top_builddir)/src/utils/libutils.la                       \
     $(DBUS_LIBS)                                                \
-    $(MBEDTLS_LIBS)                                             \
     $(NULL)
 
 libotbr_agent_la_LDFLAGS = \
@@ -92,10 +87,7 @@ libotbr_agent_la_LDFLAGS = \
     $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
-    -I$(top_builddir)/third_party/libcoap/repo                               \
     -I$(top_srcdir)/src                                                      \
-    -I$(top_srcdir)/third_party/libcoap/repo                                 \
-    -I$(top_srcdir)/third_party/libcoap/repo/include                         \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
     -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus                   \
@@ -103,7 +95,6 @@ libotbr_agent_la_CPPFLAGS                                                  = \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund                   \
     -I$(top_srcdir)/third_party/wpantund/repo/third_party/openthread/src/ncp \
     $(DBUS_CFLAGS)                                                           \
-    $(MBEDTLS_CPPFLAGS)                                                      \
     $(OPENTHREAD_CPPFLAGS)                                                   \
     $(NULL)
 
@@ -131,17 +122,12 @@ endif
 noinst_HEADERS        = \
     agent_instance.hpp  \
     border_agent.hpp    \
-    coap.hpp            \
-    coap_libcoap.hpp    \
-    dtls.hpp            \
-    dtls_mbedtls.hpp    \
     mdns.hpp            \
     mdns_avahi.hpp      \
     mdns_mdnssd.hpp     \
     ncp.hpp             \
     ncp_openthread.hpp  \
     ncp_wpantund.hpp    \
-    libcoap.h           \
     uris.hpp            \
     $(NULL)
 

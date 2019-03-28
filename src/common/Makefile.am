@@ -28,9 +28,17 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+include $(top_srcdir)/third_party/openthread/mbedtls.mk
+
 noinst_HEADERS                                        = \
     code_utils.hpp                                      \
+    coap.hpp                                            \
+    coap_libcoap.hpp                                    \
+    dtls.hpp                                            \
+    dtls_mbedtls.hpp                                    \
     event_emitter.hpp                                   \
+    libcoap.h                                           \
+    mainloop.h                                          \
     time.hpp                                            \
     tlv.hpp                                             \
     types.hpp                                           \
@@ -38,12 +46,40 @@ noinst_HEADERS                                        = \
     $(NULL)
 
 noinst_LTLIBRARIES                                    = \
-    libotbr-logging.la                                  \
+    libotbr-coap.la                                     \
+    libotbr-dtls.la                                     \
     libotbr-event-emitter.la                            \
+    libotbr-logging.la                                  \
     $(NULL)
 
 libotbr_logging_la_SOURCES =                            \
     logging.cpp                                         \
+    $(NULL)
+
+libotbr_coap_la_SOURCES                               = \
+    coap_libcoap.cpp                                    \
+    $(NULL)
+
+libotbr_coap_la_CPPFLAGS                              = \
+    -I$(top_builddir)/third_party/libcoap/repo          \
+    -I$(top_srcdir)/third_party/libcoap/repo            \
+    -I$(top_srcdir)/third_party/libcoap/repo/include    \
+    $(NULL)
+
+libotbr_coap_la_LIBADD                                      = \
+    $(top_builddir)/third_party/libcoap/repo/libcoap-1.la     \
+    $(NULL)
+
+libotbr_dtls_la_SOURCES                               = \
+    dtls_mbedtls.cpp                                    \
+    $(NULL)
+
+libotbr_dtls_la_CPPFLAGS                              = \
+    $(MBEDTLS_CPPFLAGS)                                 \
+    $(NULL)
+
+libotbr_dtls_la_LIBADD                                = \
+    $(MBEDTLS_LIBS)                                     \
     $(NULL)
 
 libotbr_event_emitter_la_SOURCES                      = \

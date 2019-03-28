@@ -38,8 +38,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <openthread-system.h>
-
 #include "agent_instance.hpp"
 #include "ncp.hpp"
 #include "common/code_utils.hpp"

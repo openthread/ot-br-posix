@@ -35,8 +35,6 @@ LOCAL_MODULE_TAGS := eng
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/src \
-    $(LOCAL_PATH)/third_party/openthread/repo/include \
-    $(LOCAL_PATH)/third_party/openthread/repo/src/posix/platform \
     $(LOCAL_PATH)/third_party/wpantund \
     $(LOCAL_PATH)/third_party/wpantund/repo/src \
     $(LOCAL_PATH)/third_party/wpantund/repo/src/ipc-dbus \
@@ -75,3 +73,14 @@ LOCAL_SHARED_LIBRARIES += libmdnssd
 endif
 
 include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := otbr-agent.conf
+LOCAL_MODULE_TAGS := eng
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES := src/agent/otbr-agent.conf
+
+include $(BUILD_PREBUILT)

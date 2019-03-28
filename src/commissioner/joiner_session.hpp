@@ -37,8 +37,8 @@
 #include <sys/socket.h>
 
 #include "commissioner_constants.hpp"
-#include "agent/coap.hpp"
-#include "agent/dtls.hpp"
+#include "common/coap.hpp"
+#include "common/dtls.hpp"
 #include "utils/pskc.hpp"
 
 namespace ot {

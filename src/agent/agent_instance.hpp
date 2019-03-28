@@ -39,8 +39,6 @@
 #include <sys/select.h>
 #include <sys/types.h>
 
-#include <openthread-system.h>
-
 #include "border_agent.hpp"
 #include "ncp.hpp"
 
