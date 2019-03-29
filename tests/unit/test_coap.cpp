@@ -34,7 +34,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#include "agent/coap.hpp"
+#include "common/coap.hpp"
 
 using namespace ot::BorderRouter;
 

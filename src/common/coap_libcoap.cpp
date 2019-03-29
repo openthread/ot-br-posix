@@ -36,9 +36,9 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
-#include "common/types.hpp"
+#include "code_utils.hpp"
+#include "logging.hpp"
+#include "types.hpp"
 
 namespace ot {
 

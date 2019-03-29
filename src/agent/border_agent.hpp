@@ -36,7 +36,6 @@
 
 #include <stdint.h>
 
-#include "dtls.hpp"
 #include "mdns.hpp"
 #include "ncp.hpp"
 

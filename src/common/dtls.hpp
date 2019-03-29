@@ -37,7 +37,7 @@
 #include <sys/select.h>
 #include <unistd.h>
 
-#include "common/types.hpp"
+#include "types.hpp"
 
 namespace ot {
 

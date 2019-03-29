@@ -36,6 +36,8 @@
 
 #include "ncp.hpp"
 
+#if OTBR_ENABLE_NCP_OPENTHREAD
+
 namespace ot {
 
 namespace BorderRouter {
@@ -111,5 +113,7 @@ private:
 } // namespace BorderRouter
 
 } // namespace ot
+
+#endif // OTBR_ENABLE_NCP_OPENTHREAD
 
 #endif // NCP_POSIX_HPP_

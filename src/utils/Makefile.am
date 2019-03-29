@@ -47,6 +47,7 @@ libutils_la_CPPFLAGS                                    = \
 
 libutils_la_LIBADD                                      = \
     $(MBEDTLS_LIBS)                                       \
+    $(top_builddir)/src/common/libotbr-logging.la         \
     $(NULL)
 
 noinst_HEADERS      = \

@@ -70,7 +70,6 @@ extern "C" {
 } // extern "C"
 
 #include "dtls.hpp"
-#include "common/types.hpp"
 
 namespace ot {
 
