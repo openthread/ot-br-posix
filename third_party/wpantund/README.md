@@ -6,7 +6,7 @@ https://github.com/openthread/wpantund
 
 ## Version
 
-1.5.2-g552c8be
+0.07.01-286-g42f9b6e
 
 ## License
 
