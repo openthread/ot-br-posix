@@ -30,6 +30,15 @@
 set -e
 set -x
 
+check_otbr_agent() {
+    sudo dbus-send --system             \
+        --dest=org.freedesktop.DBus     \
+        --type=method_call              \
+        --print-reply                   \
+        /org/freedesktop/DBus           \
+        org.freedesktop.DBus.ListNames | grep -q '"otbr.agent'
+}
+
 main() {
     RELEASE=1 ./script/bootstrap
     ./script/bootstrap
@@ -56,7 +65,7 @@ main() {
     sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 10
-    netstat -an | grep 49191 || die 'Service otbr-agent not ready!'
+    check_otbr_agent || die 'Service otbr-agent not ready!'
     netstat -an | grep 80 || die 'Service otbr-web not ready!'
     pidof tayga || die 'tayga not running'
     kill $SERVICES_PID || die 'Failed to stop services!'
