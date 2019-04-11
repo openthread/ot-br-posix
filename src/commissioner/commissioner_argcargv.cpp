@@ -258,7 +258,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
         steeringLength = (allowAllJoiners ? 1 : kSteeringDefaultLength);
     }
 
-    aArgs.mSteeringData.Init(steeringLength);
+    aArgs.mSteeringData.Init(static_cast<uint8_t>(steeringLength));
 
     if (!allowAllJoiners)
     {

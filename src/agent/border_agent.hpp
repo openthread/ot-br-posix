@@ -70,14 +70,10 @@ public:
     ~BorderAgent(void);
 
     /**
-     * This method starts border agent service.
-     *
-     * @retval  OTBR_ERROR_NONE     Successfully started border agent.
-     * @retval  OTBR_ERROR_ERRNO    Failed to start border agent.
-     * @retval  OTBR_ERROR_DTLS     Failed to start border agent for DTLS error.
+     * This method initialize border agent service.
      *
      */
-    otbrError Start(void);
+    void Init(void);
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -102,6 +98,21 @@ public:
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
 private:
+    /**
+     * This method starts border agent service.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully started border agent.
+     * @retval  OTBR_ERROR_ERRNO    Failed to start border agent.
+     *
+     */
+    otbrError Start(void);
+
+    /**
+     * This method stops border agent service.
+     *
+     */
+    void Stop(void);
+
 #if OTBR_ENABLE_NCP_WPANTUND
     static void SendToCommissioner(void *aContext, int aEvent, va_list aArguments);
 #endif
@@ -114,11 +125,10 @@ private:
     void PublishService(void);
     void StartPublishService(void);
     void StopPublishService(void);
-    void HandleThreadChange(void);
 
     void SetNetworkName(const char *aNetworkName);
     void SetExtPanId(const uint8_t *aExtPanId);
-    void SetThreadStarted(bool aStarted);
+    void HandleThreadState(bool aStarted);
 
     static void HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);

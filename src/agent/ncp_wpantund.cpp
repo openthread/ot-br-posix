@@ -234,6 +234,9 @@ otbrError ControllerWpantund::UpdateInterfaceDBusPath()
 {
     otbrError ret = OTBR_ERROR_ERRNO;
 
+    memset(mInterfaceDBusPath, 0, sizeof(mInterfaceDBusPath));
+    memset(mInterfaceDBusName, 0, sizeof(mInterfaceDBusName));
+
     VerifyOrExit(lookup_dbus_name_from_interface(mInterfaceDBusName, mInterfaceName) == 0,
                  otbrLog(OTBR_LOG_ERR, "NCP failed to find the interface!"), errno = ENODEV);
 
@@ -259,7 +262,7 @@ otbrError ControllerWpantund::Init(void)
     VerifyOrExit(dbus_bus_register(mDBus, &error));
 
     sprintf(dbusName, "%s.%s", OTBR_AGENT_DBUS_NAME_PREFIX, mInterfaceName);
-    otbrLog(OTBR_LOG_INFO, "NCP requesting DBus name %s...", dbusName);
+    otbrLog(OTBR_LOG_INFO, "NCP request DBus name %s", dbusName);
     VerifyOrExit(dbus_bus_request_name(mDBus, dbusName, DBUS_NAME_FLAG_DO_NOT_QUEUE, &error) ==
                  DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
 
@@ -271,7 +274,9 @@ otbrError ControllerWpantund::Init(void)
 
     VerifyOrExit(dbus_connection_add_filter(mDBus, HandlePropertyChangedSignal, this, NULL));
 
-    ret = UpdateInterfaceDBusPath();
+    // Allow wpantund not started.
+    ret = OTBR_ERROR_NONE;
+    otbrLogResult("Get Thread interface d-bus path", UpdateInterfaceDBusPath());
 
 exit:
     if (dbus_error_is_set(&error))
@@ -286,9 +291,9 @@ exit:
             dbus_connection_unref(mDBus);
             mDBus = NULL;
         }
-        otbrLog(OTBR_LOG_ERR, "NCP failed to initialize!");
     }
 
+    otbrLogResult("NCP initialize", ret);
     return ret;
 }
 
@@ -313,9 +318,11 @@ otbrError ControllerWpantund::UdpForwardSend(const uint8_t * aBuffer,
     std::vector<uint8_t> data(aLength + sizeof(aPeerPort) + sizeof(aPeerAddr) + sizeof(aSockPort));
     const uint8_t *      value = data.data();
     const char *         key   = kWPANTUNDProperty_UdpForwardStream;
+    size_t               index = aLength;
+
+    VerifyOrExit(mInterfaceDBusPath[0] != '\0', errno = EADDRNOTAVAIL);
 
     memcpy(data.data(), aBuffer, aLength);
-    int index       = aLength;
     data[index]     = (aPeerPort >> 8);
     data[index + 1] = (aPeerPort & 0xff);
     index += sizeof(aPeerPort);
@@ -470,7 +477,8 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
         break;
     }
 
-    VerifyOrExit(key != NULL, errno = EINVAL);
+    VerifyOrExit(key != NULL && mInterfaceDBusPath[0] != '\0', errno = EINVAL);
+
     otbrLog(OTBR_LOG_DEBUG, "Requesting %s...", key);
     VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath,
                                                          WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_CMD_PROP_GET)) !=
@@ -507,7 +515,7 @@ exit:
 
     if (ret != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "Error requesting %s:%s", key, otbrErrorString(ret));
+        otbrLog(OTBR_LOG_WARNING, "Error requesting %s: %s", key, otbrErrorString(ret));
     }
     return ret;
 }

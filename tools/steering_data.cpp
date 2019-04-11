@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
         ++i;
     }
 
-    computer.Init(length);
+    computer.Init(static_cast<uint8_t>(length));
 
     for (; i < argc; ++i)
     {

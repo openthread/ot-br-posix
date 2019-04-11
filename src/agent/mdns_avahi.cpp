@@ -229,12 +229,12 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
         }
         else
         {
-            int sec;
-            int usec;
+            time_t      sec;
+            suseconds_t usec;
 
             timeout -= now;
-            sec  = timeout / 1000;
-            usec = (timeout % 1000) * 1000;
+            sec  = static_cast<time_t>(timeout / 1000);
+            usec = static_cast<suseconds_t>((timeout % 1000) * 1000);
 
             if (sec < aTimeout.tv_sec)
             {

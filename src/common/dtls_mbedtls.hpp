@@ -207,9 +207,8 @@ private:
     static int  GetDelay(void *aContext);
     int         GetDelay(void) const;
 
-    mbedtls_net_context          mNet;
-    mbedtls_timing_delay_context mTimer;
-    mbedtls_ssl_context          mSsl;
+    mbedtls_net_context mNet;
+    mbedtls_ssl_context mSsl;
 
     DataHandler    mDataHandler;
     void *         mContext;

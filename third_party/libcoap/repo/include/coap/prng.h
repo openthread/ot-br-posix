@@ -98,7 +98,7 @@ lwip_prng_impl(unsigned char *buf, size_t len) {
  *
  * @hideinitializer
  */
-#define prng_init(Value) srand((unsigned long)(Value))
+#define prng_init(Value) srand((unsigned int)(Value))
 #endif
 
 /** @} */
