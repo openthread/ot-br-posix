@@ -373,7 +373,8 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
             continue;
         }
 
-        cur[0] = recordLength;
+        assert(recordLength <= 255);
+        cur[0] = static_cast<uint8_t>(recordLength);
         cur += 1;
 
         memcpy(cur, name, nameLength);
@@ -393,13 +394,14 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
         if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)))
         {
             otbrLog(OTBR_LOG_INFO, "MDNS remove current service %s", aName);
-            DNSServiceUpdateRecord(it->mService, NULL, 0, cur - txt, txt, 0);
+            DNSServiceUpdateRecord(it->mService, NULL, 0, static_cast<uint16_t>(cur - txt), txt, 0);
             ExitNow();
         }
     }
 
     SuccessOrExit(error = DNSServiceRegister(&serviceRef, 0, kDNSServiceInterfaceIndexAny, aName, aType, mDomain, mHost,
-                                             htons(aPort), cur - txt, txt, HandleServiceRegisterResult, this));
+                                             htons(aPort), static_cast<uint16_t>(cur - txt), txt,
+                                             HandleServiceRegisterResult, this));
     if (serviceRef != NULL)
     {
         RecordService(aName, aType, serviceRef);
