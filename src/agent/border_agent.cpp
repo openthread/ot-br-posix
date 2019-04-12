@@ -157,13 +157,13 @@ void BorderAgent::Stop(void)
 
 BorderAgent::~BorderAgent(void)
 {
+    Stop();
+
     if (mPublisher != NULL)
     {
         delete mPublisher;
         mPublisher = NULL;
     }
-
-    Stop();
 }
 
 void BorderAgent::HandleMdnsState(Mdns::State aState)
