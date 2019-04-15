@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
     int              logLevel = OTBR_LOG_INFO;
     int              opt;
     int              ret           = EXIT_SUCCESS;
-    char *           interfaceName = NULL;
+    const char *     interfaceName = kDefaultInterfaceName;
     Ncp::Controller *ncp           = NULL;
 
     while ((opt = getopt(argc, argv, "d:I:v")) != -1)

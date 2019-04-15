@@ -90,9 +90,29 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp)
 {
 }
 
+void BorderAgent::Init(void)
+{
+    memset(mNetworkName, 0, sizeof(mNetworkName));
+    memset(mExtPanId, 0, sizeof(mExtPanId));
+
+#if OTBR_ENABLE_NCP_WPANTUND
+    mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
+#endif
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+    mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
+    mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
+#endif
+    mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
+
+    otbrLogResult("Check if Thread is up", mNcp->RequestEvent(Ncp::kEventThreadState));
+}
+
 otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    // In case we didn't receive Thread down event.
+    Stop();
 
 #if OTBR_ENABLE_NCP_WPANTUND
     struct sockaddr_in6 sin6;
@@ -102,38 +122,48 @@ otbrError BorderAgent::Start(void)
 
     mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
     VerifyOrExit(mSocket != -1, error = OTBR_ERROR_ERRNO);
-    SuccessOrExit(bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)));
-
-    mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
+    VerifyOrExit(bind(mSocket, reinterpret_cast<struct sockaddr *>(&sin6), sizeof(sin6)) == 0,
+                 error = OTBR_ERROR_ERRNO);
 #endif
 
-    mNetworkName[sizeof(mNetworkName) - 1] = '\0';
-
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
-    mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
-    mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
-    mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
-
-    mNcp->RequestEvent(Ncp::kEventNetworkName);
-    mNcp->RequestEvent(Ncp::kEventExtPanId);
-    mNcp->RequestEvent(Ncp::kEventThreadState);
+    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
+    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
+    StartPublishService();
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
 
-    VerifyOrExit(error == OTBR_ERROR_NONE,
-                 otbrLog(OTBR_LOG_ERR, "Failed to start border agent: %s!", otbrErrorString(error)));
+    // Suppress unused warning of label exit
+    ExitNow();
 
 exit:
+    otbrLogResult("Start Thread Border Agent", error);
     return error;
 }
 
-BorderAgent::~BorderAgent(void)
+void BorderAgent::Stop(void)
 {
 #if OTBR_ENABLE_NCP_WPANTUND
     if (mSocket != -1)
     {
         close(mSocket);
+        mSocket = -1;
     }
 #endif // OTBR_ENABLE_NCP_WPANTUND
+
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+    StopPublishService();
+#endif
+}
+
+BorderAgent::~BorderAgent(void)
+{
+    Stop();
+
+    if (mPublisher != NULL)
+    {
+        delete mPublisher;
+        mPublisher = NULL;
+    }
 }
 
 void BorderAgent::HandleMdnsState(Mdns::State aState)
@@ -153,15 +183,17 @@ void BorderAgent::HandleMdnsState(Mdns::State aState)
 void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArguments)
 {
     struct sockaddr_in6 sin6;
-    const uint8_t *     packet   = va_arg(aArguments, const uint8_t *);
-    uint16_t            length   = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    uint16_t            peerPort = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
-    const in6_addr *    addr     = va_arg(aArguments, const in6_addr *);
-    uint16_t            sockPort = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    const uint8_t *     packet      = va_arg(aArguments, const uint8_t *);
+    uint16_t            length      = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    uint16_t            peerPort    = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    const in6_addr *    addr        = va_arg(aArguments, const in6_addr *);
+    uint16_t            sockPort    = static_cast<uint16_t>(va_arg(aArguments, unsigned int));
+    BorderAgent *       borderAgent = static_cast<BorderAgent *>(aContext);
 
     (void)aEvent;
     assert(aEvent == Ncp::kEventUdpForwardStream);
     VerifyOrExit(sockPort == kBorderAgentUdpPort);
+    VerifyOrExit(borderAgent->mSocket != -1);
 
     memset(&sin6, 0, sizeof(sin6));
     sin6.sin6_family = AF_INET6;
@@ -169,8 +201,8 @@ void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArgume
     sin6.sin6_port = htons(peerPort);
 
     {
-        ssize_t sent = sendto(static_cast<BorderAgent *>(aContext)->mSocket, packet, length, 0,
-                              reinterpret_cast<const sockaddr *>(&sin6), sizeof(sin6));
+        ssize_t sent =
+            sendto(borderAgent->mSocket, packet, length, 0, reinterpret_cast<const sockaddr *>(&sin6), sizeof(sin6));
         VerifyOrExit(sent == static_cast<ssize_t>(length), perror("send to commissioner"));
     }
 
@@ -194,12 +226,16 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
     (void)aWriteFdSet;
 
 #if OTBR_ENABLE_NCP_WPANTUND
-    FD_SET(mSocket, &aReadFdSet);
-
-    if (mSocket > aMaxFd)
+    if (mSocket != -1)
     {
-        aMaxFd = mSocket;
+        FD_SET(mSocket, &aReadFdSet);
+
+        if (mSocket > aMaxFd)
+        {
+            aMaxFd = mSocket;
+        }
     }
+
 #endif // OTBR_ENABLE_NCP_WPANTUND
 }
 
@@ -215,7 +251,7 @@ void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, c
     ssize_t             len     = sizeof(packet);
     socklen_t           socklen = sizeof(sin6);
 
-    VerifyOrExit(FD_ISSET(mSocket, &aReadFdSet));
+    VerifyOrExit(mSocket != -1 && FD_ISSET(mSocket, &aReadFdSet));
 
     len = recvfrom(mSocket, packet, sizeof(packet), 0, reinterpret_cast<struct sockaddr *>(&sin6), &socklen);
     VerifyOrExit(len > 0);
@@ -240,6 +276,8 @@ void BorderAgent::PublishService(void)
 
 void BorderAgent::StartPublishService(void)
 {
+    VerifyOrExit(mNetworkName[0] != '\0');
+
     otbrLog(OTBR_LOG_INFO, "Start publishing service");
 
     if (mPublisher->IsStarted())
@@ -250,53 +288,66 @@ void BorderAgent::StartPublishService(void)
     {
         mPublisher->Start();
     }
+
+exit:
+    return;
 }
 
 void BorderAgent::StopPublishService(void)
 {
-    otbrLog(OTBR_LOG_INFO, "Stop publishing service");
+    VerifyOrExit(mPublisher != NULL);
 
     if (mPublisher->IsStarted())
     {
         mPublisher->Stop();
     }
-}
 
-void BorderAgent::HandleThreadChange(void)
-{
-    otbrLog(OTBR_LOG_INFO, "Handle Thread change");
-
-    if (mThreadStarted && mNetworkName[0] != '\0')
-    {
-        StartPublishService();
-    }
-    else
-    {
-        StopPublishService();
-    }
-}
-
-void BorderAgent::SetThreadStarted(bool aStarted)
-{
-    if (aStarted != mThreadStarted)
-    {
-        mThreadStarted = aStarted;
-        HandleThreadChange();
-    }
+exit:
+    otbrLog(OTBR_LOG_INFO, "Stop publishing service");
 }
 
 void BorderAgent::SetNetworkName(const char *aNetworkName)
 {
     strncpy(mNetworkName, aNetworkName, sizeof(mNetworkName) - 1);
-    // have to restart publisher to publish new service name.
-    mPublisher->Stop();
-    HandleThreadChange();
+
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+    if (mThreadStarted)
+    {
+        // Restart publisher to publish new service name.
+        mPublisher->Stop();
+        StartPublishService();
+    }
+#endif
 }
 
 void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
 {
     memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
-    HandleThreadChange();
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+    if (mThreadStarted)
+    {
+        StartPublishService();
+    }
+#endif
+}
+
+void BorderAgent::HandleThreadState(bool aStarted)
+{
+    VerifyOrExit(mThreadStarted != aStarted);
+
+    if (aStarted)
+    {
+        Start();
+    }
+    else
+    {
+        Stop();
+    }
+
+    mThreadStarted = aStarted;
+
+exit:
+    otbrLog(OTBR_LOG_INFO, "Thread is %s", (aStarted ? "up" : "down"));
 }
 
 void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
@@ -304,7 +355,7 @@ void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArgumen
     assert(aEvent == Ncp::kEventThreadState);
 
     int started = va_arg(aArguments, int);
-    static_cast<BorderAgent *>(aContext)->SetThreadStarted(started);
+    static_cast<BorderAgent *>(aContext)->HandleThreadState(started);
 }
 
 void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)

@@ -73,8 +73,8 @@ void SteeringData::ComputeBloomFilter(const uint8_t *aJoinerId)
         ansi.Update(byte);
     }
 
-    SetBit(ccitt.Get() % numBits);
-    SetBit(ansi.Get() % numBits);
+    SetBit(static_cast<uint8_t>(ccitt.Get() % numBits));
+    SetBit(static_cast<uint8_t>(ansi.Get() % numBits));
 }
 
 } // namespace ot

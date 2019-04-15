@@ -202,7 +202,7 @@ private:
                                    const uint8_t *       aIp6,
                                    uint16_t              aPort,
                                    void *                aContext);
-    int         SendRelayTransmit(uint8_t *aBuf, size_t aLength);
+    ssize_t     SendRelayTransmit(uint8_t *aBuf, size_t aLength);
 
     mbedtls_net_context          mSslClientFd;
     mbedtls_ssl_context          mSsl;
@@ -213,7 +213,7 @@ private:
     bool                         mDtlsInitDone;
 
     Coap::Agent *  mCoapAgent;
-    int            mCoapToken;
+    uint16_t       mCoapToken;
     Coap::Resource mRelayReceiveHandler;
 
     uint8_t  mPskcBin[OT_PSKC_LENGTH];

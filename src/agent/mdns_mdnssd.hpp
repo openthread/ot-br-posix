@@ -169,7 +169,6 @@ private:
     typedef std::vector<Service> Services;
 
     Services     mServices;
-    int          mProtocol;
     const char * mHost;
     const char * mDomain;
     State        mState;

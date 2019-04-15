@@ -41,7 +41,7 @@ AC_INIT([OTBR],
         m4_esyscmd([third_party/openthread/repo/third_party/nlbuild-autotools/repo/scripts/mkversion -b `cat .default-version` .]),
         [openthread-devel@googlegroups.com],
         [otbr],
-        [https://github.com/openthread/ot-br-private])
+        [https://github.com/openthread/ot-br-posix])
 
 # Tell the rest of the build system the absolute path where the
 # nlbuild-autotools repository is rooted at.
@@ -61,7 +61,7 @@ AC_SUBST(abs_top_nlbuild_autotools_dir,[\${abs_top_srcdir}/\${nlbuild_autotools_
 #
 AC_SUBST(LIBOTBR_VERSION_CURRENT,  [0])
 AC_SUBST(LIBOTBR_VERSION_AGE,      [1])
-AC_SUBST(LIBOTBR_VERSION_REVISION, [0])
+AC_SUBST(LIBOTBR_VERSION_REVISION, [1])
 AC_SUBST(LIBOTBR_VERSION_INFO,     [${LIBOTBR_VERSION_CURRENT}:${LIBOTBR_VERSION_REVISION}:${LIBOTBR_VERSION_AGE}])
 
 #
@@ -266,7 +266,6 @@ AM_CONDITIONAL([OTBR_BUILD_OPTIMIZED], [test "${nl_cv_build_optimized}" = "yes"]
 
 AC_SUBST(PRETTY, ["\${abs_top_srcdir}/.script/clang-format.sh"])
 AC_SUBST(PRETTY_ARGS, ["-style=file -i"])
-AC_SUBST(PRETTY_CHECK, ["uncrustify"])
 AC_SUBST(PRETTY_CHECK, ["\${abs_top_srcdir}/.script/clang-format-check.sh"])
 AC_SUBST(PRETTY_CHECK_ARGS, [""])
 
@@ -469,6 +468,7 @@ fi
 
 CPPFLAGS="${CPPFLAGS} ${NL_COVERAGE_CPPFLAGS}"
 LIBS="${LIBS} ${NL_COVERAGE_LIBS}"
+LDFLAGS="${LDFLAGS} ${NL_COVERAGE_LDFLAGS}"
 
 # At this point, we can restore the compiler flags to whatever the
 # user passed in, now that we're clear of an -Werror issues by
@@ -514,6 +514,7 @@ doc/Makefile
 
 ac_configure_args="$ac_configure_args --disable-examples --disable-documentation"
 AC_CONFIG_SUBDIRS([third_party/libcoap/repo])
+
 #
 # Generate the auto-generated files for the package
 #
@@ -543,6 +544,7 @@ AC_MSG_NOTICE([
   Build coverage libraries                  : ${nl_cv_build_coverage}
   Build coverage reports                    : ${nl_cv_build_coverage_reports}
   MDNS implementation                       : ${with_mdns}
+  Web service                               : ${enable_web_service}
   Lcov                                      : ${LCOV:--}
   Genhtml                                   : ${GENHTML:--}
   Build tests                               : ${nl_cv_build_tests}
