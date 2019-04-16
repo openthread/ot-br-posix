@@ -54,14 +54,10 @@ otbrError AgentInstance::Init(void)
 
     SuccessOrExit(error = mNcp->Init());
 
-    SuccessOrExit(error = mBorderAgent.Start());
+    mBorderAgent.Init();
 
 exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLog(OTBR_LOG_ERR, "Failed to create border route agent instance: %d!", error);
-    }
-
+    otbrLogResult("Initialize OpenThread Border Router Agent", error);
     return error;
 }
 

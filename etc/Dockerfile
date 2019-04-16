@@ -32,11 +32,9 @@ WORKDIR /app/borderrouter
 ADD . /app/borderrouter
 
 RUN apt-get -y update
-
-RUN apt-get install -y sudo lsb-core
+RUN apt-get install -y lsb-core rsyslog sudo
 
 RUN cd /app/borderrouter && NAT64=1 ./script/bootstrap
-
 RUN cd /app/borderrouter && NAT64=1 ./script/setup
 
 RUN chmod 644 /etc/bind/named.conf.options

@@ -114,7 +114,7 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port        = htons(kPortJoinerSession);
     mCoapAgent           = Coap::Agent::Create(SendCoap, this);
-    mCoapToken           = rand();
+    mCoapToken           = static_cast<uint16_t>(rand());
     mCoapAgent->AddResource(mRelayReceiveHandler);
     mCommissionState = kStateInvalid;
     VerifyOrExit((mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0)) > 0);
@@ -428,7 +428,7 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
 
         if (n > 0)
         {
-            mCoapAgent->Input(buffer, n, NULL, 0);
+            mCoapAgent->Input(buffer, static_cast<uint16_t>(n), NULL, 0);
         }
     }
 
@@ -446,7 +446,7 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
                 GetIPString((struct sockaddr *)(&from_addr), buf, sizeof(buf));
                 otbrLog(OTBR_LOG_INFO, "relay from: %s\n", buf);
             }
-            SendRelayTransmit(buffer, n);
+            SendRelayTransmit(buffer, static_cast<uint16_t>(n));
         }
     }
     gettimeofday(&nowTime, NULL);
@@ -556,7 +556,8 @@ void Commissioner::HandleRelayReceive(const Coap::Resource &aResource,
         switch (tlvType)
         {
         case Meshcop::kJoinerDtlsEncapsulation:
-            ret = send(commissioner->mJoinerSessionClientFd, requestTlv->GetValue(), requestTlv->GetLength(), 0);
+            ret = static_cast<int>(
+                send(commissioner->mJoinerSessionClientFd, requestTlv->GetValue(), requestTlv->GetLength(), 0));
             if (ret < 0)
             {
                 otbrLog(OTBR_LOG_ERR, "relay receive, sendto() fails with %d", errno);
@@ -594,7 +595,7 @@ exit:
     return;
 }
 
-int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
+ssize_t Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
 {
     uint8_t payload[kSizeMaxPacket];
     Tlv *   responseTlv = reinterpret_cast<Tlv *>(payload);
@@ -643,7 +644,7 @@ int Commissioner::SendRelayTransmit(uint8_t *aBuf, size_t aLength)
         mCoapAgent->FreeMessage(message);
     }
 
-    return aLength;
+    return static_cast<ssize_t>(aLength);
 }
 
 int Commissioner::GetNumFinalizedJoiners(void)

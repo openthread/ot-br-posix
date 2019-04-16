@@ -149,8 +149,8 @@ TEST(Coap, TestRequest)
     // Process request
     {
         ssize_t count = recvfrom(context.mSocket, buffer, sizeof(buffer), 0, NULL, NULL);
-        CHECK(count > 0);
-        context.mAgent->Input(buffer, count, NULL, 0);
+        CHECK(count > 0 && count <= 0xffff);
+        context.mAgent->Input(buffer, static_cast<uint16_t>(count), NULL, 0);
         CHECK_EQUAL(true, context.mRequestHandled);
         CHECK_EQUAL(false, context.mResponseHandled);
     }
@@ -158,8 +158,8 @@ TEST(Coap, TestRequest)
     // Process reponse
     {
         ssize_t count = recvfrom(context.mSocket, buffer, sizeof(buffer), 0, NULL, NULL);
-        CHECK(count > 0);
-        context.mAgent->Input(buffer, count, NULL, 0);
+        CHECK(count > 0 && count <= 0xffff);
+        context.mAgent->Input(buffer, static_cast<uint16_t>(count), NULL, 0);
         CHECK_EQUAL(true, context.mResponseHandled);
     }
 

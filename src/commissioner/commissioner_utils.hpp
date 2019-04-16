@@ -56,7 +56,7 @@ namespace Utils {
  */
 inline uint16_t LengthOf(const void *aStart, const void *aEnd)
 {
-    return static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart);
+    return static_cast<uint16_t>(static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart));
 }
 
 /**

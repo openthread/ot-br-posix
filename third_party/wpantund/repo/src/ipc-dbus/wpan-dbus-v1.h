@@ -92,6 +92,8 @@
 #define WPANTUND_IF_CMD_PEEK                  "Peek"
 #define WPANTUND_IF_CMD_POKE                  "Poke"
 
+#define WPANTUND_IF_SIGNAL_NETWORK_TIME_UPDATE "NetworkTimeUpdate"
+
 // ============================================================================
 // NestLabs Internal API Interface
 

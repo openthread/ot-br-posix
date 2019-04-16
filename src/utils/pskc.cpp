@@ -56,7 +56,7 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
     memcpy(mSalt + cur, aNetworkName, strlen(aNetworkName));
     cur += strlen(aNetworkName);
 
-    mSaltLen = cur;
+    mSaltLen = static_cast<uint16_t>(cur);
 
 exit:
     if (ret != kPskcStatus_Ok)

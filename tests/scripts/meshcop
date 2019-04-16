@@ -241,7 +241,7 @@ test_setup()
   # We will be creating a lot of log information
   # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
   if [[ -f /etc/logrotate.conf ]]; then
-    sudo logrotate -f /etc/logrotate.conf
+    sudo logrotate -f /etc/logrotate.conf || true
   fi
 
   # From now on - all exits are TRAPPED
@@ -323,7 +323,7 @@ compile_wpantund()
 
 compile_openthread()
 {
-  (cd "${ABS_TOP_BUILDDIR}/third_party/openthread" && make -f repo/examples/Makefile-posix TargetTuple=otbr)
+  (cd "${ABS_TOP_BUILDDIR}/third_party/openthread" && make -f repo/examples/Makefile-posix DISABLE_DOC=1 TargetTuple=otbr)
   executable_or_die "${OT_NCP_PATH}"
   executable_or_die "${OT_CLI_PATH}"
   executable_or_die "${OT_RADIO_PATH}"
