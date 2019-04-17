@@ -174,7 +174,7 @@ void BorderAgent::HandleMdnsState(Mdns::State aState)
         PublishService();
         break;
     default:
-        otbrLog(OTBR_LOG_WARNING, "Mdns service not available!");
+        otbrLog(OTBR_LOG_WARNING, "MDNS service not available!");
         break;
     }
 }
@@ -206,7 +206,7 @@ void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArgume
         VerifyOrExit(sent == static_cast<ssize_t>(length), perror("send to commissioner"));
     }
 
-    otbrLog(OTBR_LOG_INFO, "Sent to commissioner");
+    otbrLog(OTBR_LOG_DEBUG, "Sent to commissioner");
 
 exit:
     return;
@@ -278,8 +278,6 @@ void BorderAgent::StartPublishService(void)
 {
     VerifyOrExit(mNetworkName[0] != '\0');
 
-    otbrLog(OTBR_LOG_INFO, "Start publishing service");
-
     if (mPublisher->IsStarted())
     {
         PublishService();
@@ -290,7 +288,7 @@ void BorderAgent::StartPublishService(void)
     }
 
 exit:
-    return;
+    otbrLog(OTBR_LOG_INFO, "Start publishing service");
 }
 
 void BorderAgent::StopPublishService(void)

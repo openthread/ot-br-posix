@@ -202,7 +202,7 @@ void PublisherMDnsSd::Stop(void)
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {
-        otbrLog(OTBR_LOG_INFO, "MDNS remove service %s...", it->mName);
+        otbrLog(OTBR_LOG_INFO, "MDNS remove service %s", it->mName);
         DNSServiceRefDeallocate(it->mService);
     }
 
@@ -260,7 +260,7 @@ void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSe
 
         if (error != kDNSServiceErr_NoError)
         {
-            otbrLog(OTBR_LOG_WARNING, "DNSServiceProcessResult returned %s", DNSErrorToString(error));
+            otbrLog(OTBR_LOG_WARNING, "DNSServiceProcessResult failed: %s", DNSErrorToString(error));
         }
     }
 }
@@ -369,7 +369,7 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
 
         if (cur + recordLength >= txt + sizeof(txt))
         {
-            otbrLog(OTBR_LOG_ERR, "Skip text record too much long:%s=%s", name, value);
+            otbrLog(OTBR_LOG_WARNING, "Skip text record too much long: %s=%s", name, value);
             continue;
         }
 
