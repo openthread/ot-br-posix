@@ -31,6 +31,7 @@
 #endif
 
 #include <errno.h>
+#include <getopt.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
@@ -49,6 +50,12 @@ static const char kDefaultInterfaceName[] = "wpan0";
 
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
+static const struct option  kOptions[]   = {{"debug-level", required_argument, NULL, 'd'},
+                                         {"help", no_argument, NULL, 'h'},
+                                         {"thread-ifname", required_argument, NULL, 'I'},
+                                         {"verbose", no_argument, NULL, 'v'},
+                                         {"version", no_argument, NULL, 'V'},
+                                         {0, 0, 0, 0}};
 
 jmp_buf gResetJump;
 
@@ -59,7 +66,7 @@ static void HandleSignal(int aSignal)
     signal(aSignal, SIG_DFL);
 }
 
-int Mainloop(AgentInstance &aInstance)
+static int Mainloop(AgentInstance &aInstance)
 {
     int rval = EXIT_FAILURE;
 
@@ -97,7 +104,16 @@ int Mainloop(AgentInstance &aInstance)
     return rval;
 }
 
-void PrintVersion(void)
+static void PrintHelp(const char *aProgramName)
+{
+#if OTBR_ENABLE_NCP_WPANTUND
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", aProgramName);
+#else
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] [RADIO_DEVICE] [RADIO_CONFIG]\n", aProgramName);
+#endif
+}
+
+static void PrintVersion(void)
 {
     printf("%s\n", PACKAGE_VERSION);
 }
@@ -115,8 +131,9 @@ int main(int argc, char *argv[])
     int              ret           = EXIT_SUCCESS;
     const char *     interfaceName = kDefaultInterfaceName;
     Ncp::Controller *ncp           = NULL;
+    bool             verbose       = false;
 
-    while ((opt = getopt(argc, argv, "d:I:v")) != -1)
+    while ((opt = getopt_long(argc, argv, "d:hI:Vv", kOptions, NULL)) != -1)
     {
         switch (opt)
         {
@@ -129,17 +146,20 @@ int main(int argc, char *argv[])
             break;
 
         case 'v':
+            verbose = true;
+            break;
+
+        case 'V':
             PrintVersion();
             ExitNow();
             break;
 
+        case 'h':
+            PrintHelp(argv[0]);
+            ExitNow(ret = EXIT_SUCCESS);
+            break;
         default:
-#if OTBR_ENABLE_NCP_WPANTUND
-            fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", argv[0]);
-#else
-            fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] [RADIO_DEVICE] [RADIO_CONFIG]\n",
-                    argv[0]);
-#endif
+            PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
             break;
         }
@@ -153,9 +173,9 @@ int main(int argc, char *argv[])
 #endif
     VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
 
-    otbrLogInit(kSyslogIdent, logLevel);
+    otbrLogInit(kSyslogIdent, logLevel, verbose);
 
-    otbrLog(OTBR_LOG_INFO, "Starting border router agent on %s...", interfaceName);
+    otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 
     {
         AgentInstance instance(ncp);

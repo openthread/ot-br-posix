@@ -370,16 +370,16 @@ ba_start()
   write_syslog "AGENT: starting"
 
   # check version
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -v)
+  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -V)
   # check invalid arguments
   (cd "${ORIGIN_PWD}" && ! sudo "${OTBR_AGENT_PATH}" -x)
 
   # we launch this in the background
   set -x
   if [[ "${NCP_CONTROLLER}" = openthread ]]; then
-    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -d 6 ${ot_radio} ${LEADER_NODE_ID}&)
+    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_radio} ${LEADER_NODE_ID}&)
   else
-    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -d 6&)
+    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6&)
   fi
   set +x
 

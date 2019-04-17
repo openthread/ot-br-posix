@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
     SuccessOrExit(error = ParseArgs(argc, argv, args));
 
-    otbrLogInit("Commissioner", args.mDebugLevel);
+    otbrLogInit("Commissioner", args.mDebugLevel, true);
     signal(SIGTERM, HandleSignal);
     signal(SIGINT, HandleSignal);
 

@@ -472,7 +472,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         break;
 
     case AVAHI_CLIENT_CONNECTING:
-        otbrLog(OTBR_LOG_DEBUG, "Connecting to avahi server...");
+        otbrLog(OTBR_LOG_DEBUG, "Connecting to avahi server");
         break;
 
     default:
@@ -534,7 +534,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
         if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)) &&
             it->mPort == aPort)
         {
-            otbrLog(OTBR_LOG_INFO, "MDNS updating service %s...", aName);
+            otbrLog(OTBR_LOG_INFO, "MDNS update service %s", aName);
             error = avahi_entry_group_update_service_txt_strlst(
                 mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0), aName, aType, mDomain, last);
             SuccessOrExit(error);
@@ -543,7 +543,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
         }
     }
 
-    otbrLog(OTBR_LOG_INFO, "MDNS creating service %s...", aName);
+    otbrLog(OTBR_LOG_INFO, "MDNS create service %s", aName);
     error = avahi_entry_group_add_service_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0),
                                                  aName, aType, mDomain, mHost, aPort, last);
     SuccessOrExit(error);

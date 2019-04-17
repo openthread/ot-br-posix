@@ -99,7 +99,7 @@ DBusHandlerResult ControllerWpantund::HandlePropertyChangedSignal(DBusMessage &a
     VerifyOrExit(key != NULL, result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
     dbus_message_iter_next(&iter);
 
-    otbrLog(OTBR_LOG_INFO, "NCP property %s changed.", key);
+    otbrLog(OTBR_LOG_DEBUG, "NCP property %s changed.", key);
     SuccessOrExit(OTBR_ERROR_NONE == ParseEvent(key, &iter));
 
     result = DBUS_HANDLER_RESULT_HANDLED;
@@ -199,7 +199,6 @@ otbrError ControllerWpantund::ParseEvent(const char *aKey, DBusMessageIter *aIte
             ExitNow(ret = OTBR_ERROR_DBUS);
         }
 
-        otbrLog(OTBR_LOG_INFO, "xpanid %llu...", xpanid);
         EventEmitter::Emit(kEventExtPanId, reinterpret_cast<uint8_t *>(&xpanid));
     }
 
@@ -356,7 +355,7 @@ exit:
 
     if (ret != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_INFO, "UdpForwardSend failed: ", otbrErrorString(ret));
+        otbrLog(OTBR_LOG_WARNING, "UdpForwardSend failed: ", otbrErrorString(ret));
     }
 
     return ret;
@@ -473,13 +472,13 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
         key = kWPANTUNDProperty_NetworkPSKc;
         break;
     default:
-        otbrLog(OTBR_LOG_WARNING, "Unknown event %d", aEvent);
+        assert(false);
         break;
     }
 
     VerifyOrExit(key != NULL && mInterfaceDBusPath[0] != '\0', errno = EINVAL);
 
-    otbrLog(OTBR_LOG_DEBUG, "Requesting %s...", key);
+    otbrLog(OTBR_LOG_DEBUG, "Request event %s", key);
     VerifyOrExit((message = dbus_message_new_method_call(mInterfaceDBusName, mInterfaceDBusPath,
                                                          WPANTUND_DBUS_APIv1_INTERFACE, WPANTUND_IF_CMD_PROP_GET)) !=
                      NULL,
