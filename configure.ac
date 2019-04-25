@@ -439,10 +439,6 @@ AC_DEFUN([OTBR_REQUIRE_HEADER],
 
 OTBR_REQUIRE_HEADER([stdint.h])
 OTBR_REQUIRE_HEADER([string.h])
-AC_LANG_PUSH(C++)
-OTBR_REQUIRE_HEADER([boost/scoped_ptr.hpp])
-OTBR_REQUIRE_HEADER([boost/shared_ptr.hpp])
-AC_LANG_POP(C++)
 
 #
 # Check for types and structures
