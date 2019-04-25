@@ -38,14 +38,14 @@ bbb_disable_services()
     SERVICE_LIST="${SERVICE_LIST} bonescript.socket"
     SERVICE_LIST="${SERVICE_LIST} bonescript.service"
     SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
-    
+
     for service in $SERVICE_LIST
     do
         for action in stop disable
         do
             sudo systemctl $action $service
         done
-    done    
+    done
 }
 
 
@@ -56,7 +56,7 @@ disable_services()
     beagleboneblack)
          bbb_disable_services
          ;;
-    
+
     *)
          echo "Nothing to disable" > /dev/null
          ;;

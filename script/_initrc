@@ -72,7 +72,9 @@ with()
 
     VALUE=$(printenv "$1")
     if test -z "$VALUE"; then
-        eval VALUE="\$$1"
+        if test -f examples/platforms/$PLATFORM/default; then
+            VALUE="$(. examples/platforms/$PLATFORM/default && eval echo "\$$1")"
+        fi
     fi
 
     test "$VALUE" = 1
@@ -103,10 +105,6 @@ if test -z "$PLATFORM"; then
     PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
 fi
 echo "Current platform is $PLATFORM"
-
-if test -f examples/platforms/$PLATFORM/default; then
-    . examples/platforms/$PLATFORM/default
-fi
 
 STAGE_DIR=$(pwd)/._stage
 BUILD_DIR=$(pwd)/._build

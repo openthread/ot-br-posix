@@ -42,7 +42,7 @@ wpantund_install()
     CLONE_ARGS=""
 
     if [ -z "$WPANTUND_COMMIT" ]; then
-	CLONE_ARGS="--depth 1"
+        CLONE_ARGS="--depth 1"
     fi
 
     test -d $BUILD_DIR/wpantund || (cd $BUILD_DIR &&

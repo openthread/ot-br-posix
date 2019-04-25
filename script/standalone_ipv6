@@ -30,7 +30,7 @@
 # Purpose:
 #  To understand the purpose of this script see: print_big_ugly_warning() below.
 #----------------------------------------
-#   
+#
 
 # remember the name of this script
 SCRIPT_NAME=$0
@@ -271,13 +271,13 @@ To test/develop your applications a means for these other devices on
 your test network to talk to devices on the Thread Network must exist.
 
 The problem:
- 
+
 
    Most home network routers provide only IPv4 services. They most
    typically assume the upstream ISP network provider will provide
    IPv6 addresses and configuration. A test network is often issolated
    and not connected to the large world wide web, it is completely an
-   island. The upstream ISP provider does not exist. 
+   island. The upstream ISP provider does not exist.
 
    In the end something needs to provide a minimal IPv6 configuration.
 
