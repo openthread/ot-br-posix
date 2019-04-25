@@ -472,6 +472,29 @@ LDFLAGS="${LDFLAGS} ${NL_COVERAGE_LDFLAGS}"
 
 NL_RESTORE_WERROR
 
+#
+# Agent user
+#
+
+AC_ARG_WITH(
+    [agent-user],
+    [AS_HELP_STRING([--with-agent-user=<USER>],[Specify the user to run otbr-agent service @<:@default=root@:>@.])],
+    [
+	    OTBR_AGENT_USER="${withval}"
+    ],
+    [
+	    OTBR_AGENT_USER=root
+    ])
+
+AC_MSG_CHECKING([Agent user])
+AC_MSG_RESULT(${OTBR_AGENT_USER})
+AC_SUBST(OTBR_AGENT_USER)
+AC_DEFINE_UNQUOTED([OTBR_AGENT_USER],[${OTBR_AGENT_USER}],[Define the user to run otbr-agent service])
+
+#
+# systemd
+#
+
 AC_ARG_WITH([systemdsystemunitdir],
             AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Path to install systemd unit files.]),
             [], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
@@ -496,6 +519,7 @@ third_party/angular-material/Makefile
 include/Makefile
 src/Makefile
 src/agent/Makefile
+src/agent/otbr-agent.conf
 src/commissioner/Makefile
 src/common/Makefile
 src/utils/Makefile
