@@ -276,8 +276,10 @@ main()
     prepare_libmdnssd
 
     make showcommands otbr-agent
+    make showcommands otbr-agent.conf
 
     test -f out/target/product/generic_arm64/system/bin/otbr-agent
+    test -f out/target/product/generic_arm64/system/etc/dbus-1/system.d/otbr-agent.conf
 }
 
 main "$@"
