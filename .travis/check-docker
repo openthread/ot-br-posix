@@ -31,7 +31,7 @@ set -e
 set -x
 
 main() {
-    docker build -t otbr -f etc/Dockerfile .
+    docker build -t otbr -f etc/docker/Dockerfile .
     SOCAT_OUTPUT=/tmp/ot-socat
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
     while true; do

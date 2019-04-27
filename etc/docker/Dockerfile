@@ -27,18 +27,21 @@
 
 FROM ubuntu
 
-WORKDIR /app/borderrouter
+ENV DEBIAN_FRONTEND noninteractive
+ENV RELEASE 1
+ENV NAT64 1
+ENV DNS64 1
 
-ADD . /app/borderrouter
+COPY . /app
 
-RUN apt-get -y update
-RUN apt-get install -y lsb-core rsyslog sudo
+WORKDIR /app
 
-RUN cd /app/borderrouter && NAT64=1 ./script/bootstrap
-RUN cd /app/borderrouter && NAT64=1 ./script/setup
+RUN apt-get update
+RUN apt-get install -y lsb-core sudo
 
+RUN ./script/bootstrap && ./script/setup
 RUN chmod 644 /etc/bind/named.conf.options
 
-ENTRYPOINT ["/app/borderrouter/script/docker_entrypoint.sh"]
+ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 
 EXPOSE 80
