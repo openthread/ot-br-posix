@@ -93,7 +93,7 @@ option ntp_servers
 require dhcp_server_identifier
 
 # Generate Stable Private IPv6 Addresses instead of hardware based ones
-slaac hwaddr 
+slaac hwaddr
 
 # A hook script is provided to lookup the hostname if not set by the DHCP
 # server, but it should not be run by default.
@@ -111,7 +111,7 @@ nodhcp6
 interface $WAN_INTERFACE
 iaid 1
 ipv6rs
-ia_na 2 
+ia_na 2
 ia_pd 3/::/63 $WPANTUND_INTERFACE/1
 
 EOF
@@ -323,7 +323,7 @@ dhcpv6_pd_install()
         create_ncp_state_notifier_service
 
         sudo systemctl daemon-reload
-        
+
         if systemctl is-active NetworkManager; then
             sudo systemctl restart NetworkManager || die "Unable to restart NetworkManager!"
         fi
