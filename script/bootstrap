@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -78,7 +78,7 @@ install_packages_apt()
     without NETWORK_MANAGER || sudo apt-get install -y network-manager
 
     # dhcpcd5
-    if [ $DHCPV6_PD -eq 1 ]; then
+    if test -z "$DHCPV6_PD"; then
         # More details can be found in issue: #122
         if [ $PLATFORM = "raspbian" ]; then
             sudo dpkg -i third_party/dhcpcd/dhcpcd5_6.11.5-1+rpt2_armhf.deb

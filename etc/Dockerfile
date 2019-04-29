@@ -27,18 +27,18 @@
 
 FROM ubuntu
 
-WORKDIR /app/borderrouter
-
-ADD . /app/borderrouter
+WORKDIR /app/
 
 RUN apt-get -y update
-RUN apt-get install -y lsb-core rsyslog sudo
+RUN apt-get install -y git lsb-core rsyslog sudo
 
-RUN cd /app/borderrouter && NAT64=1 ./script/bootstrap
-RUN cd /app/borderrouter && NAT64=1 ./script/setup
+RUN git clone --recursive https://github.com/openthread/ot-br-posix.git
+
+RUN cd /app/ot-br-posix && NAT64=1 ./script/bootstrap
+RUN cd /app/ot-br-posix && NAT64=1 ./script/setup
 
 RUN chmod 644 /etc/bind/named.conf.options
 
-ENTRYPOINT ["/app/borderrouter/script/docker_entrypoint.sh"]
+ENTRYPOINT ["/app/ot-br-posix/script/docker_entrypoint.sh"]
 
 EXPOSE 80

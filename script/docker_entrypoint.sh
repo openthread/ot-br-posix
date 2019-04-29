@@ -92,7 +92,7 @@ echo "IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC" >> /etc/wpantund.conf
 echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME\"" > /etc/default/otbr-agent
 echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -p 80\"" > /etc/default/otbr-web
 
-NAT64=1 DNS64=1 /app/borderrouter/script/server
+NAT64=1 DNS64=1 /app/ot-br-posix/script/server
 
 while [ $? = 0 ]
 do
