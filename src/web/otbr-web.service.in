@@ -5,7 +5,7 @@ ConditionPathExists=@sbindir@/otbr-web
 
 [Service]
 EnvironmentFile=-@sysconfdir@/default/otbr-web
-ExecStart=@sbindir@/otbr-web $BR_OPTS
+ExecStart=@sbindir@/otbr-web $OTBR_WEB_OPTS
 Restart=on-failure
 RestartSec=5
 RestartPreventExitStatus=SIGKILL
