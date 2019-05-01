@@ -164,9 +164,10 @@ install_cpputest()
 main()
 {
     . $BEFORE_HOOK
+    # TODO remove `|| true` after docker hub builder gets its git upgraded
+    git submodule update --init --recursive || true
     install_packages
     with RELEASE || install_cpputest
-    git submodule update --init --recursive
     ./bootstrap
     . $AFTER_HOOK
 }
