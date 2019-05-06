@@ -105,7 +105,7 @@ install_packages_rpm()
     else
         PM=yum
     fi
-    sudo $PM install -y gcc gcc-c++ libtool automake autoconf autoconf-archive git
+    sudo $PM install -y gcc gcc-c++ libtool automake autoconf autoconf-archive
     with RELEASE || sudo $PM install -y cmake
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
