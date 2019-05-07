@@ -364,7 +364,11 @@
             ev.path[0].disabled = true;
             
             httpRequest.then(function successCallback(response) {
-                $scope.showAlert(event, 'Commission result:', response.data.result);
+                if (response.data.error == 0) {
+                    $scope.showAlert(event, 'Commission', 'success');
+                } else {
+                    $scope.showAlert(event, 'Commission', 'failed');
+                }
                 ev.path[0].disabled = false;
             });
         };
