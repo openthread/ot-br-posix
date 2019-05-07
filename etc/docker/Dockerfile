@@ -37,7 +37,7 @@ COPY . /app
 WORKDIR /app
 
 RUN apt-get update
-RUN apt-get install -y lsb-core sudo
+RUN apt-get install -y git lsb-core sudo
 
 RUN ./script/bootstrap && ./script/setup
 RUN chmod 644 /etc/bind/named.conf.options
