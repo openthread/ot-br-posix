@@ -36,11 +36,15 @@ COPY . /app
 
 WORKDIR /app
 
-RUN apt-get update
-RUN apt-get install -y git lsb-core sudo
+RUN apt-get update && apt-get install -y git lsb-core sudo
 
+RUN git reset --hard && git clean -xffd
 RUN ./script/bootstrap && ./script/setup
 RUN chmod 644 /etc/bind/named.conf.options
+RUN mv ./script /tmp && mv ./etc /tmp
+RUN find . -delete && rm -rf /usr/include
+RUN mv /tmp/script . && mv /tmp/etc .
+RUN apt-get autoremove -y -o APT::Autoremove::RecommendsImportant=0 -o APT::Autoremove::SuggestsImportant=0 && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 
