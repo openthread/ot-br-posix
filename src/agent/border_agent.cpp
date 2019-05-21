@@ -103,13 +103,17 @@ void BorderAgent::Init(void)
     mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
 #endif
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
+    mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
 
     otbrLogResult("Check if Thread is up", mNcp->RequestEvent(Ncp::kEventThreadState));
+    otbrLogResult("Check if PSKc is initialized", mNcp->RequestEvent(Ncp::kEventPSKc));
 }
 
 otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mThreadStarted && mPSKcInitialized);
 
     // In case we didn't receive Thread down event.
     Stop();
@@ -329,9 +333,43 @@ void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
 #endif
 }
 
+void BorderAgent::HandlePSKc(void *aContext, int aEvent, va_list aArguments)
+{
+    assert(aEvent == Ncp::kEventPSKc);
+
+    static_cast<BorderAgent *>(aContext)->HandlePSKc(va_arg(aArguments, const uint8_t *));
+}
+
+void BorderAgent::HandlePSKc(const uint8_t *aPSKc)
+{
+    mPSKcInitialized = false;
+
+    for (size_t i = 0; i < kSizePSKc; ++i)
+    {
+        if (aPSKc[i] != 0)
+        {
+            mPSKcInitialized = true;
+            break;
+        }
+    }
+
+    if (mPSKcInitialized)
+    {
+        Start();
+    }
+    else
+    {
+        Stop();
+    }
+
+    otbrLog(OTBR_LOG_INFO, "PSKc is %s", (mPSKcInitialized ? "initialized" : "not initialized"));
+}
+
 void BorderAgent::HandleThreadState(bool aStarted)
 {
     VerifyOrExit(mThreadStarted != aStarted);
+
+    mThreadStarted = aStarted;
 
     if (aStarted)
     {
@@ -341,8 +379,6 @@ void BorderAgent::HandleThreadState(bool aStarted)
     {
         Stop();
     }
-
-    mThreadStarted = aStarted;
 
 exit:
     otbrLog(OTBR_LOG_INFO, "Thread is %s", (aStarted ? "up" : "down"));
