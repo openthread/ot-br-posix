@@ -1,5 +1,7 @@
 [![Build Status][otbr-travis-svg]][otbr-travis]
 [![Coverage Status][otbr-codecov-svg]][otbr-codecov]
+[![Docker Status][otbr-docker-amd64-linux-svg]][otbr-docker-amd64-linux]
+[![Docker Status][otbr-docker-arm32v7l-raspbian-svg]][otbr-docker-arm32v7l-raspbian]
 
 ---
 
@@ -34,6 +36,10 @@ More information about Thread can be found at [threadgroup.org](http://threadgro
 [otbr-travis-svg]: https://travis-ci.org/openthread/ot-br-posix.svg?branch=master
 [otbr-codecov]: https://codecov.io/gh/openthread/ot-br-posix
 [otbr-codecov-svg]: https://codecov.io/gh/openthread/ot-br-posix/branch/master/graph/badge.svg
+[otbr-docker-amd64-linux]: https://hub.docker.com/r/openthread/otbr_amd64_linux
+[otbr-docker-amd64-linux-svg]: https://img.shields.io/docker/cloud/build/openthread/otbr_amd64_linux.svg?label=docker%20%7C%20amd64_linux
+[otbr-docker-arm32v7l-raspbian]: https://hub.docker.com/r/openthread/arm32v7l-raspbian
+[otbr-docker-arm32v7l-raspbian-svg]: https://img.shields.io/docker/cloud/build/openthread/otbr_arm32v7l_raspbian.svg?label=docker%20%7C%20arm32v7l_raspbian
 
 ## Getting started
 

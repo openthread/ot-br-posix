@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -40,9 +40,11 @@ install_packages_apt()
                          iproute2 \
                          iputils-ping \
                          apt-utils
-    sudo apt-get install -y build-essential libtool git automake autoconf
+    sudo apt-get install -y build-essential libtool automake autoconf
 
     with RELEASE || sudo apt-get install -y cmake
+
+    sudo apt-get install -y rsyslog
 
     # For wpantund
     sudo apt-get install -y libdbus-1-dev
@@ -54,8 +56,7 @@ install_packages_apt()
     sudo apt-get install -y libavahi-common-dev libavahi-client-dev avahi-daemon
 
     # Doxygen
-    # TODO remove this in release mode
-    sudo apt-get install -y doxygen
+    with RELEASE || sudo apt-get install -y doxygen
 
     # For libcoap to generate .sym and .map
     # TODO remove this in release mode
@@ -78,14 +79,15 @@ install_packages_apt()
     without NETWORK_MANAGER || sudo apt-get install -y network-manager
 
     # dhcpcd5
-    if [ $DHCPV6_PD -eq 1 ]; then
+    without DHCPV6_PD || {
         # More details can be found in issue: #122
-        if [ $PLATFORM = "raspbian" ]; then
+        if [ $PLATFORM = 'raspbian' ]; then
+            # TODO should figure out a better way to deal with this
             sudo dpkg -i third_party/dhcpcd/dhcpcd5_6.11.5-1+rpt2_armhf.deb
         else
             sudo apt-get install -y dhcpcd5
         fi
-    fi
+    }
 
     # libjsoncpp
     sudo apt-get install -y libjsoncpp-dev
@@ -103,7 +105,7 @@ install_packages_rpm()
     else
         PM=yum
     fi
-    sudo $PM install -y gcc gcc-c++ libtool automake autoconf autoconf-archive git
+    sudo $PM install -y gcc gcc-c++ libtool automake autoconf autoconf-archive
     with RELEASE || sudo $PM install -y cmake
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
@@ -162,9 +164,10 @@ install_cpputest()
 main()
 {
     . $BEFORE_HOOK
+    # TODO remove `|| true` after docker hub builder gets its git upgraded
+    git submodule update --init --recursive || true
     install_packages
     with RELEASE || install_cpputest
-    git submodule update --init --recursive
     ./bootstrap
     . $AFTER_HOOK
 }

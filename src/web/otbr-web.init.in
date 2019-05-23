@@ -29,7 +29,7 @@
 # Provides:          otbr-web
 # Required-Start:    wpantund otbr-agent
 # Required-Stop:
-# Should-Start:      
+# Should-Start:
 # Should-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
@@ -54,7 +54,7 @@ if [ -f $OTBR_WEB_CONF ]; then
     . $OTBR_WEB_CONF
 fi
 
-start_web() 
+start_web()
 {
     if [ -e $PIDFILE ]; then
         if $0 status > /dev/null ; then

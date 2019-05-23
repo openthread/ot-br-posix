@@ -33,7 +33,7 @@ include $(top_srcdir)/third_party/openthread/openthread.mk
 
 # Temporary disable -Werror for the included third party server_http
 
-override CXXFLAGS := $(filter-out -std=gnu++98 -Wshadow -Werror,$(CXXFLAGS))
+override CXXFLAGS := $(filter-out -Wshadow -Werror,$(CXXFLAGS))
 
 sbin_PROGRAMS = otbr-web
 
@@ -108,7 +108,6 @@ libotbr_web_la_CPPFLAGS                                         = \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl         \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund        \
     -DWEB_FILE_PATH=\"$(datadir)/border-router/frontend\"         \
-    -std=c++11                                                    \
     $(DBUS_CFLAGS)                                                \
     $(MBEDTLS_CPPFLAGS)                                           \
     $(OPENTHREAD_CPPFLAGS)                                        \

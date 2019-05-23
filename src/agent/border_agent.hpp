@@ -129,8 +129,9 @@ private:
     void SetNetworkName(const char *aNetworkName);
     void SetExtPanId(const uint8_t *aExtPanId);
     void HandleThreadState(bool aStarted);
+    void HandlePSKc(const uint8_t *aPSKc);
 
-    static void HandlePSKcChanged(void *aContext, int aEvent, va_list aArguments);
+    static void HandlePSKc(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);
     static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
     static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
@@ -144,6 +145,7 @@ private:
     uint8_t mExtPanId[kSizeExtPanId];
     char    mNetworkName[kSizeNetworkName + 1];
     bool    mThreadStarted;
+    bool    mPSKcInitialized;
 };
 
 /**
