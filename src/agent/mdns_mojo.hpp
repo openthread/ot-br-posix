@@ -1,10 +1,9 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2019, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
- *    modification, are permitted provided that the following conditions are
- * met:
+ *    modification, are permitted provided that the following conditions are met:
  *    1. Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *    2. Redistributions in binary form must reproduce the above copyright
@@ -14,8 +13,8 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
- * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  *    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  *    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  *    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
@@ -29,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for MDNS service based on avahi.
+ *   This file includes definition for MDNS service based on mojo.
  */
 
 #ifndef MDNS_MOJO_HPP__
@@ -38,15 +37,33 @@
 #include <base/macros.h>
 #include <base/message_loop/message_loop.h>
 #include <base/message_loop/message_pump_for_io.h>
+#ifndef TEST_IN_CHROMIUM
 #include <base/task_scheduler/post_task.h>
+#else
+#include <base/task/post_task.h>
+#endif
 #include <chromecast/external_mojo/public/cpp/common.h>
+#ifndef TEST_IN_CHROMIUM
 #include <chromecast/external_mojo/public/cpp/external_connector.h>
+#else
+#include <chromecast/external_mojo/external_service_support/external_connector.h>
+#endif
 
-#include <mutex>
 #include <thread>
 
+#ifndef TEST_IN_CHROMIUM
 #include "agent/mdns.hpp"
-#include "public/chromecast/mojom/mdns.mojom.h"
+#include "third_party/chromecast/mojom/mdns.mojom.h"
+#else
+#include "mdns.hpp"
+#include "mdns_mojo_test/public/mojom/mdns.mojom.h"
+#endif
+
+#ifndef TEST_IN_CHROMIUM
+#define MOJO_CONNECTOR_NS chromecast::external_mojo
+#else
+#define MOJO_CONNECTOR_NS chromecast::external_service_support
+#endif
 
 namespace ot {
 namespace BorderRouter {
@@ -55,6 +72,13 @@ namespace Mdns {
 class MdnsMojoPublisher : public Publisher
 {
 public:
+    /**
+     * The constructor to MdnsMojoPublisher
+     *
+     * @param[in]   aHandler    The callback function for mojo connect state change
+     * @param[in]   aContext    The context for callback function
+     *
+     */
     MdnsMojoPublisher(StateHandler aHandler, void *aContext);
 
     /**
@@ -88,7 +112,8 @@ public:
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
      * @param[in]   ...                 Pointers to null-terminated string of key
-     * and value for text record. The last argument must be NULL.
+     *                                  and value for text record.
+     *                                  The last argument must be NULL.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
@@ -113,10 +138,11 @@ public:
      * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
      * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
      * @param[inout]    aMaxFd          A reference to the current max fd in @p
-     * aReadFdSet and @p aWriteFdSet.
+     *                                  aReadFdSet and @p aWriteFdSet.
      * @param[inout]    aTimeout        A reference to the timeout. Update this
-     * value if the MDNS service has pending process in less than its current
-     * value.
+     *                                  value if the MDNS service has pending
+     *                                  process in less than its current
+     *                                  value.
      *
      */
     void UpdateFdSet(fd_set & aReadFdSet,
@@ -124,6 +150,8 @@ public:
                      fd_set & aErrorFdSet,
                      int &    aMaxFd,
                      timeval &aTimeout) override;
+
+    ~MdnsMojoPublisher(void) override;
 
 private:
     void PublishServiceTask(uint16_t                        aPort,
@@ -134,15 +162,17 @@ private:
     void StopPublishTask(void);
 
     void LaunchMojoThreads(void);
+    void TearDownMojoThreads(void);
     void ConnectToMojo(void);
-    void mMojoConnectCb(std::unique_ptr<chromecast::external_mojo::ExternalConnector> aConnector);
+    void mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> aConnector);
     void mMojoDisconnectedCb(void);
     void mRegisterServiceCb(chromecast::mojom::MdnsResult aResult);
 
-    scoped_refptr<base::SingleThreadTaskRunner>                   mMojoTaskRunner;
-    std::unique_ptr<std::thread>                                  mLaunchThread;
-    std::unique_ptr<chromecast::external_mojo::ExternalConnector> mConnector;
-    chromecast::mojom::MdnsResponderPtr                           mResponder;
+    scoped_refptr<base::SingleThreadTaskRunner>           mMojoTaskRunner;
+    std::unique_ptr<std::thread>                          mMojoCoreThread;
+    base::Closure                                         mMojoCoreThreadQuitClosure;
+    std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> mConnector;
+    chromecast::mojom::MdnsResponderPtr                   mResponder;
 
     std::string mLastServiceName;
     std::string mLastInstanceName;
@@ -151,8 +181,8 @@ private:
     void *       mContext;
     bool         mStarted;
 
-    MdnsMojoPublisher(const MdnsMojoPublisher &);
-    MdnsMojoPublisher &operator=(const MdnsMojoPublisher &);
+    MdnsMojoPublisher(const MdnsMojoPublisher &) = delete;
+    MdnsMojoPublisher &operator=(const MdnsMojoPublisher &) = delete;
 };
 
 } // namespace Mdns

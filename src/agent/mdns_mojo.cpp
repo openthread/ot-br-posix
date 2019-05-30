@@ -1,38 +1,87 @@
+/*
+ *    Copyright (c) 2019, The OpenThread Authors.
+ *    All rights reserved.
+ *
+ *    Redistribution and use in source and binary forms, with or without
+ *    modification, are permitted provided that the following conditions are met:
+ *    1. Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *    2. Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *    3. Neither the name of the copyright holder nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *    POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * @file
+ *   This file includes implementation for MDNS service based on mojo.
+ */
+
 #include <base/at_exit.h>
 #include <base/bind.h>
 #include <base/bind_helpers.h>
 #include <base/command_line.h>
 #include <base/logging.h>
-#include <base/task_scheduler/post_task.h>
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
 
-#include <functional>
-
-#include "agent/mdns_mojo.hpp"
 #include "common/code_utils.hpp"
+#ifndef TEST_IN_CHROMIUM
+#include "agent/mdns_mojo.hpp"
 #include "common/logging.hpp"
+#else
+#include "mdns_mojo.hpp"
+#define otbrLog(level, format, ...)             \
+    do                                          \
+    {                                           \
+        fprintf(stderr, format, ##__VA_ARGS__); \
+        fprintf(stderr, "\r\n");                \
+    } while (0)
+#endif
 
 namespace ot {
 namespace BorderRouter {
 namespace Mdns {
 
-void MdnsMojoPublisher::LaunchMojoThreads()
+void MdnsMojoPublisher::LaunchMojoThreads(void)
 {
     otbrLog(OTBR_LOG_INFO, "chromeTask");
     base::CommandLine::Init(0, NULL);
-    base::AtExitManager exit_manager;
+    base::AtExitManager exitManager;
 
-    base::MessageLoopForIO main_loop;
-    base::RunLoop          run_loop;
+    base::MessageLoopForIO mainLoop;
+    base::RunLoop          runLoop;
 
     mojo::core::Init();
-    mojo::core::ScopedIPCSupport ipc_support(main_loop.task_runner(),
-                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+    mojo::core::ScopedIPCSupport ipcSupport(mainLoop.task_runner(),
+                                            mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
-    mMojoTaskRunner = main_loop.task_runner();
+    mMojoTaskRunner = mainLoop.task_runner();
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)));
-    run_loop.Run();
+    mMojoCoreThreadQuitClosure = runLoop.QuitClosure();
+    runLoop.Run();
+}
+
+void MdnsMojoPublisher::TearDownMojoThreads(void)
+{
+    mConnector      = nullptr;
+    mResponder      = nullptr;
+    mMojoTaskRunner = nullptr;
+    mMojoCoreThreadQuitClosure.Run();
 }
 
 MdnsMojoPublisher::MdnsMojoPublisher(StateHandler aHandler, void *aContext)
@@ -41,18 +90,18 @@ MdnsMojoPublisher::MdnsMojoPublisher(StateHandler aHandler, void *aContext)
     , mContext(aContext)
     , mStarted(false)
 {
-    mLaunchThread = std::make_unique<std::thread>(&MdnsMojoPublisher::LaunchMojoThreads, this);
+    mMojoCoreThread = std::make_unique<std::thread>(&MdnsMojoPublisher::LaunchMojoThreads, this);
 }
 
-void MdnsMojoPublisher::ConnectToMojo()
+void MdnsMojoPublisher::ConnectToMojo(void)
 {
     otbrLog(OTBR_LOG_INFO, "Connecting to Mojo");
-    chromecast::external_mojo::ExternalConnector::Connect(
+    MOJO_CONNECTOR_NS::ExternalConnector::Connect(
         chromecast::external_mojo::GetBrokerPath(),
         base::BindOnce(&MdnsMojoPublisher::mMojoConnectCb, base::Unretained(this)));
 }
 
-void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<chromecast::external_mojo::ExternalConnector> aConnector)
+void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> aConnector)
 {
     if (aConnector)
     {
@@ -69,12 +118,12 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<chromecast::external_mojo
     }
 }
 
-void MdnsMojoPublisher::mMojoDisconnectedCb()
+void MdnsMojoPublisher::mMojoDisconnectedCb(void)
 {
     mConnector = nullptr;
 }
 
-otbrError MdnsMojoPublisher::Start()
+otbrError MdnsMojoPublisher::Start(void)
 {
     otbrError err = OTBR_ERROR_NONE;
 
@@ -86,7 +135,7 @@ exit:
     return err;
 }
 
-bool MdnsMojoPublisher::IsStarted() const
+bool MdnsMojoPublisher::IsStarted(void) const
 {
     return mStarted;
 }
@@ -149,13 +198,13 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
     serviceName     = aType.substr(0, split);
     serviceProtocol = aType.substr(split + 1, std::string::npos);
 
-    VerifyOrExit(!serviceName.empty() && !serviceProtocol.empty());
-
     // Remove the last trailing dot since the cast mdns will add one
     if (serviceProtocol.back() == '.')
     {
         serviceProtocol.erase(serviceProtocol.size() - 1);
     }
+
+    VerifyOrExit(!serviceName.empty() && !serviceProtocol.empty());
 
     mResponder->UnregisterServiceInstance(serviceName, aInstanceName, base::DoNothing());
     if (!mLastServiceName.empty())
@@ -194,6 +243,14 @@ void MdnsMojoPublisher::Process(const fd_set &aReadFdSet, const fd_set &aWriteFd
     (void)aReadFdSet;
     (void)aWriteFdSet;
     (void)aErrorFdSet;
+}
+
+MdnsMojoPublisher::~MdnsMojoPublisher()
+{
+    mMojoTaskRunner->PostTask(FROM_HERE,
+                              base::BindOnce(&MdnsMojoPublisher::TearDownMojoThreads, base::Unretained(this)));
+
+    mMojoCoreThread->join();
 }
 
 Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext)

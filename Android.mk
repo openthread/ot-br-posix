@@ -28,6 +28,7 @@
 
 LOCAL_PATH := $(call my-dir)
 
+ifeq ($(WITH_MDNS),mojo)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
@@ -45,7 +46,7 @@ LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CPPFLAGS += -std=c++14
 
 LOCAL_MOJOM_FILES := \
-    public/chromecast/mojom/mdns.mojom \
+    third_party/chromecast/mojom/mdns.mojom \
     $(NULL)
 
 LOCAL_MOJOM_TYPEMAP_FILES :=
@@ -60,6 +61,7 @@ MDNS_MOJOM_SRCS := $(gen_src)
 LOCAL_SHARED_LIBRARIES += libchrome libmojo
 
 include $(BUILD_SHARED_LIBRARY)
+endif
 
 include $(CLEAR_VARS)
 
@@ -67,7 +69,6 @@ LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
 LOCAL_SHARED_LIBRARIES := libdbus
-WITH_MDNS := mojo
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/src \
@@ -109,10 +110,10 @@ LOCAL_SRC_FILES += \
     $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libmdnssd
-else ifeq($(WITH_MDNS),mojo)
-
+else
+ifeq ($(WITH_MDNS),mojo)
 LOCAL_CFLAGS += \
-    -DOTBR_ENABLE_MOJO=1 \
+    -DOTBR_ENABLE_MDNS_MOJO=1 \
     $(NULL)
 
 LOCAL_SRC_FILES += \
@@ -121,8 +122,9 @@ LOCAL_SRC_FILES += \
 
 # The generated header files are not in dependency chain.
 # Force dependency here
-LOCAL_ADDITIONAL_DEPENDENCIES += $(MDNS_MOJOM_GEN_SRCS)
+LOCAL_ADDITIONAL_DEPENDENCIES += $(MDNS_MOJOM_SRCS)
 LOCAL_SHARED_LIBRARIES += libmdns_mojom libchrome libmojo
+endif
 endif
 
 include $(BUILD_EXECUTABLE)
