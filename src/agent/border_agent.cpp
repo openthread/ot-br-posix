@@ -77,7 +77,7 @@ enum
 };
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
     : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
 #else
     : mPublisher(NULL)
@@ -98,7 +98,7 @@ void BorderAgent::Init(void)
 #if OTBR_ENABLE_NCP_WPANTUND
     mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
 #endif
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
     mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
     mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
 #endif
@@ -130,11 +130,11 @@ otbrError BorderAgent::Start(void)
                  error = OTBR_ERROR_ERRNO);
 #endif
 
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
     StartPublishService();
-#endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
 
     // Suppress unused warning of label exit
     ExitNow();
@@ -154,7 +154,7 @@ void BorderAgent::Stop(void)
     }
 #endif // OTBR_ENABLE_NCP_WPANTUND
 
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
     StopPublishService();
 #endif
 }
@@ -312,7 +312,7 @@ void BorderAgent::SetNetworkName(const char *aNetworkName)
 {
     strncpy(mNetworkName, aNetworkName, sizeof(mNetworkName) - 1);
 
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
     if (mThreadStarted)
     {
         // Restart publisher to publish new service name.
@@ -325,7 +325,7 @@ void BorderAgent::SetNetworkName(const char *aNetworkName)
 void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
 {
     memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MOJO
     if (mThreadStarted)
     {
         StartPublishService();
