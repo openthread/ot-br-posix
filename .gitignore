@@ -51,7 +51,6 @@ include/otbr-config.h
 include/otbr-config.h.in
 
 
-
 # VIM swap files
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
@@ -61,6 +60,7 @@ include/otbr-config.h.in
 src/agent/otbr-agent
 src/agent/otbr-agent.service
 src/agent/otbr-agent.init
+src/agent/otbr-agent.conf
 
 # Border router web service
 src/web/otbr-web
@@ -78,3 +78,11 @@ third_party/wpantund/wpantund.service
 
 # Tools
 tools/pskc
+tools/steering-data
+
+# Commissioner
+src/commissioner/otbr-commissioner
+
+# libcoap build
+third_party/libcoap/repo/libcoap-1.map
+third_party/libcoap/repo/libcoap-1.sym
