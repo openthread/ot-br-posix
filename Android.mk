@@ -60,6 +60,7 @@ LOCAL_SRC_FILES := \
     src/common/event_emitter.cpp \
     src/common/logging.cpp \
     src/utils/hex.cpp \
+    src/utils/strcpy_utils.cpp \
     $(NULL)
 
 LOCAL_SHARED_LIBRARIES := libdbus
