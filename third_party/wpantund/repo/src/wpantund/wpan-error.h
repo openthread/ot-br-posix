@@ -65,6 +65,11 @@ typedef enum {
 
 	kWPANTUNDStatus_InterfaceNotFound             = 28,
 
+	kWPANTUNDStatus_JoinerFailed_Security         = 29,
+	kWPANTUNDStatus_JoinerFailed_NoPeers          = 30,
+	kWPANTUNDStatus_JoinerFailed_ResponseTimeout  = 31,
+	kWPANTUNDStatus_JoinerFailed_Unknown          = 32,
+
 	kWPANTUNDStatus_NCPError_First                = 0xEA0000,
 	kWPANTUNDStatus_NCPError_Last                 = 0xEAFFFF,
 } wpantund_status_t;
