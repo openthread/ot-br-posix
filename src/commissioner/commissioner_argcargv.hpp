@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 
+#include "commissioner_api.h"
 #include "commissioner_constants.hpp"
 #include "common/types.hpp"
 #include "utils/steering_data.hpp"
@@ -51,8 +52,8 @@ struct CommissionerArgs
     const char *mPSKd;
     uint8_t     mPSKc[kPSKcLength];
 
-    SteeringData mSteeringData;
-    int          mKeepAliveInterval;
+    steering_data_handle_t mSteeringData;
+    int                    mKeepAliveInterval;
 
     int mDebugLevel;
 };

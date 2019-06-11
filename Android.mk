@@ -50,6 +50,8 @@ LOCAL_CFLAGS := \
     -DOTBR_ENABLE_NCP_WPANTUND=1 \
     $(NULL)
 
+LOCAL_CPPFLAGS += -std=c++14
+
 LOCAL_SRC_FILES := \
     third_party/wpantund/repo/src/util/string-utils.c \
     third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \

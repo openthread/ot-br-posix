@@ -86,3 +86,7 @@ src/commissioner/otbr-commissioner
 # libcoap build
 third_party/libcoap/repo/libcoap-1.map
 third_party/libcoap/repo/libcoap-1.sym
+
+.ycm_extra_conf.py
+third_party/openthread/build
+third_party/openthread/output

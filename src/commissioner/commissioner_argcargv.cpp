@@ -252,35 +252,18 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
     VerifyOrExit(networkName != NULL, fprintf(stderr, "Missing network name!"));
     VerifyOrExit(networkPassword != NULL, fprintf(stderr, "Missing network password!"));
     VerifyOrExit(isXPanIdSet, fprintf(stderr, "Missing extended PAN ID!"));
-
-    if (steeringLength == 0)
-    {
-        steeringLength = (allowAllJoiners ? 1 : kSteeringDefaultLength);
-    }
-
-    aArgs.mSteeringData.Init(static_cast<uint8_t>(steeringLength));
-
     if (!allowAllJoiners)
     {
         VerifyOrExit(aArgs.mPSKd != NULL, fprintf(stderr, "Missing PSKd!"));
         VerifyOrExit(isEui64Set, fprintf(stderr, "Missing EUI64!"));
-
-        aArgs.mSteeringData.ComputeJoinerId(joinerEui64, joinerEui64);
-        aArgs.mSteeringData.ComputeBloomFilter(joinerEui64);
-    }
-    else
-    {
-        aArgs.mSteeringData.Set();
     }
 
-    {
-        ot::Psk::Pskc pskc;
-
-        memcpy(aArgs.mPSKc, pskc.ComputePskc(xPanId, networkName, networkPassword), sizeof(aArgs.mPSKc));
-    }
+    SuccessOrExit(otbr_commissioner_create_steering_data(&aArgs.mSteeringData, static_cast<uint8_t>(steeringLength),
+                                                         allowAllJoiners, joinerEui64));
+    SuccessOrExit(
+        otbr_commissioner_compute_pskc(aArgs.mPSKc, sizeof(aArgs.mPSKc), xPanId, networkName, networkPassword));
 
     error = OTBR_ERROR_NONE;
-
 exit:
     if (error != OTBR_ERROR_NONE)
     {

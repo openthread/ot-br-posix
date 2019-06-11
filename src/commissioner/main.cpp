@@ -38,6 +38,7 @@
 #include <signal.h>
 
 #include "commissioner.hpp"
+#include "commissioner_api.h"
 #include "commissioner_argcargv.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -53,9 +54,9 @@ static void HandleSignal(int aSignal)
 
 int main(int argc, char **argv)
 {
-    otbrError        error;
-    CommissionerArgs args;
-    int              ret = 0;
+    otbrError                  error;
+    CommissionerArgs           args;
+    otbr_commissioner_handle_t commissioner = nullptr;
 
     SuccessOrExit(error = ParseArgs(argc, argv, args));
 
@@ -66,26 +67,20 @@ int main(int argc, char **argv)
     srand(static_cast<unsigned int>(time(0)));
 
     {
-        Commissioner commissioner(args.mPSKc, args.mKeepAliveInterval);
-        bool         joinerSetDone = false;
+        bool joinerSetDone = false;
+        bool isCommissionerValid;
 
-        commissioner.InitDtls(args.mAgentHost, args.mAgentPort);
+        SuccessOrExit(otbr_commissioner_create_commissioner_handle(&commissioner, args.mPSKc, args.mKeepAliveInterval));
+        SuccessOrExit(otbr_commissioner_connect_dtls(commissioner, args.mAgentHost, args.mAgentPort));
+        SuccessOrExit(otbr_commissioner_petition(commissioner));
+        SuccessOrExit(otbr_commissioner_is_valid(commissioner, &isCommissionerValid));
 
-        do
-        {
-            ret = commissioner.TryDtlsHandshake();
-        } while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
-
-        if (commissioner.IsValid())
-        {
-            commissioner.CommissionerPetition();
-        }
-
-        while (commissioner.IsValid())
+        while (isCommissionerValid)
         {
             int            maxFd   = -1;
             struct timeval timeout = {10, 0};
             int            rval;
+            bool           isCommissionerAccepted;
 
             fd_set readFdSet;
             fd_set writeFdSet;
@@ -94,22 +89,34 @@ int main(int argc, char **argv)
             FD_ZERO(&readFdSet);
             FD_ZERO(&writeFdSet);
             FD_ZERO(&errorFdSet);
-            commissioner.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
+            SuccessOrExit(
+                otbr_commissioner_update_fd_set(commissioner, &readFdSet, &writeFdSet, &errorFdSet, &maxFd, &timeout));
             rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, &timeout);
             if (rval < 0)
             {
                 otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
                 break;
             }
-            commissioner.Process(readFdSet, writeFdSet, errorFdSet);
-            if (commissioner.IsCommissionerAccepted() && !joinerSetDone)
+            SuccessOrExit(otbr_commissioner_process(commissioner, &readFdSet, &writeFdSet, &errorFdSet));
+            SuccessOrExit(otbr_commissioner_is_accepted(commissioner, &isCommissionerAccepted));
+            if (isCommissionerAccepted && !joinerSetDone)
             {
-                commissioner.SetJoiner(args.mPSKd, args.mSteeringData);
+                SuccessOrExit(otbr_commissioner_set_joiner(commissioner, args.mPSKd, args.mSteeringData));
+                // commissioner.SetJoiner(args.mPSKd, args.mSteeringData);
                 joinerSetDone = true;
             }
+            SuccessOrExit(otbr_commissioner_is_valid(commissioner, &isCommissionerValid));
         }
     }
 
 exit:
+    if (commissioner)
+    {
+        otbr_commissioner_free_commissioner_handle(commissioner);
+    }
+    if (args.mSteeringData)
+    {
+        otbr_commissioner_free_steering_data(args.mSteeringData);
+    }
     return error;
 }

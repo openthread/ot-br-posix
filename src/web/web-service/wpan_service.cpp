@@ -36,6 +36,7 @@
 #include <inttypes.h>
 
 #include "ot_client.hpp"
+#include "commissioner/commissioner_api.h"
 #include "common/code_utils.hpp"
 
 namespace ot {
@@ -632,11 +633,7 @@ std::string WpanService::CommissionDevice(const char *aPskd, const char *aNetwor
     }
 
     // We allow all joiners for simplicity
-    {
-        int steeringLength = 1;
-        args.mSteeringData.Init(steeringLength);
-        args.mSteeringData.Set();
-    }
+    otbr_commissioner_create_steering_data(&args.mSteeringData, 0, true, NULL);
 
     args.mKeepAliveInterval = 15;
     args.mDebugLevel        = OTBR_LOG_EMERG;
@@ -693,10 +690,11 @@ int WpanService::RunCommission(BorderRouter::CommissionerArgs aArgs)
         commissioner.Process(readFdSet, writeFdSet, errorFdSet);
         if (commissioner.IsCommissionerAccepted() && !joinerSetDone)
         {
-            commissioner.SetJoiner(aArgs.mPSKd, aArgs.mSteeringData);
+            commissioner.SetJoiner(aArgs.mPSKd, *reinterpret_cast<SteeringData *>(aArgs.mSteeringData));
             joinerSetDone = true;
         }
     }
+    otbr_commissioner_free_steering_data(aArgs.mSteeringData);
 
     return commissioner.GetNumFinalizedJoiners();
 }

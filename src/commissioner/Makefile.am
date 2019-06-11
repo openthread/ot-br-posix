@@ -37,6 +37,7 @@ bin_PROGRAMS = otbr-commissioner
 noinst_HEADERS                                        = \
     addr_utils.hpp                                      \
     commissioner.hpp                                    \
+    commissioner_api.h                                  \
     commissioner_argcargv.hpp                           \
     commissioner_constants.hpp                          \
     commissioner_utils.hpp                              \
@@ -46,6 +47,7 @@ noinst_HEADERS                                        = \
 libotbr_commissioner_la_SOURCES                       = \
     addr_utils.cpp                                      \
     commissioner.cpp                                    \
+    commissioner_api.cpp                                \
     commissioner_argcargv.cpp                           \
     joiner_session.cpp                                  \
     $(NULL)
