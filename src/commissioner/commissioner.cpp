@@ -101,6 +101,7 @@ static int DummyKeyExport(void *               aContext,
 
 Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     : mDtlsInitDone(false)
+    , mIsCommissioner(false)
     , mRelayReceiveHandler(OT_URI_PATH_RELAY_RX, Commissioner::HandleRelayReceive, this)
     , mPetitionRetryCount(0)
     , mJoinerSession(NULL)
@@ -116,7 +117,7 @@ Commissioner::Commissioner(const uint8_t *aPskcBin, int aKeepAliveRate)
     mCoapAgent           = Coap::Agent::Create(SendCoap, this);
     mCoapToken           = static_cast<uint16_t>(rand());
     mCoapAgent->AddResource(mRelayReceiveHandler);
-    mCommissionState = kStateInvalid;
+    mCommissionState = CommissionState::kStateInvalid;
     VerifyOrExit((mJoinerSessionClientFd = socket(AF_INET, SOCK_DGRAM, 0)) > 0);
     SuccessOrExit(connect(mJoinerSessionClientFd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)));
 exit:
@@ -192,11 +193,11 @@ int Commissioner::TryDtlsHandshake(void)
     int ret = mbedtls_ssl_handshake(&mSsl);
     if (ret == 0)
     {
-        mCommissionState = kStateConnected;
+        mCommissionState = CommissionState::kStateConnected;
     }
     else if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
     {
-        mCommissionState = kStateInvalid;
+        mCommissionState = CommissionState::kStateInvalid;
     }
     return ret;
 }
@@ -211,7 +212,7 @@ void Commissioner::CommissionerPetition(void)
     uint16_t       token = ++mCoapToken;
 
     otbrLog(OTBR_LOG_INFO, "COMM_PET.req: start");
-    if (mCommissionState == kStateRejected)
+    if (mCommissionState == CommissionState::kStateRejected)
     {
         sleep(kPetitionAttemptDelay);
         retryCount++;
@@ -273,13 +274,13 @@ void Commissioner::HandleCommissionerPetition(const Coap::Message &aMessage, voi
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                commissioner->mCommissionState = kStateAccepted;
+                commissioner->mCommissionState = CommissionState::kStateAccepted;
                 break;
             case Meshcop::kStateRejected:
-                commissioner->mCommissionState = kStateRejected;
+                commissioner->mCommissionState = CommissionState::kStateRejected;
                 break;
             default:
-                commissioner->mCommissionState = kStateInvalid;
+                commissioner->mCommissionState = CommissionState::kStateInvalid;
                 break;
             }
             break;
@@ -354,13 +355,14 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                commissioner->mCommissionState = kStateAccepted;
+                commissioner->mCommissionState = CommissionState::kStateAccepted;
+                commissioner->mIsCommissioner  = true;
                 break;
             case Meshcop::kStateRejected:
-                commissioner->mCommissionState = kStateRejected;
+                commissioner->mCommissionState = CommissionState::kStateRejected;
                 break;
             default:
-                commissioner->mCommissionState = kStateInvalid;
+                commissioner->mCommissionState = CommissionState::kStateInvalid;
                 break;
             }
             break;
@@ -382,16 +384,16 @@ void Commissioner::HandleCommissionerSet(const Coap::Message &aMessage, void *aC
 
 void Commissioner::CommissionerResponseNext(void)
 {
-    if (mCommissionState == kStateConnected || mCommissionState == kStateRejected)
+    if (mCommissionState == CommissionState::kStateConnected || mCommissionState == CommissionState::kStateRejected)
     {
-        if (mCommissionState != kStateInvalid && mPetitionRetryCount < kPetitionMaxRetry)
+        if (mCommissionState != CommissionState::kStateInvalid && mPetitionRetryCount < kPetitionMaxRetry)
         {
             mPetitionRetryCount++;
             CommissionerPetition();
         }
         else
         {
-            mCommissionState    = kStateInvalid;
+            mCommissionState    = CommissionState::kStateInvalid;
             mPetitionRetryCount = 0;
         }
     }
@@ -450,14 +452,22 @@ void Commissioner::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, 
         }
     }
     gettimeofday(&nowTime, NULL);
-    if (mCommissionState == kStateAccepted && mKeepAliveRate > 0 &&
+    if (mCommissionState == CommissionState::kStateAccepted && mKeepAliveRate > 0 &&
         nowTime.tv_sec - mLastKeepAliveTime.tv_sec > mKeepAliveRate)
     {
-        CommissionerKeepAlive();
+        CommissionerKeepAlive(static_cast<uint8_t>(Meshcop::kStateAccepted));
     }
 }
 
-void Commissioner::CommissionerKeepAlive(void)
+void Commissioner::Resign(void)
+{
+    if (mIsCommissioner)
+    {
+        CommissionerKeepAlive(static_cast<uint8_t>(Meshcop::kStateRejected));
+    }
+}
+
+void Commissioner::CommissionerKeepAlive(uint8_t aState)
 {
     uint8_t        buffer[kSizeMaxPacket];
     Tlv *          tlv = reinterpret_cast<Tlv *>(buffer);
@@ -468,7 +478,7 @@ void Commissioner::CommissionerKeepAlive(void)
                                      reinterpret_cast<const uint8_t *>(&mCoapToken), sizeof(mCoapToken));
 
     tlv->SetType(Meshcop::kState);
-    tlv->SetValue(static_cast<uint8_t>(Meshcop::kStateAccepted));
+    tlv->SetValue(aState);
     tlv = tlv->GetNext();
 
     tlv->SetType(Meshcop::kCommissionerSessionId);
@@ -515,13 +525,13 @@ void Commissioner::HandleCommissionerKeepAlive(const Coap::Message &aMessage, vo
             switch (state)
             {
             case Meshcop::kStateAccepted:
-                commissioner->mCommissionState = kStateAccepted;
+                commissioner->mCommissionState = CommissionState::kStateAccepted;
                 break;
             case Meshcop::kStateRejected:
-                commissioner->mCommissionState = kStateRejected;
+                commissioner->mCommissionState = CommissionState::kStateRejected;
                 break;
             default:
-                commissioner->mCommissionState = kStateInvalid;
+                commissioner->mCommissionState = CommissionState::kStateInvalid;
                 break;
             }
             break;
@@ -654,6 +664,7 @@ int Commissioner::GetNumFinalizedJoiners(void)
 
 Commissioner::~Commissioner()
 {
+    Resign();
     if (mDtlsInitDone)
     {
         int ret;

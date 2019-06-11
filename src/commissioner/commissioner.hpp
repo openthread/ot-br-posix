@@ -113,7 +113,7 @@ public:
      * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool IsValid(void) const { return mCommissionState != kStateInvalid; }
+    bool IsValid(void) const { return mCommissionState != CommissionState::kStateInvalid; }
 
     /**
      * This method returns whether the commissioner petition succeeded
@@ -121,7 +121,7 @@ public:
      * @returns inner commisioner state is kStateAccepted
      *
      */
-    bool IsCommissionerAccepted(void) const { return mCommissionState == kStateAccepted; }
+    bool IsCommissionerAccepted(void) const { return mCommissionState == CommissionState::kStateAccepted; }
 
     /**
      * This method initialize the dtls session
@@ -151,14 +151,6 @@ public:
     void CommissionerPetition(void);
 
     /**
-     * This method sends commissioner set coap request
-     *
-     * @param[in]    aSteeringData      steering data to filter joiner, overrrides data from constructor
-     *
-     */
-    void CommissionerSet(const SteeringData &aSteeringData);
-
-    /**
      * This method gets number of nodes joined through commissioner
      *
      * @returns number of JOIN_FIN.rsp messages sent
@@ -169,7 +161,21 @@ public:
     ~Commissioner();
 
 private:
-    enum CommissionState
+    /**
+     * This method sends commissioner set coap request
+     *
+     * @param[in]    aSteeringData      steering data to filter joiner, overrrides data from constructor
+     *
+     */
+    void CommissionerSet(const SteeringData &aSteeringData);
+
+    /**
+     * This method gracefully resign as commissioner
+     *
+     */
+    void Resign(void);
+
+    enum class CommissionState
     {
         kStateInvalid = 0, ///< uninitialized, encounter network error or petition exceeds max retry
         kStateConnected,   ///< dtls connection setup done
@@ -181,7 +187,7 @@ private:
     Commissioner &operator=(const Commissioner &);
 
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
-    void CommissionerKeepAlive(void);
+    void CommissionerKeepAlive(uint8_t aState);
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,
@@ -211,6 +217,7 @@ private:
     mbedtls_ssl_config           mSslConf;
     mbedtls_timing_delay_context mTimer;
     bool                         mDtlsInitDone;
+    bool                         mIsCommissioner;
 
     Coap::Agent *  mCoapAgent;
     uint16_t       mCoapToken;
