@@ -113,7 +113,7 @@ public:
      * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool IsValid(void) const { return mCommissionState != CommissionState::kStateInvalid; }
+    bool IsValid(void) const { return mCommissionerState != CommissionerState::kStateInvalid; }
 
     /**
      * This method returns whether the commissioner petition succeeded
@@ -121,7 +121,7 @@ public:
      * @returns inner commisioner state is kStateAccepted
      *
      */
-    bool IsCommissionerAccepted(void) const { return mCommissionState == CommissionState::kStateAccepted; }
+    bool IsCommissionerAccepted(void) const { return mCommissionerState == CommissionerState::kStateAccepted; }
 
     /**
      * This method initialize the dtls session
@@ -156,9 +156,9 @@ public:
      * @returns number of JOIN_FIN.rsp messages sent
      *
      */
-    int GetNumFinalizedJoiners(void);
+    int GetNumFinalizedJoiners(void) const;
 
-    ~Commissioner();
+    ~Commissioner(void);
 
 private:
     /**
@@ -170,24 +170,24 @@ private:
     void CommissionerSet(const SteeringData &aSteeringData);
 
     /**
-     * This method gracefully resign as commissioner
+     * This method gracefully resigns as commissioner
      *
      */
     void Resign(void);
 
-    enum class CommissionState
+    enum class CommissionerState
     {
         kStateInvalid = 0, ///< uninitialized, encounter network error or petition exceeds max retry
         kStateConnected,   ///< dtls connection setup done
         kStateAccepted,    ///< commissioner petition succeeded
         kStateRejected,    ///< rejected by leader, still retrying petition
-    } mCommissionState;
+    } mCommissionerState;
 
     Commissioner(const Commissioner &);
     Commissioner &operator=(const Commissioner &);
 
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
-    void CommissionerKeepAlive(uint8_t aState);
+    void SendCommissionerKeepAlive(int8_t aState);
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,
@@ -217,7 +217,6 @@ private:
     mbedtls_ssl_config           mSslConf;
     mbedtls_timing_delay_context mTimer;
     bool                         mDtlsInitDone;
-    bool                         mIsCommissioner;
 
     Coap::Agent *  mCoapAgent;
     uint16_t       mCoapToken;
