@@ -1,6 +1,4 @@
-#!/bin/sh
-#
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2019, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -25,68 +23,54 @@
 #  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
-#
 
-set -e
-set -x
+import("//build/config/nacl/config.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+import("//testing/test.gni")
 
-TOOLS_HOME=$HOME/.cache/tools
+executable("mdns_mojo_client") {
+  testonly = true
+  sources = [
+    "client.cpp",
+    "mdns_mojo.cpp",
+    "mdns_mojo.hpp",
+    "mdns.hpp",
+    "common/code_utils.hpp",
+    "common/types.hpp",
+  ]
 
-die() {
-	echo " *** ERROR: " $*
-	exit 1
+  defines = [
+    "TEST_IN_CHROMIUM"
+  ]
+
+  deps = [
+    "//mdns_mojo_test/public/mojom",
+    "//base",
+    "//mojo/core/embedder",
+    "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/platform",
+    "//mojo/public/cpp/system",
+    "//chromecast/external_mojo/external_service_support:external_service",
+    "//chromecast/external_mojo/public/cpp:common",
+    "//chromecast/external_mojo/public/mojom",
+  ]
 }
 
-case $BUILD_TARGET in
-android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
-    ;;
+executable("mdns_mojo_stub_service") {
+  testonly = true
+  sources = [
+    "stub_mojo_service.cpp",
+  ]
 
-mdns-mojo-check)
-    ./tests/mdns/test-mojo
-    ;;
-
-pretty-check)
-    export PATH=$TOOLS_HOME/usr/bin:$PATH
-    ./bootstrap && ./configure && make pretty-check || die
-    ;;
-
-posix-check)
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" .travis/check-posix
-    ;;
-
-meshcop)
-    if gcc-5 --version; then
-      export CC=gcc-5
-      export CXX=g++-5
-    fi
-
-    ./bootstrap
-    ./script/test build
-
-    OT_CLI="ot-cli-mtd" ./script/test meshcop
-    OT_CLI="ot-cli-ftd" ./script/test meshcop
-    COMMISSIONER_WEB=1 ./script/test meshcop
-    NCP_CONTROLLER=openthread ./script/test clean build meshcop
-    ;;
-
-scan-build)
-    .travis/check-scan-build
-    ;;
-
-script-check)
-    .travis/check-scripts
-    ;;
-
-raspbian-gcc)
-    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
-    ;;
-
-docker-check)
-    .travis/check-docker
-    ;;
-
-*)
-    die
-    ;;
-esac
+  deps = [
+    "//mdns_mojo_test/public/mojom",
+    "//base",
+    "//mojo/core/embedder",
+    "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/platform",
+    "//mojo/public/cpp/system",
+    "//chromecast/external_mojo/external_service_support:external_service",
+    "//chromecast/external_mojo/public/cpp:common",
+    "//chromecast/external_mojo/public/mojom",
+  ]
+}
