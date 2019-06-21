@@ -46,11 +46,16 @@ noinst_HEADERS                                        = \
     $(NULL)
 
 noinst_LTLIBRARIES                                    = \
-    libotbr-coap.la                                     \
     libotbr-dtls.la                                     \
     libotbr-event-emitter.la                            \
     libotbr-logging.la                                  \
     $(NULL)
+
+if OTBR_ENABLE_COMMISSIONER
+noinst_LTLIBRARIES                                   += \
+    libotbr-coap.la                                     \
+    $(NULL)
+endif
 
 libotbr_logging_la_SOURCES =                            \
     logging.cpp                                         \
