@@ -55,6 +55,8 @@
 
 #define WPANTUND_IF_CMD_ROUTE_ADD             "RouteAdd"
 #define WPANTUND_IF_CMD_ROUTE_REMOVE          "RouteRemove"
+#define WPANTUND_IF_CMD_SERVICE_ADD           "ServiceAdd"
+#define WPANTUND_IF_CMD_SERVICE_REMOVE        "ServiceRemove"
 #define WPANTUND_IF_CMD_CONFIG_GATEWAY        "ConfigGateway"
 #define WPANTUND_IF_CMD_DATA_POLL             "DataPoll"
 
@@ -81,7 +83,9 @@
 #define WPANTUND_IF_SIGNAL_PROP_CHANGED       "PropChanged"
 
 #define WPANTUND_IF_CMD_JOINER_ATTACH         "JoinerAttach"
-#define WPANTUND_IF_CMD_JOINER_COMMISSIONING  "JoinerCommissioning"
+#define WPANTUND_IF_CMD_JOINER_COMMISSIONING  "JoinerCommissioning" // Deprecated, please use JOINER_START and STOP
+#define WPANTUND_IF_CMD_JOINER_START          "JoinerStart"
+#define WPANTUND_IF_CMD_JOINER_STOP           "JoinerStop"
 
 #define WPANTUND_IF_CMD_JOINER_ADD            "JoinerAdd"
 #define WPANTUND_IF_CMD_JOINER_REMOVE         "JoinerRemove"

@@ -67,6 +67,7 @@
 #define kWPANTUNDProperty_NCPTXPowerLimit                       "NCP:TXPowerLimit"
 #define kWPANTUNDProperty_NCPCCAThreshold                       "NCP:CCAThreshold"
 #define kWPANTUNDProperty_NCPChannelMask                        "NCP:ChannelMask"
+#define kWPANTUNDProperty_NCPPreferredChannelMask               "NCP:PreferredChannelMask"
 #define kWPANTUNDProperty_NCPSleepyPollInterval                 "NCP:SleepyPollInterval"
 #define kWPANTUNDProperty_NCPRSSI                               "NCP:RSSI"
 #define kWPANTUNDProperty_NCPCCAFailureRate                     "NCP:CCAFailureRate"
@@ -189,6 +190,10 @@
 #define kWPANTUNDProperty_MACBlacklistEnabled                   "MAC:Blacklist:Enabled"
 #define kWPANTUNDProperty_MACBlacklistEntries                   "MAC:Blacklist:Entries"
 #define kWPANTUNDProperty_MACBlacklistEntriesAsValMap           "MAC:Blacklist:Entries:AsValMap"
+
+#define kWPANTUNDProperty_MACFilterFixedRssi                    "MAC:Filter:FixedRssi"
+#define kWPANTUNDProperty_MACFilterEntries                      "MAC:Filter:Entries"
+#define kWPANTUNDProperty_MACFilterEntriesAsValMap              "MAC:Filter:Entries:AsValMap"
 
 #define kWPANTUNDProperty_JamDetectionStatus                    "JamDetection:Status"
 #define kWPANTUNDProperty_JamDetectionEnable                    "JamDetection:Enable"
@@ -324,6 +329,11 @@
 #define kWPANTUNDProperty_StatLinkQualityPeriod                 "Stat:LinkQuality:Period"
 #define kWPANTUNDProperty_StatHelp                              "Stat:Help"
 
+#define kWPANTUNDProperty_ThreadServices                        "Thread:Services"
+#define kWPANTUNDProperty_ThreadServicesAsValMap                "Thread:Services:AsValMap"
+#define kWPANTUNDProperty_ThreadLeaderServices                  "Thread:Leader:Services"
+#define kWPANTUNDProperty_ThreadLeaderServicesAsValMap          "Thread:Leader:Services:AsValMap"
+
 // ----------------------------------------------------------------------------
 
 #define kWPANTUNDNodeType_Unknown                               "unknown"
@@ -358,6 +368,18 @@
 #define kWPANTUNDNCPMCUPowerState_On                            "on"
 #define kWPANTUNDNCPMCUPowerState_LowPower                      "low-power"
 #define kWPANTUNDNCPMCUPowerState_Off                           "off"
+
+
+// ----------------------------------------------------------------------------
+
+// Values of the property kWPANTUNDProperty_ThreadJoinerState
+
+#define kWPANTUNDThreadJoinerState_Idle                         "idle"
+#define kWPANTUNDThreadJoinerState_Discover                     "discover"
+#define kWPANTUNDThreadJoinerState_Connecting                   "connecting"
+#define kWPANTUNDThreadJoinerState_Connected                    "connected"
+#define kWPANTUNDThreadJoinerState_Entrust                      "entrust"
+#define kWPANTUNDThreadJoinerState_Joined                       "joined"
 
 // ----------------------------------------------------------------------------
 
@@ -411,6 +433,14 @@
 #define kWPANTUNDValueMapKey_Scan_EnableFiltering               "Scan:EnableFiltering"
 #define kWPANTUNDValueMapKey_Scan_PANIDFilter                   "Scan:PANID"
 
+#define kWPANTUNDValueMapKey_Joiner_ReturnImmediatelyOnStart    "Joiner:ReturnImmediatelyOnStart"
+#define kWPANTUNDValueMapKey_Joiner_ProvisioningUrl             "Joiner:ProvisioningUrl"
+#define kWPANTUNDValueMapKey_Joiner_PSKd                        "Joiner:PSKd"
+#define kWPANTUNDValueMapKey_Joiner_VendorName                  "Joiner:Vendor:Name"
+#define kWPANTUNDValueMapKey_Joiner_VendorModel                 "Joiner:Vendor:Model"
+#define kWPANTUNDValueMapKey_Joiner_VendorSwVersion             "Joiner:Vendor:SwVersion"
+#define kWPANTUNDValueMapKey_Joiner_VendorData                  "Joiner:Vendor:Data"
+
 #define kWPANTUNDValueMapKey_Counter_TxTotal                    "TxTotal"              // Number of transmissions
 #define kWPANTUNDValueMapKey_Counter_TxUnicast                  "TxUnicast"            // Number of unicast transmissions
 #define kWPANTUNDValueMapKey_Counter_TxBroadcast                "TxBroadcast"          // Number of broadcast transmissions
@@ -457,5 +487,12 @@
 #define kWPANTUNDValueMapKey_TimeSync_Time                      "ThreadNetworkTime"
 #define kWPANTUNDValueMapKey_TimeSync_Status                    "TimeSyncStatus"
 #define kWPANTUNDValueMapKey_TimeSync_ReceivedMonoTimeUs        "TimeSyncReceivedMonoTimeUs"
+
+#define kWPANTUNDValueMapKey_Service_ServiceId                  "ServiceId"
+#define kWPANTUNDValueMapKey_Service_EnterpriseNumber           "EnterpriseNumber"
+#define kWPANTUNDValueMapKey_Service_ServiceData                "ServiceData"
+#define kWPANTUNDValueMapKey_Service_Stable                     "Stable"
+#define kWPANTUNDValueMapKey_Service_ServerData                 "ServerData"
+#define kWPANTUNDValueMapKey_Service_RLOC16                     "RLOC16"
 
 #endif

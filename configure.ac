@@ -293,6 +293,36 @@ NL_ENABLE_DOCS([auto],[NO])
 AM_CONDITIONAL(OTBR_BUILD_DOCS, [test "${nl_cv_build_docs}" = "yes"])
 
 #
+# Commissioner
+#
+
+AC_ARG_ENABLE(commissioner,
+    [AS_HELP_STRING([--enable-commissioner],[Enable commissioner @<:@default=yes@:>@.])],
+    [
+        case "${enableval}" in
+
+        no|yes)
+            enable_commissioner=${enableval}
+            ;;
+
+        *)
+            AC_MSG_ERROR([Invalid value ${enable_commissioner} for --enable-commissioner])
+            ;;
+        esac
+    ],
+    [enable_commissioner=yes])
+
+if test "$enable_commissioner" = "yes"; then
+    OTBR_ENABLE_COMMISSIONER=1
+else
+    OTBR_ENABLE_COMMISSIONER=0
+fi
+
+AC_MSG_RESULT(${enable_commissioner})
+AC_SUBST(OTBR_ENABLE_COMMISSIONER)
+AM_CONDITIONAL([OTBR_ENABLE_COMMISSIONER], [test "${enable_commissioner}" = "yes"])
+
+#
 # Web Service
 #
 
@@ -381,7 +411,11 @@ AC_MSG_CHECKING([checking if Exuberant Ctags is available])
 AC_PATH_PROGS_FEATURE_CHECK([CTAGS], [ctags],
                             [$ac_path_CTAGS --version | grep -q Exuberant &&
                              ac_cv_path_CTAGS=$ac_path_CTAGS],
-                            [AC_MSG_ERROR([could not find ctags])])
+                            [
+                                if test "$enable_commissioner" = "yes"; then
+                                    AC_MSG_ERROR([could not find ctags])
+                                fi
+                            ])
 AC_MSG_RESULT([$ac_cv_path_CTAGS])
 
 # Check if the DBus module
@@ -532,8 +566,10 @@ tools/Makefile
 doc/Makefile
 ])
 
-ac_configure_args="$ac_configure_args --disable-examples --disable-documentation"
-AC_CONFIG_SUBDIRS([third_party/libcoap/repo])
+if test "$enable_commissioner" = "yes"; then
+    ac_configure_args="$ac_configure_args --disable-examples --disable-documentation"
+    AC_CONFIG_SUBDIRS([third_party/libcoap/repo])
+fi
 
 #
 # Generate the auto-generated files for the package
@@ -564,6 +600,7 @@ AC_MSG_NOTICE([
   Build coverage libraries                  : ${nl_cv_build_coverage}
   Build coverage reports                    : ${nl_cv_build_coverage_reports}
   MDNS implementation                       : ${with_mdns}
+  Commissioner                              : ${enable_commissioner}
   Web service                               : ${enable_web_service}
   Lcov                                      : ${LCOV:--}
   Genhtml                                   : ${GENHTML:--}

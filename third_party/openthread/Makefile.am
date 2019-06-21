@@ -31,7 +31,8 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 include $(top_srcdir)/third_party/openthread/mbedtls.mk
 include $(top_srcdir)/third_party/openthread/openthread.mk
 
-lib_LTLIBRARIES=libmbedcrypto.la
+noinst_LTLIBRARIES=libmbedcrypto.la
+
 override CFLAGS:=$(filter-out -Wconversion,$(CFLAGS)) -Wno-overlength-strings
 
 libmbedcrypto_la_SOURCES                                         = \

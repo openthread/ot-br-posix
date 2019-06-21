@@ -44,8 +44,13 @@ SUBDIRS                                              = \
     common                                             \
     utils                                              \
     agent                                              \
+    $(NULL)
+
+if OTBR_ENABLE_COMMISSIONER
+SUBDIRS                                             += \
     commissioner                                       \
     $(NULL)
+endif
 
 if OTBR_ENABLE_WEB_SERVICE
 SUBDIRS                                             += \

@@ -1,0 +1,113 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module chromecast.mojom;
+
+// Public mojo Interface for exposing partial multicast management.
+
+enum MdnsResult {
+  // Operation was successfully completed.
+  SUCCESS,
+  // The specified service could not be found as a valid service registered
+  // to the responder, i.e. the service was never registered or has already
+  // been unregistered.
+  NOT_FOUND,
+  // The specified service is a duplicate or similar enough to another service
+  // that would cause conflicts if it became registered with the responder.
+  DUPLICATE_SERVICE,
+  // The specified service could not be used to create a service record.
+  CANNOT_CREATE_RECORDS,
+  // The specified service was given one or more invalid TXT records.
+  INVALID_TEXT,
+  // The specified service was given one or more invalid parameters for the
+  // operation.
+  INVALID_PARAMS,
+};
+
+// Describes an initial instance publication or query response.
+struct MdnsPublication {
+  uint16 port;
+  bool can_cache;
+  array<string>? text;
+  uint32 ptr_ttl_seconds = 4500; // default 75 minutes
+  uint32 srv_ttl_seconds = 120; // default 2 minutes
+  uint32 txt_ttl_seconds = 4500; // default 75 minutes
+};
+
+interface MdnsDynamicServiceResponder {
+  // Updates the status of the instance publication.
+  UpdateStatus(MdnsResult error);
+
+  // Provides instance information for initial announcements and query responses
+  // relating to the service instance specified in
+  // |Responder.RegisterDynamicServiceInstance|.
+  // |query| indicates whether data is requested for an initial announcement
+  // (false) or in response to a query (true). If the publication relates to a
+  // subtype of the service, |subtype| contains the subtype, otherwise it is
+  // null. If |publication| is null, no announcement or response is transmitted.
+  // Strings in |text| are transmitted in the TXT record.
+  GetPublication(bool query, string subtype) => (MdnsPublication? publication);
+};
+
+interface MdnsResponder {
+  // Registers service instance with the responder.
+  RegisterServiceInstance(string service_name,
+                          string service_transport,
+                          string instance_name,
+                          int32 port,
+                          array<string>? text) => (MdnsResult error);
+
+  // Registers service instance with the responder, with user specific behavior
+  // in announcement and query reply, such as dynamic subtype filtering.
+  // Use GetPublication to get initial announcements if |initializer| is null.
+  RegisterDynamicServiceInstance(string service_name,
+                                 string instance_name,
+                                 MdnsDynamicServiceResponder responder,
+                                 MdnsPublication initializer);
+
+  // Unregisters currently registered service instance from responder.
+  UnregisterServiceInstance(string service_name,
+                            string instance_name) => (MdnsResult error);
+
+  // Initiates announcement of a service instance currently being registered.
+  // Typically used when records change for services registered by a call to
+  // |RegisterDynamicServiceInstance|.
+  ReannounceInstance(string service_name,
+                     string instance_name);
+
+  // Updates the entries in the TXT record. If the service is still probing
+  // then it will reprobe with new records. If the service is already running
+  // then it will reannounce soon.
+  UpdateTxtRecord(string service_name,
+                  string instance_name,
+                  array<string> text) => (MdnsResult error);
+
+  // Updates the entries in the SRV record. If the service is still probing
+  // then it will reprobe with new records. If the service is already running
+  // then it will reannounce soon.
+  UpdateSrvRecord(string service_name,
+                  string instance_name,
+                  int32 port,
+                  int32 priority,
+                  int32 weight) => (MdnsResult error);
+
+  // Updates the list of known subtypes. This new list of subtypes will
+  // replace the old list, although goodbye records will only be sent for
+  // removed subtypes and announcement records will only be sent for newly
+  // added subtypes.
+  // For Dynamic Service, if a query matches a fixed subtype for a service
+  // it will immediately respond with cached data. The service will only
+  // fallback to GetPublication if no fixed subtypes matched the query.
+  UpdateSubtypes(string service_name,
+                 string instance_name,
+                 array<string> fixed_subtypes) => (MdnsResult error);
+
+  // Clear the cache to a Dynamic Service. If the cached publication relates to
+  // a subtype of the service, |subtype| contains the subtype, otherwise it is
+  // null.
+  ClearPublicationCache(string service_name,
+                        string instance_name,
+                        string subtype);
+};
+
