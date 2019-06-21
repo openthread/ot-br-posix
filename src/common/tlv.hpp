@@ -128,6 +128,9 @@ public:
 
     /**
      * This method sets uint16_t as the value.
+     *
+     * @param[in]    aValue         uint16_t value
+     *
      */
     void SetValue(uint16_t aValue)
     {
@@ -141,11 +144,26 @@ public:
 
     /**
      * This method sets uint8_t as the value.
+     *
+     * @param[in]    aValue         uint8_t value
+     *
      */
     void SetValue(uint8_t aValue)
     {
         SetLength(sizeof(aValue), false);
         *static_cast<uint8_t *>(GetValue()) = aValue;
+    }
+
+    /**
+     * This method sets int8_t as the value.
+     *
+     * @param[in]    aValue         int8_t value
+     *
+     */
+    void SetValue(int8_t aValue)
+    {
+        SetLength(sizeof(aValue), false);
+        *static_cast<int8_t *>(GetValue()) = aValue;
     }
 
     /**
