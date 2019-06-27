@@ -260,6 +260,13 @@ include \$(BUILD_SHARED_LIBRARY)
 EOF
 }
 
+prepare_libchrome_stub()
+{
+    SRC_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+    mkdir external
+    cp -r "${SRC_DIR}"/../etc/libchrome_stub external/libchrome
+}
+
 #######################################
 # Check build with android build system
 # Globals:
@@ -274,6 +281,7 @@ main()
     prepare_build_system
     prepare_dbus
     prepare_libmdnssd
+    prepare_libchrome_stub
 
     make showcommands otbr-agent
     make showcommands otbr-agent.conf

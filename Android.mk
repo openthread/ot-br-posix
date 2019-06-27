@@ -28,6 +28,8 @@
 
 LOCAL_PATH := $(call my-dir)
 
+WITH_MDNS ?= mojo
+
 ifeq ($(WITH_MDNS),mojo)
 include $(CLEAR_VARS)
 

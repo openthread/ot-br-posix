@@ -49,7 +49,10 @@
 #include <chromecast/external_mojo/external_service_support/external_connector.h>
 #endif
 
+#include <memory>
+#include <string>
 #include <thread>
+#include <vector>
 
 #ifndef TEST_IN_CHROMIUM
 #include "agent/mdns.hpp"
