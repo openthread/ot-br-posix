@@ -139,5 +139,8 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
 LOCAL_SRC_FILES := src/agent/otbr-agent.conf
 $(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
 	sed 's/@OTBR_AGENT_USER@/root/g' $< > $@
-
 include $(BUILD_PREBUILT)
+
+include $(LOCAL_PATH)/libcoap.mk
+include $(LOCAL_PATH)/commissioner.mk
+
