@@ -37,6 +37,7 @@ libutils_la_SOURCES = \
     hex.cpp           \
     pskc.cpp          \
     steering_data.cpp \
+    strcpy_utils.cpp  \
     $(NULL)
 
 libutils_la_CPPFLAGS                                    = \
@@ -55,6 +56,7 @@ noinst_HEADERS      = \
     hex.hpp           \
     pskc.hpp          \
     steering_data.hpp \
+    strcpy_utils.hpp  \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

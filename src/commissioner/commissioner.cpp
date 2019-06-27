@@ -46,6 +46,7 @@
 #include "common/tlv.hpp"
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
+#include "utils/strcpy_utils.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -65,7 +66,7 @@ static void MBedDebugPrint(void *aCtx, int aLevel, const char *aFile, int aLine,
      */
     char *cp;
 
-    strncpy(buf, aStr, sizeof(buf));
+    strcpy_safe(buf, sizeof(buf), aStr);
     cp = strchr(buf, '\n');
     if (cp)
     {

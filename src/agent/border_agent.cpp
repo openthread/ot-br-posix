@@ -49,6 +49,7 @@
 #include "common/tlv.hpp"
 #include "common/types.hpp"
 #include "utils/hex.hpp"
+#include "utils/strcpy_utils.hpp"
 
 namespace ot {
 
@@ -310,7 +311,7 @@ exit:
 
 void BorderAgent::SetNetworkName(const char *aNetworkName)
 {
-    strncpy(mNetworkName, aNetworkName, sizeof(mNetworkName) - 1);
+    strcpy_safe(mNetworkName, sizeof(mNetworkName), aNetworkName);
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     if (mThreadStarted)

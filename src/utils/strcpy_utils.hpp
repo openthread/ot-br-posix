@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2017-2019, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -26,57 +26,30 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef OTBR_STRCPY_UTILS_HPP
+#define OTBR_STRCPY_UTILS_HPP
+
+#include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
- * @file
- *   This file implements the function of "configure gateway" function.
+ * This method is a safe version of strcpy always ensuring last byte to be 0
+ * If strlen(aSrc) >= n, the string will be truncated
+ *
+ * @param[out] aDest      dest string
+ * @param[in]  aDestSize  size of dest string buffer
+ * @param[in]  aSrc       src string
+ *
+ * @returns 0 on success, -1 on error
+ *
  */
+int strcpy_safe(char *aDest, size_t aDestSize, const char *aSrc);
 
-#ifndef DBUS_GATEWAY_HPP
-#define DBUS_GATEWAY_HPP
+#ifdef __cplusplus
+}
+#endif
 
-#define OT_INET6_ADDR_STR_LENGTH 46
-
-#include <arpa/inet.h>
-#include <stdio.h>
-
-#include <dbus/dbus.h>
-
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
-#include "utils/strcpy_utils.hpp"
-
-namespace ot {
-namespace Dbus {
-
-class DBusGateway : public DBusBase
-{
-public:
-    DBusGateway(void);
-
-    int  ProcessReply(void);
-    void SetDefaultRoute(dbus_bool_t aDefaultRoute) { mDefaultRoute = aDefaultRoute; }
-    void SetValidLifeTime(uint32_t aValidLifetime) { mValidLifetime = aValidLifetime; }
-    void SetPreferredLifetime(uint32_t aPreferredLifetime) { mPreferredLifetime = aPreferredLifetime; }
-    void SetPrefix(const char *aPrefix) { mPrefix = aPrefix; }
-    void SetAddressString(const char *aAddressString)
-    {
-        strcpy_safe(mAddressString, sizeof(mAddressString), aAddressString);
-        mAddressString[strlen(aAddressString)] = '\0';
-    }
-    void SetPrefixBytes(uint8_t *aPrefixBytes) { memcpy(mPrefixBytes, aPrefixBytes, sizeof(mPrefixBytes)); }
-    void SetAddr(uint8_t *aAddr) { mAddr = aAddr; }
-
-private:
-    dbus_bool_t mDefaultRoute;
-    uint32_t    mPreferredLifetime;
-    uint32_t    mValidLifetime;
-    const char *mPrefix;
-    uint8_t     mPrefixLength;
-    char        mAddressString[OT_INET6_ADDR_STR_LENGTH];
-    uint8_t     mPrefixBytes[16];
-    uint8_t *   mAddr;
-};
-
-} // namespace Dbus
-} // namespace ot
-#endif // DBUS_GATEWAY_HPP
+#endif // OTBR_STRCPY_UTILS_HPP

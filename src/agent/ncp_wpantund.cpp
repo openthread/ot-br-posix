@@ -44,6 +44,7 @@ extern "C" {
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "utils/strcpy_utils.hpp"
 
 #if OTBR_ENABLE_NCP_WPANTUND
 
@@ -226,7 +227,7 @@ ControllerWpantund::ControllerWpantund(const char *aInterfaceName)
     : mDBus(NULL)
 {
     mInterfaceDBusName[0] = '\0';
-    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName) - 1);
+    strcpy_safe(mInterfaceName, sizeof(mInterfaceName), aInterfaceName);
 }
 
 otbrError ControllerWpantund::UpdateInterfaceDBusPath()

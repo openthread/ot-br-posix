@@ -43,6 +43,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
+#include "utils/strcpy_utils.hpp"
 
 #include "dns_sd.h"
 
@@ -337,8 +338,8 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
     {
         Service service;
 
-        strncpy(service.mName, aName, sizeof(service.mName));
-        strncpy(service.mType, aType, sizeof(service.mType));
+        strcpy_safe(service.mName, sizeof(service.mName), aName);
+        strcpy_safe(service.mType, sizeof(service.mType), aType);
         service.mService = aServiceRef;
         mServices.push_back(service);
     }

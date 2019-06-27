@@ -102,6 +102,7 @@ LOCAL_SRC_FILES := \
     src/common/event_emitter.cpp \
     src/common/logging.cpp \
     src/utils/hex.cpp \
+    src/utils/strcpy_utils.cpp \
     $(NULL)
 
 ifeq ($(WITH_MDNS),mDNSResponder)

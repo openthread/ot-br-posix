@@ -33,6 +33,7 @@
  */
 
 #include "common/code_utils.hpp"
+#include "utils/strcpy_utils.hpp"
 
 #include "dbus_base.hpp"
 #include "wpan_controller.hpp"
@@ -157,7 +158,7 @@ void DBusBase::SetDestination(const char *aDestination)
 
     dbus_error_init(&error);
     VerifyOrExit(aDestination != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mDestination, aDestination, sizeof(mDestination));
+    strcpy_safe(mDestination, sizeof(mDestination), aDestination);
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -178,7 +179,7 @@ void DBusBase::SetInterface(const char *aIface)
 
     dbus_error_init(&error);
     VerifyOrExit(aIface != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mIface, aIface, sizeof(mIface));
+    strcpy_safe(mIface, sizeof(mIface), aIface);
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -203,7 +204,7 @@ void DBusBase::SetInterfaceName(const char *aInterfaceName)
 
     dbus_error_init(&error);
     VerifyOrExit(aInterfaceName != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mInterfaceName, aInterfaceName, sizeof(mInterfaceName));
+    strcpy_safe(mInterfaceName, sizeof(mInterfaceName), aInterfaceName);
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -223,7 +224,7 @@ void DBusBase::SetPath(const char *aPath)
 
     dbus_error_init(&error);
     VerifyOrExit(aPath != NULL, ret = kWpantundStatus_InvalidArgument);
-    strncpy(mPath, aPath, sizeof(mPath));
+    strcpy_safe(mPath, sizeof(mPath), aPath);
 exit:
     if (ret != kWpantundStatus_Ok)
     {
@@ -243,7 +244,7 @@ void DBusBase::SetDBusName(const char *aDBusName)
 
     dbus_error_init(&error);
     VerifyOrExit(aDBusName != NULL, ret = kWpantundStatus_InvalidDBusName);
-    strncpy(mDBusName, aDBusName, sizeof(mDBusName));
+    strcpy_safe(mDBusName, sizeof(mDBusName), aDBusName);
 exit:
     if (ret != kWpantundStatus_Ok)
     {

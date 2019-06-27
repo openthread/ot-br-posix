@@ -34,6 +34,7 @@
 #include <dbus/dbus.h>
 
 #include "common/code_utils.hpp"
+#include "utils/strcpy_utils.hpp"
 
 #include "dbus_ifname.hpp"
 
@@ -73,7 +74,7 @@ int DBusIfname::ProcessReply(void)
         if ((NULL != aItemInterfaceName) && (NULL != aItemDBusName) &&
             (strcmp(aItemInterfaceName, mInterfaceName) == 0))
         {
-            strncpy(mDBusName, aItemDBusName, DBUS_MAXIMUM_NAME_LENGTH);
+            strcpy_safe(mDBusName, DBUS_MAXIMUM_NAME_LENGTH, aItemDBusName);
             break;
         }
     }
