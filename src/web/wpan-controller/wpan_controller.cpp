@@ -38,6 +38,7 @@
 #include <dbus/dbus.h>
 
 #include "common/code_utils.hpp"
+#include "utils/strcpy_utils.hpp"
 
 #include "dbus_base.hpp"
 #include "dbus_form.hpp"
@@ -242,7 +243,7 @@ exit:
 
 void WPANController::SetInterfaceName(const char *aIfName)
 {
-    strncpy(mIfName, aIfName, sizeof(mIfName));
+    strcpy_safe(mIfName, sizeof(mIfName), aIfName);
 }
 
 } // namespace Dbus

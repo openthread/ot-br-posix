@@ -38,6 +38,8 @@ matrix:
       compiler: clang
     - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       os: linux
+    - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=""
+      os: linux
     - env: BUILD_TARGET="android-check" VERBOSE=1
       os: linux
     - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1

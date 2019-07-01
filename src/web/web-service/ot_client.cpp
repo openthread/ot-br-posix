@@ -15,6 +15,7 @@
 #include "platform-posix.h"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "utils/strcpy_utils.hpp"
 
 namespace ot {
 
@@ -41,7 +42,7 @@ bool Client::Connect(void)
 
     memset(&sockname, 0, sizeof(struct sockaddr_un));
     sockname.sun_family = AF_UNIX;
-    strncpy(sockname.sun_path, OPENTHREAD_POSIX_APP_SOCKET_NAME, sizeof(sockname.sun_path) - 1);
+    strcpy_safe(sockname.sun_path, sizeof(sockname.sun_path), OPENTHREAD_POSIX_APP_SOCKET_NAME);
 
     ret = connect(mSocket, reinterpret_cast<const struct sockaddr *>(&sockname), sizeof(struct sockaddr_un));
 

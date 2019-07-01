@@ -28,6 +28,8 @@
 
 LOCAL_PATH := $(call my-dir)
 
+WITH_MDNS ?= mojo
+
 ifeq ($(WITH_MDNS),mojo)
 include $(CLEAR_VARS)
 
@@ -102,6 +104,7 @@ LOCAL_SRC_FILES := \
     src/common/event_emitter.cpp \
     src/common/logging.cpp \
     src/utils/hex.cpp \
+    src/utils/strcpy_utils.cpp \
     $(NULL)
 
 ifeq ($(WITH_MDNS),mDNSResponder)

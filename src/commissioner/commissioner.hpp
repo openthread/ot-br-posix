@@ -113,7 +113,7 @@ public:
      * @returns inner commisioner state is not kStateInvalid
      *
      */
-    bool IsValid(void) const { return mCommissionState != kStateInvalid; }
+    bool IsValid(void) const { return mCommissionerState != CommissionerState::kStateInvalid; }
 
     /**
      * This method returns whether the commissioner petition succeeded
@@ -121,7 +121,7 @@ public:
      * @returns inner commisioner state is kStateAccepted
      *
      */
-    bool IsCommissionerAccepted(void) const { return mCommissionState == kStateAccepted; }
+    bool IsCommissionerAccepted(void) const { return mCommissionerState == CommissionerState::kStateAccepted; }
 
     /**
      * This method initialize the dtls session
@@ -151,6 +151,17 @@ public:
     void CommissionerPetition(void);
 
     /**
+     * This method gets number of nodes joined through commissioner
+     *
+     * @returns number of JOIN_FIN.rsp messages sent
+     *
+     */
+    int GetNumFinalizedJoiners(void) const;
+
+    ~Commissioner(void);
+
+private:
+    /**
      * This method sends commissioner set coap request
      *
      * @param[in]    aSteeringData      steering data to filter joiner, overrrides data from constructor
@@ -159,29 +170,24 @@ public:
     void CommissionerSet(const SteeringData &aSteeringData);
 
     /**
-     * This method gets number of nodes joined through commissioner
-     *
-     * @returns number of JOIN_FIN.rsp messages sent
+     * This method gracefully resigns as commissioner
      *
      */
-    int GetNumFinalizedJoiners(void);
+    void Resign(void);
 
-    ~Commissioner();
-
-private:
-    enum CommissionState
+    enum class CommissionerState
     {
         kStateInvalid = 0, ///< uninitialized, encounter network error or petition exceeds max retry
         kStateConnected,   ///< dtls connection setup done
         kStateAccepted,    ///< commissioner petition succeeded
         kStateRejected,    ///< rejected by leader, still retrying petition
-    } mCommissionState;
+    } mCommissionerState;
 
     Commissioner(const Commissioner &);
     Commissioner &operator=(const Commissioner &);
 
     int  DtlsHandShake(const sockaddr_in &aAgentAddr);
-    void CommissionerKeepAlive(void);
+    void SendCommissionerKeepAlive(int8_t aState);
 
     static ssize_t SendCoap(const uint8_t *aBuffer,
                             uint16_t       aLength,

@@ -33,9 +33,9 @@
 
 #include "addr_utils.hpp"
 
-#include <string.h>
-
 #include <arpa/inet.h>
+
+#include "utils/strcpy_utils.hpp"
 
 namespace ot {
 namespace BorderRouter {
@@ -55,7 +55,7 @@ char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
         break;
 
     default:
-        strncpy(aOutBuf, "Unknown AF", aLength);
+        strcpy_safe(aOutBuf, aLength, "Unknown AF");
         return NULL;
     }
 

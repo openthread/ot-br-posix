@@ -46,6 +46,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
+#include "utils/strcpy_utils.hpp"
 
 AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
                            AvahiTimeoutCallback  aCallback,
@@ -550,8 +551,8 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
 
     {
         Service service;
-        strncpy(service.mName, aName, sizeof(service.mName));
-        strncpy(service.mType, aType, sizeof(service.mType));
+        strcpy_safe(service.mName, sizeof(service.mName), aName);
+        strcpy_safe(service.mType, sizeof(service.mType), aType);
         service.mPort = aPort;
         mServices.push_back(service);
     }

@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,37 +26,12 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
+include $(CLEAR_VARS)
+LOCAL_MODULE := libchrome
+LOCAL_MODULE_TAGS := eng
+include $(BUILD_SHARED_LIBRARY)
 
-include $(top_srcdir)/third_party/openthread/mbedtls.mk
-
-noinst_LTLIBRARIES = libutils.la
-
-libutils_la_SOURCES = \
-    crc16.cpp         \
-    hex.cpp           \
-    pskc.cpp          \
-    steering_data.cpp \
-    strcpy_utils.cpp  \
-    $(NULL)
-
-libutils_la_CPPFLAGS                                    = \
-    -I$(top_srcdir)/src                                   \
-    -I$(top_srcdir)/third_party/mbedtls/repo/include      \
-    $(MBEDTLS_CPPFLAGS)                                   \
-    $(NULL)
-
-libutils_la_LIBADD                                      = \
-    $(MBEDTLS_LIBS)                                       \
-    $(top_builddir)/src/common/libotbr-logging.la         \
-    $(NULL)
-
-noinst_HEADERS      = \
-    crc16.hpp         \
-    hex.hpp           \
-    pskc.hpp          \
-    steering_data.hpp \
-    strcpy_utils.hpp  \
-    $(NULL)
-
-include $(abs_top_nlbuild_autotools_dir)/automake/post.am
+include $(CLEAR_VARS)
+LOCAL_MODULE := libmojo
+LOCAL_MODULE_TAGS := eng
+include $(BUILD_SHARED_LIBRARY)
