@@ -96,7 +96,7 @@ all-local: $(OPENTHREAD_LIBS)
 $(OPENTHREAD_LIBS): $(top_builddir)/third_party/openthread/output/posix/otbr/lib
 
 $(top_builddir)/third_party/openthread/output/posix/otbr/lib:
-	CPPFLAGS="-I$(abs_top_srcdir)/third_party/openthread -I$(abs_top_srcdir)/third_party/openthread/repo/third_party/mbedtls/repo/include -DMBEDTLS_CONFIG_FILE='\\\"mbedtls-config.h\\\"' -DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=2" $(MAKE) -f $(srcdir)/repo/src/posix/Makefile-posix BORDER_AGENT=1 BORDER_ROUTER=1 DISABLE_BUILTIN_MBEDTLS=1 DISABLE_EXECUTABLE=1 JOINER=1 PLATFORM_NETIF=1 PLATFORM_UDP=1 DAEMON=1 TargetTuple=otbr
+	CPPFLAGS="-I$(abs_top_srcdir)/third_party/openthread -I$(abs_top_srcdir)/third_party/openthread/repo/third_party/mbedtls/repo/include -DMBEDTLS_CONFIG_FILE='\\\"mbedtls-config.h\\\"' -DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=2" $(MAKE) -f $(srcdir)/repo/src/posix/Makefile-posix BORDER_AGENT=1 BORDER_ROUTER=1 DISABLE_BUILTIN_MBEDTLS=1 DISABLE_EXECUTABLE=1 JOINER=1 PLATFORM_NETIF=1 PLATFORM_UDP=1 UDP_FORWARD=0 DAEMON=1 TargetTuple=otbr
 endif
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am
