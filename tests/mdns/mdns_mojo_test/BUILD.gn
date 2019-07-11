@@ -74,3 +74,23 @@ executable("mdns_mojo_stub_service") {
     "//chromecast/external_mojo/public/mojom",
   ]
 }
+
+executable("standalone_mojo_broker_lite") {
+  testonly = true
+  sources = [
+    "standalone_mojo_broker_lite.cpp",
+  ]
+
+  deps = [
+    "//mdns_mojo_test/public/mojom",
+    "//base",
+    "//mojo/core/embedder",
+    "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/platform",
+    "//mojo/public/cpp/system",
+    "//chromecast/external_mojo/external_service_support:external_service",
+    "//chromecast/external_mojo/public/cpp:common",
+    "//chromecast/external_mojo/public/cpp:external_mojo_broker",
+    "//chromecast/external_mojo/public/mojom",
+  ]
+}
