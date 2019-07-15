@@ -420,7 +420,7 @@ AC_MSG_RESULT([$ac_cv_path_CTAGS])
 
 # Check if the DBus module
 
-if test "${with_mdns}" != none && test "${with_ncp}" != "wpantund"; then
+if test "${with_mdns}" != none -a "${with_ncp}" != "wpantund"; then
   PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not find dbus(>= 1.4)])])
 fi
 AC_SUBST(DBUS_CFLAGS)
