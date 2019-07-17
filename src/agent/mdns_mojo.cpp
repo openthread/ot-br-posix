@@ -147,12 +147,11 @@ void MdnsMojoPublisher::Stop()
 
 void MdnsMojoPublisher::StopPublishTask(void)
 {
-    if (!mLastServiceName.empty())
+    for (const auto &serviceInstancePair : mPublishedServices)
     {
-        mResponder->UnregisterServiceInstance(mLastServiceName, mLastInstanceName, base::DoNothing());
+        mResponder->UnregisterServiceInstance(serviceInstancePair.first, serviceInstancePair.second, base::DoNothing());
     }
-    mLastServiceName.clear();
-    mLastInstanceName.clear();
+    mPublishedServices.clear();
 }
 
 otbrError MdnsMojoPublisher::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
@@ -207,10 +206,6 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
     VerifyOrExit(!serviceName.empty() && !serviceProtocol.empty());
 
     mResponder->UnregisterServiceInstance(serviceName, aInstanceName, base::DoNothing());
-    if (!mLastServiceName.empty())
-    {
-        mResponder->UnregisterServiceInstance(mLastServiceName, mLastInstanceName, base::DoNothing());
-    }
 
     otbrLog(OTBR_LOG_INFO, "service name %s, protocol %s, instance %s", serviceName.c_str(), serviceProtocol.c_str(),
             aInstanceName.c_str());
@@ -218,8 +213,7 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
                                         base::BindOnce([](chromecast::mojom::MdnsResult r) {
                                             otbrLog(OTBR_LOG_INFO, "register result %d", static_cast<int32_t>(r));
                                         }));
-    mLastServiceName  = serviceName;
-    mLastInstanceName = aInstanceName;
+    mPublishedServices.emplace_back(std::make_pair(serviceName, aInstanceName));
 
 exit:
     return;
