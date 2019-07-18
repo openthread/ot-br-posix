@@ -28,23 +28,53 @@
 FROM ubuntu
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV PLATFORM ubuntu
 ENV RELEASE 1
 ENV NAT64 1
 ENV DNS64 1
 
 COPY . /app
-
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y git lsb-core sudo
+# Required during build or run
+ENV OTBR_DOCKER_REQS sudo
 
-RUN git reset --hard && git clean -xffd
-RUN ./script/bootstrap && ./script/setup
-RUN chmod 644 /etc/bind/named.conf.options
-RUN mv ./script /tmp && mv ./etc /tmp
-RUN find . -delete && rm -rf /usr/include
-RUN mv /tmp/script . && mv /tmp/etc .
-RUN apt-get autoremove -y -o APT::Autoremove::RecommendsImportant=0 -o APT::Autoremove::SuggestsImportant=0 && rm -rf /var/lib/apt/lists/*
+# Required during build, could be removed
+ENV OTBR_DOCKER_DEPS git
+
+# Required and installed during build (script/bootstrap), could be removed
+ENV OTBR_BUILD_DEPS \
+  apt-utils \
+  autoconf \
+  autoconf-archive \
+  automake \
+  build-essential \
+  ctags \
+  libtool \
+  wget
+
+# Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
+ENV OTBR_NORELEASE_DEPS \
+  cmake \
+  cpputest \
+  doxygen
+
+RUN apt-get update \
+  && apt-get install -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
+  && git reset --hard && git clean -xffd \
+  && ./script/bootstrap \
+  && ./script/setup \
+  && chmod 644 /etc/bind/named.conf.options \
+  && mv ./script /tmp \
+  && mv ./etc /tmp \
+  && find . -delete \
+  && rm -rf /usr/include \
+  && mv /tmp/script . \
+  && mv /tmp/etc . \
+  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_DOCKER_DEPS \
+  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
+  && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
+  && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 
