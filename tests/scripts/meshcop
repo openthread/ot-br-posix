@@ -41,7 +41,7 @@ readonly SCRIPT_DIR="$(cd "$(dirname $0)" && pwd)"
 # Configurations
 #---------------------------------------
 readonly OT_NCP="${OT_NCP:-ot-ncp-ftd}"
-readonly OT_RADIO="ot-ncp-radio"
+readonly OT_RCP="ot-rcp"
 readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
 readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
@@ -67,7 +67,7 @@ readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OT_CLI_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_CLI}"
 readonly OT_NCP_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_NCP}"
-readonly OT_RADIO_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_RADIO}"
+readonly OT_RCP_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_RCP}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
 readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 
@@ -202,12 +202,12 @@ build_dependencies()
   if [[ "${IGNORE_INSTALLED}" = 0 ]] && which "${OT_NCP}" && which "${OT_CLI}"; then
     ot_ncp="${OT_NCP}"
     ot_cli="${OT_CLI}"
-    ot_radio="${OT_RADIO}"
+    ot_rcp="${OT_RCP}"
   else
     compile_openthread
     ot_ncp="${OT_NCP_PATH}"
     ot_cli="${OT_CLI_PATH}"
-    ot_radio="${OT_RADIO_PATH}"
+    ot_rcp="${OT_RCP_PATH}"
   fi
 
   [[ "${DEAMON}" == 1 ]] || {
@@ -326,7 +326,7 @@ compile_openthread()
   (cd "${ABS_TOP_BUILDDIR}/third_party/openthread" && make -f repo/examples/Makefile-posix DISABLE_DOC=1 TargetTuple=otbr)
   executable_or_die "${OT_NCP_PATH}"
   executable_or_die "${OT_CLI_PATH}"
-  executable_or_die "${OT_RADIO_PATH}"
+  executable_or_die "${OT_RCP_PATH}"
 }
 
 leader_start()
@@ -377,7 +377,7 @@ ba_start()
   # we launch this in the background
   set -x
   if [[ "${NCP_CONTROLLER}" = openthread ]]; then
-    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_radio} ${LEADER_NODE_ID}&)
+    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_rcp} ${LEADER_NODE_ID}&)
   else
     (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6&)
   fi
