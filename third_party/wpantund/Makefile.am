@@ -33,7 +33,9 @@ EXTRA_DIST                         = \
     wpantund.init                    \
     $(NULL)
 
+if OTBR_ENABLE_NCP_WPANTUND
 noinst_LTLIBRARIES = libwpanctl.la
+endif
 
 # Disable Werror for third_party
 
