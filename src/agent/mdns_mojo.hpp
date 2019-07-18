@@ -177,8 +177,7 @@ private:
     std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> mConnector;
     chromecast::mojom::MdnsResponderPtr                   mResponder;
 
-    std::string mLastServiceName;
-    std::string mLastInstanceName;
+    std::vector<std::pair<std::string, std::string>> mPublishedServices;
 
     StateHandler mStateHandler;
     void *       mContext;
