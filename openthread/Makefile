@@ -8,7 +8,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/openthread/ot-br-posix.git
-PKG_SOURCE_VERSION:=a38a48a8eaf5a1e9b5c335a8306bbfd9fde9b869
+PKG_SOURCE_VERSION:=460a31137648dd18124a5c271f64d9d1fe3c5517
 
 include $(INCLUDE_DIR)/package.mk
 
