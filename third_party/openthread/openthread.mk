@@ -35,7 +35,6 @@ OPENTHREAD_CPPFLAGS                                                        = \
 
 OPENTHREAD_LIBS = \
     $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-cli-ftd.a \
-    $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-diag.a \
     $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-ftd.a \
     $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-posix.a \
     $(top_builddir)/third_party/openthread/output/posix/otbr/lib/libopenthread-ncp-ftd.a \
