@@ -46,16 +46,8 @@ linux)
             git clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!' &&
             cd openthread &&
             ./bootstrap &&
-            ./configure --prefix=/usr       \
-                --enable-ftd                \
-                --enable-ncp                \
-                --with-ncp-bus=uart         \
-                --with-examples=posix       \
-                --with-platform-info=POSIX  \
-                --enable-border-router      \
-                --enable-udp-proxy          \
-                $NULL &&
-            make && sudo make install) || die 'Failed to build OpenThread!'
+            make -f examples/Makefile-posix &&
+            install output/*/bin/* /usr/bin) || die 'Failed to build OpenThread!'
         which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
         sudo apt-get install socat
         echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
