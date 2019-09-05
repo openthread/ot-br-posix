@@ -181,7 +181,7 @@ otbrError AgentLibcoap::Send(Message &       aMessage,
         VerifyOrExit(pdu->length + sizeof(meta) < pdu->max_size, errno = EMSGSIZE);
 
         tid = coap_send_confirmed(&mCoap, mCoap.endpoint, &remote, pdu);
-        memcpy(pdu->hdr + pdu->length, &meta, sizeof(meta));
+        memcpy((unsigned char *)pdu->hdr + pdu->length, &meta, sizeof(meta));
     }
     else
     {
@@ -269,7 +269,7 @@ void AgentLibcoap::HandleResponse(coap_context_t *       aCoap,
 
     VerifyOrExit(aSent != NULL, otbrLog(OTBR_LOG_ERR, "request not found!"));
 
-    memcpy(&meta, aSent->hdr + aSent->length, sizeof(meta));
+    memcpy(&meta, (unsigned char *)aSent->hdr + aSent->length, sizeof(meta));
 
     if (meta.mHandler)
     {
