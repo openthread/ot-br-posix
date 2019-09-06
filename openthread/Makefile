@@ -8,15 +8,16 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/openthread/ot-br-posix.git
-PKG_SOURCE_VERSION:=a38a48a8eaf5a1e9b5c335a8306bbfd9fde9b869
+PKG_SOURCE_VERSION:=460a31137648dd18124a5c271f64d9d1fe3c5517
 
 include $(INCLUDE_DIR)/package.mk
 
 # Package definition; instructs on how and where our package will appear in the overall configuration menu ('make menuconfig')
 define Package/openthread
-	SECTION:=openthread
+	SECTION:=base
 	CATEGORY:=Network
-	TITLE:=openthread border router program
+	TITLE:=OpenThread border router
+	DEPENDS:=+libjson-c +libubox +libubus +libblobmsg-json
 endef
 
 # Package description; a more verbose description on what our package does
@@ -36,7 +37,7 @@ endef
 
 define Build/Compile
 	@echo "Build/Compile"
-	cd $(PKG_BUILD_DIR) && HOST=mips-openwrt-linux make
+	cd $(PKG_BUILD_DIR) && HOST=mips-openwrt-linux $(MAKE)
 endef
 
 # Package install instructions; create a directory inside the package to hold our executable, and then copy the executable we built previously into the folder

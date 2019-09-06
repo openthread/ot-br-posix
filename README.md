@@ -25,7 +25,8 @@ make
 #### Package and Install otbr package
 
 ```sh
-# move feeds.conf to OpenWRT directory and then run
+# Download ot-br-posix's feeds
+curl -s https://raw.githubusercontent.com/openthread/ot-br-posix/openwrt/feeds.conf >> feeds.conf
 ./scripts/feeds update openthread
 ./scripts/feeds install -a -p openthread
 # in "Network" column, select "openthread" option
