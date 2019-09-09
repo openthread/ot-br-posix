@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
