@@ -37,6 +37,7 @@
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/logging.h>
+#include <openthread/platform/misc.h>
 
 #include "common/types.hpp"
 
@@ -47,15 +48,17 @@ namespace Ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
 {
-    (void)aInterfaceName;
+    otPlatformConfig config;
 
-    char *argv[] = {
-        NULL,
-        aRadioFile,
-        aRadioConfig,
-    };
+    memset(&config, 0, sizeof(config));
 
-    mInstance = otSysInit(sizeof(argv) / sizeof(argv[0]), argv);
+    config.mInterfaceName = aInterfaceName;
+    config.mRadioConfig   = aRadioConfig;
+    config.mRadioFile     = aRadioFile;
+    config.mResetRadio    = true;
+    config.mSpeedUpFactor = 1;
+
+    mInstance = otSysInit(&config);
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
@@ -65,7 +68,6 @@ ControllerOpenThread::~ControllerOpenThread(void)
 
 otbrError ControllerOpenThread::Init(void)
 {
-    otSysInitNetif(mInstance);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
 
@@ -191,5 +193,11 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 } // namespace Ncp
 } // namespace BorderRouter
 } // namespace ot
+
+void otPlatReset(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    exit(0);
+}
 
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
