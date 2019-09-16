@@ -157,6 +157,8 @@ public:
     ~MdnsMojoPublisher(void) override;
 
 private:
+    static const int kMojoConnectRetrySeconds = 10;
+
     void PublishServiceTask(uint16_t                        aPort,
                             const std::string &             aType,
                             const std::string &             aInstanceName,

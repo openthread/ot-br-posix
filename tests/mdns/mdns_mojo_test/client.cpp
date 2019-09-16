@@ -47,6 +47,7 @@ void PublishHandler(void *aContext, ot::BorderRouter::Mdns::State aState)
 int main(void)
 {
     sPublisher = ot::BorderRouter::Mdns::Publisher::Create(0, nullptr, nullptr, PublishHandler, nullptr);
+    sPublisher->Start();
     while (!published)
         ;
     sleep(1);
