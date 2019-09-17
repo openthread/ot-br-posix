@@ -79,6 +79,11 @@ inline const char *GetBrokerPath(void)
 
 namespace base {
 
+struct TimeDelta
+{
+    static int FromSeconds(int) { return 0; }
+};
+
 void *DoNothing()
 {
     return nullptr;
@@ -103,6 +108,7 @@ class SingleThreadTaskRunner
 {
 public:
     void PostTask(int, void *) {}
+    void PostDelayedTask(int, void *, int) {}
 };
 
 class CommandLine

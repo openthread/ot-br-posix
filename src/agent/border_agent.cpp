@@ -374,6 +374,7 @@ void BorderAgent::HandleThreadState(bool aStarted)
 
     if (aStarted)
     {
+        SuccessOrExit(mNcp->RequestEvent(Ncp::kEventPSKc));
         Start();
     }
     else
