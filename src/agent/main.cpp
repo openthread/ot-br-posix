@@ -75,9 +75,9 @@ static int Mainloop(AgentInstance &aInstance)
 
     while (true)
     {
-        otSysMainloopContext                         mainloop;
-        ot::BorderRouter::Ncp::ControllerOpenThread *ncp =
-            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.GetNcp());
+        otSysMainloopContext       mainloop;
+        Ncp::ControllerOpenThread &ncp = static_cast<Ncp::ControllerOpenThread &>(aInstance.GetNcp());
+        int                        rval;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = kPollTimeout;
@@ -88,12 +88,12 @@ static int Mainloop(AgentInstance &aInstance)
 
         aInstance.UpdateFdSet(mainloop);
 
-        int rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                          &mainloop.mTimeout);
+        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                      &mainloop.mTimeout);
 
-        if (ncp->IsResetRequested())
+        if (ncp.IsResetRequested())
         {
-            ncp->Reset();
+            ncp.Reset();
             continue;
         }
 

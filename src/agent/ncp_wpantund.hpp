@@ -79,7 +79,7 @@ public:
      * This method reset the NCP controller.
      *
      */
-    void Reset(void);
+    virtual void Reset(void);
 
     /**
      * This method sends a packet through UDP forward service.

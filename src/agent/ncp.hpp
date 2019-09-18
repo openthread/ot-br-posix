@@ -124,6 +124,12 @@ public:
     virtual void Process(const otSysMainloopContext &aMainloop) = 0;
 
     /**
+     * This method reest the Ncp Controller.
+     *
+     */
+    virtual void Reset(void) = 0;
+
+    /**
      * This method request the event.
      *
      * @param[in]   aEvent  The event id to request.
