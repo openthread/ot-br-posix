@@ -164,6 +164,8 @@ private:
                             const std::string &             aInstanceName,
                             const std::vector<std::string> &aText);
 
+    bool VerifyFileAccess(const char *aFile);
+
     void StopPublishTask(void);
 
     void LaunchMojoThreads(void);
