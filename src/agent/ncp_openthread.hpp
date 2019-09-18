@@ -75,7 +75,7 @@ public:
      * @retval  the pointer of mInstance.
      *
      */
-    virtual otInstance *getInstance(void) { return mInstance; }
+    virtual otInstance *GetInstance(void) { return mInstance; }
 
     /**
      * This method updates the fd_set to poll.

@@ -68,7 +68,7 @@ static void HandleSignal(int aSignal)
 
 static int Mainloop(AgentInstance &aInstance)
 {
-    int rval = EXIT_FAILURE;
+    int error = EXIT_FAILURE;
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
@@ -88,32 +88,29 @@ static int Mainloop(AgentInstance &aInstance)
 
         aInstance.UpdateFdSet(mainloop);
 
-        if (select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                   &mainloop.mTimeout) >= 0)
+        int rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                          &mainloop.mTimeout);
+
+        if (sReset)
         {
-            if (sReset)
-            {
-                static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.getNcp())->Reset();
-                sReset = false;
-                continue;
-            }
+            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.GetNcp())->Reset();
+            sReset = false;
+            continue;
+        }
+
+        if (rval >= 0)
+        {
             aInstance.Process(mainloop);
         }
         else
         {
-            if (sReset)
-            {
-                static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.getNcp())->Reset();
-                sReset = false;
-                continue;
-            }
-            rval = OTBR_ERROR_ERRNO;
+            error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
         }
     }
 
-    return rval;
+    return error;
 }
 
 static void PrintHelp(const char *aProgramName)
