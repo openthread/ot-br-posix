@@ -39,8 +39,11 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/logging.h>
 #include <openthread/platform/misc.h>
+#include <openthread/platform/settings.h>
 
 #include "common/types.hpp"
+
+extern bool sReset;
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 namespace ot {
@@ -49,26 +52,24 @@ namespace Ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
 {
-    otPlatformConfig config;
+    memset(&mConfig, 0, sizeof(mConfig));
 
-    memset(&config, 0, sizeof(config));
-
-    config.mInterfaceName = aInterfaceName;
-    config.mRadioConfig   = aRadioConfig;
-    config.mRadioFile     = aRadioFile;
-    config.mResetRadio    = true;
-    config.mSpeedUpFactor = 1;
-
-    mInstance = otSysInit(&config);
+    mConfig.mInterfaceName = aInterfaceName;
+    mConfig.mRadioConfig   = aRadioConfig;
+    mConfig.mRadioFile     = aRadioFile;
+    mConfig.mResetRadio    = true;
+    mConfig.mSpeedUpFactor = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
 {
     otInstanceFinalize(mInstance);
+    otSysDeinit();
 }
 
 otbrError ControllerOpenThread::Init(void)
 {
+    mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
 
@@ -122,6 +123,13 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
+}
+
+void ControllerOpenThread::Reset(void)
+{
+    otInstanceFinalize(mInstance);
+    otSysDeinit();
+    Init();
 }
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
@@ -198,7 +206,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 void otPlatReset(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
-    exit(0);
+    sReset = true;
 }
 
 #endif // OTBR_ENABLE_NCP_OPENTHREAD

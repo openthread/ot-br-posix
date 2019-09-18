@@ -32,7 +32,6 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,12 +40,15 @@
 
 #include "agent_instance.hpp"
 #include "ncp.hpp"
+#include "ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
+
+bool sReset = false;
 
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
@@ -56,8 +58,6 @@ static const struct option  kOptions[]   = {{"debug-level", required_argument, N
                                          {"verbose", no_argument, NULL, 'v'},
                                          {"version", no_argument, NULL, 'V'},
                                          {0, 0, 0, 0}};
-
-jmp_buf gResetJump;
 
 using namespace ot::BorderRouter;
 
@@ -91,10 +91,22 @@ static int Mainloop(AgentInstance &aInstance)
         if (select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                    &mainloop.mTimeout) >= 0)
         {
+            if (sReset)
+            {
+                static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.getNcp())->Reset();
+                sReset = false;
+                continue;
+            }
             aInstance.Process(mainloop);
         }
         else
         {
+            if (sReset)
+            {
+                static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.getNcp())->Reset();
+                sReset = false;
+                continue;
+            }
             rval = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
@@ -120,12 +132,6 @@ static void PrintVersion(void)
 
 int main(int argc, char *argv[])
 {
-    if (setjmp(gResetJump))
-    {
-        alarm(0);
-        execvp(argv[0], argv);
-    }
-
     int              logLevel = OTBR_LOG_INFO;
     int              opt;
     int              ret           = EXIT_SUCCESS;

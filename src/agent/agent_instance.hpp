@@ -89,6 +89,14 @@ public:
      */
     void Process(const otSysMainloopContext &aMainloop);
 
+    /**
+     * This method return mNcp pointer.
+     *
+     * @retval  the pointer of mNcp.
+     *
+     */
+    Ncp::Controller *getNcp() { return mNcp; }
+
 private:
     Ncp::Controller *mNcp;
     BorderAgent      mBorderAgent;
