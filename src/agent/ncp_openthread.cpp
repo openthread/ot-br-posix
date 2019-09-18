@@ -43,7 +43,7 @@
 
 #include "common/types.hpp"
 
-extern bool sReset;
+static bool sReset;
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 namespace ot {
@@ -130,6 +130,12 @@ void ControllerOpenThread::Reset(void)
     otInstanceFinalize(mInstance);
     otSysDeinit();
     Init();
+    sReset = false;
+}
+
+bool ControllerOpenThread::IsResetRequested(void)
+{
+    return sReset;
 }
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)

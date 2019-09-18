@@ -48,8 +48,6 @@
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
 
-bool sReset = false;
-
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 static const struct option  kOptions[]   = {{"debug-level", required_argument, NULL, 'd'},
@@ -77,7 +75,9 @@ static int Mainloop(AgentInstance &aInstance)
 
     while (true)
     {
-        otSysMainloopContext mainloop;
+        otSysMainloopContext                         mainloop;
+        ot::BorderRouter::Ncp::ControllerOpenThread *ncp =
+            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.GetNcp());
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = kPollTimeout;
@@ -91,10 +91,9 @@ static int Mainloop(AgentInstance &aInstance)
         int rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                           &mainloop.mTimeout);
 
-        if (sReset)
+        if (ncp->IsResetRequested())
         {
-            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.GetNcp())->Reset();
-            sReset = false;
+            ncp->Reset();
             continue;
         }
 

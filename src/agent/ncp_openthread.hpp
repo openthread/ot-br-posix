@@ -100,6 +100,14 @@ public:
     virtual void Reset(void);
 
     /**
+     * This method return the value of sReset.
+     *
+     * @retval  the value of sReset.
+     *
+     */
+    static bool IsResetRequested(void);
+
+    /**
      * This method request the event.
      *
      * @param[in]   aEvent  The event id to request.
