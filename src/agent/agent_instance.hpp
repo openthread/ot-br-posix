@@ -95,7 +95,7 @@ public:
      * @retval  the pointer of mNcp.
      *
      */
-    Ncp::Controller *getNcp() { return mNcp; }
+    Ncp::Controller *getNcp(void) { return mNcp; }
 
 private:
     Ncp::Controller *mNcp;
