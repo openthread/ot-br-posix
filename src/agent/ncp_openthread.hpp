@@ -100,12 +100,13 @@ public:
     virtual void Reset(void);
 
     /**
-     * This method return the value of sReset.
+     * This method return whether reset is requested.
      *
-     * @retval  the value of sReset.
+     * @retval  TRUE  reset is requested.
+     * @retval  FALSE reset isn't requested.
      *
      */
-    static bool IsResetRequested(void);
+    virtual bool IsResetRequested(void);
 
     /**
      * This method request the event.

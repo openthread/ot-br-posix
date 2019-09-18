@@ -75,9 +75,9 @@ static int Mainloop(AgentInstance &aInstance)
 
     while (true)
     {
-        otSysMainloopContext       mainloop;
-        Ncp::ControllerOpenThread &ncp = static_cast<Ncp::ControllerOpenThread &>(aInstance.GetNcp());
-        int                        rval;
+        otSysMainloopContext mainloop;
+        Ncp::Controller &    ncp = aInstance.GetNcp();
+        int                  rval;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = kPollTimeout;
