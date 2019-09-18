@@ -31,6 +31,8 @@
  *   This file includes implementation for MDNS service based on mojo.
  */
 
+#include <unistd.h>
+
 #include <base/at_exit.h>
 #include <base/bind.h>
 #include <base/bind_helpers.h>
@@ -71,7 +73,15 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     mMojoTaskRunner = mainLoop.task_runner();
+
+    if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
+    {
+        otbrLog(OTBR_LOG_WARNING, "Cannot access %s, will wait until file is ready",
+                chromecast::external_mojo::GetBrokerPath().c_str());
+    }
+
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)));
+
     mMojoCoreThreadQuitClosure = runLoop.QuitClosure();
     runLoop.Run();
 }
@@ -95,9 +105,22 @@ MdnsMojoPublisher::MdnsMojoPublisher(StateHandler aHandler, void *aContext)
 void MdnsMojoPublisher::ConnectToMojo(void)
 {
     otbrLog(OTBR_LOG_INFO, "Connecting to Mojo");
-    MOJO_CONNECTOR_NS::ExternalConnector::Connect(
-        chromecast::external_mojo::GetBrokerPath(),
-        base::BindOnce(&MdnsMojoPublisher::mMojoConnectCb, base::Unretained(this)));
+
+    if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
+    {
+        mMojoConnectCb(nullptr);
+    }
+    else
+    {
+        MOJO_CONNECTOR_NS::ExternalConnector::Connect(
+            chromecast::external_mojo::GetBrokerPath(),
+            base::BindOnce(&MdnsMojoPublisher::mMojoConnectCb, base::Unretained(this)));
+    }
+}
+
+bool MdnsMojoPublisher::VerifyFileAccess(const char *aFile)
+{
+    return (access(aFile, R_OK) == 0) && (access(aFile, W_OK) == 0);
 }
 
 void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> aConnector)
@@ -118,7 +141,6 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
     }
     else
     {
-        otbrLog(OTBR_LOG_INFO, "Mojo connect failed, will try reconnect in %ds", kMojoConnectRetrySeconds);
         mMojoTaskRunner->PostDelayedTask(FROM_HERE,
                                          base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)),
                                          base::TimeDelta::FromSeconds(kMojoConnectRetrySeconds));
