@@ -157,6 +157,8 @@ public:
     ~MdnsMojoPublisher(void) override;
 
 private:
+    static const int kMojoConnectRetrySeconds = 10;
+
     void PublishServiceTask(uint16_t                        aPort,
                             const std::string &             aType,
                             const std::string &             aInstanceName,
@@ -177,8 +179,7 @@ private:
     std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> mConnector;
     chromecast::mojom::MdnsResponderPtr                   mResponder;
 
-    std::string mLastServiceName;
-    std::string mLastInstanceName;
+    std::vector<std::pair<std::string, std::string>> mPublishedServices;
 
     StateHandler mStateHandler;
     void *       mContext;

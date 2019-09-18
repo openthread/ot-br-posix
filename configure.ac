@@ -420,7 +420,9 @@ AC_MSG_RESULT([$ac_cv_path_CTAGS])
 
 # Check if the DBus module
 
-PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not find dbus(>= 1.4)])])
+if test "${with_mdns}" == "avahi" -o "${with_ncp}" == "wpantund"; then
+  PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not find dbus(>= 1.4)])])
+fi
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 

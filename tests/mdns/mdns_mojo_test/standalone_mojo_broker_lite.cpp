@@ -26,33 +26,39 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes stub service for MDNS client based on mojo.
- */
+#include <string>
+#include <vector>
 
-#include <unistd.h>
+#include "base/at_exit.h"
+#include "base/command_line.h"
+#include "base/message_loop/message_pump_for_io.h"
+#include "base/message_loop/message_pump_type.h"
+#include "base/run_loop.h"
+#include "base/task/single_thread_task_executor.h"
+#include "chromecast/external_mojo/public/cpp/common.h"
+#include "chromecast/external_mojo/public/cpp/external_mojo_broker.h"
+#include "mojo/core/embedder/embedder.h"
+#include "mojo/core/embedder/scoped_ipc_support.h"
 
-#include "mdns_mojo.hpp"
+// Standalone Mojo broker process.
 
-static ot::BorderRouter::Mdns::Publisher *sPublisher;
-static bool                               published = false;
-
-void PublishHandler(void *aContext, ot::BorderRouter::Mdns::State aState)
+int main(int argc, char **argv)
 {
-    sPublisher->PublishService(49191, "test", "_meshcop._udp", nullptr);
-    published = true;
-}
+    base::AtExitManager exit_manager;
+    base::CommandLine::Init(argc, argv);
+    base::SingleThreadTaskExecutor io_task_executor(base::MessagePumpType::IO);
+    base::RunLoop                  run_loop;
 
-int main(void)
-{
-    sPublisher = ot::BorderRouter::Mdns::Publisher::Create(0, nullptr, nullptr, PublishHandler, nullptr);
-    sPublisher->Start();
-    while (!published)
-        ;
-    sleep(1);
-    sPublisher->Stop();
-    sleep(1);
-    ot::BorderRouter::Mdns::Publisher::Destroy(sPublisher);
+    mojo::core::Configuration mojo_config;
+    mojo_config.is_broker_process = true;
+    mojo::core::Init(mojo_config);
+
+    mojo::core::ScopedIPCSupport ipc_support(io_task_executor.task_runner(),
+                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+
+    chromecast::external_mojo::ExternalMojoBroker broker(chromecast::external_mojo::GetBrokerPath());
+
+    run_loop.Run();
+
     return 0;
 }

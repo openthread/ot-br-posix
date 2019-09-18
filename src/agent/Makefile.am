@@ -70,17 +70,32 @@ libotbr_agent_la_CXXFLAGS                                     = \
 libotbr_agent_la_SOURCES                                      = \
     agent_instance.cpp                                          \
     border_agent.cpp                                            \
-    ncp_openthread.cpp                                          \
-    ncp_wpantund.cpp                                            \
     $(NULL)
 
+if OTBR_ENABLE_NCP_OPENTHREAD
+libotbr_agent_la_SOURCES                                     += \
+    ncp_openthread.cpp                                          \
+    $(NULL)
+endif
+
+if OTBR_ENABLE_NCP_WPANTUND
+libotbr_agent_la_SOURCES                                     += \
+    ncp_wpantund.cpp                                            \
+    $(NULL)
+endif
+
 libotbr_agent_la_LIBADD                                       = \
-    $(top_builddir)/third_party/wpantund/libwpanctl.la          \
     $(top_builddir)/src/common/libotbr-logging.la               \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
     $(top_builddir)/src/utils/libutils.la                       \
+    $(NULL)
+
+if OTBR_ENABLE_NCP_WPANTUND
+libotbr_agent_la_LIBADD                                      += \
+    $(top_builddir)/third_party/wpantund/libwpanctl.la          \
     $(DBUS_LIBS)                                                \
     $(NULL)
+endif
 
 libotbr_agent_la_LDFLAGS = \
     -static                \

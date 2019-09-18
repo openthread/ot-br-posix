@@ -90,7 +90,6 @@ MdnsMojoPublisher::MdnsMojoPublisher(StateHandler aHandler, void *aContext)
     , mContext(aContext)
     , mStarted(false)
 {
-    mMojoCoreThread = std::make_unique<std::thread>(&MdnsMojoPublisher::LaunchMojoThreads, this);
 }
 
 void MdnsMojoPublisher::ConnectToMojo(void)
@@ -106,15 +105,23 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
     if (aConnector)
     {
         otbrLog(OTBR_LOG_INFO, "Mojo connected");
+#ifndef TEST_IN_CHROMIUM
         aConnector->set_connection_error_callback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
+#else
+        aConnector->SetConnectionErrorCallback(
+            base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
+#endif
         aConnector->BindInterface("chromecast", &mResponder);
         mConnector = std::move(aConnector);
-        Start();
+        mStateHandler(mContext, kStateReady);
     }
     else
     {
-        mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)));
+        otbrLog(OTBR_LOG_INFO, "Mojo connect failed, will try reconnect in %ds", kMojoConnectRetrySeconds);
+        mMojoTaskRunner->PostDelayedTask(FROM_HERE,
+                                         base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)),
+                                         base::TimeDelta::FromSeconds(kMojoConnectRetrySeconds));
     }
 }
 
@@ -125,14 +132,17 @@ void MdnsMojoPublisher::mMojoDisconnectedCb(void)
 
 otbrError MdnsMojoPublisher::Start(void)
 {
-    otbrError err = OTBR_ERROR_NONE;
-
-    VerifyOrExit(mConnector != nullptr, err = OTBR_ERROR_MDNS);
-
     mStarted = true;
-    mStateHandler(mContext, kStateReady);
-exit:
-    return err;
+    if (mResponder)
+    {
+        mStateHandler(mContext, kStateReady);
+    }
+    else if (!mMojoCoreThread)
+    {
+        mMojoCoreThread = std::make_unique<std::thread>(&MdnsMojoPublisher::LaunchMojoThreads, this);
+    }
+
+    return OTBR_ERROR_NONE;
 }
 
 bool MdnsMojoPublisher::IsStarted(void) const
@@ -142,17 +152,21 @@ bool MdnsMojoPublisher::IsStarted(void) const
 
 void MdnsMojoPublisher::Stop()
 {
-    mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::StopPublishTask, base::Unretained(this)));
+    if (mResponder)
+    {
+        mMojoTaskRunner->PostTask(FROM_HERE,
+                                  base::BindOnce(&MdnsMojoPublisher::StopPublishTask, base::Unretained(this)));
+    }
+    mStarted = false;
 }
 
 void MdnsMojoPublisher::StopPublishTask(void)
 {
-    if (!mLastServiceName.empty())
+    for (const auto &serviceInstancePair : mPublishedServices)
     {
-        mResponder->UnregisterServiceInstance(mLastServiceName, mLastInstanceName, base::DoNothing());
+        mResponder->UnregisterServiceInstance(serviceInstancePair.first, serviceInstancePair.second, base::DoNothing());
     }
-    mLastServiceName.clear();
-    mLastInstanceName.clear();
+    mPublishedServices.clear();
 }
 
 otbrError MdnsMojoPublisher::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
@@ -207,10 +221,6 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
     VerifyOrExit(!serviceName.empty() && !serviceProtocol.empty());
 
     mResponder->UnregisterServiceInstance(serviceName, aInstanceName, base::DoNothing());
-    if (!mLastServiceName.empty())
-    {
-        mResponder->UnregisterServiceInstance(mLastServiceName, mLastInstanceName, base::DoNothing());
-    }
 
     otbrLog(OTBR_LOG_INFO, "service name %s, protocol %s, instance %s", serviceName.c_str(), serviceProtocol.c_str(),
             aInstanceName.c_str());
@@ -218,8 +228,7 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
                                         base::BindOnce([](chromecast::mojom::MdnsResult r) {
                                             otbrLog(OTBR_LOG_INFO, "register result %d", static_cast<int32_t>(r));
                                         }));
-    mLastServiceName  = serviceName;
-    mLastInstanceName = aInstanceName;
+    mPublishedServices.emplace_back(std::make_pair(serviceName, aInstanceName));
 
 exit:
     return;
