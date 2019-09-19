@@ -67,6 +67,9 @@ static void HandleSignal(int aSignal)
 static int Mainloop(AgentInstance &aInstance)
 {
     int error = EXIT_FAILURE;
+#if OTBR_ENABLE_NCP_OPENTHREAD
+    Ncp::Controller &ncp = aInstance.GetNcp();
+#endif
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
@@ -76,7 +79,6 @@ static int Mainloop(AgentInstance &aInstance)
     while (true)
     {
         otSysMainloopContext mainloop;
-        Ncp::Controller &    ncp = aInstance.GetNcp();
         int                  rval;
 
         mainloop.mMaxFd   = -1;
@@ -91,11 +93,13 @@ static int Mainloop(AgentInstance &aInstance)
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
+#if OTBR_ENABLE_NCP_OPENTHREAD
         if (ncp.IsResetRequested())
         {
             ncp.Reset();
             continue;
         }
+#endif
 
         if (rval >= 0)
         {
