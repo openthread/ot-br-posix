@@ -30,6 +30,9 @@
 #include "otbr-config.h"
 #endif
 
+#include <mutex>
+#include <thread>
+
 #include <errno.h>
 #include <getopt.h>
 #include <signal.h>
@@ -45,8 +48,17 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
+extern void otUbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
+extern void otUbusProcess(const fd_set &aReadFdSet);
+extern void otUbusServerRun(void);
+extern void otUbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
+
+std::mutex threadMutex;
+
+bool sReset = false;
 
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
@@ -88,6 +100,7 @@ static int Mainloop(AgentInstance &aInstance)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
+        otUbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         aInstance.UpdateFdSet(mainloop);
 
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
@@ -103,7 +116,15 @@ static int Mainloop(AgentInstance &aInstance)
 
         if (rval >= 0)
         {
+            threadMutex.lock();
+            if (sReset)
+            {
+                static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.getNcp())->Reset();
+                sReset = false;
+                continue;
+            }
             aInstance.Process(mainloop);
+            otUbusProcess(mainloop.mReadFdSet);
         }
         else
         {
@@ -187,6 +208,12 @@ int main(int argc, char *argv[])
         AgentInstance instance(ncp);
 
         SuccessOrExit(ret = instance.Init());
+
+        ot::BorderRouter::Ncp::ControllerOpenThread *ncpThread =
+            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(ncp);
+        otUbusServerInit(ncpThread, &threadMutex);
+        std::thread(otUbusServerRun).detach();
+
         SuccessOrExit(ret = Mainloop(instance));
     }
 

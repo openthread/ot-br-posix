@@ -75,6 +75,12 @@ public:
      */
     otbrError Init(void);
 
+    /*
+     * This method reset the NCP controller.
+     *
+     */
+    void Reset(void);
+
     /**
      * This method sends a packet through UDP forward service.
      *

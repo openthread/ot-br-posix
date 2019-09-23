@@ -35,6 +35,7 @@ sbin_PROGRAMS=otbr-agent
 
 otbr_agent_SOURCES = \
     main.cpp         \
+    otubus.cpp       \
     $(NULL)
 
 otbr_agent_LDADD     = \
@@ -53,11 +54,12 @@ otbr_agent_LDADD    += \
     $(NULL)
 
 otbr_agent_LDFLAGS = \
-    -static          \
+    -pthread         \
     $(NULL)
 
 otbr_agent_CPPFLAGS         = \
     -I$(top_srcdir)/src       \
+    -I$(top_srcdir)/third_party/openthread/repo/src/core                     \
     $(OPENTHREAD_CPPFLAGS)    \
     $(NULL)
 
@@ -90,6 +92,15 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/utils/libutils.la                       \
     $(NULL)
 
+if OTBR_ENABLE_NCP_OPENTHREAD
+libotbr_agent_la_LIBADD                                      += \
+    -lubox             \
+    -lubus             \
+    -lblobmsg_json     \
+    -ljson-c           \
+    $(NULL)
+endif
+
 if OTBR_ENABLE_NCP_WPANTUND
 libotbr_agent_la_LIBADD                                      += \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
@@ -98,7 +109,11 @@ libotbr_agent_la_LIBADD                                      += \
 endif
 
 libotbr_agent_la_LDFLAGS = \
-    -static                \
+    $(NULL)
+libotbr_agent_la_LDFLAGS += \
+    -Wl, --gc-sections      \
+    -flto=jobserver         \
+    -fuse-linker-plugin     \
     $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
@@ -144,6 +159,7 @@ noinst_HEADERS        = \
     ncp_openthread.hpp  \
     ncp_wpantund.hpp    \
     uris.hpp            \
+    otubus.hpp          \
     $(NULL)
 
 EXTRA_DIST                = \

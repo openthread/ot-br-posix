@@ -31,6 +31,7 @@ OPENTHREAD_CPPFLAGS                                                        = \
     -I$(top_srcdir)/third_party/openthread                                   \
     -I$(top_srcdir)/third_party/openthread/repo/include                      \
     -I$(top_srcdir)/third_party/openthread/repo/src/posix/platform           \
+    -I$(top_builddir)/third_party/openthread/build/posix/otbr/include        \
     $(NULL)
 
 OPENTHREAD_LIBS = \
