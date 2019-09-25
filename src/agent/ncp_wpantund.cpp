@@ -495,7 +495,7 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
     {
         uint32_t status = 0;
         dbus_message_iter_get_basic(&iter, &status);
-        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EREMOTEIO);
+        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EIO);
     }
 
     dbus_message_iter_next(&iter);

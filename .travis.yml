@@ -65,3 +65,5 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - clang-format-6.0
+    - env: BUILD_TARGET="macOS"
+      os: osx

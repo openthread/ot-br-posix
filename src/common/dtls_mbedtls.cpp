@@ -30,6 +30,10 @@
  * This file implements the DTLS service.
  */
 
+#ifdef __APPLE__
+#define __APPLE_USE_RFC_3542
+#endif
+
 #include "dtls_mbedtls.hpp"
 
 #include <algorithm>
