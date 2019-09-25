@@ -867,7 +867,7 @@ int OtUbusServer::Ubus_mgmtset(struct ubus_context *aContext,
     long                 value;
     int                  length = 0;
 
-    SuccessOrExit(error = otDatasetGetPending(otUbusServerInstance->mInstance, &dataset));
+    SuccessOrExit(error = otDatasetGetActive(otUbusServerInstance->mInstance, &dataset));
 
     blobmsg_parse(mgmtset_policy, MGMTSET_MAX, tb, blob_data(msg), blob_len(msg));
     if (tb[MASTERKEY] != NULL)
@@ -915,11 +915,13 @@ int OtUbusServer::Ubus_mgmtset(struct ubus_context *aContext,
                      error = OT_ERROR_PARSE);
         length = 0;
     }
-    dataset.mComponents.mIsPendingTimestampPresent = true;
-    dataset.mComponents.mIsActiveTimestampPresent  = false;
-    dataset.mPendingTimestamp++;
-    SuccessOrExit(error = otDatasetSendMgmtPendingSet(otUbusServerInstance->mInstance, &dataset, tlvs,
-                                                      static_cast<uint8_t>(length)));
+    dataset.mActiveTimestamp++;
+    if (otCommissionerGetState(otUbusServerInstance->mInstance) != OT_COMMISSIONER_STATE_DISABLED)
+    {
+        otCommissionerStop(otUbusServerInstance->mInstance);
+    }
+    SuccessOrExit(error = otDatasetSendMgmtActiveSet(otUbusServerInstance->mInstance, &dataset, tlvs,
+                                                     static_cast<uint8_t>(length)));
 exit:
     AppendResult(error, aContext, aRequest);
     return 0;
