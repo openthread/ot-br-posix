@@ -68,6 +68,9 @@ function thread_handler_setting()
 	local submitcontent = luci.http.formvalue("submitcontent")
 	local jumpflag = 0
 
+	local vError = 0
+	local result
+
 	local conn = ubus.connect()
 
 	if not conn then
@@ -75,20 +78,35 @@ function thread_handler_setting()
 	end
 
 	if submitcontent == "enable" then
-		conn:call("otbr", "threadstart", {})
+		result = conn:call("otbr", "threadstart", {})
+		vError = result.Error
 	elseif submitcontent == "disable" then
-		conn:call("otbr", "threadstop", {})
+		result = conn:call("otbr", "threadstop", {})
+		vError = result.Error
 	elseif submitcontent == "leave" then
-		conn:call("otbr", "leave", {})
+		result = conn:call("otbr", "leave", {})
+		vError = result.Error
+	elseif submitcontent == "clearAddr" then
+		result = conn:call("otbr", "macfilterclear", {})
+		vError = result.Error
+		jumpflag = 1
 	elseif submitcontent == "addAddr" then
-		conn:call("otbr", "macfilteradd", { addr = macfilteradd })
+		result = conn:call("otbr", "macfilteradd", { addr = macfilteradd })
+		conn:call("otbr", "macfiltersetstate", { state = macfilter })
+		vError = result.Error
 		jumpflag = 1
 	elseif submitcontent == "removeAddr" then
-		local removeAddrIndex = luci.http.formvalue("removeAddrIndex") + 0
-		conn:call("otbr", "macfilterremove", { addr = macfilterremove[removeAddrIndex] })
+		if type(macfilterremove) == "table" then
+			local removeAddrIndex = luci.http.formvalue("removeAddrIndex") + 0
+			result = conn:call("otbr", "macfilterremove", { addr = macfilterremove[removeAddrIndex] })
+		else
+			result = conn:call("otbr", "macfilterremove", { addr = macfilterremove })
+		end
+		conn:call("otbr", "macfiltersetstate", { state = macfilter })
+		vError = result.Error
 		jumpflag = 1
 	else
-		if(threadget("state") == "disabled")then
+		if(threadget("state").State == "disabled")then
 			conn:call("otbr", "setnetworkname", { networkname = networkname })
 			conn:call("otbr", "setchannel", { channel = channel })
 			conn:call("otbr", "setpanid", { panid = panid })
@@ -98,19 +116,21 @@ function thread_handler_setting()
 			conn:call("otbr", "setmasterkey", { masterkey = masterkey })
 			conn:call("otbr", "setpskc", { pskc = pskc })
 			conn:call("otbr", "macfiltersetstate", { state = macfilter })
-			conn:call("otbr", "threadstart", {})
+			result = conn:call("otbr", "threadstart", {})
 		else
-			conn:call("otbr", "mgmtset", { masterkey = masterkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = pskc })
+			result = conn:call("otbr", "mgmtset", { masterkey = masterkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = pskc })
 			conn:call("otbr", "macfiltersetstate", { state = macfilter })
 		end
+		vError = result.Error
 	end
 
 	if(jumpflag == 0) then
 		local stat, dsp = pcall(require, "luci.dispatcher")
-		luci.http.redirect(stat and dsp.build_url("admin", "network", "thread"))
+		stat = 0
+		luci.http.redirect(stat and dsp.build_url("admin", "network", "thread") .. "?error=" .. vError)
 	else
 		local stat, dsp = pcall(require, "luci.dispatcher")
-		luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_setting"))
+		luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_setting") .. "?error=" .. vError)
 	end
 end
 
@@ -125,10 +145,11 @@ function thread_add()
 		error("Failed to connect to ubusd")
 	end
 
-	conn:call("otbr", "commissionerstart", {})
+	result = conn:call("otbr", "commissionerstart", {})
+	local vError = result.Error
 
 	local stat, dsp = pcall(require, "luci.dispatcher")
-	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_add_page"))
+	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_add_page") .. "?error=" .. vError)
 end
 
 function thread_add_joiner()
@@ -144,14 +165,18 @@ function thread_add_joiner()
 		error("Failed to connect to ubusd")
 	end
 
-	conn:call("otbr", "joineradd", { pskd = pskd, eui64 = eui64})
+	result = conn:call("otbr", "joineradd", { pskd = pskd, eui64 = eui64})
+	vError = result.Error
 
 	local stat, dsp = pcall(require, "luci.dispatcher")
-	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_view"))
+	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_view") .. "?error=" .. vError)
 end
 
 function joiner_remove()
 	local ubus = require "ubus"
+	local tpl = require "luci.template"
+	local http = require "luci.http"
+	local eui64 = luci.http.formvalue("eui64")
 
 	local conn = ubus.connect()
 
@@ -159,10 +184,11 @@ function joiner_remove()
 		error("Failed to connect to ubusd")
 	end
 
-	conn:call("otbr", "joinerremove", {})
+	result = conn:call("otbr", "joinerremove", { eui64 = eui64 })
+	vError = result.Error
 
 	local stat, dsp = pcall(require, "luci.dispatcher")
-	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_view"))
+	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread_view") .. "?error=" .. vError)
 end
 
 function thread_attach()
@@ -182,10 +208,11 @@ function thread_attach()
 	conn:call("otbr", "setpanid", { panid = panid })
 	conn:call("otbr", "setchannel", { channel = channel })
 	conn:call("otbr", "setmasterkey", { masterkey = masterkey })
-	conn:call("otbr", "threadstart", {})
+	result = conn:call("otbr", "threadstart", {})
+	vError = result.Error
 
 	local stat, dsp = pcall(require, "luci.dispatcher")
-	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread"))
+	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread") .. "?error=" .. vError)
 end
 
 function thread_stop()
@@ -199,10 +226,11 @@ function thread_stop()
 		error("Failed to connect to ubusd")
 	end
 
-	conn:call("otbr", "threadstop", {})
+	result = conn:call("otbr", "threadstop", {})
+	vError = result.Error
 
 	local stat, dsp = pcall(require, "luci.dispatcher")
-	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread"))
+	luci.http.redirect(stat and dsp.build_url("admin", "network", "thread") .. "?error=" .. vError)
 end
 
 function thread_join()
@@ -217,12 +245,12 @@ function thread_state()
 	luci.http.prepare_content("application/json")
 
 	local result = {}
-	result.state = threadget("state")
+	result.state = threadget("state").State
 
-	if(result.status ~= "disabled") then
-		result.panid = threadget("panid")
-		result.channel = threadget("channel")
-		result.networkname = threadget("networkname")
+	if(result.state ~= "disabled") then
+		result.panid = threadget("panid").PanId
+		result.channel = threadget("channel").Channel
+		result.networkname = threadget("networkname").NetworkName
 	end
 	luci.http.write_json(result)
 end
@@ -237,10 +265,15 @@ function thread_neighbors()
 	luci.http.prepare_content("application/json")
 
 	local result = {}
+	local neighbor = neighborlist()
 
-	result.neighbor = neighborlist()
-	result.joinernum = threadget("joinernum")
-	result.state = threadget("state")
+	result.neighbor = neighbor.neighborlist
+
+	local joiner = joinerlist()
+	result.joinernum = joiner.joinernum
+	result.joinerlist = joiner.joinerlist
+
+	result.state = threadget("state").State
 
 	luci.http.write_json(result)
 end
@@ -257,35 +290,52 @@ function networkdata()
 	end
 
 	data.connect = l
-	data.state = threadget("state")
-	data.rloc16 = threadget("rloc16")
-	data.joinernum = threadget("joinernum")
-	data.leader = threadget("leaderdata").LeaderRouterId
+	data.state = threadget("state").State
+	data.rloc16 = threadget("rloc16").rloc16
+	data.joinernum = threadget("joinernum").joinernum
+	data.leader = threadget("leaderdata").leaderdata.LeaderRouterId
+	return data
+end
+
+function joinerlist()
+	local k, v, result
+	local l = { }
+	local data = { }
+
+	result = connect_ubus("joinernum")
+	data.joinernum = result.joinernum
+
+	if result.Joinernum ~= 0 then
+		for k, v in pairs(result.joiner_list) do
+			l[#l+1] = v
+		end
+	end
+
+	data.joinerlist = l
 	return data
 end
 
 function neighborlist()
-	local k, v, m, n, result
+	local k, v, result, tmpResult
 	local l = { }
+	local data = { }
 
-	local state = threadget("state")
+	local state = threadget("state").State
 
 	if state == 'child' then
-		result = connect_ubus("parent")
-		for k, v in pairs(result) do
-			l[#l+1] = v
-		end
+		tmpResult = connect_ubus("parent")
+		result = tmpResult.parent_list
 	else
-		result = connect_ubus("neighbor")
-		for k, v in pairs(result) do
-			for m, n in pairs(v) do
-				-- n is the table of neighborlist item
-				l[#l+1] = n
-			end
-		end
+		tmpResult = connect_ubus("neighbor")
+		result = tmpResult.neighbor_list
 	end
 
-	return l
+	for k, v in pairs(result) do
+		l[#l+1] = v
+	end
+
+	data.neighborlist = l
+	return data
 end
 
 function connect_ubus(methods)
@@ -303,12 +353,7 @@ function connect_ubus(methods)
 end
 
 function threadget(action)
-	local getresult = connect_ubus(action)
-	local k, v, result
-
-	for k, v in pairs(getresult) do
-		result = v
-	end
+	local result = connect_ubus(action)
 
 	return result
 end

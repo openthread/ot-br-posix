@@ -17,12 +17,7 @@
 	end
 
 	function threadget(action)
-		local getresult = connect_ubus(action)
-		local k, v, result
-
-		for k, v in pairs(getresult) do
-			result = v
-		end
+		local result = connect_ubus(action)
 
 		return result
 	end
@@ -30,7 +25,7 @@
 
 <%+header%>
 
-<h2><%:Thread View: %><%=threadget("networkname")%><%: (wpan0)%></h2>
+<h2><%:Thread View: %><%=threadget("networkname").NetworkName%><%: (wpan0)%></h2>
 <div>This is the list and topograph of your thread network.</div>
 <br />
 
@@ -55,7 +50,7 @@
 				</div>
 
 				<!-- leader situatioin -->
-				<% leader = threadget("leaderdata") %>
+				<% leader = threadget("leaderdata").leaderdata %>
 				<div class="tr cbi-rowstyle-2%>" style="border:solid 1px #ddd; border-top:hidden;">
 					<div class="td col-3 center"><%=leader.LeaderRouterId%></div>
 					<div class="td col-3 center"><%=leader.PartitionId%></div>
@@ -68,37 +63,46 @@
 		</div>
 	</div>
 	<br />
-
-	<!-- neighbor list -->
 	<h3><%: Neighbor Situation of Network%></h3><br />
-	<div class="cbi-map" style="width:90%;margin-left:5%;">
-		<div class="cbi-section">
-			<div class="table" id="neighbors">
-				<div class="tr table-titles" style="background-color:#eee;">
-					<div class="th col-2 center"><%:RLOC16%></div>
-					<div class="th col-2 center"><%:Role%></div>
-					<div class="th col-2 center"><%:Age%></div>
-					<div class="th col-2 center"><%:Avg RSSI%></div>
-					<div class="th col-2 center"><%:Last RSSI%></div>
-					<div class="th col-2 center"><%:Mode%></div>
-					<div class="th col-4 center"><%:Extended MAC%></div>
-					<div class="th cbi-section-actions">&#160;</div>
-				</div>
-
-				<!-- neighbor list -->
-				<div class="tr placeholder">
-					<div class="td"><em><%:Collecting data...%></em></div>
-				</div>
-				<!-- /neighbor list -->
-			</div>
+	<!-- neighbor list -->
+	<div class="table" id="neighbors" style="width:90%;margin-left:5%;">
+		<div class="tr table-titles" style="background-color:#eee;">
+			<div class="th col-2 center"><%:RLOC16%></div>
+			<div class="th col-2 center"><%:Role%></div>
+			<div class="th col-2 center"><%:Age%></div>
+			<div class="th col-2 center"><%:Avg RSSI%></div>
+			<div class="th col-2 center"><%:Last RSSI%></div>
+			<div class="th col-2 center"><%:Mode%></div>
+			<div class="th col-4 center"><%:Extended MAC%></div>
+			<div class="th cbi-section-actions">&#160;</div>
+		</div>
+		<div class="tr placeholder">
+			<div class="td"><em><%:Collecting data...%></em></div>
 		</div>
 	</div>
+	<!--/neighbor list-->
+
+	<!-- parent list -->
+	<div class="table" id="parent" style="width:90%;margin-left:5%;display:none;">
+		<div class="tr table-titles" style="background-color:#eee;">
+			<div class="th col-2 center"><%:RLOC16%></div>
+			<div class="th col-2 center"><%:Role%></div>
+			<div class="th col-2 center"><%:Age%></div>
+			<div class="th col-2 center"><%:LinkQualityIn%></div>
+			<div class="th col-4 center"><%:ExtAddress%></div>
+			<div class="th cbi-section-actions">&#160;</div>
+		</div>
+		<div class="tr placeholder">
+			<div class="td"><em><%:Collecting data...%></em></div>
+		</div>
+	</div>
+	<!--/parent list-->
 </div>
 
 <!-- graph div -->
 <div style="width:100%;margin-left:5%;display:none;" id="graphdiv">
 	<div style="width:20%"><svg id="topologyLegend"></svg></div>
-	<svg width="960" height="400" id="graph"></svg>
+	<svg width="960" height="500" id="graph"></svg>
 </div>
 
 <div class="cbi-page-actions right" style="margin-top:10%;">
@@ -113,7 +117,10 @@
 <%+footer%>
 
 <script src='http://d3js.org/d3.v4.min.js'></script>
+<script type="text/javascript" src="/luci-static/resources/handle_error.js"></script>
 <script type="text/javascript">//<![CDATA[
+	handle_error(GetURLParameter('error'));
+
 	var svg = d3.select("#graph"),
 		width = +svg.attr("width"),
 		height = +svg.attr("height"),
@@ -211,10 +218,9 @@
 	}
 
 	function getRole(rloc, leader) {
-		//TODO: if local is child, then will receive message from it
 		if(parseInt(rloc) == leader) return 'leader';
 		else if((parseInt(rloc) & 0xff) == 0) return 'router';
-		else return 'child';
+		else return 'ftd';
 	}
 
 	XHR.poll(5, '<%=url('admin/network/thread_graph')%>', null,
@@ -292,13 +298,55 @@
 	XHR.poll(2, '<%=url('admin/network/thread_neighbors')%>', null,
 		function(x, st)
 		{
-			var tb = document.getElementById('neighbors');
-			if (st && tb)
+			if (st && st.state == 'child')
 			{
-				var rows = [];
+				var tb = document.getElementById('parent');
+				document.getElementById('neighbors').style.display = "none";
+				if(tb)
+				{
+					var rows = [];
 
-				st.neighbor.forEach(function(bss) {
-					rows.push([
+					st.neighbor.forEach(function(bss) {
+						rows.push([
+						'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
+						'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
+						'<div class="col-2 center"> %s </div>'.format(bss.Age),
+						'<div class="col-2 center"> %s </div>'.format(bss.LinkQualityIn),
+						'<div class="col-4 center"> %s </div>'.format(bss.ExtAddress),
+						]);
+					});
+					var joiner;
+					for (joiner = 0; joiner < st.joinernum; joiner++) {
+						rows.push([
+						'<div class="col-2 center"> Pending </div>',
+						'<div class="col-2 center"> New Joiner </div>',
+						'<div class="col-2 center"> Pending </div>',
+						'<div class="col-2 center"> Pending </div>',
+						'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
+						'<div class="th cbi-section-actions">' +
+						'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
+							'<input type="hidden" name="token" value="<%=token%>" />' +
+							'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
+							'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
+							'<input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" />' +
+						'</form>' +
+						'</div>'
+						]);
+					}
+					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
+					tb.style.display = "table";
+				}
+			}
+			else if(st)
+			{
+				var tb = document.getElementById('neighbors');
+				document.getElementById('parent').style.display = "none";
+				if(tb)
+				{
+					var rows = [];
+
+					st.neighbor.forEach(function(bss) {
+						rows.push([
 						'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
 						'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
 						'<div class="col-2 center"> %s </div>'.format(bss.Age),
@@ -306,33 +354,37 @@
 						'<div class="col-2 center"> %s </div>'.format(bss.LastRssi),
 						'<div class="col-2 center"> %s </div>'.format(bss.Mode),
 						'<div class="col-4 center"> %s </div>'.format(bss.ExtAddress)
-					]);
-				});
-				var joiner;
-				for (joiner = 0; joiner < st.joinernum; joiner++) {
-					rows.push([
+						]);
+					});
+					var joiner;
+					for (joiner = 0; joiner < st.joinernum; joiner++) {
+						rows.push([
 						'<div class="col-2 center"> Pending </div>',
 						'<div class="col-2 center"> New Joiner </div>',
 						'<div class="col-2 center"> Pending </div>',
 						'<div class="col-2 center"> Pending </div>',
 						'<div class="col-2 center"> Pending </div>',
 						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-4 center"> Pending </div>',
+						'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
 						'<div class="th cbi-section-actions">' +
 						'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
 							'<input type="hidden" name="token" value="<%=token%>" />' +
+							'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
+							'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
 							'<input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" />' +
 						'</form>' +
 						'</div>'
-					]);
+						]);
+					}
+					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
+					tb.style.display = "table";
 				}
-				cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
 			}
 		});
 
-		function transRole(info) {
-			if(info == "C") return 'Child';
-			else if(info == "R") return "Router";
-			else return "Pending";
-		}
+	function transRole(info) {
+		if(info == "C") return 'Child';
+		else if(info == "R") return "Router";
+		else return "Pending";
+	}
 //]]></script>

@@ -46,7 +46,7 @@
 	end
 
 	function scanlist()
-		local k, v, m, n
+		local k, v
 		local l = { }
 
 		local conn = ubus.connect()
@@ -56,11 +56,8 @@
 
 		local scanresult = conn:call("otbr", "scan", {})
 
-		for k, v in pairs(scanresult) do
-			for m, n in pairs(v) do
-				-- n is the table of scanresult item
-				l[#l+1] = n
-			end
+		for k, v in pairs(scanresult.scan_list) do
+			l[#l+1] = v
 		end
 
 		return l
