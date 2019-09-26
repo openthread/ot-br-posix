@@ -70,6 +70,14 @@ public:
     virtual otbrError Init(void);
 
     /**
+     * This method get mInstance pointer.
+     *
+     * @retval  the pointer of mInstance.
+     *
+     */
+    virtual otInstance *GetInstance(void) { return mInstance; }
+
+    /**
      * This method updates the fd_set to poll.
      *
      * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
@@ -84,6 +92,21 @@ public:
      *
      */
     virtual void Process(const otSysMainloopContext &aMainloop);
+
+    /**
+     * This method reset the NCP controller.
+     *
+     */
+    virtual void Reset(void);
+
+    /**
+     * This method return whether reset is requested.
+     *
+     * @retval  TRUE  reset is requested.
+     * @retval  FALSE reset isn't requested.
+     *
+     */
+    virtual bool IsResetRequested(void);
 
     /**
      * This method request the event.
@@ -106,6 +129,8 @@ private:
     void HandleStateChanged(otChangedFlags aFlags);
 
     otInstance *mInstance;
+
+    otPlatformConfig mConfig;
 };
 
 } // namespace Ncp

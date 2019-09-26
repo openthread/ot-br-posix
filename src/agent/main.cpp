@@ -32,7 +32,6 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +40,7 @@
 
 #include "agent_instance.hpp"
 #include "ncp.hpp"
+#include "ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -57,8 +57,6 @@ static const struct option  kOptions[]   = {{"debug-level", required_argument, N
                                          {"version", no_argument, NULL, 'V'},
                                          {0, 0, 0, 0}};
 
-jmp_buf gResetJump;
-
 using namespace ot::BorderRouter;
 
 static void HandleSignal(int aSignal)
@@ -68,7 +66,10 @@ static void HandleSignal(int aSignal)
 
 static int Mainloop(AgentInstance &aInstance)
 {
-    int rval = EXIT_FAILURE;
+    int error = EXIT_FAILURE;
+#if OTBR_ENABLE_NCP_OPENTHREAD
+    Ncp::Controller &ncp = aInstance.GetNcp();
+#endif
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
@@ -78,6 +79,7 @@ static int Mainloop(AgentInstance &aInstance)
     while (true)
     {
         otSysMainloopContext mainloop;
+        int                  rval;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = kPollTimeout;
@@ -88,20 +90,30 @@ static int Mainloop(AgentInstance &aInstance)
 
         aInstance.UpdateFdSet(mainloop);
 
-        if (select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                   &mainloop.mTimeout) >= 0)
+        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                      &mainloop.mTimeout);
+
+#if OTBR_ENABLE_NCP_OPENTHREAD
+        if (ncp.IsResetRequested())
+        {
+            ncp.Reset();
+            continue;
+        }
+#endif
+
+        if (rval >= 0)
         {
             aInstance.Process(mainloop);
         }
         else
         {
-            rval = OTBR_ERROR_ERRNO;
+            error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
         }
     }
 
-    return rval;
+    return error;
 }
 
 static void PrintHelp(const char *aProgramName)
@@ -120,12 +132,6 @@ static void PrintVersion(void)
 
 int main(int argc, char *argv[])
 {
-    if (setjmp(gResetJump))
-    {
-        alarm(0);
-        execvp(argv[0], argv);
-    }
-
     int              logLevel = OTBR_LOG_INFO;
     int              opt;
     int              ret           = EXIT_SUCCESS;

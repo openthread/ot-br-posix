@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
@@ -37,8 +38,12 @@
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/logging.h>
+#include <openthread/platform/misc.h>
+#include <openthread/platform/settings.h>
 
 #include "common/types.hpp"
+
+static bool sReset;
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 namespace ot {
@@ -47,25 +52,24 @@ namespace Ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
 {
-    (void)aInterfaceName;
+    memset(&mConfig, 0, sizeof(mConfig));
 
-    char *argv[] = {
-        NULL,
-        aRadioFile,
-        aRadioConfig,
-    };
-
-    mInstance = otSysInit(sizeof(argv) / sizeof(argv[0]), argv);
+    mConfig.mInterfaceName = aInterfaceName;
+    mConfig.mRadioConfig   = aRadioConfig;
+    mConfig.mRadioFile     = aRadioFile;
+    mConfig.mResetRadio    = true;
+    mConfig.mSpeedUpFactor = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
 {
     otInstanceFinalize(mInstance);
+    otSysDeinit();
 }
 
 otbrError ControllerOpenThread::Init(void)
 {
-    otSysInitNetif(mInstance);
+    mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
 
@@ -121,6 +125,19 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
     otSysMainloopProcess(mInstance, &aMainloop);
 }
 
+void ControllerOpenThread::Reset(void)
+{
+    otInstanceFinalize(mInstance);
+    otSysDeinit();
+    Init();
+    sReset = false;
+}
+
+bool ControllerOpenThread::IsResetRequested(void)
+{
+    return sReset;
+}
+
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
 {
     otbrError ret = OTBR_ERROR_ERRNO;
@@ -157,7 +174,7 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     }
     case kEventPSKc:
     {
-        EventEmitter::Emit(kEventPSKc, otThreadGetPSKc(mInstance));
+        EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
         break;
     }
     default:
@@ -191,5 +208,11 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 } // namespace Ncp
 } // namespace BorderRouter
 } // namespace ot
+
+void otPlatReset(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    sReset = true;
+}
 
 #endif // OTBR_ENABLE_NCP_OPENTHREAD

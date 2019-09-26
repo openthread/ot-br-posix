@@ -194,7 +194,6 @@ bool Client::FactoryReset(void)
 
     Execute("factoryreset");
     sleep(0);
-    VerifyOrExit(Connect());
     result = Execute("version");
     VerifyOrExit(result != NULL);
 
