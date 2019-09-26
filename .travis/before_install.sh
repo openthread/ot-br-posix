@@ -151,6 +151,7 @@ linux)
     ;;
 
 osx)
+    brew install dbus ctags
     ;;
 
 *)
