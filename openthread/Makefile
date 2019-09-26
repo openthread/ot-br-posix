@@ -32,7 +32,7 @@ define Build/Configure
 		./configure --with-ncp=openthread \
 		--prefix= --exec-prefix=/usr --disable-docs \
 		--disable-web-service --host=mips-openwrt-linux \
-		--with-mdns=none --with-openwrt=openwrt
+		--with-mdns=none --enable-openwrt
 endef
 
 define Build/Compile
@@ -45,7 +45,7 @@ define Package/openthread/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci-static/resources
+	$(INSTALL_DIR) $(1)/www/luci-static/resources
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/agent/otbr-agent $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/openwrt/controller/thread.lua $(1)/usr/lib/lua/luci/controller/admin
