@@ -174,7 +174,7 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     }
     case kEventPSKc:
     {
-        EventEmitter::Emit(kEventPSKc, otThreadGetPSKc(mInstance));
+        EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
         break;
     }
     default:
