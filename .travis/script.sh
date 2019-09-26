@@ -86,7 +86,7 @@ docker-check)
     .travis/check-docker
     ;;
 
-osx)
+macOS)
     ./configure --prefix= --exec-prefix=/usr --disable-web-service --with-mdns=none
     make -j$(shell getconf _NPROCESSORS_ONLN)
     ;;
