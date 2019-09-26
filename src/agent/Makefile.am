@@ -110,11 +110,6 @@ endif
 
 libotbr_agent_la_LDFLAGS = \
     $(NULL)
-libotbr_agent_la_LDFLAGS += \
-    -Wl, --gc-sections      \
-    -flto=jobserver         \
-    -fuse-linker-plugin     \
-    $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
     -I$(top_srcdir)/src                                                      \
