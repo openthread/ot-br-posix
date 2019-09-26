@@ -59,7 +59,7 @@ otbr_agent_LDADD    += \
     $(NULL)
 
 otbr_agent_LDFLAGS = \
-    -pthread         \
+    -static          \
     $(NULL)
 
 otbr_agent_CPPFLAGS         = \
