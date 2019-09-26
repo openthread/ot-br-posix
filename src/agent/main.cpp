@@ -48,10 +48,10 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
-extern void otUbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
-extern void otUbusProcess(const fd_set &aReadFdSet);
-extern void otUbusServerRun(void);
-extern void otUbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
+extern void UbusProcess(const fd_set &aReadFdSet);
+extern void UbusServerRun(void);
+extern void UbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
 
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -100,7 +100,7 @@ static int Mainloop(AgentInstance &aInstance)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        otUbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
+        UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         aInstance.UpdateFdSet(mainloop);
 
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
@@ -124,7 +124,7 @@ static int Mainloop(AgentInstance &aInstance)
                 continue;
             }
             aInstance.Process(mainloop);
-            otUbusProcess(mainloop.mReadFdSet);
+            UbusProcess(mainloop.mReadFdSet);
         }
         else
         {
@@ -211,8 +211,8 @@ int main(int argc, char *argv[])
 
         ot::BorderRouter::Ncp::ControllerOpenThread *ncpThread =
             static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(ncp);
-        otUbusServerInit(ncpThread, &threadMutex);
-        std::thread(otUbusServerRun).detach();
+        UbusServerInit(ncpThread, &threadMutex);
+        std::thread(UbusServerRun).detach();
 
         SuccessOrExit(ret = Mainloop(instance));
     }
