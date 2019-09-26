@@ -35,8 +35,13 @@ sbin_PROGRAMS=otbr-agent
 
 otbr_agent_SOURCES = \
     main.cpp         \
-    otubus.cpp       \
     $(NULL)
+
+if OTBR_ENABLE_OPENWRT
+otbr_agent_SOURCES += \
+    otubus.cpp        \
+    $(NULL)
+endif
 
 otbr_agent_LDADD     = \
     libotbr-agent.la   \
@@ -93,12 +98,14 @@ libotbr_agent_la_LIBADD                                       = \
     $(NULL)
 
 if OTBR_ENABLE_NCP_OPENTHREAD
+if OTBR_ENABLE_OPENWRT
 libotbr_agent_la_LIBADD                                      += \
     -lubox             \
     -lubus             \
     -lblobmsg_json     \
     -ljson-c           \
     $(NULL)
+endif
 endif
 
 if OTBR_ENABLE_NCP_WPANTUND
@@ -154,8 +161,13 @@ noinst_HEADERS        = \
     ncp_openthread.hpp  \
     ncp_wpantund.hpp    \
     uris.hpp            \
+    $(NULL)
+
+if OTBR_ENABLE_OPENWRT
+noinst_HEADERS       += \
     otubus.hpp          \
     $(NULL)
+endif
 
 EXTRA_DIST                = \
     otbr-agent.conf         \
