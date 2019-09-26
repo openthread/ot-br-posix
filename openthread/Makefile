@@ -32,7 +32,7 @@ define Build/Configure
 		./configure --with-ncp=openthread \
 		--prefix= --exec-prefix=/usr --disable-docs \
 		--disable-web-service --host=mips-openwrt-linux \
-		--with-mdns=none
+		--with-mdns=none --with-openwrt=openwrt
 endef
 
 define Build/Compile
@@ -43,7 +43,13 @@ endef
 # Package install instructions; create a directory inside the package to hold our executable, and then copy the executable we built previously into the folder
 define Package/openthread/install
 	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/agent/otbr-agent $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/openwrt/controller/thread.lua $(1)/usr/lib/lua/luci/controller/admin
+	$(CP) $(PKG_BUILD_DIR)/src/openwrt/view/admin_thread $(1)/usr/lib/lua/luci/view
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/openwrt/otbr $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_DATA) $(TOOLCHAIN_DIR)/lib/libstdc++.so.6 $(1)/usr/lib
 endef
