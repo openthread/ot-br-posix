@@ -50,7 +50,7 @@ define Package/openthread/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/agent/otbr-agent $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/openwrt/controller/thread.lua $(1)/usr/lib/lua/luci/controller/admin
 	$(CP) $(PKG_BUILD_DIR)/src/openwrt/view/admin_thread $(1)/usr/lib/lua/luci/view
-	$(CP) $(PKG_BUILD_DIR)/src/openwrt/handle_error.js $(1)/usr/lib/lua/luci-static/resources
+	$(CP) $(PKG_BUILD_DIR)/src/openwrt/handle_error.js $(1)/www/luci-static/resources
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/openwrt/otbr $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_DATA) $(TOOLCHAIN_DIR)/lib/libstdc++.so.6 $(1)/usr/lib
