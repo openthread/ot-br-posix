@@ -634,6 +634,7 @@ AC_MSG_NOTICE([
   MDNS implementation                       : ${with_mdns}
   Commissioner                              : ${enable_commissioner}
   Web service                               : ${enable_web_service}
+  OpenWRT                                   : ${enable_openwrt}
   Lcov                                      : ${LCOV:--}
   Genhtml                                   : ${GENHTML:--}
   Build tests                               : ${nl_cv_build_tests}

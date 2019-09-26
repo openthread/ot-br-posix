@@ -59,8 +59,6 @@ std::mutex  threadMutex;
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
 
-bool sReset = false;
-
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 static const struct option  kOptions[]   = {{"debug-level", required_argument, NULL, 'd'},
@@ -101,9 +99,11 @@ static int Mainloop(AgentInstance &aInstance)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         aInstance.UpdateFdSet(mainloop);
 
+#if OTBR_ENABLE_OPENWRT UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
+        threadMutex.unlock();
+#endif
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
@@ -117,18 +117,17 @@ static int Mainloop(AgentInstance &aInstance)
 
         if (rval >= 0)
         {
+#if OTBR_ENABLE_OPENWRT
             threadMutex.lock();
-            if (sReset)
-            {
-                static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(aInstance.getNcp())->Reset();
-                sReset = false;
-                continue;
-            }
-            aInstance.Process(mainloop);
             UbusProcess(mainloop.mReadFdSet);
+#endif
+            aInstance.Process(mainloop);
         }
         else
         {
+#if OTBR_ENABLE_OPENWRT
+            threadMutex.lock();
+#endif
             error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
@@ -210,10 +209,12 @@ int main(int argc, char *argv[])
 
         SuccessOrExit(ret = instance.Init());
 
+#if OTBR_ENABLE_OPENWRT
         ot::BorderRouter::Ncp::ControllerOpenThread *ncpThread =
             static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(ncp);
         UbusServerInit(ncpThread, &threadMutex);
         std::thread(UbusServerRun).detach();
+#endif
 
         SuccessOrExit(ret = Mainloop(instance));
     }

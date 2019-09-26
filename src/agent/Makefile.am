@@ -97,7 +97,6 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/utils/libutils.la                       \
     $(NULL)
 
-if OTBR_ENABLE_NCP_OPENTHREAD
 if OTBR_ENABLE_OPENWRT
 libotbr_agent_la_LIBADD                                      += \
     -lubox             \
@@ -105,7 +104,6 @@ libotbr_agent_la_LIBADD                                      += \
     -lblobmsg_json     \
     -ljson-c           \
     $(NULL)
-endif
 endif
 
 if OTBR_ENABLE_NCP_WPANTUND
