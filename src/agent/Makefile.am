@@ -114,6 +114,7 @@ libotbr_agent_la_LIBADD                                      += \
 endif
 
 libotbr_agent_la_LDFLAGS = \
+    -static                \
     $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
