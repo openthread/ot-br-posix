@@ -374,6 +374,7 @@ AC_ARG_ENABLE(openwrt,
 
 if test "$enable_openwrt" = "yes"; then
     OTBR_ENABLE_OPENWRT=1
+    AC_DEFINE_UNQUOTED([OTBR_ENABLE_OPENWRT], [1], [Define to 1 if you want to compile for OpenWRT])
 else
     OTBR_ENABLE_OPENWRT=0
 fi
