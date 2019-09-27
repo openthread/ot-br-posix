@@ -306,7 +306,7 @@ function joinerlist()
 	data.joinernum = result.joinernum
 
 	if result.Joinernum ~= 0 then
-		for k, v in pairs(result.joiner_list) do
+		for k, v in pairs(result.joinerList) do
 			l[#l+1] = v
 		end
 	end
