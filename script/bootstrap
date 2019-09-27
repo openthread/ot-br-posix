@@ -119,7 +119,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    die 'macOS not supported currently'
+    brew install dbus ctags
 }
 
 install_packages_source()
