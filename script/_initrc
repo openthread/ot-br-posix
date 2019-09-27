@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -91,7 +91,9 @@ then
     cat /sys/firmware/devicetree/base/model | grep -s "BeagleBone Black" && PLATFORM=beagleboneblack
 fi
 
-if test -z "$PLATFORM"; then
+if [[ "${OSTYPE}" = "darwin"* ]]; then
+    PLATFORM=macOS
+elif test -z "$PLATFORM"; then
     have_or_die lsb_release
     PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
 fi
