@@ -86,6 +86,12 @@ docker-check)
     .travis/check-docker
     ;;
 
+macOS)
+    RELEASE=1 ./script/bootstrap
+    # Currently only verify otbr-agent
+    ./configure --prefix= --exec-prefix=/usr --disable-web-service --with-mdns=none
+    make -j$(shell getconf _NPROCESSORS_ONLN)
+    ;;
 *)
     die
     ;;
