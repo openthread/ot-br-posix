@@ -101,9 +101,11 @@ static int Mainloop(AgentInstance &aInstance)
 
         aInstance.UpdateFdSet(mainloop);
 
-#if OTBR_ENABLE_OPENWRT UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
+#if OTBR_ENABLE_OPENWRT
+        UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         threadMutex.unlock();
 #endif
+
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
