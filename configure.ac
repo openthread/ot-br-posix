@@ -362,7 +362,7 @@ AC_ARG_ENABLE(openwrt,
         case "${enableval}" in
 
         no|yes)
-            enable_commissioner=${enableval}
+            enable_openwrt=${enableval}
             ;;
 
         *)
@@ -370,9 +370,9 @@ AC_ARG_ENABLE(openwrt,
             ;;
         esac
     ],
-    [enable_commissioner=no])
+    [enable_openwrt=no])
 
-if test "$enable_commissioner" = "yes"; then
+if test "$enable_openwrt" = "yes"; then
     OTBR_ENABLE_OPENWRT=1
 else
     OTBR_ENABLE_OPENWRT=0
