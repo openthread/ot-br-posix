@@ -73,6 +73,7 @@ enum
     kEventNetworkName,      ///< Network name arrived.
     kEventPSKc,             ///< PSKc arrived.
     kEventThreadState,      ///< Thread State.
+    kEventThreadVersion,    ///< Thread Version.
     kEventUdpForwardStream, ///< UDP forward stream arrived.
 };
 

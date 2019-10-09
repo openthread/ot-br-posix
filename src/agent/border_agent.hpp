@@ -128,13 +128,16 @@ private:
 
     void SetNetworkName(const char *aNetworkName);
     void SetExtPanId(const uint8_t *aExtPanId);
+    void SetThreadVersion(uint16_t aThreadVersion);
     void HandleThreadState(bool aStarted);
     void HandlePSKc(const uint8_t *aPSKc);
 
-    static void HandlePSKc(void *aContext, int aEvent, va_list aArguments);
-    static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);
-    static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
-    static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
+    static void        HandlePSKc(void *aContext, int aEvent, va_list aArguments);
+    static void        HandleThreadState(void *aContext, int aEvent, va_list aArguments);
+    static void        HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
+    static void        HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
+    static void        HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
+    static const char *ThreadVersionToString(uint16_t aThreadVersion);
 
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
@@ -142,10 +145,11 @@ private:
 #if OTBR_ENABLE_NCP_WPANTUND
     int mSocket;
 #endif
-    uint8_t mExtPanId[kSizeExtPanId];
-    char    mNetworkName[kSizeNetworkName + 1];
-    bool    mThreadStarted;
-    bool    mPSKcInitialized;
+    uint8_t  mExtPanId[kSizeExtPanId];
+    char     mNetworkName[kSizeNetworkName + 1];
+    uint16_t mThreadVersion;
+    bool     mThreadStarted;
+    bool     mPSKcInitialized;
 };
 
 /**

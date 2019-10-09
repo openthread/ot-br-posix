@@ -140,7 +140,7 @@ bool ControllerOpenThread::IsResetRequested(void)
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
 {
-    otbrError ret = OTBR_ERROR_ERRNO;
+    otbrError ret = OTBR_ERROR_NONE;
 
     switch (aEvent)
     {
@@ -175,6 +175,11 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     case kEventPSKc:
     {
         EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
+        break;
+    }
+    case kEventThreadVersion:
+    {
+        EventEmitter::Emit(kEventThreadVersion, otGetThreadVersion());
         break;
     }
     default:
