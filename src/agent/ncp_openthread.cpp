@@ -140,7 +140,7 @@ bool ControllerOpenThread::IsResetRequested(void)
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
 {
-    otbrError ret = OTBR_ERROR_ERRNO;
+    otbrError ret = OTBR_ERROR_NONE;
 
     switch (aEvent)
     {
