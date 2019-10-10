@@ -429,7 +429,7 @@ void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArgum
     assert(aEvent == Ncp::kEventThreadVersion);
 
     // `uint16_t` has been promoted to `int`.
-    uint16_t threadVersion = va_arg(aArguments, int);
+    uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));
     static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
 }
 
