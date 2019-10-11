@@ -136,6 +136,8 @@ otbrError BorderAgent::Start(void)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
+
+// Currently supports only NCP_OPENTHREAD
 #if OTBR_ENABLE_NCP_OPENTHREAD
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventThreadVersion));
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
