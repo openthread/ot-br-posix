@@ -72,8 +72,10 @@ EOF
         sudo git clone --depth 1 https://github.com/openthread/wpantund.git $IMAGE_DIR/home/pi/repo/._build/wpantund && \
         sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh &&  \
         sudo ./qemu-setup.sh $IMAGE_DIR &&                             \
-        sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh &&          \
-        sudo ./qemu-cleanup.sh $IMAGE_DIR &&                           \
+        sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh
+        sudo umount -lf $IMAGE_DIR/dev/pts || true
+        sudo ./qemu-cleanup.sh $IMAGE_DIR || true
+        sudo umount -lf $IMAGE_DIR/dev || true
         sudo ./unmount.sh $IMAGE_DIR)
 }
 
