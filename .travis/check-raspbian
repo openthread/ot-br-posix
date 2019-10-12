@@ -59,6 +59,8 @@ main() {
         su -m -c 'script/bootstrap' pi
         su -m -c './configure --prefix=/usr' pi
         su -m -c 'make' pi
+        umount /sys
+        umount /proc
 EOF
 
     (cd docker-rpi-emu/scripts &&
