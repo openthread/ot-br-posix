@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -91,11 +91,16 @@ then
     cat /sys/firmware/devicetree/base/model | grep -s "BeagleBone Black" && PLATFORM=beagleboneblack
 fi
 
-if [[ "${OSTYPE}" = "darwin"* ]]; then
-    PLATFORM=macOS
-elif test -z "$PLATFORM"; then
-    have_or_die lsb_release
-    PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+if test -z "$PLATFORM"; then
+    case "${OSTYPE}" in
+        darwin*)
+            PLATFORM=macOS
+            ;;
+        *)
+            have_or_die lsb_release
+            PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+            ;;
+    esac
 fi
 echo "Current platform is $PLATFORM"
 
