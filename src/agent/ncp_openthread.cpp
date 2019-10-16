@@ -179,7 +179,7 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     }
     case kEventThreadVersion:
     {
-        EventEmitter::Emit(kEventThreadVersion, otGetThreadVersion());
+        EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
         break;
     }
     default:
