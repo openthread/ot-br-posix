@@ -132,12 +132,11 @@ private:
     void HandleThreadState(bool aStarted);
     void HandlePSKc(const uint8_t *aPSKc);
 
-    static void        HandlePSKc(void *aContext, int aEvent, va_list aArguments);
-    static void        HandleThreadState(void *aContext, int aEvent, va_list aArguments);
-    static void        HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
-    static void        HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
-    static void        HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
-    static const char *ThreadVersionToString(uint16_t aThreadVersion);
+    static void HandlePSKc(void *aContext, int aEvent, va_list aArguments);
+    static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);
+    static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
+    static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
+    static void HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
 
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;

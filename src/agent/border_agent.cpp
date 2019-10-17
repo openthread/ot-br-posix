@@ -276,6 +276,19 @@ exit:
     return;
 }
 
+static const char *ThreadVersionToString(uint16_t aThreadVersion)
+{
+    switch (aThreadVersion)
+    {
+    case 2:
+        return "1.1.1";
+    case 3:
+        return "1.2.0";
+    default:
+        return "";
+    }
+}
+
 void BorderAgent::PublishService(void)
 {
     char xpanid[sizeof(mExtPanId) * 2 + 1];
@@ -435,19 +448,6 @@ void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArgum
     // `uint16_t` has been promoted to `int`.
     uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));
     static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
-}
-
-const char *BorderAgent::ThreadVersionToString(uint16_t aThreadVersion)
-{
-    switch (aThreadVersion)
-    {
-    case 2:
-        return "1.1.1";
-    case 3:
-        return "1.2.0";
-    default:
-        return "";
-    }
 }
 
 } // namespace BorderRouter
