@@ -37,7 +37,7 @@ The OpenThread Project follows the "Fork-and-Pull" model for accepting contribut
 Setup your GitHub fork and continuous-integration services:
 
 1. Fork the [OpenThread repository](https://github.com/openthread/ot-br-posix) by clicking "Fork" on the web UI.
-2. Enable [Travis CI](https://travis-ci.org/) and [AppVeyor](https://ci.appveyor.com/) by logging in the respective services with your GitHub account and enabling your newly created fork.  We use Travis CI for Linux-based continuous integration checks and AppVeyor for Windows-based continuous integration checks.  All contributions must pass these checks to be accepted.
+2. Enable [Travis CI](https://travis-ci.org/) by logging in with your GitHub account and enabling your newly created fork.  We use Travis CI for Linux and macOS continuous integration checks.  All contributions must pass these checks to be accepted.
 
 Setup your local development environment:
 
@@ -104,7 +104,7 @@ Now, it may be desirable to squash some of your smaller commits down into a smal
 
 ```bash
 # Rebase all commits on your development branch
-git checkout 
+git checkout
 git rebase -i master
 ```
 
@@ -112,15 +112,14 @@ This will open up a text editor where you can specify which commits to squash.
 
 #### Coding Conventions and Style
 
-OpenThread uses and enforces the [OpenThread Coding Conventions and Style](STYLE_GUIDE.md) on all code, except for code located in [third_party](third_party).
+OpenThread uses and enforces the [OpenThread Coding Conventions and Style](STYLE_GUIDE.md) on all code, except for code located in [third_party](third_party).  Use the `make pretty` and `make pretty-check` targets to automatically reformat code and check for code-style compliance, respectively.  OpenThread currently requires [clang-format v6.0.0](http://releases.llvm.org/download.html#6.0.0) for `make pretty` and `make pretty-check`.
 
 As part of the cleanup process, you should also run `make pretty-check` to ensure that your code passes the baseline code style checks.
 
 ```bash
 ./bootstrap
-./configure --enable-ftd --enable-cli --enable-diag --enable-dhcp6-client --enable-dhcp6-server --enable-commissioner --enable-joiner --with-examples=posix
+./configure
 make pretty-check
-
 ```
 
 Make sure to include any code format changes in your commits.
@@ -135,8 +134,8 @@ git checkout <branch-name>
 git push origin <branch-name>
 ```
 
-This will trigger the Travis CI and AppVeyor continuous-integration checks.  You can view the results in the respective services.  Note that the integration checks will report failures on occasion.  If a failure occurs, you may try rerunning the test via the Travis and/or AppVeyor web UI.
+This will trigger the Travis CI continuous-integration checks.  You can view the results in the respective services.  Note that the integration checks will report failures on occasion.  If a failure occurs, you may try rerunning the test via the Travis web UI.
 
 #### Submit Pull Request
 
-Once you've validated the Travis CI and AppVeyor results, go to the page for your fork on GitHub, select your development branch, and click the pull request button. If you need to make any adjustments to your pull request, just push the updates to GitHub. Your pull request will automatically track the changes on your development branch and update.
+Once you've validated the Travis CI results, go to the page for your fork on GitHub, select your development branch, and click the pull request button. If you need to make any adjustments to your pull request, just push the updates to GitHub. Your pull request will automatically track the changes on your development branch and update.
