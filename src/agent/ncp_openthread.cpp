@@ -177,6 +177,11 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
         EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
         break;
     }
+    case kEventThreadVersion:
+    {
+        EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
+        break;
+    }
     default:
         assert(false);
         break;

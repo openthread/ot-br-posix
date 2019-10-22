@@ -95,6 +95,7 @@ void BorderAgent::Init(void)
 {
     memset(mNetworkName, 0, sizeof(mNetworkName));
     memset(mExtPanId, 0, sizeof(mExtPanId));
+    mThreadVersion = 0;
 
 #if OTBR_ENABLE_NCP_WPANTUND
     mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
@@ -102,6 +103,7 @@ void BorderAgent::Init(void)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
     mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
+    mNcp->On(Ncp::kEventThreadVersion, HandleThreadVersion, this);
 #endif
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
     mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
@@ -134,6 +136,11 @@ otbrError BorderAgent::Start(void)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
+
+// Currently supports only NCP_OPENTHREAD
+#if OTBR_ENABLE_NCP_OPENTHREAD
+    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventThreadVersion));
+#endif // OTBR_ENABLE_NCP_OPENTHREAD
     StartPublishService();
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 
@@ -269,6 +276,19 @@ exit:
     return;
 }
 
+static const char *ThreadVersionToString(uint16_t aThreadVersion)
+{
+    switch (aThreadVersion)
+    {
+    case 2:
+        return "1.1.1";
+    case 3:
+        return "1.2.0";
+    default:
+        return "";
+    }
+}
+
 void BorderAgent::PublishService(void)
 {
     char xpanid[sizeof(mExtPanId) * 2 + 1];
@@ -276,7 +296,7 @@ void BorderAgent::PublishService(void)
     assert(mNetworkName[0] != '\0');
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
     mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
-                               xpanid, NULL);
+                               xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
 }
 
 void BorderAgent::StartPublishService(void)
@@ -326,6 +346,17 @@ void BorderAgent::SetNetworkName(const char *aNetworkName)
 void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
 {
     memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
+    if (mThreadStarted)
+    {
+        StartPublishService();
+    }
+#endif
+}
+
+void BorderAgent::SetThreadVersion(uint16_t aThreadVersion)
+{
+    mThreadVersion = aThreadVersion;
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     if (mThreadStarted)
     {
@@ -408,6 +439,15 @@ void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
 
     const uint8_t *xpanid = va_arg(aArguments, const uint8_t *);
     static_cast<BorderAgent *>(aContext)->SetExtPanId(xpanid);
+}
+
+void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArguments)
+{
+    assert(aEvent == Ncp::kEventThreadVersion);
+
+    // `uint16_t` has been promoted to `int`.
+    uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));
+    static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
 }
 
 } // namespace BorderRouter
