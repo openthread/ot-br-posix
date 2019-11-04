@@ -285,7 +285,7 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
     case 3:
         return "1.2.0";
     default:
-        return "";
+        return NULL;
     }
 }
 
@@ -295,8 +295,19 @@ void BorderAgent::PublishService(void)
 
     assert(mNetworkName[0] != '\0');
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
-    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
-                               xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
+
+#if OTBR_ENABLE_NCP_OPENTHREAD
+    if (ThreadVersionToString(mThreadVersion) != NULL)
+    {
+        mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
+                                   xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
+    }
+    else
+#endif // OTBR_ENABLE_NCP_OPENTHREAD
+    {
+        mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
+                                   xpanid, NULL);
+    }
 }
 
 void BorderAgent::StartPublishService(void)
