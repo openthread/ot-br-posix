@@ -276,6 +276,7 @@ exit:
     return;
 }
 
+#if OTBR_ENABLE_NCP_OPENTHREAD
 static const char *ThreadVersionToString(uint16_t aThreadVersion)
 {
     switch (aThreadVersion)
@@ -288,6 +289,7 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
         return NULL;
     }
 }
+#endif // OTBR_ENABLE_NCP_OPENTHREAD
 
 void BorderAgent::PublishService(void)
 {
