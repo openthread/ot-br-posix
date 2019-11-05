@@ -98,6 +98,7 @@ void BorderAgent::Init(void)
 {
     memset(mNetworkName, 0, sizeof(mNetworkName));
     memset(mExtPanId, 0, sizeof(mExtPanId));
+    mExtPanIdInitialized = false;
     mThreadVersion = 0;
 
 #if OTBR_ENABLE_NCP_WPANTUND
@@ -289,7 +290,8 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
     case kThreadVersion12:
         return "1.2.0";
     default:
-        return NULL;
+        otbrLog(OTBR_LOG_ERR, "unexpected thread version %hu", aThreadVersion);
+        abort();
     }
 }
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
@@ -299,25 +301,26 @@ void BorderAgent::PublishService(void)
     char xpanid[sizeof(mExtPanId) * 2 + 1];
 
     assert(mNetworkName[0] != '\0');
+    assert(mExtPanIdInitialized);
+    assert(mThreadVersion != 0);
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
-    if (ThreadVersionToString(mThreadVersion) != NULL)
-    {
-        mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
-                                   xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
-    }
-    else
+    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
+                               xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
+#else
+    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
+                               xpanid, NULL);
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
-    {
-        mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
-                                   xpanid, NULL);
-    }
 }
 
 void BorderAgent::StartPublishService(void)
 {
     VerifyOrExit(mNetworkName[0] != '\0');
+    VerifyOrExit(mExtPanIdInitialized);
+#if OTBR_ENABLE_NCP_OPENTHREAD
+    VerifyOrExit(mThreadVersion != 0);
+#endif // OTBR_ENABLE_NCP_OPENTHREAD
 
     if (mPublisher->IsStarted())
     {
@@ -362,6 +365,7 @@ void BorderAgent::SetNetworkName(const char *aNetworkName)
 void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
 {
     memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
+    mExtPanIdInitialized = true;
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     if (mThreadStarted)
     {
