@@ -55,6 +55,9 @@ namespace ot {
 
 namespace BorderRouter {
 
+static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
+static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
+
 static const char   kBorderAgentServiceType[] = "_meshcop._udp."; ///< Border agent service type of mDNS
 static const size_t kMaxSizeOfPacket          = 1500;             ///< Max size of packet in bytes.
 
@@ -281,9 +284,9 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
 {
     switch (aThreadVersion)
     {
-    case 2:
+    case kThreadVersion11:
         return "1.1.1";
-    case 3:
+    case kThreadVersion12:
         return "1.2.0";
     default:
         return NULL;
