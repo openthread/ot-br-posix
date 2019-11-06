@@ -30,6 +30,9 @@
 #include "otbr-config.h"
 #endif
 
+#include <mutex>
+#include <thread>
+
 #include <errno.h>
 #include <getopt.h>
 #include <signal.h>
@@ -44,6 +47,14 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+
+#if OTBR_ENABLE_OPENWRT
+extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
+extern void UbusProcess(const fd_set &aReadFdSet);
+extern void UbusServerRun(void);
+extern void UbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+std::mutex  threadMutex;
+#endif
 
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -90,6 +101,11 @@ static int Mainloop(AgentInstance &aInstance)
 
         aInstance.UpdateFdSet(mainloop);
 
+#if OTBR_ENABLE_OPENWRT
+        UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
+        threadMutex.unlock();
+#endif
+
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
@@ -103,10 +119,17 @@ static int Mainloop(AgentInstance &aInstance)
 
         if (rval >= 0)
         {
+#if OTBR_ENABLE_OPENWRT
+            threadMutex.lock();
+            UbusProcess(mainloop.mReadFdSet);
+#endif
             aInstance.Process(mainloop);
         }
         else
         {
+#if OTBR_ENABLE_OPENWRT
+            threadMutex.lock();
+#endif
             error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
@@ -187,6 +210,14 @@ int main(int argc, char *argv[])
         AgentInstance instance(ncp);
 
         SuccessOrExit(ret = instance.Init());
+
+#if OTBR_ENABLE_OPENWRT
+        ot::BorderRouter::Ncp::ControllerOpenThread *ncpThread =
+            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(ncp);
+        UbusServerInit(ncpThread, &threadMutex);
+        std::thread(UbusServerRun).detach();
+#endif
+
         SuccessOrExit(ret = Mainloop(instance));
     }
 

@@ -37,6 +37,12 @@ otbr_agent_SOURCES = \
     main.cpp         \
     $(NULL)
 
+if OTBR_ENABLE_OPENWRT
+otbr_agent_SOURCES += \
+    otubus.cpp        \
+    $(NULL)
+endif
+
 otbr_agent_LDADD     = \
     libotbr-agent.la   \
     $(NULL)
@@ -58,6 +64,7 @@ otbr_agent_LDFLAGS = \
 
 otbr_agent_CPPFLAGS         = \
     -I$(top_srcdir)/src       \
+    -I$(top_srcdir)/third_party/openthread/repo/src/core                     \
     $(OPENTHREAD_CPPFLAGS)    \
     $(NULL)
 
@@ -89,6 +96,15 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
     $(top_builddir)/src/utils/libutils.la                       \
     $(NULL)
+
+if OTBR_ENABLE_OPENWRT
+libotbr_agent_la_LIBADD                                      += \
+    -lubox             \
+    -lubus             \
+    -lblobmsg_json     \
+    -ljson-c           \
+    $(NULL)
+endif
 
 if OTBR_ENABLE_NCP_WPANTUND
 libotbr_agent_la_LIBADD                                      += \
@@ -145,6 +161,12 @@ noinst_HEADERS        = \
     ncp_wpantund.hpp    \
     uris.hpp            \
     $(NULL)
+
+if OTBR_ENABLE_OPENWRT
+noinst_HEADERS       += \
+    otubus.hpp          \
+    $(NULL)
+endif
 
 EXTRA_DIST                = \
     otbr-agent.conf         \

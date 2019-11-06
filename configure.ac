@@ -353,6 +353,37 @@ AC_SUBST(OTBR_ENABLE_WEB_SERVICE)
 AM_CONDITIONAL([OTBR_ENABLE_WEB_SERVICE], [test "${enable_web_service}" = "yes"])
 
 #
+# OpenWRT
+#
+
+AC_ARG_ENABLE(openwrt,
+    [AS_HELP_STRING([--enable-openwrt],[Enable OpenWRT @<:@default=no@:>@.])],
+    [
+        case "${enableval}" in
+
+        no|yes)
+            enable_openwrt=${enableval}
+            ;;
+
+        *)
+            AC_MSG_ERROR([Invalid value ${enable_openwrt} for --enable-openwrt])
+            ;;
+        esac
+    ],
+    [enable_openwrt=no])
+
+if test "$enable_openwrt" = "yes"; then
+    OTBR_ENABLE_OPENWRT=1
+    AC_DEFINE_UNQUOTED([OTBR_ENABLE_OPENWRT], [1], [Define to 1 if you want to compile for OpenWRT])
+else
+    OTBR_ENABLE_OPENWRT=0
+fi
+
+AC_MSG_RESULT(${enable_openwrt})
+AC_SUBST(OTBR_ENABLE_OPENWRT)
+AM_CONDITIONAL([OTBR_ENABLE_OPENWRT], [test "${enable_openwrt}" = "yes"])
+
+#
 # Checks for libraries and packages.
 #
 # At minimum, the following packages are optional, depending on
@@ -604,6 +635,7 @@ AC_MSG_NOTICE([
   MDNS implementation                       : ${with_mdns}
   Commissioner                              : ${enable_commissioner}
   Web service                               : ${enable_web_service}
+  OpenWRT                                   : ${enable_openwrt}
   Lcov                                      : ${LCOV:--}
   Genhtml                                   : ${GENHTML:--}
   Build tests                               : ${nl_cv_build_tests}

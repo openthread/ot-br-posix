@@ -528,6 +528,10 @@ Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, cha
     return new ControllerWpantund(aInterfaceName);
 }
 
+void ControllerWpantund::Reset(void)
+{
+}
+
 } // namespace Ncp
 
 } // namespace BorderRouter
