@@ -55,8 +55,10 @@ namespace ot {
 
 namespace BorderRouter {
 
+#if OTBR_ENABLE_NCP_OPENTHREAD
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
+#endif // OTBR_ENABLE_NCP_OPENTHREAD
 
 static const char   kBorderAgentServiceType[] = "_meshcop._udp."; ///< Border agent service type of mDNS
 static const size_t kMaxSizeOfPacket          = 1500;             ///< Max size of packet in bytes.
