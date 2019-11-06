@@ -777,7 +777,7 @@ private:
     bool                       mIfFinishScan;
     struct ubus_context *      mContext;
     const char *               mSockPath;
-    struct blob_buf            mBuf;
+    struct blob_buf            mScanReplyBuf;
     struct blob_buf            mNetworkdataBuf;
     Ncp::ControllerOpenThread *mController;
     time_t                     mSecond;
@@ -1116,9 +1116,13 @@ private:
      * @param[in]   aError      The error type of the message.
      * @param[in]   aContext    A pointer to the context.
      * @param[in]   aRequest    A pointer to the request.
+     * @param[in]   aBuf        The result data buffer
      *
      */
-    void AppendResult(otError aError, struct ubus_context *aContext, struct ubus_request_data *aRequest);
+    void AppendResult(otError                   aError,
+                      struct ubus_context *     aContext,
+                      struct ubus_request_data *aRequest,
+                      struct blob_buf *         aBuf);
 };
 } // namespace ubus
 } // namespace BorderRouter
