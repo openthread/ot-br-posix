@@ -58,7 +58,7 @@ namespace BorderRouter {
 #if OTBR_ENABLE_NCP_OPENTHREAD
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
-#endif // OTBR_ENABLE_NCP_OPENTHREAD
+#endif                                      // OTBR_ENABLE_NCP_OPENTHREAD
 
 static const char   kBorderAgentServiceType[] = "_meshcop._udp."; ///< Border agent service type of mDNS
 static const size_t kMaxSizeOfPacket          = 1500;             ///< Max size of packet in bytes.
@@ -101,7 +101,7 @@ void BorderAgent::Init(void)
     memset(mNetworkName, 0, sizeof(mNetworkName));
     memset(mExtPanId, 0, sizeof(mExtPanId));
     mExtPanIdInitialized = false;
-    mThreadVersion = 0;
+    mThreadVersion       = 0;
 
 #if OTBR_ENABLE_NCP_WPANTUND
     mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
