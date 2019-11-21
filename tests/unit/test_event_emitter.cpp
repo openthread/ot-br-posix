@@ -26,11 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <CppUTest/TestHarness.h>
-
 #include <stdarg.h>
 
 #include "common/event_emitter.hpp"
+
+#include <CppUTest/TestHarness.h>
 
 static int   sCounter = 0;
 static int   sEvent   = 0;

@@ -86,3 +86,11 @@ src/commissioner/otbr-commissioner
 # libcoap build
 third_party/libcoap/repo/libcoap-1.map
 third_party/libcoap/repo/libcoap-1.sym
+
+# Test logs
+tests/unit/unittest
+*.log
+*.trs
+
+# Vim auto complete helper
+.ycm_extra_conf.py

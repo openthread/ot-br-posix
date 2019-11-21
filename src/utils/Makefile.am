@@ -51,12 +51,13 @@ libutils_la_LIBADD                                      = \
     $(top_builddir)/src/common/libotbr-logging.la         \
     $(NULL)
 
-noinst_HEADERS      = \
-    crc16.hpp         \
-    hex.hpp           \
-    pskc.hpp          \
-    steering_data.hpp \
-    strcpy_utils.hpp  \
+noinst_HEADERS                 = \
+    concurrent_queue.hpp         \
+    crc16.hpp                    \
+    hex.hpp                      \
+    pskc.hpp                     \
+    steering_data.hpp            \
+    strcpy_utils.hpp             \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

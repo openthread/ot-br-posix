@@ -38,6 +38,7 @@ unittest_SOURCES           = \
     test_event_emitter.cpp   \
     test_pskc.cpp            \
     test_logging.cpp         \
+    test_queue.cpp           \
     $(NULL)
 
 if OTBR_ENABLE_MDNS_MDNSSD
