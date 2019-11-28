@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -28,47 +28,58 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-# Always package (e.g. for 'make dist') these subdirectories.
+noinst_LTLIBRARIES = libotbr-dbus.la
 
-DIST_SUBDIRS                                         = \
-    agent                                              \
-    commissioner                                       \
-    common                                             \
-    dbus                                               \
-    utils                                              \
-    web                                                \
+bin_PROGRAMS = dbus-server-test
+
+dbus_server_test_SOURCES  = \
+    dbus_server_test.cpp    \
     $(NULL)
 
-# Always build (e.g. for 'make all') these subdirectories.
-
-SUBDIRS                                              = \
-    common                                             \
-    utils                                              \
-    dbus                                               \
-    agent                                              \
+dbus_server_test_CXXFLAGS = \
+    -fno-exceptions         \
     $(NULL)
 
-if OTBR_ENABLE_COMMISSIONER
-SUBDIRS                                             += \
-    commissioner                                       \
+dbus_server_test_CPPFLAGS = \
+    -I$(top_srcdir)/src     \
+    -I$(top_srcdir)         \
+    $(DBUS_CFLAGS)          \
     $(NULL)
-endif
 
-if OTBR_ENABLE_WEB_SERVICE
-SUBDIRS                                             += \
-    web                                                \
+dbus_server_test_LDADD    = \
+    libotbr-dbus.la         \
     $(NULL)
-endif
 
-# Always pretty (e.g. for 'make pretty') these subdirectories.
+dbus_server_test_LDFLAGS  = \
+    -static                 \
+    $(NULL)
 
-PRETTY_SUBDIRS                                       = \
-    agent                                              \
-    commissioner                                       \
-    common                                             \
-    dbus                                               \
-    utils                                              \
-    web                                                \
+libotbr_dbus_la_CXXFLAGS          = \
+    -fno-exceptions                 \
+    -Wno-missing-field-initializers \
+    -Wno-unused-parameter           \
+    $(NULL)
+
+libotbr_dbus_la_SOURCES   = \
+    dbus_object.cpp         \
+    dbus_message_helper.cpp \
+    $(NULL)
+
+libotbr_dbus_la_CPPFLAGS  = \
+    -I$(top_srcdir)/src     \
+    -I$(top_srcdir)         \
+    $(DBUS_CFLAGS)          \
+    $(NULL)
+
+libotbr_dbus_la_LIBADD    = \
+    $(DBUS_LIBS)            \
+    $(NULL)
+
+noinst_HEADERS            = \
+    dbus_object.hpp         \
+    dbus_request.hpp        \
+    dbus_resources.hpp      \
+    dbus_message_helper.hpp \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

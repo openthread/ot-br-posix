@@ -589,6 +589,7 @@ src/agent/Makefile
 src/agent/otbr-agent.conf
 src/commissioner/Makefile
 src/common/Makefile
+src/dbus/Makefile
 src/utils/Makefile
 src/web/Makefile
 tests/Makefile
