@@ -83,6 +83,9 @@ tools/steering-data
 # Commissioner
 src/commissioner/otbr-commissioner
 
+# dbus
+src/dbus/dbus-server-test
+
 # libcoap build
 third_party/libcoap/repo/libcoap-1.map
 third_party/libcoap/repo/libcoap-1.sym

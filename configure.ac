@@ -201,7 +201,7 @@ AC_PATH_PROG(PERL, perl)
 #
 
 PROSPECTIVE_CFLAGS="-Wall -Wextra -Wshadow -Werror -std=c99 -pedantic-errors"
-PROSPECTIVE_CXXFLAGS="-Wall -Wextra -Wshadow -Werror -std=c++11 -Wno-c++14-compat"
+PROSPECTIVE_CXXFLAGS="-Wall -Wextra -Wshadow -Werror -std=c++14"
 
 AC_CACHE_CHECK([whether $CC is Clang],
     [nl_cv_clang],
@@ -589,6 +589,7 @@ src/agent/Makefile
 src/agent/otbr-agent.conf
 src/commissioner/Makefile
 src/common/Makefile
+src/dbus/Makefile
 src/utils/Makefile
 src/web/Makefile
 tests/Makefile
