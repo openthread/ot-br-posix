@@ -186,11 +186,11 @@ int main()
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
-    base::SingleThreadTaskExecutor io_task_executor(base::MessagePumpType::IO);
+    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
     base::RunLoop                  runLoop;
 
     mojo::core::Init();
-    mojo::core::ScopedIPCSupport ipcSupport(io_task_executor.task_runner(),
+    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     chromecast::external_service_support::ExternalConnector::Connect(chromecast::external_mojo::GetBrokerPath(),
