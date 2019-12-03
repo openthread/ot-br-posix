@@ -45,6 +45,7 @@
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
 #include <mojo/public/cpp/bindings/binding_set.h>
+#include "base/task/single_thread_task_executor.h"
 
 #include <utility>
 
@@ -185,11 +186,11 @@ int main()
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
-    base::MessageLoopForIO mainLoop;
-    base::RunLoop          runLoop;
+    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
+    base::RunLoop                  runLoop;
 
     mojo::core::Init();
-    mojo::core::ScopedIPCSupport ipcSupport(mainLoop.task_runner(),
+    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     chromecast::external_service_support::ExternalConnector::Connect(chromecast::external_mojo::GetBrokerPath(),

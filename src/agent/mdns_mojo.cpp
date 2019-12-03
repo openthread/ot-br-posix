@@ -53,6 +53,7 @@
         fprintf(stderr, format, ##__VA_ARGS__); \
         fprintf(stderr, "\r\n");                \
     } while (0)
+#include "base/task/single_thread_task_executor.h"
 #endif
 
 namespace ot {
@@ -65,6 +66,7 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
+#ifndef TEST_IN_CHROMIUM
     base::MessageLoopForIO mainLoop;
     base::RunLoop          runLoop;
 
@@ -73,6 +75,16 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     mMojoTaskRunner = mainLoop.task_runner();
+#else
+    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
+    base::RunLoop          runLoop;
+
+    mojo::core::Init();
+    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
+                                            mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+
+    mMojoTaskRunner = ioTaskExecutor.task_runner();
+#endif // TEST_IN_CHROMIUM
 
     if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
     {
