@@ -76,14 +76,14 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
 
     mMojoTaskRunner = mainLoop.task_runner();
 #else
-    base::SingleThreadTaskExecutor io_task_executor(base::MessagePumpType::IO);
+    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
     base::RunLoop          runLoop;
 
     mojo::core::Init();
-    mojo::core::ScopedIPCSupport ipcSupport(io_task_executor.task_runner(),
+    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
-    mMojoTaskRunner = io_task_executor.task_runner();
+    mMojoTaskRunner = ioTaskExecutor.task_runner();
 #endif // TEST_IN_CHROMIUM
 
     if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
