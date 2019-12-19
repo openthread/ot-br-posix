@@ -101,8 +101,15 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
 void MdnsMojoPublisher::TearDownMojoThreads(void)
 {
     mConnector      = nullptr;
-    mResponder      = nullptr;
     mMojoTaskRunner = nullptr;
+
+#ifndef TEST_IN_CHROMIUM
+    mResponder = nullptr;
+#else
+    mResponder.reset();
+    mResponder = mojo::Remote<chromecast::mojom::MdnsResponder>();
+#endif
+
     mMojoCoreThreadQuitClosure.Run();
 }
 
@@ -143,11 +150,12 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
 #ifndef TEST_IN_CHROMIUM
         aConnector->set_connection_error_callback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
+        aConnector->BindInterface("chromecast", &mResponder);
 #else
         aConnector->SetConnectionErrorCallback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
+        aConnector->BindInterface("chromecast", mResponder.BindNewPipeAndPassReceiver());
 #endif
-        aConnector->BindInterface("chromecast", &mResponder);
         mConnector = std::move(aConnector);
         mStateHandler(mContext, kStateReady);
     }
