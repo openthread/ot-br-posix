@@ -1,7 +1,6 @@
 language: cpp
 
 sudo: required
-dist: trusty
 
 cache:
   directories:
@@ -16,10 +15,13 @@ matrix:
   include:
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2017-04-10-raspbian-jessie-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2018-04-18-raspbian-stretch-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="meshcop" VERBOSE=1
       os: linux
+      dist: trusty
       addons:
         apt:
           sources:
@@ -29,35 +31,47 @@ matrix:
             - g++-5
     - env: BUILD_TARGET="docker-check" VERBOSE=1
       os: linux
+      dist: trusty
       compiler: gcc
     - env: BUILD_TARGET="script-check"
       compiler: gcc
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="scan-build"
       os: linux
+      dist: trusty
       compiler: clang
     - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=""
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="android-check" VERBOSE=1
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1
       os: linux
+      dist: bionic
     - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: clang
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: clang
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: gcc
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux
+      dist: trusty
     - env: BUILD_TARGET="pretty-check"
       os: linux
+      dist: trusty
       addons:
         apt:
           sources:
