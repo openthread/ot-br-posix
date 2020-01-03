@@ -15,67 +15,60 @@ matrix:
   include:
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2017-04-10-raspbian-jessie-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2018-04-18-raspbian-stretch-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="meshcop" VERBOSE=1
       os: linux
-      dist: trusty
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
+      dist: bionic
     - env: BUILD_TARGET="docker-check" VERBOSE=1
       os: linux
-      dist: trusty
+      dist: bionic
       compiler: gcc
     - env: BUILD_TARGET="script-check"
       compiler: gcc
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="scan-build"
       os: linux
-      dist: trusty
+      dist: bionic
       compiler: clang
     - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=""
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="android-check" VERBOSE=1
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1
       os: linux
       dist: bionic
     - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: clang
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: clang
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: gcc
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="posix-check" VERBOSE=1
       compiler: gcc
       os: linux
-      dist: trusty
+      dist: bionic
     - env: BUILD_TARGET="pretty-check"
       os: linux
-      dist: trusty
+      dist: bionic
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-bionic-6.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-format-6.0

@@ -146,7 +146,7 @@ random_masterkey()
 
 write_syslog()
 {
-  logger -p syslog.alert "OPENTHREAD_TEST: $@"
+  logger -s -p syslog.alert "OPENTHREAD_TEST: $@"
 }
 
 output_logs()

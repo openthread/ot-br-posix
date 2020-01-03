@@ -564,7 +564,7 @@ AC_DEFINE_UNQUOTED([OTBR_AGENT_USER],[${OTBR_AGENT_USER}],[Define the user to ru
 
 AC_ARG_WITH([systemdsystemunitdir],
             AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Path to install systemd unit files.]),
-            [], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+            [], [with_systemdsystemunitdir=${prefix}$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
 if test -n "${with_systemdsystemunitdir}"; then
   AC_SUBST([systemdsystemunitdir], [${with_systemdsystemunitdir}])
 fi
