@@ -26,6 +26,9 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+// FIXME: These build flags don't make sense and make code a mess.
+// FIXME: We need to separate main with wpantund and openthread into different files.
+
 #if HAVE_CONFIG_H
 #include "otbr-config.h"
 #endif
@@ -47,7 +50,13 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#include "dbus/dbus_agent.hpp"
 
+using namespace ot::BorderRouter::Ncp;
+using namespace otbr::agent;
+using namespace otbr::dbus;
+
+// FIXME: The ubus IPC is poorly implemented, refactor
 #if OTBR_ENABLE_OPENWRT
 extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
 extern void UbusProcess(const fd_set &aReadFdSet);
@@ -75,13 +84,20 @@ static void HandleSignal(int aSignal)
     signal(aSignal, SIG_DFL);
 }
 
-static int Mainloop(AgentInstance &aInstance)
+static int Mainloop(AgentInstance &aInstance, const char *aInterfaceName)
 {
     int error = EXIT_FAILURE;
-#if OTBR_ENABLE_NCP_OPENTHREAD
-    Ncp::Controller &ncp = aInstance.GetNcp();
-#endif
 
+#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+    ControllerOpenThread *ncpOpenThread =
+        reinterpret_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(&aInstance.GetNcp());
+    std::unique_ptr<otbr::dbus::DBusAgent> dbusAgent =
+        std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
+
+    dbusAgent->Init();
+#else
+    (void)aInterfaceName;
+#endif
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
     // allow quitting elegantly
@@ -101,6 +117,11 @@ static int Mainloop(AgentInstance &aInstance)
 
         aInstance.UpdateFdSet(mainloop);
 
+#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+        dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
+                               mainloop.mTimeout);
+#endif
+
 #if OTBR_ENABLE_OPENWRT
         UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         threadMutex.unlock();
@@ -109,10 +130,10 @@ static int Mainloop(AgentInstance &aInstance)
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
-        if (ncp.IsResetRequested())
+#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+        if (ncpOpenThread->IsResetRequested())
         {
-            ncp.Reset();
+            ncpOpenThread->Reset();
             continue;
         }
 #endif
@@ -124,6 +145,13 @@ static int Mainloop(AgentInstance &aInstance)
             UbusProcess(mainloop.mReadFdSet);
 #endif
             aInstance.Process(mainloop);
+
+#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+            if (dbusAgent)
+            {
+                dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
+            }
+#endif
         }
         else
         {
@@ -212,13 +240,11 @@ int main(int argc, char *argv[])
         SuccessOrExit(ret = instance.Init());
 
 #if OTBR_ENABLE_OPENWRT
-        ot::BorderRouter::Ncp::ControllerOpenThread *ncpThread =
-            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(ncp);
         UbusServerInit(ncpThread, &threadMutex);
         std::thread(UbusServerRun).detach();
 #endif
 
-        SuccessOrExit(ret = Mainloop(instance));
+        SuccessOrExit(ret = Mainloop(instance, interfaceName));
     }
 
     otbrLogDeinit();

@@ -26,69 +26,45 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
-#define OTBR_DBUS_DBUS_RESOURCES_HPP_
+#ifndef OTBR_THREAD_API_DBUS_HPP_
+#define OTBR_THREAD_API_DBUS_HPP_
 
-#include <utility>
+#include "dbus/constants.hpp"
+#include "dbus/dbus.h"
+#include "dbus/dbus_message_helper.hpp"
 
-#include <dbus/dbus.h>
+#include "agent/thread_api.hpp"
 
 namespace otbr {
-namespace dbus {
+namespace client {
 
-template <typename T, T *(*refFunc)(T *), void (*unrefFunc)(T *)> class SharedDBusResource final
+class ThreadApiDBus : public otbr::agent::ThreadApi
 {
 public:
-    explicit SharedDBusResource(T *aResource)
-        : mResource(aResource)
-    {
-        refFunc(aResource);
-    }
+    ThreadApiDBus(DBusConnection *aConnection);
+    ThreadApiDBus(DBusConnection *aConnection, const std::string &mInterfaceName);
 
-    SharedDBusResource(const SharedDBusResource &aOther) { CopyFrom(aOther); }
+    otError Scan(const ScanHandler &aHandler) override;
 
-    SharedDBusResource &operator=(const SharedDBusResource &aOther) { return CopyFrom(aOther); }
+    std::string GetInterfaceName(void);
 
-    SharedDBusResource(SharedDBusResource &&aOther) { Reset(std::move(aOther)); }
-
-    SharedDBusResource &operator=(SharedDBusResource &&aOther) { return Reset(std::move(aOther)); }
-
-    T *operator->(void) { return mResource; }
-    T *GetRaw(void) { return mResource; }
-
-    ~SharedDBusResource(void)
-    {
-        if (mResource != nullptr)
-        {
-            unrefFunc(mResource);
-        }
-        mResource = nullptr;
-    }
+    static const std::string kDefaultInterfaceName;
 
 private:
-    SharedDBusResource &CopyFrom(const SharedDBusResource &aOther)
-    {
-        this->mResource = aOther.mResource;
-        refFunc(this->mResource);
+    otError CallDBusMethodAsync(const std::string &aMethodName, DBusPendingCallNotifyFunction aFunction);
 
-        return *this;
-    }
+    static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aData);
+    void        ScanPendingCallHandler(DBusPendingCall *aPending);
+    static void EmptyFree(void *aData) { (void)aData; }
 
-    SharedDBusResource &Reset(SharedDBusResource &&aOther)
-    {
-        this->mResource  = aOther.mResource;
-        aOther.mResource = nullptr;
+    std::string mInterfaceName;
 
-        return *this;
-    }
+    DBusConnection *mConnection;
 
-    T *mResource;
+    ScanHandler mScanHandler;
 };
 
-using SharedDBusConnection = SharedDBusResource<DBusConnection, dbus_connection_ref, dbus_connection_unref>;
-using SharedDBusMessage    = SharedDBusResource<DBusMessage, dbus_message_ref, dbus_message_unref>;
-
-} // namespace dbus
+} // namespace client
 } // namespace otbr
 
-#endif // OTBR_DBUS_DBUS_RESOURCES_HPP_
+#endif

@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2019, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,69 +26,47 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
-#define OTBR_DBUS_DBUS_RESOURCES_HPP_
+#include <assert.h>
 
-#include <utility>
+#include "dbus/constants.hpp"
+#include "dbus/dbus_agent.hpp"
+#include "dbus/dbus_thread_object.hpp"
 
-#include <dbus/dbus.h>
+using namespace std::placeholders;
 
 namespace otbr {
 namespace dbus {
 
-template <typename T, T *(*refFunc)(T *), void (*unrefFunc)(T *)> class SharedDBusResource final
+DBusThreadObject::DBusThreadObject(DBusConnection *                             aConnection,
+                                   const std::string &                          aInterfaceName,
+                                   ot::BorderRouter::Ncp::ControllerOpenThread *aNcp)
+    : DBusObject(aConnection, kOtbrDbusObjectPrefix + aInterfaceName)
+    , mNcp(aNcp)
 {
-public:
-    explicit SharedDBusResource(T *aResource)
-        : mResource(aResource)
+}
+
+otbrError DBusThreadObject::Init(void)
+{
+    otbrError err = DBusObject::Init();
+
+    RegisterMethod(kOtbrDbusPrefix, kOtbrDbusObjectScanMethod, std::bind(&DBusThreadObject::ScanHandler, this, _1));
+
+    return err;
+}
+
+void DBusThreadObject::ScanHandler(DBusRequest &aRequest)
+{
+    std::unique_ptr<otbr::agent::ThreadApi> const &threadApi = this->mNcp->GetThreadApi();
+    if (threadApi->Scan(std::bind(&DBusThreadObject::ReplyScanResult, this, aRequest, _1)) != OT_ERROR_NONE)
     {
-        refFunc(aResource);
+        aRequest.Reply(std::tuple<std::vector<otActiveScanResult>>({}));
     }
+}
 
-    SharedDBusResource(const SharedDBusResource &aOther) { CopyFrom(aOther); }
-
-    SharedDBusResource &operator=(const SharedDBusResource &aOther) { return CopyFrom(aOther); }
-
-    SharedDBusResource(SharedDBusResource &&aOther) { Reset(std::move(aOther)); }
-
-    SharedDBusResource &operator=(SharedDBusResource &&aOther) { return Reset(std::move(aOther)); }
-
-    T *operator->(void) { return mResource; }
-    T *GetRaw(void) { return mResource; }
-
-    ~SharedDBusResource(void)
-    {
-        if (mResource != nullptr)
-        {
-            unrefFunc(mResource);
-        }
-        mResource = nullptr;
-    }
-
-private:
-    SharedDBusResource &CopyFrom(const SharedDBusResource &aOther)
-    {
-        this->mResource = aOther.mResource;
-        refFunc(this->mResource);
-
-        return *this;
-    }
-
-    SharedDBusResource &Reset(SharedDBusResource &&aOther)
-    {
-        this->mResource  = aOther.mResource;
-        aOther.mResource = nullptr;
-
-        return *this;
-    }
-
-    T *mResource;
-};
-
-using SharedDBusConnection = SharedDBusResource<DBusConnection, dbus_connection_ref, dbus_connection_unref>;
-using SharedDBusMessage    = SharedDBusResource<DBusMessage, dbus_message_ref, dbus_message_unref>;
+void DBusThreadObject::ReplyScanResult(DBusRequest aRequest, const std::vector<otActiveScanResult> &aResult)
+{
+    aRequest.Reply(std::tie(aResult));
+}
 
 } // namespace dbus
 } // namespace otbr
-
-#endif // OTBR_DBUS_DBUS_RESOURCES_HPP_

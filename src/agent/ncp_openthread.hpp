@@ -34,7 +34,13 @@
 #ifndef NCP_POSIX_HPP_
 #define NCP_POSIX_HPP_
 
+#include <openthread/instance.h>
+
 #include "ncp.hpp"
+#include "agent/thread_api.hpp"
+
+// FIXME: For otPlatformConfig
+#include "posix/platform/openthread-system.h"
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 
@@ -67,7 +73,7 @@ public:
      * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
      *
      */
-    virtual otbrError Init(void);
+    otbrError Init(void) override;
 
     /**
      * This method get mInstance pointer.
@@ -75,7 +81,9 @@ public:
      * @retval  the pointer of mInstance.
      *
      */
-    virtual otInstance *GetInstance(void) { return mInstance; }
+    otInstance *GetInstance(void) { return mInstance; }
+
+    std::unique_ptr<otbr::agent::ThreadApi> &GetThreadApi(void) { return mThreadApi; }
 
     /**
      * This method updates the fd_set to poll.
@@ -83,7 +91,7 @@ public:
      * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    virtual void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void UpdateFdSet(otSysMainloopContext &aMainloop) override;
 
     /**
      * This method performs the DTLS processing.
@@ -91,13 +99,13 @@ public:
      * @param[in]       aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    virtual void Process(const otSysMainloopContext &aMainloop);
+    void Process(const otSysMainloopContext &aMainloop) override;
 
     /**
      * This method reset the NCP controller.
      *
      */
-    virtual void Reset(void);
+    void Reset(void);
 
     /**
      * This method return whether reset is requested.
@@ -106,7 +114,7 @@ public:
      * @retval  FALSE reset isn't requested.
      *
      */
-    virtual bool IsResetRequested(void);
+    bool IsResetRequested(void);
 
     /**
      * This method request the event.
@@ -117,9 +125,9 @@ public:
      * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
      *
      */
-    virtual otbrError RequestEvent(int aEvent);
+    otbrError RequestEvent(int aEvent) override;
 
-    virtual ~ControllerOpenThread(void);
+    ~ControllerOpenThread(void);
 
 private:
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
@@ -130,7 +138,8 @@ private:
 
     otInstance *mInstance;
 
-    otPlatformConfig mConfig;
+    otPlatformConfig                        mConfig;
+    std::unique_ptr<otbr::agent::ThreadApi> mThreadApi;
 };
 
 } // namespace Ncp

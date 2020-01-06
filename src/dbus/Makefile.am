@@ -40,10 +40,12 @@ dbus_server_test_CXXFLAGS = \
     -fno-exceptions         \
     $(NULL)
 
-dbus_server_test_CPPFLAGS = \
-    -I$(top_srcdir)/src     \
-    -I$(top_srcdir)         \
-    $(DBUS_CFLAGS)          \
+dbus_server_test_CPPFLAGS                                  = \
+    -I$(top_srcdir)                                          \
+    -I$(top_srcdir)/src                                      \
+    -I$(top_srcdir)/third_party/openthread/repo/src/         \
+    -I$(top_srcdir)/third_party/openthread/repo/include/     \
+    $(DBUS_CFLAGS)                                           \
     $(NULL)
 
 dbus_server_test_LDADD    = \
@@ -60,15 +62,21 @@ libotbr_dbus_la_CXXFLAGS          = \
     -Wno-unused-parameter           \
     $(NULL)
 
-libotbr_dbus_la_SOURCES   = \
-    dbus_object.cpp         \
-    dbus_message_helper.cpp \
+libotbr_dbus_la_SOURCES =              \
+    constants.cpp                      \
+    dbus_agent.cpp                     \
+    dbus_message_helper.cpp            \
+    dbus_message_helper_openthread.cpp \
+    dbus_object.cpp                    \
+    dbus_thread_object.cpp             \
     $(NULL)
 
-libotbr_dbus_la_CPPFLAGS  = \
-    -I$(top_srcdir)/src     \
-    -I$(top_srcdir)         \
-    $(DBUS_CFLAGS)          \
+libotbr_dbus_la_CPPFLAGS                                   = \
+    -I$(top_srcdir)/src                                      \
+    -I$(top_srcdir)                                          \
+    -I$(top_srcdir)/third_party/openthread/repo/src/         \
+    -I$(top_srcdir)/third_party/openthread/repo/include/     \
+    $(DBUS_CFLAGS)                                           \
     $(NULL)
 
 libotbr_dbus_la_LIBADD    = \
@@ -76,10 +84,13 @@ libotbr_dbus_la_LIBADD    = \
     $(NULL)
 
 noinst_HEADERS            = \
+    constants.hpp           \
+    dbus_agent.hpp          \
     dbus_object.hpp         \
     dbus_request.hpp        \
     dbus_resources.hpp      \
     dbus_message_helper.hpp \
+    dbus_thread_object.hpp  \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

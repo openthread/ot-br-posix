@@ -43,7 +43,7 @@
 #if OTBR_ENABLE_NCP_WPANTUND
 #include "common/mainloop.h"
 #else
-#include <openthread-system.h>
+#include "posix/platform/openthread-system.h"
 #endif
 #include "common/event_emitter.hpp"
 #include "common/types.hpp"

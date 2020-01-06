@@ -47,7 +47,9 @@ linux)
             cd openthread &&
             ./bootstrap &&
             make -f examples/Makefile-posix &&
+            sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-rcp /usr/bin/ &&
             sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd /usr/bin/) || die 'Failed to build OpenThread!'
+        which ot-rcp || die 'Unable to find ot-rcp!'
         which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
         sudo apt-get install socat
         echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6

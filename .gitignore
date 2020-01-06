@@ -117,3 +117,4 @@ tests/unit/unittest
 *.data
 *.flash
 
+src/client/dbus/dbus-client-test

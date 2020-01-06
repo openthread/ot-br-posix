@@ -39,8 +39,17 @@
 #include "common/types.hpp"
 #include "dbus/dbus_resources.hpp"
 
+#include "openthread/border_router.h"
+#include "openthread/link.h"
+#include "openthread/thread.h"
+
 namespace otbr {
 namespace dbus {
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otError &aValue);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otActiveScanResult &aValue);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otError &aValue);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otActiveScanResult &aValue);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -87,6 +96,7 @@ template <> struct DBusTypeTrait<int64_t>
 };
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::string &aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const char *aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<uint8_t> &aValue);
@@ -97,6 +107,7 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int16_t> &
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int32_t> &aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int64_t> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::string &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<uint8_t> &aValue);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<uint16_t> &aValue);

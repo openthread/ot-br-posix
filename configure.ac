@@ -323,6 +323,37 @@ AC_SUBST(OTBR_ENABLE_COMMISSIONER)
 AM_CONDITIONAL([OTBR_ENABLE_COMMISSIONER], [test "${enable_commissioner}" = "yes"])
 
 #
+# dbus server
+#
+
+AC_ARG_ENABLE(dbus-server,
+    [AS_HELP_STRING([--enable-dbus-server],[Enable dbus server @<:@default=yes@:>@.])],
+    [
+        case "${enableval}" in
+
+        no|yes)
+            enable_dbus_server=${enableval}
+            ;;
+
+        *)
+            AC_MSG_ERROR([Invalid value ${enable_dbus_server} for --enable-dbus-server])
+            ;;
+        esac
+    ],
+    [enable_dbus_server=no])
+
+if test "$enable_dbus_server" = "yes"; then
+    AC_DEFINE_UNQUOTED([OTBR_ENABLE_DBUS_SERVER], [1], [Define to 1 if you want otbr-agent to provide dbus server])
+    OTBR_ENABLE_DBUS_SERVER=1
+else
+    OTBR_ENABLE_DBUS_SERVER=0
+fi
+
+AC_MSG_RESULT(${enable_dbus_server})
+AC_SUBST(OTBR_ENABLE_DBUS_SERVER)
+AM_CONDITIONAL([OTBR_ENABLE_DBUS_SERVER], [test "${enable_dbus_server}" = "yes"])
+
+#
 # Web Service
 #
 
@@ -588,6 +619,8 @@ src/Makefile
 src/agent/Makefile
 src/agent/otbr-agent.conf
 src/commissioner/Makefile
+src/client/Makefile
+src/client/dbus/Makefile
 src/common/Makefile
 src/dbus/Makefile
 src/utils/Makefile

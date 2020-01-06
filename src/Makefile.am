@@ -32,6 +32,7 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 DIST_SUBDIRS                                         = \
     agent                                              \
+    client                                             \
     commissioner                                       \
     common                                             \
     dbus                                               \
@@ -46,6 +47,7 @@ SUBDIRS                                              = \
     utils                                              \
     dbus                                               \
     agent                                              \
+    client                                             \
     $(NULL)
 
 if OTBR_ENABLE_COMMISSIONER
@@ -64,6 +66,7 @@ endif
 
 PRETTY_SUBDIRS                                       = \
     agent                                              \
+    client                                             \
     commissioner                                       \
     common                                             \
     dbus                                               \

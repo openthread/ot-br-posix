@@ -41,6 +41,7 @@
 #include <openthread/platform/misc.h>
 #include <openthread/platform/settings.h>
 
+#include "agent/thread_api_impl.hpp"
 #include "common/types.hpp"
 
 static bool sReset;
@@ -72,6 +73,7 @@ otbrError ControllerOpenThread::Init(void)
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+    mThreadApi = std::unique_ptr<otbr::agent::ThreadApiImpl>(new otbr::agent::ThreadApiImpl(mInstance));
 
     return OTBR_ERROR_NONE;
 }

@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,77 +26,22 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+# Test build and run otbr dbus server
+#
 
-set -e
 set -x
+set -e
 
-TOOLS_HOME=$HOME/.cache/tools
-
-die() {
-	echo " *** ERROR: " $*
-	exit 1
+main()
+{
+    ./bootstrap
+    ./configure --with-ncp=openthread --enable-dbus-server=yes
+    make
+    sudo make install
+    sudo ./src/agent/otbr-agent -I wpan0 "$(which ot-rcp)" 1 &
+    sleep 5
+    sudo ./src/client/dbus/dbus-client-test
+    sudo kill -9 $(pidof otbr-agent)
 }
 
-case $BUILD_TARGET in
-android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
-    ;;
-
-mdns-mojo-check)
-    ./tests/mdns/test-mojo
-    ;;
-
-pretty-check)
-    export PATH=$TOOLS_HOME/usr/bin:$PATH
-    ./bootstrap && ./configure && make pretty-check || die
-    ;;
-
-posix-check)
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" .travis/check-posix
-    ;;
-
-meshcop)
-    if gcc-5 --version; then
-      export CC=gcc-5
-      export CXX=g++-5
-    fi
-
-    ./bootstrap
-    ./script/test build
-
-    OT_CLI="ot-cli-mtd" ./script/test meshcop
-    OT_CLI="ot-cli-ftd" ./script/test meshcop
-    COMMISSIONER_WEB=1 ./script/test meshcop
-    NCP_CONTROLLER=openthread ./script/test clean build meshcop
-    ;;
-
-scan-build)
-    .travis/check-scan-build
-    ;;
-
-script-check)
-    .travis/check-scripts
-    ;;
-
-raspbian-gcc)
-    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
-    ;;
-
-docker-check)
-    .travis/check-docker
-    ;;
-
-otbr-dbus-check)
-    .travis/check-otbr-dbus
-    ;;
-
-macOS)
-    RELEASE=1 ./script/bootstrap
-    # Currently only verify otbr-agent
-    ./configure --prefix= --exec-prefix=/usr --disable-web-service --with-mdns=none
-    make -j$(shell getconf _NPROCESSORS_ONLN)
-    ;;
-*)
-    die
-    ;;
-esac
+main

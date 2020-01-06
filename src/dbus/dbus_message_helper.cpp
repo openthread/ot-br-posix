@@ -42,6 +42,17 @@ exit:
     return err;
 }
 
+otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue)
+{
+    otbrError err = OTBR_ERROR_NONE;
+    uint8_t   val;
+
+    SuccessOrExit(err = DBusMessageExtract(aIter, val));
+    aValue = static_cast<int8_t>(aValue);
+exit:
+    return err;
+}
+
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::string &aValue)
 {
     const char *buf;
@@ -95,6 +106,11 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue)
     uint8_t val = aValue;
 
     return DBusMessageEncode(aIter, val);
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue)
+{
+    return DBusMessageEncode(aIter, static_cast<uint8_t>(aValue));
 }
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::string &aValue)
