@@ -97,8 +97,12 @@ void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uin
     ResponseGetAvailableNetwork();
     ResponseCommission();
     DefaultHttpResponse();
-    std::thread ServerThread([this]() { mServer->start(); });
-    ServerThread.join();
+    mServer->start();
+}
+
+void WebServer::StopWebServer(void)
+{
+    mServer->stop();
 }
 
 void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback)

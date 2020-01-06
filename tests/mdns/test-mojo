@@ -33,7 +33,7 @@ set -x
 set -e
 
 
-main() 
+main()
 {
     OTBR_DIR=${OTBR_DIR:-$(pwd)}
     BUILD_DIR=${OTBR_DIR}/build/chromium

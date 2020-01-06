@@ -28,34 +28,46 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-noinst_LTLIBRARIES = libotbr-dbus.la
+check_PROGRAMS = otbr-test-dbus-server
 
-libotbr_dbus_la_CXXFLAGS          = \
-    -fno-exceptions                 \
-    -Wno-missing-field-initializers \
-    -Wno-unused-parameter           \
+otbr_test_dbus_server_SOURCES = \
+    test-dbus-server.cpp \
     $(NULL)
 
-libotbr_dbus_la_SOURCES   = \
-    dbus_object.cpp         \
-    dbus_message_helper.cpp \
+otbr_test_dbus_server_CXXFLAGS = \
+    -fno-exceptions \
     $(NULL)
 
-libotbr_dbus_la_CPPFLAGS  = \
-    -I$(top_srcdir)/src     \
-    -I$(top_srcdir)         \
-    $(DBUS_CFLAGS)          \
+otbr_test_dbus_server_CPPFLAGS = \
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir) \
+    $(DBUS_CFLAGS) \
     $(NULL)
 
-libotbr_dbus_la_LIBADD    = \
-    $(DBUS_LIBS)            \
+otbr_test_dbus_server_LDADD = \
+    $(top_builddir)/src/dbus/libotbr-dbus.la \
     $(NULL)
 
-noinst_HEADERS            = \
-    dbus_object.hpp         \
-    dbus_request.hpp        \
-    dbus_resources.hpp      \
-    dbus_message_helper.hpp \
+otbr_test_dbus_server_LDFLAGS = \
+    -static \
+    $(NULL)
+
+dist_check_SCRIPTS = \
+    test-server \
+    $(NULL)
+
+EXTRA_DIST                = \
+    otbr-test-dbus-server.conf \
+    $(NULL)
+
+TESTS = \
+    test-server \
+    $(NULL)
+
+TESTS_ENVIRONMENT = \
+    export \
+    srcdir='$(srcdir)' \
+    VERBOSE=1; \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

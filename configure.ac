@@ -593,6 +593,7 @@ src/dbus/Makefile
 src/utils/Makefile
 src/web/Makefile
 tests/Makefile
+tests/dbus/Makefile
 tests/mdns/Makefile
 tests/tools/Makefile
 tests/unit/Makefile

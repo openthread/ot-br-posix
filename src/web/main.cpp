@@ -30,15 +30,12 @@
  * @file
  *   This file is the entry of the program, it starts a Web service.
  */
-#ifndef OT_WEB_FILE_PATH
-#define OT_WEB_FILE_PATH "/usr/local/share/border-router/frontend"
-#endif
-
 #define OT_HTTP_PORT 80
 
 #include "otbr-config.h"
 
 #include <errno.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,22 +49,34 @@ static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
 static const char kDefaultListenAddr[]    = "0.0.0.0";
 
-void PrintVersion(void)
+std::unique_ptr<ot::Web::WebServer> sServer(nullptr);
+
+static void HandleSignal(int aSignal)
+{
+    signal(aSignal, SIG_DFL);
+
+    otbrLog(OTBR_LOG_CRIT, "Stopping web server");
+
+    if (sServer != nullptr)
+    {
+        sServer->StopWebServer();
+    }
+}
+
+static void PrintVersion(void)
 {
     printf("%s\n", PACKAGE_VERSION);
 }
 
 int main(int argc, char **argv)
 {
-    const char *interfaceName  = NULL;
-    const char *httpListenAddr = NULL;
-    const char *httpPort       = NULL;
+    const char *interfaceName  = nullptr;
+    const char *httpListenAddr = nullptr;
+    const char *httpPort       = nullptr;
     int         logLevel       = OTBR_LOG_INFO;
     int         ret            = 0;
     int         opt;
     uint16_t    port = OT_HTTP_PORT;
-
-    ot::Web::WebServer *server = NULL;
 
     while ((opt = getopt(argc, argv, "d:I:p:v:a:")) != -1)
     {
@@ -85,7 +94,7 @@ int main(int argc, char **argv)
 
         case 'p':
             httpPort = optarg;
-            VerifyOrExit(httpPort != NULL);
+            VerifyOrExit(httpPort != nullptr);
             port = atoi(httpPort);
             break;
 
@@ -102,19 +111,19 @@ int main(int argc, char **argv)
         }
     }
 
-    if (interfaceName == NULL)
+    if (interfaceName == nullptr)
     {
         interfaceName = kDefaultInterfaceName;
         printf("interfaceName not specified, using default %s\n", interfaceName);
     }
 
-    if (httpListenAddr == NULL)
+    if (httpListenAddr == nullptr)
     {
         httpListenAddr = kDefaultListenAddr;
         printf("listenAddr not specified, using default %s\n", httpListenAddr);
     }
 
-    if (httpPort == NULL)
+    if (httpPort == nullptr)
     {
         printf("http port not specified, using default %d\n", port);
     }
@@ -122,15 +131,15 @@ int main(int argc, char **argv)
     otbrLogInit(kSyslogIdent, logLevel, true);
     otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
 
-    server = new ot::Web::WebServer();
-    server->StartWebServer(interfaceName, httpListenAddr, port);
+    // allow quitting elegantly
+    signal(SIGTERM, HandleSignal);
+    signal(SIGINT, HandleSignal);
+
+    sServer.reset(new ot::Web::WebServer());
+    sServer->StartWebServer(interfaceName, httpListenAddr, port);
 
     otbrLogDeinit();
 
 exit:
-    if (server != NULL)
-    {
-        delete server;
-    }
     return ret;
 }

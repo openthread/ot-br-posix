@@ -37,9 +37,12 @@ class TestObject : public DBusObject
 public:
     TestObject(DBusConnection *aConnection)
         : DBusObject(aConnection, "/org/otbr/testobj")
+        , mEnded(false)
     {
         RegisterMethod("org.otbr", "Ping", std::bind(&TestObject::PingHandler, this, _1));
     }
+
+    bool IsEnded(void) const { return mEnded; }
 
 private:
     void PingHandler(DBusRequest &aRequest)
@@ -55,35 +58,40 @@ private:
         else
         {
             aRequest.Reply(std::make_tuple("hello"));
+            mEnded = true;
         }
     }
+
+    bool mEnded;
 };
 
 int main()
 {
+    int       ret = EXIT_SUCCESS;
     int       requestReply;
     DBusError dbusErr;
 
     dbus_error_init(&dbusErr);
 
-    DBusConnection *connection = dbus_bus_get(DBUS_BUS_SESSION, &dbusErr);
+    DBusConnection *connection = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusErr);
     VerifyOrExit(connection != nullptr);
     dbus_bus_register(connection, &dbusErr);
 
     requestReply = dbus_bus_request_name(connection, "org.otbr.TestServer", DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusErr);
     VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
-                 requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER);
+                     requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
+                 ret = EXIT_FAILURE);
 
     {
         TestObject s(connection);
         s.Init();
 
-        while (true)
+        while (!s.IsEnded())
         {
-            dbus_connection_read_write_dispatch(connection, 0);
+            dbus_connection_read_write_dispatch(connection, -1);
         }
     }
 exit:
     dbus_connection_unref(connection);
-    return 0;
+    return ret;
 }

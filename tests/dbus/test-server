@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
@@ -26,36 +27,32 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
+#
+# This script tests dbus server.
+#
 
-noinst_LTLIBRARIES = libotbr-dbus.la
+set -e
+set -x
 
-libotbr_dbus_la_CXXFLAGS          = \
-    -fno-exceptions                 \
-    -Wno-missing-field-initializers \
-    -Wno-unused-parameter           \
-    $(NULL)
+readonly DBUS_SERVER_CONF=otbr-test-dbus-server.conf
 
-libotbr_dbus_la_SOURCES   = \
-    dbus_object.cpp         \
-    dbus_message_helper.cpp \
-    $(NULL)
+test_teardown()
+{
+    pkill -f otbr-test-dbus-server || true
+    sudo rm "/etc/dbus-1/system.d/${DBUS_SERVER_CONF}" || true
+}
 
-libotbr_dbus_la_CPPFLAGS  = \
-    -I$(top_srcdir)/src     \
-    -I$(top_srcdir)         \
-    $(DBUS_CFLAGS)          \
-    $(NULL)
+main()
+{
+    sudo install -m 644 "${srcdir}/${DBUS_SERVER_CONF}" /etc/dbus-1/system.d/
+    sudo service dbus reload
+    trap test_teardown EXIT
+    ./otbr-test-dbus-server &
+    # wait for server ready.
+    sleep 2
+    dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.otbr.Ping uint32:1 string:"Ping" | grep 'PingPong"'
+    dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.otbr.Ping | grep '"hello"'
+    wait
+}
 
-libotbr_dbus_la_LIBADD    = \
-    $(DBUS_LIBS)            \
-    $(NULL)
-
-noinst_HEADERS            = \
-    dbus_object.hpp         \
-    dbus_request.hpp        \
-    dbus_resources.hpp      \
-    dbus_message_helper.hpp \
-    $(NULL)
-
-include $(abs_top_nlbuild_autotools_dir)/automake/post.am
+main "$@"

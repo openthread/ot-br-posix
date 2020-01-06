@@ -67,8 +67,10 @@ libotbr_coap_la_SOURCES                               = \
 
 libotbr_coap_la_CPPFLAGS                              = \
     -I$(top_builddir)/third_party/libcoap/repo          \
+    -I$(top_builddir)/third_party/libcoap/repo/include  \
     -I$(top_srcdir)/third_party/libcoap/repo            \
     -I$(top_srcdir)/third_party/libcoap/repo/include    \
+    -I$(top_srcdir)/third_party/libcoap/repo/include/coap \
     $(NULL)
 
 libotbr_coap_la_LIBADD                                      = \

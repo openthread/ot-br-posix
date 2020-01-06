@@ -35,6 +35,7 @@
 
 #include <arpa/inet.h>
 #include <assert.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,7 +117,7 @@ otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(mThreadStarted && mPSKcInitialized);
+    VerifyOrExit(mThreadStarted && mPSKcInitialized, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
 
     // In case we didn't receive Thread down event.
     Stop();
@@ -231,11 +232,10 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
-    (void)aErrorFdSet;
-    (void)aMaxFd;
-    (void)aReadFdSet;
-    (void)aTimeout;
-    (void)aWriteFdSet;
+    if (mPublisher != NULL)
+    {
+        mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    }
 
 #if OTBR_ENABLE_NCP_WPANTUND
     if (mSocket != -1)
@@ -253,9 +253,10 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    (void)aErrorFdSet;
-    (void)aReadFdSet;
-    (void)aWriteFdSet;
+    if (mPublisher != NULL)
+    {
+        mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    }
 
 #if OTBR_ENABLE_NCP_WPANTUND
     uint8_t             packet[kMaxSizeOfPacket];

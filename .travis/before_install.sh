@@ -91,7 +91,7 @@ linux)
 
     [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
 
-    [ $BUILD_TARGET != posix-check ] || {
+    [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != distcheck ] && [ $BUILD_TARGET != meshcop ] || {
         sudo apt-get install -y  \
             avahi-daemon         \
             avahi-utils          \
@@ -111,10 +111,10 @@ linux)
     }
 
     # Enable IPv6
-    [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
+    [ $BUILD_TARGET != check -a $BUILD_TARGET != distcheck ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
 
     # Allow access syslog file for unit test
-    [ $BUILD_TARGET != posix-check ] || sudo chmod a+r /var/log/syslog || die
+    [ $BUILD_TARGET != check -a $BUILD_TARGET != distcheck ] || sudo chmod a+r /var/log/syslog || die
 
     # Prepare Raspbian image
     [ $BUILD_TARGET != raspbian-gcc ] || {

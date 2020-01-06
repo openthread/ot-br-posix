@@ -33,6 +33,7 @@
 
 #include "wpan_service.hpp"
 
+#include <byteswap.h>
 #include <inttypes.h>
 
 #include "ot_client.hpp"
@@ -499,7 +500,7 @@ std::string WpanService::HandleAvailableNetworkRequest()
     {
         char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1], panId[OT_PANID_LENGTH * 2 + 3],
             hardwareAddress[OT_HARDWARE_ADDRESS_LENGTH * 2 + 1];
-        ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(mNetworks[i].mExtPanId), extPanId);
+        ot::Utils::Long2Hex(bswap_64(mNetworks[i].mExtPanId), extPanId);
         ot::Utils::Bytes2Hex(mNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", mNetworks[i].mPanId);
         networkInfo[i]["nn"] = mNetworks[i].mNetworkName;
@@ -593,14 +594,25 @@ std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
     Json::Reader reader;
     int          ret = ot::Dbus::kWpantundStatus_Ok;
     std::string  pskd;
-    std::string  passphrase;
     std::string  response;
 
     VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    pskd       = root["pskd"].asString();
-    passphrase = root["passphrase"].asString();
+    pskd = root["pskd"].asString();
+#if OTBR_ENABLE_NCP_WPANTUND
+    response = CommissionDevice(pskd.c_str(), root["passphrase"].asString().c_str());
+#else
+    {
+        ot::Client  client;
+        const char *rval;
 
-    response = CommissionDevice(pskd.c_str(), passphrase.c_str());
+        VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
+        rval = client.Execute("commissioner start");
+        VerifyOrExit(rval != NULL, ret = kWpanStatus_Down);
+        rval = client.Execute("commissioner joiner add * %s", pskd.c_str());
+        VerifyOrExit(rval != NULL, ret = kWpanStatus_Down);
+        root["error"] = ret;
+    }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 exit:
     if (ret != ot::Dbus::kWpantundStatus_Ok)
     {
@@ -610,6 +622,7 @@ exit:
     return response;
 }
 
+#if OTBR_ENABLE_NCP_WPANTUND
 std::string WpanService::CommissionDevice(const char *aPskd, const char *aNetworkPassword)
 {
     int                            ret = ot::Dbus::kWpantundStatus_Ok;
@@ -700,6 +713,7 @@ int WpanService::RunCommission(BorderRouter::CommissionerArgs aArgs)
 
     return commissioner.GetNumFinalizedJoiners();
 }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 
 } // namespace Web
 } // namespace ot
