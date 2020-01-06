@@ -57,7 +57,7 @@ main() {
         apt-get install -y git
         su -m -c 'git config --global pack.threads 1' pi
         su -m -c 'script/bootstrap' pi
-        su -m -c './configure --prefix=/usr' pi
+        su -m -c './configure --prefix= --exec-prefix=/usr' pi
         su -m -c 'make' pi
         umount -lf /sys
         umount -lf /proc

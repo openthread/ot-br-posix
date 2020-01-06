@@ -84,7 +84,7 @@ TEST(Logging, TestLoggingLowerLevel)
 
 TEST(Logging, TestLoggingDump)
 {
-    char ident[120];
+    char ident[32];
     char cmd[128];
 
     sprintf(ident, "otbr-test-%ld", clock());

@@ -110,15 +110,6 @@ linux)
         make os=linux && sudo make install os=linux
     }
 
-    # Unittest
-    [ $BUILD_TARGET != posix-check ] || [ -f $TOOLS_HOME/usr/lib/libCppUTest.a ] || (cd /tmp &&
-        wget https://github.com/cpputest/cpputest/archive/v3.8.tar.gz &&
-        tar xzf v3.8.tar.gz &&
-        cd cpputest-3.8 &&
-        ./autogen.sh &&
-        ./configure --prefix=/usr &&
-        make && make install DESTDIR=$TOOLS_HOME) || die
-
     # Enable IPv6
     [ $BUILD_TARGET != posix-check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
 
