@@ -41,6 +41,8 @@
 
 main()
 {
+    ./script/bootstrap
+
     . $BEFORE_HOOK
     otbr_uninstall
     dhcpv6_pd_uninstall
