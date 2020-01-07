@@ -31,7 +31,7 @@ set -e
 set -x
 
 main() {
-    ./bootstrap
+    ./script/bootstrap
     ./configure
     distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
     if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
