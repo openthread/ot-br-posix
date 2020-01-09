@@ -50,7 +50,7 @@ otbrError DBusObject::Init(void)
         .message_function    = DBusObject::sMessageHandler,
     };
 
-    VerifyOrExit(dbus_connection_register_object_path(mConnection, mObjectPath.c_str(), &vTable, this) == true,
+    VerifyOrExit(dbus_connection_register_object_path(mConnection, mObjectPath.c_str(), &vTable, this),
                  err = OTBR_ERROR_DBUS);
 exit:
     return err;
