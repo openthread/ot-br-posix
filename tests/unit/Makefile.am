@@ -38,6 +38,7 @@ unittest_SOURCES           = \
     test_event_emitter.cpp   \
     test_pskc.cpp            \
     test_logging.cpp         \
+    test_dbus_message.cpp    \
     $(NULL)
 
 if OTBR_ENABLE_MDNS_MDNSSD
@@ -51,13 +52,15 @@ unittest_CPPFLAGS                                             = \
     -I$(top_srcdir)/src/agent                                   \
     -I$(top_srcdir)/src/web                                     \
     -I$(top_srcdir)/third_party/mbedtls/repo/include            \
-    $(MBEDTLS_CPPFLAGS)                                                      \
+    $(MBEDTLS_CPPFLAGS)                                         \
+    $(DBUS_CFLAGS)                                              \
     $(NULL)
 
 unittest_LDADD                                                = \
     $(top_builddir)/src/agent/libotbr-agent.la                  \
+    $(top_builddir)/src/agent/libotbr-agent.la                  \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
-    $(top_builddir)/src/common/libotbr-logging.la               \
+    $(top_builddir)/src/dbus/libotbr-dbus.la                    \
     $(top_builddir)/src/web/libotbr-web.la                      \
     $(NULL)
 

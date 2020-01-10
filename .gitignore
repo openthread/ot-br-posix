@@ -36,6 +36,7 @@ Makefile.in
 .dirstamp
 stamp-h1
 .stamp-h1
+build
 
 # Border Router Docs
 doc/Doxyfile
@@ -83,6 +84,36 @@ tools/steering-data
 # Commissioner
 src/commissioner/otbr-commissioner
 
+# dbus
+src/dbus/dbus-server-test
+src/dbus/dbus-message-test
+
 # libcoap build
 third_party/libcoap/repo/libcoap-1.map
 third_party/libcoap/repo/libcoap-1.sym
+
+# Test logs
+tests/unit/unittest
+*.log
+*.trs
+
+# Vim auto complete helper
+.ycm_extra_conf.py
+
+# openthread build
+third_party/openthread/build/
+third_party/openthread/output/
+
+# Test logs
+tests/unit/unittest
+*.log
+*.trs
+
+# Vim auto complete helper
+.ycm_extra_conf.py
+
+# Thread local storage
+./tmp/
+*.data
+*.flash
+
