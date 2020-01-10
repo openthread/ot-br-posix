@@ -1,0 +1,131 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="io.openthread.BordeRrouter">
+    <method name="Scan">
+      <arg name="scan_result" type="a(taytayqqyyyyy)" direction="out"/> 
+    </method>
+
+    <method name="Attach">
+      <arg name="masterkey" type="ay"/>
+      <arg name="panid" type="q"/>
+      <arg name="networkname" type="s"/>
+      <arg name="extpanid" type="t"/>
+      <arg name="pskc" type="ay"/>
+      <arg name="channel_mask" type="u"/>
+    </method>
+
+    <method name="OpenUnsecurePort">
+      <arg name="port" type="q"/>
+      <arg name="timeout" type="i"/>
+    </method>
+
+    <method name="JoinerStart">
+      <arg name="pskd" type="s"/>
+      <arg name="provision_url" type="s"/>
+      <arg name="vendor_name" type="s"/>
+      <arg name="vendor_model" type="s"/>
+      <arg name="vendor_sw_version" type="s"/>
+      <arg name="vendor_data" type="s"/>
+    </method>
+
+    <method name="JoinerStop">
+    </method>
+
+    <method name="FactoryReset">
+    </method>
+
+    <method name="Reset">
+    </method>
+
+    <method name="AddOnMeshPrefix">
+      <arg name="prefix" type="(ayy)"/>
+      <arg name="preference" type="y"/>
+      <arg name="preferred" type="y"/>
+      <arg name="slaac" type="y"/>
+      <arg name="dhcp" type="y"/>
+      <arg name="configure" type="y"/>
+      <arg name="default_route" type="y"/>
+      <arg name="on_mesh" type="y"/>
+      <arg name="stable" type="y"/>
+    </method>
+
+    <method name="RemoveOnMeshPrefix">
+      <arg name="prefix" type="(ayy)"/>
+    </method>
+
+    <property name="MeshLocalPrefix" type="ay" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="LegacyULAPrefix" type="ay" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="LinkMode" type="(yyyy)" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="DeviceRole" type="string" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+
+    <property name="NetworkName" type="s" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="PanId" type="q" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="ExtPanId" type="t" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="Channel" type="q" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="CcaFailureRate" type="q" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="MacCounters" type="(yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="LinkCounters" type="(yyyy)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="SupportedChannelMask" type="y" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+  </interface>
+
+  <interface name="org.freedesktop.DBus.Properties">
+    <method name="Get">
+      <arg name="interface" direction="in" type="s"/>
+      <arg name="property" direction="in" type="s"/>
+      <arg name="value" direction="out" type="v"/>
+    </method>
+
+    <method name="GetAll">
+      <arg name="interface" direction="in" type="s"/>
+      <arg name="properties" direction="out" type="a{sv}"/>
+    </method>
+
+    <method name="Set">
+      <arg name="interface" direction="in" type="s"/>
+      <arg name="property" direction="in" type="s"/>
+      <arg name="value" direction="in" type="v"/>
+    </method>
+
+    <signal name="PropertiesChanged">
+      <arg type="s" name="interface"/>
+      <arg type="a{sv}" name="changed_properties"/>
+      <arg type="as" name="invalidated_properties"/>
+    </signal>
+  </interface>
+</node>
+
