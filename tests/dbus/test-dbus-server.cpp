@@ -38,13 +38,32 @@ public:
     TestObject(DBusConnection *aConnection)
         : DBusObject(aConnection, "/org/otbr/testobj")
         , mEnded(false)
+        , mCount(0)
     {
         RegisterMethod("org.otbr", "Ping", std::bind(&TestObject::PingHandler, this, _1));
+        RegisterGetPropertyHandler("org.otbr", "Count", std::bind(&TestObject::CountGetHandler, this, _1));
+        RegisterSetPropertyHandler("org.otbr", "Count", std::bind(&TestObject::CountSetHandler, this, _1));
     }
 
     bool IsEnded(void) const { return mEnded; }
 
 private:
+    otError CountGetHandler(DBusMessageIter &aIter)
+    {
+        DBusMessageEncodeToVariant(&aIter, mCount);
+        return OT_ERROR_NONE;
+    }
+
+    otError CountSetHandler(DBusMessageIter &aIter)
+    {
+        int32_t cnt = 0;
+
+        DBusMessageExtractFromVariant(&aIter, cnt);
+        mCount = cnt;
+
+        return OT_ERROR_NONE;
+    }
+
     void PingHandler(DBusRequest &aRequest)
     {
         uint32_t    id;
@@ -62,7 +81,8 @@ private:
         }
     }
 
-    bool mEnded;
+    bool    mEnded;
+    int32_t mCount;
 };
 
 int main()

@@ -37,8 +37,10 @@ libotbr_dbus_la_CXXFLAGS          = \
     $(NULL)
 
 libotbr_dbus_la_SOURCES   = \
+    constants.cpp           \
     dbus_object.cpp         \
     dbus_message_helper.cpp \
+    error.cpp               \
     $(NULL)
 
 libotbr_dbus_la_CPPFLAGS  = \
@@ -52,10 +54,12 @@ libotbr_dbus_la_LIBADD    = \
     $(NULL)
 
 noinst_HEADERS            = \
+    constants.hpp           \
     dbus_object.hpp         \
     dbus_request.hpp        \
     dbus_resources.hpp      \
     dbus_message_helper.hpp \
+    error.hpp               \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

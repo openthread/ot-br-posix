@@ -275,6 +275,35 @@ constexpr otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<FieldTypes
                                                                                                            aValues);
 }
 
+template <typename ValueType> otbrError DBusMessageEncodeToVariant(DBusMessageIter *aIter, const ValueType &aValue)
+{
+    otbrError       err = OTBR_ERROR_NONE;
+    DBusMessageIter subIter;
+
+    VerifyOrExit(
+        dbus_message_iter_open_container(aIter, DBUS_TYPE_VARIANT, DBusTypeTrait<ValueType>::TYPE_AS_STRING, &subIter),
+        err = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(err = DBusMessageEncode(&subIter, aValue));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
+exit:
+    return err;
+}
+
+template <typename ValType> otbrError DBusMessageExtractFromVariant(DBusMessageIter *aIter, ValType &aValue)
+{
+    otbrError       err = OTBR_ERROR_NONE;
+    DBusMessageIter subIter;
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_VARIANT, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &subIter);
+
+    SuccessOrExit(err = DBusMessageExtract(&subIter, aValue));
+exit:
+    return err;
+}
+
 /**
  * This function converts a d-bus message to a tuple of C++ types.
  *

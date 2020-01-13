@@ -28,6 +28,7 @@
 
 #include "dbus/dbus_message_helper.hpp"
 #include "dbus/dbus_resources.hpp"
+#include "dbus/error.hpp"
 
 namespace otbr {
 namespace dbus {
@@ -53,6 +54,13 @@ public:
     SharedDBusMessage GetMessage(void) { return mMessage; }
 
     /**
+     * This method returns underlying d-bus connection
+     *
+     * @returns   The dbus connection
+     */
+    SharedDBusConnection GetConnection(void) { return mConnection; }
+
+    /**
      * This method replys to the d-bus method call.
      *
      * @param[in] aReply  The tuple to be sent
@@ -64,6 +72,35 @@ public:
 
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
+
+        dbus_connection_send(mConnection.GetRaw(), reply, nullptr);
+    exit:
+        if (reply)
+        {
+            dbus_message_unref(reply);
+        }
+    }
+
+    /**
+     * This method replys an otError to the d-bus method call.
+     *
+     * @param[in] aError  The error to be sent
+     *
+     */
+    void ReplyOtResult(otError aError)
+    {
+        DBusMessage *reply;
+
+        if (aError != OT_ERROR_NONE)
+        {
+            reply = dbus_message_new_error(mMessage.GetRaw(), ConvertToDBusErrorName(aError).c_str(), nullptr);
+        }
+        else
+        {
+            reply = dbus_message_new_method_return(mMessage.GetRaw());
+        }
+
+        VerifyOrExit(reply != nullptr);
 
         dbus_connection_send(mConnection.GetRaw(), reply, nullptr);
     exit:

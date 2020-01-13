@@ -36,6 +36,7 @@
 
 #include <dbus/dbus.h>
 
+#include "constants.hpp"
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
 #include "dbus/dbus_message_helper.hpp"
@@ -52,7 +53,9 @@ namespace dbus {
 class DBusObject
 {
 public:
-    using HandlerType = std::function<void(DBusRequest &)>;
+    using MethodHandlerType = std::function<void(DBusRequest &)>;
+
+    using PropertyHandlerType = std::function<otError(DBusMessageIter &)>;
 
     /**
      * The constructor of a d-bus object.
@@ -79,7 +82,31 @@ public:
      * @param[in]   aMethodName       The method name
      * @param[in]   aHandler          The method handler
      */
-    void RegisterMethod(const std::string &aInterfaceName, const std::string &aMethodName, const HandlerType &aHandler);
+    void RegisterMethod(const std::string &      aInterfaceName,
+                        const std::string &      aMethodName,
+                        const MethodHandlerType &aHandler);
+
+    /**
+     * This method the get handler for a property
+     *
+     * @param[in]   aInterfaceName    The interface name
+     * @param[in]   aMethodName       The method name
+     * @param[in]   aHandler          The method handler
+     */
+    void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
+                                    const std::string &        aMethodName,
+                                    const PropertyHandlerType &aHandler);
+
+    /**
+     * This method the set handler for a property
+     *
+     * @param[in]   aInterfaceName    The interface name
+     * @param[in]   aMethodName       The method name
+     * @param[in]   aHandler          The method handler
+     */
+    void RegisterSetPropertyHandler(const std::string &        aInterfaceName,
+                                    const std::string &        aPropertyName,
+                                    const PropertyHandlerType &aHandler);
 
     /**
      * This method sends a signal.
@@ -107,6 +134,43 @@ public:
         }
     }
 
+    template <typename ValueType>
+    void SignalPropertyChanged(const std::string &aInterfaceName,
+                               const std::string &aPropertyName,
+                               const ValueType &  aValue)
+    {
+        DBusMessage *   signalMsg = dbus_message_new_signal(mObjectPath.c_str(), kDBusPropertyInterface.c_str(),
+                                                         kDBusPropertiesChangedSignal.c_str());
+        DBusMessageIter iter, subIter, dictEntryIter;
+
+        VerifyOrExit(signalMsg != nullptr);
+        dbus_message_iter_init_append(signalMsg, &iter);
+
+        // interface_name
+        VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE);
+
+        // changed_properties
+        VerifyOrExit(dbus_message_iter_open_container(
+            &iter, DBUS_TYPE_ARRAY, "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}", &subIter));
+        VerifyOrExit(dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter));
+
+        SuccessOrExit(DBusMessageEncode(&dictEntryIter, aPropertyName));
+        SuccessOrExit(DBusMessageEncodeToVariant(&dictEntryIter, aValue));
+
+        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter));
+        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter));
+
+        // invalidated_properties
+        VerifyOrExit(DBusMessageEncode(&iter, std::vector<std::string>()) == OTBR_ERROR_NONE);
+
+        dbus_connection_send(mConnection, signalMsg, nullptr);
+    exit:
+        if (signalMsg)
+        {
+            dbus_message_unref(signalMsg);
+        }
+    }
+
     /**
      * The destructor of a d-bus object.
      *
@@ -114,12 +178,20 @@ public:
     virtual ~DBusObject(void);
 
 private:
+    void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
+
+    void GetPropertyMethodHandler(DBusRequest &aRequest);
+
+    void SetPropertyMethodHandler(DBusRequest &aRequest);
+
     static DBusHandlerResult sMessageHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aData);
     DBusHandlerResult        MessageHandler(DBusConnection *aConnection, DBusMessage *aMessage);
 
-    std::unordered_map<std::string, HandlerType> mHandlers;
-    DBusConnection *                             mConnection;
-    std::string                                  mObjectPath;
+    std::unordered_map<std::string, MethodHandlerType>                                    mMethodHandlers;
+    std::unordered_map<std::string, std::unordered_map<std::string, PropertyHandlerType>> mGetPropertyHandlers;
+    std::unordered_map<std::string, PropertyHandlerType>                                  mSetPropertyHandlers;
+    DBusConnection *                                                                      mConnection;
+    std::string                                                                           mObjectPath;
 };
 
 } // namespace dbus
