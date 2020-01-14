@@ -304,10 +304,10 @@ void BorderAgent::PublishService(void)
 
     assert(mNetworkName[0] != '\0');
     assert(mExtPanIdInitialized);
-    assert(mThreadVersion != 0);
     Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
+    assert(mThreadVersion != 0);
     mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
                                xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
 #else
