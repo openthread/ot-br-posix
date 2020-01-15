@@ -69,7 +69,7 @@ static const std::unordered_map<otError, std::string> *sErrorNameMap = new std::
     {OT_ERROR_LINK_MARGIN_LOW, "io.openthread.LinkMarginLow"},
 };
 
-static std::unordered_map<std::string, otError> sErrorCodeMap = {
+static const std::unordered_map<std::string, otError> *sErrorCodeMap = new std::unordered_map<std::string, otError>{
     {"io.openthread.OK", OT_ERROR_NONE},
     {"io.openthread.Failed", OT_ERROR_FAILED},
     {"io.openthread.Drop", OT_ERROR_DROP},
@@ -111,18 +111,25 @@ namespace dbus {
 
 std::string ConvertToDBusErrorName(otError aError)
 {
-    return (*sErrorNameMap)[aError];
+    if (sErrorNameMap->find(aError) != sErrorNameMap->end())
+    {
+        return sErrorNameMap->at(aError);
+    }
+    else
+    {
+        return sErrorNameMap->at(OT_ERROR_GENERIC);
+    }
 }
 
 otError ConvertFromDBusErrorName(const std::string &aErrorName)
 {
-    if (sErrorCodeMap.find(aErrorName) != sErrorCodeMap.end())
+    if (sErrorCodeMap->find(aErrorName) != sErrorCodeMap->end())
     {
-        return sErrorCodeMap.at(aErrorName);
+        return sErrorCodeMap->at(aErrorName);
     }
     else
     {
-        return OT_ERROR_INVALID_ARGS;
+        return OT_ERROR_GENERIC;
     }
 }
 
