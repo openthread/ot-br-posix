@@ -26,13 +26,13 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dbus/error.hpp"
 #include "dbus/constants.hpp"
 #include "dbus/dbus_message_helper.hpp"
+#include "dbus/error.hpp"
 
 #include <unordered_map>
 
-static std::unordered_map<otError, std::string> sErrorNameMap = {
+static const std::unordered_map<otError, std::string> *sErrorNameMap = new std::unordered_map<otError, std::string>{
     {OT_ERROR_NONE, "io.openthread.OK"},
     {OT_ERROR_FAILED, "io.openthread.Failed"},
     {OT_ERROR_DROP, "io.openthread.Drop"},
@@ -111,7 +111,7 @@ namespace dbus {
 
 std::string ConvertToDBusErrorName(otError aError)
 {
-    return sErrorNameMap[aError];
+    return (*sErrorNameMap)[aError];
 }
 
 otError ConvertFromDBusErrorName(const std::string &aErrorName)
