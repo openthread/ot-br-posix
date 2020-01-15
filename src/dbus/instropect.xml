@@ -66,7 +66,7 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <property name="DeviceRole" type="string" access="read">
+    <property name="DeviceRole" type="s" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
     </property>
 
