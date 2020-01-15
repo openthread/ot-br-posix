@@ -33,12 +33,12 @@
 namespace otbr {
 namespace dbus {
 
-const std::string kDBusPropertyInterface = DBUS_INTERFACE_PROPERTIES;
+const char kDBusPropertyInterface[] = DBUS_INTERFACE_PROPERTIES;
 
-const std::string kDBusPropertyGetMethod          = "Get";
-const std::string kDBusPropertyGetAllMethod       = "GetAll";
-const std::string kDBusPropertySetMethod          = "Set";
-const std::string kDBusPropertiesChangedInterface = "PropertiesChanged";
+const char kDBusPropertyGetMethod[]          = "Get";
+const char kDBusPropertyGetAllMethod[]       = "GetAll";
+const char kDBusPropertySetMethod[]          = "Set";
+const char kDBusPropertiesChangedInterface[] = "PropertiesChanged";
 
 } // namespace dbus
 } // namespace otbr

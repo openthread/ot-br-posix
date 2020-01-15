@@ -34,12 +34,12 @@
 namespace otbr {
 namespace dbus {
 
-extern const std::string kDBusPropertyInterface;
+extern const char kDBusPropertyInterface[];
 
-extern const std::string kDBusPropertyGetMethod;
-extern const std::string kDBusPropertyGetAllMethod;
-extern const std::string kDBusPropertySetMethod;
-extern const std::string kDBusPropertiesChangedSignal;
+extern const char kDBusPropertyGetMethod[];
+extern const char kDBusPropertyGetAllMethod[];
+extern const char kDBusPropertySetMethod[];
+extern const char kDBusPropertiesChangedSignal[];
 
 } // namespace dbus
 } // namespace otbr
