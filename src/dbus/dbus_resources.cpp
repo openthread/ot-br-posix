@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2019, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,24 +26,22 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
-#define OTBR_DBUS_DBUS_RESOURCES_HPP_
+#include "dbus/dbus_resources.hpp"
 
-#include <memory>
-#include <utility>
-
-#include <dbus/dbus.h>
+#include "dbus/dbus.h"
 
 namespace otbr {
 namespace dbus {
 
-using UniqueDBusMessage    = std::unique_ptr<DBusMessage, decltype(&dbus_message_unref)>;
-using UniqueDBusConnection = std::unique_ptr<DBusConnection, decltype(&dbus_connection_unref)>;
+UniqueDBusConnection MakeUniqueDBusConnection(DBusConnection *aConnection)
+{
+    return UniqueDBusConnection(aConnection, dbus_connection_unref);
+}
 
-UniqueDBusConnection MakeUniqueDBusConnection(DBusConnection *aConnection);
-UniqueDBusMessage    MakeUniqueDBusMessage(DBusMessage *aMessage);
+UniqueDBusMessage MakeUniqueDBusMessage(DBusMessage *aMessage)
+{
+    return UniqueDBusMessage(aMessage, dbus_message_unref);
+}
 
 } // namespace dbus
 } // namespace otbr
-
-#endif // OTBR_DBUS_DBUS_RESOURCES_HPP_

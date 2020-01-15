@@ -41,9 +41,11 @@ class DBusRequest
 {
 public:
     DBusRequest(DBusConnection *aConnection, DBusMessage *aMessage)
-        : mConnection(aConnection)
-        , mMessage(aMessage)
+        : mConnection(aConnection, dbus_connection_unref)
+        , mMessage(aMessage, dbus_message_unref)
     {
+        dbus_message_ref(aMessage);
+        dbus_connection_ref(aConnection);
     }
 
     /**
@@ -51,14 +53,14 @@ public:
      *
      * @returns   The dbus message
      */
-    SharedDBusMessage GetMessage(void) { return mMessage; }
+    UniqueDBusMessage const &GetMessage(void) { return mMessage; }
 
     /**
      * This method returns underlying d-bus connection
      *
      * @returns   The dbus connection
      */
-    SharedDBusConnection GetConnection(void) { return mConnection; }
+    UniqueDBusConnection const &GetConnection(void) { return mConnection; }
 
     /**
      * This method replys to the d-bus method call.
@@ -68,17 +70,14 @@ public:
      */
     template <typename... Args> void Reply(const std::tuple<Args...> &aReply)
     {
-        DBusMessage *reply = dbus_message_new_method_return(mMessage.GetRaw());
+        UniqueDBusMessage reply = MakeUniqueDBusMessage(dbus_message_new_method_return(mMessage.get()));
 
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
-        dbus_connection_send(mConnection.GetRaw(), reply, nullptr);
+        dbus_connection_send(mConnection.get(), reply.get(), nullptr);
     exit:
-        if (reply)
-        {
-            dbus_message_unref(reply);
-        }
+        return;
     }
 
     /**
@@ -89,30 +88,28 @@ public:
      */
     void ReplyOtResult(otError aError)
     {
-        DBusMessage *reply;
+        UniqueDBusMessage reply(nullptr, dbus_message_unref);
 
         if (aError != OT_ERROR_NONE)
         {
-            reply = dbus_message_new_error(mMessage.GetRaw(), ConvertToDBusErrorName(aError).c_str(), nullptr);
+            reply = MakeUniqueDBusMessage(
+                dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError).c_str(), nullptr));
         }
         else
         {
-            reply = dbus_message_new_method_return(mMessage.GetRaw());
+            reply = MakeUniqueDBusMessage(
+                dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError).c_str(), nullptr));
         }
 
         VerifyOrExit(reply != nullptr);
-
-        dbus_connection_send(mConnection.GetRaw(), reply, nullptr);
+        dbus_connection_send(mConnection.get(), reply.get(), nullptr);
     exit:
-        if (reply)
-        {
-            dbus_message_unref(reply);
-        }
+        return;
     }
 
 private:
-    SharedDBusConnection mConnection;
-    SharedDBusMessage    mMessage;
+    UniqueDBusConnection mConnection;
+    UniqueDBusMessage    mMessage;
 };
 
 } // namespace dbus

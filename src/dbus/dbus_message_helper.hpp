@@ -353,9 +353,9 @@ otbrError TupleToDBusMessage(DBusMessage &aMsg, const std::tuple<FieldTypes...> 
  * @retval  OTBR_ERROR_DBUS   Failed to decode the message
  */
 template <typename... FieldTypes>
-otbrError DBusMessageToTuple(SharedDBusMessage aMsg, std::tuple<FieldTypes...> &aValues)
+otbrError DBusMessageToTuple(UniqueDBusMessage const &aMsg, std::tuple<FieldTypes...> &aValues)
 {
-    return DBusMessageToTuple(*aMsg.GetRaw(), aValues);
+    return DBusMessageToTuple(*aMsg.get(), aValues);
 }
 
 } // namespace dbus

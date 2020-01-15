@@ -120,18 +120,15 @@ public:
                 const std::string &              aSignalName,
                 const std::tuple<FieldTypes...> &aArgs)
     {
-        DBusMessage *signalMsg =
-            dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str());
+        UniqueDBusMessage signalMsg = MakeUniqueDBusMessage(
+            dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str()));
 
         VerifyOrExit(signalMsg != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*signalMsg, aArgs) == OTBR_ERROR_NONE);
 
-        dbus_connection_send(mConnection, signalMsg, nullptr);
+        dbus_connection_send(mConnection, signalMsg.get(), nullptr);
     exit:
-        if (signalMsg)
-        {
-            dbus_message_unref(signalMsg);
-        }
+        return;
     }
 
     template <typename ValueType>
@@ -139,12 +136,12 @@ public:
                                const std::string &aPropertyName,
                                const ValueType &  aValue)
     {
-        DBusMessage *   signalMsg = dbus_message_new_signal(mObjectPath.c_str(), kDBusPropertyInterface.c_str(),
-                                                         kDBusPropertiesChangedSignal.c_str());
+        UniqueDBusMessage signalMsg = MakeUniqueDBusMessage(
+            dbus_message_new_signal(mObjectPath.c_str(), kDBusPropertyInterface, kDBusPropertiesChangedSignal));
         DBusMessageIter iter, subIter, dictEntryIter;
 
         VerifyOrExit(signalMsg != nullptr);
-        dbus_message_iter_init_append(signalMsg, &iter);
+        dbus_message_iter_init_append(signalMsg.get(), &iter);
 
         // interface_name
         VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE);
@@ -163,12 +160,9 @@ public:
         // invalidated_properties
         VerifyOrExit(DBusMessageEncode(&iter, std::vector<std::string>()) == OTBR_ERROR_NONE);
 
-        dbus_connection_send(mConnection, signalMsg, nullptr);
+        dbus_connection_send(mConnection, signalMsg.get(), nullptr);
     exit:
-        if (signalMsg)
-        {
-            dbus_message_unref(signalMsg);
-        }
+        return;
     }
 
     /**
