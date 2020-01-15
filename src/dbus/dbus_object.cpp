@@ -46,7 +46,6 @@ DBusObject::DBusObject(DBusConnection *aConnection, const std::string &aObjectPa
 
 otbrError DBusObject::Init(void)
 {
-    printf("DBusObject::Init\n");
     otbrError            err    = OTBR_ERROR_NONE;
     DBusObjectPathVTable vTable = {
         .unregister_function = nullptr,
@@ -109,7 +108,6 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL &&
         mMethodHandlers.find(memberName) != mMethodHandlers.end())
     {
-        printf("Handling method %s\n", memberName.c_str());
         mMethodHandlers.at(memberName)(request);
         handled = DBUS_HANDLER_RESULT_HANDLED;
     }
@@ -129,8 +127,6 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
     VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage().GetRaw(), &iter), err = OT_ERROR_FAILED);
     VerifyOrExit(DBusMessageExtract(&iter, interfaceName) == OTBR_ERROR_NONE, err = OT_ERROR_FAILED);
     VerifyOrExit(DBusMessageExtract(&iter, propertyName) == OTBR_ERROR_NONE, err = OT_ERROR_FAILED);
-
-    printf("interfaceName %s propertyName %s\n", interfaceName.c_str(), propertyName.c_str());
 
     VerifyOrExit(mGetPropertyHandlers.find(interfaceName) != mGetPropertyHandlers.end(), err = OT_ERROR_NOT_FOUND);
     {
@@ -171,7 +167,6 @@ void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
 
     for (auto &p : mGetPropertyHandlers.at(interfaceName))
     {
-        printf("GetAll: Handling %s\n", p.first.c_str());
         VerifyOrExit(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
                                                       "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}",
                                                       &subIter),
@@ -184,14 +179,11 @@ void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
 
         VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter), err = OT_ERROR_FAILED);
         VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter));
-        printf("GetAll: Handle%s done\n", p.first.c_str());
     }
-    printf("GetAll: all done\n");
 
 exit:
     if (err == OT_ERROR_NONE)
     {
-        printf("GetAll: send reply\n");
         dbus_connection_send(aRequest.GetConnection().GetRaw(), reply, nullptr);
     }
     else
