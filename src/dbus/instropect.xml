@@ -3,7 +3,23 @@
 <node>
   <interface name="io.openthread.BorderRouter">
     <method name="Scan">
-      <arg name="scan_result" type="a(taytayqqyyyyy)" direction="out"/> 
+      <!--
+        struct {
+          uint64 ext_address
+          string network_name
+          uint64 ext_panid
+          uint8[] steering_data
+          uint16 panid
+          uint16 joiner_udp_port
+          uint16 channel
+          uint16 rssi
+          uint8 lqi
+          uint8 version
+          bool is_native
+          bool is_joinable
+        }
+      -->
+      <arg name="scan_result" type="a(tstayqqqqyybb)" direction="out"/> 
     </method>
 
     <method name="Attach">
