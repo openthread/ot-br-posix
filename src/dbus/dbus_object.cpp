@@ -33,7 +33,7 @@
 
 #include "dbus/dbus_object.hpp"
 
-using namespace std::placeholders;
+using std::placeholders::_1;
 
 namespace otbr {
 namespace dbus {

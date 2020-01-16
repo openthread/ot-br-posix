@@ -29,8 +29,12 @@
 #include "dbus/dbus_message_helper.hpp"
 #include "dbus/dbus_object.hpp"
 
-using namespace otbr::dbus;
-using namespace std::placeholders;
+using otbr::dbus::DBusMessageEncodeToVariant;
+using otbr::dbus::DBusMessageExtractFromVariant;
+using otbr::dbus::DBusMessageToTuple;
+using otbr::dbus::DBusObject;
+using otbr::dbus::DBusRequest;
+using std::placeholders::_1;
 
 class TestObject : public DBusObject
 {
