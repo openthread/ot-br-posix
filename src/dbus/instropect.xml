@@ -1,7 +1,7 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
  "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node>
-  <interface name="io.openthread.BordeRrouter">
+  <interface name="io.openthread.BorderRouter">
     <method name="Scan">
       <arg name="scan_result" type="a(taytayqqyyyyy)" direction="out"/> 
     </method>
@@ -38,18 +38,34 @@
     <method name="Reset">
     </method>
 
+    <!--
+      struct {
+        struct {
+          uint8[] prefix_bytes
+          uint8 prefix_length
+        }
+        byte preference
+        struct {
+          boolean preferred
+          boolean slaac 
+          boolean dhcp 
+          boolean configure 
+          boolean default_route   
+          boolean on_mesh
+          boolean stable 
+        }
+      }
+    -->
     <method name="AddOnMeshPrefix">
-      <arg name="prefix" type="(ayy)"/>
-      <arg name="preference" type="y"/>
-      <arg name="preferred" type="y"/>
-      <arg name="slaac" type="y"/>
-      <arg name="dhcp" type="y"/>
-      <arg name="configure" type="y"/>
-      <arg name="default_route" type="y"/>
-      <arg name="on_mesh" type="y"/>
-      <arg name="stable" type="y"/>
+      <arg name="prefix" type="((ayy)y(bbbbbbb))"/>
     </method>
-
+    
+    <!--
+      struct {
+        uint8[] prefix_bytes
+        uint8 prefix_length
+      }
+    -->
     <method name="RemoveOnMeshPrefix">
       <arg name="prefix" type="(ayy)"/>
     </method>
@@ -62,7 +78,15 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <property name="LinkMode" type="(yyyy)" access="readwrite">
+    <!--
+      struct {
+        bool rx_on_when_idle
+        bool secure_data_requests
+        bool device_type (ftd or mtd)
+        bool network_data (ftd or mtd)
+      }
+    -->
+    <property name="LinkMode" type="(bbbb)" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
@@ -90,15 +114,59 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <property name="MacCounters" type="(yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy)" access="read">
+    <!--
+      struct {
+        uint32 tx_total;
+        uint32 tx_unicast;
+        uint32 tx_broadcast;
+        uint32 tx_ack_requested;
+        uint32 tx_acked;
+        uint32 tx_no_ack_requested;
+        uint32 tx_data;
+        uint32 tx_data_poll;
+        uint32 tx_beacon;
+        uint32 tx_beacon_request;
+        uint32 tx_other;
+        uint32 tx_retry;
+        uint32 tx_err_cca;
+        uint32 tx_err_abort;
+        uint32 tx_busy_channel;
+        uint32 rx_total;
+        uint32 rx_unicast;
+        uint32 rx_broadcast;
+        uint32 rx_data;
+        uint32 rx_data_poll;
+        uint32 rx_beacon;
+        uint32 rx_beacon_request;
+        uint32 rx_other;
+        uint32 rx_address_filtered;
+        uint32 rx_dest_address_filtered;
+        uint32 rx_duplicated;
+        uint32 rx_err_no_frame;
+        uint32 rx_err_unknown_neighbor;
+        uint32 rx_err_invalid_src_addr;
+        uint32 rx_err_sec;
+        uint32 rx_err_fcs;
+        uint32 rx_err_other;
+      }
+    -->
+    <property name="MacCounters" type="(uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <property name="LinkCounters" type="(yyyy)" access="read">
+    <!--
+      struct {
+        uint32 tx_success;
+        uint32 rx_success;
+        uint32 tx_failure;
+        uint32 rx_failure;
+      }
+    -->
+    <property name="LinkCounters" type="(uuuu)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <property name="SupportedChannelMask" type="y" access="read">
+    <property name="SupportedChannelMask" type="u" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
   </interface>
@@ -128,4 +196,3 @@
     </signal>
   </interface>
 </node>
-
