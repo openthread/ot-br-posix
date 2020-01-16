@@ -52,7 +52,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue)
     uint8_t   val;
 
     SuccessOrExit(err = DBusMessageExtract(aIter, val));
-    aValue = static_cast<int8_t>(aValue);
+    aValue = static_cast<int8_t>(val);
 exit:
     return err;
 }
