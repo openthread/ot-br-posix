@@ -26,48 +26,49 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dbus/error.hpp"
 #include "dbus/constants.hpp"
 #include "dbus/dbus_message_helper.hpp"
-#include "dbus/error.hpp"
 
 #include <unordered_map>
 
-static const std::unordered_map<otError, std::string> *sErrorNameMap = new std::unordered_map<otError, std::string>{
-    {OT_ERROR_NONE, "io.openthread.OK"},
-    {OT_ERROR_FAILED, "io.openthread.Failed"},
-    {OT_ERROR_DROP, "io.openthread.Drop"},
-    {OT_ERROR_NO_BUFS, "io.openthread.NoBufs"},
-    {OT_ERROR_NO_ROUTE, "io.openthread.NoRoute"},
-    {OT_ERROR_BUSY, "io.openthread.Busy"},
-    {OT_ERROR_PARSE, "io.openthread.Parse"},
-    {OT_ERROR_INVALID_ARGS, "io.openthread.InvalidArgs"},
-    {OT_ERROR_SECURITY, "io.openthread.Security"},
-    {OT_ERROR_ADDRESS_QUERY, "io.openthread.AddressQuery"},
-    {OT_ERROR_NO_ADDRESS, "io.openthread.NoAddress"},
-    {OT_ERROR_ABORT, "io.openthread.Abort"},
-    {OT_ERROR_NOT_IMPLEMENTED, "io.openthread.NotImplemented"},
-    {OT_ERROR_INVALID_STATE, "io.openthread.InvalidState"},
-    {OT_ERROR_NO_ACK, "io.openthread.NoAck"},
-    {OT_ERROR_CHANNEL_ACCESS_FAILURE, "io.openthread.ChannelAccessFailure"},
-    {OT_ERROR_DETACHED, "io.openthread.Detached"},
-    {OT_ERROR_FCS, "io.openthread.FcsErr"},
-    {OT_ERROR_NO_FRAME_RECEIVED, "io.openthread.NoFrameReceived"},
-    {OT_ERROR_UNKNOWN_NEIGHBOR, "io.openthread.UnknownNeighbor"},
-    {OT_ERROR_INVALID_SOURCE_ADDRESS, "io.openthread.InvalidSourceAddress"},
-    {OT_ERROR_ADDRESS_FILTERED, "io.openthread.AddressFiltered"},
-    {OT_ERROR_DESTINATION_ADDRESS_FILTERED, "io.openthread.DestinationAddressFiltered"},
-    {OT_ERROR_NOT_FOUND, "io.openthread.NotFound"},
-    {OT_ERROR_ALREADY, "io.openthread.Already"},
-    {OT_ERROR_IP6_ADDRESS_CREATION_FAILURE, "io.openthread.Ipv6AddressCreationFailure"},
-    {OT_ERROR_NOT_CAPABLE, "io.openthread.NotCapable"},
-    {OT_ERROR_RESPONSE_TIMEOUT, "io.openthread.ResponseTimeout"},
-    {OT_ERROR_DUPLICATED, "io.openthread.Duplicated"},
-    {OT_ERROR_REASSEMBLY_TIMEOUT, "io.openthread.ReassemblyTimeout"},
-    {OT_ERROR_NOT_TMF, "io.openthread.NotTmf"},
-    {OT_ERROR_NOT_LOWPAN_DATA_FRAME, "io.openthread.NonLowpanDatatFrame"},
-    {OT_ERROR_GENERIC, "io.openthread.GenericError"},
-    {OT_ERROR_LINK_MARGIN_LOW, "io.openthread.LinkMarginLow"},
-};
+static const std::unordered_map<otError, std::string, std::hash<int>> *sErrorNameMap =
+    new std::unordered_map<otError, std::string, std::hash<int>>{
+        {OT_ERROR_NONE, "io.openthread.OK"},
+        {OT_ERROR_FAILED, "io.openthread.Failed"},
+        {OT_ERROR_DROP, "io.openthread.Drop"},
+        {OT_ERROR_NO_BUFS, "io.openthread.NoBufs"},
+        {OT_ERROR_NO_ROUTE, "io.openthread.NoRoute"},
+        {OT_ERROR_BUSY, "io.openthread.Busy"},
+        {OT_ERROR_PARSE, "io.openthread.Parse"},
+        {OT_ERROR_INVALID_ARGS, "io.openthread.InvalidArgs"},
+        {OT_ERROR_SECURITY, "io.openthread.Security"},
+        {OT_ERROR_ADDRESS_QUERY, "io.openthread.AddressQuery"},
+        {OT_ERROR_NO_ADDRESS, "io.openthread.NoAddress"},
+        {OT_ERROR_ABORT, "io.openthread.Abort"},
+        {OT_ERROR_NOT_IMPLEMENTED, "io.openthread.NotImplemented"},
+        {OT_ERROR_INVALID_STATE, "io.openthread.InvalidState"},
+        {OT_ERROR_NO_ACK, "io.openthread.NoAck"},
+        {OT_ERROR_CHANNEL_ACCESS_FAILURE, "io.openthread.ChannelAccessFailure"},
+        {OT_ERROR_DETACHED, "io.openthread.Detached"},
+        {OT_ERROR_FCS, "io.openthread.FcsErr"},
+        {OT_ERROR_NO_FRAME_RECEIVED, "io.openthread.NoFrameReceived"},
+        {OT_ERROR_UNKNOWN_NEIGHBOR, "io.openthread.UnknownNeighbor"},
+        {OT_ERROR_INVALID_SOURCE_ADDRESS, "io.openthread.InvalidSourceAddress"},
+        {OT_ERROR_ADDRESS_FILTERED, "io.openthread.AddressFiltered"},
+        {OT_ERROR_DESTINATION_ADDRESS_FILTERED, "io.openthread.DestinationAddressFiltered"},
+        {OT_ERROR_NOT_FOUND, "io.openthread.NotFound"},
+        {OT_ERROR_ALREADY, "io.openthread.Already"},
+        {OT_ERROR_IP6_ADDRESS_CREATION_FAILURE, "io.openthread.Ipv6AddressCreationFailure"},
+        {OT_ERROR_NOT_CAPABLE, "io.openthread.NotCapable"},
+        {OT_ERROR_RESPONSE_TIMEOUT, "io.openthread.ResponseTimeout"},
+        {OT_ERROR_DUPLICATED, "io.openthread.Duplicated"},
+        {OT_ERROR_REASSEMBLY_TIMEOUT, "io.openthread.ReassemblyTimeout"},
+        {OT_ERROR_NOT_TMF, "io.openthread.NotTmf"},
+        {OT_ERROR_NOT_LOWPAN_DATA_FRAME, "io.openthread.NonLowpanDatatFrame"},
+        {OT_ERROR_GENERIC, "io.openthread.GenericError"},
+        {OT_ERROR_LINK_MARGIN_LOW, "io.openthread.LinkMarginLow"},
+    };
 
 static const std::unordered_map<std::string, otError> *sErrorCodeMap = new std::unordered_map<std::string, otError>{
     {"io.openthread.OK", OT_ERROR_NONE},
@@ -109,7 +110,7 @@ static const std::unordered_map<std::string, otError> *sErrorCodeMap = new std::
 namespace otbr {
 namespace dbus {
 
-std::string ConvertToDBusErrorName(otError aError)
+const std::string &ConvertToDBusErrorName(otError aError)
 {
     if (sErrorNameMap->find(aError) != sErrorNameMap->end())
     {

@@ -33,7 +33,7 @@
 namespace otbr {
 namespace dbus {
 
-std::string ConvertToDBusErrorName(otError aError);
+const std::string &ConvertToDBusErrorName(otError aError);
 
 otError ConvertFromDBusErrorName(const std::string &aErrorName);
 

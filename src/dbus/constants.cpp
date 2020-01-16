@@ -35,10 +35,10 @@ namespace dbus {
 
 const char kDBusPropertyInterface[] = DBUS_INTERFACE_PROPERTIES;
 
-const char kDBusPropertyGetMethod[]          = "Get";
-const char kDBusPropertyGetAllMethod[]       = "GetAll";
-const char kDBusPropertySetMethod[]          = "Set";
-const char kDBusPropertiesChangedInterface[] = "PropertiesChanged";
+const char kDBusPropertyGetMethod[]       = "Get";
+const char kDBusPropertyGetAllMethod[]    = "GetAll";
+const char kDBusPropertySetMethod[]       = "Set";
+const char kDBusPropertiesChangedSignal[] = "PropertiesChanged";
 
 } // namespace dbus
 } // namespace otbr
