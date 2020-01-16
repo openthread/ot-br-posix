@@ -92,13 +92,13 @@ public:
 
         if (aError != OT_ERROR_NONE)
         {
-            reply = MakeUniqueDBusMessage(
-                dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError).c_str(), nullptr));
+            reply =
+                MakeUniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
         }
         else
         {
-            reply = MakeUniqueDBusMessage(
-                dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError).c_str(), nullptr));
+            reply =
+                MakeUniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
         }
 
         VerifyOrExit(reply != nullptr);

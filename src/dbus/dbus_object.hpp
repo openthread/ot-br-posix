@@ -137,7 +137,7 @@ public:
                                const ValueType &  aValue)
     {
         UniqueDBusMessage signalMsg = MakeUniqueDBusMessage(
-            dbus_message_new_signal(mObjectPath.c_str(), kDBusPropertyInterface, kDBusPropertiesChangedSignal));
+            dbus_message_new_signal(mObjectPath.c_str(), DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
         DBusMessageIter iter, subIter, dictEntryIter;
 
         VerifyOrExit(signalMsg != nullptr);

@@ -54,11 +54,11 @@ otbrError DBusObject::Init(void)
 
     VerifyOrExit(dbus_connection_register_object_path(mConnection, mObjectPath.c_str(), &vTable, this),
                  err = OTBR_ERROR_DBUS);
-    RegisterMethod(kDBusPropertyInterface, kDBusPropertyGetMethod,
+    RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_METHOD,
                    std::bind(&DBusObject::GetPropertyMethodHandler, this, _1));
-    RegisterMethod(kDBusPropertyInterface, kDBusPropertySetMethod,
+    RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_SET_METHOD,
                    std::bind(&DBusObject::SetPropertyMethodHandler, this, _1));
-    RegisterMethod(kDBusPropertyInterface, kDBusPropertyGetAllMethod,
+    RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_ALL_METHOD,
                    std::bind(&DBusObject::GetAllPropertiesMethodHandler, this, _1));
 exit:
     return err;

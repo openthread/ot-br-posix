@@ -29,19 +29,9 @@
 #ifndef OTBR_DBUS_CONSTANTS_HPP_
 #define OTBR_DBUS_CONSTANTS_HPP_
 
-#include <string>
-
-namespace otbr {
-namespace dbus {
-
-extern const char kDBusPropertyInterface[];
-
-extern const char kDBusPropertyGetMethod[];
-extern const char kDBusPropertyGetAllMethod[];
-extern const char kDBusPropertySetMethod[];
-extern const char kDBusPropertiesChangedSignal[];
-
-} // namespace dbus
-} // namespace otbr
+#define DBUS_PROPERTY_GET_METHOD "Get"
+#define DBUS_PROPERTY_SET_METHOD "Set"
+#define DBUS_PROPERTY_GET_ALL_METHOD "GetAll"
+#define DBUS_PROPERTIES_CHANGED_SIGNAL "PropertiesChanged"
 
 #endif // OTBR_DBUS_CONSTANTS_HPP_

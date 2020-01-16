@@ -37,7 +37,6 @@ libotbr_dbus_la_CXXFLAGS          = \
     $(NULL)
 
 libotbr_dbus_la_SOURCES   = \
-    constants.cpp           \
     dbus_object.cpp         \
     dbus_resources.cpp      \
     dbus_message_helper.cpp \
