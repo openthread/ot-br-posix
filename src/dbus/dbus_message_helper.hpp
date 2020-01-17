@@ -291,7 +291,7 @@ exit:
     return err;
 }
 
-template <typename ValType> otbrError DBusMessageExtractFromVariant(DBusMessageIter *aIter, ValType &aValue)
+template <typename ValueType> otbrError DBusMessageExtractFromVariant(DBusMessageIter *aIter, ValueType &aValue)
 {
     otbrError       err = OTBR_ERROR_NONE;
     DBusMessageIter subIter;
