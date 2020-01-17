@@ -31,10 +31,8 @@
 #include "dbus/constants.hpp"
 #include "dbus/dbus_message_helper.hpp"
 
-#include <unordered_map>
-
 static const std::pair<otError, const char *> sErrorNameMap[] = {
-    {OT_ERROR_GENERIC, "io.openthread.Error.GenericError"},
+    {OT_ERROR_GENERIC, "io.openthread.Error.Generic"},
     {OT_ERROR_NONE, "io.openthread.Error.OK"},
     {OT_ERROR_FAILED, "io.openthread.Error.Failed"},
     {OT_ERROR_DROP, "io.openthread.Error.Drop"},

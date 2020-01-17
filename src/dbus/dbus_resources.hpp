@@ -40,8 +40,23 @@ namespace dbus {
 using UniqueDBusMessage    = std::unique_ptr<DBusMessage, decltype(&dbus_message_unref)>;
 using UniqueDBusConnection = std::unique_ptr<DBusConnection, decltype(&dbus_connection_unref)>;
 
+/**
+ * This method creates a unique_ptr from raw DBusConnection.
+ *
+ * @param[in] aConnection   Raw dbus connection.
+ *
+ * @returns   The unique_ptr of the the given connection.
+ */
 UniqueDBusConnection MakeUniqueDBusConnection(DBusConnection *aConnection);
-UniqueDBusMessage    MakeUniqueDBusMessage(DBusMessage *aMessage);
+
+/**
+ * This method creates a unique_ptr from raw DBusMessage.
+ *
+ * @param[in] aMessage      Raw dbus message.
+ *
+ * @returns   The unique_ptr of the the given message.
+ */
+UniqueDBusMessage MakeUniqueDBusMessage(DBusMessage *aMessage);
 
 } // namespace dbus
 } // namespace otbr

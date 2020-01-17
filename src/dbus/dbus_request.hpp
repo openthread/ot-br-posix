@@ -51,21 +51,21 @@ public:
     /**
      * This method returns the message sent to call the d-bus method.
      *
-     * @returns   The dbus message
+     * @returns   The dbus message.
      */
     UniqueDBusMessage const &GetMessage(void) { return mMessage; }
 
     /**
      * This method returns underlying d-bus connection
      *
-     * @returns   The dbus connection
+     * @returns   The dbus connection.
      */
     UniqueDBusConnection const &GetConnection(void) { return mConnection; }
 
     /**
-     * This method replys to the d-bus method call.
+     * This method replies to the d-bus method call.
      *
-     * @param[in] aReply  The tuple to be sent
+     * @param[in] aReply  The tuple to be sent.
      *
      */
     template <typename... Args> void Reply(const std::tuple<Args...> &aReply)
@@ -81,9 +81,9 @@ public:
     }
 
     /**
-     * This method replys an otError to the d-bus method call.
+     * This method replies an otError to the d-bus method call.
      *
-     * @param[in] aError  The error to be sent
+     * @param[in] aError  The error to be sent.
      *
      */
     void ReplyOtResult(otError aError)
