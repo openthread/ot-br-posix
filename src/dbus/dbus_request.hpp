@@ -41,8 +41,8 @@ class DBusRequest
 {
 public:
     DBusRequest(DBusConnection *aConnection, DBusMessage *aMessage)
-        : mConnection(aConnection, dbus_connection_unref)
-        , mMessage(aMessage, dbus_message_unref)
+        : mConnection(aConnection)
+        , mMessage(aMessage)
     {
         dbus_message_ref(aMessage);
         dbus_connection_ref(aConnection);
@@ -70,7 +70,7 @@ public:
      */
     template <typename... Args> void Reply(const std::tuple<Args...> &aReply)
     {
-        UniqueDBusMessage reply = MakeUniqueDBusMessage(dbus_message_new_method_return(mMessage.get()));
+        UniqueDBusMessage reply(dbus_message_new_method_return(mMessage.get()));
 
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
@@ -88,17 +88,16 @@ public:
      */
     void ReplyOtResult(otError aError)
     {
-        UniqueDBusMessage reply(nullptr, dbus_message_unref);
+        UniqueDBusMessage reply(nullptr);
 
         if (aError != OT_ERROR_NONE)
         {
-            reply =
-                MakeUniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
+            reply = UniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
         }
         else
         {
             reply =
-                MakeUniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
+                UniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
         }
 
         VerifyOrExit(reply != nullptr);

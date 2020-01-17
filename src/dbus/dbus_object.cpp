@@ -117,7 +117,7 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
 
 void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
 {
-    UniqueDBusMessage reply = MakeUniqueDBusMessage(dbus_message_new_method_return(aRequest.GetMessage().get()));
+    UniqueDBusMessage reply = UniqueDBusMessage(dbus_message_new_method_return(aRequest.GetMessage().get()));
 
     DBusMessageIter iter;
     std::string     interfaceName;
@@ -153,7 +153,7 @@ exit:
 
 void DBusObject::GetAllPropertiesMethodHandler(DBusRequest &aRequest)
 {
-    UniqueDBusMessage reply = MakeUniqueDBusMessage(dbus_message_new_method_return(aRequest.GetMessage().get()));
+    UniqueDBusMessage reply = UniqueDBusMessage(dbus_message_new_method_return(aRequest.GetMessage().get()));
     DBusMessageIter   iter, subIter, dictEntryIter;
     std::string       interfaceName;
     auto              args = std::tie(interfaceName);

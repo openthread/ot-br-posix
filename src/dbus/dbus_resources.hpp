@@ -37,26 +37,13 @@
 namespace otbr {
 namespace dbus {
 
-using UniqueDBusMessage    = std::unique_ptr<DBusMessage, decltype(&dbus_message_unref)>;
-using UniqueDBusConnection = std::unique_ptr<DBusConnection, decltype(&dbus_connection_unref)>;
+template <typename kType, void (*kUnref)(kType *)> struct DBusDeleter
+{
+    void operator()(kType *aPointer) { kUnref(aPointer); }
+};
 
-/**
- * This method creates a unique_ptr from raw DBusConnection.
- *
- * @param[in] aConnection   Raw dbus connection.
- *
- * @returns   The unique_ptr of the the given connection.
- */
-UniqueDBusConnection MakeUniqueDBusConnection(DBusConnection *aConnection);
-
-/**
- * This method creates a unique_ptr from raw DBusMessage.
- *
- * @param[in] aMessage      Raw dbus message.
- *
- * @returns   The unique_ptr of the the given message.
- */
-UniqueDBusMessage MakeUniqueDBusMessage(DBusMessage *aMessage);
+using UniqueDBusMessage    = std::unique_ptr<DBusMessage, DBusDeleter<DBusMessage, &dbus_message_unref>>;
+using UniqueDBusConnection = std::unique_ptr<DBusConnection, DBusDeleter<DBusConnection, &dbus_connection_unref>>;
 
 } // namespace dbus
 } // namespace otbr
