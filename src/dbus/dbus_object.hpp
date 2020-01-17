@@ -114,21 +114,25 @@ public:
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aSignalName       The signal name.
      * @param[in]   aArgs             The tuple to be encoded into the signal.
+     *
+     * @retval OTBR_ERROR_NONE  Signal successfully sent.
+     * @retval OTBR_ERROR_DBUS  Failed to send the signal.
      */
     template <typename... FieldTypes>
-    void Signal(const std::string &              aInterfaceName,
-                const std::string &              aSignalName,
-                const std::tuple<FieldTypes...> &aArgs)
+    otbrError Signal(const std::string &              aInterfaceName,
+                     const std::string &              aSignalName,
+                     const std::tuple<FieldTypes...> &aArgs)
     {
         UniqueDBusMessage signalMsg = UniqueDBusMessage(
             dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str()));
+        otbrError err = OTBR_ERROR_NONE;
 
-        VerifyOrExit(signalMsg != nullptr);
-        VerifyOrExit(otbr::dbus::TupleToDBusMessage(*signalMsg, aArgs) == OTBR_ERROR_NONE);
+        VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
+        VerifyOrExit(err = otbr::dbus::TupleToDBusMessage(*signalMsg, aArgs));
 
-        dbus_connection_send(mConnection, signalMsg.get(), nullptr);
+        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
     exit:
-        return;
+        return err;
     }
 
     /**
@@ -137,39 +141,46 @@ public:
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aPropertyName     The property name.
      * @param[in]   aValue            New value of the property.
+     *
+     * @retval OTBR_ERROR_NONE  Signal successfully sent.
+     * @retval OTBR_ERROR_DBUS  Failed to send the signal.
      */
     template <typename ValueType>
-    void SignalPropertyChanged(const std::string &aInterfaceName,
-                               const std::string &aPropertyName,
-                               const ValueType &  aValue)
+    otbrError SignalPropertyChanged(const std::string &aInterfaceName,
+                                    const std::string &aPropertyName,
+                                    const ValueType &  aValue)
     {
         UniqueDBusMessage signalMsg = UniqueDBusMessage(
             dbus_message_new_signal(mObjectPath.c_str(), DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
         DBusMessageIter iter, subIter, dictEntryIter;
+        otbrError       err = OTBR_ERROR_NONE;
 
-        VerifyOrExit(signalMsg != nullptr);
+        VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
         dbus_message_iter_init_append(signalMsg.get(), &iter);
 
         // interface_name
-        VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE);
+        VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE, err = OTBR_ERROR_DBUS);
 
         // changed_properties
-        VerifyOrExit(dbus_message_iter_open_container(
-            &iter, DBUS_TYPE_ARRAY, "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}", &subIter));
-        VerifyOrExit(dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter));
+        VerifyOrExit(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
+                                                      "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}",
+                                                      &subIter),
+                     err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter),
+                     err = OTBR_ERROR_DBUS);
 
-        SuccessOrExit(DBusMessageEncode(&dictEntryIter, aPropertyName));
-        SuccessOrExit(DBusMessageEncodeToVariant(&dictEntryIter, aValue));
+        SuccessOrExit(err = DBusMessageEncode(&dictEntryIter, aPropertyName));
+        SuccessOrExit(err = DBusMessageEncodeToVariant(&dictEntryIter, aValue));
 
-        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter));
-        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter));
+        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter), err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter), err = OTBR_ERROR_DBUS);
 
         // invalidated_properties
-        VerifyOrExit(DBusMessageEncode(&iter, std::vector<std::string>()) == OTBR_ERROR_NONE);
+        SuccessOrExit(err = DBusMessageEncode(&iter, std::vector<std::string>()));
 
-        dbus_connection_send(mConnection, signalMsg.get(), nullptr);
+        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
     exit:
-        return;
+        return err;
     }
 
     /**

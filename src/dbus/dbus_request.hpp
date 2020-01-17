@@ -90,14 +90,13 @@ public:
     {
         UniqueDBusMessage reply(nullptr);
 
-        if (aError != OT_ERROR_NONE)
+        if (aError == OT_ERROR_NONE)
         {
-            reply = UniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
+            reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage.get()));
         }
         else
         {
-            reply =
-                UniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
+            reply = UniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
         }
 
         VerifyOrExit(reply != nullptr);

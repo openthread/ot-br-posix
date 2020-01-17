@@ -331,7 +331,8 @@ exit:
  * @retval  OTBR_ERROR_NONE   Successfully decoded the message.
  * @retval  OTBR_ERROR_DBUS   Failed to decode the message.
  */
-template <typename... FieldTypes> otbrError DBusMessageToTuple(DBusMessage &aMessage, std::tuple<FieldTypes...> &aValues)
+template <typename... FieldTypes>
+otbrError DBusMessageToTuple(DBusMessage &aMessage, std::tuple<FieldTypes...> &aValues)
 {
     otbrError       err = OTBR_ERROR_NONE;
     DBusMessageIter iter;

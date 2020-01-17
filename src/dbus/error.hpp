@@ -36,12 +36,16 @@ namespace dbus {
 /**
  * This function returns the string representation of an otError.
  *
+ * @param[in] aError  The otError value.
+ *
  * @returns The string representation of an otError.
  */
 const char *ConvertToDBusErrorName(otError aError);
 
 /**
  * This function converts an error string to otError.
+ *
+ * @param[in] aErrorName  The error string.
  *
  * @returns The corresponding otError. OT_ERROR_GENERIC will be returned
  *          if the error name is not defined in OpenThread.
@@ -50,6 +54,8 @@ otError ConvertFromDBusErrorName(const std::string &aErrorName);
 
 /**
  * This function converts an DBus reply message to otError.
+ *
+ * @param[in] aMessage  The dbus reply message.
  *
  * @returns The error code encoded in the message.
  */
