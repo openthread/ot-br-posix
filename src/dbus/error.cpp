@@ -31,7 +31,7 @@
 #include "dbus/constants.hpp"
 #include "dbus/dbus_message_helper.hpp"
 
-static const std::pair<otError, const char *> sErrorNameMap[] = {
+static const std::pair<otError, const char *> sErrorNames[] = {
     {OT_ERROR_GENERIC, "io.openthread.Error.Generic"},
     {OT_ERROR_NONE, "io.openthread.Error.OK"},
     {OT_ERROR_FAILED, "io.openthread.Error.Failed"},
@@ -73,9 +73,9 @@ namespace dbus {
 
 const char *ConvertToDBusErrorName(otError aError)
 {
-    const char *name = sErrorNameMap[0].second;
+    const char *name = sErrorNames[0].second;
 
-    for (auto &&p : sErrorNameMap)
+    for (auto &&p : sErrorNames)
     {
         if (p.first == aError)
         {
@@ -89,7 +89,7 @@ otError ConvertFromDBusErrorName(const std::string &aErrorName)
 {
     otError err = OT_ERROR_GENERIC;
 
-    for (auto &&p : sErrorNameMap)
+    for (auto &&p : sErrorNames)
     {
         if (p.second == aErrorName)
         {
