@@ -115,6 +115,7 @@ int main()
             dbus_connection_read_write_dispatch(connection, -1);
         }
     }
+
 exit:
     dbus_connection_unref(connection);
     return ret;

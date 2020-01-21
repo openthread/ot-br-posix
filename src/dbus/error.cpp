@@ -111,6 +111,7 @@ otError CheckErrorMessage(DBusMessage *aMessage)
         VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, err = OT_ERROR_FAILED);
         err = ConvertFromDBusErrorName(errMsg);
     }
+
 exit:
     return err;
 }

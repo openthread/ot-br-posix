@@ -82,7 +82,7 @@ static int Mainloop(AgentInstance &aInstance)
     Ncp::Controller &ncp = aInstance.GetNcp();
 #endif
 
-    otbrLog(OTBR_LOG_INFO, "Border router agent started.");
+    otbrLog(OTBR_LOG_CRIT, "Border router agent started.");
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);

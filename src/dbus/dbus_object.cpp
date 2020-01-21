@@ -60,6 +60,7 @@ otbrError DBusObject::Init(void)
                    std::bind(&DBusObject::SetPropertyMethodHandler, this, _1));
     RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_ALL_METHOD,
                    std::bind(&DBusObject::GetAllPropertiesMethodHandler, this, _1));
+
 exit:
     return err;
 }
@@ -142,6 +143,7 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
             SuccessOrExit(err = interfaceIter->second(replyIter));
         }
     }
+
 exit:
     if (err == OT_ERROR_NONE)
     {
@@ -212,6 +214,7 @@ void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
         VerifyOrExit(handlerIter != mSetPropertyHandlers.end(), err = OT_ERROR_NOT_FOUND);
         err = handlerIter->second(iter);
     }
+
 exit:
     aRequest.ReplyOtResult(err);
     return;

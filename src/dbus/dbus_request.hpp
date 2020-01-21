@@ -56,7 +56,7 @@ public:
     UniqueDBusMessage const &GetMessage(void) { return mMessage; }
 
     /**
-     * This method returns underlying d-bus connection
+     * This method returns underlying d-bus connection.
      *
      * @returns   The dbus connection.
      */
@@ -76,6 +76,7 @@ public:
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
         dbus_connection_send(mConnection.get(), reply.get(), nullptr);
+
     exit:
         return;
     }
@@ -101,6 +102,7 @@ public:
 
         VerifyOrExit(reply != nullptr);
         dbus_connection_send(mConnection.get(), reply.get(), nullptr);
+
     exit:
         return;
     }

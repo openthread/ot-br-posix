@@ -114,6 +114,7 @@ template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, T &aV
     dbus_message_iter_get_basic(aIter, &aValue);
     dbus_message_iter_next(aIter);
     err = OTBR_ERROR_NONE;
+
 exit:
     return err;
 }
@@ -134,6 +135,7 @@ template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::
     }
 
     err = OTBR_ERROR_NONE;
+
 exit:
     return err;
 }
@@ -161,6 +163,7 @@ template <typename T> otbrError DBusMessageExtractPrimitive(DBusMessageIter *aIt
         }
     }
     dbus_message_iter_next(aIter);
+
 exit:
     return err;
 }
@@ -169,6 +172,7 @@ template <typename T> otbrError DBusMessageEncode(DBusMessageIter *aIter, T aVal
 {
     otbrError err = OTBR_ERROR_NONE;
     VerifyOrExit(dbus_message_iter_append_basic(aIter, DBusTypeTrait<T>::TYPE, &aValue), err = OTBR_ERROR_DBUS);
+
 exit:
     return err;
 }
@@ -183,6 +187,7 @@ template <typename T> otbrError DBusMessageEncode(DBusMessageIter *aIter, const 
     {
         SuccessOrExit(err = DBusMessageEncode(aIter, v));
     }
+
 exit:
     return err;
 }
@@ -226,6 +231,7 @@ public:
 
         SuccessOrExit(err);
         err = DBusMessageIterFor<I - 1, N, FieldTypes...>::ConvertToTuple(aIter, aValues);
+
     exit:
         return err;
     }
@@ -236,6 +242,7 @@ public:
 
         SuccessOrExit(err);
         err = DBusMessageIterFor<I - 1, N, FieldTypes...>::ConvertToDBusMessage(aIter, aValues);
+
     exit:
         return err;
     }
@@ -276,7 +283,7 @@ constexpr otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<FieldTypes
 }
 
 /**
- * This function converts a value ot a d-bus variant.
+ * This function converts a value to a d-bus variant.
  *
  * @param[out]  aIter    The message iterator pointing to the variant.
  * @param[in]   aValue    The value input.
@@ -296,6 +303,7 @@ template <typename ValueType> otbrError DBusMessageEncodeToVariant(DBusMessageIt
     SuccessOrExit(err = DBusMessageEncode(&subIter, aValue));
 
     VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
+
 exit:
     return err;
 }
@@ -318,6 +326,7 @@ template <typename ValueType> otbrError DBusMessageExtractFromVariant(DBusMessag
     dbus_message_iter_recurse(aIter, &subIter);
 
     SuccessOrExit(err = DBusMessageExtract(&subIter, aValue));
+
 exit:
     return err;
 }
@@ -340,6 +349,7 @@ otbrError DBusMessageToTuple(DBusMessage &aMessage, std::tuple<FieldTypes...> &a
     VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), err = OTBR_ERROR_DBUS);
 
     err = ConvertToTuple(&iter, aValues);
+
 exit:
     return err;
 }

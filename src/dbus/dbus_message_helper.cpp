@@ -42,6 +42,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue)
     dbus_message_iter_next(aIter);
     aValue = (val != 0);
     err    = OTBR_ERROR_NONE;
+
 exit:
     return err;
 }
@@ -53,6 +54,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue)
 
     SuccessOrExit(err = DBusMessageExtract(aIter, val));
     aValue = static_cast<int8_t>(val);
+
 exit:
     return err;
 }
@@ -66,6 +68,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, std::string &aValue)
     dbus_message_iter_get_basic(aIter, &buf);
     dbus_message_iter_next(aIter);
     aValue = buf;
+
 exit:
     return err;
 }
@@ -111,6 +114,7 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue)
     otbrError   err = OTBR_ERROR_NONE;
 
     VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_BOOLEAN, &val), err = OTBR_ERROR_DBUS);
+
 exit:
     return err;
 
@@ -128,6 +132,7 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::string &aValue)
     const char *buf = aValue.c_str();
 
     VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_STRING, &buf), err = OTBR_ERROR_DBUS);
+
 exit:
     return err;
 }

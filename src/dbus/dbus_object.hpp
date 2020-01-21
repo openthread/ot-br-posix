@@ -87,7 +87,7 @@ public:
                         const MethodHandlerType &aHandler);
 
     /**
-     * This method the get handler for a property.
+     * This method registers the get handler for a property.
      *
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aMethodName       The method name.
@@ -98,7 +98,7 @@ public:
                                     const PropertyHandlerType &aHandler);
 
     /**
-     * This method the set handler for a property.
+     * This method registers the set handler for a property.
      *
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aMethodName       The method name.
@@ -131,6 +131,7 @@ public:
         VerifyOrExit(err = otbr::dbus::TupleToDBusMessage(*signalMsg, aArgs));
 
         VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
+
     exit:
         return err;
     }
@@ -179,6 +180,7 @@ public:
         SuccessOrExit(err = DBusMessageEncode(&iter, std::vector<std::string>()));
 
         VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
+
     exit:
         return err;
     }
