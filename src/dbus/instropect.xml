@@ -99,7 +99,7 @@
         bool rx_on_when_idle
         bool secure_data_requests
         bool device_type (ftd or mtd)
-        bool network_data (ftd or mtd)
+        bool network_data (full or stable)
       }
     -->
     <property name="LinkMode" type="(bbbb)" access="readwrite">
@@ -166,16 +166,16 @@
         uint32 rx_err_other;
       }
     -->
-    <property name="MacCounters" type="(uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu)" access="read">
+    <property name="MacCounters" type="(uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
     <!--
       struct {
-        uint32 tx_success;
-        uint32 rx_success;
-        uint32 tx_failure;
-        uint32 rx_failure;
+        uint32 ip_tx_success;
+        uint32 ip_rx_success;
+        uint32 ip_tx_failure;
+        uint32 ip_rx_failure;
       }
     -->
     <property name="LinkCounters" type="(uuuu)" access="read">
