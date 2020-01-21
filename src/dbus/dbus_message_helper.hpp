@@ -325,7 +325,7 @@ exit:
 /**
  * This function converts a d-bus message to a tuple of C++ types.
  *
- * @param[out]  aMessage  The dbus message to decode.
+ * @param[in]   aMessage  The dbus message to decode.
  * @param[out]  aValues   The tuple output.
  *
  * @retval  OTBR_ERROR_NONE   Successfully decoded the message.
@@ -365,7 +365,7 @@ otbrError TupleToDBusMessage(DBusMessage &aMessage, const std::tuple<FieldTypes.
 /**
  * This function converts a d-bus message to a tuple of C++ types.
  *
- * @param[out]  aMessage  The dbus message to decode.
+ * @param[in]   aMessage  The dbus message to decode.
  * @param[out]  aValues   The tuple output.
  *
  * @retval  OTBR_ERROR_NONE   Successfully decoded the message.
