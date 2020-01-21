@@ -33,7 +33,7 @@
 
     <method name="OpenUnsecurePort">
       <arg name="port" type="q"/>
-      <arg name="timeout" type="i"/>
+      <arg name="timeout" type="u"/>
     </method>
 
     <method name="JoinerStart">
