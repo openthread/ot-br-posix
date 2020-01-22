@@ -117,8 +117,6 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue)
 
 exit:
     return err;
-
-    return DBusMessageEncode(aIter, val);
 }
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue)
