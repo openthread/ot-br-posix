@@ -53,14 +53,14 @@ public:
      *
      * @returns   The dbus message.
      */
-    UniqueDBusMessage const &GetMessage(void) { return mMessage; }
+    DBusMessage *const &GetMessage(void) { return mMessage; }
 
     /**
      * This method returns underlying d-bus connection.
      *
      * @returns   The dbus connection.
      */
-    UniqueDBusConnection const &GetConnection(void) { return mConnection; }
+    DBusConnection *const &GetConnection(void) { return mConnection; }
 
     /**
      * This method replies to the d-bus method call.
@@ -70,12 +70,12 @@ public:
      */
     template <typename... Args> void Reply(const std::tuple<Args...> &aReply)
     {
-        UniqueDBusMessage reply(dbus_message_new_method_return(mMessage.get()));
+        UniqueDBusMessage reply(dbus_message_new_method_return(mMessage));
 
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
-        dbus_connection_send(mConnection.get(), reply.get(), nullptr);
+        dbus_connection_send(mConnection, reply.get(), nullptr);
 
     exit:
         return;
@@ -93,23 +93,32 @@ public:
 
         if (aError == OT_ERROR_NONE)
         {
-            reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage.get()));
+            reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage));
         }
         else
         {
-            reply = UniqueDBusMessage(dbus_message_new_error(mMessage.get(), ConvertToDBusErrorName(aError), nullptr));
+            reply = UniqueDBusMessage(dbus_message_new_error(mMessage, ConvertToDBusErrorName(aError), nullptr));
         }
 
         VerifyOrExit(reply != nullptr);
-        dbus_connection_send(mConnection.get(), reply.get(), nullptr);
+        dbus_connection_send(mConnection, reply.get(), nullptr);
 
     exit:
         return;
     }
 
+    ~DBusRequest(void)
+    {
+        dbus_connection_unref(mConnection);
+        dbus_message_unref(mMessage);
+    }
+
 private:
-    UniqueDBusConnection mConnection;
-    UniqueDBusMessage    mMessage;
+    DBusRequest(const DBusRequest &) = delete;
+    DBusRequest &operator=(const DBusRequest &) = delete;
+
+    DBusConnection *mConnection;
+    DBusMessage *   mMessage;
 };
 
 } // namespace dbus

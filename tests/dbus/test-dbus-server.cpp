@@ -74,7 +74,7 @@ private:
         std::string pingMessage;
         auto        args = std::tie(id, pingMessage);
 
-        if (DBusMessageToTuple(aRequest.GetMessage(), args) == OTBR_ERROR_NONE)
+        if (DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE)
         {
             aRequest.Reply(std::make_tuple(id, pingMessage + "Pong"));
         }
