@@ -123,8 +123,8 @@ public:
                      const std::string &              aSignalName,
                      const std::tuple<FieldTypes...> &aArgs)
     {
-        UniqueDBusMessage signalMsg = UniqueDBusMessage(
-            dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str()));
+        UniqueDBusMessage signalMsg{
+            dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str())};
         otbrError err = OTBR_ERROR_NONE;
 
         VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
@@ -151,8 +151,8 @@ public:
                                     const std::string &aPropertyName,
                                     const ValueType &  aValue)
     {
-        UniqueDBusMessage signalMsg = UniqueDBusMessage(
-            dbus_message_new_signal(mObjectPath.c_str(), DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
+        UniqueDBusMessage signalMsg{
+            dbus_message_new_signal(mObjectPath.c_str(), DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL)};
         DBusMessageIter iter, subIter, dictEntryIter;
         otbrError       err = OTBR_ERROR_NONE;
 

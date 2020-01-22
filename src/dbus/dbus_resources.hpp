@@ -37,13 +37,12 @@
 namespace otbr {
 namespace dbus {
 
-template <typename kType, void (*kUnref)(kType *)> struct DBusDeleter
+struct DBusMessageDeleter
 {
-    void operator()(kType *aPointer) { kUnref(aPointer); }
+    void operator()(DBusMessage *aPointer) { dbus_message_unref(aPointer); }
 };
 
-using UniqueDBusMessage    = std::unique_ptr<DBusMessage, DBusDeleter<DBusMessage, &dbus_message_unref>>;
-using UniqueDBusConnection = std::unique_ptr<DBusConnection, DBusDeleter<DBusConnection, &dbus_connection_unref>>;
+using UniqueDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
 
 } // namespace dbus
 } // namespace otbr

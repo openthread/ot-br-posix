@@ -70,7 +70,7 @@ public:
      */
     template <typename... Args> void Reply(const std::tuple<Args...> &aReply)
     {
-        UniqueDBusMessage reply(dbus_message_new_method_return(mMessage));
+        UniqueDBusMessage reply{dbus_message_new_method_return(mMessage)};
 
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
@@ -89,7 +89,7 @@ public:
      */
     void ReplyOtResult(otError aError)
     {
-        UniqueDBusMessage reply(nullptr);
+        UniqueDBusMessage reply{nullptr};
 
         if (aError == OT_ERROR_NONE)
         {
