@@ -19,14 +19,17 @@ matrix:
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2018-04-18-raspbian-stretch-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="meshcop" VERBOSE=1
+    - env: BUILD_TARGET="meshcop" COVERAGE=1 VERBOSE=1
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="docker-check" VERBOSE=1
+    - env: BUILD_TARGET="meshcop" COVERAGE=1 WITH_NCP=openthread VERBOSE=1
+      os: linux
+      dist: bionic
+    - env: BUILD_TARGET="docker-check" COVERAGE=1 VERBOSE=1
       os: linux
       dist: bionic
       compiler: gcc
-    - env: BUILD_TARGET="script-check"
+    - env: BUILD_TARGET="script-check" COVERAGE=1
       compiler: gcc
       os: linux
       dist: bionic
@@ -43,19 +46,19 @@ matrix:
     - env: BUILD_TARGET="android-check" VERBOSE=1
       os: linux
       dist: trusty
-    - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
+    - env: BUILD_TARGET="distcheck" COVERAGE=1 VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: clang
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="posix-check" VERBOSE=1
+    - env: BUILD_TARGET="distcheck" COVERAGE=1 VERBOSE=1
       compiler: clang
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="posix-check" VERBOSE=1 WITH_MDNS=mDNSResponder
+    - env: BUILD_TARGET="check" COVERAGE=1 VERBOSE=1 WITH_MDNS=mDNSResponder
       compiler: gcc
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="posix-check" VERBOSE=1
+    - env: BUILD_TARGET="check" COVERAGE=1 VERBOSE=1
       compiler: gcc
       os: linux
       dist: bionic

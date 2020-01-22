@@ -86,6 +86,12 @@ public:
      */
     void StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort);
 
+    /**
+     * This method stops the Web Server.
+     *
+     */
+    void StopWebServer(void);
+
 private:
     typedef std::string (*HttpRequestCallback)(const std::string &aRequest, void *aUserData);
     static std::string HandleJoinNetworkRequest(const std::string &aJoinRequest, void *aUserData);

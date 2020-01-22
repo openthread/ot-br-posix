@@ -140,7 +140,6 @@ html_DATA                                                      = \
     $(NULL)
 
 noinst_HEADERS                                                 = \
-    utils/encoding.hpp                                           \
     web-service/ot_client.hpp                                    \
     web-service/web_server.hpp                                   \
     web-service/wpan_service.hpp                                 \

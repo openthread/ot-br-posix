@@ -45,7 +45,6 @@
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
-#include "../utils/encoding.hpp"
 #include "../wpan-controller/wpan_controller.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"

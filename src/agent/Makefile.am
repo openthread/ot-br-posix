@@ -55,9 +55,6 @@ otbr_agent_LDADD    += \
     $(NULL)
 endif
 
-otbr_agent_LDADD    += \
-    $(NULL)
-
 otbr_agent_LDFLAGS = \
     -static          \
     $(NULL)
