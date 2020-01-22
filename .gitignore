@@ -72,6 +72,7 @@ src/web/otbr-web.init
 tests/mdns/otbr-test-mdns
 tests/meshcop/otbr-commissioner
 tests/testdriver
+tests/dbus/otbr-test-dbus-server
 
 # all things here.
 third_party/mbedtls/repo

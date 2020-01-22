@@ -53,14 +53,14 @@ public:
      *
      * @returns   The dbus message.
      */
-    DBusMessage *const &GetMessage(void) { return mMessage; }
+    DBusMessage *GetMessage(void) { return mMessage; }
 
     /**
      * This method returns underlying d-bus connection.
      *
      * @returns   The dbus connection.
      */
-    DBusConnection *const &GetConnection(void) { return mConnection; }
+    DBusConnection *GetConnection(void) { return mConnection; }
 
     /**
      * This method replies to the d-bus method call.

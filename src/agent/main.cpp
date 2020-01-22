@@ -82,7 +82,7 @@ static int Mainloop(AgentInstance &aInstance)
     Ncp::Controller &ncp = aInstance.GetNcp();
 #endif
 
-    otbrLog(OTBR_LOG_CRIT, "Border router agent started.");
+    otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
@@ -155,7 +155,7 @@ static void PrintVersion(void)
 
 static void OnAllocateFailed(void)
 {
-    otbrLog(OTBR_LOG_INFO, "Allocate failure, exiting...");
+    otbrLog(OTBR_LOG_CRIT, "Allocate failure, exiting...");
     exit(1);
 }
 
