@@ -51,11 +51,10 @@ main()
     # wait for server ready.
     sleep 2
     dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.otbr.Ping uint32:1 string:"Ping" | grep 'PingPong"'
-    dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.otbr.Ping | grep '"hello"'
-    dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.otbr.Ping | grep '"hello"'
     dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.freedesktop.DBus.Properties.Set string:org.otbr string:Count variant:int32:3
     dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.freedesktop.DBus.Properties.GetAll string:org.otbr | grep 'int32 3'
     dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.freedesktop.DBus.Properties.Get string:org.otbr string:Count | grep 'int32 3'
+    dbus-send --system --dest=org.otbr.TestServer --type=method_call --print-reply /org/otbr/testobj org.otbr.Ping | grep '"hello"'
     wait
 }
 

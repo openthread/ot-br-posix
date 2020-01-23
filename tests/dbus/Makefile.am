@@ -39,8 +39,10 @@ otbr_test_dbus_server_CXXFLAGS = \
     $(NULL)
 
 otbr_test_dbus_server_CPPFLAGS = \
-    -I$(top_srcdir)/src \
     -I$(top_srcdir) \
+    -I$(top_srcdir)/src \
+    -I$(top_srcdir)/third_party/openthread/repo/src/ \
+    -I$(top_srcdir)/third_party/openthread/repo/include/ \
     $(DBUS_CFLAGS) \
     $(NULL)
 
