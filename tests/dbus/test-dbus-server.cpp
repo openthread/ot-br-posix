@@ -40,13 +40,13 @@ class TestObject : public DBusObject
 {
 public:
     TestObject(DBusConnection *aConnection)
-        : DBusObject(aConnection, "/org/otbr/testobj")
+        : DBusObject(aConnection, "/io/openthread/testobj")
         , mEnded(false)
         , mCount(0)
     {
-        RegisterMethod("org.otbr", "Ping", std::bind(&TestObject::PingHandler, this, _1));
-        RegisterGetPropertyHandler("org.otbr", "Count", std::bind(&TestObject::CountGetHandler, this, _1));
-        RegisterSetPropertyHandler("org.otbr", "Count", std::bind(&TestObject::CountSetHandler, this, _1));
+        RegisterMethod("io.openthread", "Ping", std::bind(&TestObject::PingHandler, this, _1));
+        RegisterGetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountGetHandler, this, _1));
+        RegisterSetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountSetHandler, this, _1));
     }
 
     bool IsEnded(void) const { return mEnded; }
@@ -101,7 +101,8 @@ int main()
     VerifyOrExit(connection != nullptr);
     dbus_bus_register(connection, &dbusErr);
 
-    requestReply = dbus_bus_request_name(connection, "org.otbr.TestServer", DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusErr);
+    requestReply =
+        dbus_bus_request_name(connection, "io.openthread.TestServer", DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusErr);
     VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
                      requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
                  ret = EXIT_FAILURE);

@@ -82,6 +82,7 @@ const char *ConvertToDBusErrorName(otError aError)
         if (p.first == aError)
         {
             name = p.second;
+            break;
         }
     }
     return name;
@@ -96,6 +97,7 @@ otError ConvertFromDBusErrorName(const std::string &aErrorName)
         if (p.second == aErrorName)
         {
             err = p.first;
+            break;
         }
     }
     return err;
