@@ -39,11 +39,14 @@ libotbr_dbus_la_CXXFLAGS          = \
 libotbr_dbus_la_SOURCES   = \
     dbus_object.cpp         \
     dbus_message_helper.cpp \
+    error.cpp               \
     $(NULL)
 
-libotbr_dbus_la_CPPFLAGS  = \
-    -I$(top_srcdir)/src     \
-    -I$(top_srcdir)         \
+libotbr_dbus_la_CPPFLAGS                                   = \
+    -I$(top_srcdir)                                          \
+    -I$(top_srcdir)/src                                      \
+    -I$(top_srcdir)/third_party/openthread/repo/src/         \
+    -I$(top_srcdir)/third_party/openthread/repo/include/     \
     $(DBUS_CFLAGS)          \
     $(NULL)
 
@@ -52,10 +55,12 @@ libotbr_dbus_la_LIBADD    = \
     $(NULL)
 
 noinst_HEADERS            = \
+    constants.hpp           \
     dbus_object.hpp         \
     dbus_request.hpp        \
     dbus_resources.hpp      \
     dbus_message_helper.hpp \
+    error.hpp               \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2019, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,25 +26,12 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
-#define OTBR_DBUS_DBUS_RESOURCES_HPP_
+#ifndef OTBR_DBUS_CONSTANTS_HPP_
+#define OTBR_DBUS_CONSTANTS_HPP_
 
-#include <memory>
-#include <utility>
+#define DBUS_PROPERTY_GET_METHOD "Get"
+#define DBUS_PROPERTY_SET_METHOD "Set"
+#define DBUS_PROPERTY_GET_ALL_METHOD "GetAll"
+#define DBUS_PROPERTIES_CHANGED_SIGNAL "PropertiesChanged"
 
-#include <dbus/dbus.h>
-
-namespace otbr {
-namespace dbus {
-
-struct DBusMessageDeleter
-{
-    void operator()(DBusMessage *aPointer) { dbus_message_unref(aPointer); }
-};
-
-using UniqueDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
-
-} // namespace dbus
-} // namespace otbr
-
-#endif // OTBR_DBUS_DBUS_RESOURCES_HPP_
+#endif // OTBR_DBUS_CONSTANTS_HPP_

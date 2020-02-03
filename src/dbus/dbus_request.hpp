@@ -28,6 +28,7 @@
 
 #include "dbus/dbus_message_helper.hpp"
 #include "dbus/dbus_resources.hpp"
+#include "dbus/error.hpp"
 
 namespace otbr {
 namespace dbus {
@@ -43,39 +44,81 @@ public:
         : mConnection(aConnection)
         , mMessage(aMessage)
     {
+        dbus_message_ref(aMessage);
+        dbus_connection_ref(aConnection);
     }
 
     /**
      * This method returns the message sent to call the d-bus method.
      *
-     * @returns   The dbus message
+     * @returns   The dbus message.
      */
-    SharedDBusMessage GetMessage(void) { return mMessage; }
+    DBusMessage *GetMessage(void) { return mMessage; }
 
     /**
-     * This method replys to the d-bus method call.
+     * This method returns underlying d-bus connection.
      *
-     * @param[in] aReply  The tuple to be sent
+     * @returns   The dbus connection.
+     */
+    DBusConnection *GetConnection(void) { return mConnection; }
+
+    /**
+     * This method replies to the d-bus method call.
+     *
+     * @param[in] aReply  The tuple to be sent.
      *
      */
     template <typename... Args> void Reply(const std::tuple<Args...> &aReply)
     {
-        DBusMessage *reply = dbus_message_new_method_return(mMessage.GetRaw());
+        UniqueDBusMessage reply{dbus_message_new_method_return(mMessage)};
 
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
-        dbus_connection_send(mConnection.GetRaw(), reply, nullptr);
+        dbus_connection_send(mConnection, reply.get(), nullptr);
+
     exit:
-        if (reply)
+        return;
+    }
+
+    /**
+     * This method replies an otError to the d-bus method call.
+     *
+     * @param[in] aError  The error to be sent.
+     *
+     */
+    void ReplyOtResult(otError aError)
+    {
+        UniqueDBusMessage reply{nullptr};
+
+        if (aError == OT_ERROR_NONE)
         {
-            dbus_message_unref(reply);
+            reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage));
         }
+        else
+        {
+            reply = UniqueDBusMessage(dbus_message_new_error(mMessage, ConvertToDBusErrorName(aError), nullptr));
+        }
+
+        VerifyOrExit(reply != nullptr);
+        dbus_connection_send(mConnection, reply.get(), nullptr);
+
+    exit:
+        return;
+    }
+
+    ~DBusRequest(void)
+    {
+        dbus_connection_unref(mConnection);
+        dbus_message_unref(mMessage);
     }
 
 private:
-    SharedDBusConnection mConnection;
-    SharedDBusMessage    mMessage;
+    DBusRequest(const DBusRequest &) = delete;
+    DBusRequest &operator=(const DBusRequest &) = delete;
+
+    DBusConnection *mConnection;
+    DBusMessage *   mMessage;
 };
 
 } // namespace dbus

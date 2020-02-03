@@ -29,29 +29,52 @@
 #include "dbus/dbus_message_helper.hpp"
 #include "dbus/dbus_object.hpp"
 
-using namespace otbr::dbus;
-using namespace std::placeholders;
+using otbr::dbus::DBusMessageEncodeToVariant;
+using otbr::dbus::DBusMessageExtractFromVariant;
+using otbr::dbus::DBusMessageToTuple;
+using otbr::dbus::DBusObject;
+using otbr::dbus::DBusRequest;
+using std::placeholders::_1;
 
 class TestObject : public DBusObject
 {
 public:
     TestObject(DBusConnection *aConnection)
-        : DBusObject(aConnection, "/org/otbr/testobj")
+        : DBusObject(aConnection, "/io/openthread/testobj")
         , mEnded(false)
+        , mCount(0)
     {
-        RegisterMethod("org.otbr", "Ping", std::bind(&TestObject::PingHandler, this, _1));
+        RegisterMethod("io.openthread", "Ping", std::bind(&TestObject::PingHandler, this, _1));
+        RegisterGetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountGetHandler, this, _1));
+        RegisterSetPropertyHandler("io.openthread", "Count", std::bind(&TestObject::CountSetHandler, this, _1));
     }
 
     bool IsEnded(void) const { return mEnded; }
 
 private:
+    otError CountGetHandler(DBusMessageIter &aIter)
+    {
+        DBusMessageEncodeToVariant(&aIter, mCount);
+        return OT_ERROR_NONE;
+    }
+
+    otError CountSetHandler(DBusMessageIter &aIter)
+    {
+        int32_t cnt = 0;
+
+        DBusMessageExtractFromVariant(&aIter, cnt);
+        mCount = cnt;
+
+        return OT_ERROR_NONE;
+    }
+
     void PingHandler(DBusRequest &aRequest)
     {
         uint32_t    id;
         std::string pingMessage;
         auto        args = std::tie(id, pingMessage);
 
-        if (DBusMessageToTuple(aRequest.GetMessage(), args) == OTBR_ERROR_NONE)
+        if (DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE)
         {
             aRequest.Reply(std::make_tuple(id, pingMessage + "Pong"));
         }
@@ -62,7 +85,8 @@ private:
         }
     }
 
-    bool mEnded;
+    bool    mEnded;
+    int32_t mCount;
 };
 
 int main()
@@ -77,7 +101,8 @@ int main()
     VerifyOrExit(connection != nullptr);
     dbus_bus_register(connection, &dbusErr);
 
-    requestReply = dbus_bus_request_name(connection, "org.otbr.TestServer", DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusErr);
+    requestReply =
+        dbus_bus_request_name(connection, "io.openthread.TestServer", DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusErr);
     VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
                      requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
                  ret = EXIT_FAILURE);
@@ -91,6 +116,7 @@ int main()
             dbus_connection_read_write_dispatch(connection, -1);
         }
     }
+
 exit:
     dbus_connection_unref(connection);
     return ret;
