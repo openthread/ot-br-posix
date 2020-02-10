@@ -50,8 +50,8 @@
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
-using otbr::Ncp::ControllerOpenThread;
 #endif
+using otbr::Ncp::ControllerOpenThread;
 #endif
 
 #if OTBR_ENABLE_OPENWRT

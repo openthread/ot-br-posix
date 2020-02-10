@@ -32,7 +32,6 @@
  */
 
 #include "web/wpan-controller/dbus_get.hpp"
-
 #include "common/code_utils.hpp"
 
 namespace otbr {
@@ -228,7 +227,7 @@ int DBusGet::GetAllPropertyNames(void)
     {
         char *pName;
         dbus_message_iter_get_basic(&listIter, &pName);
-        strncpy(mPropertyList[propCnt].name, pName, sizeof(mPropertyList[propCnt].name));
+        strcpy_safe(mPropertyList[propCnt].name, sizeof(mPropertyList[propCnt].name), pName);
         propCnt++;
     }
     return propCnt;
@@ -238,7 +237,7 @@ void DBusGet::GetAllPropertyValues(int propCnt)
 {
     for (int i = 0; i < propCnt; i++)
     {
-        strncpy(mPropertyList[i].value, GetPropertyValue(mPropertyList[i].name), sizeof(mPropertyList[i].value));
+        strcpy_safe(mPropertyList[i].value, sizeof(mPropertyList[i].value), GetPropertyValue(mPropertyList[i].name));
     }
 }
 

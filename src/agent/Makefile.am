@@ -59,13 +59,13 @@ otbr_agent_LDFLAGS = \
     -static          \
     $(NULL)
 
-otbr_agent_CPPFLAGS                                    = \
-    -I$(top_srcdir)/src                                  \
-    -I$(top_srcdir)/include                              \
-    -I$(top_srcdir)/third_party/openthread/repo/src/     \
-    -I$(top_srcdir)/third_party/openthread/repo/include/ \
-    $(OPENTHREAD_CPPFLAGS)                               \
-    $(DBUS_CFLAGS)                                       \
+otbr_agent_CPPFLAGS                                           = \
+    $(MBEDTLS_CPPFLAGS)                                         \
+    $(OPENTHREAD_CPPFLAGS)                                      \
+    -I$(top_srcdir)/include                                     \
+    -I$(top_srcdir)/src                                         \
+    -I$(top_srcdir)/third_party/openthread/repo/include/        \
+    -I$(top_srcdir)/third_party/openthread/repo/src/            \
     $(NULL)
 
 noinst_LTLIBRARIES = libotbr-agent.la

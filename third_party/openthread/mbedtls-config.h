@@ -31,7 +31,10 @@
 
 #define MBEDTLS_DEBUG_C
 
+// Not supported on MIPS
+#ifndef __mips__
 #define MBEDTLS_HAVE_ASM
+#endif
 
 #define MBEDTLS_AES_ROM_TABLES
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED

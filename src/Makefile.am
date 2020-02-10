@@ -44,20 +44,20 @@ DIST_SUBDIRS                                         = \
 SUBDIRS                                              = \
     common                                             \
     utils                                              \
-    dbus                                               \
-    agent                                              \
     $(NULL)
 
+if OTBR_ENABLE_DBUS_SERVER
+SUBDIRS                                             += dbus
+endif
+
+SUBDIRS                                             += agent
+
 if OTBR_ENABLE_COMMISSIONER
-SUBDIRS                                             += \
-    commissioner                                       \
-    $(NULL)
+SUBDIRS                                             += commissioner
 endif
 
 if OTBR_ENABLE_WEB_SERVICE
-SUBDIRS                                             += \
-    web                                                \
-    $(NULL)
+SUBDIRS                                             += web
 endif
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

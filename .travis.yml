@@ -13,6 +13,9 @@ after_success:
 
 matrix:
   include:
+    - env: BUILD_TARGET="openwrt-check" VERBOSE=1
+      os: linux
+      dist: bionic
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2017-04-10-raspbian-jessie-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip
       os: linux
       dist: bionic

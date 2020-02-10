@@ -90,7 +90,7 @@ dist_check_SCRIPTS = \
     test-server \
     $(NULL)
 
-EXTRA_DIST                = \
+EXTRA_DIST = \
     otbr-test-dbus-server.conf \
     $(NULL)
 

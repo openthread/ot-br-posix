@@ -1,6 +1,5 @@
-#!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,75 +26,47 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
-set -x
+LOCAL_SOURCE_DIR := $(abspath $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../../..)
 
-TOOLS_HOME=$HOME/.cache/tools
+#$(error $(LOCAL_SOURCE_DIR))
+include $(TOPDIR)/rules.mk
 
-die() {
-	echo " *** ERROR: " $*
-	exit 1
-}
+PKG_NAME := openthread-br
+PKG_LICENSE := BSD-3-Clause
+PKG_LICENSE_FILES := LICENSE
+PKG_RELEASE := 1
+PKG_VERSION := 1.0
 
-case $BUILD_TARGET in
-android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
-    ;;
+include $(INCLUDE_DIR)/package.mk
 
-mdns-mojo-check)
-    ./tests/mdns/test-mojo
-    ;;
+CONFIGURE_CMD = $(LOCAL_SOURCE_DIR)/configure
 
-check)
-    ./script/bootstrap
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test build check
-    ;;
+CONFIGURE_ARGS += \
+	--disable-docs \
+	--disable-web-service \
+	--disable-commissioner \
+	--enable-openwrt \
+	--with-ncp=openthread \
+	--with-mdns=none \
 
-distcheck)
-    ./script/bootstrap
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test distcheck
-    ;;
+define Package/openthread-br
+	SECTION := base
+	CATEGORY := Network
+	TITLE := OpenThread Border Router
+	DEPENDS := +libstdcpp +libjson-c +libubus +libblobmsg-json
+endef
 
-meshcop)
-    ./bootstrap
-    ./script/test build
+define Package/openthread-br/description
+    A Thread border router for POSIX-based platforms.
+endef
 
-    OT_CLI="ot-cli-mtd" ./script/test meshcop
-    OT_CLI="ot-cli-ftd" ./script/test meshcop
-    COMMISSIONER_WEB=1 ./script/test meshcop
-    ;;
+define Build/Prepare
+	cd $(LOCAL_SOURCE_DIR) && ./bootstrap
+endef
 
-openwrt-check)
-    ./script/test openwrt
-    ;;
+define Package/openthread-br/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/agent/otbr-agent $(1)/usr/sbin
+endef
 
-scan-build)
-    .travis/check-scan-build
-    ;;
-
-script-check)
-    .travis/check-scripts
-    ;;
-
-raspbian-gcc)
-    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
-    ;;
-
-docker-check)
-    .travis/check-docker
-    ;;
-
-otbr-dbus-check)
-    .travis/check-otbr-dbus
-    ;;
-
-macOS)
-    RELEASE=1 ./script/bootstrap
-    # Currently only verify otbr-agent
-    ./configure --prefix= --exec-prefix=/usr --disable-web-service --with-mdns=none
-    make -j$(shell getconf _NPROCESSORS_ONLN)
-    ;;
-*)
-    die
-    ;;
-esac
+$(eval $(call BuildPackage,openthread-br))

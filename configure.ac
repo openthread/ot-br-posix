@@ -175,6 +175,8 @@ AC_PROG_CXXCPP
 AC_PROG_CXX
 AC_PROG_CXX_C_O
 
+AC_C_BIGENDIAN
+
 # Check for other compiler toolchain tools.
 
 AC_CHECK_TOOL(AR, ar)
@@ -314,18 +316,15 @@ AC_SUBST(OTBR_ENABLE_COMMISSIONER)
 AM_CONDITIONAL([OTBR_ENABLE_COMMISSIONER], [test "${enable_commissioner}" = "yes"])
 
 #
-# dbus server
+# DBus server
 #
-
 AC_ARG_ENABLE(dbus-server,
-    [AS_HELP_STRING([--enable-dbus-server],[Enable dbus server @<:@default=yes@:>@.])],
+    [AS_HELP_STRING([--enable-dbus-server],[Enable DBus server @<:@default=no@:>@.])],
     [
         case "${enableval}" in
-
         no|yes)
             enable_dbus_server=${enableval}
             ;;
-
         *)
             AC_MSG_ERROR([Invalid value ${enable_dbus_server} for --enable-dbus-server])
             ;;
@@ -333,15 +332,12 @@ AC_ARG_ENABLE(dbus-server,
     ],
     [enable_dbus_server=no])
 
+
 if test "$enable_dbus_server" = "yes"; then
     AC_DEFINE_UNQUOTED([OTBR_ENABLE_DBUS_SERVER], [1], [Define to 1 if you want otbr-agent to provide dbus server])
-    OTBR_ENABLE_DBUS_SERVER=1
-else
-    OTBR_ENABLE_DBUS_SERVER=0
 fi
 
 AC_MSG_RESULT(${enable_dbus_server})
-AC_SUBST(OTBR_ENABLE_DBUS_SERVER)
 AM_CONDITIONAL([OTBR_ENABLE_DBUS_SERVER], [test "${enable_dbus_server}" = "yes"])
 
 #
@@ -473,7 +469,7 @@ AC_MSG_RESULT([$ac_cv_path_CTAGS])
 
 # Check if the DBus module
 
-if test "${with_mdns}" == "avahi" -o "${with_ncp}" == "wpantund"; then
+if test "${with_mdns}" == "avahi" -o "${with_ncp}" == "wpantund" -o "${enable_dbus_server}" == "yes"; then
   PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not find dbus(>= 1.4)])])
 fi
 AC_SUBST(DBUS_CFLAGS)
@@ -687,3 +683,4 @@ AC_MSG_NOTICE([
   Link libraries                            : ${LIBS}
 
 ])
+
