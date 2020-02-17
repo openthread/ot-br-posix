@@ -35,6 +35,7 @@ otbr_test_mdns_SOURCES                                 = \
     $(NULL)
 
 otbr_test_mdns_CPPFLAGS                                = \
+    -I$(top_srcdir)/include                              \
     -I$(top_srcdir)/src                                  \
     $(NULL)
 

@@ -34,9 +34,7 @@
 #ifndef NCP_HPP_
 #define NCP_HPP_
 
-#if HAVE_CONFIG_H
-#include "otbr-config.h"
-#endif
+#include <openthread-br/config.h>
 
 #include <netinet/in.h>
 #include <stddef.h>

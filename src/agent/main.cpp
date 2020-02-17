@@ -26,9 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if HAVE_CONFIG_H
-#include "otbr-config.h"
-#endif
+#include <openthread-br/config.h>
 
 #include <mutex>
 #include <thread>

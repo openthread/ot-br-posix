@@ -51,6 +51,7 @@ libotbr_commissioner_la_SOURCES                       = \
     $(NULL)
 
 libotbr_commissioner_la_CPPFLAGS                      = \
+    -I$(top_srcdir)/include                             \
     -I$(top_srcdir)/src                                 \
     -I$(top_srcdir)/src/web                             \
     $(MBEDTLS_CPPFLAGS)                                 \
@@ -76,6 +77,7 @@ otbr_commissioner_LDADD                               = \
     $(NULL)
 
 otbr_commissioner_CPPFLAGS                            = \
+    -I$(top_srcdir)/include                             \
     $(libotbr_commissioner_la_CPPFLAGS)                 \
     $(NULL)
 

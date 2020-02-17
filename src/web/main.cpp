@@ -32,7 +32,7 @@
  */
 #define OT_HTTP_PORT 80
 
-#include "otbr-config.h"
+#include <openthread-br/config.h>
 
 #include <errno.h>
 #include <signal.h>

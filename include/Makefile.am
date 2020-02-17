@@ -28,4 +28,8 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
+nobase_include_HEADERS = \
+    openthread-br/config.h \
+    $(NULL)
+
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

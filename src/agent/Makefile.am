@@ -60,6 +60,7 @@ otbr_agent_LDFLAGS = \
     $(NULL)
 
 otbr_agent_CPPFLAGS         = \
+    -I$(top_srcdir)/include   \
     -I$(top_srcdir)/src       \
     -I$(top_srcdir)/third_party/openthread/repo/src/core                     \
     $(OPENTHREAD_CPPFLAGS)    \
@@ -115,6 +116,7 @@ libotbr_agent_la_LDFLAGS = \
     $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
+    -I$(top_srcdir)/include                                                  \
     -I$(top_srcdir)/src                                                      \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \

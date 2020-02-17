@@ -85,7 +85,7 @@ AC_CONFIG_MACRO_DIR([third_party/openthread/repo/third_party/nlbuild-autotools/r
 # Tell autoconf what file the package is using to aggregate C preprocessor
 # defines.
 #
-AC_CONFIG_HEADERS([include/otbr-config.h])
+AC_CONFIG_HEADERS([include/openthread-br/autoconf-config.h])
 
 #
 # Figure out what the canonical build, host and target tuples are.

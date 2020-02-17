@@ -66,6 +66,7 @@ libotbr_coap_la_SOURCES                               = \
     $(NULL)
 
 libotbr_coap_la_CPPFLAGS                              = \
+    -I$(top_srcdir)/include                             \
     -I$(top_builddir)/third_party/libcoap/repo          \
     -I$(top_builddir)/third_party/libcoap/repo/include  \
     -I$(top_srcdir)/third_party/libcoap/repo            \
@@ -82,6 +83,7 @@ libotbr_dtls_la_SOURCES                               = \
     $(NULL)
 
 libotbr_dtls_la_CPPFLAGS                              = \
+    -I$(top_srcdir)/include                             \
     $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 
