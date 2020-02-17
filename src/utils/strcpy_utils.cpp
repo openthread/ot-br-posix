@@ -33,8 +33,8 @@ int strcpy_safe(char *aDest, size_t aDestSize, const char *aSrc)
 {
     int ret = 0;
     VerifyOrExit(aDest != NULL, ret = -1);
-    VerifyOrExit(aSrc != NULL, ret = -1, aDest[0] = 0);
-    VerifyOrExit(aDestSize > strnlen(aSrc, aDestSize), ret = -1, aDest[0] = 0);
+    VerifyOrExit(aSrc != NULL, ret = -1);
+    VerifyOrExit(aDestSize > strnlen(aSrc, aDestSize), ret = -1);
 
     strncpy(aDest, aSrc, aDestSize);
 
