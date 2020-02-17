@@ -36,14 +36,14 @@ extern "C" {
 #endif
 
 /**
- * This method is a safe version of strcpy always ensuring last byte to be 0
- * If strlen(aSrc) >= n, the string will be truncated
+ * This method is a safe version of strcpy. A source string longer than
+ * destination will be rejected.
  *
  * @param[out] aDest      dest string
  * @param[in]  aDestSize  size of dest string buffer
  * @param[in]  aSrc       src string
  *
- * @returns 0 on success, -1 on error
+ * @returns 0, succeed and string copied; -1, failed and `aDest` is not changed.
  *
  */
 int strcpy_safe(char *aDest, size_t aDestSize, const char *aSrc);
