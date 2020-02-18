@@ -37,6 +37,7 @@ pskc_SOURCES                                              = \
     $(NULL)
 
 pskc_CPPFLAGS                                             = \
+    -I$(top_srcdir)/include                                 \
     -I$(top_srcdir)/src                                     \
     -I$(top_srcdir)/src/agent                               \
     -I$(top_srcdir)/src/web                                 \
@@ -57,6 +58,7 @@ steering_data_SOURCES                                     = \
     $(NULL)
 
 steering_data_CPPFLAGS                                    = \
+    -I$(top_srcdir)/include                                 \
     -I$(top_srcdir)/src                                     \
     -I$(top_srcdir)/src/agent                               \
     $(MBEDTLS_CPPFLAGS)                                     \

@@ -34,9 +34,7 @@
 #ifndef WPAN_SERVICE
 #define WPAN_SERVICE
 
-#if HAVE_CONFIG_H
-#include "otbr-config.h"
-#endif
+#include <openthread-br/config.h>
 
 #include <stdint.h>
 #include <stdio.h>

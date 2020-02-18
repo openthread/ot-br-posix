@@ -50,6 +50,7 @@ otbr_web_LDFLAGS                                           = \
     $(NULL)
 
 otbr_web_CPPFLAGS                                          = \
+    -I$(top_srcdir)/include                                  \
     $(libotbr_web_la_CPPFLAGS)                               \
     $(NULL)
 
@@ -99,6 +100,7 @@ libotbr_web_la_LDFLAGS                                          = \
     $(NULL)
 
 libotbr_web_la_CPPFLAGS                                         = \
+    -I$(top_srcdir)/include                                       \
     -I$(top_srcdir)/src                                           \
     -I$(top_srcdir)/src/wpan-controller                           \
     -I$(top_srcdir)/src/web-service                               \

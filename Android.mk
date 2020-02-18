@@ -73,6 +73,7 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_SHARED_LIBRARIES := libdbus
 
 LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/src \
     $(LOCAL_PATH)/third_party/wpantund \
     $(LOCAL_PATH)/third_party/wpantund/repo/src \
