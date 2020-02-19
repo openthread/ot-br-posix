@@ -145,6 +145,7 @@ private:
     int mSocket;
 #endif
     uint8_t  mExtPanId[kSizeExtPanId];
+    bool     mExtPanIdInitialized;
     uint16_t mThreadVersion;
     char     mNetworkName[kSizeNetworkName + 1];
     bool     mThreadStarted;
