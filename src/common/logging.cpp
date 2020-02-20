@@ -290,7 +290,7 @@ const char *otbrErrorString(otbrError aError)
 {
     const char *error = NULL;
 
-    switch (aError)
+    switch (static_cast<otbrErrorCode>(aError))
     {
     case OTBR_ERROR_NONE:
         error = "OK";

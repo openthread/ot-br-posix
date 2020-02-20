@@ -44,16 +44,238 @@
 #define IN6ADDR_ANY "::"
 #endif
 
+extern "C" {
+
 /**
  * This enumeration represents error codes used throughout OpenThread Border Router.
  */
-enum otbrError
+enum otbrErrorCode
 {
-    OTBR_ERROR_NONE  = 0,  ///< No error.
-    OTBR_ERROR_ERRNO = -1, ///< Error defined by errno.
-    OTBR_ERROR_DTLS  = -2, ///< DTLS error.
-    OTBR_ERROR_DBUS  = -3, ///< DBus error.
-    OTBR_ERROR_MDNS  = -4, ///< MDNS error.
+    OTBR_ERROR_NONE       = 0,  ///< No error.
+    OTBR_ERROR_ERRNO      = -1, ///< Error defined by errno.
+    OTBR_ERROR_DTLS       = -2, ///< DTLS error.
+    OTBR_ERROR_DBUS       = -3, ///< DBus error.
+    OTBR_ERROR_MDNS       = -4, ///< MDNS error.
+    OTBR_ERROR_OPENTHREAD = -5, ///< OpenThread error.
+};
+
+/**
+ * This is the raw data for an otbrError, the top-level error code and the
+ * third-party error code embedded
+ */
+struct otbrErrorVanilla
+{
+    otbrErrorCode mTopError;
+    uint64_t      mEmbeddedError;
+};
+}
+
+/**
+ * This enumeration represents error codes used throughout OpenThread.
+ *
+ */
+enum class otbrEmbedOtError
+{
+    /**
+     * No error.
+     */
+    OT_ERROR_NONE = 0,
+
+    /**
+     * Operational failed.
+     */
+    OT_ERROR_FAILED = 1,
+
+    /**
+     * Message was dropped.
+     */
+    OT_ERROR_DROP = 2,
+
+    /**
+     * Insufficient buffers.
+     */
+    OT_ERROR_NO_BUFS = 3,
+
+    /**
+     * No route available.
+     */
+    OT_ERROR_NO_ROUTE = 4,
+
+    /**
+     * Service is busy and could not service the operation.
+     */
+    OT_ERROR_BUSY = 5,
+
+    /**
+     * Failed to parse message or arguments.
+     */
+    OT_ERROR_PARSE = 6,
+
+    /**
+     * Input arguments are invalid.
+     */
+    OT_ERROR_INVALID_ARGS = 7,
+
+    /**
+     * Security checks failed.
+     */
+    OT_ERROR_SECURITY = 8,
+
+    /**
+     * Address resolution requires an address query operation.
+     */
+    OT_ERROR_ADDRESS_QUERY = 9,
+
+    /**
+     * Address is not in the source match table.
+     */
+    OT_ERROR_NO_ADDRESS = 10,
+
+    /**
+     * Operation was aborted.
+     */
+    OT_ERROR_ABORT = 11,
+
+    /**
+     * Function or method is not implemented.
+     */
+    OT_ERROR_NOT_IMPLEMENTED = 12,
+
+    /**
+     * Cannot complete due to invalid state.
+     */
+    OT_ERROR_INVALID_STATE = 13,
+
+    /**
+     * No acknowledgment was received after macMaxFrameRetries (IEEE 802.15.4-2006).
+     */
+    OT_ERROR_NO_ACK = 14,
+
+    /**
+     * A transmission could not take place due to activity on the channel, i.e., the CSMA-CA mechanism has failed
+     * (IEEE 802.15.4-2006).
+     */
+    OT_ERROR_CHANNEL_ACCESS_FAILURE = 15,
+
+    /**
+     * Not currently attached to a Thread Partition.
+     */
+    OT_ERROR_DETACHED = 16,
+
+    /**
+     * FCS check failure while receiving.
+     */
+    OT_ERROR_FCS = 17,
+
+    /**
+     * No frame received.
+     */
+    OT_ERROR_NO_FRAME_RECEIVED = 18,
+
+    /**
+     * Received a frame from an unknown neighbor.
+     */
+    OT_ERROR_UNKNOWN_NEIGHBOR = 19,
+
+    /**
+     * Received a frame from an invalid source address.
+     */
+    OT_ERROR_INVALID_SOURCE_ADDRESS = 20,
+
+    /**
+     * Received a frame filtered by the address filter (whitelisted or blacklisted).
+     */
+    OT_ERROR_ADDRESS_FILTERED = 21,
+
+    /**
+     * Received a frame filtered by the destination address check.
+     */
+    OT_ERROR_DESTINATION_ADDRESS_FILTERED = 22,
+
+    /**
+     * The requested item could not be found.
+     */
+    OT_ERROR_NOT_FOUND = 23,
+
+    /**
+     * The operation is already in progress.
+     */
+    OT_ERROR_ALREADY = 24,
+
+    /**
+     * The creation of IPv6 address failed.
+     */
+    OT_ERROR_IP6_ADDRESS_CREATION_FAILURE = 26,
+
+    /**
+     * Operation prevented by mode flags
+     */
+    OT_ERROR_NOT_CAPABLE = 27,
+
+    /**
+     * Coap response or acknowledgment or DNS, SNTP response not received.
+     */
+    OT_ERROR_RESPONSE_TIMEOUT = 28,
+
+    /**
+     * Received a duplicated frame.
+     */
+    OT_ERROR_DUPLICATED = 29,
+
+    /**
+     * Message is being dropped from reassembly list due to timeout.
+     */
+    OT_ERROR_REASSEMBLY_TIMEOUT = 30,
+
+    /**
+     * Message is not a TMF Message.
+     */
+    OT_ERROR_NOT_TMF = 31,
+
+    /**
+     * Received a non-lowpan data frame.
+     */
+    OT_ERROR_NOT_LOWPAN_DATA_FRAME = 32,
+
+    /**
+     * The link margin was too low.
+     */
+    OT_ERROR_LINK_MARGIN_LOW = 34,
+
+    /**
+     * The number of defined errors.
+     */
+    OT_NUM_ERRORS,
+
+    /**
+     * Generic error (should not use).
+     */
+    OT_ERROR_GENERIC = 255,
+};
+
+class otbrError
+{
+public:
+    otbrError()
+        : mError{OTBR_ERROR_NONE, 0}
+    {
+    }
+
+    otbrError(otbrErrorCode aError)
+        : mError{aError, 0}
+    {
+    }
+
+    otbrError(otbrEmbedOtError aOtError)
+        : mError{OTBR_ERROR_OPENTHREAD, static_cast<uint64_t>(aOtError)}
+    {
+    }
+
+    operator otbrErrorCode() { return mError.mTopError; }
+    operator otbrEmbedOtError() { return static_cast<otbrEmbedOtError>(mError.mEmbeddedError); }
+
+private:
+    otbrErrorVanilla mError;
 };
 
 namespace ot {
