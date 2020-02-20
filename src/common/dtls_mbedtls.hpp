@@ -71,9 +71,7 @@ extern "C" {
 
 #include "dtls.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Dtls {
 
@@ -347,8 +345,6 @@ private:
 
 } // namespace Dtls
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // DTLS_MBEDTLS_HPP_

@@ -33,7 +33,7 @@
 
 #include "crc16.hpp"
 
-namespace ot {
+namespace otbr {
 
 Crc16::Crc16(Polynomial aPolynomial)
 {
@@ -61,4 +61,4 @@ void Crc16::Update(uint8_t aByte)
     } while (--i);
 }
 
-} // namespace ot
+} // namespace otbr

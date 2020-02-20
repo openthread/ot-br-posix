@@ -34,9 +34,7 @@
 
 #include <stdarg.h>
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This class implements the basic functionality of an event emitter.
@@ -90,8 +88,6 @@ private:
     Events                              mEvents;
 };
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // EVENT_EMITTER_HPP_

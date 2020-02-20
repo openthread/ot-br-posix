@@ -37,8 +37,7 @@
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAscii)
     : mDtlsServer(Dtls::Server::Create(aInternalServerPort, JoinerSession::HandleSessionChange, this))
@@ -168,5 +167,4 @@ JoinerSession::~JoinerSession()
     Coap::Agent::Destroy(mCoapAgent);
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

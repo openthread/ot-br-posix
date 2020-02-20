@@ -41,8 +41,7 @@
 #include "common/dtls.hpp"
 #include "utils/pskc.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 class JoinerSession
 {
@@ -136,7 +135,6 @@ private:
     bool           mNeedAppendKek;
 };
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_JOINER_SESSION_HPP_

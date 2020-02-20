@@ -34,6 +34,8 @@
 #ifndef AGENT_INSTANCE_HPP_
 #define AGENT_INSTANCE_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdarg.h>
 #include <stdint.h>
 #include <sys/select.h>
@@ -42,9 +44,7 @@
 #include "border_agent.hpp"
 #include "ncp.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This class implements an instance to host services used by border router.
@@ -102,8 +102,6 @@ private:
     BorderAgent      mBorderAgent;
 };
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // AGENT_INSTANCE_HPP_

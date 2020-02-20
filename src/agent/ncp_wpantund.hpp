@@ -44,9 +44,7 @@
 
 #include "ncp.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -155,8 +153,6 @@ private:
 
 } // namespace Ncp
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif //  NCP_WPANTUND_HPP_

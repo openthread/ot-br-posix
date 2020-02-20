@@ -36,8 +36,7 @@
 
 #include <sys/socket.h>
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This function prints sockaddr struct to a string buffer
@@ -51,7 +50,6 @@ namespace BorderRouter {
  */
 char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength);
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_ADDR_UTILS_HPP_

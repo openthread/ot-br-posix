@@ -43,8 +43,7 @@
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 
-using namespace ot;
-using namespace ot::BorderRouter;
+using namespace otbr;
 
 static void HandleSignal(int aSignal)
 {

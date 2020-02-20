@@ -35,7 +35,7 @@
 
 #include "dbus_leave.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int DBusLeave::ProcessReply(void)
@@ -63,4 +63,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

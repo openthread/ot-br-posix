@@ -37,7 +37,7 @@
 #include "dbus_form.hpp"
 #include "wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int DBusForm::ProcessReply(void)
@@ -72,4 +72,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

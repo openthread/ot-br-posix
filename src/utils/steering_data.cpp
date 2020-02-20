@@ -33,7 +33,7 @@
 
 #include "crc16.hpp"
 
-namespace ot {
+namespace otbr {
 
 void SteeringData::Init(uint8_t aLength)
 {
@@ -77,4 +77,4 @@ void SteeringData::ComputeBloomFilter(const uint8_t *aJoinerId)
     SetBit(static_cast<uint8_t>(ansi.Get() % numBits));
 }
 
-} // namespace ot
+} // namespace otbr

@@ -36,7 +36,7 @@
 
 #include "dbus_gateway.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 DBusGateway::DBusGateway(void)
@@ -71,7 +71,7 @@ int DBusGateway::ProcessReply(void)
         else
         {
             // DATA-style
-            int length = ot::Utils::Hex2Bytes(mPrefix, mPrefixBytes, 8);
+            int length = otbr::Utils::Hex2Bytes(mPrefix, mPrefixBytes, 8);
             VerifyOrExit(length > 0, ret = kWpantundStatus_InvalidArgument);
         }
 
@@ -97,4 +97,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

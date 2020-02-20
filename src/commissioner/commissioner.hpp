@@ -60,8 +60,7 @@
 #include "utils/pskc.hpp"
 #include "utils/steering_data.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 class Commissioner
 {
@@ -247,7 +246,6 @@ private:
     static const int      kCoapResponseRetryTime;
 };
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_COMMISSIONER_HPP_

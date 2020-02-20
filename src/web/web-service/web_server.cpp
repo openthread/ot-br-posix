@@ -57,7 +57,7 @@
 #define OT_RESPONSE_FAILURE_STATUS "HTTP/1.1 400 Bad Request\r\n"
 #define OT_BUFFER_SIZE 1024
 
-namespace ot {
+namespace otbr {
 namespace Web {
 
 WebServer::WebServer(void)
@@ -335,4 +335,4 @@ std::string WebServer::HandleCommission(const std::string &aCommissionRequest)
 }
 
 } // namespace Web
-} // namespace ot
+} // namespace otbr

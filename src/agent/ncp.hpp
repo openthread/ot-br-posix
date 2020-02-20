@@ -46,9 +46,7 @@
 #include "common/event_emitter.hpp"
 #include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -173,8 +171,6 @@ public:
 
 } // namespace Ncp
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // NCP_HPP_

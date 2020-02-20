@@ -38,9 +38,7 @@
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -135,9 +133,7 @@ private:
 
 } // namespace Ncp
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
 

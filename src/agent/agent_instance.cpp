@@ -38,9 +38,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 AgentInstance::AgentInstance(Ncp::Controller *aNcp)
     : mNcp(aNcp)
@@ -79,6 +77,4 @@ AgentInstance::~AgentInstance(void)
     Ncp::Controller::Destroy(mNcp);
 }
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

@@ -54,7 +54,7 @@ extern "C" {
 
 #include "dbus_base.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 enum
@@ -237,5 +237,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr
 #endif // WPAN_CONTROLLER_HPP

@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace ot {
+namespace otbr {
 
 namespace Utils {
 
@@ -49,6 +49,6 @@ size_t Long2Hex(const uint64_t aLong, char *aHex);
 
 } // namespace Utils
 
-} // namespace ot
+} // namespace otbr
 
 #endif // HEX

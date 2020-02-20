@@ -37,8 +37,7 @@
 
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
 {
@@ -62,5 +61,4 @@ char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
     return aOutBuf;
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

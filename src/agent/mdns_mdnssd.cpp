@@ -47,9 +47,7 @@
 
 #include "dns_sd.h"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -431,6 +429,4 @@ void Publisher::Destroy(Publisher *aPublisher)
 
 } // namespace Mdns
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

@@ -48,8 +48,7 @@ extern "C" {
 #include <libubus.h>
 }
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Ncp {
 class ControllerOpenThread;
 }
@@ -57,7 +56,7 @@ class ControllerOpenThread;
 namespace ubus {
 
 /**
- * @namespace ot::BorderRouter::ubus
+ * @namespace otbr::ubus
  *
  * @brief
  *   This namespace contains definitions for ubus related instance.
@@ -1121,7 +1120,6 @@ private:
     void AppendResult(otError aError, struct ubus_context *aContext, struct ubus_request_data *aRequest);
 };
 } // namespace ubus
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTUBUS_HPP_

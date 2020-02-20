@@ -47,7 +47,7 @@
 #include "dbus_base.hpp"
 #include "wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 struct PropertyNameValue
@@ -78,5 +78,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr
 #endif // DBUS_GET_HPP

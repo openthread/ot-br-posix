@@ -52,7 +52,7 @@ template <class T> class Server;
 typedef boost::asio::ip::tcp::socket HTTP;
 } // namespace SimpleWeb
 
-namespace ot {
+namespace otbr {
 namespace Web {
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
@@ -123,12 +123,12 @@ private:
 
     void Init(void);
 
-    char                 mIfName[IFNAMSIZ];
-    HttpServer *         mServer;
-    ot::Web::WpanService mWpanService;
+    char                   mIfName[IFNAMSIZ];
+    HttpServer *           mServer;
+    otbr::Web::WpanService mWpanService;
 };
 
 } // namespace Web
-} // namespace ot
+} // namespace otbr
 
 #endif

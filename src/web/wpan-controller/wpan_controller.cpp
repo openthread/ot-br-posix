@@ -51,7 +51,7 @@
 #include "dbus_set.hpp"
 #include "wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int WPANController::Scan(void)
@@ -247,4 +247,4 @@ void WPANController::SetInterfaceName(const char *aIfName)
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

@@ -34,9 +34,7 @@
 #include "coap.hpp"
 #include "libcoap.h"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Coap {
 
@@ -316,9 +314,6 @@ private:
  */
 
 } // namespace Coap
-
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // COAP_LIBCOAP_HPP_

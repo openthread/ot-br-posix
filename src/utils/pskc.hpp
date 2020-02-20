@@ -45,7 +45,7 @@
 
 #include <mbedtls/cmac.h>
 
-namespace ot {
+namespace otbr {
 namespace Psk {
 
 enum
@@ -78,6 +78,6 @@ private:
 };
 
 } // namespace Psk
-} // namespace ot
+} // namespace otbr
 
 #endif // PSKC_HPP

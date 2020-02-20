@@ -36,7 +36,7 @@
 
 #include <stdint.h>
 
-namespace ot {
+namespace otbr {
 
 /**
  * This class implements CRC16 computations.
@@ -86,6 +86,6 @@ private:
     uint16_t mCrc;
 };
 
-} // namespace ot
+} // namespace otbr
 
 #endif // CRC16_HPP_

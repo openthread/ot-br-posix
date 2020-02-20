@@ -68,8 +68,7 @@
 #define MOJO_CONNECTOR_NS chromecast::external_service_support
 #endif
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Mdns {
 
 class MdnsMojoPublisher : public Publisher
@@ -198,7 +197,6 @@ private:
 };
 
 } // namespace Mdns
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif

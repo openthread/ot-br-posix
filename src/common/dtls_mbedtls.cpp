@@ -48,9 +48,7 @@
 #include "time.hpp"
 #include "types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Dtls {
 
@@ -741,6 +739,4 @@ exit:
 
 } // namespace Dtls
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

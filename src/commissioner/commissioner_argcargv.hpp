@@ -40,8 +40,7 @@
 #include "common/types.hpp"
 #include "utils/steering_data.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 struct CommissionerArgs
 {
@@ -59,7 +58,6 @@ struct CommissionerArgs
 
 otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs);
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_COMMISSIONER_ARGCARGV_HPP_

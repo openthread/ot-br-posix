@@ -17,22 +17,24 @@
 #include "common/logging.hpp"
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
+namespace otbr {
+namespace Web {
 
-Client::Client(void)
+OpenThreadClient::OpenThreadClient(void)
     : mTimeout(kDefaultTimeout)
     , mSocket(-1)
 {
 }
 
-Client::~Client(void)
+OpenThreadClient::~OpenThreadClient(void)
 {
     if (mSocket != -1)
     {
         close(mSocket);
     }
 }
-bool Client::Connect(void)
+
+bool OpenThreadClient::Connect(void)
 {
     struct sockaddr_un sockname;
     int                ret;
@@ -55,7 +57,7 @@ exit:
     return ret == 0;
 }
 
-char *Client::Execute(const char *aFormat, ...)
+char *OpenThreadClient::Execute(const char *aFormat, ...)
 {
     va_list args;
     int     ret;
@@ -131,7 +133,7 @@ exit:
     return rval;
 }
 
-int Client::Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength)
+int OpenThreadClient::Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength)
 {
     char *result;
     int   rval = 0;
@@ -187,7 +189,7 @@ exit:
     return rval;
 }
 
-bool Client::FactoryReset(void)
+bool OpenThreadClient::FactoryReset(void)
 {
     const char *result;
     bool        rval = false;
@@ -203,4 +205,5 @@ exit:
     return rval;
 }
 
-} // namespace ot
+} // namespace Web
+} // namespace otbr

@@ -36,7 +36,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Psk {
 
 void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
@@ -117,4 +117,4 @@ const uint8_t *Pskc::ComputePskc(const uint8_t *aExtPanId, const char *aNetworkN
 }
 
 } // namespace Psk
-} // namespace ot
+} // namespace otbr

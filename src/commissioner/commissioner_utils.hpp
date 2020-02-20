@@ -41,8 +41,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Utils {
 
 /**
@@ -82,7 +81,6 @@ template <typename T> T Max(const T &lhs, const T &rhs)
 }
 
 } // namespace Utils
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_COMMISSIONER_UTILS_HPP_

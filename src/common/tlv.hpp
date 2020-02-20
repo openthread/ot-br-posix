@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <string.h>
 
-namespace ot {
+namespace otbr {
 
 /**
  * This class implements TMF Tlv functionality.
@@ -230,6 +230,6 @@ enum
 
 } // namespace Meshcop
 
-} // namespace ot
+} // namespace otbr
 
 #endif // TLV_HPP_

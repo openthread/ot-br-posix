@@ -56,8 +56,7 @@
 #include "base/task/single_thread_task_executor.h"
 #endif
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Mdns {
 
 void MdnsMojoPublisher::LaunchMojoThreads(void)
@@ -77,7 +76,7 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
     mMojoTaskRunner = mainLoop.task_runner();
 #else
     base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
-    base::RunLoop          runLoop;
+    base::RunLoop                  runLoop;
 
     mojo::core::Init();
     mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
@@ -319,5 +318,4 @@ void Publisher::Destroy(Publisher *aPublisher)
 }
 
 } // namespace Mdns
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

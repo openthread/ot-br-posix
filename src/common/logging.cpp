@@ -116,7 +116,7 @@ static int LogCheck(int aLevel)
 /** return the time, in milliseconds since application start */
 static unsigned long GetMsecsNow(void)
 {
-    unsigned long now = ot::BorderRouter::GetNow();
+    unsigned long now = otbr::GetNow();
 
     now -= sMsecsStart;
     return now;
@@ -180,7 +180,7 @@ void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr)
     assert(aIdent);
     assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
 
-    sMsecsStart = ot::BorderRouter::GetNow();
+    sMsecsStart = otbr::GetNow();
 
     /* only open the syslog once... */
     if (!sSyslogOpened)

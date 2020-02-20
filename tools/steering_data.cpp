@@ -39,8 +39,6 @@
 #include "utils/hex.hpp"
 #include "utils/steering_data.hpp"
 
-using namespace ot;
-
 void help(void)
 {
     printf("steering-data - compute steering data\n"
@@ -56,9 +54,10 @@ int ComputeJoinerId(const char *aEui64, uint8_t *aJoinerId)
 {
     int ret = -1;
 
-    VerifyOrExit(strlen(aEui64) == SteeringData::kSizeJoinerId * 2);
-    VerifyOrExit(ot::Utils::Hex2Bytes(aEui64, aJoinerId, SteeringData::kSizeJoinerId) == SteeringData::kSizeJoinerId);
-    ot::SteeringData::ComputeJoinerId(aJoinerId, aJoinerId);
+    VerifyOrExit(strlen(aEui64) == otbr::SteeringData::kSizeJoinerId * 2);
+    VerifyOrExit(otbr::Utils::Hex2Bytes(aEui64, aJoinerId, otbr::SteeringData::kSizeJoinerId) ==
+                 otbr::SteeringData::kSizeJoinerId);
+    otbr::SteeringData::ComputeJoinerId(aJoinerId, aJoinerId);
     ret = 0;
 
 exit:
@@ -72,20 +71,20 @@ exit:
 
 int main(int argc, char *argv[])
 {
-    ot::SteeringData computer;
-    int              ret    = -1;
-    int              length = 16;
-    int              i      = 1;
+    otbr::SteeringData computer;
+    int                ret    = -1;
+    int                length = 16;
+    int                i      = 1;
 
     if (argc < 2)
     {
         ExitNow(help());
     }
 
-    if (strlen(argv[i]) != SteeringData::kSizeJoinerId * 2)
+    if (strlen(argv[i]) != otbr::SteeringData::kSizeJoinerId * 2)
     {
         length = atoi(argv[i]);
-        VerifyOrExit(length > 0 && length <= SteeringData::kMaxSizeOfBloomFilter,
+        VerifyOrExit(length > 0 && length <= otbr::SteeringData::kMaxSizeOfBloomFilter,
                      fprintf(stderr, "Invalid bloom filter length: %d\n", length));
 
         ++i;
@@ -95,7 +94,7 @@ int main(int argc, char *argv[])
 
     for (; i < argc; ++i)
     {
-        uint8_t joinerId[SteeringData::kSizeJoinerId];
+        uint8_t joinerId[otbr::SteeringData::kSizeJoinerId];
 
         VerifyOrExit(ComputeJoinerId(argv[i], joinerId) == 0, fprintf(stderr, "Invalid EUI64 : %s\n", argv[i]));
         computer.ComputeBloomFilter(joinerId);

@@ -39,9 +39,7 @@
 
 #include "types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Dtls {
 
@@ -242,8 +240,6 @@ public:
 
 } // namespace Dtls
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // DTLS_HPP_

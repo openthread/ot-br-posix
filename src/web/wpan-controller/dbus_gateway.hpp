@@ -45,7 +45,7 @@
 #include "wpan_controller.hpp"
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 class DBusGateway : public DBusBase
@@ -78,5 +78,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr
 #endif // DBUS_GATEWAY_HPP

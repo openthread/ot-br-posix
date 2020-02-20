@@ -39,9 +39,7 @@
 #include "mdns.hpp"
 #include "ncp.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * @addtogroup border-router-border-agent
@@ -156,8 +154,6 @@ private:
  * @}
  */
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // BORDER_AGENT_HPP_

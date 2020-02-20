@@ -33,9 +33,7 @@
 
 #include <sys/time.h>
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This method returns the timestamp in miniseconds of @aTime.
@@ -64,8 +62,6 @@ inline unsigned long GetNow(void)
     return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
 }
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // TIME_HPP_

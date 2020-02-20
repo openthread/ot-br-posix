@@ -35,7 +35,7 @@
 
 #include "dbus_get.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent, bool aBare)
@@ -252,4 +252,4 @@ PropertyNameValue *DBusGet::GetPropertyList(void)
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

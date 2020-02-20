@@ -38,7 +38,7 @@
 
 #include "dbus_ifname.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int DBusIfname::ProcessReply(void)
@@ -89,4 +89,4 @@ char *DBusIfname::GetDBusName(void)
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

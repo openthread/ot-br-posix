@@ -64,7 +64,7 @@
 #define OT_HEX_PREFIX_LENGTH 2
 #define OT_PUBLISH_SERVICE_INTERVAL 20
 
-namespace ot {
+namespace otbr {
 namespace Web {
 
 /**
@@ -171,17 +171,17 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
-    int RunCommission(BorderRouter::CommissionerArgs aArgs);
+    int RunCommission(CommissionerArgs aArgs);
 
-    ot::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
-    int                       mNetworksCount;
-    char                      mIfName[IFNAMSIZ];
-    std::string               mNetworkName;
-    std::string               mExtPanId;
-    const char *              mResponseSuccess = "successful";
-    const char *              mResponseFail    = "failed";
-    const char *              mServiceUp       = "up";
-    const char *              mServiceDown     = "down";
+    otbr::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
+    int                         mNetworksCount;
+    char                        mIfName[IFNAMSIZ];
+    std::string                 mNetworkName;
+    std::string                 mExtPanId;
+    const char *                mResponseSuccess = "successful";
+    const char *                mResponseFail    = "failed";
+    const char *                mServiceUp       = "up";
+    const char *                mServiceDown     = "down";
 
     enum
     {
@@ -205,6 +205,6 @@ private:
 };
 
 } // namespace Web
-} // namespace ot
+} // namespace otbr
 
 #endif

@@ -46,8 +46,7 @@
 static bool sReset;
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
@@ -211,8 +210,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 }
 
 } // namespace Ncp
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 void otPlatReset(otInstance *aInstance)
 {

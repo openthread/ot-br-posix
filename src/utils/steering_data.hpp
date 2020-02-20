@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <string.h>
 
-namespace ot {
+namespace otbr {
 
 /**
  * This class represents Steering Data
@@ -116,6 +116,6 @@ private:
     uint8_t mLength;
 };
 
-} /* namespace ot */
+} /* namespace otbr */
 
 #endif // STEERING_DATA_HPP

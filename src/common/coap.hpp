@@ -39,9 +39,7 @@
 
 #include "types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Coap {
 
@@ -355,8 +353,6 @@ public:
 
 } // namespace Coap
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // COAP_HPP_

@@ -108,9 +108,7 @@ struct AvahiTimeout
     AvahiTimeout(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext, void *aPoller);
 };
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -310,9 +308,7 @@ private:
 
 } // namespace Mdns
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 /**
  * @}

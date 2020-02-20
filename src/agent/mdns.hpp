@@ -38,9 +38,7 @@
 
 #include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -180,8 +178,6 @@ public:
 
 } // namespace Mdns
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // MDNS_HPP_

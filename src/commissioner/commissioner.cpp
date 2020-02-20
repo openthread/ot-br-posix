@@ -48,8 +48,7 @@
 #include "utils/pskc.hpp"
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 const uint16_t Commissioner::kPortJoinerSession      = 49192;
 const uint8_t  Commissioner::kSeed[]                 = "Commissioner";
@@ -678,5 +677,4 @@ Commissioner::~Commissioner(void)
     Coap::Agent::Destroy(mCoapAgent);
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

@@ -44,8 +44,7 @@
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 /** Handle the preshared joining credential for the joining device on the command line */
 static bool CheckPSKd(const char *aPSKd)
@@ -273,7 +272,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
     }
 
     {
-        ot::Psk::Pskc pskc;
+        otbr::Psk::Pskc pskc;
 
         memcpy(aArgs.mPSKc, pskc.ComputePskc(xPanId, networkName, networkPassword), sizeof(aArgs.mPSKc));
     }
@@ -289,5 +288,4 @@ exit:
     return error;
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

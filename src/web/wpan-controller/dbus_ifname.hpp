@@ -41,7 +41,7 @@
 #include "dbus_base.hpp"
 #include "wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 class DBusIfname : public DBusBase
@@ -54,5 +54,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr
 #endif // DBUS_IFNAME_HPP

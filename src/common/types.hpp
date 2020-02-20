@@ -56,7 +56,7 @@ enum otbrError
     OTBR_ERROR_MDNS  = -4, ///< MDNS error.
 };
 
-namespace ot {
+namespace otbr {
 
 enum
 {
@@ -115,6 +115,6 @@ public:
     };
 };
 
-} // namespace ot
+} // namespace otbr
 
 #endif // TYPES_HPP_

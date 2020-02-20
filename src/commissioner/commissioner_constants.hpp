@@ -36,8 +36,7 @@
 
 #include "netinet/in.h"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * Constants
@@ -78,7 +77,6 @@ enum
     kKEKSize = 32, ///< key encrypted key(KEK) size
 };
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_COMMISSION_COMMON_H_

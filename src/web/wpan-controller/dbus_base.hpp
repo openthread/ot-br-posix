@@ -38,7 +38,7 @@
 
 #include "common/logging.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 class DBusBase
@@ -75,5 +75,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr
 #endif // DBUS_BASE_HPP

@@ -30,25 +30,26 @@
 
 #include "../wpan-controller/wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
+namespace Web {
 
 /**
  * This class implements functionality of OpenThread client.
  *
  */
-class Client
+class OpenThreadClient
 {
 public:
     /**
      * This constructor creates an OpenThread client.
      *
      */
-    Client(void);
+    OpenThreadClient(void);
     /**
      * This destructor destories an OpenThread client.
      *
      */
-    ~Client(void);
+    ~OpenThreadClient(void);
 
     /**
      * This method connects to OpenThread daemon.
@@ -99,6 +100,7 @@ private:
     int  mSocket;
 };
 
-} // namespace ot
+} // namespace Web
+} // namespace otbr
 
 #endif // OT_CLIENT_HPP_
