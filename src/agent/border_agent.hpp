@@ -31,8 +31,8 @@
  *   This file includes definition for Thread border agent.
  */
 
-#ifndef BORDER_AGENT_HPP_
-#define BORDER_AGENT_HPP_
+#ifndef OTBR_AGENT_BORDER_AGENT_HPP_
+#define OTBR_AGENT_BORDER_AGENT_HPP_
 
 #include <stdint.h>
 
@@ -156,4 +156,4 @@ private:
 
 } // namespace otbr
 
-#endif // BORDER_AGENT_HPP_
+#endif // OTBR_AGENT_BORDER_AGENT_HPP_

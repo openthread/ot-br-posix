@@ -31,8 +31,8 @@
  *   This file includes definition for CoAP service.
  */
 
-#ifndef COAP_HPP_
-#define COAP_HPP_
+#ifndef OTBR_COMMON_COAP_HPP_
+#define OTBR_COMMON_COAP_HPP_
 
 #include <stdint.h>
 #include <unistd.h>
@@ -355,4 +355,4 @@ public:
 
 } // namespace otbr
 
-#endif // COAP_HPP_
+#endif // OTBR_COMMON_COAP_HPP_

@@ -31,8 +31,8 @@
  *   This file includes definitions for CRC16 computations.
  */
 
-#ifndef CRC16_HPP_
-#define CRC16_HPP_
+#ifndef OTBR_UTILS_CRC16_HPP_
+#define OTBR_UTILS_CRC16_HPP_
 
 #include <stdint.h>
 
@@ -88,4 +88,4 @@ private:
 
 } // namespace otbr
 
-#endif // CRC16_HPP_
+#endif // OTBR_UTILS_CRC16_HPP_

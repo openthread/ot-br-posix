@@ -31,8 +31,8 @@
  *   The file is the header for the command line params for the commissioner test app.
  */
 
-#ifndef OTBR_COMMISSION_COMMON_H_
-#define OTBR_COMMISSION_COMMON_H_
+#ifndef OTBR_COMMISSION_CONSTANTS_H_
+#define OTBR_COMMISSION_CONSTANTS_H_
 
 #include "netinet/in.h"
 
@@ -79,4 +79,4 @@ enum
 
 } // namespace otbr
 
-#endif // OTBR_COMMISSION_COMMON_H_
+#endif // OTBR_COMMISSION_CONSTANTS_H_

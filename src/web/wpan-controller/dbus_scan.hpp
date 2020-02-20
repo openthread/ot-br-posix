@@ -31,8 +31,8 @@
  *   This file implements "scan" Thread Network function.
  */
 
-#ifndef DBUS_SCAN_HPP
-#define DBUS_SCAN_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_SCAN_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_SCAN_HPP_
 
 #include <stdio.h>
 
@@ -64,4 +64,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_SCAN_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_SCAN_HPP_

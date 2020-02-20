@@ -31,8 +31,8 @@
  *   This file implements the function of "configure gateway" function.
  */
 
-#ifndef DBUS_GATEWAY_HPP
-#define DBUS_GATEWAY_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_
 
 #define OT_INET6_ADDR_STR_LENGTH 46
 
@@ -79,4 +79,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_GATEWAY_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_

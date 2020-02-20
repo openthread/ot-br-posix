@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COAP_LIBCOAP_HPP_
-#define COAP_LIBCOAP_HPP_
+#ifndef OTBR_COMMON_COAP_LIBCOAP_HPP_
+#define OTBR_COMMON_COAP_LIBCOAP_HPP_
 
 #include <map>
 
@@ -316,4 +316,4 @@ private:
 } // namespace Coap
 } // namespace otbr
 
-#endif // COAP_LIBCOAP_HPP_
+#endif // OTBR_COMMON_COAP_LIBCOAP_HPP_

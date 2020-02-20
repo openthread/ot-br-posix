@@ -31,8 +31,8 @@
  *   This file implements the function of "get property"
  */
 
-#ifndef DBUS_GET_HPP
-#define DBUS_GET_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_
 
 #define OT_LIST_MAX_LENGTH 100
 #define OT_PROPERTY_NAME_SIZE 512
@@ -79,4 +79,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_GET_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_

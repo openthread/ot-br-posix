@@ -31,8 +31,8 @@
  *   This file includes definition for Thread border router agent instance.
  */
 
-#ifndef AGENT_INSTANCE_HPP_
-#define AGENT_INSTANCE_HPP_
+#ifndef OTBR_AGENT_AGENT_INSTANCE_HPP_
+#define OTBR_AGENT_AGENT_INSTANCE_HPP_
 
 #include "openthread-br/config.h"
 
@@ -104,4 +104,4 @@ private:
 
 } // namespace otbr
 
-#endif // AGENT_INSTANCE_HPP_
+#endif // OTBR_AGENT_AGENT_INSTANCE_HPP_

@@ -31,8 +31,8 @@
  *   This file includes definition for mbedTLS-based DTLS implementation.
  */
 
-#ifndef DTLS_MBEDTLS_HPP_
-#define DTLS_MBEDTLS_HPP_
+#ifndef OTBR_COMMON_DTLS_MBEDTLS_HPP_
+#define OTBR_COMMON_DTLS_MBEDTLS_HPP_
 
 #include <vector>
 
@@ -347,4 +347,4 @@ private:
 
 } // namespace otbr
 
-#endif // DTLS_MBEDTLS_HPP_
+#endif // OTBR_COMMON_DTLS_MBEDTLS_HPP_

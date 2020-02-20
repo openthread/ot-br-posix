@@ -31,8 +31,8 @@
  *   This file includes definitions for NCP service based on wpantund.
  */
 
-#ifndef NCP_WPANTUND_HPP_
-#define NCP_WPANTUND_HPP_
+#ifndef OTBR_AGENT_NCP_WPANTUND_HPP_
+#define OTBR_AGENT_NCP_WPANTUND_HPP_
 
 #include <map>
 
@@ -155,4 +155,4 @@ private:
 
 } // namespace otbr
 
-#endif //  NCP_WPANTUND_HPP_
+#endif //  OTBR_AGENT_NCP_WPANTUND_HPP_

@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TIME_HPP_
-#define TIME_HPP_
+#ifndef OTBR_COMMON_TIME_HPP_
+#define OTBR_COMMON_TIME_HPP_
 
 #include <stdint.h>
 
@@ -64,4 +64,4 @@ inline unsigned long GetNow(void)
 
 } // namespace otbr
 
-#endif // TIME_HPP_
+#endif // OTBR_COMMON_TIME_HPP_

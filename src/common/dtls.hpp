@@ -31,8 +31,8 @@
  *   This file includes definition for DTLS service.
  */
 
-#ifndef DTLS_HPP_
-#define DTLS_HPP_
+#ifndef OTBR_COMMON_DTLS_HPP_
+#define OTBR_COMMON_DTLS_HPP_
 
 #include <sys/select.h>
 #include <unistd.h>
@@ -242,4 +242,4 @@ public:
 
 } // namespace otbr
 
-#endif // DTLS_HPP_
+#endif // OTBR_COMMON_DTLS_HPP_

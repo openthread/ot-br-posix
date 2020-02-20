@@ -30,7 +30,7 @@
  * @file
  *   The file implements the command line params for the commissioner test app.
  */
-#include "commissioner_argcargv.hpp"
+#include "commissioner/arguments.hpp"
 
 #include <assert.h>
 #include <ctype.h>

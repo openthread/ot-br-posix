@@ -31,8 +31,8 @@
  *   This file implements "join" Thread Network function.
  */
 
-#ifndef DBUS_JOIN_HPP
-#define DBUS_JOIN_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_JOIN_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_JOIN_HPP_
 
 #include <stdio.h>
 
@@ -71,4 +71,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_JOIN_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_JOIN_HPP_

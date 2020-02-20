@@ -31,8 +31,8 @@
  *   This file implements the web server of border router
  */
 
-#ifndef WEB_SERVER
-#define WEB_SERVER
+#ifndef OTBR_WEB_WEB_SERVICE_WEB_SERVER_
+#define OTBR_WEB_WEB_SERVICE_WEB_SERVER_
 
 #include <algorithm>
 #include <fstream>
@@ -131,4 +131,4 @@ private:
 } // namespace Web
 } // namespace otbr
 
-#endif
+#endif // OTBR_WEB_WEB_SERVICE_WEB_SERVER_

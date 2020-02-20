@@ -31,8 +31,8 @@
  *   This file implements the basic DBus operations
  */
 
-#ifndef DBUS_BASE_HPP
-#define DBUS_BASE_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_
 
 #include <dbus/dbus.h>
 
@@ -76,4 +76,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_BASE_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_

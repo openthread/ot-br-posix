@@ -37,8 +37,8 @@
 
 #include <signal.h>
 
+#include "arguments.hpp"
 #include "commissioner.hpp"
-#include "commissioner_argcargv.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"

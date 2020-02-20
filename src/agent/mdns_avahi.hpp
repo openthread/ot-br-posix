@@ -31,8 +31,8 @@
  *   This file includes definition for MDNS service based on avahi.
  */
 
-#ifndef MDNS_AVAHI_HPP_
-#define MDNS_AVAHI_HPP_
+#ifndef OTBR_AGENT_MDNS_AVAHI_HPP_
+#define OTBR_AGENT_MDNS_AVAHI_HPP_
 
 #include <vector>
 
@@ -313,4 +313,4 @@ private:
 /**
  * @}
  */
-#endif // MDNS_AVAHI_HPP_
+#endif // OTBR_AGENT_MDNS_AVAHI_HPP_

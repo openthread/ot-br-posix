@@ -31,8 +31,8 @@
  *   This file implements "set property" function.
  */
 
-#ifndef DBUS_SET_HPP
-#define DBUS_SET_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_
 
 #include <stdio.h>
 
@@ -74,4 +74,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_SET_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_

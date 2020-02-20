@@ -31,8 +31,8 @@
  *   This file provides kinds of convertion functions.
  */
 
-#ifndef HEX_HPP
-#define HEX_HPP
+#ifndef OTBR_UTILS_HEX_HPP_
+#define OTBR_UTILS_HEX_HPP_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -51,4 +51,4 @@ size_t Long2Hex(const uint64_t aLong, char *aHex);
 
 } // namespace otbr
 
-#endif // HEX
+#endif // OTBR_UTILS_HEX_

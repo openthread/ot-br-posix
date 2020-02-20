@@ -31,8 +31,8 @@
  *   This file includes definition for Thread Management Framework(TMF) Tlv.
  */
 
-#ifndef TLV_HPP_
-#define TLV_HPP_
+#ifndef OTBR_COMMON_TLV_HPP_
+#define OTBR_COMMON_TLV_HPP_
 
 #include <stdint.h>
 #include <string.h>
@@ -232,4 +232,4 @@ enum
 
 } // namespace otbr
 
-#endif // TLV_HPP_
+#endif // OTBR_COMMON_TLV_HPP_

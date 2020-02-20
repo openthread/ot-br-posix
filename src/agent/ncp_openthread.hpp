@@ -31,8 +31,8 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef NCP_POSIX_HPP_
-#define NCP_POSIX_HPP_
+#ifndef OTBR_AGENT_NCP_OPENTHREAD_HPP_
+#define OTBR_AGENT_NCP_OPENTHREAD_HPP_
 
 #include "ncp.hpp"
 
@@ -137,4 +137,4 @@ private:
 
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
 
-#endif // NCP_POSIX_HPP_
+#endif // OTBR_AGENT_NCP_OPENTHREAD_HPP_

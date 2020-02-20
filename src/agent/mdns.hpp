@@ -31,8 +31,8 @@
  *   This file includes definition for MDNS service.
  */
 
-#ifndef MDNS_HPP_
-#define MDNS_HPP_
+#ifndef OTBR_AGENT_MDNS_HPP_
+#define OTBR_AGENT_MDNS_HPP_
 
 #include <sys/select.h>
 
@@ -180,4 +180,4 @@ public:
 
 } // namespace otbr
 
-#endif // MDNS_HPP_
+#endif // OTBR_AGENT_MDNS_HPP_

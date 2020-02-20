@@ -31,8 +31,8 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef OTBR_MAINLOOP_HPP_
-#define OTBR_MAINLOOP_HPP_
+#ifndef OTBR_COMMON_OTBR_MAINLOOP_HPP_
+#define OTBR_COMMON_OTBR_MAINLOOP_HPP_
 
 #include <sys/select.h>
 
@@ -57,4 +57,4 @@ typedef struct otSysMainloopContext
 } // end of extern "C"
 #endif
 
-#endif // OTBR_MAINLOOP_HPP_
+#endif // OTBR_COMMON_OTBR_MAINLOOP_HPP_

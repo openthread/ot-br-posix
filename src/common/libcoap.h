@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBCOAP_H_
-#define LIBCOAP_H_
+#ifndef OTBR_COMMON_LIBCOAP_H_
+#define OTBR_COMMON_LIBCOAP_H_
 
 /// @cond
 
@@ -53,4 +53,4 @@ typedef struct coap_packet_t
 
 /// @endcond
 
-#endif
+#endif // OTBR_COMMON_LIBCOAP_H_

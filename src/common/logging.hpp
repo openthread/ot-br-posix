@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LOGGING_HPP_
-#define LOGGING_HPP_
+#ifndef OTBR_COMMON_LOGGING_HPP_
+#define OTBR_COMMON_LOGGING_HPP_
 
 #include "types.hpp"
 #include <stdarg.h>
@@ -145,4 +145,4 @@ const char *otbrErrorString(otbrError aError);
  */
 void otbrLogDeinit(void);
 
-#endif // LOGGING_HPP_
+#endif // OTBR_COMMON_LOGGING_HPP_

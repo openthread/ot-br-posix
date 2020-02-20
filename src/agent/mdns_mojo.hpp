@@ -31,8 +31,8 @@
  *   This file includes definition for MDNS service based on mojo.
  */
 
-#ifndef MDNS_MOJO_HPP__
-#define MDNS_MOJO_HPP__
+#ifndef OTBR_AGENT_MDNS_MOJO_HPP__
+#define OTBR_AGENT_MDNS_MOJO_HPP__
 
 #include <base/macros.h>
 #include <base/message_loop/message_loop.h>
@@ -199,4 +199,4 @@ private:
 } // namespace Mdns
 } // namespace otbr
 
-#endif
+#endif // OTBR_AGENT_MDNS_MOJO_HPP__

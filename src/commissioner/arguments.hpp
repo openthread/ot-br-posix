@@ -31,12 +31,12 @@
  *   The file is the header for the command line parameters for the commissioner app.
  */
 
-#ifndef OTBR_COMMISSIONER_ARGCARGV_HPP_
-#define OTBR_COMMISSIONER_ARGCARGV_HPP_
+#ifndef OTBR_COMMISSIONER_ARGUMENTS_HPP_
+#define OTBR_COMMISSIONER_ARGUMENTS_HPP_
 
 #include <stdint.h>
 
-#include "commissioner_constants.hpp"
+#include "commissioner/constants.hpp"
 #include "common/types.hpp"
 #include "utils/steering_data.hpp"
 
@@ -60,4 +60,4 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs);
 
 } // namespace otbr
 
-#endif // OTBR_COMMISSIONER_ARGCARGV_HPP_
+#endif // OTBR_COMMISSIONER_ARGUMENTS_HPP_

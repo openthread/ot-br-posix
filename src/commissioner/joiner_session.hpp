@@ -36,7 +36,7 @@
 
 #include <sys/socket.h>
 
-#include "commissioner_constants.hpp"
+#include "commissioner/constants.hpp"
 #include "common/coap.hpp"
 #include "common/dtls.hpp"
 #include "utils/pskc.hpp"

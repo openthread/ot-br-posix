@@ -31,8 +31,8 @@
  *   This file provides commissioner steering data calculations
  */
 
-#ifndef STEERING_DATA_HPP
-#define STEERING_DATA_HPP
+#ifndef OTBR_UTILS_STEERING_DATA_HPP_
+#define OTBR_UTILS_STEERING_DATA_HPP_
 
 #include <stdint.h>
 #include <string.h>
@@ -118,4 +118,4 @@ private:
 
 } /* namespace otbr */
 
-#endif // STEERING_DATA_HPP
+#endif // OTBR_UTILS_STEERING_DATA_HPP_

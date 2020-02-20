@@ -31,8 +31,8 @@
  *   The file is the header for the address manipulation utilities for the commissioner test app.
  */
 
-#ifndef OTBR_ADDR_UTILS_HPP_
-#define OTBR_ADDR_UTILS_HPP_
+#ifndef OTBR_COMMISSIONER_ADDR_UTILS_HPP_
+#define OTBR_COMMISSIONER_ADDR_UTILS_HPP_
 
 #include <sys/socket.h>
 
@@ -52,4 +52,4 @@ char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength);
 
 } // namespace otbr
 
-#endif // OTBR_ADDR_UTILS_HPP_
+#endif // OTBR_COMMISSIONER_ADDR_UTILS_HPP_

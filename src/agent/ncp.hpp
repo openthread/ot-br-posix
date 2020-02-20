@@ -31,8 +31,8 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef NCP_HPP_
-#define NCP_HPP_
+#ifndef OTBR_AGENT_NCP_HPP_
+#define OTBR_AGENT_NCP_HPP_
 
 #include <openthread-br/config.h>
 
@@ -173,4 +173,4 @@ public:
 
 } // namespace otbr
 
-#endif // NCP_HPP_
+#endif // OTBR_AGENT_NCP_HPP_

@@ -31,8 +31,8 @@
  *   This file implements function of "look up" DBus interface name.
  */
 
-#ifndef DBUS_IFNAME_HPP
-#define DBUS_IFNAME_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_IFNAME_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_IFNAME_HPP_
 
 #include <stdio.h>
 
@@ -55,4 +55,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_IFNAME_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_IFNAME_HPP_

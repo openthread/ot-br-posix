@@ -31,8 +31,8 @@
  *   This file implements the function of "form" a new Thread Network.
  */
 
-#ifndef DBUS_FORM_HPP
-#define DBUS_FORM_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_FORM_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_FORM_HPP_
 
 #include <stdint.h>
 #include <stdio.h>
@@ -69,4 +69,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // DBUS_FORM_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_FORM_HPP_

@@ -31,8 +31,8 @@
  *   This file includes definition for data types used by Thread border agent.
  */
 
-#ifndef TYPES_HPP_
-#define TYPES_HPP_
+#ifndef OTBR_COMMON_TYPES_HPP_
+#define OTBR_COMMON_TYPES_HPP_
 
 #include <stdint.h>
 
@@ -117,4 +117,4 @@ public:
 
 } // namespace otbr
 
-#endif // TYPES_HPP_
+#endif // OTBR_COMMON_TYPES_HPP_

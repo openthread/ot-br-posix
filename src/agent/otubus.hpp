@@ -26,8 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTUBUS_HPP_
-#define OTUBUS_HPP_
+#ifndef OTBR_AGENT_OTUBUS_HPP_
+#define OTBR_AGENT_OTUBUS_HPP_
 
 #include <stdarg.h>
 #include <time.h>
@@ -1122,4 +1122,4 @@ private:
 } // namespace ubus
 } // namespace otbr
 
-#endif // OTUBUS_HPP_
+#endif // OTBR_AGENT_OTUBUS_HPP_

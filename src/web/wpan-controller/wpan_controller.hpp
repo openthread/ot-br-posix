@@ -31,8 +31,8 @@
  *   This file provides DBus operations APIs for other modules to control the WPAN interface.
  */
 
-#ifndef WPAN_CONTROLLER_HPP
-#define WPAN_CONTROLLER_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_WPAN_CONTROLLER_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_WPAN_CONTROLLER_HPP_
 
 #define OT_SCANNED_NET_BUFFER_SIZE 250
 #define OT_SET_MAX_DATA_SIZE 250
@@ -238,4 +238,4 @@ private:
 
 } // namespace Dbus
 } // namespace otbr
-#endif // WPAN_CONTROLLER_HPP
+#endif // OTBR_WEB_WPAN_CONTROLLER_WPAN_CONTROLLER_HPP_

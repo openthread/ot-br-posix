@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef EVENT_EMITTER_HPP_
-#define EVENT_EMITTER_HPP_
+#ifndef OTBR_COMMON_EVENT_EMITTER_HPP_
+#define OTBR_COMMON_EVENT_EMITTER_HPP_
 
 #include <list>
 #include <map>
@@ -90,4 +90,4 @@ private:
 
 } // namespace otbr
 
-#endif // EVENT_EMITTER_HPP_
+#endif // OTBR_COMMON_EVENT_EMITTER_HPP_

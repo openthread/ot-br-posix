@@ -31,8 +31,8 @@
  *   This file implements the wpan controller service
  */
 
-#ifndef WPAN_SERVICE
-#define WPAN_SERVICE
+#ifndef OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_
+#define OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_
 
 #include <openthread-br/config.h>
 
@@ -48,8 +48,8 @@
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
 
+#include "commissioner/arguments.hpp"
 #include "commissioner/commissioner.hpp"
-#include "commissioner/commissioner_argcargv.hpp"
 
 /**
  * WPAN parameter constants
@@ -207,4 +207,4 @@ private:
 } // namespace Web
 } // namespace otbr
 
-#endif
+#endif // OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_

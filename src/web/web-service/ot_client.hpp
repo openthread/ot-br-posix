@@ -25,8 +25,8 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef OT_CLIENT_HPP_
-#define OT_CLIENT_HPP_
+#ifndef OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
+#define OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 
 #include "../wpan-controller/wpan_controller.hpp"
 
@@ -103,4 +103,4 @@ private:
 } // namespace Web
 } // namespace otbr
 
-#endif // OT_CLIENT_HPP_
+#endif // OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
