@@ -53,7 +53,6 @@ libotbr_commissioner_la_SOURCES                       = \
 libotbr_commissioner_la_CPPFLAGS                      = \
     -I$(top_srcdir)/include                             \
     -I$(top_srcdir)/src                                 \
-    -I$(top_srcdir)/src/web                             \
     $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 
