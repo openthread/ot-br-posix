@@ -29,6 +29,8 @@
 #ifndef OTBR_COMMON_EVENT_EMITTER_HPP_
 #define OTBR_COMMON_EVENT_EMITTER_HPP_
 
+#include "openthread-br/config.h"
+
 #include <list>
 #include <map>
 

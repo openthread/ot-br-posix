@@ -31,7 +31,7 @@
  *   The file is the implementation of the address manipulation utilities for the commissioner test app.
  */
 
-#include "addr_utils.hpp"
+#include "commissioner/addr_utils.hpp"
 
 #include <arpa/inet.h>
 

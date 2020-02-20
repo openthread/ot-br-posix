@@ -31,7 +31,7 @@
  *   This file implements MDNS service based on avahi.
  */
 
-#include "mdns_mdnssd.hpp"
+#include "agent/mdns_mdnssd.hpp"
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -44,8 +44,6 @@
 #include "common/logging.hpp"
 #include "common/time.hpp"
 #include "utils/strcpy_utils.hpp"
-
-#include "dns_sd.h"
 
 namespace otbr {
 

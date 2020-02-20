@@ -31,7 +31,7 @@
  *   The file implements the Thread border agent.
  */
 
-#include "border_agent.hpp"
+#include "agent/border_agent.hpp"
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -42,9 +42,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "border_agent.hpp"
-#include "ncp.hpp"
-#include "uris.hpp"
+#include "agent/border_agent.hpp"
+#include "agent/ncp.hpp"
+#include "agent/uris.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"

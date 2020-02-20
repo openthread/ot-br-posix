@@ -31,15 +31,16 @@
  *   The file implements the commissioner class
  */
 
+#include "commissioner/commissioner.hpp"
+
 #include <vector>
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "addr_utils.hpp"
-#include "commissioner.hpp"
 #include "agent/uris.hpp"
+#include "commissioner/addr_utils.hpp"
 #include "commissioner/utils.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"

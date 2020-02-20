@@ -31,7 +31,7 @@
  *   This file implements the generating pskc function.
  */
 
-#include "pskc.hpp"
+#include "utils/pskc.hpp"
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"

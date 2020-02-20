@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ncp_openthread.hpp"
+#include "agent/ncp_openthread.hpp"
 
 #include <assert.h>
 #include <stdio.h>

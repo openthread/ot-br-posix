@@ -34,7 +34,9 @@
 #ifndef OTBR_COMMISSION_CONSTANTS_H_
 #define OTBR_COMMISSION_CONSTANTS_H_
 
-#include "netinet/in.h"
+#include "openthread-br/config.h"
+
+#include <netinet/in.h>
 
 namespace otbr {
 

@@ -34,7 +34,7 @@
 #ifndef OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_
 #define OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_
 
-#include <openthread-br/config.h>
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -43,13 +43,12 @@
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
-#include "../wpan-controller/wpan_controller.hpp"
+#include "commissioner/arguments.hpp"
+#include "commissioner/commissioner.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
-
-#include "commissioner/arguments.hpp"
-#include "commissioner/commissioner.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
 /**
  * WPAN parameter constants

@@ -34,16 +34,13 @@
 #ifndef OTBR_AGENT_NCP_HPP_
 #define OTBR_AGENT_NCP_HPP_
 
-#include <openthread-br/config.h>
+#include "openthread-br/config.h"
 
 #include <netinet/in.h>
 #include <stddef.h>
-#if OTBR_ENABLE_NCP_WPANTUND
-#include "common/mainloop.h"
-#else
-#include <openthread-system.h>
-#endif
+
 #include "common/event_emitter.hpp"
+#include "common/mainloop.h"
 #include "common/types.hpp"
 
 namespace otbr {

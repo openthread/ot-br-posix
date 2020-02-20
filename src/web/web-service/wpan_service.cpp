@@ -31,13 +31,13 @@
  *   This file implements the wpan controller service
  */
 
-#include "wpan_service.hpp"
+#include "web/web-service/wpan_service.hpp"
 
 #include <byteswap.h>
 #include <inttypes.h>
 
-#include "ot_client.hpp"
 #include "common/code_utils.hpp"
+#include "web/web-service/ot_client.hpp"
 
 namespace otbr {
 namespace Web {

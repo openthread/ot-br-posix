@@ -31,7 +31,7 @@
  *   This file provides kinds of convertion functions.
  */
 
-#include "hex.hpp"
+#include "utils/hex.hpp"
 
 #include <string>
 

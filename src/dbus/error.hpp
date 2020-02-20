@@ -26,9 +26,16 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef OTBR_DBUS_DBUS_ERROR_HPP_
+#define OTBR_DBUS_DBUS_ERROR_HPP_
+
+#include "openthread-br/config.h"
+
 #include <string>
+
+#include <openthread/error.h>
+
 #include "dbus/dbus_message_helper.hpp"
-#include "openthread/error.h"
 
 namespace otbr {
 namespace dbus {
@@ -63,3 +70,5 @@ otError CheckErrorMessage(DBusMessage *aMessage);
 
 } // namespace dbus
 } // namespace otbr
+
+#endif // OTBR_DBUS_DBUS_ERROR_HPP_

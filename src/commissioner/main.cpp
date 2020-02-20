@@ -31,14 +31,15 @@
  *   The file is the entry point for commissioner
  */
 
+#include "openthread-br/config.h"
+
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include <signal.h>
-
-#include "arguments.hpp"
-#include "commissioner.hpp"
+#include "commissioner/arguments.hpp"
+#include "commissioner/commissioner.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"

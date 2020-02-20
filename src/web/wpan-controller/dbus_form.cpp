@@ -31,11 +31,11 @@
  *   This file implements the function of "form" a new Thread Network.
  */
 
-#include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_form.hpp"
 
-#include "dbus_base.hpp"
-#include "dbus_form.hpp"
-#include "wpan_controller.hpp"
+#include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
 namespace Dbus {

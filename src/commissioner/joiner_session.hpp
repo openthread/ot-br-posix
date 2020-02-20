@@ -34,6 +34,8 @@
 #ifndef OTBR_JOINER_SESSION_HPP_
 #define OTBR_JOINER_SESSION_HPP_
 
+#include "openthread-br/config.h"
+
 #include <sys/socket.h>
 
 #include "commissioner/constants.hpp"

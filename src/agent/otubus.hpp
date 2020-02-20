@@ -29,6 +29,8 @@
 #ifndef OTBR_AGENT_OTUBUS_HPP_
 #define OTBR_AGENT_OTUBUS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdarg.h>
 #include <time.h>
 

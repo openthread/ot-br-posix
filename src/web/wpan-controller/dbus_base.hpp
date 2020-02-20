@@ -34,6 +34,8 @@
 #ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_
 #define OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_
 
+#include "openthread-br/config.h"
+
 #include <dbus/dbus.h>
 
 #include "common/logging.hpp"

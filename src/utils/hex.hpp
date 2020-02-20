@@ -34,6 +34,8 @@
 #ifndef OTBR_UTILS_HEX_HPP_
 #define OTBR_UTILS_HEX_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stddef.h>
 #include <stdint.h>
 

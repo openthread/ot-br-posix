@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_NCP_WPANTUND_HPP_
 #define OTBR_AGENT_NCP_WPANTUND_HPP_
 
+#include "openthread-br/config.h"
+
 #include <map>
 
 #include <arpa/inet.h>
@@ -42,7 +44,7 @@
 #include <stdint.h>
 #include <sys/select.h>
 
-#include "ncp.hpp"
+#include "agent/ncp.hpp"
 
 namespace otbr {
 

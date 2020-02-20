@@ -34,12 +34,14 @@
 #ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_LEAVE_HPP_
 #define OTBR_WEB_WPAN_CONTROLLER_DBUS_LEAVE_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdio.h>
 
 #include <dbus/dbus.h>
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
 namespace Dbus {

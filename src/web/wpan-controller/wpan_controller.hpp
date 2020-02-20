@@ -34,12 +34,7 @@
 #ifndef OTBR_WEB_WPAN_CONTROLLER_WPAN_CONTROLLER_HPP_
 #define OTBR_WEB_WPAN_CONTROLLER_WPAN_CONTROLLER_HPP_
 
-#define OT_SCANNED_NET_BUFFER_SIZE 250
-#define OT_SET_MAX_DATA_SIZE 250
-#define OT_NETWORK_NAME_MAX_SIZE 17
-#define OT_HARDWARE_ADDRESS_SIZE 8
-#define OT_PREFIX_SIZE 8
-#define OT_ROUTER_ROLE 2
+#include "openthread-br/config.h"
 
 #include <net/if.h>
 #include <stdint.h>
@@ -52,7 +47,14 @@ extern "C" {
 #include "wpanctl-utils.h"
 }
 
-#include "dbus_base.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+
+#define OT_SCANNED_NET_BUFFER_SIZE 250
+#define OT_SET_MAX_DATA_SIZE 250
+#define OT_NETWORK_NAME_MAX_SIZE 17
+#define OT_HARDWARE_ADDRESS_SIZE 8
+#define OT_PREFIX_SIZE 8
+#define OT_ROUTER_ROLE 2
 
 namespace otbr {
 namespace Dbus {

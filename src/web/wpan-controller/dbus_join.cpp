@@ -31,9 +31,9 @@
  *   This file implements "join" Thread Network function.
  */
 
-#include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_join.hpp"
 
-#include "dbus_join.hpp"
+#include "common/code_utils.hpp"
 
 namespace otbr {
 namespace Dbus {

@@ -31,9 +31,9 @@
  *   This file implements "leave" Thread Network function.
  */
 
-#include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_leave.hpp"
 
-#include "dbus_leave.hpp"
+#include "common/code_utils.hpp"
 
 namespace otbr {
 namespace Dbus {

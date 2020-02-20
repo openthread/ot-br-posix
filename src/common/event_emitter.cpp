@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "event_emitter.hpp"
+#include "common/event_emitter.hpp"
 
 #include <assert.h>
 

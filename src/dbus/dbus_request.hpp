@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef OTBR_DBUS_DBUS_REQUEST_HPP_
+#define OTBR_DBUS_DBUS_REQUEST_HPP_
+
+#include "openthread-br/config.h"
+
 #include "dbus/dbus_message_helper.hpp"
 #include "dbus/dbus_resources.hpp"
 #include "dbus/error.hpp"
@@ -123,3 +128,5 @@ private:
 
 } // namespace dbus
 } // namespace otbr
+
+#endif // OTBR_DBUS_DBUS_REQUEST_HPP_

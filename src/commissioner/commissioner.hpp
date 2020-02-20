@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMISSIONER_COMMISSIONER_HPP_
 #define OTBR_COMMISSIONER_COMMISSIONER_HPP_
 
+#include "openthread-br/config.h"
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sys/socket.h>

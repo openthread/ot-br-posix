@@ -31,7 +31,7 @@
  *   This file implements the web server of border router
  */
 
-#include "web_server.hpp"
+#include "web/web-service/web_server.hpp"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>

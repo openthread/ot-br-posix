@@ -31,7 +31,8 @@
  *   The file implements the dtls session class to communicate with the joiner
  */
 
-#include "joiner_session.hpp"
+#include "commissioner/joiner_session.hpp"
+
 #include "agent/uris.hpp"
 #include "commissioner/utils.hpp"
 #include "common/logging.hpp"

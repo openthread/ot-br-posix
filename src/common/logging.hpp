@@ -29,9 +29,12 @@
 #ifndef OTBR_COMMON_LOGGING_HPP_
 #define OTBR_COMMON_LOGGING_HPP_
 
-#include "types.hpp"
+#include "openthread-br/config.h"
+
 #include <stdarg.h>
 #include <stddef.h>
+
+#include "common/types.hpp"
 
 /**
  * Logging level, which is identical to syslog

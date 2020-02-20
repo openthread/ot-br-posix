@@ -34,10 +34,12 @@
 #ifndef OTBR_COMMON_DTLS_HPP_
 #define OTBR_COMMON_DTLS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <sys/select.h>
 #include <unistd.h>
 
-#include "types.hpp"
+#include "common/types.hpp"
 
 namespace otbr {
 

@@ -34,10 +34,11 @@
 #ifndef OTBR_AGENT_MDNS_MDNSSD_HPP_
 #define OTBR_AGENT_MDNS_MDNSSD_HPP_
 
-#include <dns_sd.h>
 #include <vector>
 
-#include "mdns.hpp"
+#include <dns_sd.h>
+
+#include "agent/mdns.hpp"
 #include "common/types.hpp"
 
 namespace otbr {

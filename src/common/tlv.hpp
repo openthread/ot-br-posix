@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMON_TLV_HPP_
 #define OTBR_COMMON_TLV_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdint.h>
 #include <string.h>
 

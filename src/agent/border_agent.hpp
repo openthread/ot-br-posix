@@ -36,8 +36,8 @@
 
 #include <stdint.h>
 
-#include "mdns.hpp"
-#include "ncp.hpp"
+#include "agent/mdns.hpp"
+#include "agent/ncp.hpp"
 
 namespace otbr {
 

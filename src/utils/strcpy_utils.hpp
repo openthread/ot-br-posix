@@ -29,6 +29,8 @@
 #ifndef OTBR_UTILS_STRCPY_UTILS_HPP_
 #define OTBR_UTILS_STRCPY_UTILS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <string.h>
 
 #ifdef __cplusplus

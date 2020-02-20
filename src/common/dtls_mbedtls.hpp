@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMON_DTLS_MBEDTLS_HPP_
 #define OTBR_COMMON_DTLS_MBEDTLS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <vector>
 
 #include <netinet/in.h>
@@ -69,7 +71,7 @@ extern "C" {
 
 } // extern "C"
 
-#include "dtls.hpp"
+#include "common/dtls.hpp"
 
 namespace otbr {
 

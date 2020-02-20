@@ -34,6 +34,8 @@
 #ifndef OTBR_UTILS_STEERING_DATA_HPP_
 #define OTBR_UTILS_STEERING_DATA_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdint.h>
 #include <string.h>
 

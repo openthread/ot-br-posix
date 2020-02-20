@@ -32,7 +32,7 @@
  */
 #define OT_HTTP_PORT 80
 
-#include <openthread-br/config.h>
+#include "openthread-br/config.h"
 
 #include <errno.h>
 #include <signal.h>
@@ -43,7 +43,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "web-service/web_server.hpp"
+#include "web/web-service/web_server.hpp"
 
 static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";

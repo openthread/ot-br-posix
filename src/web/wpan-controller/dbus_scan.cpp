@@ -31,9 +31,9 @@
  *   This file implements "scan" Thread Network function.
  */
 
-#include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_scan.hpp"
 
-#include "dbus_scan.hpp"
+#include "common/code_utils.hpp"
 
 namespace otbr {
 namespace Dbus {

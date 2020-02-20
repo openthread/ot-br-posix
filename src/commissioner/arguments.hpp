@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMISSIONER_ARGUMENTS_HPP_
 #define OTBR_COMMISSIONER_ARGUMENTS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdint.h>
 
 #include "commissioner/constants.hpp"

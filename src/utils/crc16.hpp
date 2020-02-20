@@ -34,6 +34,8 @@
 #ifndef OTBR_UTILS_CRC16_HPP_
 #define OTBR_UTILS_CRC16_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdint.h>
 
 namespace otbr {

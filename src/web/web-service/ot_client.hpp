@@ -28,7 +28,9 @@
 #ifndef OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 #define OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 
-#include "../wpan-controller/wpan_controller.hpp"
+#include "openthread-br/config.h"
+
+#include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
 namespace Web {

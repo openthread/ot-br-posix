@@ -27,6 +27,7 @@
  */
 
 #include "dbus/dbus_message_helper.hpp"
+
 #include "dbus/constants.hpp"
 
 namespace otbr {

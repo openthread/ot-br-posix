@@ -31,9 +31,9 @@
  *   This file implements the function of "get property"
  */
 
-#include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_get.hpp"
 
-#include "dbus_get.hpp"
+#include "common/code_utils.hpp"
 
 namespace otbr {
 namespace Dbus {

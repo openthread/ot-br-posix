@@ -34,6 +34,8 @@
 #ifndef OTBR_WEB_WEB_SERVICE_WEB_SERVER_
 #define OTBR_WEB_WEB_SERVICE_WEB_SERVER_
 
+#include "openthread-br/config.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -45,7 +47,7 @@
 
 #include <boost/asio/ip/tcp.hpp>
 
-#include "wpan_service.hpp"
+#include "web/web-service/wpan_service.hpp"
 
 namespace SimpleWeb {
 template <class T> class Server;

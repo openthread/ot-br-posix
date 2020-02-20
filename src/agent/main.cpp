@@ -39,9 +39,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "agent_instance.hpp"
-#include "ncp.hpp"
-#include "ncp_openthread.hpp"
+#include "agent/agent_instance.hpp"
+#include "agent/ncp.hpp"
+#include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"

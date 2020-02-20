@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logging.hpp"
+#include "common/logging.hpp"
 
 #include <assert.h>
 #include <errno.h>
@@ -38,7 +38,7 @@
 #include <sys/time.h>
 #include <syslog.h>
 
-#include "time.hpp"
+#include "common/time.hpp"
 
 static int        sLevel      = LOG_INFO;
 static const char kHexChars[] = "0123456789abcdef";

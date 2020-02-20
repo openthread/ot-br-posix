@@ -34,6 +34,8 @@
 #ifndef OTBR_UTILS_PSKC_HPP_
 #define OTBR_UTILS_PSKC_HPP_
 
+#include "openthread-br/config.h"
+
 #define OT_EXTENDED_PAN_ID_LENGTH 8
 #define OT_ITERATION_COUNTS 16384
 #define OT_PASSPHRASE_MAX_LENGTH 255

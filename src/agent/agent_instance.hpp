@@ -41,8 +41,8 @@
 #include <sys/select.h>
 #include <sys/types.h>
 
-#include "border_agent.hpp"
-#include "ncp.hpp"
+#include "agent/border_agent.hpp"
+#include "agent/ncp.hpp"
 
 namespace otbr {
 

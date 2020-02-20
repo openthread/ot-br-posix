@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMON_TYPES_HPP_
 #define OTBR_COMMON_TYPES_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdint.h>
 
 #ifndef IN6ADDR_ANY

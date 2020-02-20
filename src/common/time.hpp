@@ -29,6 +29,8 @@
 #ifndef OTBR_COMMON_TIME_HPP_
 #define OTBR_COMMON_TIME_HPP_
 
+#include "openthread-br/config.h"
+
 #include <stdint.h>
 
 #include <sys/time.h>

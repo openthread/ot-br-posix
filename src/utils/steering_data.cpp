@@ -26,12 +26,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "steering_data.hpp"
+#include "utils/steering_data.hpp"
 
 #include <assert.h>
 #include <mbedtls/sha256.h>
 
-#include "crc16.hpp"
+#include "utils/crc16.hpp"
 
 namespace otbr {
 

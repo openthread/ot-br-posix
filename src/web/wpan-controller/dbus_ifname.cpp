@@ -31,12 +31,12 @@
  *   This file implements function of "look up" DBus interface name.
  */
 
+#include "web/wpan-controller/dbus_ifname.hpp"
+
 #include <dbus/dbus.h>
 
 #include "common/code_utils.hpp"
 #include "utils/strcpy_utils.hpp"
-
-#include "dbus_ifname.hpp"
 
 namespace otbr {
 namespace Dbus {

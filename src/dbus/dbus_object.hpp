@@ -29,6 +29,8 @@
 #ifndef OTBR_DBUS_DBUS_OBJECT_HPP_
 #define OTBR_DBUS_DBUS_OBJECT_HPP_
 
+#include "openthread-br/config.h"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -36,9 +38,9 @@
 
 #include <dbus/dbus.h>
 
-#include "constants.hpp"
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
+#include "dbus/constants.hpp"
 #include "dbus/dbus_message_helper.hpp"
 #include "dbus/dbus_request.hpp"
 #include "dbus/dbus_resources.hpp"

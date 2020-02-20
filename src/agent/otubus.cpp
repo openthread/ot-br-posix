@@ -30,12 +30,12 @@
 #define BYTE_ORDER_BIG_ENDIAN 1
 #endif
 
-#include "otubus.hpp"
-#include "common/logging.hpp"
+#include "agent/otubus.hpp"
 
 #include <mutex>
 
 #include <sys/eventfd.h>
+
 #include <openthread/commissioner.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
@@ -49,10 +49,12 @@
 #undef PACKAGE_VERSION
 #undef VERSION
 
-#include "ncp_openthread.hpp"
+#include "agent/ncp_openthread.hpp"
+#include "common/logging.hpp"
 
 namespace otbr {
 namespace ubus {
+
 static UbusServer *sUbusServerInstance = NULL;
 static int         sUbusEfd            = -1;
 static void *      sJsonUri            = NULL;

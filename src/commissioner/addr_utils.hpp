@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMISSIONER_ADDR_UTILS_HPP_
 #define OTBR_COMMISSIONER_ADDR_UTILS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <sys/socket.h>
 
 namespace otbr {

@@ -31,7 +31,7 @@
  *   This file implements MDNS service based on avahi.
  */
 
-#include "mdns_avahi.hpp"
+#include "agent/mdns_avahi.hpp"
 
 #include <avahi-common/alternative.h>
 #include <avahi-common/error.h>

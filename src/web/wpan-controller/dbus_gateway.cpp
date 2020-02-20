@@ -31,10 +31,10 @@
  *   This file implements the function of "configure gateway" function.
  */
 
+#include "web/wpan-controller/dbus_gateway.hpp"
+
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
-
-#include "dbus_gateway.hpp"
 
 namespace otbr {
 namespace Dbus {

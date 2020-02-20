@@ -31,10 +31,10 @@
  *   This file implements "set property" function.
  */
 
+#include "web/wpan-controller/dbus_set.hpp"
+
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
-
-#include "dbus_set.hpp"
 
 namespace otbr {
 namespace Dbus {
