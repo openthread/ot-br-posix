@@ -27,11 +27,8 @@
 #
 
 OPENTHREAD_CPPFLAGS                                                        = \
-    -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
     -I$(top_srcdir)/third_party/openthread                                   \
-    -I$(top_srcdir)/third_party/openthread/repo/include                      \
-    -I$(top_srcdir)/third_party/openthread/repo/src/posix/platform           \
-    -I$(top_builddir)/third_party/openthread/build/posix/otbr/include        \
+    -I$(top_builddir)/third_party/openthread/output/posix/include            \
     $(NULL)
 
 OPENTHREAD_LIBS = \
