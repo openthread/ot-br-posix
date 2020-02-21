@@ -93,19 +93,14 @@ EOF
 
 do_build() {
     mkdir -p "${TOP_BUILDDIR}"
-    (
-        set -e
-
-        cd "${TOP_BUILDDIR}"
-
-        ${CONFIGURE_PATH} \
-            --disable-docs \
-            --exec-prefix=/usr \
-            --prefix= \
-            ${configure_options}
-
-        make -j${BUILD_JOBS}
-    )
+    (cd "${TOP_BUILDDIR}" \
+        && ([[ -f "${TOP_BUILDDIR}/config.status" ]] \
+        || ${CONFIGURE_PATH} \
+        --disable-docs \
+        --exec-prefix=/usr \
+        --prefix= \
+        ${configure_options}) \
+        && make -j${BUILD_JOBS})
 }
 
 do_clean() {

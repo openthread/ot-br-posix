@@ -12,10 +12,14 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "platform-posix.h"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/strcpy_utils.hpp"
+
+// Temporary solution before posix platform header files are cleaned up.
+#ifndef OPENTHREAD_POSIX_APP_SOCKET_NAME
+#define OPENTHREAD_POSIX_APP_SOCKET_NAME "/tmp/openthread.sock"
+#endif
 
 namespace ot {
 
@@ -38,7 +42,7 @@ bool Client::Connect(void)
     int                ret;
 
     mSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-    VerifyOrExit(mSocket != -1, perror("socket"); ret = OT_EXIT_FAILURE);
+    VerifyOrExit(mSocket != -1, perror("socket"); ret = EXIT_FAILURE);
 
     memset(&sockname, 0, sizeof(struct sockaddr_un));
     sockname.sun_family = AF_UNIX;
