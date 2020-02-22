@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
@@ -27,14 +27,20 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
-set -x
+set -euxo pipefail
 
 main() {
     SCAN_TMPDIR=./scan-tmp
-    ./bootstrap
-    scan-build ./configure --prefix= --exec-prefix=/usr --disable-docs
-    scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v make
+    (mkdir -p scan-build \
+        && cd scan-build \
+        && scan-build cmake -GNinja \
+        -DBUILD_TESTING=OFF \
+        -DCMAKE_CXX_COMPILER=clang++ \
+        -DCMAKE_C_COMPILER=clang \
+        -DOTBR_DBUS=ON \
+        -DOTBR_WEB=ON \
+        .. \
+        && scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v ninja)
     ! (grep "^<!-- BUGFILE $(pwd)" "${SCAN_TMPDIR}"/*/report-*.html | grep -v 'third_party') && echo 'Success'
 }
 

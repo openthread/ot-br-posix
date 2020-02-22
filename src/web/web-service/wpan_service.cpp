@@ -33,9 +33,9 @@
 
 #include "web/web-service/wpan_service.hpp"
 
-#include <byteswap.h>
 #include <inttypes.h>
 
+#include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 
 namespace otbr {

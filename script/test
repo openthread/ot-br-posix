@@ -30,24 +30,25 @@
 #       This script runs border router tests.
 #
 
+# shellcheck source=_initrc
 . "$(dirname "$0")"/_initrc
-set -o pipefail
 
-readonly COLOR_PASS='\033[0;32m'
-readonly COLOR_FAIL='\033[0;31m'
-readonly COLOR_NONE='\033[0m'
+readonly OTBR_COLOR_PASS='\033[0;32m'
+readonly OTBR_COLOR_FAIL='\033[0;31m'
+readonly OTBR_COLOR_NONE='\033[0m'
 readonly QUIET=${QUIET:-1}
 
-readonly BUILD_JOBS=$(getconf _NPROCESSORS_ONLN)
-readonly CONFIGURE_PATH="$(pwd)/configure"
-readonly TOP_BUILDDIR="${BUILD_DIR}/otbr"
+readonly OTBR_COVERAGE="${OTBR_COVERAGE:-0}"
+readonly OTBR_MDNS="${OTBR_MDNS:-}"
+readonly OTBR_TOP_SRCDIR="$PWD"
+readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 
 #######################################
 # Run test and print result.
 # Globals:
-#   COLOR_PASS
-#   COLOR_FAIL
-#   COLOR_NONE
+#   OTBR_COLOR_PASS
+#   OTBR_COLOR_FAIL
+#   OTBR_COLOR_NONE
 # Arguments:
 #   $@  - Test command
 # Returns:
@@ -57,7 +58,7 @@ readonly TOP_BUILDDIR="${BUILD_DIR}/otbr"
 print_result() {
     local exit_code=0
 
-    echo -e "$(date) Running $@"
+    echo -e "$(date) Running $*"
 
     if [[ "${QUIET}" = 1 ]]; then
         "$@" &> test.log || exit_code=$?
@@ -66,12 +67,12 @@ print_result() {
     fi
 
     if [[ "$exit_code" = 0 ]]; then
-        prefix="${COLOR_PASS}PASS${COLOR_NONE}"
+        prefix="${OTBR_COLOR_PASS}PASS${OTBR_COLOR_NONE}"
     else
-        prefix="${COLOR_FAIL}FAIL${COLOR_NONE}"
+        prefix="${OTBR_COLOR_FAIL}FAIL${OTBR_COLOR_NONE}"
     fi
 
-    echo -e "${prefix}" $*
+    echo -e "${prefix} $*"
 
     # only output log on failure
     if [[ "${QUIET}" = 1 && "${exit_code}" != 0 ]]; then
@@ -88,7 +89,6 @@ USAGE: $0 COMMAND
 COMMAND:
     build       Build project for running tests. This can be used to rebuild the project for changes.
     clean       Clean built files to prepare new build.
-    distcheck   Run autoconf distcheck.
     meshcop     Run MeshCoP tests.
     openwrt     Run OpenWRT tests.
     help        Print this help.
@@ -96,25 +96,21 @@ COMMAND:
 EXAMPLES:
     $0 clean build
 EOF
-    exit $1
+    exit "$1"
 }
 
 do_build() {
-    mkdir -p "${TOP_BUILDDIR}"
-    (
-        set -e
-
-        cd "${TOP_BUILDDIR}"
-
-        ${CONFIGURE_PATH} \
-            --disable-docs \
-            --enable-dbus-server \
-            --exec-prefix=/usr \
-            --prefix= \
-            ${configure_options}
-
-        make -j${BUILD_JOBS}
+    otbr_options=(
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DOTBR_DBUS=ON"
+        "-DOTBR_WEB=ON"
+        ${otbr_options[@]+"${otbr_options[@]}"}
     )
+
+    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
+        && cd "${OTBR_TOP_BUILDDIR}" \
+        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
+        && ninja)
 }
 
 do_clean() {
@@ -123,56 +119,49 @@ do_clean() {
 }
 
 do_check() {
-    (
-        set -e
-
-        cd "${TOP_BUILDDIR}"
-
-        make check
-    )
-}
-
-do_distcheck() {
-    mkdir -p "${TOP_BUILDDIR}"
-    (
-        set -e
-
-        cd "${TOP_BUILDDIR}"
-
-        ${CONFIGURE_PATH}
-
-        distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
-        make distcheck DISTCHECK_CONFIGURE_FLAGS="${configure_options}" distcleancheck_listfiles="${distcleancheck_listfiles}"
-    )
+    (cd "${OTBR_TOP_BUILDDIR}" \
+        && CTEST_OUTPUT_ON_FAILURE=1 ninja test)
 }
 
 do_prepare() {
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
-        sudo service avahi-daemon stop
-        sudo mdnsd
+    if [[ ${OTBR_OPTIONS+x} ]]; then
+        read -r -a otbr_options <<< "${OTBR_OPTIONS-}"
+    else
+        otbr_options=()
     fi
 
-    if [[ -n "${WITH_MDNS}" ]]; then
-        configure_options="${configure_options} --with-mdns=${WITH_MDNS}"
+
+    if [[ -n "${OTBR_MDNS}" ]]; then
+        otbr_options+=("-DOTBR_MDNS=${OTBR_MDNS}")
     fi
 
-    if [[ "${COVERAGE}" = 1 ]]; then
-        configure_options="${configure_options} --enable-debug --enable-coverage"
-    fi
-
-    if [[ "${DEBUG}" = 1 ]]; then
-        configure_options="${configure_options} --enable-debug"
+    if [[ "${OTBR_COVERAGE}" == 1 ]]; then
+        otbr_options+=("-DOTBR_COVERAGE=ON" "-DCMAKE_BUILD_TYPE=Debug")
     fi
 }
 
+do_package() {
+    otbr_options=(
+        "-DBUILD_TESTING=OFF"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DOTBR_WEB=ON"
+        ${otbr_options[@]+"${otbr_options[@]}"}
+    )
+
+    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
+        && cd "${OTBR_TOP_BUILDDIR}" \
+        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
+        && ninja package)
+}
+
 main() {
-    if [[ -z "$1" ]]; then
+    if [[ "$#" == 0 ]]; then
         print_usage 1
     fi
 
     do_prepare
 
-    while [[ -n "$1" ]]; do
+    while [[ $# != 0 ]]; do
         case "$1" in
             build)
                 do_build
@@ -183,19 +172,20 @@ main() {
             clean)
                 do_clean
                 ;;
-            distcheck)
-                print_result do_distcheck
-                ;;
             help)
                 print_usage
                 ;;
             meshcop)
-                top_builddir="${TOP_BUILDDIR}" print_result ./tests/scripts/meshcop
+                top_builddir="${OTBR_TOP_BUILDDIR}" print_result ./tests/scripts/meshcop
                 ;;
+
             openwrt)
                 print_result ./tests/scripts/openwrt
                 ;;
 
+            package)
+                do_package
+                ;;
             *)
                 echo "Unknown test: ${1}"
                 print_usage 1

@@ -1,11 +1,11 @@
 [Unit]
 Description=Border Router Web
 After=otbr-agent.service
-ConditionPathExists=@sbindir@/otbr-web
+ConditionPathExists=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-web
 
 [Service]
-EnvironmentFile=-@sysconfdir@/default/otbr-web
-ExecStart=@sbindir@/otbr-web $OTBR_WEB_OPTS
+EnvironmentFile=-@CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-web
+ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-web $OTBR_WEB_OPTS
 Restart=on-failure
 RestartSec=5
 RestartPreventExitStatus=SIGKILL

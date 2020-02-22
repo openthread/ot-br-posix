@@ -28,7 +28,7 @@
 
 #include <CppUTest/TestHarness.h>
 
-#include "agent/mdns_mdnssd.cpp"
+#include "mdns/mdns_mdnssd.cpp"
 
 TEST_GROUP(MdnsSd){};
 

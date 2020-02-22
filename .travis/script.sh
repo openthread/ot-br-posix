@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -31,11 +31,7 @@ set -e
 set -x
 
 TOOLS_HOME=$HOME/.cache/tools
-
-die() {
-	echo " *** ERROR: " $*
-	exit 1
-}
+export PATH=/usr/local/bin:$PATH
 
 case $BUILD_TARGET in
 android-check)
@@ -51,13 +47,8 @@ check)
     CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test build check
     ;;
 
-distcheck)
-    ./script/bootstrap
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test distcheck
-    ;;
-
 meshcop)
-    ./bootstrap
+    ./script/bootstrap
     ./script/test build
 
     OT_CLI="ot-cli-mtd" ./script/test meshcop
@@ -90,12 +81,10 @@ otbr-dbus-check)
     ;;
 
 macOS)
-    RELEASE=1 ./script/bootstrap
-    # Currently only verify otbr-agent
-    ./configure --prefix= --exec-prefix=/usr --disable-web-service --with-mdns=none
-    make -j$(shell getconf _NPROCESSORS_ONLN)
+    ./script/bootstrap || true
+    OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
     ;;
 *)
-    die
+    false
     ;;
 esac

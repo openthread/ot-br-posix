@@ -1,6 +1,8 @@
-language: cpp
+language: python
+python: "3.6"
 
-sudo: required
+dist: bionic
+os: linux
 
 cache:
   directories:
@@ -11,64 +13,29 @@ script: .travis/script.sh
 after_success:
   - .travis/after_success.sh
 
-matrix:
+jobs:
   include:
+    - env: BUILD_TARGET="cmake-check"
+      script: script/test package
     - env: BUILD_TARGET="openwrt-check" VERBOSE=1
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2017-04-10-raspbian-jessie-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2017-04-10/2017-04-10-raspbian-jessie-lite.zip
-      os: linux
-      dist: bionic
     - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2018-04-18-raspbian-stretch-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="meshcop" COVERAGE=1 VERBOSE=1
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="docker-check" COVERAGE=1 VERBOSE=1
-      os: linux
-      dist: bionic
-      compiler: gcc
-    - env: BUILD_TARGET="script-check" COVERAGE=1
-      compiler: gcc
-      os: linux
-      dist: bionic
+    - env: BUILD_TARGET="meshcop" OTBR_COVERAGE=1 VERBOSE=1
+    - env: BUILD_TARGET="docker-check" OTBR_COVERAGE=1 VERBOSE=1
+    - env: BUILD_TARGET="script-check" OTBR_COVERAGE=1
     - env: BUILD_TARGET="scan-build"
-      os: linux
-      dist: bionic
       compiler: clang
-    - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=mDNSResponder
-      os: linux
+    - env: BUILD_TARGET="android-check" VERBOSE=1 OTBR_MDNS=mDNSResponder
       dist: trusty
-    - env: BUILD_TARGET="android-check" VERBOSE=1 WITH_MDNS=""
-      os: linux
+      language: "cpp"
+    - env: BUILD_TARGET="android-check" VERBOSE=1 OTBR_MDNS=""
       dist: trusty
+      language: "cpp"
     - env: BUILD_TARGET="android-check" VERBOSE=1
-      os: linux
       dist: trusty
-    - env: BUILD_TARGET="distcheck" COVERAGE=1 VERBOSE=1 WITH_MDNS=mDNSResponder
-      compiler: clang
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="distcheck" COVERAGE=1 VERBOSE=1
-      compiler: clang
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="check" COVERAGE=1 VERBOSE=1 WITH_MDNS=mDNSResponder
-      compiler: gcc
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="check" COVERAGE=1 VERBOSE=1
-      compiler: gcc
-      os: linux
-      dist: bionic
-    - env: BUILD_TARGET="otbr-dbus-check" COVERAGE=1 VERBOSE=1
-      compiler: gcc
-      os: linux
-      dist: bionic
+      language: "cpp"
+    - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1 OTBR_MDNS=mDNSResponder
+    - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="pretty-check"
-      os: linux
-      dist: bionic
       addons:
         apt:
           packages:
@@ -76,6 +43,7 @@ matrix:
       script: script/make-pretty check
     - env: BUILD_TARGET="macOS"
       os: osx
+      language: "generic"
   allow_failures:
     - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1
       os: linux
