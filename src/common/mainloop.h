@@ -38,7 +38,7 @@
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 
-#include <openthread-system.h>
+#include <openthread/openthread-system.h>
 
 #else
 #include <sys/select.h>
