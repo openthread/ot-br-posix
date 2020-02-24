@@ -36,7 +36,7 @@
 
 #include "common/coap.hpp"
 
-using namespace ot::BorderRouter;
+using namespace otbr;
 
 struct TestContext
 {
@@ -115,10 +115,10 @@ TEST(Coap, TestRequest)
 {
     TestContext context;
 
-    Coap::Resource resource("cool", TestRequestHandler, &context);
-    uint16_t       token = htons(1);
-    ot::Ip6Address addr(0);
-    uint8_t        buffer[128];
+    Coap::Resource   resource("cool", TestRequestHandler, &context);
+    uint16_t         token = htons(1);
+    otbr::Ip6Address addr(0);
+    uint8_t          buffer[128];
 
     agent = Coap::Agent::Create(TestNetworkSender, &context);
 

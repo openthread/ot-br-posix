@@ -31,12 +31,12 @@
  *   This file implements "set property" function.
  */
 
+#include "web/wpan-controller/dbus_set.hpp"
+
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
 
-#include "dbus_set.hpp"
-
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int DBusSet::ProcessReply(void)
@@ -62,7 +62,7 @@ int DBusSet::ProcessReply(void)
     else if (mPropertyType == kPropertyType_Data)
     {
         char  propertyValueBytes[OT_SET_MAX_DATA_SIZE];
-        int   length = ot::Utils::Hex2Bytes(mPropertyValue, (uint8_t *)propertyValueBytes, strlen(mPropertyValue));
+        int   length = otbr::Utils::Hex2Bytes(mPropertyValue, (uint8_t *)propertyValueBytes, strlen(mPropertyValue));
         char *cur    = propertyValueBytes;
         dbus_message_append_args(messsage, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &cur, length, DBUS_TYPE_INVALID);
     }
@@ -85,4 +85,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

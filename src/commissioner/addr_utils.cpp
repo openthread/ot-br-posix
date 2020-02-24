@@ -31,14 +31,13 @@
  *   The file is the implementation of the address manipulation utilities for the commissioner test app.
  */
 
-#include "addr_utils.hpp"
+#include "commissioner/addr_utils.hpp"
 
 #include <arpa/inet.h>
 
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
 {
@@ -62,5 +61,4 @@ char *GetIPString(const struct sockaddr *aAddr, char *aOutBuf, size_t aLength)
     return aOutBuf;
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

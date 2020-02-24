@@ -31,16 +31,14 @@
  *   This file includes implementation for Thread border router agent instance.
  */
 
-#include "agent_instance.hpp"
+#include "agent/agent_instance.hpp"
 
 #include <assert.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 AgentInstance::AgentInstance(Ncp::Controller *aNcp)
     : mNcp(aNcp)
@@ -79,6 +77,4 @@ AgentInstance::~AgentInstance(void)
     Ncp::Controller::Destroy(mNcp);
 }
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

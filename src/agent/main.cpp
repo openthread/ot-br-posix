@@ -39,9 +39,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "agent_instance.hpp"
-#include "ncp.hpp"
-#include "ncp_openthread.hpp"
+#include "agent/agent_instance.hpp"
+#include "agent/ncp.hpp"
+#include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -50,7 +50,7 @@
 extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
 extern void UbusProcess(const fd_set &aReadFdSet);
 extern void UbusServerRun(void);
-extern void UbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+extern void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
 std::mutex  threadMutex;
 #endif
 
@@ -66,18 +66,16 @@ static const struct option  kOptions[]   = {{"debug-level", required_argument, N
                                          {"version", no_argument, NULL, 'V'},
                                          {0, 0, 0, 0}};
 
-using namespace ot::BorderRouter;
-
 static void HandleSignal(int aSignal)
 {
     signal(aSignal, SIG_DFL);
 }
 
-static int Mainloop(AgentInstance &aInstance)
+static int Mainloop(otbr::AgentInstance &aInstance)
 {
     int error = EXIT_FAILURE;
 #if OTBR_ENABLE_NCP_OPENTHREAD
-    Ncp::Controller &ncp = aInstance.GetNcp();
+    otbr::Ncp::Controller &ncp = aInstance.GetNcp();
 #endif
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
@@ -159,12 +157,12 @@ static void OnAllocateFailed(void)
 
 int main(int argc, char *argv[])
 {
-    int              logLevel = OTBR_LOG_INFO;
-    int              opt;
-    int              ret           = EXIT_SUCCESS;
-    const char *     interfaceName = kDefaultInterfaceName;
-    Ncp::Controller *ncp           = NULL;
-    bool             verbose       = false;
+    int                    logLevel = OTBR_LOG_INFO;
+    int                    opt;
+    int                    ret           = EXIT_SUCCESS;
+    const char *           interfaceName = kDefaultInterfaceName;
+    otbr::Ncp::Controller *ncp           = NULL;
+    bool                   verbose       = false;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -201,10 +199,10 @@ int main(int argc, char *argv[])
     }
 
 #if OTBR_ENABLE_NCP_WPANTUND
-    ncp = Ncp::Controller::Create(interfaceName);
+    ncp = otbr::Ncp::Controller::Create(interfaceName);
 #else
     VerifyOrExit(optind + 1 < argc, ret = EXIT_FAILURE);
-    ncp = Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
+    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
 #endif
     VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
 
@@ -213,13 +211,12 @@ int main(int argc, char *argv[])
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 
     {
-        AgentInstance instance(ncp);
+        otbr::AgentInstance instance(ncp);
 
         SuccessOrExit(ret = instance.Init());
 
 #if OTBR_ENABLE_OPENWRT
-        ot::BorderRouter::Ncp::ControllerOpenThread *ncpThread =
-            static_cast<ot::BorderRouter::Ncp::ControllerOpenThread *>(ncp);
+        otbr::Ncp::ControllerOpenThread *ncpThread = static_cast<otbr::Ncp::ControllerOpenThread *>(ncp);
         UbusServerInit(ncpThread, &threadMutex);
         std::thread(UbusServerRun).detach();
 #endif

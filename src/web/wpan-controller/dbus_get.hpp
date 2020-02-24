@@ -31,12 +31,10 @@
  *   This file implements the function of "get property"
  */
 
-#ifndef DBUS_GET_HPP
-#define DBUS_GET_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_
 
-#define OT_LIST_MAX_LENGTH 100
-#define OT_PROPERTY_NAME_SIZE 512
-#define OT_PROPERTY_VALUE_SIZE 512
+#include "openthread-br/config.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -44,10 +42,14 @@
 
 #include <dbus/dbus.h>
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
-namespace ot {
+#define OT_LIST_MAX_LENGTH 100
+#define OT_PROPERTY_NAME_SIZE 512
+#define OT_PROPERTY_VALUE_SIZE 512
+
+namespace otbr {
 namespace Dbus {
 
 struct PropertyNameValue
@@ -78,5 +80,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
-#endif // DBUS_GET_HPP
+} // namespace otbr
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_

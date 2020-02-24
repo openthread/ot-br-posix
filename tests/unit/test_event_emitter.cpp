@@ -85,8 +85,8 @@ TEST_GROUP(EventEmitter){};
 
 TEST(EventEmitter, TestSingleHandler)
 {
-    ot::BorderRouter::EventEmitter ee;
-    int                            event = 1;
+    otbr::EventEmitter ee;
+    int                event = 1;
     ee.On(event, HandleSingleEvent, NULL);
 
     sContext = NULL;
@@ -100,8 +100,8 @@ TEST(EventEmitter, TestSingleHandler)
 
 TEST(EventEmitter, TestDoubleHandler)
 {
-    ot::BorderRouter::EventEmitter ee;
-    int                            event = 1;
+    otbr::EventEmitter ee;
+    int                event = 1;
     ee.On(event, HandleSingleEvent, NULL);
     ee.On(event, HandleSingleEvent, NULL);
 
@@ -116,8 +116,8 @@ TEST(EventEmitter, TestDoubleHandler)
 
 TEST(EventEmitter, TestDifferentContext)
 {
-    ot::BorderRouter::EventEmitter ee;
-    int                            event = 2;
+    otbr::EventEmitter ee;
+    int                event = 2;
 
     int context1 = 1;
     int context2 = 2;
@@ -136,8 +136,8 @@ TEST(EventEmitter, TestDifferentContext)
 
 TEST(EventEmitter, TestCallSequence)
 {
-    ot::BorderRouter::EventEmitter ee;
-    int                            event = 3;
+    otbr::EventEmitter ee;
+    int                event = 3;
 
     int context1 = 1;
     int context2 = 2;
@@ -156,8 +156,8 @@ TEST(EventEmitter, TestCallSequence)
 
 TEST(EventEmitter, TestRemoveHandler)
 {
-    ot::BorderRouter::EventEmitter ee;
-    int                            event = 3;
+    otbr::EventEmitter ee;
+    int                event = 3;
 
     ee.On(event, HandleSingleEvent, NULL);
     ee.On(event, HandleSingleEvent, NULL);

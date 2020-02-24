@@ -26,7 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "strcpy_utils.hpp"
+#include "utils/strcpy_utils.hpp"
+
 #include "common/code_utils.hpp"
 
 int strcpy_safe(char *aDest, size_t aDestSize, const char *aSrc)

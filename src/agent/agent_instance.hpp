@@ -31,20 +31,20 @@
  *   This file includes definition for Thread border router agent instance.
  */
 
-#ifndef AGENT_INSTANCE_HPP_
-#define AGENT_INSTANCE_HPP_
+#ifndef OTBR_AGENT_AGENT_INSTANCE_HPP_
+#define OTBR_AGENT_AGENT_INSTANCE_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdarg.h>
 #include <stdint.h>
 #include <sys/select.h>
 #include <sys/types.h>
 
-#include "border_agent.hpp"
-#include "ncp.hpp"
+#include "agent/border_agent.hpp"
+#include "agent/ncp.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This class implements an instance to host services used by border router.
@@ -102,8 +102,6 @@ private:
     BorderAgent      mBorderAgent;
 };
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // AGENT_INSTANCE_HPP_
+#endif // OTBR_AGENT_AGENT_INSTANCE_HPP_

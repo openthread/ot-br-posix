@@ -32,7 +32,7 @@
  */
 #define OT_HTTP_PORT 80
 
-#include <openthread-br/config.h>
+#include "openthread-br/config.h"
 
 #include <errno.h>
 #include <signal.h>
@@ -43,13 +43,13 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "web-service/web_server.hpp"
+#include "web/web-service/web_server.hpp"
 
 static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
 static const char kDefaultListenAddr[]    = "0.0.0.0";
 
-std::unique_ptr<ot::Web::WebServer> sServer(nullptr);
+std::unique_ptr<otbr::Web::WebServer> sServer(nullptr);
 
 static void HandleSignal(int aSignal)
 {
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     signal(SIGTERM, HandleSignal);
     signal(SIGINT, HandleSignal);
 
-    sServer.reset(new ot::Web::WebServer());
+    sServer.reset(new otbr::Web::WebServer());
     sServer->StartWebServer(interfaceName, httpListenAddr, port);
 
     otbrLogDeinit();

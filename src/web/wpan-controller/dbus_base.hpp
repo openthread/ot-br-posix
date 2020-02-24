@@ -31,14 +31,16 @@
  *   This file implements the basic DBus operations
  */
 
-#ifndef DBUS_BASE_HPP
-#define DBUS_BASE_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_
+
+#include "openthread-br/config.h"
 
 #include <dbus/dbus.h>
 
 #include "common/logging.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 class DBusBase
@@ -75,5 +77,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
-#endif // DBUS_BASE_HPP
+} // namespace otbr
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_

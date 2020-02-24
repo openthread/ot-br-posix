@@ -31,8 +31,10 @@
  *   This file includes definition for data types used by Thread border agent.
  */
 
-#ifndef TYPES_HPP_
-#define TYPES_HPP_
+#ifndef OTBR_COMMON_TYPES_HPP_
+#define OTBR_COMMON_TYPES_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 
@@ -56,7 +58,7 @@ enum otbrError
     OTBR_ERROR_MDNS  = -4, ///< MDNS error.
 };
 
-namespace ot {
+namespace otbr {
 
 enum
 {
@@ -115,6 +117,6 @@ public:
     };
 };
 
-} // namespace ot
+} // namespace otbr
 
-#endif // TYPES_HPP_
+#endif // OTBR_COMMON_TYPES_HPP_

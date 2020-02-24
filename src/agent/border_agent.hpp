@@ -31,17 +31,15 @@
  *   This file includes definition for Thread border agent.
  */
 
-#ifndef BORDER_AGENT_HPP_
-#define BORDER_AGENT_HPP_
+#ifndef OTBR_AGENT_BORDER_AGENT_HPP_
+#define OTBR_AGENT_BORDER_AGENT_HPP_
 
 #include <stdint.h>
 
-#include "mdns.hpp"
-#include "ncp.hpp"
+#include "agent/mdns.hpp"
+#include "agent/ncp.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * @addtogroup border-router-border-agent
@@ -156,8 +154,6 @@ private:
  * @}
  */
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // BORDER_AGENT_HPP_
+#endif // OTBR_AGENT_BORDER_AGENT_HPP_

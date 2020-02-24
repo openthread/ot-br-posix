@@ -26,13 +26,14 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBCOAP_H_
-#define LIBCOAP_H_
+#ifndef OTBR_COMMON_LIBCOAP_H_
+#define OTBR_COMMON_LIBCOAP_H_
+
+#include "openthread-br/config.h"
 
 /// @cond
 
 #define WITH_POSIX 1
-#include "coap_config.h"
 #include <coap/coap.h>
 
 #define MAX_COAP_PACKET 1280
@@ -53,4 +54,4 @@ typedef struct coap_packet_t
 
 /// @endcond
 
-#endif
+#endif // OTBR_COMMON_LIBCOAP_H_

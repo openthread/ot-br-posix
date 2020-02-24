@@ -31,8 +31,10 @@
  *   This file implements the web server of border router
  */
 
-#ifndef WEB_SERVER
-#define WEB_SERVER
+#ifndef OTBR_WEB_WEB_SERVICE_WEB_SERVER_
+#define OTBR_WEB_WEB_SERVICE_WEB_SERVER_
+
+#include "openthread-br/config.h"
 
 #include <algorithm>
 #include <fstream>
@@ -45,14 +47,14 @@
 
 #include <boost/asio/ip/tcp.hpp>
 
-#include "wpan_service.hpp"
+#include "web/web-service/wpan_service.hpp"
 
 namespace SimpleWeb {
 template <class T> class Server;
 typedef boost::asio::ip::tcp::socket HTTP;
 } // namespace SimpleWeb
 
-namespace ot {
+namespace otbr {
 namespace Web {
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
@@ -123,12 +125,12 @@ private:
 
     void Init(void);
 
-    char                 mIfName[IFNAMSIZ];
-    HttpServer *         mServer;
-    ot::Web::WpanService mWpanService;
+    char                   mIfName[IFNAMSIZ];
+    HttpServer *           mServer;
+    otbr::Web::WpanService mWpanService;
 };
 
 } // namespace Web
-} // namespace ot
+} // namespace otbr
 
-#endif
+#endif // OTBR_WEB_WEB_SERVICE_WEB_SERVER_

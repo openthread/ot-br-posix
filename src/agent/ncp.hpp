@@ -31,24 +31,19 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef NCP_HPP_
-#define NCP_HPP_
+#ifndef OTBR_AGENT_NCP_HPP_
+#define OTBR_AGENT_NCP_HPP_
 
-#include <openthread-br/config.h>
+#include "openthread-br/config.h"
 
 #include <netinet/in.h>
 #include <stddef.h>
-#if OTBR_ENABLE_NCP_WPANTUND
-#include "common/mainloop.h"
-#else
-#include <openthread/openthread-system.h>
-#endif
+
 #include "common/event_emitter.hpp"
+#include "common/mainloop.h"
 #include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -173,8 +168,6 @@ public:
 
 } // namespace Ncp
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // NCP_HPP_
+#endif // OTBR_AGENT_NCP_HPP_

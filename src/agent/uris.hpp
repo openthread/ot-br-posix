@@ -31,10 +31,10 @@
  *   This file includes definitions for Thread URIs.
  */
 
-#ifndef THREAD_URIS_HPP_
-#define THREAD_URIS_HPP_
+#ifndef OTBR_AGENT_THREAD_URIS_HPP_
+#define OTBR_AGENT_THREAD_URIS_HPP_
 
-namespace ot {
+namespace otbr {
 
 /**
  * The URI Path for Address Query.
@@ -274,6 +274,6 @@ namespace ot {
  */
 #define OT_URI_PATH_DIAGNOSTIC_RESET "d/dr"
 
-} // namespace ot
+} // namespace otbr
 
-#endif // THREAD_URIS_HPP_
+#endif // OTBR_AGENT_THREAD_URIS_HPP_

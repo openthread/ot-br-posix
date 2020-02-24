@@ -62,8 +62,8 @@ int printPSKc(const char *aPassphrase, const char *aExtPanId, const char *aNetwo
     size_t  length;
     int     ret = -1;
 
-    ot::Psk::Pskc  pskcComputer;
-    const uint8_t *pskc;
+    otbr::Psk::Pskc pskcComputer;
+    const uint8_t * pskc;
 
     length = strlen(aPassphrase);
     VerifyOrExit(length > 0, printf("PASSPHRASE must not be empty.\n"));
@@ -78,7 +78,7 @@ int printPSKc(const char *aPassphrase, const char *aExtPanId, const char *aNetwo
                          (aExtPanId[i] <= 'F' && aExtPanId[i] >= 'A'),
                      printf("EXTPANID must be encoded in hex.\n"));
     }
-    ot::Utils::Hex2Bytes(aExtPanId, extpanid, sizeof(extpanid));
+    otbr::Utils::Hex2Bytes(aExtPanId, extpanid, sizeof(extpanid));
 
     length = strlen(aNetworkName);
     VerifyOrExit(length > 0, printf("NETWORK_NAME must not be empty.\n"));

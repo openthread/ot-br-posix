@@ -38,7 +38,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
-using namespace ot::BorderRouter;
+using namespace otbr;
 
 static struct Context
 {

@@ -35,10 +35,10 @@
 
 #include "mdns_mojo.hpp"
 
-static ot::BorderRouter::Mdns::Publisher *sPublisher;
+static otbr::Mdns::Publisher *sPublisher;
 static bool                               published = false;
 
-void PublishHandler(void *aContext, ot::BorderRouter::Mdns::State aState)
+void PublishHandler(void *aContext, otbr::Mdns::State aState)
 {
     sPublisher->PublishService(49191, "test", "_meshcop._udp", nullptr);
     published = true;
@@ -46,13 +46,13 @@ void PublishHandler(void *aContext, ot::BorderRouter::Mdns::State aState)
 
 int main(void)
 {
-    sPublisher = ot::BorderRouter::Mdns::Publisher::Create(0, nullptr, nullptr, PublishHandler, nullptr);
+    sPublisher = otbr::Mdns::Publisher::Create(0, nullptr, nullptr, PublishHandler, nullptr);
     sPublisher->Start();
     while (!published)
         ;
     sleep(1);
     sPublisher->Stop();
     sleep(1);
-    ot::BorderRouter::Mdns::Publisher::Destroy(sPublisher);
+    otbr::Mdns::Publisher::Destroy(sPublisher);
     return 0;
 }

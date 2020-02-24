@@ -31,11 +31,11 @@
  *   This file implements "scan" Thread Network function.
  */
 
+#include "web/wpan-controller/dbus_scan.hpp"
+
 #include "common/code_utils.hpp"
 
-#include "dbus_scan.hpp"
-
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int             DBusScan::mAvailableNetworksCnt = 0;
@@ -208,4 +208,4 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo, DBusMessag
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

@@ -31,14 +31,14 @@
  *   The file implements the dtls session class to communicate with the joiner
  */
 
-#include "joiner_session.hpp"
-#include "commissioner_utils.hpp"
+#include "commissioner/joiner_session.hpp"
+
 #include "agent/uris.hpp"
+#include "commissioner/utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAscii)
     : mDtlsServer(Dtls::Server::Create(aInternalServerPort, JoinerSession::HandleSessionChange, this))
@@ -168,5 +168,4 @@ JoinerSession::~JoinerSession()
     Coap::Agent::Destroy(mCoapAgent);
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

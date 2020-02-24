@@ -31,17 +31,17 @@
  *   This file includes definition for CoAP service.
  */
 
-#ifndef COAP_HPP_
-#define COAP_HPP_
+#ifndef OTBR_COMMON_COAP_HPP_
+#define OTBR_COMMON_COAP_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 #include <unistd.h>
 
-#include "types.hpp"
+#include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Coap {
 
@@ -355,8 +355,6 @@ public:
 
 } // namespace Coap
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // COAP_HPP_
+#endif // OTBR_COMMON_COAP_HPP_

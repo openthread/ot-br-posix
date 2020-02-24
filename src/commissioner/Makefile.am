@@ -36,24 +36,23 @@ bin_PROGRAMS = otbr-commissioner
 
 noinst_HEADERS                                        = \
     addr_utils.hpp                                      \
+    arguments.hpp                                       \
     commissioner.hpp                                    \
-    commissioner_argcargv.hpp                           \
-    commissioner_constants.hpp                          \
-    commissioner_utils.hpp                              \
+    constants.hpp                                       \
     joiner_session.hpp                                  \
+    utils.hpp                                           \
     $(NULL)
 
 libotbr_commissioner_la_SOURCES                       = \
     addr_utils.cpp                                      \
+    arguments.cpp                                       \
     commissioner.cpp                                    \
-    commissioner_argcargv.cpp                           \
     joiner_session.cpp                                  \
     $(NULL)
 
 libotbr_commissioner_la_CPPFLAGS                      = \
     -I$(top_srcdir)/include                             \
     -I$(top_srcdir)/src                                 \
-    -I$(top_srcdir)/src/web                             \
     $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 

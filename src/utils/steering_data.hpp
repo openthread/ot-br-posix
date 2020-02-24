@@ -31,13 +31,15 @@
  *   This file provides commissioner steering data calculations
  */
 
-#ifndef STEERING_DATA_HPP
-#define STEERING_DATA_HPP
+#ifndef OTBR_UTILS_STEERING_DATA_HPP_
+#define OTBR_UTILS_STEERING_DATA_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 #include <string.h>
 
-namespace ot {
+namespace otbr {
 
 /**
  * This class represents Steering Data
@@ -116,6 +118,6 @@ private:
     uint8_t mLength;
 };
 
-} /* namespace ot */
+} /* namespace otbr */
 
-#endif // STEERING_DATA_HPP
+#endif // OTBR_UTILS_STEERING_DATA_HPP_

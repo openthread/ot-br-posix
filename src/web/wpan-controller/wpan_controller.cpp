@@ -31,6 +31,8 @@
  *   This file provides DBus operations APIs for other modules to control the WPAN interface.
  */
 
+#include "web/wpan-controller/wpan_controller.hpp"
+
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -39,19 +41,17 @@
 
 #include "common/code_utils.hpp"
 #include "utils/strcpy_utils.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/dbus_form.hpp"
+#include "web/wpan-controller/dbus_gateway.hpp"
+#include "web/wpan-controller/dbus_get.hpp"
+#include "web/wpan-controller/dbus_ifname.hpp"
+#include "web/wpan-controller/dbus_join.hpp"
+#include "web/wpan-controller/dbus_leave.hpp"
+#include "web/wpan-controller/dbus_scan.hpp"
+#include "web/wpan-controller/dbus_set.hpp"
 
-#include "dbus_base.hpp"
-#include "dbus_form.hpp"
-#include "dbus_gateway.hpp"
-#include "dbus_get.hpp"
-#include "dbus_ifname.hpp"
-#include "dbus_join.hpp"
-#include "dbus_leave.hpp"
-#include "dbus_scan.hpp"
-#include "dbus_set.hpp"
-#include "wpan_controller.hpp"
-
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int WPANController::Scan(void)
@@ -247,4 +247,4 @@ void WPANController::SetInterfaceName(const char *aIfName)
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

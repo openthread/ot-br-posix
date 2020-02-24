@@ -31,13 +31,13 @@
  *   This file implements the function of "form" a new Thread Network.
  */
 
+#include "web/wpan-controller/dbus_form.hpp"
+
 #include "common/code_utils.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
-#include "dbus_base.hpp"
-#include "dbus_form.hpp"
-#include "wpan_controller.hpp"
-
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int DBusForm::ProcessReply(void)
@@ -72,4 +72,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

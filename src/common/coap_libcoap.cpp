@@ -31,18 +31,16 @@
  *   The file implements the CoAP service.
  */
 
-#include "coap_libcoap.hpp"
+#include "common/coap_libcoap.hpp"
 
 #include <errno.h>
 #include <stdio.h>
 
-#include "code_utils.hpp"
-#include "logging.hpp"
-#include "types.hpp"
+#include "common/code_utils.hpp"
+#include "common/logging.hpp"
+#include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Coap {
 
@@ -381,6 +379,4 @@ void Agent::Destroy(Agent *aAgent)
 
 } // namespace Coap
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

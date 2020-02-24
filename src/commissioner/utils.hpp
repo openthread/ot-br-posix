@@ -28,57 +28,61 @@
 
 /**
  * @file
- *   The file is the header for the command line params for the commissioner test app.
+ *   The file is some small utility functions for commissioner code
  */
 
-#ifndef OTBR_COMMISSION_COMMON_H_
-#define OTBR_COMMISSION_COMMON_H_
+#ifndef OTBR_COMMISSIONER_UTILS_HPP_
+#define OTBR_COMMISSIONER_UTILS_HPP_
 
-#include "netinet/in.h"
+#include "openthread-br/config.h"
 
-namespace ot {
-namespace BorderRouter {
+#include <stdint.h>
+#include <stdio.h>
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <sys/socket.h>
+
+namespace otbr {
+namespace Utils {
 
 /**
- * Constants
+ * This method computes number of bytes between start and end pointer
+ *
+ * @param[in]    aStart         start pointer
+ * @param[in]    aEnd           end pointer
+ *
+ * @returns number of bytes within
+ *
  */
-enum
+inline uint16_t LengthOf(const void *aStart, const void *aEnd)
 {
-    kSizeMaxPacket = 1500, ///< max size of a network packet
+    return static_cast<uint16_t>(static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart));
+}
 
-    kPetitionAttemptDelay = 5, ///< delay between failed attempts to petition
+/**
+ * This method returns min of two parameters
+ *
+ * @returns min of two parameters
+ *
+ */
+template <typename T> T Min(const T &lhs, const T &rhs)
+{
+    return lhs < rhs ? lhs : rhs;
+}
 
-    kPetitionMaxRetry = 2, ///< max retry for petition
+/**
+ * This method returns max of two parameters
+ *
+ * @returns max of two parameters
+ *
+ */
+template <typename T> T Max(const T &lhs, const T &rhs)
+{
+    return lhs > rhs ? lhs : rhs;
+}
 
-    kSteeringDefaultLength = 15, ///< Default size of steering data
+} // namespace Utils
+} // namespace otbr
 
-    kEui64Len = (64 / 8), ///< how long is an EUI64 in bytes
-
-    kPSKcLength = 16, ///< how long is a PSKc in bytes
-    kPSKdLength = 32, ///< how long is a PSKd in bytes
-
-    kPortJoinerSession = 49192, ///< What port does our internal server use?
-
-    kXPanIdLength = (64 / 8), ///< 64bit xpanid length in bytes
-
-    kNetworkNameLenMax = 16, ///< specification: 8.10.4
-
-    kBorderRouterPassPhraseLen = 64, ///< Spec is not specific about this items max length, so we choose 64
-
-    kIPAddrNameBufSize = INET6_ADDRSTRLEN, ///< String buffer size for ip address
-
-    kPortNameBufSize = 6, ///< String buffer size for port
-
-    kMBedDebugDefaultThreshold = 4, ///< mbed debug print threshold
-
-    kMbedDtlsHandshakeMinTimeout = 8000, ///< dtls handshake min timeout
-
-    kMbedDtlsHandshakeMaxTimeout = 60000, ///< dtls handshake min timeout
-
-    kKEKSize = 32, ///< key encrypted key(KEK) size
-};
-
-} // namespace BorderRouter
-} // namespace ot
-
-#endif // OTBR_COMMISSION_COMMON_H_
+#endif // OTBR_COMMISSIONER_UTILS_HPP_

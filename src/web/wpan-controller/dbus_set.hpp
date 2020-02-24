@@ -31,17 +31,19 @@
  *   This file implements "set property" function.
  */
 
-#ifndef DBUS_SET_HPP
-#define DBUS_SET_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdio.h>
 
 #include <dbus/dbus.h>
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 enum
@@ -73,5 +75,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
-#endif // DBUS_SET_HPP
+} // namespace otbr
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_

@@ -31,16 +31,17 @@
  *   The file implements the commissioner class
  */
 
+#include "commissioner/commissioner.hpp"
+
 #include <vector>
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "addr_utils.hpp"
-#include "commissioner.hpp"
-#include "commissioner_utils.hpp"
 #include "agent/uris.hpp"
+#include "commissioner/addr_utils.hpp"
+#include "commissioner/utils.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
@@ -48,8 +49,7 @@
 #include "utils/pskc.hpp"
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 const uint16_t Commissioner::kPortJoinerSession      = 49192;
 const uint8_t  Commissioner::kSeed[]                 = "Commissioner";
@@ -678,5 +678,4 @@ Commissioner::~Commissioner(void)
     Coap::Agent::Destroy(mCoapAgent);
 }
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

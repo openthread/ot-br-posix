@@ -26,12 +26,12 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dbus/dbus_object.hpp"
+
 #include <assert.h>
 #include <stdio.h>
 
 #include <dbus/dbus.h>
-
-#include "dbus/dbus_object.hpp"
 
 using std::placeholders::_1;
 

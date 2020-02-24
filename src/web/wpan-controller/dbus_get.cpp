@@ -31,11 +31,11 @@
  *   This file implements the function of "get property"
  */
 
+#include "web/wpan-controller/dbus_get.hpp"
+
 #include "common/code_utils.hpp"
 
-#include "dbus_get.hpp"
-
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 static void DumpInfoFromIter(char *aOutput, DBusMessageIter *aIter, int aIndent, bool aBare)
@@ -252,4 +252,4 @@ PropertyNameValue *DBusGet::GetPropertyList(void)
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

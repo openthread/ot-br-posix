@@ -26,8 +26,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTUBUS_HPP_
-#define OTUBUS_HPP_
+#ifndef OTBR_AGENT_OTUBUS_HPP_
+#define OTBR_AGENT_OTUBUS_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdarg.h>
 #include <time.h>
@@ -48,8 +50,7 @@ extern "C" {
 #include <libubus.h>
 }
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Ncp {
 class ControllerOpenThread;
 }
@@ -57,7 +58,7 @@ class ControllerOpenThread;
 namespace ubus {
 
 /**
- * @namespace ot::BorderRouter::ubus
+ * @namespace otbr::ubus
  *
  * @brief
  *   This namespace contains definitions for ubus related instance.
@@ -1121,7 +1122,6 @@ private:
     void AppendResult(otError aError, struct ubus_context *aContext, struct ubus_request_data *aRequest);
 };
 } // namespace ubus
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
-#endif // OTUBUS_HPP_
+#endif // OTBR_AGENT_OTUBUS_HPP_

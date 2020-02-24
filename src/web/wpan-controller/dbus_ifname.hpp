@@ -31,17 +31,19 @@
  *   This file implements function of "look up" DBus interface name.
  */
 
-#ifndef DBUS_IFNAME_HPP
-#define DBUS_IFNAME_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_IFNAME_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_IFNAME_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdio.h>
 
 #include <dbus/dbus.h>
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 class DBusIfname : public DBusBase
@@ -54,5 +56,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
-#endif // DBUS_IFNAME_HPP
+} // namespace otbr
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_IFNAME_HPP_

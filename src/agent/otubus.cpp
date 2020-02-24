@@ -30,12 +30,12 @@
 #define BYTE_ORDER_BIG_ENDIAN 1
 #endif
 
-#include "otubus.hpp"
-#include "common/logging.hpp"
+#include "agent/otubus.hpp"
 
 #include <mutex>
 
 #include <sys/eventfd.h>
+
 #include <openthread/commissioner.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
@@ -49,11 +49,12 @@
 #undef PACKAGE_VERSION
 #undef VERSION
 
-#include "ncp_openthread.hpp"
+#include "agent/ncp_openthread.hpp"
+#include "common/logging.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace ubus {
+
 static UbusServer *sUbusServerInstance = NULL;
 static int         sUbusEfd            = -1;
 static void *      sJsonUri            = NULL;
@@ -1779,16 +1780,15 @@ exit:
 }
 
 } // namespace ubus
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
-void UbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex)
+void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex)
 {
-    ot::BorderRouter::ubus::sNcpThreadMutex = aNcpThreadMutex;
-    ot::BorderRouter::ubus::UbusServer::Initialize(aController);
+    otbr::ubus::sNcpThreadMutex = aNcpThreadMutex;
+    otbr::ubus::UbusServer::Initialize(aController);
 
-    ot::BorderRouter::ubus::sUbusEfd = eventfd(0, 0);
-    if (ot::BorderRouter::ubus::sUbusEfd == -1)
+    otbr::ubus::sUbusEfd = eventfd(0, 0);
+    if (otbr::ubus::sUbusEfd == -1)
     {
         perror("ubus eventfd create failed\n");
         exit(EXIT_FAILURE);
@@ -1797,18 +1797,18 @@ void UbusServerInit(ot::BorderRouter::Ncp::ControllerOpenThread *aController, st
 
 void UbusServerRun(void)
 {
-    ot::BorderRouter::ubus::UbusServer::GetInstance().InstallUbusObject();
+    otbr::ubus::UbusServer::GetInstance().InstallUbusObject();
 }
 
 void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd)
 {
-    VerifyOrExit(ot::BorderRouter::ubus::sUbusEfd != -1);
+    VerifyOrExit(otbr::ubus::sUbusEfd != -1);
 
-    FD_SET(ot::BorderRouter::ubus::sUbusEfd, &aReadFdSet);
+    FD_SET(otbr::ubus::sUbusEfd, &aReadFdSet);
 
-    if (aMaxFd < ot::BorderRouter::ubus::sUbusEfd)
+    if (aMaxFd < otbr::ubus::sUbusEfd)
     {
-        aMaxFd = ot::BorderRouter::ubus::sUbusEfd;
+        aMaxFd = otbr::ubus::sUbusEfd;
     }
 
 exit:
@@ -1820,11 +1820,11 @@ void UbusProcess(const fd_set &aReadFdSet)
     ssize_t  retval;
     uint64_t num;
 
-    VerifyOrExit(ot::BorderRouter::ubus::sUbusEfd != -1);
+    VerifyOrExit(otbr::ubus::sUbusEfd != -1);
 
-    if (FD_ISSET(ot::BorderRouter::ubus::sUbusEfd, &aReadFdSet))
+    if (FD_ISSET(otbr::ubus::sUbusEfd, &aReadFdSet))
     {
-        retval = read(ot::BorderRouter::ubus::sUbusEfd, &num, sizeof(uint64_t));
+        retval = read(otbr::ubus::sUbusEfd, &num, sizeof(uint64_t));
         if (retval != sizeof(uint64_t))
         {
             perror("read ubus eventfd failed\n");

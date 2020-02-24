@@ -48,9 +48,7 @@ extern "C" {
 
 #if OTBR_ENABLE_NCP_WPANTUND
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -534,8 +532,6 @@ void ControllerWpantund::Reset(void)
 
 } // namespace Ncp
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_ENABLE_NCP_WPANTUND

@@ -31,12 +31,14 @@
  *   This file includes definitions for CRC16 computations.
  */
 
-#ifndef CRC16_HPP_
-#define CRC16_HPP_
+#ifndef OTBR_UTILS_CRC16_HPP_
+#define OTBR_UTILS_CRC16_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 
-namespace ot {
+namespace otbr {
 
 /**
  * This class implements CRC16 computations.
@@ -86,6 +88,6 @@ private:
     uint16_t mCrc;
 };
 
-} // namespace ot
+} // namespace otbr
 
-#endif // CRC16_HPP_
+#endif // OTBR_UTILS_CRC16_HPP_

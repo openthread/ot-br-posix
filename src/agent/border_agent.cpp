@@ -31,7 +31,7 @@
  *   The file implements the Thread border agent.
  */
 
-#include "border_agent.hpp"
+#include "agent/border_agent.hpp"
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -42,9 +42,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "border_agent.hpp"
-#include "ncp.hpp"
-#include "uris.hpp"
+#include "agent/border_agent.hpp"
+#include "agent/ncp.hpp"
+#include "agent/uris.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
@@ -52,9 +52,7 @@
 #include "utils/hex.hpp"
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
@@ -473,6 +471,4 @@ void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArgum
     static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
 }
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

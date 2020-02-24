@@ -102,8 +102,6 @@ libotbr_web_la_LDFLAGS                                          = \
 libotbr_web_la_CPPFLAGS                                         = \
     -I$(top_srcdir)/include                                       \
     -I$(top_srcdir)/src                                           \
-    -I$(top_srcdir)/src/wpan-controller                           \
-    -I$(top_srcdir)/src/web-service                               \
     -I$(top_srcdir)/third_party/Simple-web-server/repo/           \
     -I$(top_srcdir)/third_party/wpantund/repo/src                 \
     -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus        \

@@ -34,7 +34,7 @@
 #define __APPLE_USE_RFC_3542
 #endif
 
-#include "dtls_mbedtls.hpp"
+#include "common/dtls_mbedtls.hpp"
 
 #include <algorithm>
 
@@ -43,14 +43,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "code_utils.hpp"
-#include "logging.hpp"
-#include "time.hpp"
-#include "types.hpp"
+#include "common/code_utils.hpp"
+#include "common/logging.hpp"
+#include "common/time.hpp"
+#include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Dtls {
 
@@ -741,6 +739,4 @@ exit:
 
 } // namespace Dtls
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

@@ -26,17 +26,17 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef COAP_LIBCOAP_HPP_
-#define COAP_LIBCOAP_HPP_
+#ifndef OTBR_COMMON_COAP_LIBCOAP_HPP_
+#define OTBR_COMMON_COAP_LIBCOAP_HPP_
+
+#include "openthread-br/config.h"
 
 #include <map>
 
-#include "coap.hpp"
-#include "libcoap.h"
+#include "common/coap.hpp"
+#include "common/libcoap.h"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Coap {
 
@@ -316,9 +316,6 @@ private:
  */
 
 } // namespace Coap
+} // namespace otbr
 
-} // namespace BorderRouter
-
-} // namespace ot
-
-#endif // COAP_LIBCOAP_HPP_
+#endif // OTBR_COMMON_COAP_LIBCOAP_HPP_
