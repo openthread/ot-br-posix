@@ -26,14 +26,14 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dbus/dbus_message_helper.hpp"
-#include "dbus/dbus_object.hpp"
+#include "dbus/common/dbus_message_helper.hpp"
+#include "dbus/server/dbus_object.hpp"
 
-using otbr::dbus::DBusMessageEncodeToVariant;
-using otbr::dbus::DBusMessageExtractFromVariant;
-using otbr::dbus::DBusMessageToTuple;
-using otbr::dbus::DBusObject;
-using otbr::dbus::DBusRequest;
+using otbr::DBus::DBusMessageEncodeToVariant;
+using otbr::DBus::DBusMessageExtractFromVariant;
+using otbr::DBus::DBusMessageToTuple;
+using otbr::DBus::DBusObject;
+using otbr::DBus::DBusRequest;
 using std::placeholders::_1;
 
 class TestObject : public DBusObject
@@ -118,6 +118,7 @@ int main()
     }
 
 exit:
+    dbus_error_free(&dbusErr);
     dbus_connection_unref(connection);
     return ret;
 }

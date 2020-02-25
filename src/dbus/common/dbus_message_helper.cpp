@@ -26,12 +26,10 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dbus/dbus_message_helper.hpp"
-
-#include "dbus/constants.hpp"
+#include "dbus/common/dbus_message_helper.hpp"
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue)
 {
@@ -55,7 +53,6 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue)
 
     SuccessOrExit(err = DBusMessageExtract(aIter, val));
     aValue = static_cast<int8_t>(val);
-
 exit:
     return err;
 }
@@ -180,5 +177,5 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int64_t> &
     return DBusMessageEncodePrimitive(aIter, aValue);
 }
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr

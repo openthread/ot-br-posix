@@ -9,8 +9,6 @@
  *    2. Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *    3. Neither the name of the copyright holder nor the
- *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -26,16 +24,15 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dbus/error.hpp"
-
-#include "dbus/constants.hpp"
-#include "dbus/dbus_message_helper.hpp"
+#include "dbus/common/error_helper.hpp"
+#include "common/code_utils.hpp"
+#include "dbus/common/dbus_message_helper.hpp"
 
 #define OPENTHREAD_ERROR_PREFIX "io.openthread.Error"
 
 static const std::pair<otError, const char *> sErrorNames[] = {
-    {OT_ERROR_GENERIC, OPENTHREAD_ERROR_PREFIX ".Generic"},
     {OT_ERROR_NONE, OPENTHREAD_ERROR_PREFIX ".OK"},
+    {OT_ERROR_GENERIC, OPENTHREAD_ERROR_PREFIX ".Generic"},
     {OT_ERROR_FAILED, OPENTHREAD_ERROR_PREFIX ".Failed"},
     {OT_ERROR_DROP, OPENTHREAD_ERROR_PREFIX ".Drop"},
     {OT_ERROR_NO_BUFS, OPENTHREAD_ERROR_PREFIX ".NoBufs"},
@@ -71,13 +68,13 @@ static const std::pair<otError, const char *> sErrorNames[] = {
 };
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 const char *ConvertToDBusErrorName(otError aError)
 {
     const char *name = sErrorNames[0].second;
 
-    for (auto &&p : sErrorNames)
+    for (const auto &p : sErrorNames)
     {
         if (p.first == aError)
         {
@@ -88,31 +85,31 @@ const char *ConvertToDBusErrorName(otError aError)
     return name;
 }
 
-otError ConvertFromDBusErrorName(const std::string &aErrorName)
+OtbrClientError ConvertFromDBusErrorName(const std::string &aErrorName)
 {
-    otError err = OT_ERROR_GENERIC;
+    OtbrClientError err = OtbrClientError::ERROR_NONE;
 
-    for (auto &&p : sErrorNames)
+    for (const auto &p : sErrorNames)
     {
         if (p.second == aErrorName)
         {
-            err = p.first;
+            err = static_cast<OtbrClientError>(p.first);
             break;
         }
     }
     return err;
 }
 
-otError CheckErrorMessage(DBusMessage *aMessage)
+OtbrClientError CheckErrorMessage(DBusMessage *aMessage)
 {
-    otError err = OT_ERROR_NONE;
+    OtbrClientError err = OtbrClientError::ERROR_NONE;
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_ERROR)
     {
         std::string errMsg;
         auto        args = std::tie(errMsg);
 
-        VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, err = OT_ERROR_FAILED);
+        VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, err = OtbrClientError::ERROR_DBUS);
         err = ConvertFromDBusErrorName(errMsg);
     }
 
@@ -120,5 +117,5 @@ exit:
     return err;
 }
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr

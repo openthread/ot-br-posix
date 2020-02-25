@@ -62,6 +62,10 @@ matrix:
       compiler: gcc
       os: linux
       dist: bionic
+    - env: BUILD_TARGET="otbr-dbus-check" COVERAGE=1 VERBOSE=1
+      compiler: gcc
+      os: linux
+      dist: bionic
     - env: BUILD_TARGET="pretty-check"
       os: linux
       dist: bionic

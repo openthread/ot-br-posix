@@ -27,81 +27,52 @@
 #
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
+include $(top_srcdir)/third_party/openthread/openthread.mk
 
-if OTBR_ENABLE_DBUS_SERVER
-check_PROGRAMS = otbr-test-dbus-server
+noinst_LTLIBRARIES = libotbr-dbus-server.la
+
+libotbr_dbus_server_la_CXXFLAGS   = \
+    -fno-exceptions                 \
+    -Wno-missing-field-initializers \
+    -Wno-unused-parameter           \
+    $(NULL)
+
+libotbr_dbus_server_la_SOURCES       = \
+    dbus_object.cpp                    \
+    $(NULL)
 
 if OTBR_ENABLE_NCP_OPENTHREAD
-check_PROGRAMS += otbr-test-dbus-client
+libotbr_dbus_server_la_SOURCES      += \
+    dbus_agent.cpp                     \
+    dbus_thread_object.cpp             \
+    $(NULL)
 endif
 
-otbr_test_dbus_server_SOURCES = \
-    test_dbus_server.cpp \
+libotbr_dbus_server_la_CPPFLAGS                            = \
+    -I$(top_srcdir)/include                                  \
+    -I$(top_srcdir)/src                                      \
+    -I$(top_srcdir)/third_party/openthread/repo/include/     \
+    -I$(top_srcdir)/third_party/openthread/repo/src/         \
+    $(DBUS_CFLAGS)                                           \
+    $(OPENTHREAD_CPPFLAGS)                                   \
     $(NULL)
 
-otbr_test_dbus_server_CXXFLAGS = \
-    -fno-exceptions \
-    $(NULL)
-
-otbr_test_dbus_server_CPPFLAGS = \
-    -I$(top_srcdir) \
-    -I$(top_srcdir)/include \
-    -I$(top_srcdir)/src \
-    -I$(top_srcdir)/third_party/openthread/repo/src/ \
-    -I$(top_srcdir)/third_party/openthread/repo/include/ \
-    $(DBUS_CFLAGS) \
-    $(NULL)
-
-otbr_test_dbus_server_LDADD = \
-    $(top_builddir)/src/dbus/server/libotbr-dbus-server.la \
-    $(top_builddir)/src/common/libotbr-logging.la \
-    $(NULL)
-
-otbr_test_dbus_server_LDFLAGS = \
-    -static \
+libotbr_dbus_server_la_LIBADD                              = \
+    $(top_builddir)/src/dbus/common/libotbr-dbus-common.la   \
+    $(DBUS_LIBS)                                             \
     $(NULL)
 
 if OTBR_ENABLE_NCP_OPENTHREAD
-otbr_test_dbus_client_SOURCES = \
-    test_dbus_client.cpp \
+libotbr_dbus_server_la_LIBADD                             += \
+    $(OPENTHREAD_LIBS)                                       \
+    $(NULL)
+endif
+
+noinst_HEADERS            = \
+    dbus_agent.hpp          \
+    dbus_object.hpp         \
+    dbus_request.hpp        \
+    dbus_thread_object.hpp  \
     $(NULL)
 
-otbr_test_dbus_client_CXXFLAGS = \
-    -fno-exceptions \
-    $(NULL)
-
-otbr_test_dbus_client_CPPFLAGS = \
-    -I$(top_srcdir) \
-    -I$(top_srcdir)/include \
-    -I$(top_srcdir)/src \
-    $(DBUS_CFLAGS) \
-    $(NULL)
-
-otbr_test_dbus_client_LDADD = \
-    $(top_builddir)/src/dbus/client/libotbr-dbus-client.la \
-    $(NULL)
-
-otbr_test_dbus_client_LDFLAGS = \
-    -static \
-    $(NULL)
-endif# if OTBR_ENABLE_NCP_OPENTHREAD
-
-dist_check_SCRIPTS = \
-    test-server \
-    $(NULL)
-
-EXTRA_DIST                = \
-    otbr-test-dbus-server.conf \
-    $(NULL)
-
-TESTS = \
-    test-server \
-    $(NULL)
-
-TESTS_ENVIRONMENT = \
-    export \
-    srcdir='$(srcdir)' \
-    VERBOSE=1; \
-    $(NULL)
-endif# if OTBR_ENABLE_DBUS_SERVER
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

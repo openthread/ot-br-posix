@@ -37,9 +37,9 @@
 #include <sys/time.h>
 
 extern "C" {
-#include "spinel.h"
 #include "wpan-dbus-v1.h"
 #include "wpanctl-utils.h"
+#include "spinel/spinel.h"
 }
 
 #include "common/code_utils.hpp"

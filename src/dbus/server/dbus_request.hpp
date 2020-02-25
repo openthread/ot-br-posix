@@ -26,17 +26,14 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_DBUS_REQUEST_HPP_
-#define OTBR_DBUS_DBUS_REQUEST_HPP_
+#include "common/logging.hpp"
 
-#include "openthread-br/config.h"
-
-#include "dbus/dbus_message_helper.hpp"
-#include "dbus/dbus_resources.hpp"
-#include "dbus/error.hpp"
+#include "dbus/common/dbus_message_helper.hpp"
+#include "dbus/common/dbus_resources.hpp"
+#include "dbus/common/error_helper.hpp"
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 /**
  * This class represents a incoming call for a d-bus method.
@@ -45,6 +42,13 @@ namespace dbus {
 class DBusRequest
 {
 public:
+    /**
+     * The constructor of dbus request.
+     *
+     * @param[in]   aConnection   The dbus connection.
+     * @param[in]   aMessage      The incoming dbus message.
+     *
+     */
     DBusRequest(DBusConnection *aConnection, DBusMessage *aMessage)
         : mConnection(aConnection)
         , mMessage(aMessage)
@@ -54,9 +58,35 @@ public:
     }
 
     /**
+     * The copy constructor of dbus request.
+     *
+     * @param[in]   aOther    The object to be copied from.
+     *
+     */
+    DBusRequest(const DBusRequest &aOther)
+        : mConnection(nullptr)
+        , mMessage(nullptr)
+    {
+        CopyFrom(aOther);
+    }
+
+    /**
+     * The assignment operator of dbus request.
+     *
+     * @param[in]   aOther    The object to be copied from.
+     *
+     */
+    DBusRequest &operator=(const DBusRequest &aOther)
+    {
+        CopyFrom(aOther);
+        return *this;
+    }
+
+    /**
      * This method returns the message sent to call the d-bus method.
      *
      * @returns   The dbus message.
+     *
      */
     DBusMessage *GetMessage(void) { return mMessage; }
 
@@ -64,6 +94,7 @@ public:
      * This method returns underlying d-bus connection.
      *
      * @returns   The dbus connection.
+     *
      */
     DBusConnection *GetConnection(void) { return mConnection; }
 
@@ -78,7 +109,7 @@ public:
         UniqueDBusMessage reply{dbus_message_new_method_return(mMessage)};
 
         VerifyOrExit(reply != nullptr);
-        VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
+        VerifyOrExit(otbr::DBus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
         dbus_connection_send(mConnection, reply.get(), nullptr);
 
@@ -95,7 +126,9 @@ public:
     void ReplyOtResult(otError aError)
     {
         UniqueDBusMessage reply{nullptr};
+        auto              logLevel = (aError == OT_ERROR_NONE) ? OTBR_LOG_INFO : OTBR_LOG_ERR;
 
+        otbrLog(logLevel, "Replied with result %s", ConvertToDBusErrorName(aError));
         if (aError == OT_ERROR_NONE)
         {
             reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage));
@@ -112,21 +145,42 @@ public:
         return;
     }
 
+    /**
+     * The destructor of DBusRequest
+     *
+     */
     ~DBusRequest(void)
     {
-        dbus_connection_unref(mConnection);
-        dbus_message_unref(mMessage);
+        if (mConnection)
+        {
+            dbus_connection_unref(mConnection);
+        }
+        if (mMessage)
+        {
+            dbus_message_unref(mMessage);
+        }
     }
 
 private:
-    DBusRequest(const DBusRequest &) = delete;
-    DBusRequest &operator=(const DBusRequest &) = delete;
+    void CopyFrom(const DBusRequest &aOther)
+    {
+        if (mMessage)
+        {
+            dbus_message_unref(mMessage);
+        }
+        if (mConnection)
+        {
+            dbus_connection_unref(mConnection);
+        }
+        mConnection = aOther.mConnection;
+        mMessage    = aOther.mMessage;
+        dbus_message_ref(mMessage);
+        dbus_connection_ref(mConnection);
+    }
 
     DBusConnection *mConnection;
     DBusMessage *   mMessage;
 };
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr
-
-#endif // OTBR_DBUS_DBUS_REQUEST_HPP_

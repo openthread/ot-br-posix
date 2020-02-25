@@ -101,6 +101,7 @@ TARGET_PRODUCT := aosp_arm64
 TARGET_BUILD_VARIANT := eng
 TARGET_BUILD_TYPE := release
 TARGET_TOOLS_PREFIX := $ANDROID_NDK_PATH/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-
+USE_OTBR_DAEMON := 1
 EOF
 }
 
@@ -262,9 +263,16 @@ EOF
 
 prepare_libchrome_stub()
 {
-    SRC_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-    mkdir external
+    SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
+    mkdir -p external
     cp -r "${SRC_DIR}"/../etc/libchrome_stub external/libchrome
+}
+
+prepare_openthread()
+{
+    SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
+    mkdir -p external
+    mv "${SRC_DIR}"/../third_party/openthread/repo external/openthread
 }
 
 #######################################
@@ -282,6 +290,7 @@ main()
     prepare_dbus
     prepare_libmdnssd
     prepare_libchrome_stub
+    prepare_openthread
 
     make showcommands otbr-agent
     make showcommands otbr-agent.conf

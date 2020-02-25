@@ -29,8 +29,6 @@
 #ifndef OTBR_DBUS_DBUS_OBJECT_HPP_
 #define OTBR_DBUS_DBUS_OBJECT_HPP_
 
-#include "openthread-br/config.h"
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -40,13 +38,13 @@
 
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
-#include "dbus/constants.hpp"
-#include "dbus/dbus_message_helper.hpp"
-#include "dbus/dbus_request.hpp"
-#include "dbus/dbus_resources.hpp"
+#include "dbus/common/constants.hpp"
+#include "dbus/common/dbus_message_helper.hpp"
+#include "dbus/common/dbus_resources.hpp"
+#include "dbus/server/dbus_request.hpp"
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 /**
  * This class is a base class for implementing a d-bus object.
@@ -64,6 +62,7 @@ public:
      *
      * @param[in]   aConnection   The dbus-connection the object bounds to.
      * @param[in]   aObjectPath   The path of the object.
+     *
      */
     DBusObject(DBusConnection *aConnection, const std::string &aObjectPath);
 
@@ -74,6 +73,7 @@ public:
      *
      * @retval  OTBR_ERROR_NONE   Successfully registered the object.
      * @retval  OTBR_ERROR_DBUS   Failed to ragister an object.
+     *
      */
     virtual otbrError Init(void);
 
@@ -83,6 +83,7 @@ public:
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aMethodName       The method name.
      * @param[in]   aHandler          The method handler.
+     *
      */
     void RegisterMethod(const std::string &      aInterfaceName,
                         const std::string &      aMethodName,
@@ -94,6 +95,7 @@ public:
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aMethodName       The method name.
      * @param[in]   aHandler          The method handler.
+     *
      */
     void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
                                     const std::string &        aMethodName,
@@ -105,6 +107,7 @@ public:
      * @param[in]   aInterfaceName    The interface name.
      * @param[in]   aMethodName       The method name.
      * @param[in]   aHandler          The method handler.
+     *
      */
     void RegisterSetPropertyHandler(const std::string &        aInterfaceName,
                                     const std::string &        aPropertyName,
@@ -119,6 +122,7 @@ public:
      *
      * @retval OTBR_ERROR_NONE  Signal successfully sent.
      * @retval OTBR_ERROR_DBUS  Failed to send the signal.
+     *
      */
     template <typename... FieldTypes>
     otbrError Signal(const std::string &              aInterfaceName,
@@ -130,7 +134,7 @@ public:
         otbrError err = OTBR_ERROR_NONE;
 
         VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
-        VerifyOrExit(err = otbr::dbus::TupleToDBusMessage(*signalMsg, aArgs));
+        VerifyOrExit(err = otbr::DBus::TupleToDBusMessage(*signalMsg, aArgs));
 
         VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
 
@@ -147,6 +151,7 @@ public:
      *
      * @retval OTBR_ERROR_NONE  Signal successfully sent.
      * @retval OTBR_ERROR_DBUS  Failed to send the signal.
+     *
      */
     template <typename ValueType>
     otbrError SignalPropertyChanged(const std::string &aInterfaceName,
@@ -210,7 +215,7 @@ private:
     std::string                                                                           mObjectPath;
 };
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr
 
 #endif // OTBR_DBUS_DBUS_SERVER_HPP_

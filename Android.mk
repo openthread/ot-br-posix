@@ -67,6 +67,38 @@ endif
 
 include $(CLEAR_VARS)
 
+ifeq ($(USE_OTBR_DAEMON), 1)
+LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+LOCAL_MODULE := libotbr-dbus-client
+LOCAL_MODULE_TAGS := eng
+
+LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/src \
+    external/openthread/include \
+    $(NULL)
+
+LOCAL_SRC_FILES = \
+    src/dbus/client/thread_api_dbus.cpp \
+    src/dbus/common/dbus_message_helper.cpp \
+    src/dbus/common/dbus_message_helper_openthread.cpp \
+    src/dbus/common/error.cpp \
+    src/dbus/common/error_helper.cpp \
+    $(NULL)
+
+LOCAL_EXPORT_C_INCLUDE_DIRS := \
+    $(LOCAL_PATH)/src \
+    $(NULL)
+
+LOCAL_SHARED_LIBRARIES += libdbus
+
+include $(BUILD_STATIC_LIBRARY)
+endif # ifeq ($(USE_OTBR_DAEMON), 1)
+
+include $(CLEAR_VARS)
+
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
@@ -75,6 +107,66 @@ LOCAL_SHARED_LIBRARIES := libdbus
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/src \
+    external/libchrome \
+    external/gtest/include \
+    external/openthread/include \
+    external/openthread/src/posix/platform/include \
+    $(NULL)
+
+LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
+LOCAL_CFLAGS += \
+    -DPACKAGE_VERSION=\"0.01.00\" \
+    $(NULL)
+
+LOCAL_CPPFLAGS += -std=c++14
+
+LOCAL_SRC_FILES := \
+    src/agent/agent_instance.cpp \
+    src/agent/border_agent.cpp \
+    src/agent/main.cpp \
+    src/common/event_emitter.cpp \
+    src/common/logging.cpp \
+    src/utils/hex.cpp \
+    src/utils/strcpy_utils.cpp \
+    $(NULL)
+
+ifeq ($(USE_OTBR_DAEMON), 1)
+LOCAL_CFLAGS  += \
+    -DOTBR_ENABLE_NCP_OPENTHREAD=1 \
+    -DOTBR_ENABLE_DBUS_SERVER=1 \
+    $(NULL)
+
+LOCAL_SRC_FILES += \
+    src/agent/ncp_openthread.cpp \
+    src/agent/thread_helper.cpp \
+    src/dbus/common/dbus_message_helper.cpp \
+    src/dbus/common/dbus_message_helper_openthread.cpp \
+    src/dbus/common/error.cpp \
+    src/dbus/common/error_helper.cpp \
+    src/dbus/server/dbus_agent.cpp \
+    src/dbus/server/dbus_object.cpp \
+    src/dbus/server/dbus_thread_object.cpp \
+    $(NULL)
+
+LOCAL_STATIC_LIBRARIES += \
+    libopenthread-ncp \
+    libopenthread-cli \
+    ot-core \
+    $(NULL)
+
+LOCAL_LDLIBS := \
+    -lutil
+else
+LOCAL_CFLAGS  += -DOTBR_ENABLE_NCP_WPANTUND=1
+
+LOCAL_SRC_FILES += \
+    src/agent/ncp_wpantund.cpp \
+    third_party/wpantund/repo/src/util/string-utils.c \
+    third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
+    $(NULL)
+
+LOCAL_C_INCLUDES += \
+    $(LOCAL_PATH)/third_party/wpantund \
     $(LOCAL_PATH)/third_party/wpantund \
     $(LOCAL_PATH)/third_party/wpantund/repo/src \
     $(LOCAL_PATH)/third_party/wpantund/repo/src/ipc-dbus \
@@ -83,30 +175,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/third_party/wpantund/repo/src/wpanctl \
     $(LOCAL_PATH)/third_party/wpantund/repo/third_party/assert-macros \
     $(LOCAL_PATH)/third_party/wpantund/repo/third_party/openthread/src/ncp \
-    external/libchrome \
-    external/gtest/include \
     $(NULL)
-
-LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
-LOCAL_CFLAGS += \
-    -DPACKAGE_VERSION=\"0.01.00\" \
-    -DOTBR_ENABLE_NCP_WPANTUND=1 \
-    $(NULL)
-
-LOCAL_CPPFLAGS += -std=c++14
-
-LOCAL_SRC_FILES := \
-    third_party/wpantund/repo/src/util/string-utils.c \
-    third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
-    src/agent/agent_instance.cpp \
-    src/agent/border_agent.cpp \
-    src/agent/main.cpp \
-    src/agent/ncp_wpantund.cpp \
-    src/common/event_emitter.cpp \
-    src/common/logging.cpp \
-    src/utils/hex.cpp \
-    src/utils/strcpy_utils.cpp \
-    $(NULL)
+endif
 
 ifeq ($(WITH_MDNS),mDNSResponder)
 LOCAL_SRC_FILES += \

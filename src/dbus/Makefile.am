@@ -28,40 +28,22 @@
 
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
-noinst_LTLIBRARIES = libotbr-dbus.la
-
-libotbr_dbus_la_CXXFLAGS          = \
-    -fno-exceptions                 \
-    -Wno-missing-field-initializers \
-    -Wno-unused-parameter           \
+DIST_SUBDIRS   = \
+    common       \
+    client       \
+    server       \
     $(NULL)
 
-libotbr_dbus_la_SOURCES   = \
-    dbus_object.cpp         \
-    dbus_message_helper.cpp \
-    error.cpp               \
+SUBDIRS        = \
+    common       \
+    client       \
+    server       \
     $(NULL)
 
-libotbr_dbus_la_CPPFLAGS                                   = \
-    -I$(top_srcdir)                                          \
-    -I$(top_srcdir)/include                                  \
-    -I$(top_srcdir)/src                                      \
-    -I$(top_srcdir)/third_party/openthread/repo/src/         \
-    -I$(top_srcdir)/third_party/openthread/repo/include/     \
-    $(DBUS_CFLAGS)          \
-    $(NULL)
-
-libotbr_dbus_la_LIBADD    = \
-    $(DBUS_LIBS)            \
-    $(NULL)
-
-noinst_HEADERS            = \
-    constants.hpp           \
-    dbus_object.hpp         \
-    dbus_request.hpp        \
-    dbus_resources.hpp      \
-    dbus_message_helper.hpp \
-    error.hpp               \
+PRETTY_SUBDIRS = \
+    client       \
+    common       \
+    server       \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

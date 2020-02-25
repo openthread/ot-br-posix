@@ -41,9 +41,14 @@
 #include <openthread/platform/misc.h>
 #include <openthread/platform/settings.h>
 
+#include "common/code_utils.hpp"
 #include "common/types.hpp"
 
 static bool sReset;
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::seconds;
+using std::chrono::steady_clock;
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 namespace otbr {
@@ -68,11 +73,15 @@ ControllerOpenThread::~ControllerOpenThread(void)
 
 otbrError ControllerOpenThread::Init(void)
 {
+    otbrError err = OTBR_ERROR_NONE;
+
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
-
-    return OTBR_ERROR_NONE;
+    mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
+    VerifyOrExit(mThreadHelper->Init() == OT_ERROR_NONE, err = OTBR_ERROR_OPENTHREAD);
+exit:
+    return err;
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
@@ -106,22 +115,56 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
     }
 }
 
+static struct timeval ToTimeVal(const microseconds &aTime)
+{
+    constexpr int  kUsPerSecond = 1000000;
+    struct timeval val;
+
+    val.tv_sec  = aTime.count() / kUsPerSecond;
+    val.tv_usec = aTime.count() % kUsPerSecond;
+
+    return val;
+};
+
 void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
+    microseconds timeout = microseconds(aMainloop.mTimeout.tv_usec) + seconds(aMainloop.mTimeout.tv_sec);
+    auto         now     = steady_clock::now();
+
     if (otTaskletsArePending(mInstance))
     {
-        aMainloop.mTimeout.tv_sec  = 0;
-        aMainloop.mTimeout.tv_usec = 0;
+        timeout = microseconds::zero();
     }
+    else if (!mTimers.empty())
+    {
+        if (mTimers.begin()->first < now)
+        {
+            timeout = microseconds::zero();
+        }
+        else
+        {
+            timeout = std::min(timeout, duration_cast<microseconds>(mTimers.begin()->first - now));
+        }
+    }
+
+    aMainloop.mTimeout = ToTimeVal(timeout);
 
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
 void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
 {
+    auto now = steady_clock::now();
+
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
+
+    while (!mTimers.empty() && mTimers.begin()->first <= now)
+    {
+        mTimers.begin()->second();
+        mTimers.erase(mTimers.begin());
+    }
 }
 
 void ControllerOpenThread::Reset(void)
@@ -187,6 +230,12 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     }
 
     return ret;
+}
+
+void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point aTimePoint,
+                                         const std::function<void(void)> &     aTask)
+{
+    mTimers.insert({aTimePoint, aTask});
 }
 
 Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
