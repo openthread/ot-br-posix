@@ -173,7 +173,7 @@ uint8_t ThreadHelper::RandomChannelFromChannelMask(uint32_t aChannelMask)
         }
     }
 
-    return channels[std::uniform_int_distribution<unsigned int>(0, numValidChannels)(mRandomDevice)];
+    return channels[std::uniform_int_distribution<unsigned int>(0, numValidChannels - 1)(mRandomDevice)];
 }
 
 static otExtendedPanId ToOtExtendedPanId(uint64_t aExtPanId)
@@ -208,7 +208,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 
     VerifyOrExit(aHandler != nullptr, err = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, err = OT_ERROR_INVALID_STATE);
-    mAttachHandler = std::move(aHandler);
+    mAttachHandler = aHandler;
     VerifyOrExit(aMasterKey.empty() || aMasterKey.size() == sizeof(masterKey.m8), err = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), err = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aChannelMask != 0, err = OT_ERROR_INVALID_ARGS);
@@ -300,7 +300,7 @@ void ThreadHelper::JoinerStart(const std::string &aPskd,
 
     VerifyOrExit(aHandler != nullptr, err = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, err = OT_ERROR_INVALID_STATE);
-    mJoinerHandler = std::move(aHandler);
+    mJoinerHandler = aHandler;
 
     if (!otIp6IsEnabled(mInstance))
     {
@@ -330,6 +330,7 @@ void ThreadHelper::JoinerCallback(otError aError)
 {
     if (aError != OT_ERROR_NONE)
     {
+        otIp6SetEnabled(mInstance, false);
         mJoinerHandler(aError);
     }
     else

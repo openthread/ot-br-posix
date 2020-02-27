@@ -90,6 +90,7 @@ LOCAL_SRC_FILES = \
 
 LOCAL_EXPORT_C_INCLUDE_DIRS := \
     $(LOCAL_PATH)/src \
+    $(LOCAL_PATH)/include \
     $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libdbus
