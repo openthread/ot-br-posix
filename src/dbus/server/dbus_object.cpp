@@ -110,7 +110,7 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
-        otbrLog(OTBR_LOG_INFO, "Handling method %s\n", memberName.c_str());
+        otbrLog(OTBR_LOG_INFO, "Handling method %s", memberName.c_str());
         (iter->second)(request);
         handled = DBUS_HANDLER_RESULT_HANDLED;
     }

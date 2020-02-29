@@ -29,7 +29,9 @@
 #ifndef OTBR_THREAD_HELPER_HPP_
 #define OTBR_THREAD_HELPER_HPP_
 
+#include <chrono>
 #include <functional>
+#include <map>
 #include <random>
 #include <string>
 #include <vector>
@@ -106,6 +108,8 @@ public:
     /**
      * This method attaches the device to the Thread network.
      *
+     * @note The joiner start and the attach proccesses are exclusive
+     *
      * @param[in]   aNetworkName    The network name.
      * @param[in]   aPanId          The pan id, UINT16_MAX for random.
      * @param[in]   aExtPanId       The extended pan id, UINT64_MAX for random.
@@ -134,7 +138,7 @@ public:
     /**
      * This method triggers a thread join process.
      *
-     * @note The joiner start and the attach proccess are exclusive
+     * @note The joiner start and the attach proccesses are exclusive
      *
      * @param[in]   aPskd             The pre-shared key for device.
      * @param[in]   aProvisioningUrl  The provision url.
@@ -182,8 +186,9 @@ private:
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 
+    std::map<uint16_t, std::chrono::steady_clock::time_point> mPortTime;
+
     ResultHandler mAttachHandler;
-    ResultHandler mLeaveHandler;
     ResultHandler mJoinerHandler;
 
     std::random_device mRandomDevice;

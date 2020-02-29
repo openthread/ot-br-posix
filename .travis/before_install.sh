@@ -59,7 +59,7 @@ install_openthread_binraries() {
     git -C /tmp clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!'
     cd /tmp/openthread
     ./bootstrap
-    make -f examples/Makefile-posix
+    make -f examples/Makefile-simulation
     sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-rcp /usr/bin/
     sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd /usr/bin/ || die 'Failed to build OpenThread!'
     which ot-rcp || die 'Unable to find ot-rcp!'

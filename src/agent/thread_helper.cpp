@@ -44,6 +44,7 @@
 
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 
 namespace otbr {
 namespace agent {
@@ -51,7 +52,6 @@ namespace agent {
 ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp)
     : mInstance(aInstance)
     , mNcp(aNcp)
-    , mScanHandler(nullptr)
 {
 }
 
@@ -76,12 +76,6 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
         for (const auto &handler : mDeviceRoleHandlers)
         {
             handler(role);
-        }
-
-        if (role == OT_DEVICE_ROLE_DISABLED && mLeaveHandler != nullptr)
-        {
-            mLeaveHandler(OT_ERROR_NONE);
-            mLeaveHandler = nullptr;
         }
 
         if (role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED)
@@ -202,7 +196,6 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     otExtendedPanId extPanId;
     otMasterKey     masterKey;
     otPskc          pskc;
-    otError         pskcRet;
     uint32_t        channelMask;
     uint8_t         channel;
 
@@ -213,7 +206,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), err = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aChannelMask != 0, err = OT_ERROR_INVALID_ARGS);
 
-    if (aPanId == UINT16_MAX)
+    while (aPanId == UINT16_MAX)
     {
         RandomFill(&aPanId, sizeof(aPanId));
     }
@@ -224,7 +217,10 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     }
     else
     {
-        RandomFill(extPanId.m8, sizeof(extPanId.m8));
+        while (aExtPanId != UINT64_MAX)
+        {
+            RandomFill(extPanId.m8, sizeof(extPanId.m8));
+        }
     }
 
     if (!aMasterKey.empty())
@@ -256,13 +252,12 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     {
         channelMask = otLinkGetSupportedChannelMask(mInstance) & aChannelMask;
     }
-    VerifyOrExit(channelMask != 0, err = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(channelMask != 0, otbrLog(OTBR_LOG_WARNING, "Invalid channel mask"), err = OT_ERROR_INVALID_ARGS);
 
     channel = RandomChannelFromChannelMask(channelMask);
     SuccessOrExit(otLinkSetChannel(mInstance, channel));
 
-    pskcRet = otThreadSetPskc(mInstance, &pskc);
-    VerifyOrExit(pskcRet == OT_ERROR_NONE, err = OT_ERROR_FAILED);
+    SuccessOrExit(err = otThreadSetPskc(mInstance, &pskc));
 
     if (!otIp6IsEnabled(mInstance))
     {
@@ -331,13 +326,12 @@ void ThreadHelper::JoinerCallback(otError aError)
     if (aError != OT_ERROR_NONE)
     {
         otIp6SetEnabled(mInstance, false);
-        mJoinerHandler(aError);
+        mJoinerHandler = nullptr;
     }
     else
     {
         otThreadSetEnabled(mInstance, true);
     }
-    mJoinerHandler = nullptr;
 }
 
 otError ThreadHelper::AddUnsecurePort(uint16_t aPort, uint32_t aSeconds)
@@ -350,7 +344,20 @@ otError ThreadHelper::AddUnsecurePort(uint16_t aPort, uint32_t aSeconds)
     {
         auto triggerTime = std::chrono::steady_clock::now() + std::chrono::seconds(aSeconds);
 
-        mNcp->PostTimerTask(triggerTime, [this, aPort]() { otIp6RemoveUnsecurePort(mInstance, aPort); });
+        if (mPortTime.find(aPort) == mPortTime.end() || mPortTime[aPort] < triggerTime)
+        {
+            mPortTime[aPort] = triggerTime;
+        }
+
+        mNcp->PostTimerTask(triggerTime, [this, aPort]() {
+            auto now = std::chrono::steady_clock::now();
+
+            if (now >= mPortTime[aPort])
+            {
+                otIp6RemoveUnsecurePort(mInstance, aPort);
+                mPortTime.erase(aPort);
+            }
+        });
     }
 
 exit:
