@@ -31,7 +31,7 @@
       <arg name="channel_mask" type="u"/>
     </method>
 
-    <method name="OpenUnsecurePort">
+    <method name="AddUnsecurePort">
       <arg name="port" type="q"/>
       <arg name="timeout" type="u"/>
     </method>

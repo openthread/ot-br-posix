@@ -26,17 +26,18 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dbus/dbus_object.hpp"
-
 #include <assert.h>
 #include <stdio.h>
 
 #include <dbus/dbus.h>
 
+#include "common/logging.hpp"
+#include "dbus/server/dbus_object.hpp"
+
 using std::placeholders::_1;
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 DBusObject::DBusObject(DBusConnection *aConnection, const std::string &aObjectPath)
     : mConnection(aConnection)
@@ -109,6 +110,7 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
+        otbrLog(OTBR_LOG_INFO, "Handling method %s", memberName.c_str());
         (iter->second)(request);
         handled = DBUS_HANDLER_RESULT_HANDLED;
     }
@@ -143,7 +145,6 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
             SuccessOrExit(err = interfaceIter->second(replyIter));
         }
     }
-
 exit:
     if (err == OT_ERROR_NONE)
     {
@@ -224,5 +225,5 @@ DBusObject::~DBusObject(void)
 {
 }
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr

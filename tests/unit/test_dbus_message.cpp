@@ -27,12 +27,19 @@
  */
 
 #include <assert.h>
-#include "dbus/dbus_message_helper.hpp"
+#include "dbus/common/dbus_message_helper.hpp"
 
 #include <CppUTest/TestHarness.h>
 
-using namespace otbr::dbus;
-using namespace std;
+using std::array;
+using std::string;
+using std::tuple;
+using std::vector;
+
+using otbr::DBus::DBusMessageEncode;
+using otbr::DBus::DBusMessageExtract;
+using otbr::DBus::DBusMessageToTuple;
+using otbr::DBus::TupleToDBusMessage;
 
 struct TestStruct
 {
@@ -82,6 +89,22 @@ TEST(DBusMessage, TestVectorMessage)
     tuple<vector<uint8_t>, vector<uint16_t>, vector<uint32_t>, vector<uint64_t>, vector<int16_t>, vector<int32_t>,
           vector<int64_t>>
         getVals({}, {}, {}, {}, {}, {}, {});
+    assert(msg != NULL);
+
+    TupleToDBusMessage(*msg, setVals);
+    DBusMessageToTuple(*msg, getVals);
+
+    assert(setVals == getVals);
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestArrayMessage)
+{
+    DBusMessage *            msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<array<uint8_t, 4>> setVals({1, 2, 3, 4});
+    tuple<array<uint8_t, 4>> getVals({0, 0, 0, 0});
+
     assert(msg != NULL);
 
     TupleToDBusMessage(*msg, setVals);

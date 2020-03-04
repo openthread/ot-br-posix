@@ -38,42 +38,7 @@ die() {
 	exit 1
 }
 
-case $TRAVIS_OS_NAME in
-linux)
-    sudo apt-get update
-    [ $BUILD_TARGET != script-check ] && [ $BUILD_TARGET != docker-check ] || {
-        (cd /tmp &&
-            git clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!' &&
-            cd openthread &&
-            ./bootstrap &&
-            make -f examples/Makefile-posix &&
-            sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd /usr/bin/) || die 'Failed to build OpenThread!'
-        which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
-        sudo apt-get install socat
-        echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
-        echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
-        echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
-        # Skip installing build dependencies when checking script
-        exit 0
-    }
-
-    [ $BUILD_TARGET != meshcop ] || {
-        echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
-        echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
-        echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
-    }
-
-    [ $BUILD_TARGET != android-check ] || {
-        sudo apt-get install -y gcc-multilib g++-multilib
-        (
-        cd $HOME
-        wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
-        unzip android-ndk-r17c-linux-x86_64.zip > /dev/null
-        mv android-ndk-r17c ndk-bundle
-        )
-        exit 0
-    }
-
+install_common_dependencies() {
     # Common dependencies
     sudo apt-get install -y      \
         libdbus-1-dev            \
@@ -88,6 +53,58 @@ linux)
         libavahi-client-dev      \
         libjsoncpp-dev           \
         $NULL
+}
+
+install_openthread_binraries() {
+    git -C /tmp clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!'
+    cd /tmp/openthread
+    ./bootstrap
+    make -f examples/Makefile-simulation
+    sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-rcp /usr/bin/
+    sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd /usr/bin/ || die 'Failed to build OpenThread!'
+    which ot-rcp || die 'Unable to find ot-rcp!'
+    which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
+    sudo apt-get install socat
+}
+
+configure_network() {
+    echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+    echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
+    echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
+}
+
+case $TRAVIS_OS_NAME in
+linux)
+    sudo apt-get update
+    [ $BUILD_TARGET != script-check ] && [ $BUILD_TARGET != docker-check ] || {
+        install_openthread_binraries
+        configure_network
+        exit 0
+    }
+
+    [ $BUILD_TARGET != otbr-dbus-check ] || {
+        install_openthread_binraries
+        configure_network
+        install_common_dependencies
+        exit 0
+    }
+
+    [ $BUILD_TARGET != meshcop ] || {
+        configure_network
+    }
+
+    [ $BUILD_TARGET != android-check ] || {
+        sudo apt-get install -y gcc-multilib g++-multilib
+        (
+        cd $HOME
+        wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+        unzip android-ndk-r17c-linux-x86_64.zip > /dev/null
+        mv android-ndk-r17c ndk-bundle
+        )
+        exit 0
+    }
+
+    install_common_dependencies
 
     [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
 

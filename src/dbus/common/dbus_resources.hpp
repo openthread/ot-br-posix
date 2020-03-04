@@ -29,15 +29,13 @@
 #ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
 #define OTBR_DBUS_DBUS_RESOURCES_HPP_
 
-#include "openthread-br/config.h"
-
 #include <memory>
 #include <utility>
 
 #include <dbus/dbus.h>
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 struct DBusMessageDeleter
 {
@@ -46,7 +44,7 @@ struct DBusMessageDeleter
 
 using UniqueDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr
 
 #endif // OTBR_DBUS_DBUS_RESOURCES_HPP_

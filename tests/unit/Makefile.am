@@ -53,6 +53,8 @@ unittest_CPPFLAGS                                             = \
     -I$(top_srcdir)/src/agent                                   \
     -I$(top_srcdir)/src/web                                     \
     -I$(top_srcdir)/third_party/mbedtls/repo/include            \
+    -I$(top_srcdir)/third_party/openthread/repo/src/            \
+    -I$(top_srcdir)/third_party/openthread/repo/include/        \
     $(MBEDTLS_CPPFLAGS)                                         \
     $(DBUS_CFLAGS)                                              \
     $(NULL)
@@ -61,7 +63,7 @@ unittest_LDADD                                                = \
     $(top_builddir)/src/agent/libotbr-agent.la                  \
     $(top_builddir)/src/agent/libotbr-agent.la                  \
     $(top_builddir)/src/common/libotbr-event-emitter.la         \
-    $(top_builddir)/src/dbus/libotbr-dbus.la                    \
+    $(top_builddir)/src/dbus/common/libotbr-dbus-common.la      \
     $(top_builddir)/src/web/libotbr-web.la                      \
     $(NULL)
 

@@ -1,0 +1,407 @@
+/*
+ *    Copyright (c) 2020, The OpenThread Authors.
+ *    All rights reserved.
+ *
+ *    Redistribution and use in source and binary forms, with or without
+ *    modification, are permitted provided that the following conditions are met:
+ *    1. Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *    2. Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *    3. Neither the name of the copyright holder nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *    POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef OTBR_DBUS_COMMON_TYPES_HPP_
+#define OTBR_DBUS_COMMON_TYPES_HPP_
+
+#include "dbus/common/error.hpp"
+
+#include <stdint.h>
+
+#include <string>
+#include <vector>
+
+namespace otbr {
+namespace DBus {
+
+enum otbrDeviceRole
+{
+    OTBR_DEVICE_ROLE_DISABLED = 0,
+    OTBR_DEVICE_ROLE_DETACHED = 1,
+    OTBR_DEVICE_ROLE_CHILD    = 2,
+    OTBR_DEVICE_ROLE_ROUTER   = 3,
+    OTBR_DEVICE_ROLE_LEADER   = 4,
+};
+
+struct otbrActiveScanResult
+{
+    uint64_t             mExtAddress;    ///< IEEE 802.15.4 Extended Address
+    std::string          mNetworkName;   ///< Thread Network Name
+    uint64_t             mExtendedPanId; ///< Thread Extended PAN ID
+    std::vector<uint8_t> mSteeringData;  ///< Steering Data
+    uint16_t             mPanId;         ///< IEEE 802.15.4 PAN ID
+    uint16_t             mJoinerUdpPort; ///< Joiner UDP Port
+    uint8_t              mChannel;       ///< IEEE 802.15.4 Channel
+    int8_t               mRssi;          ///< RSSI (dBm)
+    uint8_t              mLqi;           ///< LQI
+    uint8_t              mVersion;       ///< Version
+    bool                 mIsNative;      ///< Native Commissioner flag
+    bool                 mIsJoinable;    ///< Joining Permitted flag
+};
+
+struct otbrLinkModeConfig
+{
+    bool mRxOnWhenIdle;       ///< 1, if the sender has its receiver on when not transmitting. 0, otherwise.
+    bool mSecureDataRequests; ///< 1, if the sender uses IEEE 802.15.4 to secure all data requests. 0, otherwise.
+    bool mDeviceType;         ///< 1, if the sender is an FTD. 0, otherwise.
+    bool mNetworkData;        ///< 1, if the sender requires the full Network Data. 0, otherwise.
+};
+
+struct otbrIp6Prefix
+{
+    std::vector<uint8_t> mPrefix; ///< The IPv6 prefix.
+
+    uint8_t mLength; ///< The IPv6 prefix length.
+};
+
+struct otbrOnMeshPrefix
+{
+    /**
+     * The IPv6 prefix.
+     */
+    otbrIp6Prefix mPrefix;
+
+    /**
+     * A 2-bit signed integer indicating router preference as defined in RFC 4191.
+     */
+    int8_t mPreference;
+
+    /**
+     * TRUE, if @p mPrefix is preferred.  FALSE, otherwise.
+     */
+    bool mPreferred;
+
+    /**
+     * TRUE, if @p mPrefix should be used for address autoconfiguration.  FALSE, otherwise.
+     */
+    bool mSlaac;
+
+    /**
+     * TRUE, if this border router is a DHCPv6 Agent that supplies IPv6 address configuration.  FALSE, otherwise.
+     */
+    bool mDhcp;
+
+    /**
+     * TRUE, if this border router is a DHCPv6 Agent that supplies other configuration data.  FALSE, otherwise.
+     */
+    bool mConfigure;
+
+    /**
+     * TRUE, if this border router is a default route for @p mPrefix.  FALSE, otherwise.
+     */
+    bool mDefaultRoute;
+
+    /**
+     * TRUE, if this prefix is considered on-mesh.  FALSE, otherwise.
+     */
+    bool mOnMesh;
+
+    /**
+     * TRUE, if this configuration is considered Stable Network Data.  FALSE, otherwise.
+     */
+    bool mStable;
+};
+
+/**
+ * This structure represents the MAC layer counters.
+ *
+ */
+struct otbrMacCounters
+{
+    /**
+     * The total number of unique MAC frame transmission requests.
+     *
+     * Note that this counter is incremented for each MAC transmission request only by one,
+     * regardless of the amount of CCA failures, CSMA-CA attempts, or retransmissions.
+     *
+     * This incrementation rule applies to the following counters:
+     *   @p mTxUnicast
+     *   @p mTxBroadcast
+     *   @p mTxAckRequested
+     *   @p mTxNoAckRequested
+     *   @p mTxData
+     *   @p mTxDataPoll
+     *   @p mTxBeacon
+     *   @p mTxBeaconRequest
+     *   @p mTxOther
+     *   @p mTxErrAbort
+     *   @p mTxErrBusyChannel
+     *
+     * The following equations are valid:
+     *     @p mTxTotal = @p mTxUnicast + @p mTxBroadcast
+     *     @p mTxTotal = @p mTxAckRequested + @p mTxNoAckRequested
+     *     @p mTxTotal = @p mTxData + @p mTxDataPoll + @p mTxBeacon + @p mTxBeaconRequest + @p mTxOther
+     *
+     */
+    uint32_t mTxTotal;
+
+    /**
+     * The total number of unique unicast MAC frame transmission requests.
+     *
+     */
+    uint32_t mTxUnicast;
+
+    /**
+     * The total number of unique broadcast MAC frame transmission requests.
+     *
+     */
+    uint32_t mTxBroadcast;
+
+    /**
+     * The total number of unique MAC frame transmission requests with requested acknowledgment.
+     *
+     */
+    uint32_t mTxAckRequested;
+
+    /**
+     * The total number of unique MAC frame transmission requests that were acked.
+     *
+     */
+    uint32_t mTxAcked;
+
+    /**
+     * The total number of unique MAC frame transmission requests without requested acknowledgment.
+     *
+     */
+    uint32_t mTxNoAckRequested;
+
+    /**
+     * The total number of unique MAC Data frame transmission requests.
+     *
+     */
+    uint32_t mTxData;
+
+    /**
+     * The total number of unique MAC Data Poll frame transmission requests.
+     *
+     */
+    uint32_t mTxDataPoll;
+
+    /**
+     * The total number of unique MAC Beacon frame transmission requests.
+     *
+     */
+    uint32_t mTxBeacon;
+
+    /**
+     * The total number of unique MAC Beacon Request frame transmission requests.
+     *
+     */
+    uint32_t mTxBeaconRequest;
+
+    /**
+     * The total number of unique other MAC frame transmission requests.
+     *
+     * This counter is currently unused.
+     *
+     */
+    uint32_t mTxOther;
+
+    /**
+     * The total number of MAC retransmission attempts.
+     *
+     * Note that this counter is incremented by one for each retransmission attempt that may be
+     * triggered by lack of acknowledgement, CSMA/CA failure, or other type of transmission error.
+     * The @p mTxRetry counter is incremented both for unicast and broadcast MAC frames.
+     *
+     * Check the following configuration parameters to control the amount of retransmissions in the system:
+     *   @sa OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_DIRECT
+     *   @sa OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_INDIRECT
+     *   @sa OPENTHREAD_CONFIG_MAC_TX_NUM_BCAST
+     *   @sa OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+     *   @sa OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_INDIRECT
+     *
+     * Currently, this counter is invalid if the platform's radio driver capability includes
+     * @sa OT_RADIO_CAPS_TRANSMIT_RETRIES.
+     *
+     */
+    uint32_t mTxRetry;
+
+    /**
+     * The total number of unique MAC transmission packets that meet maximal retry limit for direct packets.
+     *
+     */
+    uint32_t mTxDirectMaxRetryExpiry;
+
+    /**
+     * The total number of unique MAC transmission packets that meet maximal retry limit for indirect packets.
+     *
+     */
+    uint32_t mTxIndirectMaxRetryExpiry;
+
+    /**
+     * The total number of CCA failures.
+     *
+     * The meaning of this counter can be different and it depends on the platform's radio driver capabilities.
+     *
+     * If @sa OT_RADIO_CAPS_CSMA_BACKOFF is enabled, this counter represents the total number of full CSMA/CA
+     * failed attempts and it is incremented by one also for each retransmission (in case of a CSMA/CA fail).
+     *
+     * If @sa OT_RADIO_CAPS_TRANSMIT_RETRIES is enabled, this counter represents the total number of full CSMA/CA
+     * failed attempts and it is incremented by one for each individual data frame request (regardless of the amount of
+     * retransmissions).
+     *
+     */
+    uint32_t mTxErrCca;
+
+    /**
+     * The total number of unique MAC transmission request failures cause by an abort error.
+     *
+     */
+    uint32_t mTxErrAbort;
+
+    /**
+     * The total number of unique MAC transmission requests failures caused by a busy channel (a CSMA/CA fail).
+     *
+     */
+    uint32_t mTxErrBusyChannel;
+
+    /**
+     * The total number of received frames.
+     *
+     * This counter counts all frames reported by the platform's radio driver, including frames
+     * that were dropped, for example because of an FCS error.
+     *
+     */
+    uint32_t mRxTotal;
+
+    /**
+     * The total number of unicast frames received.
+     *
+     */
+    uint32_t mRxUnicast;
+
+    /**
+     * The total number of broadcast frames received.
+     *
+     */
+    uint32_t mRxBroadcast;
+
+    /**
+     * The total number of MAC Data frames received.
+     *
+     */
+    uint32_t mRxData;
+
+    /**
+     * The total number of MAC Data Poll frames received.
+     *
+     */
+    uint32_t mRxDataPoll;
+
+    /**
+     * The total number of MAC Beacon frames received.
+     *
+     */
+    uint32_t mRxBeacon;
+
+    /**
+     * The total number of MAC Beacon Request frames received.
+     *
+     */
+    uint32_t mRxBeaconRequest;
+
+    /**
+     * The total number of other types of frames received.
+     *
+     */
+    uint32_t mRxOther;
+
+    /**
+     * The total number of frames dropped by MAC Filter module, for example received from blacklisted node.
+     *
+     */
+    uint32_t mRxAddressFiltered;
+
+    /**
+     * The total number of frames dropped by destination address check, for example received frame for other node.
+     *
+     */
+    uint32_t mRxDestAddrFiltered;
+
+    /**
+     * The total number of frames dropped due to duplication, that is when the frame has been already received.
+     *
+     * This counter may be incremented, for example when ACK frame generated by the receiver hasn't reached
+     * transmitter node which performed retransmission.
+     *
+     */
+    uint32_t mRxDuplicated;
+
+    /**
+     * The total number of frames dropped because of missing or malformed content.
+     *
+     */
+    uint32_t mRxErrNoFrame;
+
+    /**
+     * The total number of frames dropped due to unknown neighbor.
+     *
+     */
+    uint32_t mRxErrUnknownNeighbor;
+
+    /**
+     * The total number of frames dropped due to invalid source address.
+     *
+     */
+    uint32_t mRxErrInvalidSrcAddr;
+
+    /**
+     * The total number of frames dropped due to security error.
+     *
+     * This counter may be incremented, for example when lower than expected Frame Counter is used
+     * to encrypt the frame.
+     *
+     */
+    uint32_t mRxErrSec;
+
+    /**
+     * The total number of frames dropped due to invalid FCS.
+     *
+     */
+    uint32_t mRxErrFcs;
+
+    /**
+     * The total number of frames dropped due to other error.
+     *
+     */
+    uint32_t mRxErrOther;
+};
+
+struct otbrIpCounters
+{
+    uint32_t mTxSuccess; ///< The number of IPv6 packets successfully transmitted.
+    uint32_t mRxSuccess; ///< The number of IPv6 packets successfully received.
+    uint32_t mTxFailure; ///< The number of IPv6 packets failed to transmit.
+    uint32_t mRxFailure; ///< The number of IPv6 packets failed to receive.
+};
+
+} // namespace DBus
+} // namespace otbr
+
+#endif // OTBR_DBUS_COMMON_TYPES_HPP_

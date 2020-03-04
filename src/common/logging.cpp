@@ -312,6 +312,10 @@ const char *otbrErrorString(otbrError aError)
         error = "MDNS error";
         break;
 
+    case OTBR_ERROR_OPENTHREAD:
+        error = "OpenThread error";
+        break;
+
     default:
         assert(false);
     }

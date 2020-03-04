@@ -86,6 +86,10 @@ docker-check)
     .travis/check-docker
     ;;
 
+otbr-dbus-check)
+    .travis/check-otbr-dbus
+    ;;
+
 macOS)
     RELEASE=1 ./script/bootstrap
     # Currently only verify otbr-agent

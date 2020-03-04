@@ -37,6 +37,8 @@
 #include "openthread-br/config.h"
 
 #include <stdint.h>
+#include <string>
+#include <vector>
 
 #ifndef IN6ADDR_ANY
 /**
@@ -46,16 +48,23 @@
 #define IN6ADDR_ANY "::"
 #endif
 
+#define OTBR_IP6_ADDRESS_SIZE 16
+#define OTBR_IP6_PREFIX_SIZE 8
+#define OTBR_MASTER_KEY_SIZE 16
+#define OTBR_PSKC_SIZE 16
+
 /**
  * This enumeration represents error codes used throughout OpenThread Border Router.
  */
 enum otbrError
 {
-    OTBR_ERROR_NONE  = 0,  ///< No error.
-    OTBR_ERROR_ERRNO = -1, ///< Error defined by errno.
-    OTBR_ERROR_DTLS  = -2, ///< DTLS error.
-    OTBR_ERROR_DBUS  = -3, ///< DBus error.
-    OTBR_ERROR_MDNS  = -4, ///< MDNS error.
+    OTBR_ERROR_NONE = 0, ///< No error.
+
+    OTBR_ERROR_ERRNO      = -1, ///< Error defined by errno.
+    OTBR_ERROR_DTLS       = -2, ///< DTLS error.
+    OTBR_ERROR_DBUS       = -3, ///< DBus error.
+    OTBR_ERROR_MDNS       = -4, ///< MDNS error.
+    OTBR_ERROR_OPENTHREAD = -5, ///< OpenThread error.
 };
 
 namespace otbr {

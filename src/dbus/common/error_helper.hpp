@@ -26,19 +26,18 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_DBUS_ERROR_HPP_
-#define OTBR_DBUS_DBUS_ERROR_HPP_
-
-#include "openthread-br/config.h"
+#ifndef OTBR_DBUS_COMMON_ERROR_HELPER_HPP_
+#define OTBR_DBUS_COMMON_ERROR_HELPER_HPP_
 
 #include <string>
 
+#include <dbus/dbus.h>
 #include <openthread/error.h>
 
-#include "dbus/dbus_message_helper.hpp"
+#include "dbus/common/error.hpp"
 
 namespace otbr {
-namespace dbus {
+namespace DBus {
 
 /**
  * This function returns the string representation of an otError.
@@ -46,18 +45,20 @@ namespace dbus {
  * @param[in] aError  The otError value.
  *
  * @returns The string representation of an otError.
+ *
  */
 const char *ConvertToDBusErrorName(otError aError);
 
 /**
- * This function converts an error string to otError.
+ * This function converts an error string to client error.
  *
  * @param[in] aErrorName  The error string.
  *
  * @returns The corresponding otError. OT_ERROR_GENERIC will be returned
  *          if the error name is not defined in OpenThread.
+ *
  */
-otError ConvertFromDBusErrorName(const std::string &aErrorName);
+OtbrClientError ConvertFromDBusErrorName(const std::string &aErrorName);
 
 /**
  * This function converts an DBus reply message to otError.
@@ -65,10 +66,11 @@ otError ConvertFromDBusErrorName(const std::string &aErrorName);
  * @param[in] aMessage  The dbus reply message.
  *
  * @returns The error code encoded in the message.
+ *
  */
-otError CheckErrorMessage(DBusMessage *aMessage);
+OtbrClientError CheckErrorMessage(DBusMessage *aMessage);
 
-} // namespace dbus
+} // namespace DBus
 } // namespace otbr
 
-#endif // OTBR_DBUS_DBUS_ERROR_HPP_
+#endif // OTBR_DBUS_COMMON_ERROR_HELPER_HPP_
