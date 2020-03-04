@@ -424,6 +424,76 @@ OtbrClientError ThreadApiDBus::GetSupportedChannelMask(uint32_t &aChannelMask)
     return GetProperty(OTBR_DBUS_SUPPORTED_CHANNEL_MASK_PROPERTY, aChannelMask);
 }
 
+OtbrClientError ThreadApiDBus::GetRloc16(uint16_t &aRloc16)
+{
+    return GetProperty(OTBR_DBUS_RLOC16_PROPERTY, aRloc16);
+}
+
+OtbrClientError ThreadApiDBus::GetExtendedAddress(uint64_t &aExtendedAddress)
+{
+    return GetProperty(OTBR_DBUS_EXTENDED_ADDRESS_PROPERTY, aExtendedAddress);
+}
+
+OtbrClientError ThreadApiDBus::GetRouterId(uint8_t &aRouterId)
+{
+    return GetProperty(OTBR_DBUS_ROUTER_ID_PROPERTY, aRouterId);
+}
+
+OtbrClientError ThreadApiDBus::GetLeaderData(otbrLeaderData &aLeaderData)
+{
+    return GetProperty(OTBR_DBUS_LEADER_DATA_PROPERTY, aLeaderData);
+}
+
+OtbrClientError ThreadApiDBus::GetNetworkData(std::vector<uint8_t> &aNetworkData)
+{
+    return GetProperty(OTBR_DBUS_NETWORK_DATA_PRPOERTY, aNetworkData);
+}
+
+OtbrClientError ThreadApiDBus::GetStableNetworkData(std::vector<uint8_t> &aNetworkData)
+{
+    return GetProperty(OTBR_DBUS_STABLE_NETWORK_DATA_PRPOERTY, aNetworkData);
+}
+
+OtbrClientError ThreadApiDBus::GetLocalLeaderWeight(uint8_t &aWeight)
+{
+    return GetProperty(OTBR_DBUS_LOCAL_LEADER_WEIGHT_PROPERTY, aWeight);
+}
+
+OtbrClientError ThreadApiDBus::GetChannelMonitorSampleCount(uint32_t &aSampleCount)
+{
+    return GetProperty(OTBR_DBUS_CHANNEL_MONITOR_SAMPLE_COUNT_PROPERTY, aSampleCount);
+}
+
+OtbrClientError ThreadApiDBus::GetChannelMonitorChannelQualityMap(std::vector<otbrChannelQuality> &aQualityMap)
+{
+    return GetProperty(OTBR_DBUS_CHANNEL_MONITOR_CHANNEL_QUALITY_MAP_PROPERTY, aQualityMap);
+}
+
+OtbrClientError ThreadApiDBus::GetChildTable(std::vector<otbrChildInfo> &aChildTable)
+{
+    return GetProperty(OTBR_DBUS_CHILD_TABLE_PROPERTY, aChildTable);
+}
+
+OtbrClientError ThreadApiDBus::GetNeighborTable(std::vector<otbrNeighborInfo> &aNeighborTable)
+{
+    return GetProperty(OTBR_DBUS_NEIGHBOR_TABLE_PROEPRTY, aNeighborTable);
+}
+
+OtbrClientError ThreadApiDBus::GetPartitionId(uint32_t &aPartitionId)
+{
+    return GetProperty(OTBR_DBUS_PARTITION_ID_PROEPRTY, aPartitionId);
+}
+
+OtbrClientError ThreadApiDBus::GetInstantRssi(int8_t &aRssi)
+{
+    return GetProperty(OTBR_DBUS_INSTANT_RSSI_PROPERTY, aRssi);
+}
+
+OtbrClientError ThreadApiDBus::GetRadioTxPower(int8_t &aTxPower)
+{
+    return GetProperty(OTBR_DBUS_RADIO_TX_POWER_PROPERTY, aTxPower);
+}
+
 std::string ThreadApiDBus::GetInterfaceName(void)
 {
     return mInterfaceName;

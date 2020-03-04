@@ -27,6 +27,8 @@
  */
 
 #include <assert.h>
+#include <string.h>
+
 #include "dbus/common/dbus_message_helper.hpp"
 
 #include <CppUTest/TestHarness.h>
@@ -48,18 +50,72 @@ struct TestStruct
     std::string name;
 };
 
+template <> struct otbr::DBus::DBusTypeTrait<TestStruct>
+{
+    static constexpr const char *TYPE_AS_STRING =
+        //{uint8, uint32, string}
+        "(yus)";
+};
+
 bool operator==(const TestStruct &aLhs, const TestStruct &aRhs)
 {
     return aLhs.tag == aRhs.tag && aLhs.val == aRhs.val && aLhs.name == aRhs.name;
 }
 
+bool operator==(const otbr::DBus::otbrChannelQuality &aLhs, const otbr::DBus::otbrChannelQuality &aRhs)
+{
+    return aLhs.mChannel == aRhs.mChannel && aLhs.mOccupancy == aRhs.mOccupancy;
+}
+
+bool operator==(const otbr::DBus::otbrChildInfo &aLhs, const otbr::DBus::otbrChildInfo &aRhs)
+{
+    return aLhs.mExtAddress == aRhs.mExtAddress && aLhs.mTimeout == aRhs.mTimeout && aLhs.mAge == aRhs.mAge &&
+           aLhs.mRloc16 == aRhs.mRloc16 && aLhs.mChildId == aRhs.mChildId &&
+           aLhs.mNetworkDataVersion == aRhs.mNetworkDataVersion && aLhs.mLinkQualityIn == aRhs.mLinkQualityIn &&
+           aLhs.mAverageRssi == aRhs.mAverageRssi && aLhs.mLastRssi == aRhs.mLastRssi &&
+           aLhs.mFrameErrorRate == aRhs.mFrameErrorRate && aLhs.mMessageErrorRate == aRhs.mMessageErrorRate &&
+           aLhs.mRxOnWhenIdle == aRhs.mRxOnWhenIdle && aLhs.mSecureDataRequest == aRhs.mSecureDataRequest &&
+           aLhs.mFullThreadDevice == aRhs.mFullThreadDevice && aLhs.mFullNetworkData == aRhs.mFullNetworkData &&
+           aLhs.mIsStateRestoring == aRhs.mIsStateRestoring;
+}
+
+bool operator==(const otbr::DBus::otbrNeighborInfo &aLhs, const otbr::DBus::otbrNeighborInfo &aRhs)
+{
+    return aLhs.mExtAddress == aRhs.mExtAddress && aLhs.mAge == aRhs.mAge && aLhs.mRloc16 == aRhs.mRloc16 &&
+           aLhs.mLinkFrameCounter == aRhs.mLinkFrameCounter && aLhs.mMleFrameCounter == aRhs.mMleFrameCounter &&
+           aLhs.mLinkQualityIn == aRhs.mLinkQualityIn && aLhs.mAverageRssi == aRhs.mAverageRssi &&
+           aLhs.mLastRssi == aRhs.mLastRssi && aLhs.mFrameErrorRate == aRhs.mFrameErrorRate &&
+           aLhs.mMessageErrorRate == aRhs.mMessageErrorRate && aLhs.mRxOnWhenIdle == aRhs.mRxOnWhenIdle &&
+           aLhs.mSecureDataRequest == aRhs.mSecureDataRequest && aLhs.mFullThreadDevice == aRhs.mFullThreadDevice &&
+           aLhs.mFullNetworkData == aRhs.mFullNetworkData && aLhs.mIsChild == aRhs.mIsChild;
+}
+
+bool operator==(const otbr::DBus::otbrLeaderData &aLhs, const otbr::DBus::otbrLeaderData &aRhs)
+{
+    return aLhs.mPartitionId == aRhs.mPartitionId && aLhs.mWeighting == aRhs.mWeighting &&
+           aLhs.mDataVersion == aRhs.mDataVersion && aLhs.mStableDataVersion == aRhs.mStableDataVersion &&
+           aLhs.mLeaderRouterId == aRhs.mLeaderRouterId;
+}
+
+bool operator==(const otbr::DBus::otbrActiveScanResult &aLhs, const otbr::DBus::otbrActiveScanResult &aRhs)
+{
+    return aLhs.mExtAddress == aRhs.mExtAddress && aLhs.mNetworkName == aRhs.mNetworkName &&
+           aLhs.mExtendedPanId == aRhs.mExtendedPanId && aLhs.mSteeringData == aRhs.mSteeringData &&
+           aLhs.mPanId == aRhs.mPanId && aLhs.mJoinerUdpPort == aRhs.mJoinerUdpPort && aLhs.mChannel == aRhs.mChannel &&
+           aLhs.mRssi == aRhs.mRssi && aLhs.mLqi == aRhs.mLqi && aLhs.mVersion == aRhs.mVersion &&
+           aLhs.mIsNative == aRhs.mIsNative && aLhs.mIsJoinable == aRhs.mIsJoinable;
+}
+
 inline otbrError DBusMessageEncode(DBusMessageIter *aIter, const TestStruct &aValue)
 {
-    otbrError err = OTBR_ERROR_DBUS;
+    otbrError       err = OTBR_ERROR_DBUS;
+    DBusMessageIter sub;
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), err = OTBR_ERROR_DBUS);
 
-    SuccessOrExit(DBusMessageEncode(aIter, aValue.tag));
-    SuccessOrExit(DBusMessageEncode(aIter, aValue.val));
-    SuccessOrExit(DBusMessageEncode(aIter, aValue.name));
+    SuccessOrExit(DBusMessageEncode(&sub, aValue.tag));
+    SuccessOrExit(DBusMessageEncode(&sub, aValue.val));
+    SuccessOrExit(DBusMessageEncode(&sub, aValue.name));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), err = OTBR_ERROR_DBUS);
     err = OTBR_ERROR_NONE;
 exit:
     return err;
@@ -67,11 +123,16 @@ exit:
 
 inline otbrError DBusMessageExtract(DBusMessageIter *aIter, TestStruct &aValue)
 {
-    otbrError err = OTBR_ERROR_DBUS;
+    otbrError       err = OTBR_ERROR_DBUS;
+    DBusMessageIter sub;
 
-    SuccessOrExit(DBusMessageExtract(aIter, aValue.tag));
-    SuccessOrExit(DBusMessageExtract(aIter, aValue.val));
-    SuccessOrExit(DBusMessageExtract(aIter, aValue.name));
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(DBusMessageExtract(&sub, aValue.tag));
+    SuccessOrExit(DBusMessageExtract(&sub, aValue.val));
+    SuccessOrExit(DBusMessageExtract(&sub, aValue.name));
+
+    dbus_message_iter_next(aIter);
     err = OTBR_ERROR_NONE;
 exit:
     return err;
@@ -147,7 +208,87 @@ TEST(DBusMessage, TestStructMessage)
     TupleToDBusMessage(*msg, setVals);
     DBusMessageToTuple(*msg, getVals);
 
+    printf("%zu %s\n", std::get<2>(getVals).size(), std::get<2>(getVals)[0].c_str());
     assert(setVals == getVals);
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestOtbrChannelQuality)
+{
+    DBusMessage *                         msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<otbr::DBus::otbrChannelQuality> setVals({1, 2});
+    tuple<otbr::DBus::otbrChannelQuality> getVals;
+
+    assert(msg != NULL);
+
+    TupleToDBusMessage(*msg, setVals);
+    DBusMessageToTuple(*msg, getVals);
+
+    assert(std::get<0>(setVals) == std::get<0>(getVals));
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestOtbrChildInfo)
+{
+    DBusMessage *                    msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<otbr::DBus::otbrChildInfo> setVals({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false, true});
+    tuple<otbr::DBus::otbrChildInfo> getVals;
+
+    assert(msg != NULL);
+
+    TupleToDBusMessage(*msg, setVals);
+    DBusMessageToTuple(*msg, getVals);
+
+    assert(std::get<0>(setVals) == std::get<0>(getVals));
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestOtbrNeighborInfo)
+{
+    DBusMessage *                       msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<otbr::DBus::otbrNeighborInfo> setVals({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false, true});
+    tuple<otbr::DBus::otbrNeighborInfo> getVals;
+
+    assert(msg != NULL);
+
+    TupleToDBusMessage(*msg, setVals);
+    DBusMessageToTuple(*msg, getVals);
+    assert(std::get<0>(setVals) == std::get<0>(getVals));
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestOtbrLeaderData)
+{
+    DBusMessage *                     msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<otbr::DBus::otbrLeaderData> setVals({1, 2, 3, 4, 5});
+    tuple<otbr::DBus::otbrLeaderData> getVals;
+
+    assert(msg != NULL);
+
+    TupleToDBusMessage(*msg, setVals);
+    DBusMessageToTuple(*msg, getVals);
+
+    assert(std::get<0>(setVals) == std::get<0>(getVals));
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestOtbrActiveScanResults)
+{
+    DBusMessage *                           msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<otbr::DBus::otbrActiveScanResult> setVals({1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true});
+    tuple<otbr::DBus::otbrActiveScanResult> getVals;
+
+    assert(msg != NULL);
+
+    TupleToDBusMessage(*msg, setVals);
+    DBusMessageToTuple(*msg, getVals);
+
+    assert(std::get<0>(setVals) == std::get<0>(getVals));
 
     dbus_message_unref(msg);
 }

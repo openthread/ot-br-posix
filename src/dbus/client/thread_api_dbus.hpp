@@ -352,6 +352,34 @@ public:
      */
     OtbrClientError GetSupportedChannelMask(uint32_t &aChannelMask);
 
+    OtbrClientError GetRloc16(uint16_t &aRloc16);
+
+    OtbrClientError GetExtendedAddress(uint64_t &aExtendedAddress);
+
+    OtbrClientError GetRouterId(uint8_t &aRouterId);
+
+    OtbrClientError GetLeaderData(otbrLeaderData &aLeaderData);
+
+    OtbrClientError GetNetworkData(std::vector<uint8_t> &aNetworkData);
+
+    OtbrClientError GetStableNetworkData(std::vector<uint8_t> &aNetworkData);
+
+    OtbrClientError GetLocalLeaderWeight(uint8_t &aWeight);
+
+    OtbrClientError GetChannelMonitorSampleCount(uint32_t &aSampleCount);
+
+    OtbrClientError GetChannelMonitorChannelQualityMap(std::vector<otbrChannelQuality> &aQualityMap);
+
+    OtbrClientError GetChildTable(std::vector<otbrChildInfo> &aChildTable);
+
+    OtbrClientError GetNeighborTable(std::vector<otbrNeighborInfo> &aNeighborTable);
+
+    OtbrClientError GetPartitionId(uint32_t &aPartitionId);
+
+    OtbrClientError GetInstantRssi(int8_t &aRssi);
+
+    OtbrClientError GetRadioTxPower(int8_t &aTxPower);
+
     /**
      * This method returns the network interface name the client is bound to.
      *

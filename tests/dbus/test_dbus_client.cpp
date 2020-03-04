@@ -26,8 +26,10 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <memory>
+#include <assert.h>
 #include <stdio.h>
+
+#include <memory>
 
 #include <dbus/dbus.h>
 
@@ -86,14 +88,43 @@ int main()
             uint64_t extpanidCheck;
             if (aError == OTBR_ERROR_NONE)
             {
-                std::string name;
+                std::string                               name;
+                uint64_t                                  extAddress;
+                uint16_t                                  rloc16;
+                uint8_t                                   routerId;
+                std::vector<uint8_t>                      networkData;
+                std::vector<uint8_t>                      stableNetworkData;
+                otbr::DBus::otbrLeaderData                leaderData;
+                uint8_t                                   leaderWeight;
+                int8_t                                    rssi;
+                int8_t                                    txPower;
+                std::vector<otbr::DBus::otbrChildInfo>    childTable;
+                std::vector<otbr::DBus::otbrNeighborInfo> neighborTable;
+                uint32_t                                  partitionId;
 
-                api->GetNetworkName(name);
-                api->GetExtPanId(extpanidCheck);
-                printf("Current network name %s\n", name.c_str());
-                printf("Current network xpanid %lx\n", extpanidCheck);
+                assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
+                assert(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
+                assert(api->GetRloc16(rloc16) == OTBR_ERROR_NONE);
+                assert(api->GetExtendedAddress(extAddress) == OTBR_ERROR_NONE);
+                assert(api->GetRouterId(routerId) == OTBR_ERROR_NONE);
+                assert(api->GetLeaderData(leaderData) == OTBR_ERROR_NONE);
+                assert(api->GetNetworkData(networkData) == OTBR_ERROR_NONE);
+                assert(api->GetStableNetworkData(stableNetworkData) == OTBR_ERROR_NONE);
+                assert(api->GetLocalLeaderWeight(leaderWeight) == OTBR_ERROR_NONE);
+                assert(api->GetChildTable(childTable) == OTBR_ERROR_NONE);
+                assert(api->GetNeighborTable(neighborTable) == OTBR_ERROR_NONE);
+                assert(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
+                assert(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
+                assert(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
                 api->FactoryReset(nullptr);
-                api->GetNetworkName(name);
+                assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
+                assert(rloc16 != 0);
+                assert(extAddress != 0);
+                assert(partitionId != 0);
+                assert(routerId == leaderData.mLeaderRouterId);
+                assert(!networkData.empty());
+                assert(childTable.empty());
+                assert(neighborTable.empty());
             }
             if (aError != OTBR_ERROR_NONE || extpanidCheck != extpanid)
             {

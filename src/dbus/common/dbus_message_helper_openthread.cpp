@@ -273,5 +273,127 @@ exit:
     return err;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrChildInfo &aChildInfo)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aChildInfo.mExtAddress, aChildInfo.mTimeout, aChildInfo.mAge, aChildInfo.mRloc16,
+                         aChildInfo.mChildId, aChildInfo.mNetworkDataVersion, aChildInfo.mLinkQualityIn,
+                         aChildInfo.mAverageRssi, aChildInfo.mLastRssi, aChildInfo.mFrameErrorRate,
+                         aChildInfo.mMessageErrorRate, aChildInfo.mRxOnWhenIdle, aChildInfo.mSecureDataRequest,
+                         aChildInfo.mFullThreadDevice, aChildInfo.mFullNetworkData, aChildInfo.mIsStateRestoring);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub));
+    SuccessOrExit(err = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, err = OTBR_ERROR_DBUS);
+exit:
+    return err;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrChildInfo &aChildInfo)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aChildInfo.mExtAddress, aChildInfo.mTimeout, aChildInfo.mAge, aChildInfo.mRloc16,
+                         aChildInfo.mChildId, aChildInfo.mNetworkDataVersion, aChildInfo.mLinkQualityIn,
+                         aChildInfo.mAverageRssi, aChildInfo.mLastRssi, aChildInfo.mFrameErrorRate,
+                         aChildInfo.mMessageErrorRate, aChildInfo.mRxOnWhenIdle, aChildInfo.mSecureDataRequest,
+                         aChildInfo.mFullThreadDevice, aChildInfo.mFullNetworkData, aChildInfo.mIsStateRestoring);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(err = ConvertToTuple(&sub, args));
+exit:
+    return err;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrNeighborInfo &aNeighborInfo)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aNeighborInfo.mExtAddress, aNeighborInfo.mAge, aNeighborInfo.mRloc16,
+                         aNeighborInfo.mLinkFrameCounter, aNeighborInfo.mMleFrameCounter, aNeighborInfo.mLinkQualityIn,
+                         aNeighborInfo.mAverageRssi, aNeighborInfo.mLastRssi, aNeighborInfo.mFrameErrorRate,
+                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mSecureDataRequest,
+                         aNeighborInfo.mFullThreadDevice, aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub));
+    SuccessOrExit(err = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, err = OTBR_ERROR_DBUS);
+exit:
+    return err;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrNeighborInfo &aNeighborInfo)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aNeighborInfo.mExtAddress, aNeighborInfo.mAge, aNeighborInfo.mRloc16,
+                         aNeighborInfo.mLinkFrameCounter, aNeighborInfo.mMleFrameCounter, aNeighborInfo.mLinkQualityIn,
+                         aNeighborInfo.mAverageRssi, aNeighborInfo.mLastRssi, aNeighborInfo.mFrameErrorRate,
+                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mSecureDataRequest,
+                         aNeighborInfo.mFullThreadDevice, aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(err = ConvertToTuple(&sub, args));
+exit:
+    return err;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrLeaderData &aLeaderData)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aLeaderData.mPartitionId, aLeaderData.mWeighting, aLeaderData.mDataVersion,
+                         aLeaderData.mStableDataVersion, aLeaderData.mLeaderRouterId);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub));
+    SuccessOrExit(err = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, err = OTBR_ERROR_DBUS);
+exit:
+    return err;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrLeaderData &aLeaderData)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aLeaderData.mPartitionId, aLeaderData.mWeighting, aLeaderData.mDataVersion,
+                         aLeaderData.mStableDataVersion, aLeaderData.mLeaderRouterId);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(err = ConvertToTuple(&sub, args));
+exit:
+    return err;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrChannelQuality &aQuality)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aQuality.mChannel, aQuality.mOccupancy);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub));
+    SuccessOrExit(err = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, err = OTBR_ERROR_DBUS);
+exit:
+    return err;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrChannelQuality &aQuality)
+{
+    DBusMessageIter sub;
+    otbrError       err  = OTBR_ERROR_NONE;
+    auto            args = std::tie(aQuality.mChannel, aQuality.mOccupancy);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(err = ConvertToTuple(&sub, args));
+exit:
+    return err;
+}
+
 } // namespace DBus
 } // namespace otbr

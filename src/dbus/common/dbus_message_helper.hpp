@@ -58,6 +58,14 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrMacCounters &aCoun
 otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrMacCounters &aCounters);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrIpCounters &aCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrIpCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrChildInfo &aChildInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrChildInfo &aChildInfo);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrNeighborInfo &aNeighborInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrNeighborInfo &aNeighborInfo);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrLeaderData &aLeaderData);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrLeaderData &aLeaderData);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrChannelQuality &aQuality);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrChannelQuality &aQuality);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -95,6 +103,67 @@ template <> struct DBusTypeTrait<otbrIp6Prefix>
 {
     // struct of { arrray of bytes, byte}
     static constexpr const char *TYPE_AS_STRING = "(ayy)";
+};
+
+template <> struct DBusTypeTrait<otbrLeaderData>
+{
+    // struct of { uint32, byte, byte, byte, byte, byte}
+    static constexpr const char *TYPE_AS_STRING = "(uyyyy)";
+};
+
+template <> struct DBusTypeTrait<std::vector<otbrChannelQuality>>
+{
+    // array of struct of { uint8, uint16 }
+    static constexpr const char *TYPE_AS_STRING = "a(yq)";
+};
+
+template <> struct DBusTypeTrait<otbrNeighborInfo>
+{
+    // struct of { uint64, uint32, uint16, uint32, uint32, uint8,
+    //             uint8, uint8, uint16, uint16, bool, bool, bool, bool }
+    static constexpr const char *TYPE_AS_STRING = "(tuquuyyyqqbbbb)";
+};
+
+template <> struct DBusTypeTrait<std::vector<otbrNeighborInfo>>
+{
+    // array of struct of { uint64, uint32, uint16, uint32, uint32, uint8,
+    //                      uint8, uint8, uint16, uint16, bool, bool, bool, bool }
+    static constexpr const char *TYPE_AS_STRING = "a(tuquuyyyqqbbbb)";
+};
+
+template <> struct DBusTypeTrait<otbrChildInfo>
+{
+    // struct of { uint64, uint32, uint32, uint16, uint16, uint8, uint8,
+    //             uint8, uint8, uint16, uint16, bool, bool, bool, bool,
+    //             bool}
+    static constexpr const char *TYPE_AS_STRING = "(tuuqqyyyyqqbbbbb)";
+};
+
+template <> struct DBusTypeTrait<otbrActiveScanResult>
+{
+    // struct of { uint64, string, uint64, array<uint8>, uint16, uint16, uint8,
+    //             uint8, uint8, uint8, bool, bool }
+    static constexpr const char *TYPE_AS_STRING = "(tstayqqyyyybb)";
+};
+
+template <> struct DBusTypeTrait<otbrChannelQuality>
+{
+    // struct of { uint8, uint16}
+    static constexpr const char *TYPE_AS_STRING = "(yq)";
+};
+
+template <> struct DBusTypeTrait<std::vector<otbrChildInfo>>
+{
+    // array of struct of { uint64, uint32, uint32, uint16, uint16, uint8, uint8,
+    //                      uint8, uint8, uint16, uint16, bool, bool, bool, bool,
+    //                      bool}
+    static constexpr const char *TYPE_AS_STRING = "a(tuuqqyyyyqqbbbbb)";
+};
+
+template <> struct DBusTypeTrait<int8_t>
+{
+    static constexpr int         TYPE           = DBUS_TYPE_BYTE;
+    static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BYTE_AS_STRING;
 };
 
 template <> struct DBusTypeTrait<uint8_t>
@@ -182,20 +251,19 @@ exit:
 
 template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<T> &aValue)
 {
-    otbrError err = OTBR_ERROR_NONE;
-    uint32_t  size;
+    otbrError       err = OTBR_ERROR_NONE;
+    DBusMessageIter subIter;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_UINT32, err = OTBR_ERROR_DBUS);
-    SuccessOrExit(err = DBusMessageExtract(aIter, size));
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, err = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &subIter);
 
     aValue.clear();
-    for (uint32_t i = 0; i < size; i++)
+    while (dbus_message_iter_get_arg_type(&subIter) != DBUS_TYPE_INVALID)
     {
         aValue.emplace_back();
-        DBusMessageExtract(aIter, aValue.back());
+        SuccessOrExit(err = DBusMessageExtract(&subIter, aValue.back()));
     }
-
-    err = OTBR_ERROR_NONE;
+    dbus_message_iter_next(aIter);
 
 exit:
     return err;
@@ -269,15 +337,18 @@ exit:
 
 template <typename T> otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<T> &aValue)
 {
-    otbrError err  = OTBR_ERROR_NONE;
-    uint32_t  size = static_cast<uint32_t>(aValue.size());
+    otbrError       err = OTBR_ERROR_NONE;
+    DBusMessageIter subIter;
 
-    SuccessOrExit(err = DBusMessageEncode(aIter, size));
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_ARRAY, DBusTypeTrait<T>::TYPE_AS_STRING, &subIter),
+                 err = OTBR_ERROR_DBUS);
+
     for (const auto &v : aValue)
     {
-        SuccessOrExit(err = DBusMessageEncode(aIter, v));
+        SuccessOrExit(err = DBusMessageEncode(&subIter, v));
     }
 
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
 exit:
     return err;
 }

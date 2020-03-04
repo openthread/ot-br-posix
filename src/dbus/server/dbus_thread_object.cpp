@@ -31,8 +31,13 @@
 #include <string.h>
 
 #include "openthread/border_router.h"
+#include "openthread/channel_monitor.h"
 #include "openthread/instance.h"
 #include "openthread/joiner.h"
+#include "openthread/link_raw.h"
+#include "openthread/netdata.h"
+#include "openthread/platform/radio.h"
+#include "openthread/thread_ftd.h"
 
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
@@ -145,6 +150,34 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetIp6CountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SUPPORTED_CHANNEL_MASK_PROPERTY,
                                std::bind(&DBusThreadObject::GetSupportedChannelMaskHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_RLOC16_PROPERTY,
+                               std::bind(&DBusThreadObject::GetRloc16Handler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_EXTENDED_ADDRESS_PROPERTY,
+                               std::bind(&DBusThreadObject::GetExtendedAddressHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ROUTER_ID_PROPERTY,
+                               std::bind(&DBusThreadObject::GetRouterIdHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LEADER_DATA_PROPERTY,
+                               std::bind(&DBusThreadObject::GetLeaderDataHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_NETWORK_DATA_PRPOERTY,
+                               std::bind(&DBusThreadObject::GetNetworkDataHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_STABLE_NETWORK_DATA_PRPOERTY,
+                               std::bind(&DBusThreadObject::GetStableNetworkDataHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LOCAL_LEADER_WEIGHT_PROPERTY,
+                               std::bind(&DBusThreadObject::GetLocalLeaderWeightHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_CHANNEL_MONITOR_SAMPLE_COUNT_PROPERTY,
+                               std::bind(&DBusThreadObject::GetChannelMonitorSampleCountHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_CHANNEL_MONITOR_CHANNEL_QUALITY_MAP_PROPERTY,
+                               std::bind(&DBusThreadObject::GetChannelMonitorChannelQualityMapHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_CHILD_TABLE_PROPERTY,
+                               std::bind(&DBusThreadObject::GetChildTableHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_NEIGHBOR_TABLE_PROEPRTY,
+                               std::bind(&DBusThreadObject::GetNeighborTableHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PARTITION_ID_PROEPRTY,
+                               std::bind(&DBusThreadObject::GetPartitionIDHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_INSTANT_RSSI_PROPERTY,
+                               std::bind(&DBusThreadObject::GetInstantRssiHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_RADIO_TX_POWER_PROPERTY,
+                               std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
 
     return err;
 }
@@ -552,6 +585,249 @@ otError DBusThreadObject::GetSupportedChannelMaskHandler(DBusMessageIter &aIter)
     otError  err          = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, channelMask) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetRloc16Handler(DBusMessageIter &aIter)
+{
+    auto     threadHelper = mNcp->GetThreadHelper();
+    otError  err          = OT_ERROR_NONE;
+    uint16_t rloc16       = otThreadGetRloc16(threadHelper->GetInstance());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, rloc16) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetExtendedAddressHandler(DBusMessageIter &aIter)
+{
+    auto                threadHelper    = mNcp->GetThreadHelper();
+    otError             err             = OT_ERROR_NONE;
+    const otExtAddress *addr            = otLinkGetExtendedAddress(threadHelper->GetInstance());
+    uint64_t            extendedAddress = ConvertOpenThreadUint64(addr->m8, sizeof(addr->m8));
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extendedAddress) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetRouterIdHandler(DBusMessageIter &aIter)
+{
+    auto         threadHelper = mNcp->GetThreadHelper();
+    otError      err          = OT_ERROR_NONE;
+    uint16_t     rloc16       = otThreadGetRloc16(threadHelper->GetInstance());
+    otRouterInfo info;
+
+    SuccessOrExit(err = otThreadGetRouterInfo(threadHelper->GetInstance(), rloc16, &info));
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, info.mRouterId) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetLeaderDataHandler(DBusMessageIter &aIter)
+{
+    auto                threadHelper = mNcp->GetThreadHelper();
+    otError             err          = OT_ERROR_NONE;
+    struct otLeaderData data;
+    otbrLeaderData      leaderData;
+
+    SuccessOrExit(err = otThreadGetLeaderData(threadHelper->GetInstance(), &data));
+    leaderData.mPartitionId       = data.mPartitionId;
+    leaderData.mWeighting         = data.mWeighting;
+    leaderData.mDataVersion       = data.mDataVersion;
+    leaderData.mStableDataVersion = data.mStableDataVersion;
+    leaderData.mLeaderRouterId    = data.mLeaderRouterId;
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, leaderData) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetNetworkDataHandler(DBusMessageIter &aIter)
+{
+    auto                 threadHelper = mNcp->GetThreadHelper();
+    otError              err          = OT_ERROR_NONE;
+    uint8_t              data[255]; // magic number from openthread/src/cli/cli.cpp:ProcessNetworkDataShow
+    uint8_t              len = sizeof(data);
+    std::vector<uint8_t> networkData;
+
+    otNetDataGet(threadHelper->GetInstance(), /*stable=*/false, data, &len);
+    networkData = std::vector<uint8_t>(&data[0], &data[len]);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkData) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetStableNetworkDataHandler(DBusMessageIter &aIter)
+{
+    auto                 threadHelper = mNcp->GetThreadHelper();
+    otError              err          = OT_ERROR_NONE;
+    uint8_t              data[255]; // magic number from openthread/src/cli/cli.cpp:ProcessNetworkDataShow
+    uint8_t              len = sizeof(data);
+    std::vector<uint8_t> networkData;
+
+    otNetDataGet(threadHelper->GetInstance(), /*stable=*/true, data, &len);
+    networkData = std::vector<uint8_t>(&data[0], &data[len]);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkData) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetLocalLeaderWeightHandler(DBusMessageIter &aIter)
+{
+    auto    threadHelper = mNcp->GetThreadHelper();
+    otError err          = OT_ERROR_NONE;
+    uint8_t weight       = otThreadGetLocalLeaderWeight(threadHelper->GetInstance());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, weight) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &aIter)
+{
+#if OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    auto     threadHelper = mNcp->GetThreadHelper();
+    otError  err          = OT_ERROR_NONE;
+    uint32_t cnt          = otChannelMonitorGetSampleCount(threadHelper->GetInstance());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, cnt) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+#else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+}
+
+otError DBusThreadObject::GetChannelMonitorChannelQualityMapHandler(DBusMessageIter &aIter)
+{
+#if OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    auto                            threadHelper = mNcp->GetThreadHelper();
+    otError                         err          = OT_ERROR_NONE;
+    uint32_t                        channelMask  = otLinkGetSupportedChannelMask(threadHelper->GetInstance());
+    constexpr uint8_t               kNumChannels = sizeof(channelMask) * 8; // 8 bit per byte
+    std::vector<otbrChannelQuality> quality;
+
+    for (uint8_t i = 0; i < kNumChannels; i++)
+    {
+        if (channelMask & (1 << i))
+        {
+            uint16_t occupancy = otChannelMonitorGetChannelOccupancy(threadHelper->GetInstance(), i);
+
+            quality.emplace_back(otbrChannelQuality{i, occupancy});
+        }
+    }
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, quality) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+#else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+}
+
+otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
+{
+    auto                       threadHelper = mNcp->GetThreadHelper();
+    otError                    err          = OT_ERROR_NONE;
+    uint16_t                   childIndex   = 0;
+    otChildInfo                childInfo;
+    std::vector<otbrChildInfo> childTable;
+
+    while (otThreadGetChildInfoByIndex(threadHelper->GetInstance(), childIndex, &childInfo) == OT_ERROR_NONE)
+    {
+        otbrChildInfo info;
+
+        info.mExtAddress         = ConvertOpenThreadUint64(childInfo.mExtAddress.m8, sizeof(childInfo.mExtAddress.m8));
+        info.mTimeout            = childInfo.mTimeout;
+        info.mAge                = childInfo.mAge;
+        info.mChildId            = childInfo.mChildId;
+        info.mNetworkDataVersion = childInfo.mNetworkDataVersion;
+        info.mLinkQualityIn      = childInfo.mLinkQualityIn;
+        info.mAverageRssi        = childInfo.mAverageRssi;
+        info.mLastRssi           = childInfo.mLastRssi;
+        info.mFrameErrorRate     = childInfo.mFrameErrorRate;
+        info.mMessageErrorRate   = childInfo.mMessageErrorRate;
+        info.mRxOnWhenIdle       = childInfo.mRxOnWhenIdle;
+        info.mSecureDataRequest  = childInfo.mSecureDataRequest;
+        info.mFullThreadDevice   = childInfo.mFullThreadDevice;
+        info.mFullNetworkData    = childInfo.mFullNetworkData;
+        info.mIsStateRestoring   = childInfo.mIsStateRestoring;
+        childTable.push_back(info);
+        childIndex++;
+    }
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, childTable) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
+{
+    auto                          threadHelper = mNcp->GetThreadHelper();
+    otError                       err          = OT_ERROR_NONE;
+    otNeighborInfoIterator        iter         = OT_NEIGHBOR_INFO_ITERATOR_INIT;
+    otNeighborInfo                neighborInfo;
+    std::vector<otbrNeighborInfo> neighborTable;
+
+    while (otThreadGetNextNeighborInfo(threadHelper->GetInstance(), &iter, &neighborInfo) == OT_ERROR_NONE)
+    {
+        otbrNeighborInfo info;
+
+        info.mExtAddress = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8, sizeof(neighborInfo.mExtAddress.m8));
+        info.mAge        = neighborInfo.mAge;
+        info.mRloc16     = neighborInfo.mRloc16;
+        info.mLinkFrameCounter  = neighborInfo.mLinkFrameCounter;
+        info.mMleFrameCounter   = neighborInfo.mMleFrameCounter;
+        info.mLinkQualityIn     = neighborInfo.mLinkQualityIn;
+        info.mAverageRssi       = neighborInfo.mAverageRssi;
+        info.mLastRssi          = neighborInfo.mLastRssi;
+        info.mFrameErrorRate    = neighborInfo.mFrameErrorRate;
+        info.mMessageErrorRate  = neighborInfo.mMessageErrorRate;
+        info.mRxOnWhenIdle      = neighborInfo.mRxOnWhenIdle;
+        info.mSecureDataRequest = neighborInfo.mSecureDataRequest;
+        info.mFullThreadDevice  = neighborInfo.mFullThreadDevice;
+        info.mFullNetworkData   = neighborInfo.mFullNetworkData;
+        info.mIsChild           = neighborInfo.mIsChild;
+        neighborTable.push_back(info);
+    }
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, neighborTable) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetPartitionIDHandler(DBusMessageIter &aIter)
+{
+    auto     threadHelper = mNcp->GetThreadHelper();
+    otError  err          = OT_ERROR_NONE;
+    uint32_t partitionId  = otThreadGetPartitionId(threadHelper->GetInstance());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, partitionId) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetInstantRssiHandler(DBusMessageIter &aIter)
+{
+    auto    threadHelper = mNcp->GetThreadHelper();
+    otError err          = OT_ERROR_NONE;
+    int8_t  rssi         = otPlatRadioGetRssi(threadHelper->GetInstance());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, rssi) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
+exit:
+    return err;
+}
+
+otError DBusThreadObject::GetRadioTxPowerHandler(DBusMessageIter &aIter)
+{
+    auto    threadHelper = mNcp->GetThreadHelper();
+    otError err          = OT_ERROR_NONE;
+    int8_t  txPower;
+
+    SuccessOrExit(err = otPlatRadioGetTransmitPower(threadHelper->GetInstance(), &txPower));
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, txPower) == OTBR_ERROR_NONE, err = OT_ERROR_INVALID_ARGS);
 exit:
     return err;
 }
