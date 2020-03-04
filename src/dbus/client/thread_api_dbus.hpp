@@ -67,7 +67,7 @@ public:
      * @param[in]   aInterfaceName  The network interface name.
      *
      */
-    ThreadApiDBus(DBusConnection *aConnection, const std::string &mInterfaceName);
+    ThreadApiDBus(DBusConnection *aConnection, const std::string &aInterfaceName);
 
     /**
      * This method adds a callback for device role change.
@@ -136,8 +136,6 @@ public:
     /**
      * This method performs a soft reset.
      *
-     * @param[in]   aHandler        The reset result handler.
-     *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
      * @returns Error value otherwise
      *
@@ -170,9 +168,7 @@ public:
                                 const OtResultHandler &aHandler);
 
     /**
-     * This method performs a soft reset.
-     *
-     * @param[in]   aHandler        The reset result handler.
+     * This method stops the joiner process
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
      * @returns Error value otherwise
@@ -249,7 +245,7 @@ public:
     /**
      * This method gets the current device role.
      *
-     * @param[out]  aConfig   The device role
+     * @param[out]  aDeviceRole   The device role
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
      * @returns Error value otherwise
@@ -271,7 +267,7 @@ public:
     /**
      * This method gets the network pan id.
      *
-     * @param[out]  aName   The pan id.
+     * @param[out]  aPanId  The pan id.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
      * @returns Error value otherwise
@@ -410,4 +406,4 @@ private:
 } // namespace DBus
 } // namespace otbr
 
-#endif
+#endif // OTBR_THREAD_API_DBUS_HPP_

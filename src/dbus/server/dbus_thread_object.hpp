@@ -101,4 +101,4 @@ private:
 } // namespace DBus
 } // namespace otbr
 
-#endif
+#endif // OTBR_DBUS_THREAD_OBJECT_HPP_

@@ -100,8 +100,6 @@ public:
      *
      * @param[in]   aHandler  The scan result handler.
      *
-     * @retval OT_ERROR_NONE successfully performed the dbus function call
-     *
      */
     void Scan(ScanHandler aHandler);
 
@@ -161,6 +159,7 @@ public:
      * This method returns the underlying OpenThread instance.
      *
      * @returns The underlying instance.
+     *
      */
     otInstance *GetInstance(void) { return mInstance; }
 

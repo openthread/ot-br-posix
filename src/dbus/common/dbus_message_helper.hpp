@@ -502,4 +502,4 @@ otbrError DBusMessageToTuple(UniqueDBusMessage const &aMessage, std::tuple<Field
 } // namespace DBus
 } // namespace otbr
 
-#endif
+#endif // DBUS_MESSAGE_HELPER_HPP_

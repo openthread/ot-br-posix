@@ -124,6 +124,7 @@ void ThreadHelper::RandomFill(void *aBuf, size_t size)
 {
     std::uniform_int_distribution<> dist(0, UINT8_MAX);
     uint8_t *                       buf = static_cast<uint8_t *>(aBuf);
+
     for (size_t i = 0; i < size; i++)
     {
         buf[i] = static_cast<uint8_t>(dist(mRandomDevice));

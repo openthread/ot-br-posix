@@ -125,35 +125,32 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
 {
     (void)aConnection;
 
-    if (dbus_message_is_signal(aMessage, DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL))
+    DBusMessageIter iter, subIter, dictEntryIter, valIter;
+    std::string     interfaceName, propertyName, val;
+    otbrDeviceRole  role;
+
+    VerifyOrExit(dbus_message_is_signal(aMessage, DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
+    VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
+    SuccessOrExit(DBusMessageExtract(&iter, interfaceName));
+    VerifyOrExit(interfaceName == OTBR_DBUS_THREAD_INTERFACE);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY);
+    dbus_message_iter_recurse(&iter, &subIter);
+    VerifyOrExit(dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_DICT_ENTRY);
+    dbus_message_iter_recurse(&subIter, &dictEntryIter);
+    SuccessOrExit(DBusMessageExtract(&dictEntryIter, propertyName));
+    VerifyOrExit(dbus_message_iter_get_arg_type(&dictEntryIter) == DBUS_TYPE_VARIANT);
+    dbus_message_iter_recurse(&dictEntryIter, &valIter);
+    SuccessOrExit(DBusMessageExtract(&valIter, val));
+
+    VerifyOrExit(propertyName == OTBR_DBUS_DEVICE_ROLE_PROPERTY);
+    SuccessOrExit(NameToDeviceRole(val, role));
+
+    for (const auto &f : mDeviceRoleHandlers)
     {
-        DBusMessageIter iter, subIter, dictEntryIter, valIter;
-        std::string     interfaceName, propertyName, val;
-        otbrDeviceRole  role;
-
-        VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
-        SuccessOrExit(DBusMessageExtract(&iter, interfaceName));
-        VerifyOrExit(interfaceName == OTBR_DBUS_THREAD_INTERFACE);
-
-        VerifyOrExit(dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_ARRAY);
-        dbus_message_iter_recurse(&iter, &subIter);
-        VerifyOrExit(dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_DICT_ENTRY);
-        dbus_message_iter_recurse(&subIter, &dictEntryIter);
-        SuccessOrExit(DBusMessageExtract(&dictEntryIter, propertyName));
-        VerifyOrExit(dbus_message_iter_get_arg_type(&dictEntryIter) == DBUS_TYPE_VARIANT);
-        dbus_message_iter_recurse(&dictEntryIter, &valIter);
-        SuccessOrExit(DBusMessageExtract(&valIter, val));
-
-        VerifyOrExit(propertyName == OTBR_DBUS_DEVICE_ROLE_PROPERTY);
-        SuccessOrExit(NameToDeviceRole(val, role));
-
-        for (const auto &f : mDeviceRoleHandlers)
-        {
-            f(role);
-        }
+        f(role);
     }
 exit:
-
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 

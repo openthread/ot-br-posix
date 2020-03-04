@@ -404,4 +404,4 @@ struct otbrIpCounters
 } // namespace DBus
 } // namespace otbr
 
-#endif
+#endif // OTBR_DBUS_COMMON_TYPES_HPP_
