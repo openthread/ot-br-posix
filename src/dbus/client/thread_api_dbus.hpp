@@ -352,32 +352,159 @@ public:
      */
     OtbrClientError GetSupportedChannelMask(uint32_t &aChannelMask);
 
+    /**
+     * This method gets the Thread routing locator
+     *
+     * @param[out]  aRloc16   The routing locator
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetRloc16(uint16_t &aRloc16);
 
+    /**
+     * This method gets 802.15.4 extended address
+     *
+     * @param[out]  aExtendedAddress    The extended address
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetExtendedAddress(uint64_t &aExtendedAddress);
 
+    /**
+     * This method gets the node's router id.
+     *
+     * @param[out]  aRouterId     The router id.
+     *
+     * @retval OT_ERROR_NONE      Successfully performed the dbus function call.
+     * @retval OT_ERROR_NOT_FOUND The node is not a router.
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetRouterId(uint8_t &aRouterId);
 
+    /**
+     * This method gets the network's leader data.
+     *
+     * @param[out]  aLeaderData   The leader data.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetLeaderData(otbrLeaderData &aLeaderData);
 
+    /**
+     * This method gets the network data.
+     *
+     * @param[out]  aNetworkData   The network data.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetNetworkData(std::vector<uint8_t> &aNetworkData);
 
+    /**
+     * This method gets the stable network data.
+     *
+     * @param[out]  aNetworkData   The stable network data.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetStableNetworkData(std::vector<uint8_t> &aNetworkData);
 
+    /**
+     * This method gets the node's local leader weight.
+     *
+     * @param[out]  aWeight     The local leader weight.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetLocalLeaderWeight(uint8_t &aWeight);
 
+    /**
+     * This method gets the channel monitor sample count.
+     *
+     * @param[out]  aWeight     The local leader weight.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetChannelMonitorSampleCount(uint32_t &aSampleCount);
 
+    /**
+     * This method gets the channel quality map.
+     *
+     * @param[out]  aQualityMap     The channel quality map.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetChannelMonitorChannelQualityMap(std::vector<otbrChannelQuality> &aQualityMap);
 
+    /**
+     * This method gets the child table.
+     *
+     * @param[out]  aChildTable     The child table.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetChildTable(std::vector<otbrChildInfo> &aChildTable);
 
+    /**
+     * This method gets the neighbor table.
+     *
+     * @param[out]  aNeighborTable     The neighbor table.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetNeighborTable(std::vector<otbrNeighborInfo> &aNeighborTable);
 
+    /**
+     * This method gets the network's parition id.
+     *
+     * @param[out]  aPartitionId      The partition id.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetPartitionId(uint32_t &aPartitionId);
 
+    /**
+     * This method gets the rssi of the latest packet.
+     *
+     * @param[out]  aRssi      The rssi of the latest packet.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetInstantRssi(int8_t &aRssi);
 
+    /**
+     * This method gets the radio transmit power.
+     *
+     * @param[out]  aTxPower    The radio transmit power.
+     *
+     * @retval OT_ERROR_NONE successfully performed the dbus function call
+     * @returns Error value otherwise
+     *
+     */
     OtbrClientError GetRadioTxPower(int8_t &aTxPower);
 
     /**
