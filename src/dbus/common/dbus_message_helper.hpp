@@ -46,42 +46,42 @@ namespace DBus {
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrError &aError);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrError &aError);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrActiveScanResult &aScanResult);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrActiveScanResult &aScanResult);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrLinkModeConfig &aConfig);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrLinkModeConfig &aConfig);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrIp6Prefix &aPrefix);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrIp6Prefix &aPrefix);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrOnMeshPrefix &aPrefix);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrOnMeshPrefix &aPrefix);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrMacCounters &aCounters);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrMacCounters &aCounters);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrIpCounters &aCounters);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrIpCounters &aCounters);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrChildInfo &aChildInfo);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrChildInfo &aChildInfo);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrNeighborInfo &aNeighborInfo);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrNeighborInfo &aNeighborInfo);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrLeaderData &aLeaderData);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrLeaderData &aLeaderData);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrChannelQuality &aQuality);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrChannelQuality &aQuality);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const ActiveScanResult &aScanResult);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, ActiveScanResult &aScanResult);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const LinkModeConfig &aConfig);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, LinkModeConfig &aConfig);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Ip6Prefix &aPrefix);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Ip6Prefix &aPrefix);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const OnMeshPrefix &aPrefix);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, OnMeshPrefix &aPrefix);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MacCounters &aCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MacCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const IpCounters &aCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, IpCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const ChildInfo &aChildInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, ChildInfo &aChildInfo);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const NeighborInfo &aNeighborInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, NeighborInfo &aNeighborInfo);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const LeaderData &aLeaderData);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, LeaderData &aLeaderData);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const ChannelQuality &aQuality);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, ChannelQuality &aQuality);
 
 template <typename T> struct DBusTypeTrait;
 
-template <> struct DBusTypeTrait<otbrIpCounters>
+template <> struct DBusTypeTrait<IpCounters>
 {
     // struct of 32 bytes
     static constexpr const char *TYPE_AS_STRING = "(uuuu)";
 };
 
-template <> struct DBusTypeTrait<otbrMacCounters>
+template <> struct DBusTypeTrait<MacCounters>
 {
     // struct of 32 bytes
     static constexpr const char *TYPE_AS_STRING = "(uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu)";
 };
 
-template <> struct DBusTypeTrait<otbrLinkModeConfig>
+template <> struct DBusTypeTrait<LinkModeConfig>
 {
     // struct of four booleans
     static constexpr const char *TYPE_AS_STRING = "(bbbb)";
@@ -99,39 +99,39 @@ template <size_t SIZE> struct DBusTypeTrait<std::array<uint8_t, SIZE>>
     static constexpr const char *TYPE_AS_STRING = "ay";
 };
 
-template <> struct DBusTypeTrait<otbrIp6Prefix>
+template <> struct DBusTypeTrait<Ip6Prefix>
 {
     // struct of { arrray of bytes, byte}
     static constexpr const char *TYPE_AS_STRING = "(ayy)";
 };
 
-template <> struct DBusTypeTrait<otbrLeaderData>
+template <> struct DBusTypeTrait<LeaderData>
 {
     // struct of { uint32, byte, byte, byte, byte, byte}
     static constexpr const char *TYPE_AS_STRING = "(uyyyy)";
 };
 
-template <> struct DBusTypeTrait<std::vector<otbrChannelQuality>>
+template <> struct DBusTypeTrait<std::vector<ChannelQuality>>
 {
     // array of struct of { uint8, uint16 }
     static constexpr const char *TYPE_AS_STRING = "a(yq)";
 };
 
-template <> struct DBusTypeTrait<otbrNeighborInfo>
+template <> struct DBusTypeTrait<NeighborInfo>
 {
     // struct of { uint64, uint32, uint16, uint32, uint32, uint8,
     //             uint8, uint8, uint16, uint16, bool, bool, bool, bool }
     static constexpr const char *TYPE_AS_STRING = "(tuquuyyyqqbbbb)";
 };
 
-template <> struct DBusTypeTrait<std::vector<otbrNeighborInfo>>
+template <> struct DBusTypeTrait<std::vector<NeighborInfo>>
 {
     // array of struct of { uint64, uint32, uint16, uint32, uint32, uint8,
     //                      uint8, uint8, uint16, uint16, bool, bool, bool, bool }
     static constexpr const char *TYPE_AS_STRING = "a(tuquuyyyqqbbbb)";
 };
 
-template <> struct DBusTypeTrait<otbrChildInfo>
+template <> struct DBusTypeTrait<ChildInfo>
 {
     // struct of { uint64, uint32, uint32, uint16, uint16, uint8, uint8,
     //             uint8, uint8, uint16, uint16, bool, bool, bool, bool,
@@ -139,20 +139,20 @@ template <> struct DBusTypeTrait<otbrChildInfo>
     static constexpr const char *TYPE_AS_STRING = "(tuuqqyyyyqqbbbbb)";
 };
 
-template <> struct DBusTypeTrait<otbrActiveScanResult>
+template <> struct DBusTypeTrait<ActiveScanResult>
 {
     // struct of { uint64, string, uint64, array<uint8>, uint16, uint16, uint8,
     //             uint8, uint8, uint8, bool, bool }
     static constexpr const char *TYPE_AS_STRING = "(tstayqqyyyybb)";
 };
 
-template <> struct DBusTypeTrait<otbrChannelQuality>
+template <> struct DBusTypeTrait<ChannelQuality>
 {
     // struct of { uint8, uint16}
     static constexpr const char *TYPE_AS_STRING = "(yq)";
 };
 
-template <> struct DBusTypeTrait<std::vector<otbrChildInfo>>
+template <> struct DBusTypeTrait<std::vector<ChildInfo>>
 {
     // array of struct of { uint64, uint32, uint32, uint16, uint16, uint8, uint8,
     //                      uint8, uint8, uint16, uint16, bool, bool, bool, bool,
@@ -260,8 +260,9 @@ template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::
     aValue.clear();
     while (dbus_message_iter_get_arg_type(&subIter) != DBUS_TYPE_INVALID)
     {
-        aValue.emplace_back();
-        SuccessOrExit(err = DBusMessageExtract(&subIter, aValue.back()));
+        T val;
+        SuccessOrExit(err = DBusMessageExtract(&subIter, val));
+        aValue.push_back(val);
     }
     dbus_message_iter_next(aIter);
 

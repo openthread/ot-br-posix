@@ -31,12 +31,12 @@
 namespace otbr {
 namespace DBus {
 
-bool operator==(OtbrClientError aError, int aValue)
+bool operator==(ClientError aError, int aValue)
 {
     return static_cast<int>(aError) == aValue;
 }
 
-bool operator!=(OtbrClientError aError, int aValue)
+bool operator!=(ClientError aError, int aValue)
 {
     return static_cast<int>(aError) != aValue;
 }

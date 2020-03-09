@@ -36,7 +36,7 @@
 namespace otbr {
 namespace DBus {
 
-enum class OtbrClientError
+enum class ClientError
 {
     ERROR_NONE = 0, ///< No error.
 
@@ -210,8 +210,8 @@ enum class OtbrClientError
     OT_ERROR_GENERIC = 255,
 };
 
-bool operator==(OtbrClientError aError, int aValue);
-bool operator!=(OtbrClientError aError, int aValue);
+bool operator==(ClientError aError, int aValue);
+bool operator!=(ClientError aError, int aValue);
 
 } // namespace DBus
 } // namespace otbr

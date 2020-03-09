@@ -101,7 +101,7 @@ private:
     otError GetStableNetworkDataHandler(DBusMessageIter &aIter);
     otError GetLocalLeaderWeightHandler(DBusMessageIter &aIter);
     otError GetChannelMonitorSampleCountHandler(DBusMessageIter &aIter);
-    otError GetChannelMonitorChannelQualityMapHandler(DBusMessageIter &aIter);
+    otError GetChannelMonitorAllChannelQualities(DBusMessageIter &aIter);
     otError GetChildTableHandler(DBusMessageIter &aIter);
     otError GetNeighborTableHandler(DBusMessageIter &aIter);
     otError GetPartitionIDHandler(DBusMessageIter &aIter);

@@ -58,7 +58,7 @@ const char *ConvertToDBusErrorName(otError aError);
  *          if the error name is not defined in OpenThread.
  *
  */
-OtbrClientError ConvertFromDBusErrorName(const std::string &aErrorName);
+ClientError ConvertFromDBusErrorName(const std::string &aErrorName);
 
 /**
  * This function converts an DBus reply message to otError.
@@ -68,7 +68,7 @@ OtbrClientError ConvertFromDBusErrorName(const std::string &aErrorName);
  * @returns The error code encoded in the message.
  *
  */
-OtbrClientError CheckErrorMessage(DBusMessage *aMessage);
+ClientError CheckErrorMessage(DBusMessage *aMessage);
 
 } // namespace DBus
 } // namespace otbr

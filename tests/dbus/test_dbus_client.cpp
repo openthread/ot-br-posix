@@ -36,10 +36,10 @@
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
 
-using otbr::DBus::otbrActiveScanResult;
-using otbr::DBus::OtbrClientError;
-using otbr::DBus::otbrDeviceRole;
-using otbr::DBus::otbrLinkModeConfig;
+using otbr::DBus::ActiveScanResult;
+using otbr::DBus::ClientError;
+using otbr::DBus::DeviceRole;
+using otbr::DBus::LinkModeConfig;
 using otbr::DBus::ThreadApiDBus;
 
 struct DBusConnectionDeleter
@@ -66,10 +66,10 @@ int main()
     api = std::unique_ptr<ThreadApiDBus>(new ThreadApiDBus(connection.get()));
 
     api->AddDeviceRoleHandler(
-        [](otbrDeviceRole aRole) { printf("Device role changed to %d\n", static_cast<uint8_t>(aRole)); });
+        [](DeviceRole aRole) { printf("Device role changed to %d\n", static_cast<uint8_t>(aRole)); });
 
-    api->Scan([&api, extpanid](const std::vector<otbrActiveScanResult> &aResult) {
-        otbrLinkModeConfig cfg = {true, true, false, true};
+    api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
+        LinkModeConfig cfg = {true, true, false, true};
 
         for (auto &&result : aResult)
         {
@@ -83,24 +83,24 @@ int main()
         cfg.mDeviceType = true;
         api->SetLinkMode(cfg);
 
-        api->Attach("Test", 0x3456, extpanid, {}, {}, UINT32_MAX, [&api, extpanid](OtbrClientError aError) {
+        api->Attach("Test", 0x3456, extpanid, {}, {}, UINT32_MAX, [&api, extpanid](ClientError aError) {
             printf("Attach result %d\n", static_cast<int>(aError));
             uint64_t extpanidCheck;
             if (aError == OTBR_ERROR_NONE)
             {
-                std::string                               name;
-                uint64_t                                  extAddress;
-                uint16_t                                  rloc16;
-                uint8_t                                   routerId;
-                std::vector<uint8_t>                      networkData;
-                std::vector<uint8_t>                      stableNetworkData;
-                otbr::DBus::otbrLeaderData                leaderData;
-                uint8_t                                   leaderWeight;
-                int8_t                                    rssi;
-                int8_t                                    txPower;
-                std::vector<otbr::DBus::otbrChildInfo>    childTable;
-                std::vector<otbr::DBus::otbrNeighborInfo> neighborTable;
-                uint32_t                                  partitionId;
+                std::string                           name;
+                uint64_t                              extAddress;
+                uint16_t                              rloc16;
+                uint8_t                               routerId;
+                std::vector<uint8_t>                  networkData;
+                std::vector<uint8_t>                  stableNetworkData;
+                otbr::DBus::LeaderData                leaderData;
+                uint8_t                               leaderWeight;
+                int8_t                                rssi;
+                int8_t                                txPower;
+                std::vector<otbr::DBus::ChildInfo>    childTable;
+                std::vector<otbr::DBus::NeighborInfo> neighborTable;
+                uint32_t                              partitionId;
 
                 assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                 assert(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
@@ -131,7 +131,7 @@ int main()
                 exit(-1);
             }
             api->Attach("Test", 0x3456, extpanid, {}, {}, UINT32_MAX,
-                        [](OtbrClientError aErr) { exit(static_cast<uint8_t>(aErr)); });
+                        [](ClientError aErr) { exit(static_cast<uint8_t>(aErr)); });
         });
     });
 
