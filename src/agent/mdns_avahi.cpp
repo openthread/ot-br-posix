@@ -442,7 +442,10 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         mState = kStateReady;
         CreateGroup(aClient);
         mStateHandler(mContext, mState);
-        avahi_entry_group_commit(mGroup);
+        if (mGroup)
+        {
+            avahi_entry_group_commit(mGroup);
+        }
         break;
 
     case AVAHI_CLIENT_FAILURE:
