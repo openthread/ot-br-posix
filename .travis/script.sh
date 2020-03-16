@@ -46,11 +46,6 @@ mdns-mojo-check)
     ./tests/mdns/test-mojo
     ;;
 
-pretty-check)
-    export PATH=$TOOLS_HOME/usr/bin:$PATH
-    ./bootstrap && ./configure && make pretty-check || die
-    ;;
-
 check)
     ./script/bootstrap
     CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test build check

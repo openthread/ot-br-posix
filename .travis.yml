@@ -71,11 +71,9 @@ matrix:
       dist: bionic
       addons:
         apt:
-          sources:
-            - llvm-toolchain-bionic-6.0
-            - ubuntu-toolchain-r-test
           packages:
             - clang-format-6.0
+      script: script/make-pretty check
     - env: BUILD_TARGET="macOS"
       os: osx
   allow_failures:

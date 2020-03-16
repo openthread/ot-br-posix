@@ -261,15 +261,6 @@ NL_ENABLE_OPTIMIZATION([yes])
 AM_CONDITIONAL([OTBR_BUILD_OPTIMIZED], [test "${nl_cv_build_optimized}" = "yes"])
 
 #
-# Code style
-#
-
-AC_SUBST(PRETTY, ["\${abs_top_srcdir}/.script/clang-format.sh"])
-AC_SUBST(PRETTY_ARGS, ["-style=file -i"])
-AC_SUBST(PRETTY_CHECK, ["\${abs_top_srcdir}/.script/clang-format-check.sh"])
-AC_SUBST(PRETTY_CHECK_ARGS, [""])
-
-#
 # Tests
 #
 AC_MSG_NOTICE([checking whether to build tests])
