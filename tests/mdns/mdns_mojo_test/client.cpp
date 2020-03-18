@@ -36,7 +36,7 @@
 #include "mdns_mojo.hpp"
 
 static otbr::Mdns::Publisher *sPublisher;
-static bool                               published = false;
+static bool                   published = false;
 
 void PublishHandler(void *aContext, otbr::Mdns::State aState)
 {

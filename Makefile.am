@@ -56,12 +56,6 @@ DISTCLEANFILES                            = \
     .local-version                          \
     $(NULL)
 
-PRETTY_SUBDIRS                            = \
-    src                                     \
-    tests                                   \
-    tools                                   \
-    $(NULL)
-
 #
 # Package version files:
 #

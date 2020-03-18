@@ -115,10 +115,6 @@ linux)
             $NULL
     }
 
-    [ $BUILD_TARGET != pretty-check ] || {
-        clang-format --version || die
-    }
-
     [ "$WITH_MDNS" != 'mDNSResponder' ] || {
         SOURCE_NAME=mDNSResponder-878.30.4
         wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz &&
