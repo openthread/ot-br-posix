@@ -280,7 +280,7 @@
         bool     mIsChild;           ///< Is the neighbor a child
       }
     -->
-    <property name="NeighborTable" type="a(tuquuyyyqqbbbb)" access="read">
+    <property name="NeighborTable" type="a(tuquuyyyqqbbbbb)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 

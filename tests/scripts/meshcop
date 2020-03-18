@@ -323,7 +323,7 @@ compile_wpantund()
 
 compile_openthread()
 {
-  (cd "${ABS_TOP_BUILDDIR}" && make -f "${ABS_TOP_SRCDIR}/third_party/openthread/repo/examples/Makefile-posix" DISABLE_DOC=1 TargetTuple=otbr)
+  (cd "${ABS_TOP_BUILDDIR}" && make -f "${ABS_TOP_SRCDIR}/third_party/openthread/repo/examples/Makefile-simulation" DISABLE_DOC=1 TargetTuple=otbr)
   executable_or_die "${OT_NCP_PATH}"
   executable_or_die "${OT_CLI_PATH}"
   executable_or_die "${OT_RCP_PATH}"

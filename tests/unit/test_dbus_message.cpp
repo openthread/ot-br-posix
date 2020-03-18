@@ -216,80 +216,82 @@ TEST(DBusMessage, TestStructMessage)
 
 TEST(DBusMessage, TestOtbrChannelQuality)
 {
-    DBusMessage *                     msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<otbr::DBus::ChannelQuality> setVals({1, 2});
-    tuple<otbr::DBus::ChannelQuality> getVals;
+    DBusMessage *                                  msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::ChannelQuality>> setVals({{1, 2}});
+    tuple<std::vector<otbr::DBus::ChannelQuality>> getVals;
 
     CHECK(msg != NULL);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
 
-    CHECK(std::get<0>(setVals) == std::get<0>(getVals));
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
 
     dbus_message_unref(msg);
 }
 
 TEST(DBusMessage, TestOtbrChildInfo)
 {
-    DBusMessage *                msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<otbr::DBus::ChildInfo> setVals({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false, true});
-    tuple<otbr::DBus::ChildInfo> getVals;
+    DBusMessage *                             msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::ChildInfo>> setVals(
+        {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false, true}});
+    tuple<std::vector<otbr::DBus::ChildInfo>> getVals;
 
     CHECK(msg != NULL);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
 
-    CHECK(std::get<0>(setVals) == std::get<0>(getVals));
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
 
     dbus_message_unref(msg);
 }
 
 TEST(DBusMessage, TestOtbrNeighborInfo)
 {
-    DBusMessage *                   msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<otbr::DBus::NeighborInfo> setVals({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false, true});
-    tuple<otbr::DBus::NeighborInfo> getVals;
+    DBusMessage *                                msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::NeighborInfo>> setVals(
+        {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false, true}});
+    tuple<std::vector<otbr::DBus::NeighborInfo>> getVals;
 
     CHECK(msg != NULL);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
 
-    CHECK(std::get<0>(setVals) == std::get<0>(getVals));
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
 
     dbus_message_unref(msg);
 }
 
 TEST(DBusMessage, TestOtbrLeaderData)
 {
-    DBusMessage *                 msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<otbr::DBus::LeaderData> setVals({1, 2, 3, 4, 5});
-    tuple<otbr::DBus::LeaderData> getVals;
+    DBusMessage *                              msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::LeaderData>> setVals({{1, 2, 3, 4, 5}});
+    tuple<std::vector<otbr::DBus::LeaderData>> getVals;
 
     CHECK(msg != NULL);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
 
-    CHECK(std::get<0>(setVals) == std::get<0>(getVals));
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
 
     dbus_message_unref(msg);
 }
 
 TEST(DBusMessage, TestOtbrActiveScanResults)
 {
-    DBusMessage *                       msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<otbr::DBus::ActiveScanResult> setVals({1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true});
-    tuple<otbr::DBus::ActiveScanResult> getVals;
+    DBusMessage *                                    msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true}});
+    tuple<std::vector<otbr::DBus::ActiveScanResult>> getVals;
 
     CHECK(msg != NULL);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
 
-    CHECK(std::get<0>(setVals) == std::get<0>(getVals));
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
 
     dbus_message_unref(msg);
 }

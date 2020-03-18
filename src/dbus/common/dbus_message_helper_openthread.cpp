@@ -132,6 +132,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, LinkModeConfig &aConfig)
     SuccessOrExit(DBusMessageExtract(&sub, aConfig.mDeviceType));
     SuccessOrExit(DBusMessageExtract(&sub, aConfig.mNetworkData));
 
+    dbus_message_iter_next(aIter);
     err = OTBR_ERROR_NONE;
 exit:
     return err;
@@ -165,7 +166,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, Ip6Prefix &aPrefix)
     VerifyOrExit(aPrefix.mPrefix.size() == OTBR_IP6_ADDRESS_SIZE, err = OTBR_ERROR_DBUS);
     SuccessOrExit(err = DBusMessageExtract(&sub, aPrefix.mLength));
 
-    err = OTBR_ERROR_NONE;
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -201,6 +202,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, OnMeshPrefix &aPrefix)
     VerifyOrExit(dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(&sub, &flagsSub);
     SuccessOrExit(err = ConvertToTuple(&flagsSub, flagArgs));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -243,6 +245,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, MacCounters &aCounters)
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -269,6 +272,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, IpCounters &aCounters)
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -303,6 +307,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, ChildInfo &aChildInfo)
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -337,6 +342,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, NeighborInfo &aNeighborInfo
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -365,6 +371,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, LeaderData &aLeaderData)
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }
@@ -391,6 +398,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, ChannelQuality &aQuality)
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
 exit:
     return err;
 }

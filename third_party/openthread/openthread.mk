@@ -29,6 +29,7 @@
 OPENTHREAD_CPPFLAGS                                                        = \
     -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
     -I$(top_srcdir)/third_party/openthread/repo/include                      \
+    -I$(top_srcdir)/third_party/openthread/repo/src/lib/                     \
     -I$(top_srcdir)/third_party/openthread/repo/src/posix/platform/include   \
     $(NULL)
 
