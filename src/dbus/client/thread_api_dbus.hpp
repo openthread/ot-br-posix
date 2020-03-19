@@ -84,7 +84,7 @@ public:
      * @param[in]   aSeconds  The timeout to close the port, 0 for never close.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError AddUnsecurePort(uint16_t aPort, uint32_t aSeconds);
@@ -95,7 +95,7 @@ public:
      * @param[in]   aHandler  The scan result handler.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError Scan(const ScanHandler &aHandler);
@@ -111,7 +111,7 @@ public:
      * @param[in]   aHandler        The attach result handler.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError Attach(const std::string &         aNetworkName,
@@ -128,7 +128,7 @@ public:
      * @param[in]   aHandler        The reset result handler.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError FactoryReset(const OtResultHandler &aHandler);
@@ -137,7 +137,7 @@ public:
      * This method performs a soft reset.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError Reset(void);
@@ -156,7 +156,7 @@ public:
      * @param[in]   aHandler          The join result handler.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError JoinerStart(const std::string &    aPskd,
@@ -171,7 +171,7 @@ public:
      * This method stops the joiner process
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError JoinerStop(void);
@@ -182,7 +182,7 @@ public:
      * @param[in]   aPrefix     The address prefix.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError AddOnMeshPrefix(const OnMeshPrefix &aPrefix);
@@ -193,7 +193,7 @@ public:
      * @param[in]   aPrefix     The address prefix.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError RemoveOnMeshPrefix(const Ip6Prefix &aPrefix);
@@ -204,7 +204,7 @@ public:
      * @param[in]   aPrefix     The address prefix.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
@@ -215,7 +215,7 @@ public:
      * @param[in]   aPrefix     The address prefix.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
@@ -226,7 +226,7 @@ public:
      * @param[in]   aConfig   The operating mode config.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError SetLinkMode(const LinkModeConfig &aConfig);
@@ -237,7 +237,7 @@ public:
      * @param[out]  aConfig   The operating mode config.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetLinkMode(LinkModeConfig &aConfig);
@@ -248,7 +248,7 @@ public:
      * @param[out]  aDeviceRole   The device role
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetDeviceRole(DeviceRole &aDeviceRole);
@@ -259,7 +259,7 @@ public:
      * @param[out]  aName   The network name.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetNetworkName(std::string &aName);
@@ -270,7 +270,7 @@ public:
      * @param[out]  aPanId  The pan id.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetPanId(uint16_t &aPanId);
@@ -281,7 +281,7 @@ public:
      * @param[out]  aExtPanId   The extended pan id.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetExtPanId(uint64_t &aExtPanId);
@@ -292,7 +292,7 @@ public:
      * @param[out]  aChannel   The extended pan id.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetChannel(uint16_t &aChannel);
@@ -303,7 +303,7 @@ public:
      * @param[out]  aMasterKey   The network master key.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetMasterKey(std::vector<uint8_t> &aMasterKey);
@@ -314,7 +314,7 @@ public:
      * @param[out]  aFailureRate   The failure rate.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetCcaFailureRate(uint16_t &aFailureRate);
@@ -325,7 +325,7 @@ public:
      * @param[out]  aCounters    The statistic counters.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetLinkCounters(MacCounters &aCounters); // For telemetry
@@ -336,7 +336,7 @@ public:
      * @param[out]  aCounters    The statistic counters.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetIp6Counters(IpCounters &aCounters); // For telemetry
@@ -347,7 +347,7 @@ public:
      * @param[out]  aChannelMask   The channel mask.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetSupportedChannelMask(uint32_t &aChannelMask);
@@ -358,7 +358,7 @@ public:
      * @param[out]  aRloc16   The routing locator
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetRloc16(uint16_t &aRloc16);
@@ -369,7 +369,7 @@ public:
      * @param[out]  aExtendedAddress    The extended address
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetExtendedAddress(uint64_t &aExtendedAddress);
@@ -381,7 +381,7 @@ public:
      *
      * @retval OT_ERROR_NONE            Successfully performed the dbus function call.
      * @retval OT_ERROR_INVALID_STATE   The node is not a router.
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetRouterId(uint8_t &aRouterId);
@@ -392,7 +392,7 @@ public:
      * @param[out]  aLeaderData   The leader data.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetLeaderData(LeaderData &aLeaderData);
@@ -403,7 +403,7 @@ public:
      * @param[out]  aNetworkData   The network data.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetNetworkData(std::vector<uint8_t> &aNetworkData);
@@ -414,7 +414,7 @@ public:
      * @param[out]  aNetworkData   The stable network data.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetStableNetworkData(std::vector<uint8_t> &aNetworkData);
@@ -425,7 +425,7 @@ public:
      * @param[out]  aWeight     The local leader weight.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetLocalLeaderWeight(uint8_t &aWeight);
@@ -433,21 +433,21 @@ public:
     /**
      * This method gets the channel monitor sample count.
      *
-     * @param[out]  aWeight     The local leader weight.
+     * @param[out]  aSampleCount     The channel monitor sample count.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetChannelMonitorSampleCount(uint32_t &aSampleCount);
 
     /**
-     * This method gets the channel quality map.
+     * This method gets the channel qualities
      *
-     * @param[out]  aQualityMap     The channel quality map.
+     * @param[out]  aChannelQualities     The channel qualities.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetChannelMonitorAllChannelQualities(std::vector<ChannelQuality> &aChannelQualities);
@@ -458,7 +458,7 @@ public:
      * @param[out]  aChildTable     The child table.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetChildTable(std::vector<ChildInfo> &aChildTable);
@@ -469,7 +469,7 @@ public:
      * @param[out]  aNeighborTable     The neighbor table.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetNeighborTable(std::vector<NeighborInfo> &aNeighborTable);
@@ -480,7 +480,7 @@ public:
      * @param[out]  aPartitionId      The partition id.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetPartitionId(uint32_t &aPartitionId);
@@ -491,7 +491,7 @@ public:
      * @param[out]  aRssi      The rssi of the latest packet.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetInstantRssi(int8_t &aRssi);
@@ -502,7 +502,7 @@ public:
      * @param[out]  aTxPower    The radio transmit power.
      *
      * @retval OT_ERROR_NONE successfully performed the dbus function call
-     * @retval Error value otherwise
+     * @returns Error value otherwise
      *
      */
     ClientError GetRadioTxPower(int8_t &aTxPower);

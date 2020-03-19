@@ -107,7 +107,7 @@ template <> struct DBusTypeTrait<Ip6Prefix>
 
 template <> struct DBusTypeTrait<LeaderData>
 {
-    // struct of { uint32, byte, byte, byte, byte, byte}
+    // struct of { uint32, byte, byte, byte, byte }
     static constexpr const char *TYPE_AS_STRING = "(uyyyy)";
 };
 
