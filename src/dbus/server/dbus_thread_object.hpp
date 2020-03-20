@@ -81,6 +81,7 @@ private:
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
     otError SetLinkModeHandler(DBusMessageIter &aIter);
+
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
     otError GetNetworkNameHandler(DBusMessageIter &aIter);
@@ -92,6 +93,20 @@ private:
     otError GetLinkCountersHandler(DBusMessageIter &aIter);
     otError GetIp6CountersHandler(DBusMessageIter &aIter);
     otError GetSupportedChannelMaskHandler(DBusMessageIter &aIter);
+    otError GetRloc16Handler(DBusMessageIter &aIter);
+    otError GetExtendedAddressHandler(DBusMessageIter &aIter);
+    otError GetRouterIdHandler(DBusMessageIter &aIter);
+    otError GetLeaderDataHandler(DBusMessageIter &aIter);
+    otError GetNetworkDataHandler(DBusMessageIter &aIter);
+    otError GetStableNetworkDataHandler(DBusMessageIter &aIter);
+    otError GetLocalLeaderWeightHandler(DBusMessageIter &aIter);
+    otError GetChannelMonitorSampleCountHandler(DBusMessageIter &aIter);
+    otError GetChannelMonitorAllChannelQualities(DBusMessageIter &aIter);
+    otError GetChildTableHandler(DBusMessageIter &aIter);
+    otError GetNeighborTableHandler(DBusMessageIter &aIter);
+    otError GetPartitionIDHandler(DBusMessageIter &aIter);
+    otError GetInstantRssiHandler(DBusMessageIter &aIter);
+    otError GetRadioTxPowerHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
 

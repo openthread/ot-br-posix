@@ -39,7 +39,7 @@
 namespace otbr {
 namespace DBus {
 
-enum otbrDeviceRole
+enum DeviceRole
 {
     OTBR_DEVICE_ROLE_DISABLED = 0,
     OTBR_DEVICE_ROLE_DETACHED = 1,
@@ -48,7 +48,7 @@ enum otbrDeviceRole
     OTBR_DEVICE_ROLE_LEADER   = 4,
 };
 
-struct otbrActiveScanResult
+struct ActiveScanResult
 {
     uint64_t             mExtAddress;    ///< IEEE 802.15.4 Extended Address
     std::string          mNetworkName;   ///< Thread Network Name
@@ -64,7 +64,7 @@ struct otbrActiveScanResult
     bool                 mIsJoinable;    ///< Joining Permitted flag
 };
 
-struct otbrLinkModeConfig
+struct LinkModeConfig
 {
     bool mRxOnWhenIdle;       ///< 1, if the sender has its receiver on when not transmitting. 0, otherwise.
     bool mSecureDataRequests; ///< 1, if the sender uses IEEE 802.15.4 to secure all data requests. 0, otherwise.
@@ -72,19 +72,19 @@ struct otbrLinkModeConfig
     bool mNetworkData;        ///< 1, if the sender requires the full Network Data. 0, otherwise.
 };
 
-struct otbrIp6Prefix
+struct Ip6Prefix
 {
     std::vector<uint8_t> mPrefix; ///< The IPv6 prefix.
 
     uint8_t mLength; ///< The IPv6 prefix length.
 };
 
-struct otbrOnMeshPrefix
+struct OnMeshPrefix
 {
     /**
      * The IPv6 prefix.
      */
-    otbrIp6Prefix mPrefix;
+    Ip6Prefix mPrefix;
 
     /**
      * A 2-bit signed integer indicating router preference as defined in RFC 4191.
@@ -131,7 +131,7 @@ struct otbrOnMeshPrefix
  * This structure represents the MAC layer counters.
  *
  */
-struct otbrMacCounters
+struct MacCounters
 {
     /**
      * The total number of unique MAC frame transmission requests.
@@ -393,12 +393,66 @@ struct otbrMacCounters
     uint32_t mRxErrOther;
 };
 
-struct otbrIpCounters
+struct IpCounters
 {
     uint32_t mTxSuccess; ///< The number of IPv6 packets successfully transmitted.
     uint32_t mRxSuccess; ///< The number of IPv6 packets successfully received.
     uint32_t mTxFailure; ///< The number of IPv6 packets failed to transmit.
     uint32_t mRxFailure; ///< The number of IPv6 packets failed to receive.
+};
+
+struct ChannelQuality
+{
+    uint8_t  mChannel;
+    uint16_t mOccupancy;
+};
+
+struct ChildInfo
+{
+    uint64_t mExtAddress;         ///< IEEE 802.15.4 Extended Address
+    uint32_t mTimeout;            ///< Timeout
+    uint32_t mAge;                ///< Time last heard
+    uint16_t mRloc16;             ///< RLOC16
+    uint16_t mChildId;            ///< Child ID
+    uint8_t  mNetworkDataVersion; ///< Network Data Version
+    uint8_t  mLinkQualityIn;      ///< Link Quality In
+    int8_t   mAverageRssi;        ///< Average RSSI
+    int8_t   mLastRssi;           ///< Last observed RSSI
+    uint16_t mFrameErrorRate;     ///< Frame error rate (0xffff->100%). Requires error tracking feature.
+    uint16_t mMessageErrorRate;   ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
+    bool     mRxOnWhenIdle;       ///< rx-on-when-idle
+    bool     mSecureDataRequest;  ///< Secure Data Requests
+    bool     mFullThreadDevice;   ///< Full Thread Device
+    bool     mFullNetworkData;    ///< Full Network Data
+    bool     mIsStateRestoring;   ///< Is in restoring state
+};
+
+struct NeighborInfo
+{
+    uint64_t mExtAddress;        ///< IEEE 802.15.4 Extended Address
+    uint32_t mAge;               ///< Time last heard
+    uint16_t mRloc16;            ///< RLOC16
+    uint32_t mLinkFrameCounter;  ///< Link Frame Counter
+    uint32_t mMleFrameCounter;   ///< MLE Frame Counter
+    uint8_t  mLinkQualityIn;     ///< Link Quality In
+    int8_t   mAverageRssi;       ///< Average RSSI
+    int8_t   mLastRssi;          ///< Last observed RSSI
+    uint16_t mFrameErrorRate;    ///< Frame error rate (0xffff->100%). Requires error tracking feature.
+    uint16_t mMessageErrorRate;  ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
+    bool     mRxOnWhenIdle;      ///< rx-on-when-idle
+    bool     mSecureDataRequest; ///< Secure Data Requests
+    bool     mFullThreadDevice;  ///< Full Thread Device
+    bool     mFullNetworkData;   ///< Full Network Data
+    bool     mIsChild;           ///< Is the neighbor a child
+};
+
+struct LeaderData
+{
+    uint32_t mPartitionId;       ///< Partition ID
+    uint8_t  mWeighting;         ///< Leader Weight
+    uint8_t  mDataVersion;       ///< Full Network Data Version
+    uint8_t  mStableDataVersion; ///< Stable Network Data Version
+    uint8_t  mLeaderRouterId;    ///< Leader Router ID
 };
 
 } // namespace DBus

@@ -327,6 +327,7 @@ void ThreadHelper::JoinerCallback(otError aError)
     if (aError != OT_ERROR_NONE)
     {
         otIp6SetEnabled(mInstance, false);
+        mJoinerHandler(aError);
         mJoinerHandler = nullptr;
     }
     else

@@ -87,31 +87,31 @@ const char *ConvertToDBusErrorName(otError aError)
     return name;
 }
 
-OtbrClientError ConvertFromDBusErrorName(const std::string &aErrorName)
+ClientError ConvertFromDBusErrorName(const std::string &aErrorName)
 {
-    OtbrClientError err = OtbrClientError::ERROR_NONE;
+    ClientError err = ClientError::ERROR_NONE;
 
     for (const auto &p : sErrorNames)
     {
         if (p.second == aErrorName)
         {
-            err = static_cast<OtbrClientError>(p.first);
+            err = static_cast<ClientError>(p.first);
             break;
         }
     }
     return err;
 }
 
-OtbrClientError CheckErrorMessage(DBusMessage *aMessage)
+ClientError CheckErrorMessage(DBusMessage *aMessage)
 {
-    OtbrClientError err = OtbrClientError::ERROR_NONE;
+    ClientError err = ClientError::ERROR_NONE;
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_ERROR)
     {
         std::string errMsg;
         auto        args = std::tie(errMsg);
 
-        VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, err = OtbrClientError::ERROR_DBUS);
+        VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, err = ClientError::ERROR_DBUS);
         err = ConvertFromDBusErrorName(errMsg);
     }
 

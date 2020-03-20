@@ -31,17 +31,12 @@ include $(top_srcdir)/third_party/openthread/openthread.mk
 
 noinst_LTLIBRARIES = libotbr-dbus-common.la
 
-libotbr_dbus_common_la_SOURCES  = \
-    dbus_message_helper.cpp       \
-    error.cpp                     \
-    error_helper.cpp              \
-    $(NULL)
-
-if OTBR_ENABLE_NCP_OPENTHREAD
-libotbr_dbus_common_la_SOURCES      += \
+libotbr_dbus_common_la_SOURCES       = \
+    dbus_message_helper.cpp            \
+    error.cpp                          \
+    error_helper.cpp                   \
     dbus_message_helper_openthread.cpp \
     $(NULL)
-endif
 
 libotbr_dbus_common_la_LIBADD                              = \
     $(top_builddir)/src/utils/libutils.la                    \
