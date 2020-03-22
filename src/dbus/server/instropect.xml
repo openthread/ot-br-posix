@@ -54,6 +54,28 @@
     <method name="Reset">
     </method>
 
+    <method name="AddExternalRoute">
+      <!--
+        struct {
+          uint8[] prefix_bytes
+          uint8 prefix_length
+        }
+      -->
+      <arg name="prefix" type="(ayy)"/>
+      <arg name="preference" type="y"/>
+      <arg name="stable" type="b"/>
+    </method>
+
+    <method name="RemoveExternalRoute">
+      <!--
+        struct {
+          uint8[] prefix_bytes
+          uint8 prefix_length
+        }
+      -->
+      <arg name="prefix" type="(ayy)"/>
+    </method>
+
     <!--
       struct {
         struct {

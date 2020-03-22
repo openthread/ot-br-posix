@@ -39,7 +39,7 @@
 extern "C" {
 #include "wpan-dbus-v1.h"
 #include "wpanctl-utils.h"
-#include "spinel/spinel.h"
+#include "lib/spinel/spinel.h"
 }
 
 #include "common/code_utils.hpp"
