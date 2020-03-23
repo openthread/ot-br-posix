@@ -78,7 +78,7 @@ public:
     void AddDeviceRoleHandler(const DeviceRoleHandler &aHandler);
 
     /**
-     * This method adds an unsecure thread port.
+     * This method permits unsecure join on port.
      *
      * @param[in]   aPort     The port number.
      * @param[in]   aSeconds  The timeout to close the port, 0 for never close.
@@ -88,7 +88,7 @@ public:
      * @retval ...        OpenThread defined error value otherwise
      *
      */
-    ClientError AddUnsecurePort(uint16_t aPort, uint32_t aSeconds);
+    ClientError PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds);
 
     /**
      * This method performs a Thread network scan.

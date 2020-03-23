@@ -74,7 +74,7 @@ private:
     void ResetHandler(DBusRequest &aRequest);
     void JoinerStartHandler(DBusRequest &aRequest);
     void JoinerStopHandler(DBusRequest &aRequest);
-    void AddUnsecurePortHandler(DBusRequest &aRequest);
+    void PermitUnsecureJoinHandler(DBusRequest &aRequest);
     void AddOnMeshPrefixHandler(DBusRequest &aRequest);
     void RemoveOnMeshPrefixHandler(DBusRequest &aRequest);
     void AddExternalRouteHandler(DBusRequest &aRequest);

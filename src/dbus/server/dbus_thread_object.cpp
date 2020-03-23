@@ -114,8 +114,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::JoinerStartHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOINER_STOP_METHOD,
                    std::bind(&DBusThreadObject::JoinerStopHandler, this, _1));
-    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ADD_UNSECURE_PORT_METHOD,
-                   std::bind(&DBusThreadObject::AddUnsecurePortHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PERMIT_UNSECURE_JOIN_METHOD,
+                   std::bind(&DBusThreadObject::PermitUnsecureJoinHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ADD_ON_MESH_PREFIX_METHOD,
                    std::bind(&DBusThreadObject::AddOnMeshPrefixHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_ON_MESH_PREFIX_METHOD,
@@ -303,7 +303,7 @@ void DBusThreadObject::JoinerStopHandler(DBusRequest &aRequest)
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
-void DBusThreadObject::AddUnsecurePortHandler(DBusRequest &aRequest)
+void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 {
     auto     threadHelper = mNcp->GetThreadHelper();
     uint16_t port;
@@ -316,7 +316,7 @@ void DBusThreadObject::AddUnsecurePortHandler(DBusRequest &aRequest)
     }
     else
     {
-        aRequest.ReplyOtResult(threadHelper->AddUnsecurePort(port, timeout));
+        aRequest.ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
     }
 }
 
