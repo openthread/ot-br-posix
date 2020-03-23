@@ -42,6 +42,7 @@
 #include <openthread/platform/settings.h>
 
 #include "common/code_utils.hpp"
+#include "common/logging.hpp"
 #include "common/types.hpp"
 
 static bool sReset;
@@ -248,13 +249,38 @@ Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, cha
  */
 extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
 {
-    OT_UNUSED_VARIABLE(aLogLevel);
     OT_UNUSED_VARIABLE(aLogRegion);
-    OT_UNUSED_VARIABLE(aFormat);
+
+    int otbrLogLevel;
+
+    switch (aLogLevel)
+    {
+    case OT_LOG_LEVEL_NONE:
+        otbrLogLevel = OTBR_LOG_EMERG;
+        break;
+    case OT_LOG_LEVEL_CRIT:
+        otbrLogLevel = OTBR_LOG_CRIT;
+        break;
+    case OT_LOG_LEVEL_WARN:
+        otbrLogLevel = OTBR_LOG_WARNING;
+        break;
+    case OT_LOG_LEVEL_NOTE:
+        otbrLogLevel = OTBR_LOG_NOTICE;
+        break;
+    case OT_LOG_LEVEL_INFO:
+        otbrLogLevel = OTBR_LOG_INFO;
+        break;
+    case OT_LOG_LEVEL_DEBG:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    default:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    }
 
     va_list ap;
     va_start(ap, aFormat);
-    otCliPlatLogv(aLogLevel, aLogRegion, aFormat, ap);
+    otbrLogv(otbrLogLevel, aFormat, ap);
     va_end(ap);
 }
 
