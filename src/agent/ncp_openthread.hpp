@@ -145,6 +145,7 @@ private:
     otPlatformConfig                                                                mConfig;
     std::unique_ptr<otbr::agent::ThreadHelper>                                      mThreadHelper;
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
+    bool                                                                            mTriedAttach;
 };
 
 } // namespace Ncp

@@ -381,6 +381,7 @@ ba_start()
     # check invalid arguments
     ! sudo "${OTBR_AGENT_PATH}" -x
 
+    [[ ! -d tmp ]] || sudo rm -rf tmp
     if [[ "${WITH_NCP}" = openthread ]]; then
       sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_rcp} ${LEADER_NODE_ID} &
     else
