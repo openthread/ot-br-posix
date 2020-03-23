@@ -134,6 +134,7 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
     {
         auto propertyIter = mGetPropertyHandlers.find(interfaceName);
 
+        otbrLog(OTBR_LOG_INFO, "GetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
         VerifyOrExit(propertyIter != mGetPropertyHandlers.end(), err = OT_ERROR_NOT_FOUND);
         {
             DBusMessageIter replyIter;
@@ -209,6 +210,7 @@ void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
     VerifyOrExit(DBusMessageExtract(&iter, propertyName) == OTBR_ERROR_NONE, err = OT_ERROR_PARSE);
 
     propertyFullPath = interfaceName + "." + propertyName;
+    otbrLog(OTBR_LOG_INFO, "SetProperty %s", propertyFullPath.c_str());
     {
         auto handlerIter = mSetPropertyHandlers.find(propertyFullPath);
 
