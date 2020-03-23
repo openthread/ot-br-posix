@@ -144,7 +144,7 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const Ip6Prefix &aPrefix)
     otbrError       err = OTBR_ERROR_NONE;
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), err = OTBR_ERROR_DBUS);
-    VerifyOrExit(aPrefix.mPrefix.size() == OTBR_IP6_ADDRESS_SIZE, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(aPrefix.mPrefix.size() <= OTBR_IP6_PREFIX_SIZE, err = OTBR_ERROR_DBUS);
 
     SuccessOrExit(DBusMessageEncode(&sub, aPrefix.mPrefix));
     SuccessOrExit(DBusMessageEncode(&sub, aPrefix.mLength));
@@ -163,7 +163,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, Ip6Prefix &aPrefix)
 
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(err = DBusMessageExtract(&sub, aPrefix.mPrefix));
-    VerifyOrExit(aPrefix.mPrefix.size() == OTBR_IP6_ADDRESS_SIZE, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(aPrefix.mPrefix.size() <= OTBR_IP6_PREFIX_SIZE, err = OTBR_ERROR_DBUS);
     SuccessOrExit(err = DBusMessageExtract(&sub, aPrefix.mLength));
 
     dbus_message_iter_next(aIter);

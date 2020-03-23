@@ -374,10 +374,10 @@ void DBusThreadObject::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
 void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
 {
     auto      threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix onMeshPrefix;
+    Ip6Prefix routePrefix;
     int8_t    preference;
     bool      stable;
-    auto      args = std::tie(onMeshPrefix, preference, stable);
+    auto      args = std::tie(routePrefix, preference, stable);
 
     if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
     {
@@ -389,8 +389,8 @@ void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
         otIp6Prefix &         prefix = route.mPrefix;
 
         // size is guaranteed by parsing
-        std::copy(onMeshPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-        prefix.mLength    = onMeshPrefix.mLength;
+        std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+        prefix.mLength    = routePrefix.mLength;
         route.mPreference = preference;
         route.mStable     = stable;
 
@@ -401,8 +401,8 @@ void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
 void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
 {
     auto      threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix onMeshPrefix;
-    auto      args = std::tie(onMeshPrefix);
+    Ip6Prefix routePrefix;
+    auto      args = std::tie(routePrefix);
 
     if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
     {
@@ -412,8 +412,8 @@ void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
     {
         otIp6Prefix prefix;
         // size is guaranteed by parsing
-        std::copy(onMeshPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-        prefix.mLength = onMeshPrefix.mLength;
+        std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+        prefix.mLength = routePrefix.mLength;
 
         aRequest.ReplyOtResult(otBorderRouterRemoveRoute(threadHelper->GetInstance(), &prefix));
     }
