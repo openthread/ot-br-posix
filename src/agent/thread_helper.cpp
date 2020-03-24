@@ -347,7 +347,6 @@ otError ThreadHelper::TryResumeNetwork(void)
         {
             SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
         }
-        SuccessOrExit(err = otThreadSetEnabled(mInstance, true));
     }
 exit:
     if (err != OT_ERROR_NONE)
