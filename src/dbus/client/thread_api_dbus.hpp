@@ -208,6 +208,32 @@ public:
     ClientError RemoveOnMeshPrefix(const Ip6Prefix &aPrefix);
 
     /**
+     * This method adds an external route.
+     *
+     * @param[in]   aPrefix         The route prefix.
+     * @param[in]   aPreference     The route preference.
+     * @param[in]   aStable         Whether or not the route is stable.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError AddExternalRoute(const Ip6Prefix &aPrefix, int8_t aPerference, bool aStable);
+
+    /**
+     * This method removes an external route.
+     *
+     * @param[in]   aPrefix         The route prefix.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError RemoveExternalRoute(const Ip6Prefix &aPrefix);
+
+    /**
      * This method sets the mesh-local prefix.
      *
      * @param[in]   aPrefix     The address prefix.

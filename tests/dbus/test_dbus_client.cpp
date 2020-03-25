@@ -101,6 +101,15 @@ int main()
                 std::vector<otbr::DBus::ChildInfo>    childTable;
                 std::vector<otbr::DBus::NeighborInfo> neighborTable;
                 uint32_t                              partitionId;
+                otbr::DBus::Ip6Prefix                 prefix;
+                otbr::DBus::OnMeshPrefix              onMeshPrefix;
+
+                prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+                prefix.mLength = 64;
+
+                onMeshPrefix.mPrefix     = prefix;
+                onMeshPrefix.mPreference = 0;
+                onMeshPrefix.mStable     = true;
 
                 assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                 assert(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
@@ -116,6 +125,10 @@ int main()
                 assert(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
                 assert(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
                 assert(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
+                assert(api->AddExternalRoute(prefix, 0, true) == OTBR_ERROR_NONE);
+                assert(api->RemoveExternalRoute(prefix) == OTBR_ERROR_NONE);
+                assert(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
+                assert(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
                 api->FactoryReset(nullptr);
                 assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                 assert(rloc16 != 0);

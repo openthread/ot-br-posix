@@ -120,6 +120,10 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AddOnMeshPrefixHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_ON_MESH_PREFIX_METHOD,
                    std::bind(&DBusThreadObject::RemoveOnMeshPrefixHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ADD_EXTERNAL_ROUTE_METHOD,
+                   std::bind(&DBusThreadObject::AddExternalRouteHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD,
+                   std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
 
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX,
                                std::bind(&DBusThreadObject::SetMeshLocalPrefixHandler, this, _1));
@@ -364,6 +368,54 @@ void DBusThreadObject::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
         prefix.mLength = onMeshPrefix.mLength;
 
         aRequest.ReplyOtResult(otBorderRouterRemoveOnMeshPrefix(threadHelper->GetInstance(), &prefix));
+    }
+}
+
+void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
+{
+    auto      threadHelper = mNcp->GetThreadHelper();
+    Ip6Prefix routePrefix;
+    int8_t    preference;
+    bool      stable;
+    auto      args = std::tie(routePrefix, preference, stable);
+
+    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
+    }
+    else
+    {
+        otExternalRouteConfig route;
+        otIp6Prefix &         prefix = route.mPrefix;
+
+        // size is guaranteed by parsing
+        std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+        prefix.mLength    = routePrefix.mLength;
+        route.mPreference = preference;
+        route.mStable     = stable;
+
+        aRequest.ReplyOtResult(otBorderRouterAddRoute(threadHelper->GetInstance(), &route));
+    }
+}
+
+void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
+{
+    auto      threadHelper = mNcp->GetThreadHelper();
+    Ip6Prefix routePrefix;
+    auto      args = std::tie(routePrefix);
+
+    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
+    }
+    else
+    {
+        otIp6Prefix prefix;
+        // size is guaranteed by parsing
+        std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+        prefix.mLength = routePrefix.mLength;
+
+        aRequest.ReplyOtResult(otBorderRouterRemoveRoute(threadHelper->GetInstance(), &prefix));
     }
 }
 

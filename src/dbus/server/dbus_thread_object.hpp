@@ -77,6 +77,8 @@ private:
     void AddUnsecurePortHandler(DBusRequest &aRequest);
     void AddOnMeshPrefixHandler(DBusRequest &aRequest);
     void RemoveOnMeshPrefixHandler(DBusRequest &aRequest);
+    void AddExternalRouteHandler(DBusRequest &aRequest);
+    void RemoveExternalRouteHandler(DBusRequest &aRequest);
 
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
