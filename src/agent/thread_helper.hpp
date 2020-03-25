@@ -193,7 +193,7 @@ private:
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 
-    std::map<uint16_t, std::chrono::steady_clock::time_point> mPortTime;
+    std::map<uint16_t, std::chrono::steady_clock::time_point> mUnsecurePortCloseTime;
 
     ResultHandler mAttachHandler;
     ResultHandler mJoinerHandler;

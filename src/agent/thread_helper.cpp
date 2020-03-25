@@ -337,7 +337,6 @@ void ThreadHelper::JoinerCallback(otError aError)
     }
 }
 
-<<<<<<< HEAD
 otError ThreadHelper::TryResumeNetwork(void)
 {
     otError err = OT_ERROR_NONE;
@@ -373,9 +372,10 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
     {
         auto triggerTime = std::chrono::steady_clock::now() + std::chrono::seconds(aSeconds);
 
-        if (mPortTime.find(aPort) == mPortTime.end() || mPortTime[aPort] < triggerTime)
+        if (mUnsecurePortCloseTime.find(aPort) == mUnsecurePortCloseTime.end() ||
+            mUnsecurePortCloseTime[aPort] < triggerTime)
         {
-            mPortTime[aPort] = triggerTime;
+            mUnsecurePortCloseTime[aPort] = triggerTime;
         }
 
         mNcp->PostTimerTask(triggerTime, [this, aPort]() {
@@ -384,11 +384,11 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 
             // 0 to clean steering data
             memset(&steeringClearData.m8, 0, sizeof(steeringClearData.m8));
-            if (now >= mPortTime[aPort])
+            if (now >= mUnsecurePortCloseTime[aPort])
             {
                 otIp6RemoveUnsecurePort(mInstance, aPort);
                 otThreadSetSteeringData(mInstance, &steeringClearData);
-                mPortTime.erase(aPort);
+                mUnsecurePortCloseTime.erase(aPort);
             }
         });
     }
