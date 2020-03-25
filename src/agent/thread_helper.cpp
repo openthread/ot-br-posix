@@ -242,6 +242,11 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
         RandomFill(pskc.m8, sizeof(pskc.m8));
     }
 
+    if (!otIp6IsEnabled(mInstance))
+    {
+        SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
+    }
+
     SuccessOrExit(err = otThreadSetNetworkName(mInstance, aNetworkName.c_str()));
     SuccessOrExit(err = otLinkSetPanId(mInstance, aPanId));
     SuccessOrExit(err = otThreadSetExtendedPanId(mInstance, &extPanId));
@@ -260,10 +265,6 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 
     SuccessOrExit(err = otThreadSetPskc(mInstance, &pskc));
 
-    if (!otIp6IsEnabled(mInstance))
-    {
-        SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
-    }
     SuccessOrExit(err = otThreadSetEnabled(mInstance, true));
 exit:
     if (err != OT_ERROR_NONE)
@@ -334,6 +335,27 @@ void ThreadHelper::JoinerCallback(otError aError)
     {
         otThreadSetEnabled(mInstance, true);
     }
+}
+
+otError ThreadHelper::TryResumeNetwork(void)
+{
+    otError err = OT_ERROR_NONE;
+
+    if (otLinkGetPanId(mInstance) != UINT16_MAX && otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
+    {
+        if (!otIp6IsEnabled(mInstance))
+        {
+            SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
+        }
+    }
+
+exit:
+    if (err != OT_ERROR_NONE)
+    {
+        otIp6SetEnabled(mInstance, false);
+    }
+
+    return err;
 }
 
 otError ThreadHelper::AddUnsecurePort(uint16_t aPort, uint32_t aSeconds)

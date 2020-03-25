@@ -56,6 +56,7 @@ namespace otbr {
 namespace Ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
+    : mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
@@ -165,6 +166,12 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
     {
         mTimers.begin()->second();
         mTimers.erase(mTimers.begin());
+    }
+
+    if (!mTriedAttach)
+    {
+        mThreadHelper->TryResumeNetwork();
+        mTriedAttach = true;
     }
 }
 

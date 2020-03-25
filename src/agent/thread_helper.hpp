@@ -156,6 +156,14 @@ public:
                      ResultHandler      aHandler);
 
     /**
+     * This method tries to restore the network after reboot
+     *
+     * @returns The error value of underlying OpenThread api calls.
+     *
+     */
+    otError TryResumeNetwork(void);
+
+    /**
      * This method returns the underlying OpenThread instance.
      *
      * @returns The underlying instance.
