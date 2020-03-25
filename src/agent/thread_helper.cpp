@@ -358,28 +358,37 @@ exit:
     return err;
 }
 
-otError ThreadHelper::AddUnsecurePort(uint16_t aPort, uint32_t aSeconds)
+otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 {
-    otError err = OT_ERROR_NONE;
+    otError      err = OT_ERROR_NONE;
+    otExtAddress steeringData;
 
+    // 0xff to allow all devices to join
+    memset(&steeringData.m8, 0xff, sizeof(steeringData.m8));
     SuccessOrExit(err = otIp6AddUnsecurePort(mInstance, aPort));
+    otThreadSetSteeringData(mInstance, &steeringData);
 
     if (aSeconds > 0)
     {
         auto triggerTime = std::chrono::steady_clock::now() + std::chrono::seconds(aSeconds);
 
-        if (mPortTime.find(aPort) == mPortTime.end() || mPortTime[aPort] < triggerTime)
+        if (mUnsecurePortCloseTime.find(aPort) == mUnsecurePortCloseTime.end() ||
+            mUnsecurePortCloseTime[aPort] < triggerTime)
         {
-            mPortTime[aPort] = triggerTime;
+            mUnsecurePortCloseTime[aPort] = triggerTime;
         }
 
         mNcp->PostTimerTask(triggerTime, [this, aPort]() {
-            auto now = std::chrono::steady_clock::now();
+            auto         now = std::chrono::steady_clock::now();
+            otExtAddress steeringClearData;
 
-            if (now >= mPortTime[aPort])
+            // 0 to clean steering data
+            memset(&steeringClearData.m8, 0, sizeof(steeringClearData.m8));
+            if (now >= mUnsecurePortCloseTime[aPort])
             {
                 otIp6RemoveUnsecurePort(mInstance, aPort);
-                mPortTime.erase(aPort);
+                otThreadSetSteeringData(mInstance, &steeringClearData);
+                mUnsecurePortCloseTime.erase(aPort);
             }
         });
     }

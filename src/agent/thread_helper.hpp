@@ -85,7 +85,7 @@ public:
     void AddDeviceRoleHandler(DeviceRoleHandler aHandler);
 
     /**
-     * This method adds an unsecure thread port.
+     * This method permits unsecure join on port.
      *
      * @param[in]   aPort     The port number.
      * @param[in]   aSeconds  The timeout to close the port, 0 for never close.
@@ -93,7 +93,7 @@ public:
      * @returns The error value of underlying OpenThread api calls.
      *
      */
-    otError AddUnsecurePort(uint16_t aPort, uint32_t aSeconds);
+    otError PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds);
 
     /**
      * This method performs a Thread network scan.
@@ -193,7 +193,7 @@ private:
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 
-    std::map<uint16_t, std::chrono::steady_clock::time_point> mPortTime;
+    std::map<uint16_t, std::chrono::steady_clock::time_point> mUnsecurePortCloseTime;
 
     ResultHandler mAttachHandler;
     ResultHandler mJoinerHandler;

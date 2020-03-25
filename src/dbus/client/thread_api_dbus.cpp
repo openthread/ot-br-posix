@@ -191,9 +191,9 @@ void ThreadApiDBus::ScanPendingCallHandler(DBusPendingCall *aPending)
     mScanHandler = nullptr;
 }
 
-ClientError ThreadApiDBus::AddUnsecurePort(uint16_t aPort, uint32_t aSeconds)
+ClientError ThreadApiDBus::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 {
-    return CallDBusMethodSync(OTBR_DBUS_ADD_UNSECURE_PORT_METHOD, std::tie(aPort, aSeconds));
+    return CallDBusMethodSync(OTBR_DBUS_PERMIT_UNSECURE_JOIN_METHOD, std::tie(aPort, aSeconds));
 }
 
 ClientError ThreadApiDBus::Attach(const std::string &         aNetworkName,
