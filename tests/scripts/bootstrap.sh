@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -73,8 +73,8 @@ configure_network() {
     echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
 }
 
-case $TRAVIS_OS_NAME in
-linux)
+case "$(uname)" in
+"Linux")
     sudo apt-get update
     [ $BUILD_TARGET != script-check ] && [ $BUILD_TARGET != docker-check ] || {
         install_openthread_binraries
@@ -107,6 +107,8 @@ linux)
     install_common_dependencies
 
     [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
+
+    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install -y clang-format-6.0
 
     [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != distcheck ] && [ $BUILD_TARGET != meshcop ] || {
         sudo apt-get install -y  \
@@ -154,11 +156,12 @@ linux)
     }
     ;;
 
-osx)
+"Darwin")
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
     ;;
 
 *)
+    echo "Unknown os type"
     die
     ;;
 esac
