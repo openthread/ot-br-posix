@@ -269,6 +269,7 @@ prepare_libchrome_stub()
     SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
     mkdir -p external
     cp -r "${SRC_DIR}"/../etc/libchrome_stub external/libchrome
+    touch ${SRC_DIR}/../mdns_mojom_stub.c
 }
 
 prepare_openthread()

@@ -33,7 +33,7 @@ WITH_MDNS ?= mojo
 ifeq ($(WITH_MDNS),mojo)
 include $(CLEAR_VARS)
 
-LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libmdns_mojom
 LOCAL_MODULE_TAGS := eng
 LOCAL_CPP_EXTENSION := .cc
@@ -62,7 +62,7 @@ MDNS_MOJOM_SRCS := $(gen_src)
 
 LOCAL_SHARED_LIBRARIES += libchrome libmojo
 
-include $(BUILD_SHARED_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 endif
 
 include $(CLEAR_VARS)
@@ -199,7 +199,8 @@ LOCAL_SRC_FILES += \
 # The generated header files are not in dependency chain.
 # Force dependency here
 LOCAL_ADDITIONAL_DEPENDENCIES += $(MDNS_MOJOM_SRCS)
-LOCAL_SHARED_LIBRARIES += libmdns_mojom libchrome libmojo
+LOCAL_STATIC_LIBRARIES += libmdns_mojom
+LOCAL_SHARED_LIBRARIES += libchrome libmojo
 endif
 endif
 
