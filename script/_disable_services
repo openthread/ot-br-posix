@@ -34,7 +34,7 @@
 bbb_disable_services()
 {
     SERVICE_LIST=""
-    SERVICE_LIST="${SERVICE_LIST} apache2 "
+    SERVICE_LIST="${SERVICE_LIST} nginx "
     SERVICE_LIST="${SERVICE_LIST} bonescript.socket"
     SERVICE_LIST="${SERVICE_LIST} bonescript.service"
     SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
