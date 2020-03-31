@@ -34,17 +34,21 @@
 bbb_disable_services()
 {
     SERVICE_LIST=""
-    SERVICE_LIST="${SERVICE_LIST} nginx "
+    SERVICE_LIST="${SERVICE_LIST} apache2 " # Debian jessie
+    SERVICE_LIST="${SERVICE_LIST} nginx "   # Debian stretch
     SERVICE_LIST="${SERVICE_LIST} bonescript.socket"
     SERVICE_LIST="${SERVICE_LIST} bonescript.service"
     SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
 
     for service in $SERVICE_LIST
     do
-        for action in stop disable
-        do
-            sudo systemctl $action $service
-        done
+        if [[ $(sudo systemctl is-active $service) != "inactive" ]];
+        then
+            for action in stop disable
+            do
+                sudo systemctl $action $service
+            done
+        fi
     done
 }
 
