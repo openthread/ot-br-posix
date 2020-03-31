@@ -42,7 +42,7 @@ bbb_disable_services()
 
     for service in $SERVICE_LIST
     do
-        if [[ $(sudo systemctl is-active $service) != "inactive" ]];
+        if [ $(sudo systemctl is-active $service) != "inactive" ];
         then
             for action in stop disable
             do
