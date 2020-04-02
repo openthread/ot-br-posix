@@ -53,10 +53,10 @@
         fprintf(stderr, format, ##__VA_ARGS__); \
         fprintf(stderr, "\r\n");                \
     } while (0)
+#include "base/task/single_thread_task_executor.h"
 #endif
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Mdns {
 
 void MdnsMojoPublisher::LaunchMojoThreads(void)
@@ -65,6 +65,7 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
+#ifndef TEST_IN_CHROMIUM
     base::MessageLoopForIO mainLoop;
     base::RunLoop          runLoop;
 
@@ -73,6 +74,16 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     mMojoTaskRunner = mainLoop.task_runner();
+#else
+    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
+    base::RunLoop                  runLoop;
+
+    mojo::core::Init();
+    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
+                                            mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
+
+    mMojoTaskRunner = ioTaskExecutor.task_runner();
+#endif // TEST_IN_CHROMIUM
 
     if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
     {
@@ -89,8 +100,15 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
 void MdnsMojoPublisher::TearDownMojoThreads(void)
 {
     mConnector      = nullptr;
-    mResponder      = nullptr;
     mMojoTaskRunner = nullptr;
+
+#ifndef TEST_IN_CHROMIUM
+    mResponder = nullptr;
+#else
+    mResponder.reset();
+    mResponder = mojo::Remote<chromecast::mojom::MdnsResponder>();
+#endif
+
     mMojoCoreThreadQuitClosure.Run();
 }
 
@@ -131,11 +149,12 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
 #ifndef TEST_IN_CHROMIUM
         aConnector->set_connection_error_callback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
+        aConnector->BindInterface("chromecast", &mResponder);
 #else
         aConnector->SetConnectionErrorCallback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
+        aConnector->BindInterface("chromecast", mResponder.BindNewPipeAndPassReceiver());
 #endif
-        aConnector->BindInterface("chromecast", &mResponder);
         mConnector = std::move(aConnector);
         mStateHandler(mContext, kStateReady);
     }
@@ -299,5 +318,4 @@ void Publisher::Destroy(Publisher *aPublisher)
 }
 
 } // namespace Mdns
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr

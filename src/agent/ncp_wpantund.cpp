@@ -37,9 +37,9 @@
 #include <sys/time.h>
 
 extern "C" {
-#include "spinel.h"
 #include "wpan-dbus-v1.h"
 #include "wpanctl-utils.h"
+#include "lib/spinel/spinel.h"
 }
 
 #include "common/code_utils.hpp"
@@ -48,9 +48,7 @@ extern "C" {
 
 #if OTBR_ENABLE_NCP_WPANTUND
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -495,7 +493,7 @@ otbrError ControllerWpantund::RequestEvent(int aEvent)
     {
         uint32_t status = 0;
         dbus_message_iter_get_basic(&iter, &status);
-        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EREMOTEIO);
+        VerifyOrExit(status == SPINEL_STATUS_OK, errno = EIO);
     }
 
     dbus_message_iter_next(&iter);
@@ -528,10 +526,12 @@ Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, cha
     return new ControllerWpantund(aInterfaceName);
 }
 
+void ControllerWpantund::Reset(void)
+{
+}
+
 } // namespace Ncp
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 #endif // OTBR_ENABLE_NCP_WPANTUND

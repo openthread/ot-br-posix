@@ -31,21 +31,23 @@
  *   This file implements the function of "configure gateway" function.
  */
 
-#ifndef DBUS_GATEWAY_HPP
-#define DBUS_GATEWAY_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_
 
-#define OT_INET6_ADDR_STR_LENGTH 46
+#include "openthread-br/config.h"
 
 #include <arpa/inet.h>
 #include <stdio.h>
 
 #include <dbus/dbus.h>
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
 #include "utils/strcpy_utils.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
-namespace ot {
+#define OT_INET6_ADDR_STR_LENGTH 46
+
+namespace otbr {
 namespace Dbus {
 
 class DBusGateway : public DBusBase
@@ -78,5 +80,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
-#endif // DBUS_GATEWAY_HPP
+} // namespace otbr
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_

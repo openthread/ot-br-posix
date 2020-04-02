@@ -31,18 +31,17 @@
  *   This file includes definition for MDNS service.
  */
 
-#ifndef MDNS_MDNSSD_HPP_
-#define MDNS_MDNSSD_HPP_
+#ifndef OTBR_AGENT_MDNS_MDNSSD_HPP_
+#define OTBR_AGENT_MDNS_MDNSSD_HPP_
 
-#include <dns_sd.h>
 #include <vector>
 
-#include "mdns.hpp"
+#include <dns_sd.h>
+
+#include "agent/mdns.hpp"
 #include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -182,8 +181,6 @@ private:
 
 } // namespace Mdns
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // MDNS_MDNSSD_HPP_
+#endif // OTBR_AGENT_MDNS_MDNSSD_HPP_

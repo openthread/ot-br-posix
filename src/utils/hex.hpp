@@ -31,13 +31,15 @@
  *   This file provides kinds of convertion functions.
  */
 
-#ifndef HEX_HPP
-#define HEX_HPP
+#ifndef OTBR_UTILS_HEX_HPP_
+#define OTBR_UTILS_HEX_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stddef.h>
 #include <stdint.h>
 
-namespace ot {
+namespace otbr {
 
 namespace Utils {
 
@@ -49,6 +51,6 @@ size_t Long2Hex(const uint64_t aLong, char *aHex);
 
 } // namespace Utils
 
-} // namespace ot
+} // namespace otbr
 
-#endif // HEX
+#endif // OTBR_UTILS_HEX_

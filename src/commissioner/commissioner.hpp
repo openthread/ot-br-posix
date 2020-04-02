@@ -31,8 +31,10 @@
  *   The file is the header for the commissioner class
  */
 
-#ifndef OTBR_COMMISSIONER_HPP_
-#define OTBR_COMMISSIONER_HPP_
+#ifndef OTBR_COMMISSIONER_COMMISSIONER_HPP_
+#define OTBR_COMMISSIONER_COMMISSIONER_HPP_
+
+#include "openthread-br/config.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -54,14 +56,13 @@
 #include <mbedtls/timing.h>
 #include <sys/time.h>
 
-#include "commissioner_constants.hpp"
-#include "joiner_session.hpp"
+#include "commissioner/constants.hpp"
+#include "commissioner/joiner_session.hpp"
 #include "common/coap.hpp"
 #include "utils/pskc.hpp"
 #include "utils/steering_data.hpp"
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 
 class Commissioner
 {
@@ -247,7 +248,6 @@ private:
     static const int      kCoapResponseRetryTime;
 };
 
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
-#endif // OTBR_COMMISSIONER_HPP_
+#endif // OTBR_COMMISSIONER_COMMISSIONER_HPP_

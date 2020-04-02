@@ -31,8 +31,10 @@
  *   This file includes definition for mbedTLS-based DTLS implementation.
  */
 
-#ifndef DTLS_MBEDTLS_HPP_
-#define DTLS_MBEDTLS_HPP_
+#ifndef OTBR_COMMON_DTLS_MBEDTLS_HPP_
+#define OTBR_COMMON_DTLS_MBEDTLS_HPP_
+
+#include "openthread-br/config.h"
 
 #include <vector>
 
@@ -69,11 +71,9 @@ extern "C" {
 
 } // extern "C"
 
-#include "dtls.hpp"
+#include "common/dtls.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Dtls {
 
@@ -347,8 +347,6 @@ private:
 
 } // namespace Dtls
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // DTLS_MBEDTLS_HPP_
+#endif // OTBR_COMMON_DTLS_MBEDTLS_HPP_

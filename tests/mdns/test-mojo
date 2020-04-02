@@ -33,7 +33,7 @@ set -x
 set -e
 
 
-main() 
+main()
 {
     OTBR_DIR=${OTBR_DIR:-$(pwd)}
     BUILD_DIR=${OTBR_DIR}/build/chromium
@@ -68,6 +68,8 @@ main()
     gclient runhooks
 
     sed -i -e '/"\/\/url:url_unittests",/a \    "\/\/mdns_mojo_test:mdns_mojo_client",\n    "\/\/mdns_mojo_test:mdns_mojo_stub_service",\n    "\/\/mdns_mojo_test:standalone_mojo_broker_lite",' "${CHROMIUM_DIR}/src/BUILD.gn"
+    sudo pip2 install httplib2
+    sudo pip3 install httplib2
 
     gn gen out/Default --args="use_ozone=true"
     autoninja -C out/Default mdns_mojo_test:mdns_mojo_client mdns_mojo_test:mdns_mojo_stub_service mdns_mojo_test:standalone_mojo_broker_lite

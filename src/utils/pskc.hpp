@@ -31,8 +31,10 @@
  *   This file implements the generating pskc function.
  */
 
-#ifndef PSKC_HPP
-#define PSKC_HPP
+#ifndef OTBR_UTILS_PSKC_HPP_
+#define OTBR_UTILS_PSKC_HPP_
+
+#include "openthread-br/config.h"
 
 #define OT_EXTENDED_PAN_ID_LENGTH 8
 #define OT_ITERATION_COUNTS 16384
@@ -45,7 +47,7 @@
 
 #include <mbedtls/cmac.h>
 
-namespace ot {
+namespace otbr {
 namespace Psk {
 
 enum
@@ -78,6 +80,6 @@ private:
 };
 
 } // namespace Psk
-} // namespace ot
+} // namespace otbr
 
-#endif // PSKC_HPP
+#endif // OTBR_UTILS_PSKC_HPP_

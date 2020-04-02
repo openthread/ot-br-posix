@@ -31,26 +31,19 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef NCP_HPP_
-#define NCP_HPP_
+#ifndef OTBR_AGENT_NCP_HPP_
+#define OTBR_AGENT_NCP_HPP_
 
-#if HAVE_CONFIG_H
-#include "otbr-config.h"
-#endif
+#include "openthread-br/config.h"
 
 #include <netinet/in.h>
 #include <stddef.h>
-#if OTBR_ENABLE_NCP_WPANTUND
-#include "common/mainloop.h"
-#else
-#include <openthread-system.h>
-#endif
+
 #include "common/event_emitter.hpp"
+#include "common/mainloop.h"
 #include "common/types.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -73,6 +66,7 @@ enum
     kEventNetworkName,      ///< Network name arrived.
     kEventPSKc,             ///< PSKc arrived.
     kEventThreadState,      ///< Thread State.
+    kEventThreadVersion,    ///< Thread Version.
     kEventUdpForwardStream, ///< UDP forward stream arrived.
 };
 
@@ -123,6 +117,23 @@ public:
      */
     virtual void Process(const otSysMainloopContext &aMainloop) = 0;
 
+#if OTBR_ENABLE_NCP_OPENTHREAD
+    /**
+     * This method reest the Ncp Controller.
+     *
+     */
+    virtual void Reset(void) = 0;
+
+    /**
+     * This method return whether reset is requested.
+     *
+     * @retval  TRUE  reset is requested.
+     * @retval  FALSE reset isn't requested.
+     *
+     */
+    virtual bool IsResetRequested(void) = 0;
+#endif
+
     /**
      * This method request the event.
      *
@@ -157,8 +168,6 @@ public:
 
 } // namespace Ncp
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // NCP_HPP_
+#endif // OTBR_AGENT_NCP_HPP_

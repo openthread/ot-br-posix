@@ -50,6 +50,7 @@ otbr_web_LDFLAGS                                           = \
     $(NULL)
 
 otbr_web_CPPFLAGS                                          = \
+    -I$(top_srcdir)/include                                  \
     $(libotbr_web_la_CPPFLAGS)                               \
     $(NULL)
 
@@ -99,9 +100,8 @@ libotbr_web_la_LDFLAGS                                          = \
     $(NULL)
 
 libotbr_web_la_CPPFLAGS                                         = \
+    -I$(top_srcdir)/include                                       \
     -I$(top_srcdir)/src                                           \
-    -I$(top_srcdir)/src/wpan-controller                           \
-    -I$(top_srcdir)/src/web-service                               \
     -I$(top_srcdir)/third_party/Simple-web-server/repo/           \
     -I$(top_srcdir)/third_party/wpantund/repo/src                 \
     -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus        \
@@ -140,7 +140,6 @@ html_DATA                                                      = \
     $(NULL)
 
 noinst_HEADERS                                                 = \
-    utils/encoding.hpp                                           \
     web-service/ot_client.hpp                                    \
     web-service/web_server.hpp                                   \
     web-service/wpan_service.hpp                                 \

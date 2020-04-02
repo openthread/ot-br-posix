@@ -26,12 +26,15 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LOGGING_HPP_
-#define LOGGING_HPP_
+#ifndef OTBR_COMMON_LOGGING_HPP_
+#define OTBR_COMMON_LOGGING_HPP_
 
-#include "types.hpp"
+#include "openthread-br/config.h"
+
 #include <stdarg.h>
 #include <stddef.h>
+
+#include "common/types.hpp"
 
 /**
  * Logging level, which is identical to syslog
@@ -145,4 +148,4 @@ const char *otbrErrorString(otbrError aError);
  */
 void otbrLogDeinit(void);
 
-#endif // LOGGING_HPP_
+#endif // OTBR_COMMON_LOGGING_HPP_

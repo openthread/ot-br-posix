@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CODE_UTILS_HPP_
-#define CODE_UTILS_HPP_
+#ifndef OTBR_COMMON_CODE_UTILS_HPP_
+#define OTBR_COMMON_CODE_UTILS_HPP_
 
 /**
  *  This aligns the pointer to @p aAlignType.
@@ -104,4 +104,4 @@
         goto exit;   \
     } while (false)
 
-#endif // CODE_UTILS_HPP_
+#endif // OTBR_COMMON_CODE_UTILS_HPP_

@@ -1,4 +1,32 @@
-#include "ot_client.hpp"
+/*
+ *  Copyright (c) 2020, The OpenThread Authors.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *  3. Neither the name of the copyright holder nor the
+ *     names of its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "web/web-service/ot_client.hpp"
 
 #include <openthread/platform/toolchain.h>
 
@@ -12,33 +40,39 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "platform-posix.h"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/strcpy_utils.hpp"
 
-namespace ot {
+// Temporary solution before posix platform header files are cleaned up.
+#ifndef OPENTHREAD_POSIX_APP_SOCKET_NAME
+#define OPENTHREAD_POSIX_APP_SOCKET_NAME "/tmp/openthread.sock"
+#endif
 
-Client::Client(void)
+namespace otbr {
+namespace Web {
+
+OpenThreadClient::OpenThreadClient(void)
     : mTimeout(kDefaultTimeout)
     , mSocket(-1)
 {
 }
 
-Client::~Client(void)
+OpenThreadClient::~OpenThreadClient(void)
 {
     if (mSocket != -1)
     {
         close(mSocket);
     }
 }
-bool Client::Connect(void)
+
+bool OpenThreadClient::Connect(void)
 {
     struct sockaddr_un sockname;
     int                ret;
 
     mSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-    VerifyOrExit(mSocket != -1, perror("socket"); ret = OT_EXIT_FAILURE);
+    VerifyOrExit(mSocket != -1, perror("socket"); ret = EXIT_FAILURE);
 
     memset(&sockname, 0, sizeof(struct sockaddr_un));
     sockname.sun_family = AF_UNIX;
@@ -55,7 +89,7 @@ exit:
     return ret == 0;
 }
 
-char *Client::Execute(const char *aFormat, ...)
+char *OpenThreadClient::Execute(const char *aFormat, ...)
 {
     va_list args;
     int     ret;
@@ -131,7 +165,7 @@ exit:
     return rval;
 }
 
-int Client::Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength)
+int OpenThreadClient::Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength)
 {
     char *result;
     int   rval = 0;
@@ -187,14 +221,13 @@ exit:
     return rval;
 }
 
-bool Client::FactoryReset(void)
+bool OpenThreadClient::FactoryReset(void)
 {
     const char *result;
     bool        rval = false;
 
     Execute("factoryreset");
     sleep(0);
-    VerifyOrExit(Connect());
     result = Execute("version");
     VerifyOrExit(result != NULL);
 
@@ -204,4 +237,5 @@ exit:
     return rval;
 }
 
-} // namespace ot
+} // namespace Web
+} // namespace otbr

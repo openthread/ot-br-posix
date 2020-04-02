@@ -31,22 +31,22 @@
  *   This file includes definition for MDNS service based on mojo.
  */
 
-#ifndef MDNS_MOJO_HPP__
-#define MDNS_MOJO_HPP__
+#ifndef OTBR_AGENT_MDNS_MOJO_HPP__
+#define OTBR_AGENT_MDNS_MOJO_HPP__
 
 #include <base/macros.h>
 #include <base/message_loop/message_loop.h>
 #include <base/message_loop/message_pump_for_io.h>
+#include <chromecast/external_mojo/public/cpp/common.h>
+
 #ifndef TEST_IN_CHROMIUM
 #include <base/task_scheduler/post_task.h>
-#else
-#include <base/task/post_task.h>
-#endif
-#include <chromecast/external_mojo/public/cpp/common.h>
-#ifndef TEST_IN_CHROMIUM
 #include <chromecast/external_mojo/public/cpp/external_connector.h>
 #else
+#include <base/task/post_task.h>
 #include <chromecast/external_mojo/external_service_support/external_connector.h>
+#include <mojo/public/cpp/bindings/receiver.h>
+#include <mojo/public/cpp/bindings/remote.h>
 #endif
 
 #include <memory>
@@ -68,8 +68,7 @@
 #define MOJO_CONNECTOR_NS chromecast::external_service_support
 #endif
 
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Mdns {
 
 class MdnsMojoPublisher : public Publisher
@@ -78,7 +77,8 @@ public:
     /**
      * The constructor to MdnsMojoPublisher
      *
-     * @param[in]   aHandler    The callback function for mojo connect state change
+     * @param[in]   aHandler    The callback function for mojo connect state
+     * change
      * @param[in]   aContext    The context for callback function
      *
      */
@@ -179,7 +179,12 @@ private:
     std::unique_ptr<std::thread>                          mMojoCoreThread;
     base::Closure                                         mMojoCoreThreadQuitClosure;
     std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> mConnector;
-    chromecast::mojom::MdnsResponderPtr                   mResponder;
+
+#ifndef TEST_IN_CHROMIUM
+    chromecast::mojom::MdnsResponderPtr mResponder;
+#else
+    mojo::Remote<chromecast::mojom::MdnsResponder> mResponder;
+#endif
 
     std::vector<std::pair<std::string, std::string>> mPublishedServices;
 
@@ -192,7 +197,6 @@ private:
 };
 
 } // namespace Mdns
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
 
-#endif
+#endif // OTBR_AGENT_MDNS_MOJO_HPP__

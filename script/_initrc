@@ -92,8 +92,15 @@ then
 fi
 
 if test -z "$PLATFORM"; then
-    have_or_die lsb_release
-    PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+    case "${OSTYPE}" in
+        darwin*)
+            PLATFORM=macOS
+            ;;
+        *)
+            have_or_die lsb_release
+            PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+            ;;
+    esac
 fi
 echo "Current platform is $PLATFORM"
 

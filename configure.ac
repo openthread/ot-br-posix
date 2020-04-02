@@ -85,7 +85,7 @@ AC_CONFIG_MACRO_DIR([third_party/openthread/repo/third_party/nlbuild-autotools/r
 # Tell autoconf what file the package is using to aggregate C preprocessor
 # defines.
 #
-AC_CONFIG_HEADERS([include/otbr-config.h])
+AC_CONFIG_HEADERS([include/openthread-br/autoconf-config.h])
 
 #
 # Figure out what the canonical build, host and target tuples are.
@@ -261,15 +261,6 @@ NL_ENABLE_OPTIMIZATION([yes])
 AM_CONDITIONAL([OTBR_BUILD_OPTIMIZED], [test "${nl_cv_build_optimized}" = "yes"])
 
 #
-# Code style
-#
-
-AC_SUBST(PRETTY, ["\${abs_top_srcdir}/.script/clang-format.sh"])
-AC_SUBST(PRETTY_ARGS, ["-style=file -i"])
-AC_SUBST(PRETTY_CHECK, ["\${abs_top_srcdir}/.script/clang-format-check.sh"])
-AC_SUBST(PRETTY_CHECK_ARGS, [""])
-
-#
 # Tests
 #
 AC_MSG_NOTICE([checking whether to build tests])
@@ -323,6 +314,37 @@ AC_SUBST(OTBR_ENABLE_COMMISSIONER)
 AM_CONDITIONAL([OTBR_ENABLE_COMMISSIONER], [test "${enable_commissioner}" = "yes"])
 
 #
+# dbus server
+#
+
+AC_ARG_ENABLE(dbus-server,
+    [AS_HELP_STRING([--enable-dbus-server],[Enable dbus server @<:@default=yes@:>@.])],
+    [
+        case "${enableval}" in
+
+        no|yes)
+            enable_dbus_server=${enableval}
+            ;;
+
+        *)
+            AC_MSG_ERROR([Invalid value ${enable_dbus_server} for --enable-dbus-server])
+            ;;
+        esac
+    ],
+    [enable_dbus_server=no])
+
+if test "$enable_dbus_server" = "yes"; then
+    AC_DEFINE_UNQUOTED([OTBR_ENABLE_DBUS_SERVER], [1], [Define to 1 if you want otbr-agent to provide dbus server])
+    OTBR_ENABLE_DBUS_SERVER=1
+else
+    OTBR_ENABLE_DBUS_SERVER=0
+fi
+
+AC_MSG_RESULT(${enable_dbus_server})
+AC_SUBST(OTBR_ENABLE_DBUS_SERVER)
+AM_CONDITIONAL([OTBR_ENABLE_DBUS_SERVER], [test "${enable_dbus_server}" = "yes"])
+
+#
 # Web Service
 #
 
@@ -351,6 +373,37 @@ fi
 AC_MSG_RESULT(${enable_web_service})
 AC_SUBST(OTBR_ENABLE_WEB_SERVICE)
 AM_CONDITIONAL([OTBR_ENABLE_WEB_SERVICE], [test "${enable_web_service}" = "yes"])
+
+#
+# OpenWRT
+#
+
+AC_ARG_ENABLE(openwrt,
+    [AS_HELP_STRING([--enable-openwrt],[Enable OpenWRT @<:@default=no@:>@.])],
+    [
+        case "${enableval}" in
+
+        no|yes)
+            enable_openwrt=${enableval}
+            ;;
+
+        *)
+            AC_MSG_ERROR([Invalid value ${enable_openwrt} for --enable-openwrt])
+            ;;
+        esac
+    ],
+    [enable_openwrt=no])
+
+if test "$enable_openwrt" = "yes"; then
+    OTBR_ENABLE_OPENWRT=1
+    AC_DEFINE_UNQUOTED([OTBR_ENABLE_OPENWRT], [1], [Define to 1 if you want to compile for OpenWRT])
+else
+    OTBR_ENABLE_OPENWRT=0
+fi
+
+AC_MSG_RESULT(${enable_openwrt})
+AC_SUBST(OTBR_ENABLE_OPENWRT)
+AM_CONDITIONAL([OTBR_ENABLE_OPENWRT], [test "${enable_openwrt}" = "yes"])
 
 #
 # Checks for libraries and packages.
@@ -533,7 +586,7 @@ AC_DEFINE_UNQUOTED([OTBR_AGENT_USER],[${OTBR_AGENT_USER}],[Define the user to ru
 
 AC_ARG_WITH([systemdsystemunitdir],
             AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Path to install systemd unit files.]),
-            [], [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+            [], [with_systemdsystemunitdir=${prefix}$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
 if test -n "${with_systemdsystemunitdir}"; then
   AC_SUBST([systemdsystemunitdir], [${with_systemdsystemunitdir}])
 fi
@@ -558,9 +611,14 @@ src/agent/Makefile
 src/agent/otbr-agent.conf
 src/commissioner/Makefile
 src/common/Makefile
+src/dbus/Makefile
+src/dbus/client/Makefile
+src/dbus/common/Makefile
+src/dbus/server/Makefile
 src/utils/Makefile
 src/web/Makefile
 tests/Makefile
+tests/dbus/Makefile
 tests/mdns/Makefile
 tests/tools/Makefile
 tests/unit/Makefile
@@ -604,6 +662,7 @@ AC_MSG_NOTICE([
   MDNS implementation                       : ${with_mdns}
   Commissioner                              : ${enable_commissioner}
   Web service                               : ${enable_web_service}
+  OpenWRT                                   : ${enable_openwrt}
   Lcov                                      : ${LCOV:--}
   Genhtml                                   : ${GENHTML:--}
   Build tests                               : ${nl_cv_build_tests}

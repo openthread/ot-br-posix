@@ -31,8 +31,10 @@
  *   This file includes definitions for NCP service based on wpantund.
  */
 
-#ifndef NCP_WPANTUND_HPP_
-#define NCP_WPANTUND_HPP_
+#ifndef OTBR_AGENT_NCP_WPANTUND_HPP_
+#define OTBR_AGENT_NCP_WPANTUND_HPP_
+
+#include "openthread-br/config.h"
 
 #include <map>
 
@@ -42,11 +44,9 @@
 #include <stdint.h>
 #include <sys/select.h>
 
-#include "ncp.hpp"
+#include "agent/ncp.hpp"
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Ncp {
 
@@ -74,6 +74,12 @@ public:
      *
      */
     otbrError Init(void);
+
+    /*
+     * This method reset the NCP controller.
+     *
+     */
+    void Reset(void);
 
     /**
      * This method sends a packet through UDP forward service.
@@ -149,8 +155,6 @@ private:
 
 } // namespace Ncp
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif //  NCP_WPANTUND_HPP_
+#endif //  OTBR_AGENT_NCP_WPANTUND_HPP_

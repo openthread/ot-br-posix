@@ -26,8 +26,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_STRCPY_UTILS_HPP
-#define OTBR_STRCPY_UTILS_HPP
+#ifndef OTBR_UTILS_STRCPY_UTILS_HPP_
+#define OTBR_UTILS_STRCPY_UTILS_HPP_
+
+#include "openthread-br/config.h"
 
 #include <string.h>
 
@@ -52,4 +54,4 @@ int strcpy_safe(char *aDest, size_t aDestSize, const char *aSrc);
 }
 #endif
 
-#endif // OTBR_STRCPY_UTILS_HPP
+#endif // OTBR_UTILS_STRCPY_UTILS_HPP_

@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2018, The OpenThread Authors.
+ *    Copyright (c) 2017-2018, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,61 +28,38 @@
 
 /**
  * @file
- *   The file is some small utility functions for commissioner code
+ *   The file is the header for the command line parameters for the commissioner app.
  */
 
-#ifndef OTBR_COMMISSIONER_UTILS_HPP_
-#define OTBR_COMMISSIONER_UTILS_HPP_
+#ifndef OTBR_COMMISSIONER_ARGUMENTS_HPP_
+#define OTBR_COMMISSIONER_ARGUMENTS_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
-#include <stdio.h>
 
-#include <arpa/inet.h>
-#include <errno.h>
-#include <sys/socket.h>
+#include "commissioner/constants.hpp"
+#include "common/types.hpp"
+#include "utils/steering_data.hpp"
 
-namespace ot {
-namespace BorderRouter {
-namespace Utils {
+namespace otbr {
 
-/**
- * This method computes number of bytes between start and end pointer
- *
- * @param[in]    aStart         start pointer
- * @param[in]    aEnd           end pointer
- *
- * @returns number of bytes within
- *
- */
-inline uint16_t LengthOf(const void *aStart, const void *aEnd)
+struct CommissionerArgs
 {
-    return static_cast<uint16_t>(static_cast<const uint8_t *>(aEnd) - static_cast<const uint8_t *>(aStart));
-}
+    const char *mAgentPort;
+    const char *mAgentHost;
 
-/**
- * This method returns min of two parameters
- *
- * @returns min of two parameters
- *
- */
-template <typename T> T Min(const T &lhs, const T &rhs)
-{
-    return lhs < rhs ? lhs : rhs;
-}
+    const char *mPSKd;
+    uint8_t     mPSKc[kPSKcLength];
 
-/**
- * This method returns max of two parameters
- *
- * @returns max of two parameters
- *
- */
-template <typename T> T Max(const T &lhs, const T &rhs)
-{
-    return lhs > rhs ? lhs : rhs;
-}
+    SteeringData mSteeringData;
+    int          mKeepAliveInterval;
 
-} // namespace Utils
-} // namespace BorderRouter
-} // namespace ot
+    int mDebugLevel;
+};
 
-#endif // OTBR_COMMISSIONER_UTILS_HPP_
+otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs);
+
+} // namespace otbr
+
+#endif // OTBR_COMMISSIONER_ARGUMENTS_HPP_

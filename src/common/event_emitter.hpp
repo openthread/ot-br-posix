@@ -26,17 +26,17 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef EVENT_EMITTER_HPP_
-#define EVENT_EMITTER_HPP_
+#ifndef OTBR_COMMON_EVENT_EMITTER_HPP_
+#define OTBR_COMMON_EVENT_EMITTER_HPP_
+
+#include "openthread-br/config.h"
 
 #include <list>
 #include <map>
 
 #include <stdarg.h>
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This class implements the basic functionality of an event emitter.
@@ -90,8 +90,6 @@ private:
     Events                              mEvents;
 };
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // EVENT_EMITTER_HPP_
+#endif // OTBR_COMMON_EVENT_EMITTER_HPP_

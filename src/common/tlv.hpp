@@ -31,13 +31,15 @@
  *   This file includes definition for Thread Management Framework(TMF) Tlv.
  */
 
-#ifndef TLV_HPP_
-#define TLV_HPP_
+#ifndef OTBR_COMMON_TLV_HPP_
+#define OTBR_COMMON_TLV_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 #include <string.h>
 
-namespace ot {
+namespace otbr {
 
 /**
  * This class implements TMF Tlv functionality.
@@ -230,6 +232,6 @@ enum
 
 } // namespace Meshcop
 
-} // namespace ot
+} // namespace otbr
 
-#endif // TLV_HPP_
+#endif // OTBR_COMMON_TLV_HPP_

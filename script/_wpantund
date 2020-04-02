@@ -51,7 +51,7 @@ wpantund_install()
     (cd $BUILD_DIR/wpantund &&
 	((test -n "$WPANTUND_COMMIT" && git reset $WPANTUND_COMMIT --hard) || echo "WPANTUND_COMMIT value has not been set or something went wrong during switching to the set commit.") &&
         (test -f configure || ./bootstrap.sh) &&
-        (test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc \
+        (test -f config.status || ./configure --prefix= --exec-prefix=/usr --sysconfdir=/etc \
         --disable-ncp-dummy --enable-static-link-ncp-plugin=spinel) &&
         make && sudo make install &&
         sudo sed -i '/Config:NCP:SocketPath "\/dev/i Config:NCP:SocketPath "/dev/ttyUSB0"' /etc/wpantund.conf) || die 'Failed to install wpantund!'

@@ -31,11 +31,11 @@
  *   This file implements "join" Thread Network function.
  */
 
+#include "web/wpan-controller/dbus_join.hpp"
+
 #include "common/code_utils.hpp"
 
-#include "dbus_join.hpp"
-
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 int DBusJoin::ProcessReply(void)
@@ -81,4 +81,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

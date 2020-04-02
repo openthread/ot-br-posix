@@ -42,7 +42,7 @@ install_packages_apt()
                          apt-utils
     sudo apt-get install -y build-essential libtool automake autoconf
 
-    with RELEASE || sudo apt-get install -y cmake
+    with RELEASE || sudo apt-get install -y cmake libcpputest-dev
 
     sudo apt-get install -y rsyslog
 
@@ -119,7 +119,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    die 'macOS not supported currently'
+    brew install dbus ctags
 }
 
 install_packages_source()
@@ -142,32 +142,12 @@ install_packages()
     fi
 }
 
-install_cpputest()
-{
-    if test -f $STAGE_DIR/usr/lib/libCppUTest.a; then
-        echo 'CppUTest already installed'
-        return
-    fi
-
-    BUILD_DIR=/tmp/build-$(date +%s)
-    test ! -e $BUILD_DIR || die "$BUILD_DIR already exists!"
-    mkdir -p $BUILD_DIR
-    (cd $BUILD_DIR &&
-        wget https://github.com/cpputest/cpputest/archive/v3.8.tar.gz &&
-        tar xzf v3.8.tar.gz &&
-        cd cpputest-3.8 &&
-        ./autogen.sh &&
-        ./configure --prefix=/usr &&
-        make install DESTDIR=$STAGE_DIR) || die 'Failed to build CppUTest!'
-}
-
 main()
 {
     . $BEFORE_HOOK
     # TODO remove `|| true` after docker hub builder gets its git upgraded
     git submodule update --init --recursive || true
     install_packages
-    with RELEASE || install_cpputest
     ./bootstrap
     . $AFTER_HOOK
 }

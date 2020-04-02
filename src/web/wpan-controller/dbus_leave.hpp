@@ -31,17 +31,19 @@
  *   This file implements "leave" Thread Network function.
  */
 
-#ifndef DBUS_LEAVE_HPP
-#define DBUS_LEAVE_HPP
+#ifndef OTBR_WEB_WPAN_CONTROLLER_DBUS_LEAVE_HPP_
+#define OTBR_WEB_WPAN_CONTROLLER_DBUS_LEAVE_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdio.h>
 
 #include <dbus/dbus.h>
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 class DBusLeave : public DBusBase
@@ -53,5 +55,5 @@ private:
 };
 
 } // namespace Dbus
-} // namespace ot
-#endif // DBUS_LEAVE_HPP
+} // namespace otbr
+#endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_LEAVE_HPP_

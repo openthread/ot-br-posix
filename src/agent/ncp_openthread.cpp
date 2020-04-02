@@ -26,10 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ncp_openthread.hpp"
+#include "agent/ncp_openthread.hpp"
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
@@ -37,39 +38,52 @@
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/logging.h>
+#include <openthread/platform/misc.h>
+#include <openthread/platform/settings.h>
 
+#include "common/code_utils.hpp"
+#include "common/logging.hpp"
 #include "common/types.hpp"
 
+static bool sReset;
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::seconds;
+using std::chrono::steady_clock;
+
 #if OTBR_ENABLE_NCP_OPENTHREAD
-namespace ot {
-namespace BorderRouter {
+namespace otbr {
 namespace Ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
+    : mTriedAttach(false)
 {
-    (void)aInterfaceName;
+    memset(&mConfig, 0, sizeof(mConfig));
 
-    char *argv[] = {
-        NULL,
-        aRadioFile,
-        aRadioConfig,
-    };
-
-    mInstance = otSysInit(sizeof(argv) / sizeof(argv[0]), argv);
+    mConfig.mInterfaceName = aInterfaceName;
+    mConfig.mRadioConfig   = aRadioConfig;
+    mConfig.mRadioFile     = aRadioFile;
+    mConfig.mResetRadio    = true;
+    mConfig.mSpeedUpFactor = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
 {
     otInstanceFinalize(mInstance);
+    otSysDeinit();
 }
 
 otbrError ControllerOpenThread::Init(void)
 {
-    otSysInitNetif(mInstance);
+    otbrError err = OTBR_ERROR_NONE;
+
+    mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
-
-    return OTBR_ERROR_NONE;
+    mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
+    VerifyOrExit(mThreadHelper->Init() == OT_ERROR_NONE, err = OTBR_ERROR_OPENTHREAD);
+exit:
+    return err;
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
@@ -103,27 +117,80 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
     }
 }
 
+static struct timeval ToTimeVal(const microseconds &aTime)
+{
+    constexpr int  kUsPerSecond = 1000000;
+    struct timeval val;
+
+    val.tv_sec  = aTime.count() / kUsPerSecond;
+    val.tv_usec = aTime.count() % kUsPerSecond;
+
+    return val;
+};
+
 void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
+    microseconds timeout = microseconds(aMainloop.mTimeout.tv_usec) + seconds(aMainloop.mTimeout.tv_sec);
+    auto         now     = steady_clock::now();
+
     if (otTaskletsArePending(mInstance))
     {
-        aMainloop.mTimeout.tv_sec  = 0;
-        aMainloop.mTimeout.tv_usec = 0;
+        timeout = microseconds::zero();
     }
+    else if (!mTimers.empty())
+    {
+        if (mTimers.begin()->first < now)
+        {
+            timeout = microseconds::zero();
+        }
+        else
+        {
+            timeout = std::min(timeout, duration_cast<microseconds>(mTimers.begin()->first - now));
+        }
+    }
+
+    aMainloop.mTimeout = ToTimeVal(timeout);
 
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
 void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
 {
+    auto now = steady_clock::now();
+
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
+
+    while (!mTimers.empty() && mTimers.begin()->first <= now)
+    {
+        mTimers.begin()->second();
+        mTimers.erase(mTimers.begin());
+    }
+
+    if (!mTriedAttach)
+    {
+        mThreadHelper->TryResumeNetwork();
+        mTriedAttach = true;
+    }
+}
+
+void ControllerOpenThread::Reset(void)
+{
+    otInstanceFinalize(mInstance);
+    otSysDeinit();
+    Init();
+    sReset = false;
+}
+
+bool ControllerOpenThread::IsResetRequested(void)
+{
+    return sReset;
 }
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
 {
-    otbrError ret = OTBR_ERROR_ERRNO;
+    otbrError ret = OTBR_ERROR_NONE;
 
     switch (aEvent)
     {
@@ -157,7 +224,12 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     }
     case kEventPSKc:
     {
-        EventEmitter::Emit(kEventPSKc, otThreadGetPSKc(mInstance));
+        EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
+        break;
+    }
+    case kEventThreadVersion:
+    {
+        EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
         break;
     }
     default:
@@ -166,6 +238,12 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     }
 
     return ret;
+}
+
+void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point aTimePoint,
+                                         const std::function<void(void)> &     aTask)
+{
+    mTimers.insert({aTimePoint, aTask});
 }
 
 Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
@@ -178,18 +256,48 @@ Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, cha
  */
 extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
 {
-    OT_UNUSED_VARIABLE(aLogLevel);
     OT_UNUSED_VARIABLE(aLogRegion);
-    OT_UNUSED_VARIABLE(aFormat);
+
+    int otbrLogLevel;
+
+    switch (aLogLevel)
+    {
+    case OT_LOG_LEVEL_NONE:
+        otbrLogLevel = OTBR_LOG_EMERG;
+        break;
+    case OT_LOG_LEVEL_CRIT:
+        otbrLogLevel = OTBR_LOG_CRIT;
+        break;
+    case OT_LOG_LEVEL_WARN:
+        otbrLogLevel = OTBR_LOG_WARNING;
+        break;
+    case OT_LOG_LEVEL_NOTE:
+        otbrLogLevel = OTBR_LOG_NOTICE;
+        break;
+    case OT_LOG_LEVEL_INFO:
+        otbrLogLevel = OTBR_LOG_INFO;
+        break;
+    case OT_LOG_LEVEL_DEBG:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    default:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    }
 
     va_list ap;
     va_start(ap, aFormat);
-    otCliPlatLogv(aLogLevel, aLogRegion, aFormat, ap);
+    otbrLogv(otbrLogLevel, aFormat, ap);
     va_end(ap);
 }
 
 } // namespace Ncp
-} // namespace BorderRouter
-} // namespace ot
+} // namespace otbr
+
+void otPlatReset(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    sReset = true;
+}
 
 #endif // OTBR_ENABLE_NCP_OPENTHREAD

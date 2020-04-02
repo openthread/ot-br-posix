@@ -46,7 +46,12 @@ otbr_uninstall()
 
 otbr_install()
 {
-    test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc
+    test -f config.status || $(pwd)/configure \
+        --exec-prefix=/usr \
+        --prefix= \
+        --sysconfdir=/etc \
+        $(without COVERAGE || echo '--enable-coverage') \
+
     make -j$(getconf _NPROCESSORS_ONLN)
     sudo make install
     if have systemctl; then

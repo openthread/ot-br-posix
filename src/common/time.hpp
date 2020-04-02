@@ -26,16 +26,16 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TIME_HPP_
-#define TIME_HPP_
+#ifndef OTBR_COMMON_TIME_HPP_
+#define OTBR_COMMON_TIME_HPP_
+
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 
 #include <sys/time.h>
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 /**
  * This method returns the timestamp in miniseconds of @aTime.
@@ -64,8 +64,6 @@ inline unsigned long GetNow(void)
     return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
 }
 
-} // namespace BorderRouter
+} // namespace otbr
 
-} // namespace ot
-
-#endif // TIME_HPP_
+#endif // OTBR_COMMON_TIME_HPP_

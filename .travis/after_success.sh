@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-#  Copyright (c) 2018, The OpenThread Authors.
+#  Copyright (c) 2019, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,20 +27,26 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+[ -n "$BUILD_TARGET" ] || exit 0
+
 set -e
-set -x
+
+codecov_upload() {
+    curl -s https://codecov.io/bash > codecov
+    chmod a+x codecov
+
+    # Assume gcov by default, and llvm-cov if CC is clang
+    if [[ -z $CC ]]; then
+        ./codecov
+    elif  "$CC" --version | grep -q gcc; then
+        ./codecov
+    elif "$CC" --version | grep -q clang; then
+        ./codecov -x "llvm-cov gcov"
+    fi
+}
 
 main() {
-    ./bootstrap
-    ./configure
-    distcleancheck_listfiles="find . -type f \\( -name '*.gcda' -o -name '*.gcno' \\) -exec mv '{}' '$(pwd)/{}' \\;;find . -type f"
-    if [ "$WITH_MDNS" = 'mDNSResponder' ]; then
-        sudo service avahi-daemon stop
-        sudo mdnsd
-        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage --with-mdns=mDNSResponder' distcleancheck_listfiles="${distcleancheck_listfiles}"
-    else
-        make distcheck DISTCHECK_CONFIGURE_FLAGS='--enable-coverage' distcleancheck_listfiles="${distcleancheck_listfiles}"
-    fi
+    codecov_upload
 }
 
 main "$@"

@@ -25,31 +25,6 @@ enum MdnsResult {
   INVALID_PARAMS,
 };
 
-// Describes an initial instance publication or query response.
-struct MdnsPublication {
-  uint16 port;
-  bool can_cache;
-  array<string>? text;
-  uint32 ptr_ttl_seconds = 4500; // default 75 minutes
-  uint32 srv_ttl_seconds = 120; // default 2 minutes
-  uint32 txt_ttl_seconds = 4500; // default 75 minutes
-};
-
-interface MdnsDynamicServiceResponder {
-  // Updates the status of the instance publication.
-  UpdateStatus(MdnsResult error);
-
-  // Provides instance information for initial announcements and query responses
-  // relating to the service instance specified in
-  // |Responder.RegisterDynamicServiceInstance|.
-  // |query| indicates whether data is requested for an initial announcement
-  // (false) or in response to a query (true). If the publication relates to a
-  // subtype of the service, |subtype| contains the subtype, otherwise it is
-  // null. If |publication| is null, no announcement or response is transmitted.
-  // Strings in |text| are transmitted in the TXT record.
-  GetPublication(bool query, string subtype) => (MdnsPublication? publication);
-};
-
 interface MdnsResponder {
   // Registers service instance with the responder.
   RegisterServiceInstance(string service_name,
@@ -57,14 +32,6 @@ interface MdnsResponder {
                           string instance_name,
                           int32 port,
                           array<string>? text) => (MdnsResult error);
-
-  // Registers service instance with the responder, with user specific behavior
-  // in announcement and query reply, such as dynamic subtype filtering.
-  // Use GetPublication to get initial announcements if |initializer| is null.
-  RegisterDynamicServiceInstance(string service_name,
-                                 string instance_name,
-                                 MdnsDynamicServiceResponder responder,
-                                 MdnsPublication initializer);
 
   // Unregisters currently registered service instance from responder.
   UnregisterServiceInstance(string service_name,

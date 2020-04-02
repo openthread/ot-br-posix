@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logging.hpp"
+#include "common/logging.hpp"
 
 #include <assert.h>
 #include <errno.h>
@@ -38,7 +38,7 @@
 #include <sys/time.h>
 #include <syslog.h>
 
-#include "time.hpp"
+#include "common/time.hpp"
 
 static int        sLevel      = LOG_INFO;
 static const char kHexChars[] = "0123456789abcdef";
@@ -116,7 +116,7 @@ static int LogCheck(int aLevel)
 /** return the time, in milliseconds since application start */
 static unsigned long GetMsecsNow(void)
 {
-    unsigned long now = ot::BorderRouter::GetNow();
+    unsigned long now = otbr::GetNow();
 
     now -= sMsecsStart;
     return now;
@@ -180,7 +180,7 @@ void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr)
     assert(aIdent);
     assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
 
-    sMsecsStart = ot::BorderRouter::GetNow();
+    sMsecsStart = otbr::GetNow();
 
     /* only open the syslog once... */
     if (!sSyslogOpened)
@@ -310,6 +310,10 @@ const char *otbrErrorString(otbrError aError)
 
     case OTBR_ERROR_MDNS:
         error = "MDNS error";
+        break;
+
+    case OTBR_ERROR_OPENTHREAD:
+        error = "OpenThread error";
         break;
 
     default:

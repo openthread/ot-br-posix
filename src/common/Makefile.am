@@ -31,18 +31,18 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 include $(top_srcdir)/third_party/openthread/mbedtls.mk
 
 noinst_HEADERS                                        = \
-    code_utils.hpp                                      \
     coap.hpp                                            \
     coap_libcoap.hpp                                    \
+    code_utils.hpp                                      \
     dtls.hpp                                            \
     dtls_mbedtls.hpp                                    \
     event_emitter.hpp                                   \
     libcoap.h                                           \
+    logging.hpp                                         \
     mainloop.h                                          \
     time.hpp                                            \
     tlv.hpp                                             \
     types.hpp                                           \
-    logging.hpp                                         \
     $(NULL)
 
 noinst_LTLIBRARIES                                    = \
@@ -57,7 +57,12 @@ noinst_LTLIBRARIES                                   += \
     $(NULL)
 endif
 
-libotbr_logging_la_SOURCES =                            \
+libotbr_logging_la_CPPFLAGS                           = \
+    -I$(top_srcdir)/include                             \
+    -I$(top_srcdir)/src                                 \
+    $(NULL)
+
+libotbr_logging_la_SOURCES                            = \
     logging.cpp                                         \
     $(NULL)
 
@@ -67,8 +72,12 @@ libotbr_coap_la_SOURCES                               = \
 
 libotbr_coap_la_CPPFLAGS                              = \
     -I$(top_builddir)/third_party/libcoap/repo          \
+    -I$(top_builddir)/third_party/libcoap/repo/include  \
+    -I$(top_srcdir)/include                             \
+    -I$(top_srcdir)/src                                 \
     -I$(top_srcdir)/third_party/libcoap/repo            \
     -I$(top_srcdir)/third_party/libcoap/repo/include    \
+    -I$(top_srcdir)/third_party/libcoap/repo/include/coap \
     $(NULL)
 
 libotbr_coap_la_LIBADD                                      = \
@@ -80,11 +89,18 @@ libotbr_dtls_la_SOURCES                               = \
     $(NULL)
 
 libotbr_dtls_la_CPPFLAGS                              = \
+    -I$(top_srcdir)/include                             \
+    -I$(top_srcdir)/src                                 \
     $(MBEDTLS_CPPFLAGS)                                 \
     $(NULL)
 
 libotbr_dtls_la_LIBADD                                = \
     $(MBEDTLS_LIBS)                                     \
+    $(NULL)
+
+libotbr_event_emitter_la_CPPFLAGS                     = \
+    -I$(top_srcdir)/include                             \
+    -I$(top_srcdir)/src                                 \
     $(NULL)
 
 libotbr_event_emitter_la_SOURCES                      = \

@@ -26,13 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "event_emitter.hpp"
+#include "common/event_emitter.hpp"
 
 #include <assert.h>
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 void EventEmitter::On(int aEvent, Callback aCallback, void *aContext)
 {
@@ -93,6 +91,4 @@ void EventEmitter::Emit(int aEvent, ...)
     va_end(args);
 }
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

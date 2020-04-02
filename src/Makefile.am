@@ -34,6 +34,7 @@ DIST_SUBDIRS                                         = \
     agent                                              \
     commissioner                                       \
     common                                             \
+    dbus                                               \
     utils                                              \
     web                                                \
     $(NULL)
@@ -43,6 +44,7 @@ DIST_SUBDIRS                                         = \
 SUBDIRS                                              = \
     common                                             \
     utils                                              \
+    dbus                                               \
     agent                                              \
     $(NULL)
 
@@ -57,15 +59,5 @@ SUBDIRS                                             += \
     web                                                \
     $(NULL)
 endif
-
-# Always pretty (e.g. for 'make pretty') these subdirectories.
-
-PRETTY_SUBDIRS                                       = \
-    agent                                              \
-    commissioner                                       \
-    common                                             \
-    utils                                              \
-    web                                                \
-    $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

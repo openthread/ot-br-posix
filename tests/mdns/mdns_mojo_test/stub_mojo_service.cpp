@@ -44,7 +44,11 @@
 #include <chromecast/external_mojo/public/cpp/common.h>
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
-#include <mojo/public/cpp/bindings/binding_set.h>
+#include <mojo/public/cpp/bindings/binder_map.h>
+#include <mojo/public/cpp/bindings/pending_receiver.h>
+#include <mojo/public/cpp/bindings/pending_remote.h>
+#include <mojo/public/cpp/bindings/receiver_set.h>
+#include "base/task/single_thread_task_executor.h"
 
 #include <utility>
 
@@ -64,9 +68,9 @@ class StubMdnsMojomResponder : public chromecast::mojom::MdnsResponder
 public:
     StubMdnsMojomResponder() {}
 
-    void AddBinding(chromecast::mojom::MdnsResponderRequest aRequest)
+    void AddReceiver(mojo::PendingReceiver<chromecast::mojom::MdnsResponder> aRequest)
     {
-        mBindings.AddBinding(this, std::move(aRequest));
+        mReceivers.Add(this, std::move(aRequest));
     }
 
     void RegisterServiceInstance(const std::string &                             aServiceName,
@@ -83,17 +87,6 @@ public:
         (void)aCallback;
 
         std::move(aCallback).Run(chromecast::mojom::MdnsResult::SUCCESS);
-    }
-
-    void RegisterDynamicServiceInstance(const std::string &                               aServiceName,
-                                        const std::string &                               aInstanceName,
-                                        chromecast::mojom::MdnsDynamicServiceResponderPtr aResponder,
-                                        chromecast::mojom::MdnsPublicationPtr             aInitializer) override
-    {
-        (void)aServiceName;
-        (void)aInstanceName;
-        (void)aResponder;
-        (void)aInitializer;
     }
 
     void UnregisterServiceInstance(const std::string &               aServiceName,
@@ -162,7 +155,7 @@ public:
     }
 
 private:
-    mojo::BindingSet<chromecast::mojom::MdnsResponder> mBindings;
+    mojo::ReceiverSet<chromecast::mojom::MdnsResponder> mReceivers;
 
     DISALLOW_COPY_AND_ASSIGN(StubMdnsMojomResponder);
 };
@@ -174,7 +167,7 @@ void OnConnected(GlobalState *                                                  
     aState->service   = std::make_unique<chromecast::external_service_support::ExternalService>();
     aState->responder = std::make_unique<StubMdnsMojomResponder>();
     aState->service->AddInterface(
-        base::BindRepeating(&StubMdnsMojomResponder::AddBinding, base::Unretained(aState->responder.get())));
+        base::BindRepeating(&StubMdnsMojomResponder::AddReceiver, base::Unretained(aState->responder.get())));
     aState->connector->RegisterService("chromecast", aState->service.get());
 }
 
@@ -185,11 +178,11 @@ int main()
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
-    base::MessageLoopForIO mainLoop;
-    base::RunLoop          runLoop;
+    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
+    base::RunLoop                  runLoop;
 
     mojo::core::Init();
-    mojo::core::ScopedIPCSupport ipcSupport(mainLoop.task_runner(),
+    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     chromecast::external_service_support::ExternalConnector::Connect(chromecast::external_mojo::GetBrokerPath(),

@@ -31,8 +31,8 @@
  *   This file includes definition for MDNS service based on avahi.
  */
 
-#ifndef MDNS_AVAHI_HPP_
-#define MDNS_AVAHI_HPP_
+#ifndef OTBR_AGENT_MDNS_AVAHI_HPP_
+#define OTBR_AGENT_MDNS_AVAHI_HPP_
 
 #include <vector>
 
@@ -108,9 +108,7 @@ struct AvahiTimeout
     AvahiTimeout(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext, void *aPoller);
 };
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -310,11 +308,9 @@ private:
 
 } // namespace Mdns
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
 
 /**
  * @}
  */
-#endif // MDNS_AVAHI_HPP_
+#endif // OTBR_AGENT_MDNS_AVAHI_HPP_

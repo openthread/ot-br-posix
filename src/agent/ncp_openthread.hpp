@@ -31,17 +31,19 @@
  *   This file includes definitions for NCP service.
  */
 
-#ifndef NCP_POSIX_HPP_
-#define NCP_POSIX_HPP_
+#ifndef OTBR_AGENT_NCP_OPENTHREAD_HPP_
+#define OTBR_AGENT_NCP_OPENTHREAD_HPP_
+
+#include <chrono>
+#include <memory>
+
+#include <openthread/instance.h>
+#include <openthread/openthread-system.h>
 
 #include "ncp.hpp"
+#include "agent/thread_helper.hpp"
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
-
-namespace ot {
-
-namespace BorderRouter {
-
+namespace otbr {
 namespace Ncp {
 
 /**
@@ -67,7 +69,23 @@ public:
      * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
      *
      */
-    virtual otbrError Init(void);
+    otbrError Init(void) override;
+
+    /**
+     * This method get mInstance pointer.
+     *
+     * @retval  the pointer of mInstance.
+     *
+     */
+    otInstance *GetInstance(void) { return mInstance; }
+
+    /**
+     * This method gets the thread functionality helper.
+     *
+     * @retval  the pointer to the helper object.
+     *
+     */
+    otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
 
     /**
      * This method updates the fd_set to poll.
@@ -75,7 +93,7 @@ public:
      * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    virtual void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void UpdateFdSet(otSysMainloopContext &aMainloop) override;
 
     /**
      * This method performs the DTLS processing.
@@ -83,7 +101,22 @@ public:
      * @param[in]       aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    virtual void Process(const otSysMainloopContext &aMainloop);
+    void Process(const otSysMainloopContext &aMainloop) override;
+
+    /**
+     * This method reset the NCP controller.
+     *
+     */
+    void Reset(void) override;
+
+    /**
+     * This method return whether reset is requested.
+     *
+     * @retval  TRUE  reset is requested.
+     * @retval  FALSE reset isn't requested.
+     *
+     */
+    bool IsResetRequested(void) override;
 
     /**
      * This method request the event.
@@ -94,9 +127,11 @@ public:
      * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
      *
      */
-    virtual otbrError RequestEvent(int aEvent);
+    otbrError RequestEvent(int aEvent) override;
 
-    virtual ~ControllerOpenThread(void);
+    void PostTimerTask(std::chrono::steady_clock::time_point aTimePoint, const std::function<void(void)> &aTask);
+
+    ~ControllerOpenThread(void) override;
 
 private:
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
@@ -106,14 +141,14 @@ private:
     void HandleStateChanged(otChangedFlags aFlags);
 
     otInstance *mInstance;
+
+    otPlatformConfig                                                                mConfig;
+    std::unique_ptr<otbr::agent::ThreadHelper>                                      mThreadHelper;
+    std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
+    bool                                                                            mTriedAttach;
 };
 
 } // namespace Ncp
+} // namespace otbr
 
-} // namespace BorderRouter
-
-} // namespace ot
-
-#endif // OTBR_ENABLE_NCP_OPENTHREAD
-
-#endif // NCP_POSIX_HPP_
+#endif // OTBR_AGENT_NCP_OPENTHREAD_HPP_

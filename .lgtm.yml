@@ -1,6 +1,5 @@
-#!/bin/sh
 #
-#  Copyright (c) 2018, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,15 +26,16 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-#
-# clang-format does not return a non-zero exit code.  This wrapper
-# exits with a non-zero exit code if clang-format outputs any
-# replacements.
-#
-
-set -x
-
-# from `man diff`:
-# Exit status is 0 if inputs are the same, 1 if different, 2 if trouble.
-
-$(dirname "$0")/clang-format.sh -style=file $@  | diff -u $@ -
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - ctags
+        - libjsoncpp-dev
+    configure:
+      command:
+        - ./bootstrap
+        - ./configure --disable-docs --exec-prefix=/usr --prefix=
+    index:
+      build_command:
+        - make -j2

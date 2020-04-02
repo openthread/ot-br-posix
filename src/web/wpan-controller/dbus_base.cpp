@@ -32,15 +32,17 @@
  *
  */
 
+#include "openthread-br/config.h"
+
 #include "common/code_utils.hpp"
 #include "utils/strcpy_utils.hpp"
 
-#include "dbus_base.hpp"
-#include "wpan_controller.hpp"
+#include "web/wpan-controller/dbus_base.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
 #define OT_DEFAULT_TIMEOUT_IN_MILLISECONDS 60 * 1000
 
-namespace ot {
+namespace otbr {
 namespace Dbus {
 
 DBusConnection *DBusBase::GetConnection(void)
@@ -258,4 +260,4 @@ exit:
 }
 
 } // namespace Dbus
-} // namespace ot
+} // namespace otbr

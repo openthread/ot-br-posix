@@ -37,6 +37,12 @@ otbr_agent_SOURCES = \
     main.cpp         \
     $(NULL)
 
+if OTBR_ENABLE_OPENWRT
+otbr_agent_SOURCES += \
+    otubus.cpp        \
+    $(NULL)
+endif
+
 otbr_agent_LDADD     = \
     libotbr-agent.la   \
     $(NULL)
@@ -49,16 +55,17 @@ otbr_agent_LDADD    += \
     $(NULL)
 endif
 
-otbr_agent_LDADD    += \
-    $(NULL)
-
 otbr_agent_LDFLAGS = \
     -static          \
     $(NULL)
 
-otbr_agent_CPPFLAGS         = \
-    -I$(top_srcdir)/src       \
-    $(OPENTHREAD_CPPFLAGS)    \
+otbr_agent_CPPFLAGS                                    = \
+    -I$(top_srcdir)/src                                  \
+    -I$(top_srcdir)/include                              \
+    -I$(top_srcdir)/third_party/openthread/repo/src/     \
+    -I$(top_srcdir)/third_party/openthread/repo/include/ \
+    $(OPENTHREAD_CPPFLAGS)                               \
+    $(DBUS_CFLAGS)                                       \
     $(NULL)
 
 noinst_LTLIBRARIES = libotbr-agent.la
@@ -75,6 +82,7 @@ libotbr_agent_la_SOURCES                                      = \
 if OTBR_ENABLE_NCP_OPENTHREAD
 libotbr_agent_la_SOURCES                                     += \
     ncp_openthread.cpp                                          \
+    thread_helper.cpp                                           \
     $(NULL)
 endif
 
@@ -90,6 +98,15 @@ libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/utils/libutils.la                       \
     $(NULL)
 
+if OTBR_ENABLE_OPENWRT
+libotbr_agent_la_LIBADD                                      += \
+    -lubox             \
+    -lubus             \
+    -lblobmsg_json     \
+    -ljson-c           \
+    $(NULL)
+endif
+
 if OTBR_ENABLE_NCP_WPANTUND
 libotbr_agent_la_LIBADD                                      += \
     $(top_builddir)/third_party/wpantund/libwpanctl.la          \
@@ -97,18 +114,29 @@ libotbr_agent_la_LIBADD                                      += \
     $(NULL)
 endif
 
+if OTBR_ENABLE_NCP_OPENTHREAD
+if OTBR_ENABLE_DBUS_SERVER
+libotbr_agent_la_LIBADD                                      += \
+    $(top_builddir)/src/dbus/server/libotbr-dbus-server.la      \
+    $(DBUS_LIBS)                                                \
+    $(NULL)
+endif
+endif
+
 libotbr_agent_la_LDFLAGS = \
     -static                \
     $(NULL)
 
 libotbr_agent_la_CPPFLAGS                                                  = \
+    -I$(top_srcdir)/include                                                  \
     -I$(top_srcdir)/src                                                      \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
     -I$(top_srcdir)/third_party/wpantund/repo/src                            \
     -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus                   \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl                    \
     -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund                   \
-    -I$(top_srcdir)/third_party/wpantund/repo/third_party/openthread/src/ncp \
+    -I$(top_srcdir)/third_party/openthread/repo/include/                     \
+    -I$(top_srcdir)/third_party/openthread/repo/src/                         \
     $(DBUS_CFLAGS)                                                           \
     $(OPENTHREAD_CPPFLAGS)                                                   \
     $(NULL)
@@ -143,8 +171,15 @@ noinst_HEADERS        = \
     ncp.hpp             \
     ncp_openthread.hpp  \
     ncp_wpantund.hpp    \
+    thread_helper.hpp   \
     uris.hpp            \
     $(NULL)
+
+if OTBR_ENABLE_OPENWRT
+noinst_HEADERS       += \
+    otubus.hpp          \
+    $(NULL)
+endif
 
 EXTRA_DIST                = \
     otbr-agent.conf         \

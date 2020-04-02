@@ -46,28 +46,23 @@ mdns-mojo-check)
     ./tests/mdns/test-mojo
     ;;
 
-pretty-check)
-    export PATH=$TOOLS_HOME/usr/bin:$PATH
-    ./bootstrap && ./configure && make pretty-check || die
+check)
+    ./script/bootstrap
+    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test build check
     ;;
 
-posix-check)
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" .travis/check-posix
+distcheck)
+    ./script/bootstrap
+    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test distcheck
     ;;
 
 meshcop)
-    if gcc-5 --version; then
-      export CC=gcc-5
-      export CXX=g++-5
-    fi
-
     ./bootstrap
     ./script/test build
 
     OT_CLI="ot-cli-mtd" ./script/test meshcop
     OT_CLI="ot-cli-ftd" ./script/test meshcop
     COMMISSIONER_WEB=1 ./script/test meshcop
-    NCP_CONTROLLER=openthread ./script/test clean build meshcop
     ;;
 
 scan-build)
@@ -86,6 +81,16 @@ docker-check)
     .travis/check-docker
     ;;
 
+otbr-dbus-check)
+    .travis/check-otbr-dbus
+    ;;
+
+macOS)
+    RELEASE=1 ./script/bootstrap
+    # Currently only verify otbr-agent
+    ./configure --prefix= --exec-prefix=/usr --disable-web-service --with-mdns=none
+    make -j$(shell getconf _NPROCESSORS_ONLN)
+    ;;
 *)
     die
     ;;

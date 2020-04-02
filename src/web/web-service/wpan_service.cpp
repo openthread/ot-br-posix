@@ -31,14 +31,15 @@
  *   This file implements the wpan controller service
  */
 
-#include "wpan_service.hpp"
+#include "web/web-service/wpan_service.hpp"
 
+#include <byteswap.h>
 #include <inttypes.h>
 
-#include "ot_client.hpp"
 #include "common/code_utils.hpp"
+#include "web/web-service/ot_client.hpp"
 
-namespace ot {
+namespace otbr {
 namespace Web {
 
 const char *WpanService::kBorderAgentHost = "127.0.0.1";
@@ -54,13 +55,13 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     std::string      networkKey;
     std::string      prefix;
     bool             defaultRoute;
-    int              ret = ot::Dbus::kWpantundStatus_Ok;
+    int              ret = otbr::Dbus::kWpantundStatus_Ok;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 #else
-    ot::Client client;
+    otbr::Web::OpenThreadClient client;
 
-    VerifyOrExit(client.Connect(), ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Connect(), ret = otbr::Dbus::kWpantundStatus_SetFailed);
 #endif
 
     VerifyOrExit(reader.parse(aJoinRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
@@ -71,36 +72,38 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
 
 #if OTBR_ENABLE_NCP_WPANTUND
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
+    VerifyOrExit(wpanController.Leave() == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_LeaveFailed);
     VerifyOrExit(wpanController.Set(kPropertyType_Data, "Network:Key", networkKey.c_str()) ==
-                     ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                     otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(wpanController.Join(mNetworks[index].mNetworkName, mNetworks[index].mChannel,
                                      mNetworks[index].mExtPanId,
-                                     mNetworks[index].mPanId) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_JoinFailed);
-    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
+                                     mNetworks[index].mPanId) == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_JoinFailed);
+    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetGatewayFailed);
 #else  // OTBR_ENABLE_NCP_WPANTUND
     if (prefix.find('/') == std::string::npos)
     {
         prefix += "/64";
     }
 
-    VerifyOrExit(client.FactoryReset(), ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-    VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.FactoryReset(), ret = otbr::Dbus::kWpantundStatus_LeaveFailed);
+    VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != NULL,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("networkname %s", mNetworks[index].mNetworkName) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("channel %u", mNetworks[index].mChannel) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("extpanid %016" PRIx64, mNetworks[index].mExtPanId) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("panid %u", mNetworks[index].mPanId) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(client.Execute("ifconfig up") != NULL, ret = ot::Dbus::kWpantundStatus_JoinFailed);
-    VerifyOrExit(client.Execute("thread start") != NULL, ret = ot::Dbus::kWpantundStatus_JoinFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Execute("ifconfig up") != NULL, ret = otbr::Dbus::kWpantundStatus_JoinFailed);
+    VerifyOrExit(client.Execute("thread start") != NULL, ret = otbr::Dbus::kWpantundStatus_JoinFailed);
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
 #endif // OTBR_ENABLE_NCP_WPANTUND
 exit:
 
@@ -108,7 +111,7 @@ exit:
     root["result"] = mResponseSuccess;
 
     root["error"] = ret;
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    if (ret != otbr::Dbus::kWpantundStatus_Ok)
     {
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
         root["result"] = mResponseFail;
@@ -123,7 +126,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     Json::FastWriter jsonWriter;
     Json::Reader     reader;
     std::string      response;
-    ot::Psk::Pskc    psk;
+    otbr::Psk::Pskc  psk;
     char             pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1];
     uint8_t          extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
     std::string      networkKey;
@@ -134,13 +137,13 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     std::string      panId;
     std::string      extPanId;
     bool             defaultRoute;
-    int              ret = ot::Dbus::kWpantundStatus_Ok;
+    int              ret = otbr::Dbus::kWpantundStatus_Ok;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 #else
-    ot::Client client;
+    otbr::Web::OpenThreadClient client;
 
-    VerifyOrExit(client.Connect(), ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Connect(), ret = otbr::Dbus::kWpantundStatus_SetFailed);
 #endif
 
     pskcStr[OT_PSKC_MAX_LENGTH * 2] = '\0'; // for manipulating with strlen
@@ -154,51 +157,53 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     extPanId     = root["extPanId"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
-    ot::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
-    ot::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(), passphrase.c_str()), OT_PSKC_MAX_LENGTH,
-                         pskcStr);
+    otbr::Utils::Hex2Bytes(extPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
+    otbr::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, networkName.c_str(), passphrase.c_str()), OT_PSKC_MAX_LENGTH,
+                           pskcStr);
 
 #if OTBR_ENABLE_NCP_WPANTUND
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Leave() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_LeaveFailed);
+    VerifyOrExit(wpanController.Leave() == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_LeaveFailed);
 
     VerifyOrExit(wpanController.Set(kPropertyType_Data, kWPANTUNDProperty_NetworkKey, networkKey.c_str()) ==
-                     ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                     otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
 
     VerifyOrExit(wpanController.Set(kPropertyType_String, kWPANTUNDProperty_NetworkPANID, panId.c_str()) ==
-                     ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                     otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(wpanController.Set(kPropertyType_Data, kWPANTUNDProperty_NetworkXPANID, extPanId.c_str()) ==
-                     ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                     otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(wpanController.Set(kPropertyType_Data, kWPANTUNDProperty_NetworkPSKc, pskcStr) ==
-                     ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                     otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
 
-    VerifyOrExit(wpanController.Form(networkName.c_str(), channel) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_FormFailed);
+    VerifyOrExit(wpanController.Form(networkName.c_str(), channel) == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_FormFailed);
 
-    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
+    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetGatewayFailed);
 #else  // OTBR_ENABLE_NCP_WPANTUND
     if (prefix.find('/') == std::string::npos)
     {
         prefix += "/64";
     }
 
-    VerifyOrExit(client.FactoryReset(), ret = ot::Dbus::kWpantundStatus_LeaveFailed);
-    VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.FactoryReset(), ret = otbr::Dbus::kWpantundStatus_LeaveFailed);
+    VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != NULL,
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
     VerifyOrExit(client.Execute("networkname %s", networkName.c_str()) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(client.Execute("channel %u", channel) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(client.Execute("extpanid %s", extPanId.c_str()) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(client.Execute("panid %s", panId.c_str()) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(client.Execute("pskc %s", pskcStr) != NULL, ret = ot::Dbus::kWpantundStatus_SetFailed);
-    VerifyOrExit(client.Execute("ifconfig up") != NULL, ret = ot::Dbus::kWpantundStatus_FormFailed);
-    VerifyOrExit(client.Execute("thread start") != NULL, ret = ot::Dbus::kWpantundStatus_FormFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Execute("channel %u", channel) != NULL, ret = otbr::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Execute("extpanid %s", extPanId.c_str()) != NULL, ret = otbr::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Execute("panid %s", panId.c_str()) != NULL, ret = otbr::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Execute("pskc %s", pskcStr) != NULL, ret = otbr::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Execute("ifconfig up") != NULL, ret = otbr::Dbus::kWpantundStatus_FormFailed);
+    VerifyOrExit(client.Execute("thread start") != NULL, ret = otbr::Dbus::kWpantundStatus_FormFailed);
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetFailed);
 #endif // OTBR_ENABLE_NCP_WPANTUND
 exit:
 
@@ -206,7 +211,7 @@ exit:
 
     root["result"] = mResponseSuccess;
     root["error"]  = ret;
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    if (ret != otbr::Dbus::kWpantundStatus_Ok)
     {
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
         root["result"] = mResponseFail;
@@ -223,13 +228,13 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
     std::string      response;
     std::string      prefix;
     bool             defaultRoute;
-    int              ret = ot::Dbus::kWpantundStatus_Ok;
+    int              ret = otbr::Dbus::kWpantundStatus_Ok;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 #else
-    ot::Client client;
+    otbr::Web::OpenThreadClient client;
 
-    VerifyOrExit(client.Connect(), ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Connect(), ret = otbr::Dbus::kWpantundStatus_SetFailed);
 #endif
 
     VerifyOrExit(reader.parse(aAddPrefixRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
@@ -238,11 +243,11 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
 
 #if OTBR_ENABLE_NCP_WPANTUND
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
+    VerifyOrExit(wpanController.AddGateway(prefix.c_str(), defaultRoute) == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetGatewayFailed);
 #else
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetGatewayFailed);
 #endif
 exit:
 
@@ -250,7 +255,7 @@ exit:
 
     root["result"] = mResponseSuccess;
     root["error"]  = ret;
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    if (ret != otbr::Dbus::kWpantundStatus_Ok)
     {
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
         root["result"] = mResponseFail;
@@ -266,13 +271,13 @@ std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteReq
     Json::Reader     reader;
     std::string      response;
     std::string      prefix;
-    int              ret = ot::Dbus::kWpantundStatus_Ok;
+    int              ret = otbr::Dbus::kWpantundStatus_Ok;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 #else
-    ot::Client client;
+    otbr::Web::OpenThreadClient client;
 
-    VerifyOrExit(client.Connect(), ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Connect(), ret = otbr::Dbus::kWpantundStatus_SetFailed);
 #endif
 
     VerifyOrExit(reader.parse(aDeleteRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
@@ -280,11 +285,11 @@ std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteReq
 
 #if OTBR_ENABLE_NCP_WPANTUND
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.RemoveGateway(prefix.c_str()) == ot::Dbus::kWpantundStatus_Ok,
-                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
+    VerifyOrExit(wpanController.RemoveGateway(prefix.c_str()) == otbr::Dbus::kWpantundStatus_Ok,
+                 ret = otbr::Dbus::kWpantundStatus_SetGatewayFailed);
 #else
     VerifyOrExit(client.Execute("prefix remove %s", prefix.c_str()) != NULL,
-                 ret = ot::Dbus::kWpantundStatus_SetGatewayFailed);
+                 ret = otbr::Dbus::kWpantundStatus_SetGatewayFailed);
 #endif
 exit:
 
@@ -292,7 +297,7 @@ exit:
     root["result"] = mResponseSuccess;
 
     root["error"] = ret;
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    if (ret != otbr::Dbus::kWpantundStatus_Ok)
     {
         otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
         root["result"] = mResponseFail;
@@ -308,7 +313,7 @@ std::string WpanService::HandleStatusRequest()
     std::string      response, networkName, extPanId, propertyValue;
     int              ret = kWpanStatus_OK;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 
     switch (GetWpanServiceStatus(networkName, extPanId))
     {
@@ -369,11 +374,11 @@ std::string WpanService::HandleStatusRequest()
         break;
     }
 #else
-    ot::Client client;
-    char *     rval;
+    otbr::Web::OpenThreadClient client;
+    char *                      rval;
 
     networkInfo["WPAN service"] = kWPANTUNDStateUninitialized;
-    VerifyOrExit(client.Connect(), ret = ot::Dbus::kWpantundStatus_SetFailed);
+    VerifyOrExit(client.Connect(), ret = otbr::Dbus::kWpantundStatus_SetFailed);
 
     VerifyOrExit((rval = client.Execute("state")) != NULL, ret = kWpanStatus_GetPropertyFailed);
     networkInfo[kWPANTUNDProperty_NCPState] = rval;
@@ -477,30 +482,30 @@ std::string WpanService::HandleAvailableNetworkRequest()
     Json::Value      root, networks, networkInfo;
     Json::FastWriter jsonWriter;
     std::string      response;
-    int              ret = ot::Dbus::kWpantundStatus_Ok;
+    int              ret = otbr::Dbus::kWpantundStatus_Ok;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(mIfName);
-    VerifyOrExit(wpanController.Scan() == ot::Dbus::kWpantundStatus_Ok, ret = ot::Dbus::kWpantundStatus_ScanFailed);
+    VerifyOrExit(wpanController.Scan() == otbr::Dbus::kWpantundStatus_Ok, ret = otbr::Dbus::kWpantundStatus_ScanFailed);
     mNetworksCount = wpanController.GetScanNetworksInfoCount();
-    VerifyOrExit(mNetworksCount > 0, ret = ot::Dbus::kWpantundStatus_NetworkNotFound);
-    memcpy(mNetworks, wpanController.GetScanNetworksInfo(), mNetworksCount * sizeof(ot::Dbus::WpanNetworkInfo));
+    VerifyOrExit(mNetworksCount > 0, ret = otbr::Dbus::kWpantundStatus_NetworkNotFound);
+    memcpy(mNetworks, wpanController.GetScanNetworksInfo(), mNetworksCount * sizeof(otbr::Dbus::WpanNetworkInfo));
 
 #else
-    ot::Client client;
+    otbr::Web::OpenThreadClient client;
 
-    VerifyOrExit(client.Connect(), ret = ot::Dbus::kWpantundStatus_ScanFailed);
+    VerifyOrExit(client.Connect(), ret = otbr::Dbus::kWpantundStatus_ScanFailed);
     VerifyOrExit((mNetworksCount = client.Scan(mNetworks, sizeof(mNetworks) / sizeof(mNetworks[0]))) > 0,
-                 ret = ot::Dbus::kWpantundStatus_NetworkNotFound);
+                 ret = otbr::Dbus::kWpantundStatus_NetworkNotFound);
 #endif
 
     for (int i = 0; i < mNetworksCount; i++)
     {
         char extPanId[OT_EXTENDED_PANID_LENGTH * 2 + 1], panId[OT_PANID_LENGTH * 2 + 3],
             hardwareAddress[OT_HARDWARE_ADDRESS_LENGTH * 2 + 1];
-        ot::Utils::Long2Hex(Thread::Encoding::BigEndian::HostSwap64(mNetworks[i].mExtPanId), extPanId);
-        ot::Utils::Bytes2Hex(mNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
+        otbr::Utils::Long2Hex(bswap_64(mNetworks[i].mExtPanId), extPanId);
+        otbr::Utils::Bytes2Hex(mNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
         sprintf(panId, "0x%X", mNetworks[i].mPanId);
         networkInfo[i]["nn"] = mNetworks[i].mNetworkName;
         networkInfo[i]["xp"] = extPanId;
@@ -512,7 +517,7 @@ std::string WpanService::HandleAvailableNetworkRequest()
     root["result"] = networkInfo;
 
 exit:
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    if (ret != otbr::Dbus::kWpantundStatus_Ok)
     {
         root["result"] = mResponseFail;
         otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
@@ -527,7 +532,7 @@ int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aE
     std::string wpantundState = "";
     int         status        = kWpanStatus_OK;
 #if OTBR_ENABLE_NCP_WPANTUND
-    ot::Dbus::WPANController wpanController;
+    otbr::Dbus::WPANController wpanController;
 
     wpanController.SetInterfaceName(mIfName);
     wpantundState = wpanController.Get(kWPANTUNDProperty_NCPState);
@@ -556,8 +561,8 @@ int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aE
         status = kWpanStatus_Uninitialized;
     }
 #else
-    ot::Client  client;
-    const char *rval;
+    otbr::Web::OpenThreadClient client;
+    const char *                rval;
 
     VerifyOrExit(client.Connect(), status = kWpanStatus_Uninitialized);
     rval = client.Execute("state");
@@ -591,18 +596,29 @@ std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
 {
     Json::Value  root;
     Json::Reader reader;
-    int          ret = ot::Dbus::kWpantundStatus_Ok;
+    int          ret = otbr::Dbus::kWpantundStatus_Ok;
     std::string  pskd;
-    std::string  passphrase;
     std::string  response;
 
     VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    pskd       = root["pskd"].asString();
-    passphrase = root["passphrase"].asString();
+    pskd = root["pskd"].asString();
+#if OTBR_ENABLE_NCP_WPANTUND
+    response = CommissionDevice(pskd.c_str(), root["passphrase"].asString().c_str());
+#else
+    {
+        otbr::Web::OpenThreadClient client;
+        const char *                rval;
 
-    response = CommissionDevice(pskd.c_str(), passphrase.c_str());
+        VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
+        rval = client.Execute("commissioner start");
+        VerifyOrExit(rval != NULL, ret = kWpanStatus_Down);
+        rval = client.Execute("commissioner joiner add * %s", pskd.c_str());
+        VerifyOrExit(rval != NULL, ret = kWpanStatus_Down);
+        root["error"] = ret;
+    }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 exit:
-    if (ret != ot::Dbus::kWpantundStatus_Ok)
+    if (ret != otbr::Dbus::kWpantundStatus_Ok)
     {
         root["result"] = mResponseFail;
         otbrLog(OTBR_LOG_ERR, "error: %d", ret);
@@ -610,21 +626,22 @@ exit:
     return response;
 }
 
+#if OTBR_ENABLE_NCP_WPANTUND
 std::string WpanService::CommissionDevice(const char *aPskd, const char *aNetworkPassword)
 {
-    int                            ret = ot::Dbus::kWpantundStatus_Ok;
-    Json::Value                    root, networkInfo;
-    Json::FastWriter               jsonWriter;
-    std::string                    response, networkName, extPanId, propertyValue;
-    BorderRouter::CommissionerArgs args;
-    int                            serviceStatus = GetWpanServiceStatus(networkName, extPanId);
+    int              ret = otbr::Dbus::kWpantundStatus_Ok;
+    Json::Value      root, networkInfo;
+    Json::FastWriter jsonWriter;
+    std::string      response, networkName, extPanId, propertyValue;
+    CommissionerArgs args;
+    int              serviceStatus = GetWpanServiceStatus(networkName, extPanId);
 
     VerifyOrExit(serviceStatus == kWpanStatus_OK, ret = Dbus::kWpantundStatus_NetworkNotFound);
     args.mPSKd = aPskd;
 
     {
-        ot::Psk::Pskc pskc;
-        uint8_t       extPanIdHex[BorderRouter::kXPanIdLength];
+        otbr::Psk::Pskc pskc;
+        uint8_t         extPanIdHex[kXPanIdLength];
         VerifyOrExit(sizeof(extPanIdHex) == Utils::Hex2Bytes(extPanId.c_str(), extPanIdHex, sizeof(extPanIdHex)),
                      ret = Dbus::kWpantundStatus_Failure);
 
@@ -652,11 +669,11 @@ exit:
     return response;
 }
 
-int WpanService::RunCommission(BorderRouter::CommissionerArgs aArgs)
+int WpanService::RunCommission(CommissionerArgs aArgs)
 {
-    BorderRouter::Commissioner commissioner(aArgs.mPSKc, aArgs.mKeepAliveInterval);
-    bool                       joinerSetDone = false;
-    int                        ret;
+    Commissioner commissioner(aArgs.mPSKc, aArgs.mKeepAliveInterval);
+    bool         joinerSetDone = false;
+    int          ret;
 
     commissioner.InitDtls(aArgs.mAgentHost, aArgs.mAgentPort);
 
@@ -700,6 +717,7 @@ int WpanService::RunCommission(BorderRouter::CommissionerArgs aArgs)
 
     return commissioner.GetNumFinalizedJoiners();
 }
+#endif // OTBR_ENABLE_NCP_WPANTUND
 
 } // namespace Web
-} // namespace ot
+} // namespace otbr

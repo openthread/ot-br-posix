@@ -47,7 +47,7 @@ readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
 readonly NO_CLEAN="${NO_CLEAN:-1}"
 readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
-readonly NCP_CONTROLLER="${NCP_CONTROLLER:-wpantund}"
+readonly WITH_NCP="${WITH_NCP:-wpantund}"
 
 #----------------------------------------
 # Test constants
@@ -65,10 +65,10 @@ readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
 readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
-readonly OT_CLI_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_CLI}"
-readonly OT_NCP_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_NCP}"
-readonly OT_RCP_PATH="${ABS_TOP_BUILDDIR}/third_party/openthread/output/otbr/bin/${OT_RCP}"
-readonly OTBR_DBUS_CONF="${ABS_TOP_SRCDIR}/src/agent/otbr-agent.conf"
+readonly OT_CLI_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_CLI}"
+readonly OT_NCP_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_NCP}"
+readonly OT_RCP_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_RCP}"
+readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
 readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 
 # The node ids
@@ -146,7 +146,7 @@ random_masterkey()
 
 write_syslog()
 {
-  logger -p syslog.alert "OPENTHREAD_TEST: $@"
+  logger -s -p syslog.alert "OPENTHREAD_TEST: $@"
 }
 
 output_logs()
@@ -210,7 +210,7 @@ build_dependencies()
     ot_rcp="${OT_RCP_PATH}"
   fi
 
-  [[ "${DEAMON}" == 1 ]] || {
+  [[ "${DAEMON}" == 1 ]] || {
     if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}"; then
       wpantund="${WPANTUND}"
     else
@@ -255,12 +255,12 @@ test_teardown()
   readonly EXITCODE=$?
   write_syslog "EXIT ${EXITCODE} - output logs"
 
-  sudo killall "${WPANTUND}" || true
-  sudo killall "${OTBR_AGENT}" || true
-  sudo killall "${OTBR_WEB}" || true
-  sudo killall "${OTBR_COMMISSIONER}" || true
-  sudo killall "${OT_NCP}" || true
-  sudo killall "${OT_CLI}" || true
+  sudo pkill -f "${WPANTUND}" || true
+  sudo pkill -f "${OTBR_AGENT}" || true
+  sudo pkill -f "${OTBR_WEB}" || true
+  sudo pkill -f "${OTBR_COMMISSIONER}" || true
+  sudo pkill -f "${OT_NCP}" || true
+  sudo pkill -f "${OT_CLI}" || true
   wait
 
   if [[ "${NO_CLEAN}" != 1 ]]; then
@@ -323,7 +323,7 @@ compile_wpantund()
 
 compile_openthread()
 {
-  (cd "${ABS_TOP_BUILDDIR}/third_party/openthread" && make -f repo/examples/Makefile-posix DISABLE_DOC=1 TargetTuple=otbr)
+  (cd "${ABS_TOP_BUILDDIR}" && make -f "${ABS_TOP_SRCDIR}/third_party/openthread/repo/examples/Makefile-simulation" DISABLE_DOC=1 TargetTuple=otbr)
   executable_or_die "${OT_NCP_PATH}"
   executable_or_die "${OT_CLI_PATH}"
   executable_or_die "${OT_RCP_PATH}"
@@ -331,7 +331,7 @@ compile_openthread()
 
 leader_start()
 {
-  [[ "${NCP_CONTROLLER}" != openthread ]] || return 0
+  [[ "${WITH_NCP}" != openthread ]] || return 0
   write_syslog "MESHCOP TEST BEGIN - rotated logs"
 
   # These might not exit cleanly
@@ -369,19 +369,25 @@ ba_start()
   sudo killall "${OTBR_AGENT}" || true
   write_syslog "AGENT: starting"
 
-  # check version
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -V)
-  # check invalid arguments
-  (cd "${ORIGIN_PWD}" && ! sudo "${OTBR_AGENT_PATH}" -x)
-
   # we launch this in the background
-  set -x
-  if [[ "${NCP_CONTROLLER}" = openthread ]]; then
-    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_rcp} ${LEADER_NODE_ID}&)
-  else
-    (cd "${ORIGIN_PWD}" && sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6&)
-  fi
-  set +x
+  (
+    set -e
+    set -x
+
+    cd "${ORIGIN_PWD}"
+
+    # check version
+    sudo "${OTBR_AGENT_PATH}" -V
+    # check invalid arguments
+    ! sudo "${OTBR_AGENT_PATH}" -x
+
+    [[ ! -d tmp ]] || sudo rm -rf tmp
+    if [[ "${WITH_NCP}" = openthread ]]; then
+      sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_rcp} ${LEADER_NODE_ID} &
+    else
+      sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 &
+    fi
+  )
 
   # wait for it to complete
   sleep 10
@@ -395,7 +401,13 @@ web_start()
   write_syslog "WEB: kill old"
   sudo killall "${OTBR_WEB}" || true
   write_syslog "WEB: starting"
-  (cd "${ORIGIN_PWD}" && sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p 8773 -a 127.0.0.1&)
+  (
+    set -e
+    set -x
+
+    cd "${ORIGIN_PWD}"
+    sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p 8773 -a 127.0.0.1 &
+  )
   sleep 15
 
   pidof ${OTBR_WEB} || die "WEB: failed to start"
@@ -411,6 +423,8 @@ network_form()
 
   curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network | grep "success" || die "WEB: form failed"
   sleep 15
+  # verify mDNS is working as expected.
+  avahi-browse -aprt | grep -q "${OT_NETWORK_NAME}"
 }
 
 commissioner_start()
@@ -437,9 +451,13 @@ commissioner_start()
   args="${args} --debug-level 7"
 
   # Launch the commissioner in the background
-  set -x
-  (cd "${ORIGIN_PWD}" && "${OTBR_COMMISSIONER_PATH}" ${args} &)
-  set +x
+  (
+    set -e
+    set -x
+
+    cd "${ORIGIN_PWD}"
+    "${OTBR_COMMISSIONER_PATH}" ${args} &
+  )
 
   # Wait for it to launch and get started.
   sleep 5
@@ -475,8 +493,8 @@ web_commissioner_start()
 joiner_start()
 {
   write_syslog 'JOINER START'
+  cd ${TEST_BASE}
   expect -f-  <<EOF || die 'JOINER FAILED'
-send "cd ${TEST_BASE}\r\n"
 spawn ${ot_cli} ${JOINER_NODE_ID}
 send "ifconfig up\r\n"
 expect "Done"

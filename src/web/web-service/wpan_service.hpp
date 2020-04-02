@@ -31,12 +31,10 @@
  *   This file implements the wpan controller service
  */
 
-#ifndef WPAN_SERVICE
-#define WPAN_SERVICE
+#ifndef OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_
+#define OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_
 
-#if HAVE_CONFIG_H
-#include "otbr-config.h"
-#endif
+#include "openthread-br/config.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -45,14 +43,12 @@
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
-#include "../utils/encoding.hpp"
-#include "../wpan-controller/wpan_controller.hpp"
+#include "commissioner/arguments.hpp"
+#include "commissioner/commissioner.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
-
-#include "commissioner/commissioner.hpp"
-#include "commissioner/commissioner_argcargv.hpp"
+#include "web/wpan-controller/wpan_controller.hpp"
 
 /**
  * WPAN parameter constants
@@ -67,7 +63,7 @@
 #define OT_HEX_PREFIX_LENGTH 2
 #define OT_PUBLISH_SERVICE_INTERVAL 20
 
-namespace ot {
+namespace otbr {
 namespace Web {
 
 /**
@@ -174,17 +170,17 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
-    int RunCommission(BorderRouter::CommissionerArgs aArgs);
+    int RunCommission(CommissionerArgs aArgs);
 
-    ot::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
-    int                       mNetworksCount;
-    char                      mIfName[IFNAMSIZ];
-    std::string               mNetworkName;
-    std::string               mExtPanId;
-    const char *              mResponseSuccess = "successful";
-    const char *              mResponseFail    = "failed";
-    const char *              mServiceUp       = "up";
-    const char *              mServiceDown     = "down";
+    otbr::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
+    int                         mNetworksCount;
+    char                        mIfName[IFNAMSIZ];
+    std::string                 mNetworkName;
+    std::string                 mExtPanId;
+    const char *                mResponseSuccess = "successful";
+    const char *                mResponseFail    = "failed";
+    const char *                mServiceUp       = "up";
+    const char *                mServiceDown     = "down";
 
     enum
     {
@@ -208,6 +204,6 @@ private:
 };
 
 } // namespace Web
-} // namespace ot
+} // namespace otbr
 
-#endif
+#endif // OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_

@@ -34,9 +34,9 @@ SUBDIRS                                   = \
     third_party                             \
     include                                 \
     src                                     \
+    tools                                   \
     tests                                   \
     doc                                     \
-    tools                                   \
     $(NULL)
 
 EXTRA_DIST                                = \
@@ -54,12 +54,6 @@ dist_doc_DATA                             = \
 
 DISTCLEANFILES                            = \
     .local-version                          \
-    $(NULL)
-
-PRETTY_SUBDIRS                            = \
-    src                                     \
-    tests                                   \
-    tools                                   \
     $(NULL)
 
 #

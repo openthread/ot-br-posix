@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017-2018, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,40 +26,13 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   The file is the header for the command line parameters for the commissioner app.
- */
+#ifndef OTBR_CONFIG_H_
+#define OTBR_CONFIG_H_
 
-#ifndef OTBR_COMMISSIONER_ARGCARGV_HPP_
-#define OTBR_COMMISSIONER_ARGCARGV_HPP_
+#if HAVE_CONFIG_H
+#include "autoconf-config.h"
+#elif defined(OTBR_CONFIG_FILE)
+#include OTBR_CONFIG_FILE
+#endif
 
-#include <stdint.h>
-
-#include "commissioner_constants.hpp"
-#include "common/types.hpp"
-#include "utils/steering_data.hpp"
-
-namespace ot {
-namespace BorderRouter {
-
-struct CommissionerArgs
-{
-    const char *mAgentPort;
-    const char *mAgentHost;
-
-    const char *mPSKd;
-    uint8_t     mPSKc[kPSKcLength];
-
-    SteeringData mSteeringData;
-    int          mKeepAliveInterval;
-
-    int mDebugLevel;
-};
-
-otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs);
-
-} // namespace BorderRouter
-} // namespace ot
-
-#endif // OTBR_COMMISSIONER_ARGCARGV_HPP_
+#endif // OTBR_CONFIG_H_

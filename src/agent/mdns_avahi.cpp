@@ -31,7 +31,7 @@
  *   This file implements MDNS service based on avahi.
  */
 
-#include "mdns_avahi.hpp"
+#include "agent/mdns_avahi.hpp"
 
 #include <avahi-common/alternative.h>
 #include <avahi-common/error.h>
@@ -58,7 +58,7 @@ AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
 {
     if (aTimeout)
     {
-        mTimeout = ot::BorderRouter::GetNow() + ot::BorderRouter::GetTimestamp(*aTimeout);
+        mTimeout = otbr::GetNow() + otbr::GetTimestamp(*aTimeout);
     }
     else
     {
@@ -66,9 +66,7 @@ AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
     }
 }
 
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -154,7 +152,7 @@ void Poller::TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout)
     }
     else
     {
-        aTimer->mTimeout = ot::BorderRouter::GetNow() + ot::BorderRouter::GetTimestamp(*aTimeout);
+        aTimer->mTimeout = otbr::GetNow() + otbr::GetTimestamp(*aTimeout);
     }
 }
 
@@ -444,7 +442,10 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         mState = kStateReady;
         CreateGroup(aClient);
         mStateHandler(mContext, mState);
-        avahi_entry_group_commit(mGroup);
+        if (mGroup)
+        {
+            avahi_entry_group_commit(mGroup);
+        }
         break;
 
     case AVAHI_CLIENT_FAILURE:
@@ -588,6 +589,4 @@ void Publisher::Destroy(Publisher *aPublisher)
 
 } // namespace Mdns
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr

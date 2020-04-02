@@ -31,7 +31,7 @@
  *   This file implements MDNS service based on avahi.
  */
 
-#include "mdns_mdnssd.hpp"
+#include "agent/mdns_mdnssd.hpp"
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -45,11 +45,7 @@
 #include "common/time.hpp"
 #include "utils/strcpy_utils.hpp"
 
-#include "dns_sd.h"
-
-namespace ot {
-
-namespace BorderRouter {
+namespace otbr {
 
 namespace Mdns {
 
@@ -431,6 +427,4 @@ void Publisher::Destroy(Publisher *aPublisher)
 
 } // namespace Mdns
 
-} // namespace BorderRouter
-
-} // namespace ot
+} // namespace otbr
