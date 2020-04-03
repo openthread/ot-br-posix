@@ -107,36 +107,36 @@ bool operator==(const otbr::DBus::ActiveScanResult &aLhs, const otbr::DBus::Acti
 
 inline otbrError DBusMessageEncode(DBusMessageIter *aIter, const TestStruct &aValue)
 {
-    otbrError       err = OTBR_ERROR_DBUS;
+    otbrError       error = OTBR_ERROR_DBUS;
     DBusMessageIter sub;
-    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
 
     SuccessOrExit(DBusMessageEncode(&sub, aValue.tag));
     SuccessOrExit(DBusMessageEncode(&sub, aValue.val));
     SuccessOrExit(DBusMessageEncode(&sub, aValue.name));
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), err = OTBR_ERROR_DBUS);
-    err = OTBR_ERROR_NONE;
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+    error = OTBR_ERROR_NONE;
 
 exit:
-    return err;
+    return error;
 }
 
 inline otbrError DBusMessageExtract(DBusMessageIter *aIter, TestStruct &aValue)
 {
-    otbrError       err = OTBR_ERROR_DBUS;
+    otbrError       error = OTBR_ERROR_DBUS;
     DBusMessageIter sub;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
     SuccessOrExit(DBusMessageExtract(&sub, aValue.tag));
     SuccessOrExit(DBusMessageExtract(&sub, aValue.val));
     SuccessOrExit(DBusMessageExtract(&sub, aValue.name));
 
     dbus_message_iter_next(aIter);
-    err = OTBR_ERROR_NONE;
+    error = OTBR_ERROR_NONE;
 
 exit:
-    return err;
+    return error;
 }
 
 TEST_GROUP(DBusMessage){};

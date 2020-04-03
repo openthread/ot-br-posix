@@ -51,17 +51,17 @@ using UniqueDBusConnection = std::unique_ptr<DBusConnection, DBusConnectionDelet
 
 int main()
 {
-    DBusError                      err;
+    DBusError                      error;
     UniqueDBusConnection           connection;
     std::unique_ptr<ThreadApiDBus> api;
     uint64_t                       extpanid = 0xdead00beaf00cafe;
 
-    dbus_error_init(&err);
-    connection = UniqueDBusConnection(dbus_bus_get(DBUS_BUS_SYSTEM, &err));
+    dbus_error_init(&error);
+    connection = UniqueDBusConnection(dbus_bus_get(DBUS_BUS_SYSTEM, &error));
 
     VerifyOrExit(connection != nullptr);
 
-    VerifyOrExit(dbus_bus_register(connection.get(), &err) == true);
+    VerifyOrExit(dbus_bus_register(connection.get(), &error) == true);
 
     api = std::unique_ptr<ThreadApiDBus>(new ThreadApiDBus(connection.get()));
 
@@ -154,6 +154,6 @@ int main()
     }
 
 exit:
-    dbus_error_free(&err);
+    dbus_error_free(&error);
     return 0;
 };
