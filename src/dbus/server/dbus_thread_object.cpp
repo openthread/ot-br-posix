@@ -322,101 +322,98 @@ void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 
 void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
 {
-    auto         threadHelper = mNcp->GetThreadHelper();
-    OnMeshPrefix onMeshPrefix;
-    auto         args = std::tie(onMeshPrefix);
+    auto                 threadHelper = mNcp->GetThreadHelper();
+    OnMeshPrefix         onMeshPrefix;
+    auto                 args  = std::tie(onMeshPrefix);
+    otError              error = OT_ERROR_NONE;
+    otBorderRouterConfig config;
 
-    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
-    {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
-    }
-    else
-    {
-        otBorderRouterConfig cfg;
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-        // size is guaranteed by parsing
-        std::copy(onMeshPrefix.mPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.mPrefix.end(),
-                  &cfg.mPrefix.mPrefix.mFields.m8[0]);
-        cfg.mPrefix.mLength = onMeshPrefix.mPrefix.mLength;
-        cfg.mPreference     = onMeshPrefix.mPreference;
-        cfg.mSlaac          = onMeshPrefix.mSlaac;
-        cfg.mDhcp           = onMeshPrefix.mDhcp;
-        cfg.mConfigure      = onMeshPrefix.mConfigure;
-        cfg.mDefaultRoute   = onMeshPrefix.mDefaultRoute;
-        cfg.mOnMesh         = onMeshPrefix.mOnMesh;
-        cfg.mStable         = onMeshPrefix.mStable;
+    // size is guaranteed by parsing
+    std::copy(onMeshPrefix.mPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.mPrefix.end(),
+              &config.mPrefix.mPrefix.mFields.m8[0]);
+    config.mPrefix.mLength = onMeshPrefix.mPrefix.mLength;
+    config.mPreference     = onMeshPrefix.mPreference;
+    config.mSlaac          = onMeshPrefix.mSlaac;
+    config.mDhcp           = onMeshPrefix.mDhcp;
+    config.mConfigure      = onMeshPrefix.mConfigure;
+    config.mDefaultRoute   = onMeshPrefix.mDefaultRoute;
+    config.mOnMesh         = onMeshPrefix.mOnMesh;
+    config.mStable         = onMeshPrefix.mStable;
 
-        aRequest.ReplyOtResult(otBorderRouterAddOnMeshPrefix(threadHelper->GetInstance(), &cfg));
-    }
+    SuccessOrExit(error = otBorderRouterAddOnMeshPrefix(threadHelper->GetInstance(), &config));
+    SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 void DBusThreadObject::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
 {
-    auto      threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix onMeshPrefix;
-    auto      args = std::tie(onMeshPrefix);
+    auto        threadHelper = mNcp->GetThreadHelper();
+    Ip6Prefix   onMeshPrefix;
+    auto        args  = std::tie(onMeshPrefix);
+    otError     error = OT_ERROR_NONE;
+    otIp6Prefix prefix;
 
-    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
-    {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
-    }
-    else
-    {
-        otIp6Prefix prefix;
-        // size is guaranteed by parsing
-        std::copy(onMeshPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-        prefix.mLength = onMeshPrefix.mLength;
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    // size is guaranteed by parsing
+    std::copy(onMeshPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+    prefix.mLength = onMeshPrefix.mLength;
 
-        aRequest.ReplyOtResult(otBorderRouterRemoveOnMeshPrefix(threadHelper->GetInstance(), &prefix));
-    }
+    SuccessOrExit(error = otBorderRouterRemoveOnMeshPrefix(threadHelper->GetInstance(), &prefix));
+    SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
 {
-    auto      threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix routePrefix;
-    int8_t    preference;
-    bool      stable;
-    auto      args = std::tie(routePrefix, preference, stable);
+    auto                  threadHelper = mNcp->GetThreadHelper();
+    Ip6Prefix             routePrefix;
+    int8_t                preference;
+    bool                  stable;
+    auto                  args  = std::tie(routePrefix, preference, stable);
+    otError               error = OT_ERROR_NONE;
+    otExternalRouteConfig route;
+    otIp6Prefix &         prefix = route.mPrefix;
 
-    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
-    {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
-    }
-    else
-    {
-        otExternalRouteConfig route;
-        otIp6Prefix &         prefix = route.mPrefix;
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-        // size is guaranteed by parsing
-        std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-        prefix.mLength    = routePrefix.mLength;
-        route.mPreference = preference;
-        route.mStable     = stable;
+    // size is guaranteed by parsing
+    std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+    prefix.mLength    = routePrefix.mLength;
+    route.mPreference = preference;
+    route.mStable     = stable;
 
-        aRequest.ReplyOtResult(otBorderRouterAddRoute(threadHelper->GetInstance(), &route));
-    }
+    SuccessOrExit(error = otBorderRouterAddRoute(threadHelper->GetInstance(), &route));
+    SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
 {
-    auto      threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix routePrefix;
-    auto      args = std::tie(routePrefix);
+    auto        threadHelper = mNcp->GetThreadHelper();
+    Ip6Prefix   routePrefix;
+    auto        args  = std::tie(routePrefix);
+    otError     error = OT_ERROR_NONE;
+    otIp6Prefix prefix;
 
-    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
-    {
-        aRequest.ReplyOtResult(OT_ERROR_INVALID_ARGS);
-    }
-    else
-    {
-        otIp6Prefix prefix;
-        // size is guaranteed by parsing
-        std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-        prefix.mLength = routePrefix.mLength;
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-        aRequest.ReplyOtResult(otBorderRouterRemoveRoute(threadHelper->GetInstance(), &prefix));
-    }
+    // size is guaranteed by parsing
+    std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+    prefix.mLength = routePrefix.mLength;
+
+    SuccessOrExit(error = otBorderRouterRemoveRoute(threadHelper->GetInstance(), &prefix));
+    SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
