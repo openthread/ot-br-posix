@@ -30,7 +30,7 @@
 
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
-#include "dbus/common/error_helper.hpp"
+#include "dbus/server/error_helper.hpp"
 
 namespace otbr {
 namespace DBus {

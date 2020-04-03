@@ -30,11 +30,11 @@
 #include <string.h>
 
 #include "common/code_utils.hpp"
+#include "dbus/client/client_error.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
-#include "dbus/common/error_helper.hpp"
 
 namespace otbr {
 namespace DBus {
