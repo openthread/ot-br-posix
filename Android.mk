@@ -81,11 +81,11 @@ LOCAL_C_INCLUDES := \
     $(NULL)
 
 LOCAL_SRC_FILES = \
+    src/dbus/client/client_error.cpp \
     src/dbus/client/thread_api_dbus.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
     src/dbus/common/error.cpp \
-    src/dbus/common/error_helper.cpp \
     $(NULL)
 
 LOCAL_EXPORT_C_INCLUDE_DIRS := \
@@ -144,10 +144,10 @@ LOCAL_SRC_FILES += \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
     src/dbus/common/error.cpp \
-    src/dbus/common/error_helper.cpp \
     src/dbus/server/dbus_agent.cpp \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
+    src/dbus/server/error_helper.cpp \
     $(NULL)
 
 LOCAL_STATIC_LIBRARIES += \

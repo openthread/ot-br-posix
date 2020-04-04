@@ -31,6 +31,7 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 noinst_LTLIBRARIES = libotbr-dbus-client.la
 
 libotbr_dbus_client_la_SOURCES = \
+    client_error.cpp             \
     thread_api_dbus.cpp          \
     $(NULL)
 
@@ -56,6 +57,7 @@ libotbr_dbus_client_la_CXXFLAGS = \
     $(NULL)
 
 noinst_HEADERS        = \
+    client_error.hpp    \
     thread_api_dbus.hpp \
     $(NULL)
 
