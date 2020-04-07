@@ -35,6 +35,7 @@
 #include <openthread/instance.h>
 #include <openthread/joiner.h>
 #include <openthread/link_raw.h>
+#include <openthread/ncp.h>
 #include <openthread/netdata.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
@@ -431,12 +432,8 @@ exit:
     return err;
 }
 
-#if OPENTHREAD_CONFIG_LEGACY_ENABLE
-extern "C" void otNcpHandleDidReceiveNewLegacyUlaPrefix(const uint8_t *aUlaPrefix);
-#endif
 otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
 {
-#if OPENTHREAD_CONFIG_LEGACY_ENABLE
     std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> data;
     otError                                   err = OT_ERROR_NONE;
 
@@ -445,9 +442,6 @@ otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
 
 exit:
     return err;
-#else
-    return OT_ERROR_NOT_IMPLEMENTED;
-#endif // OPENTHREAD_CONFIG_LEGACY_ENABLE
 }
 
 otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
