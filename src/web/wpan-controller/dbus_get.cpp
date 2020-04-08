@@ -33,6 +33,7 @@
 
 #include "web/wpan-controller/dbus_get.hpp"
 #include "common/code_utils.hpp"
+#include "utils/strcpy_utils.hpp"
 
 namespace otbr {
 namespace Dbus {
