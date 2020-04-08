@@ -145,7 +145,11 @@ public:
      * @param[in]  aIfName  The pointer to the interface name of wpantund.
      *
      */
-    void SetInterfaceName(const char *aIfName) { strcpy_safe(mIfName, sizeof(mIfName), aIfName); }
+    void SetInterfaceName(const char *aIfName)
+    {
+        strncpy(mIfName, aIfName, sizeof(mIfName) - 1);
+        mIfName[sizeof(mIfName) - 1] = '\0';
+    }
 
     /**
      * This method gets status of wpan service.
