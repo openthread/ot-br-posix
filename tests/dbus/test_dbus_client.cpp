@@ -36,11 +36,11 @@
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
 
-using otbr::DBus::ActiveScanResult;
-using otbr::DBus::ClientError;
-using otbr::DBus::DeviceRole;
-using otbr::DBus::LinkModeConfig;
-using otbr::DBus::ThreadApiDBus;
+using otbr::dbus::ActiveScanResult;
+using otbr::dbus::ClientError;
+using otbr::dbus::DeviceRole;
+using otbr::dbus::LinkModeConfig;
+using otbr::dbus::ThreadApiDBus;
 
 struct DBusConnectionDeleter
 {
@@ -94,15 +94,15 @@ int main()
                 uint8_t                               routerId;
                 std::vector<uint8_t>                  networkData;
                 std::vector<uint8_t>                  stableNetworkData;
-                otbr::DBus::LeaderData                leaderData;
+                otbr::dbus::LeaderData                leaderData;
                 uint8_t                               leaderWeight;
                 int8_t                                rssi;
                 int8_t                                txPower;
-                std::vector<otbr::DBus::ChildInfo>    childTable;
-                std::vector<otbr::DBus::NeighborInfo> neighborTable;
+                std::vector<otbr::dbus::ChildInfo>    childTable;
+                std::vector<otbr::dbus::NeighborInfo> neighborTable;
                 uint32_t                              partitionId;
-                otbr::DBus::Ip6Prefix                 prefix;
-                otbr::DBus::OnMeshPrefix              onMeshPrefix;
+                otbr::dbus::Ip6Prefix                 prefix;
+                otbr::dbus::OnMeshPrefix              onMeshPrefix;
 
                 prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
                 prefix.mLength = 64;

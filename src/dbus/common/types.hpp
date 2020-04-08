@@ -37,7 +37,7 @@
 #include <vector>
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 enum DeviceRole
 {
@@ -455,7 +455,7 @@ struct LeaderData
     uint8_t  mLeaderRouterId;    ///< Leader Router ID
 };
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_COMMON_TYPES_HPP_

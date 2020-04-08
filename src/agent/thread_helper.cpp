@@ -49,7 +49,7 @@
 namespace otbr {
 namespace agent {
 
-ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp)
+ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::ncp::ControllerOpenThread *aNcp)
     : mInstance(aInstance)
     , mNcp(aNcp)
 {

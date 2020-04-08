@@ -42,7 +42,7 @@ namespace otbr {
 
 JoinerSession::JoinerSession(uint16_t aInternalServerPort, const char *aPskdAscii)
     : mDtlsServer(Dtls::Server::Create(aInternalServerPort, JoinerSession::HandleSessionChange, this))
-    , mCoapAgent(Coap::Agent::Create(JoinerSession::SendCoap, this))
+    , mCoapAgent(coap::Agent::Create(JoinerSession::SendCoap, this))
     , mJoinerFinalizeHandler(OT_URI_PATH_JOINER_FINALIZE, HandleJoinerFinalize, this)
     , mNeedAppendKek(false)
 {
@@ -106,9 +106,9 @@ void JoinerSession::FeedCoap(const uint8_t *aBuffer, uint16_t aLength, void *aCo
     joinerSession->mCoapAgent->Input(aBuffer, aLength, NULL, 0);
 }
 
-void JoinerSession::HandleJoinerFinalize(const Coap::Resource &aResource,
-                                         const Coap::Message & aRequest,
-                                         Coap::Message &       aResponse,
+void JoinerSession::HandleJoinerFinalize(const coap::Resource &aResource,
+                                         const coap::Message & aRequest,
+                                         coap::Message &       aResponse,
                                          const uint8_t *       aIp6,
                                          uint16_t              aPort,
                                          void *                aContext)
@@ -124,8 +124,8 @@ void JoinerSession::HandleJoinerFinalize(const Coap::Resource &aResource,
     responseTlv = responseTlv->GetNext();
 
     // Piggyback response
-    aResponse.SetCode(Coap::kCodeChanged);
-    aResponse.SetPayload(payload, Utils::LengthOf(payload, responseTlv));
+    aResponse.SetCode(coap::kCodeChanged);
+    aResponse.SetPayload(payload, utils::LengthOf(payload, responseTlv));
 
     (void)aResource;
     (void)aRequest;
@@ -159,13 +159,13 @@ void JoinerSession::MarkKekSent(void)
 
 void JoinerSession::GetKek(uint8_t *aBuf, size_t aBufSize)
 {
-    memcpy(aBuf, mKek, Utils::Min(sizeof(mKek), aBufSize));
+    memcpy(aBuf, mKek, utils::Min(sizeof(mKek), aBufSize));
 }
 
 JoinerSession::~JoinerSession()
 {
     Dtls::Server::Destroy(mDtlsServer);
-    Coap::Agent::Destroy(mCoapAgent);
+    coap::Agent::Destroy(mCoapAgent);
 }
 
 } // namespace otbr

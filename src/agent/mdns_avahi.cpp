@@ -68,7 +68,7 @@ AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
 
 namespace otbr {
 
-namespace Mdns {
+namespace mdns {
 
 Poller::Poller(void)
 {
@@ -587,6 +587,6 @@ void Publisher::Destroy(Publisher *aPublisher)
     delete static_cast<PublisherAvahi *>(aPublisher);
 }
 
-} // namespace Mdns
+} // namespace mdns
 
 } // namespace otbr

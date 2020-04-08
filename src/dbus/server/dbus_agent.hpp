@@ -41,7 +41,7 @@
 #include "agent/ncp_openthread.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 class DBusAgent
 {
@@ -53,7 +53,7 @@ public:
      * @param[in]       aNcp            The ncp controller.
      *
      */
-    DBusAgent(const std::string &aInterfaceName, otbr::Ncp::ControllerOpenThread *aNcp);
+    DBusAgent(const std::string &aInterfaceName, otbr::ncp::ControllerOpenThread *aNcp);
 
     /**
      * This method initializes the dbus agent.
@@ -100,7 +100,7 @@ private:
     std::unique_ptr<DBusThreadObject> mThreadObject;
     using UniqueDBusConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>;
     UniqueDBusConnection             mConnection;
-    otbr::Ncp::ControllerOpenThread *mNcp;
+    otbr::ncp::ControllerOpenThread *mNcp;
 
     /**
      * This map is used to track DBusWatch-es.
@@ -110,7 +110,7 @@ private:
     WatchMap mWatches;
 };
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_AGENT_HPP_

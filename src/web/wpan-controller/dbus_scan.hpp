@@ -44,7 +44,7 @@
 #include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 class DBusScan : public DBusBase
 {
@@ -64,6 +64,6 @@ private:
     static int             mAvailableNetworksCnt;
 };
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr
 #endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_SCAN_HPP_

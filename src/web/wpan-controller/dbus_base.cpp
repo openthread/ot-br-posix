@@ -43,7 +43,7 @@
 #define OT_DEFAULT_TIMEOUT_IN_MILLISECONDS 60 * 1000
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 DBusConnection *DBusBase::GetConnection(void)
 {
@@ -259,5 +259,5 @@ exit:
     }
 }
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr

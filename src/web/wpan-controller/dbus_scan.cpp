@@ -36,7 +36,7 @@
 #include "common/code_utils.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 int             DBusScan::mAvailableNetworksCnt = 0;
 WpanNetworkInfo DBusScan::mAvailableNetworks[OT_SCANNED_NET_BUFFER_SIZE];
@@ -207,5 +207,5 @@ int DBusScan::ParseNetworkInfoFromIter(WpanNetworkInfo *aNetworkInfo, DBusMessag
     return ret;
 }
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr

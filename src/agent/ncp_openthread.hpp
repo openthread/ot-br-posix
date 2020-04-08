@@ -44,7 +44,7 @@
 #include "agent/thread_helper.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace ncp {
 
 /**
  * This interface defines NCP Controller functionality.
@@ -148,7 +148,7 @@ private:
     bool                                                                            mTriedAttach;
 };
 
-} // namespace Ncp
+} // namespace ncp
 } // namespace otbr
 
 #endif // OTBR_AGENT_NCP_OPENTHREAD_HPP_

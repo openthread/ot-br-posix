@@ -51,7 +51,7 @@ extern "C" {
 }
 
 namespace otbr {
-namespace Ncp {
+namespace ncp {
 class ControllerOpenThread;
 }
 
@@ -73,7 +73,7 @@ public:
      *
      * @param[in]  aController  A pointer to OpenThread Controller structure.
      */
-    static void Initialize(Ncp::ControllerOpenThread *aController);
+    static void Initialize(ncp::ControllerOpenThread *aController);
 
     /**
      * This method return the instance of the global UbusServer.
@@ -780,7 +780,7 @@ private:
     const char *               mSockPath;
     struct blob_buf            mBuf;
     struct blob_buf            mNetworkdataBuf;
-    Ncp::ControllerOpenThread *mController;
+    ncp::ControllerOpenThread *mController;
     time_t                     mSecond;
     enum
     {
@@ -792,7 +792,7 @@ private:
      *
      * @param[in]  aController  The pointer to OpenThread Controller structure.
      */
-    UbusServer(Ncp::ControllerOpenThread *aController);
+    UbusServer(ncp::ControllerOpenThread *aController);
 
     /**
      * This method start scan.

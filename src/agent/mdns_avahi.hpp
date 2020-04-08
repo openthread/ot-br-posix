@@ -110,7 +110,7 @@ struct AvahiTimeout
 
 namespace otbr {
 
-namespace Mdns {
+namespace mdns {
 
 /**
  * This class implements the AvahiPoll.
@@ -306,7 +306,7 @@ private:
     void *           mContext;
 };
 
-} // namespace Mdns
+} // namespace mdns
 
 } // namespace otbr
 

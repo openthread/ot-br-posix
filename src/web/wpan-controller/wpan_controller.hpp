@@ -57,7 +57,7 @@ extern "C" {
 #define OT_ROUTER_ROLE 2
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 enum
 {
@@ -238,6 +238,6 @@ private:
     int             mScannedNetworkCount = 0;
 };
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr
 #endif // OTBR_WEB_WPAN_CONTROLLER_WPAN_CONTROLLER_HPP_

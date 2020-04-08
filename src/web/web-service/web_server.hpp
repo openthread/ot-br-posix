@@ -55,7 +55,7 @@ typedef boost::asio::ip::tcp::socket HTTP;
 } // namespace SimpleWeb
 
 namespace otbr {
-namespace Web {
+namespace web {
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 
@@ -127,10 +127,10 @@ private:
 
     char                   mIfName[IFNAMSIZ];
     HttpServer *           mServer;
-    otbr::Web::WpanService mWpanService;
+    otbr::web::WpanService mWpanService;
 };
 
-} // namespace Web
+} // namespace web
 } // namespace otbr
 
 #endif // OTBR_WEB_WEB_SERVICE_WEB_SERVER_

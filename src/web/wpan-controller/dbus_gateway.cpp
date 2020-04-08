@@ -37,7 +37,7 @@
 #include "utils/hex.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 DBusGateway::DBusGateway(void)
     : mPreferredLifetime(0xFFFFFFFF)
@@ -71,7 +71,7 @@ int DBusGateway::ProcessReply(void)
         else
         {
             // DATA-style
-            int length = otbr::Utils::Hex2Bytes(mPrefix, mPrefixBytes, 8);
+            int length = otbr::utils::Hex2Bytes(mPrefix, mPrefixBytes, 8);
             VerifyOrExit(length > 0, ret = kWpantundStatus_InvalidArgument);
         }
 
@@ -96,5 +96,5 @@ exit:
     return ret;
 }
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr

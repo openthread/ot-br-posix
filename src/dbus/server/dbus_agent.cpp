@@ -31,11 +31,11 @@
 #include "dbus/common/constants.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 const struct timeval DBusAgent::kPollTimeout = {0, 0};
 
-DBusAgent::DBusAgent(const std::string &aInterfaceName, otbr::Ncp::ControllerOpenThread *aNcp)
+DBusAgent::DBusAgent(const std::string &aInterfaceName, otbr::ncp::ControllerOpenThread *aNcp)
     : mInterfaceName(aInterfaceName)
     , mNcp(aNcp)
 {
@@ -183,5 +183,5 @@ void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, con
         ;
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

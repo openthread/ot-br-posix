@@ -48,7 +48,7 @@
 
 namespace otbr {
 
-namespace Ncp {
+namespace ncp {
 
 /**
  * This class provides NCP service based on wpantund.
@@ -153,7 +153,7 @@ private:
     WatchMap        mWatches;
 };
 
-} // namespace Ncp
+} // namespace ncp
 
 } // namespace otbr
 

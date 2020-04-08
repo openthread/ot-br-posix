@@ -44,7 +44,7 @@
 #include <openthread/thread.h>
 
 namespace otbr {
-namespace Ncp {
+namespace ncp {
 class ControllerOpenThread;
 }
 } // namespace otbr
@@ -66,7 +66,7 @@ public:
      * @param[in]   aNcp       The ncp controller.
      *
      */
-    ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp);
+    ThreadHelper(otInstance *aInstance, otbr::ncp::ControllerOpenThread *aNcp);
 
     /**
      * This method initializes the Thread helper.
@@ -186,7 +186,7 @@ private:
 
     otInstance *mInstance;
 
-    otbr::Ncp::ControllerOpenThread *mNcp;
+    otbr::ncp::ControllerOpenThread *mNcp;
 
     ScanHandler                     mScanHandler;
     std::vector<otActiveScanResult> mScanResults;

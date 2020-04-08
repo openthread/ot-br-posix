@@ -33,7 +33,7 @@
 #include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
-namespace Web {
+namespace web {
 
 /**
  * This class implements functionality of OpenThread client.
@@ -82,7 +82,7 @@ public:
      * @returns Number of entries found. 0 if none found.
      *
      */
-    int Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength);
+    int Scan(dbus::WpanNetworkInfo *aNetworks, int aLength);
 
     /**
      * This method performs factory reset.
@@ -102,7 +102,7 @@ private:
     int  mSocket;
 };
 
-} // namespace Web
+} // namespace web
 } // namespace otbr
 
 #endif // OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_

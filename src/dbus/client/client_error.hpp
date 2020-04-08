@@ -36,7 +36,7 @@
 #include "dbus/common/error.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 /**
  * This function converts an error string to client error.
@@ -59,7 +59,7 @@ ClientError ConvertFromDBusErrorName(const std::string &aErrorName);
  */
 ClientError CheckErrorMessage(DBusMessage *aMessage);
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_

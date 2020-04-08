@@ -48,7 +48,7 @@
 #define OT_INET6_ADDR_STR_LENGTH 46
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 class DBusGateway : public DBusBase
 {
@@ -79,6 +79,6 @@ private:
     uint8_t *   mAddr;
 };
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr
 #endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_GATEWAY_HPP_

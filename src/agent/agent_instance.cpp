@@ -40,7 +40,7 @@
 
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
+AgentInstance::AgentInstance(ncp::Controller *aNcp)
     : mNcp(aNcp)
     , mBorderAgent(aNcp)
 {
@@ -74,7 +74,7 @@ void AgentInstance::Process(const otSysMainloopContext &aMainloop)
 
 AgentInstance::~AgentInstance(void)
 {
-    Ncp::Controller::Destroy(mNcp);
+    ncp::Controller::Destroy(mNcp);
 }
 
 } // namespace otbr

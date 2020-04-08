@@ -50,7 +50,7 @@
 #endif
 
 namespace otbr {
-namespace Web {
+namespace web {
 
 OpenThreadClient::OpenThreadClient(void)
     : mTimeout(kDefaultTimeout)
@@ -165,7 +165,7 @@ exit:
     return rval;
 }
 
-int OpenThreadClient::Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength)
+int OpenThreadClient::Scan(dbus::WpanNetworkInfo *aNetworks, int aLength)
 {
     char *result;
     int   rval = 0;
@@ -237,5 +237,5 @@ exit:
     return rval;
 }
 
-} // namespace Web
+} // namespace web
 } // namespace otbr

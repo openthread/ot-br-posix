@@ -34,7 +34,7 @@
 #define OTBR_OPENTHREAD_ERROR_PREFIX "io.openthread.Error"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 static const std::pair<ClientError, const char *> sErrorNames[] = {
     {ClientError::ERROR_NONE, OTBR_OPENTHREAD_ERROR_PREFIX ".OK"},
@@ -105,5 +105,5 @@ exit:
     return error;
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

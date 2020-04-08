@@ -81,9 +81,9 @@ enum
     kBorderAgentUdpPort = 49191, ///< Thread commissioning port.
 };
 
-BorderAgent::BorderAgent(Ncp::Controller *aNcp)
+BorderAgent::BorderAgent(ncp::Controller *aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
+    : mPublisher(mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
 #else
     : mPublisher(NULL)
 #endif
@@ -103,18 +103,18 @@ void BorderAgent::Init(void)
     mThreadVersion       = 0;
 
 #if OTBR_ENABLE_NCP_WPANTUND
-    mNcp->On(Ncp::kEventUdpForwardStream, SendToCommissioner, this);
+    mNcp->On(ncp::kEventUdpForwardStream, SendToCommissioner, this);
 #endif
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
-    mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
-    mNcp->On(Ncp::kEventThreadVersion, HandleThreadVersion, this);
+    mNcp->On(ncp::kEventExtPanId, HandleExtPanId, this);
+    mNcp->On(ncp::kEventNetworkName, HandleNetworkName, this);
+    mNcp->On(ncp::kEventThreadVersion, HandleThreadVersion, this);
 #endif
-    mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
-    mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
+    mNcp->On(ncp::kEventThreadState, HandleThreadState, this);
+    mNcp->On(ncp::kEventPSKc, HandlePSKc, this);
 
-    otbrLogResult("Check if Thread is up", mNcp->RequestEvent(Ncp::kEventThreadState));
-    otbrLogResult("Check if PSKc is initialized", mNcp->RequestEvent(Ncp::kEventPSKc));
+    otbrLogResult("Check if Thread is up", mNcp->RequestEvent(ncp::kEventThreadState));
+    otbrLogResult("Check if PSKc is initialized", mNcp->RequestEvent(ncp::kEventPSKc));
 }
 
 otbrError BorderAgent::Start(void)
@@ -139,12 +139,12 @@ otbrError BorderAgent::Start(void)
 #endif
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
+    SuccessOrExit(error = mNcp->RequestEvent(ncp::kEventNetworkName));
+    SuccessOrExit(error = mNcp->RequestEvent(ncp::kEventExtPanId));
 
 // Currently supports only NCP_OPENTHREAD
 #if OTBR_ENABLE_NCP_OPENTHREAD
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventThreadVersion));
+    SuccessOrExit(error = mNcp->RequestEvent(ncp::kEventThreadVersion));
 #endif // OTBR_ENABLE_NCP_OPENTHREAD
     StartPublishService();
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
@@ -183,11 +183,11 @@ BorderAgent::~BorderAgent(void)
     }
 }
 
-void BorderAgent::HandleMdnsState(Mdns::State aState)
+void BorderAgent::HandleMdnsState(mdns::State aState)
 {
     switch (aState)
     {
-    case Mdns::kStateReady:
+    case mdns::kStateReady:
         PublishService();
         break;
     default:
@@ -208,7 +208,7 @@ void BorderAgent::SendToCommissioner(void *aContext, int aEvent, va_list aArgume
     BorderAgent *       borderAgent = static_cast<BorderAgent *>(aContext);
 
     (void)aEvent;
-    assert(aEvent == Ncp::kEventUdpForwardStream);
+    assert(aEvent == ncp::kEventUdpForwardStream);
     VerifyOrExit(sockPort == kBorderAgentUdpPort);
     VerifyOrExit(borderAgent->mSocket != -1);
 
@@ -303,7 +303,7 @@ void BorderAgent::PublishService(void)
 
     assert(mNetworkName[0] != '\0');
     assert(mExtPanIdInitialized);
-    Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
+    utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
     assert(mThreadVersion != 0);
@@ -388,7 +388,7 @@ void BorderAgent::SetThreadVersion(uint16_t aThreadVersion)
 
 void BorderAgent::HandlePSKc(void *aContext, int aEvent, va_list aArguments)
 {
-    assert(aEvent == Ncp::kEventPSKc);
+    assert(aEvent == ncp::kEventPSKc);
 
     static_cast<BorderAgent *>(aContext)->HandlePSKc(va_arg(aArguments, const uint8_t *));
 }
@@ -426,7 +426,7 @@ void BorderAgent::HandleThreadState(bool aStarted)
 
     if (aStarted)
     {
-        SuccessOrExit(mNcp->RequestEvent(Ncp::kEventPSKc));
+        SuccessOrExit(mNcp->RequestEvent(ncp::kEventPSKc));
         Start();
     }
     else
@@ -440,7 +440,7 @@ exit:
 
 void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
 {
-    assert(aEvent == Ncp::kEventThreadState);
+    assert(aEvent == ncp::kEventThreadState);
 
     int started = va_arg(aArguments, int);
     static_cast<BorderAgent *>(aContext)->HandleThreadState(started);
@@ -448,7 +448,7 @@ void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArgumen
 
 void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)
 {
-    assert(aEvent == Ncp::kEventNetworkName);
+    assert(aEvent == ncp::kEventNetworkName);
 
     const char *networkName = va_arg(aArguments, const char *);
     static_cast<BorderAgent *>(aContext)->SetNetworkName(networkName);
@@ -456,7 +456,7 @@ void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArgumen
 
 void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
 {
-    assert(aEvent == Ncp::kEventExtPanId);
+    assert(aEvent == ncp::kEventExtPanId);
 
     const uint8_t *xpanid = va_arg(aArguments, const uint8_t *);
     static_cast<BorderAgent *>(aContext)->SetExtPanId(xpanid);
@@ -464,7 +464,7 @@ void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
 
 void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArguments)
 {
-    assert(aEvent == Ncp::kEventThreadVersion);
+    assert(aEvent == ncp::kEventThreadVersion);
 
     // `uint16_t` has been promoted to `int`.
     uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));

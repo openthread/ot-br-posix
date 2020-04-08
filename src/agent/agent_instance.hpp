@@ -59,7 +59,7 @@ public:
      * @param[in]   aNcp  A pointer to the NCP controller.
      *
      */
-    AgentInstance(Ncp::Controller *aNcp);
+    AgentInstance(ncp::Controller *aNcp);
 
     ~AgentInstance(void);
 
@@ -95,10 +95,10 @@ public:
      * @retval  the pointer of mNcp.
      *
      */
-    Ncp::Controller &GetNcp(void) { return *mNcp; }
+    ncp::Controller &GetNcp(void) { return *mNcp; }
 
 private:
-    Ncp::Controller *mNcp;
+    ncp::Controller *mNcp;
     BorderAgent      mBorderAgent;
 };
 

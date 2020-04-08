@@ -45,7 +45,7 @@
 
 namespace otbr {
 
-namespace Ncp {
+namespace ncp {
 
 /**
  * @addtogroup border-router-ncp
@@ -166,7 +166,7 @@ public:
     virtual ~Controller(void) {}
 };
 
-} // namespace Ncp
+} // namespace ncp
 
 } // namespace otbr
 

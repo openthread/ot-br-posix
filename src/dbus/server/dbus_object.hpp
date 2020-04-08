@@ -44,7 +44,7 @@
 #include "dbus/server/dbus_request.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 /**
  * This class is a base class for implementing a d-bus object.
@@ -134,7 +134,7 @@ public:
         otbrError err = OTBR_ERROR_NONE;
 
         VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
-        VerifyOrExit(err = otbr::DBus::TupleToDBusMessage(*signalMsg, aArgs));
+        VerifyOrExit(err = otbr::dbus::TupleToDBusMessage(*signalMsg, aArgs));
 
         VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
 
@@ -215,7 +215,7 @@ private:
     std::string                                                                           mObjectPath;
 };
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_DBUS_SERVER_HPP_

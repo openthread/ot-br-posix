@@ -52,7 +52,7 @@
 #include "web/wpan-controller/dbus_set.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 int WPANController::Scan(void)
 {
@@ -69,7 +69,7 @@ int WPANController::Scan(void)
     VerifyOrExit((ret = scannedNetwork.ProcessReply()) == 0);
 
     VerifyOrExit((mScannedNetworkCount = scannedNetwork.GetNetworksCount()) > 0, ret = kWpantundStatus_NetworkNotFound);
-    memcpy(mScannedNetworks, scannedNetwork.GetNetworks(), mScannedNetworkCount * sizeof(Dbus::WpanNetworkInfo));
+    memcpy(mScannedNetworks, scannedNetwork.GetNetworks(), mScannedNetworkCount * sizeof(dbus::WpanNetworkInfo));
 exit:
     return ret;
 }
@@ -246,5 +246,5 @@ void WPANController::SetInterfaceName(const char *aIfName)
     strcpy_safe(mIfName, sizeof(mIfName), aIfName);
 }
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr

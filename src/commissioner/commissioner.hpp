@@ -198,14 +198,14 @@ private:
 
     static void LogMeshcopState(const char *aPrefix, int8_t aState);
 
-    static void HandleCommissionerPetition(const Coap::Message &aMessage, void *aContext);
-    static void HandleCommissionerSet(const Coap::Message &aMessage, void *aContext);
-    static void HandleCommissionerKeepAlive(const Coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerPetition(const coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerSet(const coap::Message &aMessage, void *aContext);
+    static void HandleCommissionerKeepAlive(const coap::Message &aMessage, void *aContext);
     void        CommissionerResponseNext(void);
 
-    static void HandleRelayReceive(const Coap::Resource &aResource,
-                                   const Coap::Message & aMessage,
-                                   Coap::Message &       aResponse,
+    static void HandleRelayReceive(const coap::Resource &aResource,
+                                   const coap::Message & aMessage,
+                                   coap::Message &       aResponse,
                                    const uint8_t *       aIp6,
                                    uint16_t              aPort,
                                    void *                aContext);
@@ -219,9 +219,9 @@ private:
     mbedtls_timing_delay_context mTimer;
     bool                         mDtlsInitDone;
 
-    Coap::Agent *  mCoapAgent;
+    coap::Agent *  mCoapAgent;
     uint16_t       mCoapToken;
-    Coap::Resource mRelayReceiveHandler;
+    coap::Resource mRelayReceiveHandler;
 
     uint8_t  mPskcBin[OT_PSKC_LENGTH];
     int      mPetitionRetryCount;

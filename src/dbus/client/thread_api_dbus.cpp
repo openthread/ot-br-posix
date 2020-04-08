@@ -37,7 +37,7 @@
 #include "dbus/common/dbus_resources.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 static ClientError NameToDeviceRole(const std::string &aRoleName, DeviceRole &aDeviceRole)
 {
@@ -523,7 +523,7 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName)
     reply = UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
     VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::ERROR_DBUS);
-    ret = DBus::CheckErrorMessage(reply.get());
+    ret = dbus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&err);
     return ret;
@@ -552,19 +552,19 @@ template <typename ArgType>
 ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName, const ArgType &aArgs)
 {
     ClientError             ret = ClientError::ERROR_NONE;
-    DBus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
+    dbus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
                                                                  (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                                  OTBR_DBUS_THREAD_INTERFACE, aMethodName.c_str()));
-    DBus::UniqueDBusMessage reply = nullptr;
+    dbus::UniqueDBusMessage reply = nullptr;
     DBusError               err;
 
     dbus_error_init(&err);
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
-    VerifyOrExit(otbr::DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
-    reply = DBus::UniqueDBusMessage(
+    VerifyOrExit(otbr::dbus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
+    reply = dbus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
     VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::ERROR_DBUS);
-    ret = DBus::CheckErrorMessage(reply.get());
+    ret = dbus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&err);
     return ret;
@@ -577,13 +577,13 @@ ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string &           aMe
 {
     ClientError ret = ClientError::ERROR_NONE;
 
-    DBus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
+    dbus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
                                                                  (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                                  OTBR_DBUS_THREAD_INTERFACE, aMethodName.c_str()));
     DBusPendingCall *       pending = nullptr;
 
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
-    VerifyOrExit(DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(dbus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
     VerifyOrExit(dbus_connection_send_with_reply(mConnection, message.get(), &pending, DBUS_TIMEOUT_USE_DEFAULT) ==
                      true,
                  ret = ClientError::ERROR_DBUS);
@@ -597,10 +597,10 @@ exit:
 template <typename ValType>
 ClientError ThreadApiDBus::SetProperty(const std::string &aPropertyName, const ValType &aValue)
 {
-    DBus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
+    dbus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
                                                                  (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                                  DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_SET_METHOD));
-    DBus::UniqueDBusMessage reply = nullptr;
+    dbus::UniqueDBusMessage reply = nullptr;
     ClientError             ret   = ClientError::ERROR_NONE;
     DBusError               err;
     DBusMessageIter         iter;
@@ -609,16 +609,16 @@ ClientError ThreadApiDBus::SetProperty(const std::string &aPropertyName, const V
     VerifyOrExit(message != nullptr, ret = ClientError::OT_ERROR_FAILED);
 
     dbus_message_iter_init_append(message.get(), &iter);
-    VerifyOrExit(DBus::DBusMessageEncode(&iter, OTBR_DBUS_THREAD_INTERFACE) == OTBR_ERROR_NONE,
+    VerifyOrExit(dbus::DBusMessageEncode(&iter, OTBR_DBUS_THREAD_INTERFACE) == OTBR_ERROR_NONE,
                  ret = ClientError::ERROR_DBUS);
-    VerifyOrExit(DBus::DBusMessageEncode(&iter, aPropertyName) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
-    VerifyOrExit(DBus::DBusMessageEncodeToVariant(&iter, aValue) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(dbus::DBusMessageEncode(&iter, aPropertyName) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(dbus::DBusMessageEncodeToVariant(&iter, aValue) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
 
-    reply = DBus::UniqueDBusMessage(
+    reply = dbus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
 
     VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
-    ret = DBus::CheckErrorMessage(reply.get());
+    ret = dbus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&err);
     return ret;
@@ -626,10 +626,10 @@ exit:
 
 template <typename ValType> ClientError ThreadApiDBus::GetProperty(const std::string &aPropertyName, ValType &aValue)
 {
-    DBus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
+    dbus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
                                                                  (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                                  DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_METHOD));
-    DBus::UniqueDBusMessage reply = nullptr;
+    dbus::UniqueDBusMessage reply = nullptr;
 
     ClientError     ret = ClientError::ERROR_NONE;
     DBusError       err;
@@ -637,14 +637,14 @@ template <typename ValType> ClientError ThreadApiDBus::GetProperty(const std::st
 
     dbus_error_init(&err);
     VerifyOrExit(message != nullptr, ret = ClientError::OT_ERROR_FAILED);
-    otbr::DBus::TupleToDBusMessage(*message, std::tie(OTBR_DBUS_THREAD_INTERFACE, aPropertyName));
-    reply = DBus::UniqueDBusMessage(
+    otbr::dbus::TupleToDBusMessage(*message, std::tie(OTBR_DBUS_THREAD_INTERFACE, aPropertyName));
+    reply = dbus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
 
     VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
-    SuccessOrExit(DBus::CheckErrorMessage(reply.get()));
+    SuccessOrExit(dbus::CheckErrorMessage(reply.get()));
     VerifyOrExit(dbus_message_iter_init(reply.get(), &iter), ret = ClientError::OT_ERROR_FAILED);
-    VerifyOrExit(DBus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE,
+    VerifyOrExit(dbus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE,
                  ret = ClientError::OT_ERROR_FAILED);
 
 exit:
@@ -660,5 +660,5 @@ void ThreadApiDBus::sHandleDBusPendingCall(DBusPendingCall *aPending, void *aThr
     (api->*Handler)(aPending);
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

@@ -65,7 +65,7 @@ const static int PANID_LENGTH     = 10;
 const static int XPANID_LENGTH    = 64;
 const static int MASTERKEY_LENGTH = 64;
 
-UbusServer::UbusServer(Ncp::ControllerOpenThread *aController)
+UbusServer::UbusServer(ncp::ControllerOpenThread *aController)
 {
     mController = aController;
     mSecond     = 0;
@@ -78,7 +78,7 @@ UbusServer &UbusServer::GetInstance(void)
     return *sUbusServerInstance;
 }
 
-void UbusServer::Initialize(Ncp::ControllerOpenThread *aController)
+void UbusServer::Initialize(ncp::ControllerOpenThread *aController)
 {
     sUbusServerInstance = new UbusServer(aController);
     otThreadSetReceiveDiagnosticGetCallback(aController->GetInstance(), &UbusServer::HandleDiagnosticGetResponse,
@@ -1782,7 +1782,7 @@ exit:
 } // namespace ubus
 } // namespace otbr
 
-void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex)
+void UbusServerInit(otbr::ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex)
 {
     otbr::ubus::sNcpThreadMutex = aNcpThreadMutex;
     otbr::ubus::UbusServer::Initialize(aController);

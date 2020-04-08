@@ -34,7 +34,7 @@
 #include <dbus/dbus.h>
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 enum class ClientError
 {
@@ -213,7 +213,7 @@ enum class ClientError
 bool operator==(ClientError aError, int aValue);
 bool operator!=(ClientError aError, int aValue);
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_COMMON_ERROR_HPP_

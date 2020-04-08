@@ -55,7 +55,7 @@ int ComputeJoinerId(const char *aEui64, uint8_t *aJoinerId)
     int ret = -1;
 
     VerifyOrExit(strlen(aEui64) == otbr::SteeringData::kSizeJoinerId * 2);
-    VerifyOrExit(otbr::Utils::Hex2Bytes(aEui64, aJoinerId, otbr::SteeringData::kSizeJoinerId) ==
+    VerifyOrExit(otbr::utils::Hex2Bytes(aEui64, aJoinerId, otbr::SteeringData::kSizeJoinerId) ==
                  otbr::SteeringData::kSizeJoinerId);
     otbr::SteeringData::ComputeJoinerId(aJoinerId, aJoinerId);
     ret = 0;

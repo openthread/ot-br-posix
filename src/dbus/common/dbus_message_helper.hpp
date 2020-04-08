@@ -42,7 +42,7 @@
 #include "dbus/common/types.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrError &aError);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrError &aError);
@@ -571,7 +571,7 @@ otbrError DBusMessageToTuple(UniqueDBusMessage const &aMessage, std::tuple<Field
     return DBusMessageToTuple(*aMessage.get(), aValues);
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // DBUS_MESSAGE_HELPER_HPP_

@@ -50,7 +50,7 @@
 #define OT_PROPERTY_VALUE_SIZE 512
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 struct PropertyNameValue
 {
@@ -79,6 +79,6 @@ private:
     PropertyNameValue mPropertyList[OT_LIST_MAX_LENGTH];
 };
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr
 #endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_GET_HPP_

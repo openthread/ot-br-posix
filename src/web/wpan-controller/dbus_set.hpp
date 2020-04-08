@@ -44,7 +44,7 @@
 #include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 enum
 {
@@ -74,6 +74,6 @@ private:
     uint8_t     mPropertyType;
 };
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr
 #endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_SET_HPP_

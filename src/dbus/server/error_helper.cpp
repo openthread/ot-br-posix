@@ -70,7 +70,7 @@ static const std::pair<otError, const char *> sErrorNames[] = {
 };
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 const char *ConvertToDBusErrorName(otError aError)
 {
@@ -87,5 +87,5 @@ const char *ConvertToDBusErrorName(otError aError)
     return name;
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

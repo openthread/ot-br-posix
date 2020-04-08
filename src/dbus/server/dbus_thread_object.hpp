@@ -37,7 +37,7 @@
 #include "dbus/server/dbus_object.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 class DBusAgent;
 
@@ -54,7 +54,7 @@ public:
      */
     DBusThreadObject(DBusConnection *                 aConnection,
                      const std::string &              aInterfaceName,
-                     otbr::Ncp::ControllerOpenThread *aNcp);
+                     otbr::ncp::ControllerOpenThread *aNcp);
 
     /**
      * This method initializes the dbus thread object.
@@ -112,10 +112,10 @@ private:
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
 
-    otbr::Ncp::ControllerOpenThread *mNcp;
+    otbr::ncp::ControllerOpenThread *mNcp;
 };
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_THREAD_OBJECT_HPP_

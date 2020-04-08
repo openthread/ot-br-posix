@@ -49,7 +49,7 @@ static const char kSyslogIdent[]          = "otWeb";
 static const char kDefaultInterfaceName[] = "wpan0";
 static const char kDefaultListenAddr[]    = "0.0.0.0";
 
-std::unique_ptr<otbr::Web::WebServer> sServer(nullptr);
+std::unique_ptr<otbr::web::WebServer> sServer(nullptr);
 
 static void HandleSignal(int aSignal)
 {
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     signal(SIGTERM, HandleSignal);
     signal(SIGINT, HandleSignal);
 
-    sServer.reset(new otbr::Web::WebServer());
+    sServer.reset(new otbr::web::WebServer());
     sServer->StartWebServer(interfaceName, httpListenAddr, port);
 
     otbrLogDeinit();

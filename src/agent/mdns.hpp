@@ -40,7 +40,7 @@
 
 namespace otbr {
 
-namespace Mdns {
+namespace mdns {
 
 /**
  * MDNS state values.
@@ -176,7 +176,7 @@ public:
  * @}
  */
 
-} // namespace Mdns
+} // namespace mdns
 
 } // namespace otbr
 

@@ -37,7 +37,7 @@
 using std::placeholders::_1;
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 DBusObject::DBusObject(DBusConnection *aConnection, const std::string &aObjectPath)
     : mConnection(aConnection)
@@ -227,5 +227,5 @@ DBusObject::~DBusObject(void)
 {
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

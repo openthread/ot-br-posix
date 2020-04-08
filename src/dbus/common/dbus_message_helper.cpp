@@ -29,7 +29,7 @@
 #include "dbus/common/dbus_message_helper.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue)
 {
@@ -177,5 +177,5 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int64_t> &
     return DBusMessageEncodePrimitive(aIter, aValue);
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

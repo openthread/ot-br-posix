@@ -38,7 +38,7 @@
 #include "web/wpan-controller/wpan_controller.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 int DBusForm::ProcessReply(void)
 {
@@ -71,5 +71,5 @@ exit:
     return ret;
 }
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr

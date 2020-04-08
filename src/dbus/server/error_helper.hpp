@@ -37,7 +37,7 @@
 #include "dbus/common/error.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 /**
  * This function returns the string representation of an otError.
@@ -49,7 +49,7 @@ namespace DBus {
  */
 const char *ConvertToDBusErrorName(otError aError);
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_SERVER_ERROR_HELPER_HPP_

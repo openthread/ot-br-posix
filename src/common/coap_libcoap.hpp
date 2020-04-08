@@ -38,7 +38,7 @@
 
 namespace otbr {
 
-namespace Coap {
+namespace coap {
 
 /**
  * @addtogroup border-router-coap
@@ -315,7 +315,7 @@ private:
  * @}
  */
 
-} // namespace Coap
+} // namespace coap
 } // namespace otbr
 
 #endif // OTBR_COMMON_COAP_LIBCOAP_HPP_

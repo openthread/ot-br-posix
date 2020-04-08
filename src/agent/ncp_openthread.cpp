@@ -53,7 +53,7 @@ using std::chrono::steady_clock;
 
 #if OTBR_ENABLE_NCP_OPENTHREAD
 namespace otbr {
-namespace Ncp {
+namespace ncp {
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
     : mTriedAttach(false)
@@ -291,7 +291,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
     va_end(ap);
 }
 
-} // namespace Ncp
+} // namespace ncp
 } // namespace otbr
 
 void otPlatReset(otInstance *aInstance)

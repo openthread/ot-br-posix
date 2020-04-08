@@ -121,9 +121,9 @@ private:
                             uint16_t       aPort,
                             void *         aContext);
     static void    FeedCoap(const uint8_t *aBuffer, uint16_t aLength, void *aContext);
-    static void    HandleJoinerFinalize(const Coap::Resource &aResource,
-                                        const Coap::Message & aRequest,
-                                        Coap::Message &       aResponse,
+    static void    HandleJoinerFinalize(const coap::Resource &aResource,
+                                        const coap::Message & aRequest,
+                                        coap::Message &       aResponse,
                                         const uint8_t *       aIp6,
                                         uint16_t              aPort,
                                         void *                aContext);
@@ -132,8 +132,8 @@ private:
 
     Dtls::Server * mDtlsServer;
     Dtls::Session *mDtlsSession;
-    Coap::Agent *  mCoapAgent;
-    Coap::Resource mJoinerFinalizeHandler;
+    coap::Agent *  mCoapAgent;
+    coap::Resource mJoinerFinalizeHandler;
     bool           mNeedAppendKek;
 };
 

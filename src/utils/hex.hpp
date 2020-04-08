@@ -41,7 +41,7 @@
 
 namespace otbr {
 
-namespace Utils {
+namespace utils {
 
 int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength);
 
@@ -49,7 +49,7 @@ size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 
 size_t Long2Hex(const uint64_t aLong, char *aHex);
 
-} // namespace Utils
+} // namespace utils
 
 } // namespace otbr
 

@@ -43,7 +43,7 @@
 
 namespace otbr {
 
-namespace Mdns {
+namespace mdns {
 
 /**
  * This class implements MDNS service with avahi.
@@ -179,7 +179,7 @@ private:
  * @}
  */
 
-} // namespace Mdns
+} // namespace mdns
 
 } // namespace otbr
 

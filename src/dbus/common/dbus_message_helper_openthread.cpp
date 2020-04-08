@@ -31,7 +31,7 @@
 #include "dbus/common/dbus_message_helper.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrError &aError)
 {
@@ -403,5 +403,5 @@ exit:
     return err;
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

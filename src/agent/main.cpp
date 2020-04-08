@@ -49,8 +49,8 @@
 #include "agent/ncp_openthread.hpp"
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
-using otbr::DBus::DBusAgent;
-using otbr::Ncp::ControllerOpenThread;
+using otbr::dbus::DBusAgent;
+using otbr::ncp::ControllerOpenThread;
 #endif
 #endif
 
@@ -58,7 +58,7 @@ using otbr::Ncp::ControllerOpenThread;
 extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
 extern void UbusProcess(const fd_set &aReadFdSet);
 extern void UbusServerRun(void);
-extern void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+extern void UbusServerInit(otbr::ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
 std::mutex  threadMutex;
 #endif
 
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
     int                    opt;
     int                    ret           = EXIT_SUCCESS;
     const char *           interfaceName = kDefaultInterfaceName;
-    otbr::Ncp::Controller *ncp           = NULL;
+    otbr::ncp::Controller *ncp           = NULL;
     bool                   verbose       = false;
 
     std::set_new_handler(OnAllocateFailed);
@@ -220,10 +220,10 @@ int main(int argc, char *argv[])
     }
 
 #if OTBR_ENABLE_NCP_WPANTUND
-    ncp = otbr::Ncp::Controller::Create(interfaceName);
+    ncp = otbr::ncp::Controller::Create(interfaceName);
 #else
     VerifyOrExit(optind + 1 < argc, ret = EXIT_FAILURE);
-    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
+    ncp = otbr::ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
 #endif
     VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
 

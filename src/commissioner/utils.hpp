@@ -44,7 +44,7 @@
 #include <sys/socket.h>
 
 namespace otbr {
-namespace Utils {
+namespace utils {
 
 /**
  * This method computes number of bytes between start and end pointer
@@ -82,7 +82,7 @@ template <typename T> T Max(const T &lhs, const T &rhs)
     return lhs > rhs ? lhs : rhs;
 }
 
-} // namespace Utils
+} // namespace utils
 } // namespace otbr
 
 #endif // OTBR_COMMISSIONER_UTILS_HPP_

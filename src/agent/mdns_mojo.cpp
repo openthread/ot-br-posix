@@ -57,7 +57,7 @@
 #endif
 
 namespace otbr {
-namespace Mdns {
+namespace mdns {
 
 void MdnsMojoPublisher::LaunchMojoThreads(void)
 {
@@ -317,5 +317,5 @@ void Publisher::Destroy(Publisher *aPublisher)
     delete aPublisher;
 }
 
-} // namespace Mdns
+} // namespace mdns
 } // namespace otbr

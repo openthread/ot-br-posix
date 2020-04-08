@@ -42,7 +42,7 @@
 
 namespace otbr {
 
-namespace Coap {
+namespace coap {
 
 static void CoapAddressInit(coap_address_t &aAddress, const uint8_t *aIp6, uint16_t aPort)
 {
@@ -377,6 +377,6 @@ void Agent::Destroy(Agent *aAgent)
     delete static_cast<AgentLibcoap *>(aAgent);
 }
 
-} // namespace Coap
+} // namespace coap
 
 } // namespace otbr

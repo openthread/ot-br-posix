@@ -37,10 +37,10 @@ using std::string;
 using std::tuple;
 using std::vector;
 
-using otbr::DBus::DBusMessageEncode;
-using otbr::DBus::DBusMessageExtract;
-using otbr::DBus::DBusMessageToTuple;
-using otbr::DBus::TupleToDBusMessage;
+using otbr::dbus::DBusMessageEncode;
+using otbr::dbus::DBusMessageExtract;
+using otbr::dbus::DBusMessageToTuple;
+using otbr::dbus::TupleToDBusMessage;
 
 struct TestStruct
 {
@@ -49,7 +49,7 @@ struct TestStruct
     std::string name;
 };
 
-template <> struct otbr::DBus::DBusTypeTrait<TestStruct>
+template <> struct otbr::dbus::DBusTypeTrait<TestStruct>
 {
     static constexpr const char *TYPE_AS_STRING =
         //{uint8, uint32, string}
@@ -61,12 +61,12 @@ bool operator==(const TestStruct &aLhs, const TestStruct &aRhs)
     return aLhs.tag == aRhs.tag && aLhs.val == aRhs.val && aLhs.name == aRhs.name;
 }
 
-bool operator==(const otbr::DBus::ChannelQuality &aLhs, const otbr::DBus::ChannelQuality &aRhs)
+bool operator==(const otbr::dbus::ChannelQuality &aLhs, const otbr::dbus::ChannelQuality &aRhs)
 {
     return aLhs.mChannel == aRhs.mChannel && aLhs.mOccupancy == aRhs.mOccupancy;
 }
 
-bool operator==(const otbr::DBus::ChildInfo &aLhs, const otbr::DBus::ChildInfo &aRhs)
+bool operator==(const otbr::dbus::ChildInfo &aLhs, const otbr::dbus::ChildInfo &aRhs)
 {
     return aLhs.mExtAddress == aRhs.mExtAddress && aLhs.mTimeout == aRhs.mTimeout && aLhs.mAge == aRhs.mAge &&
            aLhs.mRloc16 == aRhs.mRloc16 && aLhs.mChildId == aRhs.mChildId &&
@@ -78,7 +78,7 @@ bool operator==(const otbr::DBus::ChildInfo &aLhs, const otbr::DBus::ChildInfo &
            aLhs.mIsStateRestoring == aRhs.mIsStateRestoring;
 }
 
-bool operator==(const otbr::DBus::NeighborInfo &aLhs, const otbr::DBus::NeighborInfo &aRhs)
+bool operator==(const otbr::dbus::NeighborInfo &aLhs, const otbr::dbus::NeighborInfo &aRhs)
 {
     return aLhs.mExtAddress == aRhs.mExtAddress && aLhs.mAge == aRhs.mAge && aLhs.mRloc16 == aRhs.mRloc16 &&
            aLhs.mLinkFrameCounter == aRhs.mLinkFrameCounter && aLhs.mMleFrameCounter == aRhs.mMleFrameCounter &&
@@ -89,14 +89,14 @@ bool operator==(const otbr::DBus::NeighborInfo &aLhs, const otbr::DBus::Neighbor
            aLhs.mFullNetworkData == aRhs.mFullNetworkData && aLhs.mIsChild == aRhs.mIsChild;
 }
 
-bool operator==(const otbr::DBus::LeaderData &aLhs, const otbr::DBus::LeaderData &aRhs)
+bool operator==(const otbr::dbus::LeaderData &aLhs, const otbr::dbus::LeaderData &aRhs)
 {
     return aLhs.mPartitionId == aRhs.mPartitionId && aLhs.mWeighting == aRhs.mWeighting &&
            aLhs.mDataVersion == aRhs.mDataVersion && aLhs.mStableDataVersion == aRhs.mStableDataVersion &&
            aLhs.mLeaderRouterId == aRhs.mLeaderRouterId;
 }
 
-bool operator==(const otbr::DBus::ActiveScanResult &aLhs, const otbr::DBus::ActiveScanResult &aRhs)
+bool operator==(const otbr::dbus::ActiveScanResult &aLhs, const otbr::dbus::ActiveScanResult &aRhs)
 {
     return aLhs.mExtAddress == aRhs.mExtAddress && aLhs.mNetworkName == aRhs.mNetworkName &&
            aLhs.mExtendedPanId == aRhs.mExtendedPanId && aLhs.mSteeringData == aRhs.mSteeringData &&
@@ -217,8 +217,8 @@ TEST(DBusMessage, TestStructMessage)
 TEST(DBusMessage, TestOtbrChannelQuality)
 {
     DBusMessage *                                  msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::ChannelQuality>> setVals({{1, 2}});
-    tuple<std::vector<otbr::DBus::ChannelQuality>> getVals;
+    tuple<std::vector<otbr::dbus::ChannelQuality>> setVals({{1, 2}});
+    tuple<std::vector<otbr::dbus::ChannelQuality>> getVals;
 
     CHECK(msg != NULL);
 
@@ -233,9 +233,9 @@ TEST(DBusMessage, TestOtbrChannelQuality)
 TEST(DBusMessage, TestOtbrChildInfo)
 {
     DBusMessage *                             msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::ChildInfo>> setVals(
+    tuple<std::vector<otbr::dbus::ChildInfo>> setVals(
         {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false, true}});
-    tuple<std::vector<otbr::DBus::ChildInfo>> getVals;
+    tuple<std::vector<otbr::dbus::ChildInfo>> getVals;
 
     CHECK(msg != NULL);
 
@@ -250,9 +250,9 @@ TEST(DBusMessage, TestOtbrChildInfo)
 TEST(DBusMessage, TestOtbrNeighborInfo)
 {
     DBusMessage *                                msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::NeighborInfo>> setVals(
+    tuple<std::vector<otbr::dbus::NeighborInfo>> setVals(
         {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false, true}});
-    tuple<std::vector<otbr::DBus::NeighborInfo>> getVals;
+    tuple<std::vector<otbr::dbus::NeighborInfo>> getVals;
 
     CHECK(msg != NULL);
 
@@ -267,8 +267,8 @@ TEST(DBusMessage, TestOtbrNeighborInfo)
 TEST(DBusMessage, TestOtbrLeaderData)
 {
     DBusMessage *                              msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::LeaderData>> setVals({{1, 2, 3, 4, 5}});
-    tuple<std::vector<otbr::DBus::LeaderData>> getVals;
+    tuple<std::vector<otbr::dbus::LeaderData>> setVals({{1, 2, 3, 4, 5}});
+    tuple<std::vector<otbr::dbus::LeaderData>> getVals;
 
     CHECK(msg != NULL);
 
@@ -283,8 +283,8 @@ TEST(DBusMessage, TestOtbrLeaderData)
 TEST(DBusMessage, TestOtbrActiveScanResults)
 {
     DBusMessage *                                    msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true}});
-    tuple<std::vector<otbr::DBus::ActiveScanResult>> getVals;
+    tuple<std::vector<otbr::dbus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true}});
+    tuple<std::vector<otbr::dbus::ActiveScanResult>> getVals;
 
     CHECK(msg != NULL);
 

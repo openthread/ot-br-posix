@@ -39,7 +39,7 @@
 #include "dbus/common/types.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 bool IsThreadActive(DeviceRole aRole);
 
@@ -620,7 +620,7 @@ private:
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 };
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_THREAD_API_DBUS_HPP_

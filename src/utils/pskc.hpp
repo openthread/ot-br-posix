@@ -48,7 +48,7 @@
 #include <mbedtls/cmac.h>
 
 namespace otbr {
-namespace Psk {
+namespace psk {
 
 enum
 {
@@ -79,7 +79,7 @@ private:
     uint8_t  mPskc[OT_PSKC_LENGTH];
 };
 
-} // namespace Psk
+} // namespace psk
 } // namespace otbr
 
 #endif // OTBR_UTILS_PSKC_HPP_

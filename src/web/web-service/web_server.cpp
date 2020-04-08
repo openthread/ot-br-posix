@@ -58,7 +58,7 @@
 #define OT_BUFFER_SIZE 1024
 
 namespace otbr {
-namespace Web {
+namespace web {
 
 WebServer::WebServer(void)
     : mServer(new HttpServer())
@@ -334,5 +334,5 @@ std::string WebServer::HandleCommission(const std::string &aCommissionRequest)
     return mWpanService.HandleCommission(aCommissionRequest);
 }
 
-} // namespace Web
+} // namespace web
 } // namespace otbr

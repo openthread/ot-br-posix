@@ -37,7 +37,7 @@
 #include "utils/hex.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 int DBusSet::ProcessReply(void)
 {
@@ -62,7 +62,7 @@ int DBusSet::ProcessReply(void)
     else if (mPropertyType == kPropertyType_Data)
     {
         char  propertyValueBytes[OT_SET_MAX_DATA_SIZE];
-        int   length = otbr::Utils::Hex2Bytes(mPropertyValue, (uint8_t *)propertyValueBytes, strlen(mPropertyValue));
+        int   length = otbr::utils::Hex2Bytes(mPropertyValue, (uint8_t *)propertyValueBytes, strlen(mPropertyValue));
         char *cur    = propertyValueBytes;
         dbus_message_append_args(messsage, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &cur, length, DBUS_TYPE_INVALID);
     }
@@ -84,5 +84,5 @@ exit:
     return ret;
 }
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr

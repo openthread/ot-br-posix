@@ -50,7 +50,7 @@ extern "C" {
 
 namespace otbr {
 
-namespace Ncp {
+namespace ncp {
 
 /**
  * This string is used to filter the property changed signal from wpantund.
@@ -530,7 +530,7 @@ void ControllerWpantund::Reset(void)
 {
 }
 
-} // namespace Ncp
+} // namespace ncp
 
 } // namespace otbr
 

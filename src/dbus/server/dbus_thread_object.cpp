@@ -86,11 +86,11 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue, size_t aSize)
 }
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 DBusThreadObject::DBusThreadObject(DBusConnection *                 aConnection,
                                    const std::string &              aInterfaceName,
-                                   otbr::Ncp::ControllerOpenThread *aNcp)
+                                   otbr::ncp::ControllerOpenThread *aNcp)
     : DBusObject(aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mNcp(aNcp)
 {
@@ -906,5 +906,5 @@ exit:
     return err;
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

@@ -35,7 +35,7 @@
 #include <dbus/dbus.h>
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 struct DBusMessageDeleter
 {
@@ -44,7 +44,7 @@ struct DBusMessageDeleter
 
 using UniqueDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr
 
 #endif // OTBR_DBUS_DBUS_RESOURCES_HPP_

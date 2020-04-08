@@ -33,7 +33,7 @@
 #include "dbus/server/error_helper.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 /**
  * This class represents a incoming call for a d-bus method.
@@ -109,7 +109,7 @@ public:
         UniqueDBusMessage reply{dbus_message_new_method_return(mMessage)};
 
         VerifyOrExit(reply != nullptr);
-        VerifyOrExit(otbr::DBus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
+        VerifyOrExit(otbr::dbus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
         dbus_connection_send(mConnection, reply.get(), nullptr);
 
@@ -182,5 +182,5 @@ private:
     DBusMessage *   mMessage;
 };
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

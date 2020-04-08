@@ -41,7 +41,7 @@
 #include "common/logging.hpp"
 
 namespace otbr {
-namespace Dbus {
+namespace dbus {
 
 class DBusBase
 {
@@ -76,6 +76,6 @@ private:
     char        mIface[DBUS_MAXIMUM_NAME_LENGTH + 1];
 };
 
-} // namespace Dbus
+} // namespace dbus
 } // namespace otbr
 #endif // OTBR_WEB_WPAN_CONTROLLER_DBUS_BASE_HPP_

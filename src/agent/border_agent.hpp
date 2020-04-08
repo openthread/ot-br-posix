@@ -63,7 +63,7 @@ public:
      * @param[in]   aNcp            A pointer to the NCP controller.
      *
      */
-    BorderAgent(Ncp::Controller *aNcp);
+    BorderAgent(ncp::Controller *aNcp);
 
     ~BorderAgent(void);
 
@@ -115,11 +115,11 @@ private:
     static void SendToCommissioner(void *aContext, int aEvent, va_list aArguments);
 #endif
 
-    static void HandleMdnsState(void *aContext, Mdns::State aState)
+    static void HandleMdnsState(void *aContext, mdns::State aState)
     {
         static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
     }
-    void HandleMdnsState(Mdns::State aState);
+    void HandleMdnsState(mdns::State aState);
     void PublishService(void);
     void StartPublishService(void);
     void StopPublishService(void);
@@ -136,8 +136,8 @@ private:
     static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
 
-    Mdns::Publisher *mPublisher;
-    Ncp::Controller *mNcp;
+    mdns::Publisher *mPublisher;
+    ncp::Controller *mNcp;
 
 #if OTBR_ENABLE_NCP_WPANTUND
     int mSocket;

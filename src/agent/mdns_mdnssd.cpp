@@ -47,7 +47,7 @@
 
 namespace otbr {
 
-namespace Mdns {
+namespace mdns {
 
 static const char *DNSErrorToString(DNSServiceErrorType aError)
 {
@@ -425,6 +425,6 @@ void Publisher::Destroy(Publisher *aPublisher)
     delete static_cast<PublisherMDnsSd *>(aPublisher);
 }
 
-} // namespace Mdns
+} // namespace mdns
 
 } // namespace otbr

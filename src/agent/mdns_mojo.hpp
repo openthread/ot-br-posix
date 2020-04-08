@@ -69,7 +69,7 @@
 #endif
 
 namespace otbr {
-namespace Mdns {
+namespace mdns {
 
 class MdnsMojoPublisher : public Publisher
 {
@@ -196,7 +196,7 @@ private:
     MdnsMojoPublisher &operator=(const MdnsMojoPublisher &) = delete;
 };
 
-} // namespace Mdns
+} // namespace mdns
 } // namespace otbr
 
 #endif // OTBR_AGENT_MDNS_MOJO_HPP__

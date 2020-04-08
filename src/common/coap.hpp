@@ -43,7 +43,7 @@
 
 namespace otbr {
 
-namespace Coap {
+namespace coap {
 
 /**
  * @addtogroup border-router-coap
@@ -353,7 +353,7 @@ public:
  * @}
  */
 
-} // namespace Coap
+} // namespace coap
 
 } // namespace otbr
 

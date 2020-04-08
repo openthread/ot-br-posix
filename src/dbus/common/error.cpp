@@ -29,7 +29,7 @@
 #include "dbus/common/error.hpp"
 
 namespace otbr {
-namespace DBus {
+namespace dbus {
 
 bool operator==(ClientError aError, int aValue)
 {
@@ -41,5 +41,5 @@ bool operator!=(ClientError aError, int aValue)
     return static_cast<int>(aError) != aValue;
 }
 
-} // namespace DBus
+} // namespace dbus
 } // namespace otbr

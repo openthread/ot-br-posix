@@ -64,7 +64,7 @@
 #define OT_PUBLISH_SERVICE_INTERVAL 20
 
 namespace otbr {
-namespace Web {
+namespace web {
 
 /**
  * This class provides web service to manage WPAN.
@@ -172,7 +172,7 @@ public:
 private:
     int RunCommission(CommissionerArgs aArgs);
 
-    otbr::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
+    otbr::dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
     int                         mNetworksCount;
     char                        mIfName[IFNAMSIZ];
     std::string                 mNetworkName;
@@ -203,7 +203,7 @@ private:
     static const char *kBorderAgentPort;
 };
 
-} // namespace Web
+} // namespace web
 } // namespace otbr
 
 #endif // OTBR_WEB_WEB_SERVICE_WPAN_SERVICE_

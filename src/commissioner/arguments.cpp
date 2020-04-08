@@ -177,7 +177,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
         {
         case 'E':
             isEui64Set = true;
-            VerifyOrExit(sizeof(joinerEui64) == Utils::Hex2Bytes(optarg, joinerEui64, sizeof(joinerEui64)),
+            VerifyOrExit(sizeof(joinerEui64) == utils::Hex2Bytes(optarg, joinerEui64, sizeof(joinerEui64)),
                          fprintf(stderr, "Invalid joiner EUI64!"));
             break;
         case 'D':
@@ -205,7 +205,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
         }
         case 'X':
             isXPanIdSet = true;
-            VerifyOrExit(sizeof(xPanId) == Utils::Hex2Bytes(optarg, xPanId, sizeof(xPanId)),
+            VerifyOrExit(sizeof(xPanId) == utils::Hex2Bytes(optarg, xPanId, sizeof(xPanId)),
                          fprintf(stderr, "Invalid xpanid!"));
             break;
         case 'H':
@@ -272,7 +272,7 @@ otbrError ParseArgs(int aArgc, char *aArgv[], CommissionerArgs &aArgs)
     }
 
     {
-        otbr::Psk::Pskc pskc;
+        otbr::psk::Pskc pskc;
 
         memcpy(aArgs.mPSKc, pskc.ComputePskc(xPanId, networkName, networkPassword), sizeof(aArgs.mPSKc));
     }

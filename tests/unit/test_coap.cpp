@@ -40,16 +40,16 @@ using namespace otbr;
 
 struct TestContext
 {
-    Coap::Agent *mAgent;
+    coap::Agent *mAgent;
     int          mSocket;
     sockaddr_in6 mSockName;
     bool         mRequestHandled;
     bool         mResponseHandled;
 };
 
-void TestRequestHandler(const Coap::Resource &aResource,
-                        const Coap::Message & aRequest,
-                        Coap::Message &       aResponse,
+void TestRequestHandler(const coap::Resource &aResource,
+                        const coap::Message & aRequest,
+                        coap::Message &       aResponse,
                         const uint8_t *       aIp6,
                         uint16_t              aPort,
                         void *                aContext)
@@ -57,7 +57,7 @@ void TestRequestHandler(const Coap::Resource &aResource,
     TestContext &context = *static_cast<TestContext *>(aContext);
 
     context.mRequestHandled = true;
-    aResponse.SetCode(Coap::kCodeChanged);
+    aResponse.SetCode(coap::kCodeChanged);
 
     (void)aResource;
     (void)aRequest;
@@ -66,7 +66,7 @@ void TestRequestHandler(const Coap::Resource &aResource,
     (void)aContext;
 }
 
-void TestResponseHandler(const Coap::Message &aMessage, void *aContext)
+void TestResponseHandler(const coap::Message &aMessage, void *aContext)
 {
     TestContext &context = *static_cast<TestContext *>(aContext);
 
@@ -88,13 +88,13 @@ ssize_t TestNetworkSender(const uint8_t *aBuffer, uint16_t aLength, const uint8_
 
 TEST_GROUP(Coap)
 {
-    Coap::Agent *agent;
+    coap::Agent *agent;
 };
 
 TEST(Coap, TestAddRemoveResource)
 {
-    Coap::Resource resource("test/a", TestRequestHandler, NULL);
-    agent = Coap::Agent::Create(NULL, NULL);
+    coap::Resource resource("test/a", TestRequestHandler, NULL);
+    agent = coap::Agent::Create(NULL, NULL);
 
     CHECK_EQUAL(OTBR_ERROR_NONE, agent->AddResource(resource));
 
@@ -108,19 +108,19 @@ TEST(Coap, TestAddRemoveResource)
     CHECK_EQUAL(OTBR_ERROR_ERRNO, agent->RemoveResource(resource));
     CHECK_EQUAL(ENOENT, errno);
 
-    Coap::Agent::Destroy(agent);
+    coap::Agent::Destroy(agent);
 }
 
 TEST(Coap, TestRequest)
 {
     TestContext context;
 
-    Coap::Resource   resource("cool", TestRequestHandler, &context);
+    coap::Resource   resource("cool", TestRequestHandler, &context);
     uint16_t         token = htons(1);
     otbr::Ip6Address addr(0);
     uint8_t          buffer[128];
 
-    agent = Coap::Agent::Create(TestNetworkSender, &context);
+    agent = coap::Agent::Create(TestNetworkSender, &context);
 
     context.mSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
     CHECK(context.mSocket != -1);
@@ -138,7 +138,7 @@ TEST(Coap, TestRequest)
     context.mResponseHandled = false;
 
     CHECK_EQUAL(OTBR_ERROR_NONE, agent->AddResource(resource));
-    Coap::Message *message = agent->NewMessage(Coap::kTypeConfirmable, Coap::kCodePost,
+    coap::Message *message = agent->NewMessage(coap::kTypeConfirmable, coap::kCodePost,
                                                reinterpret_cast<const uint8_t *>(&token), sizeof(token));
     message->SetPath("cool");
 
@@ -165,5 +165,5 @@ TEST(Coap, TestRequest)
 
     CHECK_EQUAL(0, close(context.mSocket));
 
-    Coap::Agent::Destroy(agent);
+    coap::Agent::Destroy(agent);
 }

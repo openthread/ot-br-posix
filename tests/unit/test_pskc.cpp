@@ -32,7 +32,7 @@
 
 TEST_GROUP(Pskc)
 {
-    otbr::Psk::Pskc mPSKc;
+    otbr::psk::Pskc mPSKc;
 };
 
 TEST(Pskc, Test123456_0001020304050607_OpenThread)
