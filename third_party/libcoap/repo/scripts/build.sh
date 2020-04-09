@@ -23,10 +23,10 @@ case "${PLATFORM}" in
              ;;
 esac
 
-error=$?
-if test $error = 0 -a -n "$WITH_TESTS" ; then
+err=$?
+if test $err = 0 -a -n "$WITH_TESTS" ; then
     tests/testdriver
-    error=$?
+    err=$?
 fi
 
-exit $error
+exit $err

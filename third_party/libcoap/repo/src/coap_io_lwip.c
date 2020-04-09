@@ -67,7 +67,7 @@ static void coap_recv(void *arg, struct udp_pcb *upcb, struct pbuf *p, const ip_
 
 coap_endpoint_t *coap_new_endpoint(const coap_address_t *addr, int flags) {
 	coap_endpoint_t *result;
-	err_t error;
+	err_t err;
 
 	LWIP_ASSERT("Flags not supported for LWIP endpoints", flags == COAP_ENDPOINT_NOSEC);
 
@@ -78,8 +78,8 @@ coap_endpoint_t *coap_new_endpoint(const coap_address_t *addr, int flags) {
 	if (result->pcb == NULL) goto error;
 
 	udp_recv(result->pcb, coap_recv, (void*)result);
-	error = udp_bind(result->pcb, &addr->addr, addr->port);
-	if (error) {
+	err = udp_bind(result->pcb, &addr->addr, addr->port);
+	if (err) {
 		udp_remove(result->pcb);
 		goto error;
 	}

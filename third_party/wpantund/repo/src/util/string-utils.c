@@ -244,8 +244,8 @@ strtologmask(const char* value, int prev_mask)
 				mask |= LOG_MASK(LOG_CRIT);
 			}
 		}
-		if (strcasestr(value, "error") != NULL) {
-			if (strcasestr(value, "-error") != NULL) {
+		if (strcasestr(value, "err") != NULL) {
+			if (strcasestr(value, "-err") != NULL) {
 				mask &= ~LOG_MASK(LOG_ERR);
 			} else {
 				mask |= LOG_MASK(LOG_ERR);
