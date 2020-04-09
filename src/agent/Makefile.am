@@ -60,6 +60,7 @@ otbr_agent_LDFLAGS = \
     $(NULL)
 
 otbr_agent_CPPFLAGS                                           = \
+    $(DBUS_CFLAGS)                                              \
     $(MBEDTLS_CPPFLAGS)                                         \
     $(OPENTHREAD_CPPFLAGS)                                      \
     -I$(top_srcdir)/include                                     \

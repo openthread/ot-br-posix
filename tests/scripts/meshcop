@@ -494,7 +494,7 @@ joiner_start()
 {
   write_syslog 'JOINER START'
   cd ${TEST_BASE}
-  expect -f-  <<EOF || die 'JOINER FAILED'
+  sudo expect -f-  <<EOF || die 'JOINER FAILED'
 spawn ${ot_cli} ${JOINER_NODE_ID}
 send "ifconfig up\r\n"
 expect "Done"

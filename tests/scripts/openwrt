@@ -63,7 +63,7 @@ do_build()
 
 do_clean()
 {
-    exit_code=$?
+    local exit_code=$?
     rm feeds.conf || true
     docker stop "${CONTAINER_NAME}" || true
     exit $exit_code
