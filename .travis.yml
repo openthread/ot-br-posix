@@ -6,7 +6,7 @@ cache:
   directories:
   - $HOME/.cache/tools
 
-before_install: .travis/before_install.sh
+before_install: ./tests/scripts/bootstrap.sh
 script: .travis/script.sh
 after_success:
   - .travis/after_success.sh
