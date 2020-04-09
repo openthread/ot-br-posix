@@ -46,19 +46,19 @@ static ClientError NameToDeviceRole(const std::string &aRoleName, DeviceRole &aD
         {OTBR_ROLE_NAME_CHILD, OTBR_DEVICE_ROLE_CHILD},       {OTBR_ROLE_NAME_ROUTER, OTBR_DEVICE_ROLE_ROUTER},
         {OTBR_ROLE_NAME_LEADER, OTBR_DEVICE_ROLE_LEADER},
     };
-    ClientError err = ClientError::OT_ERROR_NOT_FOUND;
+    ClientError error = ClientError::OT_ERROR_NOT_FOUND;
 
     for (const auto &p : sRoleMap)
     {
         if (p.first == aRoleName)
         {
             aDeviceRole = p.second;
-            err         = ClientError::ERROR_NONE;
+            error       = ClientError::ERROR_NONE;
             break;
         }
     }
 
-    return err;
+    return error;
 }
 
 bool IsThreadActive(DeviceRole aRole)
@@ -98,17 +98,17 @@ ThreadApiDBus::ThreadApiDBus(DBusConnection *aConnection, const std::string &aIn
 ClientError ThreadApiDBus::SubscribeDeviceRoleSignal(void)
 {
     std::string matchRule = "type='signal',interface='" DBUS_INTERFACE_PROPERTIES "'";
-    DBusError   err;
+    DBusError   error;
     ClientError ret = ClientError::ERROR_NONE;
 
-    dbus_error_init(&err);
-    dbus_bus_add_match(mConnection, matchRule.c_str(), &err);
+    dbus_error_init(&error);
+    dbus_bus_add_match(mConnection, matchRule.c_str(), &error);
 
-    VerifyOrExit(!dbus_error_is_set(&err), ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = ClientError::OT_ERROR_FAILED);
 
     dbus_connection_add_filter(mConnection, sDBusMessageFilter, this, nullptr);
 exit:
-    dbus_error_free(&err);
+    dbus_error_free(&error);
     return ret;
 }
 
@@ -161,19 +161,19 @@ void ThreadApiDBus::AddDeviceRoleHandler(const DeviceRoleHandler &aHandler)
 
 ClientError ThreadApiDBus::Scan(const ScanHandler &aHandler)
 {
-    ClientError err = ClientError::ERROR_NONE;
+    ClientError error = ClientError::ERROR_NONE;
 
-    VerifyOrExit(mScanHandler == nullptr, err = ClientError::OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mScanHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
     mScanHandler = aHandler;
 
-    err = CallDBusMethodAsync(OTBR_DBUS_SCAN_METHOD,
-                              &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::ScanPendingCallHandler>);
-    if (err != ClientError::ERROR_NONE)
+    error = CallDBusMethodAsync(OTBR_DBUS_SCAN_METHOD,
+                                &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::ScanPendingCallHandler>);
+    if (error != ClientError::ERROR_NONE)
     {
         mScanHandler = nullptr;
     }
 exit:
-    return err;
+    return error;
 }
 
 void ThreadApiDBus::ScanPendingCallHandler(DBusPendingCall *aPending)
@@ -204,27 +204,27 @@ ClientError ThreadApiDBus::Attach(const std::string &         aNetworkName,
                                   uint32_t                    aChannelMask,
                                   const OtResultHandler &     aHandler)
 {
-    ClientError err  = ClientError::ERROR_NONE;
-    const auto  args = std::tie(aMasterKey, aPanId, aNetworkName, aExtPanId, aPSKc, aChannelMask);
+    ClientError error = ClientError::ERROR_NONE;
+    const auto  args  = std::tie(aMasterKey, aPanId, aNetworkName, aExtPanId, aPSKc, aChannelMask);
 
-    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, err = ClientError::OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
     mAttachHandler = aHandler;
 
     if (aHandler)
     {
-        err = CallDBusMethodAsync(OTBR_DBUS_ATTACH_METHOD, args,
-                                  &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::AttachPendingCallHandler>);
+        error = CallDBusMethodAsync(OTBR_DBUS_ATTACH_METHOD, args,
+                                    &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::AttachPendingCallHandler>);
     }
     else
     {
-        err = CallDBusMethodSync(OTBR_DBUS_ATTACH_METHOD, args);
+        error = CallDBusMethodSync(OTBR_DBUS_ATTACH_METHOD, args);
     }
-    if (err != ClientError::ERROR_NONE)
+    if (error != ClientError::ERROR_NONE)
     {
         mAttachHandler = nullptr;
     }
 exit:
-    return err;
+    return error;
 }
 
 void ThreadApiDBus::AttachPendingCallHandler(DBusPendingCall *aPending)
@@ -244,27 +244,27 @@ void ThreadApiDBus::AttachPendingCallHandler(DBusPendingCall *aPending)
 
 ClientError ThreadApiDBus::FactoryReset(const OtResultHandler &aHandler)
 {
-    ClientError err = ClientError::ERROR_NONE;
+    ClientError error = ClientError::ERROR_NONE;
 
-    VerifyOrExit(mFactoryResetHandler == nullptr, err = ClientError::OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mFactoryResetHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
     mFactoryResetHandler = aHandler;
 
     if (aHandler)
     {
-        err =
+        error =
             CallDBusMethodAsync(OTBR_DBUS_FACTORY_RESET_METHOD,
                                 &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::FactoryResetPendingCallHandler>);
     }
     else
     {
-        err = CallDBusMethodSync(OTBR_DBUS_FACTORY_RESET_METHOD);
+        error = CallDBusMethodSync(OTBR_DBUS_FACTORY_RESET_METHOD);
     }
-    if (err != ClientError::ERROR_NONE)
+    if (error != ClientError::ERROR_NONE)
     {
         mFactoryResetHandler = nullptr;
     }
 exit:
-    return err;
+    return error;
 }
 
 void ThreadApiDBus::FactoryResetPendingCallHandler(DBusPendingCall *aPending)
@@ -294,28 +294,28 @@ ClientError ThreadApiDBus::JoinerStart(const std::string &    aPskd,
                                        const std::string &    aVendorData,
                                        const OtResultHandler &aHandler)
 {
-    ClientError err  = ClientError::ERROR_NONE;
-    const auto  args = std::tie(aPskd, aProvisioningUrl, aVendorName, aVendorModel, aVendorSwVersion, aVendorData);
+    ClientError error = ClientError::ERROR_NONE;
+    const auto  args  = std::tie(aPskd, aProvisioningUrl, aVendorName, aVendorModel, aVendorSwVersion, aVendorData);
     DBusPendingCallNotifyFunction notifyFunc =
         aHandler ? &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::JoinerStartPendingCallHandler> : nullptr;
 
-    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, err = ClientError::OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
     mJoinerHandler = aHandler;
 
     if (aHandler)
     {
-        err = CallDBusMethodAsync(OTBR_DBUS_JOINER_START_METHOD, args, notifyFunc);
+        error = CallDBusMethodAsync(OTBR_DBUS_JOINER_START_METHOD, args, notifyFunc);
     }
     else
     {
-        err = CallDBusMethodSync(OTBR_DBUS_JOINER_START_METHOD, args);
+        error = CallDBusMethodSync(OTBR_DBUS_JOINER_START_METHOD, args);
     }
-    if (err != ClientError::ERROR_NONE)
+    if (error != ClientError::ERROR_NONE)
     {
         mJoinerHandler = nullptr;
     }
 exit:
-    return err;
+    return error;
 }
 
 void ThreadApiDBus::JoinerStartPendingCallHandler(DBusPendingCall *aPending)
@@ -381,12 +381,12 @@ ClientError ThreadApiDBus::GetLinkMode(LinkModeConfig &aConfig)
 ClientError ThreadApiDBus::GetDeviceRole(DeviceRole &aRole)
 {
     std::string roleName;
-    ClientError err;
+    ClientError error;
 
-    SuccessOrExit(err = GetProperty(OTBR_DBUS_PROPERTY_DEVICE_ROLE, roleName));
-    SuccessOrExit(err = NameToDeviceRole(roleName, aRole));
+    SuccessOrExit(error = GetProperty(OTBR_DBUS_PROPERTY_DEVICE_ROLE, roleName));
+    SuccessOrExit(error = NameToDeviceRole(roleName, aRole));
 exit:
-    return err;
+    return error;
 }
 
 ClientError ThreadApiDBus::GetNetworkName(std::string &aNetworkName)
@@ -516,16 +516,16 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName)
                                                            (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                            OTBR_DBUS_THREAD_INTERFACE, aMethodName.c_str()));
     UniqueDBusMessage reply = nullptr;
-    DBusError         err;
+    DBusError         error;
 
-    dbus_error_init(&err);
+    dbus_error_init(&error);
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
     reply = UniqueDBusMessage(
-        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
-    VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::ERROR_DBUS);
+        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
+    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
-    dbus_error_free(&err);
+    dbus_error_free(&error);
     return ret;
 }
 
@@ -556,17 +556,17 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName, co
                                                                  (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                                  OTBR_DBUS_THREAD_INTERFACE, aMethodName.c_str()));
     DBus::UniqueDBusMessage reply = nullptr;
-    DBusError               err;
+    DBusError               error;
 
-    dbus_error_init(&err);
+    dbus_error_init(&error);
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
     VerifyOrExit(otbr::DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
     reply = DBus::UniqueDBusMessage(
-        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
-    VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::ERROR_DBUS);
+        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
+    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
-    dbus_error_free(&err);
+    dbus_error_free(&error);
     return ret;
 }
 
@@ -602,10 +602,10 @@ ClientError ThreadApiDBus::SetProperty(const std::string &aPropertyName, const V
                                                                  DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_SET_METHOD));
     DBus::UniqueDBusMessage reply = nullptr;
     ClientError             ret   = ClientError::ERROR_NONE;
-    DBusError               err;
+    DBusError               error;
     DBusMessageIter         iter;
 
-    dbus_error_init(&err);
+    dbus_error_init(&error);
     VerifyOrExit(message != nullptr, ret = ClientError::OT_ERROR_FAILED);
 
     dbus_message_iter_init_append(message.get(), &iter);
@@ -615,12 +615,12 @@ ClientError ThreadApiDBus::SetProperty(const std::string &aPropertyName, const V
     VerifyOrExit(DBus::DBusMessageEncodeToVariant(&iter, aValue) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
 
     reply = DBus::UniqueDBusMessage(
-        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
+        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
-    dbus_error_free(&err);
+    dbus_error_free(&error);
     return ret;
 }
 
@@ -632,23 +632,23 @@ template <typename ValType> ClientError ThreadApiDBus::GetProperty(const std::st
     DBus::UniqueDBusMessage reply = nullptr;
 
     ClientError     ret = ClientError::ERROR_NONE;
-    DBusError       err;
+    DBusError       error;
     DBusMessageIter iter;
 
-    dbus_error_init(&err);
+    dbus_error_init(&error);
     VerifyOrExit(message != nullptr, ret = ClientError::OT_ERROR_FAILED);
     otbr::DBus::TupleToDBusMessage(*message, std::tie(OTBR_DBUS_THREAD_INTERFACE, aPropertyName));
     reply = DBus::UniqueDBusMessage(
-        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &err));
+        dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    VerifyOrExit(!dbus_error_is_set(&err) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
     SuccessOrExit(DBus::CheckErrorMessage(reply.get()));
     VerifyOrExit(dbus_message_iter_init(reply.get(), &iter), ret = ClientError::OT_ERROR_FAILED);
     VerifyOrExit(DBus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE,
                  ret = ClientError::OT_ERROR_FAILED);
 
 exit:
-    dbus_error_free(&err);
+    dbus_error_free(&error);
     return ret;
 }
 

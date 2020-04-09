@@ -131,15 +131,15 @@ public:
     {
         UniqueDBusMessage signalMsg{
             dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str())};
-        otbrError err = OTBR_ERROR_NONE;
+        otbrError error = OTBR_ERROR_NONE;
 
-        VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
-        VerifyOrExit(err = otbr::DBus::TupleToDBusMessage(*signalMsg, aArgs));
+        VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
+        VerifyOrExit(error = otbr::DBus::TupleToDBusMessage(*signalMsg, aArgs));
 
-        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
 
     exit:
-        return err;
+        return error;
     }
 
     /**
@@ -161,35 +161,35 @@ public:
         UniqueDBusMessage signalMsg{
             dbus_message_new_signal(mObjectPath.c_str(), DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL)};
         DBusMessageIter iter, subIter, dictEntryIter;
-        otbrError       err = OTBR_ERROR_NONE;
+        otbrError       error = OTBR_ERROR_NONE;
 
-        VerifyOrExit(signalMsg != nullptr, err = OTBR_ERROR_DBUS);
+        VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
         dbus_message_iter_init_append(signalMsg.get(), &iter);
 
         // interface_name
-        VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE, err = OTBR_ERROR_DBUS);
+        VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE, error = OTBR_ERROR_DBUS);
 
         // changed_properties
         VerifyOrExit(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
                                                       "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}",
                                                       &subIter),
-                     err = OTBR_ERROR_DBUS);
+                     error = OTBR_ERROR_DBUS);
         VerifyOrExit(dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter),
-                     err = OTBR_ERROR_DBUS);
+                     error = OTBR_ERROR_DBUS);
 
-        SuccessOrExit(err = DBusMessageEncode(&dictEntryIter, aPropertyName));
-        SuccessOrExit(err = DBusMessageEncodeToVariant(&dictEntryIter, aValue));
+        SuccessOrExit(error = DBusMessageEncode(&dictEntryIter, aPropertyName));
+        SuccessOrExit(error = DBusMessageEncodeToVariant(&dictEntryIter, aValue));
 
-        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter), err = OTBR_ERROR_DBUS);
-        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter), err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter), error = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter), error = OTBR_ERROR_DBUS);
 
         // invalidated_properties
-        SuccessOrExit(err = DBusMessageEncode(&iter, std::vector<std::string>()));
+        SuccessOrExit(error = DBusMessageEncode(&iter, std::vector<std::string>()));
 
-        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
 
     exit:
-        return err;
+        return error;
     }
 
     /**

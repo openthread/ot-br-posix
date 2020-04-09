@@ -212,13 +212,13 @@ void MdnsMojoPublisher::StopPublishTask(void)
 
 otbrError MdnsMojoPublisher::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
 {
-    otbrError                err = OTBR_ERROR_NONE;
+    otbrError                error = OTBR_ERROR_NONE;
     std::vector<std::string> text;
     va_list                  args;
 
     va_start(args, aType);
 
-    VerifyOrExit(mConnector != nullptr, err = OTBR_ERROR_MDNS);
+    VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
     for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
     {
         const char *value = va_arg(args, const char *);
@@ -230,7 +230,7 @@ otbrError MdnsMojoPublisher::PublishService(uint16_t aPort, const char *aName, c
 
 exit:
     va_end(args);
-    return err;
+    return error;
 }
 
 void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort,

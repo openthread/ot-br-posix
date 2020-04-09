@@ -75,15 +75,15 @@ ControllerOpenThread::~ControllerOpenThread(void)
 
 otbrError ControllerOpenThread::Init(void)
 {
-    otbrError err = OTBR_ERROR_NONE;
+    otbrError error = OTBR_ERROR_NONE;
 
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
     otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
-    VerifyOrExit(mThreadHelper->Init() == OT_ERROR_NONE, err = OTBR_ERROR_OPENTHREAD);
+    VerifyOrExit(mThreadHelper->Init() == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 exit:
-    return err;
+    return error;
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
