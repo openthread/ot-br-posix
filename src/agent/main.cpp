@@ -55,11 +55,11 @@ using otbr::Ncp::ControllerOpenThread;
 #endif
 
 #if OTBR_ENABLE_OPENWRT
-extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
-extern void UbusProcess(const fd_set &aReadFdSet);
-extern void UbusServerRun(void);
-extern void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
-std::mutex  threadMutex;
+extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
+extern void       UbusProcess(const fd_set &aReadFdSet);
+extern void       UbusServerRun(void);
+extern void       UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+static std::mutex sThreadMutex;
 #endif
 
 static const char kSyslogIdent[]          = "otbr-agent";
@@ -116,7 +116,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 #if OTBR_ENABLE_OPENWRT
         UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
-        threadMutex.unlock();
+        sThreadMutex.unlock();
 #endif
 
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
@@ -133,7 +133,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         if (rval >= 0)
         {
 #if OTBR_ENABLE_OPENWRT
-            threadMutex.lock();
+            sThreadMutex.lock();
             UbusProcess(mainloop.mReadFdSet);
 #endif
             aInstance.Process(mainloop);
@@ -145,7 +145,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         else
         {
 #if OTBR_ENABLE_OPENWRT
-            threadMutex.lock();
+            sThreadMutex.lock();
 #endif
             error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 #if OTBR_ENABLE_OPENWRT
         ControllerOpenThread *ncpThread = reinterpret_cast<ControllerOpenThread *>(ncp);
 
-        UbusServerInit(ncpThread, &threadMutex);
+        UbusServerInit(ncpThread, &sThreadMutex);
         std::thread(UbusServerRun).detach();
 #endif
 

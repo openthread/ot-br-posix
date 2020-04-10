@@ -57,11 +57,17 @@ const static int XPANID_LENGTH    = 64;
 const static int MASTERKEY_LENGTH = 64;
 
 UbusServer::UbusServer(Ncp::ControllerOpenThread *aController)
+    : mIfFinishScan(false)
+    , mContext(nullptr)
+    , mSockPath(nullptr)
+    , mController(aController)
+    , mSecond(0)
 {
-    mController = aController;
-    mSecond     = 0;
-    blob_buf_init(&mNetworkdataBuf, 0);
+    memset(&mNetworkdataBuf, 0, sizeof(mNetworkdataBuf));
+    memset(&mBuf, 0, sizeof(mBuf));
+
     blob_buf_init(&mBuf, 0);
+    blob_buf_init(&mNetworkdataBuf, 0);
 }
 
 UbusServer &UbusServer::GetInstance(void)
@@ -1805,12 +1811,13 @@ exit:
 void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex)
 {
     otbr::ubus::sNcpThreadMutex = aNcpThreadMutex;
+    otbr::ubus::sUbusEfd        = eventfd(0, 0);
+
     otbr::ubus::UbusServer::Initialize(aController);
 
-    otbr::ubus::sUbusEfd = eventfd(0, 0);
     if (otbr::ubus::sUbusEfd == -1)
     {
-        perror("ubus eventfd create failed\n");
+        perror("Failed to create eventfd for ubus");
         exit(EXIT_FAILURE);
     }
 }

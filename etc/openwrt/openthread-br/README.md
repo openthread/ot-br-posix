@@ -1,7 +1,7 @@
 OpenThread Border Router on OpenWRT
 ===================================
 
-## Get Started
+## Build
 
 This is for local development.
 
@@ -47,4 +47,13 @@ Copy the generated **ipk** file into OpenWRT, and install with **opkg**.
 
 ```bash
 opkg install openthread-br-1.0*.ipk
+```
+
+## Usage
+
+Start otbr-agent.
+
+```bash
+# Assuming that ttyUSB0 is a RCP with baudrate 115200.
+/usr/sbin/otbr-agent /dev/ttyUSB0 115200
 ```
