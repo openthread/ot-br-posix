@@ -39,6 +39,7 @@ libotbr_dbus_server_la_CXXFLAGS   = \
 
 libotbr_dbus_server_la_SOURCES       = \
     dbus_object.cpp                    \
+    error_helper.cpp                   \
     $(NULL)
 
 if OTBR_ENABLE_NCP_OPENTHREAD
@@ -73,6 +74,7 @@ noinst_HEADERS            = \
     dbus_object.hpp         \
     dbus_request.hpp        \
     dbus_thread_object.hpp  \
+    error_helper.hpp        \
     $(NULL)
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

@@ -101,20 +101,21 @@ void ThreadHelper::AddDeviceRoleHandler(DeviceRoleHandler aHandler)
 
 void ThreadHelper::Scan(ScanHandler aHandler)
 {
-    otError err = OT_ERROR_NONE;
+    otError error = OT_ERROR_NONE;
 
     VerifyOrExit(aHandler != nullptr);
     mScanHandler = aHandler;
     mScanResults.clear();
 
-    err = otLinkActiveScan(mInstance, /*scanChannels =*/0, /*scanDuration=*/0, &ThreadHelper::sActiveScanHandler, this);
+    error =
+        otLinkActiveScan(mInstance, /*scanChannels =*/0, /*scanDuration=*/0, &ThreadHelper::sActiveScanHandler, this);
 
 exit:
-    if (err != OT_ERROR_NONE)
+    if (error != OT_ERROR_NONE)
     {
         if (aHandler)
         {
-            mScanHandler(err, {});
+            mScanHandler(error, {});
         }
         mScanHandler = nullptr;
     }
@@ -193,19 +194,19 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
                           ResultHandler               aHandler)
 
 {
-    otError         err = OT_ERROR_NONE;
+    otError         error = OT_ERROR_NONE;
     otExtendedPanId extPanId;
     otMasterKey     masterKey;
     otPskc          pskc;
     uint32_t        channelMask;
     uint8_t         channel;
 
-    VerifyOrExit(aHandler != nullptr, err = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, err = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
     mAttachHandler = aHandler;
-    VerifyOrExit(aMasterKey.empty() || aMasterKey.size() == sizeof(masterKey.m8), err = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), err = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(aChannelMask != 0, err = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aMasterKey.empty() || aMasterKey.size() == sizeof(masterKey.m8), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aChannelMask != 0, error = OT_ERROR_INVALID_ARGS);
 
     while (aPanId == UINT16_MAX)
     {
@@ -244,13 +245,13 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 
     if (!otIp6IsEnabled(mInstance))
     {
-        SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
+        SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
     }
 
-    SuccessOrExit(err = otThreadSetNetworkName(mInstance, aNetworkName.c_str()));
-    SuccessOrExit(err = otLinkSetPanId(mInstance, aPanId));
-    SuccessOrExit(err = otThreadSetExtendedPanId(mInstance, &extPanId));
-    SuccessOrExit(err = otThreadSetMasterKey(mInstance, &masterKey));
+    SuccessOrExit(error = otThreadSetNetworkName(mInstance, aNetworkName.c_str()));
+    SuccessOrExit(error = otLinkSetPanId(mInstance, aPanId));
+    SuccessOrExit(error = otThreadSetExtendedPanId(mInstance, &extPanId));
+    SuccessOrExit(error = otThreadSetMasterKey(mInstance, &masterKey));
 
     channelMask = otPlatRadioGetPreferredChannelMask(mInstance) & aChannelMask;
 
@@ -258,20 +259,20 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     {
         channelMask = otLinkGetSupportedChannelMask(mInstance) & aChannelMask;
     }
-    VerifyOrExit(channelMask != 0, otbrLog(OTBR_LOG_WARNING, "Invalid channel mask"), err = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(channelMask != 0, otbrLog(OTBR_LOG_WARNING, "Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
 
     channel = RandomChannelFromChannelMask(channelMask);
     SuccessOrExit(otLinkSetChannel(mInstance, channel));
 
-    SuccessOrExit(err = otThreadSetPskc(mInstance, &pskc));
+    SuccessOrExit(error = otThreadSetPskc(mInstance, &pskc));
 
-    SuccessOrExit(err = otThreadSetEnabled(mInstance, true));
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
 exit:
-    if (err != OT_ERROR_NONE)
+    if (error != OT_ERROR_NONE)
     {
         if (aHandler)
         {
-            aHandler(err);
+            aHandler(error);
         }
         mAttachHandler = nullptr;
     }
@@ -293,24 +294,24 @@ void ThreadHelper::JoinerStart(const std::string &aPskd,
                                const std::string &aVendorData,
                                ResultHandler      aHandler)
 {
-    otError err = OT_ERROR_NONE;
+    otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(aHandler != nullptr, err = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, err = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
     mJoinerHandler = aHandler;
 
     if (!otIp6IsEnabled(mInstance))
     {
-        SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
+        SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
     }
-    err = otJoinerStart(mInstance, aPskd.c_str(), aProvisioningUrl.c_str(), aVendorName.c_str(), aVendorModel.c_str(),
-                        aVendorSwVersion.c_str(), aVendorData.c_str(), sJoinerCallback, this);
+    error = otJoinerStart(mInstance, aPskd.c_str(), aProvisioningUrl.c_str(), aVendorName.c_str(), aVendorModel.c_str(),
+                          aVendorSwVersion.c_str(), aVendorData.c_str(), sJoinerCallback, this);
 exit:
-    if (err != OT_ERROR_NONE)
+    if (error != OT_ERROR_NONE)
     {
         if (aHandler)
         {
-            aHandler(err);
+            aHandler(error);
         }
         mJoinerHandler = nullptr;
     }
@@ -339,33 +340,34 @@ void ThreadHelper::JoinerCallback(otError aError)
 
 otError ThreadHelper::TryResumeNetwork(void)
 {
-    otError err = OT_ERROR_NONE;
+    otError error = OT_ERROR_NONE;
 
     if (otLinkGetPanId(mInstance) != UINT16_MAX && otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
     {
         if (!otIp6IsEnabled(mInstance))
         {
-            SuccessOrExit(err = otIp6SetEnabled(mInstance, true));
+            SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+            SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
         }
     }
 
 exit:
-    if (err != OT_ERROR_NONE)
+    if (error != OT_ERROR_NONE)
     {
         otIp6SetEnabled(mInstance, false);
     }
 
-    return err;
+    return error;
 }
 
 otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 {
-    otError      err = OT_ERROR_NONE;
+    otError      error = OT_ERROR_NONE;
     otExtAddress steeringData;
 
     // 0xff to allow all devices to join
     memset(&steeringData.m8, 0xff, sizeof(steeringData.m8));
-    SuccessOrExit(err = otIp6AddUnsecurePort(mInstance, aPort));
+    SuccessOrExit(error = otIp6AddUnsecurePort(mInstance, aPort));
     otThreadSetSteeringData(mInstance, &steeringData);
 
     if (aSeconds > 0)
@@ -394,7 +396,7 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
     }
 
 exit:
-    return err;
+    return error;
 }
 
 } // namespace agent

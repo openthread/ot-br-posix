@@ -34,7 +34,6 @@ noinst_LTLIBRARIES = libotbr-dbus-common.la
 libotbr_dbus_common_la_SOURCES       = \
     dbus_message_helper.cpp            \
     error.cpp                          \
-    error_helper.cpp                   \
     dbus_message_helper_openthread.cpp \
     $(NULL)
 
@@ -65,7 +64,6 @@ noinst_HEADERS            = \
     dbus_message_helper.hpp \
     dbus_resources.hpp      \
     error.hpp               \
-    error_helper.hpp        \
     types.hpp               \
     $(NULL)
 

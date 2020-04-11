@@ -26,28 +26,17 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_DBUS_COMMON_ERROR_HELPER_HPP_
-#define OTBR_DBUS_COMMON_ERROR_HELPER_HPP_
+#ifndef OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_
+#define OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_
 
 #include <string>
 
 #include <dbus/dbus.h>
-#include <openthread/error.h>
 
 #include "dbus/common/error.hpp"
 
 namespace otbr {
 namespace DBus {
-
-/**
- * This function returns the string representation of an otError.
- *
- * @param[in] aError  The otError value.
- *
- * @returns The string representation of an otError.
- *
- */
-const char *ConvertToDBusErrorName(otError aError);
 
 /**
  * This function converts an error string to client error.
@@ -73,4 +62,4 @@ ClientError CheckErrorMessage(DBusMessage *aMessage);
 } // namespace DBus
 } // namespace otbr
 
-#endif // OTBR_DBUS_COMMON_ERROR_HELPER_HPP_
+#endif // OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_

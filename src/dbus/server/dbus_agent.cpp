@@ -44,7 +44,7 @@ DBusAgent::DBusAgent(const std::string &aInterfaceName, otbr::Ncp::ControllerOpe
 otbrError DBusAgent::Init(void)
 {
     DBusError   dbusError;
-    otbrError   err = OTBR_ERROR_NONE;
+    otbrError   error = OTBR_ERROR_NONE;
     int         requestReply;
     std::string serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;
 
@@ -52,24 +52,24 @@ otbrError DBusAgent::Init(void)
     DBusConnection *conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
     mConnection          = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
         conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
-    VerifyOrExit(mConnection != nullptr, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(mConnection != nullptr, error = OTBR_ERROR_DBUS);
     dbus_bus_register(mConnection.get(), &dbusError);
     requestReply =
         dbus_bus_request_name(mConnection.get(), serverName.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusError);
     VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
                      requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
-                 err = OTBR_ERROR_DBUS);
+                 error = OTBR_ERROR_DBUS);
     VerifyOrExit(dbus_connection_set_watch_functions(mConnection.get(), AddDBusWatch, RemoveDBusWatch, ToggleDBusWatch,
                                                      this, NULL));
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, mNcp));
-    err           = mThreadObject->Init();
+    error         = mThreadObject->Init();
 exit:
     dbus_error_free(&dbusError);
-    if (err != OTBR_ERROR_NONE)
+    if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "dbus err %s: %s", dbusError.name, dbusError.message);
+        otbrLog(OTBR_LOG_ERR, "dbus error %s: %s", dbusError.name, dbusError.message);
     }
-    return err;
+    return error;
 }
 
 dbus_bool_t DBusAgent::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)

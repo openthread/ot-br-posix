@@ -33,42 +33,42 @@ namespace DBus {
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue)
 {
-    otbrError   err = OTBR_ERROR_DBUS;
+    otbrError   error = OTBR_ERROR_DBUS;
     dbus_bool_t val;
 
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_BOOLEAN);
     dbus_message_iter_get_basic(aIter, &val);
     dbus_message_iter_next(aIter);
     aValue = (val != 0);
-    err    = OTBR_ERROR_NONE;
+    error  = OTBR_ERROR_NONE;
 
 exit:
-    return err;
+    return error;
 }
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, int8_t &aValue)
 {
-    otbrError err = OTBR_ERROR_NONE;
+    otbrError error = OTBR_ERROR_NONE;
     uint8_t   val;
 
-    SuccessOrExit(err = DBusMessageExtract(aIter, val));
+    SuccessOrExit(error = DBusMessageExtract(aIter, val));
     aValue = static_cast<int8_t>(val);
 exit:
-    return err;
+    return error;
 }
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::string &aValue)
 {
     const char *buf;
-    otbrError   err = OTBR_ERROR_NONE;
+    otbrError   error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRING, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRING, error = OTBR_ERROR_DBUS);
     dbus_message_iter_get_basic(aIter, &buf);
     dbus_message_iter_next(aIter);
     aValue = buf;
 
 exit:
-    return err;
+    return error;
 }
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<uint8_t> &aValue)
@@ -108,13 +108,13 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int64_t> &aValu
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue)
 {
-    dbus_bool_t val = aValue ? 1 : 0;
-    otbrError   err = OTBR_ERROR_NONE;
+    dbus_bool_t val   = aValue ? 1 : 0;
+    otbrError   error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_BOOLEAN, &val), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_BOOLEAN, &val), error = OTBR_ERROR_DBUS);
 
 exit:
-    return err;
+    return error;
 }
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue)
@@ -124,22 +124,22 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue)
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::string &aValue)
 {
-    otbrError   err = OTBR_ERROR_NONE;
-    const char *buf = aValue.c_str();
+    otbrError   error = OTBR_ERROR_NONE;
+    const char *buf   = aValue.c_str();
 
-    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_STRING, &buf), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_STRING, &buf), error = OTBR_ERROR_DBUS);
 
 exit:
-    return err;
+    return error;
 }
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const char *aValue)
 {
-    otbrError err = OTBR_ERROR_NONE;
+    otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_STRING, &aValue), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBUS_TYPE_STRING, &aValue), error = OTBR_ERROR_DBUS);
 exit:
-    return err;
+    return error;
 }
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<uint8_t> &aValue)

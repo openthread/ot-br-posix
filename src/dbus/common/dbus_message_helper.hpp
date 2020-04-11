@@ -238,53 +238,53 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<int64_t> &aValu
 
 template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, T &aValue)
 {
-    otbrError err = OTBR_ERROR_DBUS;
+    otbrError error = OTBR_ERROR_DBUS;
 
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBusTypeTrait<T>::TYPE);
     dbus_message_iter_get_basic(aIter, &aValue);
     dbus_message_iter_next(aIter);
-    err = OTBR_ERROR_NONE;
+    error = OTBR_ERROR_NONE;
 
 exit:
-    return err;
+    return error;
 }
 
 template <typename T> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::vector<T> &aValue)
 {
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     DBusMessageIter subIter;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &subIter);
 
     aValue.clear();
     while (dbus_message_iter_get_arg_type(&subIter) != DBUS_TYPE_INVALID)
     {
         T val;
-        SuccessOrExit(err = DBusMessageExtract(&subIter, val));
+        SuccessOrExit(error = DBusMessageExtract(&subIter, val));
         aValue.push_back(val);
     }
     dbus_message_iter_next(aIter);
 
 exit:
-    return err;
+    return error;
 }
 
 template <typename T> otbrError DBusMessageExtractPrimitive(DBusMessageIter *aIter, std::vector<T> &aValue)
 {
     DBusMessageIter subIter;
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     T *             val;
     int             n;
     int             subtype;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &subIter);
 
     subtype = dbus_message_iter_get_arg_type(&subIter);
     if (subtype != DBUS_TYPE_INVALID)
     {
-        VerifyOrExit(dbus_message_iter_get_arg_type(&subIter) == DBusTypeTrait<T>::TYPE, err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_get_arg_type(&subIter) == DBusTypeTrait<T>::TYPE, error = OTBR_ERROR_DBUS);
         dbus_message_iter_get_fixed_array(&subIter, &val, &n);
 
         if (val != nullptr)
@@ -295,26 +295,26 @@ template <typename T> otbrError DBusMessageExtractPrimitive(DBusMessageIter *aIt
     dbus_message_iter_next(aIter);
 
 exit:
-    return err;
+    return error;
 }
 
 template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter *aIter, std::array<T, SIZE> &aValue)
 {
     DBusMessageIter subIter;
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     T *             val;
     int             n;
     int             subtype;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_ARRAY, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &subIter);
 
     subtype = dbus_message_iter_get_arg_type(&subIter);
     if (subtype != DBUS_TYPE_INVALID)
     {
-        VerifyOrExit(dbus_message_iter_get_arg_type(&subIter) == DBusTypeTrait<T>::TYPE, err = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_get_arg_type(&subIter) == DBusTypeTrait<T>::TYPE, error = OTBR_ERROR_DBUS);
         dbus_message_iter_get_fixed_array(&subIter, &val, &n);
-        VerifyOrExit(n == SIZE, err = OTBR_ERROR_DBUS);
+        VerifyOrExit(n == SIZE, error = OTBR_ERROR_DBUS);
 
         if (val != nullptr)
         {
@@ -324,43 +324,43 @@ template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter 
     dbus_message_iter_next(aIter);
 
 exit:
-    return err;
+    return error;
 }
 
 template <typename T> otbrError DBusMessageEncode(DBusMessageIter *aIter, T aValue)
 {
-    otbrError err = OTBR_ERROR_NONE;
-    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBusTypeTrait<T>::TYPE, &aValue), err = OTBR_ERROR_DBUS);
+    otbrError error = OTBR_ERROR_NONE;
+    VerifyOrExit(dbus_message_iter_append_basic(aIter, DBusTypeTrait<T>::TYPE, &aValue), error = OTBR_ERROR_DBUS);
 
 exit:
-    return err;
+    return error;
 }
 
 template <typename T> otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<T> &aValue)
 {
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     DBusMessageIter subIter;
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_ARRAY, DBusTypeTrait<T>::TYPE_AS_STRING, &subIter),
-                 err = OTBR_ERROR_DBUS);
+                 error = OTBR_ERROR_DBUS);
 
     for (const auto &v : aValue)
     {
-        SuccessOrExit(err = DBusMessageEncode(&subIter, v));
+        SuccessOrExit(error = DBusMessageEncode(&subIter, v));
     }
 
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), error = OTBR_ERROR_DBUS);
 exit:
-    return err;
+    return error;
 }
 
 template <typename T> otbrError DBusMessageEncodePrimitive(DBusMessageIter *aIter, const std::vector<T> &aValue)
 {
     DBusMessageIter subIter;
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_ARRAY, DBusTypeTrait<T>::TYPE_AS_STRING, &subIter),
-                 err = OTBR_ERROR_DBUS);
+                 error = OTBR_ERROR_DBUS);
 
     if (!aValue.empty())
     {
@@ -368,21 +368,21 @@ template <typename T> otbrError DBusMessageEncodePrimitive(DBusMessageIter *aIte
 
         VerifyOrExit(dbus_message_iter_append_fixed_array(&subIter, DBusTypeTrait<T>::TYPE, &buf,
                                                           static_cast<int>(aValue.size())),
-                     err = OTBR_ERROR_DBUS);
+                     error = OTBR_ERROR_DBUS);
     }
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), error = OTBR_ERROR_DBUS);
 exit:
-    return err;
+    return error;
 }
 
 template <typename T, size_t SIZE>
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::array<T, SIZE> &aValue)
 {
     DBusMessageIter subIter;
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_ARRAY, DBusTypeTrait<T>::TYPE_AS_STRING, &subIter),
-                 err = OTBR_ERROR_DBUS);
+                 error = OTBR_ERROR_DBUS);
 
     if (!aValue.empty())
     {
@@ -390,11 +390,11 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::array<T, SIZE> &a
 
         VerifyOrExit(dbus_message_iter_append_fixed_array(&subIter, DBusTypeTrait<T>::TYPE, &buf,
                                                           static_cast<int>(aValue.size())),
-                     err = OTBR_ERROR_DBUS);
+                     error = OTBR_ERROR_DBUS);
     }
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), error = OTBR_ERROR_DBUS);
 exit:
-    return err;
+    return error;
 }
 
 template <size_t I, typename... FieldTypes> struct ElementType
@@ -409,26 +409,26 @@ template <size_t I, size_t N, typename... FieldTypes> class DBusMessageIterFor
 public:
     static otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<FieldTypes...> &aValues)
     {
-        using RawValueType = typename ElementType<N - I, FieldTypes...>::RawValueType;
-        RawValueType &val  = std::get<N - I>(aValues);
-        otbrError     err  = DBusMessageExtract(aIter, val);
+        using RawValueType  = typename ElementType<N - I, FieldTypes...>::RawValueType;
+        RawValueType &val   = std::get<N - I>(aValues);
+        otbrError     error = DBusMessageExtract(aIter, val);
 
-        SuccessOrExit(err);
-        err = DBusMessageIterFor<I - 1, N, FieldTypes...>::ConvertToTuple(aIter, aValues);
+        SuccessOrExit(error);
+        error = DBusMessageIterFor<I - 1, N, FieldTypes...>::ConvertToTuple(aIter, aValues);
 
     exit:
-        return err;
+        return error;
     }
 
     static otbrError ConvertToDBusMessage(DBusMessageIter *aIter, const std::tuple<FieldTypes...> &aValues)
     {
-        otbrError err = DBusMessageEncode(aIter, std::get<N - I>(aValues));
+        otbrError error = DBusMessageEncode(aIter, std::get<N - I>(aValues));
 
-        SuccessOrExit(err);
-        err = DBusMessageIterFor<I - 1, N, FieldTypes...>::ConvertToDBusMessage(aIter, aValues);
+        SuccessOrExit(error);
+        error = DBusMessageIterFor<I - 1, N, FieldTypes...>::ConvertToDBusMessage(aIter, aValues);
 
     exit:
-        return err;
+        return error;
     }
 };
 
@@ -437,18 +437,18 @@ template <size_t N, typename... FieldTypes> class DBusMessageIterFor<1, N, Field
 public:
     static otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<FieldTypes...> &aValues)
     {
-        using RawValueType = typename ElementType<N - 1, FieldTypes...>::RawValueType;
-        RawValueType &val  = std::get<N - 1>(aValues);
-        otbrError     err  = DBusMessageExtract(aIter, val);
+        using RawValueType  = typename ElementType<N - 1, FieldTypes...>::RawValueType;
+        RawValueType &val   = std::get<N - 1>(aValues);
+        otbrError     error = DBusMessageExtract(aIter, val);
 
-        return err;
+        return error;
     }
 
     static otbrError ConvertToDBusMessage(DBusMessageIter *aIter, const std::tuple<FieldTypes...> &aValues)
     {
-        otbrError err = DBusMessageEncode(aIter, std::get<N - 1>(aValues));
+        otbrError error = DBusMessageEncode(aIter, std::get<N - 1>(aValues));
 
-        return err;
+        return error;
     }
 };
 
@@ -477,19 +477,19 @@ constexpr otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<FieldTypes
  */
 template <typename ValueType> otbrError DBusMessageEncodeToVariant(DBusMessageIter *aIter, const ValueType &aValue)
 {
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     DBusMessageIter subIter;
 
     VerifyOrExit(
         dbus_message_iter_open_container(aIter, DBUS_TYPE_VARIANT, DBusTypeTrait<ValueType>::TYPE_AS_STRING, &subIter),
-        err = OTBR_ERROR_DBUS);
+        error = OTBR_ERROR_DBUS);
 
-    SuccessOrExit(err = DBusMessageEncode(&subIter, aValue));
+    SuccessOrExit(error = DBusMessageEncode(&subIter, aValue));
 
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &subIter), error = OTBR_ERROR_DBUS);
 
 exit:
-    return err;
+    return error;
 }
 
 /**
@@ -503,16 +503,16 @@ exit:
  */
 template <typename ValueType> otbrError DBusMessageExtractFromVariant(DBusMessageIter *aIter, ValueType &aValue)
 {
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     DBusMessageIter subIter;
 
-    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_VARIANT, err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_VARIANT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &subIter);
 
-    SuccessOrExit(err = DBusMessageExtract(&subIter, aValue));
+    SuccessOrExit(error = DBusMessageExtract(&subIter, aValue));
 
 exit:
-    return err;
+    return error;
 }
 
 /**
@@ -527,15 +527,15 @@ exit:
 template <typename... FieldTypes>
 otbrError DBusMessageToTuple(DBusMessage &aMessage, std::tuple<FieldTypes...> &aValues)
 {
-    otbrError       err = OTBR_ERROR_NONE;
+    otbrError       error = OTBR_ERROR_NONE;
     DBusMessageIter iter;
 
-    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), err = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), error = OTBR_ERROR_DBUS);
 
-    err = ConvertToTuple(&iter, aValues);
+    error = ConvertToTuple(&iter, aValues);
 
 exit:
-    return err;
+    return error;
 }
 
 /**
