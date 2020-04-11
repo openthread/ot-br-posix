@@ -51,9 +51,21 @@ opkg install openthread-br-1.0*.ipk
 
 ## Usage
 
-Start otbr-agent.
+### Start
+
+Start otbr-agent manually:
 
 ```bash
 # Assuming that ttyUSB0 is a RCP with baudrate 115200.
 /usr/sbin/otbr-agent /dev/ttyUSB0 115200
 ```
+
+Edit the service file `/etc/init.d/otbr-agent` to use correct RCP and then start with:
+
+```bash
+start_service otbr-agent
+```
+
+### Test
+
+Enter the OpenWRT web GUI. There will be a new item *Thread* Under *Network*. Scan or create network here.
