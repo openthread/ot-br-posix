@@ -261,21 +261,20 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
 void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
     aRequest.ReplyOtResult(OT_ERROR_NONE);
+    otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
     mNcp->Reset();
-
-    {
-        auto threadHelper = mNcp->GetThreadHelper();
-        threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
-        SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
-                              GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
-    }
+    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
+                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
-    auto threadHelper = mNcp->GetThreadHelper();
+    mNcp->Reset();
+    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
+                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 
-    otInstanceReset(threadHelper->GetInstance());
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
