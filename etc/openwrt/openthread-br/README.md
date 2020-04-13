@@ -68,4 +68,4 @@ start_service otbr-agent
 
 ### Test
 
-Enter the OpenWRT web GUI. There will be a new item *Thread* Under *Network*. Scan or create network here.
+Enter the OpenWRT web GUI. There will be a new item *Thread* under *Network*. Scan or create network here.

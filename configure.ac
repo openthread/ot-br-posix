@@ -332,7 +332,6 @@ AC_ARG_ENABLE(dbus-server,
     ],
     [enable_dbus_server=no])
 
-
 if test "$enable_dbus_server" = "yes"; then
     AC_DEFINE_UNQUOTED([OTBR_ENABLE_DBUS_SERVER], [1], [Define to 1 if you want otbr-agent to provide dbus server])
 fi
@@ -683,4 +682,3 @@ AC_MSG_NOTICE([
   Link libraries                            : ${LIBS}
 
 ])
-

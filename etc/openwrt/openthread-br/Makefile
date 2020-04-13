@@ -28,7 +28,6 @@
 
 LOCAL_SOURCE_DIR := $(abspath $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../../..)
 
-#$(error $(LOCAL_SOURCE_DIR))
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := openthread-br
