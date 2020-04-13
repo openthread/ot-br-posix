@@ -348,9 +348,9 @@ ClientError ThreadApiDBus::RemoveOnMeshPrefix(const Ip6Prefix &aPrefix)
     return CallDBusMethodSync(OTBR_DBUS_REMOVE_ON_MESH_PREFIX_METHOD, std::tie(aPrefix));
 }
 
-ClientError ThreadApiDBus::AddExternalRoute(const Ip6Prefix &aPrefix, int8_t aPreference, bool aStable)
+ClientError ThreadApiDBus::AddExternalRoute(const ExternalRoute &aExternalRoute)
 {
-    return CallDBusMethodSync(OTBR_DBUS_ADD_EXTERNAL_ROUTE_METHOD, std::tie(aPrefix, aPreference, aStable));
+    return CallDBusMethodSync(OTBR_DBUS_ADD_EXTERNAL_ROUTE_METHOD, std::tie(aExternalRoute));
 }
 
 ClientError ThreadApiDBus::RemoveExternalRoute(const Ip6Prefix &aPrefix)
@@ -502,6 +502,11 @@ ClientError ThreadApiDBus::GetInstantRssi(int8_t &aRssi)
 ClientError ThreadApiDBus::GetRadioTxPower(int8_t &aTxPower)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_RADIO_TX_POWER, aTxPower);
+}
+
+ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
 }
 
 std::string ThreadApiDBus::GetInterfaceName(void)
