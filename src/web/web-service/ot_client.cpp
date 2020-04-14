@@ -165,7 +165,7 @@ exit:
     return rval;
 }
 
-int OpenThreadClient::Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength)
+int OpenThreadClient::Scan(WpanNetworkInfo *aNetworks, int aLength)
 {
     char *result;
     int   rval = 0;

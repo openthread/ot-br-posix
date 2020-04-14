@@ -33,7 +33,6 @@ function parse_args()
 {
     while [ $# -gt 0 ]
     do
-        echo $1
         case $1 in
         --ncp-path)
             NCP_PATH=$2
@@ -84,12 +83,7 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
 
-echo "Config:NCP:SocketPath \"$NCP_PATH\"" > /etc/wpantund.conf
-echo "Config:TUN:InterfaceName $TUN_INTERFACE_NAME " >> /etc/wpantund.conf
-echo "Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_ROUTE" >> /etc/wpantund.conf
-echo "IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC" >> /etc/wpantund.conf
-
-echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME\"" > /etc/default/otbr-agent
+echo "OTBR_AGENT_OPTS=\"-I '$TUN_INTERFACE_NAME' '$NCP_PATH' 115200\"" > /etc/default/otbr-agent
 echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -p 80\"" > /etc/default/otbr-web
 
 /app/script/server

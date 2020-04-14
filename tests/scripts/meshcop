@@ -26,16 +26,16 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-# Test thread commissioning along with openthread and wpantund.
+# Test thread commissioning along with openthread.
 #
 # Usage:
-#   ./meshcop         # test with latest openthread and wpantund.
+#   ./meshcop         # test with latest openthread.
 #   NO_CLEAN=1 ./meshcop # test with existing binaries in ${TEST_BASE}.
 set -e
 
 # Get our starting directory and remember it
 readonly ORIGIN_PWD="$(pwd)"
-readonly SCRIPT_DIR="$(cd "$(dirname $0)" && pwd)"
+readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 #---------------------------------------
 # Configurations
@@ -43,25 +43,22 @@ readonly SCRIPT_DIR="$(cd "$(dirname $0)" && pwd)"
 readonly OT_NCP="${OT_NCP:-ot-ncp-ftd}"
 readonly OT_RCP="ot-rcp"
 readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
-readonly ABS_TOP_BUILDDIR="$(cd ${top_builddir:-${SCRIPT_DIR}/../../} && pwd)"
-readonly ABS_TOP_SRCDIR="$(cd ${top_srcdir:-${SCRIPT_DIR}/../../} && pwd)"
+readonly ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly ABS_TOP_SRCDIR="$(cd "${top_srcdir:-"${SCRIPT_DIR}"/../../}" && pwd)"
 readonly NO_CLEAN="${NO_CLEAN:-1}"
 readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
-readonly WITH_NCP="${WITH_NCP:-wpantund}"
 
 #----------------------------------------
 # Test constants
 #----------------------------------------
 readonly TEST_BASE=/tmp/test-otbr
 
-readonly WPANTUND=wpantund
 readonly OTBR_AGENT=otbr-agent
 readonly OTBR_WEB=otbr-web
 readonly OTBR_COMMISSIONER=otbr-commissioner
 
 readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
-readonly WPANTUND_PATH="${STAGE_DIR}/usr/sbin/${WPANTUND}"
 readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
@@ -109,8 +106,8 @@ echo "ABS_TOP_BUILDDIR=${ABS_TOP_BUILDDIR}"
 
 die()
 {
-  exit_message="$@"
-  echo " *** ERROR: " "$@"
+  exit_message="$*"
+  echo " *** ERROR: $*"
   exit 1
 }
 
@@ -126,7 +123,7 @@ executable_or_die()
 
 random_channel()
 {
-  expr 11 + "${RANDOM}" % 16
+  echo $((11 + "${RANDOM}" % 16))
 }
 
 random_panid()
@@ -146,7 +143,7 @@ random_masterkey()
 
 write_syslog()
 {
-  logger -s -p syslog.alert "OPENTHREAD_TEST: $@"
+  logger -s -p syslog.alert "OPENTHREAD_TEST: $*"
 }
 
 output_logs()
@@ -180,8 +177,6 @@ output_logs()
   cat /var/log/syslog | grep "${OT_NCP}" | tee "${OT_NCP}.log"
   echo 'START_LOG: OT-CLI ==================='
   cat /var/log/syslog | grep "${OT_CLI}" | tee "${OT_CLI}.log"
-  echo 'START_LOG: WPANTUND ================='
-  cat /var/log/syslog | grep "${WPANTUND}" | tee wpantund.log
   echo '====================================='
   echo 'Hint, for each log Search backwards for: "START_LOG: <NAME>"'
   echo '====================================='
@@ -209,17 +204,6 @@ build_dependencies()
     ot_cli="${OT_CLI_PATH}"
     ot_rcp="${OT_RCP_PATH}"
   fi
-
-  [[ "${DAEMON}" == 1 ]] || {
-    if [[ "${IGNORE_INSTALLED}" = 0 ]] && sudo which "${WPANTUND}"; then
-      wpantund="${WPANTUND}"
-    else
-      checkout_wpantund
-      configure_wpantund
-      compile_wpantund
-      wpantund="${WPANTUND_PATH}"
-    fi
-  }
 
   write_syslog "TEST: BUILD COMPLETE"
 }
@@ -255,7 +239,6 @@ test_teardown()
   readonly EXITCODE=$?
   write_syslog "EXIT ${EXITCODE} - output logs"
 
-  sudo pkill -f "${WPANTUND}" || true
   sudo pkill -f "${OTBR_AGENT}" || true
   sudo pkill -f "${OTBR_WEB}" || true
   sudo pkill -f "${OTBR_COMMISSIONER}" || true
@@ -265,7 +248,6 @@ test_teardown()
 
   if [[ "${NO_CLEAN}" != 1 ]]; then
     echo 'clearing all'
-    sudo rm /etc/dbus-1/system.d/wpantund.conf || true
     sudo rm /etc/dbus-1/system.d/otbr-agent.conf || true
     sudo rm -rf "${STAGE_DIR}" || true
     sudo rm -rf "${BUILD_DIR}" || true
@@ -277,50 +259,6 @@ test_teardown()
   exit ${EXIT_CODE}
 }
 
-checkout_wpantund()
-{
-  cd "${BUILD_DIR}"
-
-  [[ -d 'wpantund' ]] || git clone --depth 1 https://github.com/openthread/wpantund.git
-}
-
-configure_wpantund()
-{
-  cd "${BUILD_DIR}/wpantund"
-
-  if [[ "${NO_CLEAN}" = 1 && -f Makefile ]]; then
-    echo 'Skip configure openthread'
-    return 0
-  fi
-
-  set -x
-  ./bootstrap.sh
-  ./configure \
-    --disable-ncp-dummy \
-    --exec-prefix=/usr \
-    --enable-static-link-ncp-plugin=spinel  \
-    --prefix= \
-    --without-connman
-  set +x
-}
-
-compile_wpantund()
-{
-  make -C "${BUILD_DIR}/wpantund" all
-  make -C "${BUILD_DIR}/wpantund" install DESTDIR="${STAGE_DIR}"
-
-  executable_or_die "${WPANTUND_PATH}"
-
-  sudo cp "${STAGE_DIR}/etc/dbus-1/system.d/wpantund.conf" /etc/dbus-1/system.d
-
-  if which service; then
-    # tell dbus to reload, we have changed/added a configuration file
-    sudo service dbus reload
-  else
-    write_syslog "WARNING: Do not know how to tell dbus to re-load config files"
-  fi
-}
-
 compile_openthread()
 {
   (cd "${ABS_TOP_BUILDDIR}" && make -f "${ABS_TOP_SRCDIR}/third_party/openthread/repo/examples/Makefile-simulation" DISABLE_DOC=1 TargetTuple=otbr)
@@ -328,37 +266,6 @@ compile_openthread()
   executable_or_die "${OT_CLI_PATH}"
   executable_or_die "${OT_RCP_PATH}"
 }
-
-leader_start()
-{
-  [[ "${WITH_NCP}" != openthread ]] || return 0
-  write_syslog "MESHCOP TEST BEGIN - rotated logs"
-
-  # These might not exit cleanly
-  write_syslog "LEADER: killing the old"
-
-  # Kill old wpantund
-  sudo killall "${WPANTUND}" || true
-  sudo killall "${OT_NCP}" || true
-
-  write_syslog "LEADER: starting"
-
-  # Do this within a private script as root.
-  set -x
-  (cd "${TEST_BASE}" && sudo "${wpantund}" -d 5 -I "${TUN_NAME}" \
-    -s "system:${ot_ncp} ${LEADER_NODE_ID}" &)
-  set +x
-
-  echo 'Waiting for wpantund to fully start'
-  sleep 10
-
-  # These should be running now and should not have crashed!
-  pidof "${WPANTUND}" || die "LEADER: Failed to start wpantund"
-  pidof "${OT_NCP}" || die "LEADER: Failed to start ${OT_NCP}"
-
-  write_syslog "LEADER: start complete"
-}
-
 
 ba_start()
 {
@@ -379,14 +286,10 @@ ba_start()
     # check version
     sudo "${OTBR_AGENT_PATH}" -V
     # check invalid arguments
-    ! sudo "${OTBR_AGENT_PATH}" -x
+    sudo "${OTBR_AGENT_PATH}" -x && exit $?
 
     [[ ! -d tmp ]] || sudo rm -rf tmp
-    if [[ "${WITH_NCP}" = openthread ]]; then
-      sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 ${ot_rcp} ${LEADER_NODE_ID} &
-    else
-      sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 &
-    fi
+    sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 "${ot_rcp}" "${LEADER_NODE_ID}" &
   )
 
   # wait for it to complete
@@ -517,7 +420,6 @@ EOF
 main()
 {
   test_setup
-  leader_start
   ba_start
   web_start
   network_form

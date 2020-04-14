@@ -111,10 +111,6 @@ private:
      */
     void Stop(void);
 
-#if OTBR_ENABLE_NCP_WPANTUND
-    static void SendToCommissioner(void *aContext, int aEvent, va_list aArguments);
-#endif
-
     static void HandleMdnsState(void *aContext, Mdns::State aState)
     {
         static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
@@ -139,9 +135,6 @@ private:
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
 
-#if OTBR_ENABLE_NCP_WPANTUND
-    int mSocket;
-#endif
     uint8_t  mExtPanId[kSizeExtPanId];
     bool     mExtPanIdInitialized;
     uint16_t mThreadVersion;

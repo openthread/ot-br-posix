@@ -108,6 +108,7 @@ do_build() {
 
         ${CONFIGURE_PATH} \
             --disable-docs \
+            --enable-dbus-server \
             --exec-prefix=/usr \
             --prefix= \
             ${configure_options}
@@ -153,10 +154,6 @@ do_prepare() {
 
     if [[ -n "${WITH_MDNS}" ]]; then
         configure_options="${configure_options} --with-mdns=${WITH_MDNS}"
-    fi
-
-    if [[ -n "${WITH_NCP}" ]]; then
-        configure_options="${configure_options} --with-ncp=${WITH_NCP}"
     fi
 
     if [[ "${COVERAGE}" = 1 ]]; then

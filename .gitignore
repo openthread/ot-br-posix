@@ -25,7 +25,7 @@ libtool
 Makefile
 Makefile.in
 
-# Build inside border router of wpantund
+# Build inside border router
 ._build
 
 
@@ -77,7 +77,6 @@ tests/dbus/otbr-test-dbus-client
 
 # all things here.
 third_party/mbedtls/repo
-third_party/wpantund/wpantund.service
 
 # Tools
 tools/pskc

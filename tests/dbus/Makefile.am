@@ -29,11 +29,10 @@
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 if OTBR_ENABLE_DBUS_SERVER
-check_PROGRAMS = otbr-test-dbus-server
-
-if OTBR_ENABLE_NCP_OPENTHREAD
-check_PROGRAMS += otbr-test-dbus-client
-endif
+check_PROGRAMS = \
+    otbr-test-dbus-client \
+    otbr-test-dbus-server \
+    $(NULL)
 
 otbr_test_dbus_server_SOURCES = \
     test_dbus_server.cpp \
@@ -61,7 +60,6 @@ otbr_test_dbus_server_LDFLAGS = \
     -static \
     $(NULL)
 
-if OTBR_ENABLE_NCP_OPENTHREAD
 otbr_test_dbus_client_SOURCES = \
     test_dbus_client.cpp \
     $(NULL)
@@ -84,7 +82,6 @@ otbr_test_dbus_client_LDADD = \
 otbr_test_dbus_client_LDFLAGS = \
     -static \
     $(NULL)
-endif# if OTBR_ENABLE_NCP_OPENTHREAD
 
 dist_check_SCRIPTS = \
     test-server \

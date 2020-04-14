@@ -35,7 +35,7 @@ main() {
     SOCAT_OUTPUT=/tmp/ot-socat
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
     while true; do
-        if test $(head -n2 $SOCAT_OUTPUT | wc -l) = 2; then
+        if test "$(head -n2 $SOCAT_OUTPUT | wc -l)" = 2; then
             DEVICE_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
             DOCKER_PTY=$(head -n2 $SOCAT_OUTPUT | tail -n1 | grep -o '/dev/.\+')
             break
@@ -44,16 +44,17 @@ main() {
         sleep 1
     done
 
-    ot-ncp-ftd 1 > $DEVICE_PTY < $DEVICE_PTY &
+    # shellcheck disable=SC2094
+    ot-rcp 1 > "$DEVICE_PTY" < "$DEVICE_PTY" &
 
     docker run --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
-        --privileged -p 8080:80 --dns=127.0.0.1 --volume $DOCKER_PTY:/dev/ttyUSB0 otbr &
+        --privileged -p 8080:80 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr &
     sleep 10
     sudo lsof -i :8080
     curl "http://127.0.0.1:8080"
 
-    docker kill $(docker ps -q)
-    killall ot-ncp-ftd
+    docker kill "$(docker ps -q)"
+    killall ot-rcp
     killall socat
 }
 

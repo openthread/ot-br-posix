@@ -46,11 +46,8 @@ install_packages_apt()
 
     sudo apt-get install -y rsyslog
 
-    # For wpantund
+    # For DBus server
     sudo apt-get install -y libdbus-1-dev
-
-    # This is for configuring wpantund
-    sudo apt-get install -y autoconf-archive
 
     # mDNS
     sudo apt-get install -y libavahi-common-dev libavahi-client-dev avahi-daemon

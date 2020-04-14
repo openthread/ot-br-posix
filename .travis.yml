@@ -25,9 +25,6 @@ matrix:
     - env: BUILD_TARGET="meshcop" COVERAGE=1 VERBOSE=1
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="meshcop" COVERAGE=1 WITH_NCP=openthread VERBOSE=1
-      os: linux
-      dist: bionic
     - env: BUILD_TARGET="docker-check" COVERAGE=1 VERBOSE=1
       os: linux
       dist: bionic
@@ -77,8 +74,8 @@ matrix:
           packages:
             - clang-format-6.0
       script: script/make-pretty check
-    - env: BUILD_TARGET="macOS"
-      os: osx
   allow_failures:
     - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1
       os: linux
+    - env: BUILD_TARGET="macOS"
+      os: osx

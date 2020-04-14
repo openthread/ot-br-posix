@@ -1,6 +1,5 @@
 [Unit]
 Description=Border Router Agent
-After=wpantund.service
 ConditionPathExists=@sbindir@/otbr-agent
 
 [Service]

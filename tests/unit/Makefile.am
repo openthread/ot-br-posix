@@ -66,7 +66,7 @@ unittest_LDADD                                                = \
 
 if OTBR_ENABLE_DBUS_SERVER
 unittest_SOURCES += test_dbus_message.cpp
-unittest_LDADD += $(top_builddir)/src/dbus/libotbr-dbus.la
+unittest_LDADD += $(top_builddir)/src/dbus/common/libotbr-dbus-common.la
 endif
 
 unittest_LDFLAGS             = \

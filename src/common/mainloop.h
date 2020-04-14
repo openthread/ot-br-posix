@@ -36,8 +36,6 @@
 
 #include "openthread-br/config.h"
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
-
 #include <openthread/openthread-system.h>
 
 #else
@@ -63,7 +61,5 @@ typedef struct otSysMainloopContext
 #ifdef __cplusplus
 } // end of extern "C"
 #endif
-
-#endif // OTBR_ENABLE_NCP_OPENTHREAD
 
 #endif // OTBR_COMMON_OTBR_MAINLOOP_HPP_

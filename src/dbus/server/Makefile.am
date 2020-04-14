@@ -38,16 +38,11 @@ libotbr_dbus_server_la_CXXFLAGS   = \
     $(NULL)
 
 libotbr_dbus_server_la_SOURCES       = \
+    dbus_agent.cpp                     \
     dbus_object.cpp                    \
+    dbus_thread_object.cpp             \
     error_helper.cpp                   \
     $(NULL)
-
-if OTBR_ENABLE_NCP_OPENTHREAD
-libotbr_dbus_server_la_SOURCES      += \
-    dbus_agent.cpp                     \
-    dbus_thread_object.cpp             \
-    $(NULL)
-endif
 
 libotbr_dbus_server_la_CPPFLAGS                            = \
     -I$(top_srcdir)/include                                  \
@@ -59,15 +54,10 @@ libotbr_dbus_server_la_CPPFLAGS                            = \
     $(NULL)
 
 libotbr_dbus_server_la_LIBADD                              = \
-    $(top_builddir)/src/dbus/common/libotbr-dbus-common.la   \
     $(DBUS_LIBS)                                             \
-    $(NULL)
-
-if OTBR_ENABLE_NCP_OPENTHREAD
-libotbr_dbus_server_la_LIBADD                             += \
     $(OPENTHREAD_LIBS)                                       \
+    $(top_builddir)/src/dbus/common/libotbr-dbus-common.la   \
     $(NULL)
-endif
 
 noinst_HEADERS            = \
     dbus_agent.hpp          \

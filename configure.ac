@@ -412,26 +412,6 @@ AC_MSG_NOTICE([checking required package dependencies])
 
 # NL_WITH_PACKAGE(...)
 
-AC_ARG_WITH(ncp,
-  AC_HELP_STRING([--with-ncp=NCP_TYPE], [specify the type of NCP implementation: wpantund, openthread @<:@default=wpantund@:>@.]),
-  [with_ncp=${withval}],
-  [with_ncp=wpantund]
-)
-
-case "${with_ncp}" in
-openthread)
-  AC_DEFINE_UNQUOTED([OTBR_ENABLE_NCP_OPENTHREAD], [1], [Define to 1 if you want to choose wpantund to manage NCP])
-  ;;
-wpantund)
-  AC_DEFINE_UNQUOTED([OTBR_ENABLE_NCP_WPANTUND], [1], [Define to 1 if you want to choose openthread to manage NCP])
-  ;;
-*)
-  AC_MSG_ERROR([Invalid value ${with_ncp} for --with-ncp])
-esac
-
-AM_CONDITIONAL([OTBR_ENABLE_NCP_OPENTHREAD], [test "${with_ncp}" = "openthread"])
-AM_CONDITIONAL([OTBR_ENABLE_NCP_WPANTUND], [test "${with_ncp}" = "wpantund"])
-
 AC_ARG_WITH(mdns,
   AC_HELP_STRING([--with-mdns=MDNS_TYPE], [specify the type of mdns implementation: avahi, mDNSResponder, none @<:@default=avahi@:>@.]),
   [with_mdns=${withval}],
@@ -468,7 +448,7 @@ AC_MSG_RESULT([$ac_cv_path_CTAGS])
 
 # Check if the DBus module
 
-if test "${with_mdns}" == "avahi" -o "${with_ncp}" == "wpantund" -o "${enable_dbus_server}" == "yes"; then
+if test "${with_mdns}" == "avahi" -o "${enable_dbus_server}" == "yes"; then
   PKG_CHECK_MODULES(DBUS, [dbus-1 >= 1.4], , [AC_MSG_ERROR([could not find dbus(>= 1.4)])])
 fi
 AC_SUBST(DBUS_CFLAGS)
@@ -596,7 +576,6 @@ third_party/Makefile
 third_party/Simple-web-server/Makefile
 third_party/libcoap/Makefile
 third_party/openthread/Makefile
-third_party/wpantund/Makefile
 third_party/mdl/Makefile
 third_party/angular/Makefile
 third_party/angular-material/Makefile
