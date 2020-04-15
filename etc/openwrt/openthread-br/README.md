@@ -7,7 +7,7 @@ This is for local development.
 
 ### 1. Add OpenThread feed
 
-Assuming `OPENWRT_TOP_SRCDIR` is root of openwrt sources.
+Assuming `OPENWRT_TOP_SRCDIR` is the root of openwrt sources.
 
 ```bash
 echo src-link openthread "$(pwd)/etc/openwrt" >> ${OPENWRT_TOP_SRCDIR}/feeds.conf
@@ -17,17 +17,17 @@ cd "${OPENWRT_TOP_SRCDIR}"
 ```
 ### 2. Enable OpenThread Border Router
 
-OpenThread is not selcted by default, so use menuconfig to select openthread-br(OpenThread Border Router).
+OpenThread is not selected by default, so use menuconfig to select openthread-br (OpenThread Border Router).
 
 ```bash
 make menuconfig
 ```
 
-In the configure window, use key Up, key Down to move cursor and key Left, key Right choose action.
+In the configure window, use the Up and Down keys to move the cursor and the Left and Right keys to choose an action.
 
 1. Select *Network* to enter its submenu.
-2. Enable *openthread-br* by moving cursor to it and press **Y**.
-3. Take *Exit* action.
+2. Enable *openthread-br* by moving the cursor to it and pressing **Y**.
+3. Select *Exit* to exit.
 
 ### 3. Build OpenThread Border Router
 
@@ -35,7 +35,7 @@ In the configure window, use key Up, key Down to move cursor and key Left, key R
 make package/openthread-br/compile
 ```
 
-or verbose make for debugging,
+or to do a verbose make for debugging:
 
 ```bash
 make -j1 V=sc package/openthread-br/compile
@@ -60,7 +60,7 @@ Start otbr-agent manually:
 /usr/sbin/otbr-agent /dev/ttyUSB0 115200
 ```
 
-Edit the service file `/etc/init.d/otbr-agent` to use correct RCP and then start with:
+Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyUSB0` and then start with:
 
 ```bash
 start_service otbr-agent
