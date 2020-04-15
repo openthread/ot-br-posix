@@ -29,10 +29,13 @@
 include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 SUBDIRS         = \
-    dbus          \
     mdns          \
     tools         \
     unit          \
     $(NULL)
+
+if OTBR_ENABLE_DBUS_SERVER
+SUBDIRS += dbus
+endif
 
 include $(abs_top_nlbuild_autotools_dir)/automake/post.am

@@ -40,16 +40,7 @@
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 
-#include "thread/network_diagnostic_tlvs.hpp"
-#undef PACKAGE
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_URL
-#undef PACKAGE_VERSION
-#undef VERSION
-
-#include "agent/ncp_openthread.hpp"
+#include "ncp_openthread.hpp"
 #include "common/logging.hpp"
 
 namespace otbr {
@@ -66,11 +57,17 @@ const static int XPANID_LENGTH    = 64;
 const static int MASTERKEY_LENGTH = 64;
 
 UbusServer::UbusServer(Ncp::ControllerOpenThread *aController)
+    : mIfFinishScan(false)
+    , mContext(nullptr)
+    , mSockPath(nullptr)
+    , mController(aController)
+    , mSecond(0)
 {
-    mController = aController;
-    mSecond     = 0;
-    blob_buf_init(&mNetworkdataBuf, 0);
+    memset(&mNetworkdataBuf, 0, sizeof(mNetworkdataBuf));
+    memset(&mBuf, 0, sizeof(mBuf));
+
     blob_buf_init(&mBuf, 0);
+    blob_buf_init(&mNetworkdataBuf, 0);
 }
 
 UbusServer &UbusServer::GetInstance(void)
@@ -1302,80 +1299,109 @@ exit:
 
 void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
 {
-    static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(
-        *static_cast<ot::Message *>(aMessage), *static_cast<const ot::Ip6::MessageInfo *>(aMessageInfo));
+    static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(aMessage,
+                                                                     *static_cast<const otMessageInfo *>(aMessageInfo));
 }
 
-void UbusServer::HandleDiagnosticGetResponse(ot::Message &aMessage, const ot::Ip6::MessageInfo &aMessageInfo)
+static bool IsRoutingLocator(const otIp6Address *aAddress)
 {
-    uint8_t  childNum = 0;
-    uint16_t rloc16;
-    uint16_t sockRloc16 = 0;
-    void *   jsonArray  = NULL;
-    void *   jsonItem   = NULL;
-    char     xrloc[10];
-    uint16_t offset;
+    enum
+    {
+        kAloc16Mask            = 0xfc, ///< The mask for Aloc16.
+        kRloc16ReservedBitMask = 0x02, ///< The mask for the reserved bit of Rloc16.
+    };
 
-    ot::NetworkDiagnostic::ChildTableTlv   childTlv;
-    ot::NetworkDiagnostic::ChildTableEntry childEntry;
-    ot::NetworkDiagnostic::RouteTlv        routeTlv;
+    return (aAddress->mFields.m32[2] == htonl(0x000000ff) && aAddress->mFields.m16[6] == htons(0xfe00) &&
+            aAddress->mFields.m8[14] < kAloc16Mask && (aAddress->mFields.m8[14] & kRloc16ReservedBitMask) == 0);
+}
+
+void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo &aMessageInfo)
+{
+    uint16_t              rloc16;
+    uint16_t              sockRloc16 = 0;
+    void *                jsonArray  = NULL;
+    void *                jsonItem   = NULL;
+    char                  xrloc[10];
+    otNetworkDiagTlv      diagTlv;
+    otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
 
     char networkdata[20];
     sprintf(networkdata, "networkdata%d", sBufNum);
     sJsonUri = blobmsg_open_table(&mNetworkdataBuf, networkdata);
     sBufNum++;
 
-    if (aMessageInfo.GetSockAddr().IsRoutingLocator())
+    if (IsRoutingLocator(&aMessageInfo.mSockAddr))
     {
-        sockRloc16 = aMessageInfo.GetPeerAddr().mFields.m16[7];
+        sockRloc16 = aMessageInfo.mPeerAddr.mFields.m16[7];
         sprintf(xrloc, "0x%04x", sockRloc16);
         blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
     }
 
-    jsonArray = blobmsg_open_array(&mNetworkdataBuf, "routedata");
-    if (ot::NetworkDiagnostic::NetworkDiagnosticTlv::GetTlv(
-            aMessage, ot::NetworkDiagnostic::NetworkDiagnosticTlv::kRoute, sizeof(routeTlv), routeTlv) == OT_ERROR_NONE)
+    while (otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv) == OT_ERROR_NONE)
     {
-        for (uint8_t i = 0, routeid = 0; i < 64; i++)
+        switch (diagTlv.mType)
         {
-            if (routeTlv.IsRouterIdSet(i))
+        case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
+        {
+            const otNetworkDiagRoute &route = diagTlv.mData.mRoute;
+
+            jsonArray = blobmsg_open_array(&mNetworkdataBuf, "routedata");
+
+            for (uint16_t i = 0; i < route.mRouteCount; ++i)
             {
                 uint8_t in, out;
-                in  = routeTlv.GetLinkQualityIn(routeid);
-                out = routeTlv.GetLinkQualityOut(routeid);
+                in  = route.mRouteData[i].mLinkQualityIn;
+                out = route.mRouteData[i].mLinkQualityOut;
                 if (in != 0 && out != 0)
                 {
                     jsonItem = blobmsg_open_table(&mNetworkdataBuf, "router");
-                    rloc16   = i << 10;
-                    blobmsg_add_u32(&mNetworkdataBuf, "routerid", i);
+                    rloc16   = route.mRouteData[i].mRouterId << 10;
+                    blobmsg_add_u32(&mNetworkdataBuf, "routerid", route.mRouteData[i].mRouterId);
                     sprintf(xrloc, "0x%04x", rloc16);
                     blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
                     blobmsg_close_table(&mNetworkdataBuf, jsonItem);
                 }
-                routeid++;
             }
+            blobmsg_close_array(&mNetworkdataBuf, jsonArray);
+            break;
         }
-    }
-    blobmsg_close_array(&mNetworkdataBuf, jsonArray);
 
-    jsonArray = blobmsg_open_array(&mNetworkdataBuf, "childdata");
-    if (ot::NetworkDiagnostic::NetworkDiagnosticTlv::GetTlv(aMessage,
-                                                            ot::NetworkDiagnostic::NetworkDiagnosticTlv::kChildTable,
-                                                            sizeof(childTlv), childTlv) == OT_ERROR_NONE)
-    {
-        childNum = childTlv.GetNumEntries();
-        for (uint8_t i = 0; i < childNum; i++)
+        case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE:
         {
-            jsonItem = blobmsg_open_table(&mNetworkdataBuf, "child");
-            ot::Tlv::GetOffset(aMessage, ot::NetworkDiagnostic::NetworkDiagnosticTlv::kChildTable, offset);
-            childTlv.ReadEntry(childEntry, aMessage, offset, i);
-            sprintf(xrloc, "0x%04x", (sockRloc16 | childEntry.GetChildId()));
-            blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
-            blobmsg_add_u16(&mNetworkdataBuf, "mode", childEntry.GetMode().Get());
-            blobmsg_close_table(&mNetworkdataBuf, jsonItem);
+            jsonArray = blobmsg_open_array(&mNetworkdataBuf, "childdata");
+            for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
+            {
+                enum
+                {
+                    kModeRxOnWhenIdle      = 1 << 3, ///< If the device has its receiver on when not transmitting.
+                    kModeSecureDataRequest = 1 << 2, ///< If the device uses link layer security for all data requests.
+                    kModeFullThreadDevice  = 1 << 1, ///< If the device is an FTD.
+                    kModeFullNetworkData   = 1 << 0, ///< If the device requires the full Network Data.
+                };
+                const otNetworkDiagChildEntry &entry = diagTlv.mData.mChildTable.mTable[i];
+
+                uint8_t mode = 0;
+
+                jsonItem = blobmsg_open_table(&mNetworkdataBuf, "child");
+                sprintf(xrloc, "0x%04x", (sockRloc16 | entry.mChildId));
+                blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
+
+                mode = (entry.mMode.mRxOnWhenIdle ? kModeRxOnWhenIdle : 0) |
+                       (entry.mMode.mSecureDataRequests ? kModeSecureDataRequest : 0) |
+                       (entry.mMode.mDeviceType ? kModeFullThreadDevice : 0) |
+                       (entry.mMode.mNetworkData ? kModeFullNetworkData : 0);
+                blobmsg_add_u16(&mNetworkdataBuf, "mode", mode);
+                blobmsg_close_table(&mNetworkdataBuf, jsonItem);
+            }
+            blobmsg_close_array(&mNetworkdataBuf, jsonArray);
+            break;
+        }
+
+        default:
+            // Ignore other network diagnostics data.
+            break;
         }
     }
-    blobmsg_close_array(&mNetworkdataBuf, jsonArray);
 
     blobmsg_close_table(&mNetworkdataBuf, sJsonUri);
 }
@@ -1785,12 +1811,13 @@ exit:
 void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex)
 {
     otbr::ubus::sNcpThreadMutex = aNcpThreadMutex;
+    otbr::ubus::sUbusEfd        = eventfd(0, 0);
+
     otbr::ubus::UbusServer::Initialize(aController);
 
-    otbr::ubus::sUbusEfd = eventfd(0, 0);
     if (otbr::ubus::sUbusEfd == -1)
     {
-        perror("ubus eventfd create failed\n");
+        perror("Failed to create eventfd for ubus");
         exit(EXIT_FAILURE);
     }
 }

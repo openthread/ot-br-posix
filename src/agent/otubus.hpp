@@ -36,11 +36,10 @@
 
 #include <openthread/ip6.h>
 #include <openthread/link.h>
+#include <openthread/netdiag.h>
 #include <openthread/udp.h>
 
 #include "common/code_utils.hpp"
-#include "common/message.hpp"
-#include "net/socket.hpp"
 
 extern "C" {
 #include <libubox/blobmsg_json.h>
@@ -772,7 +771,7 @@ public:
      * @param[in]   aMessageInfo    A pointer to the message information.
      *
      */
-    void HandleDiagnosticGetResponse(ot::Message &aMessage, const ot::Ip6::MessageInfo &aMessageInfo);
+    void HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo &aMessageInfo);
 
 private:
     bool                       mIfFinishScan;
