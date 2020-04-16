@@ -183,6 +183,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetInstantRssiHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_TX_POWER,
                                std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
+                               std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
 
     return error;
 }
@@ -373,24 +375,25 @@ exit:
 void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
 {
     auto                  threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix             routePrefix;
-    int8_t                preference;
-    bool                  stable;
-    auto                  args  = std::tie(routePrefix, preference, stable);
+    ExternalRoute         route;
+    auto                  args  = std::tie(route);
     otError               error = OT_ERROR_NONE;
-    otExternalRouteConfig route;
-    otIp6Prefix &         prefix = route.mPrefix;
+    otExternalRouteConfig otRoute;
+    otIp6Prefix &         prefix = otRoute.mPrefix;
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     // size is guaranteed by parsing
-    std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-    prefix.mLength    = routePrefix.mLength;
-    route.mPreference = preference;
-    route.mStable     = stable;
+    std::copy(route.mPrefix.mPrefix.begin(), route.mPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+    prefix.mLength      = route.mPrefix.mLength;
+    otRoute.mPreference = route.mPreference;
+    otRoute.mStable     = route.mStable;
 
-    SuccessOrExit(error = otBorderRouterAddRoute(threadHelper->GetInstance(), &route));
-    SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+    SuccessOrExit(error = otBorderRouterAddRoute(threadHelper->GetInstance(), &otRoute));
+    if (route.mStable)
+    {
+        SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+    }
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -903,6 +906,38 @@ otError DBusThreadObject::GetRadioTxPowerHandler(DBusMessageIter &aIter)
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, txPower) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
+    return error;
+}
+
+otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
+{
+    auto                       threadHelper = mNcp->GetThreadHelper();
+    otError                    error        = OT_ERROR_NONE;
+    otNetworkDataIterator      iter         = OT_NETWORK_DATA_ITERATOR_INIT;
+    otExternalRouteConfig      config;
+    std::vector<ExternalRoute> externalRouteTable;
+
+    while (otNetDataGetNextRoute(threadHelper->GetInstance(), &iter, &config) == OT_ERROR_NONE)
+    {
+        ExternalRoute route;
+
+        route.mPrefix.mPrefix      = std::vector<uint8_t>(&config.mPrefix.mPrefix.mFields.m8[0],
+                                                     &config.mPrefix.mPrefix.mFields.m8[OTBR_IP6_PREFIX_SIZE]);
+        route.mPrefix.mLength      = config.mPrefix.mLength;
+        route.mRloc16              = config.mRloc16;
+        route.mPreference          = config.mPreference;
+        route.mStable              = config.mStable;
+        route.mNextHopIsThisDevice = config.mNextHopIsThisDevice;
+        externalRouteTable.push_back(route);
+    }
+
+    printf("Encode size %zu\n", externalRouteTable.size());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, externalRouteTable) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    printf("error %d\n", error);
     return error;
 }
 

@@ -105,6 +105,20 @@ bool operator==(const otbr::DBus::ActiveScanResult &aLhs, const otbr::DBus::Acti
            aLhs.mIsNative == aRhs.mIsNative && aLhs.mIsJoinable == aRhs.mIsJoinable;
 }
 
+bool operator==(const otbr::DBus::Ip6Prefix &aLhs, const otbr::DBus::Ip6Prefix &aRhs)
+{
+    bool prefixDataEquality = (aLhs.mPrefix.size() == aRhs.mPrefix.size()) &&
+                              (memcmp(&aLhs.mPrefix[0], &aRhs.mPrefix[0], aLhs.mPrefix.size()) == 0);
+
+    return prefixDataEquality && aLhs.mLength == aRhs.mLength;
+}
+
+bool operator==(const otbr::DBus::ExternalRoute &aLhs, const otbr::DBus::ExternalRoute &aRhs)
+{
+    return aLhs.mPrefix == aRhs.mPrefix && aLhs.mRloc16 == aRhs.mRloc16 && aLhs.mPreference == aRhs.mPreference &&
+           aLhs.mStable == aRhs.mStable && aLhs.mNextHopIsThisDevice == aRhs.mNextHopIsThisDevice;
+}
+
 inline otbrError DBusMessageEncode(DBusMessageIter *aIter, const TestStruct &aValue)
 {
     otbrError       error = OTBR_ERROR_DBUS;
@@ -285,6 +299,24 @@ TEST(DBusMessage, TestOtbrActiveScanResults)
     DBusMessage *                                    msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true}});
     tuple<std::vector<otbr::DBus::ActiveScanResult>> getVals;
+
+    CHECK(msg != NULL);
+
+    CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
+    CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
+
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestOtbrExternalRoute)
+{
+    DBusMessage *                                 msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::ExternalRoute>> setVals(
+        {{otbr::DBus::Ip6Prefix({{0xfa, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, 64}), uint16_t(0xfc00), 1, true,
+          true}});
+    tuple<std::vector<otbr::DBus::ExternalRoute>> getVals;
 
     CHECK(msg != NULL);
 

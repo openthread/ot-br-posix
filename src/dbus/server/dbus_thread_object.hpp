@@ -109,6 +109,7 @@ private:
     otError GetPartitionIDHandler(DBusMessageIter &aIter);
     otError GetInstantRssiHandler(DBusMessageIter &aIter);
     otError GetRadioTxPowerHandler(DBusMessageIter &aIter);
+    otError GetExternalRoutesHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
 

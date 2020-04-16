@@ -210,16 +210,14 @@ public:
     /**
      * This method adds an external route.
      *
-     * @param[in]   aPrefix         The route prefix.
-     * @param[in]   aPreference     The route preference.
-     * @param[in]   aStable         Whether or not the route is stable.
+     * @param[in]   aExternalroute  The external route config
      *
      * @retval ERROR_NONE successfully performed the dbus function call
      * @retval ERROR_DBUS dbus encode/decode error
      * @retval ...        OpenThread defined error value otherwise
      *
      */
-    ClientError AddExternalRoute(const Ip6Prefix &aPrefix, int8_t aPerference, bool aStable);
+    ClientError AddExternalRoute(const ExternalRoute &aExternalRoute);
 
     /**
      * This method removes an external route.
@@ -569,6 +567,18 @@ public:
      *
      */
     ClientError GetRadioTxPower(int8_t &aTxPower);
+
+    /**
+     * This method gets the external route table
+     *
+     * @param[out]  aExternalRoutes   The external route table
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
 
     /**
      * This method returns the network interface name the client is bound to.

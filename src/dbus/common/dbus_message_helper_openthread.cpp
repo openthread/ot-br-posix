@@ -146,12 +146,11 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const Ip6Prefix &aPrefix)
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
     VerifyOrExit(aPrefix.mPrefix.size() <= OTBR_IP6_PREFIX_SIZE, error = OTBR_ERROR_DBUS);
 
-    SuccessOrExit(DBusMessageEncode(&sub, aPrefix.mPrefix));
-    SuccessOrExit(DBusMessageEncode(&sub, aPrefix.mLength));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mPrefix));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mLength));
 
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
 
-    error = OTBR_ERROR_NONE;
 exit:
     return error;
 }
@@ -167,6 +166,44 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, Ip6Prefix &aPrefix)
     SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mLength));
 
     dbus_message_iter_next(aIter);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const ExternalRoute &aRoute)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRoute.mPrefix));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRoute.mRloc16));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRoute.mPreference));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRoute.mStable));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRoute.mNextHopIsThisDevice));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, ExternalRoute &aRoute)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRoute.mPrefix));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRoute.mRloc16));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRoute.mPreference));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRoute.mStable));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRoute.mNextHopIsThisDevice));
+
+    dbus_message_iter_next(aIter);
+
 exit:
     return error;
 }
