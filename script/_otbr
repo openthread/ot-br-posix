@@ -30,11 +30,15 @@
 otbr_uninstall()
 {
     if have systemctl; then
-        sudo systemctl stop otbr-web otbr-agent wpantund || true
-        sudo systemctl disable otbr-web otbr-agent wpantund || true
+        sudo systemctl stop otbr-web otbr-agent || true
+        sudo systemctl disable otbr-web otbr-agent || true
         ! sudo systemctl is-enabled otbr-web
         ! sudo systemctl is-enabled otbr-agent
-        ! sudo systemctl is-enabled wpantund
+        with OTBR_DAEMON || {
+            sudo systemctl stop wpantund || true
+            sudo systemctl disable wpantund || true
+            ! sudo systemctl is-enabled wpantund
+        }
     fi
     sudo killall otbr-web otbr-agent || true
 
@@ -50,15 +54,19 @@ otbr_install()
         --exec-prefix=/usr \
         --prefix= \
         --sysconfdir=/etc \
-        $(without COVERAGE || echo '--enable-coverage') \
+        $(without OTBR_DAEMON || echo '--with-ncp=openthread --enable-dbus-server') \
+        $(without COVERAGE || echo '--enable-coverage')
 
     make -j$(getconf _NPROCESSORS_ONLN)
     sudo make install
     if have systemctl; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
-        sudo systemctl enable wpantund otbr-web otbr-agent || true
-        sudo systemctl is-enabled wpantund || die 'Failed to enable wpantund!'
+        with OTBR_DAEMON || {
+            sudo systemctl enable wpantund || true
+            sudo systemctl is-enabled wpantund || die 'Failed to enable wpantund!'
+        }
+        sudo systemctl enable otbr-web otbr-agent || true
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
         sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else

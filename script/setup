@@ -51,7 +51,7 @@ main()
     otbr_uninstall
     network_manager_uninstall
     dhcpv6_pd_uninstall
-    wpantund_uninstall
+    with OTBR_DAEMON || wpantund_uninstall
     nat64_uninstall
     dns64_uninstall
     ipforward_uninstall
@@ -60,7 +60,7 @@ main()
     nat64_install
     dns64_install
     network_manager_install
-    wpantund_install
+    with OTBR_DAEMON || wpantund_install
     dhcpv6_pd_install
     otbr_install
     . $AFTER_HOOK
