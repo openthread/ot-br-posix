@@ -1,7 +1,4 @@
-[![Build Status][otbr-travis-svg]][otbr-travis]
-[![Coverage Status][otbr-codecov-svg]][otbr-codecov]
-[![Docker Status][otbr-docker-amd64-linux-svg]][otbr-docker-amd64-linux]
-[![Docker Status][otbr-docker-arm32v7l-raspbian-svg]][otbr-docker-arm32v7l-raspbian]
+[![Build Status][otbr-travis-svg]][otbr-travis] [![Coverage Status][otbr-codecov-svg]][otbr-codecov] [![Docker Status][otbr-docker-amd64-linux-svg]][otbr-docker-amd64-linux] [![Docker Status][otbr-docker-arm32v7l-raspbian-svg]][otbr-docker-arm32v7l-raspbian]
 
 ---
 
@@ -11,8 +8,8 @@ Per the [Thread 1.1.1 Specification](http://threadgroup.org/ThreadSpec), a Threa
 
 A Thread Border Router minimally supports the following functions:
 
--  End-to-end IP connectivity via routing between Thread devices and other external IP networks
--  External Thread Commissioning (for example, a mobile phone) to authenticate and join a Thread device to a Thread network
+- End-to-end IP connectivity via routing between Thread devices and other external IP networks
+- External Thread Commissioning (for example, a mobile phone) to authenticate and join a Thread device to a Thread network
 
 <a href="https://www.threadgroup.org/What-is-Thread#certifiedproducts">
 <img src="/doc/images/certified.svg" alt="Thread Certified Component" width="150px" align="right">
@@ -22,13 +19,13 @@ OpenThread's implementation of a Border Router is called OpenThread Border Route
 
 OTBR includes a number of features, including:
 
--  Web UI for configuration and management
--  Thread Border Agent to support an External Commissioner
--  DHCPv6 Prefix Delegation to obtain IPv6 prefixes for a Thread network
--  NAT64 for connecting to IPv4 networks
--  DNS64 to allow Thread devices to initiate communications by name to an IPv4-only server
--  Thread interface driver using [wpantund](https://github.com/openthread/wpantund)
--  Docker support
+- Web UI for configuration and management
+- Thread Border Agent to support an External Commissioner
+- DHCPv6 Prefix Delegation to obtain IPv6 prefixes for a Thread network
+- NAT64 for connecting to IPv4 networks
+- DNS64 to allow Thread devices to initiate communications by name to an IPv4-only server
+- Thread interface driver using [wpantund](https://github.com/openthread/wpantund)
+- Docker support
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
@@ -73,9 +70,9 @@ Please only use the OpenThread name and marks when accurately referencing this s
 
 There are numerous avenues for OpenThread support:
 
-* Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/ot-br-posix/issues)
-* Stack Overflow — [post questions using the `openthread` tag](http://stackoverflow.com/questions/tagged/openthread)
-* Google Groups — [discussion and announcements at openthread-users](https://groups.google.com/forum/#!forum/openthread-users)
+- Bugs and feature requests — [submit to the Issue Tracker](https://github.com/openthread/ot-br-posix/issues)
+- Stack Overflow — [post questions using the `openthread` tag](http://stackoverflow.com/questions/tagged/openthread)
+- Google Groups — [discussion and announcements at openthread-users](https://groups.google.com/forum/#!forum/openthread-users)
 
 The openthread-users Google Group is the recommended place for users to discuss OpenThread and interact directly with the OpenThread team.
 
