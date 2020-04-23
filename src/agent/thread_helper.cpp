@@ -382,17 +382,25 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 
         mNcp->PostTimerTask(triggerTime, [this, aPort]() {
             auto         now = std::chrono::steady_clock::now();
-            otExtAddress steeringClearData;
+            otExtAddress noneAddress;
 
             // 0 to clean steering data
-            memset(&steeringClearData.m8, 0, sizeof(steeringClearData.m8));
+            memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
             if (now >= mUnsecurePortCloseTime[aPort])
             {
                 otIp6RemoveUnsecurePort(mInstance, aPort);
-                otThreadSetSteeringData(mInstance, &steeringClearData);
+                otThreadSetSteeringData(mInstance, &noneAddress);
                 mUnsecurePortCloseTime.erase(aPort);
             }
         });
+    }
+    else
+    {
+        otExtAddress noneAddress;
+
+        memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
+        otIp6RemoveUnsecurePort(mInstance, aPort);
+        otThreadSetSteeringData(mInstance, &noneAddress);
     }
 
 exit:
