@@ -54,7 +54,7 @@ main() {
         chown -R pi:pi /home/pi/repo
         cd /home/pi/repo
         apt-get update
-        apt-get install -y git
+        apt-get install --no-install-recommends -y git
         su -m -c 'git config --global pack.threads 1' pi
         su -m -c 'script/bootstrap' pi
         su -m -c './configure --prefix= --exec-prefix=/usr' pi

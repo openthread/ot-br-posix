@@ -60,7 +60,7 @@ ENV OTBR_NORELEASE_DEPS \
   doxygen
 
 RUN apt-get update \
-  && apt-get install -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
+  && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
   && git reset --hard && git clean -xffd \
   && ./script/bootstrap \
   && ./script/setup \

@@ -40,7 +40,7 @@ die() {
 
 install_common_dependencies() {
     # Common dependencies
-    sudo apt-get install -y      \
+    sudo apt-get install --no-install-recommends -y      \
         libdbus-1-dev            \
         autoconf-archive         \
         doxygen                  \
@@ -64,7 +64,7 @@ install_openthread_binraries() {
     sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd /usr/bin/ || die 'Failed to build OpenThread!'
     which ot-rcp || die 'Unable to find ot-rcp!'
     which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
-    sudo apt-get install socat
+    sudo apt-get install --no-install-recommends socat
 }
 
 configure_network() {
@@ -94,7 +94,7 @@ case "$(uname)" in
     }
 
     [ $BUILD_TARGET != android-check ] || {
-        sudo apt-get install -y gcc-multilib g++-multilib
+        sudo apt-get install --no-install-recommends -y gcc-multilib g++-multilib
         (
         cd $HOME
         wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
@@ -106,12 +106,12 @@ case "$(uname)" in
 
     install_common_dependencies
 
-    [ $BUILD_TARGET != scan-build ] || sudo apt-get install -y clang
+    [ $BUILD_TARGET != scan-build ] || sudo apt-get install --no-install-recommends -y clang
 
-    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install -y clang-format-6.0
+    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install --no-install-recommends -y clang-format-6.0
 
     [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != distcheck ] && [ $BUILD_TARGET != meshcop ] || {
-        sudo apt-get install -y  \
+        sudo apt-get install --no-install-recommends -y  \
             avahi-daemon         \
             avahi-utils          \
             $NULL
@@ -133,7 +133,7 @@ case "$(uname)" in
 
     # Prepare Raspbian image
     [ $BUILD_TARGET != raspbian-gcc ] || {
-        sudo apt-get install --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
+        sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
 
         git clone --depth 1 https://github.com/ryankurte/docker-rpi-emu.git
 
