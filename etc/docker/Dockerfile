@@ -61,6 +61,7 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
+  && git config --global http.sslVerify false \
   && git reset --hard && git clean -xffd \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
