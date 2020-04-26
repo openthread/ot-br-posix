@@ -138,7 +138,7 @@ public:
      */
     static int UbusSetChannelHandler(struct ubus_context *     aContext,
                                      struct ubus_object *      aObj,
-                                     struct ubus_request_data *requ,
+                                     struct ubus_request_data *aRequest,
                                      const char *              aMethod,
                                      struct blob_attr *        aMsg);
 
@@ -174,7 +174,7 @@ public:
      */
     static int UbusSetNetworknameHandler(struct ubus_context *     aContext,
                                          struct ubus_object *      aObj,
-                                         struct ubus_request_data *requ,
+                                         struct ubus_request_data *aRequest,
                                          const char *              aMethod,
                                          struct blob_attr *        aMsg);
 
@@ -210,7 +210,7 @@ public:
      */
     static int UbusMacfilterSetStateHandler(struct ubus_context *     aContext,
                                             struct ubus_object *      aObj,
-                                            struct ubus_request_data *requ,
+                                            struct ubus_request_data *aRequest,
                                             const char *              aMethod,
                                             struct blob_attr *        aMsg);
 
@@ -246,7 +246,7 @@ public:
      */
     static int UbusSetPanIdHandler(struct ubus_context *     aContext,
                                    struct ubus_object *      aObj,
-                                   struct ubus_request_data *requ,
+                                   struct ubus_request_data *aRequest,
                                    const char *              aMethod,
                                    struct blob_attr *        aMsg);
 
@@ -282,7 +282,7 @@ public:
      */
     static int UbusSetPskcHandler(struct ubus_context *     aContext,
                                   struct ubus_object *      aObj,
-                                  struct ubus_request_data *requ,
+                                  struct ubus_request_data *aRequest,
                                   const char *              aMethod,
                                   struct blob_attr *        aMsg);
 
@@ -318,7 +318,7 @@ public:
      */
     static int UbusSetMasterkeyHandler(struct ubus_context *     aContext,
                                        struct ubus_object *      aObj,
-                                       struct ubus_request_data *requ,
+                                       struct ubus_request_data *aRequest,
                                        const char *              aMethod,
                                        struct blob_attr *        aMsg);
 
@@ -336,7 +336,7 @@ public:
      */
     static int UbusRloc16Handler(struct ubus_context *     aContext,
                                  struct ubus_object *      aObj,
-                                 struct ubus_request_data *requ,
+                                 struct ubus_request_data *aRequest,
                                  const char *              aMethod,
                                  struct blob_attr *        aMsg);
 
@@ -354,7 +354,7 @@ public:
      */
     static int UbusExtPanIdHandler(struct ubus_context *     aContext,
                                    struct ubus_object *      aObj,
-                                   struct ubus_request_data *requ,
+                                   struct ubus_request_data *aRequest,
                                    const char *              aMethod,
                                    struct blob_attr *        aMsg);
 
@@ -372,7 +372,7 @@ public:
      */
     static int UbusSetExtPanIdHandler(struct ubus_context *     aContext,
                                       struct ubus_object *      aObj,
-                                      struct ubus_request_data *requ,
+                                      struct ubus_request_data *aRequest,
                                       const char *              aMethod,
                                       struct blob_attr *        aMsg);
 
@@ -390,7 +390,7 @@ public:
      */
     static int UbusModeHandler(struct ubus_context *     aContext,
                                struct ubus_object *      aObj,
-                               struct ubus_request_data *requ,
+                               struct ubus_request_data *aRequest,
                                const char *              aMethod,
                                struct blob_attr *        aMsg);
 
@@ -408,7 +408,7 @@ public:
      */
     static int UbusSetModeHandler(struct ubus_context *     aContext,
                                   struct ubus_object *      aObj,
-                                  struct ubus_request_data *requ,
+                                  struct ubus_request_data *aRequest,
                                   const char *              aMethod,
                                   struct blob_attr *        aMsg);
 
@@ -426,7 +426,7 @@ public:
      */
     static int UbusLeaderPartitionIdHandler(struct ubus_context *     aContext,
                                             struct ubus_object *      aObj,
-                                            struct ubus_request_data *requ,
+                                            struct ubus_request_data *aRequest,
                                             const char *              aMethod,
                                             struct blob_attr *        aMsg);
 
@@ -444,7 +444,7 @@ public:
      */
     static int UbusSetLeaderPartitionIdHandler(struct ubus_context *     aContext,
                                                struct ubus_object *      aObj,
-                                               struct ubus_request_data *requ,
+                                               struct ubus_request_data *aRequest,
                                                const char *              aMethod,
                                                struct blob_attr *        aMsg);
 
@@ -462,7 +462,7 @@ public:
      */
     static int UbusLeaderdataHandler(struct ubus_context *     aContext,
                                      struct ubus_object *      aObj,
-                                     struct ubus_request_data *requ,
+                                     struct ubus_request_data *aRequest,
                                      const char *              aMethod,
                                      struct blob_attr *        aMsg);
 
@@ -480,7 +480,7 @@ public:
      */
     static int UbusNetworkdataHandler(struct ubus_context *     aContext,
                                       struct ubus_object *      aObj,
-                                      struct ubus_request_data *requ,
+                                      struct ubus_request_data *aRequest,
                                       const char *              aMethod,
                                       struct blob_attr *        aMsg);
 
@@ -498,7 +498,7 @@ public:
      */
     static int UbusParentHandler(struct ubus_context *     aContext,
                                  struct ubus_object *      aObj,
-                                 struct ubus_request_data *requ,
+                                 struct ubus_request_data *aRequest,
                                  const char *              aMethod,
                                  struct blob_attr *        aMsg);
 
@@ -516,7 +516,7 @@ public:
      */
     static int UbusNeighborHandler(struct ubus_context *     aContext,
                                    struct ubus_object *      aObj,
-                                   struct ubus_request_data *requ,
+                                   struct ubus_request_data *aRequest,
                                    const char *              aMethod,
                                    struct blob_attr *        aMsg);
 
@@ -570,7 +570,7 @@ public:
      */
     static int UbusLeaveHandler(struct ubus_context *     aContext,
                                 struct ubus_object *      aObj,
-                                struct ubus_request_data *requ,
+                                struct ubus_request_data *aRequest,
                                 const char *              aMethod,
                                 struct blob_attr *        aMsg);
 
@@ -624,7 +624,7 @@ public:
      */
     static int UbusMacfilterAddHandler(struct ubus_context *     aContext,
                                        struct ubus_object *      aObj,
-                                       struct ubus_request_data *requ,
+                                       struct ubus_request_data *aRequest,
                                        const char *              aMethod,
                                        struct blob_attr *        aMsg);
 
@@ -642,7 +642,7 @@ public:
      */
     static int UbusMacfilterClearHandler(struct ubus_context *     aContext,
                                          struct ubus_object *      aObj,
-                                         struct ubus_request_data *requ,
+                                         struct ubus_request_data *aRequest,
                                          const char *              aMethod,
                                          struct blob_attr *        aMsg);
 
@@ -660,7 +660,7 @@ public:
      */
     static int UbusMacfilterRemoveHandler(struct ubus_context *     aContext,
                                           struct ubus_object *      aObj,
-                                          struct ubus_request_data *requ,
+                                          struct ubus_request_data *aRequest,
                                           const char *              aMethod,
                                           struct blob_attr *        aMsg);
 
@@ -678,7 +678,7 @@ public:
      */
     static int UbusCommissionerStartHandler(struct ubus_context *     aContext,
                                             struct ubus_object *      aObj,
-                                            struct ubus_request_data *requ,
+                                            struct ubus_request_data *aRequest,
                                             const char *              aMethod,
                                             struct blob_attr *        aMsg);
 
@@ -732,7 +732,7 @@ public:
      */
     static int UbusJoinerNumHandler(struct ubus_context *     aContext,
                                     struct ubus_object *      aObj,
-                                    struct ubus_request_data *requ,
+                                    struct ubus_request_data *aRequest,
                                     const char *              aMethod,
                                     struct blob_attr *        aMsg);
 
