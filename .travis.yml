@@ -74,8 +74,8 @@ matrix:
           packages:
             - clang-format-6.0
       script: script/make-pretty check
+    - env: BUILD_TARGET="macOS"
+      os: osx
   allow_failures:
     - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1
       os: linux
-    - env: BUILD_TARGET="macOS"
-      os: osx

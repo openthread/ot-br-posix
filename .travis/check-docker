@@ -35,7 +35,7 @@ main() {
     SOCAT_OUTPUT=/tmp/ot-socat
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
     while true; do
-        if test "$(head -n2 $SOCAT_OUTPUT | wc -l)" = 2; then
+        if test "$(head -n2 "$SOCAT_OUTPUT" | wc -l)" = 2; then
             DEVICE_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
             DOCKER_PTY=$(head -n2 $SOCAT_OUTPUT | tail -n1 | grep -o '/dev/.\+')
             break
