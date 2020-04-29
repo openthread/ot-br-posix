@@ -930,13 +930,10 @@ otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
         externalRouteTable.push_back(route);
     }
 
-    printf("Encode size %zu\n", externalRouteTable.size());
-
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, externalRouteTable) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
 exit:
-    printf("error %d\n", error);
     return error;
 }
 
