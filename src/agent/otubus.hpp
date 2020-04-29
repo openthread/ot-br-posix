@@ -93,7 +93,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -102,7 +102,7 @@ public:
      */
     static int UbusScanHandler(struct ubus_context *     aContext,
                                struct ubus_object *      aObj,
-                               struct ubus_request_data *aReq,
+                               struct ubus_request_data *aRequest,
                                const char *              aMethod,
                                struct blob_attr *        aMsg);
 
@@ -111,7 +111,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -120,7 +120,7 @@ public:
      */
     static int UbusChannelHandler(struct ubus_context *     aContext,
                                   struct ubus_object *      aObj,
-                                  struct ubus_request_data *aReq,
+                                  struct ubus_request_data *aRequest,
                                   const char *              aMethod,
                                   struct blob_attr *        aMsg);
 
@@ -129,7 +129,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -138,7 +138,7 @@ public:
      */
     static int UbusSetChannelHandler(struct ubus_context *     aContext,
                                      struct ubus_object *      aObj,
-                                     struct ubus_request_data *requ,
+                                     struct ubus_request_data *aRequest,
                                      const char *              aMethod,
                                      struct blob_attr *        aMsg);
 
@@ -147,7 +147,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -156,7 +156,7 @@ public:
      */
     static int UbusNetworknameHandler(struct ubus_context *     aContext,
                                       struct ubus_object *      aObj,
-                                      struct ubus_request_data *aReq,
+                                      struct ubus_request_data *aRequest,
                                       const char *              aMethod,
                                       struct blob_attr *        aMsg);
 
@@ -165,7 +165,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -174,7 +174,7 @@ public:
      */
     static int UbusSetNetworknameHandler(struct ubus_context *     aContext,
                                          struct ubus_object *      aObj,
-                                         struct ubus_request_data *requ,
+                                         struct ubus_request_data *aRequest,
                                          const char *              aMethod,
                                          struct blob_attr *        aMsg);
 
@@ -183,7 +183,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -192,7 +192,7 @@ public:
      */
     static int UbusStateHandler(struct ubus_context *     aContext,
                                 struct ubus_object *      aObj,
-                                struct ubus_request_data *aReq,
+                                struct ubus_request_data *aRequest,
                                 const char *              aMethod,
                                 struct blob_attr *        aMsg);
 
@@ -201,7 +201,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -210,7 +210,7 @@ public:
      */
     static int UbusMacfilterSetStateHandler(struct ubus_context *     aContext,
                                             struct ubus_object *      aObj,
-                                            struct ubus_request_data *requ,
+                                            struct ubus_request_data *aRequest,
                                             const char *              aMethod,
                                             struct blob_attr *        aMsg);
 
@@ -219,7 +219,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -228,7 +228,7 @@ public:
      */
     static int UbusPanIdHandler(struct ubus_context *     aContext,
                                 struct ubus_object *      aObj,
-                                struct ubus_request_data *aReq,
+                                struct ubus_request_data *aRequest,
                                 const char *              aMethod,
                                 struct blob_attr *        aMsg);
 
@@ -237,7 +237,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -246,7 +246,7 @@ public:
      */
     static int UbusSetPanIdHandler(struct ubus_context *     aContext,
                                    struct ubus_object *      aObj,
-                                   struct ubus_request_data *requ,
+                                   struct ubus_request_data *aRequest,
                                    const char *              aMethod,
                                    struct blob_attr *        aMsg);
 
@@ -255,7 +255,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -264,7 +264,7 @@ public:
      */
     static int UbusPskcHandler(struct ubus_context *     aContext,
                                struct ubus_object *      aObj,
-                               struct ubus_request_data *aReq,
+                               struct ubus_request_data *aRequest,
                                const char *              aMethod,
                                struct blob_attr *        aMsg);
 
@@ -273,7 +273,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -282,7 +282,7 @@ public:
      */
     static int UbusSetPskcHandler(struct ubus_context *     aContext,
                                   struct ubus_object *      aObj,
-                                  struct ubus_request_data *requ,
+                                  struct ubus_request_data *aRequest,
                                   const char *              aMethod,
                                   struct blob_attr *        aMsg);
 
@@ -291,7 +291,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -300,7 +300,7 @@ public:
      */
     static int UbusMasterkeyHandler(struct ubus_context *     aContext,
                                     struct ubus_object *      aObj,
-                                    struct ubus_request_data *aReq,
+                                    struct ubus_request_data *aRequest,
                                     const char *              aMethod,
                                     struct blob_attr *        aMsg);
 
@@ -309,7 +309,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -318,7 +318,7 @@ public:
      */
     static int UbusSetMasterkeyHandler(struct ubus_context *     aContext,
                                        struct ubus_object *      aObj,
-                                       struct ubus_request_data *requ,
+                                       struct ubus_request_data *aRequest,
                                        const char *              aMethod,
                                        struct blob_attr *        aMsg);
 
@@ -327,7 +327,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -336,7 +336,7 @@ public:
      */
     static int UbusRloc16Handler(struct ubus_context *     aContext,
                                  struct ubus_object *      aObj,
-                                 struct ubus_request_data *requ,
+                                 struct ubus_request_data *aRequest,
                                  const char *              aMethod,
                                  struct blob_attr *        aMsg);
 
@@ -345,7 +345,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -354,7 +354,7 @@ public:
      */
     static int UbusExtPanIdHandler(struct ubus_context *     aContext,
                                    struct ubus_object *      aObj,
-                                   struct ubus_request_data *requ,
+                                   struct ubus_request_data *aRequest,
                                    const char *              aMethod,
                                    struct blob_attr *        aMsg);
 
@@ -363,7 +363,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -372,7 +372,7 @@ public:
      */
     static int UbusSetExtPanIdHandler(struct ubus_context *     aContext,
                                       struct ubus_object *      aObj,
-                                      struct ubus_request_data *requ,
+                                      struct ubus_request_data *aRequest,
                                       const char *              aMethod,
                                       struct blob_attr *        aMsg);
 
@@ -381,7 +381,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -390,7 +390,7 @@ public:
      */
     static int UbusModeHandler(struct ubus_context *     aContext,
                                struct ubus_object *      aObj,
-                               struct ubus_request_data *requ,
+                               struct ubus_request_data *aRequest,
                                const char *              aMethod,
                                struct blob_attr *        aMsg);
 
@@ -399,7 +399,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -408,7 +408,7 @@ public:
      */
     static int UbusSetModeHandler(struct ubus_context *     aContext,
                                   struct ubus_object *      aObj,
-                                  struct ubus_request_data *requ,
+                                  struct ubus_request_data *aRequest,
                                   const char *              aMethod,
                                   struct blob_attr *        aMsg);
 
@@ -417,7 +417,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -426,7 +426,7 @@ public:
      */
     static int UbusLeaderPartitionIdHandler(struct ubus_context *     aContext,
                                             struct ubus_object *      aObj,
-                                            struct ubus_request_data *requ,
+                                            struct ubus_request_data *aRequest,
                                             const char *              aMethod,
                                             struct blob_attr *        aMsg);
 
@@ -435,7 +435,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -444,7 +444,7 @@ public:
      */
     static int UbusSetLeaderPartitionIdHandler(struct ubus_context *     aContext,
                                                struct ubus_object *      aObj,
-                                               struct ubus_request_data *requ,
+                                               struct ubus_request_data *aRequest,
                                                const char *              aMethod,
                                                struct blob_attr *        aMsg);
 
@@ -453,7 +453,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -462,7 +462,7 @@ public:
      */
     static int UbusLeaderdataHandler(struct ubus_context *     aContext,
                                      struct ubus_object *      aObj,
-                                     struct ubus_request_data *requ,
+                                     struct ubus_request_data *aRequest,
                                      const char *              aMethod,
                                      struct blob_attr *        aMsg);
 
@@ -471,7 +471,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -480,7 +480,7 @@ public:
      */
     static int UbusNetworkdataHandler(struct ubus_context *     aContext,
                                       struct ubus_object *      aObj,
-                                      struct ubus_request_data *requ,
+                                      struct ubus_request_data *aRequest,
                                       const char *              aMethod,
                                       struct blob_attr *        aMsg);
 
@@ -489,7 +489,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -498,7 +498,7 @@ public:
      */
     static int UbusParentHandler(struct ubus_context *     aContext,
                                  struct ubus_object *      aObj,
-                                 struct ubus_request_data *requ,
+                                 struct ubus_request_data *aRequest,
                                  const char *              aMethod,
                                  struct blob_attr *        aMsg);
 
@@ -507,7 +507,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -516,7 +516,7 @@ public:
      */
     static int UbusNeighborHandler(struct ubus_context *     aContext,
                                    struct ubus_object *      aObj,
-                                   struct ubus_request_data *requ,
+                                   struct ubus_request_data *aRequest,
                                    const char *              aMethod,
                                    struct blob_attr *        aMsg);
 
@@ -525,7 +525,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -534,7 +534,7 @@ public:
      */
     static int UbusThreadStartHandler(struct ubus_context *     aContext,
                                       struct ubus_object *      aObj,
-                                      struct ubus_request_data *aReq,
+                                      struct ubus_request_data *aRequest,
                                       const char *              aMethod,
                                       struct blob_attr *        aMsg);
 
@@ -543,7 +543,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -552,7 +552,7 @@ public:
      */
     static int UbusThreadStopHandler(struct ubus_context *     aContext,
                                      struct ubus_object *      aObj,
-                                     struct ubus_request_data *aReq,
+                                     struct ubus_request_data *aRequest,
                                      const char *              aMethod,
                                      struct blob_attr *        aMsg);
 
@@ -561,7 +561,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -570,7 +570,7 @@ public:
      */
     static int UbusLeaveHandler(struct ubus_context *     aContext,
                                 struct ubus_object *      aObj,
-                                struct ubus_request_data *requ,
+                                struct ubus_request_data *aRequest,
                                 const char *              aMethod,
                                 struct blob_attr *        aMsg);
 
@@ -579,7 +579,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -588,7 +588,7 @@ public:
      */
     static int UbusMacfilterAddrHandler(struct ubus_context *     aContext,
                                         struct ubus_object *      aObj,
-                                        struct ubus_request_data *aReq,
+                                        struct ubus_request_data *aRequest,
                                         const char *              aMethod,
                                         struct blob_attr *        aMsg);
 
@@ -597,7 +597,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -606,7 +606,7 @@ public:
      */
     static int UbusMacfilterStateHandler(struct ubus_context *     aContext,
                                          struct ubus_object *      aObj,
-                                         struct ubus_request_data *aReq,
+                                         struct ubus_request_data *aRequest,
                                          const char *              aMethod,
                                          struct blob_attr *        aMsg);
 
@@ -615,7 +615,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -624,7 +624,7 @@ public:
      */
     static int UbusMacfilterAddHandler(struct ubus_context *     aContext,
                                        struct ubus_object *      aObj,
-                                       struct ubus_request_data *requ,
+                                       struct ubus_request_data *aRequest,
                                        const char *              aMethod,
                                        struct blob_attr *        aMsg);
 
@@ -633,7 +633,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -642,7 +642,7 @@ public:
      */
     static int UbusMacfilterClearHandler(struct ubus_context *     aContext,
                                          struct ubus_object *      aObj,
-                                         struct ubus_request_data *requ,
+                                         struct ubus_request_data *aRequest,
                                          const char *              aMethod,
                                          struct blob_attr *        aMsg);
 
@@ -651,7 +651,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -660,7 +660,7 @@ public:
      */
     static int UbusMacfilterRemoveHandler(struct ubus_context *     aContext,
                                           struct ubus_object *      aObj,
-                                          struct ubus_request_data *requ,
+                                          struct ubus_request_data *aRequest,
                                           const char *              aMethod,
                                           struct blob_attr *        aMsg);
 
@@ -669,7 +669,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -678,7 +678,7 @@ public:
      */
     static int UbusCommissionerStartHandler(struct ubus_context *     aContext,
                                             struct ubus_object *      aObj,
-                                            struct ubus_request_data *requ,
+                                            struct ubus_request_data *aRequest,
                                             const char *              aMethod,
                                             struct blob_attr *        aMsg);
 
@@ -687,7 +687,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -705,7 +705,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -723,7 +723,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -732,7 +732,7 @@ public:
      */
     static int UbusJoinerNumHandler(struct ubus_context *     aContext,
                                     struct ubus_object *      aObj,
-                                    struct ubus_request_data *requ,
+                                    struct ubus_request_data *aRequest,
                                     const char *              aMethod,
                                     struct blob_attr *        aMsg);
 
@@ -741,7 +741,7 @@ public:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -804,7 +804,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -813,7 +813,7 @@ private:
      */
     int UbusScanHandlerDetail(struct ubus_context *     aContext,
                               struct ubus_object *      aObj,
-                              struct ubus_request_data *aReq,
+                              struct ubus_request_data *aRequest,
                               const char *              aMethod,
                               struct blob_attr *        aMsg);
 
@@ -839,7 +839,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -848,7 +848,7 @@ private:
      */
     int UbusNeighborHandlerDetail(struct ubus_context *     aContext,
                                   struct ubus_object *      aObj,
-                                  struct ubus_request_data *aReq,
+                                  struct ubus_request_data *aRequest,
                                   const char *              aMethod,
                                   struct blob_attr *        aMsg);
 
@@ -857,7 +857,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -866,7 +866,7 @@ private:
      */
     int UbusParentHandlerDetail(struct ubus_context *     aContext,
                                 struct ubus_object *      aObj,
-                                struct ubus_request_data *aReq,
+                                struct ubus_request_data *aRequest,
                                 const char *              aMethod,
                                 struct blob_attr *        aMsg);
 
@@ -875,7 +875,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -884,7 +884,7 @@ private:
      */
     int UbusMgmtset(struct ubus_context *     aContext,
                     struct ubus_object *      aObj,
-                    struct ubus_request_data *aReq,
+                    struct ubus_request_data *aRequest,
                     const char *              aMethod,
                     struct blob_attr *        aMsg);
 
@@ -893,7 +893,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      *
@@ -902,7 +902,7 @@ private:
      */
     int UbusLeaveHandlerDetail(struct ubus_context *     aContext,
                                struct ubus_object *      aObj,
-                               struct ubus_request_data *aReq,
+                               struct ubus_request_data *aRequest,
                                const char *              aMethod,
                                struct blob_attr *        aMsg);
 
@@ -911,7 +911,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      * @param[in]   aAction     A pointer to the action needed.
@@ -921,7 +921,7 @@ private:
      */
     int UbusThreadHandler(struct ubus_context *     aContext,
                           struct ubus_object *      aObj,
-                          struct ubus_request_data *aReq,
+                          struct ubus_request_data *aRequest,
                           const char *              aMethod,
                           struct blob_attr *        aMsg,
                           const char *              aAction);
@@ -931,7 +931,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      * @param[in]   aAction     A pointer to the action needed.
@@ -941,7 +941,7 @@ private:
      */
     int UbusGetInformation(struct ubus_context *     aContext,
                            struct ubus_object *      aObj,
-                           struct ubus_request_data *aReq,
+                           struct ubus_request_data *aRequest,
                            const char *              aMethod,
                            struct blob_attr *        aMsg,
                            const char *              action);
@@ -951,7 +951,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      * @param[in]   aAction     A pointer to the action needed.
@@ -961,7 +961,7 @@ private:
      */
     int UbusSetInformation(struct ubus_context *     aContext,
                            struct ubus_object *      aObj,
-                           struct ubus_request_data *aReq,
+                           struct ubus_request_data *aRequest,
                            const char *              aMethod,
                            struct blob_attr *        aMsg,
                            const char *              aAction);
@@ -971,7 +971,7 @@ private:
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aReq        A pointer to the ubus request.
+     * @param[in]   aRequest    A pointer to the ubus request.
      * @param[in]   aMethod     A pointer to the ubus method.
      * @param[in]   aMsg        A pointer to the ubus message.
      * @param[in]   aAction     A pointer to the action needed.
@@ -981,7 +981,7 @@ private:
      */
     int UbusCommissioner(struct ubus_context *     aContext,
                          struct ubus_object *      aObj,
-                         struct ubus_request_data *aReq,
+                         struct ubus_request_data *aRequest,
                          const char *              aMethod,
                          struct blob_attr *        aMsg,
                          const char *              aAction);
