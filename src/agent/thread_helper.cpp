@@ -42,9 +42,9 @@
 #include <openthread/platform/radio.h>
 
 #include "agent/ncp_openthread.hpp"
+#include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "common/byteswap.hpp"
 
 namespace otbr {
 namespace agent {

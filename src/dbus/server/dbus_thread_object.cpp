@@ -39,10 +39,10 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
+#include "common/byteswap.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
-#include "common/byteswap.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
