@@ -66,8 +66,7 @@ determine_eth0_name()
         ignore=false
         case ${devname} in
             usb* | can* | wpan* | br* | wlan* | lo)
-                # by name we can ignore USB-gadget, CANbus,
-                # Wpantund, wireless and loopback
+                # by name we can ignore USB-gadget, CANbus, Thread, wireless and loopback
                 ignore=true
                 ;;
             *)

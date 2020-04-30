@@ -67,7 +67,6 @@ endif
 
 include $(CLEAR_VARS)
 
-ifeq ($(USE_OTBR_DAEMON), 1)
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libotbr-dbus-client
 LOCAL_MODULE_TAGS := eng
@@ -96,7 +95,6 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
 LOCAL_SHARED_LIBRARIES += libdbus
 
 include $(BUILD_STATIC_LIBRARY)
-endif # ifeq ($(USE_OTBR_DAEMON), 1)
 
 include $(CLEAR_VARS)
 
