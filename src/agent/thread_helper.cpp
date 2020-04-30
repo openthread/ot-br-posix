@@ -29,7 +29,6 @@
 #include "agent/thread_helper.hpp"
 
 #include <assert.h>
-#include <byteswap.h>
 #include <limits.h>
 #include <string.h>
 
@@ -45,6 +44,7 @@
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/byteswap.hpp"
 
 namespace otbr {
 namespace agent {

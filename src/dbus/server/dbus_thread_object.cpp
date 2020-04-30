@@ -27,7 +27,6 @@
  */
 
 #include <assert.h>
-#include <byteswap.h>
 #include <string.h>
 
 #include <openthread/border_router.h>
@@ -43,6 +42,7 @@
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
+#include "common/byteswap.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -765,6 +765,7 @@ otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &a
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    (void)aIter;
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
@@ -793,6 +794,7 @@ otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    (void)aIter;
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
