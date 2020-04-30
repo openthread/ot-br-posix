@@ -50,6 +50,22 @@ enum DeviceRole
 
 struct ActiveScanResult
 {
+    ActiveScanResult()
+        : mExtAddress()
+        , mNetworkName()
+        , mExtendedPanId()
+        , mSteeringData()
+        , mPanId()
+        , mJoinerUdpPort()
+        , mChannel()
+        , mRssi()
+        , mLqi()
+        , mVersion()
+        , mIsNative()
+        , mIsJoinable()
+    {
+    }
+
     uint64_t             mExtAddress;    ///< IEEE 802.15.4 Extended Address
     std::string          mNetworkName;   ///< Thread Network Name
     uint64_t             mExtendedPanId; ///< Thread Extended PAN ID
@@ -66,6 +82,14 @@ struct ActiveScanResult
 
 struct LinkModeConfig
 {
+    LinkModeConfig()
+        : mRxOnWhenIdle()
+        , mSecureDataRequests()
+        , mDeviceType()
+        , mNetworkData()
+    {
+    }
+
     bool mRxOnWhenIdle;       ///< 1, if the sender has its receiver on when not transmitting. 0, otherwise.
     bool mSecureDataRequests; ///< 1, if the sender uses IEEE 802.15.4 to secure all data requests. 0, otherwise.
     bool mDeviceType;         ///< 1, if the sender is an FTD. 0, otherwise.
@@ -74,6 +98,12 @@ struct LinkModeConfig
 
 struct Ip6Prefix
 {
+    Ip6Prefix()
+        : mPrefix()
+        , mLength()
+    {
+    }
+
     std::vector<uint8_t> mPrefix; ///< The IPv6 prefix.
 
     uint8_t mLength; ///< The IPv6 prefix length.
@@ -81,6 +111,18 @@ struct Ip6Prefix
 
 struct OnMeshPrefix
 {
+    OnMeshPrefix()
+        : mPrefix()
+        , mPreference()
+        , mPreferred()
+        , mSlaac()
+        , mDhcp()
+        , mConfigure()
+        , mDefaultRoute()
+        , mStable()
+    {
+    }
+
     /**
      * The IPv6 prefix.
      */
@@ -129,6 +171,15 @@ struct OnMeshPrefix
 
 struct ExternalRoute
 {
+    ExternalRoute()
+        : mPrefix()
+        , mRloc16()
+        , mPreference()
+        , mStable()
+        , mNextHopIsThisDevice()
+    {
+    }
+
     /**
      * The IPv6 prefix.
      */
@@ -166,6 +217,44 @@ struct ExternalRoute
  */
 struct MacCounters
 {
+    MacCounters()
+        : mTxTotal()
+        , mTxUnicast()
+        , mTxBroadcast()
+        , mTxAckRequested()
+        , mTxAcked()
+        , mTxNoAckRequested()
+        , mTxData()
+        , mTxDataPoll()
+        , mTxBeacon()
+        , mTxBeaconRequest()
+        , mTxOther()
+        , mTxRetry()
+        , mTxDirectMaxRetryExpiry()
+        , mTxIndirectMaxRetryExpiry()
+        , mTxErrCca()
+        , mTxErrAbort()
+        , mTxErrBusyChannel()
+        , mRxTotal()
+        , mRxUnicast()
+        , mRxBroadcast()
+        , mRxData()
+        , mRxDataPoll()
+        , mRxBeacon()
+        , mRxBeaconRequest()
+        , mRxOther()
+        , mRxAddressFiltered()
+        , mRxDestAddrFiltered()
+        , mRxDuplicated()
+        , mRxErrNoFrame()
+        , mRxErrUnknownNeighbor()
+        , mRxErrInvalidSrcAddr()
+        , mRxErrSec()
+        , mRxErrFcs()
+        , mRxErrOther()
+    {
+    }
+
     /**
      * The total number of unique MAC frame transmission requests.
      *
@@ -428,6 +517,14 @@ struct MacCounters
 
 struct IpCounters
 {
+    IpCounters()
+        : mTxSuccess()
+        , mRxSuccess()
+        , mTxFailure()
+        , mRxFailure()
+    {
+    }
+
     uint32_t mTxSuccess; ///< The number of IPv6 packets successfully transmitted.
     uint32_t mRxSuccess; ///< The number of IPv6 packets successfully received.
     uint32_t mTxFailure; ///< The number of IPv6 packets failed to transmit.
@@ -436,12 +533,38 @@ struct IpCounters
 
 struct ChannelQuality
 {
+    ChannelQuality()
+        : mChannel()
+        , mOccupancy()
+    {
+    }
+
     uint8_t  mChannel;
     uint16_t mOccupancy;
 };
 
 struct ChildInfo
 {
+    ChildInfo()
+        : mExtAddress()
+        , mTimeout()
+        , mAge()
+        , mRloc16()
+        , mChildId()
+        , mNetworkDataVersion()
+        , mLinkQualityIn()
+        , mAverageRssi()
+        , mLastRssi()
+        , mFrameErrorRate()
+        , mMessageErrorRate()
+        , mRxOnWhenIdle()
+        , mSecureDataRequest()
+        , mFullThreadDevice()
+        , mFullNetworkData()
+        , mIsStateRestoring()
+    {
+    }
+
     uint64_t mExtAddress;         ///< IEEE 802.15.4 Extended Address
     uint32_t mTimeout;            ///< Timeout
     uint32_t mAge;                ///< Time last heard
@@ -462,6 +585,24 @@ struct ChildInfo
 
 struct NeighborInfo
 {
+    NeighborInfo()
+        : mExtAddress()
+        , mAge()
+        , mRloc16()
+        , mLinkFrameCounter()
+        , mLinkQualityIn()
+        , mAverageRssi()
+        , mLastRssi()
+        , mFrameErrorRate()
+        , mMessageErrorRate()
+        , mRxOnWhenIdle()
+        , mSecureDataRequest()
+        , mFullThreadDevice()
+        , mFullNetworkData()
+        , mIsChild()
+    {
+    }
+
     uint64_t mExtAddress;        ///< IEEE 802.15.4 Extended Address
     uint32_t mAge;               ///< Time last heard
     uint16_t mRloc16;            ///< RLOC16
@@ -481,6 +622,15 @@ struct NeighborInfo
 
 struct LeaderData
 {
+    LeaderData()
+        : mPartitionId()
+        , mWeighting()
+        , mDataVersion()
+        , mStableDataVersion()
+        , mLeaderRouterId()
+    {
+    }
+
     uint32_t mPartitionId;       ///< Partition ID
     uint8_t  mWeighting;         ///< Leader Weight
     uint8_t  mDataVersion;       ///< Full Network Data Version
