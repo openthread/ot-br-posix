@@ -1,6 +1,6 @@
 [Unit]
 Description=Border Router Web
-After=wpantund.service
+After=otbr-agent.service
 ConditionPathExists=@sbindir@/otbr-web
 
 [Service]

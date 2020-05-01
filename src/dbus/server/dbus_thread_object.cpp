@@ -27,7 +27,6 @@
  */
 
 #include <assert.h>
-#include <byteswap.h>
 #include <string.h>
 
 #include <openthread/border_router.h>
@@ -40,6 +39,7 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
+#include "common/byteswap.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
@@ -765,6 +765,7 @@ otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &a
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    (void)aIter;
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
@@ -793,6 +794,7 @@ otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    (void)aIter;
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }

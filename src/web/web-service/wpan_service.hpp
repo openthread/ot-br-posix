@@ -36,6 +36,7 @@
 
 #include "openthread-br/config.h"
 
+#include <net/if.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,8 +50,7 @@
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
-#include "utils/strcpy_utils.hpp"
-#include "web/wpan-controller/wpan_controller.hpp"
+#include "web/web-service/ot_client.hpp"
 
 /**
  * WPAN parameter constants
@@ -140,9 +140,9 @@ public:
     std::string HandleCommission(const std::string &aCommissionRequest);
 
     /**
-     * This method sets the interface name of the wpantund.
+     * This method sets the Thread interface name.
      *
-     * @param[in]  aIfName  The pointer to the interface name of wpantund.
+     * @param[in]  aIfName  The pointer to the Thread interface name.
      *
      */
     void SetInterfaceName(const char *aIfName)
@@ -157,9 +157,9 @@ public:
      * @param[inout]  aNetworkName  The pointer to the network name.
      * @param[inout]  aIfName       The pointer to the extended PAN ID.
      *
-     * @retval kWpanStatus_OK        Successfully started the wpan service.
-     * @retval kWpanStatus_Offline   Not started the wpan service.
-     * @retval kWpanStatus_Down      The wpantund was down.
+     * @retval kWpanStatus_OK        Successfully started the Thread service.
+     * @retval kWpanStatus_Offline   Not started the Thread service.
+     * @retval kWpanStatus_Down      The Thread service was down.
      *
      */
     int GetWpanServiceStatus(std::string &aNetworkName, std::string &aExtPanId) const;
@@ -178,25 +178,28 @@ public:
 private:
     int RunCommission(CommissionerArgs aArgs);
 
-    otbr::Dbus::WpanNetworkInfo mNetworks[DBUS_MAXIMUM_NAME_LENGTH];
-    int                         mNetworksCount;
-    char                        mIfName[IFNAMSIZ];
-    std::string                 mNetworkName;
-    std::string                 mExtPanId;
-    const char *                mResponseSuccess = "successful";
-    const char *                mResponseFail    = "failed";
-    const char *                mServiceUp       = "up";
-    const char *                mServiceDown     = "down";
+    WpanNetworkInfo mNetworks[OT_SCANNED_NET_BUFFER_SIZE];
+    int             mNetworksCount;
+    char            mIfName[IFNAMSIZ];
+    std::string     mNetworkName;
+    std::string     mExtPanId;
 
     enum
     {
-        kWpanStatus_OK = 0,
+        kWpanStatus_Ok = 0,
         kWpanStatus_Associating,
         kWpanStatus_Down,
-        kWpanStatus_Offline,
-        kWpanStatus_Uninitialized,
-        kWpanStatus_ParseRequestFailed,
+        kWpanStatus_FormFailed,
         kWpanStatus_GetPropertyFailed,
+        kWpanStatus_JoinFailed,
+        kWpanStatus_LeaveFailed,
+        kWpanStatus_NetworkNotFound,
+        kWpanStatus_Offline,
+        kWpanStatus_ParseRequestFailed,
+        kWpanStatus_ScanFailed,
+        kWpanStatus_SetFailed,
+        kWpanStatus_SetGatewayFailed,
+        kWpanStatus_Uninitialized,
     };
 
     enum

@@ -27,7 +27,7 @@
 #
 ### BEGIN INIT INFO
 # Provides:          otbr-agent
-# Required-Start:    wpantund
+# Required-Start:
 # Required-Stop:
 # Should-Start:
 # Should-Stop:

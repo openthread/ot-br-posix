@@ -39,7 +39,7 @@ test -n "$NCP" || NCP=/dev/ttyUSB0
 killall_services()
 {
     echo 'Closing services...'
-    sudo killall otbr-agent otbr-web wpantund || true
+    sudo killall otbr-agent otbr-web || true
 }
 
 on_exit()
@@ -52,16 +52,14 @@ main()
 {
     . $BEFORE_HOOK
     if have systemctl; then
-        sudo systemctl stop otbr-web otbr-agent wpantund || true
+        sudo systemctl stop otbr-web otbr-agent || true
     fi
     killall_services
 
     trap on_exit INT TERM EXIT
     ipforward_enable
     sudo sh -s <<EOF
-wpantund -I $TUN -s "$NCP" &
-sleep 3
-otbr-agent -I $TUN &
+otbr-agent -I $TUN $NCP 115200 &
 otbr-web -I $TUN &
 wait
 EOF

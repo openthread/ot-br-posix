@@ -46,7 +46,6 @@ ENV OTBR_DOCKER_DEPS git
 ENV OTBR_BUILD_DEPS \
   apt-utils \
   autoconf \
-  autoconf-archive \
   automake \
   build-essential \
   ctags \

@@ -31,6 +31,7 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 include $(top_srcdir)/third_party/openthread/mbedtls.mk
 
 noinst_HEADERS                                        = \
+    byteswap.hpp                                        \
     coap.hpp                                            \
     coap_libcoap.hpp                                    \
     code_utils.hpp                                      \

@@ -51,7 +51,6 @@ using std::chrono::microseconds;
 using std::chrono::seconds;
 using std::chrono::steady_clock;
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
 namespace otbr {
 namespace Ncp {
 
@@ -299,5 +298,3 @@ void otPlatReset(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
     sReset = true;
 }
-
-#endif // OTBR_ENABLE_NCP_OPENTHREAD

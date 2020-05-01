@@ -45,15 +45,10 @@ endif
 
 otbr_agent_LDADD     = \
     libotbr-agent.la   \
-    $(NULL)
-
-if OTBR_ENABLE_NCP_OPENTHREAD
-otbr_agent_LDADD    += \
     $(OPENTHREAD_LIBS) \
     $(MBEDTLS_LIBS)    \
     -lutil             \
     $(NULL)
-endif
 
 otbr_agent_LDFLAGS = \
     -static          \
@@ -80,18 +75,10 @@ libotbr_agent_la_SOURCES                                      = \
     border_agent.cpp                                            \
     $(NULL)
 
-if OTBR_ENABLE_NCP_OPENTHREAD
 libotbr_agent_la_SOURCES                                     += \
     ncp_openthread.cpp                                          \
     thread_helper.cpp                                           \
     $(NULL)
-endif
-
-if OTBR_ENABLE_NCP_WPANTUND
-libotbr_agent_la_SOURCES                                     += \
-    ncp_wpantund.cpp                                            \
-    $(NULL)
-endif
 
 libotbr_agent_la_LIBADD                                       = \
     $(top_builddir)/src/common/libotbr-logging.la               \
@@ -108,20 +95,11 @@ libotbr_agent_la_LIBADD                                      += \
     $(NULL)
 endif
 
-if OTBR_ENABLE_NCP_WPANTUND
-libotbr_agent_la_LIBADD                                      += \
-    $(top_builddir)/third_party/wpantund/libwpanctl.la          \
-    $(DBUS_LIBS)                                                \
-    $(NULL)
-endif
-
-if OTBR_ENABLE_NCP_OPENTHREAD
 if OTBR_ENABLE_DBUS_SERVER
 libotbr_agent_la_LIBADD                                      += \
     $(top_builddir)/src/dbus/server/libotbr-dbus-server.la      \
     $(DBUS_LIBS)                                                \
     $(NULL)
-endif
 endif
 
 libotbr_agent_la_LDFLAGS = \
@@ -131,11 +109,6 @@ libotbr_agent_la_LDFLAGS = \
 libotbr_agent_la_CPPFLAGS                                                  = \
     -I$(top_srcdir)/include                                                  \
     -I$(top_srcdir)/src                                                      \
-    -I$(top_srcdir)/third_party/wpantund/repo/src                            \
-    -I$(top_srcdir)/third_party/wpantund/repo/src                            \
-    -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus                   \
-    -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl                    \
-    -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund                   \
     -I$(top_srcdir)/third_party/openthread/repo/include/                     \
     -I$(top_srcdir)/third_party/openthread/repo/src/                         \
     $(DBUS_CFLAGS)                                                           \
@@ -171,7 +144,6 @@ noinst_HEADERS        = \
     mdns_mdnssd.hpp     \
     ncp.hpp             \
     ncp_openthread.hpp  \
-    ncp_wpantund.hpp    \
     thread_helper.hpp   \
     uris.hpp            \
     $(NULL)
