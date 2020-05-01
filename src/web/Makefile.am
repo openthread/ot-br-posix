@@ -69,31 +69,10 @@ libotbr_web_la_LIBADD                                           = \
     $(NULL)
 
 libotbr_web_la_SOURCES                                          = \
+    web-service/ot_client.cpp                                     \
     web-service/web_server.cpp                                    \
     web-service/wpan_service.cpp                                  \
     $(NULL)
-
-
-if OTBR_ENABLE_NCP_WPANTUND
-libotbr_web_la_SOURCES                                         += \
-    wpan-controller/dbus_base.cpp                                 \
-    wpan-controller/dbus_join.cpp                                 \
-    wpan-controller/dbus_set.cpp                                  \
-    wpan-controller/dbus_gateway.cpp                              \
-    wpan-controller/dbus_get.cpp                                  \
-    wpan-controller/dbus_leave.cpp                                \
-    wpan-controller/dbus_form.cpp                                 \
-    wpan-controller/dbus_scan.cpp                                 \
-    wpan-controller/dbus_ifname.cpp                               \
-    wpan-controller/wpan_controller.cpp                           \
-    $(NULL)
-endif
-
-if OTBR_ENABLE_NCP_OPENTHREAD
-libotbr_web_la_SOURCES                                         += \
-    web-service/ot_client.cpp                                     \
-    $(NULL)
-endif
 
 libotbr_web_la_LDFLAGS                                          = \
     -static                                                       \
@@ -103,10 +82,6 @@ libotbr_web_la_CPPFLAGS                                         = \
     -I$(top_srcdir)/include                                       \
     -I$(top_srcdir)/src                                           \
     -I$(top_srcdir)/third_party/Simple-web-server/repo/           \
-    -I$(top_srcdir)/third_party/wpantund/repo/src                 \
-    -I$(top_srcdir)/third_party/wpantund/repo/src/ipc-dbus        \
-    -I$(top_srcdir)/third_party/wpantund/repo/src/wpanctl         \
-    -I$(top_srcdir)/third_party/wpantund/repo/src/wpantund        \
     -DWEB_FILE_PATH=\"$(datadir)/border-router/frontend\"         \
     $(DBUS_CFLAGS)                                                \
     $(MBEDTLS_CPPFLAGS)                                           \
@@ -143,16 +118,6 @@ noinst_HEADERS                                                 = \
     web-service/ot_client.hpp                                    \
     web-service/web_server.hpp                                   \
     web-service/wpan_service.hpp                                 \
-    wpan-controller/dbus_base.hpp                                \
-    wpan-controller/dbus_form.hpp                                \
-    wpan-controller/dbus_gateway.hpp                             \
-    wpan-controller/dbus_get.hpp                                 \
-    wpan-controller/dbus_ifname.hpp                              \
-    wpan-controller/dbus_join.hpp                                \
-    wpan-controller/dbus_leave.hpp                               \
-    wpan-controller/dbus_scan.hpp                                \
-    wpan-controller/dbus_set.hpp                                 \
-    wpan-controller/wpan_controller.hpp                          \
     $(NULL)
 
 EXTRA_DIST                                                     = \

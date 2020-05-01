@@ -25,9 +25,6 @@ matrix:
     - env: BUILD_TARGET="meshcop" COVERAGE=1 VERBOSE=1
       os: linux
       dist: bionic
-    - env: BUILD_TARGET="meshcop" COVERAGE=1 WITH_NCP=openthread VERBOSE=1
-      os: linux
-      dist: bionic
     - env: BUILD_TARGET="docker-check" COVERAGE=1 VERBOSE=1
       os: linux
       dist: bionic

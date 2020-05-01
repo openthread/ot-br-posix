@@ -40,9 +40,7 @@ else
 fi
 
 WLAN_INTERFACE="wlan0"
-
-WPANTUND_INTERFACE="wpan0"
-WPANTUND_ENV="/etc/default/wpantund"
+WPAN_INTERFACE="wpan0"
 
 DHCPCD_CONF="/etc/dhcpcd.conf"
 DHCPCD_CONF_BACKUP="$DHCPCD_CONF.orig"
@@ -104,7 +102,7 @@ denyinterfaces nat*
 
 noipv6rs
 
-interface $WPANTUND_INTERFACE
+interface $WPAN_INTERFACE
 nodhcp
 nodhcp6
 
@@ -112,7 +110,7 @@ interface $WAN_INTERFACE
 iaid 1
 ipv6rs
 ia_na 2
-ia_pd 3/::/63 $WPANTUND_INTERFACE/1
+ia_pd 3/::/63 $WPAN_INTERFACE/1
 
 EOF
 
@@ -122,7 +120,7 @@ interface $WLAN_INTERFACE
 iaid 4
 ipv6rs
 ia_na 5
-ia_pd 6/::/63 $WPANTUND_INTERFACE/1
+ia_pd 6/::/63 $WPAN_INTERFACE/1
 EOF
 fi
 }
@@ -170,13 +168,12 @@ DISPATCHER_PATH="${NCP_STATE_DISPATCHER}"
 echo \${PID} > "/tmp/\${NAME}.pid"
 
 if [ -z \${IFACE} ]; then
-    IFACE=${WPANTUND_INTERFACE}
+    IFACE=${WPAN_INTERFACE}
 fi
 
-WPANTUND_IFACE="com.nestlabs.WPANTunnelDriver"
-WPANTUND_NCP_STATE_PATH="/com/nestlabs/WPANTunnelDriver/\${IFACE}/Properties/NCP/State"
+OTBR_PATH="/io/openthread/BorderRouter/\${IFACE}"
 
-WATCH1="type='signal', interface=\${WPANTUND_IFACE}, path=\${WPANTUND_NCP_STATE_PATH}, member='PropertyChanged'"
+WATCH1="type='signal', interface=org.freedesktop.DBus.Properties, path=\${OTBR_PATH}, member='PropertiesChanged'"
 
 notify_about_state()
 {
@@ -282,7 +279,7 @@ create_ncp_state_notifier_service()
     sudo tee ${NCP_STATE_NOTIFIER_SERVICE} << EOF
 [Unit]
 Description=Daemon call scripts on every NCP state change
-After=wpantund.service
+After=otbr-agent.service
 ConditionPathExists=${NCP_STATE_NOTIFIER}
 
 [Service]
@@ -293,11 +290,6 @@ KillMode=control-group
 [Install]
 WantedBy=multi-user.target
 EOF
-}
-
-create_wpantund_env_file()
-{
-    echo "WPANTUND_OPTS=-o Daemon:SetDefaultRouteForAutoAddedPrefix true -o IPv6:SetSLAACForAutoAddedPrefix true" | sudo tee $WPANTUND_ENV
 }
 
 dhcpv6_pd_install()
@@ -316,8 +308,6 @@ dhcpv6_pd_install()
 
     create_dhcpcd_reloader_script
     sudo chmod +x ${DHCPCD_RELOADER}
-
-    create_wpantund_env_file
 
     if have systemctl; then
         create_ncp_state_notifier_service
@@ -350,7 +340,6 @@ dhcpv6_pd_uninstall()
 
     sudo rm ${NCP_STATE_NOTIFIER} || true
     sudo rm ${DHCPCD_RELOADER} || true
-    sudo rm ${WPANTUND_ENV} || true
 
     sudo rm -r ${NCP_STATE_DISPATCHER} || true
 

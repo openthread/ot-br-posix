@@ -67,7 +67,6 @@ endif
 
 include $(CLEAR_VARS)
 
-ifeq ($(USE_OTBR_DAEMON), 1)
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libotbr-dbus-client
 LOCAL_MODULE_TAGS := eng
@@ -96,7 +95,6 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
 LOCAL_SHARED_LIBRARIES += libdbus
 
 include $(BUILD_STATIC_LIBRARY)
-endif # ifeq ($(USE_OTBR_DAEMON), 1)
 
 include $(CLEAR_VARS)
 
@@ -118,6 +116,7 @@ LOCAL_C_INCLUDES := \
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
     -DPACKAGE_VERSION=\"0.01.00\" \
+    -DOTBR_ENABLE_DBUS_SERVER=1 \
     $(NULL)
 
 LOCAL_CPPFLAGS += -std=c++14
@@ -126,21 +125,10 @@ LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
     src/agent/border_agent.cpp \
     src/agent/main.cpp \
-    src/common/event_emitter.cpp \
-    src/common/logging.cpp \
-    src/utils/hex.cpp \
-    src/utils/strcpy_utils.cpp \
-    $(NULL)
-
-ifeq ($(USE_OTBR_DAEMON), 1)
-LOCAL_CFLAGS  += \
-    -DOTBR_ENABLE_NCP_OPENTHREAD=1 \
-    -DOTBR_ENABLE_DBUS_SERVER=1 \
-    $(NULL)
-
-LOCAL_SRC_FILES += \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
+    src/common/event_emitter.cpp \
+    src/common/logging.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
     src/dbus/common/error.cpp \
@@ -148,6 +136,8 @@ LOCAL_SRC_FILES += \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
+    src/utils/hex.cpp \
+    src/utils/strcpy_utils.cpp \
     $(NULL)
 
 LOCAL_STATIC_LIBRARIES += \
@@ -158,27 +148,6 @@ LOCAL_STATIC_LIBRARIES += \
 
 LOCAL_LDLIBS := \
     -lutil
-else
-LOCAL_CFLAGS  += -DOTBR_ENABLE_NCP_WPANTUND=1
-
-LOCAL_SRC_FILES += \
-    src/agent/ncp_wpantund.cpp \
-    third_party/wpantund/repo/src/util/string-utils.c \
-    third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
-    $(NULL)
-
-LOCAL_C_INCLUDES += \
-    $(LOCAL_PATH)/third_party/wpantund \
-    $(LOCAL_PATH)/third_party/wpantund \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/ipc-dbus \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/util \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/wpantund \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/wpanctl \
-    $(LOCAL_PATH)/third_party/wpantund/repo/third_party/assert-macros \
-    $(LOCAL_PATH)/third_party/wpantund/repo/third_party/openthread/src/ncp \
-    $(NULL)
-endif
 
 ifeq ($(WITH_MDNS),mDNSResponder)
 LOCAL_SRC_FILES += \

@@ -30,7 +30,6 @@ include $(abs_top_nlbuild_autotools_dir)/automake/pre.am
 
 SUBDIRS                 = \
     openthread            \
-    wpantund              \
     $(NULL)
 
 if OTBR_ENABLE_COMMISSIONER

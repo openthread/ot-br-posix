@@ -24,7 +24,6 @@ OTBR includes a number of features, including:
 - DHCPv6 Prefix Delegation to obtain IPv6 prefixes for a Thread network
 - NAT64 for connecting to IPv4 networks
 - DNS64 to allow Thread devices to initiate communications by name to an IPv4-only server
-- Thread interface driver using [wpantund](https://github.com/openthread/wpantund)
 - Docker support
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.

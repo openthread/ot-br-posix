@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
@@ -27,8 +27,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
-set -x
+set -eux
 
 check_otbr_agent() {
     sudo dbus-send --system             \
@@ -36,7 +35,7 @@ check_otbr_agent() {
         --type=method_call              \
         --print-reply                   \
         /org/freedesktop/DBus           \
-        org.freedesktop.DBus.ListNames | grep -q '"otbr.agent'
+        org.freedesktop.DBus.ListNames | grep -q '"io.openthread.BorderRouter.wpan0"'
 }
 
 main() {
@@ -47,34 +46,37 @@ main() {
 
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
     while true; do
-        if test $(head -n2 $SOCAT_OUTPUT | wc -l) = 2; then
-            DEVICE_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
-            WPANTUND_PTY=$(head -n2 $SOCAT_OUTPUT | tail -n1 | grep -o '/dev/.\+')
+        if [[ "$(head -n2 $SOCAT_OUTPUT | wc -l)" == 2 ]]; then
+            RCP_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
+            HOST_PTY=$(head -n2 $SOCAT_OUTPUT | tail -n1 | grep -o '/dev/.\+')
             break
         fi
         echo 'Waiting for socat ready...'
         sleep 1
     done
-    echo 'DEVICE_PTY' $DEVICE_PTY
-    echo 'WPANTUND_PTY' $WPANTUND_PTY
-    # default configuration for Thread device is /dev/ttyUSB0
-    sudo ln -s $WPANTUND_PTY /dev/ttyUSB0 || die 'Failed to create ttyUSB0!'
+    echo "RCP_PTY: ${RCP_PTY}"
+    echo "HOST_PTY: ${HOST_PTY}"
 
-    ot-ncp-ftd 1 > $DEVICE_PTY < $DEVICE_PTY &
-    ./script/console & SERVICES_PID=$!
+    if ! command -v ot-rcp; then
+        make -f third_party/openthread/repo/examples/Makefile-simulation DISABLE_DOC=1 TargetTuple=otbr
+        PATH=$PATH:output/otbr/bin
+    fi
+
+    # shellcheck disable=SC2094
+    ot-rcp 1 > "${RCP_PTY}" < "${RCP_PTY}" &
+    NCP="${HOST_PTY}" ./script/console & SERVICES_PID=$!
     sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 10
-    check_otbr_agent || die 'Service otbr-agent not ready!'
-    netstat -an | grep 80 || die 'Service otbr-web not ready!'
-    pidof tayga || die 'tayga not running'
-    kill $SERVICES_PID || die 'Failed to stop services!'
+    check_otbr_agent
+    netstat -an | grep 80
+    pidof tayga
+    kill "${SERVICES_PID}"
     sudo killall otbr-web || true
     sudo killall otbr-agent || true
-    sudo killall wpantund || true
     sudo service tayga stop || true
-    killall ot-ncp-ftd || die 'Failed to end OpenThread!'
-    killall socat || die 'Failed to end socat!'
+    killall ot-rcp
+    killall socat
     jobs
     echo 'Waiting for services to end...'
     wait

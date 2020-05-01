@@ -45,14 +45,12 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
 #include "agent/ncp_openthread.hpp"
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
 using otbr::Ncp::ControllerOpenThread;
-#endif
 
 #if OTBR_ENABLE_OPENWRT
 extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
@@ -82,7 +80,7 @@ static void HandleSignal(int aSignal)
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
     int error = EXIT_FAILURE;
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
     ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
     std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
 
@@ -109,7 +107,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
         aInstance.UpdateFdSet(mainloop);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
         dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
                                mainloop.mTimeout);
 #endif
@@ -122,7 +120,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
         if (ncpOpenThread->IsResetRequested())
         {
             ncpOpenThread->Reset();
@@ -138,7 +136,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #endif
             aInstance.Process(mainloop);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
             dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
 #endif
         }
@@ -158,11 +156,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-#if OTBR_ENABLE_NCP_WPANTUND
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", aProgramName);
-#else
     fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] [RADIO_DEVICE] [RADIO_CONFIG]\n", aProgramName);
-#endif
 }
 
 static void PrintVersion(void)
@@ -219,12 +213,8 @@ int main(int argc, char *argv[])
         }
     }
 
-#if OTBR_ENABLE_NCP_WPANTUND
-    ncp = otbr::Ncp::Controller::Create(interfaceName);
-#else
     VerifyOrExit(optind + 1 < argc, ret = EXIT_FAILURE);
     ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
-#endif
     VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
