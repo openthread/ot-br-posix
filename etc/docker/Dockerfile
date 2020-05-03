@@ -48,7 +48,6 @@ ENV OTBR_BUILD_DEPS \
   autoconf \
   automake \
   build-essential \
-  ctags \
   libtool \
   wget
 

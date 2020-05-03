@@ -43,7 +43,6 @@ CONFIGURE_CMD = $(LOCAL_SOURCE_DIR)/configure
 CONFIGURE_ARGS += \
 	--disable-docs \
 	--disable-web-service \
-	--disable-commissioner \
 	--enable-openwrt \
 	--with-ncp=openthread \
 	--with-mdns=none \

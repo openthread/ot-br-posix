@@ -70,7 +70,6 @@ src/web/otbr-web.init
 
 # Test code.
 tests/mdns/otbr-test-mdns
-tests/meshcop/otbr-commissioner
 tests/testdriver
 tests/dbus/otbr-test-dbus-server
 tests/dbus/otbr-test-dbus-client
@@ -82,16 +81,9 @@ third_party/mbedtls/repo
 tools/pskc
 tools/steering-data
 
-# Commissioner
-src/commissioner/otbr-commissioner
-
 # dbus
 src/dbus/dbus-server-test
 src/dbus/dbus-message-test
-
-# libcoap build
-third_party/libcoap/repo/libcoap-1.map
-third_party/libcoap/repo/libcoap-1.sym
 
 # Test logs
 tests/unit/unittest

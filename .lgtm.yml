@@ -30,7 +30,6 @@ extraction:
   cpp:
     prepare:
       packages:
-        - ctags
         - libjsoncpp-dev
     configure:
       command:

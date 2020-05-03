@@ -45,8 +45,6 @@
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/writer.h>
 
-#include "commissioner/arguments.hpp"
-#include "commissioner/commissioner.hpp"
 #include "common/logging.hpp"
 #include "utils/hex.hpp"
 #include "utils/pskc.hpp"
@@ -176,8 +174,6 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
-    int RunCommission(CommissionerArgs aArgs);
-
     WpanNetworkInfo mNetworks[OT_SCANNED_NET_BUFFER_SIZE];
     int             mNetworksCount;
     char            mIfName[IFNAMSIZ];
