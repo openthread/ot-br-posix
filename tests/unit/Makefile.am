@@ -34,7 +34,6 @@ check_PROGRAMS = unittest
 
 unittest_SOURCES           = \
     main.cpp                 \
-    test_coap.cpp            \
     test_event_emitter.cpp   \
     test_pskc.cpp            \
     test_logging.cpp         \

@@ -32,13 +32,10 @@ include $(top_srcdir)/third_party/openthread/mbedtls.mk
 
 noinst_HEADERS                                        = \
     byteswap.hpp                                        \
-    coap.hpp                                            \
-    coap_libcoap.hpp                                    \
     code_utils.hpp                                      \
     dtls.hpp                                            \
     dtls_mbedtls.hpp                                    \
     event_emitter.hpp                                   \
-    libcoap.h                                           \
     logging.hpp                                         \
     mainloop.h                                          \
     time.hpp                                            \
@@ -52,12 +49,6 @@ noinst_LTLIBRARIES                                    = \
     libotbr-logging.la                                  \
     $(NULL)
 
-if OTBR_ENABLE_COMMISSIONER
-noinst_LTLIBRARIES                                   += \
-    libotbr-coap.la                                     \
-    $(NULL)
-endif
-
 libotbr_logging_la_CPPFLAGS                           = \
     -I$(top_srcdir)/include                             \
     -I$(top_srcdir)/src                                 \
@@ -65,24 +56,6 @@ libotbr_logging_la_CPPFLAGS                           = \
 
 libotbr_logging_la_SOURCES                            = \
     logging.cpp                                         \
-    $(NULL)
-
-libotbr_coap_la_SOURCES                               = \
-    coap_libcoap.cpp                                    \
-    $(NULL)
-
-libotbr_coap_la_CPPFLAGS                              = \
-    -I$(top_builddir)/third_party/libcoap/repo          \
-    -I$(top_builddir)/third_party/libcoap/repo/include  \
-    -I$(top_srcdir)/include                             \
-    -I$(top_srcdir)/src                                 \
-    -I$(top_srcdir)/third_party/libcoap/repo            \
-    -I$(top_srcdir)/third_party/libcoap/repo/include    \
-    -I$(top_srcdir)/third_party/libcoap/repo/include/coap \
-    $(NULL)
-
-libotbr_coap_la_LIBADD                                      = \
-    $(top_builddir)/third_party/libcoap/repo/libcoap-1.la     \
     $(NULL)
 
 libotbr_dtls_la_SOURCES                               = \

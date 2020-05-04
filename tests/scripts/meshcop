@@ -31,7 +31,7 @@
 # Usage:
 #   ./meshcop         # test with latest openthread.
 #   NO_CLEAN=1 ./meshcop # test with existing binaries in ${TEST_BASE}.
-set -e
+set -euxo pipefail
 
 # Get our starting directory and remember it
 readonly ORIGIN_PWD="$(pwd)"
@@ -40,13 +40,13 @@ readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 #---------------------------------------
 # Configurations
 #---------------------------------------
-readonly OT_NCP="${OT_NCP:-ot-ncp-ftd}"
 readonly OT_RCP="ot-rcp"
 readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
 readonly ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
 readonly ABS_TOP_SRCDIR="$(cd "${top_srcdir:-"${SCRIPT_DIR}"/../../}" && pwd)"
 readonly NO_CLEAN="${NO_CLEAN:-1}"
 readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
+readonly OTBR_USE_WEB_COMMISSIONER="${USE_WEB_COMMISSIONER:-0}"
 
 #----------------------------------------
 # Test constants
@@ -55,15 +55,13 @@ readonly TEST_BASE=/tmp/test-otbr
 
 readonly OTBR_AGENT=otbr-agent
 readonly OTBR_WEB=otbr-web
-readonly OTBR_COMMISSIONER=otbr-commissioner
+readonly OT_COMMISSIONER_CLI=commissioner-cli
 
 readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
-readonly OTBR_COMMISSIONER_PATH="${ABS_TOP_BUILDDIR}/src/commissioner/${OTBR_COMMISSIONER}"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OT_CLI_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_CLI}"
-readonly OT_NCP_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_NCP}"
 readonly OT_RCP_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_RCP}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
 readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
@@ -71,6 +69,11 @@ readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 # The node ids
 readonly LEADER_NODE_ID=1
 readonly JOINER_NODE_ID=2
+
+# Web GUI
+readonly OTBR_WEB_HOST=127.0.0.1
+readonly OTBR_WEB_PORT=8773
+readonly OTBR_WEB_URL="http://${OTBR_WEB_HOST}:${OTBR_WEB_PORT}"
 
 #
 # NOTE Joiner pass phrase:
@@ -87,10 +90,6 @@ readonly OT_AGENT_PASSPHRASE=MYPASSPHRASE
 
 # The network needs a name.
 readonly OT_NETWORK_NAME=MyTestNetwork
-
-# The agent is on the local host.
-readonly OT_AGENT_IPADDR='127.0.0.1'
-readonly OT_AGENT_IPPORT=49191
 
 # The TUN device for OpenThread border router.
 readonly TUN_NAME=wpan0
@@ -168,15 +167,15 @@ output_logs()
 
   cd "${ORIGIN_PWD}"
   echo 'START_LOG: SYSLOG ==================='
-  cat /var/log/syslog | tee complete-syslog.log
+  tee complete-syslog.log < /var/log/syslog
   echo 'START_LOG: BR-AGENT ================='
-  cat /var/log/syslog | grep "${OTBR_AGENT}" | tee otbr-agent.log
-  echo 'START_LOG: OTBR-COMISSIONER ========='
-  cat /var/log/syslog | grep "${OTBR_COMMISSIONER}" | tee otbr-commissioner.log
-  echo 'START_LOG: OT-NCP ==================='
-  cat /var/log/syslog | grep "${OT_NCP}" | tee "${OT_NCP}.log"
+  grep "${OTBR_AGENT}" /var/log/syslog | tee otbr-agent.log
+  echo 'START_LOG: OT-COMISSIONER ========='
+  cat "${OT_COMMISSIONER_LOG}"
+  echo 'START_LOG: OT-RCP ==================='
+  grep "${OT_RCP}" /var/log/syslog | tee "${OT_RCP}.log"
   echo 'START_LOG: OT-CLI ==================='
-  cat /var/log/syslog | grep "${OT_CLI}" | tee "${OT_CLI}.log"
+  grep "${OT_CLI}" /var/log/syslog | tee "${OT_CLI}.log"
   echo '====================================='
   echo 'Hint, for each log Search backwards for: "START_LOG: <NAME>"'
   echo '====================================='
@@ -194,15 +193,17 @@ build_dependencies()
   [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
 
   # As above, these steps are broken up
-  if [[ "${IGNORE_INSTALLED}" = 0 ]] && which "${OT_NCP}" && which "${OT_CLI}"; then
-    ot_ncp="${OT_NCP}"
+  if [[ "${IGNORE_INSTALLED}" = 0 ]] && command -v "${OT_RCP}" && command -v "${OT_CLI}"; then
     ot_cli="${OT_CLI}"
     ot_rcp="${OT_RCP}"
   else
-    compile_openthread
-    ot_ncp="${OT_NCP_PATH}"
+    openthread_build
     ot_cli="${OT_CLI_PATH}"
     ot_rcp="${OT_RCP_PATH}"
+  fi
+
+  if [[ "${OTBR_USE_WEB_COMMISSIONER}" != 1 ]]; then
+    ot_commissioner_build
   fi
 
   write_syslog "TEST: BUILD COMPLETE"
@@ -213,7 +214,6 @@ test_setup()
   # message for general failures
   exit_message="JOINER FAILED"
 
-  executable_or_die "${OTBR_COMMISSIONER_PATH}"
   executable_or_die "${OTBR_AGENT_PATH}"
   executable_or_die "${OTBR_WEB_PATH}"
 
@@ -236,13 +236,12 @@ test_setup()
 test_teardown()
 {
   # Capture the exit code so we can return it below
-  readonly EXITCODE=$?
-  write_syslog "EXIT ${EXITCODE} - output logs"
+  readonly EXIT_CODE=$?
+  write_syslog "EXIT ${EXIT_CODE} - output logs"
 
   sudo pkill -f "${OTBR_AGENT}" || true
   sudo pkill -f "${OTBR_WEB}" || true
-  sudo pkill -f "${OTBR_COMMISSIONER}" || true
-  sudo pkill -f "${OT_NCP}" || true
+  sudo pkill -f "${OT_COMMISSIONER_CLI}" || true
   sudo pkill -f "${OT_CLI}" || true
   wait
 
@@ -259,10 +258,9 @@ test_teardown()
   exit ${EXIT_CODE}
 }
 
-compile_openthread()
+openthread_build()
 {
   (cd "${ABS_TOP_BUILDDIR}" && make -f "${ABS_TOP_SRCDIR}/third_party/openthread/repo/examples/Makefile-simulation" DISABLE_DOC=1 TargetTuple=otbr)
-  executable_or_die "${OT_NCP_PATH}"
   executable_or_die "${OT_CLI_PATH}"
   executable_or_die "${OT_RCP_PATH}"
 }
@@ -309,7 +307,7 @@ web_start()
     set -x
 
     cd "${ORIGIN_PWD}"
-    sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p 8773 -a 127.0.0.1 &
+    sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p "${OTBR_WEB_PORT}" -a "${OTBR_WEB_HOST}" &
   )
   sleep 15
 
@@ -324,72 +322,68 @@ network_form()
   readonly OT_MASTER_KEY="$(random_masterkey)"
   readonly OT_CHANNEL="$(random_channel)"
 
-  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" http://127.0.0.1:8773/form_network | grep "success" || die "WEB: form failed"
+  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
   sleep 15
   # verify mDNS is working as expected.
-  avahi-browse -aprt | grep -q "${OT_NETWORK_NAME}"
+  local mdns_result="${TEST_BASE}"/mdns_result.log
+  avahi-browse -aprt | tee "${mdns_result}"
+  grep -q "${OT_NETWORK_NAME}" "${mdns_result}"
+  rm "${mdns_result}"
 }
 
-commissioner_start()
+ot_commissioner_build()
 {
-  local args
+  readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+  readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
+
+  if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
+    return 0
+  fi
+
+  (mkdir -p "${BUILD_DIR}" \
+    && cd ${BUILD_DIR} \
+    && git clone --depth 1 https://github.com/openthread/ot-commissioner.git \
+    && cd ot-commissioner \
+    && ./script/bootstrap.sh \
+    && mkdir build && cd build \
+    && cmake -GNinja -DCMAKE_BUILD_TYPE=Release .. \
+    && ninja)
+}
+
+ot_commissioner_start()
+{
   write_syslog "COMMISSIONER: kill old"
-  sudo killall "${OTBR_COMMISSIONER}" || true
+  sudo killall "${OT_COMMISSIONER_CLI}" || true
 
-  rm -f "${OT_COMMISSIONER_LOG_FILE}"
-  # Clear the args variable.
-  args=
+  readonly OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
+  readonly OT_COMMISSIONER_LOG="${TEST_BASE}"/commissioner.log
 
-  # And network parameters
-  args="${args} --network-name      ${OT_NETWORK_NAME}"
-  args="${args} --xpanid            ${OT_XPANID}"
-  args="${args} --network-password  ${OT_AGENT_PASSPHRASE}"
-  args="${args} --joiner-eui64      ${OT_JOINER_EUI64}"
-  args="${args} --joiner-pskd       ${OT_JOINER_PASSPHRASE}"
-  args="${args} --agent-host        ${OT_AGENT_IPADDR}"
-  args="${args} --agent-port        ${OT_AGENT_IPPORT}"
-  #
-  # Debug level, full blast (this is test a test on a
-  # a remote machine, being able to *SEE* the result helpful
-  args="${args} --debug-level 7"
+  local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
 
-  # Launch the commissioner in the background
-  (
-    set -e
-    set -x
+  sed "s/3aa55f91ca47d1e4e71a08cb35e91591/${OT_PSKC}/g" "${OT_COMMISSIONER_CONFIG}" > "${commissioner_config_file}"
 
-    cd "${ORIGIN_PWD}"
-    "${OTBR_COMMISSIONER_PATH}" ${args} &
-  )
+  expect -f- <<EOF &
+spawn ${OT_COMMISSIONER_PATH} ${commissioner_config_file}
+set timeout 1
+expect_after {
+    timeout { exit 1 }
+}
+send "start :: 49191\n"
+expect "done"
+sleep 5
+send "active\n"
+expect "true"
+send "joiner enable meshcop 0x${OT_JOINER_EUI64} ${OT_JOINER_PASSPHRASE}\n"
+expect "done"
+wait
+EOF
 
-  # Wait for it to launch and get started.
-  sleep 5
-
-  # Is it still running or did it die?
-  pidof "${OTBR_COMMISSIONER}" || die "COMMISSIONER: failed to start"
-  #
-  # It takes about 8 to 10 seconds for the DTLS handshake to complete.
-  echo 'Waiting for commissioner'
-
-  # The ENVELOPE (total time) timeout is 200 seconds.
-  #
-  # If no COMM_KA occurs:
-  #    The Commissioner process timeout is 50 seconds.
-  # ELSE
-  #    (COMM_KA does occur)
-  #    The commissioner will not timeout
-  #
-  # By waiting 100 seconds we test that the timeout would have fired
-  # And that the COMM_KA process is actually working.
-  #
   sleep 10
-  write_syslog "TEST: Commissioner COM_KA should be seen by now"
-  write_syslog "TEST: Commissioner ready for joiner"
 }
 
 web_commissioner_start()
 {
-  curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "http://127.0.0.1:8773/commission"&
+  curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "${OTBR_WEB_URL}"/commission
   sleep 15
 }
 
@@ -423,10 +417,10 @@ main()
   ba_start
   web_start
   network_form
-  if [ "${COMMISSIONER_WEB}" ]; then
+  if [[ "${OTBR_USE_WEB_COMMISSIONER}" == 1 ]]; then
     web_commissioner_start
   else
-    commissioner_start
+    ot_commissioner_start
   fi
   joiner_start
 }
