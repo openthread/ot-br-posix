@@ -42,9 +42,7 @@ install_common_dependencies() {
     # Common dependencies
     sudo apt-get install -y      \
         libdbus-1-dev            \
-        autoconf-archive         \
         doxygen                  \
-        ctags                    \
         expect                   \
         libboost-dev             \
         libboost-filesystem-dev  \

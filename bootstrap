@@ -32,7 +32,6 @@
 #      nlbuild-autotools repository for this project.
 #
 
-(cd third_party/libcoap/repo && ./autogen.sh)
 (cd third_party/openthread/repo && ./bootstrap)
 
 # Set this to the relative location of nlbuild-autotools to this script

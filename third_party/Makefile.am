@@ -32,12 +32,6 @@ SUBDIRS                 = \
     openthread            \
     $(NULL)
 
-if OTBR_ENABLE_COMMISSIONER
-SUBDIRS                += \
-    libcoap               \
-    $(NULL)
-endif
-
 if OTBR_ENABLE_WEB_SERVICE
 SUBDIRS                += \
     angular               \
