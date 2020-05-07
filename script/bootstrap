@@ -108,7 +108,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install -f boost cmake cpputest dbus jsoncpp ninja
+    brew install boost cmake cpputest dbus jsoncpp ninja
 }
 
 install_packages_source()

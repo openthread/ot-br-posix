@@ -81,7 +81,8 @@ otbr-dbus-check)
     ;;
 
 macOS)
-    ./script/bootstrap
+    # On Travis, brew install fails when a package is already installed, so use reinstall here instead of ./script/bootstrap
+    brew reinstall boost cmake cpputest dbus jsoncpp ninja
     OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
     ;;
 *)
