@@ -81,7 +81,7 @@ otbr-dbus-check)
     ;;
 
 macOS)
-    ./script/bootstrap || true
+    ./script/bootstrap
     OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
     ;;
 *)
