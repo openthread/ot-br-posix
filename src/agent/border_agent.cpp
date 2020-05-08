@@ -280,7 +280,7 @@ void BorderAgent::SetThreadVersion(uint16_t aThreadVersion)
 #endif
 }
 
-void BorderAgent::HandlePSKc(void *aContext, int aEvent, va_list aArguments)
+void BorderAgent::HandlePSKc(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
 {
     assert(aEvent == Ncp::kEventPSKc);
 
@@ -332,7 +332,7 @@ exit:
     otbrLog(OTBR_LOG_INFO, "Thread is %s", (aStarted ? "up" : "down"));
 }
 
-void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
+void BorderAgent::HandleThreadState(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
 {
     assert(aEvent == Ncp::kEventThreadState);
 
@@ -340,7 +340,7 @@ void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArgumen
     static_cast<BorderAgent *>(aContext)->HandleThreadState(started);
 }
 
-void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)
+void BorderAgent::HandleNetworkName(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
 {
     assert(aEvent == Ncp::kEventNetworkName);
 
@@ -348,7 +348,7 @@ void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArgumen
     static_cast<BorderAgent *>(aContext)->SetNetworkName(networkName);
 }
 
-void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
+void BorderAgent::HandleExtPanId(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
 {
     assert(aEvent == Ncp::kEventExtPanId);
 
@@ -356,7 +356,7 @@ void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
     static_cast<BorderAgent *>(aContext)->SetExtPanId(xpanid);
 }
 
-void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArguments)
+void BorderAgent::HandleThreadVersion(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
 {
     assert(aEvent == Ncp::kEventThreadVersion);
 

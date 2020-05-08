@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <dbus/dbus.h>
 
@@ -47,11 +48,12 @@ DBusObject::DBusObject(DBusConnection *aConnection, const std::string &aObjectPa
 
 otbrError DBusObject::Init(void)
 {
-    otbrError            error  = OTBR_ERROR_NONE;
-    DBusObjectPathVTable vTable = {
-        .unregister_function = nullptr,
-        .message_function    = DBusObject::sMessageHandler,
-    };
+    otbrError            error = OTBR_ERROR_NONE;
+    DBusObjectPathVTable vTable;
+
+    memset(&vTable, 0, sizeof(vTable));
+
+    vTable.message_function = DBusObject::sMessageHandler;
 
     VerifyOrExit(dbus_connection_register_object_path(mConnection, mObjectPath.c_str(), &vTable, this),
                  error = OTBR_ERROR_DBUS);

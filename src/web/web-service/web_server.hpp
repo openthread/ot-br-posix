@@ -125,7 +125,6 @@ private:
 
     void Init(void);
 
-    char                   mIfName[IFNAMSIZ];
     HttpServer *           mServer;
     otbr::Web::WpanService mWpanService;
 };

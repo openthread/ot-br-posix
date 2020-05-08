@@ -78,9 +78,16 @@ otbrError ControllerOpenThread::Init(void)
 
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
-    otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+
+    {
+        otError result = otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+
+        agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
+        VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+    }
+
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
-    VerifyOrExit(mThreadHelper->Init() == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+
 exit:
     return error;
 }
@@ -114,6 +121,8 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 
         EventEmitter::Emit(kEventThreadState, attached);
     }
+
+    mThreadHelper->StateChangedCallback(aFlags);
 }
 
 static struct timeval ToTimeVal(const microseconds &aTime)
@@ -167,9 +176,8 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
         mTimers.erase(mTimers.begin());
     }
 
-    if (!mTriedAttach)
+    if (!mTriedAttach && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
-        mThreadHelper->TryResumeNetwork();
         mTriedAttach = true;
     }
 }

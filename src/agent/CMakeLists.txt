@@ -51,10 +51,19 @@ target_link_libraries(otbr-agent PRIVATE
     otbr-common
     otbr-utils
 )
+add_dependencies(otbr-agent ot-ctl)
 install(
     TARGETS otbr-agent
     DESTINATION sbin
 )
+if(CMAKE_VERSION VERSION_LESS 3.13)
+install(PROGRAMS $<TARGET_FILE:ot-ctl> DESTINATION sbin)
+else()
+install(
+    TARGETS ot-ctl
+    DESTINATION sbin
+)
+endif()
 
 set(OTBR_AGENT_USER "root" CACHE STRING "set the username running otbr-agent service")
 
