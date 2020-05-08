@@ -31,19 +31,13 @@
 # This script tests publishing single service.
 #
 
-set -x
-set -e
-
 . "$(dirname "$0")/test_init"
 
 main()
 {
-    ./otbr-test-mdns s & PID=$!
-    trap on_exit INT TERM EXIT
+    start_publisher s
 
-    sleep 2
-
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ "${OTBR_MDNS}" == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'

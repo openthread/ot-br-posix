@@ -40,9 +40,9 @@ install_packages_apt()
                          iproute2 \
                          iputils-ping \
                          apt-utils
-    sudo apt-get install -y build-essential libtool automake autoconf
+    sudo apt-get install -y build-essential ninja-build cmake
 
-    with RELEASE || sudo apt-get install -y cmake libcpputest-dev
+    with RELEASE || sudo apt-get install -y libcpputest-dev
 
     sudo apt-get install -y rsyslog
 
@@ -51,9 +51,6 @@ install_packages_apt()
 
     # mDNS
     sudo apt-get install -y libavahi-common-dev libavahi-client-dev avahi-daemon
-
-    # Doxygen
-    with RELEASE || sudo apt-get install -y doxygen
 
     # Boost
     sudo apt-get install -y libboost-dev libboost-filesystem-dev libboost-system-dev
@@ -98,8 +95,8 @@ install_packages_rpm()
     else
         PM=yum
     fi
-    sudo $PM install -y gcc gcc-c++ libtool automake autoconf
-    with RELEASE || sudo $PM install -y cmake
+    sudo $PM install -y gcc gcc-c++
+    with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
     sudo $PM install -y doxygen
@@ -111,7 +108,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install dbus
+    brew install boost cmake cpputest dbus jsoncpp ninja
 }
 
 install_packages_source()
@@ -140,7 +137,6 @@ main()
     # TODO remove `|| true` after docker hub builder gets its git upgraded
     git submodule update --init --recursive || true
     install_packages
-    ./bootstrap
     . $AFTER_HOOK
 }
 

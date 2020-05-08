@@ -37,30 +37,25 @@ main() {
     [ -d $STAGE_DIR ] || mkdir -p $STAGE_DIR
     cp -v $IMAGE_FILE $STAGE_DIR/raspbian.img
 
-    ./bootstrap
-    ./configure
-    rm otbr-*.tar.gz || true
-    make dist
-    mv otbr-*.tar.gz $STAGE_DIR/repo.tar.gz
+    git-archive-all $STAGE_DIR/repo.tar.gz
 
     cat > $STAGE_DIR/check.sh <<EOF
-        export LC_ALL=C
-        export DEBIAN_FRONTEND=noninteractive
-        export RELEASE=1
+set -ex
 
-        echo "127.0.0.1    \$(hostname)" >> /etc/hosts
-        mount -t proc none /proc
-        mount -t sysfs none /sys
-        chown -R pi:pi /home/pi/repo
-        cd /home/pi/repo
-        apt-get update
-        apt-get install -y git
-        su -m -c 'git config --global pack.threads 1' pi
-        su -m -c 'script/bootstrap' pi
-        su -m -c './configure --prefix= --exec-prefix=/usr' pi
-        su -m -c 'make' pi
-        umount -lf /sys
-        umount -lf /proc
+export LC_ALL=C
+export DEBIAN_FRONTEND=noninteractive
+export RELEASE=1
+
+echo "127.0.0.1 \$(hostname)" >> /etc/hosts
+chown -R pi:pi /home/pi/repo
+cd /home/pi/repo
+apt-get update
+apt-get install -y --no-install-recommends git python3-pip ninja-build
+pip3 install -U scikit-build
+su -m -c 'script/bootstrap' pi
+pip3 install --system -U cmake
+pip3 show cmake
+su -m -c 'NETWORK_MANAGER=0 script/setup' pi
 EOF
 
     (cd docker-rpi-emu/scripts &&
@@ -68,7 +63,7 @@ EOF
         sudo ./mount.sh $STAGE_DIR/raspbian.img $IMAGE_DIR &&          \
         sudo mount --bind /dev/pts $IMAGE_DIR/dev/pts &&               \
         sudo mkdir -p $IMAGE_DIR/home/pi/repo &&                       \
-        sudo tar xzvf $STAGE_DIR/repo.tar.gz --strip-components 1 -C $IMAGE_DIR/home/pi/repo && \
+        sudo tar xzf $STAGE_DIR/repo.tar.gz --strip-components 1 -C $IMAGE_DIR/home/pi/repo && \
         sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh &&  \
         sudo ./qemu-setup.sh $IMAGE_DIR &&                             \
         sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh

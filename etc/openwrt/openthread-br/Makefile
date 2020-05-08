@@ -37,15 +37,14 @@ PKG_RELEASE := 1
 PKG_VERSION := 1.0
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
-CONFIGURE_CMD = $(LOCAL_SOURCE_DIR)/configure
-
-CONFIGURE_ARGS += \
-	--disable-docs \
-	--disable-web-service \
-	--enable-openwrt \
-	--with-ncp=openthread \
-	--with-mdns=none \
+CMAKE_SOURCE_DIR = $(LOCAL_SOURCE_DIR)
+CMAKE_OPTIONS = \
+	-DBUILD_TESTING=OFF \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DOTBR_MDNS=OFF \
+	-DOTBR_OPENWRT=ON
 
 define Package/openthread-br
 	SECTION := base
@@ -58,13 +57,12 @@ define Package/openthread-br/description
     A Thread border router for POSIX-based platforms.
 endef
 
-define Build/Prepare
-	cd $(LOCAL_SOURCE_DIR) && ./bootstrap
-endef
-
 define Package/openthread-br/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/agent/otbr-agent $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/otbr-agent $(1)/usr/sbin
+
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/etc/init.d/otbr-agent $(1)/etc/init.d
 
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
 	$(INSTALL_BIN) $(LOCAL_SOURCE_DIR)/src/openwrt/controller/thread.lua $(1)/usr/lib/lua/luci/controller/admin
@@ -74,9 +72,6 @@ define Package/openthread-br/install
 
 	$(INSTALL_DIR) $(1)/www/luci-static/resources
 	$(CP) $(LOCAL_SOURCE_DIR)/src/openwrt/handle_error.js $(1)/www/luci-static/resources
-
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(LOCAL_SOURCE_DIR)/src/openwrt/otbr-agent $(1)/etc/init.d
 endef
 
 $(eval $(call BuildPackage,openthread-br))

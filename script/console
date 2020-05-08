@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -33,8 +33,8 @@
 . "$(dirname "$0")"/_initrc
 . script/_ipforward
 
-test -n "$TUN" || TUN=wpan0
-test -n "$NCP" || NCP=/dev/ttyUSB0
+readonly TUN="${TUN:-wpan0}"
+readonly NCP="${NCP:-/dev/ttyUSB0}"
 
 killall_services()
 {

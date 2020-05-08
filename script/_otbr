@@ -27,6 +27,9 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
+readonly OTBR_TOP_SRCDIR="$PWD"
+
 otbr_uninstall()
 {
     if have systemctl; then
@@ -37,7 +40,8 @@ otbr_uninstall()
     fi
     sudo killall otbr-web otbr-agent || true
 
-    test ! -f config.status || sudo make uninstall || true
+    (cd "${OTBR_TOP_BUILDDIR}" \
+        && sudo xargs rm < install_manifests.txt || true)
     if have systemctl; then
         sudo systemctl daemon-reload
     fi
@@ -45,15 +49,19 @@ otbr_uninstall()
 
 otbr_install()
 {
-    test -f config.status || $(pwd)/configure \
-        --enable-dbus-server \
-        --exec-prefix=/usr \
-        --prefix= \
-        --sysconfdir=/etc \
-        $(without COVERAGE || echo '--enable-coverage') \
+    local otbr_options=(
+        "-DBUILD_TESTING=OFF"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DOTBR_DBUS=ON"
+        "-DOTBR_WEB=ON"
+    )
 
-    make -j$(getconf _NPROCESSORS_ONLN)
-    sudo make install
+    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
+        && cd "${OTBR_TOP_BUILDDIR}" \
+        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
+        && ninja \
+        && sudo ninja install)
+
     if have systemctl; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
@@ -67,9 +75,5 @@ otbr_install()
 
 otbr_update()
 {
-    test ! -f config.status || make distclean
-    test ! -f configure || find * -name Makefile.in -o -name configure | grep -v nlbuild-autotools | xargs rm -v
-    script/bootstrap
-
     otbr_install
 }
