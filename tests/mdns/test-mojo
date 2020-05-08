@@ -55,9 +55,9 @@ main()
     MOJO_TEST_SRC_DIR=${CHROMIUM_DIR}/src/mdns_mojo_test
     cp -r "${OTBR_DIR}/tests/mdns/mdns_mojo_test" "${CHROMIUM_DIR}/src/"
     ln -s "${OTBR_DIR}/third_party/chromecast/mojom/mdns.mojom" "${MOJO_TEST_SRC_DIR}/public/mojom/mdns.mojom"
-    ln -s "${OTBR_DIR}/src/agent/mdns.hpp" "${MOJO_TEST_SRC_DIR}/mdns.hpp"
-    ln -s "${OTBR_DIR}/src/agent/mdns_mojo.hpp" "${MOJO_TEST_SRC_DIR}/mdns_mojo.hpp"
-    ln -s "${OTBR_DIR}/src/agent/mdns_mojo.cpp" "${MOJO_TEST_SRC_DIR}/mdns_mojo.cpp"
+    ln -s "${OTBR_DIR}/src/mdns/mdns.hpp" "${MOJO_TEST_SRC_DIR}/mdns.hpp"
+    ln -s "${OTBR_DIR}/src/mdns/mdns_mojo.hpp" "${MOJO_TEST_SRC_DIR}/mdns_mojo.hpp"
+    ln -s "${OTBR_DIR}/src/mdns/mdns_mojo.cpp" "${MOJO_TEST_SRC_DIR}/mdns_mojo.cpp"
     ln -s "${OTBR_DIR}/src/common" "${MOJO_TEST_SRC_DIR}/common"
 
     cd /etc/apt/sources.list.d && sudo rm -rf cassandra.list* couchdb.list* mongodb-3.4.list* rabbitmq_rabbitmq-server.list* chris-lea-redis-server.list* github_git-lfs.list*

@@ -42,10 +42,10 @@ set -e
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="thread web interface"
 NAME=otbr-web
-DAEMON=@sbindir@/otbr-web
+DAEMON=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-web
 PIDFILE=/var/run/otbr-web.pid
 
-OTBR_WEB_CONF=@sysconfdir@/default/otbr-web
+OTBR_WEB_CONF=@CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-web
 
 . /lib/lsb/init-functions
 . /lib/init/vars.sh

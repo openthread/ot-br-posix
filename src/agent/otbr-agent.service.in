@@ -1,10 +1,10 @@
 [Unit]
 Description=Border Router Agent
-ConditionPathExists=@sbindir@/otbr-agent
+ConditionPathExists=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent
 
 [Service]
-EnvironmentFile=-@sysconfdir@/default/otbr-agent
-ExecStart=@sbindir@/otbr-agent $OTBR_AGENT_OPTS
+EnvironmentFile=-@CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-agent
+ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent $OTBR_AGENT_OPTS
 Restart=on-failure
 RestartSec=5
 RestartPreventExitStatus=SIGKILL

@@ -61,8 +61,6 @@ readonly STAGE_DIR="${TEST_BASE}/stage"
 readonly BUILD_DIR="${TEST_BASE}/build"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
-readonly OT_CLI_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_CLI}"
-readonly OT_RCP_PATH="${ABS_TOP_BUILDDIR}/output/otbr/bin/${OT_RCP}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
 readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 
@@ -193,14 +191,8 @@ build_dependencies()
   [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
 
   # As above, these steps are broken up
-  if [[ "${IGNORE_INSTALLED}" = 0 ]] && command -v "${OT_RCP}" && command -v "${OT_CLI}"; then
-    ot_cli="${OT_CLI}"
-    ot_rcp="${OT_RCP}"
-  else
-    openthread_build
-    ot_cli="${OT_CLI_PATH}"
-    ot_rcp="${OT_RCP_PATH}"
-  fi
+  ot_cli=$(command -v ${OT_CLI})
+  ot_rcp=$(command -v ${OT_RCP})
 
   if [[ "${OTBR_USE_WEB_COMMISSIONER}" != 1 ]]; then
     ot_commissioner_build
@@ -219,6 +211,8 @@ test_setup()
 
   # Remove flashes
   sudo rm -vrf "${TEST_BASE}/tmp"
+  # OPENTHREAD_POSIX_DAEMON_SOCKET_LOCK
+  sudo rm -vf "/tmp/openthread.lock"
 
   build_dependencies
 
@@ -256,13 +250,6 @@ test_teardown()
 
   echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
   exit ${EXIT_CODE}
-}
-
-openthread_build()
-{
-  (cd "${ABS_TOP_BUILDDIR}" && make -f "${ABS_TOP_SRCDIR}/third_party/openthread/repo/examples/Makefile-simulation" DISABLE_DOC=1 TargetTuple=otbr)
-  executable_or_die "${OT_CLI_PATH}"
-  executable_or_die "${OT_RCP_PATH}"
 }
 
 ba_start()

@@ -28,9 +28,9 @@
 
 LOCAL_PATH := $(call my-dir)
 
-WITH_MDNS ?= mojo
+OTBR_MDNS ?= mojo
 
-ifeq ($(WITH_MDNS),mojo)
+ifeq ($(OTBR_MDNS),mojo)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
@@ -127,7 +127,6 @@ LOCAL_SRC_FILES := \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
-    src/common/event_emitter.cpp \
     src/common/logging.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
@@ -136,6 +135,7 @@ LOCAL_SRC_FILES := \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
+    src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
     $(NULL)
@@ -149,20 +149,20 @@ LOCAL_STATIC_LIBRARIES += \
 LOCAL_LDLIBS := \
     -lutil
 
-ifeq ($(WITH_MDNS),mDNSResponder)
+ifeq ($(OTBR_MDNS),mDNSResponder)
 LOCAL_SRC_FILES += \
-    src/agent/mdns_mdnssd.cpp \
+    src/mdns/mdns_mdnssd.cpp \
     $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libmdnssd
 else
-ifeq ($(WITH_MDNS),mojo)
+ifeq ($(OTBR_MDNS),mojo)
 LOCAL_CFLAGS += \
     -DOTBR_ENABLE_MDNS_MOJO=1 \
     $(NULL)
 
 LOCAL_SRC_FILES += \
-    src/agent/mdns_mojo.cpp \
+    src/mdns/mdns_mojo.cpp \
     $(NULL)
 
 # The generated header files are not in dependency chain.

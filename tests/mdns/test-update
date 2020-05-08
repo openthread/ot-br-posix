@@ -31,20 +31,13 @@
 # This script tests updating text record of published service.
 #
 
-set -x
-set -e
-
 . "$(dirname "$0")/test_init"
 
 main()
 {
-    ./otbr-test-mdns u & PID=$!
-    trap on_exit INT TERM EXIT
+    start_publisher u
 
-    sleep 2
-
-
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
         dns_sd_check UpdateService _meshcop._udp 'nn=coolcool xp=8877665544332211'
     else
         avahi_check 'UpdateService;_meshcop._udp;.\+"xp=8877665544332211.\+"nn=coolcool"'

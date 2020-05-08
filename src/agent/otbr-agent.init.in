@@ -42,10 +42,10 @@ set -e
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="thread border agent"
 NAME=otbr-agent
-DAEMON=@sbindir@/otbr-agent
+DAEMON=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent
 PIDFILE=/var/run/otbr-agent.pid
 
-AGENT_CONF=@sysconfdir@/default/otbr-agent
+AGENT_CONF=@CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-agent
 
 . /lib/lsb/init-functions
 . /lib/init/vars.sh
