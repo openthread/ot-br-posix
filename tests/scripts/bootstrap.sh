@@ -146,7 +146,7 @@ case "$(uname)" in
 
         (mkdir -p docker-rpi-emu \
             && cd docker-rpi-emu \
-            && ($(git rev-parse --is-inside-work-tree) ||  git init .) \
+            && ($(git --git-dir=.git rev-parse --is-inside-work-tree) ||  git --git-dir=.git init .) \
             && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
             && git checkout FETCH_HEAD)
 
