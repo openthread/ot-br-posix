@@ -42,6 +42,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openthread/platform/toolchain.h>
+
 #include "agent/border_agent.hpp"
 #include "agent/ncp.hpp"
 #include "agent/uris.hpp"
@@ -280,8 +282,10 @@ void BorderAgent::SetThreadVersion(uint16_t aThreadVersion)
 #endif
 }
 
-void BorderAgent::HandlePSKc(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
+void BorderAgent::HandlePSKc(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventPSKc);
 
     static_cast<BorderAgent *>(aContext)->HandlePSKc(va_arg(aArguments, const uint8_t *));
@@ -332,32 +336,40 @@ exit:
     otbrLog(OTBR_LOG_INFO, "Thread is %s", (aStarted ? "up" : "down"));
 }
 
-void BorderAgent::HandleThreadState(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
+void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventThreadState);
 
     int started = va_arg(aArguments, int);
     static_cast<BorderAgent *>(aContext)->HandleThreadState(started);
 }
 
-void BorderAgent::HandleNetworkName(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
+void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventNetworkName);
 
     const char *networkName = va_arg(aArguments, const char *);
     static_cast<BorderAgent *>(aContext)->SetNetworkName(networkName);
 }
 
-void BorderAgent::HandleExtPanId(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
+void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventExtPanId);
 
     const uint8_t *xpanid = va_arg(aArguments, const uint8_t *);
     static_cast<BorderAgent *>(aContext)->SetExtPanId(xpanid);
 }
 
-void BorderAgent::HandleThreadVersion(void *aContext, OTBR_UNUSED int aEvent, va_list aArguments)
+void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventThreadVersion);
 
     // `uint16_t` has been promoted to `int`.

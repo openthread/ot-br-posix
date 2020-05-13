@@ -104,10 +104,4 @@
         goto exit;   \
     } while (false)
 
-/**
- * This flag indicates the parameter may be unused.
- *
- */
-#define OTBR_UNUSED __attribute__((unused))
-
 #endif // OTBR_COMMON_CODE_UTILS_HPP_
