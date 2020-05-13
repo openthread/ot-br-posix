@@ -42,6 +42,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openthread/platform/toolchain.h>
+
 #include "agent/border_agent.hpp"
 #include "agent/ncp.hpp"
 #include "agent/uris.hpp"
@@ -282,6 +284,8 @@ void BorderAgent::SetThreadVersion(uint16_t aThreadVersion)
 
 void BorderAgent::HandlePSKc(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventPSKc);
 
     static_cast<BorderAgent *>(aContext)->HandlePSKc(va_arg(aArguments, const uint8_t *));
@@ -334,6 +338,8 @@ exit:
 
 void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventThreadState);
 
     int started = va_arg(aArguments, int);
@@ -342,6 +348,8 @@ void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArgumen
 
 void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventNetworkName);
 
     const char *networkName = va_arg(aArguments, const char *);
@@ -350,6 +358,8 @@ void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArgumen
 
 void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventExtPanId);
 
     const uint8_t *xpanid = va_arg(aArguments, const uint8_t *);
@@ -358,6 +368,8 @@ void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
 
 void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArguments)
 {
+    OT_UNUSED_VARIABLE(aEvent);
+
     assert(aEvent == Ncp::kEventThreadVersion);
 
     // `uint16_t` has been promoted to `int`.

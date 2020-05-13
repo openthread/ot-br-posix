@@ -146,7 +146,7 @@ case "$(uname)" in
 
         (mkdir -p docker-rpi-emu \
             && cd docker-rpi-emu \
-            && git init . \
+            && ($(git --git-dir=.git rev-parse --is-inside-work-tree) ||  git --git-dir=.git init .) \
             && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
             && git checkout FETCH_HEAD)
 
@@ -159,9 +159,11 @@ case "$(uname)" in
 
             [ -d $TOOLS_HOME/images ] || mkdir -p $TOOLS_HOME/images
 
+            [[ -f $IMAGE_NAME.zip ]] || curl -LO $IMAGE_URL
+
+            unzip $IMAGE_NAME.zip -d /tmp
+
             (cd /tmp &&
-                ([[ -f $IMAGE_NAME.zip ]] || curl -LO $IMAGE_URL) &&
-                unzip $IMAGE_NAME.zip &&
                 dd if=/dev/zero bs=1048576 count=$EXPAND_SIZE >> $IMAGE_FILE &&
                 mv $IMAGE_FILE $TOOLS_HOME/images/$IMAGE_FILE)
 

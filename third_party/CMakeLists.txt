@@ -26,10 +26,4 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-if (OTBR_WEB)
-    add_subdirectory(angular)
-    add_subdirectory(angular-material)
-    add_subdirectory(mdl)
-endif()
-
 add_subdirectory(openthread)
