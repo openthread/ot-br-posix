@@ -28,21 +28,15 @@
 #
 # Test generating steering data.
 #
-set -e
+set -euxo pipefail
 
-readonly COMPUTER="${top_builddir}/tools/pskc"
-
-die()
-{
-  exit_message="$@"
-  echo " *** ERROR: " "$@"
-  exit 1
-}
+readonly OTBR_EX_USAGE=64
 
 main()
 {
-    "${COMPUTER}" | grep -q 'SYNTAX' || die "No help information found!"
-    [[ "$("${COMPUTER}"  654321 1122334455667788 OpenThread)" = 07708bf664c00858c19269cf10261e5b ]] || die "Wrong PSKc!"
+  "${OTBR_COMPUTER}" | grep 'SYNTAX' || [[ $? == $OTBR_EX_USAGE ]]
+
+  [[ "$("${OTBR_COMPUTER}"  654321 1122334455667788 OpenThread)" == 07708bf664c00858c19269cf10261e5b ]]
 }
 
 main "$@"

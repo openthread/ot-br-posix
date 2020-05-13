@@ -29,7 +29,6 @@
 #include "agent/thread_helper.hpp"
 
 #include <assert.h>
-#include <byteswap.h>
 #include <limits.h>
 #include <string.h>
 
@@ -43,6 +42,7 @@
 #include <openthread/platform/radio.h>
 
 #include "agent/ncp_openthread.hpp"
+#include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
@@ -53,18 +53,6 @@ ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThrea
     : mInstance(aInstance)
     , mNcp(aNcp)
 {
-}
-
-otError ThreadHelper::Init(void)
-{
-    return otSetStateChangedCallback(mInstance, sStateChangedCallback, this);
-}
-
-void ThreadHelper::sStateChangedCallback(otChangedFlags aFlags, void *aThreadHelper)
-{
-    ThreadHelper *helper = static_cast<ThreadHelper *>(aThreadHelper);
-
-    helper->StateChangedCallback(aFlags);
 }
 
 void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
@@ -328,13 +316,14 @@ void ThreadHelper::JoinerCallback(otError aError)
 {
     if (aError != OT_ERROR_NONE)
     {
-        otIp6SetEnabled(mInstance, false);
+        otbrLog(OTBR_LOG_WARNING, "Failed to join Thread network: %s", otThreadErrorToString(aError));
+        LogOpenThreadResult("Stop Thread network", otIp6SetEnabled(mInstance, false));
         mJoinerHandler(aError);
         mJoinerHandler = nullptr;
     }
     else
     {
-        otThreadSetEnabled(mInstance, true);
+        LogOpenThreadResult("Start Thread network", otIp6SetEnabled(mInstance, true));
     }
 }
 
@@ -354,7 +343,7 @@ otError ThreadHelper::TryResumeNetwork(void)
 exit:
     if (error != OT_ERROR_NONE)
     {
-        otIp6SetEnabled(mInstance, false);
+        (void)otIp6SetEnabled(mInstance, false);
     }
 
     return error;
@@ -388,7 +377,7 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
             memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
             if (now >= mUnsecurePortCloseTime[aPort])
             {
-                otIp6RemoveUnsecurePort(mInstance, aPort);
+                (void)otIp6RemoveUnsecurePort(mInstance, aPort);
                 otThreadSetSteeringData(mInstance, &noneAddress);
                 mUnsecurePortCloseTime.erase(aPort);
             }
@@ -399,7 +388,7 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
         otExtAddress noneAddress;
 
         memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
-        otIp6RemoveUnsecurePort(mInstance, aPort);
+        (void)otIp6RemoveUnsecurePort(mInstance, aPort);
         otThreadSetSteeringData(mInstance, &noneAddress);
     }
 

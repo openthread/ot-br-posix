@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -31,7 +31,6 @@
 #
 
 . "$(dirname "$0")"/_initrc
-. script/_wpantund
 . script/_otbr
 . script/_ipforward
 . script/_nat64
@@ -51,7 +50,6 @@ main()
     otbr_uninstall
     network_manager_uninstall
     dhcpv6_pd_uninstall
-    wpantund_uninstall
     nat64_uninstall
     dns64_uninstall
     ipforward_uninstall
@@ -60,7 +58,6 @@ main()
     nat64_install
     dns64_install
     network_manager_install
-    wpantund_install
     dhcpv6_pd_install
     otbr_install
     . $AFTER_HOOK

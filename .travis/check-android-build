@@ -237,7 +237,7 @@ prepare_libmdnssd()
 {
     readonly MDNSRESPONDER_SOURCE=mDNSResponder-878.30.4
 
-    [[ "${WITH_MDNS}" = mDNSResponder ]] || return 0
+    [[ "${OTBR_MDNS}" == mDNSResponder ]] || return 0
 
     wget "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
     tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz"

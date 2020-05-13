@@ -45,12 +45,8 @@ ENV OTBR_DOCKER_DEPS git
 # Required and installed during build (script/bootstrap), could be removed
 ENV OTBR_BUILD_DEPS \
   apt-utils \
-  autoconf \
-  autoconf-archive \
-  automake \
   build-essential \
-  ctags \
-  libtool \
+  psmisc \
   wget
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed

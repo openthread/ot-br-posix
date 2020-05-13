@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "common/event_emitter.hpp"
+#include "utils/event_emitter.hpp"
 
 #include <CppUTest/TestHarness.h>
 #include <stdarg.h>
