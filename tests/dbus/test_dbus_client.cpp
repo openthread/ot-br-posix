@@ -133,9 +133,8 @@ int main()
                 std::vector<otbr::DBus::NeighborInfo> neighborTable;
                 uint32_t                              partitionId;
                 Ip6Prefix                             prefix;
-                OnMeshPrefix                          onMeshPrefix;
+                OnMeshPrefix                          onMeshPrefix = {};
 
-                memset(&onMeshPrefix, 0, sizeof(onMeshPrefix));
                 prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
                 prefix.mLength = 64;
 

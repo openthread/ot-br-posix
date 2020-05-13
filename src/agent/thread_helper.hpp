@@ -43,6 +43,8 @@
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
 
+#include "common/logging.hpp"
+
 namespace otbr {
 namespace Ncp {
 class ControllerOpenThread;
@@ -67,14 +69,6 @@ public:
      *
      */
     ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp);
-
-    /**
-     * This method initializes the Thread helper.
-     *
-     * @returns The error value of underlying OpenThread api calls.
-     *
-     */
-    otError Init(void);
 
     /**
      * This method adds a callback for device role change.
@@ -171,10 +165,28 @@ public:
      */
     otInstance *GetInstance(void) { return mInstance; }
 
-private:
-    static void sStateChangedCallback(otChangedFlags aFlags, void *aThreadHelper);
-    void        StateChangedCallback(otChangedFlags aFlags);
+    /**
+     * This method handles OpenThread state changed notification.
+     *
+     * @param[in]  aFlags    A bit-field indicating specific state that has changed.  See `OT_CHANGED_*` definitions.
+     *
+     */
+    void StateChangedCallback(otChangedFlags aFlags);
 
+    /**
+     * This method logs OpenThread action result.
+     *
+     * @param[in] aAction   The action OpenThread performs.
+     * @param[in] aError    The action result.
+     *
+     */
+    static void LogOpenThreadResult(const char *aAction, otError aError)
+    {
+        otbrLog((aError == OT_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING), "%s: %s", aAction,
+                otThreadErrorToString(aError));
+    }
+
+private:
     static void sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
     void        ActiveScanHandler(otActiveScanResult *aResult);
 

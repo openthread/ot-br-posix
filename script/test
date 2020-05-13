@@ -40,6 +40,7 @@ readonly QUIET=${QUIET:-1}
 
 readonly OTBR_COVERAGE="${OTBR_COVERAGE:-0}"
 readonly OTBR_MDNS="${OTBR_MDNS:-}"
+readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
 readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 
@@ -124,8 +125,8 @@ do_check() {
 }
 
 do_prepare() {
-    if [[ ${OTBR_OPTIONS+x} ]]; then
-        read -r -a otbr_options <<< "${OTBR_OPTIONS-}"
+    if [[ ${OTBR_OPTIONS} ]]; then
+        read -r -a otbr_options <<< "${OTBR_OPTIONS}"
     else
         otbr_options=()
     fi
@@ -144,6 +145,7 @@ do_package() {
     otbr_options=(
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DCMAKE_BUILD_TYPE=Release"
         "-DOTBR_WEB=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )

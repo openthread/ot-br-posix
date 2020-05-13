@@ -39,6 +39,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openthread/logging.h>
+
 #include "agent/agent_instance.hpp"
 #include "agent/ncp.hpp"
 #include "common/code_utils.hpp"
@@ -187,6 +189,7 @@ int main(int argc, char *argv[])
         {
         case 'd':
             logLevel = atoi(optarg);
+            VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
             break;
 
         case 'I':
@@ -223,8 +226,36 @@ int main(int argc, char *argv[])
 
     {
         otbr::AgentInstance instance(ncp);
+        otLogLevel          level;
 
         SuccessOrExit(ret = instance.Init());
+
+        switch (logLevel)
+        {
+        case OTBR_LOG_EMERG:
+        case OTBR_LOG_ALERT:
+        case OTBR_LOG_CRIT:
+            level = OT_LOG_LEVEL_CRIT;
+            break;
+        case OTBR_LOG_ERR:
+        case OTBR_LOG_WARNING:
+            level = OT_LOG_LEVEL_WARN;
+            break;
+        case OTBR_LOG_NOTICE:
+            level = OT_LOG_LEVEL_NOTE;
+            break;
+        case OTBR_LOG_INFO:
+            level = OT_LOG_LEVEL_INFO;
+            break;
+        case OTBR_LOG_DEBUG:
+            level = OT_LOG_LEVEL_DEBG;
+            break;
+        default:
+            ExitNow(ret = EXIT_FAILURE);
+            break;
+        }
+
+        VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, ret = EXIT_FAILURE);
 
 #if OTBR_ENABLE_OPENWRT
         ControllerOpenThread *ncpThread = reinterpret_cast<ControllerOpenThread *>(ncp);
@@ -232,7 +263,6 @@ int main(int argc, char *argv[])
         UbusServerInit(ncpThread, &sThreadMutex);
         std::thread(UbusServerRun).detach();
 #endif
-
         SuccessOrExit(ret = Mainloop(instance, interfaceName));
     }
 

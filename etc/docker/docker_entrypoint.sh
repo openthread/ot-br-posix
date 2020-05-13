@@ -34,8 +34,8 @@ function parse_args()
     while [ $# -gt 0 ]
     do
         case $1 in
-        --ncp-path)
-            NCP_PATH=$2
+        --rcp-path)
+            RCP_PATH=$2
             shift
             shift
             ;;
@@ -66,13 +66,13 @@ function parse_args()
 
 parse_args "$@"
 
-[ -n "$NCP_PATH" ] || NCP_PATH="/dev/ttyUSB0"
+[ -n "$RCP_PATH" ] || RCP_PATH="/dev/ttyUSB0"
 [ -n "$TUN_INTERFACE_NAME" ] || TUN_INTERFACE_NAME="wpan0"
 [ -n "$AUTO_PREFIX_ROUTE" ] || AUTO_PREFIX_ROUTE=true
 [ -n "$AUTO_PREFIX_SLAAC" ] || AUTO_PREFIX_SLAAC=true
 [ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
 
-echo "NCP_PATH:" $NCP_PATH
+echo "RCP_PATH:" $RCP_PATH
 echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
 echo "NAT64_PREFIX:" $NAT64_PREFIX
 echo "AUTO_PREFIX_ROUTE:" $AUTO_PREFIX_ROUTE
@@ -83,12 +83,9 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
 
-echo "OTBR_AGENT_OPTS=\"-I '$TUN_INTERFACE_NAME' '$NCP_PATH' 115200\"" > /etc/default/otbr-agent
-echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -p 80\"" > /etc/default/otbr-web
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -d7 $RCP_PATH 115200\"" > /etc/default/otbr-agent
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" > /etc/default/otbr-web
 
 /app/script/server
 
-while [ $? = 0 ]
-do
-    sleep 60
-done
+tail -f /var/log/syslog

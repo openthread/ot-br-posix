@@ -35,6 +35,11 @@ add_executable(otbr-web
 target_compile_definitions(otbr-web PRIVATE
     WEB_FILE_PATH=\"${OTBR_WEB_DATADIR}/frontend\"
 )
+# TODO remove this when Simple Http Server is replaced and web-gui is refactored
+target_compile_options(otbr-web PRIVATE
+    -Wno-deprecated-declarations
+    -Wno-unused-lambda-capture
+)
 target_include_directories(otbr-web PRIVATE
     ${JSONCPP_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
@@ -56,8 +61,12 @@ install(
     DESTINATION sbin
 )
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/angular ${CMAKE_CURRENT_BINARY_DIR}/angular)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/angular-material ${CMAKE_CURRENT_BINARY_DIR}/angular-material)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/mdl ${CMAKE_CURRENT_BINARY_DIR}/mdl)
+
 install(DIRECTORY web-service/frontend
-    DESTINATION ${OTBR_WEB_DATADIR}/frontend
+    DESTINATION ${OTBR_WEB_DATADIR}
 )
 
 if(OTBR_SYSTEMD_UNIT_DIR)
