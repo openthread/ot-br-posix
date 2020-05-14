@@ -63,7 +63,7 @@ Start otbr-agent manually:
 Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyUSB0` and then start with:
 
 ```bash
-start_service otbr-agent
+service otbr-agent start
 ```
 
 ### Test
