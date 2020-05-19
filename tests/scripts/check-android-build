@@ -30,84 +30,6 @@
 set -e
 set -x
 
-
-#######################################
-# Prepare android build system
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prepare_build_system()
-{
-    # Android build system
-    BASE_COMMIT=2db32730e79cafcf13e1f898a7bee7f82b0449d6
-    # This is the commit containing arm64 target
-    ARM64_COMMIT=4f0eb7d50c5b472be762c581eeda580a9b8ede1b
-    (mkdir build && cd build && git init && git pull --depth 1 https://android.googlesource.com/platform/build "${BASE_COMMIT}")
-    (mkdir build-arm64 && cd build-arm64 && git init && git pull --depth 1 https://android.googlesource.com/platform/build "${ARM64_COMMIT}")
-    cp -vr build-arm64/core/combo/TARGET_linux-arm64.mk build/core/combo
-    cp -vr build-arm64/core/combo/arch/arm64 build/core/combo/arch
-    cp -vr build-arm64/target/board/generic_arm64 build/target/board
-    cp -vr build-arm64/target/product/aosp_arm64.mk build/target/product
-    sed -i 's/vbox_x86.mk/aosp_arm64.mk/g' build/target/product/AndroidProducts.mk
-    sed -i 's/aosp_base_telephony/generic_no_telephony/g;/device.mk/d;/emulator.mk/d' build/target/product/aosp_arm64.mk
-    sed -i 's/PRIVATE_TARGET_CRTBEGIN_DYNAMIC_O/TARGET_CRTBEGIN_DYNAMIC_O/g;s/PRIVATE_TARGET_GLOBAL_LD_DIRS/TARGET_GLOBAL_LD_DIRS/g' build/core/combo/TARGET_linux-arm64.mk
-    rm -rf build-arm64
-
-    ln -s build/core/main.mk Makefile
-
-    # Workarounds for java checking
-    export ANDROID_JAVA_HOME=/usr/lib/jvm/java-8-oracle
-    mkdir bin
-    cat > bin/java <<EOF
-#!/bin/sh
-echo java version \"1.6\"
-EOF
-
-    cat > bin/javac <<EOF
-echo javac \"1.6\"
-EOF
-    chmod a+x bin/java bin/javac
-    export PATH=$(pwd)/bin:$PATH
-
-    # Files for building ndk
-    mkdir -p system/core/include/arch/linux-arm64
-    touch system/core/include/arch/linux-arm64/AndroidConfig.h
-
-    mkdir -p system/core/include/arch/linux-x86
-    touch system/core/include/arch/linux-x86/AndroidConfig.h
-
-    ANDROID_NDK_PATH=$HOME/ndk-bundle
-    mkdir -p bionic/libc/
-    cp -r $ANDROID_NDK_PATH/sysroot/usr/include bionic/libc/include
-    mkdir -p bionic/libc/arch-arm64
-    mv bionic/libc/include/aarch64-linux-android bionic/libc/arch-arm64/include
-
-    mkdir -p out/target/product/generic_arm64/obj/
-    cp -r $ANDROID_NDK_PATH/platforms/android-27/arch-arm64/usr/lib out/target/product/generic_arm64/obj/
-
-    mkdir -p bionic/libstdc++
-    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/include bionic/libstdc++
-    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a/include/* bionic/libstdc++/include
-    # The default libstdc++.so does not contain full stl implementation, see https://developer.android.com/ndk/guides/cpp-support
-    cp -r $ANDROID_NDK_PATH/sources/cxx-stl/gnu-libstdc++/4.9/libs/arm64-v8a/libgnustl_shared.so out/target/product/generic_arm64/obj/lib/libstdc++.so
-
-    # Build spec
-    cat > buildspec.mk <<EOF
-TARGET_PRODUCT := aosp_arm64
-TARGET_BUILD_VARIANT := eng
-TARGET_BUILD_TYPE := release
-TARGET_TOOLS_PREFIX := $ANDROID_NDK_PATH/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-
-USE_OTBR_DAEMON := 1
-OPENTHREAD_PROJECT_CFLAGS := \
-     -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
-     -DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1
-EOF
-}
-
 #######################################
 # Prepare dbus source code
 # Globals:
@@ -120,9 +42,11 @@ EOF
 prepare_dbus()
 {
     DBUS_SOURCE=dbus-1.4.26
-    wget "https://dbus.freedesktop.org/releases/dbus/${DBUS_SOURCE}.tar.gz"
+    wget -nv "https://dbus.freedesktop.org/releases/dbus/${DBUS_SOURCE}.tar.gz"
     tar xvf "${DBUS_SOURCE}.tar.gz"
-    (cd "${DBUS_SOURCE}" && ./configure --prefix= --exec-prefix=/usr && sed -i '/HAVE_BACKTRACE/d' config.h)
+    (cd "${DBUS_SOURCE}" && ./configure --prefix= --exec-prefix=/usr &&
+      sed -i '/HAVE_BACKTRACE/d' config.h &&
+      sed -i 's/long/long long/' dbus/dbus-arch-deps.h)
     cat > "${DBUS_SOURCE}/dbus/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
 include \$(CLEAR_VARS)
@@ -239,7 +163,7 @@ prepare_libmdnssd()
 
     [[ "${OTBR_MDNS}" == mDNSResponder ]] || return 0
 
-    wget "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
+    wget -nv "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
     tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz"
     cat > "${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
@@ -268,15 +192,22 @@ prepare_libchrome_stub()
 {
     SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
     mkdir -p external
-    cp -r "${SRC_DIR}"/../etc/libchrome_stub external/libchrome
-    touch ${SRC_DIR}/../mdns_mojom_stub.c
+    cp -r "${SRC_DIR}"/../../etc/libchrome_stub external/libchrome
+    touch ${SRC_DIR}/../../mdns_mojom_stub.c
 }
 
 prepare_openthread()
 {
     SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
     mkdir -p external
-    mv "${SRC_DIR}"/../third_party/openthread/repo external/openthread
+    mv "${SRC_DIR}"/../../third_party/openthread/repo external/openthread
+    cat >> buildspec.mk <<EOF
+
+USE_OTBR_DAEMON := 1  
+OPENTHREAD_PROJECT_CFLAGS := \
+    -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
+    -DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1
+EOF
 }
 
 #######################################
@@ -290,17 +221,15 @@ prepare_openthread()
 #######################################
 main()
 {
-    prepare_build_system
     prepare_dbus
     prepare_libmdnssd
     prepare_libchrome_stub
     prepare_openthread
 
-    make showcommands otbr-agent
-    make showcommands otbr-agent.conf
+    make showcommands otbr-agent otbr-agent.conf
 
-    test -f out/target/product/generic_arm64/system/bin/otbr-agent
-    test -f out/target/product/generic_arm64/system/etc/dbus-1/system.d/otbr-agent.conf
+    test -f out/target/product/generic/system/bin/otbr-agent
+    test -f out/target/product/generic/system/etc/dbus-1/system.d/otbr-agent.conf
 }
 
 main "$@"

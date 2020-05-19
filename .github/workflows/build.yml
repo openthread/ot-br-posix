@@ -48,3 +48,20 @@ jobs:
       run: sudo BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
       run: script/make-pretty check
+
+  android-check:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        mdns: ["mDNSResponder", "mojo", ""]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Check
+      env:
+        OTBR_MDNS: matrix.mdns
+      run: >
+        docker run --rm -v $PWD:/build/ot-br-posix openthread/android-trusty bash -c
+        "BUILD_TARGET=android-check ot-br-posix/tests/scripts/bootstrap.sh && \
+         ot-br-posix/tests/scripts/check-android-build"

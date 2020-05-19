@@ -109,10 +109,10 @@ case "$(uname)" in
     }
 
     [ $BUILD_TARGET != android-check ] || {
-        sudo apt-get install -y gcc-multilib g++-multilib
+        sudo apt-get install -y wget unzip libexpat1-dev gcc-multilib g++-multilib
         (
         cd $HOME
-        wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+        wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
         unzip android-ndk-r17c-linux-x86_64.zip > /dev/null
         mv android-ndk-r17c ndk-bundle
         )
