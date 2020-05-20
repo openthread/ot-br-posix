@@ -135,7 +135,7 @@ main()
 {
     . $BEFORE_HOOK
     # TODO remove `|| true` after docker hub builder gets its git upgraded
-    git submodule update --init --recursive || true
+    git submodule update --init --recursive --depth 1 || true
     install_packages
     . $AFTER_HOOK
 }
