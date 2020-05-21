@@ -24,15 +24,6 @@ jobs:
     - env: BUILD_TARGET="script-check" OTBR_COVERAGE=1
     - env: BUILD_TARGET="scan-build"
       compiler: clang
-    - env: BUILD_TARGET="android-check" VERBOSE=1 OTBR_MDNS=mDNSResponder
-      dist: trusty
-      language: "cpp"
-    - env: BUILD_TARGET="android-check" VERBOSE=1 OTBR_MDNS=""
-      dist: trusty
-      language: "cpp"
-    - env: BUILD_TARGET="android-check" VERBOSE=1
-      dist: trusty
-      language: "cpp"
     - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1 OTBR_MDNS=mDNSResponder
     - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="pretty-check"
