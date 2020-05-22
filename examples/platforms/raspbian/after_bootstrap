@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-#  Copyright (c) 2018, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,48 +27,15 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
-set -x
+(
+    # source in a subshell to avoid polluting environments
+    . /etc/os-release
 
-main() {
-    STAGE_DIR=/tmp/raspbian
-    IMAGE_DIR=/media/rpi
-
-    [ -d $STAGE_DIR ] || mkdir -p $STAGE_DIR
-    cp -v $IMAGE_FILE $STAGE_DIR/raspbian.img
-
-    git-archive-all $STAGE_DIR/repo.tar.gz
-
-    cat > $STAGE_DIR/check.sh <<EOF
-set -ex
-
-export LC_ALL=C
-export DEBIAN_FRONTEND=noninteractive
-export RELEASE=1
-
-echo "127.0.0.1 \$(hostname)" >> /etc/hosts
-chown -R pi:pi /home/pi/repo
-cd /home/pi/repo
-echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
-apt-get update
-apt-get install -y --no-install-recommends git
-su -m -c 'script/bootstrap' pi
-su -m -c 'NETWORK_MANAGER=0 script/setup' pi
-EOF
-
-    (cd docker-rpi-emu/scripts &&
-        sudo mkdir -p $IMAGE_DIR &&                                    \
-        sudo ./mount.sh $STAGE_DIR/raspbian.img $IMAGE_DIR &&          \
-        sudo mount --bind /dev/pts $IMAGE_DIR/dev/pts &&               \
-        sudo mkdir -p $IMAGE_DIR/home/pi/repo &&                       \
-        sudo tar xzf $STAGE_DIR/repo.tar.gz --strip-components 1 -C $IMAGE_DIR/home/pi/repo && \
-        sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh &&  \
-        sudo ./qemu-setup.sh $IMAGE_DIR &&                             \
-        sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh
-        sudo umount -lf $IMAGE_DIR/dev/pts || true
-        sudo ./qemu-cleanup.sh $IMAGE_DIR || true
-        sudo umount -lf $IMAGE_DIR/dev || true
-        sudo ./unmount.sh $IMAGE_DIR)
-}
-
-main "$@"
+    # In stretch, cmake installed by apt-get is too old.
+    [[ ${VERSION_ID} -ge 10 ]] || {
+        sudo apt-get install -y --no-install-recommends python3-pip
+        sudo pip3 install -U scikit-build
+        sudo pip3 install --system -U cmake
+        pip3 show cmake
+    }
+)
