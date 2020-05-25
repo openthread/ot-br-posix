@@ -26,33 +26,16 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-# Test build and run otbr dbus server
-#
 
-set -euxo pipefail
+(
+    # source in a subshell to avoid polluting environments
+    . /etc/os-release
 
-readonly OTBR_DBUS_SERVER_CONF=otbr-test-agent.conf
-
-on_exit()
-{
-    local status=$?
-
-    sudo killall otbr-agent || true
-    sudo rm "/etc/dbus-1/system.d/${OTBR_DBUS_SERVER_CONF}" || true
-
-    return "${status}"
-}
-
-main()
-{
-    sudo rm -rf tmp
-    sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
-    sudo service dbus reload
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 "$(command -v ot-rcp)" 1 &
-    trap on_exit EXIT
-    sleep 5
-    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
-    sudo ./otbr-test-dbus-client
-}
-
-main "$@"
+    # In stretch, cmake installed by apt-get is too old.
+    [[ ${VERSION_ID} -ge 10 ]] || {
+        sudo apt-get install -y --no-install-recommends python3-pip
+        sudo pip3 install -U scikit-build
+        sudo pip3 install --system -U cmake
+        pip3 show cmake
+    }
+)

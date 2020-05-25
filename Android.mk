@@ -98,6 +98,14 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(LOCAL_PATH)/src/dbus/server/introspect.hpp
+
+$(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/introspect.xml
+	echo 'R"INTROSPECT(' > $@
+	cat $+ >> $@
+	echo ')INTROSPECT"' >> $@
+
+
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
@@ -117,6 +125,7 @@ LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
     -DPACKAGE_VERSION=\"0.01.00\" \
     -DOTBR_ENABLE_DBUS_SERVER=1 \
+    -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
     $(NULL)
 
 LOCAL_CPPFLAGS += -std=c++14
@@ -167,7 +176,7 @@ LOCAL_SRC_FILES += \
 
 # The generated header files are not in dependency chain.
 # Force dependency here
-LOCAL_ADDITIONAL_DEPENDENCIES += $(MDNS_MOJOM_SRCS)
+LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/src/dbus/server/introspect.hpp
 LOCAL_STATIC_LIBRARIES += libmdns_mojom
 LOCAL_SHARED_LIBRARIES += libchrome libmojo
 endif

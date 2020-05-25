@@ -54,11 +54,8 @@ chown -R pi:pi /home/pi/repo
 cd /home/pi/repo
 echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
 apt-get update
-apt-get install -y --no-install-recommends git python3-pip ninja-build
-pip3 install -U scikit-build
+apt-get install -y --no-install-recommends git
 su -m -c 'script/bootstrap' pi
-pip3 install --system -U cmake
-pip3 show cmake
 su -m -c 'NETWORK_MANAGER=0 script/setup' pi
 EOF
 
