@@ -30,14 +30,17 @@
 set -e
 set -x
 
+TOOLS_HOME=$HOME/.cache/tools
+
 main() {
     STAGE_DIR=/tmp/raspbian
     IMAGE_DIR=/media/rpi
+    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img
 
     [ -d $STAGE_DIR ] || mkdir -p $STAGE_DIR
     cp -v $IMAGE_FILE $STAGE_DIR/raspbian.img
 
-    git-archive-all $STAGE_DIR/repo.tar.gz
+    python3 -m git_archive_all $STAGE_DIR/repo.tar.gz
 
     cat > $STAGE_DIR/check.sh <<EOF
 set -ex
