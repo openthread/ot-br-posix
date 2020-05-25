@@ -125,6 +125,9 @@ otbrError DBusThreadObject::Init(void)
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD,
                    std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
 
+    RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
+                   std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
+
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX,
                                std::bind(&DBusThreadObject::SetMeshLocalPrefixHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LEGACY_ULA_PREFIX,
@@ -416,6 +419,15 @@ void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
 
 exit:
     aRequest.ReplyOtResult(error);
+}
+
+void DBusThreadObject::IntrospectHandler(DBusRequest &aRequest)
+{
+    std::string xmlString(
+#include "dbus/server/introspect.hpp"
+    );
+
+    aRequest.Reply(std::tie(xmlString));
 }
 
 otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)

@@ -51,6 +51,7 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 "$(command -v ot-rcp)" 1 &
     trap on_exit EXIT
     sleep 5
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
     sudo ./otbr-test-dbus-client
 }
 

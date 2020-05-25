@@ -26,6 +26,11 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+file(READ introspect.xml OTBR_DBUS_INTROSPECT)
+file(WRITE introspect.hpp "R\"INTROSPECT(")
+file(APPEND introspect.hpp ${OTBR_DBUS_INTROSPECT})
+file(APPEND introspect.hpp ")INTROSPECT\"")
+
 add_library(otbr-dbus-server
     dbus_agent.cpp
     dbus_object.cpp
@@ -36,4 +41,3 @@ add_library(otbr-dbus-server
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
 )
-

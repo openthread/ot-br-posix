@@ -118,3 +118,5 @@ NONE
 
 autoconf-config.h
 autoconf-config.h.in
+
+introspect.hpp

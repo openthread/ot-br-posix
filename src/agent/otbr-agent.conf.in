@@ -6,5 +6,6 @@
         <allow send_interface="io.openthread.BorderRouter"/>
         <allow send_interface="io.openthread.BorderRouter"/>
         <allow send_interface="org.freedesktop.DBus.Properties"/>
+        <allow send_interface="org.freedesktop.DBus.Introspectable"/>
     </policy>
 </busconfig>
