@@ -33,6 +33,7 @@ set -x
 TOOLS_HOME=$HOME/.cache/tools
 
 main() {
+    IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
     STAGE_DIR=/tmp/raspbian
     IMAGE_DIR=/media/rpi
     IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img
