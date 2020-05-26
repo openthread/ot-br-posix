@@ -68,10 +68,6 @@ script-check)
     .travis/check-scripts
     ;;
 
-raspbian-gcc)
-    IMAGE_FILE=$TOOLS_HOME/images/$IMAGE_NAME.img .travis/check-raspbian
-    ;;
-
 docker-check)
     .travis/check-docker
     ;;

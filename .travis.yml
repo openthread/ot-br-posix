@@ -18,7 +18,6 @@ jobs:
     - env: BUILD_TARGET="cmake-check"
       script: script/test package
     - env: BUILD_TARGET="openwrt-check" VERBOSE=1
-    - env: BUILD_TARGET="raspbian-gcc" VERBOSE=1 IMAGE_NAME=2018-04-18-raspbian-stretch-lite IMAGE_URL=http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
     - env: BUILD_TARGET="meshcop" OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="docker-check" OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="script-check" OTBR_COVERAGE=1
@@ -26,12 +25,6 @@ jobs:
       compiler: clang
     - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1 OTBR_MDNS=mDNSResponder
     - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1
-    - env: BUILD_TARGET="pretty-check"
-      addons:
-        apt:
-          packages:
-            - clang-format-6.0
-      script: script/make-pretty check
     - env: BUILD_TARGET="macOS"
       os: osx
       language: "generic"

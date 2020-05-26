@@ -63,6 +63,7 @@ install_common_dependencies() {
         libboost-system-dev \
         libavahi-common-dev \
         libavahi-client-dev \
+        libreadline-dev \
         libjsoncpp-dev
 }
 
@@ -152,6 +153,7 @@ case "$(uname)" in
 
         pip3 install git-archive-all
 
+        IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
         IMAGE_FILE=$IMAGE_NAME.img
         [ -f $TOOLS_HOME/images/$IMAGE_FILE ] || {
             # unit MB

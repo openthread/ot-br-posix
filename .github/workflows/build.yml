@@ -65,3 +65,17 @@ jobs:
         docker run --rm -v $PWD:/build/ot-br-posix openthread/android-trusty bash -c
         "BUILD_TARGET=android-check ot-br-posix/tests/scripts/bootstrap.sh && \
          ot-br-posix/tests/scripts/check-android-build"
+
+  raspbian-check:
+    runs-on: ubuntu-18.04
+    env:
+      IMAGE_URL: http://director.downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2018-04-19/2018-04-18-raspbian-stretch-lite.zip
+      BUILD_TARGET: raspbian-gcc
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Build
+      run: tests/scripts/check-raspbian
