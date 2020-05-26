@@ -29,9 +29,7 @@
 #ifndef OTBR_CONFIG_H_
 #define OTBR_CONFIG_H_
 
-#if HAVE_CONFIG_H
-#include "autoconf-config.h"
-#elif defined(OTBR_CONFIG_FILE)
+#if defined(OTBR_CONFIG_FILE)
 #include OTBR_CONFIG_FILE
 #endif
 
