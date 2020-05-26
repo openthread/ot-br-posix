@@ -34,17 +34,8 @@ TOOLS_HOME=$HOME/.cache/tools
 export PATH=/usr/local/bin:$PATH
 
 case $BUILD_TARGET in
-android-check)
-    (cd .. && "${TRAVIS_BUILD_DIR}/.travis/check-android-build")
-    ;;
-
 mdns-mojo-check)
     ./tests/mdns/test-mojo
-    ;;
-
-check)
-    ./script/bootstrap
-    CPPFLAGS="$CFLAGS -I$TOOLS_HOME/usr/include" LDFLAGS="$LDFLAGS -L$TOOLS_HOME/usr/lib" ./script/test build check
     ;;
 
 meshcop)
@@ -54,14 +45,6 @@ meshcop)
     OT_CLI="ot-cli-mtd" ./script/test meshcop
     OT_CLI="ot-cli-ftd" ./script/test meshcop
     OTBR_USE_WEB_COMMISSIONER=1 ./script/test meshcop
-    ;;
-
-openwrt-check)
-    ./script/test openwrt
-    ;;
-
-scan-build)
-    .travis/check-scan-build
     ;;
 
 script-check)

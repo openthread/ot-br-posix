@@ -60,7 +60,7 @@ jobs:
         submodules: true
     - name: Check
       env:
-        OTBR_MDNS: matrix.mdns
+        OTBR_MDNS: ${{ matrix.mdns }}
       run: >
         docker run --rm -v $PWD:/build/ot-br-posix openthread/android-trusty bash -c
         "BUILD_TARGET=android-check ot-br-posix/tests/scripts/bootstrap.sh && \
@@ -79,3 +79,61 @@ jobs:
       run: tests/scripts/bootstrap.sh
     - name: Build
       run: tests/scripts/check-raspbian
+
+  check:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        mdns: ["mDNSResponder", ""]
+    env:
+      BUILD_TARGET: check
+      OTBR_MDNS: ${{ matrix.mdns }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: script/test build check
+
+  script-check:
+    runs-on: ubuntu-18.04
+    env:
+      BUILD_TARGET: script-check
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: tests/scripts/check-scripts
+
+  scan-build:
+    runs-on: ubuntu-18.04
+    env:
+      BUILD_TARGET: scan-build
+      CC: clang
+      CXX: clang++
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: tests/scripts/check-scan-build
+
+  package:
+    runs-on: ubuntu-18.04
+    env:
+      BUILD_TARGET: package
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Build
+      run: script/test package
