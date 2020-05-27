@@ -15,16 +15,7 @@ after_success:
 
 jobs:
   include:
-    - env: BUILD_TARGET="cmake-check"
-      script: script/test package
-    - env: BUILD_TARGET="openwrt-check" VERBOSE=1
-    - env: BUILD_TARGET="meshcop" OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="docker-check" OTBR_COVERAGE=1 VERBOSE=1
-    - env: BUILD_TARGET="script-check" OTBR_COVERAGE=1
-    - env: BUILD_TARGET="scan-build"
-      compiler: clang
-    - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1 OTBR_MDNS=mDNSResponder
-    - env: BUILD_TARGET="check" OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="macOS"
       os: osx
       language: "generic"

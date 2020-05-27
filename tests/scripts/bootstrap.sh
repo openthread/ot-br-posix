@@ -105,7 +105,7 @@ case "$(uname)" in
 
     [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != meshcop ] || {
         install_openthread_binraries
-        sudo apt-get install -y avahi-daemon avahi-utils
+        sudo apt-get install -y avahi-daemon avahi-utils cpputest
         configure_network
     }
 
@@ -122,7 +122,7 @@ case "$(uname)" in
 
     [ $BUILD_TARGET != scan-build ] || {
         pip3 install -U cmake
-        sudo apt-get install -y clang
+        sudo apt-get install -y clang clang-tools
     }
 
     [ $BUILD_TARGET != pretty-check ] || sudo apt-get install -y clang-format-6.0
