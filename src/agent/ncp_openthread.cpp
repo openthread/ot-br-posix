@@ -94,17 +94,17 @@ exit:
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 {
-    if (aFlags | OT_CHANGED_THREAD_NETWORK_NAME)
+    if (aFlags & OT_CHANGED_THREAD_NETWORK_NAME)
     {
         EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
     }
 
-    if (aFlags | OT_CHANGED_THREAD_EXT_PANID)
+    if (aFlags & OT_CHANGED_THREAD_EXT_PANID)
     {
         EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
     }
 
-    if (aFlags | OT_CHANGED_THREAD_ROLE)
+    if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         bool attached = false;
 
