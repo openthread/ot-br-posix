@@ -32,6 +32,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -223,10 +224,14 @@ exit:
 
 bool OpenThreadClient::FactoryReset(void)
 {
-    const char *result;
-    bool        rval = false;
+    const char * result;
+    bool         rval = false;
+    sighandler_t handler;
 
+    handler = signal(SIGPIPE, SIG_IGN);
     Execute("factoryreset");
+    signal(SIGPIPE, handler);
+
     sleep(0);
     result = Execute("version");
     VerifyOrExit(result != NULL);
