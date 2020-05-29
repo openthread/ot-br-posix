@@ -230,8 +230,8 @@ exit:
 
 bool OpenThreadClient::FactoryReset(void)
 {
-    const char * result;
-    bool         rval = false;
+    const char *result;
+    bool        rval = false;
 #if __APPLE__
     typedef sig_t sighandler_t;
 #endif
