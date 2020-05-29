@@ -61,9 +61,15 @@ OpenThreadClient::OpenThreadClient(void)
 
 OpenThreadClient::~OpenThreadClient(void)
 {
+    Disconnect();
+}
+
+void OpenThreadClient::Disconnect(void)
+{
     if (mSocket != -1)
     {
         close(mSocket);
+        mSocket = -1;
     }
 }
 
@@ -228,11 +234,14 @@ bool OpenThreadClient::FactoryReset(void)
     bool         rval = false;
     sighandler_t handler;
 
+    // Ignore the expected SIGPIPE signal during daemon reset.
     handler = signal(SIGPIPE, SIG_IGN);
     Execute("factoryreset");
     signal(SIGPIPE, handler);
+    Disconnect();
+    sleep(1);
+    VerifyOrExit(rval = Connect());
 
-    sleep(0);
     result = Execute("version");
     VerifyOrExit(result != NULL);
 
