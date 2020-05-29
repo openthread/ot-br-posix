@@ -64,6 +64,7 @@ install_common_dependencies() {
         libavahi-common-dev \
         libavahi-client-dev \
         libreadline-dev \
+        libncurses-dev \
         libjsoncpp-dev
 }
 

@@ -32,6 +32,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,9 +61,15 @@ OpenThreadClient::OpenThreadClient(void)
 
 OpenThreadClient::~OpenThreadClient(void)
 {
+    Disconnect();
+}
+
+void OpenThreadClient::Disconnect(void)
+{
     if (mSocket != -1)
     {
         close(mSocket);
+        mSocket = -1;
     }
 }
 
@@ -225,9 +232,19 @@ bool OpenThreadClient::FactoryReset(void)
 {
     const char *result;
     bool        rval = false;
+#if __APPLE__
+    typedef sig_t sighandler_t;
+#endif
+    sighandler_t handler;
 
+    // Ignore the expected SIGPIPE signal during daemon reset.
+    handler = signal(SIGPIPE, SIG_IGN);
     Execute("factoryreset");
-    sleep(0);
+    signal(SIGPIPE, handler);
+    Disconnect();
+    sleep(1);
+    VerifyOrExit(rval = Connect());
+
     result = Execute("version");
     VerifyOrExit(result != NULL);
 

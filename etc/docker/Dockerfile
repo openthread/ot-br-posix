@@ -57,7 +57,7 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
-  && git reset --hard && git clean -xffd \
+  && git clean -xfd \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \

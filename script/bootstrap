@@ -39,7 +39,9 @@ install_packages_apt()
                          wget \
                          iproute2 \
                          iputils-ping \
-                         apt-utils
+                         apt-utils \
+                         libreadline-dev \
+                         libncurses-dev
     sudo apt-get install -y build-essential ninja-build cmake
 
     with RELEASE || sudo apt-get install -y libcpputest-dev

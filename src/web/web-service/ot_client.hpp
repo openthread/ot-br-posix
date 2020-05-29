@@ -110,6 +110,8 @@ public:
     bool FactoryReset(void);
 
 private:
+    void Disconnect(void);
+
     enum
     {
         kBufferSize     = 1024, ///< Maximum command line input and output buffer.
