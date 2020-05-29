@@ -232,6 +232,9 @@ bool OpenThreadClient::FactoryReset(void)
 {
     const char * result;
     bool         rval = false;
+#if __APPLE__
+    typedef sig_t sighandler_t;
+#endif
     sighandler_t handler;
 
     // Ignore the expected SIGPIPE signal during daemon reset.
