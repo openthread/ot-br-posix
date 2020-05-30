@@ -57,11 +57,10 @@ public:
      * This constructor initializes this object.
      *
      * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aRadioFile      A string of the NCP device file, which can be serial device or executables.
-     * @param[in]   aRadioConfig    A string of the NCP device parameters.
+     * @param[in]   aRadioUrl       The URL describes the radio chip.
      *
      */
-    ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig);
+    ControllerOpenThread(const char *aInterfaceName, const char *aRadioFile);
 
     /**
      * This method initalize the NCP controller.

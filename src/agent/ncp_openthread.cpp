@@ -54,15 +54,13 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace Ncp {
 
-ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
+ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl)
     : mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
     mConfig.mInterfaceName = aInterfaceName;
-    mConfig.mRadioConfig   = aRadioConfig;
-    mConfig.mRadioFile     = aRadioFile;
-    mConfig.mResetRadio    = true;
+    mConfig.mRadioUrl      = aRadioUrl;
     mConfig.mSpeedUpFactor = 1;
 }
 
@@ -253,9 +251,9 @@ void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point a
     mTimers.insert({aTimePoint, aTask});
 }
 
-Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
+Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl)
 {
-    return new ControllerOpenThread(aInterfaceName, aRadioFile, aRadioConfig);
+    return new ControllerOpenThread(aInterfaceName, aRadioUrl);
 }
 
 /*

@@ -57,7 +57,7 @@ Start otbr-agent manually:
 
 ```bash
 # Assuming that ttyUSB0 is a RCP with baudrate 115200.
-/usr/sbin/otbr-agent /dev/ttyUSB0 115200
+/usr/sbin/otbr-agent 'spinel+hdlc+uart:///dev/ttyUSB0?baudrate=115200'
 ```
 
 Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyUSB0` and then start with:

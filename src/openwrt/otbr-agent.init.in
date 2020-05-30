@@ -34,6 +34,6 @@ USE_PROCD=1
 
 start_service() {
 	procd_open_instance
-	procd_set_param command @CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent /dev/ttyUSB0 115200
+	procd_set_param command @CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent 'spinel+hdlc+uart:///dev/ttyUSB0?baudrate=115200'
 	procd_close_instance
 }
