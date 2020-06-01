@@ -53,20 +53,19 @@ EOF
 
 install_common_dependencies() {
     # Common dependencies
-<<<<<<< HEAD
     sudo apt-get install --no-install-recommends -y      \
-        libdbus-1-dev            \
-        autoconf-archive         \
-        doxygen                  \
-        ctags                    \
-        expect                   \
-        libboost-dev             \
-        libboost-filesystem-dev  \
-        libboost-system-dev      \
-        libavahi-common-dev      \
-        libavahi-client-dev      \
-        libjsoncpp-dev           \
-        $NULL
+        libdbus-1-dev \
+        ninja-build \
+        doxygen \
+        expect \
+        libboost-dev \
+        libboost-filesystem-dev \
+        libboost-system-dev \
+        libavahi-common-dev \
+        libavahi-client-dev \
+        libreadline-dev \
+        libncurses-dev \
+        libjsoncpp-dev
 }
 
 install_openthread_binraries() {
@@ -77,7 +76,7 @@ install_openthread_binraries() {
     sudo install -p ${ot_build_dir}/examples/apps/ncp/ot-rcp /usr/bin/
     sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-ftd /usr/bin/
     sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-mtd /usr/bin/
-    sudo apt-get install socat
+    sudo apt-get install --no-install-recommends -y socat
 }
 
 configure_network() {
@@ -107,12 +106,12 @@ case "$(uname)" in
 
     [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != meshcop ] || {
         install_openthread_binraries
-        sudo apt-get install -y avahi-daemon avahi-utils cpputest
+        sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils cpputest
         configure_network
     }
 
     [ $BUILD_TARGET != android-check ] || {
-        sudo apt-get install -y wget unzip libexpat1-dev gcc-multilib g++-multilib
+        sudo apt-get install --no-install-recommends -y wget unzip libexpat1-dev gcc-multilib g++-multilib
         (
         cd $HOME
         wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
@@ -124,8 +123,10 @@ case "$(uname)" in
 
     [ $BUILD_TARGET != scan-build ] || {
         pip3 install -U cmake
-        sudo apt-get install -y clang clang-tools
+        sudo apt-get install --no-install-recommends -y clang clang-tools
     }
+
+    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install -y clang-format-6.0
 
     [ "${OTBR_MDNS-}" != 'mDNSResponder' ] || {
         SOURCE_NAME=mDNSResponder-878.30.4

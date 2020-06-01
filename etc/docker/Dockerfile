@@ -46,8 +46,7 @@ ENV OTBR_DOCKER_DEPS git
 ENV OTBR_BUILD_DEPS \
   apt-utils \
   build-essential \
-  psmisc \
-  wget
+  psmisc
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \

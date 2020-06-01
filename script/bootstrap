@@ -39,17 +39,17 @@ install_packages_apt()
                          wget \
                          iproute2 \
                          iputils-ping \
-                         apt-utils \
                          libreadline-dev \
                          libncurses-dev
-    sudo apt-get install -y build-essential ninja-build cmake
 
-    with RELEASE || sudo apt-get install -y libcpputest-dev
+    sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
+
+    with RELEASE || sudo apt-get install --no-install-recommends -y libcpputest-dev
 
     sudo apt-get install --no-install-recommends -y rsyslog
 
     # For DBus server
-    sudo apt-get install -y libdbus-1-dev
+    sudo apt-get install --no-install-recommends -y libdbus-1-dev
 
     # mDNS
     sudo apt-get install --no-install-recommends -y libavahi-common-dev libavahi-client-dev avahi-daemon

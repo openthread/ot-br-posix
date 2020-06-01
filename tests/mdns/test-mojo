@@ -63,7 +63,7 @@ main()
     cd /etc/apt/sources.list.d && sudo rm -rf cassandra.list* couchdb.list* mongodb-3.4.list* rabbitmq_rabbitmq-server.list* chris-lea-redis-server.list* github_git-lfs.list*
     cd "${CHROMIUM_DIR}/src"
     # Required to install seperately on travis
-    sudo apt-get -y install gcc-multilib g++-multilib
+    sudo apt-get install --no-install-recommends -y gcc-multilib g++-multilib
     sudo ./build/install-build-deps.sh
     gclient runhooks
 
