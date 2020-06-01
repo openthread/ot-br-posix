@@ -120,8 +120,8 @@ int main()
             if (aError == OTBR_ERROR_NONE)
             {
                 std::string                           name;
-                uint64_t                              extAddress;
-                uint16_t                              rloc16;
+                uint64_t                              extAddress = 0;
+                uint16_t                              rloc16     = 0xffff;
                 uint8_t                               routerId;
                 std::vector<uint8_t>                  networkData;
                 std::vector<uint8_t>                  stableNetworkData;
@@ -133,7 +133,7 @@ int main()
                 std::vector<otbr::DBus::NeighborInfo> neighborTable;
                 uint32_t                              partitionId;
                 Ip6Prefix                             prefix;
-                OnMeshPrefix                          onMeshPrefix;
+                OnMeshPrefix                          onMeshPrefix = {};
 
                 prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
                 prefix.mLength = 64;
@@ -161,9 +161,8 @@ int main()
                 assert(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
                 api->FactoryReset(nullptr);
                 assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
-                assert(rloc16 != 0);
+                assert(rloc16 != 0xffff);
                 assert(extAddress != 0);
-                assert(partitionId != 0);
                 assert(routerId == leaderData.mLeaderRouterId);
                 assert(!networkData.empty());
                 assert(childTable.empty());

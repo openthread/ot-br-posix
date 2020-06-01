@@ -80,6 +80,8 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
 
+    void IntrospectHandler(DBusRequest &aRequest);
+
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
     otError SetLinkModeHandler(DBusMessageIter &aIter);

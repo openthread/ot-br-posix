@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -27,13 +27,13 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
+set -euo pipefail
 _HERE=$(dirname "$0")
 cd "${_HERE}/.."
 
 die()
 {
-    >&2 echo ' *** ERROR: ' $*
+    >&2 echo " *** ERROR:  $*"
     exit 1
 }
 
@@ -42,7 +42,7 @@ have()
     # This function checks if a tool is available
     #
 
-    which "$1" > /dev/null 2> /dev/null
+    command -v "$1" > /dev/null 2> /dev/null
 }
 
 have_or_die()
@@ -61,14 +61,14 @@ with()
     # NOTE environment settings takes higher priority than default files.
     #
 
-    VALUE=$(printenv "$1")
-    if test -z "$VALUE"; then
-        if test -f examples/platforms/$PLATFORM/default; then
-            VALUE="$(. examples/platforms/$PLATFORM/default && eval echo "\$$1")"
+    local value=$(printenv "$1")
+    if [[ -z "$value" ]]; then
+        if [[ -f examples/platforms/$PLATFORM/default ]]; then
+            value="$(. "examples/platforms/$PLATFORM/default" && eval echo "\${$1-}")"
         fi
     fi
 
-    test "$VALUE" = 1
+    [[ "$value" == 1 ]]
 }
 
 without()
@@ -81,17 +81,18 @@ without()
     ! with "$1"
 }
 
-# Platform information is needed to load hooks and default settings.
-#
-#----
-# BeagleBone Black debian distribution does not support "lsb_release"
-if [ -f /sys/firmware/devicetree/base/model ]
-then
-    # Note: 'model' is a binary file with no newline
-    cat /sys/firmware/devicetree/base/model | grep -s "BeagleBone Black" && PLATFORM=beagleboneblack
-fi
 
-if test -z "$PLATFORM"; then
+# Platform information is needed to load hooks and default settings.
+
+if [[ ! ${PLATFORM+x} ]]; then
+    # BeagleBone Black debian distribution does not support "lsb_release"
+    if grep -s "BeagleBone Black" /sys/firmware/devicetree/base/model; then
+        # Note: 'model' is a binary file with no newline
+        PLATFORM=beagleboneblack
+    else
+        PLATFORM=
+    fi
+
     case "${OSTYPE}" in
         darwin*)
             PLATFORM=macOS
@@ -104,20 +105,20 @@ if test -z "$PLATFORM"; then
 fi
 echo "Current platform is $PLATFORM"
 
-STAGE_DIR=$(pwd)/._stage
-BUILD_DIR=$(pwd)/._build
+STAGE_DIR=$PWD/stage
+BUILD_DIR=$PWD/build
 
-[ -d $STAGE_DIR ] || mkdir -v -p $STAGE_DIR
-[ -d $BUILD_DIR ] || mkdir -v -p $BUILD_DIR
+[[ -d $STAGE_DIR ]] || mkdir -v -p "$STAGE_DIR"
+[[ -d $BUILD_DIR ]] || mkdir -v -p "$BUILD_DIR"
 
 export PATH=$STAGE_DIR/usr/bin:$STAGE_DIR/usr/sbin:$PATH
 
-TASKNAME=$(basename $0)
+TASKNAME=$(basename "$0")
 BEFORE_HOOK=examples/platforms/$PLATFORM/before_$TASKNAME
 AFTER_HOOK=examples/platforms/$PLATFORM/after_$TASKNAME
-if test ! -f $BEFORE_HOOK; then
+if [[ ! -f "$BEFORE_HOOK" ]]; then
     BEFORE_HOOK=/dev/null
 fi
-if test ! -f $AFTER_HOOK; then
+if [[ ! -f $AFTER_HOOK ]]; then
     AFTER_HOOK=/dev/null
 fi

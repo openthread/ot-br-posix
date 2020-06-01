@@ -127,7 +127,7 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
 
     DBusMessageIter iter, subIter, dictEntryIter, valIter;
     std::string     interfaceName, propertyName, val;
-    DeviceRole      role;
+    DeviceRole      role = OTBR_DEVICE_ROLE_DISABLED;
 
     VerifyOrExit(dbus_message_is_signal(aMessage, DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
     VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
@@ -150,6 +150,7 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
     {
         f(role);
     }
+
 exit:
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }

@@ -33,6 +33,7 @@
 #define DBUS_PROPERTY_SET_METHOD "Set"
 #define DBUS_PROPERTY_GET_ALL_METHOD "GetAll"
 #define DBUS_PROPERTIES_CHANGED_SIGNAL "PropertiesChanged"
+#define DBUS_INTROSPECT_METHOD "Introspect"
 
 #define OTBR_DBUS_SERVER_PREFIX "io.openthread.BorderRouter."
 #define OTBR_DBUS_THREAD_INTERFACE "io.openthread.BorderRouter"

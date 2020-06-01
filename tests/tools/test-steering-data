@@ -28,29 +28,21 @@
 #
 # Test generating steering data.
 #
-set -e
-set -x
+set -euxo pipefail
 
-readonly COMPUTER="${top_builddir}/tools/steering-data"
-
-die()
-{
-  exit_message="$@"
-  echo " *** ERROR: " "$@"
-  exit 1
-}
+readonly OTBR_EX_USAGE=64
 
 main()
 {
-    "${COMPUTER}" | grep -q 'SYNTAX' || die "No help information found!"
-    ! "${COMPUTER}" 32 18b4300000000002 || die "Validation error expected!"
-    ! "${COMPUTER}" 0 18b4300000000002 || die "Validation error expected!"
-    ! "${COMPUTER}" -1 18b4300000000002 || die "Validation error expected!"
-    [[ "$("${COMPUTER}" 1)" = 00 ]] || die "Wrong steering data!"
-    [[ "$("${COMPUTER}" 18b4300000000002)" = 00000000000000000000000000000012 ]] || die "Wrong steering data!"
-    [[ "$("${COMPUTER}" 16 18b4300000000002)" = 00000000000000000000000000000012 ]] || die "Wrong steering data!"
-    [[ "$("${COMPUTER}" 18b4300000000002 18b4300000000003)" = 00000000000008002000000000000012 ]] || die "Wrong steering data!"
-    [[ "$("${COMPUTER}" 16 18b4300000000002 18b4300000000003)" = 00000000000008002000000000000012 ]] || die "Wrong steering data!"
+    "${OTBR_COMPUTER}" | grep 'SYNTAX' || [[ $? == $OTBR_EX_USAGE ]]
+    ! "${OTBR_COMPUTER}" 32 18b4300000000002
+    ! "${OTBR_COMPUTER}" 0 18b4300000000002
+    ! "${OTBR_COMPUTER}" -1 18b4300000000002
+    [[ "$("${OTBR_COMPUTER}" 1)" == 00 ]]
+    [[ "$("${OTBR_COMPUTER}" 18b4300000000002)" == 00000000000000000000000000000012 ]]
+    [[ "$("${OTBR_COMPUTER}" 16 18b4300000000002)" == 00000000000000000000000000000012 ]]
+    [[ "$("${OTBR_COMPUTER}" 18b4300000000002 18b4300000000003)" == 00000000000008002000000000000012 ]]
+    [[ "$("${OTBR_COMPUTER}" 16 18b4300000000002 18b4300000000003)" == 00000000000008002000000000000012 ]]
 }
 
 main "$@"

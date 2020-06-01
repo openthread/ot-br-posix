@@ -2,21 +2,21 @@
 
 We would love for you to contribute to OpenThread and help make it even better than it is today! As a contributor, here are the guidelines we would like you to follow.
 
-* [1 Code of Conduct](#code-of-conduct)
-* [2 Bugs](#bugs)
-* [3 New Features](#new-features)
-* [4 Contributing Code](#contributing-code)
-  * [4.1 Initial Setup](#initial-setup)
-  * [4.2 Contributor License Agreement (CLA)](#contributor-license-agreement--cla-)
-  * [4.3 Submitting a Pull Request](#submitting-a-pull-request)
+- [1 Code of Conduct](#code-of-conduct)
+- [2 Bugs](#bugs)
+- [3 New Features](#new-features)
+- [4 Contributing Code](#contributing-code)
+  - [4.1 Initial Setup](#initial-setup)
+  - [4.2 Contributor License Agreement (CLA)](#contributor-license-agreement--cla-)
+  - [4.3 Submitting a Pull Request](#submitting-a-pull-request)
 
 ## Code of Conduct
 
-Help us keep OpenThread open and inclusive.  Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Help us keep OpenThread open and inclusive. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Bugs
 
-If you find a bug in the source code, you can help us by [submitting a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new).  The best bug reports provide a detailed description of the issue and step-by-step instructions for predictably reproducing the issue.  Even better, you can [submit a Pull Request](#submitting-a-pull-request) with a fix.
+If you find a bug in the source code, you can help us by [submitting a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new). The best bug reports provide a detailed description of the issue and step-by-step instructions for predictably reproducing the issue. Even better, you can [submit a Pull Request](#submitting-a-pull-request) with a fix.
 
 ## New Features
 
@@ -24,9 +24,9 @@ You can request a new feature by [submitting a GitHub Issue](https://github.com/
 
 If you would like to implement a new feature, please consider the scope of the new feature:
 
-* *Large feature*: first [submit a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new) and communicate your proposal so that the community can review and provide feedback.  Getting early feedback will help ensure your implementation work is accepted by the community.  This will also allow us to better coordinate our efforts and minimize duplicated effort.
+- _Large feature_: first [submit a GitHub Issue](https://github.com/openthread/ot-br-posix/issues/new) and communicate your proposal so that the community can review and provide feedback. Getting early feedback will help ensure your implementation work is accepted by the community. This will also allow us to better coordinate our efforts and minimize duplicated effort.
 
-* *Small feature*: can be implemented and directly [submitted as a Pull Request](#submitting-a-pull-request).
+- _Small feature_: can be implemented and directly [submitted as a Pull Request](#submitting-a-pull-request).
 
 ## Contributing Code
 
@@ -37,7 +37,7 @@ The OpenThread Project follows the "Fork-and-Pull" model for accepting contribut
 Setup your GitHub fork and continuous-integration services:
 
 1. Fork the [OpenThread repository](https://github.com/openthread/ot-br-posix) by clicking "Fork" on the web UI.
-2. Enable [Travis CI](https://travis-ci.org/) by logging in with your GitHub account and enabling your newly created fork.  We use Travis CI for Linux and macOS continuous integration checks.  All contributions must pass these checks to be accepted.
+2. Enable [Travis CI](https://travis-ci.org/) by logging in with your GitHub account and enabling your newly created fork. We use Travis CI for Linux and macOS continuous integration checks. All contributions must pass these checks to be accepted.
 
 Setup your local development environment:
 
@@ -109,7 +109,7 @@ This will open up a text editor where you can specify which commits to squash.
 
 #### Coding Conventions and Style
 
-OpenThread uses and enforces the [OpenThread Coding Conventions and Style](STYLE_GUIDE.md) on all code, except for code located in [third_party](third_party).  Use `script/make-pretty` and `script/make-pretty check` to automatically reformat code and check for code-style compliance, respectively.  OpenThread currently requires [clang-format v6.0.0](http://releases.llvm.org/download.html#6.0.0) for C/C++ and [yapf](https://github.com/google/yapf) for Python.
+OpenThread uses and enforces the [OpenThread Coding Conventions and Style](STYLE_GUIDE.md) on all code, except for code located in [third_party](third_party). Use `script/make-pretty` and `script/make-pretty check` to automatically reformat code and check for code-style compliance, respectively. OpenThread currently requires [clang-format v6.0.0](http://releases.llvm.org/download.html#6.0.0) for C/C++ and [yapf](https://github.com/google/yapf) for Python.
 
 As part of the cleanup process, you should also run `script/make-pretty check` to ensure that your code passes the baseline code style checks.
 
@@ -123,7 +123,7 @@ git checkout <branch-name>
 git push origin <branch-name>
 ```
 
-This will trigger the Travis CI continuous-integration checks.  You can view the results in the respective services.  Note that the integration checks will report failures on occasion.  If a failure occurs, you may try rerunning the test via the Travis web UI.
+This will trigger the Travis CI continuous-integration checks. You can view the results in the respective services. Note that the integration checks will report failures on occasion. If a failure occurs, you may try rerunning the test via the Travis web UI.
 
 #### Submit Pull Request
 

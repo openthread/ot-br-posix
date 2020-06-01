@@ -34,6 +34,7 @@
 #include <mbedtls/sha256.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sysexits.h>
 
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
@@ -72,7 +73,7 @@ exit:
 int main(int argc, char *argv[])
 {
     otbr::SteeringData computer;
-    int                ret    = -1;
+    int                ret    = EX_USAGE;
     int                length = 16;
     int                i      = 1;
 
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
     }
     printf("\n");
 
-    ret = 0;
+    ret = EX_OK;
 
 exit:
     return ret;

@@ -1,5 +1,4 @@
-OpenThread Border Router on OpenWRT
-===================================
+# OpenThread Border Router on OpenWRT
 
 ## Build
 
@@ -15,6 +14,7 @@ cd "${OPENWRT_TOP_SRCDIR}"
 ./scripts/feeds update openthread
 ./scripts/feeds install openthread-br
 ```
+
 ### 2. Enable OpenThread Border Router
 
 OpenThread is not selected by default, so use menuconfig to select openthread-br (OpenThread Border Router).
@@ -25,9 +25,9 @@ make menuconfig
 
 In the configure window, use the Up and Down keys to move the cursor and the Left and Right keys to choose an action.
 
-1. Select *Network* to enter its submenu.
-2. Enable *openthread-br* by moving the cursor to it and pressing **Y**.
-3. Select *Exit* to exit.
+1. Select _Network_ to enter its submenu.
+2. Enable _openthread-br_ by moving the cursor to it and pressing **Y**.
+3. Select _Exit_ to exit.
 
 ### 3. Build OpenThread Border Router
 
@@ -63,9 +63,9 @@ Start otbr-agent manually:
 Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyUSB0` and then start with:
 
 ```bash
-start_service otbr-agent
+service otbr-agent start
 ```
 
 ### Test
 
-Enter the OpenWRT web GUI. There will be a new item *Thread* under *Network*. Scan or create network here.
+Enter the OpenWRT web GUI. There will be a new item _Thread_ under _Network_. Scan or create network here.

@@ -27,19 +27,33 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -e
-set -x
+set -euxo pipefail
 
 TOOLS_HOME=$HOME/.cache/tools
-[ -d $TOOLS_HOME ] || mkdir -p $TOOLS_HOME
+[[ -d $TOOLS_HOME ]] || mkdir -p $TOOLS_HOME
 
 die() {
 	echo " *** ERROR: " $*
 	exit 1
 }
 
+disable_install_recommends()
+{
+    OTBR_APT_CONF_FILE=/etc/apt/apt.conf
+
+    if [[ -f ${OTBR_APT_CONF_FILE} ]] && grep Install-Recommends "${OTBR_APT_CONF_FILE}"; then
+        return 0
+    fi
+
+    sudo tee -a /etc/apt/apt.conf <<EOF
+APT::Get::Install-Recommends "false";
+APT::Get::Install-Suggests "false";
+EOF
+}
+
 install_common_dependencies() {
     # Common dependencies
+<<<<<<< HEAD
     sudo apt-get install --no-install-recommends -y      \
         libdbus-1-dev            \
         autoconf-archive         \
@@ -56,15 +70,14 @@ install_common_dependencies() {
 }
 
 install_openthread_binraries() {
-    git -C /tmp clone --depth 1 https://github.com/openthread/openthread.git || die 'Failed to download OpenThread!'
-    cd /tmp/openthread
-    ./bootstrap
-    make -f examples/Makefile-simulation
-    sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-rcp /usr/bin/
-    sudo install -p ./output/x86_64-unknown-linux-gnu/bin/ot-ncp-ftd /usr/bin/ || die 'Failed to build OpenThread!'
-    which ot-rcp || die 'Unable to find ot-rcp!'
-    which ot-ncp-ftd || die 'Unable to find ot-ncp-ftd!'
-    sudo apt-get install --no-install-recommends socat
+    pip3 install -U cmake
+    cd third_party/openthread/repo
+    local ot_build_dir=$(VIRTUAL_TIME=0 ./script/test clean build | grep 'Build files have been written to: ' | cut -d: -f2 | tr -d ' ')
+    cd -
+    sudo install -p ${ot_build_dir}/examples/apps/ncp/ot-rcp /usr/bin/
+    sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-ftd /usr/bin/
+    sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-mtd /usr/bin/
+    sudo apt-get install socat
 }
 
 configure_network() {
@@ -75,7 +88,10 @@ configure_network() {
 
 case "$(uname)" in
 "Linux")
+    disable_install_recommends
     sudo apt-get update
+    install_common_dependencies
+
     [ $BUILD_TARGET != script-check ] && [ $BUILD_TARGET != docker-check ] || {
         install_openthread_binraries
         configure_network
@@ -89,35 +105,29 @@ case "$(uname)" in
         exit 0
     }
 
-    [ $BUILD_TARGET != meshcop ] || {
+    [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != meshcop ] || {
+        install_openthread_binraries
+        sudo apt-get install -y avahi-daemon avahi-utils cpputest
         configure_network
     }
 
     [ $BUILD_TARGET != android-check ] || {
-        sudo apt-get install --no-install-recommends -y gcc-multilib g++-multilib
+        sudo apt-get install -y wget unzip libexpat1-dev gcc-multilib g++-multilib
         (
         cd $HOME
-        wget https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+        wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
         unzip android-ndk-r17c-linux-x86_64.zip > /dev/null
         mv android-ndk-r17c ndk-bundle
         )
         exit 0
     }
 
-    install_common_dependencies
-
-    [ $BUILD_TARGET != scan-build ] || sudo apt-get install --no-install-recommends -y clang
-
-    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install --no-install-recommends -y clang-format-6.0
-
-    [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != distcheck ] && [ $BUILD_TARGET != meshcop ] || {
-        sudo apt-get install --no-install-recommends -y  \
-            avahi-daemon         \
-            avahi-utils          \
-            $NULL
+    [ $BUILD_TARGET != scan-build ] || {
+        pip3 install -U cmake
+        sudo apt-get install -y clang clang-tools
     }
 
-    [ "$WITH_MDNS" != 'mDNSResponder' ] || {
+    [ "${OTBR_MDNS-}" != 'mDNSResponder' ] || {
         SOURCE_NAME=mDNSResponder-878.30.4
         wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz &&
         tar xvf $SOURCE_NAME.tar.gz &&
@@ -126,17 +136,24 @@ case "$(uname)" in
     }
 
     # Enable IPv6
-    [ $BUILD_TARGET != check -a $BUILD_TARGET != distcheck ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
+    [ $BUILD_TARGET != check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
 
     # Allow access syslog file for unit test
-    [ $BUILD_TARGET != check -a $BUILD_TARGET != distcheck ] || sudo chmod a+r /var/log/syslog || die
+    [ $BUILD_TARGET != check ] || sudo chmod a+r /var/log/syslog || die
 
     # Prepare Raspbian image
     [ $BUILD_TARGET != raspbian-gcc ] || {
         sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
 
-        git clone --depth 1 https://github.com/ryankurte/docker-rpi-emu.git
+        (mkdir -p docker-rpi-emu \
+            && cd docker-rpi-emu \
+            && ($(git --git-dir=.git rev-parse --is-inside-work-tree) ||  git --git-dir=.git init .) \
+            && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
+            && git checkout FETCH_HEAD)
 
+        pip3 install git-archive-all
+
+        IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
         IMAGE_FILE=$IMAGE_NAME.img
         [ -f $TOOLS_HOME/images/$IMAGE_FILE ] || {
             # unit MB
@@ -144,9 +161,11 @@ case "$(uname)" in
 
             [ -d $TOOLS_HOME/images ] || mkdir -p $TOOLS_HOME/images
 
+            [[ -f $IMAGE_NAME.zip ]] || curl -LO $IMAGE_URL
+
+            unzip $IMAGE_NAME.zip -d /tmp
+
             (cd /tmp &&
-                curl -LO $IMAGE_URL &&
-                unzip $IMAGE_NAME.zip &&
                 dd if=/dev/zero bs=1048576 count=$EXPAND_SIZE >> $IMAGE_FILE &&
                 mv $IMAGE_FILE $TOOLS_HOME/images/$IMAGE_FILE)
 

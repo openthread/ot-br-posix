@@ -45,12 +45,8 @@ ENV OTBR_DOCKER_DEPS git
 # Required and installed during build (script/bootstrap), could be removed
 ENV OTBR_BUILD_DEPS \
   apt-utils \
-  autoconf \
-  autoconf-archive \
-  automake \
   build-essential \
-  ctags \
-  libtool \
+  psmisc \
   wget
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
@@ -61,8 +57,6 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
-  && git config --global http.sslVerify false \
-  && git reset --hard && git clean -xffd \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \
