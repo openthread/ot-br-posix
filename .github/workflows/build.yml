@@ -88,6 +88,7 @@ jobs:
     env:
       BUILD_TARGET: check
       OTBR_MDNS: ${{ matrix.mdns }}
+      OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -96,11 +97,14 @@ jobs:
       run: tests/scripts/bootstrap.sh
     - name: Run
       run: script/test build check
+    - name: Codecov
+      uses: codecov/codecov-action@v1
 
   script-check:
     runs-on: ubuntu-18.04
     env:
       BUILD_TARGET: script-check
+      OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -109,6 +113,8 @@ jobs:
       run: tests/scripts/bootstrap.sh
     - name: Run
       run: tests/scripts/check-scripts
+    - name: Codecov
+      uses: codecov/codecov-action@v1
 
   scan-build:
     runs-on: ubuntu-18.04

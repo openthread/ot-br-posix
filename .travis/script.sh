@@ -47,8 +47,8 @@ meshcop)
     OTBR_USE_WEB_COMMISSIONER=1 ./script/test meshcop
     ;;
 
-script-check)
-    .travis/check-scripts
+openwrt-check)
+    ./script/test openwrt
     ;;
 
 docker-check)
