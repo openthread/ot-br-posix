@@ -64,7 +64,7 @@ main() {
 
     # shellcheck disable=SC2094
     ot-rcp 1 > "${RCP_PTY}" < "${RCP_PTY}" &
-    NCP="${HOST_PTY}" ./script/console & SERVICES_PID=$!
+    RADIO_URL="spinel+hdlc+uart://${HOST_PTY}" ./script/console & SERVICES_PID=$!
     sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 10

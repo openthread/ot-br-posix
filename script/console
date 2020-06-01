@@ -34,7 +34,7 @@
 . script/_ipforward
 
 readonly TUN="${TUN:-wpan0}"
-readonly NCP="${NCP:-/dev/ttyUSB0}"
+readonly RADIO_URL="${RADIO_URL:-spinel+hdlc+uart:///dev/ttyUSB0}"
 
 killall_services()
 {
@@ -59,7 +59,7 @@ main()
     trap on_exit INT TERM EXIT
     ipforward_enable
     sudo sh -s <<EOF
-otbr-agent -I $TUN $NCP 115200 &
+otbr-agent -I $TUN "${RADIO_URL}" &
 otbr-web -I $TUN &
 wait
 EOF

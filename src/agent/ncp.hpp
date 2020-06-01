@@ -132,11 +132,10 @@ public:
      * This method creates a NCP Controller.
      *
      * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aRadioFile      A string of the NCP device file, which can be serial device or executables.
-     * @param[in]   aRadioConfig    A string of the NCP device parameters.
+     * @param[in]   aRadioUrl       The URL describes the radio chip.
      *
      */
-    static Controller *Create(const char *aInterfaceName, char *aRadioFile = NULL, char *aRadioConfig = NULL);
+    static Controller *Create(const char *aInterfaceName, const char *aRadioUrl);
 
     /**
      * This method destroys a NCP Controller.

@@ -158,7 +158,8 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] [RADIO_DEVICE] [RADIO_CONFIG]\n", aProgramName);
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
+    fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
 static void PrintVersion(void)
@@ -216,8 +217,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    VerifyOrExit(optind + 1 < argc, ret = EXIT_FAILURE);
-    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
+    VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
+    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
     VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
