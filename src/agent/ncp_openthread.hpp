@@ -60,7 +60,7 @@ public:
      * @param[in]   aRadioUrl       The URL describes the radio chip.
      *
      */
-    ControllerOpenThread(const char *aInterfaceName, const char *aRadioFile);
+    ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl);
 
     /**
      * This method initalize the NCP controller.
