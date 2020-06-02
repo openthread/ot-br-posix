@@ -95,7 +95,7 @@ public:
     virtual void UpdateFdSet(otSysMainloopContext &aMainloop) = 0;
 
     /**
-     * This method performs the DTLS processing.
+     * This method performs the Thread processing.
      *
      * @param[in]       aMainloop   A reference to OpenThread mainloop context.
      *

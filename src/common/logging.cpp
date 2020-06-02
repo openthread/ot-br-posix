@@ -300,10 +300,6 @@ const char *otbrErrorString(otbrError aError)
         error = strerror(errno);
         break;
 
-    case OTBR_ERROR_DTLS:
-        error = "DTLS error";
-        break;
-
     case OTBR_ERROR_DBUS:
         error = "DBUS error";
         break;

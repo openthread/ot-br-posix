@@ -67,7 +67,6 @@ public:
      * This method initialize the agent.
      *
      * @retval  OTBR_ERROR_NONE     Agent initialized successfully.
-     * @retval  OTBR_ERROR_DTLS     Failed to initialize DTLS service.
      * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
      *
      */
