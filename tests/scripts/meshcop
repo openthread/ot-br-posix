@@ -274,7 +274,7 @@ ba_start()
     sudo "${OTBR_AGENT_PATH}" -x && exit $?
 
     [[ ! -d tmp ]] || sudo rm -rf tmp
-    sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 "spinel+hdlc+forkpty://${ot_rcp}?arg=${LEADER_NODE_ID}" &
+    sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 "spinel+hdlc+forkpty://${ot_rcp}?forkpty-arg=${LEADER_NODE_ID}" &
   )
 
   # wait for it to complete
