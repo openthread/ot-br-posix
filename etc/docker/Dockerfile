@@ -46,8 +46,7 @@ ENV OTBR_DOCKER_DEPS git
 ENV OTBR_BUILD_DEPS \
   apt-utils \
   build-essential \
-  psmisc \
-  wget
+  psmisc
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
@@ -56,8 +55,7 @@ ENV OTBR_NORELEASE_DEPS \
   doxygen
 
 RUN apt-get update \
-  && apt-get install -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
-  && git clean -xfd \
+  && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \

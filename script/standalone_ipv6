@@ -110,8 +110,8 @@ determine_eth0_name()
 install_radvd()
 {
     echo "Fetching RADVD..."
-    echo "apt-get install radvd"
-    sudo apt-get install radvd
+    echo "apt-get install --no-install-recommends radvd"
+    sudo apt-get install --no-install-recommends radvd
 }
 
 choose_random_eth0_address()
