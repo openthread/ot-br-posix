@@ -49,12 +49,18 @@ struct TestStruct
     std::string name;
 };
 
-template <> struct otbr::DBus::DBusTypeTrait<TestStruct>
+namespace otbr {
+namespace DBus {
+
+template <> struct DBusTypeTrait<TestStruct>
 {
     static constexpr const char *TYPE_AS_STRING =
         //{uint8, uint32, string}
         "(yus)";
 };
+
+} // namespace DBus
+} // namespace otbr
 
 bool operator==(const TestStruct &aLhs, const TestStruct &aRhs)
 {
