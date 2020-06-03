@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     int         opt;
     uint16_t    port = OT_HTTP_PORT;
 
-    while ((opt = getopt(argc, argv, "d:I:p:v:a:")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:va:")) != -1)
     {
         switch (opt)
         {
