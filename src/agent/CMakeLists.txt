@@ -39,6 +39,7 @@ add_executable(otbr-agent
     thread_helper.cpp
     thread_helper.hpp
 )
+
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
@@ -51,8 +52,10 @@ target_link_libraries(otbr-agent PRIVATE
     otbr-common
     otbr-utils
 )
+
 add_dependencies(otbr-agent ot-ctl print-ot-config)
 install(TARGETS otbr-agent DESTINATION sbin)
+
 if(CMAKE_VERSION VERSION_LESS 3.13)
     install(PROGRAMS $<TARGET_FILE:ot-ctl> DESTINATION sbin)
 else()

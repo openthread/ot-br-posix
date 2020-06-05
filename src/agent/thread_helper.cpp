@@ -349,6 +349,7 @@ exit:
     return error;
 }
 
+#if OTBR_ENABLE_UNSECURE_JOIN
 otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 {
     otError      error = OT_ERROR_NONE;
@@ -395,6 +396,7 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 exit:
     return error;
 }
+#endif
 
 } // namespace agent
 } // namespace otbr

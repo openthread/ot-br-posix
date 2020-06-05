@@ -30,9 +30,10 @@ cmake_minimum_required(VERSION 3.11.4)
 project(openthread-br VERSION 0.2.0)
 
 
-option(OTBR_DBUS    "Build DBus support" OFF)
-option(OTBR_OPENWRT "Build OpenWrt support" OFF)
-option(OTBR_WEB     "Build Web GUI" OFF)
+option(OTBR_DBUS          "Build DBus support" OFF)
+option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
+option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
+option(OTBR_WEB           "Build Web GUI" OFF)
 
 
 if(NOT CMAKE_CXX_STANDARD)
@@ -98,6 +99,12 @@ endif()
 if(OTBR_OPENWRT)
     target_compile_definitions(otbr-config INTERFACE
         OTBR_ENABLE_OPENWRT=1
+    )
+endif()
+
+if(OTBR_UNSECURE_JOIN)
+    target_compile_definitions(otbr-config INTERFACE
+        OTBR_ENABLE_UNSECURE_JOIN=1
     )
 endif()
 

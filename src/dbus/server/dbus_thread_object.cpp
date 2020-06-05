@@ -309,6 +309,7 @@ void DBusThreadObject::JoinerStopHandler(DBusRequest &aRequest)
 
 void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 {
+#ifdef OTBR_ENABLE_UNSECURE_JOIN
     auto     threadHelper = mNcp->GetThreadHelper();
     uint16_t port;
     uint32_t timeout;
@@ -322,6 +323,9 @@ void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
     {
         aRequest.ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
     }
+#else
+    aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
+#endif
 }
 
 void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
