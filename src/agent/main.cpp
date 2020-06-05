@@ -164,7 +164,7 @@ static void PrintHelp(const char *aProgramName)
 
 static void PrintVersion(void)
 {
-    printf("%s\n", PACKAGE_VERSION);
+    printf("%s\n", OTBR_PACKAGE_VERSION);
 }
 
 static void OnAllocateFailed(void)
@@ -217,11 +217,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    otbrLogInit(kSyslogIdent, logLevel, verbose);
+    otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
     ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
     VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
-
-    otbrLogInit(kSyslogIdent, logLevel, verbose);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 

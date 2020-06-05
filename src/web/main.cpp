@@ -45,7 +45,7 @@
 #include "common/logging.hpp"
 #include "web/web-service/web_server.hpp"
 
-static const char kSyslogIdent[]          = "otWeb";
+static const char kSyslogIdent[]          = "otbr-web";
 static const char kDefaultInterfaceName[] = "wpan0";
 static const char kDefaultListenAddr[]    = "0.0.0.0";
 
@@ -65,7 +65,7 @@ static void HandleSignal(int aSignal)
 
 static void PrintVersion(void)
 {
-    printf("%s\n", PACKAGE_VERSION);
+    printf("%s\n", OTBR_PACKAGE_VERSION);
 }
 
 int main(int argc, char **argv)
@@ -111,6 +111,9 @@ int main(int argc, char **argv)
         }
     }
 
+    otbrLogInit(kSyslogIdent, logLevel, true);
+    otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+
     if (interfaceName == nullptr)
     {
         interfaceName = kDefaultInterfaceName;
@@ -128,7 +131,6 @@ int main(int argc, char **argv)
         printf("http port not specified, using default %d\n", port);
     }
 
-    otbrLogInit(kSyslogIdent, logLevel, true);
     otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
 
     // allow quitting elegantly
