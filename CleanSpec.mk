@@ -48,3 +48,5 @@
 # NEWER CLEAN STEPS MUST BE AT THE END OF THE LIST
 # ************************************************
 $(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/EXECUTABLES/otbr-agent_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/STATIC_LIBRARIES/libmdns_mojom_intermediates)
+$(call add-clean-step, rm -rf $(PRODUCT_OUT)/obj/EXECUTABLES/otbr-agent_intermediates)

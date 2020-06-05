@@ -39,34 +39,18 @@
 #include <base/message_loop/message_pump_for_io.h>
 #include <chromecast/external_mojo/public/cpp/common.h>
 
-#ifndef TEST_IN_CHROMIUM
 #include <base/task_scheduler/post_task.h>
 #include <chromecast/external_mojo/public/cpp/external_connector.h>
-#else
-#include <base/task/post_task.h>
-#include <chromecast/external_mojo/external_service_support/external_connector.h>
-#include <mojo/public/cpp/bindings/receiver.h>
-#include <mojo/public/cpp/bindings/remote.h>
-#endif
 
 #include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 
-#ifndef TEST_IN_CHROMIUM
 #include "mdns/mdns.hpp"
-#include "third_party/chromecast/mojom/mdns.mojom.h"
-#else
-#include "mdns.hpp"
-#include "mdns_mojo_test/public/mojom/mdns.mojom.h"
-#endif
+#include "chromecast/internal/receiver/mdns/public/mojom/mdns.mojom.h"
 
-#ifndef TEST_IN_CHROMIUM
 #define MOJO_CONNECTOR_NS chromecast::external_mojo
-#else
-#define MOJO_CONNECTOR_NS chromecast::external_service_support
-#endif
 
 namespace otbr {
 namespace Mdns {
@@ -171,20 +155,16 @@ private:
     void LaunchMojoThreads(void);
     void TearDownMojoThreads(void);
     void ConnectToMojo(void);
-    void mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> aConnector);
+    void mMojoConnectCb(std::unique_ptr<chromecast::external_mojo::ExternalConnector> aConnector);
     void mMojoDisconnectedCb(void);
     void mRegisterServiceCb(chromecast::mojom::MdnsResult aResult);
 
     scoped_refptr<base::SingleThreadTaskRunner>           mMojoTaskRunner;
     std::unique_ptr<std::thread>                          mMojoCoreThread;
     base::Closure                                         mMojoCoreThreadQuitClosure;
-    std::unique_ptr<MOJO_CONNECTOR_NS::ExternalConnector> mConnector;
+    std::unique_ptr<chromecast::external_mojo::ExternalConnector> mConnector;
 
-#ifndef TEST_IN_CHROMIUM
     chromecast::mojom::MdnsResponderPtr mResponder;
-#else
-    mojo::Remote<chromecast::mojom::MdnsResponder> mResponder;
-#endif
 
     std::vector<std::pair<std::string, std::string>> mPublishedServices;
 

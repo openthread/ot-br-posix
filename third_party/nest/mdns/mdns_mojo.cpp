@@ -42,19 +42,8 @@
 #include <mojo/core/embedder/scoped_ipc_support.h>
 
 #include "common/code_utils.hpp"
-#ifndef TEST_IN_CHROMIUM
 #include "common/logging.hpp"
 #include "mdns_mojo.hpp"
-#else
-#include "mdns_mojo.hpp"
-#define otbrLog(level, format, ...)             \
-    do                                          \
-    {                                           \
-        fprintf(stderr, format, ##__VA_ARGS__); \
-        fprintf(stderr, "\r\n");                \
-    } while (0)
-#include "base/task/single_thread_task_executor.h"
-#endif
 
 namespace otbr {
 namespace Mdns {
@@ -65,7 +54,6 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
-#ifndef TEST_IN_CHROMIUM
     base::MessageLoopForIO mainLoop;
     base::RunLoop          runLoop;
 
@@ -74,16 +62,6 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
                                             mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
 
     mMojoTaskRunner = mainLoop.task_runner();
-#else
-    base::SingleThreadTaskExecutor ioTaskExecutor(base::MessagePumpType::IO);
-    base::RunLoop                  runLoop;
-
-    mojo::core::Init();
-    mojo::core::ScopedIPCSupport ipcSupport(ioTaskExecutor.task_runner(),
-                                            mojo::core::ScopedIPCSupport::ShutdownPolicy::CLEAN);
-
-    mMojoTaskRunner = ioTaskExecutor.task_runner();
-#endif // TEST_IN_CHROMIUM
 
     if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
     {
@@ -102,12 +80,7 @@ void MdnsMojoPublisher::TearDownMojoThreads(void)
     mConnector      = nullptr;
     mMojoTaskRunner = nullptr;
 
-#ifndef TEST_IN_CHROMIUM
     mResponder = nullptr;
-#else
-    mResponder.reset();
-    mResponder = mojo::Remote<chromecast::mojom::MdnsResponder>();
-#endif
 
     mMojoCoreThreadQuitClosure.Run();
 }
@@ -146,15 +119,9 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
     if (aConnector)
     {
         otbrLog(OTBR_LOG_INFO, "Mojo connected");
-#ifndef TEST_IN_CHROMIUM
         aConnector->set_connection_error_callback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
         aConnector->BindInterface("chromecast", &mResponder);
-#else
-        aConnector->SetConnectionErrorCallback(
-            base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
-        aConnector->BindInterface("chromecast", mResponder.BindNewPipeAndPassReceiver());
-#endif
         mConnector = std::move(aConnector);
         mStateHandler(mContext, kStateReady);
     }
