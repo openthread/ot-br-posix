@@ -106,6 +106,7 @@ do_build() {
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
+        "-DOTBR_UNSECURE_JOIN=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
