@@ -123,7 +123,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
-    -DPACKAGE_VERSION=\"0.01.00\" \
+    -DOTBR_PACKAGE_VERSION=\"0.2.0\" \
     -DOTBR_ENABLE_DBUS_SERVER=1 \
     -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
     $(NULL)

@@ -72,8 +72,8 @@ target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_definitions(otbr-config INTERFACE
-    "PACKAGE_NAME=\"OPENTHREAD_BR\""
-    "PACKAGE_VERSION=\"${OTBR_VERSION}\""
+    "OTBR_PACKAGE_NAME=\"OPENTHREAD_BR\""
+    "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
 )
 
 
