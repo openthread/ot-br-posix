@@ -32,8 +32,8 @@ project(openthread-br VERSION 0.2.0)
 
 option(OTBR_DBUS          "Build DBus support" OFF)
 option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
-option(OTBR_WEB           "Build Web GUI" OFF)
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
+option(OTBR_WEB           "Build Web GUI" OFF)
 
 
 if(NOT CMAKE_CXX_STANDARD)
