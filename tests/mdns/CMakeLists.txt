@@ -35,13 +35,6 @@ target_link_libraries(otbr-test-mdns PRIVATE
     otbr-mdns
 )
 
-if (OTBR_MDNS STREQUAL "mojo")
-add_test(
-    NAME mdns-mojo
-    COMMAND test-mojo
-)
-endif()
-
 add_test(
     NAME mdns-single
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single

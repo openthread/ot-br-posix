@@ -188,14 +188,6 @@ include \$(BUILD_SHARED_LIBRARY)
 EOF
 }
 
-prepare_libchrome_stub()
-{
-    SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
-    mkdir -p external
-    cp -r "${SRC_DIR}"/../../etc/libchrome_stub external/libchrome
-    touch ${SRC_DIR}/../../mdns_mojom_stub.c
-}
-
 prepare_openthread()
 {
     SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
@@ -223,7 +215,6 @@ main()
 {
     prepare_dbus
     prepare_libmdnssd
-    prepare_libchrome_stub
     prepare_openthread
 
     make showcommands otbr-agent otbr-agent.conf
