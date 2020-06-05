@@ -102,6 +102,7 @@ EOF
 
 do_build() {
     otbr_options=(
+        "-DCMAKE_BUILD_TYPE=Debug"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
@@ -137,7 +138,7 @@ do_prepare() {
     fi
 
     if [[ "${OTBR_COVERAGE}" == 1 ]]; then
-        otbr_options+=("-DOTBR_COVERAGE=ON" "-DCMAKE_BUILD_TYPE=Debug")
+        otbr_options+=("-DOTBR_COVERAGE=ON")
     fi
 }
 
