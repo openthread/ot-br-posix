@@ -34,10 +34,6 @@ TOOLS_HOME=$HOME/.cache/tools
 export PATH=/usr/local/bin:$PATH
 
 case $BUILD_TARGET in
-mdns-mojo-check)
-    ./tests/mdns/test-mojo
-    ;;
-
 meshcop)
     ./script/bootstrap
     ./script/test build
