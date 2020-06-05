@@ -40,40 +40,7 @@
 
 #include "common/time.hpp"
 
-static int        sLevel      = LOG_INFO;
-static const char kHexChars[] = "0123456789abcdef";
-
-static unsigned long sMsecsStart;
-static bool          sLogCol0 = true; /* we start at col0 */
-static FILE *        sLogFp;
-static bool          sSyslogEnabled = true;
-static bool          sSyslogOpened  = false;
-
-#define LOGFLAG_syslog 1
-#define LOGFLAG_file 2
-
-/** Set/Clear syslog enable flag */
-void otbrLogEnableSyslog(bool b)
-{
-    sSyslogEnabled = b;
-}
-
-/** Enable logging to a specific file */
-void otbrLogSetFilename(const char *filename)
-{
-    if (sLogFp)
-    {
-        fclose(sLogFp);
-        sLogFp = NULL;
-    }
-    sLogFp = fopen(filename, "w");
-    if (sLogFp == NULL)
-    {
-        fprintf(stderr, "Cannot open log file: %s\n", filename);
-        perror(filename);
-        exit(EXIT_FAILURE);
-    }
-}
+static int sLevel = LOG_INFO;
 
 /** Get the current debug log level */
 int otbrLogGetLevel(void)
@@ -88,106 +55,13 @@ void otbrLogSetLevel(int aLevel)
     sLevel = aLevel;
 }
 
-/** Determine if we should not or not log, and if so where to */
-static int LogCheck(int aLevel)
-{
-    int r;
-
-    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
-
-    r = 0;
-
-    if (sSyslogOpened && sSyslogEnabled && (aLevel <= sLevel))
-    {
-        r = r | LOGFLAG_syslog;
-    }
-
-    /* if someone has turned on the seperate file the most likely
-     * situation is they are debugging a problem, or need a extra
-     * information. In this case, we do not test the log level.
-     */
-    if (sLogFp != NULL)
-    {
-        r = r | LOGFLAG_file;
-    }
-    return r;
-}
-
-/** return the time, in milliseconds since application start */
-static unsigned long GetMsecsNow(void)
-{
-    unsigned long now = otbr::GetNow();
-
-    now -= sMsecsStart;
-    return now;
-}
-
-/** Write this string to the private log file, inserting the timestamp at column 0 */
-static void LogString(const char *cp)
-{
-    int ch;
-
-    while ((ch = *cp++) != 0)
-    {
-        if (sLogCol0)
-        {
-            sLogCol0 = false;
-            unsigned long n;
-            n = GetMsecsNow();
-            fprintf(sLogFp, "%4lu.%03lu | ", (n / 1000), (n % 1000));
-        }
-        if (ch == '\n')
-        {
-            sLogCol0 = true;
-        }
-        fputc(ch, sLogFp);
-        if (ch == '\n')
-        {
-            /* force flush (in case something crashes) */
-            fflush(sLogFp);
-        }
-    }
-}
-
-/** Print to the private log file */
-static void LogVprintf(const char *fmt, va_list ap)
-{
-    char buf[1024];
-
-    /* if not enabled ... leave */
-    if (sLogFp == NULL)
-    {
-        return;
-    }
-    vsnprintf(buf, sizeof(buf), fmt, ap);
-
-    LogString(buf);
-}
-
-/** Print to the private log file */
-static void LogPrintf(const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    LogVprintf(fmt, ap);
-    va_end(ap);
-}
-
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr)
 {
     assert(aIdent);
     assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
 
-    sMsecsStart = otbr::GetNow();
-
-    /* only open the syslog once... */
-    if (!sSyslogOpened)
-    {
-        sSyslogOpened = true;
-        openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), LOG_USER);
-    }
+    openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), LOG_USER);
     sLevel = aLevel;
 }
 
@@ -204,24 +78,9 @@ void otbrLog(int aLevel, const char *aFormat, ...)
 /** log to the syslog or log file */
 void otbrLogv(int aLevel, const char *aFormat, va_list ap)
 {
-    int r;
-
     assert(aFormat);
 
-    r = LogCheck(aLevel);
-
-    if (r & LOGFLAG_file)
-    {
-        va_list cpy;
-        va_copy(cpy, ap);
-        LogVprintf(aFormat, cpy);
-        va_end(cpy);
-
-        /* logs do not end with a NEWLINE, we add one here */
-        LogString("\n");
-    }
-
-    if (r & LOGFLAG_syslog)
+    if (aLevel <= sLevel)
     {
         vsyslog(aLevel, aFormat, ap);
     }
@@ -230,14 +89,13 @@ void otbrLogv(int aLevel, const char *aFormat, va_list ap)
 /** Hex dump data to the log */
 void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
 {
+    static const char kHexChars[] = "0123456789abcdef";
     assert(aPrefix && (aMemory || aSize == 0));
     const uint8_t *pEnd;
     const uint8_t *p8;
-    int            r;
     int            addr;
 
-    r = LogCheck(aLevel);
-    if (r == 0)
+    if (aLevel >= sLevel)
     {
         return;
     }
@@ -275,14 +133,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
         }
         *ch = 0;
 
-        if (r & LOGFLAG_syslog)
-        {
-            syslog(aLevel, "%s: %04x: %s", aPrefix, addr, hex);
-        }
-        if (r & LOGFLAG_file)
-        {
-            LogPrintf("%s: %04x: %s\n", aPrefix, addr, hex);
-        }
+        syslog(aLevel, "%s: %04x: %s", aPrefix, addr, hex);
     }
 }
 
@@ -326,6 +177,5 @@ void otbrLogResult(const char *aAction, otbrError aError)
 
 void otbrLogDeinit(void)
 {
-    sSyslogOpened = false;
     closelog();
 }
