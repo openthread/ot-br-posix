@@ -21,6 +21,3 @@ jobs:
     - env: BUILD_TARGET="macOS"
       os: osx
       language: "generic"
-  allow_failures:
-    - env: BUILD_TARGET="mdns-mojo-check" VERBOSE=1
-      os: linux

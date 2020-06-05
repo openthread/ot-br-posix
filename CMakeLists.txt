@@ -102,7 +102,7 @@ if(OTBR_OPENWRT)
 endif()
 
 set(OTBR_MDNS "avahi" CACHE STRING "MDNS service provider")
-set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder" "mojo")
+set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
 
 pkg_check_modules(SYSTEMD systemd)
 
