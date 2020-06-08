@@ -510,6 +510,16 @@ ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExtern
     return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
 }
 
+ClientError ThreadApiDBus::SetPollPeriodMs(uint32_t aPollPeriod)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_POLL_PERIOD_MS, aPollPeriod);
+}
+
+ClientError ThreadApiDBus::GetPollPeriodMs(uint32_t &aPollPeriod)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_POLL_PERIOD_MS, aPollPeriod);
+}
+
 std::string ThreadApiDBus::GetInterfaceName(void)
 {
     return mInterfaceName;

@@ -337,6 +337,10 @@
     <property name="ExternalRoutes" type="((ayy)qybb)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
+
+    <property name="PollPeriodMs" type="u" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

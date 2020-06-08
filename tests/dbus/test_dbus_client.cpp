@@ -132,6 +132,8 @@ int main()
                 std::vector<otbr::DBus::ChildInfo>    childTable;
                 std::vector<otbr::DBus::NeighborInfo> neighborTable;
                 uint32_t                              partitionId;
+                uint32_t                              pollIntervalMs    = 200;
+                uint32_t                              pollIntervalMsGot = 0;
                 Ip6Prefix                             prefix;
                 OnMeshPrefix                          onMeshPrefix = {};
 
@@ -159,6 +161,9 @@ int main()
                 CheckExternalRoute(api.get(), prefix);
                 assert(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
                 assert(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
+                assert(api->SetPollPeriodMs(pollIntervalMs) == OTBR_ERROR_NONE);
+                assert(api->GetPollPeriodMs(pollIntervalMsGot) == OTBR_ERROR_NONE);
+                assert(pollIntervalMs == pollIntervalMsGot);
                 api->FactoryReset(nullptr);
                 assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                 assert(rloc16 != 0xffff);

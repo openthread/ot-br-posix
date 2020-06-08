@@ -134,6 +134,9 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::SetLegacyUlaPrefixHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::SetLinkModeHandler, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_POLL_PERIOD_MS,
+                               std::bind(&DBusThreadObject::SetPollPeriodHandler, this, _1));
+
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::GetLinkModeHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
@@ -187,6 +190,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
                                std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_POLL_PERIOD_MS,
+                               std::bind(&DBusThreadObject::GetPollPeriodHandler, this, _1));
 
     return error;
 }
@@ -950,6 +955,29 @@ otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, externalRouteTable) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
+exit:
+    return error;
+}
+
+otError DBusThreadObject::SetPollPeriodHandler(DBusMessageIter &aIter)
+{
+    auto     threadHelper = mNcp->GetThreadHelper();
+    uint32_t pollPeriod;
+    otError  error = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, pollPeriod) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    error = otLinkSetPollPeriod(threadHelper->GetInstance(), pollPeriod);
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetPollPeriodHandler(DBusMessageIter &aIter)
+{
+    auto     threadHelper = mNcp->GetThreadHelper();
+    uint32_t pollPeriod   = otLinkGetPollPeriod(threadHelper->GetInstance());
+    otError  error        = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, pollPeriod) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 exit:
     return error;
 }

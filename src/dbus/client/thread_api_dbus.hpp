@@ -581,6 +581,30 @@ public:
     ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
 
     /**
+     * This method sets the poll period.
+     *
+     * @param[in]  aPollPeriod   The poll period.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetPollPeriodMs(uint32_t aPollPeriod);
+
+    /**
+     * This method gets the poll period.
+     *
+     * @param[out] aPollPeriod   The poll period.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetPollPeriodMs(uint32_t &aPollPeriod);
+
+    /**
      * This method returns the network interface name the client is bound to.
      *
      * @returns The network interface name.
