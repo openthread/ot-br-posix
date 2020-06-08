@@ -30,10 +30,29 @@
 
 #include "openthread-br/config.h"
 
-#include "web/wpan-controller/wpan_controller.hpp"
+#include <stdint.h>
 
 namespace otbr {
 namespace Web {
+
+#define OT_SCANNED_NET_BUFFER_SIZE 250
+#define OT_SET_MAX_DATA_SIZE 250
+#define OT_NETWORK_NAME_MAX_SIZE 17
+#define OT_HARDWARE_ADDRESS_SIZE 8
+#define OT_PREFIX_SIZE 8
+#define OT_ROUTER_ROLE 2
+
+struct WpanNetworkInfo
+{
+    char     mNetworkName[OT_NETWORK_NAME_MAX_SIZE];
+    bool     mAllowingJoin;
+    uint16_t mPanId;
+    uint16_t mChannel;
+    uint64_t mExtPanId;
+    int8_t   mRssi;
+    uint8_t  mHardwareAddress[OT_HARDWARE_ADDRESS_SIZE];
+    uint8_t  mPrefix[OT_PREFIX_SIZE];
+};
 
 /**
  * This class implements functionality of OpenThread client.
@@ -82,7 +101,7 @@ public:
      * @returns Number of entries found. 0 if none found.
      *
      */
-    int Scan(Dbus::WpanNetworkInfo *aNetworks, int aLength);
+    int Scan(WpanNetworkInfo *aNetworks, int aLength);
 
     /**
      * This method performs factory reset.
@@ -91,6 +110,8 @@ public:
     bool FactoryReset(void);
 
 private:
+    void Disconnect(void);
+
     enum
     {
         kBufferSize     = 1024, ///< Maximum command line input and output buffer.

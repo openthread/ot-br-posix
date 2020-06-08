@@ -127,6 +127,39 @@ struct OnMeshPrefix
     bool mStable;
 };
 
+struct ExternalRoute
+{
+    /**
+     * The IPv6 prefix.
+     */
+    Ip6Prefix mPrefix;
+
+    /**
+     * The Rloc associated with the external route entry.
+     *
+     * This value is ignored when adding an external route. For any added route, the device's Rloc is used.
+     */
+    uint16_t mRloc16;
+
+    /**
+     * A 2-bit signed integer indicating router preference as defined in RFC 4191.
+     */
+    int8_t mPreference;
+
+    /**
+     * TRUE, if this configuration is considered Stable Network Data.  FALSE, otherwise.
+     */
+    bool mStable;
+
+    /**
+     * TRUE if the external route entry's next hop is this device itself (i.e., the route was added earlier by this
+     * device). FALSE otherwise.
+     *
+     * This value is ignored when adding an external route. For any added route the next hop is this device.
+     */
+    bool mNextHopIsThisDevice;
+};
+
 /**
  * This structure represents the MAC layer counters.
  *

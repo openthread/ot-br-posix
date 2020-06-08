@@ -32,6 +32,7 @@
  */
 
 #include <stdio.h>
+#include <sysexits.h>
 
 #include "common/code_utils.hpp"
 #include "utils/hex.hpp"
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
 {
     int ret = 0;
 
-    VerifyOrExit(argc == 4, help(), ret = -1);
+    VerifyOrExit(argc == 4, help(), ret = EX_USAGE);
     ret = printPSKc(argv[1], argv[2], argv[3]);
 
 exit:

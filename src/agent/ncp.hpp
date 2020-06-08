@@ -39,9 +39,9 @@
 #include <netinet/in.h>
 #include <stddef.h>
 
-#include "common/event_emitter.hpp"
 #include "common/mainloop.h"
 #include "common/types.hpp"
+#include "utils/event_emitter.hpp"
 
 namespace otbr {
 
@@ -86,21 +86,6 @@ public:
      */
     virtual otbrError Init(void) = 0;
 
-#if OTBR_ENABLE_NCP_WPANTUND
-    /**
-     * This method sends a packet through UDP forward service.
-     *
-     * @retval  OTBR_ERROR_NONE         Successfully sent the packet.
-     * @retval  OTBR_ERROR_ERRNO        Failed to send the packet.
-     *
-     */
-    virtual otbrError UdpForwardSend(const uint8_t * aBuffer,
-                                     uint16_t        aLength,
-                                     uint16_t        aPeerPort,
-                                     const in6_addr &aPeerAddr,
-                                     uint16_t        aSockPort) = 0;
-#endif // OTBR_ENABLE_NCP_WPANTUND
-
     /**
      * This method updates the fd_set to poll.
      *
@@ -110,14 +95,13 @@ public:
     virtual void UpdateFdSet(otSysMainloopContext &aMainloop) = 0;
 
     /**
-     * This method performs the DTLS processing.
+     * This method performs the Thread processing.
      *
      * @param[in]       aMainloop   A reference to OpenThread mainloop context.
      *
      */
     virtual void Process(const otSysMainloopContext &aMainloop) = 0;
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
     /**
      * This method reest the Ncp Controller.
      *
@@ -132,7 +116,6 @@ public:
      *
      */
     virtual bool IsResetRequested(void) = 0;
-#endif
 
     /**
      * This method request the event.
@@ -149,11 +132,10 @@ public:
      * This method creates a NCP Controller.
      *
      * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aRadioFile      A string of the NCP device file, which can be serial device or executables.
-     * @param[in]   aRadioConfig    A string of the NCP device parameters.
+     * @param[in]   aRadioUrl       The URL describes the radio chip.
      *
      */
-    static Controller *Create(const char *aInterfaceName, char *aRadioFile = NULL, char *aRadioConfig = NULL);
+    static Controller *Create(const char *aInterfaceName, const char *aRadioUrl);
 
     /**
      * This method destroys a NCP Controller.

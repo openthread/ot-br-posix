@@ -39,27 +39,27 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openthread/logging.h>
+
 #include "agent/agent_instance.hpp"
 #include "agent/ncp.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
 #include "agent/ncp_openthread.hpp"
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
+#endif
 using otbr::Ncp::ControllerOpenThread;
-#endif
-#endif
 
 #if OTBR_ENABLE_OPENWRT
-extern void UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
-extern void UbusProcess(const fd_set &aReadFdSet);
-extern void UbusServerRun(void);
-extern void UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
-std::mutex  threadMutex;
+extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
+extern void       UbusProcess(const fd_set &aReadFdSet);
+extern void       UbusServerRun(void);
+extern void       UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
+static std::mutex sThreadMutex;
 #endif
 
 static const char kSyslogIdent[]          = "otbr-agent";
@@ -82,7 +82,7 @@ static void HandleSignal(int aSignal)
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
     int error = EXIT_FAILURE;
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
     ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
     std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
 
@@ -109,20 +109,20 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
         aInstance.UpdateFdSet(mainloop);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
         dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
                                mainloop.mTimeout);
 #endif
 
 #if OTBR_ENABLE_OPENWRT
         UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
-        threadMutex.unlock();
+        sThreadMutex.unlock();
 #endif
 
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
         if (ncpOpenThread->IsResetRequested())
         {
             ncpOpenThread->Reset();
@@ -133,19 +133,19 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         if (rval >= 0)
         {
 #if OTBR_ENABLE_OPENWRT
-            threadMutex.lock();
+            sThreadMutex.lock();
             UbusProcess(mainloop.mReadFdSet);
 #endif
             aInstance.Process(mainloop);
 
-#if OTBR_ENABLE_NCP_OPENTHREAD && OTBR_ENABLE_DBUS_SERVER
+#if OTBR_ENABLE_DBUS_SERVER
             dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
 #endif
         }
         else
         {
 #if OTBR_ENABLE_OPENWRT
-            threadMutex.lock();
+            sThreadMutex.lock();
 #endif
             error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
@@ -158,16 +158,13 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-#if OTBR_ENABLE_NCP_WPANTUND
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v]\n", aProgramName);
-#else
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] [RADIO_DEVICE] [RADIO_CONFIG]\n", aProgramName);
-#endif
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
+    fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
 static void PrintVersion(void)
 {
-    printf("%s\n", PACKAGE_VERSION);
+    printf("%s\n", OTBR_PACKAGE_VERSION);
 }
 
 static void OnAllocateFailed(void)
@@ -193,6 +190,7 @@ int main(int argc, char *argv[])
         {
         case 'd':
             logLevel = atoi(optarg);
+            VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
             break;
 
         case 'I':
@@ -219,30 +217,54 @@ int main(int argc, char *argv[])
         }
     }
 
-#if OTBR_ENABLE_NCP_WPANTUND
-    ncp = otbr::Ncp::Controller::Create(interfaceName);
-#else
-    VerifyOrExit(optind + 1 < argc, ret = EXIT_FAILURE);
-    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind], argv[optind + 1]);
-#endif
-    VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
-
     otbrLogInit(kSyslogIdent, logLevel, verbose);
+    otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+
+    VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
+    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
+    VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 
     {
         otbr::AgentInstance instance(ncp);
+        otLogLevel          level;
 
         SuccessOrExit(ret = instance.Init());
+
+        switch (logLevel)
+        {
+        case OTBR_LOG_EMERG:
+        case OTBR_LOG_ALERT:
+        case OTBR_LOG_CRIT:
+            level = OT_LOG_LEVEL_CRIT;
+            break;
+        case OTBR_LOG_ERR:
+        case OTBR_LOG_WARNING:
+            level = OT_LOG_LEVEL_WARN;
+            break;
+        case OTBR_LOG_NOTICE:
+            level = OT_LOG_LEVEL_NOTE;
+            break;
+        case OTBR_LOG_INFO:
+            level = OT_LOG_LEVEL_INFO;
+            break;
+        case OTBR_LOG_DEBUG:
+            level = OT_LOG_LEVEL_DEBG;
+            break;
+        default:
+            ExitNow(ret = EXIT_FAILURE);
+            break;
+        }
+
+        VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, ret = EXIT_FAILURE);
 
 #if OTBR_ENABLE_OPENWRT
         ControllerOpenThread *ncpThread = reinterpret_cast<ControllerOpenThread *>(ncp);
 
-        UbusServerInit(ncpThread, &threadMutex);
+        UbusServerInit(ncpThread, &sThreadMutex);
         std::thread(UbusServerRun).detach();
 #endif
-
         SuccessOrExit(ret = Mainloop(instance, interfaceName));
     }
 

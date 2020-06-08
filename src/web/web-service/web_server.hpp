@@ -81,7 +81,7 @@ public:
     /**
      * This method starts the Web Server.
      *
-     * @param[in]  aIfName     The pointer to the interface name of wpantund.
+     * @param[in]  aIfName     The pointer to the Thread interface name.
      * @param[in]  aListenAddr The http server listen address, can be NULL for any address.
      * @param[in]  aPort       The port of http server.
      *
@@ -125,7 +125,6 @@ private:
 
     void Init(void);
 
-    char                   mIfName[IFNAMSIZ];
     HttpServer *           mServer;
     otbr::Web::WpanService mWpanService;
 };

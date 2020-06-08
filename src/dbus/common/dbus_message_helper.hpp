@@ -52,6 +52,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const LinkModeConfig &aConfi
 otbrError DBusMessageExtract(DBusMessageIter *aIter, LinkModeConfig &aConfig);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const Ip6Prefix &aPrefix);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, Ip6Prefix &aPrefix);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const ExternalRoute &aRoute);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, ExternalRoute &aRoute);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const OnMeshPrefix &aPrefix);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, OnMeshPrefix &aPrefix);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const MacCounters &aCounters);
@@ -101,8 +103,20 @@ template <size_t SIZE> struct DBusTypeTrait<std::array<uint8_t, SIZE>>
 
 template <> struct DBusTypeTrait<Ip6Prefix>
 {
-    // struct of { arrray of bytes, byte}
+    // struct of {array of bytes, byte}
     static constexpr const char *TYPE_AS_STRING = "(ayy)";
+};
+
+template <> struct DBusTypeTrait<ExternalRoute>
+{
+    // struct of {{array of bytes, byte}, uint16, byte, bool, bool}
+    static constexpr const char *TYPE_AS_STRING = "((ayy)qybb)";
+};
+
+template <> struct DBusTypeTrait<std::vector<ExternalRoute>>
+{
+    // array of {{array of bytes, byte}, uint16, byte, bool, bool}
+    static constexpr const char *TYPE_AS_STRING = "a((ayy)qybb)";
 };
 
 template <> struct DBusTypeTrait<LeaderData>

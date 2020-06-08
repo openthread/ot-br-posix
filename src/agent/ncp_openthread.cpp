@@ -51,19 +51,16 @@ using std::chrono::microseconds;
 using std::chrono::seconds;
 using std::chrono::steady_clock;
 
-#if OTBR_ENABLE_NCP_OPENTHREAD
 namespace otbr {
 namespace Ncp {
 
-ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
+ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl)
     : mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
     mConfig.mInterfaceName = aInterfaceName;
-    mConfig.mRadioConfig   = aRadioConfig;
-    mConfig.mRadioFile     = aRadioFile;
-    mConfig.mResetRadio    = true;
+    mConfig.mRadioUrl      = aRadioUrl;
     mConfig.mSpeedUpFactor = 1;
 }
 
@@ -79,26 +76,33 @@ otbrError ControllerOpenThread::Init(void)
 
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
-    otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+
+    {
+        otError result = otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+
+        agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
+        VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+    }
+
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
-    VerifyOrExit(mThreadHelper->Init() == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+
 exit:
     return error;
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 {
-    if (aFlags | OT_CHANGED_THREAD_NETWORK_NAME)
+    if (aFlags & OT_CHANGED_THREAD_NETWORK_NAME)
     {
         EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
     }
 
-    if (aFlags | OT_CHANGED_THREAD_EXT_PANID)
+    if (aFlags & OT_CHANGED_THREAD_EXT_PANID)
     {
         EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
     }
 
-    if (aFlags | OT_CHANGED_THREAD_ROLE)
+    if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         bool attached = false;
 
@@ -115,6 +119,8 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 
         EventEmitter::Emit(kEventThreadState, attached);
     }
+
+    mThreadHelper->StateChangedCallback(aFlags);
 }
 
 static struct timeval ToTimeVal(const microseconds &aTime)
@@ -168,9 +174,8 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
         mTimers.erase(mTimers.begin());
     }
 
-    if (!mTriedAttach)
+    if (!mTriedAttach && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
-        mThreadHelper->TryResumeNetwork();
         mTriedAttach = true;
     }
 }
@@ -246,9 +251,9 @@ void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point a
     mTimers.insert({aTimePoint, aTask});
 }
 
-Controller *Controller::Create(const char *aInterfaceName, char *aRadioFile, char *aRadioConfig)
+Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl)
 {
-    return new ControllerOpenThread(aInterfaceName, aRadioFile, aRadioConfig);
+    return new ControllerOpenThread(aInterfaceName, aRadioUrl);
 }
 
 /*
@@ -299,5 +304,3 @@ void otPlatReset(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
     sReset = true;
 }
-
-#endif // OTBR_ENABLE_NCP_OPENTHREAD

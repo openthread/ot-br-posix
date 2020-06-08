@@ -48,3 +48,84 @@ jobs:
       run: sudo BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
       run: script/make-pretty check
+
+  android-check:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        mdns: ["mDNSResponder", ""]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Check
+      env:
+        OTBR_MDNS: ${{ matrix.mdns }}
+      run: >
+        docker run --rm -v $PWD:/build/ot-br-posix openthread/android-trusty bash -c
+        "BUILD_TARGET=android-check ot-br-posix/tests/scripts/bootstrap.sh && \
+         ot-br-posix/tests/scripts/check-android-build"
+
+  check:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        mdns: ["mDNSResponder", "avahi"]
+    env:
+      BUILD_TARGET: check
+      OTBR_MDNS: ${{ matrix.mdns }}
+      OTBR_COVERAGE: 1
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: script/test build check
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+
+  script-check:
+    runs-on: ubuntu-18.04
+    env:
+      BUILD_TARGET: script-check
+      OTBR_COVERAGE: 1
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: tests/scripts/check-scripts
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+
+  scan-build:
+    runs-on: ubuntu-18.04
+    env:
+      BUILD_TARGET: scan-build
+      CC: clang
+      CXX: clang++
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: tests/scripts/check-scan-build
+
+  package:
+    runs-on: ubuntu-18.04
+    env:
+      BUILD_TARGET: package
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Build
+      run: script/test package

@@ -31,18 +31,13 @@
 # This script tests stop publishing service.
 #
 
-set -x
-set -e
-
 . "$(dirname "$0")/test_init"
 
 main()
 {
-    ./otbr-test-mdns k & PID=$!
-    trap on_exit INT TERM EXIT
+    start_publisher k
 
-    sleep 2
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
@@ -51,7 +46,7 @@ main()
     # stop service
     /bin/kill -USR1 $PID
     sleep 1
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
         ! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
         ! avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'
@@ -60,7 +55,7 @@ main()
     # start service
     /bin/kill -USR2 $PID
     sleep 1
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=1122334455667788'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool"'

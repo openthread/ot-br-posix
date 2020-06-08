@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <memory>
 
@@ -39,7 +40,10 @@
 using otbr::DBus::ActiveScanResult;
 using otbr::DBus::ClientError;
 using otbr::DBus::DeviceRole;
+using otbr::DBus::ExternalRoute;
+using otbr::DBus::Ip6Prefix;
 using otbr::DBus::LinkModeConfig;
+using otbr::DBus::OnMeshPrefix;
 using otbr::DBus::ThreadApiDBus;
 
 struct DBusConnectionDeleter
@@ -48,6 +52,33 @@ struct DBusConnectionDeleter
 };
 
 using UniqueDBusConnection = std::unique_ptr<DBusConnection, DBusConnectionDeleter>;
+
+static bool operator==(const otbr::DBus::Ip6Prefix &aLhs, const otbr::DBus::Ip6Prefix &aRhs)
+{
+    bool prefixDataEquality = (aLhs.mPrefix.size() == aRhs.mPrefix.size()) &&
+                              (memcmp(&aLhs.mPrefix[0], &aRhs.mPrefix[0], aLhs.mPrefix.size()) == 0);
+
+    return prefixDataEquality && aLhs.mLength == aRhs.mLength;
+}
+
+static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
+{
+    ExternalRoute              route;
+    std::vector<ExternalRoute> externalRouteTable;
+
+    route.mPrefix     = aPrefix;
+    route.mStable     = true;
+    route.mPreference = 0;
+
+    assert(aApi->AddExternalRoute(route) == OTBR_ERROR_NONE);
+    assert(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
+    assert(externalRouteTable.size() == 1);
+    assert(externalRouteTable[0].mPrefix == aPrefix);
+    assert(externalRouteTable[0].mPreference == 0);
+    assert(externalRouteTable[0].mStable);
+    assert(externalRouteTable[0].mNextHopIsThisDevice);
+    assert(aApi->RemoveExternalRoute(aPrefix) == OTBR_ERROR_NONE);
+}
 
 int main()
 {
@@ -89,8 +120,8 @@ int main()
             if (aError == OTBR_ERROR_NONE)
             {
                 std::string                           name;
-                uint64_t                              extAddress;
-                uint16_t                              rloc16;
+                uint64_t                              extAddress = 0;
+                uint16_t                              rloc16     = 0xffff;
                 uint8_t                               routerId;
                 std::vector<uint8_t>                  networkData;
                 std::vector<uint8_t>                  stableNetworkData;
@@ -101,8 +132,8 @@ int main()
                 std::vector<otbr::DBus::ChildInfo>    childTable;
                 std::vector<otbr::DBus::NeighborInfo> neighborTable;
                 uint32_t                              partitionId;
-                otbr::DBus::Ip6Prefix                 prefix;
-                otbr::DBus::OnMeshPrefix              onMeshPrefix;
+                Ip6Prefix                             prefix;
+                OnMeshPrefix                          onMeshPrefix = {};
 
                 prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
                 prefix.mLength = 64;
@@ -125,15 +156,13 @@ int main()
                 assert(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
                 assert(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
                 assert(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
-                assert(api->AddExternalRoute(prefix, 0, true) == OTBR_ERROR_NONE);
-                assert(api->RemoveExternalRoute(prefix) == OTBR_ERROR_NONE);
+                CheckExternalRoute(api.get(), prefix);
                 assert(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
                 assert(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
                 api->FactoryReset(nullptr);
                 assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
-                assert(rloc16 != 0);
+                assert(rloc16 != 0xffff);
                 assert(extAddress != 0);
-                assert(partitionId != 0);
                 assert(routerId == leaderData.mLeaderRouterId);
                 assert(!networkData.empty());
                 assert(childTable.empty());

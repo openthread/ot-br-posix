@@ -35,48 +35,40 @@
 install_packages_apt()
 {
     sudo apt-get update
-    sudo apt-get install -y \
+    sudo apt-get install --no-install-recommends -y \
                          wget \
                          iproute2 \
                          iputils-ping \
-                         apt-utils
-    sudo apt-get install -y build-essential libtool automake autoconf
+                         libreadline-dev \
+                         libncurses-dev
 
-    with RELEASE || sudo apt-get install -y cmake libcpputest-dev
+    sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
 
-    sudo apt-get install -y rsyslog
+    with RELEASE || sudo apt-get install --no-install-recommends -y libcpputest-dev
 
-    # For wpantund
-    sudo apt-get install -y libdbus-1-dev
+    sudo apt-get install --no-install-recommends -y rsyslog
 
-    # This is for configuring wpantund
-    sudo apt-get install -y autoconf-archive
+    # For DBus server
+    sudo apt-get install --no-install-recommends -y libdbus-1-dev
 
     # mDNS
-    sudo apt-get install -y libavahi-common-dev libavahi-client-dev avahi-daemon
-
-    # Doxygen
-    with RELEASE || sudo apt-get install -y doxygen
-
-    # For libcoap to generate .sym and .map
-    # TODO remove this in release mode
-    sudo apt-get install -y ctags
+    sudo apt-get install --no-install-recommends -y libavahi-common-dev libavahi-client-dev avahi-daemon
 
     # Boost
-    sudo apt-get install -y libboost-dev libboost-filesystem-dev libboost-system-dev
+    sudo apt-get install --no-install-recommends -y libboost-dev libboost-filesystem-dev libboost-system-dev
 
     # nat64
-    without NAT64 || sudo apt-get install -y tayga iptables
+    without NAT64 || sudo apt-get install --no-install-recommends -y tayga iptables
 
     # dns64
     without DNS64 || {
-        sudo apt-get install -y bind9
+        sudo apt-get install --no-install-recommends -y bind9
         # Resolvconf cannot be installed inside docker environment
-        [ -f /.dockerenv ] || sudo apt-get install -y resolvconf
+        [ -f /.dockerenv ] || sudo apt-get install --no-install-recommends -y resolvconf
     }
 
     # network-manager
-    without NETWORK_MANAGER || sudo apt-get install -y network-manager
+    without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y network-manager
 
     # dhcpcd5
     without DHCPV6_PD || {
@@ -85,12 +77,12 @@ install_packages_apt()
             # TODO should figure out a better way to deal with this
             sudo dpkg -i third_party/dhcpcd/dhcpcd5_6.11.5-1+rpt2_armhf.deb
         else
-            sudo apt-get install -y dhcpcd5
+            sudo apt-get install --no-install-recommends -y dhcpcd5
         fi
     }
 
     # libjsoncpp
-    sudo apt-get install -y libjsoncpp-dev
+    sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 }
 
 install_packages_opkg()
@@ -105,12 +97,11 @@ install_packages_rpm()
     else
         PM=yum
     fi
-    sudo $PM install -y gcc gcc-c++ libtool automake autoconf autoconf-archive
-    with RELEASE || sudo $PM install -y cmake
+    sudo $PM install -y gcc gcc-c++
+    with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
     sudo $PM install -y doxygen
-    sudo $PM install -y ctags
     sudo $PM install -y boost-devel boost-filesystem boost-system
     sudo $PM install -y tayga iptables
     sudo $PM install -y jsoncpp-devel
@@ -119,7 +110,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install dbus ctags
+    brew install boost cmake cpputest dbus jsoncpp ninja
 }
 
 install_packages_source()
@@ -146,9 +137,8 @@ main()
 {
     . $BEFORE_HOOK
     # TODO remove `|| true` after docker hub builder gets its git upgraded
-    git submodule update --init --recursive || true
+    git submodule update --init --recursive --depth 1 || true
     install_packages
-    ./bootstrap
     . $AFTER_HOOK
 }
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2018, The OpenThread Authors.
 #  All rights reserved.
@@ -31,7 +31,29 @@
 # This script includes common utils for testing mdns
 #
 
+set -euxo pipefail
+
 readonly DNS_SD_RESULT=result
+
+case "${OTBR_MDNS}" in
+    mDNSResponder)
+        sudo service avahi-daemon stop || true
+        sudo killall mdnsd || true
+        sudo mdnsd
+        sleep 1
+        ;;
+
+    avahi)
+        sudo killall mdnsd || true
+        sudo service avahi-daemon restart
+        sleep 1
+        ;;
+
+    *)
+        >&2 echo "Not supported"
+        exit 128
+        ;;
+esac
 
 on_exit()
 {
@@ -41,6 +63,13 @@ on_exit()
     [[ ! -e "${DNS_SD_RESULT}" ]] || rm "${DNS_SD_RESULT}" || true
 
     exit $EXIT_CODE
+}
+
+start_publisher()
+{
+    "${OTBR_TEST_MDNS}" $1 & PID=$!
+    trap on_exit EXIT
+    sleep 2
 }
 
 #######################################
@@ -57,19 +86,13 @@ on_exit()
 #######################################
 dns_sd_check()
 {
-    local ret
-
-    ret=0
-
     # dns-sd will not exit
     dns-sd -L "$1" "$2" local 2>&1 > "${DNS_SD_RESULT}" & DNS_SD_PID=$!
     sleep 1
     kill "${DNS_SD_PID}"
 
     cat "${DNS_SD_RESULT}"
-    grep -q "$3" "${DNS_SD_RESULT}" || ret=1
-
-    return ${ret}
+    grep "$3" "${DNS_SD_RESULT}"
 }
 
 #######################################
@@ -84,12 +107,5 @@ dns_sd_check()
 #######################################
 avahi_check()
 {
-    local ret
-
-    ret=0
-
-    avahi-browse -aprt
-    avahi-browse -aprt | grep -q "$1" || ret=1
-
-    return ${ret}
+    avahi-browse -aprt | tee | grep "$1"
 }

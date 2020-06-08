@@ -34,9 +34,9 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "agent/mdns.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "mdns/mdns.hpp"
 
 using namespace otbr;
 
@@ -67,7 +67,7 @@ int Mainloop(Mdns::Publisher &aPublisher)
 
         if (rval < 0)
         {
-            perror("select() failed");
+            perror("select");
             break;
         }
 

@@ -27,7 +27,6 @@
  */
 
 #include <assert.h>
-#include <byteswap.h>
 #include <string.h>
 
 #include <openthread/border_router.h>
@@ -40,6 +39,7 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
+#include "common/byteswap.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
@@ -73,11 +73,10 @@ static std::string GetDeviceRoleName(otDeviceRole aRole)
     return roleName;
 }
 
-static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue, size_t aSize)
+static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 {
     uint64_t val = 0;
 
-    assert(aSize == sizeof(uint64_t));
     for (size_t i = 0; i < sizeof(uint64_t); i++)
     {
         val = (val << 8) | aValue[i];
@@ -125,6 +124,9 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AddExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD,
                    std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
+
+    RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
+                   std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
 
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX,
                                std::bind(&DBusThreadObject::SetMeshLocalPrefixHandler, this, _1));
@@ -183,6 +185,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetInstantRssiHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_TX_POWER,
                                std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
+                               std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
 
     return error;
 }
@@ -214,8 +218,8 @@ void DBusThreadObject::ReplyScanResult(DBusRequest &                          aR
         {
             ActiveScanResult result;
 
-            result.mExtAddress    = ConvertOpenThreadUint64(r.mExtAddress.m8, sizeof(r.mExtAddress.m8));
-            result.mExtendedPanId = ConvertOpenThreadUint64(r.mExtendedPanId.m8, sizeof(r.mExtendedPanId.m8));
+            result.mExtAddress    = ConvertOpenThreadUint64(r.mExtAddress.m8);
+            result.mExtendedPanId = ConvertOpenThreadUint64(r.mExtendedPanId.m8);
             result.mNetworkName   = r.mNetworkName.m8;
             result.mSteeringData =
                 std::vector<uint8_t>(r.mSteeringData.m8, r.mSteeringData.m8 + r.mSteeringData.mLength);
@@ -261,21 +265,20 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
 void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
     aRequest.ReplyOtResult(OT_ERROR_NONE);
+    otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
     mNcp->Reset();
-
-    {
-        auto threadHelper = mNcp->GetThreadHelper();
-        threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
-        SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
-                              GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
-    }
+    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
+                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
-    auto threadHelper = mNcp->GetThreadHelper();
+    mNcp->Reset();
+    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
+                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 
-    otInstanceReset(threadHelper->GetInstance());
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
@@ -306,6 +309,7 @@ void DBusThreadObject::JoinerStopHandler(DBusRequest &aRequest)
 
 void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 {
+#ifdef OTBR_ENABLE_UNSECURE_JOIN
     auto     threadHelper = mNcp->GetThreadHelper();
     uint16_t port;
     uint32_t timeout;
@@ -319,6 +323,9 @@ void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
     {
         aRequest.ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
     }
+#else
+    aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
+#endif
 }
 
 void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
@@ -373,24 +380,25 @@ exit:
 void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
 {
     auto                  threadHelper = mNcp->GetThreadHelper();
-    Ip6Prefix             routePrefix;
-    int8_t                preference;
-    bool                  stable;
-    auto                  args  = std::tie(routePrefix, preference, stable);
+    ExternalRoute         route;
+    auto                  args  = std::tie(route);
     otError               error = OT_ERROR_NONE;
-    otExternalRouteConfig route;
-    otIp6Prefix &         prefix = route.mPrefix;
+    otExternalRouteConfig otRoute;
+    otIp6Prefix &         prefix = otRoute.mPrefix;
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     // size is guaranteed by parsing
-    std::copy(routePrefix.mPrefix.begin(), routePrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
-    prefix.mLength    = routePrefix.mLength;
-    route.mPreference = preference;
-    route.mStable     = stable;
+    std::copy(route.mPrefix.mPrefix.begin(), route.mPrefix.mPrefix.end(), &prefix.mPrefix.mFields.m8[0]);
+    prefix.mLength      = route.mPrefix.mLength;
+    otRoute.mPreference = route.mPreference;
+    otRoute.mStable     = route.mStable;
 
-    SuccessOrExit(error = otBorderRouterAddRoute(threadHelper->GetInstance(), &route));
-    SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+    SuccessOrExit(error = otBorderRouterAddRoute(threadHelper->GetInstance(), &otRoute));
+    if (route.mStable)
+    {
+        SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
+    }
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -415,6 +423,15 @@ void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
 
 exit:
     aRequest.ReplyOtResult(error);
+}
+
+void DBusThreadObject::IntrospectHandler(DBusRequest &aRequest)
+{
+    std::string xmlString(
+#include "dbus/server/introspect.hpp"
+    );
+
+    aRequest.Reply(std::tie(xmlString));
 }
 
 otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
@@ -525,7 +542,7 @@ otError DBusThreadObject::GetExtPanIdHandler(DBusMessageIter &aIter)
     uint64_t               extPanIdVal;
     otError                error = OT_ERROR_NONE;
 
-    extPanIdVal = ConvertOpenThreadUint64(extPanId->m8, sizeof(extPanId->m8));
+    extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extPanIdVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -663,7 +680,7 @@ otError DBusThreadObject::GetExtendedAddressHandler(DBusMessageIter &aIter)
     auto                threadHelper    = mNcp->GetThreadHelper();
     otError             error           = OT_ERROR_NONE;
     const otExtAddress *addr            = otLinkGetExtendedAddress(threadHelper->GetInstance());
-    uint64_t            extendedAddress = ConvertOpenThreadUint64(addr->m8, sizeof(addr->m8));
+    uint64_t            extendedAddress = ConvertOpenThreadUint64(addr->m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extendedAddress) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -714,7 +731,7 @@ otError DBusThreadObject::GetNetworkDataHandler(DBusMessageIter &aIter)
     uint8_t                 len = sizeof(data);
     std::vector<uint8_t>    networkData;
 
-    otNetDataGet(threadHelper->GetInstance(), /*stable=*/false, data, &len);
+    SuccessOrExit(error = otNetDataGet(threadHelper->GetInstance(), /*stable=*/false, data, &len));
     networkData = std::vector<uint8_t>(&data[0], &data[len]);
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkData) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -731,7 +748,7 @@ otError DBusThreadObject::GetStableNetworkDataHandler(DBusMessageIter &aIter)
     uint8_t                 len = sizeof(data);
     std::vector<uint8_t>    networkData;
 
-    otNetDataGet(threadHelper->GetInstance(), /*stable=*/true, data, &len);
+    SuccessOrExit(error = otNetDataGet(threadHelper->GetInstance(), /*stable=*/true, data, &len));
     networkData = std::vector<uint8_t>(&data[0], &data[len]);
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkData) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -763,6 +780,7 @@ otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &a
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    (void)aIter;
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
@@ -791,6 +809,7 @@ otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
+    (void)aIter;
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
@@ -807,7 +826,7 @@ otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
     {
         ChildInfo info;
 
-        info.mExtAddress         = ConvertOpenThreadUint64(childInfo.mExtAddress.m8, sizeof(childInfo.mExtAddress.m8));
+        info.mExtAddress         = ConvertOpenThreadUint64(childInfo.mExtAddress.m8);
         info.mTimeout            = childInfo.mTimeout;
         info.mAge                = childInfo.mAge;
         info.mChildId            = childInfo.mChildId;
@@ -844,9 +863,9 @@ otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
     {
         NeighborInfo info;
 
-        info.mExtAddress = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8, sizeof(neighborInfo.mExtAddress.m8));
-        info.mAge        = neighborInfo.mAge;
-        info.mRloc16     = neighborInfo.mRloc16;
+        info.mExtAddress        = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8);
+        info.mAge               = neighborInfo.mAge;
+        info.mRloc16            = neighborInfo.mRloc16;
         info.mLinkFrameCounter  = neighborInfo.mLinkFrameCounter;
         info.mMleFrameCounter   = neighborInfo.mMleFrameCounter;
         info.mLinkQualityIn     = neighborInfo.mLinkQualityIn;
@@ -901,6 +920,35 @@ otError DBusThreadObject::GetRadioTxPowerHandler(DBusMessageIter &aIter)
     SuccessOrExit(error = otPlatRadioGetTransmitPower(threadHelper->GetInstance(), &txPower));
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, txPower) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
+{
+    auto                       threadHelper = mNcp->GetThreadHelper();
+    otError                    error        = OT_ERROR_NONE;
+    otNetworkDataIterator      iter         = OT_NETWORK_DATA_ITERATOR_INIT;
+    otExternalRouteConfig      config;
+    std::vector<ExternalRoute> externalRouteTable;
+
+    while (otNetDataGetNextRoute(threadHelper->GetInstance(), &iter, &config) == OT_ERROR_NONE)
+    {
+        ExternalRoute route;
+
+        route.mPrefix.mPrefix      = std::vector<uint8_t>(&config.mPrefix.mPrefix.mFields.m8[0],
+                                                     &config.mPrefix.mPrefix.mFields.m8[OTBR_IP6_PREFIX_SIZE]);
+        route.mPrefix.mLength      = config.mPrefix.mLength;
+        route.mRloc16              = config.mRloc16;
+        route.mPreference          = config.mPreference;
+        route.mStable              = config.mStable;
+        route.mNextHopIsThisDevice = config.mNextHopIsThisDevice;
+        externalRouteTable.push_back(route);
+    }
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, externalRouteTable) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

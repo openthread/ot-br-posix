@@ -31,22 +31,22 @@
 # This script tests dbus server.
 #
 
-set -e
-set -x
+set -euxo pipefail
 
-readonly DBUS_SERVER_CONF=otbr-test-dbus-server.conf
+readonly OTBR_DBUS_SERVER_CONF=otbr-test-dbus-server.conf
 
-test_teardown()
+on_exit()
 {
     pkill -f otbr-test-dbus-server || true
-    sudo rm "/etc/dbus-1/system.d/${DBUS_SERVER_CONF}" || true
+    sudo rm "/etc/dbus-1/system.d/${OTBR_DBUS_SERVER_CONF}" || true
 }
 
 main()
 {
-    sudo install -m 644 "${srcdir}/${DBUS_SERVER_CONF}" /etc/dbus-1/system.d/
+    sudo rm -rf tmp
+    sudo install -m 644 "${CMAKE_CURRENT_SOURCE_DIR}/${OTBR_DBUS_SERVER_CONF}" /etc/dbus-1/system.d/
     sudo service dbus reload
-    trap test_teardown EXIT
+    trap on_exit EXIT
     ./otbr-test-dbus-server &
     # wait for server ready.
     sleep 2

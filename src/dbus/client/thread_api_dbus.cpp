@@ -127,7 +127,7 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
 
     DBusMessageIter iter, subIter, dictEntryIter, valIter;
     std::string     interfaceName, propertyName, val;
-    DeviceRole      role;
+    DeviceRole      role = OTBR_DEVICE_ROLE_DISABLED;
 
     VerifyOrExit(dbus_message_is_signal(aMessage, DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
     VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
@@ -150,6 +150,7 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
     {
         f(role);
     }
+
 exit:
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
@@ -348,9 +349,9 @@ ClientError ThreadApiDBus::RemoveOnMeshPrefix(const Ip6Prefix &aPrefix)
     return CallDBusMethodSync(OTBR_DBUS_REMOVE_ON_MESH_PREFIX_METHOD, std::tie(aPrefix));
 }
 
-ClientError ThreadApiDBus::AddExternalRoute(const Ip6Prefix &aPrefix, int8_t aPreference, bool aStable)
+ClientError ThreadApiDBus::AddExternalRoute(const ExternalRoute &aExternalRoute)
 {
-    return CallDBusMethodSync(OTBR_DBUS_ADD_EXTERNAL_ROUTE_METHOD, std::tie(aPrefix, aPreference, aStable));
+    return CallDBusMethodSync(OTBR_DBUS_ADD_EXTERNAL_ROUTE_METHOD, std::tie(aExternalRoute));
 }
 
 ClientError ThreadApiDBus::RemoveExternalRoute(const Ip6Prefix &aPrefix)
@@ -502,6 +503,11 @@ ClientError ThreadApiDBus::GetInstantRssi(int8_t &aRssi)
 ClientError ThreadApiDBus::GetRadioTxPower(int8_t &aTxPower)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_RADIO_TX_POWER, aTxPower);
+}
+
+ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
 }
 
 std::string ThreadApiDBus::GetInterfaceName(void)

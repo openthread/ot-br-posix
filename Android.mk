@@ -28,9 +28,9 @@
 
 LOCAL_PATH := $(call my-dir)
 
-WITH_MDNS ?= mojo
+OTBR_MDNS ?= mojo
 
-ifeq ($(WITH_MDNS),mojo)
+ifeq ($(OTBR_MDNS),mojo)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
@@ -67,7 +67,6 @@ endif
 
 include $(CLEAR_VARS)
 
-ifeq ($(USE_OTBR_DAEMON), 1)
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libotbr-dbus-client
 LOCAL_MODULE_TAGS := eng
@@ -96,9 +95,16 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
 LOCAL_SHARED_LIBRARIES += libdbus
 
 include $(BUILD_STATIC_LIBRARY)
-endif # ifeq ($(USE_OTBR_DAEMON), 1)
 
 include $(CLEAR_VARS)
+
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(LOCAL_PATH)/src/dbus/server/introspect.hpp
+
+$(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/introspect.xml
+	echo 'R"INTROSPECT(' > $@
+	cat $+ >> $@
+	echo ')INTROSPECT"' >> $@
+
 
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
@@ -117,7 +123,10 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
-    -DPACKAGE_VERSION=\"0.01.00\" \
+    -DOTBR_PACKAGE_VERSION=\"0.2.0\" \
+    -DOTBR_ENABLE_DBUS_SERVER=1 \
+    -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
+    $(OTBR_PROJECT_CFLAGS) \
     $(NULL)
 
 LOCAL_CPPFLAGS += -std=c++14
@@ -126,21 +135,9 @@ LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
     src/agent/border_agent.cpp \
     src/agent/main.cpp \
-    src/common/event_emitter.cpp \
-    src/common/logging.cpp \
-    src/utils/hex.cpp \
-    src/utils/strcpy_utils.cpp \
-    $(NULL)
-
-ifeq ($(USE_OTBR_DAEMON), 1)
-LOCAL_CFLAGS  += \
-    -DOTBR_ENABLE_NCP_OPENTHREAD=1 \
-    -DOTBR_ENABLE_DBUS_SERVER=1 \
-    $(NULL)
-
-LOCAL_SRC_FILES += \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
+    src/common/logging.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
     src/dbus/common/error.cpp \
@@ -148,6 +145,9 @@ LOCAL_SRC_FILES += \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
+    src/utils/event_emitter.cpp \
+    src/utils/hex.cpp \
+    src/utils/strcpy_utils.cpp \
     $(NULL)
 
 LOCAL_STATIC_LIBRARIES += \
@@ -158,47 +158,26 @@ LOCAL_STATIC_LIBRARIES += \
 
 LOCAL_LDLIBS := \
     -lutil
-else
-LOCAL_CFLAGS  += -DOTBR_ENABLE_NCP_WPANTUND=1
 
+ifeq ($(OTBR_MDNS),mDNSResponder)
 LOCAL_SRC_FILES += \
-    src/agent/ncp_wpantund.cpp \
-    third_party/wpantund/repo/src/util/string-utils.c \
-    third_party/wpantund/repo/src/wpanctl/wpanctl-utils.c \
-    $(NULL)
-
-LOCAL_C_INCLUDES += \
-    $(LOCAL_PATH)/third_party/wpantund \
-    $(LOCAL_PATH)/third_party/wpantund \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/ipc-dbus \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/util \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/wpantund \
-    $(LOCAL_PATH)/third_party/wpantund/repo/src/wpanctl \
-    $(LOCAL_PATH)/third_party/wpantund/repo/third_party/assert-macros \
-    $(LOCAL_PATH)/third_party/wpantund/repo/third_party/openthread/src/ncp \
-    $(NULL)
-endif
-
-ifeq ($(WITH_MDNS),mDNSResponder)
-LOCAL_SRC_FILES += \
-    src/agent/mdns_mdnssd.cpp \
+    src/mdns/mdns_mdnssd.cpp \
     $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libmdnssd
 else
-ifeq ($(WITH_MDNS),mojo)
+ifeq ($(OTBR_MDNS),mojo)
 LOCAL_CFLAGS += \
     -DOTBR_ENABLE_MDNS_MOJO=1 \
     $(NULL)
 
 LOCAL_SRC_FILES += \
-    src/agent/mdns_mojo.cpp \
+    third_party/nest/mdns/mdns_mojo.cpp \
     $(NULL)
 
 # The generated header files are not in dependency chain.
 # Force dependency here
-LOCAL_ADDITIONAL_DEPENDENCIES += $(MDNS_MOJOM_SRCS)
+LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/src/dbus/server/introspect.hpp
 LOCAL_STATIC_LIBRARIES += libmdns_mojom
 LOCAL_SHARED_LIBRARIES += libchrome libmojo
 endif

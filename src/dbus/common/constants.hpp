@@ -33,6 +33,7 @@
 #define DBUS_PROPERTY_SET_METHOD "Set"
 #define DBUS_PROPERTY_GET_ALL_METHOD "GetAll"
 #define DBUS_PROPERTIES_CHANGED_SIGNAL "PropertiesChanged"
+#define DBUS_INTROSPECT_METHOD "Introspect"
 
 #define OTBR_DBUS_SERVER_PREFIX "io.openthread.BorderRouter."
 #define OTBR_DBUS_THREAD_INTERFACE "io.openthread.BorderRouter"
@@ -77,6 +78,7 @@
 #define OTBR_DBUS_PROPERTY_PARTITION_ID_PROEPRTY "PartitionID"
 #define OTBR_DBUS_PROPERTY_INSTANT_RSSI "InstantRssi"
 #define OTBR_DBUS_PROPERTY_RADIO_TX_POWER "RadioTxPower"
+#define OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES "ExternalRoutes"
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
 #define OTBR_ROLE_NAME_DETACHED "detached"

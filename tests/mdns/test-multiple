@@ -31,20 +31,13 @@
 # This script tests publishing multiple services.
 #
 
-set -x
-set -e
-
 . "$(dirname "$0")/test_init"
 
 main()
 {
+    start_publisher m
 
-    ./otbr-test-mdns m & PID=$!
-    trap on_exit INT TERM EXIT
-
-    sleep 2
-
-    if [[ "${WITH_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
         # dns-sd will not exit
         dns_sd_check MultipleService1 _meshcop._udp 'nn=cool1 xp=1122334455667788'
         dns_sd_check MultipleService2 _meshcop._udp 'nn=cool2 xp=1122334455667788'

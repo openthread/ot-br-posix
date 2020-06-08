@@ -80,6 +80,8 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
 
+    void IntrospectHandler(DBusRequest &aRequest);
+
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
     otError SetLinkModeHandler(DBusMessageIter &aIter);
@@ -109,6 +111,7 @@ private:
     otError GetPartitionIDHandler(DBusMessageIter &aIter);
     otError GetInstantRssiHandler(DBusMessageIter &aIter);
     otError GetRadioTxPowerHandler(DBusMessageIter &aIter);
+    otError GetExternalRoutesHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
 
