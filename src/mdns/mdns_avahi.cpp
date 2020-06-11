@@ -515,15 +515,17 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
     {
         int         rval;
-        const char *value  = va_arg(args, const char *);
-        size_t      needed = sizeof(AvahiStringList) + strlen(name) + strlen(value);
+        const char *value       = va_arg(args, const char *);
+        size_t      valueLength = va_arg(args, size_t);
+        size_t      needed      = sizeof(AvahiStringList) + strlen(name) + valueLength;
 
         VerifyOrExit(used + needed < sizeof(buffer), errno = EMSGSIZE);
         curr->next = last;
         last       = curr;
-        rval       = sprintf(reinterpret_cast<char *>(curr->text), "%s=%s", name, value);
+        rval       = sprintf(reinterpret_cast<char *>(curr->text), "%s=", name);
         assert(rval > 0);
-        curr->size = static_cast<size_t>(rval);
+        memcpy(curr->text + rval, value, valueLength);
+        curr->size = valueLength + static_cast<size_t>(rval);
         {
             const uint8_t *next = curr->text + curr->size;
             curr                = OTBR_ALIGNED(next, AvahiStringList *);

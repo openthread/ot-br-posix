@@ -359,7 +359,7 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
     {
         const char * value        = va_arg(args, const char *);
         const size_t nameLength   = strlen(name);
-        const size_t valueLength  = strlen(value);
+        const size_t valueLength  = va_arg(args, size_t);
         size_t       recordLength = nameLength + 1 + valueLength;
 
         assert(nameLength > 0 && valueLength > 0 && recordLength < kMaxTextRecordSize);
