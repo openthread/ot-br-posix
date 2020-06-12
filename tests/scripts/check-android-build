@@ -117,7 +117,6 @@ LOCAL_SRC_FILES := \
     dbus-uuidgen.c \
     dbus-watch.c \
     sd-daemon.c \
-    \$(NULL)
 
 \$(DBUS_SOURCES:\$(LOCAL_PATH)/%=%)
 
@@ -174,7 +173,6 @@ LOCAL_SRC_FILES :=  \
     mDNSShared/dnssd_clientlib.c  \
     mDNSShared/dnssd_clientstub.c \
     mDNSShared/dnssd_ipc.c \
-    \$(NULL)
 
 LOCAL_MODULE := libmdnssd
 LOCAL_MODULE_TAGS := eng

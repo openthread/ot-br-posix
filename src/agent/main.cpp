@@ -79,12 +79,12 @@ enum
 
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
-static const struct option  kOptions[]   = {{"debug-level", required_argument, NULL, OTBR_OPT_DEBUG_LEVEL},
-                                         {"help", no_argument, NULL, OTBR_OPT_HELP},
-                                         {"thread-ifname", required_argument, NULL, OTBR_OPT_INTERFACE_NAME},
-                                         {"verbose", no_argument, NULL, OTBR_OPT_VERBOSE},
-                                         {"version", no_argument, NULL, OTBR_OPT_VERSION},
-                                         {"radio-version", no_argument, NULL, OTBR_OPT_RADIO_VERSION},
+static const struct option  kOptions[]   = {{"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
+                                         {"help", no_argument, nullptr, OTBR_OPT_HELP},
+                                         {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
+                                         {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
+                                         {"version", no_argument, nullptr, OTBR_OPT_VERSION},
+                                         {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
                                          {0, 0, 0, 0}};
 
 static void HandleSignal(int aSignal)
@@ -197,13 +197,13 @@ int main(int argc, char *argv[])
     int                    opt;
     int                    ret               = EXIT_SUCCESS;
     const char *           interfaceName     = kDefaultInterfaceName;
-    otbr::Ncp::Controller *ncp               = NULL;
+    otbr::Ncp::Controller *ncp               = nullptr;
     bool                   verbose           = false;
     bool                   printRadioVersion = false;
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "d:hI:Vv", kOptions, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "d:hI:Vv", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
     ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
-    VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
+    VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 

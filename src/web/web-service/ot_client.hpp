@@ -87,7 +87,7 @@ public:
      * @param[in]   aFormat     C style format string.
      * @param[in]   ...         C style format arguments.
      *
-     * @returns A pointer to the output if succeeded, otherwise NULL.
+     * @returns A pointer to the output if succeeded, otherwise nullptr.
      *
      */
     char *Execute(const char *aFormat, ...);

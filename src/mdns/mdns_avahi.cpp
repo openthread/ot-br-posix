@@ -146,7 +146,7 @@ AvahiTimeout *Poller::TimeoutNew(const struct timeval *aTimeout, AvahiTimeoutCal
 
 void Poller::TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout)
 {
-    if (aTimeout == NULL)
+    if (aTimeout == nullptr)
     {
         aTimer->mTimeout = 0;
     }
@@ -310,8 +310,8 @@ PublisherAvahi::PublisherAvahi(int          aProtocol,
                                const char * aDomain,
                                StateHandler aHandler,
                                void *       aContext)
-    : mClient(NULL)
-    , mGroup(NULL)
+    : mClient(nullptr)
+    , mGroup(nullptr)
     , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
                                       : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
     , mHost(aHost)
@@ -344,7 +344,7 @@ otbrError PublisherAvahi::Start(void)
 
 bool PublisherAvahi::IsStarted(void) const
 {
-    return mClient != NULL;
+    return mClient != nullptr;
 }
 
 void PublisherAvahi::Stop(void)
@@ -364,8 +364,8 @@ void PublisherAvahi::Stop(void)
     if (mClient)
     {
         avahi_client_free(mClient);
-        mClient = NULL;
-        mGroup  = NULL;
+        mClient = nullptr;
+        mGroup  = nullptr;
         mState  = kStateIdle;
         mStateHandler(mContext, mState);
     }
@@ -383,7 +383,7 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
 
 void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState)
 {
-    assert(mGroup == aGroup || mGroup == NULL);
+    assert(mGroup == aGroup || mGroup == nullptr);
 
     otbrLog(OTBR_LOG_INFO, "Avahi group change to state %d.", aState);
     mGroup = aGroup;
@@ -419,12 +419,12 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
 
 void PublisherAvahi::CreateGroup(AvahiClient *aClient)
 {
-    VerifyOrExit(mGroup == NULL);
+    VerifyOrExit(mGroup == nullptr);
 
-    VerifyOrExit((mGroup = avahi_entry_group_new(aClient, HandleGroupState, this)) != NULL);
+    VerifyOrExit((mGroup = avahi_entry_group_new(aClient, HandleGroupState, this)) != nullptr);
 
 exit:
-    if (mGroup == NULL)
+    if (mGroup == nullptr)
     {
         otbrLog(OTBR_LOG_ERR, "avahi_entry_group_new() failed: %s", avahi_strerror(avahi_client_errno(aClient)));
     }
@@ -503,7 +503,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     int       error = 0;
     // aligned with AvahiStringList
     AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
-    AvahiStringList *last = NULL;
+    AvahiStringList *last = nullptr;
     AvahiStringList *curr = buffer;
     va_list          args;
     size_t           used = 0;

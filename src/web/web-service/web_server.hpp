@@ -82,7 +82,7 @@ public:
      * This method starts the Web Server.
      *
      * @param[in]  aIfName     The pointer to the Thread interface name.
-     * @param[in]  aListenAddr The http server listen address, can be NULL for any address.
+     * @param[in]  aListenAddr The http server listen address, can be nullptr for any address.
      * @param[in]  aPort       The port of http server.
      *
      */

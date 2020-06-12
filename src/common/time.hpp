@@ -60,7 +60,7 @@ inline unsigned long GetNow(void)
 {
     timeval now;
 
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, nullptr);
     return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
 }
 

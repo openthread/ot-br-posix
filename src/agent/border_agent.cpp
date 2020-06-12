@@ -82,9 +82,9 @@ enum
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
+    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, HandleMdnsState, this))
 #else
-    : mPublisher(NULL)
+    : mPublisher(nullptr)
 #endif
     , mNcp(aNcp)
     , mThreadStarted(false)
@@ -146,10 +146,10 @@ BorderAgent::~BorderAgent(void)
 {
     Stop();
 
-    if (mPublisher != NULL)
+    if (mPublisher != nullptr)
     {
         delete mPublisher;
-        mPublisher = NULL;
+        mPublisher = nullptr;
     }
 }
 
@@ -172,7 +172,7 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
-    if (mPublisher != NULL)
+    if (mPublisher != nullptr)
     {
         mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
     }
@@ -180,7 +180,7 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    if (mPublisher != NULL)
+    if (mPublisher != nullptr)
     {
         mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
     }
@@ -213,7 +213,7 @@ void BorderAgent::PublishService(void)
         "nn", mNetworkName, strlen(mNetworkName),
         "xp", &mExtPanId, sizeof(mExtPanId),
         "tv", versionString, strlen(versionString),
-        NULL);
+        nullptr);
     // clang-format on
 }
 
@@ -238,7 +238,7 @@ exit:
 
 void BorderAgent::StopPublishService(void)
 {
-    VerifyOrExit(mPublisher != NULL);
+    VerifyOrExit(mPublisher != nullptr);
 
     if (mPublisher->IsStarted())
     {

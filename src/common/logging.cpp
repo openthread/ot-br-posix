@@ -139,7 +139,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
 
 const char *otbrErrorString(otbrError aError)
 {
-    const char *error = NULL;
+    const char *error = nullptr;
 
     switch (aError)
     {
