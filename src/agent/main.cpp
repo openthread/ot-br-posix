@@ -74,7 +74,7 @@ enum
     OTBR_OPT_VERBOSE        = 'v',
     OTBR_OPT_VERSION        = 'V',
     OTBR_OPT_SHORTMAX       = 128,
-    OTBR_OPT_RADIO_VERSION  = 128,
+    OTBR_OPT_RADIO_VERSION,
 };
 
 // Default poll timeout.
@@ -182,7 +182,7 @@ static void PrintVersion(void)
 
 static void PrintRadioVersion(otInstance *aInstance)
 {
-    printf("Radio version: %s\n", otPlatRadioGetVersionString(aInstance));
+    printf("%s\n", otPlatRadioGetVersionString(aInstance));
 }
 
 static void OnAllocateFailed(void)
