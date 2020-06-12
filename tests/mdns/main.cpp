@@ -131,10 +131,9 @@ void PublishUpdateServices(void *aContext, Mdns::State aState)
         }
         else
         {
-            err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.",
-                                                                          "nn", "coolcool", strlen("coolcool"), "xp",
-                                                                          reinterpret_cast<char *>(&xpanidNew),
-                                                                          sizeof(xpanidNew), NULL);
+            err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "coolcool",
+                                                      strlen("coolcool"), "xp", reinterpret_cast<char *>(&xpanidNew),
+                                                      sizeof(xpanidNew), NULL);
         }
         assert(err == OTBR_ERROR_NONE);
     }
