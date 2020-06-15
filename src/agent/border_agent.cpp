@@ -202,15 +202,19 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
 
 void BorderAgent::PublishService(void)
 {
-    char xpanid[sizeof(mExtPanId) * 2 + 1];
+    const char *versionString = ThreadVersionToString(mThreadVersion);
 
     assert(mNetworkName[0] != '\0');
     assert(mExtPanIdInitialized);
-    Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
 
     assert(mThreadVersion != 0);
-    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
-                               xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
+    // clang-format off
+    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
+        "nn", mNetworkName, strlen(mNetworkName),
+        "xp", &mExtPanId, sizeof(mExtPanId),
+        "tv", versionString, strlen(versionString),
+        NULL);
+    // clang-format on
 }
 
 void BorderAgent::StartPublishService(void)
