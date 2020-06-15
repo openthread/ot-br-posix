@@ -86,9 +86,9 @@ void PublishSingleService(void *aContext, Mdns::State aState)
     assert(aContext == &sContext);
     if (aState == Mdns::kStateReady)
     {
-        otbrError err =
-            sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp.", "nn", "cool", strlen("cool"),
-                                                "xp", reinterpret_cast<char *>(&xpanid), sizeof(xpanid), NULL);
+        otbrError err = sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp.", "nn", "cool",
+                                                            sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
+                                                            sizeof(xpanid), NULL);
 
         assert(err == OTBR_ERROR_NONE);
     }
@@ -102,12 +102,12 @@ void PublishMultipleServices(void *aContext, Mdns::State aState)
     if (aState == Mdns::kStateReady)
     {
         otbrError err = sContext.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp.", "nn", "cool1",
-                                                            strlen("cool1"), "xp", reinterpret_cast<char *>(&xpanid),
-                                                            sizeof(xpanid), NULL);
+                                                            sizeof("cool1") - 1, "xp",
+                                                            reinterpret_cast<char *>(&xpanid), sizeof(xpanid), NULL);
 
         assert(err == OTBR_ERROR_NONE);
         err = sContext.mPublisher->PublishService(12345, "MultipleService2", "_meshcop._udp.", "nn", "cool2",
-                                                  strlen("cool1"), "xp", reinterpret_cast<char *>(&xpanid),
+                                                  sizeof("cool1") - 1, "xp", reinterpret_cast<char *>(&xpanid),
                                                   sizeof(xpanid), NULL);
         assert(err == OTBR_ERROR_NONE);
     }
@@ -126,14 +126,14 @@ void PublishUpdateServices(void *aContext, Mdns::State aState)
         if (!sContext.mUpdate)
         {
             err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "cool",
-                                                      strlen("cool"), "xp", reinterpret_cast<char *>(&xpanidOld),
+                                                      sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanidOld),
                                                       sizeof(xpanidOld), NULL);
         }
         else
         {
             err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "coolcool",
-                                                      strlen("coolcool"), "xp", reinterpret_cast<char *>(&xpanidNew),
-                                                      sizeof(xpanidNew), NULL);
+                                                      sizeof("coolcool") - 1, "xp",
+                                                      reinterpret_cast<char *>(&xpanidNew), sizeof(xpanidNew), NULL);
         }
         assert(err == OTBR_ERROR_NONE);
     }
