@@ -34,6 +34,7 @@
 
 #include <dbus/dbus.h>
 
+#include "common/code_utils.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
 
