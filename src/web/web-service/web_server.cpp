@@ -205,7 +205,7 @@ void WebServer::DefaultHttpResponse(void)
 
         } catch (const std::exception &e)
         {
-            std::string content = "Could not open path";
+            std::string content = "Could not open path `" + request->path + "`: " + e.what();
             *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << content.length()
                       << OT_RESPONSE_PLACEHOLD << content;
         }
