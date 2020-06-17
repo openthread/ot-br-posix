@@ -27,11 +27,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -euo pipefail
-
-if [[ ${OTBR_VERBOSE:-} == 1 ]]; then
-    set -x
-fi
+set -euxo pipefail
 
 cd "$(dirname "$0")/.."
 
@@ -84,6 +80,7 @@ without()
 
     ! with "$1"
 }
+
 
 # Platform information is needed to load hooks and default settings.
 

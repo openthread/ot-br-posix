@@ -75,7 +75,6 @@ jobs:
       BUILD_TARGET: check
       OTBR_MDNS: ${{ matrix.mdns }}
       OTBR_COVERAGE: 1
-      OTBR_VERBOSE: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -92,7 +91,6 @@ jobs:
     env:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
-      OTBR_VERBOSE: 1
     steps:
     - uses: actions/checkout@v2
       with:
@@ -123,7 +121,6 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       BUILD_TARGET: package
-      OTBR_VERBOSE: 1
     steps:
     - uses: actions/checkout@v2
       with:
