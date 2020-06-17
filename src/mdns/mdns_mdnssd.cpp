@@ -158,7 +158,7 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
 
     default:
         assert(false);
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -312,12 +312,12 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
             assert(aServiceRef == it->mService);
             mServices.erase(it);
             DNSServiceRefDeallocate(aServiceRef);
-            aServiceRef = NULL;
+            aServiceRef = nullptr;
             break;
         }
     }
 
-    assert(aServiceRef == NULL);
+    assert(aServiceRef == nullptr);
 }
 
 void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
@@ -351,7 +351,7 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
     va_list       args;
     uint8_t       txt[kMaxSizeOfTxtRecord];
     uint8_t *     cur        = txt;
-    DNSServiceRef serviceRef = NULL;
+    DNSServiceRef serviceRef = nullptr;
 
     va_start(args, aType);
 
@@ -391,7 +391,7 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
         if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)))
         {
             otbrLog(OTBR_LOG_INFO, "MDNS remove current service %s", aName);
-            DNSServiceUpdateRecord(it->mService, NULL, 0, static_cast<uint16_t>(cur - txt), txt, 0);
+            DNSServiceUpdateRecord(it->mService, nullptr, 0, static_cast<uint16_t>(cur - txt), txt, 0);
             ExitNow();
         }
     }
@@ -399,7 +399,7 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
     SuccessOrExit(error = DNSServiceRegister(&serviceRef, 0, kDNSServiceInterfaceIndexAny, aName, aType, mDomain, mHost,
                                              htons(aPort), static_cast<uint16_t>(cur - txt), txt,
                                              HandleServiceRegisterResult, this));
-    if (serviceRef != NULL)
+    if (serviceRef != nullptr)
     {
         RecordService(aName, aType, serviceRef);
     }

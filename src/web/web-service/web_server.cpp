@@ -82,7 +82,7 @@ void WebServer::Init()
 
 void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)
 {
-    if (aListenAddr != NULL)
+    if (aListenAddr != nullptr)
     {
         mServer->config.address = aListenAddr;
     }
@@ -112,7 +112,7 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
         try
         {
             std::string httpResponse;
-            if (aCallback != NULL)
+            if (aCallback != nullptr)
             {
                 httpResponse = aCallback(request->content.string(), this);
             }

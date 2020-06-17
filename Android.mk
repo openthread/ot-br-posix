@@ -40,7 +40,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/src \
     external/openthread/include \
-    $(NULL)
 
 LOCAL_SRC_FILES = \
     src/dbus/client/client_error.cpp \
@@ -48,12 +47,10 @@ LOCAL_SRC_FILES = \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
     src/dbus/common/error.cpp \
-    $(NULL)
 
 LOCAL_EXPORT_C_INCLUDE_DIRS := \
     $(LOCAL_PATH)/src \
     $(LOCAL_PATH)/include \
-    $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libdbus
 
@@ -82,7 +79,6 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
-    $(NULL)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
@@ -90,7 +86,6 @@ LOCAL_CFLAGS += \
     -DOTBR_ENABLE_DBUS_SERVER=1 \
     -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
     $(OTBR_PROJECT_CFLAGS) \
-    $(NULL)
 
 LOCAL_CPPFLAGS += -std=c++14
 
@@ -111,13 +106,11 @@ LOCAL_SRC_FILES := \
     src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
-    $(NULL)
 
 LOCAL_STATIC_LIBRARIES += \
     libopenthread-ncp \
     libopenthread-cli \
     ot-core \
-    $(NULL)
 
 LOCAL_LDLIBS := \
     -lutil
@@ -125,7 +118,6 @@ LOCAL_LDLIBS := \
 ifeq ($(OTBR_MDNS),mDNSResponder)
 LOCAL_SRC_FILES += \
     src/mdns/mdns_mdnssd.cpp \
-    $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libmdnssd
 endif

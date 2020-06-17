@@ -65,7 +65,8 @@ int Mainloop(Mdns::Publisher &aPublisher)
         FD_ZERO(&errorFdSet);
 
         aPublisher.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
-        rval = select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, (timeout.tv_sec == INT_MAX ? NULL : &timeout));
+        rval =
+            select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, (timeout.tv_sec == INT_MAX ? nullptr : &timeout));
 
         if (rval < 0)
         {
@@ -88,7 +89,7 @@ void PublishSingleService(void *aContext, Mdns::State aState)
     {
         otbrError err = sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp.", "nn", "cool",
                                                             sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
-                                                            sizeof(xpanid), NULL);
+                                                            sizeof(xpanid), nullptr);
 
         assert(err == OTBR_ERROR_NONE);
     }
@@ -103,12 +104,12 @@ void PublishMultipleServices(void *aContext, Mdns::State aState)
     {
         otbrError err = sContext.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp.", "nn", "cool1",
                                                             sizeof("cool1") - 1, "xp",
-                                                            reinterpret_cast<char *>(&xpanid), sizeof(xpanid), NULL);
+                                                            reinterpret_cast<char *>(&xpanid), sizeof(xpanid), nullptr);
 
         assert(err == OTBR_ERROR_NONE);
         err = sContext.mPublisher->PublishService(12345, "MultipleService2", "_meshcop._udp.", "nn", "cool2",
                                                   sizeof("cool1") - 1, "xp", reinterpret_cast<char *>(&xpanid),
-                                                  sizeof(xpanid), NULL);
+                                                  sizeof(xpanid), nullptr);
         assert(err == OTBR_ERROR_NONE);
     }
 }
@@ -127,13 +128,13 @@ void PublishUpdateServices(void *aContext, Mdns::State aState)
         {
             err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "cool",
                                                       sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanidOld),
-                                                      sizeof(xpanidOld), NULL);
+                                                      sizeof(xpanidOld), nullptr);
         }
         else
         {
             err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "coolcool",
                                                       sizeof("coolcool") - 1, "xp",
-                                                      reinterpret_cast<char *>(&xpanidNew), sizeof(xpanidNew), NULL);
+                                                      reinterpret_cast<char *>(&xpanidNew), sizeof(xpanidNew), nullptr);
         }
         assert(err == OTBR_ERROR_NONE);
     }
@@ -143,7 +144,7 @@ otbrError TestSingleService(void)
 {
     otbrError ret = OTBR_ERROR_NONE;
 
-    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, PublishSingleService, &sContext);
+    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, PublishSingleService, &sContext);
     sContext.mPublisher  = pub;
     SuccessOrExit(ret = pub->Start());
     Mainloop(*pub);
@@ -157,7 +158,7 @@ otbrError TestMultipleServices(void)
 {
     otbrError ret = OTBR_ERROR_NONE;
 
-    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, PublishMultipleServices, &sContext);
+    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, PublishMultipleServices, &sContext);
     sContext.mPublisher  = pub;
     SuccessOrExit(ret = pub->Start());
     Mainloop(*pub);
@@ -171,7 +172,7 @@ otbrError TestUpdateService(void)
 {
     otbrError ret = OTBR_ERROR_NONE;
 
-    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, PublishUpdateServices, &sContext);
+    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, PublishUpdateServices, &sContext);
     sContext.mPublisher  = pub;
     sContext.mUpdate     = false;
     SuccessOrExit(ret = pub->Start());
@@ -200,7 +201,7 @@ otbrError TestStopService(void)
 {
     otbrError ret = OTBR_ERROR_NONE;
 
-    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, PublishSingleService, &sContext);
+    Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, PublishSingleService, &sContext);
     sContext.mPublisher  = pub;
     SuccessOrExit(ret = pub->Start());
     signal(SIGUSR1, RecoverSignal);

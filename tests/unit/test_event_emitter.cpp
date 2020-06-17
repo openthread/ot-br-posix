@@ -33,7 +33,7 @@
 
 static int   sCounter = 0;
 static int   sEvent   = 0;
-static void *sContext = NULL;
+static void *sContext = nullptr;
 
 static void HandleSingleEvent(void *aContext, int aEvent, va_list aArguments)
 {
@@ -87,9 +87,9 @@ TEST(EventEmitter, TestSingleHandler)
 {
     otbr::EventEmitter ee;
     int                event = 1;
-    ee.On(event, HandleSingleEvent, NULL);
+    ee.On(event, HandleSingleEvent, nullptr);
 
-    sContext = NULL;
+    sContext = nullptr;
     sEvent   = event;
     sCounter = 0;
 
@@ -102,10 +102,10 @@ TEST(EventEmitter, TestDoubleHandler)
 {
     otbr::EventEmitter ee;
     int                event = 1;
-    ee.On(event, HandleSingleEvent, NULL);
-    ee.On(event, HandleSingleEvent, NULL);
+    ee.On(event, HandleSingleEvent, nullptr);
+    ee.On(event, HandleSingleEvent, nullptr);
 
-    sContext = NULL;
+    sContext = nullptr;
     sEvent   = event;
     sCounter = 0;
 
@@ -125,7 +125,7 @@ TEST(EventEmitter, TestDifferentContext)
     ee.On(event, HandleTestDifferentContextEvent, &context1);
     ee.On(event, HandleTestDifferentContextEvent, &context2);
 
-    sContext = NULL;
+    sContext = nullptr;
     sEvent   = event;
     sCounter = 0;
 
@@ -145,7 +145,7 @@ TEST(EventEmitter, TestCallSequence)
     ee.On(event, HandleTestCallSequenceEvent, &context1);
     ee.On(event, HandleTestCallSequenceEvent, &context2);
 
-    sContext = NULL;
+    sContext = nullptr;
     sEvent   = event;
     sCounter = 0;
 
@@ -159,21 +159,21 @@ TEST(EventEmitter, TestRemoveHandler)
     otbr::EventEmitter ee;
     int                event = 3;
 
-    ee.On(event, HandleSingleEvent, NULL);
-    ee.On(event, HandleSingleEvent, NULL);
+    ee.On(event, HandleSingleEvent, nullptr);
+    ee.On(event, HandleSingleEvent, nullptr);
 
-    sContext = NULL;
+    sContext = nullptr;
     sEvent   = event;
     sCounter = 0;
 
     ee.Emit(event);
     CHECK_EQUAL(2, sCounter);
 
-    ee.Off(event, HandleSingleEvent, NULL);
+    ee.Off(event, HandleSingleEvent, nullptr);
     ee.Emit(event);
     CHECK_EQUAL(3, sCounter);
 
-    ee.Off(event, HandleSingleEvent, NULL);
+    ee.Off(event, HandleSingleEvent, nullptr);
     ee.Emit(event);
     CHECK_EQUAL(3, sCounter);
 }
