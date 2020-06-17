@@ -189,8 +189,9 @@ otbrError MdnsMojoPublisher::PublishService(uint16_t aPort, const char *aName, c
     for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
     {
         const char *value = va_arg(args, const char *);
+        size_t valueLength = va_arg(args, size_t);
 
-        text.emplace_back(std::string(name) + "=" + std::string(value));
+        text.emplace_back(std::string(name) + "=" + std::string(value, value + valueLength));
     }
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::PublishServiceTask, base::Unretained(this),
                                                         aPort, aType, aName, text));
