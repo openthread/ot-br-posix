@@ -28,8 +28,12 @@
 #
 
 set -euo pipefail
-_HERE=$(dirname "$0")
-cd "${_HERE}/.."
+
+if [[ ${OTBR_VERBOSE:-} == 1 ]]; then
+    set -x
+fi
+
+cd "$(dirname "$0")/.."
 
 die()
 {
@@ -80,7 +84,6 @@ without()
 
     ! with "$1"
 }
-
 
 # Platform information is needed to load hooks and default settings.
 

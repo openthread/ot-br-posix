@@ -49,6 +49,7 @@ set -ex
 export LC_ALL=C
 export DEBIAN_FRONTEND=noninteractive
 export RELEASE=1
+export OTBR_VERBOSE=1
 
 echo "127.0.0.1 \$(hostname)" >> /etc/hosts
 chown -R pi:pi /home/pi/repo
