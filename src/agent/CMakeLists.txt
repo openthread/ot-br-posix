@@ -63,6 +63,7 @@ else()
 endif()
 
 set(OTBR_AGENT_USER "root" CACHE STRING "set the username running otbr-agent service")
+set(OTBR_AGENT_GROUP "root" CACHE STRING "set the group using otbr-agent client")
 
 if(OTBR_DBUS)
     configure_file(otbr-agent.conf.in otbr-agent.conf)
