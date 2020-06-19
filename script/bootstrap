@@ -68,7 +68,7 @@ install_packages_apt()
     }
 
     # network-manager
-    without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y network-manager
+    without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y dnsmasq network-manager
 
     # dhcpcd5
     without DHCPV6_PD || {
