@@ -133,6 +133,6 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
 LOCAL_SRC_FILES := src/agent/otbr-agent.conf
 $(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
-	sed 's/@OTBR_AGENT_USER@/root/g' $< > $@
+	sed -e 's/@OTBR_AGENT_USER@/root/g' -e 's/@OTBR_AGENT_GROUP@/root/g' $< > $@
 
 include $(BUILD_PREBUILT)
