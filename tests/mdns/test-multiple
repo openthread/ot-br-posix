@@ -39,11 +39,11 @@ main()
 
     if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
         # dns-sd will not exit
-        dns_sd_check MultipleService1 _meshcop._udp 'nn=cool1 xp=1122334455667788'
-        dns_sd_check MultipleService2 _meshcop._udp 'nn=cool2 xp=1122334455667788'
+        dns_sd_check MultipleService1 _meshcop._udp 'nn=cool1 xp=ABCDEFGH'
+        dns_sd_check MultipleService2 _meshcop._udp 'nn=cool2 xp=ABCDEFGH'
     else
-        avahi_check 'MultipleService1;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool1"'
-        avahi_check 'MultipleService2;_meshcop._udp;.\+"xp=1122334455667788.\+"nn=cool2"'
+        avahi_check 'MultipleService1;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool1"'
+        avahi_check 'MultipleService2;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool2"'
     fi
 }
 

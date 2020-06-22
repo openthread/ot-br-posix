@@ -48,6 +48,7 @@ main()
     sudo rm -rf tmp
     sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
     sudo service dbus reload
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5

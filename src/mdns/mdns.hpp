@@ -108,7 +108,7 @@ public:
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
      * @param[in]   ...                 Pointers to null-terminated string of key and value for text record.
-     *                                  The last argument must be NULL.
+     *                                  The last argument must be nullptr.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.

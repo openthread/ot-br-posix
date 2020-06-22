@@ -118,7 +118,7 @@ do_build() {
 
 do_clean() {
     echo "Removing ${BUILD_DIR} (requiring sudo)"
-    sudo rm -rf "${BUILD_DIR}" || true
+    rm -rf "${BUILD_DIR}" || sudo rm -rf "${BUILD_DIR}"
 }
 
 do_check() {
