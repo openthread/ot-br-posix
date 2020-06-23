@@ -59,6 +59,7 @@ otbr_install()
     (mkdir -p "${OTBR_TOP_BUILDDIR}" \
         && cd "${OTBR_TOP_BUILDDIR}" \
         && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
+        && (sudo chown $USER:$USER .ninja_* || true) \
         && ninja \
         && sudo ninja install)
 
