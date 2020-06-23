@@ -38,7 +38,7 @@ create_ap_connection()
     IFNAME=$(nmcli d | grep wifi | cut -d" " -f1)
 
     sudo nmcli c add type wifi ifname $IFNAME con-name ${AP_CONN} ssid ${AP_CONN}
-    sudo nmcli c modify ${AP_CONN} 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared ipv6.method ignore
+    sudo nmcli c modify ${AP_CONN} 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared ipv6.method auto
     sudo nmcli c modify ${AP_CONN} wifi-sec.key-mgmt wpa-psk
     sudo nmcli c modify ${AP_CONN} wifi-sec.proto rsn
     sudo nmcli c modify ${AP_CONN} wifi-sec.psk "12345678"
