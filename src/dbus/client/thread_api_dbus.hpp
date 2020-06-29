@@ -33,8 +33,8 @@
 
 #include <dbus/dbus.h>
 
+#include "common/types.hpp"
 #include "dbus/common/constants.hpp"
-#include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/error.hpp"
 #include "dbus/common/types.hpp"
 

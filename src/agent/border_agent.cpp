@@ -82,9 +82,9 @@ enum
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, NULL, NULL, HandleMdnsState, this))
+    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, HandleMdnsState, this))
 #else
-    : mPublisher(NULL)
+    : mPublisher(nullptr)
 #endif
     , mNcp(aNcp)
     , mThreadStarted(false)
@@ -146,10 +146,10 @@ BorderAgent::~BorderAgent(void)
 {
     Stop();
 
-    if (mPublisher != NULL)
+    if (mPublisher != nullptr)
     {
         delete mPublisher;
-        mPublisher = NULL;
+        mPublisher = nullptr;
     }
 }
 
@@ -172,7 +172,7 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
-    if (mPublisher != NULL)
+    if (mPublisher != nullptr)
     {
         mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
     }
@@ -180,7 +180,7 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    if (mPublisher != NULL)
+    if (mPublisher != nullptr)
     {
         mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
     }
@@ -202,15 +202,19 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
 
 void BorderAgent::PublishService(void)
 {
-    char xpanid[sizeof(mExtPanId) * 2 + 1];
+    const char *versionString = ThreadVersionToString(mThreadVersion);
 
     assert(mNetworkName[0] != '\0');
     assert(mExtPanIdInitialized);
-    Utils::Bytes2Hex(mExtPanId, sizeof(mExtPanId), xpanid);
 
     assert(mThreadVersion != 0);
-    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType, "nn", mNetworkName, "xp",
-                               xpanid, "tv", ThreadVersionToString(mThreadVersion), NULL);
+    // clang-format off
+    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
+        "nn", mNetworkName, strlen(mNetworkName),
+        "xp", &mExtPanId, sizeof(mExtPanId),
+        "tv", versionString, strlen(versionString),
+        nullptr);
+    // clang-format on
 }
 
 void BorderAgent::StartPublishService(void)
@@ -234,7 +238,7 @@ exit:
 
 void BorderAgent::StopPublishService(void)
 {
-    VerifyOrExit(mPublisher != NULL);
+    VerifyOrExit(mPublisher != nullptr);
 
     if (mPublisher->IsStarted())
     {

@@ -27,9 +27,9 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -euo pipefail
-_HERE=$(dirname "$0")
-cd "${_HERE}/.."
+set -euxo pipefail
+
+cd "$(dirname "$0")/.."
 
 die()
 {

@@ -1064,7 +1064,7 @@ private:
     /**
      * This method connect and display ubus.
      *
-     * @param[in]   aPath   A pointer to the ubus server path(default is NULL).
+     * @param[in]   aPath   A pointer to the ubus server path(default is nullptr).
      *
      * @retval 0   Successfully handler the request.
      *

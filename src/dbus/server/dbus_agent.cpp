@@ -60,7 +60,7 @@ otbrError DBusAgent::Init(void)
                      requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
                  error = OTBR_ERROR_DBUS);
     VerifyOrExit(dbus_connection_set_watch_functions(mConnection.get(), AddDBusWatch, RemoveDBusWatch, ToggleDBusWatch,
-                                                     this, NULL));
+                                                     this, nullptr));
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, mNcp));
     error         = mThreadObject->Init();
 exit:
@@ -94,7 +94,7 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
                             int &           aMaxFd,
                             struct timeval &aTimeOut)
 {
-    DBusWatch *  watch = NULL;
+    DBusWatch *  watch = nullptr;
     unsigned int flags;
     int          fd;
 
@@ -140,7 +140,7 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
 
 void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    DBusWatch *  watch = NULL;
+    DBusWatch *  watch = nullptr;
     unsigned int flags;
     int          fd;
 

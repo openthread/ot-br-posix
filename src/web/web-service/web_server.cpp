@@ -82,7 +82,7 @@ void WebServer::Init()
 
 void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort)
 {
-    if (aListenAddr != NULL)
+    if (aListenAddr != nullptr)
     {
         mServer->config.address = aListenAddr;
     }
@@ -112,7 +112,7 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
         try
         {
             std::string httpResponse;
-            if (aCallback != NULL)
+            if (aCallback != nullptr)
             {
                 httpResponse = aCallback(request->content.string(), this);
             }
@@ -205,7 +205,7 @@ void WebServer::DefaultHttpResponse(void)
 
         } catch (const std::exception &e)
         {
-            std::string content = "Could not open path";
+            std::string content = "Could not open path `" + request->path + "`: " + e.what();
             *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << content.length()
                       << OT_RESPONSE_PLACEHOLD << content;
         }
