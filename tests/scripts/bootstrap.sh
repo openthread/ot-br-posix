@@ -126,7 +126,10 @@ case "$(uname)" in
         sudo apt-get install --no-install-recommends -y clang clang-tools
     }
 
-    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install -y clang-format-6.0
+    [ $BUILD_TARGET != pretty-check ] || {
+        sudo apt-get install -y clang-format-6.0 shellcheck
+        sudo snap install shfmt
+    }
 
     [ "${OTBR_MDNS-}" != 'mDNSResponder' ] || {
         SOURCE_NAME=mDNSResponder-878.30.4
