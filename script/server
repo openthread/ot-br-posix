@@ -30,13 +30,14 @@
 #       This script starts all border router services.
 #
 
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 . script/_nat64
 . script/_dns64
 
 main()
 {
-    . $BEFORE_HOOK
+    . "$BEFORE_HOOK"
     sudo sysctl --system
     nat64_start || die 'Failed to start NAT64!'
     dns64_start || die 'Failed to start DNS64!'
@@ -55,7 +56,7 @@ main()
     else
         die 'Unable to find service manager. Try script/console to start in console mode!'
     fi
-    . $AFTER_HOOK
+    . "$AFTER_HOOK"
 }
 
 main

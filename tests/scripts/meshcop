@@ -191,8 +191,8 @@ build_dependencies()
     [[ -d ${BUILD_DIR} ]] || mkdir -p "${BUILD_DIR}"
 
     # As above, these steps are broken up
-    ot_cli=$(command -v ${OT_CLI})
-    ot_rcp=$(command -v ${OT_RCP})
+    ot_cli=$(command -v "${OT_CLI}")
+    ot_rcp=$(command -v "${OT_RCP}")
 
     if [[ ${OTBR_USE_WEB_COMMISSIONER} != 1 ]]; then
         ot_commissioner_build
@@ -329,7 +329,7 @@ ot_commissioner_build()
 
     (mkdir -p "${BUILD_DIR}/ot-commissioner" \
         && cd "${BUILD_DIR}/ot-commissioner" \
-        && ($(git --git-dir=.git rev-parse --is-inside-work-tree) || git --git-dir=.git init .) \
+        && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
         && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git master \
         && git checkout FETCH_HEAD \
         && ./script/bootstrap.sh \

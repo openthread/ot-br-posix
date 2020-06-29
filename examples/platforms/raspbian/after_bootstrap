@@ -29,6 +29,7 @@
 
 (
     # source in a subshell to avoid polluting environments
+    # shellcheck source=/dev/null
     . /etc/os-release
 
     # In stretch, cmake installed by apt-get is too old.

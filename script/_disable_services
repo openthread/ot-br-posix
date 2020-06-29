@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -41,9 +41,9 @@ bbb_disable_services()
     SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
 
     for service in $SERVICE_LIST; do
-        if [ $(sudo systemctl is-active $service) != "inactive" ]; then
+        if [ "$(sudo systemctl is-active "$service")" != "inactive" ]; then
             for action in stop disable; do
-                sudo systemctl $action $service
+                sudo systemctl "$action" "$service"
             done
         fi
     done

@@ -31,6 +31,7 @@
 #       router services and dependencies.
 #
 
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 . script/_otbr
 . script/_ipforward
@@ -42,7 +43,7 @@ main()
 {
     ./script/bootstrap
 
-    . $BEFORE_HOOK
+    . "$BEFORE_HOOK"
     otbr_uninstall
     dhcpv6_pd_uninstall
     nat64_uninstall
@@ -54,7 +55,7 @@ main()
     dns64_install
     dhcpv6_pd_install
     otbr_update
-    . $AFTER_HOOK
+    . "$AFTER_HOOK"
 }
 
 main

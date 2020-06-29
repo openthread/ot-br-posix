@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -40,10 +40,10 @@ SWAP_BLOCK_CNT=${SWAP_BLOCK_CNT:-1024}
 delete_old_swapfile()
 {
     # Delete the old
-    if [ -f ${SWAP_FILENAME} ]; then
+    if [ -f "${SWAP_FILENAME}" ]; then
         echo "Disable & remove old swapfile"
         sudo swapoff -a
-        sudo rm -f ${SWAP_FILENAME}
+        sudo rm -f "${SWAP_FILENAME}"
     fi
 }
 
@@ -51,24 +51,24 @@ create_new_swapfile()
 {
     echo "Create new (zeroed) swapfile"
     SWAP_STEPSIZE=64
-    for x in $(seq $SWAP_STEPSIZE $SWAP_STEPSIZE $SWAP_BLOCK_CNT); do
+    for x in $(seq "$SWAP_STEPSIZE" "$SWAP_STEPSIZE" "$SWAP_BLOCK_CNT"); do
         echo "Block: ${x} of ${SWAP_BLOCK_CNT}"
-        sudo dd oflag=append conv=notrunc if=/dev/zero of=${SWAP_FILENAME} bs=$SWAP_BLOCK_SIZE count=$SWAP_STEPSIZE
+        sudo dd oflag=append conv=notrunc if=/dev/zero of="${SWAP_FILENAME}" bs="$SWAP_BLOCK_SIZE" count="$SWAP_STEPSIZE"
         # this actually creates 1 extra but we don't care
     done
 
     echo "Setting protections"
-    sudo chmod 0600 ${SWAP_FILENAME}
+    sudo chmod 0600 "${SWAP_FILENAME}"
 
     echo "Format swapfile"
-    sudo mkswap ${SWAP_FILENAME}
+    sudo mkswap "${SWAP_FILENAME}"
 }
 
 add_to_fstab()
 {
     echo "Adding ${SWAP_FILENAME} to /etc/fstab"
     rm -f /tmp/fstab.tmp
-    cat /etc/fstab | grep -v "^${SWAP_FILENAME}" >>/tmp/fstab.tmp
+    grep -v "^${SWAP_FILENAME}" /etc/fstab >>/tmp/fstab.tmp
     echo "${SWAP_FILENAME} none swap defaults 0 0" >>/tmp/fstab.tmp
     sudo cp /tmp/fstab.tmp /etc/fstab
 }

@@ -30,7 +30,6 @@
 set -e
 set -x
 
-TOOLS_HOME=$HOME/.cache/tools
 export PATH=/usr/local/bin:$PATH
 
 case $BUILD_TARGET in

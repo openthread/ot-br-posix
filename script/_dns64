@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -34,23 +34,23 @@ BIND_CONF_OPTIONS=/etc/bind/named.conf.options
 NAT64_PREFIX=64:ff9b::/96
 
 DNS64_NAMESERVER_ADDR=127.0.0.1
-DNS64_CONF="dns64 $(echo $NAT64_PREFIX | tr \"/\" \"\/\") { clients { thread; }; recursive-only yes; };"
+DNS64_CONF="dns64 $(echo $NAT64_PREFIX | tr \"/\" \"/\") { clients { thread; }; recursive-only yes; };"
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
-without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "dns64 is not tested under $PLATFORM."
+without NAT64 || test "$PLATFORM" = ubuntu || test "$PLATFORM" = raspbian || die "dns64 is not tested under $PLATFORM."
 
-if [ $PLATFORM = raspbian ]; then
+if [ "$PLATFORM" = raspbian ]; then
     RESOLV_CONF_HEAD=/etc/resolv.conf.head
-elif [ $PLATFORM = ubuntu ]; then
+elif [ "$PLATFORM" = ubuntu ]; then
     RESOLV_CONF_HEAD=/etc/resolvconf/resolv.conf.d/head
 fi
 
 dns64_update_resolvconf()
 {
-    if [ $PLATFORM = ubuntu ]; then
+    if [ "$PLATFORM" = ubuntu ]; then
         sudo resolvconf -u || true
-    elif [ $PLATFORM = raspbian ]; then
+    elif [ "$PLATFORM" = raspbian ]; then
         if systemctl is-enabled NetworkManager; then
             sudo systemctl restart NetworkManager || true
         fi
@@ -128,7 +128,7 @@ dns64_start()
 
     if have systemctl; then
         sudo systemctl start "${service_name}" || die 'Failed to start bind9!'
-    elif which service; then
+    elif command -v service; then
         sudo service "${service_name}" start || die 'Failed to start bind9!'
     fi
 }
@@ -141,7 +141,7 @@ dns64_stop()
 
     if have systemctl; then
         sudo systemctl stop "${service_name}" || true
-    elif which service; then
+    elif command -v service; then
         sudo service "${service_name}" stop || true
     fi
 }

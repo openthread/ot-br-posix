@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -38,10 +38,9 @@ SCRIPT_NAME=$0
 CWD=$(pwd)
 DATE=$(date)
 
-# source our common stuff
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
-OPENTHREAD_ONMESH_PREFIX=fd11:22
 ETH0_IPV6_BASE_PREFIX=fd11:33
 
 debug_echo()
@@ -58,7 +57,7 @@ determine_eth0_name()
     #
     # this gives us a sorted list of network interface names
     for devname in $(
-        cd /sys/class/net
+        cd /sys/class/net || exit
         ls
     ); do
         # We want the physical device
@@ -82,14 +81,14 @@ determine_eth0_name()
         fi
 
         debug_echo "Consider: ${devname}"
-        if [ ! -L /sys/class/net/${devname}/device ]; then
+        if [ ! -L /sys/class/net/"${devname}"/device ]; then
             debug_echo "Not a DEVICE ${devname}"
             continue
         fi
 
-        type=$(cat /sys/class/net/${devname}/type)
+        type=$(cat /sys/class/net/"${devname}"/type)
         # Type1 = ARPHRD_ETHER
-        if [ $type -ne 1 ]; then
+        if [ "$type" -ne 1 ]; then
             debug_echo "Not ARPHRD_ETHER"
             continue
         fi
