@@ -36,11 +36,11 @@ install_packages_apt()
 {
     sudo apt-get update
     sudo apt-get install --no-install-recommends -y \
-                         wget \
-                         iproute2 \
-                         iputils-ping \
-                         libreadline-dev \
-                         libncurses-dev
+        wget \
+        iproute2 \
+        iputils-ping \
+        libreadline-dev \
+        libncurses-dev
 
     sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
 

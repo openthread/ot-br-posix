@@ -29,17 +29,18 @@
 
 set -euxo pipefail
 
-main() {
+main()
+{
     SCAN_TMPDIR=./scan-tmp
     (mkdir -p scan-build \
         && cd scan-build \
         && scan-build cmake -GNinja \
-        -DBUILD_TESTING=OFF \
-        -DCMAKE_CXX_COMPILER=clang++ \
-        -DCMAKE_C_COMPILER=clang \
-        -DOTBR_DBUS=ON \
-        -DOTBR_WEB=ON \
-        .. \
+            -DBUILD_TESTING=OFF \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang \
+            -DOTBR_DBUS=ON \
+            -DOTBR_WEB=ON \
+            .. \
         && scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v ninja)
     ! (grep "^<!-- BUGFILE $(pwd)" "${SCAN_TMPDIR}"/*/report-*.html | grep -v 'third_party') && echo 'Success'
 }

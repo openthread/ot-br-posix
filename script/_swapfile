@@ -39,21 +39,19 @@ SWAP_BLOCK_CNT=${SWAP_BLOCK_CNT:-1024}
 
 delete_old_swapfile()
 {
-     # Delete the old
-     if [ -f ${SWAP_FILENAME} ]
-     then
-         echo "Disable & remove old swapfile"
-         sudo swapoff -a
-         sudo rm -f ${SWAP_FILENAME}
-     fi
+    # Delete the old
+    if [ -f ${SWAP_FILENAME} ]; then
+        echo "Disable & remove old swapfile"
+        sudo swapoff -a
+        sudo rm -f ${SWAP_FILENAME}
+    fi
 }
 
 create_new_swapfile()
 {
     echo "Create new (zeroed) swapfile"
     SWAP_STEPSIZE=64
-    for x in $(seq $SWAP_STEPSIZE $SWAP_STEPSIZE $SWAP_BLOCK_CNT)
-    do
+    for x in $(seq $SWAP_STEPSIZE $SWAP_STEPSIZE $SWAP_BLOCK_CNT); do
         echo "Block: ${x} of ${SWAP_BLOCK_CNT}"
         sudo dd oflag=append conv=notrunc if=/dev/zero of=${SWAP_FILENAME} bs=$SWAP_BLOCK_SIZE count=$SWAP_STEPSIZE
         # this actually creates 1 extra but we don't care
@@ -70,8 +68,8 @@ add_to_fstab()
 {
     echo "Adding ${SWAP_FILENAME} to /etc/fstab"
     rm -f /tmp/fstab.tmp
-    cat /etc/fstab | grep -v "^${SWAP_FILENAME}"   >> /tmp/fstab.tmp
-    echo "${SWAP_FILENAME} none swap defaults 0 0" >> /tmp/fstab.tmp
+    cat /etc/fstab | grep -v "^${SWAP_FILENAME}" >>/tmp/fstab.tmp
+    echo "${SWAP_FILENAME} none swap defaults 0 0" >>/tmp/fstab.tmp
     sudo cp /tmp/fstab.tmp /etc/fstab
 }
 
@@ -83,8 +81,7 @@ enable_swapfile()
 
 setup_swapfile()
 {
-    if ${SWAP_REQUIRED}
-    then
+    if ${SWAP_REQUIRED}; then
         echo "Swapfile: Creating..."
         delete_old_swapfile
         create_new_swapfile

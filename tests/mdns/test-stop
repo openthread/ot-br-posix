@@ -37,7 +37,7 @@ main()
 {
     start_publisher k
 
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'
@@ -46,7 +46,7 @@ main()
     # stop service
     /bin/kill -USR1 $PID
     sleep 1
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         ! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
     else
         ! avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'
@@ -55,7 +55,7 @@ main()
     # start service
     /bin/kill -USR2 $PID
     sleep 1
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'

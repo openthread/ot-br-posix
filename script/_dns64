@@ -34,7 +34,7 @@ BIND_CONF_OPTIONS=/etc/bind/named.conf.options
 NAT64_PREFIX=64:ff9b::/96
 
 DNS64_NAMESERVER_ADDR=127.0.0.1
-DNS64_CONF="dns64 `echo $NAT64_PREFIX | tr \"/\" \"\/\"` { clients { thread; }; recursive-only yes; };"
+DNS64_CONF="dns64 $(echo $NAT64_PREFIX | tr \"/\" \"\/\") { clients { thread; }; recursive-only yes; };"
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
@@ -92,7 +92,7 @@ dns64_install()
         sudo systemctl start "${service_name}" || die 'Failed to start bind9!'
     fi
 
-    [ -f /.dockerenv ] ||  dns64_update_resolvconf
+    [ -f /.dockerenv ] || dns64_update_resolvconf
 }
 
 dns64_uninstall()
@@ -112,7 +112,7 @@ dns64_uninstall()
 
     sudo sed -i '/^nameserver '$DNS64_NAMESERVER_ADDR'/d' $RESOLV_CONF_HEAD || true
 
-    [ -f /.dockerenv ] ||  dns64_update_resolvconf
+    [ -f /.dockerenv ] || dns64_update_resolvconf
 
     if have systemctl; then
         sudo systemctl stop "${service_name}" || true
