@@ -56,18 +56,19 @@ readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 #   0           - Test passed.
 #   Otherwise   - Test failed!
 #######################################
-print_result() {
+print_result()
+{
     local exit_code=0
 
     echo -e "$(date) Running $*"
 
-    if [[ "${QUIET}" = 1 ]]; then
-        "$@" &> test.log || exit_code=$?
+    if [[ ${QUIET} == 1 ]]; then
+        "$@" &>test.log || exit_code=$?
     else
         "$@" || exit_code=$?
     fi
 
-    if [[ "$exit_code" = 0 ]]; then
+    if [[ $exit_code == 0 ]]; then
         prefix="${OTBR_COLOR_PASS}PASS${OTBR_COLOR_NONE}"
     else
         prefix="${OTBR_COLOR_FAIL}FAIL${OTBR_COLOR_NONE}"
@@ -76,14 +77,15 @@ print_result() {
     echo -e "${prefix} $*"
 
     # only output log on failure
-    if [[ "${QUIET}" = 1 && "${exit_code}" != 0 ]]; then
+    if [[ ${QUIET} == 1 && ${exit_code} != 0 ]]; then
         cat test.log
     fi
 
     return ${exit_code}
 }
 
-print_usage() {
+print_usage()
+{
     cat <<EOF
 USAGE: $0 COMMAND
 
@@ -100,7 +102,8 @@ EOF
     exit "$1"
 }
 
-do_build() {
+do_build()
+{
     otbr_options=(
         "-DCMAKE_BUILD_TYPE=Debug"
         "-DCMAKE_INSTALL_PREFIX=/usr"
@@ -116,34 +119,37 @@ do_build() {
         && ninja)
 }
 
-do_clean() {
+do_clean()
+{
     echo "Removing ${BUILD_DIR} (requiring sudo)"
     rm -rf "${BUILD_DIR}" || sudo rm -rf "${BUILD_DIR}"
 }
 
-do_check() {
+do_check()
+{
     (cd "${OTBR_TOP_BUILDDIR}" \
         && CTEST_OUTPUT_ON_FAILURE=1 ninja test)
 }
 
-do_prepare() {
+do_prepare()
+{
     if [[ ${OTBR_OPTIONS} ]]; then
-        read -r -a otbr_options <<< "${OTBR_OPTIONS}"
+        read -r -a otbr_options <<<"${OTBR_OPTIONS}"
     else
         otbr_options=()
     fi
 
-
-    if [[ -n "${OTBR_MDNS}" ]]; then
+    if [[ -n ${OTBR_MDNS} ]]; then
         otbr_options+=("-DOTBR_MDNS=${OTBR_MDNS}")
     fi
 
-    if [[ "${OTBR_COVERAGE}" == 1 ]]; then
+    if [[ ${OTBR_COVERAGE} == 1 ]]; then
         otbr_options+=("-DOTBR_COVERAGE=ON")
     fi
 }
 
-do_package() {
+do_package()
+{
     otbr_options=(
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
@@ -158,8 +164,9 @@ do_package() {
         && ninja package)
 }
 
-main() {
-    if [[ "$#" == 0 ]]; then
+main()
+{
+    if [[ $# == 0 ]]; then
         print_usage 1
     fi
 

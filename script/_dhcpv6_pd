@@ -57,7 +57,7 @@ without DHCPV6_PD || test $PLATFORM = raspbian || test $PLATFORM = ubuntu || die
 
 create_dhcpcd_conf_with_dhcpv6_pd()
 {
-    sudo tee ${DHCPCD_CONF} << EOF
+    sudo tee ${DHCPCD_CONF} <<EOF
 # A sample configuration for dhcpcd.
 # See dhcpcd.conf(5) for details.
 
@@ -114,20 +114,20 @@ ia_pd 3/::/63 $WPAN_INTERFACE/1
 
 EOF
 
-if [ $PLATFORM = "raspbian" ]; then
-    sudo tee -a ${DHCPCD_CONF} << EOF
+    if [ $PLATFORM = "raspbian" ]; then
+        sudo tee -a ${DHCPCD_CONF} <<EOF
 interface $WLAN_INTERFACE
 iaid 4
 ipv6rs
 ia_na 5
 ia_pd 6/::/63 $WPAN_INTERFACE/1
 EOF
-fi
+    fi
 }
 
 create_ncp_state_notifier_script()
 {
-    sudo tee ${NCP_STATE_NOTIFIER} << EOF
+    sudo tee ${NCP_STATE_NOTIFIER} <<EOF
 #!/bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
@@ -210,7 +210,7 @@ EOF
 
 create_dhcpcd_reloader_script()
 {
-    sudo tee ${DHCPCD_RELOADER} << EOF
+    sudo tee ${DHCPCD_RELOADER} <<EOF
 #!/bin/sh
 #
 #  Copyright (c) 2017, The OpenThread Authors.
@@ -276,7 +276,7 @@ EOF
 
 create_ncp_state_notifier_service()
 {
-    sudo tee ${NCP_STATE_NOTIFIER_SERVICE} << EOF
+    sudo tee ${NCP_STATE_NOTIFIER_SERVICE} <<EOF
 [Unit]
 Description=Daemon call scripts on every NCP state change
 After=otbr-agent.service

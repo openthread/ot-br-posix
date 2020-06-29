@@ -37,7 +37,7 @@ main()
 {
     start_publisher s
 
-    if [[ "${OTBR_MDNS}" == 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'

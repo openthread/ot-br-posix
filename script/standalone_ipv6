@@ -35,8 +35,8 @@
 # remember the name of this script
 SCRIPT_NAME=$0
 
-CWD=`pwd`
-DATE=`date`
+CWD=$(pwd)
+DATE=$(date)
 
 # source our common stuff
 . "$(dirname "$0")"/_initrc
@@ -44,10 +44,10 @@ DATE=`date`
 OPENTHREAD_ONMESH_PREFIX=fd11:22
 ETH0_IPV6_BASE_PREFIX=fd11:33
 
-debug_echo() {
-    if [ x"${_DEBUG_IPV6}" == x"true" ]
-    then
-	echo "${@}"
+debug_echo()
+{
+    if [ x"${_DEBUG_IPV6}" == x"true" ]; then
+        echo "${@}"
     fi
 }
 
@@ -57,8 +57,10 @@ determine_eth0_name()
 
     #
     # this gives us a sorted list of network interface names
-    for devname in `cd /sys/class/net ; ls`
-    do
+    for devname in $(
+        cd /sys/class/net
+        ls
+    ); do
         # We want the physical device
         # Not things like "usb0" or "wpan0"
         # And we assume the first one is what we want
@@ -74,23 +76,20 @@ determine_eth0_name()
                 ;;
         esac
 
-        if $ignore
-        then
+        if $ignore; then
             debug_echo "Ignore ${devname} by name"
             continue
         fi
 
         debug_echo "Consider: ${devname}"
-        if [ ! -L /sys/class/net/${devname}/device ]
-        then
+        if [ ! -L /sys/class/net/${devname}/device ]; then
             debug_echo "Not a DEVICE ${devname}"
             continue
         fi
 
-        type=`cat /sys/class/net/${devname}/type`
+        type=$(cat /sys/class/net/${devname}/type)
         # Type1 = ARPHRD_ETHER
-        if [ $type -ne 1 ]
-        then
+        if [ $type -ne 1 ]; then
             debug_echo "Not ARPHRD_ETHER"
             continue
         fi
@@ -99,8 +98,7 @@ determine_eth0_name()
         break
     done
 
-    if [ -z "${ETH0_NAME}" ]
-    then
+    if [ -z "${ETH0_NAME}" ]; then
         echo "Cannot determine ETH0 name...."
         exit 1
     fi
@@ -135,10 +133,10 @@ choose_random_eth0_address()
     # cut gives us the items 2 and 3 on the line
     # tr  converts the space into a ':'
     #
-    RANDOM_32BIT_VALUE=`od --read-bytes=4 --format=x2 /dev/urandom | \
-        head -1 | \
-        cut -d' ' -f2,3 | \
-        tr ' ' ':'`
+    RANDOM_32BIT_VALUE=$(od --read-bytes=4 --format=x2 /dev/urandom \
+        | head -1 \
+        | cut -d' ' -f2,3 \
+        | tr ' ' ':')
 
     # thus, "RANDOM_32BIT_VALUE=1234:5678"
 
@@ -153,8 +151,7 @@ configure_radvd()
 {
     # this creates a configuration file for radvd
     CFG_FILE=/etc/radvd.conf
-    if [ -f $CFG_FILE ]
-    then
+    if [ -f $CFG_FILE ]; then
         echo "radvd config file exists: $CFG_FILE"
         echo "SKIPPING radvd configuration"
     else
@@ -193,10 +190,11 @@ __EOF__
     fi
 }
 
-assign_eth0_static_ipv6() {
+assign_eth0_static_ipv6()
+{
 
     # this creates a static IPv6 address for Eth0
-    sudo tee -a /etc/network/interfaces << __EOF__
+    sudo tee -a /etc/network/interfaces <<__EOF__
 
 # This configuration was created by
 # the openthread ${SCRIPT_NAME}
@@ -220,7 +218,8 @@ __EOF__
 
 # on BBB we do this.
 # other platforms might do something simular
-bbb_main() {
+bbb_main()
+{
     install_radvd
     determine_eth0_name
     choose_random_eth0_address
@@ -230,10 +229,11 @@ bbb_main() {
     echo "You should now reboot your Device"
 }
 
-print_big_ugly_warning() {
+print_big_ugly_warning()
+{
     # Scare our victim.
 
-cat <<_EOF_
+    cat <<_EOF_
 
 Please understand the purpose of this script.
 
@@ -301,8 +301,7 @@ _EOF_
 }
 
 # ensure user/victim has read the ugly warning.
-if [ "${1}" != "enable_ipv6_hack" ]
-then
+if [ "${1}" != "enable_ipv6_hack" ]; then
     print_big_ugly_warning
     exit 1
 fi

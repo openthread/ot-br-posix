@@ -48,8 +48,8 @@ main()
         systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
     elif have service; then
         sudo service rsyslog status || sudo service rsyslog start || die 'Failed to start rsyslog!'
-        sudo service dbus status || sudo service dbus start  || die 'Failed to start dbus!'
-        sudo service avahi-daemon status || sudo service avahi-daemon start  || die 'Failed to start avahi!'
+        sudo service dbus status || sudo service dbus start || die 'Failed to start dbus!'
+        sudo service avahi-daemon status || sudo service avahi-daemon start || die 'Failed to start avahi!'
         sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
         sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
     else

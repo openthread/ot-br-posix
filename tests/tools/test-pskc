@@ -34,9 +34,9 @@ readonly OTBR_EX_USAGE=64
 
 main()
 {
-  "${OTBR_COMPUTER}" | grep 'SYNTAX' || [[ $? == $OTBR_EX_USAGE ]]
+    "${OTBR_COMPUTER}" | grep 'SYNTAX' || [[ $? == $OTBR_EX_USAGE ]]
 
-  [[ "$("${OTBR_COMPUTER}"  654321 1122334455667788 OpenThread)" == 07708bf664c00858c19269cf10261e5b ]]
+    [[ "$("${OTBR_COMPUTER}" 654321 1122334455667788 OpenThread)" == 07708bf664c00858c19269cf10261e5b ]]
 }
 
 main "$@"

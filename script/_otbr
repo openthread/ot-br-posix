@@ -42,7 +42,7 @@ otbr_uninstall()
     sudo killall otbr-web otbr-agent || true
 
     (cd "${OTBR_TOP_BUILDDIR}" \
-        && sudo xargs rm < install_manifests.txt || true)
+        && sudo xargs rm <install_manifests.txt || true)
     if have systemctl; then
         sudo systemctl daemon-reload
     fi
@@ -53,7 +53,7 @@ otbr_install()
     local otbr_options=()
 
     if [[ ${OTBR_OPTIONS} ]]; then
-        read -r -a otbr_options <<< "${OTBR_OPTIONS}"
+        read -r -a otbr_options <<<"${OTBR_OPTIONS}"
     fi
 
     otbr_options=(
@@ -77,7 +77,7 @@ otbr_install()
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
         sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else
-        >&2 echo ' *** WARNING: systemctl not found. otbr cannot start on boot.'
+        echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi
 }
 

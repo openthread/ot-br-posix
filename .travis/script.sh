@@ -34,33 +34,33 @@ TOOLS_HOME=$HOME/.cache/tools
 export PATH=/usr/local/bin:$PATH
 
 case $BUILD_TARGET in
-meshcop)
-    ./script/bootstrap
-    ./script/test build
+    meshcop)
+        ./script/bootstrap
+        ./script/test build
 
-    OT_CLI="ot-cli-mtd" ./script/test meshcop
-    OT_CLI="ot-cli-ftd" ./script/test meshcop
-    OTBR_USE_WEB_COMMISSIONER=1 ./script/test meshcop
-    ;;
+        OT_CLI="ot-cli-mtd" ./script/test meshcop
+        OT_CLI="ot-cli-ftd" ./script/test meshcop
+        OTBR_USE_WEB_COMMISSIONER=1 ./script/test meshcop
+        ;;
 
-openwrt-check)
-    ./script/test openwrt
-    ;;
+    openwrt-check)
+        ./script/test openwrt
+        ;;
 
-docker-check)
-    .travis/check-docker
-    ;;
+    docker-check)
+        .travis/check-docker
+        ;;
 
-otbr-dbus-check)
-    .travis/check-otbr-dbus
-    ;;
+    otbr-dbus-check)
+        .travis/check-otbr-dbus
+        ;;
 
-macOS)
-    # On Travis, brew install fails when a package is already installed, so use reinstall here instead of ./script/bootstrap
-    brew reinstall boost cmake cpputest dbus jsoncpp ninja
-    OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
-    ;;
-*)
-    false
-    ;;
+    macOS)
+        # On Travis, brew install fails when a package is already installed, so use reinstall here instead of ./script/bootstrap
+        brew reinstall boost cmake cpputest dbus jsoncpp ninja
+        OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
+        ;;
+    *)
+        false
+        ;;
 esac

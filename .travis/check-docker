@@ -41,10 +41,11 @@ on_exit()
     return "${status}"
 }
 
-main() {
+main()
+{
     docker build -t otbr -f etc/docker/Dockerfile .
     local -r SOCAT_OUTPUT=/tmp/ot-socat
-    socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
+    socat -d -d pty,raw,echo=0 pty,raw,echo=0 >/dev/null 2>$SOCAT_OUTPUT &
     while true; do
         if test "$(head -n2 "$SOCAT_OUTPUT" | wc -l)" = 2; then
             local -r DEVICE_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
@@ -58,7 +59,7 @@ main() {
     trap on_exit EXIT
 
     # shellcheck disable=SC2094
-    ot-rcp 1 > "$DEVICE_PTY" < "$DEVICE_PTY" &
+    ot-rcp 1 >"$DEVICE_PTY" <"$DEVICE_PTY" &
 
     readonly OTBR_DOCKER_PID=$(docker run --rm -dit \
         --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \

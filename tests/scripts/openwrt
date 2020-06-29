@@ -42,7 +42,7 @@ do_prepare()
 {
     docker create --name "${CONTAINER_NAME}" --rm -v openwrt-bin:/home/build/openwrt/bin -it openwrtorg/sdk
     docker cp . "${CONTAINER_NAME}":/home/build/ot-br-posix
-    echo 'src-link openthread /home/build/ot-br-posix/etc/openwrt' > feeds.conf
+    echo 'src-link openthread /home/build/ot-br-posix/etc/openwrt' >feeds.conf
 
     docker start "${CONTAINER_NAME}"
     docker exec -it "${CONTAINER_NAME}" scripts/feeds update base
@@ -71,7 +71,7 @@ do_clean()
 
 main()
 {
-    if [[ $# = 0 ]]; then
+    if [[ $# == 0 ]]; then
         trap do_clean EXIT
         do_prepare
         do_build
@@ -85,6 +85,7 @@ main()
                 ;;
             clean)
                 do_clean
+                ;;
         esac
     fi
 }

@@ -103,254 +103,254 @@ echo "ABS_TOP_BUILDDIR=${ABS_TOP_BUILDDIR}"
 
 die()
 {
-  exit_message="$*"
-  echo " *** ERROR: $*"
-  exit 1
+    exit_message="$*"
+    echo " *** ERROR: $*"
+    exit 1
 }
 
 exists_or_die()
 {
-  [[ -f "$1" ]] || die "Missing file: $1"
+    [[ -f $1 ]] || die "Missing file: $1"
 }
 
 executable_or_die()
 {
-  [[ -x "$1" ]] || die "Missing executable: $1"
+    [[ -x $1 ]] || die "Missing executable: $1"
 }
 
 random_channel()
 {
-  echo $((11 + "${RANDOM}" % 16))
+    echo $((11 + "${RANDOM}" % 16))
 }
 
 random_panid()
 {
-  printf "0x%04x" "${RANDOM}"
+    printf "0x%04x" "${RANDOM}"
 }
 
 random_xpanid()
 {
-  printf "%04x%04x%04x%04x" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}"
+    printf "%04x%04x%04x%04x" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}"
 }
 
 random_masterkey()
 {
-  printf "%04x%04x%04x%04x%04x%04x%04x%04x" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}"
+    printf "%04x%04x%04x%04x%04x%04x%04x%04x" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}"
 }
 
 write_syslog()
 {
-  logger -s -p syslog.alert "OPENTHREAD_TEST: $*"
+    logger -s -p syslog.alert "OPENTHREAD_TEST: $*"
 }
 
 output_logs()
 {
-  write_syslog 'All apps should be dead now'
+    write_syslog 'All apps should be dead now'
 
-  # part 1
-  # ------
-  #
-  # On travis (the CI server), we can't see what went into the
-  # syslog.  So this is here so we can see the output.
-  #
-  # part 2
-  # ------
-  #
-  # If we run locally, it is sometimes helpful for our victim (you
-  # the developer) to have logs split upto various files to help
-  # that victim, we'll GREP the log files according.
-  #
-  # Wait 5 seconds for the "logs to flush"
-  sleep 5
+    # part 1
+    # ------
+    #
+    # On travis (the CI server), we can't see what went into the
+    # syslog.  So this is here so we can see the output.
+    #
+    # part 2
+    # ------
+    #
+    # If we run locally, it is sometimes helpful for our victim (you
+    # the developer) to have logs split upto various files to help
+    # that victim, we'll GREP the log files according.
+    #
+    # Wait 5 seconds for the "logs to flush"
+    sleep 5
 
-  cd "${ORIGIN_PWD}"
-  echo 'START_LOG: SYSLOG ==================='
-  tee complete-syslog.log < /var/log/syslog
-  echo 'START_LOG: BR-AGENT ================='
-  grep "${OTBR_AGENT}" /var/log/syslog | tee otbr-agent.log
-  echo 'START_LOG: OT-COMISSIONER ========='
-  cat "${OT_COMMISSIONER_LOG}"
-  echo 'START_LOG: OT-RCP ==================='
-  grep "${OT_RCP}" /var/log/syslog | tee "${OT_RCP}.log"
-  echo 'START_LOG: OT-CLI ==================='
-  grep "${OT_CLI}" /var/log/syslog | tee "${OT_CLI}.log"
-  echo '====================================='
-  echo 'Hint, for each log Search backwards for: "START_LOG: <NAME>"'
-  echo '====================================='
+    cd "${ORIGIN_PWD}"
+    echo 'START_LOG: SYSLOG ==================='
+    tee complete-syslog.log </var/log/syslog
+    echo 'START_LOG: BR-AGENT ================='
+    grep "${OTBR_AGENT}" /var/log/syslog | tee otbr-agent.log
+    echo 'START_LOG: OT-COMISSIONER ========='
+    cat "${OT_COMMISSIONER_LOG}"
+    echo 'START_LOG: OT-RCP ==================='
+    grep "${OT_RCP}" /var/log/syslog | tee "${OT_RCP}.log"
+    echo 'START_LOG: OT-CLI ==================='
+    grep "${OT_CLI}" /var/log/syslog | tee "${OT_CLI}.log"
+    echo '====================================='
+    echo 'Hint, for each log Search backwards for: "START_LOG: <NAME>"'
+    echo '====================================='
 }
 
 build_dependencies()
 {
-  # Clean up old stuff
-  if [[ "${NO_CLEAN}" != 1 ]]; then
-    [[ ! -d "${STAGE_DIR}" ]] || rm -rf "${STAGE_DIR}"
-    [[ ! -d "${BUILD_DIR}" ]] || rm -rf "${BUILD_DIR}"
-  fi
+    # Clean up old stuff
+    if [[ ${NO_CLEAN} != 1 ]]; then
+        [[ ! -d ${STAGE_DIR} ]] || rm -rf "${STAGE_DIR}"
+        [[ ! -d ${BUILD_DIR} ]] || rm -rf "${BUILD_DIR}"
+    fi
 
-  [[ -d "${STAGE_DIR}" ]] || mkdir -p "${STAGE_DIR}"
-  [[ -d "${BUILD_DIR}" ]] || mkdir -p "${BUILD_DIR}"
+    [[ -d ${STAGE_DIR} ]] || mkdir -p "${STAGE_DIR}"
+    [[ -d ${BUILD_DIR} ]] || mkdir -p "${BUILD_DIR}"
 
-  # As above, these steps are broken up
-  ot_cli=$(command -v ${OT_CLI})
-  ot_rcp=$(command -v ${OT_RCP})
+    # As above, these steps are broken up
+    ot_cli=$(command -v ${OT_CLI})
+    ot_rcp=$(command -v ${OT_RCP})
 
-  if [[ "${OTBR_USE_WEB_COMMISSIONER}" != 1 ]]; then
-    ot_commissioner_build
-  fi
+    if [[ ${OTBR_USE_WEB_COMMISSIONER} != 1 ]]; then
+        ot_commissioner_build
+    fi
 
-  write_syslog "TEST: BUILD COMPLETE"
+    write_syslog "TEST: BUILD COMPLETE"
 }
 
 test_setup()
 {
-  # message for general failures
-  exit_message="JOINER FAILED"
+    # message for general failures
+    exit_message="JOINER FAILED"
 
-  executable_or_die "${OTBR_AGENT_PATH}"
-  executable_or_die "${OTBR_WEB_PATH}"
+    executable_or_die "${OTBR_AGENT_PATH}"
+    executable_or_die "${OTBR_WEB_PATH}"
 
-  # Remove flashes
-  sudo rm -vrf "${TEST_BASE}/tmp"
-  # OPENTHREAD_POSIX_DAEMON_SOCKET_LOCK
-  sudo rm -vf "/tmp/openthread.lock"
+    # Remove flashes
+    sudo rm -vrf "${TEST_BASE}/tmp"
+    # OPENTHREAD_POSIX_DAEMON_SOCKET_LOCK
+    sudo rm -vf "/tmp/openthread.lock"
 
-  build_dependencies
+    build_dependencies
 
-  # We will be creating a lot of log information
-  # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
-  if [[ -f /etc/logrotate.conf ]]; then
-    sudo logrotate -f /etc/logrotate.conf || true
-  fi
+    # We will be creating a lot of log information
+    # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
+    if [[ -f /etc/logrotate.conf ]]; then
+        sudo logrotate -f /etc/logrotate.conf || true
+    fi
 
-  # From now on - all exits are TRAPPED
-  # When they occur, we call the function: output_logs'.
-  trap test_teardown EXIT
+    # From now on - all exits are TRAPPED
+    # When they occur, we call the function: output_logs'.
+    trap test_teardown EXIT
 }
 
 test_teardown()
 {
-  # Capture the exit code so we can return it below
-  readonly EXIT_CODE=$?
-  write_syslog "EXIT ${EXIT_CODE} - output logs"
+    # Capture the exit code so we can return it below
+    readonly EXIT_CODE=$?
+    write_syslog "EXIT ${EXIT_CODE} - output logs"
 
-  sudo pkill -f "${OTBR_AGENT}" || true
-  sudo pkill -f "${OTBR_WEB}" || true
-  sudo pkill -f "${OT_COMMISSIONER_CLI}" || true
-  sudo pkill -f "${OT_CLI}" || true
-  wait
+    sudo pkill -f "${OTBR_AGENT}" || true
+    sudo pkill -f "${OTBR_WEB}" || true
+    sudo pkill -f "${OT_COMMISSIONER_CLI}" || true
+    sudo pkill -f "${OT_CLI}" || true
+    wait
 
-  if [[ "${NO_CLEAN}" != 1 ]]; then
-    echo 'clearing all'
-    sudo rm /etc/dbus-1/system.d/otbr-agent.conf || true
-    sudo rm -rf "${STAGE_DIR}" || true
-    sudo rm -rf "${BUILD_DIR}" || true
+    if [[ ${NO_CLEAN} != 1 ]]; then
+        echo 'clearing all'
+        sudo rm /etc/dbus-1/system.d/otbr-agent.conf || true
+        sudo rm -rf "${STAGE_DIR}" || true
+        sudo rm -rf "${BUILD_DIR}" || true
 
-    output_logs
-  fi
+        output_logs
+    fi
 
-  echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
-  exit ${EXIT_CODE}
+    echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
+    exit ${EXIT_CODE}
 }
 
 ba_start()
 {
-  exists_or_die "${OTBR_DBUS_CONF}"
-  sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
+    exists_or_die "${OTBR_DBUS_CONF}"
+    sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
 
-  write_syslog "AGENT: kill old"
-  sudo killall "${OTBR_AGENT}" || true
-  write_syslog "AGENT: starting"
+    write_syslog "AGENT: kill old"
+    sudo killall "${OTBR_AGENT}" || true
+    write_syslog "AGENT: starting"
 
-  # we launch this in the background
-  (
-    set -e
-    set -x
+    # we launch this in the background
+    (
+        set -e
+        set -x
 
-    cd "${ORIGIN_PWD}"
+        cd "${ORIGIN_PWD}"
 
-    # check version
-    sudo "${OTBR_AGENT_PATH}" -V
-    # check invalid arguments
-    sudo "${OTBR_AGENT_PATH}" -x && exit $?
+        # check version
+        sudo "${OTBR_AGENT_PATH}" -V
+        # check invalid arguments
+        sudo "${OTBR_AGENT_PATH}" -x && exit $?
 
-    [[ ! -d tmp ]] || sudo rm -rf tmp
-    sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 "spinel+hdlc+forkpty://${ot_rcp}?forkpty-arg=${LEADER_NODE_ID}" &
-  )
+        [[ ! -d tmp ]] || sudo rm -rf tmp
+        sudo "${OTBR_AGENT_PATH}" -I "${TUN_NAME}" -v -d 6 "spinel+hdlc+forkpty://${ot_rcp}?forkpty-arg=${LEADER_NODE_ID}" &
+    )
 
-  # wait for it to complete
-  sleep 10
+    # wait for it to complete
+    sleep 10
 
-  pidof ${OTBR_AGENT} || die "AGENT: failed to start"
-  write_syslog "AGENT: start complete"
+    pidof ${OTBR_AGENT} || die "AGENT: failed to start"
+    write_syslog "AGENT: start complete"
 }
 
 web_start()
 {
-  write_syslog "WEB: kill old"
-  sudo killall "${OTBR_WEB}" || true
-  write_syslog "WEB: starting"
-  (
-    set -e
-    set -x
+    write_syslog "WEB: kill old"
+    sudo killall "${OTBR_WEB}" || true
+    write_syslog "WEB: starting"
+    (
+        set -e
+        set -x
 
-    cd "${ORIGIN_PWD}"
-    sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p "${OTBR_WEB_PORT}" -a "${OTBR_WEB_HOST}" &
-  )
-  sleep 15
+        cd "${ORIGIN_PWD}"
+        sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p "${OTBR_WEB_PORT}" -a "${OTBR_WEB_HOST}" &
+    )
+    sleep 15
 
-  pidof ${OTBR_WEB} || die "WEB: failed to start"
-  write_syslog "WEB: start complete"
+    pidof ${OTBR_WEB} || die "WEB: failed to start"
+    write_syslog "WEB: start complete"
 }
 
 network_form()
 {
-  readonly OT_PANID="$(random_panid)"
-  readonly OT_XPANID="$(random_xpanid)"
-  readonly OT_MASTER_KEY="$(random_masterkey)"
-  readonly OT_CHANNEL="$(random_channel)"
+    readonly OT_PANID="$(random_panid)"
+    readonly OT_XPANID="$(random_xpanid)"
+    readonly OT_MASTER_KEY="$(random_masterkey)"
+    readonly OT_CHANNEL="$(random_channel)"
 
-  curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
-  sleep 15
-  # verify mDNS is working as expected.
-  local mdns_result="${TEST_BASE}"/mdns_result.log
-  avahi-browse -aprt | tee "${mdns_result}"
-  grep -q "${OT_NETWORK_NAME}" "${mdns_result}"
-  rm "${mdns_result}"
+    curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
+    sleep 15
+    # verify mDNS is working as expected.
+    local mdns_result="${TEST_BASE}"/mdns_result.log
+    avahi-browse -aprt | tee "${mdns_result}"
+    grep -q "${OT_NETWORK_NAME}" "${mdns_result}"
+    rm "${mdns_result}"
 }
 
 ot_commissioner_build()
 {
-  readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
-  readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
+    readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+    readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
 
-  if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
-    return 0
-  fi
+    if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
+        return 0
+    fi
 
-  (mkdir -p "${BUILD_DIR}/ot-commissioner" \
-    && cd "${BUILD_DIR}/ot-commissioner" \
-    && ($(git --git-dir=.git rev-parse --is-inside-work-tree) ||  git --git-dir=.git init .) \
-    && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git master \
-    && git checkout FETCH_HEAD \
-    && ./script/bootstrap.sh \
-    && mkdir build && cd build \
-    && cmake -GNinja -DCMAKE_BUILD_TYPE=Release .. \
-    && ninja)
+    (mkdir -p "${BUILD_DIR}/ot-commissioner" \
+        && cd "${BUILD_DIR}/ot-commissioner" \
+        && ($(git --git-dir=.git rev-parse --is-inside-work-tree) || git --git-dir=.git init .) \
+        && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git master \
+        && git checkout FETCH_HEAD \
+        && ./script/bootstrap.sh \
+        && mkdir build && cd build \
+        && cmake -GNinja -DCMAKE_BUILD_TYPE=Release .. \
+        && ninja)
 }
 
 ot_commissioner_start()
 {
-  write_syslog "COMMISSIONER: kill old"
-  sudo killall "${OT_COMMISSIONER_CLI}" || true
+    write_syslog "COMMISSIONER: kill old"
+    sudo killall "${OT_COMMISSIONER_CLI}" || true
 
-  readonly OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
-  readonly OT_COMMISSIONER_LOG="${TEST_BASE}"/commissioner.log
+    readonly OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
+    readonly OT_COMMISSIONER_LOG="${TEST_BASE}"/commissioner.log
 
-  local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
+    local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
 
-  sed "s/3aa55f91ca47d1e4e71a08cb35e91591/${OT_PSKC}/g" "${OT_COMMISSIONER_CONFIG}" > "${commissioner_config_file}"
+    sed "s/3aa55f91ca47d1e4e71a08cb35e91591/${OT_PSKC}/g" "${OT_COMMISSIONER_CONFIG}" >"${commissioner_config_file}"
 
-  expect -f- <<EOF &
+    expect -f- <<EOF &
 spawn ${OT_COMMISSIONER_PATH} ${commissioner_config_file}
 set timeout 1
 expect_after {
@@ -366,20 +366,20 @@ expect "done"
 wait
 EOF
 
-  sleep 10
+    sleep 10
 }
 
 web_commissioner_start()
 {
-  curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "${OTBR_WEB_URL}"/commission
-  sleep 15
+    curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "${OTBR_WEB_URL}"/commission
+    sleep 15
 }
 
 joiner_start()
 {
-  write_syslog 'JOINER START'
-  cd ${TEST_BASE}
-  sudo expect -f-  <<EOF || die 'JOINER FAILED'
+    write_syslog 'JOINER START'
+    cd ${TEST_BASE}
+    sudo expect -f- <<EOF || die 'JOINER FAILED'
 spawn ${ot_cli} ${JOINER_NODE_ID}
 send "ifconfig up\r\n"
 expect "Done"
@@ -396,21 +396,21 @@ expect {
   }
 }
 EOF
-  exit_message="JOINER SUCCESS COMPLETE"
+    exit_message="JOINER SUCCESS COMPLETE"
 }
 
 main()
 {
-  test_setup
-  ba_start
-  web_start
-  network_form
-  if [[ "${OTBR_USE_WEB_COMMISSIONER}" == 1 ]]; then
-    web_commissioner_start
-  else
-    ot_commissioner_start
-  fi
-  joiner_start
+    test_setup
+    ba_start
+    web_start
+    network_form
+    if [[ ${OTBR_USE_WEB_COMMISSIONER} == 1 ]]; then
+        web_commissioner_start
+    else
+        ot_commissioner_start
+    fi
+    joiner_start
 }
 
 main "$@"

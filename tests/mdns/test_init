@@ -50,7 +50,7 @@ case "${OTBR_MDNS}" in
         ;;
 
     *)
-        >&2 echo "Not supported"
+        echo >&2 "Not supported"
         exit 128
         ;;
 esac
@@ -60,14 +60,15 @@ on_exit()
     readonly EXIT_CODE=$?
 
     kill "$PID"
-    [[ ! -e "${DNS_SD_RESULT}" ]] || rm "${DNS_SD_RESULT}" || true
+    [[ ! -e ${DNS_SD_RESULT} ]] || rm "${DNS_SD_RESULT}" || true
 
     exit $EXIT_CODE
 }
 
 start_publisher()
 {
-    "${OTBR_TEST_MDNS}" $1 & PID=$!
+    "${OTBR_TEST_MDNS}" $1 &
+    PID=$!
     trap on_exit EXIT
     sleep 2
 }
@@ -87,7 +88,8 @@ start_publisher()
 dns_sd_check()
 {
     # dns-sd will not exit
-    dns-sd -L "$1" "$2" local 2>&1 > "${DNS_SD_RESULT}" & DNS_SD_PID=$!
+    dns-sd -L "$1" "$2" local 2>&1 >"${DNS_SD_RESULT}" &
+    DNS_SD_PID=$!
     sleep 1
     kill "${DNS_SD_PID}"
 

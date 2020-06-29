@@ -32,7 +32,8 @@ set -x
 
 TOOLS_HOME=$HOME/.cache/tools
 
-main() {
+main()
+{
     IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
     STAGE_DIR=/tmp/raspbian
     IMAGE_DIR=/media/rpi
@@ -43,7 +44,7 @@ main() {
 
     python3 -m git_archive_all $STAGE_DIR/repo.tar.gz
 
-    cat > $STAGE_DIR/check.sh <<EOF
+    cat >$STAGE_DIR/check.sh <<EOF
 set -ex
 
 export LC_ALL=C
@@ -60,19 +61,21 @@ su -m -c 'script/bootstrap' pi
 su -m -c 'NETWORK_MANAGER=0 script/setup' pi
 EOF
 
-    (cd docker-rpi-emu/scripts &&
-        sudo mkdir -p $IMAGE_DIR &&                                    \
-        sudo ./mount.sh $STAGE_DIR/raspbian.img $IMAGE_DIR &&          \
-        sudo mount --bind /dev/pts $IMAGE_DIR/dev/pts &&               \
-        sudo mkdir -p $IMAGE_DIR/home/pi/repo &&                       \
-        sudo tar xzf $STAGE_DIR/repo.tar.gz --strip-components 1 -C $IMAGE_DIR/home/pi/repo && \
-        sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh &&  \
-        sudo ./qemu-setup.sh $IMAGE_DIR &&                             \
-        sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh
+    (
+        cd docker-rpi-emu/scripts \
+            && sudo mkdir -p $IMAGE_DIR \
+            && sudo ./mount.sh $STAGE_DIR/raspbian.img $IMAGE_DIR \
+            && sudo mount --bind /dev/pts $IMAGE_DIR/dev/pts \
+            && sudo mkdir -p $IMAGE_DIR/home/pi/repo \
+            && sudo tar xzf $STAGE_DIR/repo.tar.gz --strip-components 1 -C $IMAGE_DIR/home/pi/repo \
+            && sudo cp -v $STAGE_DIR/check.sh $IMAGE_DIR/home/pi/check.sh \
+            && sudo ./qemu-setup.sh $IMAGE_DIR \
+            && sudo chroot $IMAGE_DIR /bin/bash /home/pi/check.sh
         sudo umount -lf $IMAGE_DIR/dev/pts || true
         sudo ./qemu-cleanup.sh $IMAGE_DIR || true
         sudo umount -lf $IMAGE_DIR/dev || true
-        sudo ./unmount.sh $IMAGE_DIR)
+        sudo ./unmount.sh $IMAGE_DIR
+    )
 }
 
 main "$@"

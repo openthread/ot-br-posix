@@ -44,10 +44,10 @@ prepare_dbus()
     DBUS_SOURCE=dbus-1.4.26
     wget -nv "https://dbus.freedesktop.org/releases/dbus/${DBUS_SOURCE}.tar.gz"
     tar xvf "${DBUS_SOURCE}.tar.gz"
-    (cd "${DBUS_SOURCE}" && ./configure --prefix= --exec-prefix=/usr &&
-      sed -i '/HAVE_BACKTRACE/d' config.h &&
-      sed -i 's/long/long long/' dbus/dbus-arch-deps.h)
-    cat > "${DBUS_SOURCE}/dbus/Android.mk" <<EOF
+    (cd "${DBUS_SOURCE}" && ./configure --prefix= --exec-prefix=/usr \
+        && sed -i '/HAVE_BACKTRACE/d' config.h \
+        && sed -i 's/long/long long/' dbus/dbus-arch-deps.h)
+    cat >"${DBUS_SOURCE}/dbus/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
 include \$(CLEAR_VARS)
 
@@ -160,11 +160,11 @@ prepare_libmdnssd()
 {
     readonly MDNSRESPONDER_SOURCE=mDNSResponder-878.30.4
 
-    [[ "${OTBR_MDNS}" == mDNSResponder ]] || return 0
+    [[ ${OTBR_MDNS} == mDNSResponder ]] || return 0
 
     wget -nv "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
     tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz"
-    cat > "${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
+    cat >"${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
 
 include \$(CLEAR_VARS)
@@ -188,10 +188,13 @@ EOF
 
 prepare_openthread()
 {
-    SRC_DIR="$(cd "$(dirname "$0")" ; pwd -P)"
+    SRC_DIR="$(
+        cd "$(dirname "$0")"
+        pwd -P
+    )"
     mkdir -p external
     mv "${SRC_DIR}"/../../third_party/openthread/repo external/openthread
-    cat >> buildspec.mk <<EOF
+    cat >>buildspec.mk <<EOF
 
 USE_OTBR_DAEMON := 1  
 OPENTHREAD_PROJECT_CFLAGS := \

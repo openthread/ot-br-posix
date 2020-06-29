@@ -33,7 +33,7 @@ cd "$(dirname "$0")/.."
 
 die()
 {
-    >&2 echo " *** ERROR:  $*"
+    echo >&2 " *** ERROR:  $*"
     exit 1
 }
 
@@ -42,7 +42,7 @@ have()
     # This function checks if a tool is available
     #
 
-    command -v "$1" > /dev/null 2> /dev/null
+    command -v "$1" >/dev/null 2>/dev/null
 }
 
 have_or_die()
@@ -62,13 +62,13 @@ with()
     #
 
     local value=$(printenv "$1")
-    if [[ -z "$value" ]]; then
+    if [[ -z $value ]]; then
         if [[ -f examples/platforms/$PLATFORM/default ]]; then
             value="$(. "examples/platforms/$PLATFORM/default" && eval echo "\${$1-}")"
         fi
     fi
 
-    [[ "$value" == 1 ]]
+    [[ $value == 1 ]]
 }
 
 without()
@@ -80,7 +80,6 @@ without()
 
     ! with "$1"
 }
-
 
 # Platform information is needed to load hooks and default settings.
 
@@ -116,7 +115,7 @@ export PATH=$STAGE_DIR/usr/bin:$STAGE_DIR/usr/sbin:$PATH
 TASKNAME=$(basename "$0")
 BEFORE_HOOK=examples/platforms/$PLATFORM/before_$TASKNAME
 AFTER_HOOK=examples/platforms/$PLATFORM/after_$TASKNAME
-if [[ ! -f "$BEFORE_HOOK" ]]; then
+if [[ ! -f $BEFORE_HOOK ]]; then
     BEFORE_HOOK=/dev/null
 fi
 if [[ ! -f $AFTER_HOOK ]]; then

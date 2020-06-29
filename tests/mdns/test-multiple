@@ -37,7 +37,7 @@ main()
 {
     start_publisher m
 
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         # dns-sd will not exit
         dns_sd_check MultipleService1 _meshcop._udp 'nn=cool1 xp=ABCDEFGH'
         dns_sd_check MultipleService2 _meshcop._udp 'nn=cool2 xp=ABCDEFGH'

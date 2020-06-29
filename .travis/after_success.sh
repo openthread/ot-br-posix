@@ -31,21 +31,23 @@
 
 set -e
 
-codecov_upload() {
-    curl -s https://codecov.io/bash > codecov
+codecov_upload()
+{
+    curl -s https://codecov.io/bash >codecov
     chmod a+x codecov
 
     # Assume gcov by default, and llvm-cov if CC is clang
     if [[ -z $CC ]]; then
         ./codecov
-    elif  "$CC" --version | grep -q gcc; then
+    elif "$CC" --version | grep -q gcc; then
         ./codecov
     elif "$CC" --version | grep -q clang; then
         ./codecov -x "llvm-cov gcov"
     fi
 }
 
-main() {
+main()
+{
     codecov_upload
 }
 
