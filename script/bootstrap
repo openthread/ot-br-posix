@@ -30,6 +30,7 @@
 #       This script resolves all dependencies.
 #
 
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
 install_packages_apt()
@@ -73,7 +74,7 @@ install_packages_apt()
     # dhcpcd5
     without DHCPV6_PD || {
         # More details can be found in issue: #122
-        if [ $PLATFORM = 'raspbian' ]; then
+        if [ "$PLATFORM" = 'raspbian' ]; then
             # TODO should figure out a better way to deal with this
             sudo dpkg -i third_party/dhcpcd/dhcpcd5_6.11.5-1+rpt2_armhf.deb
         else
@@ -135,11 +136,11 @@ install_packages()
 
 main()
 {
-    . $BEFORE_HOOK
+    . "$BEFORE_HOOK"
     # TODO remove `|| true` after docker hub builder gets its git upgraded
     git submodule update --init --recursive --depth 1 || true
     install_packages
-    . $AFTER_HOOK
+    . "$AFTER_HOOK"
 }
 
 main

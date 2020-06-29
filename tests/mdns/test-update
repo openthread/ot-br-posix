@@ -31,6 +31,7 @@
 # This script tests updating text record of published service.
 #
 
+# shellcheck source=tests/mdns/test_init
 . "$(dirname "$0")/test_init"
 
 main()

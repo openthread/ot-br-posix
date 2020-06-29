@@ -41,8 +41,12 @@ otbr_uninstall()
     fi
     sudo killall otbr-web otbr-agent || true
 
-    (cd "${OTBR_TOP_BUILDDIR}" \
-        && sudo xargs rm <install_manifests.txt || true)
+    (
+        if cd "${OTBR_TOP_BUILDDIR}"; then
+            # shellcheck disable=SC2024
+            sudo xargs rm <install_manifests.txt || true
+        fi
+    )
     if have systemctl; then
         sudo systemctl daemon-reload
     fi

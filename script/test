@@ -30,7 +30,7 @@
 #       This script runs border router tests.
 #
 
-# shellcheck source=_initrc
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
 readonly OTBR_COLOR_PASS='\033[0;32m'

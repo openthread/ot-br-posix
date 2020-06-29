@@ -31,6 +31,7 @@
 # This script tests publishing single service.
 #
 
+# shellcheck source=tests/mdns/test_init
 . "$(dirname "$0")/test_init"
 
 main()

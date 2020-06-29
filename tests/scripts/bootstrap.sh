@@ -29,14 +29,8 @@
 
 set -euxo pipefail
 
-TOOLS_HOME=$HOME/.cache/tools
-[[ -d $TOOLS_HOME ]] || mkdir -p $TOOLS_HOME
-
-die()
-{
-    echo " *** ERROR: " $*
-    exit 1
-}
+TOOLS_HOME="$HOME"/.cache/tools
+[[ -d $TOOLS_HOME ]] || mkdir -p "$TOOLS_HOME"
 
 disable_install_recommends()
 {
@@ -74,11 +68,14 @@ install_openthread_binraries()
 {
     pip3 install -U cmake
     cd third_party/openthread/repo
-    local ot_build_dir=$(VIRTUAL_TIME=0 ./script/test clean build | grep 'Build files have been written to: ' | cut -d: -f2 | tr -d ' ')
+
+    local ot_build_dir
+    ot_build_dir=$(VIRTUAL_TIME=0 ./script/test clean build | grep 'Build files have been written to: ' | cut -d: -f2 | tr -d ' ')
+
     cd -
-    sudo install -p ${ot_build_dir}/examples/apps/ncp/ot-rcp /usr/bin/
-    sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-ftd /usr/bin/
-    sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-mtd /usr/bin/
+    sudo install -p "${ot_build_dir}"/examples/apps/ncp/ot-rcp /usr/bin/
+    sudo install -p "${ot_build_dir}"/examples/apps/cli/ot-cli-ftd /usr/bin/
+    sudo install -p "${ot_build_dir}"/examples/apps/cli/ot-cli-mtd /usr/bin/
     sudo apt-get install --no-install-recommends -y socat
 }
 
@@ -95,92 +92,96 @@ case "$(uname)" in
         sudo apt-get update
         install_common_dependencies
 
-        [ $BUILD_TARGET != script-check ] && [ $BUILD_TARGET != docker-check ] || {
+        if [ "$BUILD_TARGET" == script-check ] || [ "$BUILD_TARGET" == docker-check ]; then
             install_openthread_binraries
             configure_network
             exit 0
-        }
+        fi
 
-        [ $BUILD_TARGET != otbr-dbus-check ] || {
+        if [ "$BUILD_TARGET" == otbr-dbus-check ]; then
             install_openthread_binraries
             configure_network
             install_common_dependencies
             exit 0
-        }
+        fi
 
-        [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != meshcop ] || {
+        if [ "$BUILD_TARGET" == check ] || [ "$BUILD_TARGET" == meshcop ]; then
             install_openthread_binraries
             sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils cpputest
             configure_network
-        }
+        fi
 
-        [ $BUILD_TARGET != android-check ] || {
+        if [ "$BUILD_TARGET" == android-check ]; then
             sudo apt-get install --no-install-recommends -y wget unzip libexpat1-dev gcc-multilib g++-multilib
             (
-                cd $HOME
+                cd "$HOME"
                 wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
                 unzip android-ndk-r17c-linux-x86_64.zip >/dev/null
                 mv android-ndk-r17c ndk-bundle
             )
             exit 0
-        }
+        fi
 
-        [ $BUILD_TARGET != scan-build ] || {
+        if [ "$BUILD_TARGET" == scan-build ]; then
             pip3 install -U cmake
             sudo apt-get install --no-install-recommends -y clang clang-tools
-        }
+        fi
 
-        [ $BUILD_TARGET != pretty-check ] || {
+        if [ "$BUILD_TARGET" == pretty-check ]; then
             sudo apt-get install -y clang-format-6.0 shellcheck
             sudo snap install shfmt
-        }
+        fi
 
-        [ "${OTBR_MDNS-}" != 'mDNSResponder' ] || {
+        if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
             SOURCE_NAME=mDNSResponder-878.30.4
             wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz \
                 && tar xvf $SOURCE_NAME.tar.gz \
                 && cd $SOURCE_NAME/mDNSPosix \
                 && make os=linux && sudo make install os=linux
-        }
+        fi
 
         # Enable IPv6
-        [ $BUILD_TARGET != check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
+        if [ "$BUILD_TARGET" == check ]; then
+            echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+        fi
 
         # Allow access syslog file for unit test
-        [ $BUILD_TARGET != check ] || sudo chmod a+r /var/log/syslog || die
+        if [ "$BUILD_TARGET" == check ]; then
+            sudo chmod a+r /var/log/syslog
+        fi
 
         # Prepare Raspbian image
-        [ $BUILD_TARGET != raspbian-gcc ] || {
+        if [ "$BUILD_TARGET" == raspbian-gcc ]; then
             sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
 
             (mkdir -p docker-rpi-emu \
                 && cd docker-rpi-emu \
-                && ($(git --git-dir=.git rev-parse --is-inside-work-tree) || git --git-dir=.git init .) \
+                && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
                 && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
                 && git checkout FETCH_HEAD)
 
             pip3 install git-archive-all
 
             IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
-            IMAGE_FILE=$IMAGE_NAME.img
-            [ -f $TOOLS_HOME/images/$IMAGE_FILE ] || {
+            IMAGE_FILE="$IMAGE_NAME".img
+            [ -f "$TOOLS_HOME"/images/"$IMAGE_FILE" ] || {
                 # unit MB
                 EXPAND_SIZE=1024
 
-                [ -d $TOOLS_HOME/images ] || mkdir -p $TOOLS_HOME/images
+                [ -d "$TOOLS_HOME"/images ] || mkdir -p "$TOOLS_HOME"/images
 
-                [[ -f $IMAGE_NAME.zip ]] || curl -LO $IMAGE_URL
+                [[ -f "$IMAGE_NAME".zip ]] || curl -LO "$IMAGE_URL"
 
-                unzip $IMAGE_NAME.zip -d /tmp
+                unzip "$IMAGE_NAME".zip -d /tmp
 
                 (cd /tmp \
-                    && dd if=/dev/zero bs=1048576 count=$EXPAND_SIZE >>$IMAGE_FILE \
-                    && mv $IMAGE_FILE $TOOLS_HOME/images/$IMAGE_FILE)
+                    && dd if=/dev/zero bs=1048576 count="$EXPAND_SIZE" >>"$IMAGE_FILE" \
+                    && mv "$IMAGE_FILE" "$TOOLS_HOME"/images/"$IMAGE_FILE")
 
                 (cd docker-rpi-emu/scripts \
-                    && sudo ./expand.sh $TOOLS_HOME/images/$IMAGE_FILE $EXPAND_SIZE)
+                    && sudo ./expand.sh "$TOOLS_HOME"/images/"$IMAGE_FILE" "$EXPAND_SIZE")
             }
-        }
+        fi
         ;;
 
     "Darwin")
@@ -189,6 +190,6 @@ case "$(uname)" in
 
     *)
         echo "Unknown os type"
-        die
+        exit 1
         ;;
 esac

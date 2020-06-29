@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -49,8 +49,7 @@ extend_sudo_timeout()
     if ${SUDO_EXTEND_TIME}; then
         # do not repeat!
         set +e
-        sudo grep -s '^Defaults\s\s*timestamp_timeout' ${ETC_SUDOERS} >/dev/null
-        if [ $? -eq 0 ]; then
+        if sudo grep -s '^Defaults\s\s*timestamp_timeout' ${ETC_SUDOERS} >/dev/null; then
             SUDO_EXTEND_TIME=false
             _why="Already present"
         fi

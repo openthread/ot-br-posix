@@ -61,9 +61,11 @@ with()
     # NOTE environment settings takes higher priority than default files.
     #
 
-    local value=$(printenv "$1")
+    local value
+    value=$(printenv "$1")
     if [[ -z $value ]]; then
         if [[ -f examples/platforms/$PLATFORM/default ]]; then
+            # shellcheck source=examples/platforms/raspbian/default
             value="$(. "examples/platforms/$PLATFORM/default" && eval echo "\${$1-}")"
         fi
     fi
