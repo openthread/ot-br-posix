@@ -265,10 +265,12 @@ void MdnsMojoPublisher::Process(const fd_set &aReadFdSet, const fd_set &aWriteFd
 
 MdnsMojoPublisher::~MdnsMojoPublisher()
 {
-    mMojoTaskRunner->PostTask(FROM_HERE,
-                              base::BindOnce(&MdnsMojoPublisher::TearDownMojoThreads, base::Unretained(this)));
-
-    mMojoCoreThread->join();
+    if (mMojoCoreThread)
+    {
+        mMojoTaskRunner->PostTask(FROM_HERE,
+                                  base::BindOnce(&MdnsMojoPublisher::TearDownMojoThreads, base::Unretained(this)));
+        mMojoCoreThread->join();
+    }
 }
 
 Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext)
