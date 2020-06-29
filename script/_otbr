@@ -53,10 +53,7 @@ otbr_install()
     local otbr_options=()
 
     if [[ ${OTBR_OPTIONS} ]]; then
-        oIFS=$IFS
-        IFS=" "
         read -r -a otbr_options <<< "${OTBR_OPTIONS}"
-        IFS=$oIFS
     fi
 
     otbr_options=(
