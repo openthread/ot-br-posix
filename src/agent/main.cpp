@@ -200,7 +200,6 @@ int main(int argc, char *argv[])
     otbr::Ncp::Controller *ncp               = nullptr;
     bool                   verbose           = false;
     bool                   printRadioVersion = false;
-    otLogLevel             level;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -245,32 +244,6 @@ int main(int argc, char *argv[])
     otbrLogInit(kSyslogIdent, logLevel, verbose);
     otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
-
-    switch (logLevel)
-    {
-    case OTBR_LOG_EMERG:
-    case OTBR_LOG_ALERT:
-    case OTBR_LOG_CRIT:
-        level = OT_LOG_LEVEL_CRIT;
-        break;
-    case OTBR_LOG_ERR:
-    case OTBR_LOG_WARNING:
-        level = OT_LOG_LEVEL_WARN;
-        break;
-    case OTBR_LOG_NOTICE:
-        level = OT_LOG_LEVEL_NOTE;
-        break;
-    case OTBR_LOG_INFO:
-        level = OT_LOG_LEVEL_INFO;
-        break;
-    case OTBR_LOG_DEBUG:
-        level = OT_LOG_LEVEL_DEBG;
-        break;
-    default:
-        ExitNow(ret = EXIT_FAILURE);
-        break;
-    }
-    VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, ret = EXIT_FAILURE);
 
     ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
