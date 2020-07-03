@@ -517,7 +517,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
         int         rval;
         const char *value       = va_arg(args, const char *);
         size_t      valueLength = va_arg(args, size_t);
-        size_t      needed      = sizeof(AvahiStringList) + strlen(name) + valueLength;
+        size_t      needed      = sizeof(AvahiStringList) + strlen(name) + 1 + valueLength;
 
         VerifyOrExit(used + needed < sizeof(buffer), errno = EMSGSIZE);
         curr->next = last;
