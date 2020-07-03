@@ -517,9 +517,10 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
         int         rval;
         const char *value       = va_arg(args, const char *);
         size_t      valueLength = va_arg(args, size_t);
-        size_t      needed      = sizeof(AvahiStringList) + strlen(name) + valueLength;
+        // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
+        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + strlen(name) + valueLength + 1;
 
-        VerifyOrExit(used + needed < sizeof(buffer), errno = EMSGSIZE);
+        VerifyOrExit(used + needed <= sizeof(buffer), errno = EMSGSIZE);
         curr->next = last;
         last       = curr;
         rval       = sprintf(reinterpret_cast<char *>(curr->text), "%s=", name);
