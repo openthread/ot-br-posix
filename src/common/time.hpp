@@ -37,32 +37,36 @@
 
 namespace otbr {
 
-/**
- * This method returns the timestamp in miniseconds of @aTime.
- *
- * @param[in]   aTime   The time to convert to timestamp.
- *
- * @returns timestamp in miniseconds.
- *
- */
-inline unsigned long GetTimestamp(const timeval &aTime)
+class Time
 {
-    return static_cast<unsigned long>(aTime.tv_sec * 1000 + aTime.tv_usec / 1000);
-}
+public:
+    /**
+     * This method returns the timestamp in milliseconds of @aTime.
+     *
+     * @param[in]   aTime   The time to convert to timestamp.
+     *
+     * @returns timestamp in milliseconds.
+     *
+     */
+    static unsigned long GetTimestamp(const timeval &aTime)
+    {
+        return static_cast<unsigned long>(aTime.tv_sec * 1000 + aTime.tv_usec / 1000);
+    }
 
-/**
- * This method returns the current timestamp in miniseconds.
- *
- * @returns Current timestamp in miniseconds.
- *
- */
-inline unsigned long GetNow(void)
-{
-    timeval now;
+    /**
+     * This method returns the current timestamp in milliseconds.
+     *
+     * @returns Current timestamp in milliseconds.
+     *
+     */
+    static unsigned long GetNow(void)
+    {
+        timeval now;
 
-    gettimeofday(&now, nullptr);
-    return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
-}
+        gettimeofday(&now, nullptr);
+        return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
+    }
+};
 
 } // namespace otbr
 

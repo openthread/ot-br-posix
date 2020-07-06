@@ -58,7 +58,7 @@ AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
 {
     if (aTimeout)
     {
-        mTimeout = otbr::GetNow() + otbr::GetTimestamp(*aTimeout);
+        mTimeout = otbr::Time::GetNow() + otbr::Time::GetTimestamp(*aTimeout);
     }
     else
     {
@@ -152,7 +152,7 @@ void Poller::TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout)
     }
     else
     {
-        aTimer->mTimeout = otbr::GetNow() + otbr::GetTimestamp(*aTimeout);
+        aTimer->mTimeout = otbr::Time::GetNow() + otbr::Time::GetTimestamp(*aTimeout);
     }
 }
 
@@ -209,7 +209,7 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
         (*it)->mHappened = 0;
     }
 
-    unsigned long now = GetNow();
+    unsigned long now = Time::GetNow();
 
     for (Timers::iterator it = mTimers.begin(); it != mTimers.end(); ++it)
     {
@@ -252,7 +252,7 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
 
 void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    unsigned long now = GetNow();
+    unsigned long now = Time::GetNow();
 
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
