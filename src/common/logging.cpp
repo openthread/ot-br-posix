@@ -48,13 +48,6 @@ int otbrLogGetLevel(void)
     return sLevel;
 }
 
-/** Set the debug log level */
-void otbrLogSetLevel(int aLevel)
-{
-    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
-    sLevel = aLevel;
-}
-
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr)
 {
