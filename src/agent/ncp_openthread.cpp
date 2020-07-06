@@ -213,6 +213,10 @@ void ControllerOpenThread::Reset(void)
     otInstanceFinalize(mInstance);
     otSysDeinit();
     Init();
+    for (auto &handler : mResetHandlers)
+    {
+        handler();
+    }
     sReset = false;
 }
 
@@ -277,6 +281,11 @@ void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point a
                                          const std::function<void(void)> &     aTask)
 {
     mTimers.insert({aTimePoint, aTask});
+}
+
+void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
+{
+    mResetHandlers.emplace_back(std::move(aHandler));
 }
 
 Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl)
