@@ -36,6 +36,11 @@ option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
 option(OTBR_WEB           "Build Web GUI" OFF)
 
 
+if(NOT CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
+
 if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 11)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
