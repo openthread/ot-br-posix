@@ -159,6 +159,8 @@ int main()
                             TEST_ASSERT(api->GetStableNetworkData(stableNetworkData) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetChildTable(childTable) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetNeighborTable(neighborTable) == OTBR_ERROR_NONE);
+                            printf("neighborTable size %zu\n", neighborTable.size());
+                            printf("childTable size %zu\n", childTable.size());
                             TEST_ASSERT(neighborTable.size() == 1);
                             TEST_ASSERT(childTable.size() == 1);
                             TEST_ASSERT(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
