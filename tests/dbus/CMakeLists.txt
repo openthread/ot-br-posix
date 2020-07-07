@@ -53,3 +53,4 @@ add_test(
 set_tests_properties(dbus-client PROPERTIES
     ENVIRONMENT CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
 )
+set_tests_properties(dbus-client PROPERTIES TIMEOUT 120)
