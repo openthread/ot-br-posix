@@ -178,7 +178,7 @@ main()
                 do_build
                 ;;
             check)
-                print_result do_check
+                do_check
                 ;;
             clean)
                 do_clean

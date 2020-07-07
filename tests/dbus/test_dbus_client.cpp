@@ -33,8 +33,8 @@
 
 #include <memory>
 
-#include <unistd.h>
 #include <dbus/dbus.h>
+#include <unistd.h>
 
 #include "common/code_utils.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
@@ -49,14 +49,14 @@ using otbr::DBus::LinkModeConfig;
 using otbr::DBus::OnMeshPrefix;
 using otbr::DBus::ThreadApiDBus;
 
-#define TEST_ASSERT(x)                                                     \
-    do                                                                     \
-    {                                                                      \
-        if (!(x))                                                          \
-        {                                                                  \
-            fprintf(stderr, "Assert failed at %s:%d", __FILE__, __LINE__); \
-            exit(EXIT_FAILURE);                                            \
-        }                                                                  \
+#define TEST_ASSERT(x)                                              \
+    do                                                              \
+    {                                                               \
+        if (!(x))                                                   \
+        {                                                           \
+            printf("Assert failed at %s:%d\n", __FILE__, __LINE__); \
+            exit(EXIT_FAILURE);                                     \
+        }                                                           \
     } while (false)
 
 struct DBusConnectionDeleter
@@ -133,7 +133,7 @@ int main()
         api->Attach("Test", 0x3456, extpanid, masterKey, {}, 1 << channel,
                     [&api, channel, extpanid](ClientError aError) {
                         printf("Attach result %d\n", static_cast<int>(aError));
-                        sleep(5);
+                        sleep(10);
                         uint64_t extpanidCheck;
                         if (aError == OTBR_ERROR_NONE)
                         {
