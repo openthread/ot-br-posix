@@ -1006,21 +1006,28 @@ private:
     /**
      * This method handle joiner event (callback function).
      *
-     * @param[in]   aEvent      The joiner event.
-     * @param[in]   aJoinerId   A pointer to the joiner id.
-     * @param[in]   aContext    A pointer to the context.
+     * @param[in]  aEvent       The joiner event type.
+     * @param[in]  aJoinerInfo  A pointer to the Joiner Info.
+     * @param[in]  aJoinerId    A pointer to the Joiner ID (if not known, it will be NULL).
+     * @param[in]  aContext     A pointer to application-specific context.
      *
      */
-    static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent, const otExtAddress *aJoinerId, void *aContext);
+    static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                  const otJoinerInfo *      aJoinerInfo,
+                                  const otExtAddress *      aJoinerId,
+                                  void *                    aContext);
 
     /**
      * This method handle joiner event.
      *
-     * @param[in]   aEvent      The joiner event.
-     * @param[in]   aJoinerId   A pointer to the joiner id.
+     * @param[in]  aEvent       The joiner event type.
+     * @param[in]  aJoinerInfo  A pointer to the Joiner Info.
+     * @param[in]  aJoinerId    A pointer to the Joiner ID (if not known, it will be NULL).
      *
      */
-    void HandleJoinerEvent(otCommissionerJoinerEvent aEvent, const otExtAddress *aJoinerId);
+    void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                           const otJoinerInfo *      aJoinerInfo,
+                           const otExtAddress *      aJoinerId);
 
     /**
      * This method convert thread network state to string.

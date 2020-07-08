@@ -1046,13 +1046,19 @@ void UbusServer::HandleStateChanged(otCommissionerState aState)
     }
 }
 
-void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent, const otExtAddress *aJoinerId, void *aContext)
+void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                   const otJoinerInfo *      aJoinerInfo,
+                                   const otExtAddress *      aJoinerId,
+                                   void *                    aContext)
 {
-    static_cast<UbusServer *>(aContext)->HandleJoinerEvent(aEvent, aJoinerId);
+    static_cast<UbusServer *>(aContext)->HandleJoinerEvent(aEvent, aJoinerInfo, aJoinerId);
 }
 
-void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent, const otExtAddress *aJoinerId)
+void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                   const otJoinerInfo *      aJoinerInfo,
+                                   const otExtAddress *      aJoinerId)
 {
+    OT_UNUSED_VARIABLE(aJoinerInfo);
     OT_UNUSED_VARIABLE(aJoinerId);
 
     switch (aEvent)
@@ -1229,13 +1235,24 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
 
             jsonTable = blobmsg_open_table(&mBuf, nullptr);
 
-            blobmsg_add_string(&mBuf, "pskc", joinerInfo.mPsk);
-            OutputBytes(joinerInfo.mEui64.m8, sizeof(joinerInfo.mEui64.m8), eui64);
-            blobmsg_add_string(&mBuf, "eui64", eui64);
-            if (joinerInfo.mAny)
+            blobmsg_add_string(&mBuf, "pskd", joinerInfo.mPskd.m8);
+
+            switch (joinerInfo.mType)
+            {
+            case OT_JOINER_INFO_TYPE_ANY:
                 blobmsg_add_u16(&mBuf, "isAny", 1);
-            else
+                break;
+            case OT_JOINER_INFO_TYPE_EUI64:
                 blobmsg_add_u16(&mBuf, "isAny", 0);
+                OutputBytes(joinerInfo.mSharedId.mEui64.m8, sizeof(joinerInfo.mSharedId.mEui64.m8), eui64);
+                blobmsg_add_string(&mBuf, "eui64", eui64);
+                break;
+            case OT_JOINER_INFO_TYPE_DISCERNER:
+                blobmsg_add_u16(&mBuf, "isAny", 0);
+                blobmsg_add_u64(&mBuf, "discernerValue", joinerInfo.mSharedId.mDiscerner.mValue);
+                blobmsg_add_u16(&mBuf, "discernerLength", joinerInfo.mSharedId.mDiscerner.mLength);
+                break;
+            }
 
             blobmsg_close_table(&mBuf, jsonTable);
 
@@ -1574,7 +1591,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             char *addr = blobmsg_get_string(tb[SETNETWORK]);
             VerifyOrExit(Hex2Bin(addr, extAddr.m8, OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE, error = OT_ERROR_PARSE);
 
-            SuccessOrExit(error = otLinkFilterRemoveAddress(mController->GetInstance(), &extAddr));
+            otLinkFilterRemoveAddress(mController->GetInstance(), &extAddr);
         }
     }
     else if (!strcmp(aAction, "macfiltersetstate"))
@@ -1588,18 +1605,15 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
 
             if (strcmp(state, "disable") == 0)
             {
-                SuccessOrExit(error = otLinkFilterSetAddressMode(mController->GetInstance(),
-                                                                 OT_MAC_FILTER_ADDRESS_MODE_DISABLED));
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_DISABLED);
             }
             else if (strcmp(state, "whitelist") == 0)
             {
-                SuccessOrExit(error = otLinkFilterSetAddressMode(mController->GetInstance(),
-                                                                 OT_MAC_FILTER_ADDRESS_MODE_WHITELIST));
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_WHITELIST);
             }
             else if (strcmp(state, "blacklist") == 0)
             {
-                SuccessOrExit(error = otLinkFilterSetAddressMode(mController->GetInstance(),
-                                                                 OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST));
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST);
             }
         }
     }
