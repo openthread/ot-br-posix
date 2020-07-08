@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-cmake_minimum_required(VERSION 3.11.4)
+cmake_minimum_required(VERSION 3.10.2)
 project(openthread-br VERSION 0.2.0)
 
 

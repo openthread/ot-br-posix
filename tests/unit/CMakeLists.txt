@@ -40,7 +40,8 @@ target_include_directories(otbr-test-unit PRIVATE
 target_link_libraries(otbr-test-unit
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-common>
     $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:otbr-mdns>
-    ${CPPUTEST_LINK_LIBRARIES}
+    $<$<BOOL:${CPPUTEST_LIBRARY_DIRS}>:-L$<JOIN:${CPPUTEST_LIBRARY_DIRS}," -L">>
+    ${CPPUTEST_LIBRARIES}
     mbedtls
     otbr-common
     otbr-utils
