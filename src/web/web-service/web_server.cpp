@@ -59,8 +59,8 @@
 
 namespace otbr {
 namespace Web {
-namespace {
-void EscapeHtml(std::string &content)
+
+static void EscapeHtml(std::string &content)
 {
     std::string output;
 
@@ -92,7 +92,6 @@ void EscapeHtml(std::string &content)
 
     output.swap(content);
 }
-} // namespace
 
 WebServer::WebServer(void)
     : mServer(new HttpServer())
