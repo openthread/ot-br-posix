@@ -152,7 +152,7 @@ nat64_start()
 {
     with NAT64 || return 0
 
-    if [ -f /.dockerenv ]; then
+    if with DOCKER; then
         service tayga start || die 'Failed to start tayga'
     elif have systemctl; then
         sudo systemctl start tayga || die 'Failed to start tayga!'
@@ -164,7 +164,7 @@ nat64_stop()
 {
     with NAT64 || return 0
 
-    if [ -f /.dockerenv ]; then
+    if with DOCKER; then
         service tayga stop || true
     elif have systemctl; then
         sudo systemctl stop tayga || true
