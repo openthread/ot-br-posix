@@ -65,7 +65,9 @@ install_packages_apt()
     without DNS64 || {
         sudo apt-get install --no-install-recommends -y bind9
         # Resolvconf cannot be installed inside docker environment
-        [ -f /.dockerenv ] || sudo apt-get install --no-install-recommends -y resolvconf
+        if without DOCKER; then
+            sudo apt-get install --no-install-recommends -y resolvconf
+        fi
     }
 
     # network-manager

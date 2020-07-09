@@ -82,7 +82,9 @@ dns64_install()
 
     service_name="$(_detect_service_name)"
 
-    [ -f /.dockerenv ] || sudo sh -c "echo \"nameserver $DNS64_NAMESERVER_ADDR\" >> $RESOLV_CONF_HEAD"
+    if without DOCKER; then
+        sudo sh -c "echo \"nameserver $DNS64_NAMESERVER_ADDR\" >> $RESOLV_CONF_HEAD"
+    fi
 
     if have systemctl; then
         sudo systemctl stop dnsmasq || true
@@ -92,7 +94,9 @@ dns64_install()
         sudo systemctl start "${service_name}" || die 'Failed to start bind9!'
     fi
 
-    [ -f /.dockerenv ] || dns64_update_resolvconf
+    if without DOCKER; then
+        dns64_update_resolvconf
+    fi
 }
 
 dns64_uninstall()
@@ -112,7 +116,9 @@ dns64_uninstall()
 
     sudo sed -i '/^nameserver '$DNS64_NAMESERVER_ADDR'/d' $RESOLV_CONF_HEAD || true
 
-    [ -f /.dockerenv ] || dns64_update_resolvconf
+    if without DOCKER; then
+        dns64_update_resolvconf
+    fi
 
     if have systemctl; then
         sudo systemctl stop "${service_name}" || true
