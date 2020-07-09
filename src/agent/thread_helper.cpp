@@ -317,13 +317,12 @@ void ThreadHelper::JoinerCallback(otError aError)
     if (aError != OT_ERROR_NONE)
     {
         otbrLog(OTBR_LOG_WARNING, "Failed to join Thread network: %s", otThreadErrorToString(aError));
-        LogOpenThreadResult("Stop Thread network", otIp6SetEnabled(mInstance, false));
         mJoinerHandler(aError);
         mJoinerHandler = nullptr;
     }
     else
     {
-        LogOpenThreadResult("Start Thread network", otIp6SetEnabled(mInstance, true));
+        LogOpenThreadResult("Start Thread network", otThreadSetEnabled(mInstance, true));
     }
 }
 

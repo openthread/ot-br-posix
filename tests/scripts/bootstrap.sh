@@ -68,14 +68,12 @@ install_openthread_binraries()
 {
     pip3 install -U cmake
     cd third_party/openthread/repo
+    mkdir -p build && cd build
 
-    local ot_build_dir
-    ot_build_dir=$(VIRTUAL_TIME=0 ./script/test clean build | grep 'Build files have been written to: ' | cut -d: -f2 | tr -d ' ')
+    cmake .. -GNinja -DOT_PLATFORM=simulation -DOT_COMMISSIONER=ON -DOT_JOINER=ON
+    ninja
+    sudo ninja install
 
-    cd -
-    sudo install -p "${ot_build_dir}"/examples/apps/ncp/ot-rcp /usr/bin/
-    sudo install -p "${ot_build_dir}"/examples/apps/cli/ot-cli-ftd /usr/bin/
-    sudo install -p "${ot_build_dir}"/examples/apps/cli/ot-cli-mtd /usr/bin/
     sudo apt-get install --no-install-recommends -y socat
 }
 

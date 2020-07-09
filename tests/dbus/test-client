@@ -55,7 +55,14 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
-    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
+    (sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.JoinerStart \
+        string:ABCDEF string:mock string:mock \
+        string:mock string:mock string:mock 2>&1 || true) | grep NotFound
     expect <<EOF &
 spawn ot-cli-mtd 2
 send "panid 0x3456\r\n"
@@ -86,8 +93,19 @@ sleep 5
 send "state\r\n"
 expect "leader"
 expect "Done"
+send "commissioner start\r\n"
+expect "Commissioner: active"
+send "commissioner joiner add * ABCDEF\r\n"
+expect "Done"
 wait
 EOF
+    sleep 7
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.JoinerStart \
+        string:ABCDEF string:mock string:mock \
+        string:mock string:mock string:mock
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sudo "${CMAKE_BINARY_DIR}"/tests/dbus/otbr-test-dbus-client
 }
 
