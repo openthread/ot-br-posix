@@ -54,15 +54,3 @@ target_link_libraries(otbr-mdns PRIVATE
     dns_sd
 )
 endif()
-
-if(OTBR_MDNS STREQUAL "mojo")
-add_library(otbr-mdns
-    mdns_mojo.cpp
-)
-target_compile_definitions(otbr-mdns PUBLIC
-    OTBR_ENABLE_MDNS_MOJO=1
-)
-target_link_libraries(otbr-mdns PRIVATE
-    otbr-config
-)
-endif()

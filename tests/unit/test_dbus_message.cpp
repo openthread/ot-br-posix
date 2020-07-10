@@ -49,12 +49,16 @@ struct TestStruct
     std::string name;
 };
 
-template <> struct otbr::DBus::DBusTypeTrait<TestStruct>
+namespace otbr {
+namespace DBus {
+template <> struct DBusTypeTrait<TestStruct>
 {
     static constexpr const char *TYPE_AS_STRING =
         //{uint8, uint32, string}
         "(yus)";
 };
+} // namespace DBus
+} // namespace otbr
 
 bool operator==(const TestStruct &aLhs, const TestStruct &aRhs)
 {
@@ -165,7 +169,7 @@ TEST(DBusMessage, TestVectorMessage)
     tuple<vector<uint8_t>, vector<uint16_t>, vector<uint32_t>, vector<uint64_t>, vector<int16_t>, vector<int32_t>,
           vector<int64_t>>
         getVals({}, {}, {}, {}, {}, {}, {});
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -181,7 +185,7 @@ TEST(DBusMessage, TestArrayMessage)
     tuple<array<uint8_t, 4>> setVals({1, 2, 3, 4});
     tuple<array<uint8_t, 4>> getVals({0, 0, 0, 0});
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -201,7 +205,7 @@ TEST(DBusMessage, TestNumberMessage)
         std::make_tuple<uint8_t, uint16_t, uint32_t, uint64_t, bool, int16_t, int32_t, int64_t>(0, 0, 0, 0, false, 0, 0,
                                                                                                 0);
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -218,7 +222,7 @@ TEST(DBusMessage, TestStructMessage)
         0x03, {0x04, 0x05}, {"hello", "world"}, {{1, 0xf0a, "test1"}, {2, 0xf0b, "test2"}});
     tuple<uint8_t, vector<int32_t>, vector<string>, vector<TestStruct>> getVals(0, {}, {}, {});
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -234,7 +238,7 @@ TEST(DBusMessage, TestOtbrChannelQuality)
     tuple<std::vector<otbr::DBus::ChannelQuality>> setVals({{1, 2}});
     tuple<std::vector<otbr::DBus::ChannelQuality>> getVals;
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -251,7 +255,7 @@ TEST(DBusMessage, TestOtbrChildInfo)
         {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false, true}});
     tuple<std::vector<otbr::DBus::ChildInfo>> getVals;
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -268,7 +272,7 @@ TEST(DBusMessage, TestOtbrNeighborInfo)
         {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false, true}});
     tuple<std::vector<otbr::DBus::NeighborInfo>> getVals;
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -284,7 +288,7 @@ TEST(DBusMessage, TestOtbrLeaderData)
     tuple<std::vector<otbr::DBus::LeaderData>> setVals({{1, 2, 3, 4, 5}});
     tuple<std::vector<otbr::DBus::LeaderData>> getVals;
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -300,7 +304,7 @@ TEST(DBusMessage, TestOtbrActiveScanResults)
     tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true}});
     tuple<std::vector<otbr::DBus::ActiveScanResult>> getVals;
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
@@ -318,7 +322,7 @@ TEST(DBusMessage, TestOtbrExternalRoute)
           true}});
     tuple<std::vector<otbr::DBus::ExternalRoute>> getVals;
 
-    CHECK(msg != NULL);
+    CHECK(msg != nullptr);
 
     CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
     CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);

@@ -46,9 +46,9 @@
 namespace otbr {
 namespace ubus {
 
-static UbusServer *sUbusServerInstance = NULL;
+static UbusServer *sUbusServerInstance = nullptr;
 static int         sUbusEfd            = -1;
-static void *      sJsonUri            = NULL;
+static void *      sJsonUri            = nullptr;
 static int         sBufNum;
 static std::mutex *sNcpThreadMutex;
 
@@ -169,45 +169,45 @@ static const struct blobmsg_policy mgmtsetPolicy[MGMTSET_MAX] = {
 };
 
 static const struct ubus_method otbrMethods[] = {
-    {"scan", &UbusServer::UbusScanHandler, 0, 0, NULL, 0},
-    {"channel", &UbusServer::UbusChannelHandler, 0, 0, NULL, 0},
+    {"scan", &UbusServer::UbusScanHandler, 0, 0, nullptr, 0},
+    {"channel", &UbusServer::UbusChannelHandler, 0, 0, nullptr, 0},
     {"setchannel", &UbusServer::UbusSetChannelHandler, 0, 0, setChannelPolicy, ARRAY_SIZE(setChannelPolicy)},
-    {"networkname", &UbusServer::UbusNetworknameHandler, 0, 0, NULL, 0},
+    {"networkname", &UbusServer::UbusNetworknameHandler, 0, 0, nullptr, 0},
     {"setnetworkname", &UbusServer::UbusSetNetworknameHandler, 0, 0, setNetworknamePolicy,
      ARRAY_SIZE(setNetworknamePolicy)},
-    {"state", &UbusServer::UbusStateHandler, 0, 0, NULL, 0},
-    {"panid", &UbusServer::UbusPanIdHandler, 0, 0, NULL, 0},
+    {"state", &UbusServer::UbusStateHandler, 0, 0, nullptr, 0},
+    {"panid", &UbusServer::UbusPanIdHandler, 0, 0, nullptr, 0},
     {"setpanid", &UbusServer::UbusSetPanIdHandler, 0, 0, setPanIdPolicy, ARRAY_SIZE(setPanIdPolicy)},
-    {"rloc16", &UbusServer::UbusRloc16Handler, 0, 0, NULL, 0},
-    {"extpanid", &UbusServer::UbusExtPanIdHandler, 0, 0, NULL, 0},
+    {"rloc16", &UbusServer::UbusRloc16Handler, 0, 0, nullptr, 0},
+    {"extpanid", &UbusServer::UbusExtPanIdHandler, 0, 0, nullptr, 0},
     {"setextpanid", &UbusServer::UbusSetExtPanIdHandler, 0, 0, setExtPanIdPolicy, ARRAY_SIZE(setExtPanIdPolicy)},
-    {"masterkey", &UbusServer::UbusMasterkeyHandler, 0, 0, NULL, 0},
+    {"masterkey", &UbusServer::UbusMasterkeyHandler, 0, 0, nullptr, 0},
     {"setmasterkey", &UbusServer::UbusSetMasterkeyHandler, 0, 0, setMasterkeyPolicy, ARRAY_SIZE(setMasterkeyPolicy)},
-    {"pskc", &UbusServer::UbusPskcHandler, 0, 0, NULL, 0},
+    {"pskc", &UbusServer::UbusPskcHandler, 0, 0, nullptr, 0},
     {"setpskc", &UbusServer::UbusSetPskcHandler, 0, 0, setPskcPolicy, ARRAY_SIZE(setPskcPolicy)},
-    {"threadstart", &UbusServer::UbusThreadStartHandler, 0, 0, NULL, 0},
-    {"threadstop", &UbusServer::UbusThreadStopHandler, 0, 0, NULL, 0},
-    {"neighbor", &UbusServer::UbusNeighborHandler, 0, 0, NULL, 0},
-    {"parent", &UbusServer::UbusParentHandler, 0, 0, NULL, 0},
-    {"mode", &UbusServer::UbusModeHandler, 0, 0, NULL, 0},
+    {"threadstart", &UbusServer::UbusThreadStartHandler, 0, 0, nullptr, 0},
+    {"threadstop", &UbusServer::UbusThreadStopHandler, 0, 0, nullptr, 0},
+    {"neighbor", &UbusServer::UbusNeighborHandler, 0, 0, nullptr, 0},
+    {"parent", &UbusServer::UbusParentHandler, 0, 0, nullptr, 0},
+    {"mode", &UbusServer::UbusModeHandler, 0, 0, nullptr, 0},
     {"setmode", &UbusServer::UbusSetModeHandler, 0, 0, setModePolicy, ARRAY_SIZE(setModePolicy)},
-    {"leaderpartitionid", &UbusServer::UbusLeaderPartitionIdHandler, 0, 0, NULL, 0},
+    {"leaderpartitionid", &UbusServer::UbusLeaderPartitionIdHandler, 0, 0, nullptr, 0},
     {"setleaderpartitionid", &UbusServer::UbusSetLeaderPartitionIdHandler, 0, 0, setLeaderPartitionIdPolicy,
      ARRAY_SIZE(setLeaderPartitionIdPolicy)},
-    {"leave", &UbusServer::UbusLeaveHandler, 0, 0, NULL, 0},
-    {"leaderdata", &UbusServer::UbusLeaderdataHandler, 0, 0, NULL, 0},
-    {"networkdata", &UbusServer::UbusNetworkdataHandler, 0, 0, NULL, 0},
-    {"commissionerstart", &UbusServer::UbusCommissionerStartHandler, 0, 0, NULL, 0},
-    {"joinernum", &UbusServer::UbusJoinerNumHandler, 0, 0, NULL, 0},
-    {"joinerremove", &UbusServer::UbusJoinerRemoveHandler, 0, 0, NULL, 0},
+    {"leave", &UbusServer::UbusLeaveHandler, 0, 0, nullptr, 0},
+    {"leaderdata", &UbusServer::UbusLeaderdataHandler, 0, 0, nullptr, 0},
+    {"networkdata", &UbusServer::UbusNetworkdataHandler, 0, 0, nullptr, 0},
+    {"commissionerstart", &UbusServer::UbusCommissionerStartHandler, 0, 0, nullptr, 0},
+    {"joinernum", &UbusServer::UbusJoinerNumHandler, 0, 0, nullptr, 0},
+    {"joinerremove", &UbusServer::UbusJoinerRemoveHandler, 0, 0, nullptr, 0},
     {"macfiltersetstate", &UbusServer::UbusMacfilterSetStateHandler, 0, 0, macfilterSetStatePolicy,
      ARRAY_SIZE(macfilterSetStatePolicy)},
     {"macfilteradd", &UbusServer::UbusMacfilterAddHandler, 0, 0, macfilterAddPolicy, ARRAY_SIZE(macfilterAddPolicy)},
     {"macfilterremove", &UbusServer::UbusMacfilterRemoveHandler, 0, 0, macfilterRemovePolicy,
      ARRAY_SIZE(macfilterRemovePolicy)},
-    {"macfilterclear", &UbusServer::UbusMacfilterClearHandler, 0, 0, NULL, 0},
-    {"macfilterstate", &UbusServer::UbusMacfilterStateHandler, 0, 0, NULL, 0},
-    {"macfilteraddr", &UbusServer::UbusMacfilterAddrHandler, 0, 0, NULL, 0},
+    {"macfilterclear", &UbusServer::UbusMacfilterClearHandler, 0, 0, nullptr, 0},
+    {"macfilterstate", &UbusServer::UbusMacfilterStateHandler, 0, 0, nullptr, 0},
+    {"macfilteraddr", &UbusServer::UbusMacfilterAddrHandler, 0, 0, nullptr, 0},
     {"joineradd", &UbusServer::UbusJoinerAddHandler, 0, 0, addJoinerPolicy, ARRAY_SIZE(addJoinerPolicy)},
     {"mgmtset", &UbusServer::UbusMgmtsetHandler, 0, 0, mgmtsetPolicy, ARRAY_SIZE(mgmtsetPolicy)},
 };
@@ -218,9 +218,9 @@ static struct ubus_object otbr = {
     avl : {},
     name : "otbr",
     id : 0,
-    path : NULL,
+    path : nullptr,
     type : &otbrObjType,
-    subscribe_cb : NULL,
+    subscribe_cb : nullptr,
     has_subscribers : false,
     methods : otbrMethods,
     n_methods : ARRAY_SIZE(otbrMethods),
@@ -263,19 +263,19 @@ void UbusServer::AppendResult(otError aError, struct ubus_context *aContext, str
 
 void UbusServer::HandleActiveScanResultDetail(otActiveScanResult *aResult)
 {
-    void *jsonList = NULL;
+    void *jsonList = nullptr;
 
     char panidstring[PANID_LENGTH];
     char xpanidstring[XPANID_LENGTH] = "";
 
-    if (aResult == NULL)
+    if (aResult == nullptr)
     {
         blobmsg_close_array(&mBuf, sJsonUri);
         mIfFinishScan = true;
         goto exit;
     }
 
-    jsonList = blobmsg_open_table(&mBuf, NULL);
+    jsonList = blobmsg_open_table(&mBuf, nullptr);
 
     blobmsg_add_u32(&mBuf, "IsJoinable", aResult->mIsJoinable);
 
@@ -750,8 +750,8 @@ int UbusServer::UbusParentHandlerDetail(struct ubus_context *     aContext,
     otRouterInfo parentInfo;
     char         extAddress[XPANID_LENGTH] = "";
     char         transfer[XPANID_LENGTH]   = "";
-    void *       jsonList                  = NULL;
-    void *       jsonArray                 = NULL;
+    void *       jsonList                  = nullptr;
+    void *       jsonArray                 = nullptr;
 
     blob_buf_init(&mBuf, 0);
 
@@ -796,7 +796,7 @@ int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
     otNeighborInfo         neighborInfo;
     otNeighborInfoIterator iterator                  = OT_NEIGHBOR_INFO_ITERATOR_INIT;
     char                   transfer[XPANID_LENGTH]   = "";
-    void *                 jsonList                  = NULL;
+    void *                 jsonList                  = nullptr;
     char                   mode[5]                   = "";
     char                   extAddress[XPANID_LENGTH] = "";
 
@@ -807,7 +807,7 @@ int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
     sNcpThreadMutex->lock();
     while (otThreadGetNextNeighborInfo(mController->GetInstance(), &iterator, &neighborInfo) == OT_ERROR_NONE)
     {
-        jsonList = blobmsg_open_table(&mBuf, NULL);
+        jsonList = blobmsg_open_table(&mBuf, nullptr);
 
         blobmsg_add_string(&mBuf, "Role", neighborInfo.mIsChild ? "C" : "R");
 
@@ -883,7 +883,7 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
     SuccessOrExit(error = otDatasetGetActive(mController->GetInstance(), &dataset));
 
     blobmsg_parse(mgmtsetPolicy, MGMTSET_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-    if (tb[MASTERKEY] != NULL)
+    if (tb[MASTERKEY] != nullptr)
     {
         dataset.mComponents.mIsMasterKeyPresent = true;
         VerifyOrExit((length = Hex2Bin(blobmsg_get_string(tb[MASTERKEY]), dataset.mMasterKey.m8,
@@ -891,7 +891,7 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
                      error = OT_ERROR_PARSE);
         length = 0;
     }
-    if (tb[NETWORKNAME] != NULL)
+    if (tb[NETWORKNAME] != nullptr)
     {
         dataset.mComponents.mIsNetworkNamePresent = true;
         VerifyOrExit((length = static_cast<int>(strlen(blobmsg_get_string(tb[NETWORKNAME])))) <=
@@ -901,26 +901,26 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
         memcpy(dataset.mNetworkName.m8, blobmsg_get_string(tb[NETWORKNAME]), static_cast<size_t>(length));
         length = 0;
     }
-    if (tb[EXTPANID] != NULL)
+    if (tb[EXTPANID] != nullptr)
     {
         dataset.mComponents.mIsExtendedPanIdPresent = true;
         VerifyOrExit(Hex2Bin(blobmsg_get_string(tb[EXTPANID]), dataset.mExtendedPanId.m8,
                              sizeof(dataset.mExtendedPanId.m8)) >= 0,
                      error = OT_ERROR_PARSE);
     }
-    if (tb[PANID] != NULL)
+    if (tb[PANID] != nullptr)
     {
         dataset.mComponents.mIsPanIdPresent = true;
         SuccessOrExit(error = ParseLong(blobmsg_get_string(tb[PANID]), value));
         dataset.mPanId = static_cast<otPanId>(value);
     }
-    if (tb[CHANNEL] != NULL)
+    if (tb[CHANNEL] != nullptr)
     {
         dataset.mComponents.mIsChannelPresent = true;
         SuccessOrExit(error = ParseLong(blobmsg_get_string(tb[CHANNEL]), value));
         dataset.mChannel = static_cast<uint16_t>(value);
     }
-    if (tb[PSKC] != NULL)
+    if (tb[PSKC] != nullptr)
     {
         dataset.mComponents.mIsPskcPresent = true;
         VerifyOrExit((length = Hex2Bin(blobmsg_get_string(tb[PSKC]), dataset.mPskc.m8, sizeof(dataset.mPskc.m8))) ==
@@ -967,19 +967,19 @@ int UbusServer::UbusCommissioner(struct ubus_context *     aContext,
     {
         struct blob_attr *  tb[ADD_JOINER_MAX];
         otExtAddress        addr;
-        const otExtAddress *addrPtr = NULL;
-        char *              pskd    = NULL;
+        const otExtAddress *addrPtr = nullptr;
+        char *              pskd    = nullptr;
 
         blobmsg_parse(addJoinerPolicy, ADD_JOINER_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[PSKD] != NULL)
+        if (tb[PSKD] != nullptr)
         {
             pskd = blobmsg_get_string(tb[PSKD]);
         }
-        if (tb[EUI64] != NULL)
+        if (tb[EUI64] != nullptr)
         {
             if (!strcmp(blobmsg_get_string(tb[EUI64]), "*"))
             {
-                addrPtr = NULL;
+                addrPtr = nullptr;
                 memset(&addr, 0, sizeof(addr));
             }
             else
@@ -998,14 +998,14 @@ int UbusServer::UbusCommissioner(struct ubus_context *     aContext,
     {
         struct blob_attr *  tb[SET_NETWORK_MAX];
         otExtAddress        addr;
-        const otExtAddress *addrPtr = NULL;
+        const otExtAddress *addrPtr = nullptr;
 
         blobmsg_parse(removeJoinerPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             if (strcmp(blobmsg_get_string(tb[SETNETWORK]), "*") == 0)
             {
-                addrPtr = NULL;
+                addrPtr = nullptr;
             }
             else
             {
@@ -1046,13 +1046,19 @@ void UbusServer::HandleStateChanged(otCommissionerState aState)
     }
 }
 
-void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent, const otExtAddress *aJoinerId, void *aContext)
+void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                   const otJoinerInfo *      aJoinerInfo,
+                                   const otExtAddress *      aJoinerId,
+                                   void *                    aContext)
 {
-    static_cast<UbusServer *>(aContext)->HandleJoinerEvent(aEvent, aJoinerId);
+    static_cast<UbusServer *>(aContext)->HandleJoinerEvent(aEvent, aJoinerInfo, aJoinerId);
 }
 
-void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent, const otExtAddress *aJoinerId)
+void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                   const otJoinerInfo *      aJoinerInfo,
+                                   const otExtAddress *      aJoinerId)
 {
+    OT_UNUSED_VARIABLE(aJoinerInfo);
     OT_UNUSED_VARIABLE(aJoinerId);
 
     switch (aEvent)
@@ -1188,7 +1194,7 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
     else if (!strcmp(aAction, "networkdata"))
     {
         ubus_send_reply(aContext, aRequest, mNetworkdataBuf.head);
-        if (time(NULL) - mSecond > 10)
+        if (time(nullptr) - mSecond > 10)
         {
             struct otIp6Address address;
             uint8_t             tlvTypes[OT_NETWORK_DIAGNOSTIC_TYPELIST_MAX_ENTRIES];
@@ -1207,14 +1213,14 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
 
             sBufNum = 0;
             otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count);
-            mSecond = time(NULL);
+            mSecond = time(nullptr);
         }
         goto exit;
     }
     else if (!strcmp(aAction, "joinernum"))
     {
-        void *       jsonTable = NULL;
-        void *       jsonArray = NULL;
+        void *       jsonTable = nullptr;
+        void *       jsonArray = nullptr;
         otJoinerInfo joinerInfo;
         uint16_t     iterator        = 0;
         int          joinerNum       = 0;
@@ -1227,15 +1233,26 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         {
             memset(eui64, 0, sizeof(eui64));
 
-            jsonTable = blobmsg_open_table(&mBuf, NULL);
+            jsonTable = blobmsg_open_table(&mBuf, nullptr);
 
-            blobmsg_add_string(&mBuf, "pskc", joinerInfo.mPsk);
-            OutputBytes(joinerInfo.mEui64.m8, sizeof(joinerInfo.mEui64.m8), eui64);
-            blobmsg_add_string(&mBuf, "eui64", eui64);
-            if (joinerInfo.mAny)
+            blobmsg_add_string(&mBuf, "pskd", joinerInfo.mPskd.m8);
+
+            switch (joinerInfo.mType)
+            {
+            case OT_JOINER_INFO_TYPE_ANY:
                 blobmsg_add_u16(&mBuf, "isAny", 1);
-            else
+                break;
+            case OT_JOINER_INFO_TYPE_EUI64:
                 blobmsg_add_u16(&mBuf, "isAny", 0);
+                OutputBytes(joinerInfo.mSharedId.mEui64.m8, sizeof(joinerInfo.mSharedId.mEui64.m8), eui64);
+                blobmsg_add_string(&mBuf, "eui64", eui64);
+                break;
+            case OT_JOINER_INFO_TYPE_DISCERNER:
+                blobmsg_add_u16(&mBuf, "isAny", 0);
+                blobmsg_add_u64(&mBuf, "discernerValue", joinerInfo.mSharedId.mDiscerner.mValue);
+                blobmsg_add_u16(&mBuf, "discernerLength", joinerInfo.mSharedId.mDiscerner.mLength);
+                break;
+            }
 
             blobmsg_close_table(&mBuf, jsonTable);
 
@@ -1319,8 +1336,8 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
 {
     uint16_t              rloc16;
     uint16_t              sockRloc16 = 0;
-    void *                jsonArray  = NULL;
-    void *                jsonItem   = NULL;
+    void *                jsonArray  = nullptr;
+    void *                jsonItem   = nullptr;
     char                  xrloc[10];
     otNetworkDiagTlv      diagTlv;
     otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
@@ -1427,7 +1444,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setNetworknamePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             char *newName = blobmsg_get_string(tb[SETNETWORK]);
             SuccessOrExit(error = otThreadSetNetworkName(mController->GetInstance(), newName));
@@ -1438,7 +1455,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setChannelPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             uint32_t channel = blobmsg_get_u32(tb[SETNETWORK]);
             SuccessOrExit(error = otLinkSetChannel(mController->GetInstance(), static_cast<uint8_t>(channel)));
@@ -1449,7 +1466,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setPanIdPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             long  value;
             char *panid = blobmsg_get_string(tb[SETNETWORK]);
@@ -1462,7 +1479,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setMasterkeyPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             otMasterKey key;
             char *      masterkey = blobmsg_get_string(tb[SETNETWORK]);
@@ -1476,7 +1493,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setPskcPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             otPskc pskc;
 
@@ -1490,7 +1507,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setExtPanIdPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             otExtendedPanId extPanId;
             char *          input = blobmsg_get_string(tb[SETNETWORK]);
@@ -1504,7 +1521,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setModePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             char *inputMode = blobmsg_get_string(tb[SETNETWORK]);
             for (char *ch = inputMode; *ch != '\0'; ch++)
@@ -1540,7 +1557,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(setLeaderPartitionIdPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             uint32_t input = blobmsg_get_u32(tb[SETNETWORK]);
             otThreadSetLocalLeaderPartitionId(mController->GetInstance(), input);
@@ -1552,7 +1569,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         otExtAddress      extAddr;
 
         blobmsg_parse(macfilterAddPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             char *addr = blobmsg_get_string(tb[SETNETWORK]);
 
@@ -1569,12 +1586,12 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         otExtAddress      extAddr;
 
         blobmsg_parse(macfilterRemovePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             char *addr = blobmsg_get_string(tb[SETNETWORK]);
             VerifyOrExit(Hex2Bin(addr, extAddr.m8, OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE, error = OT_ERROR_PARSE);
 
-            SuccessOrExit(error = otLinkFilterRemoveAddress(mController->GetInstance(), &extAddr));
+            otLinkFilterRemoveAddress(mController->GetInstance(), &extAddr);
         }
     }
     else if (!strcmp(aAction, "macfiltersetstate"))
@@ -1582,24 +1599,21 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         struct blob_attr *tb[SET_NETWORK_MAX];
 
         blobmsg_parse(macfilterSetStatePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != NULL)
+        if (tb[SETNETWORK] != nullptr)
         {
             char *state = blobmsg_get_string(tb[SETNETWORK]);
 
             if (strcmp(state, "disable") == 0)
             {
-                SuccessOrExit(error = otLinkFilterSetAddressMode(mController->GetInstance(),
-                                                                 OT_MAC_FILTER_ADDRESS_MODE_DISABLED));
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_DISABLED);
             }
             else if (strcmp(state, "whitelist") == 0)
             {
-                SuccessOrExit(error = otLinkFilterSetAddressMode(mController->GetInstance(),
-                                                                 OT_MAC_FILTER_ADDRESS_MODE_WHITELIST));
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_WHITELIST);
             }
             else if (strcmp(state, "blacklist") == 0)
             {
-                SuccessOrExit(error = otLinkFilterSetAddressMode(mController->GetInstance(),
-                                                                 OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST));
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST);
             }
         }
     }
@@ -1687,7 +1701,7 @@ void UbusServer::UbusConnectionLost(struct ubus_context *aContext)
 {
     OT_UNUSED_VARIABLE(aContext);
 
-    UbusReconnTimer(NULL);
+    UbusReconnTimer(nullptr);
 }
 
 int UbusServer::DisplayUbusInit(const char *aPath)
@@ -1725,13 +1739,13 @@ void UbusServer::DisplayUbusDone(void)
     if (mContext)
     {
         ubus_free(mContext);
-        mContext = NULL;
+        mContext = nullptr;
     }
 }
 
 void UbusServer::InstallUbusObject(void)
 {
-    char *path = NULL;
+    char *path = nullptr;
 
     if (-1 == DisplayUbusInit(path))
     {

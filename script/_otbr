@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #  Copyright (c) 2017, The OpenThread Authors.
 #  All rights reserved.
@@ -29,6 +29,7 @@
 
 readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 readonly OTBR_TOP_SRCDIR="$PWD"
+readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
 
 otbr_uninstall()
 {
@@ -40,8 +41,12 @@ otbr_uninstall()
     fi
     sudo killall otbr-web otbr-agent || true
 
-    (cd "${OTBR_TOP_BUILDDIR}" \
-        && sudo xargs rm < install_manifests.txt || true)
+    (
+        if cd "${OTBR_TOP_BUILDDIR}"; then
+            # shellcheck disable=SC2024
+            sudo xargs rm <install_manifests.txt || true
+        fi
+    )
     if have systemctl; then
         sudo systemctl daemon-reload
     fi
@@ -49,11 +54,18 @@ otbr_uninstall()
 
 otbr_install()
 {
-    local otbr_options=(
+    local otbr_options=()
+
+    if [[ ${OTBR_OPTIONS} ]]; then
+        read -r -a otbr_options <<<"${OTBR_OPTIONS}"
+    fi
+
+    otbr_options=(
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
+        "${otbr_options[@]}"
     )
 
     (mkdir -p "${OTBR_TOP_BUILDDIR}" \
@@ -69,7 +81,7 @@ otbr_install()
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
         sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else
-        >&2 echo ' *** WARNING: systemctl not found. otbr cannot start on boot.'
+        echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi
 }
 

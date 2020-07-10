@@ -26,14 +26,20 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-cmake_minimum_required(VERSION 3.11.4)
+cmake_minimum_required(VERSION 3.10.2)
 project(openthread-br VERSION 0.2.0)
 
 
-option(OTBR_DBUS    "Build DBus support" OFF)
-option(OTBR_OPENWRT "Build OpenWrt support" OFF)
-option(OTBR_WEB     "Build Web GUI" OFF)
+option(OTBR_DBUS          "Build DBus support" OFF)
+option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
+option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
+option(OTBR_WEB           "Build Web GUI" OFF)
 
+
+if(NOT CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 
 if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 11)
@@ -72,8 +78,8 @@ target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_definitions(otbr-config INTERFACE
-    "PACKAGE_NAME=\"OPENTHREAD_BR\""
-    "PACKAGE_VERSION=\"${OTBR_VERSION}\""
+    "OTBR_PACKAGE_NAME=\"OPENTHREAD_BR\""
+    "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
 )
 
 
@@ -101,8 +107,14 @@ if(OTBR_OPENWRT)
     )
 endif()
 
+if(OTBR_UNSECURE_JOIN)
+    target_compile_definitions(otbr-config INTERFACE
+        OTBR_ENABLE_UNSECURE_JOIN=1
+    )
+endif()
+
 set(OTBR_MDNS "avahi" CACHE STRING "MDNS service provider")
-set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder" "mojo")
+set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
 
 pkg_check_modules(SYSTEMD systemd)
 

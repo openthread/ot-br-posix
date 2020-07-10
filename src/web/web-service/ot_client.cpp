@@ -100,7 +100,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 {
     va_list args;
     int     ret;
-    char *  rval = NULL;
+    char *  rval = nullptr;
     ssize_t count;
     size_t  rxLength = 0;
 
@@ -141,7 +141,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
         FD_ZERO(&readFdSet);
         FD_SET(mSocket, &readFdSet);
 
-        ret = select(mSocket + 1, &readFdSet, NULL, NULL, &timeout);
+        ret = select(mSocket + 1, &readFdSet, nullptr, nullptr, &timeout);
         VerifyOrExit(ret != -1 || errno == EINTR);
         if (ret <= 0)
         {
@@ -155,7 +155,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
         mBuffer[rxLength] = '\0';
         done              = strstr(mBuffer, "Done\r\n");
 
-        if (done != NULL)
+        if (done != nullptr)
         {
             // remove trailing \r\n
             if (done - rval > 2)
@@ -179,9 +179,9 @@ int OpenThreadClient::Scan(WpanNetworkInfo *aNetworks, int aLength)
 
     mTimeout = 5000;
     result   = Execute("scan");
-    VerifyOrExit(result != NULL);
+    VerifyOrExit(result != nullptr);
 
-    for (result = strtok(result, "\r\n"); result != NULL && rval < aLength; result = strtok(NULL, "\r\n"))
+    for (result = strtok(result, "\r\n"); result != nullptr && rval < aLength; result = strtok(nullptr, "\r\n"))
     {
         static const char kCliPrompt[] = "> ";
         char *            cliPrompt;
@@ -190,7 +190,7 @@ int OpenThreadClient::Scan(WpanNetworkInfo *aNetworks, int aLength)
         int               lqi;
 
         // remove prompt
-        if ((cliPrompt = strstr(result, kCliPrompt)) != NULL)
+        if ((cliPrompt = strstr(result, kCliPrompt)) != nullptr)
         {
             if (cliPrompt == result)
             {
@@ -246,9 +246,9 @@ bool OpenThreadClient::FactoryReset(void)
     VerifyOrExit(rval = Connect());
 
     result = Execute("version");
-    VerifyOrExit(result != NULL);
+    VerifyOrExit(result != nullptr);
 
-    rval = strstr(result, "OPENTHREAD") != NULL;
+    rval = strstr(result, "OPENTHREAD") != nullptr;
 
 exit:
     return rval;

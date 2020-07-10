@@ -30,13 +30,14 @@
 #       This script starts all border router services.
 #
 
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 . script/_nat64
 . script/_dns64
 
 main()
 {
-    . $BEFORE_HOOK
+    . "$BEFORE_HOOK"
     sudo sysctl --system
     nat64_start || die 'Failed to start NAT64!'
     dns64_start || die 'Failed to start DNS64!'
@@ -48,14 +49,14 @@ main()
         systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
     elif have service; then
         sudo service rsyslog status || sudo service rsyslog start || die 'Failed to start rsyslog!'
-        sudo service dbus status || sudo service dbus start  || die 'Failed to start dbus!'
-        sudo service avahi-daemon status || sudo service avahi-daemon start  || die 'Failed to start avahi!'
+        sudo service dbus status || sudo service dbus start || die 'Failed to start dbus!'
+        sudo service avahi-daemon status || sudo service avahi-daemon start || die 'Failed to start avahi!'
         sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
         sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
     else
         die 'Unable to find service manager. Try script/console to start in console mode!'
     fi
-    . $AFTER_HOOK
+    . "$AFTER_HOOK"
 }
 
 main

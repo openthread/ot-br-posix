@@ -101,6 +101,7 @@ otbrError DBusThreadObject::Init(void)
     auto      threadHelper = mNcp->GetThreadHelper();
 
     threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    mNcp->RegisterResetHandler(std::bind(&DBusThreadObject::NcpResetHandler, this));
 
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCAN_METHOD,
                    std::bind(&DBusThreadObject::ScanHandler, this, _1));
@@ -196,6 +197,13 @@ void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, GetDeviceRoleName(aDeviceRole));
 }
 
+void DBusThreadObject::NcpResetHandler(void)
+{
+    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
+                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
+}
+
 void DBusThreadObject::ScanHandler(DBusRequest &aRequest)
 {
     auto threadHelper = mNcp->GetThreadHelper();
@@ -267,18 +275,11 @@ void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
     aRequest.ReplyOtResult(OT_ERROR_NONE);
     otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
     mNcp->Reset();
-    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
-    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
-                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
     mNcp->Reset();
-    mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
-    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
-                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
-
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
@@ -309,6 +310,7 @@ void DBusThreadObject::JoinerStopHandler(DBusRequest &aRequest)
 
 void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 {
+#ifdef OTBR_ENABLE_UNSECURE_JOIN
     auto     threadHelper = mNcp->GetThreadHelper();
     uint16_t port;
     uint32_t timeout;
@@ -322,6 +324,9 @@ void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
     {
         aRequest.ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
     }
+#else
+    aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
+#endif
 }
 
 void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)

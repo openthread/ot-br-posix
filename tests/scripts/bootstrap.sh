@@ -29,13 +29,8 @@
 
 set -euxo pipefail
 
-TOOLS_HOME=$HOME/.cache/tools
-[[ -d $TOOLS_HOME ]] || mkdir -p $TOOLS_HOME
-
-die() {
-	echo " *** ERROR: " $*
-	exit 1
-}
+TOOLS_HOME="$HOME"/.cache/tools
+[[ -d $TOOLS_HOME ]] || mkdir -p "$TOOLS_HOME"
 
 disable_install_recommends()
 {
@@ -51,9 +46,10 @@ APT::Get::Install-Suggests "false";
 EOF
 }
 
-install_common_dependencies() {
+install_common_dependencies()
+{
     # Common dependencies
-    sudo apt-get install -y --no-install-recommends \
+    sudo apt-get install --no-install-recommends -y \
         libdbus-1-dev \
         ninja-build \
         doxygen \
@@ -68,120 +64,130 @@ install_common_dependencies() {
         libjsoncpp-dev
 }
 
-install_openthread_binraries() {
+install_openthread_binraries()
+{
     pip3 install -U cmake
     cd third_party/openthread/repo
-    local ot_build_dir=$(VIRTUAL_TIME=0 ./script/test clean build | grep 'Build files have been written to: ' | cut -d: -f2 | tr -d ' ')
-    cd -
-    sudo install -p ${ot_build_dir}/examples/apps/ncp/ot-rcp /usr/bin/
-    sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-ftd /usr/bin/
-    sudo install -p ${ot_build_dir}/examples/apps/cli/ot-cli-mtd /usr/bin/
-    sudo apt-get install socat
+    mkdir -p build && cd build
+
+    cmake .. -GNinja -DOT_PLATFORM=simulation -DOT_COMMISSIONER=ON -DOT_JOINER=ON
+    ninja
+    sudo ninja install
+
+    sudo apt-get install --no-install-recommends -y socat
 }
 
-configure_network() {
+configure_network()
+{
     echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
     echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/forwarding
     echo 1 | sudo tee /proc/sys/net/ipv4/conf/all/forwarding
 }
 
 case "$(uname)" in
-"Linux")
-    disable_install_recommends
-    sudo apt-get update
-    install_common_dependencies
-
-    [ $BUILD_TARGET != script-check ] && [ $BUILD_TARGET != docker-check ] || {
-        install_openthread_binraries
-        configure_network
-        exit 0
-    }
-
-    [ $BUILD_TARGET != otbr-dbus-check ] || {
-        install_openthread_binraries
-        configure_network
+    "Linux")
+        disable_install_recommends
+        sudo apt-get update
         install_common_dependencies
-        exit 0
-    }
 
-    [ $BUILD_TARGET != check ] && [ $BUILD_TARGET != meshcop ] || {
-        install_openthread_binraries
-        sudo apt-get install -y avahi-daemon avahi-utils cpputest
-        configure_network
-    }
+        if [ "$BUILD_TARGET" == script-check ] || [ "$BUILD_TARGET" == docker-check ]; then
+            install_openthread_binraries
+            configure_network
+            exit 0
+        fi
 
-    [ $BUILD_TARGET != android-check ] || {
-        sudo apt-get install -y wget unzip libexpat1-dev gcc-multilib g++-multilib
-        (
-        cd $HOME
-        wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
-        unzip android-ndk-r17c-linux-x86_64.zip > /dev/null
-        mv android-ndk-r17c ndk-bundle
-        )
-        exit 0
-    }
+        if [ "$BUILD_TARGET" == otbr-dbus-check ]; then
+            install_openthread_binraries
+            configure_network
+            install_common_dependencies
+            exit 0
+        fi
 
-    [ $BUILD_TARGET != scan-build ] || {
-        pip3 install -U cmake
-        sudo apt-get install -y clang clang-tools
-    }
+        if [ "$BUILD_TARGET" == check ] || [ "$BUILD_TARGET" == meshcop ]; then
+            install_openthread_binraries
+            sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils cpputest
+            configure_network
+        fi
 
-    [ $BUILD_TARGET != pretty-check ] || sudo apt-get install -y clang-format-6.0
+        if [ "$BUILD_TARGET" == android-check ]; then
+            sudo apt-get install --no-install-recommends -y wget unzip libexpat1-dev gcc-multilib g++-multilib
+            (
+                cd "$HOME"
+                wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+                unzip android-ndk-r17c-linux-x86_64.zip >/dev/null
+                mv android-ndk-r17c ndk-bundle
+            )
+            exit 0
+        fi
 
-    [ "${OTBR_MDNS-}" != 'mDNSResponder' ] || {
-        SOURCE_NAME=mDNSResponder-878.30.4
-        wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz &&
-        tar xvf $SOURCE_NAME.tar.gz &&
-        cd $SOURCE_NAME/mDNSPosix &&
-        make os=linux && sudo make install os=linux
-    }
+        if [ "$BUILD_TARGET" == scan-build ]; then
+            pip3 install -U cmake
+            sudo apt-get install --no-install-recommends -y clang clang-tools
+        fi
 
-    # Enable IPv6
-    [ $BUILD_TARGET != check ] || (echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6) || die
+        if [ "$BUILD_TARGET" == pretty-check ]; then
+            sudo apt-get install -y clang-format-6.0 shellcheck
+            sudo snap install shfmt
+        fi
 
-    # Allow access syslog file for unit test
-    [ $BUILD_TARGET != check ] || sudo chmod a+r /var/log/syslog || die
+        if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
+            SOURCE_NAME=mDNSResponder-878.30.4
+            wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz \
+                && tar xvf $SOURCE_NAME.tar.gz \
+                && cd $SOURCE_NAME/mDNSPosix \
+                && make os=linux && sudo make install os=linux
+        fi
 
-    # Prepare Raspbian image
-    [ $BUILD_TARGET != raspbian-gcc ] || {
-        sudo apt-get install --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
+        # Enable IPv6
+        if [ "$BUILD_TARGET" == check ]; then
+            echo 0 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
+        fi
 
-        (mkdir -p docker-rpi-emu \
-            && cd docker-rpi-emu \
-            && ($(git --git-dir=.git rev-parse --is-inside-work-tree) ||  git --git-dir=.git init .) \
-            && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
-            && git checkout FETCH_HEAD)
+        # Allow access syslog file for unit test
+        if [ "$BUILD_TARGET" == check ]; then
+            sudo chmod a+r /var/log/syslog
+        fi
 
-        pip3 install git-archive-all
+        # Prepare Raspbian image
+        if [ "$BUILD_TARGET" == raspbian-gcc ]; then
+            sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
 
-        IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
-        IMAGE_FILE=$IMAGE_NAME.img
-        [ -f $TOOLS_HOME/images/$IMAGE_FILE ] || {
-            # unit MB
-            EXPAND_SIZE=1024
+            (mkdir -p docker-rpi-emu \
+                && cd docker-rpi-emu \
+                && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
+                && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
+                && git checkout FETCH_HEAD)
 
-            [ -d $TOOLS_HOME/images ] || mkdir -p $TOOLS_HOME/images
+            pip3 install git-archive-all
 
-            [[ -f $IMAGE_NAME.zip ]] || curl -LO $IMAGE_URL
+            IMAGE_NAME=$(basename "${IMAGE_URL}" .zip)
+            IMAGE_FILE="$IMAGE_NAME".img
+            [ -f "$TOOLS_HOME"/images/"$IMAGE_FILE" ] || {
+                # unit MB
+                EXPAND_SIZE=1024
 
-            unzip $IMAGE_NAME.zip -d /tmp
+                [ -d "$TOOLS_HOME"/images ] || mkdir -p "$TOOLS_HOME"/images
 
-            (cd /tmp &&
-                dd if=/dev/zero bs=1048576 count=$EXPAND_SIZE >> $IMAGE_FILE &&
-                mv $IMAGE_FILE $TOOLS_HOME/images/$IMAGE_FILE)
+                [[ -f "$IMAGE_NAME".zip ]] || curl -LO "$IMAGE_URL"
 
-            (cd docker-rpi-emu/scripts &&
-                sudo ./expand.sh $TOOLS_HOME/images/$IMAGE_FILE $EXPAND_SIZE)
-        }
-    }
-    ;;
+                unzip "$IMAGE_NAME".zip -d /tmp
 
-"Darwin")
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-    ;;
+                (cd /tmp \
+                    && dd if=/dev/zero bs=1048576 count="$EXPAND_SIZE" >>"$IMAGE_FILE" \
+                    && mv "$IMAGE_FILE" "$TOOLS_HOME"/images/"$IMAGE_FILE")
 
-*)
-    echo "Unknown os type"
-    die
-    ;;
+                (cd docker-rpi-emu/scripts \
+                    && sudo ./expand.sh "$TOOLS_HOME"/images/"$IMAGE_FILE" "$EXPAND_SIZE")
+            }
+        fi
+        ;;
+
+    "Darwin")
+        /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        ;;
+
+    *)
+        echo "Unknown os type"
+        exit 1
+        ;;
 esac

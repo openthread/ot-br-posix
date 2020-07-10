@@ -41,7 +41,7 @@ TEST(Pskc, Test123456_0001020304050607_OpenThread)
     uint8_t expected[] = {
         0xb7, 0x83, 0x81, 0x27, 0x89, 0x91, 0x1e, 0xb4, 0xea, 0x76, 0x59, 0x6c, 0x9c, 0xed, 0x2a, 0x69,
     };
-    const uint8_t *pskc = NULL;
+    const uint8_t *pskc = nullptr;
 
     pskc = mPSKc.ComputePskc(extpanid, "OpenThread", "123456");
     MEMCMP_EQUAL(expected, pskc, sizeof(expected));

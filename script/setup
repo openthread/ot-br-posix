@@ -30,6 +30,7 @@
 #       This script builds and installs border router and dependencies.
 #
 
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 . script/_otbr
 . script/_ipforward
@@ -43,7 +44,7 @@
 
 main()
 {
-    . $BEFORE_HOOK
+    . "$BEFORE_HOOK"
     extend_sudo_timeout
     setup_swapfile
     disable_services
@@ -60,7 +61,7 @@ main()
     network_manager_install
     dhcpv6_pd_install
     otbr_install
-    . $AFTER_HOOK
+    . "$AFTER_HOOK"
 }
 
 main

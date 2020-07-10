@@ -53,14 +53,6 @@ enum
 };
 
 /**
- * Change the log level
- *
- * @param[in]   alevel  new log level
- */
-
-void otbrLogSetLevel(int aLevel);
-
-/**
  * Get current log level
  */
 int otbrLogGetLevel(void);
@@ -72,14 +64,6 @@ int otbrLogGetLevel(void);
  *
  */
 void otbrLogEnableSyslog(bool aEnabled);
-
-/**
- * This function causes logs to be written to a specific file
- * Note: Logs are still written to the syslog.
- *
- * @param[in] afilename filename to use for private logfile.
- */
-void otbrLogSetFilename(const char *aFilename);
 
 /**
  * This function initialize the logging service.

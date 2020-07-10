@@ -30,7 +30,9 @@
 #       This script starts all border router services in console mode.
 #
 
+# shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
+# shellcheck source=script/_ipforward
 . script/_ipforward
 
 readonly TUN="${TUN:-wpan0}"
@@ -45,12 +47,12 @@ killall_services()
 on_exit()
 {
     killall_services
-    . $AFTER_HOOK
+    . "$AFTER_HOOK"
 }
 
 main()
 {
-    . $BEFORE_HOOK
+    . "$BEFORE_HOOK"
     if have systemctl; then
         sudo systemctl stop otbr-web otbr-agent || true
     fi

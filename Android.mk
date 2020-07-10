@@ -28,43 +28,6 @@
 
 LOCAL_PATH := $(call my-dir)
 
-OTBR_MDNS ?= mojo
-
-ifeq ($(OTBR_MDNS),mojo)
-include $(CLEAR_VARS)
-
-LOCAL_MODULE_CLASS := STATIC_LIBRARIES
-LOCAL_MODULE := libmdns_mojom
-LOCAL_MODULE_TAGS := eng
-LOCAL_CPP_EXTENSION := .cc
-
-LOCAL_C_INCLUDES := \
-    external/libchrome \
-    external/gtest/include \
-    $(NULL)
-
-LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
-
-LOCAL_CPPFLAGS += -std=c++14
-
-LOCAL_MOJOM_FILES := \
-    third_party/chromecast/mojom/mdns.mojom \
-    $(NULL)
-
-LOCAL_MOJOM_TYPEMAP_FILES :=
-
-LIB_MOJO_ROOT := external/libchrome
-LOCAL_SOURCE_ROOT := $(LOCAL_PATH)
-
-include external/libchrome/generate_mojom_sources.mk
-
-MDNS_MOJOM_SRCS := $(gen_src)
-
-LOCAL_SHARED_LIBRARIES += libchrome libmojo
-
-include $(BUILD_STATIC_LIBRARY)
-endif
-
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
@@ -77,7 +40,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/src \
     external/openthread/include \
-    $(NULL)
 
 LOCAL_SRC_FILES = \
     src/dbus/client/client_error.cpp \
@@ -85,12 +47,10 @@ LOCAL_SRC_FILES = \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
     src/dbus/common/error.cpp \
-    $(NULL)
 
 LOCAL_EXPORT_C_INCLUDE_DIRS := \
     $(LOCAL_PATH)/src \
     $(LOCAL_PATH)/include \
-    $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libdbus
 
@@ -119,14 +79,13 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
-    $(NULL)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
-    -DPACKAGE_VERSION=\"0.01.00\" \
+    -DOTBR_PACKAGE_VERSION=\"0.2.0\" \
     -DOTBR_ENABLE_DBUS_SERVER=1 \
     -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
-    $(NULL)
+    $(OTBR_PROJECT_CFLAGS) \
 
 LOCAL_CPPFLAGS += -std=c++14
 
@@ -147,13 +106,11 @@ LOCAL_SRC_FILES := \
     src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
-    $(NULL)
 
 LOCAL_STATIC_LIBRARIES += \
     libopenthread-ncp \
     libopenthread-cli \
     ot-core \
-    $(NULL)
 
 LOCAL_LDLIBS := \
     -lutil
@@ -161,25 +118,8 @@ LOCAL_LDLIBS := \
 ifeq ($(OTBR_MDNS),mDNSResponder)
 LOCAL_SRC_FILES += \
     src/mdns/mdns_mdnssd.cpp \
-    $(NULL)
 
 LOCAL_SHARED_LIBRARIES += libmdnssd
-else
-ifeq ($(OTBR_MDNS),mojo)
-LOCAL_CFLAGS += \
-    -DOTBR_ENABLE_MDNS_MOJO=1 \
-    $(NULL)
-
-LOCAL_SRC_FILES += \
-    src/mdns/mdns_mojo.cpp \
-    $(NULL)
-
-# The generated header files are not in dependency chain.
-# Force dependency here
-LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/src/dbus/server/introspect.hpp
-LOCAL_STATIC_LIBRARIES += libmdns_mojom
-LOCAL_SHARED_LIBRARIES += libchrome libmojo
-endif
 endif
 
 include $(BUILD_EXECUTABLE)
@@ -193,6 +133,6 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
 LOCAL_SRC_FILES := src/agent/otbr-agent.conf
 $(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
-	sed 's/@OTBR_AGENT_USER@/root/g' $< > $@
+	sed -e 's/@OTBR_AGENT_USER@/root/g' -e 's/@OTBR_AGENT_GROUP@/root/g' $< > $@
 
 include $(BUILD_PREBUILT)

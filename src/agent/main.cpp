@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include <openthread/logging.h>
+#include <openthread/platform/radio.h>
 
 #include "agent/agent_instance.hpp"
 #include "agent/ncp.hpp"
@@ -65,13 +66,25 @@ static std::mutex sThreadMutex;
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
 
+enum
+{
+    OTBR_OPT_DEBUG_LEVEL    = 'd',
+    OTBR_OPT_HELP           = 'h',
+    OTBR_OPT_INTERFACE_NAME = 'I',
+    OTBR_OPT_VERBOSE        = 'v',
+    OTBR_OPT_VERSION        = 'V',
+    OTBR_OPT_SHORTMAX       = 128,
+    OTBR_OPT_RADIO_VERSION,
+};
+
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
-static const struct option  kOptions[]   = {{"debug-level", required_argument, NULL, 'd'},
-                                         {"help", no_argument, NULL, 'h'},
-                                         {"thread-ifname", required_argument, NULL, 'I'},
-                                         {"verbose", no_argument, NULL, 'v'},
-                                         {"version", no_argument, NULL, 'V'},
+static const struct option  kOptions[]   = {{"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
+                                         {"help", no_argument, nullptr, OTBR_OPT_HELP},
+                                         {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
+                                         {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
+                                         {"version", no_argument, nullptr, OTBR_OPT_VERSION},
+                                         {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
                                          {0, 0, 0, 0}};
 
 static void HandleSignal(int aSignal)
@@ -164,7 +177,12 @@ static void PrintHelp(const char *aProgramName)
 
 static void PrintVersion(void)
 {
-    printf("%s\n", PACKAGE_VERSION);
+    printf("%s\n", OTBR_PACKAGE_VERSION);
+}
+
+static void PrintRadioVersion(otInstance *aInstance)
+{
+    printf("%s\n", otPlatRadioGetVersionString(aInstance));
 }
 
 static void OnAllocateFailed(void)
@@ -177,39 +195,45 @@ int main(int argc, char *argv[])
 {
     int                    logLevel = OTBR_LOG_INFO;
     int                    opt;
-    int                    ret           = EXIT_SUCCESS;
-    const char *           interfaceName = kDefaultInterfaceName;
-    otbr::Ncp::Controller *ncp           = NULL;
-    bool                   verbose       = false;
+    int                    ret               = EXIT_SUCCESS;
+    const char *           interfaceName     = kDefaultInterfaceName;
+    otbr::Ncp::Controller *ncp               = nullptr;
+    bool                   verbose           = false;
+    bool                   printRadioVersion = false;
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "d:hI:Vv", kOptions, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "d:hI:Vv", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
-        case 'd':
+        case OTBR_OPT_DEBUG_LEVEL:
             logLevel = atoi(optarg);
             VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
             break;
 
-        case 'I':
+        case OTBR_OPT_INTERFACE_NAME:
             interfaceName = optarg;
             break;
 
-        case 'v':
+        case OTBR_OPT_VERBOSE:
             verbose = true;
             break;
 
-        case 'V':
+        case OTBR_OPT_VERSION:
             PrintVersion();
             ExitNow();
             break;
 
-        case 'h':
+        case OTBR_OPT_HELP:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_SUCCESS);
             break;
+
+        case OTBR_OPT_RADIO_VERSION:
+            printRadioVersion = true;
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -217,46 +241,27 @@ int main(int argc, char *argv[])
         }
     }
 
-    VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
-    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
-    VerifyOrExit(ncp != NULL, ret = EXIT_FAILURE);
-
     otbrLogInit(kSyslogIdent, logLevel, verbose);
+    otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+    VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
+
+    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind]);
+    VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 
     {
         otbr::AgentInstance instance(ncp);
-        otLogLevel          level;
 
         SuccessOrExit(ret = instance.Init());
 
-        switch (logLevel)
+        if (printRadioVersion)
         {
-        case OTBR_LOG_EMERG:
-        case OTBR_LOG_ALERT:
-        case OTBR_LOG_CRIT:
-            level = OT_LOG_LEVEL_CRIT;
-            break;
-        case OTBR_LOG_ERR:
-        case OTBR_LOG_WARNING:
-            level = OT_LOG_LEVEL_WARN;
-            break;
-        case OTBR_LOG_NOTICE:
-            level = OT_LOG_LEVEL_NOTE;
-            break;
-        case OTBR_LOG_INFO:
-            level = OT_LOG_LEVEL_INFO;
-            break;
-        case OTBR_LOG_DEBUG:
-            level = OT_LOG_LEVEL_DEBG;
-            break;
-        default:
-            ExitNow(ret = EXIT_FAILURE);
-            break;
-        }
+            ControllerOpenThread *ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(ncp);
 
-        VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, ret = EXIT_FAILURE);
+            PrintRadioVersion(ncpOpenThread->GetInstance());
+            ExitNow(ret = EXIT_SUCCESS);
+        }
 
 #if OTBR_ENABLE_OPENWRT
         ControllerOpenThread *ncpThread = reinterpret_cast<ControllerOpenThread *>(ncp);
