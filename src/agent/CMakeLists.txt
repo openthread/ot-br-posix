@@ -38,6 +38,12 @@ add_executable(otbr-agent
     ncp_openthread.hpp
     thread_helper.cpp
     thread_helper.hpp
+    rest_web_server.cpp
+    rest_web_server.hpp
+)
+target_include_directories(otbr-agent PRIVATE
+    ${PROJECT_SOURCE_DIR}/third_party/cJSON
+    ${PROJECT_SOURCE_DIR}/third_party/http-parser
 )
 
 target_link_libraries(otbr-agent PRIVATE
