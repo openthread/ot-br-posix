@@ -420,9 +420,6 @@
                     })
                     .on("click", function(d) {
                         d3.selectAll(".Stroke").style("stroke", "none")
-                            // .style("stroke-width", "0px");
-                            // d3.selectAll(".Stroke").style("stroke", "none")
-                            //     .style("stroke-width", "0px");
 
                         d3.select(this).style("stroke", "yellow")
                             .style("stroke-width", "1px");
@@ -435,15 +432,6 @@
                         });
                     });
 
-
-
-
-                // node.append("text")
-                //     .attr("dx", 12)
-                //     .attr("dy", ".35em")
-                //     .text(function(d) {
-                //         return d.Rloc16
-                //     });
                 force.on("tick", function() {
                     link.attr("x1", function(d) { return d.source.x; })
                         .attr("y1", function(d) { return d.source.y; })
