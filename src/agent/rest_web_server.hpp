@@ -51,6 +51,7 @@
 
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
+
 using std::chrono::steady_clock;
 
 namespace otbr {
@@ -61,85 +62,107 @@ class ControllerOpenThread;
 
 namespace otbr {
 namespace agent {
+
+class Connection;
 typedef struct DiagInfo
 {
-    std::chrono::steady_clock::time_point start;
-    cJSON *                               cDiag;
-    std::unordered_set<std::string>       nodeSet;
-    DiagInfo(std::chrono::steady_clock::time_point astart)
-        : start(astart)
+    steady_clock::time_point        mStartTime;
+    cJSON *                         mDiagJson;
+    std::unordered_set<std::string> mNodeSet;
+    DiagInfo(steady_clock::time_point aStartTime)
+        : mStartTime(aStartTime)
     {
     }
 } DiagInfo;
-
-typedef struct Connection
-{
-    std::chrono::steady_clock::time_point start;
-    DiagInfo *                            diagInfo;
-
-    int          diagisRequest;
-    int          isError;
-    int          hasCallback;
-    int          fd;
-    int          complete;
-    int          method;
-    unsigned int content_length;
-    char *       path;
-    char *       status;
-    char *       body;
-    char *       header_f;
-    char *       header_v;
-    int          header_state;
-    char *       buf;
-    char *       b;
-    int          len;
-    int          remain;
-    http_parser *mParser;
-    Connection(std::chrono::steady_clock::time_point astart)
-        : start(astart)
-        , diagisRequest(0)
-        , isError(0)
-        , hasCallback(0)
-        , complete(0)
-        , path(NULL)
-        , status(NULL)
-        , body(NULL)
-        , header_f(NULL)
-        , header_v(NULL)
-        , buf(NULL)
-        , len(0)
-        , remain(8192)
-    {
-    }
-} Connection;
-
 typedef cJSON *(*requestHandler)(Connection *connection, otInstance *mInstance);
-typedef std::unordered_map<std::string, requestHandler> handlerMap;
+typedef std::unordered_map<std::string, requestHandler> HandlerMap;
+
+class Connection
+{
+public:
+    Connection(steady_clock::time_point aStartTime, HandlerMap *aHandlerMap, otInstance *aInstance);
+
+    void NonBlockRead();
+
+    void ServeRequest();
+
+    void FreeConnection();
+
+    void ParseUri();
+
+    void SentResponse(cJSON *aData);
+
+    cJSON *GetHandler();
+
+    steady_clock::time_point mStartTime;
+    DiagInfo *               mDiagInfo;
+    HandlerMap *             mHandlerMap;
+    otInstance *             mInstance;
+    int                      mRequested;
+    int                      mError;
+    int                      mCallback;
+    int                      mFd;
+    int                      mCompleted;
+    int                      mMethod;
+    unsigned int             mContentLength;
+    char *                   mPath;
+    char *                   mStatus;
+    char *                   mBody;
+    char *                   mHeaderField;
+    char *                   mHeaderValue;
+    int                      mHeader_state;
+    char *                   mReadBuf;
+    char *                   mReadPointer;
+    int                      mReadLength;
+    int                      mBufRemain;
+    http_parser *            mParser;
+};
+
+class JSONGenerator
+{
+public:
+    static cJSON *CreateJsonMode(const otLinkModeConfig &aMode);
+    static cJSON *CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity);
+    static cJSON *CreateJsonRoute(const otNetworkDiagRoute &aRoute);
+    static cJSON *CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData);
+    static cJSON *CreateJsonLeaderData(const otLeaderData &aLeaderData);
+    static cJSON *CreateJsonIp6Address(const otIp6Address &aAddress);
+    static cJSON *CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters);
+    static cJSON *CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry);
+};
+class Handler
+{
+public:
+    Handler(HandlerMap &aHandlerMap);
+
+    static cJSON *GetJsonNodeInfo(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonExtendedAddr(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonState(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonNetworkName(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonLeaderData(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonNumOfRoute(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonRloc16(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonExtendedPanId(Connection *aConnection, otInstance *aInstance);
+    static cJSON *GetJsonRloc(Connection *aConnection, otInstance *aInstance);
+    static cJSON *DiagnosticRequestHandler(Connection *aConnection, otInstance *aInstance);
+
+    // callback
+};
 
 class RestWebServer
 {
 public:
     RestWebServer(otbr::Ncp::ControllerOpenThread *aNcp);
 
-    void init();
+    void Init();
 
     void UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout);
 
     void Process(fd_set &aReadFdSet);
 
 private:
-    /* data */
-
-    void nonBlockRead(int fd);
-
-    void serveRequest(int fd);
-
-    cJSON *getJSON(int fd);
-
-    void FreeConnection(int fd);
-
-    void parseUri(int fd);
-
+    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
+    void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
     // for service
     otbr::Ncp::ControllerOpenThread *mNcp;
     otbr::agent::ThreadHelper *      mThreadHelper;
@@ -150,43 +173,13 @@ private:
     int          mListenFd;
 
     // for Connection
-    static const int                      mTimeout     = 1000000;
+    static const int                      sTimeout     = 1000000;
     int                                   mMaxServeNum = 100;
     std::unordered_map<int, Connection *> mConnectionSet;
 
-    // static DiagInfo* mDiagInfo;
-
     // Handler
-    handlerMap mHandlerMap;
-    void       handlerInit();
-
-    static cJSON *diagnosticRequestHandler(Connection *connection, otInstance *mInstance);
-    static void   diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    void          diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo );
-
-    static cJSON *getJsonNodeInfo(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonExtendedAddr(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonState(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonNetworkName(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonLeaderData(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonNumOfRoute(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonRloc16(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonExtendedPanId(Connection *connection, otInstance *mInstance);
-    static cJSON *getJsonRloc(Connection *connection, otInstance *mInstance);
-
-    static void sentResponse(cJSON *data, Connection *connection);
-
-    static cJSON *CreateJsonMode(const otLinkModeConfig &aMode);
-    static cJSON *CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity);
-    static cJSON *CreateJsonRoute(const otNetworkDiagRoute &aRoute);
-    static cJSON *CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData);
-    static cJSON *CreateJsonLeaderData(const otLeaderData &aLeaderData);
-    static cJSON *CreateJsonIp6Address(const otIp6Address &aAddress);
-    static cJSON *CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters);
-    static cJSON *CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry);
-
-    static uint16_t HostSwap16(uint16_t v);
-    static char *   formatBytes(const uint8_t *aBytes, uint8_t aLength);
+    HandlerMap mHandlerMap;
+    Handler *  mHandler;
 };
 
 } // namespace agent
