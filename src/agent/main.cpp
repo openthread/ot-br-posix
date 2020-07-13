@@ -54,8 +54,8 @@
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
-using otbr::Ncp::ControllerOpenThread;
 using otbr::agent::RestWebServer;
+using otbr::Ncp::ControllerOpenThread;
 
 #if OTBR_ENABLE_OPENWRT
 extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
@@ -98,16 +98,14 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
     int error = EXIT_FAILURE;
 #if OTBR_ENABLE_DBUS_SERVER
-    ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
-
+    ControllerOpenThread *         ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
+    std::unique_ptr<DBusAgent>     dbusAgent = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
+    std::unique_ptr<RestWebServer> restWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(ncpOpenThread));
+    restWebServer->init();
     dbusAgent->Init();
 #else
     (void)aInterfaceName;
 #endif
-    ControllerOpenThread *     ncpOpenThread1 = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    std::unique_ptr<RestWebServer> restWebServer    = std::unique_ptr<RestWebServer>(new RestWebServer(ncpOpenThread1));
-    restWebServer->init();
 
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
