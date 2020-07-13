@@ -44,9 +44,6 @@ add_executable(otbr-agent
     rest_web_server.cpp
     rest_web_server.hpp
 )
-include_directories(${PROJECT_SOURCE_DIR}/third_party/http-parser/repo)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/cJSON/repo)
-
 
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
@@ -59,8 +56,8 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-hdlc
     otbr-common
     otbr-utils
-    ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo/cJSON.c
-    ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo/http_parser.c
+    cjson
+    http_parser
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config)

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(http_parser)
 
-add_library(http_parser SHARED http_parser.c)
+add_library(http_parser STATIC http_parser.c)
 target_compile_options(http_parser PRIVATE -Wall -Wextra -Werror)
 target_include_directories(http_parser PUBLIC .)
 
