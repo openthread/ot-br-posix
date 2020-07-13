@@ -25,6 +25,9 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+# set(CJSON_FILE ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo/cJSON.c ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo/cJSON.h)
+# set(HTTP_PARSER_FILE ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo/http_parser.c ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo/http_parser.h)
+
 
 add_executable(otbr-agent
     agent_instance.cpp
@@ -41,10 +44,9 @@ add_executable(otbr-agent
     rest_web_server.cpp
     rest_web_server.hpp
 )
-target_include_directories(otbr-agent PRIVATE
-    ${PROJECT_SOURCE_DIR}/third_party/cJSON
-    ${PROJECT_SOURCE_DIR}/third_party/http-parser
-)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/http-parser/repo)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/cJSON/repo)
+
 
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
@@ -57,6 +59,8 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-hdlc
     otbr-common
     otbr-utils
+    ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo/cJSON.c
+    ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo/http_parser.c
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config)
