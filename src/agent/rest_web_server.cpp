@@ -46,90 +46,95 @@
 
 #include "common/logging.hpp"
 #include "openthread/thread_ftd.h"
+
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::seconds;
+using std::chrono::steady_clock;
 namespace otbr {
 namespace agent {
 
-static int on_message_begin(http_parser *parser)
-{
-    Connection *Connection = (struct Connection *)parser->data;
-    Connection->complete   = 0;
-    return 0;
-}
-
-static int on_status(http_parser *parser, const char *at, size_t len)
-{
-    Connection *Connection = (struct Connection *)parser->data;
-    Connection->status     = new char[len + 1]();
-    strncpy(Connection->status, at, len);
-    return 0;
-}
-
-static int on_url(http_parser *parser, const char *at, size_t len)
-{
-    Connection *Connection = (struct Connection *)parser->data;
-    Connection->path       = new char[len + 1]();
-    strncpy(Connection->path, at, len);
-    return 0;
-}
-
-static int on_header_field(http_parser *parser, const char *at, size_t len)
-{
-    Connection *Connection = (struct Connection *)parser->data;
-    Connection->header_f   = new char[len + 1]();
-
-    strncpy(Connection->header_f, at, len);
-
-    return 0;
-}
-
-static int on_header_value(http_parser *parser, const char *at, size_t len)
+static int OnMessageBegin(http_parser *parser)
 {
     Connection *connection = (struct Connection *)parser->data;
-    connection->header_v   = new char[len + 1]();
-
-    strncpy(connection->header_v, at, len);
-
+    connection->mCompleted = 0;
     return 0;
 }
-static int on_body(http_parser *parser, const char *at, size_t len)
+
+static int OnStatus(http_parser *parser, const char *at, size_t len)
 {
     Connection *connection = (struct Connection *)parser->data;
-    connection->body       = new char[len + 1]();
-    strncpy(connection->body, at, len - 1);
+    connection->mStatus    = new char[len + 1]();
+    strncpy(connection->mStatus, at, len);
+    return 0;
+}
+
+static int OnUrl(http_parser *parser, const char *at, size_t len)
+{
+    Connection *connection = (struct Connection *)parser->data;
+    connection->mPath      = new char[len + 1]();
+    strncpy(connection->mPath, at, len);
+    return 0;
+}
+
+static int OnHeaderField(http_parser *parser, const char *at, size_t len)
+{
+    Connection *connection   = (struct Connection *)parser->data;
+    connection->mHeaderField = new char[len + 1]();
+
+    strncpy(connection->mHeaderField, at, len);
 
     return 0;
 }
 
-static int on_headers_complete(http_parser *parser)
+static int OnHeaderValue(http_parser *parser, const char *at, size_t len)
+{
+    Connection *connection   = (struct Connection *)parser->data;
+    connection->mHeaderValue = new char[len + 1]();
+
+    strncpy(connection->mHeaderValue, at, len);
+
+    return 0;
+}
+static int OnBody(http_parser *parser, const char *at, size_t len)
+{
+    Connection *connection = (struct Connection *)parser->data;
+    connection->mBody      = new char[len + 1]();
+    strncpy(connection->mBody, at, len - 1);
+
+    return 0;
+}
+
+static int OnHeadersComplete(http_parser *parser)
 {
     Connection *connection     = (struct Connection *)parser->data;
-    connection->content_length = parser->content_length;
-    connection->method         = parser->method;
+    connection->mContentLength = parser->content_length;
+    connection->mMethod        = parser->method;
     return 0;
 }
 
-static int on_message_complete(http_parser *parser)
+static int OnMessageComplete(http_parser *parser)
 {
     Connection *connection = (struct Connection *)parser->data;
-    connection->complete   = 0;
+    connection->mCompleted = 0;
     return 0;
 }
 
-static int on_chunk_header(http_parser *parser)
+static int OnChunkHeader(http_parser *parser)
 {
     Connection *connection = (struct Connection *)parser->data;
-    connection->complete   = 0;
+    connection->mCompleted = 0;
     return 0;
 }
 
-static int on_chunk_complete(http_parser *parser)
+static int OnChunkComplete(http_parser *parser)
 {
     Connection *connection = (struct Connection *)parser->data;
-    connection->complete   = 0;
+    connection->mCompleted = 0;
     return 0;
 }
 
-static int setNonBlocking(int fd)
+static int SetNonBlocking(int fd)
 {
     int oldflags;
 
@@ -143,16 +148,35 @@ static int setNonBlocking(int fd)
     return 0;
 }
 
-static http_parser_settings mSettings{.on_message_begin    = on_message_begin,
-                                      .on_url              = on_url,
-                                      .on_status           = on_status,
-                                      .on_header_field     = on_header_field,
-                                      .on_header_value     = on_header_value,
-                                      .on_headers_complete = on_headers_complete,
-                                      .on_body             = on_body,
-                                      .on_message_complete = on_message_complete,
-                                      .on_chunk_header     = on_chunk_header,
-                                      .on_chunk_complete   = on_chunk_complete};
+static http_parser_settings sSettings{.on_message_begin    = OnMessageBegin,
+                                      .on_url              = OnUrl,
+                                      .on_status           = OnStatus,
+                                      .on_header_field     = OnHeaderField,
+                                      .on_header_value     = OnHeaderValue,
+                                      .on_headers_complete = OnHeadersComplete,
+                                      .on_body             = OnBody,
+                                      .on_message_complete = OnMessageComplete,
+                                      .on_chunk_header     = OnChunkHeader,
+                                      .on_chunk_complete   = OnChunkComplete};
+
+Connection::Connection(steady_clock::time_point aStartTime, HandlerMap *aHandlerMap, otInstance *aInstance)
+    : mStartTime(aStartTime)
+    , mHandlerMap(aHandlerMap)
+    , mInstance(aInstance)
+    , mRequested(0)
+    , mError(0)
+    , mCallback(0)
+    , mCompleted(0)
+    , mPath(NULL)
+    , mStatus(NULL)
+    , mBody(NULL)
+    , mHeaderField(NULL)
+    , mHeaderValue(NULL)
+    , mReadBuf(NULL)
+    , mReadLength(0)
+    , mBufRemain(8192)
+{
+}
 
 RestWebServer::RestWebServer(otbr::Ncp::ControllerOpenThread *aNcp)
     : mNcp(aNcp)
@@ -161,44 +185,53 @@ RestWebServer::RestWebServer(otbr::Ncp::ControllerOpenThread *aNcp)
 {
 }
 
-void RestWebServer::init()
+void RestWebServer::Init()
 {
     mThreadHelper = mNcp->GetThreadHelper();
     mInstance     = mThreadHelper->GetInstance();
-
-    handlerInit();
+    mHandler      = new Handler(mHandlerMap);
 
     mAddress->sin_family      = AF_INET;
     mAddress->sin_addr.s_addr = INADDR_ANY;
     mAddress->sin_port        = htons(80);
 
-    mListenFd = socket(AF_INET, SOCK_STREAM, 0);
+    if ((mListenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        otbrLog(OTBR_LOG_ERR, "socket error");
+    }
 
-    bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr));
+    if ((bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr))) != 0)
+    {
+        otbrLog(OTBR_LOG_ERR, "bind error");
+    }
 
-    listen(mListenFd, 5);
+    if (listen(mListenFd, 5) < 0)
+    {
+        otbrLog(OTBR_LOG_ERR, "listen error");
+    }
 
-    setNonBlocking(mListenFd);
+    SetNonBlocking(mListenFd);
 }
 
-void RestWebServer::handlerInit()
+Handler::Handler(HandlerMap &aHandlerMap)
 {
-    mHandlerMap.emplace("/diagnostics", &diagnosticRequestHandler);
-    mHandlerMap.emplace("/node", &getJsonNodeInfo);
-    mHandlerMap.emplace("/node/state", &getJsonState);
-    mHandlerMap.emplace("/node/ext-address", &getJsonExtendedAddr);
-    mHandlerMap.emplace("/node/network-name", &getJsonNetworkName);
-    mHandlerMap.emplace("/node/rloc16", &getJsonRloc16);
-    mHandlerMap.emplace("/node/leader-data", &getJsonLeaderData);
-    mHandlerMap.emplace("/node/num-of-route", &getJsonNumOfRoute);
-    mHandlerMap.emplace("/node/ext-panid", &getJsonExtendedPanId);
-    mHandlerMap.emplace("/node/rloc", &getJsonRloc);
+    aHandlerMap.emplace("/diagnostics", &DiagnosticRequestHandler);
+    aHandlerMap.emplace("/node", &GetJsonNodeInfo);
+    aHandlerMap.emplace("/node/state", &GetJsonState);
+    aHandlerMap.emplace("/node/ext-address", &GetJsonExtendedAddr);
+    aHandlerMap.emplace("/node/network-name", &GetJsonNetworkName);
+    aHandlerMap.emplace("/node/rloc16", &GetJsonRloc16);
+    aHandlerMap.emplace("/node/leader-data", &GetJsonLeaderData);
+    aHandlerMap.emplace("/node/num-of-route", &GetJsonNumOfRoute);
+    aHandlerMap.emplace("/node/ext-panid", &GetJsonExtendedPanId);
+    aHandlerMap.emplace("/node/rloc", &GetJsonRloc);
 }
 
 void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout)
 {
-    struct timeval timeout = {60 * 60 * 24, 0};
-    otThreadSetReceiveDiagnosticGetCallback(mInstance, &RestWebServer::diagnosticResponseHandler, this);
+    Connection *   connection;
+    struct timeval timeout = {aTimeout.tv_sec, aTimeout.tv_usec};
+    otThreadSetReceiveDiagnosticGetCallback(mInstance, &RestWebServer::DiagnosticResponseHandler, this);
 
     FD_SET(mListenFd, &aReadFdSet);
     if (aMaxFd < mListenFd)
@@ -208,20 +241,19 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        auto duration =
-            std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - it->second->start)
-                .count();
+        connection    = it->second;
+        auto duration = duration_cast<microseconds>(steady_clock::now() - connection->mStartTime).count();
 
-        if (duration <= mTimeout)
+        if (duration <= sTimeout)
         {
             timeout.tv_sec = 0;
             if (timeout.tv_usec == 0)
             {
-                timeout.tv_usec = std::max(0, mTimeout - (int)duration);
+                timeout.tv_usec = std::max(0, sTimeout - (int)duration);
             }
             else
             {
-                timeout.tv_usec = std::min(int(timeout.tv_usec), std::max(0, mTimeout - (int)duration));
+                timeout.tv_usec = std::min(int(timeout.tv_usec), std::max(0, sTimeout - (int)duration));
             }
 
             FD_SET(it->first, &aReadFdSet);
@@ -235,22 +267,20 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
             timeout.tv_sec  = 0;
             timeout.tv_usec = 0;
         }
-        if (it->second->diagisRequest)
+        if (connection->mRequested)
         {
-            duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() -
-                                                                             it->second->diagInfo->start)
-                           .count();
+            duration = duration_cast<microseconds>(steady_clock::now() - connection->mDiagInfo->mStartTime).count();
 
-            if (duration <= mTimeout * 4)
+            if (duration <= sTimeout * 4)
             {
                 timeout.tv_sec = 0;
                 if (timeout.tv_usec == 0)
                 {
-                    timeout.tv_usec = std::max(0, 4 * mTimeout - (int)duration);
+                    timeout.tv_usec = std::max(0, 4 * sTimeout - (int)duration);
                 }
                 else
                 {
-                    timeout.tv_usec = std::min(int(timeout.tv_usec), std::max(0, 4 * mTimeout - (int)duration));
+                    timeout.tv_usec = std::min(int(timeout.tv_usec), std::max(0, 4 * sTimeout - (int)duration));
                 }
             }
             else
@@ -269,46 +299,47 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
 
 void RestWebServer::Process(fd_set &aReadFdSet)
 {
-    socklen_t addrlen = sizeof(sockaddr);
+    Connection *connection;
+    socklen_t   addrlen = sizeof(sockaddr);
     ;
     int  fd;
     auto err = errno;
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        auto duration =
-            std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - it->second->start)
-                .count();
-        if (duration > mTimeout && it->second->hasCallback == 0)
+        connection    = it->second;
+        auto duration = duration_cast<microseconds>(steady_clock::now() - connection->mStartTime).count();
+
+        if (duration > sTimeout && connection->mCallback == 0)
         {
-            serveRequest(it->first);
+            connection->ServeRequest();
         }
 
         else
         {
             if (FD_ISSET(it->first, &aReadFdSet))
-                nonBlockRead(it->first);
+                connection->NonBlockRead();
         }
-        if (it->second->diagisRequest)
+        if (connection->mRequested)
         {
-            duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() -
-                                                                             it->second->diagInfo->start)
-                           .count();
-            if (duration > 4 * mTimeout)
+            duration = duration_cast<microseconds>(steady_clock::now() - connection->mDiagInfo->mStartTime).count();
+            if (duration > 4 * sTimeout)
             {
-                if (it->second->diagInfo->nodeSet.size() == 0)
-                    it->second->isError = 1;
-                sentResponse(it->second->diagInfo->cDiag, it->second);
-                FreeConnection(it->first);
+                if (connection->mDiagInfo->mNodeSet.size() == 0)
+                    connection->mError = 1;
+                connection->SentResponse(connection->mDiagInfo->mDiagJson);
+                connection->FreeConnection();
             }
         }
     }
     auto eraseIt = mConnectionSet.begin();
     for (eraseIt = mConnectionSet.begin(); eraseIt != mConnectionSet.end();)
     {
-        if (eraseIt->second->complete == 1)
+        connection = eraseIt->second;
+
+        if (connection->mCompleted == 1)
         {
-            delete (eraseIt->second);
+            delete (connection);
             eraseIt = mConnectionSet.erase(eraseIt);
         }
         else
@@ -327,9 +358,9 @@ void RestWebServer::Process(fd_set &aReadFdSet)
             if (mConnectionSet.size() < (unsigned)mMaxServeNum)
             {
                 // set up new connection
-                setNonBlocking(fd);
-                mConnectionSet[fd]     = new Connection(std::chrono::steady_clock::now());
-                mConnectionSet[fd]->fd = fd;
+                SetNonBlocking(fd);
+                mConnectionSet[fd]      = new Connection(steady_clock::now(), &mHandlerMap, mInstance);
+                mConnectionSet[fd]->mFd = fd;
             }
             else
             {
@@ -348,47 +379,46 @@ void RestWebServer::Process(fd_set &aReadFdSet)
     }
 }
 
-cJSON *RestWebServer::getJSON(int fd)
+cJSON *Connection::GetHandler()
 {
-    cJSON *     ret         = NULL;
-    Connection *mConnection = mConnectionSet[fd];
-    std::string url         = mConnection->path;
-    auto        Handler     = mHandlerMap.find(url);
-    if (Handler == mHandlerMap.end())
+    cJSON *ret = NULL;
+
+    std::string url     = this->mPath;
+    auto        Handler = this->mHandlerMap->find(url);
+    if (Handler == this->mHandlerMap->end())
     {
-        mConnection->isError = 1;
+        this->mError = 1;
     }
     else
     {
-        ret = (*Handler->second)(mConnection, mInstance);
+        ret = (*Handler->second)(this, this->mInstance);
     }
     return ret;
 }
 
-void RestWebServer::parseUri(int fd)
+void Connection::ParseUri()
 {
-    Connection *mConnection = mConnectionSet[fd];
-    char *      queryStart  = NULL;
-    int         pc          = 0;
-    char *      tok;
-    char *      otok;
-    char *      querystring;
-    char *      p;
-    for (queryStart = mConnection->path; queryStart < mConnection->path + strlen(mConnection->path); queryStart++)
-        if (*queryStart == '?')
+    char *querymStartTime = NULL;
+    int   pc              = 0;
+    char *tok;
+    char *otok;
+    char *querystring;
+    char *p;
+    for (querymStartTime = this->mPath; querymStartTime < this->mPath + strlen(this->mPath); querymStartTime++)
+        if (*querymStartTime == '?')
         {
             break;
         }
 
-    if (queryStart != mConnection->path + strlen(mConnection->path))
+    if (querymStartTime != this->mPath + strlen(this->mPath))
     {
-        p = new char[strlen(mConnection->path) + 1]();
-        strncpy(p, mConnection->path, queryStart - mConnection->path + 1);
-        delete (mConnection->path);
-        mConnection->path = p;
-        queryStart++;
-        querystring = new char[strlen(mConnection->path) + 1]();
-        strcpy(querystring, queryStart);
+        p = new char[strlen(this->mPath) + 1]();
+        strncpy(p, this->mPath, querymStartTime - this->mPath + 1);
+        delete (this->mPath);
+        this->mPath = p;
+        querymStartTime++;
+        querystring = new char[strlen(this->mPath) + 1]();
+        strcpy(querystring, querymStartTime);
         for (tok = strtok(querystring, "&"); tok != NULL; tok = strtok(tok, "&"))
         {
             pc++;
@@ -400,21 +430,20 @@ void RestWebServer::parseUri(int fd)
     }
 }
 
-void RestWebServer::nonBlockRead(int fd)
+void Connection::NonBlockRead()
 {
-    Connection *mConnection = mConnectionSet[fd];
-    if (!mConnection->buf)
+    if (!this->mReadBuf)
     {
-        mConnection->buf = new char[mConnection->remain + 1]();
-        mConnection->b   = mConnection->buf;
+        this->mReadBuf     = new char[this->mBufRemain + 1]();
+        this->mReadPointer = this->mReadBuf;
     }
     int received = 0;
     int count    = 0;
-    while ((received = read(fd, mConnection->b, mConnection->remain - mConnection->len)) > 0)
+    while ((received = read(this->mFd, this->mReadPointer, this->mBufRemain - this->mReadLength)) > 0)
     {
-        mConnection->len += received;
-        mConnection->remain -= received;
-        mConnection->b += received;
+        this->mReadLength += received;
+        this->mBufRemain -= received;
+        this->mReadPointer += received;
     }
     if (received == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
     {
@@ -429,37 +458,35 @@ void RestWebServer::nonBlockRead(int fd)
     }
 }
 
-void RestWebServer::FreeConnection(int fd)
+void Connection::FreeConnection()
 {
-    Connection *connection = mConnectionSet[fd];
+    this->mCompleted = 1;
 
-    connection->complete = 1;
-
-    close(fd);
+    close(this->mFd);
 }
 
-void RestWebServer::serveRequest(int fd)
+void Connection::ServeRequest()
 {
-    cJSON *     data           = NULL;
-    Connection *mConnection    = mConnectionSet[fd];
-    mConnection->mParser       = new http_parser();
-    mConnection->mParser->data = mConnection;
-    http_parser_init(mConnection->mParser, HTTP_REQUEST);
-    if (mConnection->len == 0)
+    cJSON *data = NULL;
+
+    this->mParser       = new http_parser();
+    this->mParser->data = this;
+    http_parser_init(this->mParser, HTTP_REQUEST);
+    if (this->mReadLength == 0)
     {
-        mConnection->isError = 1;
+        this->mError = 1;
     }
     else
     {
         // parse
-        http_parser_execute(mConnection->mParser, &mSettings, mConnection->buf, strlen(mConnection->buf));
+        http_parser_execute(this->mParser, &sSettings, this->mReadBuf, strlen(this->mReadBuf));
         // call handler
-        data = getJSON(fd);
+        data = this->GetHandler();
     }
-    if (mConnection->hasCallback == 0)
+    if (this->mCallback == 0)
     {
-        sentResponse(data, mConnection);
-        FreeConnection(fd);
+        this->SentResponse(data);
+        this->FreeConnection();
     }
     else
     {
@@ -467,10 +494,10 @@ void RestWebServer::serveRequest(int fd)
     }
 }
 
-void RestWebServer::sentResponse(cJSON *data, Connection *connection)
+void Connection::SentResponse(cJSON *aData)
 {
     // need more definition
-    otbrLog(OTBR_LOG_ERR, "start send");
+    otbrLog(OTBR_LOG_ERR, "mStartTime send");
     char *out;
     char *p;
 
@@ -480,38 +507,38 @@ void RestWebServer::sentResponse(cJSON *data, Connection *connection)
     cJSON_AddItemToObject(root, "Error", cars);
     out = cJSON_Print(root);
 
-    if (connection->isError == 1)
+    if (this->mError == 1)
     {
         p = out;
     }
     else
     {
-        p = cJSON_Print(data);
+        p = cJSON_Print(aData);
     }
     char h[]  = "HTTP/1.1 200 OK\r\n";
     char h1[] = "Content-Type: application/json\r\n";
     char h3[] = "Access-Control-Allow-Origin: *\r\n";
 
-    write(connection->fd, h, strlen(h));
-    write(connection->fd, h1, strlen(h1));
-    write(connection->fd, h3, strlen(h3));
-    write(connection->fd, "\r\n", 2);
-    write(connection->fd, p, strlen(p));
+    write(this->mFd, h, strlen(h));
+    write(this->mFd, h1, strlen(h1));
+    write(this->mFd, h3, strlen(h3));
+    write(this->mFd, "\r\n", 2);
+    write(this->mFd, p, strlen(p));
 
     free(p);
 
-    // cJSON_Delete(data);
+    cJSON_Delete(aData);
 }
 
-uint16_t RestWebServer::HostSwap16(uint16_t v)
+static uint16_t HostSwap16(uint16_t v)
 
 {
     return (((v & 0x00ffU) << 8) & 0xff00) | (((v & 0xff00U) >> 8) & 0x00ff);
 }
 
-char *RestWebServer::formatBytes(const uint8_t *aBytes, uint8_t aLength)
+static char *FormatBytes(const uint8_t *aBytes, uint8_t aLength)
 {
-    char *p = new char[17]();
+    char *p = new char[aLength + 1]();
     char *q = p;
 
     for (int i = 0; i < aLength; i++)
@@ -522,17 +549,17 @@ char *RestWebServer::formatBytes(const uint8_t *aBytes, uint8_t aLength)
     return p;
 }
 
-cJSON *RestWebServer::getJsonNodeInfo(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonNodeInfo(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
-    cJSON *ret              = cJSON_CreateObject();
-    cJSON *cState           = getJsonState(connection, mInstance);
-    cJSON *cName            = getJsonNetworkName(connection, mInstance);
-    cJSON *cExtPanId        = getJsonExtendedPanId(connection, mInstance);
-    cJSON *cRloc16          = getJsonRloc16(connection, mInstance);
-    cJSON *cNumRoute        = getJsonNumOfRoute(connection, mInstance);
-    cJSON *cLeaderData      = getJsonLeaderData(connection, mInstance);
-    cJSON *cExtAddr         = getJsonExtendedAddr(connection, mInstance);
+    aConnection->mCallback = 0;
+    cJSON *ret             = cJSON_CreateObject();
+    cJSON *cState          = GetJsonState(aConnection, aInstance);
+    cJSON *cName           = GetJsonNetworkName(aConnection, aInstance);
+    cJSON *cExtPanId       = GetJsonExtendedPanId(aConnection, aInstance);
+    cJSON *cRloc16         = GetJsonRloc16(aConnection, aInstance);
+    cJSON *cNumRoute       = GetJsonNumOfRoute(aConnection, aInstance);
+    cJSON *cLeaderData     = GetJsonLeaderData(aConnection, aInstance);
+    cJSON *cExtAddr        = GetJsonExtendedAddr(aConnection, aInstance);
 
     cJSON_AddItemToObject(ret, "networkName", cName);
     cJSON_AddItemToObject(ret, "state", cState);
@@ -545,24 +572,24 @@ cJSON *RestWebServer::getJsonNodeInfo(Connection *connection, otInstance *mInsta
     return ret;
 }
 
-cJSON *RestWebServer::getJsonExtendedAddr(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonExtendedAddr(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
+    aConnection->mCallback = 0;
     cJSON *cExtAddr;
 
-    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
-    char *         p          = formatBytes(extAddress, OT_EXT_ADDRESS_SIZE);
+    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(aInstance));
+    char *         p          = FormatBytes(extAddress, OT_EXT_ADDRESS_SIZE);
     cExtAddr                  = cJSON_CreateString(p);
 
     return cExtAddr;
 }
 
-cJSON *RestWebServer::getJsonState(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonState(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
+    aConnection->mCallback = 0;
     cJSON *cState;
 
-    switch (otThreadGetDeviceRole(mInstance))
+    switch (otThreadGetDeviceRole(aInstance))
     {
     case OT_DEVICE_ROLE_DISABLED:
         cState = cJSON_CreateString("disabled");
@@ -587,10 +614,10 @@ cJSON *RestWebServer::getJsonState(Connection *connection, otInstance *mInstance
     return cState;
 }
 
-cJSON *RestWebServer::getJsonNetworkName(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonNetworkName(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
-    const char *networkName = otThreadGetNetworkName(mInstance);
+    aConnection->mCallback  = 0;
+    const char *networkName = otThreadGetNetworkName(aInstance);
     char *      p           = new char[20]();
     sprintf(p, "%s", static_cast<const char *>(networkName));
     cJSON *ret = cJSON_CreateString(p);
@@ -598,27 +625,27 @@ cJSON *RestWebServer::getJsonNetworkName(Connection *connection, otInstance *mIn
     return ret;
 }
 
-cJSON *RestWebServer::getJsonLeaderData(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonLeaderData(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
+    aConnection->mCallback = 0;
     otLeaderData leaderData;
-    otThreadGetLeaderData(mInstance, &leaderData);
-    cJSON *ret = CreateJsonLeaderData(leaderData);
+    otThreadGetLeaderData(aInstance, &leaderData);
+    cJSON *ret = JSONGenerator::CreateJsonLeaderData(leaderData);
     return ret;
 }
 
-cJSON *RestWebServer::getJsonNumOfRoute(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonNumOfRoute(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
-    int          count      = 0;
+    aConnection->mCallback = 0;
+    int          count     = 0;
     uint8_t      maxRouterId;
     otRouterInfo routerInfo;
-    maxRouterId = otThreadGetMaxRouterId(mInstance);
+    maxRouterId = otThreadGetMaxRouterId(aInstance);
     char *p     = new char[6]();
 
     for (uint8_t i = 0; i <= maxRouterId; i++)
     {
-        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
+        if (otThreadGetRouterInfo(aInstance, i, &routerInfo) != OT_ERROR_NONE)
         {
             continue;
         }
@@ -629,38 +656,32 @@ cJSON *RestWebServer::getJsonNumOfRoute(Connection *connection, otInstance *mIns
 
     return ret;
 }
-cJSON *RestWebServer::getJsonRloc16(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonRloc16(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
-    uint16_t rloc16         = otThreadGetRloc16(mInstance);
-    char *   p              = new char[7]();
+    aConnection->mCallback = 0;
+    uint16_t rloc16        = otThreadGetRloc16(aInstance);
+    char *   p             = new char[7]();
     sprintf(p, "0x%04x", rloc16);
     cJSON *ret = cJSON_CreateString(p);
 
     return ret;
 }
 
-cJSON *RestWebServer::getJsonExtendedPanId(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonExtendedPanId(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback = 0;
-    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    char *         p        = new char[17]();
-    char *         q        = p;
+    aConnection->mCallback  = 0;
+    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(aInstance));
+    char *         p        = FormatBytes(extPanId, OT_EXT_PAN_ID_SIZE);
 
-    for (int i = 0; i < OT_EXT_PAN_ID_SIZE; i++)
-    {
-        snprintf(q, 3, "%02x", extPanId[i]);
-        q += 2;
-    }
     cJSON *ret = cJSON_CreateString(p);
 
     return ret;
 }
 
-cJSON *RestWebServer::getJsonRloc(Connection *connection, otInstance *mInstance)
+cJSON *Handler::GetJsonRloc(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback           = 0;
-    struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
+    aConnection->mCallback            = 0;
+    struct otIp6Address rloc16address = *otThreadGetRloc(aInstance);
     char *              p             = new char[65]();
     sprintf(p, "%x:%x:%x:%x:%x:%x:%x:%x", HostSwap16(rloc16address.mFields.m16[0]),
             HostSwap16(rloc16address.mFields.m16[1]), HostSwap16(rloc16address.mFields.m16[2]),
@@ -672,14 +693,14 @@ cJSON *RestWebServer::getJsonRloc(Connection *connection, otInstance *mInstance)
     return ret;
 }
 
-cJSON *RestWebServer::diagnosticRequestHandler(Connection *connection, otInstance *mInstance)
+cJSON *Handler::DiagnosticRequestHandler(Connection *aConnection, otInstance *aInstance)
 {
-    connection->hasCallback     = 1;
-    connection->diagisRequest   = 1;
-    connection->diagInfo        = new DiagInfo(std::chrono::steady_clock::now());
-    connection->diagInfo->cDiag = cJSON_CreateArray();
+    aConnection->mCallback            = 1;
+    aConnection->mRequested           = 1;
+    aConnection->mDiagInfo            = new DiagInfo(steady_clock::now());
+    aConnection->mDiagInfo->mDiagJson = cJSON_CreateArray();
 
-    struct otIp6Address rloc16address     = *otThreadGetRloc(mInstance);
+    struct otIp6Address rloc16address     = *otThreadGetRloc(aInstance);
     char                multicastAddr[10] = "ff02::2";
     struct otIp6Address multicastAddress;
     otIp6AddressFromString(multicastAddr, &multicastAddress);
@@ -703,13 +724,13 @@ cJSON *RestWebServer::diagnosticRequestHandler(Connection *connection, otInstanc
         tlvTypes[count++] = static_cast<uint8_t>(t);
     }
 
-    otThreadSendDiagnosticGet(mInstance, &rloc16address, tlvTypes, count);
-    otThreadSendDiagnosticGet(mInstance, &multicastAddress, tlvTypes, count);
+    otThreadSendDiagnosticGet(aInstance, &rloc16address, tlvTypes, count);
+    otThreadSendDiagnosticGet(aInstance, &multicastAddress, tlvTypes, count);
 
     return ret;
 }
 
-cJSON *RestWebServer::CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity)
+cJSON *JSONGenerator::CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity)
 {
     cJSON *ret = cJSON_CreateObject();
 
@@ -744,7 +765,7 @@ cJSON *RestWebServer::CreateJsonConnectivity(const otNetworkDiagConnectivity &aC
 
     return ret;
 }
-cJSON *RestWebServer::CreateJsonMode(const otLinkModeConfig &aMode)
+cJSON *JSONGenerator::CreateJsonMode(const otLinkModeConfig &aMode)
 {
     cJSON *ret = cJSON_CreateObject();
 
@@ -765,7 +786,7 @@ cJSON *RestWebServer::CreateJsonMode(const otLinkModeConfig &aMode)
     return ret;
 }
 
-cJSON *RestWebServer::CreateJsonRoute(const otNetworkDiagRoute &aRoute)
+cJSON *JSONGenerator::CreateJsonRoute(const otNetworkDiagRoute &aRoute)
 {
     cJSON *ret = cJSON_CreateObject();
 
@@ -787,7 +808,7 @@ cJSON *RestWebServer::CreateJsonRoute(const otNetworkDiagRoute &aRoute)
 
     return ret;
 }
-cJSON *RestWebServer::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData)
+cJSON *JSONGenerator::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData)
 {
     char * tmp       = new char[5]();
     cJSON *RouteData = cJSON_CreateObject();
@@ -807,7 +828,7 @@ cJSON *RestWebServer::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteDa
     return RouteData;
 }
 
-cJSON *RestWebServer::CreateJsonLeaderData(const otLeaderData &aLeaderData)
+cJSON *JSONGenerator::CreateJsonLeaderData(const otLeaderData &aLeaderData)
 {
     char * tmp        = new char[9]();
     cJSON *LeaderData = cJSON_CreateObject();
@@ -829,7 +850,7 @@ cJSON *RestWebServer::CreateJsonLeaderData(const otLeaderData &aLeaderData)
 
     return LeaderData;
 }
-cJSON *RestWebServer::CreateJsonIp6Address(const otIp6Address &aAddress)
+cJSON *JSONGenerator::CreateJsonIp6Address(const otIp6Address &aAddress)
 {
     char *tmp = new char[65]();
 
@@ -842,7 +863,7 @@ cJSON *RestWebServer::CreateJsonIp6Address(const otIp6Address &aAddress)
     return ret;
 }
 
-cJSON *RestWebServer::CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters)
+cJSON *JSONGenerator::CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters)
 {
     char * tmp          = new char[9]();
     cJSON *cMacCounters = cJSON_CreateObject();
@@ -877,7 +898,7 @@ cJSON *RestWebServer::CreateJsonMacCounters(const otNetworkDiagMacCounters &aMac
     return cMacCounters;
 }
 
-cJSON *RestWebServer::CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry)
+cJSON *JSONGenerator::CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry)
 {
     char * tmp              = new char[7]();
     cJSON *cChildTableEntry = cJSON_CreateObject();
@@ -894,13 +915,13 @@ cJSON *RestWebServer::CreateJsonChildTableEntry(const otNetworkDiagChildEntry &a
     return cChildTableEntry;
 }
 
-void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
+void RestWebServer::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
 {
-    static_cast<RestWebServer *>(aContext)->diagnosticResponseHandler(
+    static_cast<RestWebServer *>(aContext)->DiagnosticResponseHandler(
         aMessage, *static_cast<const otMessageInfo *>(aMessageInfo));
 }
 
-void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo )
+void RestWebServer::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo)
 {
     uint8_t               buf[16];
     uint16_t              bytesToPrint;
@@ -911,8 +932,6 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
     otError               error    = OT_ERROR_NONE;
     cJSON *               ret      = cJSON_CreateObject();
     std::string           keyRloc;
-
-    
 
     while (length > 0)
     {
@@ -928,7 +947,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
         {
         case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
         {
-            char * p          = formatBytes(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE);
+            char * p          = FormatBytes(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE);
             cJSON *extAddress = cJSON_CreateString(p);
             cJSON_AddItemToObject(ret, "Ext Address", extAddress);
         }
@@ -944,7 +963,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_MODE:
         {
-            cJSON *cMode = CreateJsonMode(diagTlv.mData.mMode);
+            cJSON *cMode = JSONGenerator::CreateJsonMode(diagTlv.mData.mMode);
             cJSON_AddItemToObject(ret, "Mode", cMode);
         }
         break;
@@ -959,25 +978,25 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_CONNECTIVITY:
         {
-            cJSON *cConnectivity = CreateJsonConnectivity(diagTlv.mData.mConnectivity);
+            cJSON *cConnectivity = JSONGenerator::CreateJsonConnectivity(diagTlv.mData.mConnectivity);
             cJSON_AddItemToObject(ret, "Connectivity", cConnectivity);
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
         {
-            cJSON *cRoute = CreateJsonRoute(diagTlv.mData.mRoute);
+            cJSON *cRoute = JSONGenerator::CreateJsonRoute(diagTlv.mData.mRoute);
             cJSON_AddItemToObject(ret, "Route", cRoute);
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_LEADER_DATA:
         {
-            cJSON *cLeaderData = CreateJsonLeaderData(diagTlv.mData.mLeaderData);
+            cJSON *cLeaderData = JSONGenerator::CreateJsonLeaderData(diagTlv.mData.mLeaderData);
             cJSON_AddItemToObject(ret, "Leader Data", cLeaderData);
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
         {
-            char *p = formatBytes(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount);
+            char *p = FormatBytes(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount);
 
             cJSON *cNetworkData = cJSON_CreateString(p);
             cJSON_AddItemToObject(ret, "Network Data", cNetworkData);
@@ -989,7 +1008,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
             cJSON *cIP6List = cJSON_CreateArray();
             for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
             {
-                cJSON *cIP6Address = CreateJsonIp6Address(diagTlv.mData.mIp6AddrList.mList[i]);
+                cJSON *cIP6Address = JSONGenerator::CreateJsonIp6Address(diagTlv.mData.mIp6AddrList.mList[i]);
 
                 cJSON_AddItemToArray(cIP6List, cIP6Address);
             }
@@ -998,7 +1017,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_MAC_COUNTERS:
         {
-            cJSON *cMacCounters = CreateJsonMacCounters(diagTlv.mData.mMacCounters);
+            cJSON *cMacCounters = JSONGenerator::CreateJsonMacCounters(diagTlv.mData.mMacCounters);
             cJSON_AddItemToObject(ret, "MAC Counters", cMacCounters);
         }
         break;
@@ -1025,7 +1044,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
 
             for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
             {
-                cJSON *cChildTableEntry = CreateJsonChildTableEntry(diagTlv.mData.mChildTable.mTable[i]);
+                cJSON *cChildTableEntry = JSONGenerator::CreateJsonChildTableEntry(diagTlv.mData.mChildTable.mTable[i]);
                 cJSON_AddItemToArray(cChildTable, cChildTableEntry);
             }
             cJSON_AddItemToObject(ret, "Child Table", cChildTable);
@@ -1033,7 +1052,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_CHANNEL_PAGES:
         {
-            char *channelPages = formatBytes(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount);
+            char *channelPages = FormatBytes(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount);
 
             cJSON *cChannelPages = cJSON_CreateString(channelPages);
             cJSON_AddItemToObject(ret, "Channel Pages", cChannelPages);
@@ -1052,16 +1071,16 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
     }
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        if (it->second->diagisRequest)
+        Connection *connection = it->second;
+        if (connection->mRequested)
         {
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() -
-                                                                                  it->second->diagInfo->start)
-                                .count();
-            if (duration <= mTimeout * 4 &&
-                it->second->diagInfo->nodeSet.find(keyRloc) == it->second->diagInfo->nodeSet.end())
+            auto duration =
+                duration_cast<microseconds>(steady_clock::now() - connection->mDiagInfo->mStartTime).count();
+            if (duration <= sTimeout * 4 &&
+                connection->mDiagInfo->mNodeSet.find(keyRloc) == connection->mDiagInfo->mNodeSet.end())
             {
-                it->second->diagInfo->nodeSet.insert(keyRloc);
-                cJSON_AddItemToArray(it->second->diagInfo->cDiag, ret);
+                connection->mDiagInfo->mNodeSet.insert(keyRloc);
+                cJSON_AddItemToArray(connection->mDiagInfo->mDiagJson, ret);
 
                 break;
             }
