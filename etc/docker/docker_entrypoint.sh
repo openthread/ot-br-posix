@@ -31,35 +31,34 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 function parse_args()
 {
-    while [ $# -gt 0 ]
-    do
+    while [ $# -gt 0 ]; do
         case $1 in
-        --radio-url)
-            RADIO_URL="$2"
-            shift
-            shift
-            ;;
-        --interface|-I)
-            TUN_INTERFACE_NAME=$2
-            shift
-            shift
-            ;;
-        --nat64-prefix)
-            NAT64_PREFIX=$2
-            shift
-            shift
-            ;;
-        --disable-default-prefix-route)
-            AUTO_PREFIX_ROUTE=false
-            shift
-            ;;
-        --disable-default-prefix-slaac)
-            AUTO_PREFIX_SLAAC=false
-            shift
-            ;;
-        *)
-            shift
-            ;;
+            --radio-url)
+                RADIO_URL="$2"
+                shift
+                shift
+                ;;
+            --interface | -I)
+                TUN_INTERFACE_NAME=$2
+                shift
+                shift
+                ;;
+            --nat64-prefix)
+                NAT64_PREFIX=$2
+                shift
+                shift
+                ;;
+            --disable-default-prefix-route)
+                AUTO_PREFIX_ROUTE=false
+                shift
+                ;;
+            --disable-default-prefix-slaac)
+                AUTO_PREFIX_SLAAC=false
+                shift
+                ;;
+            *)
+                shift
+                ;;
         esac
     done
 }
@@ -83,8 +82,8 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
 
-echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -d7 $RADIO_URL\"" > /etc/default/otbr-agent
-echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" > /etc/default/otbr-web
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -d7 $RADIO_URL\"" >/etc/default/otbr-agent
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" >/etc/default/otbr-web
 
 /app/script/server
 

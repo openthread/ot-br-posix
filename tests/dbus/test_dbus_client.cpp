@@ -28,11 +28,13 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <memory>
 
 #include <dbus/dbus.h>
+#include <unistd.h>
 
 #include "common/code_utils.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
@@ -46,6 +48,16 @@ using otbr::DBus::Ip6Prefix;
 using otbr::DBus::LinkModeConfig;
 using otbr::DBus::OnMeshPrefix;
 using otbr::DBus::ThreadApiDBus;
+
+#define TEST_ASSERT(x)                                              \
+    do                                                              \
+    {                                                               \
+        if (!(x))                                                   \
+        {                                                           \
+            printf("Assert failed at %s:%d\n", __FILE__, __LINE__); \
+            exit(EXIT_FAILURE);                                     \
+        }                                                           \
+    } while (false)
 
 struct DBusConnectionDeleter
 {
@@ -71,14 +83,14 @@ static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
     route.mStable     = true;
     route.mPreference = 0;
 
-    assert(aApi->AddExternalRoute(route) == OTBR_ERROR_NONE);
-    assert(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
-    assert(externalRouteTable.size() == 1);
-    assert(externalRouteTable[0].mPrefix == aPrefix);
-    assert(externalRouteTable[0].mPreference == 0);
-    assert(externalRouteTable[0].mStable);
-    assert(externalRouteTable[0].mNextHopIsThisDevice);
-    assert(aApi->RemoveExternalRoute(aPrefix) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->AddExternalRoute(route) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
+    TEST_ASSERT(externalRouteTable.size() == 1);
+    TEST_ASSERT(externalRouteTable[0].mPrefix == aPrefix);
+    TEST_ASSERT(externalRouteTable[0].mPreference == 0);
+    TEST_ASSERT(externalRouteTable[0].mStable);
+    TEST_ASSERT(externalRouteTable[0].mNextHopIsThisDevice);
+    TEST_ASSERT(aApi->RemoveExternalRoute(aPrefix) == OTBR_ERROR_NONE);
 }
 
 int main()
@@ -101,7 +113,10 @@ int main()
         [](DeviceRole aRole) { printf("Device role changed to %d\n", static_cast<uint8_t>(aRole)); });
 
     api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
-        LinkModeConfig cfg = {true, true, false, true};
+        LinkModeConfig       cfg       = {true, true, false, true};
+        std::vector<uint8_t> masterKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                                          0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+        uint16_t             channel   = 11;
 
         for (auto &&result : aResult)
         {
@@ -115,67 +130,80 @@ int main()
         cfg.mDeviceType = true;
         api->SetLinkMode(cfg);
 
-        api->Attach("Test", 0x3456, extpanid, {}, {}, UINT32_MAX, [&api, extpanid](ClientError aError) {
-            printf("Attach result %d\n", static_cast<int>(aError));
-            uint64_t extpanidCheck;
-            if (aError == OTBR_ERROR_NONE)
-            {
-                std::string                           name;
-                uint64_t                              extAddress = 0;
-                uint16_t                              rloc16     = 0xffff;
-                uint8_t                               routerId;
-                std::vector<uint8_t>                  networkData;
-                std::vector<uint8_t>                  stableNetworkData;
-                otbr::DBus::LeaderData                leaderData;
-                uint8_t                               leaderWeight;
-                int8_t                                rssi;
-                int8_t                                txPower;
-                std::vector<otbr::DBus::ChildInfo>    childTable;
-                std::vector<otbr::DBus::NeighborInfo> neighborTable;
-                uint32_t                              partitionId;
-                Ip6Prefix                             prefix;
-                OnMeshPrefix                          onMeshPrefix = {};
+        api->Attach("Test", 0x3456, extpanid, masterKey, {}, 1 << channel,
+                    [&api, channel, extpanid](ClientError aError) {
+                        printf("Attach result %d\n", static_cast<int>(aError));
+                        sleep(10);
+                        uint64_t extpanidCheck;
+                        if (aError == OTBR_ERROR_NONE)
+                        {
+                            std::string                           name;
+                            uint64_t                              extAddress = 0;
+                            uint16_t                              rloc16     = 0xffff;
+                            std::vector<uint8_t>                  networkData;
+                            std::vector<uint8_t>                  stableNetworkData;
+                            int8_t                                rssi;
+                            int8_t                                txPower;
+                            std::vector<otbr::DBus::ChildInfo>    childTable;
+                            std::vector<otbr::DBus::NeighborInfo> neighborTable;
+                            uint32_t                              partitionId;
+                            uint16_t                              channelResult;
 
-                prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
-                prefix.mLength = 64;
+                            TEST_ASSERT(api->GetChannel(channelResult) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(channelResult == channel);
+                            TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetRloc16(rloc16) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetExtendedAddress(extAddress) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetNetworkData(networkData) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetStableNetworkData(stableNetworkData) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetChildTable(childTable) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetNeighborTable(neighborTable) == OTBR_ERROR_NONE);
+                            printf("neighborTable size %zu\n", neighborTable.size());
+                            printf("childTable size %zu\n", childTable.size());
+                            TEST_ASSERT(neighborTable.size() == 1);
+                            TEST_ASSERT(childTable.size() == 1);
+                            TEST_ASSERT(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
+                            api->FactoryReset(nullptr);
+                            TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(rloc16 != 0xffff);
+                            TEST_ASSERT(extAddress != 0);
+                            TEST_ASSERT(!networkData.empty());
+                            TEST_ASSERT(api->GetNeighborTable(neighborTable) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(neighborTable.empty());
+                        }
+                        if (aError != OTBR_ERROR_NONE || extpanidCheck != extpanid)
+                        {
+                            exit(-1);
+                        }
+                        api->Attach("Test", 0x5678, extpanid, {}, {}, UINT32_MAX, [&api](ClientError aErr) {
+                            uint8_t                routerId;
+                            otbr::DBus::LeaderData leaderData;
+                            uint8_t                leaderWeight;
+                            Ip6Prefix              prefix;
+                            OnMeshPrefix           onMeshPrefix = {};
 
-                onMeshPrefix.mPrefix     = prefix;
-                onMeshPrefix.mPreference = 0;
-                onMeshPrefix.mStable     = true;
+                            prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+                            prefix.mLength = 64;
 
-                assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
-                assert(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
-                assert(api->GetRloc16(rloc16) == OTBR_ERROR_NONE);
-                assert(api->GetExtendedAddress(extAddress) == OTBR_ERROR_NONE);
-                assert(api->GetRouterId(routerId) == OTBR_ERROR_NONE);
-                assert(api->GetLeaderData(leaderData) == OTBR_ERROR_NONE);
-                assert(api->GetNetworkData(networkData) == OTBR_ERROR_NONE);
-                assert(api->GetStableNetworkData(stableNetworkData) == OTBR_ERROR_NONE);
-                assert(api->GetLocalLeaderWeight(leaderWeight) == OTBR_ERROR_NONE);
-                assert(api->GetChildTable(childTable) == OTBR_ERROR_NONE);
-                assert(api->GetNeighborTable(neighborTable) == OTBR_ERROR_NONE);
-                assert(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
-                assert(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
-                assert(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
-                CheckExternalRoute(api.get(), prefix);
-                assert(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
-                assert(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
-                api->FactoryReset(nullptr);
-                assert(api->GetNetworkName(name) == OTBR_ERROR_NONE);
-                assert(rloc16 != 0xffff);
-                assert(extAddress != 0);
-                assert(routerId == leaderData.mLeaderRouterId);
-                assert(!networkData.empty());
-                assert(childTable.empty());
-                assert(neighborTable.empty());
-            }
-            if (aError != OTBR_ERROR_NONE || extpanidCheck != extpanid)
-            {
-                exit(-1);
-            }
-            api->Attach("Test", 0x3456, extpanid, {}, {}, UINT32_MAX,
-                        [](ClientError aErr) { exit(static_cast<uint8_t>(aErr)); });
-        });
+                            onMeshPrefix.mPrefix     = prefix;
+                            onMeshPrefix.mPreference = 0;
+                            onMeshPrefix.mStable     = true;
+
+                            TEST_ASSERT(api->GetLocalLeaderWeight(leaderWeight) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetLeaderData(leaderData) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetRouterId(routerId) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(routerId == leaderData.mLeaderRouterId);
+
+                            CheckExternalRoute(api.get(), prefix);
+                            TEST_ASSERT(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
+
+                            exit(static_cast<uint8_t>(aErr));
+                        });
+                    });
     });
 
     while (true)

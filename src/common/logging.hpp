@@ -53,14 +53,6 @@ enum
 };
 
 /**
- * Change the log level
- *
- * @param[in]   alevel  new log level
- */
-
-void otbrLogSetLevel(int aLevel);
-
-/**
  * Get current log level
  */
 int otbrLogGetLevel(void);

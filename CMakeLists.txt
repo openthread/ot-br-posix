@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-cmake_minimum_required(VERSION 3.11.4)
+cmake_minimum_required(VERSION 3.10.2)
 project(openthread-br VERSION 0.2.0)
 
 
@@ -35,6 +35,11 @@ option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
 option(OTBR_WEB           "Build Web GUI" OFF)
 
+
+if(NOT CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 
 if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 11)

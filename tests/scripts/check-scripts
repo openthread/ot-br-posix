@@ -29,22 +29,24 @@
 
 set -eux
 
-check_otbr_agent() {
-    sudo dbus-send --system             \
-        --dest=org.freedesktop.DBus     \
-        --type=method_call              \
-        --print-reply                   \
-        /org/freedesktop/DBus           \
+check_otbr_agent()
+{
+    sudo dbus-send --system \
+        --dest=org.freedesktop.DBus \
+        --type=method_call \
+        --print-reply \
+        /org/freedesktop/DBus \
         org.freedesktop.DBus.ListNames | grep -q '"io.openthread.BorderRouter.wpan0"'
 }
 
-main() {
+main()
+{
     RELEASE=1 ./script/bootstrap
     ./script/bootstrap
     NAT64=1 ./script/setup
     SOCAT_OUTPUT=/tmp/ot-socat
 
-    socat -d -d pty,raw,echo=0 pty,raw,echo=0 > /dev/null 2> $SOCAT_OUTPUT &
+    socat -d -d pty,raw,echo=0 pty,raw,echo=0 >/dev/null 2>$SOCAT_OUTPUT &
     while true; do
         if [[ "$(head -n2 $SOCAT_OUTPUT | wc -l)" == 2 ]]; then
             RCP_PTY=$(head -n1 $SOCAT_OUTPUT | grep -o '/dev/.\+')
@@ -63,8 +65,9 @@ main() {
     fi
 
     # shellcheck disable=SC2094
-    ot-rcp 1 > "${RCP_PTY}" < "${RCP_PTY}" &
-    RADIO_URL="spinel+hdlc+uart://${HOST_PTY}" ./script/console & SERVICES_PID=$!
+    ot-rcp 1 >"${RCP_PTY}" <"${RCP_PTY}" &
+    RADIO_URL="spinel+hdlc+uart://${HOST_PTY}" ./script/console &
+    SERVICES_PID=$!
     sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 10

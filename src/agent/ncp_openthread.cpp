@@ -34,6 +34,7 @@
 
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
+#include <openthread/logging.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
@@ -72,7 +73,34 @@ ControllerOpenThread::~ControllerOpenThread(void)
 
 otbrError ControllerOpenThread::Init(void)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otbrError  error = OTBR_ERROR_NONE;
+    otLogLevel level = OT_LOG_LEVEL_NONE;
+
+    switch (otbrLogGetLevel())
+    {
+    case OTBR_LOG_EMERG:
+    case OTBR_LOG_ALERT:
+    case OTBR_LOG_CRIT:
+        level = OT_LOG_LEVEL_CRIT;
+        break;
+    case OTBR_LOG_ERR:
+    case OTBR_LOG_WARNING:
+        level = OT_LOG_LEVEL_WARN;
+        break;
+    case OTBR_LOG_NOTICE:
+        level = OT_LOG_LEVEL_NOTE;
+        break;
+    case OTBR_LOG_INFO:
+        level = OT_LOG_LEVEL_INFO;
+        break;
+    case OTBR_LOG_DEBUG:
+        level = OT_LOG_LEVEL_DEBG;
+        break;
+    default:
+        ExitNow(error = OTBR_ERROR_OPENTHREAD);
+        break;
+    }
+    VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
@@ -185,6 +213,10 @@ void ControllerOpenThread::Reset(void)
     otInstanceFinalize(mInstance);
     otSysDeinit();
     Init();
+    for (auto &handler : mResetHandlers)
+    {
+        handler();
+    }
     sReset = false;
 }
 
@@ -249,6 +281,11 @@ void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point a
                                          const std::function<void(void)> &     aTask)
 {
     mTimers.insert({aTimePoint, aTask});
+}
+
+void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
+{
+    mResetHandlers.emplace_back(std::move(aHandler));
 }
 
 Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl)

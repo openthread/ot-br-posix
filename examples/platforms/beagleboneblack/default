@@ -30,6 +30,7 @@
 # We need to extend the default SUDO timeout
 # otherwise we have to enter sudo passwords multiple times :-(
 
+# shellcheck disable=SC2034
 SUDO_EXTEND_TIME=true
 
 # the beaglebone black does not have enough ram to build

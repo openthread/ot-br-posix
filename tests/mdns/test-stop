@@ -31,13 +31,14 @@
 # This script tests stop publishing service.
 #
 
+# shellcheck source=tests/mdns/test_init
 . "$(dirname "$0")/test_init"
 
 main()
 {
     start_publisher k
 
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'
@@ -45,17 +46,18 @@ main()
 
     # stop service
     /bin/kill -USR1 $PID
-    sleep 1
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
-        ! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
+        sleep 200
+        (! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH') || exit 1
     else
-        ! avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'
+        sleep 1
+        (! avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"') || exit 1
     fi
 
     # start service
     /bin/kill -USR2 $PID
     sleep 1
-    if [[ "${OTBR_MDNS}" = 'mDNSResponder' ]]; then
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH'
     else
         avahi_check 'SingleService;_meshcop._udp;.\+"xp=ABCDEFGH.\+"nn=cool"'

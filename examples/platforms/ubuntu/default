@@ -27,6 +27,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+# shellcheck disable=SC2034
 NAT64=1
 DNS64=1
 DHCPV6_PD=0

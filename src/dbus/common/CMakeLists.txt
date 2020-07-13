@@ -38,6 +38,7 @@ target_link_libraries(otbr-dbus-common PUBLIC
     otbr-common
     openthread-ftd
     openthread-posix
-    ${DBUS_LINK_LIBRARIES}
+    $<$<BOOL:${DBUS_LIBRARY_DIRS}>:-L$<JOIN:${DBUS_LIBRARY_DIRS}," -L">>
+    ${DBUS_LIBRARIES}
 )
 

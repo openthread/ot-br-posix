@@ -128,7 +128,22 @@ public:
      */
     otbrError RequestEvent(int aEvent) override;
 
+    /**
+     * This method posts a task to the timer
+     *
+     * @param[in]   aTimePoint  The timepoint to trigger the task.
+     * @param[in]   aTask       The task function.
+     *
+     */
     void PostTimerTask(std::chrono::steady_clock::time_point aTimePoint, const std::function<void(void)> &aTask);
+
+    /**
+     * This method registers a reset handler.
+     *
+     * @param[in]   aHandler  The handler function.
+     *
+     */
+    void RegisterResetHandler(std::function<void(void)> aHandler);
 
     ~ControllerOpenThread(void) override;
 
@@ -145,6 +160,7 @@ private:
     std::unique_ptr<otbr::agent::ThreadHelper>                                      mThreadHelper;
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
     bool                                                                            mTriedAttach;
+    std::vector<std::function<void(void)>>                                          mResetHandlers;
 };
 
 } // namespace Ncp

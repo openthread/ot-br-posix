@@ -46,7 +46,8 @@ target_include_directories(otbr-web PRIVATE
     ${PROJECT_SOURCE_DIR}/third_party/Simple-web-server/repo
 )
 target_link_libraries(otbr-web PRIVATE
-    ${JSONCPP_LINK_LIBRARIES}
+    $<$<BOOL:${JSONCPP_LIBRARY_DIRS}>:-L$<JOIN:${JSONCPP_LIBRARY_DIRS}," -L">>
+    ${JSONCPP_LIBRARIES}
     otbr-common
     otbr-utils
     openthread-ftd

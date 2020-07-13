@@ -60,6 +60,39 @@
 namespace otbr {
 namespace Web {
 
+static void EscapeHtml(std::string &content)
+{
+    std::string output;
+
+    output.reserve(content.size());
+    for (char c : content)
+    {
+        switch (c)
+        {
+        case '&':
+            output.append("&amp;");
+            break;
+        case '<':
+            output.append("&lt;");
+            break;
+        case '>':
+            output.append("&gt;");
+            break;
+        case '"':
+            output.append("&quot;");
+            break;
+        case '\'':
+            output.append("&apos;");
+            break;
+        default:
+            output.push_back(c);
+            break;
+        }
+    }
+
+    output.swap(content);
+}
+
 WebServer::WebServer(void)
     : mServer(new HttpServer())
 {
@@ -121,8 +154,10 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
                       << OT_RESPONSE_PLACEHOLD << httpResponse;
         } catch (std::exception &e)
         {
+            std::string content = e.what();
+            EscapeHtml(content);
             *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << strlen(e.what())
-                      << OT_RESPONSE_PLACEHOLD << e.what();
+                      << OT_RESPONSE_PLACEHOLD << content;
         }
     };
 }
@@ -206,6 +241,7 @@ void WebServer::DefaultHttpResponse(void)
         } catch (const std::exception &e)
         {
             std::string content = "Could not open path `" + request->path + "`: " + e.what();
+            EscapeHtml(content);
             *response << OT_RESPONSE_FAILURE_STATUS << OT_RESPONSE_HEADER_LENGTH << content.length()
                       << OT_RESPONSE_PLACEHOLD << content;
         }
