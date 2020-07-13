@@ -33,18 +33,21 @@
 
 #ifndef OTBR_AGENT_REST_WEB_SERVER_HPP_
 #define OTBR_AGENT_REST_WEB_SERVER_HPP_
+
+#include <unordered_map>
+#include <unordered_set>
+
 #include <chrono>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <unordered_map>
-#include <unordered_set>
-#include <openthread/netdiag.h>
 
-#include "http_parser.h"
-#include "cjson/cJSON.h"
+#include <cjson/cJSON.h>
+#include <http_parser.h>
+
+#include <openthread/netdiag.h>
 
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
@@ -159,7 +162,7 @@ private:
 
     static cJSON *diagnosticRequestHandler(Connection *connection, otInstance *mInstance);
     static void   diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    void          diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo &aMessageInfo);
+    void          diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo );
 
     static cJSON *getJsonNodeInfo(Connection *connection, otInstance *mInstance);
     static cJSON *getJsonExtendedAddr(Connection *connection, otInstance *mInstance);

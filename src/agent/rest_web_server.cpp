@@ -26,37 +26,33 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "agent/rest_web_server.hpp"
+
 #include <algorithm>
 #include <chrono>
-#include <errno.h>
-#include <fcntl.h>
 #include <fstream>
 #include <iostream>
-#include <netinet/in.h>
 #include <sstream>
+#include <string>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include "common/logging.hpp"
 #include "openthread/thread_ftd.h"
-
-#include "agent/rest_web_server.hpp"
-
-// #include "cJSON.h"
-// #include "cJSON.c"
-// #include "http-parser/http_parser.h"
-// #include "http_parser.c"
-
 namespace otbr {
 namespace agent {
 
 static int on_message_begin(http_parser *parser)
 {
     Connection *Connection = (struct Connection *)parser->data;
-
+    Connection->complete   = 0;
     return 0;
 }
 
@@ -904,7 +900,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
         aMessage, *static_cast<const otMessageInfo *>(aMessageInfo));
 }
 
-void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo &aMessageInfo)
+void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessageInfo )
 {
     uint8_t               buf[16];
     uint16_t              bytesToPrint;
@@ -916,7 +912,7 @@ void RestWebServer::diagnosticResponseHandler(otMessage *aMessage, const otMessa
     cJSON *               ret      = cJSON_CreateObject();
     std::string           keyRloc;
 
-    auto sockRloc16 = aMessageInfo.mPeerAddr.mFields.m16[7];
+    
 
     while (length > 0)
     {
