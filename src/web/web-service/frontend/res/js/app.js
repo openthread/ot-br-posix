@@ -52,8 +52,8 @@
 
     function AppCtrl($scope, $http, $mdDialog, $interval, sharedProperties) {
 
-        // $scope.ipAddr = "0.0.0.0:8080";
-        $scope.ipaddr = location.host;
+        $scope.ipAddr = "0.0.0.0:8080";
+        // $scope.ipaddr = location.host;
 
         //basic information line
         $scope.networksInfo = "Unknown";
@@ -240,7 +240,8 @@
             svg = d3.select(".d3graph").append("svg")
                 .attr("preserveAspectRatio", "xMidYMid meet")
                 .attr("viewBox", "0, 0, " + len.toString(10) + ", " + (len / (3 / 2)).toString(10)) //class to make it responsive
-                //tooltip style  for each node
+
+            //tooltip style  for each node
             tooltip = d3.select("body")
                 .append("div")
                 .attr("class", "tooltip")
@@ -340,23 +341,51 @@
                     .attr('fill', '#18c3f7')
                     .attr("class", function(d) {
                         return d.Rloc16;
+                    })
+                    .on("mouseover", function(d) {
+                        return tooltip.style("visibility", "visible")
+                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
+                    })
+                    .on("mousemove", function() {
+                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
+                            .style("left", (d3.event.pageX + 10) + "px");
+                    })
+                    .on("mouseout", function() {
+                        return tooltip.style("visibility", "hidden");
                     });
-                pentagonPoints = [-7.5, 10.44, 7.5, 10.44, 12.12, -3.936, 0, -12.63, -12.12, -3.936];
+
 
                 d3.selectAll(".Leader").append("polygon")
                     .attr("points", "-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936")
                     .attr('fill', '#000000')
                     .style("filter", "url(#f1)")
                     .attr("class", function(d) {
-                        return "shadow";
+                        return "Stroke";
+                    })
+                    .on("mouseover", function(d) {
+
+                        d3.select(this).attr("transform", "scale(1.25)");
+                        return tooltip.style("visibility", "visible")
+                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
+
+                    })
+                    .on("mousemove", function() {
+                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
+                            .style("left", (d3.event.pageX + 10) + "px");
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).attr("transform", "scale(0.8)");
+                        return tooltip.style("visibility", "hidden");
+
                     })
                     .on("click", function(d) {
+                        d3.selectAll(".Stroke").style("stroke", "none")
 
-                        d3.selectAll("#amplified")
-                            .attr("id", "normal")
-                            .attr("transform", "scale(0.8)");
-                        d3.select(this).attr("transform", "scale(1.25)")
-                            .attr("id", "amplified");
+                        d3.selectAll(".Stroke").style("stroke", "none")
+
+
+                        d3.select(this).style("stroke", "yellow")
+                            .style("stroke-width", "1px");
 
 
                         $scope.$apply(function() {
@@ -370,15 +399,34 @@
                     .attr('fill', '#024f9d')
                     .style("filter", "url(#f1)")
                     .attr("class", function(d) {
-                        return d.Rloc16;
+                        return "Stroke";
+                    })
+                    .on("mouseover", function(d) {
+
+                        d3.select(this).attr("transform", "scale(1.1)");
+                        return tooltip.style("visibility", "visible")
+                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
+
+
+                    })
+                    .on("mousemove", function() {
+                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
+                            .style("left", (d3.event.pageX + 10) + "px");
+                    })
+                    .on("mouseout", function() {
+                        d3.select(this).attr("transform", "scale(0.8)");
+                        return tooltip.style("visibility", "hidden");
+
                     })
                     .on("click", function(d) {
+                        d3.selectAll(".Stroke").style("stroke", "none")
+                            // .style("stroke-width", "0px");
+                            // d3.selectAll(".Stroke").style("stroke", "none")
+                            //     .style("stroke-width", "0px");
 
-                        d3.selectAll("#amplified")
-                            .attr("id", "normal")
-                            .attr("transform", "scale(0.8)");
-                        d3.select(this).attr("transform", "scale(1.25)")
-                            .attr("id", "amplified");
+                        d3.select(this).style("stroke", "yellow")
+                            .style("stroke-width", "1px");
+
 
 
                         $scope.$apply(function() {
@@ -519,6 +567,10 @@
                         }
                     }
                 });
+            }
+            if (index == 6) {
+                $scope.dataInit();
+                $scope.showTopology();
             }
         };
 
