@@ -30,6 +30,8 @@ cmake_minimum_required(VERSION 3.10.2)
 project(openthread-br VERSION 0.2.0)
 
 
+add_library(otbr-config INTERFACE)
+
 option(OTBR_DBUS          "Build DBus support" OFF)
 option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
@@ -50,8 +52,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (OTBR_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     message(STATUS "Coverage: ON")
-    add_compile_options(-g -O0 --coverage)
-    add_link_options(--coverage)
+    target_compile_options(otbr-config INTERFACE -g -O0 --coverage)
+    target_link_libraries(otbr-config INTERFACE --coverage)
 endif()
 
 add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
@@ -72,7 +74,6 @@ endif()
 message(STATUS "Version: ${OTBR_VERSION}")
 
 
-add_library(otbr-config INTERFACE)
 target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src
@@ -82,6 +83,9 @@ target_compile_definitions(otbr-config INTERFACE
     "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
 )
 
+if(BUILD_SHARED_LIBS)
+    target_link_libraries(otbr-config INTERFACE -Wl,--unresolved-symbols=ignore-in-shared-libs)
+endif()
 
 find_package(PkgConfig)
 include(GNUInstallDirs)
