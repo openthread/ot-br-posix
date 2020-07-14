@@ -25,9 +25,6 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-# set(CJSON_FILE ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo/cJSON.c ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo/cJSON.h)
-# set(HTTP_PARSER_FILE ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo/http_parser.c ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo/http_parser.h)
-
 
 add_executable(otbr-agent
     agent_instance.cpp
