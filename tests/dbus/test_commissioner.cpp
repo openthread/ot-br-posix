@@ -27,6 +27,7 @@
  */
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,7 +97,7 @@ int main()
                      &commissionerActiveCount, &commissionerPetitionCount](CommissionerJoinerEvent aEvent,
                                                                            const JoinerInfo &aInfo, uint64_t aJoinerId,
                                                                            bool aJoinerIdPresent) {
-                        printf("JoinerEvent %d joiner: %08lx\n", static_cast<int>(aEvent), aJoinerId);
+                        printf("JoinerEvent %d JoinerId %" PRIu64 "\n", static_cast<int>(aEvent), aJoinerId);
                         switch (aEvent)
                         {
                         case CommissionerJoinerEvent::COMMISSIONER_JOINER_START:
