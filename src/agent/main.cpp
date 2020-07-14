@@ -106,7 +106,6 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #else
     (void)aInterfaceName;
 #endif
-
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
     // allow quitting elegantly
