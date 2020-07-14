@@ -198,6 +198,10 @@ public:
      */
     virtual ~DBusObject(void);
 
+protected:
+    DBusConnection *mConnection;
+    std::string     mObjectPath;
+
 private:
     void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
 
@@ -211,8 +215,6 @@ private:
     std::unordered_map<std::string, MethodHandlerType>                                    mMethodHandlers;
     std::unordered_map<std::string, std::unordered_map<std::string, PropertyHandlerType>> mGetPropertyHandlers;
     std::unordered_map<std::string, PropertyHandlerType>                                  mSetPropertyHandlers;
-    DBusConnection *                                                                      mConnection;
-    std::string                                                                           mObjectPath;
 };
 
 } // namespace DBus

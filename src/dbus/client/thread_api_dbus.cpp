@@ -85,28 +85,30 @@ ThreadApiDBus::ThreadApiDBus(DBusConnection *aConnection)
     : mInterfaceName("wpan0")
     , mConnection(aConnection)
 {
-    SubscribeDeviceRoleSignal();
+    SubscribeSignals();
 }
 
 ThreadApiDBus::ThreadApiDBus(DBusConnection *aConnection, const std::string &aInterfaceName)
     : mInterfaceName(aInterfaceName)
     , mConnection(aConnection)
 {
-    SubscribeDeviceRoleSignal();
+    SubscribeSignals();
 }
 
-ClientError ThreadApiDBus::SubscribeDeviceRoleSignal(void)
+ClientError ThreadApiDBus::SubscribeSignals(void)
 {
-    std::string matchRule = "type='signal',interface='" DBUS_INTERFACE_PROPERTIES "'";
+    std::string propertyMatchRule = "type='signal',interface='" DBUS_INTERFACE_PROPERTIES "'";
+    std::string threadMatchRule   = "type='signal',interface='" OTBR_DBUS_THREAD_INTERFACE "'";
     DBusError   error;
     ClientError ret = ClientError::ERROR_NONE;
 
     dbus_error_init(&error);
-    dbus_bus_add_match(mConnection, matchRule.c_str(), &error);
-
+    dbus_bus_add_match(mConnection, propertyMatchRule.c_str(), &error);
     VerifyOrExit(!dbus_error_is_set(&error), ret = ClientError::OT_ERROR_FAILED);
-
+    dbus_bus_add_match(mConnection, threadMatchRule.c_str(), &error);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = ClientError::OT_ERROR_FAILED);
     dbus_connection_add_filter(mConnection, sDBusMessageFilter, this, nullptr);
+
 exit:
     dbus_error_free(&error);
     return ret;
@@ -125,11 +127,30 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
 {
     (void)aConnection;
 
-    DBusMessageIter iter, subIter, dictEntryIter, valIter;
-    std::string     interfaceName, propertyName, val;
-    DeviceRole      role = OTBR_DEVICE_ROLE_DISABLED;
+    DBusHandlerResult result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-    VerifyOrExit(dbus_message_is_signal(aMessage, DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL));
+    if (dbus_message_is_signal(aMessage, DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL))
+    {
+        result = HandlePropertySignal(aMessage);
+    }
+    else if (dbus_message_is_signal(aMessage, OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_STATE_SIGNAL))
+    {
+        result = HandleCommissionerStateSignal(aMessage);
+    }
+    else if (dbus_message_is_signal(aMessage, OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOINER_EVENT_SIGNAL))
+    {
+        result = HandleJoinerEventSignal(aMessage);
+    }
+
+    return result;
+}
+
+DBusHandlerResult ThreadApiDBus::HandlePropertySignal(DBusMessage *aMessage)
+{
+    DBusMessageIter iter, subIter, dictEntryIter, valIter;
+    DeviceRole      role = OTBR_DEVICE_ROLE_DISABLED;
+    std::string     interfaceName, propertyName, val;
+
     VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
     SuccessOrExit(DBusMessageExtract(&iter, interfaceName));
     VerifyOrExit(interfaceName == OTBR_DBUS_THREAD_INTERFACE);
@@ -149,6 +170,55 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
     for (const auto &f : mDeviceRoleHandlers)
     {
         f(role);
+    }
+
+exit:
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+DBusHandlerResult ThreadApiDBus::HandleCommissionerStateSignal(DBusMessage *aMessage)
+{
+    DBusMessageIter   iter;
+    uint8_t           stateData;
+    CommissionerState state;
+
+    VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
+    SuccessOrExit(DBusMessageExtract(&iter, stateData));
+    state = static_cast<CommissionerState>(stateData);
+
+    if (mCommissionerStateHandler)
+    {
+        mCommissionerStateHandler(state);
+    }
+
+    if (state == COMMISSIONER_STATE_DISABLED)
+    {
+        mCommissionerStateHandler = nullptr;
+        mJoinerEventHandler       = nullptr;
+    }
+
+exit:
+    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+DBusHandlerResult ThreadApiDBus::HandleJoinerEventSignal(DBusMessage *aMessage)
+{
+    DBusMessageIter         iter;
+    uint8_t                 eventData;
+    CommissionerJoinerEvent event;
+    JoinerInfo              info;
+    uint64_t                joinerId;
+    bool                    joinerIdPresent;
+
+    VerifyOrExit(dbus_message_iter_init(aMessage, &iter));
+    SuccessOrExit(DBusMessageExtract(&iter, eventData));
+    event = static_cast<CommissionerJoinerEvent>(eventData);
+    SuccessOrExit(DBusMessageExtract(&iter, info));
+    joinerIdPresent = (DBusMessageExtract(&iter, joinerId) == OTBR_ERROR_NONE);
+
+    if (mJoinerEventHandler)
+    {
+        mJoinerEventHandler(event, info, joinerId, joinerIdPresent);
     }
 
 exit:
@@ -357,6 +427,34 @@ ClientError ThreadApiDBus::AddExternalRoute(const ExternalRoute &aExternalRoute)
 ClientError ThreadApiDBus::RemoveExternalRoute(const Ip6Prefix &aPrefix)
 {
     return CallDBusMethodSync(OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD, std::tie(aPrefix));
+}
+
+ClientError ThreadApiDBus::CommissionerStart(CommissionerStateHandler aCommissionerStateHandler,
+                                             JoinerEventHandler       aJoinerEventHandler)
+{
+    ClientError error = ClientError::ERROR_NONE;
+
+    VerifyOrExit(mCommissionerStateHandler == nullptr && mJoinerEventHandler == nullptr,
+                 error = ClientError::OT_ERROR_INVALID_STATE);
+    mCommissionerStateHandler = aCommissionerStateHandler;
+    mJoinerEventHandler       = aJoinerEventHandler;
+
+    error = CallDBusMethodSync(OTBR_DBUS_COMMISSIONER_START_METHOD);
+
+exit:
+    return error;
+}
+
+ClientError ThreadApiDBus::CommissionerStop()
+{
+    mCommissionerStateHandler = nullptr;
+    mJoinerEventHandler       = nullptr;
+    return CallDBusMethodSync(OTBR_DBUS_COMMISSIONER_STOP_METHOD);
+}
+
+ClientError ThreadApiDBus::CommissionerAddJoiner(const JoinerInfo &aJoinerInfo)
+{
+    return CallDBusMethodSync(OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD, std::tie(aJoinerInfo));
 }
 
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)

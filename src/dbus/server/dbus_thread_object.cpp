@@ -40,6 +40,7 @@
 #include <openthread/platform/radio.h>
 
 #include "common/byteswap.hpp"
+#include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
@@ -73,7 +74,7 @@ static std::string GetDeviceRoleName(otDeviceRole aRole)
     return roleName;
 }
 
-static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
+static uint64_t ConvertFromOpenThreadUint64(const uint8_t *aValue)
 {
     uint64_t val = 0;
 
@@ -82,6 +83,15 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
         val = (val << 8) | aValue[i];
     }
     return val;
+}
+
+static void ConvertToOpenThreadUint64(uint8_t *aDest, uint64_t aSource)
+{
+    for (size_t i = 0; i < sizeof(uint64_t); i++)
+    {
+        aDest[sizeof(uint64_t) - i - 1] = aSource & UINT8_MAX;
+        aSource                         = aSource >> 8;
+    }
 }
 
 namespace otbr {
@@ -125,6 +135,12 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AddExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD,
                    std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_START_METHOD,
+                   std::bind(&DBusThreadObject::CommissionerStartHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_STOP_METHOD,
+                   std::bind(&DBusThreadObject::CommissionerStopHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD,
+                   std::bind(&DBusThreadObject::CommissionerAddJoinerHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
@@ -226,8 +242,8 @@ void DBusThreadObject::ReplyScanResult(DBusRequest &                          aR
         {
             ActiveScanResult result;
 
-            result.mExtAddress    = ConvertOpenThreadUint64(r.mExtAddress.m8);
-            result.mExtendedPanId = ConvertOpenThreadUint64(r.mExtendedPanId.m8);
+            result.mExtAddress    = ConvertFromOpenThreadUint64(r.mExtAddress.m8);
+            result.mExtendedPanId = ConvertFromOpenThreadUint64(r.mExtendedPanId.m8);
             result.mNetworkName   = r.mNetworkName.m8;
             result.mSteeringData =
                 std::vector<uint8_t>(r.mSteeringData.m8, r.mSteeringData.m8 + r.mSteeringData.mLength);
@@ -426,6 +442,61 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
+void DBusThreadObject::CommissionerStartHandler(DBusRequest &aRequest)
+{
+    auto    threadHelper = mNcp->GetThreadHelper();
+    otError error = otCommissionerStart(threadHelper->GetInstance(), &DBusThreadObject::HandleCommissionerStateChanged,
+                                        &DBusThreadObject::HandleJoinerEvent, this);
+
+    aRequest.ReplyOtResult(error);
+}
+
+void DBusThreadObject::CommissionerStopHandler(DBusRequest &aRequest)
+{
+    auto    threadHelper = mNcp->GetThreadHelper();
+    otError error        = otCommissionerStop(threadHelper->GetInstance());
+
+    aRequest.ReplyOtResult(error);
+}
+
+void DBusThreadObject::CommissionerAddJoinerHandler(DBusRequest &aRequest)
+{
+    auto       threadHelper = mNcp->GetThreadHelper();
+    otError    error        = OT_ERROR_NONE;
+    JoinerInfo joinerInfo;
+    auto       args = std::tie(joinerInfo);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    if (joinerInfo.mType == JoinerType::JOINER_EUI64 || joinerInfo.mType == JoinerType::JOINER_ANY)
+    {
+        otExtAddress eui64;
+
+        if (joinerInfo.mType == JoinerType::JOINER_EUI64)
+        {
+            ConvertToOpenThreadUint64(eui64.m8, joinerInfo.mEui64OrDiscerner);
+        }
+        printf("Add joiner\n");
+        error = otCommissionerAddJoiner(threadHelper->GetInstance(),
+                                        joinerInfo.mType == JoinerType::JOINER_ANY ? nullptr : &eui64,
+                                        joinerInfo.mPSkd.c_str(), joinerInfo.mTimeout);
+        printf("Add joiner error=%s\n", otThreadErrorToString(error));
+    }
+    else if (joinerInfo.mType == JoinerType::JOINER_DISCERNER)
+    {
+        otJoinerDiscerner discerner{joinerInfo.mEui64OrDiscerner, joinerInfo.mEui64OrDiscernerBitSize};
+
+        error = otCommissionerAddJoinerWithDiscerner(threadHelper->GetInstance(), &discerner, joinerInfo.mPSkd.c_str(),
+                                                     joinerInfo.mTimeout);
+    }
+    else
+    {
+        error = OT_ERROR_INVALID_ARGS;
+    }
+
+exit:
+    aRequest.ReplyOtResult(error);
+}
+
 void DBusThreadObject::IntrospectHandler(DBusRequest &aRequest)
 {
     std::string xmlString(
@@ -543,7 +614,7 @@ otError DBusThreadObject::GetExtPanIdHandler(DBusMessageIter &aIter)
     uint64_t               extPanIdVal;
     otError                error = OT_ERROR_NONE;
 
-    extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
+    extPanIdVal = ConvertFromOpenThreadUint64(extPanId->m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extPanIdVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -681,7 +752,7 @@ otError DBusThreadObject::GetExtendedAddressHandler(DBusMessageIter &aIter)
     auto                threadHelper    = mNcp->GetThreadHelper();
     otError             error           = OT_ERROR_NONE;
     const otExtAddress *addr            = otLinkGetExtendedAddress(threadHelper->GetInstance());
-    uint64_t            extendedAddress = ConvertOpenThreadUint64(addr->m8);
+    uint64_t            extendedAddress = ConvertFromOpenThreadUint64(addr->m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extendedAddress) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -827,7 +898,7 @@ otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
     {
         ChildInfo info;
 
-        info.mExtAddress         = ConvertOpenThreadUint64(childInfo.mExtAddress.m8);
+        info.mExtAddress         = ConvertFromOpenThreadUint64(childInfo.mExtAddress.m8);
         info.mTimeout            = childInfo.mTimeout;
         info.mAge                = childInfo.mAge;
         info.mChildId            = childInfo.mChildId;
@@ -864,7 +935,7 @@ otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
     {
         NeighborInfo info;
 
-        info.mExtAddress        = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8);
+        info.mExtAddress        = ConvertFromOpenThreadUint64(neighborInfo.mExtAddress.m8);
         info.mAge               = neighborInfo.mAge;
         info.mRloc16            = neighborInfo.mRloc16;
         info.mLinkFrameCounter  = neighborInfo.mLinkFrameCounter;
@@ -953,6 +1024,97 @@ otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
+}
+
+void DBusThreadObject::HandleCommissionerStateChanged(otCommissionerState aState, void *aContext)
+{
+    DBusThreadObject *object = reinterpret_cast<DBusThreadObject *>(aContext);
+
+    object->HandleCommissionerStateChanged(aState);
+}
+
+void DBusThreadObject::HandleCommissionerStateChanged(otCommissionerState aState)
+{
+    UniqueDBusMessage signalMsg{
+        dbus_message_new_signal(mObjectPath.c_str(), OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_STATE_SIGNAL)};
+    otbrError       error = OTBR_ERROR_NONE;
+    DBusMessageIter iter;
+
+    VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_init_append(signalMsg.get(), &iter);
+
+    SuccessOrExit(error = DBusMessageEncode(&iter, static_cast<uint8_t>(aState)));
+    VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "HandleCommissionerStateChanged failed with error %d", static_cast<int>(error));
+    }
+}
+
+void DBusThreadObject::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                         const otJoinerInfo *      aJoinerInfo,
+                                         const otExtAddress *      aJoinerId,
+                                         void *                    aContext)
+{
+    DBusThreadObject *object = reinterpret_cast<DBusThreadObject *>(aContext);
+
+    object->HandleJoinerEvent(aEvent, aJoinerInfo, aJoinerId);
+}
+
+void DBusThreadObject::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                         const otJoinerInfo *      aJoinerInfo,
+                                         const otExtAddress *      aJoinerId)
+{
+    JoinerInfo        joinerInfo{};
+    otbrError         error = OTBR_ERROR_NONE;
+    UniqueDBusMessage signalMsg{
+        dbus_message_new_signal(mObjectPath.c_str(), OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOINER_EVENT_SIGNAL)};
+    DBusMessageIter   iter;
+    constexpr uint8_t kBitsPerByte = 8;
+
+    VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
+    VerifyOrExit(aJoinerInfo != nullptr, error = OTBR_ERROR_OPENTHREAD);
+    switch (aJoinerInfo->mType)
+    {
+    case OT_JOINER_INFO_TYPE_ANY:
+        joinerInfo.mType = JoinerType::JOINER_ANY;
+        break;
+    case OT_JOINER_INFO_TYPE_EUI64:
+        joinerInfo.mType                    = JoinerType::JOINER_EUI64;
+        joinerInfo.mEui64OrDiscerner        = ConvertFromOpenThreadUint64(aJoinerInfo->mSharedId.mEui64.m8);
+        joinerInfo.mEui64OrDiscernerBitSize = OT_EXT_ADDRESS_SIZE * kBitsPerByte;
+        break;
+    case OT_JOINER_INFO_TYPE_DISCERNER:
+        joinerInfo.mType                    = JoinerType::JOINER_DISCERNER;
+        joinerInfo.mEui64OrDiscerner        = aJoinerInfo->mSharedId.mDiscerner.mValue;
+        joinerInfo.mEui64OrDiscernerBitSize = aJoinerInfo->mSharedId.mDiscerner.mLength;
+        break;
+    default:
+        ExitNow(error = OTBR_ERROR_OPENTHREAD);
+    }
+
+    joinerInfo.mPSkd    = std::string(aJoinerInfo->mPskd.m8);
+    joinerInfo.mTimeout = aJoinerInfo->mExpirationTime;
+
+    dbus_message_iter_init_append(signalMsg.get(), &iter);
+
+    SuccessOrExit(error = DBusMessageEncode(&iter, static_cast<uint8_t>(aEvent)));
+    SuccessOrExit(error = DBusMessageEncode(&iter, joinerInfo));
+    if (aJoinerId)
+    {
+        uint64_t joinerId = ConvertFromOpenThreadUint64(aJoinerId->m8);
+
+        SuccessOrExit(error = DBusMessageEncode(&iter, joinerId));
+    }
+    VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "HandleJoinerEvent failed with error %d", static_cast<int>(error));
+    }
 }
 
 } // namespace DBus

@@ -46,9 +46,12 @@ bool IsThreadActive(DeviceRole aRole);
 class ThreadApiDBus
 {
 public:
-    using DeviceRoleHandler = std::function<void(DeviceRole)>;
-    using ScanHandler       = std::function<void(const std::vector<ActiveScanResult> &)>;
-    using OtResultHandler   = std::function<void(ClientError)>;
+    using DeviceRoleHandler        = std::function<void(DeviceRole aRole)>;
+    using ScanHandler              = std::function<void(const std::vector<ActiveScanResult> &aScanResult)>;
+    using OtResultHandler          = std::function<void(ClientError aError)>;
+    using CommissionerStateHandler = std::function<void(CommissionerState aState)>;
+    using JoinerEventHandler       = std::function<
+        void(CommissionerJoinerEvent aEvent, const JoinerInfo &aInfo, uint64_t aJoinerId, bool aJoinerIdPresent)>;
 
     /**
      * The constructor of a d-bus object.
@@ -230,6 +233,42 @@ public:
      *
      */
     ClientError RemoveExternalRoute(const Ip6Prefix &aPrefix);
+
+    /**
+     * This method starts the commissioner.
+     *
+     * @param[in]   aCommissionerStateHandler   The commissioner state handler.
+     * @param[in]   aJoinerEventHandler         The joiner event handler.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError CommissionerStart(CommissionerStateHandler aCommissionerStateHandler,
+                                  JoinerEventHandler       aJoinerEventHandler);
+
+    /**
+     * This method stops the commissioner.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError CommissionerStop(void);
+
+    /**
+     * This method adds the joiner information.
+     *
+     * @param[in]   aJoinerInfo         The joiner information.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError CommissionerAddJoiner(const JoinerInfo &aJoinerInfo);
 
     /**
      * This method sets the mesh-local prefix.
@@ -603,9 +642,12 @@ private:
 
     template <typename ValType> ClientError GetProperty(const std::string &aPropertyName, ValType &aValue);
 
-    ClientError              SubscribeDeviceRoleSignal(void);
+    ClientError              SubscribeSignals(void);
     static DBusHandlerResult sDBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage, void *aData);
     DBusHandlerResult        DBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage);
+    DBusHandlerResult        HandlePropertySignal(DBusMessage *aMessage);
+    DBusHandlerResult        HandleCommissionerStateSignal(DBusMessage *aMessage);
+    DBusHandlerResult        HandleJoinerEventSignal(DBusMessage *aMessage);
 
     template <void (ThreadApiDBus::*Handler)(DBusPendingCall *aPending)>
     static void sHandleDBusPendingCall(DBusPendingCall *aPending, void *aThreadApiDBus);
@@ -628,6 +670,9 @@ private:
     OtResultHandler mJoinerHandler;
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
+
+    CommissionerStateHandler mCommissionerStateHandler;
+    JoinerEventHandler       mJoinerEventHandler;
 };
 
 } // namespace DBus

@@ -80,6 +80,9 @@ private:
     void RemoveOnMeshPrefixHandler(DBusRequest &aRequest);
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
+    void CommissionerStartHandler(DBusRequest &aRequest);
+    void CommissionerStopHandler(DBusRequest &aRequest);
+    void CommissionerAddJoinerHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 
@@ -115,6 +118,17 @@ private:
     otError GetExternalRoutesHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
+
+    static void HandleCommissionerStateChanged(otCommissionerState aState, void *aContext);
+    void        HandleCommissionerStateChanged(otCommissionerState aState);
+
+    static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                  const otJoinerInfo *      aJoinerInfo,
+                                  const otExtAddress *      aJoinerId,
+                                  void *                    aContext);
+    void        HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                  const otJoinerInfo *      aJoinerInfo,
+                                  const otExtAddress *      aJoinerId);
 
     otbr::Ncp::ControllerOpenThread *mNcp;
 };

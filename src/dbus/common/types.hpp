@@ -488,6 +488,39 @@ struct LeaderData
     uint8_t  mLeaderRouterId;    ///< Leader Router ID
 };
 
+enum JoinerType
+{
+    JOINER_ANY       = 0,
+    JOINER_EUI64     = 1,
+    JOINER_DISCERNER = 2,
+};
+
+enum CommissionerState
+{
+    COMMISSIONER_STATE_DISABLED = 0,
+    COMMISSIONER_STATE_PETITION = 1,
+    COMMISSIONER_STATE_ACTIVE   = 2,
+};
+
+enum CommissionerJoinerEvent
+{
+    COMMISSIONER_JOINER_START     = 0,
+    COMMISSIONER_JOINER_CONNECTED = 1,
+    COMMISSIONER_JOINER_FINALIZE  = 2,
+    COMMISSIONER_JOINER_END       = 3,
+    COMMISSIONER_JOINER_REMOVED   = 4,
+
+};
+
+struct JoinerInfo
+{
+    JoinerType  mType;                    ///< Type of joiner EUI64 or DISCERNER
+    uint64_t    mEui64OrDiscerner;        ///< Eui64 or discerner based on type
+    uint8_t     mEui64OrDiscernerBitSize; ///< Size in bits
+    std::string mPSkd;                    ///< Pre-shared key for device
+    uint32_t    mTimeout;                 ///< Joiner timeout
+};
+
 } // namespace DBus
 } // namespace otbr
 

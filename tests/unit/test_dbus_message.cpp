@@ -123,6 +123,13 @@ bool operator==(const otbr::DBus::ExternalRoute &aLhs, const otbr::DBus::Externa
            aLhs.mStable == aRhs.mStable && aLhs.mNextHopIsThisDevice == aRhs.mNextHopIsThisDevice;
 }
 
+bool operator==(const otbr::DBus::JoinerInfo &aLhs, const otbr::DBus::JoinerInfo &aRhs)
+{
+    return aLhs.mType == aRhs.mType && aLhs.mEui64OrDiscerner == aRhs.mEui64OrDiscerner &&
+           aLhs.mEui64OrDiscernerBitSize == aRhs.mEui64OrDiscernerBitSize && aLhs.mPSkd == aRhs.mPSkd &&
+           aLhs.mTimeout == aRhs.mTimeout;
+}
+
 inline otbrError DBusMessageEncode(DBusMessageIter *aIter, const TestStruct &aValue)
 {
     otbrError       error = OTBR_ERROR_DBUS;
@@ -321,6 +328,22 @@ TEST(DBusMessage, TestOtbrExternalRoute)
         {{otbr::DBus::Ip6Prefix({{0xfa, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, 64}), uint16_t(0xfc00), 1, true,
           true}});
     tuple<std::vector<otbr::DBus::ExternalRoute>> getVals;
+
+    CHECK(msg != nullptr);
+
+    CHECK(TupleToDBusMessage(*msg, setVals) == OTBR_ERROR_NONE);
+    CHECK(DBusMessageToTuple(*msg, getVals) == OTBR_ERROR_NONE);
+
+    CHECK(std::get<0>(setVals)[0] == std::get<0>(getVals)[0]);
+
+    dbus_message_unref(msg);
+}
+
+TEST(DBusMessage, TestJoinerInfo)
+{
+    DBusMessage *                              msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    tuple<std::vector<otbr::DBus::JoinerInfo>> setVals({{otbr::DBus::JOINER_EUI64, 1, 2, "test", 3}});
+    tuple<std::vector<otbr::DBus::JoinerInfo>> getVals;
 
     CHECK(msg != nullptr);
 

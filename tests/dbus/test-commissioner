@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
@@ -25,50 +26,49 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+# Test build and run otbr dbus commissioner
+#
 
-add_executable(otbr-test-dbus-client
-    test_dbus_client.cpp
-)
-target_link_libraries(otbr-test-dbus-client PRIVATE
-    otbr-dbus-client
-)
+set -euxo pipefail
 
-add_executable(otbr-test-commissioner
-    test_commissioner.cpp
-)
-target_link_libraries(otbr-test-commissioner PRIVATE
-    otbr-dbus-client
-)
+readonly OTBR_DBUS_SERVER_CONF=otbr-test-agent.conf
+readonly OT_CTL="${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl
 
-add_executable(otbr-test-dbus-server
-    test_dbus_server.cpp
-)
-target_link_libraries(otbr-test-dbus-server PRIVATE
-    otbr-dbus-server
-)
+on_exit()
+{
+    local status=$?
 
-add_test(
-    NAME dbus-server
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-server
-)
-set_tests_properties(dbus-server PROPERTIES
-    ENVIRONMENT CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-)
+    sudo killall otbr-agent || true
+    sudo killall expect || true
+    sudo killall ot-cli-ftd || true
+    sudo rm "/etc/dbus-1/system.d/${OTBR_DBUS_SERVER_CONF}" || true
 
-add_test(
-    NAME dbus-client
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-client
-)
-set_tests_properties(dbus-client PROPERTIES
-    ENVIRONMENT CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
-)
-set_tests_properties(dbus-client PROPERTIES TIMEOUT 120)
+    return "${status}"
+}
 
-add_test(
-    NAME dbus-commissioner
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-commissioner
-)
-set_tests_properties(dbus-commissioner PROPERTIES
-    ENVIRONMENT CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
-)
-set_tests_properties(dbus-commissioner PROPERTIES TIMEOUT 120)
+main()
+{
+    sudo rm -rf tmp
+    sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
+    sudo service dbus reload
+    trap on_exit EXIT
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
+    sleep 2
+    sudo "${OT_CTL}" factoryreset
+    sudo "${OT_CTL}" panid 0x1234
+    sudo "${OT_CTL}" ifconfig up
+    sudo "${OT_CTL}" thread start
+    sleep 5
+    expect <<EOF &
+spawn ot-cli-ftd 2
+sleep 5
+send "ifconfig up\r\n"
+expect "Done"
+send "joiner start ABCDEF\r\n"
+expect "Done"
+wait
+EOF
+    sudo "${CMAKE_BINARY_DIR}"/tests/dbus/otbr-test-commissioner
+}
+
+main "$@"

@@ -36,6 +36,7 @@
 #include <dbus/dbus.h>
 #include <unistd.h>
 
+#include "test_utils.hpp"
 #include "common/code_utils.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
@@ -48,21 +49,6 @@ using otbr::DBus::Ip6Prefix;
 using otbr::DBus::LinkModeConfig;
 using otbr::DBus::OnMeshPrefix;
 using otbr::DBus::ThreadApiDBus;
-
-#define TEST_ASSERT(x)                                              \
-    do                                                              \
-    {                                                               \
-        if (!(x))                                                   \
-        {                                                           \
-            printf("Assert failed at %s:%d\n", __FILE__, __LINE__); \
-            exit(EXIT_FAILURE);                                     \
-        }                                                           \
-    } while (false)
-
-struct DBusConnectionDeleter
-{
-    void operator()(DBusConnection *aConnection) { dbus_connection_unref(aConnection); }
-};
 
 using UniqueDBusConnection = std::unique_ptr<DBusConnection, DBusConnectionDeleter>;
 
