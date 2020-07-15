@@ -49,9 +49,8 @@
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
 #include "rest/connection.hpp"
-#include "rest/json.hpp"
 #include "rest/handler.hpp"
-
+#include "rest/json.hpp"
 
 using std::chrono::steady_clock;
 
@@ -73,8 +72,8 @@ public:
     void UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout);
 
     void Process(fd_set &aReadFdSet);
-    
-    void AddDiag(std::string aRloc16, std::string& aDiag);
+
+    void AddDiag(std::string aRloc16, std::string &aDiag);
 
 private:
     // for service
@@ -87,11 +86,10 @@ private:
     int          mListenFd;
 
     // for Connection
-    int                                 mMaxServeNum = 100;
-    
-    std::unordered_map<int,std::unique_ptr<Connection>> mConnectionSet;
-    static const int         sTimeout     = 1000000;
+    int mMaxServeNum = 100;
 
+    std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
+    static const int                                     sTimeout = 1000000;
 };
 
 } // namespace rest

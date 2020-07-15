@@ -54,8 +54,8 @@
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
-using otbr::rest::RestWebServer;
 using otbr::Ncp::ControllerOpenThread;
+using otbr::rest::RestWebServer;
 
 #if OTBR_ENABLE_OPENWRT
 extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);

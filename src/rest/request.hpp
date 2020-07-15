@@ -34,48 +34,42 @@
 #ifndef OTBR_REST_REQUEST_HPP_
 #define OTBR_REST_REQUEST_HPP_
 
-#include<string>
-#include<vector>
+#include <string>
+#include <vector>
 
 namespace otbr {
 namespace rest {
 
-class Request{
-    public: 
-    void SetComplete(int aCompleted);
-    void SetPath(const char * aString, int aLength);
-    void SetStatus(const char * aString, int aLength);
-    void SetBody(const char * aString, int aLength);
-    void SetContentLength(int aContentLength);
-    void SetMethod(int aMethod);
-    void AddHeaderField(const char * aString, int aLength);
-    void AddHeaderValue(const char * aString, int aLength);
+class Request
+{
+public:
+    void        SetComplete(int aCompleted);
+    void        SetPath(const char *aString, int aLength);
+    void        SetStatus(const char *aString, int aLength);
+    void        SetBody(const char *aString, int aLength);
+    void        SetContentLength(int aContentLength);
+    void        SetMethod(int aMethod);
+    void        AddHeaderField(const char *aString, int aLength);
+    void        AddHeaderValue(const char *aString, int aLength);
     std::string getPath();
-
-
 
     Request();
 
-    private:
-
-    int                      mCompleted;
-    int                      mMethod;
-    unsigned int             mContentLength;
+private:
+    int          mCompleted;
+    int          mMethod;
+    unsigned int mContentLength;
 
     std::string              mPath;
     std::string              mStatus;
     std::string              mBody;
-    std::vector<std::string>      mHeaderField;
-    std::vector<std::string>      mHeaderValue;
+    std::vector<std::string> mHeaderField;
+    std::vector<std::string> mHeaderValue;
     int                      mHeaderState;
     int                      mError;
-
-
-
-
 };
 
-}
-}
+} // namespace rest
+} // namespace otbr
 
 #endif

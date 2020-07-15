@@ -37,87 +37,92 @@ static uint16_t HostSwap16(uint16_t v)
     return (((v & 0x00ffU) << 8) & 0xff00) | (((v & 0xff00U) >> 8) & 0x00ff);
 }
 
-std::string  JSON::TwoVectorToJson( const std::vector<std::string>& aKey, const std::vector<std::string>& aValue ){
-      cJSON* json = cJSON_CreateObject();
-      std::string key;
-      cJSON* value;
-      long unsigned int index;
-      
+std::string JSON::TwoVectorToJson(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue)
+{
+    cJSON *           json = cJSON_CreateObject();
+    std::string       key;
+    cJSON *           value;
+    long unsigned int index;
 
-      for( index = 0; index < aKey.size(); index++){
-           key = aKey[index];
-           value = cJSON_Parse(aValue[index].c_str());
-           cJSON_AddItemToObject(json,key.c_str(),value);
-      }
-      return JsonToStringDeleteJson(json);
-
-
-
-
-}
-
-std::string JSON::VectorToJson( const std::vector<std::string>& aVector ){
-    cJSON* json = cJSON_CreateArray();
-    cJSON* item;
-    
-    for(auto str : aVector){
-         item = cJSON_Parse(str.c_str());
-         cJSON_AddItemToArray(item,json);
+    for (index = 0; index < aKey.size(); index++)
+    {
+        key   = aKey[index];
+        value = cJSON_Parse(aValue[index].c_str());
+        cJSON_AddItemToObject(json, key.c_str(), value);
     }
-    
     return JsonToStringDeleteJson(json);
-
 }
 
-std::string JSON::JsonToStringDeleteJson( cJSON *aJson ){
-    char *p = cJSON_Print(aJson);
+std::string JSON::VectorToJson(const std::vector<std::string> &aVector)
+{
+    cJSON *json = cJSON_CreateArray();
+    cJSON *item;
+
+    for (auto str : aVector)
+    {
+        item = cJSON_Parse(str.c_str());
+        cJSON_AddItemToArray(item, json);
+    }
+
+    return JsonToStringDeleteJson(json);
+}
+
+std::string JSON::JsonToStringDeleteJson(cJSON *aJson)
+{
+    char *      p   = cJSON_Print(aJson);
     std::string ret = p;
     cJSON_Delete(aJson);
-    delete(p);
-    
-    return ret;
+    delete (p);
 
+    return ret;
 }
 
-std::string JSON::JsonToStringKeepJson(const cJSON *aJson ){
-    char *p = cJSON_Print(aJson);
+std::string JSON::JsonToStringKeepJson(const cJSON *aJson)
+{
+    char *      p   = cJSON_Print(aJson);
     std::string ret = p;
-    delete(p);
+    delete (p);
 
     return ret;
 }
 
-std::string JSON::CreateMode(const otLinkModeConfig &aMode){
-    return  JsonToStringDeleteJson(CreateJsonMode(aMode));
+std::string JSON::CreateMode(const otLinkModeConfig &aMode)
+{
+    return JsonToStringDeleteJson(CreateJsonMode(aMode));
 }
-std::string JSON::CreateConnectivity(const otNetworkDiagConnectivity &aConnectivity){
-    return  JsonToStringDeleteJson(CreateJsonConnectivity(aConnectivity));
+std::string JSON::CreateConnectivity(const otNetworkDiagConnectivity &aConnectivity)
+{
+    return JsonToStringDeleteJson(CreateJsonConnectivity(aConnectivity));
 }
-std::string JSON::CreateRoute(const otNetworkDiagRoute &aRoute){
-    return  JsonToStringDeleteJson(CreateJsonRoute(aRoute));
+std::string JSON::CreateRoute(const otNetworkDiagRoute &aRoute)
+{
+    return JsonToStringDeleteJson(CreateJsonRoute(aRoute));
 }
-std::string JSON::CreateRouteData(const otNetworkDiagRouteData &aRouteData){
-    return  JsonToStringDeleteJson(CreateJsonRouteData(aRouteData));
+std::string JSON::CreateRouteData(const otNetworkDiagRouteData &aRouteData)
+{
+    return JsonToStringDeleteJson(CreateJsonRouteData(aRouteData));
 }
-std::string JSON::CreateLeaderData(const otLeaderData &aLeaderData){
-    return  JsonToStringDeleteJson(CreateJsonLeaderData(aLeaderData));
+std::string JSON::CreateLeaderData(const otLeaderData &aLeaderData)
+{
+    return JsonToStringDeleteJson(CreateJsonLeaderData(aLeaderData));
 }
-std::string JSON::CreateIp6Address(const otIp6Address &aAddress){
-    return  JsonToStringDeleteJson(CreateJsonIp6Address(aAddress));
+std::string JSON::CreateIp6Address(const otIp6Address &aAddress)
+{
+    return JsonToStringDeleteJson(CreateJsonIp6Address(aAddress));
 }
-std::string JSON::CreateMacCounters(const otNetworkDiagMacCounters &aMacCounters){
-    return  JsonToStringDeleteJson(CreateJsonMacCounters(aMacCounters));
-   
+std::string JSON::CreateMacCounters(const otNetworkDiagMacCounters &aMacCounters)
+{
+    return JsonToStringDeleteJson(CreateJsonMacCounters(aMacCounters));
 }
-std::string JSON::CreateChildTableEntry(const otNetworkDiagChildEntry &aChildEntry){
-    return  JsonToStringDeleteJson(CreateJsonChildTableEntry(aChildEntry));
+std::string JSON::CreateChildTableEntry(const otNetworkDiagChildEntry &aChildEntry)
+{
+    return JsonToStringDeleteJson(CreateJsonChildTableEntry(aChildEntry));
 }
 
-cJSON * JSON::CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity)
-{   
-    
-    cJSON * json = cJSON_CreateObject();
-    
+cJSON *JSON::CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity)
+{
+    cJSON *json = cJSON_CreateObject();
+
     char tmp[11];
 
     sprintf(tmp, "%d", aConnectivity.mParentPriority);
@@ -146,16 +151,14 @@ cJSON * JSON::CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectiv
 
     sprintf(tmp, "%u", aConnectivity.mSedDatagramCount);
     cJSON_AddItemToObject(json, "SedDatagramCount", cJSON_CreateString(tmp));
-    
-    
-    
+
     return json;
 }
 cJSON *JSON::CreateJsonMode(const otLinkModeConfig &aMode)
 {
     cJSON *json = cJSON_CreateObject();
-    
-    char tmp[2] ;
+
+    char tmp[2];
 
     sprintf(tmp, "%d", aMode.mRxOnWhenIdle);
     cJSON_AddItemToObject(json, "RxOnWhenIdle", cJSON_CreateString(tmp));
@@ -168,16 +171,14 @@ cJSON *JSON::CreateJsonMode(const otLinkModeConfig &aMode)
 
     sprintf(tmp, "%d", aMode.mNetworkData);
     cJSON_AddItemToObject(json, "NetworkData", cJSON_CreateString(tmp));
-    
-    
-    
+
     return json;
 }
 
 cJSON *JSON::CreateJsonRoute(const otNetworkDiagRoute &aRoute)
 {
     cJSON *json = cJSON_CreateObject();
-    
+
     char tmp[11];
 
     sprintf(tmp, "%d", aRoute.mIdSequence);
@@ -198,7 +199,7 @@ cJSON *JSON::CreateJsonRoute(const otNetworkDiagRoute &aRoute)
 }
 cJSON *JSON::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData)
 {
-    char tmp[5];
+    char   tmp[5];
     cJSON *json = cJSON_CreateObject();
 
     sprintf(tmp, "0x%02x", aRouteData.mRouterId);
@@ -218,7 +219,7 @@ cJSON *JSON::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData)
 
 cJSON *JSON::CreateJsonLeaderData(const otLeaderData &aLeaderData)
 {
-    char tmp[11];
+    char   tmp[11];
     cJSON *json = cJSON_CreateObject();
 
     sprintf(tmp, "0x%08x", aLeaderData.mPartitionId);
@@ -253,7 +254,7 @@ cJSON *JSON::CreateJsonIp6Address(const otIp6Address &aAddress)
 
 cJSON *JSON::CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters)
 {
-    char tmp[9];
+    char   tmp[9];
     cJSON *json = cJSON_CreateObject();
 
     sprintf(tmp, "%d", aMacCounters.mIfInUnknownProtos);
@@ -288,7 +289,7 @@ cJSON *JSON::CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters)
 
 cJSON *JSON::CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry)
 {
-    char  tmp[7];
+    char   tmp[7];
     cJSON *json = cJSON_CreateObject();
 
     sprintf(tmp, "0x%04x", aChildEntry.mChildId);
@@ -303,6 +304,5 @@ cJSON *JSON::CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntr
     return json;
 }
 
-
-}
-}
+} // namespace rest
+} // namespace otbr

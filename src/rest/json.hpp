@@ -43,10 +43,10 @@ namespace rest {
 class JSON
 {
 public:
-    static std::string TwoVectorToJson( const std::vector<std::string>& aKey, const std::vector<std::string>& aValue );
-    static std::string VectorToJson( const std::vector<std::string>& aVector );
-    static std::string JsonToStringDeleteJson( cJSON *aJson );
-    static std::string JsonToStringKeepJson( const cJSON *aJson );
+    static std::string TwoVectorToJson(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue);
+    static std::string VectorToJson(const std::vector<std::string> &aVector);
+    static std::string JsonToStringDeleteJson(cJSON *aJson);
+    static std::string JsonToStringKeepJson(const cJSON *aJson);
     static std::string CreateMode(const otLinkModeConfig &aMode);
     static std::string CreateConnectivity(const otNetworkDiagConnectivity &aConnectivity);
     static std::string CreateRoute(const otNetworkDiagRoute &aRoute);
@@ -67,7 +67,7 @@ private:
     static cJSON *CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry);
 };
 
-}
-}
+} // namespace rest
+} // namespace otbr
 
 #endif
