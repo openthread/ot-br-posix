@@ -427,6 +427,7 @@ void Connection::ParseUri()
             tok  = strtok(NULL, "=");
             tok  = otok;
         };
+        delete(p);
     }
 }
 
@@ -525,7 +526,7 @@ void Connection::SentResponse(cJSON *aData)
     write(this->mFd, "\r\n", 2);
     write(this->mFd, p, strlen(p));
 
-    free(p);
+    delete(p);
 
     cJSON_Delete(aData);
 }
@@ -580,6 +581,7 @@ cJSON *Handler::GetJsonExtendedAddr(Connection *aConnection, otInstance *aInstan
     const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(aInstance));
     char *         p          = FormatBytes(extAddress, OT_EXT_ADDRESS_SIZE);
     cExtAddr                  = cJSON_CreateString(p);
+    delete(p);
 
     return cExtAddr;
 }
@@ -621,7 +623,7 @@ cJSON *Handler::GetJsonNetworkName(Connection *aConnection, otInstance *aInstanc
     char *      p           = new char[20]();
     sprintf(p, "%s", static_cast<const char *>(networkName));
     cJSON *ret = cJSON_CreateString(p);
-
+    delete(p);
     return ret;
 }
 
@@ -653,7 +655,7 @@ cJSON *Handler::GetJsonNumOfRoute(Connection *aConnection, otInstance *aInstance
     }
     sprintf(p, "%d", count);
     cJSON *ret = cJSON_CreateString(p);
-
+    delete(p);
     return ret;
 }
 cJSON *Handler::GetJsonRloc16(Connection *aConnection, otInstance *aInstance)
@@ -663,7 +665,7 @@ cJSON *Handler::GetJsonRloc16(Connection *aConnection, otInstance *aInstance)
     char *   p             = new char[7]();
     sprintf(p, "0x%04x", rloc16);
     cJSON *ret = cJSON_CreateString(p);
-
+    delete(p);
     return ret;
 }
 
@@ -674,6 +676,7 @@ cJSON *Handler::GetJsonExtendedPanId(Connection *aConnection, otInstance *aInsta
     char *         p        = FormatBytes(extPanId, OT_EXT_PAN_ID_SIZE);
 
     cJSON *ret = cJSON_CreateString(p);
+    delete(p);
 
     return ret;
 }
@@ -689,6 +692,7 @@ cJSON *Handler::GetJsonRloc(Connection *aConnection, otInstance *aInstance)
             HostSwap16(rloc16address.mFields.m16[5]), HostSwap16(rloc16address.mFields.m16[6]),
             HostSwap16(rloc16address.mFields.m16[7]));
     cJSON *ret = cJSON_CreateString(p);
+    delete(p);
 
     return ret;
 }
@@ -726,7 +730,7 @@ cJSON *Handler::DiagnosticRequestHandler(Connection *aConnection, otInstance *aI
 
     otThreadSendDiagnosticGet(aInstance, &rloc16address, tlvTypes, count);
     otThreadSendDiagnosticGet(aInstance, &multicastAddress, tlvTypes, count);
-
+    delete(p);
     return ret;
 }
 
@@ -782,7 +786,7 @@ cJSON *JSONGenerator::CreateJsonMode(const otLinkModeConfig &aMode)
 
     sprintf(tmp, "%d", aMode.mNetworkData);
     cJSON_AddItemToObject(ret, "NetworkData", cJSON_CreateString(tmp));
-
+    delete(tmp);
     return ret;
 }
 
@@ -805,7 +809,7 @@ cJSON *JSONGenerator::CreateJsonRoute(const otNetworkDiagRoute &aRoute)
     }
 
     cJSON_AddItemToObject(ret, "RouteData", RouteData);
-
+    delete(tmp);
     return ret;
 }
 cJSON *JSONGenerator::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData)
@@ -824,7 +828,7 @@ cJSON *JSONGenerator::CreateJsonRouteData(const otNetworkDiagRouteData &aRouteDa
 
     sprintf(tmp, "%d", aRouteData.mRouteCost);
     cJSON_AddItemToObject(RouteData, "RouteCost", cJSON_CreateString(tmp));
-
+    delete(tmp);
     return RouteData;
 }
 
@@ -847,7 +851,7 @@ cJSON *JSONGenerator::CreateJsonLeaderData(const otLeaderData &aLeaderData)
 
     sprintf(tmp, "0x%02x", aLeaderData.mLeaderRouterId);
     cJSON_AddItemToObject(LeaderData, "LeaderRouterId", cJSON_CreateString(tmp));
-
+    delete(tmp);
     return LeaderData;
 }
 cJSON *JSONGenerator::CreateJsonIp6Address(const otIp6Address &aAddress)
@@ -860,6 +864,7 @@ cJSON *JSONGenerator::CreateJsonIp6Address(const otIp6Address &aAddress)
             HostSwap16(aAddress.mFields.m16[6]), HostSwap16(aAddress.mFields.m16[7]));
 
     cJSON *ret = cJSON_CreateString(tmp);
+    delete(tmp);
     return ret;
 }
 
@@ -894,7 +899,7 @@ cJSON *JSONGenerator::CreateJsonMacCounters(const otNetworkDiagMacCounters &aMac
 
     sprintf(tmp, "%d", aMacCounters.mIfOutDiscards);
     cJSON_AddItemToObject(cMacCounters, "IfOutDiscards", cJSON_CreateString(tmp));
-
+    delete(tmp);
     return cMacCounters;
 }
 
@@ -911,7 +916,7 @@ cJSON *JSONGenerator::CreateJsonChildTableEntry(const otNetworkDiagChildEntry &a
 
     cJSON *cMode = CreateJsonMode(aChildEntry.mMode);
     cJSON_AddItemToObject(cChildTableEntry, "Mode", cMode);
-
+    delete(tmp);
     return cChildTableEntry;
 }
 
@@ -1035,6 +1040,7 @@ void RestWebServer::DiagnosticResponseHandler(otMessage *aMessage, const otMessa
             sprintf(supplyVoltage, "%d", diagTlv.mData.mSupplyVoltage);
             cJSON *cSupplyVoltage = cJSON_CreateString(supplyVoltage);
             cJSON_AddItemToObject(ret, "Supply Voltage", cSupplyVoltage);
+            
         }
 
         break;
@@ -1056,6 +1062,7 @@ void RestWebServer::DiagnosticResponseHandler(otMessage *aMessage, const otMessa
 
             cJSON *cChannelPages = cJSON_CreateString(channelPages);
             cJSON_AddItemToObject(ret, "Channel Pages", cChannelPages);
+            delete(channelPages);
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
@@ -1064,6 +1071,7 @@ void RestWebServer::DiagnosticResponseHandler(otMessage *aMessage, const otMessa
             sprintf(childTimeout, "%d", diagTlv.mData.mMaxChildTimeout);
             cJSON *cChildTimeout = cJSON_CreateString(childTimeout);
             cJSON_AddItemToObject(ret, "Max Child Timeout", cChildTimeout);
+            delete(childTimeout);
         }
 
         break;

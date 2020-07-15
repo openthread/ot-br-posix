@@ -38,8 +38,6 @@ add_executable(otbr-agent
     ncp_openthread.hpp
     thread_helper.cpp
     thread_helper.hpp
-    rest_web_server.cpp
-    rest_web_server.hpp
 )
 
 target_link_libraries(otbr-agent PRIVATE
@@ -53,8 +51,7 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-hdlc
     otbr-common
     otbr-utils
-    cjson
-    http_parser
+    rest-web-server
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config)

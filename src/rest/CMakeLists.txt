@@ -26,24 +26,26 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_subdirectory(agent)
-add_subdirectory(common)
-add_subdirectory(rest)
+add_library(rest-web-server
+    rest_web_server.cpp
+    connection.cpp
+    json.cpp
+    request.cpp
+    response.cpp
+    handler.cpp
+)
 
-if(OTBR_DBUS)
-    add_subdirectory(dbus)
-endif()
+target_include_directories(rest-web-server PRIVATE
+    
+    ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo
+    ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
 
-if(OTBR_MDNS)
-    add_subdirectory(mdns)
-endif()
+)
 
-add_subdirectory(utils)
-
-if(OTBR_OPENWRT)
-    add_subdirectory(openwrt)
-endif()
-
-if(OTBR_WEB)
-    add_subdirectory(web)
-endif()
+target_link_libraries(rest-web-server PUBLIC
+    otbr-config
+    openthread-ftd
+    openthread-posix
+    cjson
+    http_parser
+)
