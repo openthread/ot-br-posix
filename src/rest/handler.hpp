@@ -38,11 +38,12 @@
 
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
-#include "rest/response.hpp"
+#include "openthread/thread_ftd.h"
 #include "rest/connection.hpp"
 #include "rest/json.hpp"
+#include "rest/response.hpp"
 #include "rest/rest_web_server.hpp"
-#include "openthread/thread_ftd.h"
+
 
 namespace otbr {
 namespace rest {

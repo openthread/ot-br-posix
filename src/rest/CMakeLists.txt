@@ -35,12 +35,7 @@ add_library(rest-web-server
     handler.cpp
 )
 
-target_include_directories(rest-web-server PRIVATE
-    
-    ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo
-    ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
 
-)
 
 target_link_libraries(rest-web-server PUBLIC
     otbr-config

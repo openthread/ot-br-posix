@@ -44,9 +44,6 @@
 #include <string.h>
 #include <unistd.h>
 
-
-
-
 #include <openthread/netdiag.h>
 
 #include "agent/ncp_openthread.hpp"
@@ -59,11 +56,6 @@
 using std::chrono::steady_clock;
 
 using otbr::Ncp::ControllerOpenThread;
-// namespace otbr {
-// namespace Ncp {
-// class ControllerOpenThread;
-// } // namespace Ncp
-// } // namespace otbr
 
 namespace otbr {
 namespace rest {
@@ -102,7 +94,7 @@ private:
 
 };
 
-} // namespace agent
+} // namespace rest
 } // namespace otbr
 
-#endif // OTBR_AGENT_REST_WEB_SERVER_HPP_
+#endif // OTBR_REST_REST_WEB_SERVER_HPP_

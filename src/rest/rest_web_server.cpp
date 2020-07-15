@@ -244,5 +244,5 @@ void RestWebServer::AddDiag(std::string aRloc16, std::string& aDiag){
     }
 }
 
-} // namespace agent
+} // namespace rest
 } // namespace otbr

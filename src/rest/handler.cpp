@@ -26,9 +26,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-
 #include"rest/handler.hpp"
+
+#include <string>
 
 namespace otbr {
 namespace rest {

@@ -48,11 +48,13 @@
 
 #include <http_parser.h>
 
-// #include "rest/rest_web_server.hpp"
+
+#include "rest/handler.hpp"
+#include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
-#include "rest/json.hpp"
-#include "rest/handler.hpp"
+
+
 
 using std::chrono::steady_clock;
 // using otbr::rest::requestHandler;
