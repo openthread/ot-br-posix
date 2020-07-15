@@ -44,7 +44,6 @@
 #include "rest/response.hpp"
 #include "rest/rest_web_server.hpp"
 
-
 namespace otbr {
 namespace rest {
 class Connection;
@@ -52,35 +51,30 @@ class Response;
 class RestWebServer;
 class JSON;
 
-typedef void (*requestHandler)(Connection& aConnection, Response &aResponse);
+typedef void (*requestHandler)(Connection &aConnection, Response &aResponse);
 typedef std::unordered_map<std::string, requestHandler> HandlerMap;
 
-class Handler{
-
-    public:
-
+class Handler
+{
+public:
     Handler();
     static requestHandler GetHandler(std::string aPath);
-    static void GetNodeInfo(Connection &aConnection,  Response& aResponse);
-    static void GetExtendedAddr(Connection &aConnection,  Response& aResponse);
-    static void GetState(Connection &aConnection, Response& aResponse);
-    static void GetNetworkName(Connection &aConnection,  Response& aResponse);
-    static void GetLeaderData(Connection &aConnection,  Response& aResponse);
-    static void GetNumOfRoute(Connection &aConnection, Response& aResponse );
-    static void GetRloc16(Connection &aConnection, Response& aResponse);
-    static void GetExtendedPanId(Connection &aConnection,  Response& aResponse);
-    static void GetRloc(Connection &aConnection, Response& aResponse );
-    static void GetDiagnostic(Connection &aConnection, Response& aResponse);
-    static void ErrorHandler(Connection &aConnection, Response& aResponse );
-    
+    static void           GetNodeInfo(Connection &aConnection, Response &aResponse);
+    static void           GetExtendedAddr(Connection &aConnection, Response &aResponse);
+    static void           GetState(Connection &aConnection, Response &aResponse);
+    static void           GetNetworkName(Connection &aConnection, Response &aResponse);
+    static void           GetLeaderData(Connection &aConnection, Response &aResponse);
+    static void           GetNumOfRoute(Connection &aConnection, Response &aResponse);
+    static void           GetRloc16(Connection &aConnection, Response &aResponse);
+    static void           GetExtendedPanId(Connection &aConnection, Response &aResponse);
+    static void           GetRloc(Connection &aConnection, Response &aResponse);
+    static void           GetDiagnostic(Connection &aConnection, Response &aResponse);
+    static void           ErrorHandler(Connection &aConnection, Response &aResponse);
+
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo, RestWebServer * aRestWebServer);
-    
-    
+    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo, RestWebServer *aRestWebServer);
 
-
-    private:
- 
+private:
     static std::string GetDataNodeInfo(Connection &aConnection);
     static std::string GetDataExtendedAddr(Connection &aConnection);
     static std::string GetDataState(Connection &aConnection);
@@ -89,21 +83,13 @@ class Handler{
     static std::string GetDataNumOfRoute(Connection &aConnection);
     static std::string GetDataRloc16(Connection &aConnection);
     static std::string GetDataExtendedPanId(Connection &aConnection);
-    static std::string GetDataRloc(Connection &aConnection );
- 
+    static std::string GetDataRloc(Connection &aConnection);
 
-    static JSON mJsonFormater;
+    static JSON       mJsonFormater;
     static HandlerMap mHandlerMap;
-    
-    
-
 };
 
-
-
-
-}
-}
-
+} // namespace rest
+} // namespace otbr
 
 #endif

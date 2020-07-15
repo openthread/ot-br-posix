@@ -29,54 +29,50 @@
 
 namespace otbr {
 namespace rest {
-Response::Response(){
-     
-     mCode = "HTTP/1.1 200 OK";
-     mHeaderField.push_back("Content-Type");
-     mHeaderValue.push_back("application/json");
-     
-     mHeaderField.push_back("Access-Control-Allow-Origin");
-     mHeaderValue.push_back("*");
+Response::Response()
+{
+    mCode = "HTTP/1.1 200 OK";
+    mHeaderField.push_back("Content-Type");
+    mHeaderValue.push_back("application/json");
+
+    mHeaderField.push_back("Access-Control-Allow-Origin");
+    mHeaderValue.push_back("*");
 }
-Response::Response(std::string aBody){
-        
+Response::Response(std::string aBody)
+{
+    mCode = "HTTP/1.1 200 OK";
 
-    
-        mCode = "HTTP/1.1 200 OK";
-        
-        mBody = aBody;
-        mHeaderField.push_back("Content-Type");
-        mHeaderValue.push_back("application/json");
+    mBody = aBody;
+    mHeaderField.push_back("Content-Type");
+    mHeaderValue.push_back("application/json");
 
-        mHeaderField.push_back("Access-Control-Allow-Origin");
-        mHeaderValue.push_back("*");
+    mHeaderField.push_back("Access-Control-Allow-Origin");
+    mHeaderValue.push_back("*");
 }
 
-void Response::SetBody(std::string aBody ){
+void Response::SetBody(std::string aBody)
+{
     mBody = aBody;
 }
 
-
-
-
-int Response::GetCallbackFlag(){
+int Response::GetCallbackFlag()
+{
     return this->mCallback;
 }
 
-std::string Response::SerializeResponse(){
-    unsigned long  index;
-    std::string spacer = "\r\n";
-    std::string ret(this->mCode);
-    for( index = 0; index < this->mHeaderField.size(); index++){
-         ret += (spacer + mHeaderField[index] + " " + mHeaderValue[index]);
+std::string Response::SerializeResponse()
+{
+    unsigned long index;
+    std::string   spacer = "\r\n";
+    std::string   ret(this->mCode);
+    for (index = 0; index < this->mHeaderField.size(); index++)
+    {
+        ret += (spacer + mHeaderField[index] + " " + mHeaderValue[index]);
     }
     ret += (spacer + mBody);
 
     return ret;
 }
 
-
-
-
-}
-}
+} // namespace rest
+} // namespace otbr

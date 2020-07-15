@@ -34,35 +34,31 @@
 #ifndef OTBR_REST_RESPONSE_HPP_
 #define OTBR_REST_RESPONSE_HPP_
 
-#include<string>
-#include<vector>
+#include <string>
+#include <vector>
 
 namespace otbr {
 namespace rest {
 
-class Response{
-    public:
+class Response
+{
+public:
     Response();
-   
-    Response(std::string aBody);
-    void SetBody(std::string aBody);
-    std::string SerializeResponse();
-    int GetCallbackFlag();
 
-    private:
-    int mCallback;
+    Response(std::string aBody);
+    void        SetBody(std::string aBody);
+    std::string SerializeResponse();
+    int         GetCallbackFlag();
+
+private:
+    int                      mCallback;
     std::vector<std::string> mHeaderField;
     std::vector<std::string> mHeaderValue;
-    std::string mCode;
-    std::string mBody;
-    
-
-
-    
-
+    std::string              mCode;
+    std::string              mBody;
 };
 
-}
-}
+} // namespace rest
+} // namespace otbr
 
-#endif 
+#endif

@@ -68,8 +68,6 @@ static int SetNonBlocking(int fd)
     return 0;
 }
 
-
-
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
     : mNcp(aNcp)
     , mAddress(new sockaddr_in())
@@ -78,10 +76,9 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 }
 
 void RestWebServer::Init()
-{    
+{
     mThreadHelper = mNcp->GetThreadHelper();
     mInstance     = mThreadHelper->GetInstance();
-    
 
     mAddress->sin_family      = AF_INET;
     mAddress->sin_addr.s_addr = INADDR_ANY;
@@ -105,14 +102,12 @@ void RestWebServer::Init()
     SetNonBlocking(mListenFd);
 }
 
-
 void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout)
 {
-    
-    int maxFd;
+    int            maxFd;
     struct timeval timeout = {aTimeout.tv_sec, aTimeout.tv_usec};
 
-    //set each time need to handled 
+    // set each time need to handled
     otThreadSetReceiveDiagnosticGetCallback(mInstance, &Handler::DiagnosticResponseHandler, this);
 
     FD_SET(mListenFd, &aReadFdSet);
@@ -123,16 +118,19 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        Connection *  connection = it->second.get();
-        maxFd = it->first;
+        Connection *connection = it->second.get();
+        maxFd                  = it->first;
         auto duration = duration_cast<microseconds>(steady_clock::now() - connection->GetConnectionStartTime()).count();
 
         if (duration <= sTimeout)
         {
-            timeout.tv_sec = 0;
-            timeout.tv_usec = timeout.tv_usec == 0 ?  std::max(0, sTimeout - (int)duration): std::min(int(timeout.tv_usec), std::max(0, sTimeout - (int)duration));
+            timeout.tv_sec  = 0;
+            timeout.tv_usec = timeout.tv_usec == 0
+                                  ? std::max(0, sTimeout - (int)duration)
+                                  : std::min(int(timeout.tv_usec), std::max(0, sTimeout - (int)duration));
             FD_SET(maxFd, &aReadFdSet);
-            if (aMaxFd < maxFd) aMaxFd = maxFd;
+            if (aMaxFd < maxFd)
+                aMaxFd = maxFd;
         }
         else
         {
@@ -145,8 +143,11 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
 
             if (duration <= sTimeout * 4)
             {
-                timeout.tv_sec = 0;
-                timeout.tv_usec = timeout.tv_usec == 0 ? std::max(0, 4 * sTimeout - (int)duration): std::min(int(timeout.tv_usec), std::max(0, 4 * sTimeout - (int)duration));;
+                timeout.tv_sec  = 0;
+                timeout.tv_usec = timeout.tv_usec == 0
+                                      ? std::max(0, 4 * sTimeout - (int)duration)
+                                      : std::min(int(timeout.tv_usec), std::max(0, 4 * sTimeout - (int)duration));
+                ;
             }
             else
             {
@@ -164,23 +165,20 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
 
 void RestWebServer::Process(fd_set &aReadFdSet)
 {
-    
-    int readFd;
-    socklen_t   addrlen = sizeof(sockaddr);
-    int  fd;
-    auto err = errno;
+    int       readFd;
+    socklen_t addrlen = sizeof(sockaddr);
+    int       fd;
+    auto      err = errno;
 
-
-    //check each connection
+    // check each connection
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        
-        Connection *connection    = it->second.get();
-        readFd = it->first;
-        
+        Connection *connection = it->second.get();
+        readFd                 = it->first;
+
         if (FD_ISSET(readFd, &aReadFdSet))
-                connection->SetReadFlag(1);
-        
+            connection->SetReadFlag(1);
+
         connection->Check();
     }
 
@@ -188,11 +186,11 @@ void RestWebServer::Process(fd_set &aReadFdSet)
     auto eraseIt = mConnectionSet.begin();
     for (eraseIt = mConnectionSet.begin(); eraseIt != mConnectionSet.end();)
     {
-        Connection * connection = eraseIt->second.get();
+        Connection *connection = eraseIt->second.get();
 
         if (connection->GetStatus() == 1)
         {
-           eraseIt = mConnectionSet.erase(eraseIt);
+            eraseIt = mConnectionSet.erase(eraseIt);
         }
         else
             eraseIt++;
@@ -211,9 +209,8 @@ void RestWebServer::Process(fd_set &aReadFdSet)
             {
                 // set up new connection
                 SetNonBlocking(fd);
-                mConnectionSet.insert(std::make_pair(fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), mInstance, fd))));
-               
-               
+                mConnectionSet.insert(std::make_pair(
+                    fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), mInstance, fd))));
             }
             else
             {
@@ -232,14 +229,14 @@ void RestWebServer::Process(fd_set &aReadFdSet)
     }
 }
 
-void RestWebServer::AddDiag(std::string aRloc16, std::string& aDiag){
-    
-    
-
-    for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it){
-        Connection * connection = it->second.get();
-        if (!connection->CheckDiag(aRloc16)){
-            connection->AddDiag(aRloc16,aDiag);
+void RestWebServer::AddDiag(std::string aRloc16, std::string &aDiag)
+{
+    for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
+    {
+        Connection *connection = it->second.get();
+        if (!connection->CheckDiag(aRloc16))
+        {
+            connection->AddDiag(aRloc16, aDiag);
         }
     }
 }

@@ -26,43 +26,49 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "rest/request.hpp"
 
 namespace otbr {
 namespace rest {
 
-
-
-void Request::SetComplete(int aCompleted){
+void Request::SetComplete(int aCompleted)
+{
     mCompleted = aCompleted;
 }
-void Request::SetPath(const char* aString, int aLength){
+void Request::SetPath(const char *aString, int aLength)
+{
     mPath.assign(aString, aLength);
 }
-void Request::SetStatus(const char* aString, int aLength){
+void Request::SetStatus(const char *aString, int aLength)
+{
     mStatus.assign(aString, aLength);
 }
-void Request::SetBody(const char* aString, int aLength){
+void Request::SetBody(const char *aString, int aLength)
+{
     mBody.assign(aString, aLength);
 }
 
-void Request::AddHeaderField(const char * aString, int aLength){
-    mHeaderField.push_back(std::string(aString,aLength));
+void Request::AddHeaderField(const char *aString, int aLength)
+{
+    mHeaderField.push_back(std::string(aString, aLength));
 }
-void Request::AddHeaderValue(const char * aString, int aLength){
-     mHeaderValue.push_back(std::string(aString,aLength));
+void Request::AddHeaderValue(const char *aString, int aLength)
+{
+    mHeaderValue.push_back(std::string(aString, aLength));
 }
 
-void Request::SetContentLength(int aContentLength){
+void Request::SetContentLength(int aContentLength)
+{
     mContentLength = aContentLength;
 }
-    void Request::SetMethod(int aMethod){
+void Request::SetMethod(int aMethod)
+{
     mMethod = aMethod;
 }
-std::string Request::getPath(){
+std::string Request::getPath()
+{
     return this->mPath;
 }
-    
-}
-}
+
+} // namespace rest
+} // namespace otbr
