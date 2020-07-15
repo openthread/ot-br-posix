@@ -37,6 +37,7 @@
 
 #define OTBR_DBUS_SERVER_PREFIX "io.openthread.BorderRouter."
 #define OTBR_DBUS_THREAD_INTERFACE "io.openthread.BorderRouter"
+#define OTBR_DBUS_COMMISSIONER_INTERFACE "io.openthread.Commissioner"
 #define OTBR_DBUS_OBJECT_PREFIX "/io/openthread/BorderRouter/"
 
 #define OTBR_DBUS_SCAN_METHOD "Scan"
@@ -54,7 +55,6 @@
 #define OTBR_DBUS_COMMISSIONER_STOP_METHOD "CommissionerStop"
 #define OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD "CommissionerAddJoiner"
 
-#define OTBR_DBUS_COMMISSIONER_STATE_SIGNAL "CommissionerState"
 #define OTBR_DBUS_JOINER_EVENT_SIGNAL "JoinerEvent"
 
 #define OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX "MeshLocalPrefix"
@@ -85,6 +85,7 @@
 #define OTBR_DBUS_PROPERTY_INSTANT_RSSI "InstantRssi"
 #define OTBR_DBUS_PROPERTY_RADIO_TX_POWER "RadioTxPower"
 #define OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES "ExternalRoutes"
+#define OTBR_DBUS_PROPERTY_COMMISSIONER_STATE "CommissionerState"
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
 #define OTBR_ROLE_NAME_DETACHED "detached"

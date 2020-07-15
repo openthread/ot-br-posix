@@ -135,11 +135,11 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AddExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD,
                    std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
-    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_START_METHOD,
+    RegisterMethod(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_START_METHOD,
                    std::bind(&DBusThreadObject::CommissionerStartHandler, this, _1));
-    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_STOP_METHOD,
+    RegisterMethod(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_STOP_METHOD,
                    std::bind(&DBusThreadObject::CommissionerStopHandler, this, _1));
-    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD,
+    RegisterMethod(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD,
                    std::bind(&DBusThreadObject::CommissionerAddJoinerHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
@@ -204,6 +204,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
                                std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_PROPERTY_COMMISSIONER_STATE,
+                               std::bind(&DBusThreadObject::GetCommissionerStateHandler, this, _1));
 
     return error;
 }
@@ -1026,6 +1028,18 @@ exit:
     return error;
 }
 
+otError DBusThreadObject::GetCommissionerStateHandler(DBusMessageIter &aIter)
+{
+    auto    threadHelper = mNcp->GetThreadHelper();
+    otError error        = OT_ERROR_NONE;
+    uint8_t stateData    = static_cast<uint8_t>(otCommissionerGetState(threadHelper->GetInstance()));
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, stateData) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
 void DBusThreadObject::HandleCommissionerStateChanged(otCommissionerState aState, void *aContext)
 {
     DBusThreadObject *object = reinterpret_cast<DBusThreadObject *>(aContext);
@@ -1035,22 +1049,9 @@ void DBusThreadObject::HandleCommissionerStateChanged(otCommissionerState aState
 
 void DBusThreadObject::HandleCommissionerStateChanged(otCommissionerState aState)
 {
-    UniqueDBusMessage signalMsg{
-        dbus_message_new_signal(mObjectPath.c_str(), OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_COMMISSIONER_STATE_SIGNAL)};
-    otbrError       error = OTBR_ERROR_NONE;
-    DBusMessageIter iter;
+    uint8_t stateData = static_cast<uint8_t>(aState);
 
-    VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
-    dbus_message_iter_init_append(signalMsg.get(), &iter);
-
-    SuccessOrExit(error = DBusMessageEncode(&iter, static_cast<uint8_t>(aState)));
-    VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLog(OTBR_LOG_ERR, "HandleCommissionerStateChanged failed with error %d", static_cast<int>(error));
-    }
+    SignalPropertyChanged(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_PROPERTY_COMMISSIONER_STATE, stateData);
 }
 
 void DBusThreadObject::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,

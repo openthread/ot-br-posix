@@ -620,6 +620,18 @@ public:
     ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
 
     /**
+     * This method gets the commissioner state
+     *
+     * @param[out]  aState  The commissioner state
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetCommissionerState(CommissionerState &aState);
+
+    /**
      * This method returns the network interface name the client is bound to.
      *
      * @returns The network interface name.
@@ -628,25 +640,34 @@ public:
     std::string GetInterfaceName(void);
 
 private:
-    ClientError CallDBusMethodSync(const std::string &aMethodName);
-    ClientError CallDBusMethodAsync(const std::string &aMethodName, DBusPendingCallNotifyFunction aFunction);
-
-    template <typename ArgType> ClientError CallDBusMethodSync(const std::string &aMethodName, const ArgType &aArgs);
+    ClientError CallDBusMethodSync(const std::string &aInterfaceName, const std::string &aMethodName);
+    ClientError CallDBusMethodAsync(const std::string &           aInterfaceName,
+                                    const std::string &           aMethodName,
+                                    DBusPendingCallNotifyFunction aFunction);
 
     template <typename ArgType>
-    ClientError CallDBusMethodAsync(const std::string &           aMethodName,
+    ClientError CallDBusMethodSync(const std::string &aInterfaceName,
+                                   const std::string &aMethodName,
+                                   const ArgType &    aArgs);
+
+    template <typename ArgType>
+    ClientError CallDBusMethodAsync(const std::string &           aInterfaceName,
+                                    const std::string &           aMethodName,
                                     const ArgType &               aArgs,
                                     DBusPendingCallNotifyFunction aFunction);
 
-    template <typename ValType> ClientError SetProperty(const std::string &aPropertyName, const ValType &aValue);
+    template <typename ValType>
+    ClientError SetProperty(const std::string &aInterfaceName, const std::string &aPropertyName, const ValType &aValue);
 
-    template <typename ValType> ClientError GetProperty(const std::string &aPropertyName, ValType &aValue);
+    template <typename ValType>
+    ClientError GetProperty(const std::string &aInterfaceName, const std::string &aPropertyName, ValType &aValue);
 
     ClientError              SubscribeSignals(void);
     static DBusHandlerResult sDBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage, void *aData);
     DBusHandlerResult        DBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage);
     DBusHandlerResult        HandlePropertySignal(DBusMessage *aMessage);
-    DBusHandlerResult        HandleCommissionerStateSignal(DBusMessage *aMessage);
+    void                     HandleDeviceRoleSignal(DBusMessageIter *aIter);
+    void                     HandleCommissionerStateSignal(DBusMessageIter *aIter);
     DBusHandlerResult        HandleJoinerEventSignal(DBusMessage *aMessage);
 
     template <void (ThreadApiDBus::*Handler)(DBusPendingCall *aPending)>

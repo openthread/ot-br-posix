@@ -80,25 +80,6 @@
       <arg name="prefix" type="(ayy)"/>
     </method>
 
-    <method name="CommissionerStart">
-    </method>
-
-    <method name="CommissionerStop">
-    </method>
-
-    <method name="CommissionerAddJoiner">
-      <!--
-        struct {
-          uint8 type
-          uint64 eui64_or_discerner
-          uint8 eui64_or_discerner_bit_size
-          string pskd
-          uint32 timeout
-        }
-      -->
-      <arg name="joiner_info" type="(ytysu)"/>
-    </method>
-
     <!--
       struct {
         struct {
@@ -356,10 +337,27 @@
     <property name="ExternalRoutes" type="((ayy)qybb)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
+  </interface>
 
-    <signal name="CommissionerState">
-      <arg type="y" name="state"/>
-    </signal>
+  <interface name="io.openthread.Commissioner">
+    <method name="CommissionerStart">
+    </method>
+
+    <method name="CommissionerStop">
+    </method>
+
+    <method name="CommissionerAddJoiner">
+      <!--
+        struct {
+          uint8 type
+          uint64 eui64_or_discerner
+          uint8 eui64_or_discerner_bit_size
+          string pskd
+          uint32 timeout
+        }
+      -->
+      <arg name="joiner_info" type="(ytysu)"/>
+    </method>
 
     <signal name="JoinerEvent">
       <arg type="y" name="event"/>
@@ -376,6 +374,9 @@
       <arg type="t" name="joiner_id"/>
     </signal>
 
+    <property name="CommissionerState" type="y" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

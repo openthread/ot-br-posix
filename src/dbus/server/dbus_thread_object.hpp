@@ -116,6 +116,7 @@ private:
     otError GetInstantRssiHandler(DBusMessageIter &aIter);
     otError GetRadioTxPowerHandler(DBusMessageIter &aIter);
     otError GetExternalRoutesHandler(DBusMessageIter &aIter);
+    otError GetCommissionerStateHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
 

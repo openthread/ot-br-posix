@@ -74,6 +74,8 @@ int main()
     api = std::unique_ptr<ThreadApiDBus>(new ThreadApiDBus(connection.get()));
     TEST_ASSERT(api->CommissionerStart(
                     [&commissionerPetitionCount, &commissionerActiveCount, &api, joinerInfo](CommissionerState aState) {
+                        CommissionerState state;
+
                         printf("Commisioner state %d\n", static_cast<int>(aState));
                         switch (aState)
                         {
@@ -86,6 +88,8 @@ int main()
                         case CommissionerState::COMMISSIONER_STATE_ACTIVE:
                             commissionerActiveCount++;
                             printf("Commissioner add joiner\n");
+                            TEST_ASSERT(api->GetCommissionerState(state) == ClientError::ERROR_NONE);
+                            TEST_ASSERT(state == aState);
                             TEST_ASSERT(api->CommissionerAddJoiner(joinerInfo) == ClientError::ERROR_NONE);
                             break;
                         default:
