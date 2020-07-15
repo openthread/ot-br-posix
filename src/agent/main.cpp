@@ -49,12 +49,12 @@
 #include "common/types.hpp"
 
 #include "agent/ncp_openthread.hpp"
-#include "agent/rest_web_server.hpp"
+#include "rest/rest_web_server.hpp"
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
-using otbr::agent::RestWebServer;
+using otbr::rest::RestWebServer;
 using otbr::Ncp::ControllerOpenThread;
 
 #if OTBR_ENABLE_OPENWRT
