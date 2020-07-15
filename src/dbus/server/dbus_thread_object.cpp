@@ -44,6 +44,10 @@
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
 
+#if OTBR_ENABLE_LEGACY
+#include <ot-legacy-pairing-ext.h>
+#endif
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -452,14 +456,20 @@ exit:
 
 otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
 {
+#if OTBR_ENABLE_LEGACY
     std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> data;
     otError                                   error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otNcpHandleDidReceiveNewLegacyUlaPrefix(&data[0]);
+    otSetLegacyUlaPrefix(&data[0]);
 
 exit:
     return error;
+#else
+    (void)aIter;
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif // OTBR_ENABLE_LEGACY
 }
 
 otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
