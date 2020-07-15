@@ -26,7 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "connection.hpp"
+
+#include "rest/connection.hpp"
 
 #include <chrono>
 
