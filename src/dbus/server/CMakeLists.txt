@@ -31,7 +31,7 @@ file(WRITE introspect.hpp "R\"INTROSPECT(")
 file(APPEND introspect.hpp ${OTBR_DBUS_INTROSPECT})
 file(APPEND introspect.hpp ")INTROSPECT\"")
 
-add_library(otbr-dbus-server
+add_library(otbr-dbus-server STATIC
     dbus_agent.cpp
     dbus_object.cpp
     dbus_thread_object.cpp
