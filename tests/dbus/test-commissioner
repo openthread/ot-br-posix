@@ -66,7 +66,7 @@ send "ifconfig up\r\n"
 expect "Done"
 send "joiner start ABCDEF\r\n"
 expect "Done"
-wait
+expect "Join success"
 EOF
     sudo "${CMAKE_BINARY_DIR}"/tests/dbus/otbr-test-commissioner
 }

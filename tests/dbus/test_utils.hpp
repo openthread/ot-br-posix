@@ -26,8 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef OTBR_TEST_UTILS_HPP_
-#define OTBR_TEST_UTILS_HPP_
+#ifndef OTBR_TESTS_DBUS_TEST_UTILS_HPP_
+#define OTBR_TESTS_DBUS_TEST_UTILS_HPP_
 
 #include <dbus/dbus.h>
 

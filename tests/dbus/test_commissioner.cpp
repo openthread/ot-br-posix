@@ -51,7 +51,7 @@ using otbr::DBus::ThreadApiDBus;
 
 using UniqueDBusConnection = std::unique_ptr<DBusConnection, DBusConnectionDeleter>;
 
-int main()
+int main(void)
 {
     DBusError                      error;
     UniqueDBusConnection           connection;
