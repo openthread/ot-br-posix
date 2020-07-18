@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -38,260 +38,195 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-Connection::Connection(steady_clock::time_point aStartTime, otInstance *aInstance, int aFd)
+Connection::Connection(steady_clock::time_point aStartTime, int aFd)
     : mStartTime(aStartTime)
-    , mInstance(aInstance)
+    , mComplete(false);
     , mReadFlag(1)
     , mFd(aFd)
-
     , mBufLength(2048)
     , mReadLength(0)
 {
-    mReadBuf = std::unique_ptr<char>(new char(mBufLength));
-    mParser  = std::unique_ptr<http_parser>(new http_parser());
-    http_parser_init(mParser.get(), HTTP_REQUEST);
-}
-otInstance *Connection::GetInstance()
-{
-    return this->mInstance;
+   http_parser_init(&mParser, HTTP_REQUEST);
 }
 
-int Connection::GetCallbackFlag()
-{
-    return this->mCallbackFlag;
-}
-
-std::string Connection::GetErrorCode()
-{
-    return this->mErrorCode;
-}
-
-int Connection::GetStatus()
-{
-    return this->mEndFlag;
-}
-void Connection::Check()
+void Connection::Process()
 {
     Request  req;
     Response res;
-    auto     duration = duration_cast<microseconds>(steady_clock::now() - this->mStartTime).count();
+    
+    Parse(req);
+    HandleRequest(req,res);
+    ProcessResponse(res);
 
-    // If need to read.
-    if (this->mReadFlag)
-        this->NonBlockRead();
-
-    // normal entry, create a request and process it
-    if (duration > sTimeout)
-    {
-        // parse buf data into request
-        this->CreateRequest(req);
-        // find the Handler according to path
-        requestHandler Handler = this->GetHandler(req);
-        // process the request
-        Handler(*this, res);
-
-        if (!this->mCallbackFlag && !this->mErrorFlag)
-        {
-            this->SentResponse(res);
-            this->SetEndFlag(1);
-        }
-    }
-
-    // when error occurs
-    if (this->mErrorFlag)
-    {
-        this->ErrorFormResponse(res);
-        this->SentResponse(res);
-        this->SetEndFlag(1);
-    }
-    else
-    {
-        if (this->mCallbackFlag)
-        {
-            duration = duration_cast<microseconds>(steady_clock::now() - this->mDiagInfo->mStartTime).count();
-            if (duration > 4 * sTimeout)
-            {
-                this->CallbackFormResponse(res);
-                this->SentResponse(res);
-                this->SetEndFlag(1);
-            }
-        }
-    }
 }
 
-void Connection::NonBlockRead()
+void Connection::CallBackProcess()
+{   Response res;
+    
+    HandleCallback(res);
+    ProcessResponse(res);
+    
+}
+
+void Connection::Read()
 {
     int received = 0;
 
-    while ((received = read(this->mFd, this->mReadBuf.get(), this->mBufLength)) > 0)
+    while ((received = read(mFd, mReadBuf, mBufLength)) > 0)
     {
-        this->mReadContent += std::string(this->mReadBuf.get(), received);
-        this->mReadLength += received;
+        mReadContent += std::string(mReadBuf, received);
+        mReadLength += received;
     }
     auto err = errno;
-    if (received == -1 && err != EAGAIN && err != EWOULDBLOCK)
-    {
-        this->mErrorFlag = 1;
-        this->mErrorCode = "error while read";
+
+    // error handler
+}
+
+void Connection::Parse(Request &aRequest)
+{
+    mParser.data = &aRequest;
+    http_parser_execute(&mParser, &mSettings, mReadContent.c_str(), mReadLength);
+
+    //error handler
+}
+
+void  Connection::HandleRequest(Request &aRequest, Response &aResponse)
+{
+    mResource.Handle(aRequest, aResponse);
+    //error handler
+}
+
+void  Connection::HandleCallback(Request &aRequest, Response &aResponse)
+{
+    mResource.HandleCallback(aRequest, aResponse);
+    //error handler
+}
+
+
+
+void Connection::ProcessResponse(Response &aResponse)
+{   
+    if aResponse.NeedCallback(){
+        mHasCallback = true;
+        mStartTime = steady_clock::now();
     }
+    else Write(aResponse);
 }
 
-void Connection::CreateRequest(Request &aRequest)
-{
-    mParser->data = &aRequest;
-    http_parser_execute(mParser.get(), &mSettings, this->mReadContent.c_str(), this->mReadLength);
+void Connection::Write(Response &aResponse){
+    
+    mComplete = true;
+    std::string data = aResponse.Serialize();
+    write(mFd, data.c_str(), data.size());
+    //error handler
+    mComplete = true;
 }
 
-void Connection::SetEndFlag(int aFlag)
+
+steady_clock::time_point Connection::GetStartTime()
 {
-    this->mEndFlag = aFlag;
-    close(this->mFd);
-}
-bool Connection::CheckDiag(std::string &aRloc)
-{
-    if (!this->mCallbackFlag)
-        return false;
-    auto it = this->mDiagInfo->mNodeSet.find(aRloc);
-    if (it == this->mDiagInfo->mNodeSet.end())
-        return false;
-    else
-        return true;
+    return mStartTime;
 }
 
-void Connection::AddDiag(std::string aRloc, std::string aDiag)
-{
-    this->mDiagInfo->mDiagContent.push_back(aDiag);
-    this->mDiagInfo->mNodeSet.insert(aRloc);
+bool Connection::Iscomplete()
+{   
+    return mComplete;
 }
 
-void Connection::SetCallbackFlag(int aFlag)
-{
-    this->mCallbackFlag = aFlag;
-}
-void Connection::SetErrorFlag(int aFlag)
-{
-    this->mEndFlag = aFlag;
+bool Connection::IsCallbackTimeout(int aDuration)
+{   
+   if (!mHasCallback) return false;
+   auto duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+   return duration >= aDuration ? true : false;
 }
 
-void Connection::ResetDiagInfo()
+void Connection::SetComplete(int aFlag)
 {
-    this->mDiagInfo.reset();
-    mDiagInfo = std::unique_ptr<DiagInfo>(new DiagInfo(steady_clock::now()));
+    mComplete = true;
+    close(mFd);
 }
 
-void Connection::ErrorFormResponse(Response &aResponse)
-{
-    aResponse.SetBody(this->mErrorCode);
+bool Connection::HasCallback(){
+    return mHasCallback;
 }
 
-void Connection::CallbackFormResponse(Response &aResponse)
-{
-    std::string str = mJsonFormater.VectorToJson(this->mDiagInfo->mDiagContent);
-    aResponse.SetBody(str);
+bool Connection::WaitRead(){
+    return (!mHasCallback && !IsReadTimeout());
 }
 
-void Connection::SetErrorCode(std::string aErrorCode)
-{
-    this->mErrorCode = aErrorCode;
-}
-
-requestHandler Connection::GetHandler(Request &aRequest)
-{
-    std::string url     = aRequest.getPath();
-    auto        Handler = this->mHander.GetHandler(url);
-    return Handler;
-}
-
-steady_clock::time_point Connection::GetConnectionStartTime()
-{
-    return this->mStartTime;
-}
-
-steady_clock::time_point Connection::GetDiagStartTime()
-{
-    return this->mDiagInfo->mStartTime;
-}
-
-void Connection::SentResponse(Response &aResponse)
-{
-    std::string data = aResponse.SerializeResponse();
-    write(this->mFd, data.c_str(), data.size());
+bool Connection::IsReadTimeout(int aDuration)
+{   if(mHasCallback) return false;
+    auto duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    return duration >= aDuration ? true : false;
 }
 
 int Connection::OnMessageBegin(http_parser *parser)
 {
-    Request *request = (Request *)parser->data;
-    request->SetComplete(0);
+    OT_UNUSED_VARIABLE(parser);
     return 0;
 }
 
 int Connection::OnStatus(http_parser *parser, const char *at, size_t len)
 {
-    Request *request = (Request *)parser->data;
+    Request *request = reinterpret_cast<Request *>(parser->data);
     request->SetStatus(at, len);
     return 0;
 }
 
 int Connection::OnUrl(http_parser *parser, const char *at, size_t len)
 {
-    Request *request = (Request *)parser->data;
-    request->SetPath(at, len);
+    Request *request = reinterpret_cast<Request *>(parser->data);
+    request->SetUrlPath(at, len);
     return 0;
 }
 
 int Connection::OnHeaderField(http_parser *parser, const char *at, size_t len)
 {
-    Request *request = (Request *)parser->data;
+    Request *request = reinterpret_cast<Request *>(parser->data);
     request->AddHeaderField(at, len);
     return 0;
 }
 
 int Connection::OnHeaderValue(http_parser *parser, const char *at, size_t len)
 {
-    Request *request = (Request *)parser->data;
+    Request *request = reinterpret_cast<Request *>(parser->data);
     request->AddHeaderValue(at, len);
     return 0;
 }
 int Connection::OnBody(http_parser *parser, const char *at, size_t len)
 {
-    Request *request = (Request *)parser->data;
+    Request *request = reinterpret_cast<Request *>(parser->data);
     request->SetBody(at, len);
     return 0;
 }
 
 int Connection::OnHeadersComplete(http_parser *parser)
 {
-    Request *request = (Request *)parser->data;
+    Request *request = reinterpret_cast<Request *>(parser->data);
     request->SetContentLength(parser->content_length);
     request->SetMethod(parser->method);
     return 0;
 }
 
 int Connection::OnMessageComplete(http_parser *parser)
-{
-    Request *request = (Request *)parser->data;
-    request->SetComplete(0);
+{   
+    OT_UNUSED_VARIABLE(parser);
     return 0;
 }
 
 int Connection::OnChunkHeader(http_parser *parser)
 {
-    Request *request = (Request *)parser->data;
-    request->SetComplete(0);
+    OT_UNUSED_VARIABLE(parser);
     return 0;
 }
 
 int Connection::OnChunkComplete(http_parser *parser)
 {
-    Request *request = (Request *)parser->data;
-    request->SetComplete(0);
+    OT_UNUSED_VARIABLE(parser);
     return 0;
 }
 
-void Connection::SetReadFlag(int aFlag)
-{
-    this->mReadFlag = aFlag;
-}
+
 
 } // namespace rest
 } // namespace otbr

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -43,10 +43,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <http_parser.h>
+#include "http_parser.h"
 
-#include "rest/handler.hpp"
-#include "rest/json.hpp"
+#include "rest/resource.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
 
@@ -59,43 +58,70 @@ namespace rest {
 class Connection;
 typedef void (*requestHandler)(Connection &aConnection, Response &aResponse);
 
-typedef struct DiagInfo
-{
-    steady_clock::time_point        mStartTime;
-    std::vector<std::string>        mDiagContent;
-    std::unordered_set<std::string> mNodeSet;
-    DiagInfo(steady_clock::time_point aStartTime)
-        : mStartTime(aStartTime)
-    {
-    }
 
-} DiagInfo;
+// typedef struct DiagInfo
+// {
+//     steady_clock::time_point        mStartTime;
+//     std::vector<std::string>        mDiagContent;
+//     std::unordered_set<std::string> mNodeSet;
+//     DiagInfo(steady_clock::time_point aStartTime)
+//         : mStartTime(aStartTime)
+//     {
+//     }
+
+// } DiagInfo;
 
 class Connection
 {
 public:
-    Connection(steady_clock::time_point aStartTime, otInstance *aInstance, int aFd);
+    Connection(steady_clock::time_point aStartTime, int aFd);
+    
+    void Process();
 
-    otInstance *             GetInstance();
-    steady_clock::time_point GetConnectionStartTime();
-    steady_clock::time_point GetDiagStartTime();
-    int                      GetCallbackFlag();
-    int                      GetStatus();
+    void Read();
 
-    void Check();
-    void SetEndFlag(int aFlag);
-    void SetReadFlag(int aFlag);
-    void ResetDiagInfo();
-    void SetCallbackFlag(int aFlag);
-    void SetErrorFlag(int aFlag);
-    void SetErrorCode(std::string aErrorCode);
+    otInstance *              GetInstance();
+    
+    steady_clock::time_point  GetStartTime();
+    
+    bool                      Iscomplete();
+    
+    bool                      IsReadTimeout(int aDuration);
+    
+    bool                      IsCallbackTimeout(int aDuration)
 
-    bool        CheckDiag(std::string &aRloc);
-    std::string GetErrorCode();
-    void        AddDiag(std::string aRloc, std::string aDiag);
+    bool                      HasCallback();
+private:
+    
 
-    //
+    
+    void Parse(Request &aRequest);
 
+    void HandlerRequest(Request &aRequest, Response &aResponse);
+    
+    void HandlerCallback(Request &aRequest, Response &aResponse);
+
+    void ProcessResponse(Response &aResponse);
+
+    void Write(Response &aResponse);
+
+    
+
+    
+    steady_clock::time_point  mStartTime;
+    bool        mComplete;
+    bool        mHasCallback;
+    int         mFd;
+    // read parameter
+    std::string                  mReadContent;
+    char[2048]                   mReadBuf;
+    int                          mReadLength;
+    
+    http_parser                  mParser;
+    Resource                     mResource;
+
+
+    
     static int OnMessageBegin(http_parser *parser);
     static int OnStatus(http_parser *parser, const char *at, size_t len);
     static int OnUrl(http_parser *parser, const char *at, size_t len);
@@ -107,7 +133,7 @@ public:
     static int OnChunkHeader(http_parser *parser);
     static int OnChunkComplete(http_parser *parser);
 
-    http_parser_settings mSettings{.on_message_begin    = OnMessageBegin,
+     http_parser_settings mSettings{.on_message_begin    = OnMessageBegin,
                                    .on_url              = OnUrl,
                                    .on_status           = OnStatus,
                                    .on_header_field     = OnHeaderField,
@@ -118,40 +144,6 @@ public:
                                    .on_chunk_header     = OnChunkHeader,
                                    .on_chunk_complete   = OnChunkComplete};
 
-private:
-    void NonBlockRead();
-
-    void CreateRequest(Request &aRequest);
-
-    requestHandler GetHandler(Request &aRequest);
-
-    void SentResponse(Response &aResponse);
-
-    void CallbackFormResponse(Response &aResponse);
-
-    void ErrorFormResponse(Response &aResponse);
-
-    static const int sTimeout = 1000000;
-
-private:
-    steady_clock::time_point  mStartTime;
-    std::unique_ptr<DiagInfo> mDiagInfo;
-
-    otInstance *mInstance;
-    int         mReadFlag;
-    int         mEndFlag;
-    int         mCallbackFlag;
-    int         mFd;
-    int         mErrorFlag;
-    std::string mErrorCode;
-    std::string mReadContent;
-
-    std::unique_ptr<char>        mReadBuf;
-    int                          mBufLength;
-    int                          mReadLength;
-    std::unique_ptr<http_parser> mParser;
-    static JSON                  mJsonFormater;
-    static Handler               mHander;
 };
 
 } // namespace rest
