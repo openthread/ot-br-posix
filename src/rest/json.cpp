@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -42,9 +42,9 @@ std::string JSON::TwoVectorToJson(const std::vector<std::string> &aKey, const st
     cJSON *           json = cJSON_CreateObject();
     std::string       key;
     cJSON *           value;
-    long unsigned int index;
+   
 
-    for (index = 0; index < aKey.size(); index++)
+    for ( size_t index = 0; index < aKey.size(); index++)
     {
         key   = aKey[index];
         value = cJSON_Parse(aValue[index].c_str());
@@ -67,22 +67,12 @@ std::string JSON::VectorToJson(const std::vector<std::string> &aVector)
     return JsonToStringDeleteJson(json);
 }
 
-std::string JSON::JsonToStringDeleteJson(cJSON *aJson)
+std::string JSON::JsonToString(cJSON *aJson)
 {
     char *      p   = cJSON_Print(aJson);
     std::string ret = p;
     cJSON_Delete(aJson);
     delete (p);
-
-    return ret;
-}
-
-std::string JSON::JsonToStringKeepJson(const cJSON *aJson)
-{
-    char *      p   = cJSON_Print(aJson);
-    std::string ret = p;
-    delete (p);
-
     return ret;
 }
 
