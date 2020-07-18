@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_library(rest-web-server
+add_library( otbr-rest
     rest_web_server.cpp
     connection.cpp
     json.cpp
@@ -36,11 +36,21 @@ add_library(rest-web-server
 )
 
 
+target_include_directories( otbr-rest PUBLIC
+   ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo
+   ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
+)
 
-target_link_libraries(rest-web-server PUBLIC
+
+target_link_libraries(otbr-rest PRIVATE
     otbr-config
     openthread-ftd
     openthread-posix
+)
+
+target_link_libraries(otbr-rest PUBLIC
     cjson
     http_parser
 )
+
+
