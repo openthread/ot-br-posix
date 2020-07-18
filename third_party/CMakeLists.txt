@@ -27,3 +27,6 @@
 #
 
 add_subdirectory(openthread)
+add_subdirectory(cJSON)
+add_subdirectory(http-parser)
+
