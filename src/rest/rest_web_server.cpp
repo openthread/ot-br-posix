@@ -61,51 +61,31 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
     , mAddress(new sockaddr_in())
 
 {
-    
 }
 
 otbrError  RestWebServer::Init()
 {   
-    otbrError   error = OTBR_ERROR_NONE;
-    
-    
     mThreadHelper = mNcp->GetThreadHelper();
     mInstance     = mThreadHelper->GetInstance();
     mAddress->sin_family      = AF_INET;
     mAddress->sin_addr.s_addr = INADDR_ANY;
     mAddress->sin_port        = htons(kPortNumber);
     
-    // VerifyOrExit((mListenFd = socket(AF_INET, SOCK_STREAM, 0)) != -1, error = OTBR_ERROR_DBUS);
-    
     if ((mListenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
         otbrLog(OTBR_LOG_ERR, "socket error");
-    }
-    // VerifyOrExit((bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr))) == 0, error = OTBR_ERROR_DBUS);
+    
     if ((bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr))) != 0)
-    {
         otbrLog(OTBR_LOG_ERR, "bind error");
-    }
-    // VerifyOrExit(listen(mListenFd, 5) >= 0, error = OTBR_ERROR_DBUS);
+   
     if (listen(mListenFd, 5) < 0)
-    {
         otbrLog(OTBR_LOG_ERR, "listen error");
-    }
 
     SetNonBlocking(mListenFd);
 
-// exit:
-    
-//     if (error != OTBR_ERROR_NONE)
-//     {
-//         otbrLog(OTBR_LOG_ERR, "rest server error ");
-//     }
-//     return error;
 }
 
 void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout)
 {   
-    
     // For ReadRdSet
     UpdateReadFdSet(aReadFdSet,aMaxFd);
     // For timeout
@@ -245,11 +225,9 @@ int RestWebServer::SetFdNonblocking(int fd)
     {
         return -1;
     }
-
     return 0;
 }
 
-
-
 } // namespace rest
 } // namespace otbr
+
