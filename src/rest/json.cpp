@@ -39,12 +39,11 @@ static uint16_t HostSwap16(uint16_t v)
 
 std::string JSON::TwoVectorToJson(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue)
 {
-    cJSON *           json = cJSON_CreateObject();
-    std::string       key;
-    cJSON *           value;
-   
+    cJSON *     json = cJSON_CreateObject();
+    std::string key;
+    cJSON *     value;
 
-    for ( size_t index = 0; index < aKey.size(); index++)
+    for (size_t index = 0; index < aKey.size(); index++)
     {
         key   = aKey[index];
         value = cJSON_Parse(aValue[index].c_str());

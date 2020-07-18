@@ -31,7 +31,6 @@
 namespace otbr {
 namespace rest {
 
-
 void Request::SetUrlPath(const char *aString, int aLength)
 {
     mPath.assign(aString, aLength);

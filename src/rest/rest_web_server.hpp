@@ -48,14 +48,12 @@
 
 #include "rest/connection.hpp"
 
-
 using std::chrono::steady_clock;
 
 using otbr::Ncp::ControllerOpenThread;
 
 namespace otbr {
 namespace rest {
-
 
 class RestWebServer
 {
@@ -68,8 +66,6 @@ public:
 
     void Process(fd_set &aReadFdSet);
 
-    
-
 private:
     // for service
     otbr::Ncp::ControllerOpenThread *mNcp;
@@ -80,20 +76,18 @@ private:
     sockaddr_in *mAddress;
     int          mListenFd;
 
-    
-    
     // for Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
-    
-    void UpdateTimeout(timeval &aTimeout, int aDuration,int aScaleForCallback);
+
+    void UpdateTimeout(timeval &aTimeout, int aDuration, int aScaleForCallback);
     void UpdateConnections(fd_set &aReadFdSet);
     void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     int  SetFdNonblocking(int fd)
 
-    static const unsigned        kMaxServeNum;
-    static const unsigned        kTimeout ;
-    static const unsigned        kScaleForCallbackTimeout ;
-    static const unsigned        kPortNumber ;
+        static const unsigned kMaxServeNum;
+    static const unsigned kTimeout;
+    static const unsigned kScaleForCallbackTimeout;
+    static const unsigned kPortNumber;
 };
 
 } // namespace rest

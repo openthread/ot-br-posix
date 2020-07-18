@@ -53,7 +53,6 @@ public:
     void        SetCallback();
 
 private:
-   
     bool                     mCallback;
     std::vector<std::string> mHeaderField;
     std::vector<std::string> mHeaderValue;
