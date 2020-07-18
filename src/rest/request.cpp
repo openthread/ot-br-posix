@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,8 @@
 namespace otbr {
 namespace rest {
 
-void Request::SetComplete(int aCompleted)
-{
-    mCompleted = aCompleted;
-}
-void Request::SetPath(const char *aString, int aLength)
+
+void Request::SetUrlPath(const char *aString, int aLength)
 {
     mPath.assign(aString, aLength);
 }
@@ -65,9 +62,9 @@ void Request::SetMethod(int aMethod)
 {
     mMethod = aMethod;
 }
-std::string Request::getPath()
+std::string Request::getUrlPath()
 {
-    return this->mPath;
+    return this->mUrlPath;
 }
 
 } // namespace rest
