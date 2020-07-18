@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -36,58 +36,72 @@
 
 #include <openthread/netdiag.h>
 
+#include <openthread/netdiag.h>
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
 #include "openthread/thread_ftd.h"
-#include "rest/connection.hpp"
+#include "rest/request.hpp"
 #include "rest/json.hpp"
 #include "rest/response.hpp"
-#include "rest/rest_web_server.hpp"
+
 
 namespace otbr {
 namespace rest {
-class Connection;
-class Response;
-class RestWebServer;
-class JSON;
 
-typedef void (*requestHandler)(Connection &aConnection, Response &aResponse);
-typedef std::unordered_map<std::string, requestHandler> HandlerMap;
+typedef struct DiagInfo
+{
+    steady_clock::time_point        mStartTime;
+    std::vector<std::string>        mDiagContent;
+    std::unordered_set<std::string> mNodeSet;
+    DiagInfo(steady_clock::time_point aStartTime)
+        : mStartTime(aStartTime)
+    {
+    }
 
-class Handler
+} DiagInfo;
+
+typedef void (*ResourceHandler)(Request &aRequest, Response &aResponse);
+typedef std::unordered_map<std::string, ResourceHandler> HandlerMap;
+
+
+class Resource
 {
 public:
     Handler();
-    static requestHandler GetHandler(std::string aPath);
-    static void           GetNodeInfo(Connection &aConnection, Response &aResponse);
-    static void           GetExtendedAddr(Connection &aConnection, Response &aResponse);
-    static void           GetState(Connection &aConnection, Response &aResponse);
-    static void           GetNetworkName(Connection &aConnection, Response &aResponse);
-    static void           GetLeaderData(Connection &aConnection, Response &aResponse);
-    static void           GetNumOfRoute(Connection &aConnection, Response &aResponse);
-    static void           GetRloc16(Connection &aConnection, Response &aResponse);
-    static void           GetExtendedPanId(Connection &aConnection, Response &aResponse);
-    static void           GetRloc(Connection &aConnection, Response &aResponse);
-    static void           GetDiagnostic(Connection &aConnection, Response &aResponse);
-    static void           ErrorHandler(Connection &aConnection, Response &aResponse);
+    void Init();
+    void           Handle(Request &aRequest , Response &aResponse);
+    void           NodeInfo( Request &aRequest, Response &aResponse);
+    void           ExtendedAddr(Request &aRequest, Response &aResponse);
+    void           State(Request &aRequest, Response &aResponse);
+    void           NetworkName(Request &aRequest, Response &aResponse);
+    void           LeaderData(Request &aRequest, Response &aResponse);
+    void           NumOfRoute(Request &aRequest, Response &aResponse);
+    void           Rloc16(Request &aRequest, Response &aResponse);
+    void           ExtendedPanId(Request &aRequest, Response &aResponse);
+    void           Rloc(Request &aRequest, Response &aResponse);
+    void           Diagnostic(Request &aRequest, Response &aResponse);
+    void           ErrorHandler(Request &aRequest, Response &aResponse);
 
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo, RestWebServer *aRestWebServer);
+    void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
 private:
-    static std::string GetDataNodeInfo(Connection &aConnection);
-    static std::string GetDataExtendedAddr(Connection &aConnection);
-    static std::string GetDataState(Connection &aConnection);
-    static std::string GetDataNetworkName(Connection &aConnection);
-    static std::string GetDataLeaderData(Connection &aConnection);
-    static std::string GetDataNumOfRoute(Connection &aConnection);
-    static std::string GetDataRloc16(Connection &aConnection);
-    static std::string GetDataExtendedPanId(Connection &aConnection);
-    static std::string GetDataRloc(Connection &aConnection);
+    std::string GetDataNodeInfo();
+    std::string GetDataExtendedAddr();
+    std::string GetDataState();
+    std::string GetDataNetworkName();
+    std::string GetDataLeaderData();
+    std::string GetDataNumOfRoute();
+    std::string GetDataRloc16();
+    std::string GetDataExtendedPanId();
+    std::string GetDataRloc();
+    otInstance *  mInstance;
+    JSON          mJsonFormater;
+    HandlerMap    mHandlerMap;
 
-    static JSON       mJsonFormater;
-    static HandlerMap mHandlerMap;
-};
+    static const char  *kMulticastAddrAllRouters;
+    static const uint8_t kAllTlvTypes[];
+}; 
 
 } // namespace rest
 } // namespace otbr

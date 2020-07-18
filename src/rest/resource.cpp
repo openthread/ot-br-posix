@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,23 @@
 
 #include <string>
 
+#define OT_DIAGNOETIC_PATH "/diagnostics"
+#define OT_NODE_PATH "/node"
+#define OT_RLOC_PATH "/node/rloc"
+#define OT_RLOC16_PATH "/node/rloc16"
+#define OT_EXTADDRESS_PATH "/node/ext-address"
+#define OT_STATE_PATH "/node/state"
+#define OT_NETWORKNAME_PATH "/node/network-name"
+#define OT_LEADERDATA_PATH "/node/leader-data"
+#define OT_NUMOFROUTER_PATH "/node/num-of-router"
+#define OT_EXTPANID_PATH "/node/ext-panid"
+
+
 namespace otbr {
 namespace rest {
+
+const char*  Resource::kMulticastAddrAllRouters = "ff02::2";
+const uint8_t Resource::kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
 
 static uint16_t HostSwap16(uint16_t v)
 
@@ -39,13 +54,13 @@ static uint16_t HostSwap16(uint16_t v)
     return (((v & 0x00ffU) << 8) & 0xff00) | (((v & 0xff00U) >> 8) & 0x00ff);
 }
 
-static std::string FormatBytes(const uint8_t *aBytes, uint8_t aLength)
+static std::string BytesToHexString(const uint8_t *aBytes, uint8_t aLength)
 {
     std::unique_ptr<char> p(new char(aLength + 1));
 
     char *q = p.get();
 
-    for (int i = 0; i < aLength; i++)
+    for (int i = 0; i < aLength; ++i)
     {
         snprintf(q, 3, "%02x", aBytes[i]);
         q += 2;
@@ -53,134 +68,140 @@ static std::string FormatBytes(const uint8_t *aBytes, uint8_t aLength)
     std::string s(p.get(), aLength);
     return s;
 }
-Handler::Handler()
-{
-    mHandlerMap.emplace("/diagnostics", &GetDiagnostic);
-    mHandlerMap.emplace("/node", &GetNodeInfo);
-    mHandlerMap.emplace("/node/state", &GetState);
-    mHandlerMap.emplace("/node/ext-address", &GetExtendedAddr);
-    mHandlerMap.emplace("/node/network-name", &GetNetworkName);
-    mHandlerMap.emplace("/node/rloc16", &GetRloc16);
-    mHandlerMap.emplace("/node/leader-data", &GetLeaderData);
-    mHandlerMap.emplace("/node/num-of-route", &GetNumOfRoute);
-    mHandlerMap.emplace("/node/ext-panid", &GetExtendedPanId);
-    mHandlerMap.emplace("/node/rloc", &GetRloc);
+
+void Resource::Init(){
+
+    otThreadSetReceiveDiagnosticGetCallback(mInstance, &DiagnosticResponseHandler, this);
+     
+     mHandlerMap.emplace(OT_DIAGNOETIC_PATH, &GetDiagnostic);
+     mHandlerMap.emplace(OT_NODE_PATH, &GetNodeInfo);
+     mHandlerMap.emplace(OT_STATE_PATH, &GetState);
+     mHandlerMap.emplace(OT_EXTADDRESS_PATH, &GetExtendedAddr);
+     mHandlerMap.emplace(OT_NETWORKNAME_PATH, &GetNetworkName);
+     mHandlerMap.emplace(OT_RLOC16_PATH, &GetRloc16);
+     mHandlerMap.emplace(OT_LEADERDATA_PATH, &GetLeaderData);
+     mHandlerMap.emplace(OT_NUMOFROUTER_PATH, &GetNumOfRoute);
+     mHandlerMap.emplace(OT_EXTPANID_PATH , &GetExtendedPanId);
+     mHandlerMap.emplace(OT_RLOC_PATH, &GetRloc);
 }
 
-requestHandler Handler::GetHandler(std::string aPath)
+void  Resource::Handle(Request &aRequest , Response &aResponse)
 {
     auto it = mHandlerMap.find(aPath);
     if (it == mHandlerMap.end())
-        return ErrorHandler;
-
+        
+         ErrorHandler(aRequest,aResponse);
     else
     {
         auto handler = it->second;
-        return handler;
+        handler(aRequest,aResponse);
     }
 }
 
-void Handler::ErrorHandler(Connection &aConnection, Response &aResponse)
-{
-    aConnection.SetErrorFlag(1);
-    aConnection.SetErrorCode("no match handler");
+void  Resource::HandleCallback(Response &aResponse)
+{   
+    
+   
+}
+
+
+
+void Resource::ErrorHandler(Request &aRequest, Response &aResponse)
+{   OT_UNUSED_VARIABLE(aRequest);
     aResponse.SetBody("no match handler");
 }
-void Handler::GetNodeInfo(Connection &aConnection, Response &aResponse)
+void Resource::NodeInfo(Request &aRequest, Response &aResponse)
 {
-    aConnection.SetCallbackFlag(0);
+    aRequest.SetCallbackFlag(0);
     std::vector<std::string> keyContainer;
     std::vector<std::string> valueContainer;
 
     keyContainer.push_back("state");
-    valueContainer.push_back(GetDataState(aConnection));
+    valueContainer.push_back(GetDataState(aRequest));
 
     keyContainer.push_back("networkName");
-    valueContainer.push_back(GetDataNetworkName(aConnection));
+    valueContainer.push_back(GetDataNetworkName(aRequest));
 
     keyContainer.push_back("extAddress");
-    valueContainer.push_back(GetDataExtendedAddr(aConnection));
+    valueContainer.push_back(GetDataExtendedAddr(aRequest));
 
     keyContainer.push_back("rloc16");
-    valueContainer.push_back(GetDataRloc16(aConnection));
+    valueContainer.push_back(GetDataRloc16(aRequest));
 
     keyContainer.push_back("numOfRouter");
-    valueContainer.push_back(GetDataNumOfRoute(aConnection));
+    valueContainer.push_back(GetDataNumOfRoute(aRequest));
 
     keyContainer.push_back("leaderData");
-    valueContainer.push_back(GetDataLeaderData(aConnection));
+    valueContainer.push_back(GetDataLeaderData(aRequest));
 
     keyContainer.push_back("extPanId");
-    valueContainer.push_back(GetDataExtendedPanId(aConnection));
+    valueContainer.push_back(GetDataExtendedPanId(aRequest));
 
     std::string str = mJsonFormater.TwoVectorToJson(keyContainer, valueContainer);
 
     aResponse.SetBody(str);
 }
 
-void Handler::GetExtendedAddr(Connection &aConnection, Response &aResponse)
+void Resource::ExtendedAddr(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataExtendedAddr(aConnection);
+    std::string str = GetDataExtendedAddr(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetState(Connection &aConnection, Response &aResponse)
+void Resource::State(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataState(aConnection);
+    std::string str = GetDataState(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetNetworkName(Connection &aConnection, Response &aResponse)
+void Resource::NetworkName(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataNetworkName(aConnection);
+    std::string str = GetDataNetworkName(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetLeaderData(Connection &aConnection, Response &aResponse)
+void Resource::LeaderData(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataLeaderData(aConnection);
+    std::string str = GetDataLeaderData(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetNumOfRoute(Connection &aConnection, Response &aResponse)
+void Resource::NumOfRoute(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataNumOfRoute(aConnection);
+    std::string str = GetDataNumOfRoute(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetRloc16(Connection &aConnection, Response &aResponse)
+void Resource::Rloc16(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataRloc16(aConnection);
+    std::string str = GetDataRloc16(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetExtendedPanId(Connection &aConnection, Response &aResponse)
+void Resource::ExtendedPanId(Request &aRequest, Response &aResponse)
 {
-    std::string str = GetDataExtendedPanId(aConnection);
+    std::string str = GetDataExtendedPanId(aRequest);
     aResponse.SetBody(str);
 }
 
-void Handler::GetRloc(Connection &aConnection, Response &aResponse)
-{
-    std::string str = GetDataRloc(aConnection);
+void Resource::Rloc(Request &aRequest, Response &aResponse)
+{  
+    std::string str = GetDataRloc(aRequest);
     aResponse.SetBody(str);
 }
 
-std::string Handler::GetDataExtendedAddr(Connection &aConnection)
+std::string Resource::GetDataExtendedAddr()
 {
-    aConnection.SetCallbackFlag(0);
-
-    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(aConnection.GetInstance()));
-    std::string    str        = FormatBytes(extAddress, OT_EXT_ADDRESS_SIZE);
+    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
+    std::string    str        = BytesToHexString(extAddress, OT_EXT_ADDRESS_SIZE);
     return str;
 }
 
-std::string Handler::GetDataState(Connection &aConnection)
+std::string Resource::GetDataState()
 {
-    aConnection.SetCallbackFlag(0);
     std::string state;
 
-    switch (otThreadGetDeviceRole(aConnection.GetInstance()))
+    switch (otThreadGetDeviceRole(mInstance))
     {
     case OT_DEVICE_ROLE_DISABLED:
         state = "disabled";
@@ -204,122 +225,105 @@ std::string Handler::GetDataState(Connection &aConnection)
     return state;
 }
 
-std::string Handler::GetDataNetworkName(Connection &aConnection)
+std::string Resource::GetDataNetworkName(Request &aRequest)
 {
-    aConnection.SetCallbackFlag(0);
-    const char *          networkName = otThreadGetNetworkName(aConnection.GetInstance());
-    std::unique_ptr<char> p(new char(20));
-
-    sprintf(p.get(), "%s", static_cast<const char *>(networkName));
-    std::string str = p.get();
+   
+    const char *          networkName = otThreadGetNetworkName(mInstance);
+    
+    std::string str =  networkName;
 
     return str;
 }
 
-std::string Handler::GetDataLeaderData(Connection &aConnection)
+std::string Resource::GetDataLeaderData(Request &aRequest)
 {
-    aConnection.SetCallbackFlag(0);
     otLeaderData leaderData;
-    otThreadGetLeaderData(aConnection.GetInstance(), &leaderData);
+    otThreadGetLeaderData(mInstance, &leaderData);
     std::string str = mJsonFormater.CreateLeaderData(leaderData);
     return str;
 }
 
-std::string Handler::GetDataNumOfRoute(Connection &aConnection)
+std::string Resource::GetDataNumOfRoute(Request &aRequest)
 {
-    aConnection.SetCallbackFlag(0);
+   
     int          count = 0;
     uint8_t      maxRouterId;
     otRouterInfo routerInfo;
-    maxRouterId = otThreadGetMaxRouterId(aConnection.GetInstance());
+    maxRouterId = otThreadGetMaxRouterId(mInstance);
 
-    for (uint8_t i = 0; i <= maxRouterId; i++)
+    for (uint8_t i = 0; i <= maxRouterId; ++i)
     {
-        if (otThreadGetRouterInfo(aConnection.GetInstance(), i, &routerInfo) != OT_ERROR_NONE)
+        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
         {
             continue;
         }
-        count++;
+        ++count;
     }
     std::string str = std::to_string(count);
     return str;
 }
-std::string Handler::GetDataRloc16(Connection &aConnection)
+std::string Resource::GetDataRloc16(Request &aRequest)
 {
-    aConnection.SetCallbackFlag(0);
-    uint16_t              rloc16 = otThreadGetRloc16(aConnection.GetInstance());
-    std::unique_ptr<char> p(new char(7));
-
-    sprintf(p.get(), "0x%04x", rloc16);
-    std::string str = p.get();
+    
+    uint16_t              rloc16 = otThreadGetRloc16(mInstance);
+    char p[7];
+    sprintf(p, "0x%04x", rloc16);
+    std::string str = p;
     return str;
 }
 
-std::string Handler::GetDataExtendedPanId(Connection &aConnection)
+std::string Resource::GetDataExtendedPanId(Request &aRequest)
 {
-    aConnection.SetCallbackFlag(0);
-    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(aConnection.GetInstance()));
-    std::string    str      = FormatBytes(extPanId, OT_EXT_PAN_ID_SIZE);
+    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
+    std::string    str      = BytesToHexString(extPanId, OT_EXT_PAN_ID_SIZE);
     return str;
 }
 
-std::string Handler::GetDataRloc(Connection &aConnection)
+std::string Resource::GetDataRloc(Request &aRequest)
 {
-    aConnection.SetCallbackFlag(0);
-    struct otIp6Address   rloc16address = *otThreadGetRloc(aConnection.GetInstance());
-    std::unique_ptr<char> p(new char(65));
-
-    sprintf(p.get(), "%x:%x:%x:%x:%x:%x:%x:%x", HostSwap16(rloc16address.mFields.m16[0]),
-            HostSwap16(rloc16address.mFields.m16[1]), HostSwap16(rloc16address.mFields.m16[2]),
-            HostSwap16(rloc16address.mFields.m16[3]), HostSwap16(rloc16address.mFields.m16[4]),
-            HostSwap16(rloc16address.mFields.m16[5]), HostSwap16(rloc16address.mFields.m16[6]),
-            HostSwap16(rloc16address.mFields.m16[7]));
-    std::string str = p.get();
+    struct otIp6Address   rlocAddress = *otThreadGetRloc(mInstance);
+    char p[65]l
+    
+    sprintf(p, "%x:%x:%x:%x:%x:%x:%x:%x", HostSwap16(rlocAddress.mFields.m16[0]),
+            HostSwap16(rlocAddress.mFields.m16[1]), HostSwap16(rlocAddress.mFields.m16[2]),
+            HostSwap16(rlocAddress.mFields.m16[3]), HostSwap16(rlocAddress.mFields.m16[4]),
+            HostSwap16(rlocAddress.mFields.m16[5]), HostSwap16(rlocAddress.mFields.m16[6]),
+            HostSwap16(rlocAddress.mFields.m16[7]));
+    std::string str = p;
     return str;
 }
 
-void Handler::GetDiagnostic(Connection &aConnection, Response &aResponse)
+void Resource::Diagnostic(Request &aRequest, Response &aResponse)
 {
-    OT_UNUSED_VARIABLE(aResponse);
-
-    aConnection.SetCallbackFlag(1);
-    aConnection.ResetDiagInfo();
-
-    struct otIp6Address rloc16address     = *otThreadGetRloc(aConnection.GetInstance());
-    char                multicastAddr[10] = "ff02::2";
+    
+    aResponse.SetCallback();
+    
+    struct otIp6Address rloc16address     = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
-    otIp6AddressFromString(multicastAddr, &multicastAddress);
-
-    std::unique_ptr<char> p(new char(65));
-
-    sprintf(p.get(), "%x:%x:%x:%x:%x:%x:%x:%x", HostSwap16(rloc16address.mFields.m16[0]),
-            HostSwap16(rloc16address.mFields.m16[1]), HostSwap16(rloc16address.mFields.m16[2]),
-            HostSwap16(rloc16address.mFields.m16[3]), HostSwap16(rloc16address.mFields.m16[4]),
-            HostSwap16(rloc16address.mFields.m16[5]), HostSwap16(rloc16address.mFields.m16[6]),
-            HostSwap16(rloc16address.mFields.m16[7]));
+    otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress);
+    // char[65] p;
+    
+    // sprintf(p, "%x:%x:%x:%x:%x:%x:%x:%x", HostSwap16(rloc16address.mFields.m16[0]),
+    //         HostSwap16(rloc16address.mFields.m16[1]), HostSwap16(rloc16address.mFields.m16[2]),
+    //         HostSwap16(rloc16address.mFields.m16[3]), HostSwap16(rloc16address.mFields.m16[4]),
+    //         HostSwap16(rloc16address.mFields.m16[5]), HostSwap16(rloc16address.mFields.m16[6]),
+    //         HostSwap16(rloc16address.mFields.m16[7]));
+    
+    
     uint8_t tlvTypes[OT_NETWORK_DIAGNOSTIC_TYPELIST_MAX_ENTRIES];
     uint8_t count = 0;
 
-    for (long t = 0; t <= 9; t++)
-    {
-        tlvTypes[count++] = static_cast<uint8_t>(t);
-    }
-    for (long t = 14; t <= 19; t++)
-    {
-        tlvTypes[count++] = static_cast<uint8_t>(t);
-    }
-
-    otThreadSendDiagnosticGet(aConnection.GetInstance(), &rloc16address, tlvTypes, count);
-    otThreadSendDiagnosticGet(aConnection.GetInstance(), &multicastAddress, tlvTypes, count);
+    otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, count);
+    otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, count);
 }
 
-void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
+void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
 {
     DiagnosticResponseHandler(aMessage, *static_cast<const otMessageInfo *>(aMessageInfo),
-                              static_cast<RestWebServer *>(aContext));
+                              static_cast<Resource*>(aContext));
 }
 
-void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo, RestWebServer *aRestWebServer)
+void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo)
 {
     otNetworkDiagTlv      diagTlv;
     otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
@@ -338,16 +342,15 @@ void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo
         {
         case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
         {
-            value = FormatBytes(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE);
+            value = BytesToHexString(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE);
             keyContainer.push_back("Ext Address");
             valueContainer.push_back(value);
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
-        {
-            std::unique_ptr<char> rloc(new char(7));
-            sprintf(rloc.get(), "0x%04x", diagTlv.mData.mAddr16);
-            value   = rloc.get();
+        {   char[7] rloc;
+            sprintf(rloc, "0x%04x", diagTlv.mData.mAddr16);
+            value   = rloc;
             keyRloc = value;
             keyContainer.push_back("Rloc16");
             valueContainer.push_back(value);
@@ -361,10 +364,9 @@ void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_TIMEOUT:
-        {
-            std::unique_ptr<char> timeout(new char(11));
-            sprintf(timeout.get(), "%d", diagTlv.mData.mTimeout);
-            value = timeout.get();
+        {   char[11] timeout;
+            sprintf(timeout, "%d", diagTlv.mData.mTimeout);
+            value = timeout;
             keyContainer.push_back("Timeout");
             valueContainer.push_back(value);
         }
@@ -392,7 +394,7 @@ void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
         {
-            value = FormatBytes(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount);
+            value = BytesToHexString(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount);
             keyContainer.push_back("Network Data");
             valueContainer.push_back(value);
         }
@@ -416,19 +418,17 @@ void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_BATTERY_LEVEL:
-        {
-            std::unique_ptr<char> batteryLevel(new char(9));
-            sprintf(batteryLevel.get(), "%d", diagTlv.mData.mBatteryLevel);
-            value = batteryLevel.get();
+        {   char[9] batteryLevel;
+            sprintf(batteryLevel, "%d", diagTlv.mData.mBatteryLevel);
+            value = batteryLevel;
             keyContainer.push_back("Battery Level");
             valueContainer.push_back(value);
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_SUPPLY_VOLTAGE:
-        {
-            std::unique_ptr<char> supplyVoltage(new char(9));
-            sprintf(supplyVoltage.get(), "%d", diagTlv.mData.mSupplyVoltage);
-            value = supplyVoltage.get();
+        {   char[9] supplyVoltage;
+            sprintf(supplyVoltage, "%d", diagTlv.mData.mSupplyVoltage);
+            value = supplyVoltage;
             keyContainer.push_back("Supply Voltage");
             valueContainer.push_back(value);
         }
@@ -453,11 +453,9 @@ void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo
         }
         break;
         case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
-        {
-            std::unique_ptr<char> childTimeout(new char(9));
-
-            sprintf(childTimeout.get(), "%d", diagTlv.mData.mMaxChildTimeout);
-            value = childTimeout.get();
+        {   char[9] childTimeout;
+            sprintf(childTimeout, "%d", diagTlv.mData.mMaxChildTimeout);
+            value = childTimeout;
             keyContainer.push_back("Max Child Timeout");
             valueContainer.push_back(value);
         }
@@ -466,7 +464,7 @@ void Handler::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo
         }
     }
     diag = mJsonFormater.TwoVectorToJson(keyContainer, valueContainer);
-    aRestWebServer->AddDiag(keyRloc, diag);
+   
 }
 
 } // namespace rest
