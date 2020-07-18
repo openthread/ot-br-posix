@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -46,11 +46,8 @@
 
 #include <openthread/netdiag.h>
 
-#include "agent/ncp_openthread.hpp"
-#include "agent/thread_helper.hpp"
 #include "rest/connection.hpp"
-#include "rest/handler.hpp"
-#include "rest/json.hpp"
+
 
 using std::chrono::steady_clock;
 
@@ -59,8 +56,6 @@ using otbr::Ncp::ControllerOpenThread;
 namespace otbr {
 namespace rest {
 
-class Connection;
-class Handler;
 
 class RestWebServer
 {
@@ -73,7 +68,7 @@ public:
 
     void Process(fd_set &aReadFdSet);
 
-    void AddDiag(std::string aRloc16, std::string &aDiag);
+    
 
 private:
     // for service
@@ -85,11 +80,20 @@ private:
     sockaddr_in *mAddress;
     int          mListenFd;
 
+    
+    
     // for Connection
-    int mMaxServeNum = 100;
-
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
-    static const int                                     sTimeout = 1000000;
+    
+    void UpdateTimeout(timeval &aTimeout, int aDuration,int aScaleForCallback);
+    void UpdateConnections(fd_set &aReadFdSet);
+    void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
+    int  SetFdNonblocking(int fd)
+
+    static const unsigned        kMaxServeNum;
+    static const unsigned        kTimeout ;
+    static const unsigned        kScaleForCallbackTimeout ;
+    static const unsigned        kPortNumber ;
 };
 
 } // namespace rest
