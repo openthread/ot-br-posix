@@ -40,10 +40,9 @@
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
 #include "openthread/thread_ftd.h"
-#include "rest/request.hpp"
 #include "rest/json.hpp"
+#include "rest/request.hpp"
 #include "rest/response.hpp"
-
 
 namespace otbr {
 namespace rest {
@@ -63,27 +62,26 @@ typedef struct DiagInfo
 typedef void (*ResourceHandler)(Request &aRequest, Response &aResponse);
 typedef std::unordered_map<std::string, ResourceHandler> HandlerMap;
 
-
 class Resource
 {
 public:
     Handler();
     void Init();
-    void           Handle(Request &aRequest , Response &aResponse);
-    void           NodeInfo( Request &aRequest, Response &aResponse);
-    void           ExtendedAddr(Request &aRequest, Response &aResponse);
-    void           State(Request &aRequest, Response &aResponse);
-    void           NetworkName(Request &aRequest, Response &aResponse);
-    void           LeaderData(Request &aRequest, Response &aResponse);
-    void           NumOfRoute(Request &aRequest, Response &aResponse);
-    void           Rloc16(Request &aRequest, Response &aResponse);
-    void           ExtendedPanId(Request &aRequest, Response &aResponse);
-    void           Rloc(Request &aRequest, Response &aResponse);
-    void           Diagnostic(Request &aRequest, Response &aResponse);
-    void           ErrorHandler(Request &aRequest, Response &aResponse);
+    void Handle(Request &aRequest, Response &aResponse);
+    void NodeInfo(Request &aRequest, Response &aResponse);
+    void ExtendedAddr(Request &aRequest, Response &aResponse);
+    void State(Request &aRequest, Response &aResponse);
+    void NetworkName(Request &aRequest, Response &aResponse);
+    void LeaderData(Request &aRequest, Response &aResponse);
+    void NumOfRoute(Request &aRequest, Response &aResponse);
+    void Rloc16(Request &aRequest, Response &aResponse);
+    void ExtendedPanId(Request &aRequest, Response &aResponse);
+    void Rloc(Request &aRequest, Response &aResponse);
+    void Diagnostic(Request &aRequest, Response &aResponse);
+    void ErrorHandler(Request &aRequest, Response &aResponse);
 
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+    void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
 private:
     std::string GetDataNodeInfo();
@@ -95,13 +93,13 @@ private:
     std::string GetDataRloc16();
     std::string GetDataExtendedPanId();
     std::string GetDataRloc();
-    otInstance *  mInstance;
-    JSON          mJsonFormater;
-    HandlerMap    mHandlerMap;
+    otInstance *mInstance;
+    JSON        mJsonFormater;
+    HandlerMap  mHandlerMap;
 
-    static const char  *kMulticastAddrAllRouters;
+    static const char *  kMulticastAddrAllRouters;
     static const uint8_t kAllTlvTypes[];
-}; 
+};
 
 } // namespace rest
 } // namespace otbr

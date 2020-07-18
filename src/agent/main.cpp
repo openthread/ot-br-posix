@@ -98,8 +98,8 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
     int error = EXIT_FAILURE;
 #if OTBR_ENABLE_DBUS_SERVER
-    ControllerOpenThread *         ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    std::unique_ptr<DBusAgent>     dbusAgent = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
+    ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
+    std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
     dbusAgent->Init();
 #else
     (void)aInterfaceName;

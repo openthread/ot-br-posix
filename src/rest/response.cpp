@@ -29,7 +29,8 @@
 
 namespace otbr {
 namespace rest {
-Response::Response(): mCallback(false)
+Response::Response()
+    : mCallback(false)
 {
     mCode = "HTTP/1.1 200 OK";
     mHeaderField.push_back("Content-Type");
@@ -39,7 +40,8 @@ Response::Response(): mCallback(false)
     mHeaderValue.push_back("*");
 }
 
-void    Response::SetCallback(){
+void Response::SetCallback()
+{
     mCallback = true;
 }
 
@@ -48,7 +50,8 @@ void Response::SetBody(std::string aBody)
     mBody = aBody;
 }
 
-bool  Response::NeedCallback(){
+bool Response::NeedCallback()
+{
     return mCallback;
 }
 

@@ -43,7 +43,6 @@ namespace rest {
 class Request
 {
 public:
-   
     void        SetUrlPath(const char *aString, int aLength);
     void        SetStatus(const char *aString, int aLength);
     void        SetBody(const char *aString, int aLength);
@@ -56,7 +55,6 @@ public:
     Request();
 
 private:
-    
     int          mMethod;
     unsigned int mContentLength;
 

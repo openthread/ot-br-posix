@@ -45,8 +45,8 @@
 
 #include "http_parser.h"
 
-#include "rest/resource.hpp"
 #include "rest/request.hpp"
+#include "rest/resource.hpp"
 #include "rest/response.hpp"
 
 using std::chrono::steady_clock;
@@ -57,7 +57,6 @@ namespace rest {
 
 class Connection;
 typedef void (*requestHandler)(Connection &aConnection, Response &aResponse);
-
 
 // typedef struct DiagInfo
 // {
@@ -75,53 +74,46 @@ class Connection
 {
 public:
     Connection(steady_clock::time_point aStartTime, int aFd);
-    
+
     void Process();
 
     void Read();
 
-    otInstance *              GetInstance();
-    
-    steady_clock::time_point  GetStartTime();
-    
-    bool                      Iscomplete();
-    
-    bool                      IsReadTimeout(int aDuration);
-    
-    bool                      IsCallbackTimeout(int aDuration)
+    otInstance *GetInstance();
 
-    bool                      HasCallback();
+    steady_clock::time_point GetStartTime();
+
+    bool Iscomplete();
+
+    bool IsReadTimeout(int aDuration);
+
+    bool IsCallbackTimeout(int aDuration)
+
+        bool HasCallback();
+
 private:
-    
-
-    
     void Parse(Request &aRequest);
 
     void HandlerRequest(Request &aRequest, Response &aResponse);
-    
+
     void HandlerCallback(Request &aRequest, Response &aResponse);
 
     void ProcessResponse(Response &aResponse);
 
     void Write(Response &aResponse);
 
-    
-
-    
-    steady_clock::time_point  mStartTime;
-    bool        mComplete;
-    bool        mHasCallback;
-    int         mFd;
+    steady_clock::time_point mStartTime;
+    bool                     mComplete;
+    bool                     mHasCallback;
+    int                      mFd;
     // read parameter
-    std::string                  mReadContent;
-    char[2048]                   mReadBuf;
-    int                          mReadLength;
-    
-    http_parser                  mParser;
-    Resource                     mResource;
+    std::string mReadContent;
+    char[2048] mReadBuf;
+    int mReadLength;
 
+    http_parser mParser;
+    Resource    mResource;
 
-    
     static int OnMessageBegin(http_parser *parser);
     static int OnStatus(http_parser *parser, const char *at, size_t len);
     static int OnUrl(http_parser *parser, const char *at, size_t len);
@@ -133,7 +125,7 @@ private:
     static int OnChunkHeader(http_parser *parser);
     static int OnChunkComplete(http_parser *parser);
 
-     http_parser_settings mSettings{.on_message_begin    = OnMessageBegin,
+    http_parser_settings mSettings{.on_message_begin    = OnMessageBegin,
                                    .on_url              = OnUrl,
                                    .on_status           = OnStatus,
                                    .on_header_field     = OnHeaderField,
@@ -143,7 +135,6 @@ private:
                                    .on_message_complete = OnMessageComplete,
                                    .on_chunk_header     = OnChunkHeader,
                                    .on_chunk_complete   = OnChunkComplete};
-
 };
 
 } // namespace rest
