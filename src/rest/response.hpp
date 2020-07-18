@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -47,11 +47,14 @@ public:
 
     Response(std::string aBody);
     void        SetBody(std::string aBody);
-    std::string SerializeResponse();
+    std::string Serialize();
     int         GetCallbackFlag();
+    bool        NeedCallback();
+    void        SetCallback();
 
 private:
-    int                      mCallback;
+   
+    bool                     mCallback;
     std::vector<std::string> mHeaderField;
     std::vector<std::string> mHeaderValue;
     std::string              mCode;

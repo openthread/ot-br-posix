@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, The OpenThread Authors.
+ *  Copyright (c) 2020, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 
 namespace otbr {
 namespace rest {
-Response::Response()
+Response::Response(): mCallback(false)
 {
     mCode = "HTTP/1.1 200 OK";
     mHeaderField.push_back("Content-Type");
@@ -38,16 +38,9 @@ Response::Response()
     mHeaderField.push_back("Access-Control-Allow-Origin");
     mHeaderValue.push_back("*");
 }
-Response::Response(std::string aBody)
-{
-    mCode = "HTTP/1.1 200 OK";
 
-    mBody = aBody;
-    mHeaderField.push_back("Content-Type");
-    mHeaderValue.push_back("application/json");
-
-    mHeaderField.push_back("Access-Control-Allow-Origin");
-    mHeaderValue.push_back("*");
+void    Response::SetCallback(){
+    mCallback = true;
 }
 
 void Response::SetBody(std::string aBody)
@@ -55,12 +48,11 @@ void Response::SetBody(std::string aBody)
     mBody = aBody;
 }
 
-int Response::GetCallbackFlag()
-{
-    return this->mCallback;
+bool  Response::NeedCallback(){
+    return mCallback;
 }
 
-std::string Response::SerializeResponse()
+std::string Response::Serialize()
 {
     unsigned long index;
     std::string   spacer = "\r\n";
