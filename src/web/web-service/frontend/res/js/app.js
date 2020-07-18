@@ -13,7 +13,7 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS IS'
  *    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  *    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  *    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
@@ -383,35 +383,35 @@
         };
 
 
-        $scope.ipAddr = "0.0.0.0:8080";
+        $scope.ipAddr = '0.0.0.0:8080';
         // $scope.ipaddr = location.host;
 
         //basic information line
-        $scope.networksInfo = "Unknown";
+        $scope.networksInfo = 'Unknown';
         //num of router calculated by diagnostic
-        $scope.numOfRouter = "Unknown";
+        $scope.numOfRouter = 'Unknown';
 
         //diagnostic information for detailed display
-        $scope.nodeDetailInfo = "Unknown";
+        $scope.nodeDetailInfo = 'Unknown';
         //for response of Diagnostic
-        $scope.networksDiagInfo = "";
+        $scope.networksDiagInfo = '';
         $scope.graphisReady = false;
         $scope.detailList = {
-            "Ext Address": { "title": false, "content": true },
-            "Rloc16": { "title": false, "content": true },
-            "Mode": { "title": false, "content": false },
-            "Connectivity": { "title": false, "content": false },
-            "Route": { "title": false, "content": false },
-            "Leader Data": { "title": false, "content": false },
-            "Network Data": { "title": false, "content": true },
-            "IP6 Address List": { "title": false, "content": true },
-            "MAC Counters": { "title": false, "content": false },
-            "Child Table": { "title": false, "content": false },
-            "Channel Pages": { "title": false, "content": false }
+            'Ext Address': { 'title': false, 'content': true },
+            'Rloc16': { 'title': false, 'content': true },
+            'Mode': { 'title': false, 'content': false },
+            'Connectivity': { 'title': false, 'content': false },
+            'Route': { 'title': false, 'content': false },
+            'Leader Data': { 'title': false, 'content': false },
+            'Network Data': { 'title': false, 'content': true },
+            'IP6 Address List': { 'title': false, 'content': true },
+            'MAC Counters': { 'title': false, 'content': false },
+            'Child Table': { 'title': false, 'content': false },
+            'Channel Pages': { 'title': false, 'content': false }
         };
         $scope.graphInfo = {
-            "nodes": [],
-            "links": []
+            'nodes': [],
+            'links': []
         }
 
         $scope.dataInit = function() {
@@ -430,13 +430,13 @@
         }
 
         $scope.clickList = function(key) {
-            $scope.detailList[key]["content"] = !$scope.detailList[key]["content"]
+            $scope.detailList[key]['content'] = !$scope.detailList[key]['content']
         }
 
         $scope.nodeChoose = function() {
             const hide = e => e.style.display = 'none';
             const show = e => e.style.display = ''
-            document.querySelectorAll("#Leader").forEach(e => e.style.display ? show(e) : hide(e))
+            document.querySelectorAll('#Leader').forEach(e => e.style.display ? show(e) : hide(e))
         }
         $scope.showTopology = function() {
             //record index of all node including child,leader and router
@@ -445,8 +445,8 @@
 
             $scope.graphisReady = false;
             $scope.graphInfo = {
-                "nodes": [],
-                "links": []
+                'nodes': [],
+                'links': []
             };
             $http.get('http://' + $scope.ipAddr + '/diagnostics').then(function(response) {
 
@@ -455,21 +455,21 @@
 
                 count = 0;
                 for (var x of $scope.networksDiagInfo) {
-                    if ("Child Table" in x) {
-                        rloc = parseInt(x["Rloc16"], 16).toString(16);
+                    if ('Child Table' in x) {
+                        rloc = parseInt(x['Rloc16'], 16).toString(16);
                         nodeMap[rloc] = count;
 
-                        routeid = "0x" + (parseInt(x["Rloc16"], 16) >> 10).toString(16);
-                        x["RouteId"] = routeid;
-                        leaderid = (parseInt(x["Leader Data"]["LeaderRouterId"], 16) << 10).toString(16);
+                        routeid = '0x' + (parseInt(x['Rloc16'], 16) >> 10).toString(16);
+                        x['RouteId'] = routeid;
+                        leaderid = (parseInt(x['Leader Data']['LeaderRouterId'], 16) << 10).toString(16);
                         if (leaderid == rloc) {
-                            x["Role"] = "Leader";
+                            x['Role'] = 'Leader';
                         } else {
-                            x["Role"] = "Router";
+                            x['Role'] = 'Router';
                         }
 
                         $scope.graphInfo.nodes.push(x);
-                        if (x["Rloc16"] === $scope.networksInfo.rloc16) {
+                        if (x['Rloc16'] === $scope.networksInfo.rloc16) {
                             $scope.nodeDetailInfo = x
                         }
                         count = count + 1;
@@ -482,21 +482,21 @@
                 src = 0;
                 // construct links 
                 for (var y of $scope.networksDiagInfo) {
-                    if ("Child Table" in y) {
+                    if ('Child Table' in y) {
                         // link bewtwen routers
-                        for (var z of y["Route"]["RouteData"]) {
-                            rloc = (parseInt(z["RouteId"], 16) << 10).toString(16);
+                        for (var z of y['Route']['RouteData']) {
+                            rloc = (parseInt(z['RouteId'], 16) << 10).toString(16);
                             if (rloc in nodeMap) {
                                 dist = nodeMap[rloc];
                                 if (src < dist) {
                                     $scope.graphInfo.links.push({
-                                        "source": src,
-                                        "target": dist,
-                                        "weight": 1,
-                                        "type": 0,
-                                        "linkInfo": {
-                                            "inQuality": z["LinkQualityIn"],
-                                            "outQuality": z["LinkQualityOut"]
+                                        'source': src,
+                                        'target': dist,
+                                        'weight': 1,
+                                        'type': 0,
+                                        'linkInfo': {
+                                            'inQuality': z['LinkQualityIn'],
+                                            'outQuality': z['LinkQualityOut']
                                         }
                                     });
                                 }
@@ -504,28 +504,28 @@
                         }
 
                         //link between router and child 
-                        for (var n of y["Child Table"]) {
+                        for (var n of y['Child Table']) {
                             child = {};
-                            rlocOfParent = parseInt(y["Rloc16"], 16).toString(16);
-                            rlocOfChild = (parseInt(y["Rloc16"], 16) + parseInt(n["ChildId"], 16)).toString(16);
+                            rlocOfParent = parseInt(y['Rloc16'], 16).toString(16);
+                            rlocOfChild = (parseInt(y['Rloc16'], 16) + parseInt(n['ChildId'], 16)).toString(16);
 
                             src = nodeMap[rlocOfParent];
 
-                            child["Rloc16"] = "0x" + rlocOfChild;
-                            routeid = "0x" + (parseInt(y["Rloc16"], 16) >> 10).toString(16);
-                            child["RouteId"] = routeid;
+                            child['Rloc16'] = '0x' + rlocOfChild;
+                            routeid = '0x' + (parseInt(y['Rloc16'], 16) >> 10).toString(16);
+                            child['RouteId'] = routeid;
 
                             nodeMap[rlocOfChild] = count;
-                            child["Role"] = "Child"
+                            child['Role'] = 'Child'
                             $scope.graphInfo.nodes.push(child);
                             $scope.graphInfo.links.push({
-                                "source": src,
-                                "target": count,
-                                "weight": 1,
-                                "type": 1,
-                                "linkInfo": {
-                                    "Timeout": n["Timeout"],
-                                    "Mode": n["Mode"]
+                                'source': src,
+                                'target': count,
+                                'weight': 1,
+                                'type': 1,
+                                'linkInfo': {
+                                    'Timeout': n['Timeout'],
+                                    'Mode': n['Mode']
                                 }
 
                             });
@@ -546,12 +546,12 @@
         // update what information to show when click differrent nodes
         $scope.updateDetailLabel = function() {
             for (var x in $scope.detailList) {
-                $scope.detailList[x]["title"] = false;
+                $scope.detailList[x]['title'] = false;
             }
             for (var y in $scope.nodeDetailInfo) {
 
                 if (y in $scope.detailList) {
-                    $scope.detailList[y]["title"] = true;
+                    $scope.detailList[y]['title'] = true;
                 }
 
             }
@@ -563,23 +563,23 @@
             var scale, len;
 
             //erase former graph
-            document.getElementById("topograph").innerHTML = "";
+            document.getElementById('topograph').innerHTML = '';
             scale = $scope.graphInfo.nodes.length;
             len = 125 * Math.sqrt(scale);
 
             //topology graph
-            svg = d3.select(".d3graph").append("svg")
-                .attr("preserveAspectRatio", "xMidYMid meet")
-                .attr("viewBox", "0, 0, " + len.toString(10) + ", " + (len / (3 / 2)).toString(10)) //class to make it responsive
+            svg = d3.select('.d3graph').append('svg')
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10)) //class to make it responsive
 
             //tooltip style  for each node
-            tooltip = d3.select("body")
-                .append("div")
-                .attr("class", "tooltip")
-                .style("position", "absolute")
-                .style("z-index", "10")
-                .style("visibility", "hidden")
-                .text("a simple tooltip");
+            tooltip = d3.select('body')
+                .append('div')
+                .attr('class', 'tooltip')
+                .style('position', 'absolute')
+                .style('z-index', '10')
+                .style('visibility', 'hidden')
+                .text('a simple tooltip');
 
             force = d3.layout.force()
                 .gravity(.05)
@@ -590,25 +590,25 @@
                 .size([len, len / (3 / 2)]);
 
             //blur for node
-            filt = svg.append("defs")
-                .append("filter")
-                .attr({ id: "f1", x: 0, y: 0, width: "150%", height: "150%" });
+            filt = svg.append('defs')
+                .append('filter')
+                .attr({ id: 'f1', x: 0, y: 0, width: '150%', height: '150%' });
             filt
-                .append("feOffset")
-                .attr({ result: "offOut", "in": "sourceAlpha", dx: 1, dy: 1 });
+                .append('feOffset')
+                .attr({ result: 'offOut', 'in': 'sourceAlpha', dx: 1, dy: 1 });
             filt
-                .append("feGaussianBlur")
-                .attr({ result: "blurOut", "in": "offOut", stdDeviation: 1 });
-            feMerge = filt.append("feMerge");
+                .append('feGaussianBlur')
+                .attr({ result: 'blurOut', 'in': 'offOut', stdDeviation: 1 });
+            feMerge = filt.append('feMerge');
             feMerge
-                .append("feMergeNode")
-                .attr("in", "offsetBlur");
+                .append('feMergeNode')
+                .attr('in', 'offsetBlur');
             feMerge
-                .append("feMergeNode")
-                .attr("in", "SourceGraphic");
+                .append('feMergeNode')
+                .attr('in', 'SourceGraphic');
 
 
-            d3.json("/static/data1.json", function(json) {
+            d3.json('/static/data1.json', function(json) {
                 var pentagonPoints;
                 json = $scope.graphInfo;
                 force
@@ -617,106 +617,106 @@
                     .start();
 
 
-                var link = svg.selectAll(".link")
+                var link = svg.selectAll('.link')
                     .data(json.links)
-                    .enter().append("line")
-                    .attr("class", "link")
-                    .style("stroke", "#18c3f7")
+                    .enter().append('line')
+                    .attr('class', 'link')
+                    .style('stroke', '#18c3f7')
                     // dash line for link between child and parent
-                    .style("stroke-dasharray", function(d) {
-                        if ("Timeout" in d.linkInfo) return "5 5";
-                        else return "0 0"
+                    .style('stroke-dasharray', function(d) {
+                        if ('Timeout' in d.linkInfo) return '5 5';
+                        else return '0 0'
                     })
                     // line width representing link quality
-                    .style("stroke-width", function(d) {
-                        if ("inQuality" in d.linkInfo)
+                    .style('stroke-width', function(d) {
+                        if ('inQuality' in d.linkInfo)
                             return Math.sqrt(d.linkInfo.inQuality);
                         else return Math.sqrt(0.5)
                     })
 
                 // effect on mouseover
-                .on("mouseover", function(d) {
-                        return tooltip.style("visibility", "visible")
+                .on('mouseover', function(d) {
+                        return tooltip.style('visibility', 'visible')
                             .text(d.linkInfo);
                     })
-                    .on("mousemove", function() {
-                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                            .style("left", (d3.event.pageX + 10) + "px");
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
                     })
-                    .on("mouseout", function() {
-                        return tooltip.style("visibility", "hidden");
+                    .on('mouseout', function() {
+                        return tooltip.style('visibility', 'hidden');
                     });
 
 
-                var node = svg.selectAll(".node")
+                var node = svg.selectAll('.node')
                     .data(json.nodes)
-                    .enter().append("g")
-                    .attr("class", function(d) {
+                    .enter().append('g')
+                    .attr('class', function(d) {
                         return d.Role;
                     })
                     .call(force.drag)
-                    .on("mouseover", function(d) {
-                        return tooltip.style("visibility", "visible")
-                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
+                    .on('mouseover', function(d) {
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
                     })
-                    .on("mousemove", function() {
-                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                            .style("left", (d3.event.pageX + 10) + "px");
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
                     })
-                    .on("mouseout", function() {
-                        return tooltip.style("visibility", "hidden");
+                    .on('mouseout', function() {
+                        return tooltip.style('visibility', 'hidden');
                     });
 
-                d3.selectAll(".Child").append("circle")
-                    .attr("r", "10")
+                d3.selectAll('.Child').append('circle')
+                    .attr('r', '10')
                     .attr('fill', '#18c3f7')
-                    .attr("class", function(d) {
+                    .attr('class', function(d) {
                         return d.Rloc16;
                     })
-                    .on("mouseover", function(d) {
-                        return tooltip.style("visibility", "visible")
-                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
+                    .on('mouseover', function(d) {
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
                     })
-                    .on("mousemove", function() {
-                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                            .style("left", (d3.event.pageX + 10) + "px");
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
                     })
-                    .on("mouseout", function() {
-                        return tooltip.style("visibility", "hidden");
+                    .on('mouseout', function() {
+                        return tooltip.style('visibility', 'hidden');
                     });
 
 
-                d3.selectAll(".Leader").append("polygon")
-                    .attr("points", "-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936")
+                d3.selectAll('.Leader').append('polygon')
+                    .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
                     .attr('fill', '#000000')
-                    .style("filter", "url(#f1)")
-                    .attr("class", function(d) {
-                        return "Stroke";
+                    .style('filter', 'url(#f1)')
+                    .attr('class', function(d) {
+                        return 'Stroke';
                     })
-                    .on("mouseover", function(d) {
+                    .on('mouseover', function(d) {
 
-                        d3.select(this).attr("transform", "scale(1.25)");
-                        return tooltip.style("visibility", "visible")
-                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
-
-                    })
-                    .on("mousemove", function() {
-                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                            .style("left", (d3.event.pageX + 10) + "px");
-                    })
-                    .on("mouseout", function() {
-                        d3.select(this).attr("transform", "scale(0.8)");
-                        return tooltip.style("visibility", "hidden");
+                        d3.select(this).attr('transform', 'scale(1.25)');
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
 
                     })
-                    .on("click", function(d) {
-                        d3.selectAll(".Stroke").style("stroke", "none")
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).attr('transform', 'scale(0.8)');
+                        return tooltip.style('visibility', 'hidden');
 
-                        d3.selectAll(".Stroke").style("stroke", "none")
+                    })
+                    .on('click', function(d) {
+                        d3.selectAll('.Stroke').style('stroke', 'none')
+
+                        d3.selectAll('.Stroke').style('stroke', 'none')
 
 
-                        d3.select(this).style("stroke", "yellow")
-                            .style("stroke-width", "1px");
+                        d3.select(this).style('stroke', 'yellow')
+                            .style('stroke-width', '1px');
 
 
                         $scope.$apply(function() {
@@ -725,35 +725,35 @@
                         });
                     });
 
-                d3.selectAll(".Router").append("polygon")
-                    .attr("points", "-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936")
+                d3.selectAll('.Router').append('polygon')
+                    .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
                     .attr('fill', '#024f9d')
-                    .style("filter", "url(#f1)")
-                    .attr("class", function(d) {
-                        return "Stroke";
+                    .style('filter', 'url(#f1)')
+                    .attr('class', function(d) {
+                        return 'Stroke';
                     })
-                    .on("mouseover", function(d) {
+                    .on('mouseover', function(d) {
 
-                        d3.select(this).attr("transform", "scale(1.1)");
-                        return tooltip.style("visibility", "visible")
-                            .text("RLOC16: " + d.Rloc16 + " RouteId:  " + d.RouteId);
+                        d3.select(this).attr('transform', 'scale(1.1)');
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
 
-
-                    })
-                    .on("mousemove", function() {
-                        return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                            .style("left", (d3.event.pageX + 10) + "px");
-                    })
-                    .on("mouseout", function() {
-                        d3.select(this).attr("transform", "scale(0.8)");
-                        return tooltip.style("visibility", "hidden");
 
                     })
-                    .on("click", function(d) {
-                        d3.selectAll(".Stroke").style("stroke", "none")
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).attr('transform', 'scale(0.8)');
+                        return tooltip.style('visibility', 'hidden');
 
-                        d3.select(this).style("stroke", "yellow")
-                            .style("stroke-width", "1px");
+                    })
+                    .on('click', function(d) {
+                        d3.selectAll('.Stroke').style('stroke', 'none')
+
+                        d3.select(this).style('stroke', 'yellow')
+                            .style('stroke-width', '1px');
 
 
 
@@ -763,13 +763,13 @@
                         });
                     });
 
-                force.on("tick", function() {
-                    link.attr("x1", function(d) { return d.source.x; })
-                        .attr("y1", function(d) { return d.source.y; })
-                        .attr("x2", function(d) { return d.target.x; })
-                        .attr("y2", function(d) { return d.target.y; });
-                    node.attr("transform", function(d) {
-                        return "translate(" + d.x + "," + d.y + ")";
+                force.on('tick', function() {
+                    link.attr('x1', function(d) { return d.source.x; })
+                        .attr('y1', function(d) { return d.source.y; })
+                        .attr('x2', function(d) { return d.target.x; })
+                        .attr('y2', function(d) { return d.target.y; });
+                    node.attr('transform', function(d) {
+                        return 'translate(' + d.x + ',' + d.y + ')';
                     });
                 });
             });
