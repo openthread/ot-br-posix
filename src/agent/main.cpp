@@ -103,11 +103,11 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     dbusAgent->Init();
 #else
     (void)aInterfaceName;
+#endif
+    otbrLog(OTBR_LOG_INFO, "Border router agent started.");
     ControllerOpenThread *         ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
     std::unique_ptr<RestWebServer> restWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(ncpOpenThreadRest));
     restWebServer->Init();
-#endif
-    otbrLog(OTBR_LOG_INFO, "Border router agent started.");
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
