@@ -382,9 +382,8 @@
             });
         };
 
-
-        $scope.ipAddr = '0.0.0.0:8080';
-        // $scope.ipaddr = location.host;
+        $scope.restServerPort = '8080';
+        $scope.ipaddr = location.hostname + ':' + $scope.restServerPort;
 
         //basic information line
         $scope.networksInfo = 'Unknown';
