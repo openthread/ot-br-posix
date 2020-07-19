@@ -29,6 +29,7 @@
 
 namespace otbr {
 namespace rest {
+
 Response::Response()
     : mCallback(false)
 {
@@ -40,6 +41,11 @@ Response::Response()
     mHeaderValue.push_back("*");
 }
 
+void Response::SetResponsCode(std::string aCode)
+{
+    mCode = aCode;
+}
+
 void Response::SetCallback()
 {
     mCallback = true;
@@ -48,6 +54,11 @@ void Response::SetCallback()
 void Response::SetBody(std::string aBody)
 {
     mBody = aBody;
+}
+
+std::string Response::GetBody()
+{
+    return mBody;
 }
 
 bool Response::NeedCallback()
@@ -64,7 +75,7 @@ std::string Response::Serialize()
     {
         ret += (spacer + mHeaderField[index] + " " + mHeaderValue[index]);
     }
-    ret += (spacer + mBody);
+    ret += (spacer + spacer + mBody);
 
     return ret;
 }

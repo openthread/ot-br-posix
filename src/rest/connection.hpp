@@ -50,32 +50,18 @@
 #include "rest/response.hpp"
 
 using std::chrono::steady_clock;
-// using otbr::rest::requestHandler;
-// using otbr::rest::HandlerMap;
+
 namespace otbr {
 namespace rest {
-
-class Connection;
-typedef void (*requestHandler)(Connection &aConnection, Response &aResponse);
-
-// typedef struct DiagInfo
-// {
-//     steady_clock::time_point        mStartTime;
-//     std::vector<std::string>        mDiagContent;
-//     std::unordered_set<std::string> mNodeSet;
-//     DiagInfo(steady_clock::time_point aStartTime)
-//         : mStartTime(aStartTime)
-//     {
-//     }
-
-// } DiagInfo;
 
 class Connection
 {
 public:
-    Connection(steady_clock::time_point aStartTime, int aFd);
+    Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
     void Process();
+
+    void CallbackProcess();
 
     void Read();
 
@@ -83,36 +69,42 @@ public:
 
     steady_clock::time_point GetStartTime();
 
-    bool Iscomplete();
+    bool IsComplete();
 
     bool IsReadTimeout(int aDuration);
 
-    bool IsCallbackTimeout(int aDuration)
+    bool IsCallbackTimeout(int aDuration);
 
-        bool HasCallback();
+    bool HasCallback();
+
+    bool Readable(int aDuration);
 
 private:
     void Parse(Request &aRequest);
 
-    void HandlerRequest(Request &aRequest, Response &aResponse);
+    void HandleRequest(Request &aRequest, Response &aResponse);
 
-    void HandlerCallback(Request &aRequest, Response &aResponse);
+    void HandleCallback(Request &aRequest, Response &aResponse);
 
     void ProcessResponse(Response &aResponse);
 
     void Write(Response &aResponse);
 
+    void SetComplete();
+
     steady_clock::time_point mStartTime;
     bool                     mComplete;
     bool                     mHasCallback;
     int                      mFd;
+
     // read parameter
     std::string mReadContent;
-    char[2048] mReadBuf;
+    char        mReadBuf[2048];
+
     int mReadLength;
 
     http_parser mParser;
-    Resource    mResource;
+    Resource *  mResource;
 
     static int OnMessageBegin(http_parser *parser);
     static int OnStatus(http_parser *parser, const char *at, size_t len);
