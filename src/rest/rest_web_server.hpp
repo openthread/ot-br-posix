@@ -43,6 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "common/code_utils.hpp"
 #include "rest/connection.hpp"
 #include "rest/resource.hpp"
 
@@ -57,11 +58,11 @@ class RestWebServer
 public:
     RestWebServer(ControllerOpenThread *aNcp);
 
-    void Init();
+    otbrError Init();
 
     void UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout);
 
-    void Process(fd_set &aReadFdSet);
+    otbrError Process(fd_set &aReadFdSet);
 
 private:
     // for service
@@ -75,10 +76,10 @@ private:
     // for Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
-    void UpdateTimeout(timeval &aTimeout, int aDuration, int aScaleForCallback);
-    void UpdateConnections(fd_set &aReadFdSet);
-    void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
-    int  SetFdNonblocking(int fd);
+    void      UpdateTimeout(timeval &aTimeout, int aDuration, int aScaleForCallback);
+    otbrError UpdateConnections(fd_set &aReadFdSet);
+    void      UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
+    int       SetFdNonblocking(int fd);
 
     static const unsigned kMaxServeNum;
     static const unsigned kTimeout;

@@ -59,27 +59,29 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
     mResource = std::unique_ptr<Resource>(new Resource(aNcp, kTimeout * kScaleForCallbackTimeout));
 }
 
-void RestWebServer::Init()
+otbrError RestWebServer::Init()
 {
+    int       ret;
+    otbrError error = OTBR_ERROR_NONE;
     mResource->Init();
     mAddress->sin_family      = AF_INET;
     mAddress->sin_addr.s_addr = INADDR_ANY;
     mAddress->sin_port        = htons(kPortNumber);
+    mListenFd                 = socket(AF_INET, SOCK_STREAM, 0) == -1;
+    VerifyOrExit(mListenFd != -1, error = OTBR_ERROR_REST);
+    ret = bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr));
+    VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
+    ret = listen(mListenFd, 5);
+    VerifyOrExit(ret >= 0, error = OTBR_ERROR_REST);
+    ret = SetFdNonblocking(mListenFd);
+    VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "otbr rest init error");
+    }
 
-    if ((mListenFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-        otbrLog(OTBR_LOG_ERR, "socket error");
-    }
-    if ((bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr))) != 0)
-    {
-        otbrLog(OTBR_LOG_ERR, "bind error");
-    }
-    if (listen(mListenFd, 5) < 0)
-    {
-        otbrLog(OTBR_LOG_ERR, "listen error");
-    }
-
-    SetFdNonblocking(mListenFd);
+    return error;
 }
 
 void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout)
@@ -90,8 +92,9 @@ void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeo
     UpdateTimeout(aTimeout, kTimeout, kScaleForCallbackTimeout);
 }
 
-void RestWebServer::Process(fd_set &aReadFdSet)
+otbrError RestWebServer::Process(fd_set &aReadFdSet)
 {
+    otbrError   error = OTBR_ERROR_NONE;
     Connection *connection;
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
@@ -112,7 +115,9 @@ void RestWebServer::Process(fd_set &aReadFdSet)
         }
     }
 
-    UpdateConnections(aReadFdSet);
+    error = UpdateConnections(aReadFdSet);
+
+    return error;
 }
 
 void RestWebServer::UpdateTimeout(timeval &aTimeout, int aTimeoutLen, int aScaleForCallback)
@@ -145,12 +150,13 @@ void RestWebServer::UpdateTimeout(timeval &aTimeout, int aTimeoutLen, int aScale
     }
 }
 
-void RestWebServer::UpdateConnections(fd_set &aReadFdSet)
+otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
 {
+    otbrError error   = OTBR_ERROR_NONE;
     socklen_t addrlen = sizeof(sockaddr);
     int       fd;
-    auto      err     = errno;
     auto      eraseIt = mConnectionSet.begin();
+    int       ret;
     for (eraseIt = mConnectionSet.begin(); eraseIt != mConnectionSet.end();)
     {
         Connection *connection = eraseIt->second.get();
@@ -168,30 +174,26 @@ void RestWebServer::UpdateConnections(fd_set &aReadFdSet)
 
     if (FD_ISSET(mListenFd, &aReadFdSet))
     {
-        fd  = accept(mListenFd, (struct sockaddr *)mAddress, &addrlen);
-        err = errno;
+        fd = accept(mListenFd, (struct sockaddr *)mAddress, &addrlen);
         if (mConnectionSet.size() < kMaxServeNum)
         {
             // set up new connection
-            SetFdNonblocking(fd);
+            ret = SetFdNonblocking(fd);
+            VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
             mConnectionSet.insert(std::make_pair(
                 fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), mResource.get(), fd))));
         }
         else
         {
             close(fd);
-            otbrLog(OTBR_LOG_ERR, "server is busy");
-        }
-
-        if (err == EWOULDBLOCK)
-        {
-            otbrLog(OTBR_LOG_ERR, "Having accept all connections");
-        }
-        else
-        {
-            otbrLog(OTBR_LOG_ERR, "Accept error, should handle it");
         }
     }
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "rest server set fd nonblock error");
+    }
+    return error;
 }
 
 void RestWebServer::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd)
