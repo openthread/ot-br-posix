@@ -64,6 +64,7 @@ enum otbrError
     OTBR_ERROR_DBUS       = -2, ///< DBus error.
     OTBR_ERROR_MDNS       = -3, ///< MDNS error.
     OTBR_ERROR_OPENTHREAD = -4, ///< OpenThread error.
+    OTBR_ERROR_REST       = -5  ///< Rest Server error.
 };
 
 namespace otbr {
