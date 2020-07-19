@@ -36,35 +36,35 @@
 
 #include "cJSON.h"
 
-#include "rest/rest_web_server.hpp"
+#include <string>
+#include <vector>
+
+#include "openthread/netdiag.h"
+#include "openthread/thread_ftd.h"
+
+#include "agent/ncp_openthread.hpp"
+#include "agent/thread_helper.hpp"
 
 namespace otbr {
 namespace rest {
 class JSON
 {
 public:
-    static std::string TwoVectorToJson(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue);
-    static std::string VectorToJson(const std::vector<std::string> &aVector);
-    static std::string JsonToStringDeleteJson(cJSON *aJson);
-    static std::string JsonToStringKeepJson(const cJSON *aJson);
-    static std::string CreateMode(const otLinkModeConfig &aMode);
-    static std::string CreateConnectivity(const otNetworkDiagConnectivity &aConnectivity);
-    static std::string CreateRoute(const otNetworkDiagRoute &aRoute);
-    static std::string CreateRouteData(const otNetworkDiagRouteData &aRouteData);
-    static std::string CreateLeaderData(const otLeaderData &aLeaderData);
-    static std::string CreateIp6Address(const otIp6Address &aAddress);
-    static std::string CreateMacCounters(const otNetworkDiagMacCounters &aMacCounters);
-    static std::string CreateChildTableEntry(const otNetworkDiagChildEntry &aChildEntry);
-
-private:
-    static cJSON *CreateJsonMode(const otLinkModeConfig &aMode);
-    static cJSON *CreateJsonConnectivity(const otNetworkDiagConnectivity &aConnectivity);
-    static cJSON *CreateJsonRoute(const otNetworkDiagRoute &aRoute);
-    static cJSON *CreateJsonRouteData(const otNetworkDiagRouteData &aRouteData);
-    static cJSON *CreateJsonLeaderData(const otLeaderData &aLeaderData);
-    static cJSON *CreateJsonIp6Address(const otIp6Address &aAddress);
-    static cJSON *CreateJsonMacCounters(const otNetworkDiagMacCounters &aMacCounters);
-    static cJSON *CreateJsonChildTableEntry(const otNetworkDiagChildEntry &aChildEntry);
+    static std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength);
+    static std::string String2JsonString(std::string aString);
+    static std::string TwoVector2JsonString(const std::vector<std::string> &aKey,
+                                            const std::vector<std::string> &aValue);
+    static std::string Vector2JsonString(const std::vector<std::string> &aVector);
+    static std::string Json2String(cJSON *aJson);
+    static std::string IpAddr2JsonString(const otIp6Address &aAddress);
+    static std::string Mode2JsonString(const otLinkModeConfig &aMode);
+    static std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity);
+    static std::string Route2JsonString(const otNetworkDiagRoute &aRoute);
+    static std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
+    static std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
+    static std::string Ip6Address2JsonString(const otIp6Address &aAddress);
+    static std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
+    static std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
 };
 
 } // namespace rest

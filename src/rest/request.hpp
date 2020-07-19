@@ -50,9 +50,9 @@ public:
     void        SetMethod(int aMethod);
     void        AddHeaderField(const char *aString, int aLength);
     void        AddHeaderValue(const char *aString, int aLength);
-    std::string getUrlPath();
+    std::string GetUrlPath();
 
-    Request();
+    Request(){};
 
 private:
     int          mMethod;

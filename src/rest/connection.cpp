@@ -38,10 +38,14 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-Connection::Connection(steady_clock::time_point aStartTime, int aFd)
+Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd)
+
     : mStartTime(aStartTime)
-    , mComplete(false);
-, mReadFlag(1), mFd(aFd), mBufLength(2048), mReadLength(0)
+    , mComplete(false)
+    , mHasCallback(false)
+    , mFd(aFd)
+    , mReadLength(0)
+    , mResource(aResource)
 {
     http_parser_init(&mParser, HTTP_REQUEST);
 }
@@ -52,15 +56,18 @@ void Connection::Process()
     Response res;
 
     Parse(req);
+
     HandleRequest(req, res);
+
     ProcessResponse(res);
 }
 
-void Connection::CallBackProcess()
+void Connection::CallbackProcess()
 {
+    Request  req;
     Response res;
 
-    HandleCallback(res);
+    HandleCallback(req, res);
     ProcessResponse(res);
 }
 
@@ -68,14 +75,12 @@ void Connection::Read()
 {
     int received = 0;
 
-    while ((received = read(mFd, mReadBuf, mBufLength)) > 0)
+    while ((received = read(mFd, mReadBuf, sizeof(mReadBuf))) > 0)
     {
         mReadContent += std::string(mReadBuf, received);
+
         mReadLength += received;
     }
-    auto err = errno;
-
-    // error handler
 }
 
 void Connection::Parse(Request &aRequest)
@@ -88,35 +93,37 @@ void Connection::Parse(Request &aRequest)
 
 void Connection::HandleRequest(Request &aRequest, Response &aResponse)
 {
-    mResource.Handle(aRequest, aResponse);
+    mResource->Handle(aRequest, aResponse);
     // error handler
 }
 
 void Connection::HandleCallback(Request &aRequest, Response &aResponse)
 {
-    mResource.HandleCallback(aRequest, aResponse);
+    mResource->HandleCallback(aRequest, aResponse);
     // error handler
 }
 
 void Connection::ProcessResponse(Response &aResponse)
 {
-    if
-        aResponse.NeedCallback()
-        {
-            mHasCallback = true;
-            mStartTime   = steady_clock::now();
-        }
+    if (aResponse.NeedCallback())
+    {
+        mHasCallback = true;
+        mStartTime   = steady_clock::now();
+    }
     else
+    {
         Write(aResponse);
+    }
 }
 
 void Connection::Write(Response &aResponse)
 {
-    mComplete        = true;
     std::string data = aResponse.Serialize();
+
     write(mFd, data.c_str(), data.size());
+
     // error handler
-    mComplete = true;
+    SetComplete();
 }
 
 steady_clock::time_point Connection::GetStartTime()
@@ -124,7 +131,7 @@ steady_clock::time_point Connection::GetStartTime()
     return mStartTime;
 }
 
-bool Connection::Iscomplete()
+bool Connection::IsComplete()
 {
     return mComplete;
 }
@@ -132,12 +139,14 @@ bool Connection::Iscomplete()
 bool Connection::IsCallbackTimeout(int aDuration)
 {
     if (!mHasCallback)
+    {
         return false;
+    }
     auto duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
     return duration >= aDuration ? true : false;
 }
 
-void Connection::SetComplete(int aFlag)
+void Connection::SetComplete()
 {
     mComplete = true;
     close(mFd);
@@ -148,9 +157,14 @@ bool Connection::HasCallback()
     return mHasCallback;
 }
 
-bool Connection::WaitRead()
+bool Connection::Readable(int aDuration)
 {
-    return (!mHasCallback && !IsReadTimeout());
+    if (mHasCallback)
+    {
+        return false;
+    }
+    auto duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    return duration >= aDuration ? false : true;
 }
 
 bool Connection::IsReadTimeout(int aDuration)

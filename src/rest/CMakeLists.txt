@@ -29,10 +29,11 @@
 add_library( otbr-rest
     rest_web_server.cpp
     connection.cpp
+    resource.cpp
     json.cpp
     request.cpp
     response.cpp
-    handler.cpp
+    
 )
 
 

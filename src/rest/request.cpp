@@ -33,12 +33,14 @@ namespace rest {
 
 void Request::SetUrlPath(const char *aString, int aLength)
 {
-    mPath.assign(aString, aLength);
+    mUrlPath.assign(aString, aLength);
 }
+
 void Request::SetStatus(const char *aString, int aLength)
 {
     mStatus.assign(aString, aLength);
 }
+
 void Request::SetBody(const char *aString, int aLength)
 {
     mBody.assign(aString, aLength);
@@ -48,6 +50,7 @@ void Request::AddHeaderField(const char *aString, int aLength)
 {
     mHeaderField.push_back(std::string(aString, aLength));
 }
+
 void Request::AddHeaderValue(const char *aString, int aLength)
 {
     mHeaderValue.push_back(std::string(aString, aLength));
@@ -57,11 +60,13 @@ void Request::SetContentLength(int aContentLength)
 {
     mContentLength = aContentLength;
 }
+
 void Request::SetMethod(int aMethod)
 {
     mMethod = aMethod;
 }
-std::string Request::getUrlPath()
+
+std::string Request::GetUrlPath()
 {
     return this->mUrlPath;
 }

@@ -36,7 +36,6 @@
 
 #include <chrono>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <netinet/in.h>
 #include <stdio.h>
@@ -44,13 +43,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <openthread/netdiag.h>
-
 #include "rest/connection.hpp"
-
-using std::chrono::steady_clock;
+#include "rest/resource.hpp"
 
 using otbr::Ncp::ControllerOpenThread;
+using std::chrono::steady_clock;
 
 namespace otbr {
 namespace rest {
@@ -69,8 +66,7 @@ public:
 private:
     // for service
     otbr::Ncp::ControllerOpenThread *mNcp;
-    otbr::agent::ThreadHelper *      mThreadHelper;
-    otInstance *                     mInstance;
+    std::unique_ptr<Resource>        mResource;
 
     // for server configure
     sockaddr_in *mAddress;
@@ -82,9 +78,9 @@ private:
     void UpdateTimeout(timeval &aTimeout, int aDuration, int aScaleForCallback);
     void UpdateConnections(fd_set &aReadFdSet);
     void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
-    int  SetFdNonblocking(int fd)
+    int  SetFdNonblocking(int fd);
 
-        static const unsigned kMaxServeNum;
+    static const unsigned kMaxServeNum;
     static const unsigned kTimeout;
     static const unsigned kScaleForCallbackTimeout;
     static const unsigned kPortNumber;

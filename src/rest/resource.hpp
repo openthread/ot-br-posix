@@ -34,40 +34,48 @@
 #ifndef OTBR_REST_HANDLER_HPP_
 #define OTBR_REST_HANDLER_HPP_
 
-#include <openthread/netdiag.h>
+#include <string>
+#include <unordered_map>
 
-#include <openthread/netdiag.h>
+#include "openthread/netdiag.h"
+#include "openthread/thread_ftd.h"
+
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
-#include "openthread/thread_ftd.h"
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
 
+using otbr::Ncp::ControllerOpenThread;
+using std::chrono::steady_clock;
+
 namespace otbr {
 namespace rest {
 
-typedef struct DiagInfo
+struct DiagInfo
 {
-    steady_clock::time_point        mStartTime;
-    std::vector<std::string>        mDiagContent;
-    std::unordered_set<std::string> mNodeSet;
-    DiagInfo(steady_clock::time_point aStartTime)
+    steady_clock::time_point mStartTime;
+    std::string              mDiagContent;
+
+    DiagInfo(steady_clock::time_point aStartTime, std::string aDiagContent)
         : mStartTime(aStartTime)
+        , mDiagContent(aDiagContent)
     {
     }
-
-} DiagInfo;
-
-typedef void (*ResourceHandler)(Request &aRequest, Response &aResponse);
-typedef std::unordered_map<std::string, ResourceHandler> HandlerMap;
+};
 
 class Resource
 {
 public:
-    Handler();
+    Resource(ControllerOpenThread *aNcp, int aCallbackTimeout);
     void Init();
     void Handle(Request &aRequest, Response &aResponse);
+    void HandleCallback(Request &aRequest, Response &aResponse);
+
+    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
+    void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+
+private:
     void NodeInfo(Request &aRequest, Response &aResponse);
     void ExtendedAddr(Request &aRequest, Response &aResponse);
     void State(Request &aRequest, Response &aResponse);
@@ -80,10 +88,9 @@ public:
     void Diagnostic(Request &aRequest, Response &aResponse);
     void ErrorHandler(Request &aRequest, Response &aResponse);
 
-    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+    void DeleteOutDatedDiag();
+    void UpdateDiag(std::string aKey, std::string aValue);
 
-private:
     std::string GetDataNodeInfo();
     std::string GetDataExtendedAddr();
     std::string GetDataState();
@@ -93,12 +100,15 @@ private:
     std::string GetDataRloc16();
     std::string GetDataExtendedPanId();
     std::string GetDataRloc();
-    otInstance *mInstance;
-    JSON        mJsonFormater;
-    HandlerMap  mHandlerMap;
+
+    otbr::Ncp::ControllerOpenThread *                          mNcp;
+    otInstance *                                               mInstance;
+    int                                                        mCallbackTimeout;
+    std::unordered_map<std::string, std::unique_ptr<DiagInfo>> mDiagMaintainer;
 
     static const char *  kMulticastAddrAllRouters;
     static const uint8_t kAllTlvTypes[];
+    static const uint8_t kTlvTypesCount;
 };
 
 } // namespace rest

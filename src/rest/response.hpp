@@ -44,13 +44,12 @@ class Response
 {
 public:
     Response();
-
-    Response(std::string aBody);
     void        SetBody(std::string aBody);
+    void        SetResponsCode(std::string aCode);
     std::string Serialize();
-    int         GetCallbackFlag();
     bool        NeedCallback();
     void        SetCallback();
+    std::string GetBody();
 
 private:
     bool                     mCallback;
