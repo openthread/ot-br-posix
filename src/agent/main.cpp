@@ -109,6 +109,9 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     std::unique_ptr<RestWebServer> restWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(ncpOpenThreadRest));
     restWebServer->Init();
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
+    ControllerOpenThread *         ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
+    std::unique_ptr<RestWebServer> restWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(ncpOpenThreadRest));
+    restWebServer->Init();
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
