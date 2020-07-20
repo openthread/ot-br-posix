@@ -79,6 +79,7 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
+    $(OTBR_PROJECT_INCLUDES)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \

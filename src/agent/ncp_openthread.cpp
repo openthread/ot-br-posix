@@ -46,6 +46,10 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
+#if OTBR_ENABLE_LEGACY
+#include <ot-legacy-pairing-ext.h>
+#endif
+
 static bool sReset;
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -104,6 +108,9 @@ otbrError ControllerOpenThread::Init(void)
 
     mInstance = otSysInit(&mConfig);
     otCliUartInit(mInstance);
+#if OTBR_ENABLE_LEGACY
+    otLegacyInit();
+#endif
 
     {
         otError result = otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
@@ -136,9 +143,17 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 
         switch (otThreadGetDeviceRole(mInstance))
         {
+        case OT_DEVICE_ROLE_DISABLED:
+#if OTBR_ENABLE_LEGACY
+            otLegacyStop();
+#endif
+            break;
         case OT_DEVICE_ROLE_CHILD:
         case OT_DEVICE_ROLE_ROUTER:
         case OT_DEVICE_ROLE_LEADER:
+#if OTBR_ENABLE_LEGACY
+            otLegacyStart();
+#endif
             attached = true;
             break;
         default:
