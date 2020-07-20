@@ -60,31 +60,27 @@ public:
 
     otbrError Init();
 
-    void UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout);
+    otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
 
-    otbrError Process(fd_set &aReadFdSet);
+    otbrError Process(otSysMainloopContext &aMainloop);
 
 private:
-    // for service
+    // For service
     otbr::Ncp::ControllerOpenThread *mNcp;
     std::unique_ptr<Resource>        mResource;
 
-    // for server configure
+    // For server configure
     sockaddr_in *mAddress;
     int          mListenFd;
 
-    // for Connection
+    // For Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
-    void      UpdateTimeout(timeval &aTimeout, int aDuration, int aScaleForCallback);
     otbrError UpdateConnections(fd_set &aReadFdSet);
-    void      UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     int       SetFdNonblocking(int fd);
 
-    static const unsigned kMaxServeNum;
-    static const unsigned kTimeout;
-    static const unsigned kScaleForCallbackTimeout;
-    static const unsigned kPortNumber;
+    static const uint32_t kMaxServeNum;
+    static const uint32_t kPortNumber;
 };
 
 } // namespace rest

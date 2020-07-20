@@ -41,7 +41,7 @@
 #define OT_LEADERDATA_PATH "/node/leader-data"
 #define OT_NUMOFROUTER_PATH "/node/num-of-router"
 #define OT_EXTPANID_PATH "/node/ext-panid"
-#define OT_REST_RESOURCE_NOT_FOUND "HTTP/1.1 404 Not Found"
+#define OT_REST_RESOURCE_NOT_FOUND "404 Not Found"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -49,20 +49,19 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-const char *  Resource::kMulticastAddrAllRouters = "ff02::2";
-const uint8_t Resource::kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
-const uint8_t Resource::kTlvTypesCount           = 16;
+const char *   Resource::kMulticastAddrAllRouters = "ff02::2";
+const uint8_t  Resource::kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
+const uint32_t Resource::kDiagResetTimeout        = 5000000;
 
 constexpr unsigned int str2int(const char *str, int h = 0)
 {
     return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h];
 }
 
-Resource::Resource(ControllerOpenThread *aNcp, int aCallbackTimeout)
+Resource::Resource(ControllerOpenThread *aNcp)
     : mNcp(aNcp)
-    , mCallbackTimeout(aCallbackTimeout)
+    , mInstance(aNcp->GetThreadHelper()->GetInstance())
 {
-    mInstance = aNcp->GetThreadHelper()->GetInstance();
 }
 
 void Resource::Init()
@@ -72,7 +71,7 @@ void Resource::Init()
 
 void Resource::Handle(Request &aRequest, Response &aResponse)
 {
-    std::string path = aRequest.GetUrlPath();
+    std::string path = aRequest.GetUrl();
 
     switch (str2int(path.c_str()))
     {
@@ -266,21 +265,21 @@ std::string Resource::GetDataState()
 
 void Resource::DeleteOutDatedDiag()
 {
-    auto eraseIt = mDiagMaintainer.begin();
-    for (eraseIt = mDiagMaintainer.begin(); eraseIt != mDiagMaintainer.end();)
-    {
-        auto diagInfo = eraseIt->second.get();
-        auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo->mStartTime).count();
+    // auto eraseIt = mDiagMaintainer.begin();
+    // for (eraseIt = mDiagMaintainer.begin(); eraseIt != mDiagMaintainer.end();)
+    // {
+    //     auto diagInfo = eraseIt->second.get();
+    //     auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo->mStartTime).count();
 
-        if (duration >= mCallbackTimeout)
-        {
-            eraseIt = mDiagMaintainer.erase(eraseIt);
-        }
-        else
-        {
-            eraseIt++;
-        }
-    }
+    //     if (duration >= kDiagResetTimeout)
+    //     {
+    //         eraseIt = mDiagMaintainer.erase(eraseIt);
+    //     }
+    //     else
+    //     {
+    //         eraseIt++;
+    //     }
+    // }
 }
 
 void Resource::UpdateDiag(std::string aKey, std::string aValue)
@@ -365,8 +364,8 @@ void Resource::Diagnostic(Request &aRequest, Response &aResponse)
     struct otIp6Address multicastAddress;
     otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress);
 
-    otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, kTlvTypesCount);
-    otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, kTlvTypesCount);
+    otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes));
+    otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes));
 }
 
 void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)

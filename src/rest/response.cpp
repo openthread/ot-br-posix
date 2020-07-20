@@ -33,7 +33,8 @@ namespace rest {
 Response::Response()
     : mCallback(false)
 {
-    mCode = "HTTP/1.1 200 OK";
+    mProtocol = "HTTP/1.1";
+    mCode     = "200 OK";
     mHeaderField.push_back("Content-Type");
     mHeaderValue.push_back("application/json");
 
@@ -70,8 +71,8 @@ std::string Response::Serialize()
 {
     unsigned long index;
     std::string   spacer = "\r\n";
-    std::string   ret(this->mCode);
-    for (index = 0; index < this->mHeaderField.size(); index++)
+    std::string   ret(mProtocol + " " + mCode);
+    for (index = 0; index < mHeaderField.size(); index++)
     {
         ret += (spacer + mHeaderField[index] + " " + mHeaderValue[index]);
     }

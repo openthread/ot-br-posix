@@ -31,9 +31,13 @@
 namespace otbr {
 namespace rest {
 
-void Request::SetUrlPath(const char *aString, int aLength)
+Request::Request()
+    : mComplete(false)
 {
-    mUrlPath.assign(aString, aLength);
+}
+void Request::SetUrl(const char *aString, int aLength)
+{
+    mUrl.assign(aString, aLength);
 }
 
 void Request::SetStatus(const char *aString, int aLength)
@@ -66,9 +70,38 @@ void Request::SetMethod(int aMethod)
     mMethod = aMethod;
 }
 
-std::string Request::GetUrlPath()
+std::string Request::GetUrl()
 {
-    return this->mUrlPath;
+    if (mUrl.size() == 0)
+    {
+        return "/";
+    }
+    else
+    {
+        return mUrl;
+    }
+}
+
+void Request::SetReadComplete()
+{
+    mComplete = true;
+}
+
+void Request::ResetReadComplete()
+{
+    mComplete = false;
+}
+
+bool Request::IsComplete()
+{
+    if (mComplete)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 } // namespace rest

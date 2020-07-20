@@ -46,17 +46,15 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-const unsigned RestWebServer::kMaxServeNum             = 100;
-const unsigned RestWebServer::kTimeout                 = 1000000;
-const unsigned RestWebServer::kScaleForCallbackTimeout = 4;
-const unsigned RestWebServer::kPortNumber              = 80;
+const uint32_t RestWebServer::kMaxServeNum = 100;
+const uint32_t RestWebServer::kPortNumber  = 80;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
     : mNcp(aNcp)
     , mAddress(new sockaddr_in())
 
 {
-    mResource = std::unique_ptr<Resource>(new Resource(aNcp, kTimeout * kScaleForCallbackTimeout));
+    mResource = std::unique_ptr<Resource>(new Resource(aNcp));
 }
 
 otbrError RestWebServer::Init()
@@ -67,14 +65,19 @@ otbrError RestWebServer::Init()
     mAddress->sin_family      = AF_INET;
     mAddress->sin_addr.s_addr = INADDR_ANY;
     mAddress->sin_port        = htons(kPortNumber);
-    mListenFd                 = socket(AF_INET, SOCK_STREAM, 0) == -1;
+
+    mListenFd = socket(AF_INET, SOCK_STREAM, 0);
     VerifyOrExit(mListenFd != -1, error = OTBR_ERROR_REST);
+
     ret = bind(mListenFd, (struct sockaddr *)mAddress, sizeof(sockaddr));
     VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
+
     ret = listen(mListenFd, 5);
     VerifyOrExit(ret >= 0, error = OTBR_ERROR_REST);
+
     ret = SetFdNonblocking(mListenFd);
     VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
+
 exit:
     if (error != OTBR_ERROR_NONE)
     {
@@ -84,79 +87,49 @@ exit:
     return error;
 }
 
-void RestWebServer::UpdateFdSet(fd_set &aReadFdSet, int &aMaxFd, timeval &aTimeout)
+otbrError RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
-    // For ReadRdSet
-    UpdateReadFdSet(aReadFdSet, aMaxFd);
-    // For timeout
-    UpdateTimeout(aTimeout, kTimeout, kScaleForCallbackTimeout);
-}
+    otbrError error = OTBR_ERROR_NONE;
 
-otbrError RestWebServer::Process(fd_set &aReadFdSet)
-{
-    otbrError   error = OTBR_ERROR_NONE;
+    FD_SET(mListenFd, &aMainloop.mReadFdSet);
+    aMainloop.mMaxFd = aMainloop.mMaxFd < mListenFd ? mListenFd : aMainloop.mMaxFd;
+
     Connection *connection;
-
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         connection = it->second.get();
-
-        if (connection->Readable(kTimeout))
-        {
-            connection->Read();
-        }
-        else if (connection->IsReadTimeout(kTimeout))
-        {
-            connection->Process();
-        }
-        else if (connection->IsCallbackTimeout(kTimeout * kScaleForCallbackTimeout))
-        {
-            connection->CallbackProcess();
-        }
+        error      = connection->UpdateFdSet(aMainloop);
     }
-
-    error = UpdateConnections(aReadFdSet);
 
     return error;
 }
 
-void RestWebServer::UpdateTimeout(timeval &aTimeout, int aTimeoutLen, int aScaleForCallback)
+otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
 {
-    Connection *   connection;
-    int            timeoutLen;
-    struct timeval timeout = {aTimeout.tv_sec, aTimeout.tv_usec};
+    otbrError   error = OTBR_ERROR_NONE;
+    Connection *connection;
+
+    error = UpdateConnections(aMainloop.mReadFdSet);
+
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        connection    = it->second.get();
-        timeoutLen    = connection->HasCallback() ? aTimeoutLen * aScaleForCallback : aTimeoutLen;
-        auto duration = duration_cast<microseconds>(steady_clock::now() - connection->GetStartTime()).count();
-        if (duration <= timeoutLen)
-        {
-            timeout.tv_sec = 0;
+        connection = it->second.get();
+        error      = connection->Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet);
+    }
 
-            if (timeout.tv_usec == 0)
-            {
-                timeout.tv_usec = timeoutLen - duration;
-            }
-            else
-            {
-                timeout.tv_usec = timeout.tv_usec < (timeoutLen - duration) ? timeout.tv_usec : (timeoutLen - duration);
-            }
-        }
-    }
-    if (timercmp(&timeout, &aTimeout, <))
-    {
-        aTimeout = timeout;
-    }
+    return error;
 }
 
 otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
 {
-    otbrError error   = OTBR_ERROR_NONE;
-    socklen_t addrlen = sizeof(sockaddr);
-    int       fd;
-    auto      eraseIt = mConnectionSet.begin();
-    int       ret;
+    std::string errorCode;
+    otbrError   error   = OTBR_ERROR_NONE;
+    socklen_t   addrlen = sizeof(sockaddr);
+    int         fd;
+    auto        eraseIt = mConnectionSet.begin();
+    int         ret;
+
+    // Erase useless connections
     for (eraseIt = mConnectionSet.begin(); eraseIt != mConnectionSet.end();)
     {
         Connection *connection = eraseIt->second.get();
@@ -165,23 +138,29 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
         {
             eraseIt = mConnectionSet.erase(eraseIt);
         }
-
         else
         {
             eraseIt++;
         }
     }
 
+    // Create new connection if listenfd is set
     if (FD_ISSET(mListenFd, &aReadFdSet))
     {
         fd = accept(mListenFd, (struct sockaddr *)mAddress, &addrlen);
+        VerifyOrExit(fd != 0, error = OTBR_ERROR_REST; errorCode = "rest server accept error");
+
         if (mConnectionSet.size() < kMaxServeNum)
         {
             // set up new connection
             ret = SetFdNonblocking(fd);
-            VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
+
+            VerifyOrExit(ret == 0, error = OTBR_ERROR_REST; errorCode = "set nonblock error");
+
             mConnectionSet.insert(std::make_pair(
                 fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), mResource.get(), fd))));
+            Connection *connection = mConnectionSet[fd].get();
+            connection->Init();
         }
         else
         {
@@ -191,29 +170,9 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "rest server set fd nonblock error");
+        otbrLog(OTBR_LOG_ERR, "rest server error: %s", errorCode.c_str());
     }
     return error;
-}
-
-void RestWebServer::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd)
-{
-    Connection *connection;
-    int         maxFd;
-
-    FD_SET(mListenFd, &aReadFdSet);
-    aMaxFd = aMaxFd < mListenFd ? mListenFd : aMaxFd;
-
-    for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
-    {
-        connection = it->second.get();
-        maxFd      = it->first;
-        if (connection->Readable(kTimeout))
-        {
-            FD_SET(maxFd, &aReadFdSet);
-            aMaxFd = aMaxFd < maxFd ? maxFd : aMaxFd;
-        }
-    }
 }
 
 int RestWebServer::SetFdNonblocking(int fd)

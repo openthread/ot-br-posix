@@ -28,10 +28,35 @@
 
 #include "rest/json.hpp"
 
+#include "cJSON.h"
+
 namespace otbr {
 namespace rest {
+namespace JSON {
 
-static bool is_big_endian(void)
+std::string String2JsonString(std::string aString)
+{
+    cJSON *     json = cJSON_CreateString(aString.c_str());
+    char *      out  = cJSON_Print(json);
+    std::string ret  = out;
+    cJSON_Delete(json);
+    return ret;
+}
+
+std::string Json2String(cJSON *aJson)
+{
+    char *      out = cJSON_Print(aJson);
+    std::string ret;
+    if (out != nullptr)
+    {
+        ret = out;
+        cJSON_Delete(aJson);
+        delete (out);
+    }
+    return ret;
+}
+
+bool is_big_endian(void)
 {
     union
     {
@@ -42,7 +67,7 @@ static bool is_big_endian(void)
     return bint.c[0] == 1;
 }
 
-std::string JSON::IpAddr2JsonString(const otIp6Address &aAddress)
+std::string IpAddr2JsonString(const otIp6Address &aAddress)
 {
     std::string str;
     uint16_t    value;
@@ -61,7 +86,7 @@ std::string JSON::IpAddr2JsonString(const otIp6Address &aAddress)
     return String2JsonString(str);
 }
 
-std::string JSON::Bytes2HexString(const uint8_t *aBytes, uint8_t aLength)
+std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength)
 {
     std::string str;
     char        p[3];
@@ -75,7 +100,7 @@ std::string JSON::Bytes2HexString(const uint8_t *aBytes, uint8_t aLength)
     return str;
 }
 
-std::string JSON::TwoVector2JsonString(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue)
+std::string TwoVector2JsonString(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue)
 {
     cJSON *     json = cJSON_CreateObject();
     std::string key;
@@ -90,7 +115,7 @@ std::string JSON::TwoVector2JsonString(const std::vector<std::string> &aKey, con
     return Json2String(json);
 }
 
-std::string JSON::Vector2JsonString(const std::vector<std::string> &aVector)
+std::string Vector2JsonString(const std::vector<std::string> &aVector)
 {
     cJSON *json = cJSON_CreateArray();
     cJSON *item;
@@ -104,29 +129,7 @@ std::string JSON::Vector2JsonString(const std::vector<std::string> &aVector)
     return Json2String(json);
 }
 
-std::string JSON::String2JsonString(std::string aString)
-{
-    cJSON *     json = cJSON_CreateString(aString.c_str());
-    char *      out  = cJSON_Print(json);
-    std::string ret  = out;
-    cJSON_Delete(json);
-    return ret;
-}
-
-std::string JSON::Json2String(cJSON *aJson)
-{
-    char *      out = cJSON_Print(aJson);
-    std::string ret;
-    if (out != nullptr)
-    {
-        ret = out;
-        cJSON_Delete(aJson);
-        delete (out);
-    }
-    return ret;
-}
-
-std::string JSON::Mode2JsonString(const otLinkModeConfig &aMode)
+std::string Mode2JsonString(const otLinkModeConfig &aMode)
 {
     cJSON *json = cJSON_CreateObject();
 
@@ -147,7 +150,7 @@ std::string JSON::Mode2JsonString(const otLinkModeConfig &aMode)
     return Json2String(json);
 }
 
-std::string JSON::Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity)
+std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity)
 {
     cJSON *json = cJSON_CreateObject();
 
@@ -183,7 +186,27 @@ std::string JSON::Connectivity2JsonString(const otNetworkDiagConnectivity &aConn
     return Json2String(json);
 }
 
-std::string JSON::Route2JsonString(const otNetworkDiagRoute &aRoute)
+std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData)
+{
+    char   value[5];
+    cJSON *json = cJSON_CreateObject();
+
+    sprintf(value, "0x%02x", aRouteData.mRouterId);
+    cJSON_AddItemToObject(json, "RouteId", cJSON_CreateString(value));
+
+    sprintf(value, "%d", aRouteData.mLinkQualityOut);
+    cJSON_AddItemToObject(json, "LinkQualityOut", cJSON_CreateString(value));
+
+    sprintf(value, "%d", aRouteData.mLinkQualityIn);
+    cJSON_AddItemToObject(json, "LinkQualityIn", cJSON_CreateString(value));
+
+    sprintf(value, "%d", aRouteData.mRouteCost);
+    cJSON_AddItemToObject(json, "RouteCost", cJSON_CreateString(value));
+
+    return Json2String(json);
+}
+
+std::string Route2JsonString(const otNetworkDiagRoute &aRoute)
 {
     cJSON *json = cJSON_CreateObject();
 
@@ -206,27 +229,7 @@ std::string JSON::Route2JsonString(const otNetworkDiagRoute &aRoute)
     return Json2String(json);
 }
 
-std::string JSON::RouteData2JsonString(const otNetworkDiagRouteData &aRouteData)
-{
-    char   value[5];
-    cJSON *json = cJSON_CreateObject();
-
-    sprintf(value, "0x%02x", aRouteData.mRouterId);
-    cJSON_AddItemToObject(json, "RouteId", cJSON_CreateString(value));
-
-    sprintf(value, "%d", aRouteData.mLinkQualityOut);
-    cJSON_AddItemToObject(json, "LinkQualityOut", cJSON_CreateString(value));
-
-    sprintf(value, "%d", aRouteData.mLinkQualityIn);
-    cJSON_AddItemToObject(json, "LinkQualityIn", cJSON_CreateString(value));
-
-    sprintf(value, "%d", aRouteData.mRouteCost);
-    cJSON_AddItemToObject(json, "RouteCost", cJSON_CreateString(value));
-
-    return Json2String(json);
-}
-
-std::string JSON::LeaderData2JsonString(const otLeaderData &aLeaderData)
+std::string LeaderData2JsonString(const otLeaderData &aLeaderData)
 {
     char   value[11];
     cJSON *json = cJSON_CreateObject();
@@ -249,7 +252,7 @@ std::string JSON::LeaderData2JsonString(const otLeaderData &aLeaderData)
     return Json2String(json);
 }
 
-std::string JSON::MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters)
+std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters)
 {
     char   value[9];
     cJSON *json = cJSON_CreateObject();
@@ -284,7 +287,7 @@ std::string JSON::MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCou
     return Json2String(json);
 }
 
-std::string JSON::ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry)
+std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry)
 {
     char   value[7];
     cJSON *json = cJSON_CreateObject();
@@ -300,6 +303,6 @@ std::string JSON::ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChi
 
     return Json2String(json);
 }
-
+} // namespace JSON
 } // namespace rest
 } // namespace otbr

@@ -36,22 +36,18 @@ add_library( otbr-rest
     
 )
 
-
-target_include_directories( otbr-rest PUBLIC
-   ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo
-   ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
+target_include_directories( otbr-rest 
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo
 )
 
-
-target_link_libraries(otbr-rest PRIVATE
-    otbr-config
-    openthread-ftd
-    openthread-posix
+target_link_libraries(otbr-rest 
+    PRIVATE
+        cjson
+        http_parser
+        otbr-config
+        openthread-ftd
+        openthread-posix
 )
-
-target_link_libraries(otbr-rest PUBLIC
-    cjson
-    http_parser
-)
-
-

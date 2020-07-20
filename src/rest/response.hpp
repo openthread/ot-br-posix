@@ -52,10 +52,12 @@ public:
     std::string GetBody();
 
 private:
-    bool                     mCallback;
+    bool mCallback;
+
     std::vector<std::string> mHeaderField;
     std::vector<std::string> mHeaderValue;
     std::string              mCode;
+    std::string              mProtocol;
     std::string              mBody;
 };
 

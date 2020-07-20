@@ -34,8 +34,6 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
-#include "cJSON.h"
-
 #include <string>
 #include <vector>
 
@@ -47,25 +45,22 @@
 
 namespace otbr {
 namespace rest {
-class JSON
-{
-public:
-    static std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength);
-    static std::string String2JsonString(std::string aString);
-    static std::string TwoVector2JsonString(const std::vector<std::string> &aKey,
-                                            const std::vector<std::string> &aValue);
-    static std::string Vector2JsonString(const std::vector<std::string> &aVector);
-    static std::string Json2String(cJSON *aJson);
-    static std::string IpAddr2JsonString(const otIp6Address &aAddress);
-    static std::string Mode2JsonString(const otLinkModeConfig &aMode);
-    static std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity);
-    static std::string Route2JsonString(const otNetworkDiagRoute &aRoute);
-    static std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
-    static std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
-    static std::string Ip6Address2JsonString(const otIp6Address &aAddress);
-    static std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
-    static std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
-};
+namespace JSON {
+
+std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength);
+std::string String2JsonString(std::string aString);
+std::string TwoVector2JsonString(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue);
+std::string Vector2JsonString(const std::vector<std::string> &aVector);
+std::string IpAddr2JsonString(const otIp6Address &aAddress);
+std::string Mode2JsonString(const otLinkModeConfig &aMode);
+std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity);
+std::string Route2JsonString(const otNetworkDiagRoute &aRoute);
+std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
+std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
+std::string Ip6Address2JsonString(const otIp6Address &aAddress);
+std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
+std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
+}; // namespace JSON
 
 } // namespace rest
 } // namespace otbr

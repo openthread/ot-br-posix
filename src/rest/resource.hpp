@@ -67,7 +67,7 @@ struct DiagInfo
 class Resource
 {
 public:
-    Resource(ControllerOpenThread *aNcp, int aCallbackTimeout);
+    Resource(ControllerOpenThread *aNcp);
     void Init();
     void Handle(Request &aRequest, Response &aResponse);
     void HandleCallback(Request &aRequest, Response &aResponse);
@@ -103,12 +103,11 @@ private:
 
     otbr::Ncp::ControllerOpenThread *                          mNcp;
     otInstance *                                               mInstance;
-    int                                                        mCallbackTimeout;
     std::unordered_map<std::string, std::unique_ptr<DiagInfo>> mDiagMaintainer;
 
-    static const char *  kMulticastAddrAllRouters;
-    static const uint8_t kAllTlvTypes[];
-    static const uint8_t kTlvTypesCount;
+    static const char *   kMulticastAddrAllRouters;
+    static const uint8_t  kAllTlvTypes[];
+    static const uint32_t kDiagResetTimeout;
 };
 
 } // namespace rest

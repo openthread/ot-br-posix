@@ -38,6 +38,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +46,7 @@
 
 #include "http_parser.h"
 
+#include "common/code_utils.hpp"
 #include "rest/request.hpp"
 #include "rest/resource.hpp"
 #include "rest/response.hpp"
@@ -54,54 +56,51 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
+enum ConnectionState
+{
+    OTBR_REST_CONNECTION_INIT         = 0,
+    OTBR_REST_CONNECTION_READWAIT     = 1, ///< wait to read
+    OTBR_REST_CONNECTION_CALLBACKWAIT = 2, ///< wait for callback
+    OTBR_REST_CONNECTION_WRITEWAIT    = 3, ///<  wait for write
+    OTBR_REST_CONNECTION_COMPLETE     = 4, ///< have sent response and wait to be deleted
+
+};
 class Connection
 {
 public:
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
-    void Process();
+    void Init();
 
-    void CallbackProcess();
+    otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
 
-    void Read();
-
-    otInstance *GetInstance();
-
-    steady_clock::time_point GetStartTime();
+    otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
 
     bool IsComplete();
 
-    bool IsReadTimeout(int aDuration);
-
-    bool IsCallbackTimeout(int aDuration);
-
-    bool HasCallback();
-
-    bool Readable(int aDuration);
-
 private:
-    void Parse(Request &aRequest);
+    otbrError UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
+    otbrError UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
+    otbrError UpdateTimeout(timeval &aTimeout);
 
-    void HandleRequest(Request &aRequest, Response &aResponse);
+    otbrError ProcessWaitRead();
+    otbrError ProcessWaitCallback();
+    otbrError ProcessWaitWrite();
 
-    void HandleCallback(Request &aRequest, Response &aResponse);
-
-    void ProcessResponse(Response &aResponse);
-
-    void Write(Response &aResponse);
-
-    void SetComplete();
+    otbrError ProcessResponse();
+    otbrError Write();
+    void      Disconnect();
 
     steady_clock::time_point mStartTime;
-    bool                     mComplete;
-    bool                     mHasCallback;
     int                      mFd;
+    ConnectionState          mState;
+    uint32_t                 mWritePointer;
+    std::string              mWriteContent;
 
     // read parameter
-    std::string mReadContent;
-    char        mReadBuf[2048];
 
-    int mReadLength;
+    Response mResponse;
+    Request  mRequest;
 
     http_parser mParser;
     Resource *  mResource;
@@ -109,24 +108,14 @@ private:
     static int OnMessageBegin(http_parser *parser);
     static int OnStatus(http_parser *parser, const char *at, size_t len);
     static int OnUrl(http_parser *parser, const char *at, size_t len);
-    static int OnHeaderField(http_parser *parser, const char *at, size_t len);
-    static int OnHeaderValue(http_parser *parser, const char *at, size_t len);
     static int OnBody(http_parser *parser, const char *at, size_t len);
-    static int OnHeadersComplete(http_parser *parser);
     static int OnMessageComplete(http_parser *parser);
-    static int OnChunkHeader(http_parser *parser);
-    static int OnChunkComplete(http_parser *parser);
 
-    http_parser_settings mSettings{.on_message_begin    = OnMessageBegin,
-                                   .on_url              = OnUrl,
-                                   .on_status           = OnStatus,
-                                   .on_header_field     = OnHeaderField,
-                                   .on_header_value     = OnHeaderValue,
-                                   .on_headers_complete = OnHeadersComplete,
-                                   .on_body             = OnBody,
-                                   .on_message_complete = OnMessageComplete,
-                                   .on_chunk_header     = OnChunkHeader,
-                                   .on_chunk_complete   = OnChunkComplete};
+    http_parser_settings mSettings;
+
+    static const uint32_t kCallbackTimeout;
+    static const uint32_t kWriteTimeout;
+    static const uint32_t kReadTimeout;
 };
 
 } // namespace rest

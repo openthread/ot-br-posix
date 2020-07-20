@@ -43,24 +43,28 @@ namespace rest {
 class Request
 {
 public:
-    void        SetUrlPath(const char *aString, int aLength);
+    void        SetUrl(const char *aString, int aLength);
     void        SetStatus(const char *aString, int aLength);
     void        SetBody(const char *aString, int aLength);
     void        SetContentLength(int aContentLength);
     void        SetMethod(int aMethod);
+    void        SetReadComplete();
+    void        ResetReadComplete();
     void        AddHeaderField(const char *aString, int aLength);
     void        AddHeaderValue(const char *aString, int aLength);
-    std::string GetUrlPath();
+    std::string GetUrl();
+    bool        IsComplete();
 
-    Request(){};
+    Request();
 
 private:
     int          mMethod;
     unsigned int mContentLength;
 
-    std::string              mUrlPath;
+    std::string              mUrl;
     std::string              mStatus;
     std::string              mBody;
+    bool                     mComplete;
     std::vector<std::string> mHeaderField;
     std::vector<std::string> mHeaderValue;
     int                      mHeaderState;
