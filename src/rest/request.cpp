@@ -94,14 +94,7 @@ void Request::ResetReadComplete()
 
 bool Request::IsComplete()
 {
-    if (mComplete)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return mComplete
 }
 
 } // namespace rest
