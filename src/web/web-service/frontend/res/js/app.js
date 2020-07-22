@@ -382,7 +382,7 @@
             });
         };
 
-        $scope.restServerPort = '8080';
+        $scope.restServerPort = '81';
         $scope.ipaddr = location.hostname + ':' + $scope.restServerPort;
 
         //basic information line
