@@ -1,4 +1,4 @@
-[![Build Status][otbr-travis-svg]][otbr-travis] [![Coverage Status][otbr-codecov-svg]][otbr-codecov] [![Docker Status][otbr-docker-amd64-linux-svg]][otbr-docker-amd64-linux] [![Docker Status][otbr-docker-arm32v7l-raspbian-svg]][otbr-docker-arm32v7l-raspbian]
+[![Build Status][ot-gh-action-build-svg]][ot-gh-action-build] [![Docker Status][ot-gh-action-docker-svg]][ot-gh-action-docker] [![Build Status][otbr-travis-svg]][otbr-travis] [![Coverage Status][otbr-codecov-svg]][otbr-codecov]
 
 ---
 
@@ -28,14 +28,14 @@ OTBR includes a number of features, including:
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
+[ot-gh-action-build]: https://github.com/openthread/ot-br-posix/actions?query=workflow%3ABuild+branch%3Amaster+event%3Apush
+[ot-gh-action-build-svg]: https://github.com/openthread/ot-br-posix/workflows/Build/badge.svg?branch=master&event=push
+[ot-gh-action-docker]: https://github.com/openthread/ot-br-posix/actions?query=workflow%3ADocker+branch%3Amaster+event%3Apush
+[ot-gh-action-docker-svg]: https://github.com/openthread/ot-br-posix/workflows/Docker/badge.svg?branch=master&event=push
 [otbr-travis]: https://travis-ci.org/openthread/ot-br-posix
 [otbr-travis-svg]: https://travis-ci.org/openthread/ot-br-posix.svg?branch=master
 [otbr-codecov]: https://codecov.io/gh/openthread/ot-br-posix
 [otbr-codecov-svg]: https://codecov.io/gh/openthread/ot-br-posix/branch/master/graph/badge.svg
-[otbr-docker-amd64-linux]: https://hub.docker.com/r/openthread/otbr_amd64_linux
-[otbr-docker-amd64-linux-svg]: https://img.shields.io/docker/cloud/build/openthread/otbr_amd64_linux.svg?label=docker%20%7C%20amd64_linux
-[otbr-docker-arm32v7l-raspbian]: https://hub.docker.com/r/openthread/arm32v7l-raspbian
-[otbr-docker-arm32v7l-raspbian-svg]: https://img.shields.io/docker/cloud/build/openthread/otbr_arm32v7l_raspbian.svg?label=docker%20%7C%20arm32v7l_raspbian
 
 ## Getting started
 
