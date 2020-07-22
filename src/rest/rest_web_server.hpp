@@ -67,17 +67,19 @@ public:
 private:
     // For service
     otbr::Ncp::ControllerOpenThread *mNcp;
-    std::unique_ptr<Resource>        mResource;
+    Resource      mResource;
 
     // For server configure
-    sockaddr_in *mAddress;
+    
+    sockaddr_in  mAddress;
     int          mListenFd;
 
     // For Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
     otbrError UpdateConnections(fd_set &aReadFdSet);
-    int       SetFdNonblocking(int fd);
+    otbrError Accept(int aListenFd);
+    bool       SetFdNonblocking(int fd);
 
     static const uint32_t kMaxServeNum;
     static const uint32_t kPortNumber;

@@ -42,15 +42,30 @@
 
 #include "agent/ncp_openthread.hpp"
 #include "agent/thread_helper.hpp"
+#include "utils/hex.hpp"
 
 namespace otbr {
 namespace rest {
+
+struct Node{
+    int role;
+    int numOfRouter;
+    uint16_t rloc16;
+    const uint8_t *extPanId;
+    const uint8_t *extAddress;
+    otIp6Address rlocAddress;
+    otLeaderData leaderData;
+    const char *networkName;
+};
+
 namespace JSON {
 
-std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength);
+std::string Number2JsonString(const uint32_t aNumber);
+std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength);
+std::string CString2JsonString(const char *aBytes);
 std::string String2JsonString(std::string aString);
-std::string TwoVector2JsonString(const std::vector<std::string> &aKey, const std::vector<std::string> &aValue);
-std::string Vector2JsonString(const std::vector<std::string> &aVector);
+std::string Node2JsonString(Node node);
+std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet);
 std::string IpAddr2JsonString(const otIp6Address &aAddress);
 std::string Mode2JsonString(const otLinkModeConfig &aMode);
 std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity);
@@ -60,6 +75,7 @@ std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
 std::string Ip6Address2JsonString(const otIp6Address &aAddress);
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
+
 }; // namespace JSON
 
 } // namespace rest

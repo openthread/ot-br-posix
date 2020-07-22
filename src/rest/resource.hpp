@@ -52,16 +52,24 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-struct DiagInfo
-{
-    steady_clock::time_point mStartTime;
-    std::string              mDiagContent;
+// struct Node{
+//     int role;
+//     int numOfRouter;
+//     uint16_t rloc16;
+//     const uint8_t *extPanId;
+//     otIp6Address rlocAddress;
+//     otLeaderData leaderData;
+//     const char *networkName;
+// }
 
-    DiagInfo(steady_clock::time_point aStartTime, std::string aDiagContent)
-        : mStartTime(aStartTime)
-        , mDiagContent(aDiagContent)
-    {
-    }
+struct DiagInfo
+{  steady_clock::time_point mStartTime;
+   std::vector<otNetworkDiagTlv> mDiagContent ;
+   DiagInfo(steady_clock::time_point aStartTime,std::vector<otNetworkDiagTlv> &aDiagContent)
+   :mStartTime(aStartTime)
+   {
+       mDiagContent.assign(aDiagContent.begin(),aDiagContent.end());
+   }
 };
 
 class Resource
@@ -76,6 +84,8 @@ public:
     void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
 private:
+
+    typedef void (Resource::*ResourceHandler)(Request &aRequest, Response &aResponse);
     void NodeInfo(Request &aRequest, Response &aResponse);
     void ExtendedAddr(Request &aRequest, Response &aResponse);
     void State(Request &aRequest, Response &aResponse);
@@ -89,7 +99,7 @@ private:
     void ErrorHandler(Request &aRequest, Response &aResponse);
 
     void DeleteOutDatedDiag();
-    void UpdateDiag(std::string aKey, std::string aValue);
+    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> aDiag);
 
     std::string GetDataNodeInfo();
     std::string GetDataExtendedAddr();
@@ -103,11 +113,10 @@ private:
 
     otbr::Ncp::ControllerOpenThread *                          mNcp;
     otInstance *                                               mInstance;
-    std::unordered_map<std::string, std::unique_ptr<DiagInfo>> mDiagMaintainer;
-
-    static const char *   kMulticastAddrAllRouters;
-    static const uint8_t  kAllTlvTypes[];
-    static const uint32_t kDiagResetTimeout;
+   
+    std::unordered_map<std::string,ResourceHandler> mResourceMap;
+    std::unordered_map<std::string,std::unique_ptr<DiagInfo>> mDiagSet;
+    
 };
 
 } // namespace rest

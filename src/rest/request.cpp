@@ -36,28 +36,18 @@ Request::Request()
 {
 }
 void Request::SetUrl(const char *aString, int aLength)
-{
-    mUrl.assign(aString, aLength);
+{   
+    mUrl = std::string(aString, aLength);
 }
 
 void Request::SetStatus(const char *aString, int aLength)
 {
-    mStatus.assign(aString, aLength);
+    mStatus = std::string(aString, aLength);
 }
 
 void Request::SetBody(const char *aString, int aLength)
 {
-    mBody.assign(aString, aLength);
-}
-
-void Request::AddHeaderField(const char *aString, int aLength)
-{
-    mHeaderField.push_back(std::string(aString, aLength));
-}
-
-void Request::AddHeaderValue(const char *aString, int aLength)
-{
-    mHeaderValue.push_back(std::string(aString, aLength));
+    mBody= std::string(aString, aLength);
 }
 
 void Request::SetContentLength(int aContentLength)
@@ -71,15 +61,13 @@ void Request::SetMethod(int aMethod)
 }
 
 std::string Request::GetUrl()
-{
-    if (mUrl.size() == 0)
-    {
-        return "/";
-    }
-    else
-    {
-        return mUrl;
-    }
+{   
+    std::string url = mUrl;
+
+    VerifyOrExit( mUrl.size() > 0 , url = "/");
+
+exit:  
+    return url; 
 }
 
 void Request::SetReadComplete()
@@ -94,7 +82,7 @@ void Request::ResetReadComplete()
 
 bool Request::IsComplete()
 {
-    return mComplete
+    return mComplete;
 }
 
 } // namespace rest

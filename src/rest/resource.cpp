@@ -49,84 +49,63 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-const char *   Resource::kMulticastAddrAllRouters = "ff02::2";
-const uint8_t  Resource::kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
-const uint32_t Resource::kDiagResetTimeout        = 5000000;
-
-constexpr unsigned int str2int(const char *str, int h = 0)
-{
-    return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h];
-}
+static const char *   kMulticastAddrAllRouters = "ff02::2";
+static const uint8_t  kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
+//  Timeout for delete outdated diagnostics in Microseconds 
+static const uint32_t kDiagResetTimeout        = 5000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
     : mNcp(aNcp)
     , mInstance(aNcp->GetThreadHelper()->GetInstance())
 {
+    mResourceMap.insert( std::make_pair( OT_DIAGNOETIC_PATH, &Resource::Diagnostic ));
+    mResourceMap.insert( std::make_pair( OT_NODE_PATH, &Resource::NodeInfo ));
+    mResourceMap.insert( std::make_pair( OT_STATE_PATH, &Resource::State ));
+    mResourceMap.insert( std::make_pair( OT_EXTADDRESS_PATH, &Resource::ExtendedAddr ));
+    mResourceMap.insert( std::make_pair( OT_NETWORKNAME_PATH, &Resource::NetworkName ));
+    mResourceMap.insert( std::make_pair( OT_RLOC16_PATH, &Resource::Rloc16 ));
+    mResourceMap.insert( std::make_pair( OT_LEADERDATA_PATH, &Resource::LeaderData ));
+    mResourceMap.insert( std::make_pair( OT_NUMOFROUTER_PATH, &Resource::NumOfRoute ));
+    mResourceMap.insert( std::make_pair( OT_EXTPANID_PATH, &Resource::ExtendedPanId ));
+    mResourceMap.insert( std::make_pair( OT_RLOC_PATH, &Resource::Rloc ));
 }
 
 void Resource::Init()
-{
+{   
     otThreadSetReceiveDiagnosticGetCallback(mInstance, &Resource::DiagnosticResponseHandler, this);
 }
 
 void Resource::Handle(Request &aRequest, Response &aResponse)
 {
-    std::string path = aRequest.GetUrl();
-
-    switch (str2int(path.c_str()))
+    std::string url = aRequest.GetUrl();
+    auto it = mResourceMap.find(url);
+    if (it != mResourceMap.end())
     {
-    case str2int(OT_DIAGNOETIC_PATH):
-        Diagnostic(aRequest, aResponse);
-        break;
-    case str2int(OT_NODE_PATH):
-        NodeInfo(aRequest, aResponse);
-        break;
-    case str2int(OT_STATE_PATH):
-        State(aRequest, aResponse);
-        break;
-    case str2int(OT_EXTADDRESS_PATH):
-        ExtendedAddr(aRequest, aResponse);
-        break;
-    case str2int(OT_NETWORKNAME_PATH):
-        NetworkName(aRequest, aResponse);
-        break;
-    case str2int(OT_RLOC16_PATH):
-        Rloc16(aRequest, aResponse);
-        break;
-    case str2int(OT_LEADERDATA_PATH):
-        LeaderData(aRequest, aResponse);
-        break;
-    case str2int(OT_NUMOFROUTER_PATH):
-        NumOfRoute(aRequest, aResponse);
-        break;
-    case str2int(OT_EXTPANID_PATH):
-        ExtendedPanId(aRequest, aResponse);
-        break;
-    case str2int(OT_RLOC_PATH):
-        Rloc(aRequest, aResponse);
-        break;
-    default:
-        ErrorHandler(aRequest, aResponse);
-        break;
+
+        ResourceHandler  resourceHandler= it->second;
+        (this->*resourceHandler)(aRequest,aResponse);
+    }
+    else
+    {
+        ErrorHandler(aRequest,aResponse);
     }
 }
 
 void Resource::HandleCallback(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
+    std::vector<std::vector<otNetworkDiagTlv>> diagTestSet;
 
     DeleteOutDatedDiag();
-    std::string              diagContent;
-    std::vector<std::string> diag;
-
-    for (auto it = mDiagMaintainer.begin(); it != mDiagMaintainer.end(); ++it)
-    {
-        diagContent = it->second->mDiagContent;
-        diag.push_back(diagContent);
+    
+    for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it){
+        diagTestSet.push_back(it->second->mDiagContent);
     }
 
-    std::string body = JSON::Vector2JsonString(diag);
-    aResponse.SetBody(body);
+    
+    std::string bodyTest = JSON::Diag2JsonString(diagTestSet);
+    
+    aResponse.SetBody(bodyTest);
 }
 
 void Resource::ErrorHandler(Request &aRequest, Response &aResponse)
@@ -139,33 +118,33 @@ void Resource::ErrorHandler(Request &aRequest, Response &aResponse)
 void Resource::NodeInfo(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
+    
+    Node node;
+    otRouterInfo routerInfo;
+    int maxRouterId;
+    std::string str;
 
-    std::vector<std::string> keyContainer;
-    std::vector<std::string> valueContainer;
-    std::string              str;
+    node.role = otThreadGetDeviceRole(mInstance);
+    node.extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
+    node.networkName = otThreadGetNetworkName(mInstance);
+    otThreadGetLeaderData(mInstance, &node.leaderData);
+    node.rloc16 =  otThreadGetRloc16(mInstance);
+    node.extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
+    node.rlocAddress = *otThreadGetRloc(mInstance);
+    node.numOfRouter = 0;
+    maxRouterId = otThreadGetMaxRouterId(mInstance);
+    
 
-    keyContainer.push_back("state");
-    valueContainer.push_back(GetDataState());
+    for (uint8_t i = 0; i <= maxRouterId; ++i)
+    {
+        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
+        {
+            continue;
+        }
+        ++node.numOfRouter;
+    }
 
-    keyContainer.push_back("networkName");
-    valueContainer.push_back(GetDataNetworkName());
-
-    keyContainer.push_back("extAddress");
-    valueContainer.push_back(GetDataExtendedAddr());
-
-    keyContainer.push_back("rloc16");
-    valueContainer.push_back(GetDataRloc16());
-
-    keyContainer.push_back("numOfRouter");
-    valueContainer.push_back(GetDataNumOfRoute());
-
-    keyContainer.push_back("leaderData");
-    valueContainer.push_back(GetDataLeaderData());
-
-    keyContainer.push_back("extPanId");
-    valueContainer.push_back(GetDataExtendedPanId());
-
-    str = JSON::TwoVector2JsonString(keyContainer, valueContainer);
+    str = JSON::Node2JsonString(node);
 
     aResponse.SetBody(str);
 }
@@ -229,8 +208,9 @@ void Resource::Rloc(Request &aRequest, Response &aResponse)
 std::string Resource::GetDataExtendedAddr()
 {
     const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
-    std::string    str        = JSON::Bytes2HexString(extAddress, OT_EXT_ADDRESS_SIZE);
-    str                       = JSON::String2JsonString(str);
+    
+    std::string    str        = JSON::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
+    
     return str;
 }
 
@@ -238,61 +218,50 @@ std::string Resource::GetDataState()
 {
     std::string state;
 
-    switch (otThreadGetDeviceRole(mInstance))
-    {
-    case OT_DEVICE_ROLE_DISABLED:
-        state = "disabled";
-        break;
-    case OT_DEVICE_ROLE_DETACHED:
-        state = "detached";
-        break;
-    case OT_DEVICE_ROLE_CHILD:
-        state = "child";
-        break;
-    case OT_DEVICE_ROLE_ROUTER:
-        state = "router";
-        break;
-    case OT_DEVICE_ROLE_LEADER:
-        state = "leader";
-        break;
-    default:
-        state = "invalid state";
-        break;
-    }
-    state = JSON::String2JsonString(state);
+    // 0 : disabled
+    // 1 : detached
+    // 2 : child
+    // 3 : router
+    // 4 : leader  
+    
+    auto role = otThreadGetDeviceRole(mInstance);
+
+    state  = JSON::Number2JsonString(role);
+
     return state;
 }
 
 void Resource::DeleteOutDatedDiag()
 {
-    // auto eraseIt = mDiagMaintainer.begin();
-    // for (eraseIt = mDiagMaintainer.begin(); eraseIt != mDiagMaintainer.end();)
-    // {
-    //     auto diagInfo = eraseIt->second.get();
-    //     auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo->mStartTime).count();
+    auto eraseIt  = mDiagSet.begin();
+    for (eraseIt = mDiagSet.begin(); eraseIt != mDiagSet.end();)
+    {
+        auto diagInfo = eraseIt->second.get();
+        auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo->mStartTime).count();
 
-    //     if (duration >= kDiagResetTimeout)
-    //     {
-    //         eraseIt = mDiagMaintainer.erase(eraseIt);
-    //     }
-    //     else
-    //     {
-    //         eraseIt++;
-    //     }
-    // }
+        if (duration >= kDiagResetTimeout)
+        {
+            eraseIt = mDiagSet.erase(eraseIt);
+        }
+        else
+        {
+            eraseIt++;
+        }
+    }
+
 }
 
-void Resource::UpdateDiag(std::string aKey, std::string aValue)
-{
-    mDiagMaintainer[aKey] = std::unique_ptr<DiagInfo>(new DiagInfo(steady_clock::now(), aValue));
+void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> aDiag)
+{   
+    mDiagSet[aKey] = std::unique_ptr<DiagInfo>(new DiagInfo(steady_clock::now(),aDiag));
 }
 
 std::string Resource::GetDataNetworkName()
-{
+{   
+    std::string str;
     const char *networkName = otThreadGetNetworkName(mInstance);
-    std::string str         = networkName;
-
-    str = JSON::String2JsonString(str);
+    
+    str = JSON::CString2JsonString(networkName);
     return str;
 }
 
@@ -300,8 +269,10 @@ std::string Resource::GetDataLeaderData()
 {
     otLeaderData leaderData;
     std::string  str;
+    
     otThreadGetLeaderData(mInstance, &leaderData);
     str = JSON::LeaderData2JsonString(leaderData);
+    
     return str;
 }
 
@@ -321,8 +292,8 @@ std::string Resource::GetDataNumOfRoute()
         }
         ++count;
     }
-    str = std::to_string(count);
-    str = JSON::String2JsonString(str);
+    
+    str = JSON::Number2JsonString(count);
     return str;
 }
 
@@ -330,19 +301,20 @@ std::string Resource::GetDataRloc16()
 {
     uint16_t    rloc16 = otThreadGetRloc16(mInstance);
     char        p[7];
+    
     std::string str;
     sprintf(p, "0x%04x", rloc16);
-    str = p;
-    str = JSON::String2JsonString(str);
+    str = JSON::CString2JsonString(p);
+    
     return str;
 }
 
 std::string Resource::GetDataExtendedPanId()
 {
     const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    std::string    str      = JSON::Bytes2HexString(extPanId, OT_EXT_PAN_ID_SIZE);
+    
+    std::string    str      = JSON::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
 
-    str = JSON::String2JsonString(str);
     return str;
 }
 
@@ -375,153 +347,25 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
 }
 
 void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo)
-{
+{   
+    std::vector<otNetworkDiagTlv> diagSet;
     otNetworkDiagTlv      diagTlv;
     otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
     otError               error    = OT_ERROR_NONE;
-
-    std::string              keyRloc;
-    std::string              diag;
-    std::string              key;
-    std::string              value;
-    std::vector<std::string> keyContainer;
-    std::vector<std::string> valueContainer;
-
+    char rloc[7];
+    std::string              keyRloc = "0xffee";
+    
     while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
-    {
-        switch (diagTlv.mType)
+    {   if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS)
         {
-        case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
-        {
-            value = JSON::Bytes2HexString(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE);
-            keyContainer.push_back("ExtAddress");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
-        {
-            char rloc[7];
             sprintf(rloc, "0x%04x", diagTlv.mData.mAddr16);
-            value   = rloc;
-            keyRloc = value;
-            keyContainer.push_back("Rloc16");
-            valueContainer.push_back(JSON::String2JsonString(value));
+            keyRloc   = JSON::CString2JsonString(rloc);
         }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_MODE:
-        {
-            value = JSON::Mode2JsonString(diagTlv.mData.mMode);
-            keyContainer.push_back("Mode");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_TIMEOUT:
-        {
-            char timeout[11];
-            sprintf(timeout, "%d", diagTlv.mData.mTimeout);
-            value = timeout;
-            keyContainer.push_back("Timeout");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_CONNECTIVITY:
-        {
-            value = JSON::Connectivity2JsonString(diagTlv.mData.mConnectivity);
-            keyContainer.push_back("Connectivity");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
-        {
-            value = JSON::Route2JsonString(diagTlv.mData.mRoute);
-            keyContainer.push_back("Route");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_LEADER_DATA:
-        {
-            value = JSON::LeaderData2JsonString(diagTlv.mData.mLeaderData);
-            keyContainer.push_back("LeaderData");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
-        {
-            value = JSON::Bytes2HexString(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount);
-            keyContainer.push_back("NetworkData");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST:
-        {
-            std::vector<std::string> Ip6AddressList;
-            for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
-                Ip6AddressList.push_back(JSON::IpAddr2JsonString(diagTlv.mData.mIp6AddrList.mList[i]));
-            value = JSON::Vector2JsonString(Ip6AddressList);
-            keyContainer.push_back("IP6AddressList");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_MAC_COUNTERS:
-        {
-            value = JSON::MacCounters2JsonString(diagTlv.mData.mMacCounters);
-            keyContainer.push_back("MACCounters");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_BATTERY_LEVEL:
-        {
-            char batteryLevel[9];
-            sprintf(batteryLevel, "%d", diagTlv.mData.mBatteryLevel);
-            value = batteryLevel;
-            keyContainer.push_back("BatteryLevel");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_SUPPLY_VOLTAGE:
-        {
-            char supplyVoltage[9];
-            sprintf(supplyVoltage, "%d", diagTlv.mData.mSupplyVoltage);
-            value = supplyVoltage;
-            keyContainer.push_back("SupplyVoltage");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE:
-        {
-            std::vector<std::string> ChildTableList;
-
-            for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
-                ChildTableList.push_back(JSON::ChildTableEntry2JsonString(diagTlv.mData.mChildTable.mTable[i]));
-            value = JSON::Vector2JsonString(ChildTableList);
-            keyContainer.push_back("ChildTable");
-            valueContainer.push_back(value);
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_CHANNEL_PAGES:
-        {
-            value = JSON::Bytes2HexString(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount);
-            keyContainer.push_back("ChannelPages");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-        break;
-        case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
-        {
-            char childTimeout[9];
-            sprintf(childTimeout, "%d", diagTlv.mData.mMaxChildTimeout);
-            value = childTimeout;
-            keyContainer.push_back("MaxChildTimeout");
-            valueContainer.push_back(JSON::String2JsonString(value));
-        }
-
-        break;
-        }
+        diagSet.push_back(diagTlv);
     }
+        
+    UpdateDiag(keyRloc,diagSet);
 
-    diag = JSON::TwoVector2JsonString(keyContainer, valueContainer);
-    UpdateDiag(keyRloc, diag);
 }
 
 } // namespace rest

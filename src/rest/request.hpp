@@ -37,12 +37,16 @@
 #include <string>
 #include <vector>
 
+#include "common/code_utils.hpp"
+
 namespace otbr {
 namespace rest {
 
 class Request
 {
 public:
+    Request();
+    
     void        SetUrl(const char *aString, int aLength);
     void        SetStatus(const char *aString, int aLength);
     void        SetBody(const char *aString, int aLength);
@@ -50,25 +54,21 @@ public:
     void        SetMethod(int aMethod);
     void        SetReadComplete();
     void        ResetReadComplete();
-    void        AddHeaderField(const char *aString, int aLength);
-    void        AddHeaderValue(const char *aString, int aLength);
     std::string GetUrl();
     bool        IsComplete();
-
-    Request();
+    
+    
 
 private:
+    
     int          mMethod;
     unsigned int mContentLength;
-
     std::string              mUrl;
     std::string              mStatus;
     std::string              mBody;
     bool                     mComplete;
-    std::vector<std::string> mHeaderField;
-    std::vector<std::string> mHeaderValue;
-    int                      mHeaderState;
-    int                      mError;
+    
+  
 };
 
 } // namespace rest

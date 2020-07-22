@@ -40,33 +40,39 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-const uint32_t Connection::kCallbackTimeout = 4000000;
-const uint32_t Connection::kWriteTimeout    = 10000000;
-const uint32_t Connection::kReadTimeout     = 1000000;
+// Timeout settings in microseconds
+static const uint32_t kCallbackTimeout = 4000000;
+static const uint32_t kWriteTimeout    = 10000000;
+static const uint32_t kReadTimeout     = 1000000;
 
 Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd)
-
-    : mStartTime(aStartTime)
+: mStartTime(aStartTime)
     , mFd(aFd)
     , mState(OTBR_REST_CONNECTION_INIT)
-    , mWritePointer(0)
     , mResource(aResource)
 {
 }
 
 void Connection::Init()
-{
+{  
     mSettings.on_message_begin = OnMessageBegin;
     mSettings.on_url           = OnUrl;
     mSettings.on_status        = OnStatus;
-    mSettings.on_body = OnBody, mSettings.on_message_complete = OnMessageComplete,
+    mSettings.on_header_field = OnHandlerData;
+    mSettings.on_header_value = OnHandlerData;
+    mSettings.on_body = OnBody;
+    mSettings.on_headers_complete = OnHandler;
+    mSettings.on_message_complete = OnMessageComplete;
+
     http_parser_init(&mParser, HTTP_REQUEST);
+    
     mParser.data = &mRequest;
 }
 
 void Connection::Disconnect()
 {
     mState = OTBR_REST_CONNECTION_COMPLETE;
+    
     if (mFd != -1)
     {
         close(mFd);
@@ -77,22 +83,26 @@ void Connection::Disconnect()
 otbrError Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd)
 {
     otbrError error = OTBR_ERROR_NONE;
+    
     if (mState == OTBR_REST_CONNECTION_READWAIT || mState == OTBR_REST_CONNECTION_INIT)
     {
         FD_SET(mFd, &aReadFdSet);
         aMaxFd = aMaxFd < mFd ? mFd : aMaxFd;
     }
+    
     return error;
 }
 
 otbrError Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd)
 {
     otbrError error = OTBR_ERROR_NONE;
+    
     if (mState == OTBR_REST_CONNECTION_WRITEWAIT)
     {
         FD_SET(mFd, &aWriteFdSet);
         aMaxFd = aMaxFd < mFd ? mFd : aMaxFd;
     }
+    
     return error;
 }
 
@@ -135,15 +145,18 @@ otbrError Connection::UpdateTimeout(timeval &aTimeout)
     {
         aTimeout = timeout;
     }
+    
     return error;
 }
 
 otbrError Connection::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
     otbrError error = OTBR_ERROR_NONE;
+    
     error           = UpdateTimeout(aMainloop.mTimeout);
     error           = UpdateReadFdSet(aMainloop.mReadFdSet, aMainloop.mMaxFd);
     error           = UpdateWriteFdSet(aMainloop.mWriteFdSet, aMainloop.mMaxFd);
+    
     return error;
 }
 
@@ -151,53 +164,79 @@ otbrError Connection::ProcessWaitRead()
 {
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
-    if (mState == OTBR_REST_CONNECTION_INIT)
+    int  received;
+    char buf[2048];
+    int  err;
+   
+    if (mState <=  OTBR_REST_CONNECTION_READWAIT)
     {
         mState = OTBR_REST_CONNECTION_READWAIT;
     }
     if (duration <= kReadTimeout)
     {
-        int  received;
-        char buf[4096];
-        auto err = errno;
+        
         while (true)
-        {
+        {   
             received = read(mFd, buf, sizeof(buf));
             err      = errno;
-            if (received <= 0)
-                break;
-            http_parser_execute(&mParser, &mSettings, buf, received);
-            if (mRequest.IsComplete())
-            {
-                mResource->Handle(mRequest, mResponse);
-                ProcessResponse();
-                break;
-            }
-        }
 
-        if (received == 0)
-        {
-            Disconnect();
+            if(received <= 0)
+            {   // Read Error excrpt EINTR which need read again, jump out of the loop 
+                // 
+                if( err != EINTR )
+                {   
+                    break;
+                }
+            }
+            else
+            {   
+                // Normal parser process after a successful Read()
+                http_parser_execute(&mParser, &mSettings, buf, received);
+                
+                // Received the signal that a Request has been fully parsed, jump out of the loop
+                if (mRequest.IsComplete())
+                {  
+                   break;
+                }
+            } 
         }
-        else if (err == EINTR)
-        {
-            ProcessWaitRead();
+        
+        // Start to Handle the request
+        if (mRequest.IsComplete())
+        {  
+            mResource->Handle(mRequest, mResponse);
+  
+            if (mResponse.NeedCallback()){
+                
+                // Set its state as Waitforcallback and refresh its timer
+                mState = OTBR_REST_CONNECTION_CALLBACKWAIT;
+                mStartTime = steady_clock::now();
+            }
+            else
+            {   
+                // Normal Write back process.
+                Write();
+            }
+
         }
         else
         {
-            VerifyOrExit(err == EAGAIN || err == EWOULDBLOCK, error = OTBR_ERROR_REST);
+            // 1. Catch the error 
+            // 2. Client side has close this connection(received == 0).
+            VerifyOrExit( received > 0 || (received == -1 && (err == EAGAIN || err == EWOULDBLOCK)), error = OTBR_ERROR_REST);
+            
         }
     }
     else
-    {
+    {   
+        // Pass timeout, just close the connection
         Disconnect();
     }
 
 exit:
     if (error == OTBR_ERROR_REST)
     {
-        otbrLog(OTBR_LOG_ERR, "otbr rest read error");
-        Disconnect();
+       Disconnect();
     }
     return error;
 }
@@ -206,11 +245,14 @@ otbrError Connection::ProcessWaitCallback()
 {
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    
     if (duration >= kCallbackTimeout)
-    {
+    {   
+        // Handle Callback, then Write back response  
         mResource->HandleCallback(mRequest, mResponse);
         Write();
     }
+    
     return error;
 }
 
@@ -218,29 +260,34 @@ otbrError Connection::ProcessWaitWrite()
 {
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    
     if (duration <= kWriteTimeout)
-    {
+    {   
+        // WriteFdSet is set, then try to write again
         Write();
     }
     else
-    {
+    {   // Pass write timeout, just close the error
         Disconnect();
     }
     return error;
 }
 
 otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
-{
+{   
     otbrError error = OTBR_ERROR_NONE;
+
     switch (mState)
     {
+    // Initial state, directly read for the first time.
     case OTBR_REST_CONNECTION_INIT:
-    {
+    {   
         error = ProcessWaitRead();
         break;
     }
     case OTBR_REST_CONNECTION_READWAIT:
-    {
+    {   
+    // Read not complete state, Read when fd is set.
         if (FD_ISSET(mFd, &aReadFdSet))
         {
             error = ProcessWaitRead();
@@ -248,12 +295,15 @@ otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
         break;
     }
     case OTBR_REST_CONNECTION_CALLBACKWAIT:
-    {
+    {   
+    //  Wait for Callback process.
         error = ProcessWaitCallback();
         break;
     }
     case OTBR_REST_CONNECTION_WRITEWAIT:
     {
+    // Wait for write state, Write when fd is set
+
         if (FD_ISSET(mFd, &aWriteFdSet))
         {
             error = ProcessWaitWrite();
@@ -268,107 +318,134 @@ otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
     return error;
 }
 
-otbrError Connection::ProcessResponse()
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    if (mResponse.NeedCallback() && mState == OTBR_REST_CONNECTION_READWAIT)
-    {
-        mState     = OTBR_REST_CONNECTION_CALLBACKWAIT;
-        mStartTime = steady_clock::now();
-    }
-    else
-    {
-        error = Write();
-    }
-    return error;
-}
-
 otbrError Connection::Write()
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorCode;
-    int         send;
-    auto        err = errno;
-    if (mState == OTBR_REST_CONNECTION_READWAIT || mState == OTBR_REST_CONNECTION_CALLBACKWAIT)
-    {
-        mWriteContent = mResponse.Serialize();
+    int32_t    sendPointer;
+    int        err ;
+    
+
+    if (mState < OTBR_REST_CONNECTION_WRITEWAIT ) 
+    {   
+        // Change its state when try write for the first time.
         mState        = OTBR_REST_CONNECTION_WRITEWAIT;
         mStartTime    = steady_clock::now();
+        mWriteContent = mResponse.Serialize();
     }
-
-    if (mWriteContent.size() == mWritePointer)
+    
+    if( mWriteContent.size() == 0)
+    {
+       Disconnect();
+    }
+    
+    sendPointer = write(mFd, mWriteContent.c_str(), mWriteContent.size());
+    err = errno;
+    
+    // Write successfully
+    if ( sendPointer  == static_cast<int32_t>(mWriteContent.size()))
     {
         Disconnect();
     }
-
-    send = write(mFd, mWriteContent.substr(mWritePointer).c_str(), mWriteContent.size() - mWritePointer);
-
-    err = errno;
-
-    if (send >= 0)
-    {
-        mWritePointer += send;
-        if (mWriteContent.size() == mWritePointer)
-        {
-            Disconnect();
-        }
+    else if(sendPointer >= 0){
+        // Partly write
+        mWriteContent = mWriteContent.substr(sendPointer);
     }
-    else
-    {
-        VerifyOrExit(err == EAGAIN || err == EWOULDBLOCK, error = OTBR_ERROR_REST; errorCode = "write error");
+    else{
+        if (errno == EINTR)
+        {  
+            Write();
+        }
+        else
+        {
+            VerifyOrExit( err == EAGAIN || err == EWOULDBLOCK , error = OTBR_ERROR_REST);
+        }
     }
 
 exit:
 
     if (error == OTBR_ERROR_REST)
     {
-        otbrLog(OTBR_LOG_ERR, "rest server error: %s", errorCode.c_str());
+        
         Disconnect();
     }
     return error;
 }
 
-bool Connection::IsComplete()
+bool Connection::WaitRelease()
 {
     return mState == OTBR_REST_CONNECTION_COMPLETE;
 }
 
 int Connection::OnMessageBegin(http_parser *parser)
-{
+{  
     Request *request = reinterpret_cast<Request *>(parser->data);
     request->ResetReadComplete();
+    
     return 0;
 }
 
 int Connection::OnStatus(http_parser *parser, const char *at, size_t len)
-{
+{   
     Request *request = reinterpret_cast<Request *>(parser->data);
-    request->SetStatus(at, len);
+    
+    if(len > 0)
+    {
+        request->SetStatus(at, len);
+    }
+    
     return 0;
 }
 
 int Connection::OnUrl(http_parser *parser, const char *at, size_t len)
-{
+{   
     Request *request = reinterpret_cast<Request *>(parser->data);
-    request->SetUrl(at, len);
+    
+    if (len > 0)
+    {
+        request->SetUrl(at, len);
+    }
+   
     return 0;
 }
 
 int Connection::OnBody(http_parser *parser, const char *at, size_t len)
-{
+{   
     Request *request = reinterpret_cast<Request *>(parser->data);
-    request->SetBody(at, len);
+    
+    if (len > 0)
+    {
+        request->SetBody(at, len);
+    }
+    
     return 0;
 }
 
 int Connection::OnMessageComplete(http_parser *parser)
-{
+{   
     Request *request = reinterpret_cast<Request *>(parser->data);
+    
     request->SetReadComplete();
 
     return 0;
 }
+int Connection::OnHandler(http_parser *parser)
+{
+    OT_UNUSED_VARIABLE(parser);
+    
+    return 0;
+}
+   
+int Connection::OnHandlerData(http_parser *parser,const char *at, size_t len)
+{
+    
+    OT_UNUSED_VARIABLE(parser);
+    OT_UNUSED_VARIABLE(at);
+    OT_UNUSED_VARIABLE(len);
+
+    return 0;
+}
+
 
 } // namespace rest
 } // namespace otbr

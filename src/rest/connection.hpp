@@ -76,7 +76,7 @@ public:
 
     otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
 
-    bool IsComplete();
+    bool WaitRelease();
 
 private:
     otbrError UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
@@ -87,14 +87,12 @@ private:
     otbrError ProcessWaitCallback();
     otbrError ProcessWaitWrite();
 
-    otbrError ProcessResponse();
     otbrError Write();
     void      Disconnect();
 
     steady_clock::time_point mStartTime;
     int                      mFd;
     ConnectionState          mState;
-    uint32_t                 mWritePointer;
     std::string              mWriteContent;
 
     // read parameter
@@ -110,12 +108,12 @@ private:
     static int OnUrl(http_parser *parser, const char *at, size_t len);
     static int OnBody(http_parser *parser, const char *at, size_t len);
     static int OnMessageComplete(http_parser *parser);
+    // Dummy Handler Used for http_parser callback
+    static int OnHandler(http_parser *parser);
+    static int OnHandlerData(http_parser *parser,const char *at, size_t len);
 
     http_parser_settings mSettings;
 
-    static const uint32_t kCallbackTimeout;
-    static const uint32_t kWriteTimeout;
-    static const uint32_t kReadTimeout;
 };
 
 } // namespace rest
