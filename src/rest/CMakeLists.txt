@@ -48,6 +48,7 @@ target_link_libraries(otbr-rest
         cjson
         http_parser
         otbr-config
+        otbr-utils
         openthread-ftd
         openthread-posix
 )
