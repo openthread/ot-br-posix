@@ -268,7 +268,7 @@ public:
      * @retval ...        OpenThread defined error value otherwise
      *
      */
-    ClientError CommissionerAddJoiner(const JoinerInfo &aJoinerInfo);
+    ClientError AddJoiner(const JoinerInfo &aJoinerInfo);
 
     /**
      * This method sets the mesh-local prefix.

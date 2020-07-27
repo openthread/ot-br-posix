@@ -480,10 +480,9 @@ ClientError ThreadApiDBus::CommissionerStop()
     return CallDBusMethodSync(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_STOP_METHOD);
 }
 
-ClientError ThreadApiDBus::CommissionerAddJoiner(const JoinerInfo &aJoinerInfo)
+ClientError ThreadApiDBus::AddJoiner(const JoinerInfo &aJoinerInfo)
 {
-    return CallDBusMethodSync(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD,
-                              std::tie(aJoinerInfo));
+    return CallDBusMethodSync(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_ADD_JOINER_METHOD, std::tie(aJoinerInfo));
 }
 
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)

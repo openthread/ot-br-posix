@@ -82,7 +82,7 @@ private:
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
     void CommissionerStartHandler(DBusRequest &aRequest);
     void CommissionerStopHandler(DBusRequest &aRequest);
-    void CommissionerAddJoinerHandler(DBusRequest &aRequest);
+    void AddJoinerHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 

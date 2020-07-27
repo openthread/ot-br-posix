@@ -90,7 +90,7 @@ int main(void)
                             printf("Commissioner add joiner\n");
                             TEST_ASSERT(api->GetCommissionerState(state) == ClientError::ERROR_NONE);
                             TEST_ASSERT(state == aState);
-                            TEST_ASSERT(api->CommissionerAddJoiner(joinerInfo) == ClientError::ERROR_NONE);
+                            TEST_ASSERT(api->AddJoiner(joinerInfo) == ClientError::ERROR_NONE);
                             break;
                         default:
                             TEST_ASSERT(false);

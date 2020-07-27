@@ -340,13 +340,13 @@
   </interface>
 
   <interface name="io.openthread.Commissioner">
-    <method name="CommissionerStart">
+    <method name="Start">
     </method>
 
-    <method name="CommissionerStop">
+    <method name="Stop">
     </method>
 
-    <method name="CommissionerAddJoiner">
+    <method name="AddJoiner">
       <!--
         struct {
           uint8 type

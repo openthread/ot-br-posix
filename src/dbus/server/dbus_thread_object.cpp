@@ -139,8 +139,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::CommissionerStartHandler, this, _1));
     RegisterMethod(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_STOP_METHOD,
                    std::bind(&DBusThreadObject::CommissionerStopHandler, this, _1));
-    RegisterMethod(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_COMMISSIONER_ADD_JOINER_METHOD,
-                   std::bind(&DBusThreadObject::CommissionerAddJoinerHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_COMMISSIONER_INTERFACE, OTBR_DBUS_ADD_JOINER_METHOD,
+                   std::bind(&DBusThreadObject::AddJoinerHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
@@ -461,7 +461,7 @@ void DBusThreadObject::CommissionerStopHandler(DBusRequest &aRequest)
     aRequest.ReplyOtResult(error);
 }
 
-void DBusThreadObject::CommissionerAddJoinerHandler(DBusRequest &aRequest)
+void DBusThreadObject::AddJoinerHandler(DBusRequest &aRequest)
 {
     auto       threadHelper = mNcp->GetThreadHelper();
     otError    error        = OT_ERROR_NONE;
@@ -477,11 +477,10 @@ void DBusThreadObject::CommissionerAddJoinerHandler(DBusRequest &aRequest)
         {
             ConvertToOpenThreadUint64(eui64.m8, joinerInfo.mEui64OrDiscerner);
         }
-        printf("Add joiner\n");
         error = otCommissionerAddJoiner(threadHelper->GetInstance(),
                                         joinerInfo.mType == JoinerType::JOINER_ANY ? nullptr : &eui64,
                                         joinerInfo.mPSkd.c_str(), joinerInfo.mTimeout);
-        printf("Add joiner error=%s\n", otThreadErrorToString(error));
+        otbrLog(OTBR_LOG_INFO, "Add joiner error=%s\n", otThreadErrorToString(error));
     }
     else if (joinerInfo.mType == JoinerType::JOINER_DISCERNER)
     {
