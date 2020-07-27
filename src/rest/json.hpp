@@ -72,7 +72,6 @@ std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivi
 std::string Route2JsonString(const otNetworkDiagRoute &aRoute);
 std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
 std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
-std::string Ip6Address2JsonString(const otIp6Address &aAddress);
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
 

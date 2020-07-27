@@ -37,7 +37,7 @@ Request::Request()
 }
 void Request::SetUrl(const char *aString, int aLength)
 {   
-    mUrl = std::string(aString, aLength);
+    mUrl += std::string(aString, aLength);
 }
 
 void Request::SetStatus(const char *aString, int aLength)
@@ -47,7 +47,7 @@ void Request::SetStatus(const char *aString, int aLength)
 
 void Request::SetBody(const char *aString, int aLength)
 {
-    mBody= std::string(aString, aLength);
+    mBody += std::string(aString, aLength);
 }
 
 void Request::SetContentLength(int aContentLength)
@@ -64,8 +64,15 @@ std::string Request::GetUrl()
 {   
     std::string url = mUrl;
 
-    VerifyOrExit( mUrl.size() > 0 , url = "/");
+    auto it = url.find("?");
 
+    if( it != std::string::npos)
+    {
+        url = url.substr(0,static_cast<int>(it));
+    }
+
+    VerifyOrExit( url.size() > 0 , url = "/");
+    
 exit:  
     return url; 
 }

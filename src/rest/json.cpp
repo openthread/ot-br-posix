@@ -100,13 +100,11 @@ cJSON * IpAddr2Json(const otIp6Address &aAddress)
 
 cJSON* ChildTableEntry2Json(const otNetworkDiagChildEntry &aChildEntry)
 {
-    char   value[7];
-    cJSON *json = cJSON_CreateObject();
-
-    sprintf(value, "0x%04x", aChildEntry.mChildId);
-    cJSON_AddItemToObject(json, "ChildId", cJSON_CreateString(value));
-
     
+    cJSON *json = cJSON_CreateObject();
+    
+    cJSON_AddItemToObject(json, "ChildId", cJSON_CreateNumber(aChildEntry.mChildId));
+
     cJSON_AddItemToObject(json, "Timeout", cJSON_CreateNumber(aChildEntry.mTimeout));
 
     cJSON *mode = Mode2Json(aChildEntry.mMode);
@@ -119,31 +117,22 @@ cJSON* MacCounters2Json(const otNetworkDiagMacCounters &aMacCounters)
 {
     cJSON *json = cJSON_CreateObject();
 
-   
     cJSON_AddItemToObject(json, "IfInUnknownProtos", cJSON_CreateNumber(aMacCounters.mIfInUnknownProtos));
 
-    
     cJSON_AddItemToObject(json, "IfInErrors", cJSON_CreateNumber(aMacCounters.mIfInErrors));
 
-    
     cJSON_AddItemToObject(json, "IfOutErrors", cJSON_CreateNumber(aMacCounters.mIfOutErrors));
 
-    
     cJSON_AddItemToObject(json, "IfInUcastPkts", cJSON_CreateNumber(aMacCounters.mIfInUcastPkts));
 
-    
     cJSON_AddItemToObject(json, "IfInBroadcastPkts", cJSON_CreateNumber(aMacCounters.mIfInBroadcastPkts));
 
-    
     cJSON_AddItemToObject(json, "IfInDiscards", cJSON_CreateNumber(aMacCounters.mIfInDiscards));
 
-    
     cJSON_AddItemToObject(json, "IfOutUcastPkts", cJSON_CreateNumber(aMacCounters.mIfOutUcastPkts));
 
-   
     cJSON_AddItemToObject(json, "IfOutBroadcastPkts", cJSON_CreateNumber(aMacCounters.mIfOutBroadcastPkts));
 
-    
     cJSON_AddItemToObject(json, "IfOutDiscards", cJSON_CreateNumber(aMacCounters.mIfOutDiscards));
 
     return json;
@@ -176,19 +165,14 @@ cJSON * Connectivity2Json(const otNetworkDiagConnectivity &aConnectivity){
 
 cJSON *RouteData2Json(const otNetworkDiagRouteData &aRouteData)
 {
-    char   value[5];
     cJSON *json = cJSON_CreateObject();
 
-    sprintf(value, "0x%02x", aRouteData.mRouterId);
-    cJSON_AddItemToObject(json, "RouteId", cJSON_CreateString(value));
+    cJSON_AddItemToObject(json, "RouteId", cJSON_CreateNumber(aRouteData.mRouterId));
 
-    
     cJSON_AddItemToObject(json, "LinkQualityOut", cJSON_CreateNumber(aRouteData.mLinkQualityOut));
 
-   
     cJSON_AddItemToObject(json, "LinkQualityIn", cJSON_CreateNumber(aRouteData.mLinkQualityIn));
 
-    
     cJSON_AddItemToObject(json, "RouteCost", cJSON_CreateNumber(aRouteData.mRouteCost));
 
     return json;
@@ -216,26 +200,20 @@ cJSON * Route2Json(const otNetworkDiagRoute &aRoute){
 
 cJSON * LeaderData2Json(const otLeaderData &aLeaderData)
 {
-    char   value[11];
+    
     cJSON *json = cJSON_CreateObject();
 
-    sprintf(value, "0x%08x", aLeaderData.mPartitionId);
-    cJSON_AddItemToObject(json, "PartitionId", cJSON_CreateString(value));
+    cJSON_AddItemToObject(json, "PartitionId", cJSON_CreateNumber(aLeaderData.mPartitionId));
 
-    
     cJSON_AddItemToObject(json, "Weighting", cJSON_CreateNumber(aLeaderData.mWeighting));
 
-    
     cJSON_AddItemToObject(json, "DataVersion", cJSON_CreateNumber(aLeaderData.mDataVersion));
 
-    
     cJSON_AddItemToObject(json, "StableDataVersion", cJSON_CreateNumber(aLeaderData.mStableDataVersion));
-
-    sprintf(value, "0x%02x", aLeaderData.mLeaderRouterId);
-    cJSON_AddItemToObject(json, "LeaderRouterId", cJSON_CreateString(value));
+    
+    cJSON_AddItemToObject(json, "LeaderRouterId", cJSON_CreateNumber(aLeaderData.mLeaderRouterId));
     
     return json;
-   
 }
 
 std::string IpAddr2JsonString(const otIp6Address &aAddress)
@@ -263,6 +241,7 @@ std::string IpAddr2JsonString(const otIp6Address &aAddress)
 cJSON * Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength){
     
     char hex[2*aLength+1];
+    hex[2*aLength] = '\0';
     cJSON * json;
     
     auto size = otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
@@ -277,35 +256,32 @@ cJSON * Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength){
 std::string Node2JsonString(Node node){
     cJSON *    json = cJSON_CreateObject();
     cJSON*     value;
-    char        p[7];
-
+   
     value =  cJSON_CreateNumber(node.role);
-    cJSON_AddItemToObject(json,"state",value);
+    cJSON_AddItemToObject(json,"State",value);
     
     value =  cJSON_CreateNumber(node.numOfRouter);
-    cJSON_AddItemToObject(json,"numOfRouter",value);
+    cJSON_AddItemToObject(json,"NumOfRouter",value);
     
     value = IpAddr2Json(node.rlocAddress);
-    cJSON_AddItemToObject(json,"rlocAddress",value);
+    cJSON_AddItemToObject(json,"RlocAddress",value);
     
     value = Bytes2HexJson(node.extAddress,OT_EXT_ADDRESS_SIZE);
-    cJSON_AddItemToObject(json,"extAddress",value);
+    cJSON_AddItemToObject(json,"ExtAddress",value);
     
     value = CString2Json(node.networkName);
-    cJSON_AddItemToObject(json,"networkName",value);
+    cJSON_AddItemToObject(json,"NetworkName",value);
     
-    sprintf(p, "0x%04x", node.rloc16);
-    value = CString2Json(p);
-    cJSON_AddItemToObject(json,"rloc16",value);
+    value = cJSON_CreateNumber(node.rloc16);
+    cJSON_AddItemToObject(json,"Rloc16",value);
     
     value = LeaderData2Json(node.leaderData);
-    cJSON_AddItemToObject(json,"leaderData",value);
+    cJSON_AddItemToObject(json,"LeaderData",value);
     
     value = Bytes2HexJson(node.extPanId,OT_EXT_PAN_ID_SIZE);
-    cJSON_AddItemToObject(json,"extPanId",value);
+    cJSON_AddItemToObject(json,"ExtPanId",value);
 
     return Json2String(json);
-
 }
 
 std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet){
@@ -328,9 +304,7 @@ std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aD
             break;
             case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
             {
-                char rloc[7];
-                sprintf(rloc, "0x%04x", diagTlv.mData.mAddr16);
-                value   = CString2Json(rloc);
+                value = cJSON_CreateNumber(diagTlv.mData.mAddr16);
                 cJSON_AddItemToObject(diagObject,"Rloc16",value);
             }
             break;
@@ -512,6 +486,7 @@ std::string CString2JsonString(const char *aString){
     
     return Json2String(json);
 }
+
 } // namespace JSON
 } // namespace rest
 } // namespace otbr

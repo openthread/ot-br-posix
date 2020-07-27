@@ -47,6 +47,7 @@
 #include "http_parser.h"
 
 #include "common/code_utils.hpp"
+#include "rest/parser.hpp"
 #include "rest/request.hpp"
 #include "rest/resource.hpp"
 #include "rest/response.hpp"
@@ -58,16 +59,18 @@ namespace rest {
 
 enum ConnectionState
 {
-    OTBR_REST_CONNECTION_INIT         = 0,
-    OTBR_REST_CONNECTION_READWAIT     = 1, ///< wait to read
-    OTBR_REST_CONNECTION_CALLBACKWAIT = 2, ///< wait for callback
-    OTBR_REST_CONNECTION_WRITEWAIT    = 3, ///<  wait for write
-    OTBR_REST_CONNECTION_COMPLETE     = 4, ///< have sent response and wait to be deleted
+    OTBR_REST_CONNECTION_INIT         = 0, ///< Init
+    OTBR_REST_CONNECTION_READWAIT     = 1, ///< Wait to read
+    OTBR_REST_CONNECTION_CALLBACKWAIT = 2, ///< Wait for callback
+    OTBR_REST_CONNECTION_WRITEWAIT    = 3, ///< Wait for write
+    OTBR_REST_CONNECTION_COMPLETE     = 4, ///< Have sent response and wait to be deleted
 
 };
 class Connection
 {
+
 public:
+    
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
     void Init();
@@ -79,40 +82,26 @@ public:
     bool WaitRelease();
 
 private:
+    
     otbrError UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     otbrError UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
     otbrError UpdateTimeout(timeval &aTimeout);
-
-    otbrError ProcessWaitRead();
+    otbrError ProcessWaitRead(fd_set &aReadFdSet);
     otbrError ProcessWaitCallback();
-    otbrError ProcessWaitWrite();
-
+    otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
     otbrError Write();
     void      Disconnect();
-
+    
     steady_clock::time_point mStartTime;
     int                      mFd;
     ConnectionState          mState;
     std::string              mWriteContent;
 
-    // read parameter
-
     Response mResponse;
     Request  mRequest;
-
-    http_parser mParser;
+    
+    std::unique_ptr<Parser> mParser;
     Resource *  mResource;
-
-    static int OnMessageBegin(http_parser *parser);
-    static int OnStatus(http_parser *parser, const char *at, size_t len);
-    static int OnUrl(http_parser *parser, const char *at, size_t len);
-    static int OnBody(http_parser *parser, const char *at, size_t len);
-    static int OnMessageComplete(http_parser *parser);
-    // Dummy Handler Used for http_parser callback
-    static int OnHandler(http_parser *parser);
-    static int OnHandlerData(http_parser *parser,const char *at, size_t len);
-
-    http_parser_settings mSettings;
 
 };
 

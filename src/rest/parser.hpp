@@ -25,63 +25,50 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include "rest/response.hpp"
+
+/**
+ * @file
+ *   This file includes parser definition for RESTful HTTP server.
+ */
+
+#ifndef OTBR_REST_PARSER_HPP_
+#define OTBR_REST_PARSER_HPP_
+
+#include "http_parser.h"
+
+#include "common/code_utils.hpp"
+#include "rest/request.hpp"
 
 namespace otbr {
 namespace rest {
 
-Response::Response()
-    : mCallback(false)
-{
-    mProtocol = "HTTP/1.1";
-    mCode     = "200 OK";
-    mHeaderField.push_back("Content-Type");
-    mHeaderValue.push_back("application/json");
+class Parser{
 
-    mHeaderField.push_back("Access-Control-Allow-Origin");
-    mHeaderValue.push_back("*");
-}
+public:
+    
+    Parser(Request* aRequest);
+    void Init();
+    void Process(const char * aBuf, int aLength);
 
-void Response::SetResponsCode(std::string aCode)
-{
-    mCode = aCode;
-}
+private:
+    
+    http_parser mParser;
+    http_parser_settings mSettings;
+    static int OnMessageBegin(http_parser *parser);
+    static int OnStatus(http_parser *parser, const char *at, size_t len);
+    static int OnUrl(http_parser *parser, const char *at, size_t len);
+    static int OnBody(http_parser *parser, const char *at, size_t len);
+    static int OnMessageComplete(http_parser *parser);
+    // Dummy Handler Used for http_parser callback
+    static int OnHandler(http_parser *);
+    static int OnHandlerData(http_parser *,const char *, size_t );
 
-void Response::SetCallback()
-{
-    mCallback = true;
-}
-
-void Response::SetBody(std::string aBody)
-{
-    mBody = aBody;
-}
-
-std::string Response::GetBody()
-{
-    return mBody;
-}
-
-bool Response::NeedCallback()
-{
-    return mCallback;
-}
-
-std::string Response::Serialize()
-{
-    unsigned long index;
-    std::string   spacer = "\r\n";
-    std::string   ret(mProtocol + " " + mCode);
-    for (index = 0; index < mHeaderField.size(); index++)
-    {
-        ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
-    }
-    ret += spacer + "Content-Length: " + std::to_string(mBody.size());
-
-    ret += (spacer + spacer + mBody);
-
-    return ret;
-}
+};
 
 } // namespace rest
 } // namespace otbr
+
+#endif
+
+
+

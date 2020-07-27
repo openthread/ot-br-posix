@@ -56,6 +56,8 @@ namespace rest {
 class RestWebServer
 {
 public:
+    
+    
     RestWebServer(ControllerOpenThread *aNcp);
 
     otbrError Init();
@@ -71,7 +73,7 @@ private:
 
     // For server configure
     
-    sockaddr_in  mAddress;
+    std::unique_ptr<sockaddr_in> mAddress;
     int          mListenFd;
 
     // For Connection
@@ -80,6 +82,7 @@ private:
     otbrError UpdateConnections(fd_set &aReadFdSet);
     otbrError Accept(int aListenFd);
     bool       SetFdNonblocking(int fd);
+    otbrError InitializeListenFd();
 
     static const uint32_t kMaxServeNum;
     static const uint32_t kPortNumber;

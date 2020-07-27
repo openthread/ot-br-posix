@@ -26,11 +26,12 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_library( otbr-rest
+add_library( otbr-rest 
     rest_web_server.cpp
     connection.cpp
     resource.cpp
     json.cpp
+    parser.cpp
     request.cpp
     response.cpp
     

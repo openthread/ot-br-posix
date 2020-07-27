@@ -111,8 +111,8 @@ void Resource::HandleCallback(Request &aRequest, Response &aResponse)
 void Resource::ErrorHandler(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    aResponse.SetResponsCode(OT_REST_RESOURCE_NOT_FOUND);
-    aResponse.SetBody(OT_REST_RESOURCE_NOT_FOUND);
+    std::string str = JSON::String2JsonString(aRequest.GetUrl());
+    aResponse.SetBody(str);
 }
 
 void Resource::NodeInfo(Request &aRequest, Response &aResponse)
@@ -300,11 +300,9 @@ std::string Resource::GetDataNumOfRoute()
 std::string Resource::GetDataRloc16()
 {
     uint16_t    rloc16 = otThreadGetRloc16(mInstance);
-    char        p[7];
-    
     std::string str;
-    sprintf(p, "0x%04x", rloc16);
-    str = JSON::CString2JsonString(p);
+    
+    str = JSON::Number2JsonString(rloc16);
     
     return str;
 }
@@ -321,9 +319,11 @@ std::string Resource::GetDataExtendedPanId()
 std::string Resource::GetDataRloc()
 {
     struct otIp6Address rlocAddress = *otThreadGetRloc(mInstance);
+   
     std::string         str;
-
+    
     str = JSON::IpAddr2JsonString(rlocAddress);
+    
     return str;
 }
 

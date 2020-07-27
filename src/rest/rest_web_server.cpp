@@ -35,6 +35,7 @@
 #include <sstream>
 #include <string>
 
+#include <string.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/time.h>
@@ -46,7 +47,7 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-const uint32_t RestWebServer::kMaxServeNum = 100;
+const uint32_t RestWebServer::kMaxServeNum = 500;
 const uint32_t RestWebServer::kPortNumber  = 81;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
@@ -57,53 +58,29 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 
 otbrError RestWebServer::Init()
 {
-    int       ret;
     otbrError error = OTBR_ERROR_NONE;
     
     mResource.Init();
-    mAddress.sin_family      = AF_INET;
-    mAddress.sin_addr.s_addr = INADDR_ANY;
-    mAddress.sin_port        = htons(kPortNumber);
-
-    mListenFd = socket(AF_INET, SOCK_STREAM, 0);
     
-    VerifyOrExit(mListenFd != -1, error = OTBR_ERROR_REST);
-
-    ret = bind(mListenFd, reinterpret_cast<struct sockaddr*>(&mAddress), sizeof(sockaddr));
+    error = InitializeListenFd();
     
-    VerifyOrExit(ret == 0, error = OTBR_ERROR_REST);
-
-    ret = listen(mListenFd, 5);
-    
-    VerifyOrExit(ret >= 0, error = OTBR_ERROR_REST);
-
-    ret = SetFdNonblocking(mListenFd);
-    
-    VerifyOrExit(ret , error = OTBR_ERROR_REST);
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLog(OTBR_LOG_ERR, "otbr rest init error");
-    }
-
     return error;
 }
 
 otbrError RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
     otbrError error = OTBR_ERROR_NONE;
-
+   
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = aMainloop.mMaxFd < mListenFd ? mListenFd : aMainloop.mMaxFd;
-
+    
     Connection *connection;
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         connection = it->second.get();
         error      = connection->UpdateFdSet(aMainloop);
     }
-
+    
     return error;
 }
 
@@ -111,7 +88,7 @@ otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
 {
     otbrError   error = OTBR_ERROR_NONE;
     Connection *connection;
-
+    
     error = UpdateConnections(aMainloop.mReadFdSet);
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
@@ -119,7 +96,7 @@ otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
         connection = it->second.get();
         error      = connection->Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet);
     }
-
+    
     return error;
 }
 
@@ -127,7 +104,7 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
 {
     otbrError   error   = OTBR_ERROR_NONE;
     auto        eraseIt = mConnectionSet.begin();
-   
+    
     // Erase useless connections
     for (eraseIt = mConnectionSet.begin(); eraseIt != mConnectionSet.end();)
     {
@@ -144,40 +121,76 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
     }
 
     // Create new connection if listenfd is set
-    
-    if (FD_ISSET(mListenFd, &aReadFdSet))
-    {   
+    if (FD_ISSET(mListenFd, &aReadFdSet) && mConnectionSet.size() < kMaxServeNum  )
+    {  
        error = Accept(mListenFd);
     }
-
+    
     return error;
 }
 
+otbrError RestWebServer::InitializeListenFd(){
+    otbrError error = OTBR_ERROR_NONE;
+    std::string errorMessage;
+    int ret;
+    int err = errno;
+    int optval = 1;
+
+    mAddress = std::unique_ptr<sockaddr_in>(new sockaddr_in());
+    
+    mAddress->sin_family      = AF_INET;
+    mAddress->sin_addr.s_addr = INADDR_ANY;
+    mAddress->sin_port        = htons(kPortNumber);
+
+    mListenFd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    VerifyOrExit(mListenFd != -1, err = errno ,error = OTBR_ERROR_REST, errorMessage = "socket" );
+    
+    ret = setsockopt(mListenFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&optval),sizeof(optval));
+    
+    VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST , errorMessage = "sock opt" );
+
+    ret = bind(mListenFd, reinterpret_cast<struct sockaddr*>(mAddress.get()), sizeof(sockaddr));
+    
+    VerifyOrExit(ret == 0, err = errno , error = OTBR_ERROR_REST, errorMessage = "bind");
+
+    ret = listen(mListenFd, 5);
+    
+    VerifyOrExit(ret >= 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "listen");
+
+    ret = SetFdNonblocking(mListenFd);
+    
+    VerifyOrExit(ret , err = errno, error = OTBR_ERROR_REST, errorMessage = " set nonblock");
+
+exit: 
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "otbr rest server init error %s : %s", errorMessage , strerror(err) );
+    }
+
+    return error;
+    
+
+}
+
 otbrError RestWebServer::Accept(int aListenFd)
-{
+{  
     std::string errorMessage;
     otbrError   error   = OTBR_ERROR_NONE;
     int err;
     int fd;
-    socklen_t   addrlen = sizeof(sockaddr);
+    sockaddr_in tmp;
+    socklen_t   addrlen = sizeof(tmp);
+    
+    fd = accept(aListenFd, reinterpret_cast<struct sockaddr*>(mAddress.get()), &addrlen);
+    err = errno;
 
-    while(true)
+    VerifyOrExit(fd >= 0 , err = errno, error = OTBR_ERROR_REST; errorMessage = "accept");   
+    if ( fd >= 0 )
     {
-        fd = accept(aListenFd, reinterpret_cast<struct sockaddr*>(&mAddress), &addrlen);
-        err = errno;
-        if (fd != -1 || err != EINTR )
-        {
-            break;
-        }
-    }
-        
-    VerifyOrExit(fd > 0 || (fd == -1 && (err == EAGAIN || err == EWOULDBLOCK)), error = OTBR_ERROR_REST; errorMessage = "rest server accept error");
-        
-    if (mConnectionSet.size() < kMaxServeNum)
-    {
-        // Set up new connection
+        //Set up new connection
            
-        VerifyOrExit(SetFdNonblocking(fd), error = OTBR_ERROR_REST; errorMessage = "set nonblock error");
+        VerifyOrExit(SetFdNonblocking(fd), err = errno, error = OTBR_ERROR_REST; errorMessage = "set nonblock");
             
         auto it  = mConnectionSet.insert(std::make_pair(
                 fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), &mResource, fd))));
@@ -193,22 +206,19 @@ otbrError RestWebServer::Accept(int aListenFd)
         }
             
     }
-    else
-    {   // Reach Maximum connection serve number
-        close(fd);
-    }
+    
 
 exit:
     if (error != OTBR_ERROR_NONE)
-    {
-        otbrLog(OTBR_LOG_ERR, "rest server error: %s", errorMessage.c_str());
+    {   
+        otbrLog(OTBR_LOG_ERR, "rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
     return error;
 
 }
 
 bool RestWebServer::SetFdNonblocking(int fd)
-{
+{    
     int oldflags;
     bool ret = true;
     
