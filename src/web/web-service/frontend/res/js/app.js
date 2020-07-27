@@ -385,14 +385,14 @@
         $scope.restServerPort = '81';
         $scope.ipaddr = location.hostname + ':' + $scope.restServerPort;
 
-        //basic information line
+        // tooltipbasic information line
         $scope.networksInfo = 'Unknown';
-        //num of router calculated by diagnostic
+        // tooltipnum of router calculated by diagnostic
         $scope.numOfRouter = 'Unknown';
 
-        //diagnostic information for detailed display
+        // tooltipdiagnostic information for detailed display
         $scope.nodeDetailInfo = 'Unknown';
-        //for response of Diagnostic
+        // tooltipfor response of Diagnostic
         $scope.networksDiagInfo = '';
         $scope.graphisReady = false;
         $scope.detailList = {
@@ -415,7 +415,7 @@
 
         $scope.dataInit = function() {
 
-            $http.get('http://' + $scope.ipAddr + '/node').then(function(response) {
+            $http.get('http:// tooltip' + $scope.ipAddr + '/node').then(function(response) {
 
                 $scope.networksInfo = response.data;
 
@@ -438,7 +438,7 @@
             document.querySelectorAll('#Leader').forEach(e => e.style.display ? show(e) : hide(e))
         }
         $scope.showTopology = function() {
-            //record index of all node including child,leader and router
+            // tooltiprecord index of all node including child,leader and router
             var nodeMap = {}
             var count, src, dist, rloc, leaderid, routeid, child, rlocOfParent, rlocOfChild;
 
@@ -447,20 +447,20 @@
                 'nodes': [],
                 'links': []
             };
-            $http.get('http://' + $scope.ipAddr + '/diagnostics').then(function(response) {
+            $http.get('http:// tooltip' + $scope.ipAddr + '/diagnostics').then(function(response) {
 
 
                 $scope.networksDiagInfo = response.data;
 
                 count = 0;
                 for (var x of $scope.networksDiagInfo) {
-                    if ('Child Table' in x) {
-                        rloc = parseInt(x['Rloc16'], 16).toString(16);
+                    if ('ChildTable' in x) {
+                        rloc = x['Rloc16'].toString(16);
                         nodeMap[rloc] = count;
 
-                        routeid = '0x' + (parseInt(x['Rloc16'], 16) >> 10).toString(16);
+                        routeid = '0x' + (x['Rloc16'] >> 10).toString(16);
                         x['RouteId'] = routeid;
-                        leaderid = (parseInt(x['Leader Data']['LeaderRouterId'], 16) << 10).toString(16);
+                        leaderid = ( x['LeaderData']['LeaderRouterId'] << 10).toString(16);
                         if (leaderid == rloc) {
                             x['Role'] = 'Leader';
                         } else {
@@ -474,17 +474,17 @@
                         count = count + 1;
                     }
                 }
-                // num of Router is based on the diagnostic information
+                // tooltip num of Router is based on the diagnostic information
                 $scope.numOfRouter = count;
 
-                // index for a second loop
+                // tooltip index for a second loop
                 src = 0;
-                // construct links 
+                // tooltip construct links 
                 for (var y of $scope.networksDiagInfo) {
-                    if ('Child Table' in y) {
-                        // link bewtwen routers
+                    if ('ChildTable' in y) {
+                        // tooltip link bewtwen routers
                         for (var z of y['Route']['RouteData']) {
-                            rloc = (parseInt(z['RouteId'], 16) << 10).toString(16);
+                            rloc = ( z['RouteId'] << 10).toString(16);
                             if (rloc in nodeMap) {
                                 dist = nodeMap[rloc];
                                 if (src < dist) {
@@ -502,16 +502,16 @@
                             }
                         }
 
-                        //link between router and child 
+                        // tooltiplink between router and child 
                         for (var n of y['Child Table']) {
                             child = {};
-                            rlocOfParent = parseInt(y['Rloc16'], 16).toString(16);
-                            rlocOfChild = (parseInt(y['Rloc16'], 16) + parseInt(n['ChildId'], 16)).toString(16);
+                            rlocOfParent = y['Rloc16'].toString(16);
+                            rlocOfChild = (y['Rloc16'] + n['ChildId']).toString(16);
 
                             src = nodeMap[rlocOfParent];
 
                             child['Rloc16'] = '0x' + rlocOfChild;
-                            routeid = '0x' + (parseInt(y['Rloc16'], 16) >> 10).toString(16);
+                            routeid = '0x' + ( y['Rloc16'] >> 10).toString(16);
                             child['RouteId'] = routeid;
 
                             nodeMap[rlocOfChild] = count;
@@ -534,15 +534,15 @@
                     }
                     src = src + 1;
                 }
-                // construct graph
+                // tooltip construct graph
 
                 $scope.drawGraph();
             })
 
-            // need timeout handler
+            // tooltip need timeout handler
         }
 
-        // update what information to show when click differrent nodes
+        // tooltip update what information to show when click differrent nodes
         $scope.updateDetailLabel = function() {
             for (var x in $scope.detailList) {
                 $scope.detailList[x]['title'] = false;
@@ -556,22 +556,22 @@
             }
         }
 
-        //function that draw a svg for topology
+        // tooltipfunction that draw a svg for topology
         $scope.drawGraph = function() {
             var svg, tooltip, force, filt, feMerge;
             var scale, len;
 
-            //erase former graph
+            // tooltiperase former graph
             document.getElementById('topograph').innerHTML = '';
             scale = $scope.graphInfo.nodes.length;
             len = 125 * Math.sqrt(scale);
 
-            //topology graph
+            // tooltiptopology graph
             svg = d3.select('.d3graph').append('svg')
                 .attr('preserveAspectRatio', 'xMidYMid meet')
-                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10)) //class to make it responsive
+                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10)) // tooltipclass to make it responsive
 
-            //tooltip style  for each node
+            // tooltiptooltip style  for each node
             tooltip = d3.select('body')
                 .append('div')
                 .attr('class', 'tooltip')
@@ -583,12 +583,12 @@
             force = d3.layout.force()
                 .gravity(.05)
 
-            //line length
+            // tooltipline length
             .distance(100)
                 .charge(-100)
                 .size([len, len / (3 / 2)]);
 
-            //blur for node
+            // tooltipblur for node
             filt = svg.append('defs')
                 .append('filter')
                 .attr({ id: 'f1', x: 0, y: 0, width: '150%', height: '150%' });
@@ -621,23 +621,24 @@
                     .enter().append('line')
                     .attr('class', 'link')
                     .style('stroke', '#18c3f7')
-                    // dash line for link between child and parent
+                    // Tooltip dash line for link between child and parent
                     .style('stroke-dasharray', function(d) {
                         if ('Timeout' in d.linkInfo) return '5 5';
                         else return '0 0'
                     })
-                    // line width representing link quality
+                    // Tooltip line width representing link quality
                     .style('stroke-width', function(d) {
                         if ('inQuality' in d.linkInfo)
                             return Math.sqrt(d.linkInfo.inQuality);
                         else return Math.sqrt(0.5)
                     })
 
-                // effect on mouseover
-                .on('mouseover', function(d) {
+                    // Tooltip effect of mouseover on a line
+                    .on('mouseover', function(d) {
                         return tooltip.style('visibility', 'visible')
                             .text(d.linkInfo);
                     })
+
                     .on('mousemove', function() {
                         return tooltip.style('top', (d3.event.pageY - 10) + 'px')
                             .style('left', (d3.event.pageX + 10) + 'px');
@@ -654,6 +655,8 @@
                         return d.Role;
                     })
                     .call(force.drag)
+
+                    // Tooltip effect of mouseover on a node 
                     .on('mouseover', function(d) {
                         return tooltip.style('visibility', 'visible')
                             .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
@@ -692,6 +695,8 @@
                     .attr('class', function(d) {
                         return 'Stroke';
                     })
+
+                    // The effect that node will become bigger when mouseover
                     .on('mouseover', function(d) {
 
                         d3.select(this).attr('transform', 'scale(1.25)');
@@ -708,6 +713,8 @@
                         return tooltip.style('visibility', 'hidden');
 
                     })
+
+                    //  The effect that node will have a yellow edge when clicked
                     .on('click', function(d) {
                         d3.selectAll('.Stroke').style('stroke', 'none')
 
@@ -748,6 +755,8 @@
                         return tooltip.style('visibility', 'hidden');
 
                     })
+
+                    // The same effect as Leader
                     .on('click', function(d) {
                         d3.selectAll('.Stroke').style('stroke', 'none')
 
