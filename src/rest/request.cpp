@@ -36,7 +36,7 @@ Request::Request()
 {
 }
 void Request::SetUrl(const char *aString, int aLength)
-{   
+{
     mUrl += std::string(aString, aLength);
 }
 
@@ -61,20 +61,20 @@ void Request::SetMethod(int aMethod)
 }
 
 std::string Request::GetUrl()
-{   
+{
     std::string url = mUrl;
 
     auto it = url.find("?");
 
-    if( it != std::string::npos)
+    if (it != std::string::npos)
     {
-        url = url.substr(0,static_cast<int>(it));
+        url = url.substr(0, static_cast<int>(it));
     }
 
-    VerifyOrExit( url.size() > 0 , url = "/");
-    
-exit:  
-    return url; 
+    VerifyOrExit(url.size() > 0, url = "/");
+
+exit:
+    return url;
 }
 
 void Request::SetReadComplete()

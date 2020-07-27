@@ -42,33 +42,27 @@
 namespace otbr {
 namespace rest {
 
-class Parser{
-
+class Parser
+{
 public:
-    
-    Parser(Request* aRequest);
+    Parser(Request *aRequest);
     void Init();
-    void Process(const char * aBuf, int aLength);
+    void Process(const char *aBuf, int aLength);
 
 private:
-    
-    http_parser mParser;
+    http_parser          mParser;
     http_parser_settings mSettings;
-    static int OnMessageBegin(http_parser *parser);
-    static int OnStatus(http_parser *parser, const char *at, size_t len);
-    static int OnUrl(http_parser *parser, const char *at, size_t len);
-    static int OnBody(http_parser *parser, const char *at, size_t len);
-    static int OnMessageComplete(http_parser *parser);
+    static int           OnMessageBegin(http_parser *parser);
+    static int           OnStatus(http_parser *parser, const char *at, size_t len);
+    static int           OnUrl(http_parser *parser, const char *at, size_t len);
+    static int           OnBody(http_parser *parser, const char *at, size_t len);
+    static int           OnMessageComplete(http_parser *parser);
     // Dummy Handler Used for http_parser callback
     static int OnHandler(http_parser *);
-    static int OnHandlerData(http_parser *,const char *, size_t );
-
+    static int OnHandlerData(http_parser *, const char *, size_t);
 };
 
 } // namespace rest
 } // namespace otbr
 
 #endif
-
-
-

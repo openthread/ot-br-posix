@@ -63,13 +63,14 @@ namespace rest {
 // }
 
 struct DiagInfo
-{  steady_clock::time_point mStartTime;
-   std::vector<otNetworkDiagTlv> mDiagContent ;
-   DiagInfo(steady_clock::time_point aStartTime,std::vector<otNetworkDiagTlv> &aDiagContent)
-   :mStartTime(aStartTime)
-   {
-       mDiagContent.assign(aDiagContent.begin(),aDiagContent.end());
-   }
+{
+    steady_clock::time_point      mStartTime;
+    std::vector<otNetworkDiagTlv> mDiagContent;
+    DiagInfo(steady_clock::time_point aStartTime, std::vector<otNetworkDiagTlv> &aDiagContent)
+        : mStartTime(aStartTime)
+    {
+        mDiagContent.assign(aDiagContent.begin(), aDiagContent.end());
+    }
 };
 
 class Resource
@@ -84,7 +85,6 @@ public:
     void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
 private:
-
     typedef void (Resource::*ResourceHandler)(Request &aRequest, Response &aResponse);
     void NodeInfo(Request &aRequest, Response &aResponse);
     void ExtendedAddr(Request &aRequest, Response &aResponse);
@@ -111,12 +111,11 @@ private:
     std::string GetDataExtendedPanId();
     std::string GetDataRloc();
 
-    otbr::Ncp::ControllerOpenThread *                          mNcp;
-    otInstance *                                               mInstance;
-   
-    std::unordered_map<std::string,ResourceHandler> mResourceMap;
-    std::unordered_map<std::string,std::unique_ptr<DiagInfo>> mDiagSet;
-    
+    otbr::Ncp::ControllerOpenThread *mNcp;
+    otInstance *                     mInstance;
+
+    std::unordered_map<std::string, ResourceHandler>           mResourceMap;
+    std::unordered_map<std::string, std::unique_ptr<DiagInfo>> mDiagSet;
 };
 
 } // namespace rest

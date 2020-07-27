@@ -46,7 +46,7 @@ class Request
 {
 public:
     Request();
-    
+
     void        SetUrl(const char *aString, int aLength);
     void        SetStatus(const char *aString, int aLength);
     void        SetBody(const char *aString, int aLength);
@@ -56,19 +56,14 @@ public:
     void        ResetReadComplete();
     std::string GetUrl();
     bool        IsComplete();
-    
-    
 
 private:
-    
     int          mMethod;
     unsigned int mContentLength;
-    std::string              mUrl;
-    std::string              mStatus;
-    std::string              mBody;
-    bool                     mComplete;
-    
-  
+    std::string  mUrl;
+    std::string  mStatus;
+    std::string  mBody;
+    bool         mComplete;
 };
 
 } // namespace rest

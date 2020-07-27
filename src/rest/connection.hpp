@@ -68,9 +68,7 @@ enum ConnectionState
 };
 class Connection
 {
-
 public:
-    
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
     void Init();
@@ -82,7 +80,6 @@ public:
     bool WaitRelease();
 
 private:
-    
     otbrError UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     otbrError UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
     otbrError UpdateTimeout(timeval &aTimeout);
@@ -91,7 +88,7 @@ private:
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
     otbrError Write();
     void      Disconnect();
-    
+
     steady_clock::time_point mStartTime;
     int                      mFd;
     ConnectionState          mState;
@@ -99,10 +96,9 @@ private:
 
     Response mResponse;
     Request  mRequest;
-    
-    std::unique_ptr<Parser> mParser;
-    Resource *  mResource;
 
+    std::unique_ptr<Parser> mParser;
+    Resource *              mResource;
 };
 
 } // namespace rest

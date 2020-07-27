@@ -47,15 +47,16 @@
 namespace otbr {
 namespace rest {
 
-struct Node{
-    int role;
-    int numOfRouter;
-    uint16_t rloc16;
+struct Node
+{
+    int            role;
+    int            numOfRouter;
+    uint16_t       rloc16;
     const uint8_t *extPanId;
     const uint8_t *extAddress;
-    otIp6Address rlocAddress;
-    otLeaderData leaderData;
-    const char *networkName;
+    otIp6Address   rlocAddress;
+    otLeaderData   leaderData;
+    const char *   networkName;
 };
 
 namespace JSON {

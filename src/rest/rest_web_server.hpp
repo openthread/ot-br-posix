@@ -56,8 +56,6 @@ namespace rest {
 class RestWebServer
 {
 public:
-    
-    
     RestWebServer(ControllerOpenThread *aNcp);
 
     otbrError Init();
@@ -69,19 +67,19 @@ public:
 private:
     // For service
     otbr::Ncp::ControllerOpenThread *mNcp;
-    Resource      mResource;
+    Resource                         mResource;
 
     // For server configure
-    
+
     std::unique_ptr<sockaddr_in> mAddress;
-    int          mListenFd;
+    int                          mListenFd;
 
     // For Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
     otbrError UpdateConnections(fd_set &aReadFdSet);
     otbrError Accept(int aListenFd);
-    bool       SetFdNonblocking(int fd);
+    bool      SetFdNonblocking(int fd);
     otbrError InitializeListenFd();
 
     static const uint32_t kMaxServeNum;

@@ -43,7 +43,6 @@ namespace rest {
 class Response
 {
 public:
-    
     Response();
     void        SetBody(std::string aBody);
     void        SetResponsCode(std::string aCode);
@@ -53,8 +52,7 @@ public:
     std::string GetBody();
 
 private:
-    
-    bool mCallback;
+    bool                     mCallback;
     std::vector<std::string> mHeaderField;
     std::vector<std::string> mHeaderValue;
     std::string              mCode;

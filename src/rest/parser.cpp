@@ -34,79 +34,79 @@
 namespace otbr {
 namespace rest {
 
-Parser::Parser(Request* aRequest){
+Parser::Parser(Request *aRequest)
+{
     mParser.data = aRequest;
 }
 
-void Parser::Init(){
-
-    mSettings.on_message_begin = OnMessageBegin;
-    mSettings.on_url           = OnUrl;
-    mSettings.on_status        = OnStatus;
-    mSettings.on_header_field = OnHandlerData;
-    mSettings.on_header_value = OnHandlerData;
-    mSettings.on_body = OnBody;
+void Parser::Init()
+{
+    mSettings.on_message_begin    = OnMessageBegin;
+    mSettings.on_url              = OnUrl;
+    mSettings.on_status           = OnStatus;
+    mSettings.on_header_field     = OnHandlerData;
+    mSettings.on_header_value     = OnHandlerData;
+    mSettings.on_body             = OnBody;
     mSettings.on_headers_complete = OnHandler;
     mSettings.on_message_complete = OnMessageComplete;
     http_parser_init(&mParser, HTTP_REQUEST);
-    
 }
 
-void Parser::Process(const char * aBuf, int aLength){
+void Parser::Process(const char *aBuf, int aLength)
+{
     http_parser_execute(&mParser, &mSettings, aBuf, aLength);
 }
 
 int Parser::OnStatus(http_parser *parser, const char *at, size_t len)
-{   
+{
     Request *request = reinterpret_cast<Request *>(parser->data);
-    
-    if(len > 0)
+
+    if (len > 0)
     {
         request->SetStatus(at, len);
     }
-    
+
     return 0;
 }
 
 int Parser::OnUrl(http_parser *parser, const char *at, size_t len)
-{   
+{
     Request *request = reinterpret_cast<Request *>(parser->data);
-    
+
     if (len > 0)
     {
         request->SetUrl(at, len);
     }
-   
+
     return 0;
 }
 
 int Parser::OnBody(http_parser *parser, const char *at, size_t len)
-{   
+{
     Request *request = reinterpret_cast<Request *>(parser->data);
-    
+
     if (len > 0)
     {
         request->SetBody(at, len);
     }
-    
+
     return 0;
 }
 
 int Parser::OnMessageComplete(http_parser *parser)
-{   
+{
     Request *request = reinterpret_cast<Request *>(parser->data);
-    
+
     request->SetReadComplete();
 
     return 0;
 }
 
-
 int Parser::OnMessageBegin(http_parser *parser)
-{  
+{
     Request *request = reinterpret_cast<Request *>(parser->data);
     request->ResetReadComplete();
-    
+
     return 0;
 }
 
@@ -114,8 +114,8 @@ int Parser::OnHandler(http_parser *)
 {
     return 0;
 }
-   
-int Parser::OnHandlerData(http_parser *,const char *, size_t )
+
+int Parser::OnHandlerData(http_parser *, const char *, size_t)
 {
     return 0;
 }
