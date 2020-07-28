@@ -28,7 +28,7 @@
 
 #include "rest/json.hpp"
 
-#include "cJSON.h"
+#include <cJSON.h>
 
 namespace otbr {
 namespace rest {
@@ -245,7 +245,7 @@ std::string IpAddr2JsonString(const otIp6Address &aAddress)
 cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
 {
     char hex[2 * aLength + 1];
-    
+
     cJSON *json;
 
     otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
@@ -253,9 +253,6 @@ cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
     hex[2 * aLength] = '\0';
 
     json = cJSON_CreateString(hex);
-    
-    
-    
 
     return json;
 }
