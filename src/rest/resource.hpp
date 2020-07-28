@@ -95,8 +95,7 @@ private:
     std::string GetDataExtendedPanId();
     std::string GetDataRloc();
 
-    otbr::Ncp::ControllerOpenThread *mNcp;
-    otInstance *                     mInstance;
+    otInstance *mInstance;
 
     std::unordered_map<std::string, ResourceHandler>           mResourceMap;
     std::unordered_map<std::string, std::unique_ptr<DiagInfo>> mDiagSet;

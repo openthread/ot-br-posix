@@ -41,8 +41,7 @@ const uint32_t RestWebServer::kMaxServeNum = 500;
 const uint32_t RestWebServer::kPortNumber  = 81;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
-    : mNcp(aNcp)
-    , mResource(Resource(aNcp))
+    : mResource(Resource(aNcp))
 {
 }
 

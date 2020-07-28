@@ -53,8 +53,7 @@ static const uint8_t kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1
 static const uint32_t kDiagResetTimeout = 5000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
-    : mNcp(aNcp)
-    , mInstance(aNcp->GetThreadHelper()->GetInstance())
+    : mInstance(aNcp->GetThreadHelper()->GetInstance())
 {
     mResourceMap.insert(std::make_pair(OT_DIAGNOETIC_PATH, &Resource::Diagnostic));
     mResourceMap.insert(std::make_pair(OT_NODE_PATH, &Resource::NodeInfo));

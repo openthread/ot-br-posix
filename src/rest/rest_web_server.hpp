@@ -55,8 +55,8 @@ public:
 
 private:
     // For service
-    otbr::Ncp::ControllerOpenThread *mNcp;
-    Resource                         mResource;
+
+    Resource mResource;
 
     // For server configure
 
