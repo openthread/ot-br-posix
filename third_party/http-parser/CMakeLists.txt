@@ -26,7 +26,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+project(http_parser C)
 
 add_library(http_parser STATIC repo/http_parser.c repo/http_parser.h)
-target_include_directories(http_parser PUBLIC ./repo)
-
