@@ -39,16 +39,13 @@ on_exit()
     sudo killall expect || true
     sudo killall ot-cli-ftd || true
     sudo killall ot-cli-mtd || true
-    
+
     return "${status}"
 }
 
 main()
 {
-    sudo service otbr-agent reload
-    
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d 7 -v -I wpan0 "spinel+hdlc+forkpty://third_party/openthread/repo/output/x86_64-
-unknown-linux-gnu/bin/ot-rcp?forkpty-arg=1" &
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d 7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
     sudo "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}"/test_rest.py
