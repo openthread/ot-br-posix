@@ -28,7 +28,7 @@
 
 set(CJSON_BUILD_SHARED_LIBS OFF CACHE BOOL "disable shared libs" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "disable shared libs" FORCE)
-
+set(ENABLE_CUSTOM_COMPILER_FLAGS OFF CACHE BOOL "disable custom compiler option" FORCE)
 add_subdirectory(repo)
 
 
