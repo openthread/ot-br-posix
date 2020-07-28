@@ -156,7 +156,7 @@ otbrError RestWebServer::InitializeListenFd()
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "otbr rest server init error %s : %s", errorMessage, strerror(err));
+        otbrLog(OTBR_LOG_ERR, "otbr rest server init error %s : %s", errorMessage.c_str(), strerror(err));
     }
 
     return error;

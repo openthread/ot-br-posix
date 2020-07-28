@@ -124,7 +124,10 @@ void Resource::NodeInfo(Request &aRequest, Response &aResponse)
     node.role        = otThreadGetDeviceRole(mInstance);
     node.extAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
     node.networkName = otThreadGetNetworkName(mInstance);
-    otThreadGetLeaderData(mInstance, &node.leaderData);
+    if (otThreadGetLeaderData(mInstance, &node.leaderData) == OT_ERROR_NONE)
+    {
+        node.leaderData.mLeaderRouterId = 255;
+    }
     node.rloc16      = otThreadGetRloc16(mInstance);
     node.extPanId    = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
     node.rlocAddress = *otThreadGetRloc(mInstance);
@@ -265,7 +268,10 @@ std::string Resource::GetDataLeaderData()
     otLeaderData leaderData;
     std::string  str;
 
-    otThreadGetLeaderData(mInstance, &leaderData);
+    if (otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE)
+    {
+        leaderData.mLeaderRouterId = 255;
+    }
     str = JSON::LeaderData2JsonString(leaderData);
 
     return str;
@@ -329,10 +335,19 @@ void Resource::Diagnostic(Request &aRequest, Response &aResponse)
 
     struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
-    otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress);
+    if (otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE)
+    {
+        if (otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes)) !=
+            OT_ERROR_NONE)
+        {
+            otbrLog(OTBR_LOG_ERR, "multcast diag get fail");
+        }
+    }
 
-    otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes));
-    otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes));
+    if (otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes)) != OT_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_ERR, "self diag get fail");
+    }
 }
 
 void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
