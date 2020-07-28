@@ -28,6 +28,8 @@
 
 #include "rest/rest_web_server.hpp"
 
+#include <cerrno>
+
 #include <fcntl.h>
 
 using std::chrono::duration_cast;

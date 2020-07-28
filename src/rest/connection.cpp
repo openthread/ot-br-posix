@@ -29,6 +29,7 @@
 #include "rest/connection.hpp"
 
 #include <cerrno>
+
 #include <sys/time.h>
 
 using std::chrono::duration_cast;
