@@ -104,6 +104,13 @@ LOCAL_SRC_FILES := \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
+    src/rest/rest_web_server.cpp\
+    src/rest/connection.cpp\
+    src/rest/resource.cpp\
+    src/rest/json.cpp\
+    src/rest/parser.cpp\
+    src/rest/request.cpp\
+    src/rest/response.cpp\
     src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
