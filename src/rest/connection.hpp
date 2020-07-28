@@ -34,23 +34,11 @@
 #ifndef OTBR_REST_CONNECTION_HPP_
 #define OTBR_REST_CONNECTION_HPP_
 
-#include <chrono>
-#include <unordered_map>
-#include <unordered_set>
-
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "http_parser.h"
-
-#include "common/code_utils.hpp"
 #include "rest/parser.hpp"
-#include "rest/request.hpp"
 #include "rest/resource.hpp"
-#include "rest/response.hpp"
 
 using std::chrono::steady_clock;
 

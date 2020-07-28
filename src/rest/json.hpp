@@ -34,14 +34,10 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
-#include <string>
-#include <vector>
-
 #include "openthread/netdiag.h"
 #include "openthread/thread_ftd.h"
 
 #include "agent/ncp_openthread.hpp"
-#include "agent/thread_helper.hpp"
 #include "utils/hex.hpp"
 
 namespace otbr {

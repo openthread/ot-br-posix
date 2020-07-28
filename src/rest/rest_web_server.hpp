@@ -34,18 +34,7 @@
 #ifndef OTBR_REST_REST_WEB_SERVER_HPP_
 #define OTBR_REST_REST_WEB_SERVER_HPP_
 
-#include <chrono>
-#include <unordered_map>
-
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "common/code_utils.hpp"
 #include "rest/connection.hpp"
-#include "rest/resource.hpp"
 
 using otbr::Ncp::ControllerOpenThread;
 using std::chrono::steady_clock;

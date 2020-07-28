@@ -34,14 +34,8 @@
 #ifndef OTBR_REST_HANDLER_HPP_
 #define OTBR_REST_HANDLER_HPP_
 
-#include <string>
 #include <unordered_map>
 
-#include "openthread/netdiag.h"
-#include "openthread/thread_ftd.h"
-
-#include "agent/ncp_openthread.hpp"
-#include "agent/thread_helper.hpp"
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
@@ -51,16 +45,6 @@ using std::chrono::steady_clock;
 
 namespace otbr {
 namespace rest {
-
-// struct Node{
-//     int role;
-//     int numOfRouter;
-//     uint16_t rloc16;
-//     const uint8_t *extPanId;
-//     otIp6Address rlocAddress;
-//     otLeaderData leaderData;
-//     const char *networkName;
-// }
 
 struct DiagInfo
 {

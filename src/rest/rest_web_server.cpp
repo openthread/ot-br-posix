@@ -28,17 +28,7 @@
 
 #include "rest/rest_web_server.hpp"
 
-#include <algorithm>
-#include <chrono>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-
 #include <fcntl.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/time.h>
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;

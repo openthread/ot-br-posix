@@ -36,7 +36,6 @@
 
 #include "http_parser.h"
 
-#include "common/code_utils.hpp"
 #include "rest/request.hpp"
 
 namespace otbr {

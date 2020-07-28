@@ -28,9 +28,6 @@
 
 #include "rest/resource.hpp"
 
-#include <chrono>
-#include <string>
-
 #define OT_DIAGNOETIC_PATH "/diagnostics"
 #define OT_NODE_PATH "/node"
 #define OT_RLOC_PATH "/node/rloc"
@@ -46,6 +43,7 @@
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
+
 namespace otbr {
 namespace rest {
 

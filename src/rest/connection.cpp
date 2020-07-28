@@ -28,8 +28,6 @@
 
 #include "rest/connection.hpp"
 
-#include <chrono>
-
 #include <sys/time.h>
 
 using std::chrono::duration_cast;
