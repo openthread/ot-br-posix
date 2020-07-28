@@ -48,15 +48,11 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
-#include "rest/rest_web_server.hpp"
-
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
-
 using otbr::Ncp::ControllerOpenThread;
-using otbr::rest::RestWebServer;
 
 #if OTBR_ENABLE_OPENWRT
 extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
@@ -65,6 +61,10 @@ extern void       UbusServerRun(void);
 extern void       UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
 static std::mutex sThreadMutex;
 #endif
+
+extern otbrError RestServerInit(otbr::Ncp::ControllerOpenThread *aNcp);
+extern otbrError RestServerUpdateFdSet(otSysMainloopContext &aMainloop);
+extern otbrError RestServerProcess(otSysMainloopContext &aMainloop);
 
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -105,9 +105,8 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #else
     (void)aInterfaceName;
 #endif
-    ControllerOpenThread *         ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    std::unique_ptr<RestWebServer> restWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(ncpOpenThreadRest));
-    restWebServer->Init();
+    ControllerOpenThread *ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
+    RestServerInit(ncpOpenThreadRest);
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
@@ -125,7 +124,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         FD_ZERO(&mainloop.mErrorFdSet);
 
         aInstance.UpdateFdSet(mainloop);
-        restWebServer->UpdateFdSet(mainloop);
+        RestServerUpdateFdSet(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER
         dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
@@ -155,7 +154,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             UbusProcess(mainloop.mReadFdSet);
 #endif
             aInstance.Process(mainloop);
-            restWebServer->Process(mainloop);
+            RestServerProcess(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER
             dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);

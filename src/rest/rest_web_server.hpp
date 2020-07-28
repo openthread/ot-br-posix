@@ -45,31 +45,28 @@ namespace rest {
 class RestWebServer
 {
 public:
-    RestWebServer(ControllerOpenThread *aNcp);
+    static otbrError Init(ControllerOpenThread *aNcp);
 
-    otbrError Init();
+    static otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
 
-    otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
-
-    otbrError Process(otSysMainloopContext &aMainloop);
+    static otbrError Process(otSysMainloopContext &aMainloop);
 
 private:
     // For service
 
-    Resource mResource;
+    static std::unique_ptr<Resource> mResource;
 
     // For server configure
-
-    std::unique_ptr<sockaddr_in> mAddress;
-    int                          mListenFd;
+    static std::unique_ptr<sockaddr_in> mAddress;
+    static int                          mListenFd;
 
     // For Connection
-    std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
+    static std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
-    otbrError UpdateConnections(fd_set &aReadFdSet);
-    otbrError Accept(int aListenFd);
-    bool      SetFdNonblocking(int fd);
-    otbrError InitializeListenFd();
+    static otbrError UpdateConnections(fd_set &aReadFdSet);
+    static otbrError Accept(int aListenFd);
+    static bool      SetFdNonblocking(int fd);
+    static otbrError InitializeListenFd();
 
     static const uint32_t kMaxServeNum;
     static const uint32_t kPortNumber;

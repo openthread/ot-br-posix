@@ -40,16 +40,18 @@ namespace rest {
 const uint32_t RestWebServer::kMaxServeNum = 500;
 const uint32_t RestWebServer::kPortNumber  = 81;
 
-RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
-    : mResource(Resource(aNcp))
-{
-}
+std::unordered_map<int, std::unique_ptr<Connection>> RestWebServer::mConnectionSet;
+int                                                  RestWebServer::mListenFd;
+std::unique_ptr<sockaddr_in>                         RestWebServer::mAddress;
+std::unique_ptr<Resource>                            RestWebServer::mResource;
 
-otbrError RestWebServer::Init()
+otbrError RestWebServer::Init(ControllerOpenThread *aNcp)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    mResource.Init();
+    mResource = std::unique_ptr<Resource>(new Resource(aNcp));
+
+    mResource->Init();
 
     error = InitializeListenFd();
 
@@ -181,7 +183,7 @@ otbrError RestWebServer::Accept(int aListenFd)
         VerifyOrExit(SetFdNonblocking(fd), err = errno, error = OTBR_ERROR_REST; errorMessage = "set nonblock");
 
         auto it = mConnectionSet.insert(
-            std::make_pair(fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), &mResource, fd))));
+            std::make_pair(fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), mResource.get(), fd))));
         if (it.second == true)
         {
             Connection *connection = it.first->second.get();
@@ -217,3 +219,30 @@ exit:
 
 } // namespace rest
 } // namespace otbr
+
+otbrError RestServerInit(otbr::Ncp::ControllerOpenThread *aNcp)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    error = otbr::rest::RestWebServer::Init(aNcp);
+
+    return error;
+}
+
+otbrError RestServerUpdateFdSet(otSysMainloopContext &aMainloop)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    error = otbr::rest::RestWebServer::UpdateFdSet(aMainloop);
+
+    return error;
+}
+
+otbrError RestServerProcess(otSysMainloopContext &aMainloop)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    error = otbr::rest::RestWebServer::Process(aMainloop);
+
+    return error;
+}
