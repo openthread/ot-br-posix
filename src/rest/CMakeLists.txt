@@ -38,10 +38,9 @@ add_library( otbr-rest
 )
 
 target_include_directories( otbr-rest 
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
     PRIVATE
-        ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo
+        ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
+        ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo        
 )
 
 target_link_libraries(otbr-rest 
