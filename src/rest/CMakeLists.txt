@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_library( otbr-rest 
+add_library( otbr-rest STATIC
     rest_web_server.cpp
     connection.cpp
     resource.cpp
