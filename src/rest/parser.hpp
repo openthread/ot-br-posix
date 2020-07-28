@@ -34,7 +34,7 @@
 #ifndef OTBR_REST_PARSER_HPP_
 #define OTBR_REST_PARSER_HPP_
 
-#include "http_parser.h"
+#include <memory>
 
 #include "rest/request.hpp"
 
@@ -49,16 +49,8 @@ public:
     void Process(const char *aBuf, int aLength);
 
 private:
-    http_parser          mParser;
-    http_parser_settings mSettings;
-    static int           OnMessageBegin(http_parser *parser);
-    static int           OnStatus(http_parser *parser, const char *at, size_t len);
-    static int           OnUrl(http_parser *parser, const char *at, size_t len);
-    static int           OnBody(http_parser *parser, const char *at, size_t len);
-    static int           OnMessageComplete(http_parser *parser);
-    // Dummy Handler Used for http_parser callback
-    static int OnHandler(http_parser *);
-    static int OnHandlerData(http_parser *, const char *, size_t);
+    std::shared_ptr<void> mParser;
+    std::shared_ptr<void> mSettings;
 };
 
 } // namespace rest
