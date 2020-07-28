@@ -452,7 +452,7 @@
         $scope.showTopology = function() {
             // tooltiprecord index of all node including child,leader and router
             var nodeMap = {}
-            var count, src, dist, rloc, leaderid, routeid, child, rlocOfParent, rlocOfChild;
+            var count, src, dist, rloc, child, rlocOfParent, rlocOfChild;
 
             $scope.graphisReady = false;
             $scope.graphInfo = {
@@ -580,7 +580,7 @@
 
         // tooltipfunction that draw a svg for topology
         $scope.drawGraph = function() {
-            var svg, tooltip, force, filt, feMerge;
+            var json, svg, tooltip, force, filt, feMerge;
             var scale, len;
 
             // tooltiperase former graph
@@ -627,10 +627,9 @@
             feMerge
                 .append('feMergeNode')
                 .attr('in', 'SourceGraphic');
-
-
-            
+                
             json = $scope.graphInfo;
+            
             force
                 .nodes(json.nodes)
                 .links(json.links)
