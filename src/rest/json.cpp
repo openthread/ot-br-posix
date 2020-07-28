@@ -245,15 +245,17 @@ std::string IpAddr2JsonString(const otIp6Address &aAddress)
 cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
 {
     char hex[2 * aLength + 1];
-    hex[2 * aLength] = '\0';
+    
     cJSON *json;
 
-    auto size = otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
+    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
 
-    if (static_cast<size_t>(2 * aLength + 1) >= size)
-    {
-        json = cJSON_CreateString(hex);
-    }
+    hex[2 * aLength] = '\0';
+
+    json = cJSON_CreateString(hex);
+    
+    
+    
 
     return json;
 }
