@@ -62,7 +62,7 @@ LOCAL_MODULE := http_parser
 
 LOCAL_CPPFLAGS += -std=c++14
 
-LOCAL_SRC_FILES := $(LOCAL_PATH)/repo/http_parser.c
+LOCAL_SRC_FILES := $(LOCAL_PATH)/third_party/cJSON/repo/http_parser.c
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -72,7 +72,7 @@ LOCAL_MODULE := cjson
 
 LOCAL_CPPFLAGS += -std=c++14
 
-LOCAL_SRC_FILES := $(LOCAL_PATH)/repo/cJSON.c
+LOCAL_SRC_FILES := $(LOCAL_PATH)/third_party/cJSON/repo/cJSON.c
 
 include $(BUILD_STATIC_LIBRARY)
 
