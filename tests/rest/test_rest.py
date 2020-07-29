@@ -483,7 +483,7 @@ def main():
     node_num_of_router_test(200)
     node_ext_panid_test(200)
     diagnostics_test(200)
-    # error_test(10)
+    error_test(10)
 
     return 0
 
