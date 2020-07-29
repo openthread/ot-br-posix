@@ -102,8 +102,8 @@ LOCAL_C_INCLUDES := \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
     $(OTBR_PROJECT_INCLUDES)\
-    third_party/cJSON/repo \
-    third_party/http-parser/repo \
+    $(LOCAL_PATH)/third_party/cJSON/repo \
+    $(LOCAL_PATH)/third_party/http-parser/repo \
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
