@@ -62,7 +62,7 @@ LOCAL_MODULE := http_parser
 
 LOCAL_CPPFLAGS += -std=c++14
 
-LOCAL_SRC_FILES := $(LOCAL_PATH)/third_party/cJSON/repo/http_parser.c
+LOCAL_SRC_FILES := third_party/http-parser/repo/http_parser.c
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -72,7 +72,7 @@ LOCAL_MODULE := cjson
 
 LOCAL_CPPFLAGS += -std=c++14
 
-LOCAL_SRC_FILES := $(LOCAL_PATH)/third_party/cJSON/repo/cJSON.c
+LOCAL_SRC_FILES := third_party/cJSON/repo/cJSON.c
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -141,8 +141,8 @@ LOCAL_STATIC_LIBRARIES += \
     libopenthread-ncp \
     libopenthread-cli \
     ot-core \
-    cjson\
-    http_parser\
+    cjson \
+    http_parser \
 
 LOCAL_LDLIBS := \
     -lutil
