@@ -45,31 +45,35 @@ namespace rest {
 class RestWebServer
 {
 public:
-    static otbrError Init(ControllerOpenThread *aNcp);
+    static RestWebServer *GetRestWebServer(ControllerOpenThread *aNcp);
 
-    static otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
+    otbrError Init();
 
-    static otbrError Process(otSysMainloopContext &aMainloop);
+    otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
+
+    otbrError Process(otSysMainloopContext &aMainloop);
 
 private:
     // For service
+    RestWebServer(ControllerOpenThread *aNcp);
 
-    static std::unique_ptr<Resource> mResource;
+    Resource mResource;
 
     // For server configure
-    static std::unique_ptr<sockaddr_in> mAddress;
-    static int                          mListenFd;
+    std::unique_ptr<sockaddr_in> mAddress;
+    int                          mListenFd;
 
     // For Connection
-    static std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
+    std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
-    static otbrError UpdateConnections(fd_set &aReadFdSet);
-    static otbrError Accept(int aListenFd);
-    static bool      SetFdNonblocking(int fd);
-    static otbrError InitializeListenFd();
+    otbrError UpdateConnections(fd_set &aReadFdSet);
+    otbrError Accept(int aListenFd);
+    bool      SetFdNonblocking(int fd);
+    otbrError InitializeListenFd();
 
-    static const uint32_t kMaxServeNum;
-    static const uint32_t kPortNumber;
+    static const uint32_t                 kMaxServeNum;
+    static const uint32_t                 kPortNumber;
+    static std::unique_ptr<RestWebServer> kRestWebServer;
 };
 
 } // namespace rest
