@@ -28,6 +28,8 @@
 
 #include "rest/response.hpp"
 
+#include <stdio.h>
+
 namespace otbr {
 namespace rest {
 
@@ -70,6 +72,7 @@ bool Response::NeedCallback()
 
 std::string Response::Serialize()
 {
+    char          contentLength[10];
     unsigned long index;
     std::string   spacer = "\r\n";
     std::string   ret(mProtocol + " " + mCode);
@@ -77,7 +80,10 @@ std::string Response::Serialize()
     {
         ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
     }
-    ret += spacer + "Content-Length: " + std::to_string(mBody.size());
+
+    snprintf(contentLength, 9, "%d", static_cast<int>(mBody.size()));
+
+    ret += spacer + "Content-Length: " + std::string(contentLength);
 
     ret += (spacer + spacer + mBody);
 
