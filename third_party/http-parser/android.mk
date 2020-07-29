@@ -29,14 +29,11 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+
+LOCAL_MODULE := http_parser
+
+LOCAL_CPPFLAGS += -std=c++14
+
 LOCAL_SRC_FILES := $(LOCAL_PATH)/repo/http_parser.c
-
-LOCAL_BUILT_MODULE_STEM := libhttp_parser.a
-
-LOCAL_MODULE_SUFFIX := lib
-
-LOCAL_MODULE := libhttp_parser
-
-LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 
 include $(BUILD_STATIC_LIBRARY)

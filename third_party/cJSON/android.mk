@@ -30,14 +30,11 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+
+LOCAL_MODULE := cjson
+
+LOCAL_CPPFLAGS += -std=c++14
+
 LOCAL_SRC_FILES := $(LOCAL_PATH)/repo/cJSON.c
-
-LOCAL_BUILT_MODULE_STEM := libcjson.a
-
-LOCAL_MODULE_SUFFIX := lib
-
-LOCAL_MODULE := libcjson
-
-LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 
 include $(BUILD_STATIC_LIBRARY)
