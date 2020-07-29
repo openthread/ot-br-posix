@@ -26,8 +26,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-include $(call all-subdir-makefiles)
-
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -58,25 +56,27 @@ LOCAL_SHARED_LIBRARIES += libdbus
 
 include $(BUILD_STATIC_LIBRARY)
 
-# include $(CLEAR_VARS)
+include $(CLEAR_VARS)
 
-# LOCAL_MODULE := http_parser
+LOCAL_MODULE := http_parser
 
-# LOCAL_CPPFLAGS += -std=c++14
+LOCAL_CPPFLAGS += -std=c++14
 
-# LOCAL_SRC_FILES := third_party/http-parser/repo/http_parser.c
+LOCAL_SRC_FILES = \
+    third_party/http-parser/repo/http_parser.c \
 
-# include $(BUILD_STATIC_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
-# include $(CLEAR_VARS)
+include $(CLEAR_VARS)
 
-# LOCAL_MODULE := cjson
+LOCAL_MODULE := cjson
 
-# LOCAL_CPPFLAGS += -std=c++14
+LOCAL_CPPFLAGS += -std=c++14
 
-# LOCAL_SRC_FILES := third_party/cJSON/repo/cJSON.c
+LOCAL_SRC_FILES = \
+    third_party/cJSON/repo/cJSON.c \
 
-# include $(BUILD_STATIC_LIBRARY)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
@@ -102,8 +102,8 @@ LOCAL_C_INCLUDES := \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
     $(OTBR_PROJECT_INCLUDES)\
-    $(LOCAL_PATH)/third_party/cJSON/repo \
-    $(LOCAL_PATH)/third_party/http-parser/repo \
+    third_party/cJSON/repo \
+    third_party/http-parser/repo \
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
