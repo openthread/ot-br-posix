@@ -58,6 +58,26 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
+LOCAL_MODULE := http_parser
+
+LOCAL_CPPFLAGS += -std=c++14
+
+LOCAL_SRC_FILES := $(LOCAL_PATH)/repo/http_parser.c
+
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := cjson
+
+LOCAL_CPPFLAGS += -std=c++14
+
+LOCAL_SRC_FILES := $(LOCAL_PATH)/repo/cJSON.c
+
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+
 $(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(LOCAL_PATH)/src/dbus/server/introspect.hpp
 
 $(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/introspect.xml
@@ -80,8 +100,8 @@ LOCAL_C_INCLUDES := \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
     $(OTBR_PROJECT_INCLUDES)\
-    $(LOCAL_PATH)/third_party/cJSON/repo\
-    $(LOCAL_PATH)/third_party/http-parser/repo\
+    $(LOCAL_PATH)/third_party/cJSON/repo \
+    $(LOCAL_PATH)/third_party/http-parser/repo \
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
@@ -121,8 +141,8 @@ LOCAL_STATIC_LIBRARIES += \
     libopenthread-ncp \
     libopenthread-cli \
     ot-core \
-    libcjson\
-    libhttp_parser\
+    cjson\
+    http_parser\
 
 LOCAL_LDLIBS := \
     -lutil
