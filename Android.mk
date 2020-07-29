@@ -79,7 +79,9 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
-    $(OTBR_PROJECT_INCLUDES)
+    $(OTBR_PROJECT_INCLUDES)\
+    $(LOCAL_PATH)/third_party/cJSON/repo\
+    $(LOCAL_PATH)/third_party/http-parser/repo\
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
@@ -119,6 +121,8 @@ LOCAL_STATIC_LIBRARIES += \
     libopenthread-ncp \
     libopenthread-cli \
     ot-core \
+    libcjson\
+    libhttp_parser\
 
 LOCAL_LDLIBS := \
     -lutil
