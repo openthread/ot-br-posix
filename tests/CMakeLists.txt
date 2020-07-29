@@ -34,7 +34,9 @@ if(OTBR_MDNS)
     add_subdirectory(mdns)
 endif()
 
-add_subdirectory(rest)
+if(OTBR_REST)
+    add_subdirectory(rest)
+endif()
 
 add_subdirectory(tools)
 add_subdirectory(unit)

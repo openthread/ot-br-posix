@@ -48,13 +48,15 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
+using otbr::rest::RestWebServer;
+#endif
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
 using otbr::Ncp::ControllerOpenThread;
-using otbr::rest::RestWebServer;
 
 #if OTBR_ENABLE_OPENWRT
 extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
@@ -103,9 +105,11 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #else
     (void)aInterfaceName;
 #endif
+#if OTBR_ENABLE_REST_SERVER
     ControllerOpenThread *ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
     RestWebServer *       restWebServer     = RestWebServer::GetRestWebServer(ncpOpenThreadRest);
     restWebServer->Init();
+#endif
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
@@ -123,11 +127,14 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         FD_ZERO(&mainloop.mErrorFdSet);
 
         aInstance.UpdateFdSet(mainloop);
-        restWebServer->UpdateFdSet(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER
         dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
                                mainloop.mTimeout);
+#endif
+
+#if OTBR_ENABLE_REST_SERVER
+        restWebServer->UpdateFdSet(mainloop);
 #endif
 
 #if OTBR_ENABLE_OPENWRT
@@ -152,8 +159,13 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             sThreadMutex.lock();
             UbusProcess(mainloop.mReadFdSet);
 #endif
-            aInstance.Process(mainloop);
+
+#if OTBR_ENABLE_REST_SERVER
+
             restWebServer->Process(mainloop);
+#endif
+
+            aInstance.Process(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER
             dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
