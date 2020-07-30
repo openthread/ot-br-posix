@@ -68,8 +68,8 @@ def create_multithread(url, thread_num, response_data):
 
 def diagnostics_check(data):
 
-    if data == None:
-        return 0
+    assert (data != None)
+
     if len(data) == 0:
         return 1
     for diag in data:
@@ -179,8 +179,7 @@ def diagnostics_check(data):
 
 
 def node_check(data):
-    if data == None:
-        return False
+    assert (data != None)
 
     expected_keys = [
         "State", "NumOfRouter", "RlocAddress", "NetworkName", "ExtAddress",
@@ -216,8 +215,7 @@ def node_check(data):
 
 def node_rloc_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == unicode)
 
@@ -230,8 +228,7 @@ def node_rloc_check(data):
 
 def node_rloc16_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == int)
 
@@ -240,8 +237,7 @@ def node_rloc16_check(data):
 
 def node_ext_address_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == unicode)
     assert (None != re.match(ur'^[A-F0-9]{16}$', data))
@@ -251,8 +247,7 @@ def node_ext_address_check(data):
 
 def node_state_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == int)
 
@@ -261,8 +256,7 @@ def node_state_check(data):
 
 def node_network_name_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == unicode)
 
@@ -271,8 +265,7 @@ def node_network_name_check(data):
 
 def node_leader_data_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == dict)
 
@@ -290,8 +283,7 @@ def node_leader_data_check(data):
 
 def node_num_of_router_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == int)
 
@@ -300,8 +292,7 @@ def node_num_of_router_check(data):
 
 def node_ext_panid_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (type(data) == unicode)
 
@@ -310,8 +301,7 @@ def node_ext_panid_check(data):
 
 def error_check(data):
 
-    if data == None:
-        return False
+    assert (data != None)
 
     assert (data == u'/hello')
 
