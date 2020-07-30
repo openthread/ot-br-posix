@@ -109,7 +109,6 @@ do_build()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
-        "-DOTBR_REST=ON"
         "-DOTBR_UNSECURE_JOIN=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
@@ -146,6 +145,9 @@ do_prepare()
 
     if [[ ${OTBR_COVERAGE} == 1 ]]; then
         otbr_options+=("-DOTBR_COVERAGE=ON")
+    fi 
+    if [[ ${OTBR_REST} != 0 ]]; then
+        otbr_options+=("-DOTBR_REST=ON")
     fi
 }
 
