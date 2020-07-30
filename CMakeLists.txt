@@ -36,7 +36,7 @@ option(OTBR_DBUS          "Build DBus support" OFF)
 option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
 option(OTBR_WEB           "Build Web GUI" OFF)
-option(OTBR_REST          "build Rest Server" OFF)
+option(OTBR_REST          "Build Rest Server" OFF)
 
 
 if(NOT CMAKE_C_STANDARD)
