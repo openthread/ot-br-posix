@@ -427,7 +427,7 @@ def diagnostics_test(thread_num):
         thread_num, has_content, valid))
 
 
-def error_test(thread_num):
+def error404_test(thread_num):
     url = rest_api_addr + "/hello"
 
     response_data = [None] * thread_num
@@ -450,7 +450,7 @@ def main():
     node_num_of_router_test(200)
     node_ext_panid_test(200)
     diagnostics_test(100)
-    error_test(10)
+    error404_test(10)
 
     return 0
 
