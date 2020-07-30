@@ -32,6 +32,7 @@ project(openthread-br VERSION 0.2.0)
 
 add_library(otbr-config INTERFACE)
 
+option(OTBR_BACKBONE      "Build Backbone support" ON)
 option(OTBR_DBUS          "Build DBus support" OFF)
 option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
@@ -89,6 +90,12 @@ endif()
 
 find_package(PkgConfig)
 include(GNUInstallDirs)
+
+if (OTBR_BACKBONE)
+    target_compile_definitions(otbr-config INTERFACE
+            OTBR_ENABLE_BACKBONE=1
+            )
+endif()
 
 if(OTBR_DBUS)
     pkg_check_modules(DBUS REQUIRED dbus-1)

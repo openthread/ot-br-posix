@@ -41,6 +41,7 @@
 #include <openthread/platform/logging.h>
 #include <openthread/platform/misc.h>
 #include <openthread/platform/settings.h>
+#include <openthread/backbone_router_ftd.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -135,6 +136,19 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
     if (aFlags & OT_CHANGED_THREAD_EXT_PANID)
     {
         EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
+    }
+
+    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_LOCAL)
+    {
+        switch (otBackboneRouterGetState(mInstance))
+        {
+        case OT_BACKBONE_ROUTER_STATE_DISABLED:
+            break;
+        case OT_BACKBONE_ROUTER_STATE_SECONDARY:
+            break;
+        case OT_BACKBONE_ROUTER_STATE_PRIMARY:
+            break;
+        }
     }
 
     if (aFlags & OT_CHANGED_THREAD_ROLE)
@@ -246,13 +260,11 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
 
     switch (aEvent)
     {
-    case kEventExtPanId:
-    {
+    case kEventExtPanId: {
         EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
         break;
     }
-    case kEventThreadState:
-    {
+    case kEventThreadState: {
         bool attached = false;
 
         switch (otThreadGetDeviceRole(mInstance))
@@ -269,18 +281,15 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
         EventEmitter::Emit(kEventThreadState, attached);
         break;
     }
-    case kEventNetworkName:
-    {
+    case kEventNetworkName: {
         EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
         break;
     }
-    case kEventPSKc:
-    {
+    case kEventPSKc: {
         EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
         break;
     }
-    case kEventThreadVersion:
-    {
+    case kEventThreadVersion: {
         EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
         break;
     }

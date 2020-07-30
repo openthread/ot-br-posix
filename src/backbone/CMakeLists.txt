@@ -26,27 +26,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_subdirectory(agent)
-add_subdirectory(common)
+add_library(otbr-backbone
+    backbone_agent.cpp
+)
+target_compile_definitions(otbr-backbone PUBLIC
+    OTBR_ENABLE_BACKBONE=1
+)
+target_link_libraries(otbr-backbone PRIVATE
+    otbr-common
+    otbr-utils
+)
 
-if(OTBR_DBUS)
-    add_subdirectory(dbus)
-endif()
-
-if(OTBR_MDNS)
-    add_subdirectory(mdns)
-endif()
-
-add_subdirectory(utils)
-
-if(OTBR_OPENWRT)
-    add_subdirectory(openwrt)
-endif()
-
-if(OTBR_WEB)
-    add_subdirectory(web)
-endif()
-
-if (OTBR_BACKBONE)
-    add_subdirectory(backbone)
-endif()

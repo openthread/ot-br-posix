@@ -26,6 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set(OT_BACKBONE_ROUTER ON CACHE BOOL "enable backbone router" FORCE)
 set(OT_BORDER_AGENT ON CACHE BOOL "enable border agent" FORCE)
 set(OT_BORDER_ROUTER ON CACHE BOOL "enable border router feature" FORCE)
 set(OT_BUILD_EXECUTABLES OFF CACHE BOOL "disable building executables" FORCE)
@@ -36,9 +37,12 @@ set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
 set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
+set(OT_MLR ON CACHE BOOL "enable backbone router" FORCE)
 set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
 set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
 set(OT_PLATFORM_UDP ON CACHE BOOL "enable platform UDP" FORCE)
+set(OT_SERVICE ON CACHE BOOL "enable service" FORCE)
+set(OT_THREAD_VERSION "1.2" CACHE STRING "enable Thread 1.2" FORCE)
 set(OT_UDP_FORWARD OFF CACHE BOOL "diable udp forward" FORCE)
 
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
@@ -46,9 +50,9 @@ list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/
 add_subdirectory(repo EXCLUDE_FROM_ALL)
 
 target_compile_definitions(ot-config INTERFACE
-    "-DOPENTHREAD_CONFIG_LOG_CLI=1"
-    "-DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_INFO"
-    "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
-    "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
-)
+        "-DOPENTHREAD_CONFIG_LOG_CLI=1"
+        "-DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_INFO"
+        "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
+        "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
+        )
 
