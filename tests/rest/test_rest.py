@@ -39,22 +39,27 @@ rest_api_addr = "http://0.0.0.0:81"
 
 
 def get_data_from_url(url, result, index):
-
     response = urllib2.urlopen(urllib2.Request(url))
     time_stamp = time.time()
     body = response.read()
     data = json.loads(body)
     result[index] = data
 
-    #result[index] = None
+
+def get_error_from_url(url, result, index):
+    try:
+        urllib2.urlopen(urllib2.Request(url))
+        assert (False)
+
+    except urllib2.HTTPError as e:
+        assert (e == 404)
 
 
-def create_multithread(url, thread_num, response_data):
+def create_multithread(func, url, thread_num, response_data):
     threads = [None] * thread_num
 
     for i in range(thread_num):
-        threads[i] = Thread(target=get_data_from_url,
-                            args=(url, response_data, i))
+        threads[i] = Thread(target=func, args=(url, response_data, i))
 
     for thread in threads:
         thread.start()
@@ -64,7 +69,6 @@ def create_multithread(url, thread_num, response_data):
 
 
 def diagnostics_check(data):
-
     assert (data != None)
 
     if len(data) == 0:
@@ -211,7 +215,6 @@ def node_check(data):
 
 
 def node_rloc_check(data):
-
     assert (data != None)
 
     assert (type(data) == unicode)
@@ -224,7 +227,6 @@ def node_rloc_check(data):
 
 
 def node_rloc16_check(data):
-
     assert (data != None)
 
     assert (type(data) == int)
@@ -233,7 +235,6 @@ def node_rloc16_check(data):
 
 
 def node_ext_address_check(data):
-
     assert (data != None)
 
     assert (type(data) == unicode)
@@ -243,7 +244,6 @@ def node_ext_address_check(data):
 
 
 def node_state_check(data):
-
     assert (data != None)
 
     assert (type(data) == int)
@@ -252,7 +252,6 @@ def node_state_check(data):
 
 
 def node_network_name_check(data):
-
     assert (data != None)
 
     assert (type(data) == unicode)
@@ -261,7 +260,6 @@ def node_network_name_check(data):
 
 
 def node_leader_data_check(data):
-
     assert (data != None)
 
     assert (type(data) == dict)
@@ -279,7 +277,6 @@ def node_leader_data_check(data):
 
 
 def node_num_of_router_check(data):
-
     assert (data != None)
 
     assert (type(data) == int)
@@ -288,19 +285,9 @@ def node_num_of_router_check(data):
 
 
 def node_ext_panid_check(data):
-
     assert (data != None)
 
     assert (type(data) == unicode)
-
-    return True
-
-
-def error_check(data):
-
-    assert (data != None)
-
-    assert (data == u'/hello')
 
     return True
 
@@ -310,7 +297,7 @@ def node_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_check(data) for data in response_data].count(True)
 
@@ -318,12 +305,11 @@ def node_test(thread_num):
 
 
 def node_rloc_test(thread_num):
-
     url = rest_api_addr + "/node/rloc"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_rloc_check(data) for data in response_data].count(True)
 
@@ -331,12 +317,11 @@ def node_rloc_test(thread_num):
 
 
 def node_rloc16_test(thread_num):
-
     url = rest_api_addr + "/node/rloc16"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_rloc16_check(data) for data in response_data].count(True)
 
@@ -344,12 +329,11 @@ def node_rloc16_test(thread_num):
 
 
 def node_ext_address_test(thread_num):
-
     url = rest_api_addr + "/node/ext-address"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_ext_address_check(data) for data in response_data].count(True)
 
@@ -357,7 +341,6 @@ def node_ext_address_test(thread_num):
 
 
 def node_state_test(thread_num):
-
     url = rest_api_addr + "/node/state"
 
     response_data = [None] * thread_num
@@ -370,12 +353,11 @@ def node_state_test(thread_num):
 
 
 def node_network_name_test(thread_num):
-
     url = rest_api_addr + "/node/network-name"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_network_name_check(data) for data in response_data
             ].count(True)
@@ -384,12 +366,11 @@ def node_network_name_test(thread_num):
 
 
 def node_leader_data_test(thread_num):
-
     url = rest_api_addr + "/node/leader-data"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_leader_data_check(data) for data in response_data].count(True)
 
@@ -397,12 +378,11 @@ def node_leader_data_test(thread_num):
 
 
 def node_num_of_router_test(thread_num):
-
     url = rest_api_addr + "/node/num-of-router"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_num_of_router_check(data) for data in response_data
             ].count(True)
@@ -411,12 +391,11 @@ def node_num_of_router_test(thread_num):
 
 
 def node_ext_panid_test(thread_num):
-
     url = rest_api_addr + "/node/ext-panid"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_ext_panid_check(data) for data in response_data].count(True)
 
@@ -424,12 +403,11 @@ def node_ext_panid_test(thread_num):
 
 
 def diagnostics_test(thread_num):
-
     url = rest_api_addr + "/diagnostics"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_data_from_url, url, thread_num, response_data)
 
     valid = 0
     has_content = 0
@@ -446,20 +424,16 @@ def diagnostics_test(thread_num):
 
 
 def error_test(thread_num):
-
     url = rest_api_addr + "/hello"
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multithread(get_error_from_url, url, thread_num, response_data)
 
-    valid = [error_check(data) for data in response_data].count(True)
-
-    print(" /hello : all {}, valid {} ".format(thread_num, valid))
+    print(" error check complete ")
 
 
 def main():
-
     node_test(200)
     node_rloc_test(200)
     node_rloc16_test(200)
