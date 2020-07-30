@@ -67,16 +67,15 @@ public:
 
     otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
 
-    void  UpdateFdSet(otSysMainloopContext &aMainloop);
+    void UpdateFdSet(otSysMainloopContext &aMainloop);
 
     bool IsComplete();
 
 private:
-    
-    void  UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
-    void  UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
-    void  UpdateTimeout(timeval &aTimeout);
-    
+    void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
+    void UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
+    void UpdateTimeout(timeval &aTimeout);
+
     otbrError ProcessWaitRead(fd_set &aReadFdSet);
     otbrError ProcessWaitCallback();
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);

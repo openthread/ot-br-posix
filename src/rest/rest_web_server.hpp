@@ -49,7 +49,7 @@ public:
 
     otbrError Init();
 
-    void  UpdateFdSet(otSysMainloopContext &aMainloop);
+    void UpdateFdSet(otSysMainloopContext &aMainloop);
 
     otbrError Process(otSysMainloopContext &aMainloop);
 
@@ -59,14 +59,13 @@ private:
 
     otbrError UpdateConnections(fd_set &aReadFdSet);
 
-    void  CreateNewConnection(int aFd);
-    
-    otbrError Accept(int aListenFd);
-    
-    bool      SetFdNonblocking(int fd);
-    
-    otbrError InitializeListenFd();
+    void CreateNewConnection(int aFd);
 
+    otbrError Accept(int aListenFd);
+
+    bool SetFdNonblocking(int fd);
+
+    otbrError InitializeListenFd();
 
     Resource mResource;
     // For server configure

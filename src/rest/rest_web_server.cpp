@@ -39,8 +39,8 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-static const uint32_t                 kMaxServeNum = 500;
-static const uint32_t                 kPortNumber  = 81;
+static const uint32_t          kMaxServeNum = 500;
+static const uint32_t          kPortNumber  = 81;
 std::unique_ptr<RestWebServer> RestWebServer::sRestWebServer;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
@@ -68,7 +68,7 @@ otbrError RestWebServer::Init()
     return error;
 }
 
-void  RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
+void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = aMainloop.mMaxFd < mListenFd ? mListenFd : aMainloop.mMaxFd;
@@ -78,7 +78,6 @@ void  RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
         Connection *connection = it->second.get();
         connection->UpdateFdSet(aMainloop);
     }
-
 }
 
 otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
@@ -108,7 +107,7 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
         Connection *connection = eraseIt->second.get();
 
         if (connection->IsComplete())
-        {  
+        {
             eraseIt = mConnectionSet.erase(eraseIt);
         }
         else
@@ -180,13 +179,13 @@ otbrError RestWebServer::Accept(int aListenFd)
     err = errno;
 
     VerifyOrExit(fd >= 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "accept");
-    
+
     // Set up new connection
 
     VerifyOrExit(SetFdNonblocking(fd), err = errno, error = OTBR_ERROR_REST; errorMessage = "set nonblock");
-    
+
     CreateNewConnection(fd);
-    
+
 exit:
     if (error != OTBR_ERROR_NONE)
     {
@@ -195,9 +194,10 @@ exit:
     return error;
 }
 
-void  RestWebServer::CreateNewConnection(int aFd)
+void RestWebServer::CreateNewConnection(int aFd)
 {
-    auto it = mConnectionSet.emplace(aFd,std::unique_ptr<Connection>(new Connection(steady_clock::now(), &mResource, aFd)));
+    auto it =
+        mConnectionSet.emplace(aFd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), &mResource, aFd)));
 
     if (it.second == true)
     {
@@ -209,7 +209,6 @@ void  RestWebServer::CreateNewConnection(int aFd)
         // Insert failed
         close(aFd);
     }
-
 }
 
 bool RestWebServer::SetFdNonblocking(int fd)

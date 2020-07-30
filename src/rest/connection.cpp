@@ -70,7 +70,7 @@ void Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd)
     }
 }
 
-void  Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd)
+void Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd)
 {
     if (mState == OTBR_REST_CONNECTION_WRITEWAIT)
     {
@@ -79,7 +79,7 @@ void  Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd)
     }
 }
 
-void  Connection::UpdateTimeout(timeval &aTimeout)
+void Connection::UpdateTimeout(timeval &aTimeout)
 {
     struct timeval timeout;
     uint32_t       timeoutLen = kReadTimeout;
@@ -120,7 +120,7 @@ void  Connection::UpdateTimeout(timeval &aTimeout)
     }
 }
 
-void  Connection::UpdateFdSet(otSysMainloopContext &aMainloop)
+void Connection::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
     UpdateTimeout(aMainloop.mTimeout);
     UpdateReadFdSet(aMainloop.mReadFdSet, aMainloop.mMaxFd);
@@ -160,7 +160,7 @@ otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
         assert(false);
     }
 
-    if ( error != OTBR_ERROR_NONE)
+    if (error != OTBR_ERROR_NONE)
     {
         Disconnect();
     }
@@ -196,8 +196,8 @@ otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
         Handle();
     }
 
-    VerifyOrExit(received != 0, mState = OTBR_REST_CONNECTION_READTIMEOUT );
-    
+    VerifyOrExit(received != 0, mState = OTBR_REST_CONNECTION_READTIMEOUT);
+
     // Catch ret = -1 error, then try to send back a response that there is an internal error.
     VerifyOrExit(received > 0 || (received == -1 && (err == EAGAIN || err == EWOULDBLOCK)),
                  mState = OTBR_REST_CONNECTION_INTERNALERROR);
@@ -221,7 +221,7 @@ exit:
     default:
         break;
     }
-    
+
     return error;
 }
 
@@ -229,7 +229,7 @@ otbrError Connection::Handle()
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit((shutdown(mFd, SHUT_RD) == 0), mState = OTBR_REST_CONNECTION_INTERNALERROR );
+    VerifyOrExit((shutdown(mFd, SHUT_RD) == 0), mState = OTBR_REST_CONNECTION_INTERNALERROR);
 
     mResource->Handle(mRequest, mResponse);
 
@@ -245,14 +245,14 @@ otbrError Connection::Handle()
         error = Write();
     }
 
-exit: 
-    
+exit:
+
     if (mState == OTBR_REST_CONNECTION_INTERNALERROR)
     {
         mResource->ErrorHandler(mRequest, mResponse, 500);
         error = Write();
     }
-    
+
     return error;
 }
 
@@ -285,7 +285,7 @@ otbrError Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
         }
     }
     else
-    {   // Pass write timeout, just close the error
+    { // Pass write timeout, just close the error
         Disconnect();
     }
     return error;
@@ -305,14 +305,12 @@ otbrError Connection::Write()
         mStartTime    = steady_clock::now();
         mWriteContent = mResponse.Serialize();
     }
-    
+
     VerifyOrExit(mWriteContent.size() > 0, error = OTBR_ERROR_REST);
-    
 
     sendLength = write(mFd, mWriteContent.c_str(), mWriteContent.size());
     err        = errno;
-    
-    
+
     // Write successfully
     if (sendLength == static_cast<int32_t>(mWriteContent.size()))
     {
@@ -332,7 +330,7 @@ otbrError Connection::Write()
         }
         else
         {
-            VerifyOrExit( err == EAGAIN || err == EWOULDBLOCK, error = OTBR_ERROR_REST);
+            VerifyOrExit(err == EAGAIN || err == EWOULDBLOCK, error = OTBR_ERROR_REST);
         }
     }
 
