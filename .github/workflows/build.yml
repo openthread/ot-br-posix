@@ -71,10 +71,11 @@ jobs:
     strategy:
       matrix:
         mdns: ["mDNSResponder", "avahi"]
+        rest: ["rest", ""]
     env:
       BUILD_TARGET: check
       OTBR_MDNS: ${{ matrix.mdns }}
-      OTBR_REST: rest
+      OTBR_REST: ${{ matrix.rest }}
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v2
