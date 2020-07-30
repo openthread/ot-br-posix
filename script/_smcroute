@@ -33,13 +33,13 @@
 smcroute_install() {
     with SMCROUTE || return 0
 
-    sudo apt-get install smcroute
+    sudo apt-get install -y smcroute
 }
 
 smcroute_uninstall() {
     with SMCROUTE || return 0
 
-    smcroute_stop
+    smcroute_stop || true
     sudo apt-get purge smcroute
 }
 
