@@ -49,7 +49,7 @@ public:
 
     otbrError Init();
 
-    otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
+    void UpdateFdSet(otSysMainloopContext &aMainloop);
 
     otbrError Process(otSysMainloopContext &aMainloop);
 
@@ -57,8 +57,17 @@ private:
     // For service
     RestWebServer(ControllerOpenThread *aNcp);
 
-    Resource mResource;
+    otbrError UpdateConnections(fd_set &aReadFdSet);
 
+    void CreateNewConnection(int aFd);
+
+    otbrError Accept(int aListenFd);
+
+    bool SetFdNonblocking(int fd);
+
+    otbrError InitializeListenFd();
+
+    Resource mResource;
     // For server configure
     sockaddr_in mAddress;
     int         mListenFd;
@@ -66,13 +75,6 @@ private:
     // For Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
 
-    otbrError UpdateConnections(fd_set &aReadFdSet);
-    otbrError Accept(int aListenFd);
-    bool      SetFdNonblocking(int fd);
-    otbrError InitializeListenFd();
-
-    static const uint32_t                 kMaxServeNum;
-    static const uint32_t                 kPortNumber;
     static std::unique_ptr<RestWebServer> sRestWebServer;
 };
 

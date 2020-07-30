@@ -39,8 +39,8 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-const uint32_t                 RestWebServer::kMaxServeNum = 500;
-const uint32_t                 RestWebServer::kPortNumber  = 81;
+static const uint32_t          kMaxServeNum = 500;
+static const uint32_t          kPortNumber  = 81;
 std::unique_ptr<RestWebServer> RestWebServer::sRestWebServer;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
@@ -68,19 +68,16 @@ otbrError RestWebServer::Init()
     return error;
 }
 
-otbrError RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
+void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
-    otbrError error = OTBR_ERROR_NONE;
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = aMainloop.mMaxFd < mListenFd ? mListenFd : aMainloop.mMaxFd;
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         Connection *connection = it->second.get();
-        error                  = connection->UpdateFdSet(aMainloop);
+        connection->UpdateFdSet(aMainloop);
     }
-
-    return error;
 }
 
 otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
@@ -109,7 +106,7 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
     {
         Connection *connection = eraseIt->second.get();
 
-        if (connection->WaitRelease())
+        if (connection->IsComplete())
         {
             eraseIt = mConnectionSet.erase(eraseIt);
         }
@@ -181,26 +178,13 @@ otbrError RestWebServer::Accept(int aListenFd)
     fd  = accept(aListenFd, reinterpret_cast<struct sockaddr *>(&mAddress), &addrlen);
     err = errno;
 
-    VerifyOrExit(fd >= 0, err = errno, error = OTBR_ERROR_REST; errorMessage = "accept");
-    if (fd >= 0)
-    {
-        // Set up new connection
+    VerifyOrExit(fd >= 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "accept");
 
-        VerifyOrExit(SetFdNonblocking(fd), err = errno, error = OTBR_ERROR_REST; errorMessage = "set nonblock");
+    // Set up new connection
 
-        auto it = mConnectionSet.insert(
-            std::make_pair(fd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), &mResource, fd))));
-        if (it.second == true)
-        {
-            Connection *connection = it.first->second.get();
-            connection->Init();
-        }
-        else
-        {
-            // Insert failed
-            close(fd);
-        }
-    }
+    VerifyOrExit(SetFdNonblocking(fd), err = errno, error = OTBR_ERROR_REST; errorMessage = "set nonblock");
+
+    CreateNewConnection(fd);
 
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -208,6 +192,23 @@ exit:
         otbrLog(OTBR_LOG_ERR, "rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
     return error;
+}
+
+void RestWebServer::CreateNewConnection(int aFd)
+{
+    auto it =
+        mConnectionSet.emplace(aFd, std::unique_ptr<Connection>(new Connection(steady_clock::now(), &mResource, aFd)));
+
+    if (it.second == true)
+    {
+        Connection *connection = it.first->second.get();
+        connection->Init();
+    }
+    else
+    {
+        // Insert failed
+        close(aFd);
+    }
 }
 
 bool RestWebServer::SetFdNonblocking(int fd)
