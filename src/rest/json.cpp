@@ -50,7 +50,7 @@ std::string Json2String(cJSON *aJson)
     if (out != nullptr)
     {
         ret = out;
-        
+
         delete (out);
     }
     return ret;
@@ -417,13 +417,12 @@ std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aD
         }
         cJSON_AddItemToArray(diagArray, diagObject);
     }
-    
+
     std::string ret = Json2String(diagArray);
 
     cJSON_Delete(diagArray);
 
     return ret;
-    
 }
 
 std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength)
@@ -435,7 +434,6 @@ std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string Number2JsonString(const uint32_t aNumber)
@@ -447,7 +445,6 @@ std::string Number2JsonString(const uint32_t aNumber)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string Mode2JsonString(const otLinkModeConfig &aMode)
@@ -459,19 +456,17 @@ std::string Mode2JsonString(const otLinkModeConfig &aMode)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity)
 {
     cJSON *json = Connectivity2Json(aConnectivity);
-    
+
     std::string ret = Json2String(json);
 
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData)
@@ -483,7 +478,6 @@ std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string Route2JsonString(const otNetworkDiagRoute &aRoute)
@@ -495,19 +489,17 @@ std::string Route2JsonString(const otNetworkDiagRoute &aRoute)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string LeaderData2JsonString(const otLeaderData &aLeaderData)
 {
     cJSON *json = LeaderData2Json(aLeaderData);
-    
+
     std::string ret = Json2String(json);
 
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters)
@@ -519,7 +511,6 @@ std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry)
@@ -531,7 +522,6 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string CString2JsonString(const char *aString)
@@ -543,27 +533,25 @@ std::string CString2JsonString(const char *aString)
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 std::string Error2JsonString(int aErrorCode, std::string aErrorMessage)
-{   
+{
     char codeNum[5];
-    
-    cJSON *json = cJSON_CreateObject();
-    
-    snprintf(codeNum, 5, "%d", aErrorCode);
-    
-    cJSON_AddItemToObject(json,"ErrorCode", cJSON_CreateString(codeNum));
 
-    cJSON_AddItemToObject(json,"ErrorMessage", cJSON_CreateString(aErrorMessage.c_str()));
+    cJSON *json = cJSON_CreateObject();
+
+    snprintf(codeNum, 5, "%d", aErrorCode);
+
+    cJSON_AddItemToObject(json, "ErrorCode", cJSON_CreateString(codeNum));
+
+    cJSON_AddItemToObject(json, "ErrorMessage", cJSON_CreateString(aErrorMessage.c_str()));
 
     std::string ret = Json2String(json);
 
     cJSON_Delete(json);
 
     return ret;
-
 }
 
 } // namespace JSON

@@ -61,7 +61,7 @@ private:
 
     // For server configure
     sockaddr_in mAddress;
-    int                          mListenFd;
+    int         mListenFd;
 
     // For Connection
     std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;

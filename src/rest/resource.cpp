@@ -43,8 +43,6 @@
 #define OT_REST_RESOURCE_408 "408 Request Timeout"
 #define OT_REST_RESOURCE_500 "500 Internal Server Error"
 
-
-
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
@@ -54,7 +52,7 @@ namespace rest {
 
 static const char *  kMulticastAddrAllRouters = "ff02::2";
 static const uint8_t kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
-//  Timeout(in Microseconds) for delete outdated diagnostics 
+//  Timeout(in Microseconds) for delete outdated diagnostics
 static const uint32_t kDiagResetTimeout = 5000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
@@ -73,11 +71,10 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_RLOC_PATH, &Resource::Rloc);
 
     // HTTP Response code
-    mErrorCodeMap.emplace(404,OT_REST_RESOURCE_404);
-    mErrorCodeMap.emplace(408,OT_REST_RESOURCE_408);
-    mErrorCodeMap.emplace(500,OT_REST_RESOURCE_500);
-
-
+    mErrorCodeMap.emplace(200, OT_REST_RESOURCE_200);
+    mErrorCodeMap.emplace(404, OT_REST_RESOURCE_404);
+    mErrorCodeMap.emplace(408, OT_REST_RESOURCE_408);
+    mErrorCodeMap.emplace(500, OT_REST_RESOURCE_500);
 }
 
 void Resource::Init()
@@ -90,13 +87,13 @@ void Resource::Handle(Request &aRequest, Response &aResponse)
     std::string url = aRequest.GetUrl();
     auto        it  = mResourceMap.find(url);
     if (it != mResourceMap.end())
-    {   
+    {
         ResourceHandler resourceHandler = it->second;
         (this->*resourceHandler)(aRequest, aResponse);
     }
     else
     {
-        ErrorHandler(aRequest, aResponse,404);
+        ErrorHandler(aRequest, aResponse, 404);
     }
 }
 
@@ -112,7 +109,7 @@ void Resource::HandleCallback(Request &aRequest, Response &aResponse)
         diagContentSet.push_back(it->second.mDiagContent);
     }
 
-    std::string body= JSON::Diag2JsonString(diagContentSet);
+    std::string body = JSON::Diag2JsonString(diagContentSet);
 
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
@@ -123,14 +120,13 @@ void Resource::HandleCallback(Request &aRequest, Response &aResponse)
 void Resource::ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    
+
     std::string errorMessage = mErrorCodeMap[aErrorCode];
-    
-    std::string body=JSON::Error2JsonString(aErrorCode, errorMessage);
-    
+
+    std::string body = JSON::Error2JsonString(aErrorCode, errorMessage);
+
     aResponse.SetResponsCode(errorMessage);
     aResponse.SetBody(body);
-
 }
 
 void Resource::NodeInfo(Request &aRequest, Response &aResponse)
@@ -165,7 +161,7 @@ void Resource::NodeInfo(Request &aRequest, Response &aResponse)
     }
 
     str = JSON::Node2JsonString(node);
-    
+
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -174,7 +170,7 @@ void Resource::NodeInfo(Request &aRequest, Response &aResponse)
 void Resource::ExtendedAddr(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataExtendedAddr();
+    std::string str       = GetDataExtendedAddr();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -183,7 +179,7 @@ void Resource::ExtendedAddr(Request &aRequest, Response &aResponse)
 void Resource::State(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataState();
+    std::string str       = GetDataState();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -192,7 +188,7 @@ void Resource::State(Request &aRequest, Response &aResponse)
 void Resource::NetworkName(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataNetworkName();
+    std::string str       = GetDataNetworkName();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -201,7 +197,7 @@ void Resource::NetworkName(Request &aRequest, Response &aResponse)
 void Resource::LeaderData(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataLeaderData();
+    std::string str       = GetDataLeaderData();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -210,7 +206,7 @@ void Resource::LeaderData(Request &aRequest, Response &aResponse)
 void Resource::NumOfRoute(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataNumOfRoute();
+    std::string str       = GetDataNumOfRoute();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -219,7 +215,7 @@ void Resource::NumOfRoute(Request &aRequest, Response &aResponse)
 void Resource::Rloc16(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataRloc16();
+    std::string str       = GetDataRloc16();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -228,7 +224,7 @@ void Resource::Rloc16(Request &aRequest, Response &aResponse)
 void Resource::ExtendedPanId(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataExtendedPanId();
+    std::string str       = GetDataExtendedPanId();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -237,7 +233,7 @@ void Resource::ExtendedPanId(Request &aRequest, Response &aResponse)
 void Resource::Rloc(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = GetDataRloc();
+    std::string str       = GetDataRloc();
     std::string errorCode = mErrorCodeMap[200];
     aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
@@ -288,13 +284,12 @@ void Resource::DeleteOutDatedDiag()
     }
 }
 
-void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv>& aDiag)
-{   
+void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag)
+{
     DiagInfo value;
     value.mStartTime = steady_clock::now();
-    value.mDiagContent.assign(aDiag.begin(),aDiag.end());
+    value.mDiagContent.assign(aDiag.begin(), aDiag.end());
     mDiagSet[aKey] = value;
-
 }
 
 std::string Resource::GetDataNetworkName()
