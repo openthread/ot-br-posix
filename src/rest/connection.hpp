@@ -54,7 +54,7 @@ enum ConnectionState
     OTBR_REST_CONNECTION_WRITEWAIT     = 4, ///< Wait for write
     OTBR_REST_CONNECTION_WRITETIMEOUT  = 5,
     OTBR_REST_CONNECTION_INTERNALERROR = 6,
-    OTBR_REST_CONNECTION_COMPLETE      = 5, ///< Have sent response and wait to be deleted
+    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< Have sent response and wait to be deleted
 
 };
 
@@ -67,14 +67,16 @@ public:
 
     otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
 
-    otbrError UpdateFdSet(otSysMainloopContext &aMainloop);
+    void  UpdateFdSet(otSysMainloopContext &aMainloop);
 
-    bool WaitRelease();
+    bool IsComplete();
 
 private:
-    otbrError UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
-    otbrError UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
-    otbrError UpdateTimeout(timeval &aTimeout);
+    
+    void  UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
+    void  UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
+    void  UpdateTimeout(timeval &aTimeout);
+    
     otbrError ProcessWaitRead(fd_set &aReadFdSet);
     otbrError ProcessWaitCallback();
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
