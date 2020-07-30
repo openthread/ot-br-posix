@@ -31,13 +31,11 @@
  *   This file includes definition for Thread backbone agent.
  */
 
-#ifndef BACKBONE_AGENT_HPP_
-#define BACKBONE_AGENT_HPP_
+#ifndef SMCROUTE_MANAGER_HPP_
+#define SMCROUTE_MANAGER_HPP_
 
 #include <openthread/backbone_router_ftd.h>
-
 #include "agent/ncp_openthread.hpp"
-#include "backbone/smcroute_manager.hpp"
 
 namespace otbr {
 
@@ -56,25 +54,12 @@ namespace Backbone {
  * This class implements Thread backbone agent functionality.
  *
  */
-class BackboneAgent
+class SmcrouteManager
 {
 public:
-    BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread);
     void Init(void);
-
-    void HandleBackboneRouterState(void);
-    void HandleBackboneRouterLocal(void);
-
-private:
-    otbr::Ncp::ControllerOpenThread &mThread;
-    otBackboneRouterState            mBackboneRouterState;
-    SmcrouteManager                  mSmcrouteManager;
-
-    void Log(int aLevel, const char *aFormat, ...);
-    void BackboneUp(void);
-    void BackboneDown(void);
-    void EnterPrimary(void);
-    void ExitPrimary(void);
+    void Start(void);
+    void Stop(void);
 };
 
 /**
@@ -85,4 +70,4 @@ private:
 
 } // namespace otbr
 
-#endif // BACKBONE_AGENT_HPP_
+#endif // SMCROUTE_MANAGER_HPP_

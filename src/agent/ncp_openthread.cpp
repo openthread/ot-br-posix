@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <openthread/backbone_router_ftd.h>
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
@@ -41,7 +42,6 @@
 #include <openthread/platform/logging.h>
 #include <openthread/platform/misc.h>
 #include <openthread/platform/settings.h>
-#include <openthread/backbone_router_ftd.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -138,19 +138,6 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
         EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
     }
 
-    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_LOCAL)
-    {
-        switch (otBackboneRouterGetState(mInstance))
-        {
-        case OT_BACKBONE_ROUTER_STATE_DISABLED:
-            break;
-        case OT_BACKBONE_ROUTER_STATE_SECONDARY:
-            break;
-        case OT_BACKBONE_ROUTER_STATE_PRIMARY:
-            break;
-        }
-    }
-
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         bool attached = false;
@@ -176,6 +163,17 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 
         EventEmitter::Emit(kEventThreadState, attached);
     }
+
+#if OTBR_ENABLE_BACKBONE
+    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE) {
+        EventEmitter::Emit(kEventBackboneRouterState);
+    }
+
+    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_LOCAL)
+    {
+        EventEmitter::Emit(kEventBackboneRouterLocal);
+    }
+#endif
 
     mThreadHelper->StateChangedCallback(aFlags);
 }

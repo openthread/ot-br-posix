@@ -31,14 +31,105 @@
  *   The file implements the Thread backbone agent.
  */
 
+#include <assert.h>
+#include <common/code_utils.hpp>
+#include <openthread/backbone_router_ftd.h>
 
 #include "backbone_agent.hpp"
-
+#include "backbone_helper.hpp"
 
 namespace otbr {
 
-namespace BorderRouter {
+namespace Backbone {
 
-} // namespace BorderRouter
+BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread)
+    : mThread(*aThread)
+    , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
+{
+}
+
+void BackboneAgent::Init(void)
+{
+    mSmcrouteManager.Init();
+
+    HandleBackboneRouterState();
+    HandleBackboneRouterLocal();
+}
+
+void BackboneAgent::HandleBackboneRouterState(void)
+{
+    otBackboneRouterState state = otBackboneRouterGetState(mThread.GetInstance());
+    bool                  backboneWasOn, backboneWasPrimary;
+
+    Log(OTBR_LOG_DEBUG, "HandleBackboneRouterState: state=%d, mBackboneRouterState=%d", state, mBackboneRouterState);
+    VerifyOrExit(mBackboneRouterState != state);
+
+    backboneWasOn        = (mBackboneRouterState != OT_BACKBONE_ROUTER_STATE_DISABLED);
+    backboneWasPrimary   = (mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY);
+    mBackboneRouterState = state;
+
+    if (!backboneWasOn && mBackboneRouterState != OT_BACKBONE_ROUTER_STATE_DISABLED)
+    {
+        BackboneUp();
+    }
+
+    if (!backboneWasPrimary && mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY)
+    {
+        EnterPrimary();
+    }
+    else if (backboneWasPrimary && mBackboneRouterState != OT_BACKBONE_ROUTER_STATE_PRIMARY)
+    {
+        ExitPrimary();
+    }
+
+    if (backboneWasOn && mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_DISABLED)
+    {
+        BackboneDown();
+    }
+
+exit:
+    return;
+}
+
+void BackboneAgent::HandleBackboneRouterLocal(void)
+{
+    otBackboneRouterState state = otBackboneRouterGetState(mThread.GetInstance());
+
+    Log(OTBR_LOG_DEBUG, "HandleBackboneRouterLocal: state=%d", state);
+}
+
+void BackboneAgent::Log(int aLevel, const char *aFormat, ...)
+{
+    va_list ap;
+
+    va_start(ap, aFormat);
+    BackboneHelper::Logv(aLevel, "BackboneAgent", aFormat, ap);
+    va_end(ap);
+}
+
+void BackboneAgent::BackboneUp(void)
+{
+    Log(OTBR_LOG_INFO, "Backbone turned up!");
+}
+
+void BackboneAgent::BackboneDown(void)
+{
+    Log(OTBR_LOG_INFO, "Backbone turned down!");
+}
+
+void BackboneAgent::EnterPrimary(void)
+{
+    Log(OTBR_LOG_INFO, "Backbone enters primary!");
+
+    mSmcrouteManager.Start();
+}
+
+void BackboneAgent::ExitPrimary(void)
+{
+    Log(OTBR_LOG_INFO, "Backbone exits primary to %d!", mBackboneRouterState);
+    mSmcrouteManager.Stop();
+}
+
+} // namespace Backbone
 
 } // namespace otbr

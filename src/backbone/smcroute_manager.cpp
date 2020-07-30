@@ -28,61 +28,44 @@
 
 /**
  * @file
- *   This file includes definition for Thread backbone agent.
+ *   The file implements the Thread backbone agent.
  */
 
-#ifndef BACKBONE_AGENT_HPP_
-#define BACKBONE_AGENT_HPP_
-
+#include <assert.h>
+#include <common/code_utils.hpp>
 #include <openthread/backbone_router_ftd.h>
 
-#include "agent/ncp_openthread.hpp"
-#include "backbone/smcroute_manager.hpp"
+#include "backbone_agent.hpp"
+#include "backbone_helper.hpp"
+#include "smcroute_manager.hpp"
 
 namespace otbr {
 
 namespace Backbone {
 
-/**
- * @addtogroup border-router-backbone-agent
- *
- * @brief
- *   This module includes definition for Thread backbone agent
- *
- * @{
- */
-
-/**
- * This class implements Thread backbone agent functionality.
- *
- */
-class BackboneAgent
+void SmcrouteManager::Init(void)
 {
-public:
-    BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread);
-    void Init(void);
+}
 
-    void HandleBackboneRouterState(void);
-    void HandleBackboneRouterLocal(void);
+void SmcrouteManager::Start(void)
+{
+    otbrError error;
 
-private:
-    otbr::Ncp::ControllerOpenThread &mThread;
-    otBackboneRouterState            mBackboneRouterState;
-    SmcrouteManager                  mSmcrouteManager;
+    SuccessOrExit(error = BackboneHelper::Command("systemctl restart smcroute"));
 
-    void Log(int aLevel, const char *aFormat, ...);
-    void BackboneUp(void);
-    void BackboneDown(void);
-    void EnterPrimary(void);
-    void ExitPrimary(void);
-};
+exit:
+    BackboneHelper::Log(OTBR_LOG_INFO, "SmcrouteManager","SmcrouteManager::Start => %s", otbrErrorString(error));
+}
 
-/**
- * @}
- */
+void SmcrouteManager::Stop(void)
+{
+    otbrError error;
+
+    SuccessOrExit(error = BackboneHelper::Command("systemctl stop smcroute"));
+exit:
+    BackboneHelper::Log(OTBR_LOG_INFO, "SmcrouteManager","SmcrouteManager::Stop => %s", otbrErrorString(error));
+}
 
 } // namespace Backbone
 
 } // namespace otbr
-
-#endif // BACKBONE_AGENT_HPP_

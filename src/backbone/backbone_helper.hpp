@@ -31,8 +31,8 @@
  *   This file includes definition for Thread backbone agent.
  */
 
-#ifndef BACKBONE_AGENT_HPP_
-#define BACKBONE_AGENT_HPP_
+#ifndef BACKBONE_HELPER_HPP_
+#define BACKBONE_HELPER_HPP_
 
 #include <openthread/backbone_router_ftd.h>
 
@@ -56,25 +56,19 @@ namespace Backbone {
  * This class implements Thread backbone agent functionality.
  *
  */
-class BackboneAgent
+class BackboneHelper
 {
 public:
-    BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread);
-    void Init(void);
+    enum
+    {
+        kMaxSizeOfSystemCall = 1024,
+        kMaxLogLine          = 1024,
+    };
 
-    void HandleBackboneRouterState(void);
-    void HandleBackboneRouterLocal(void);
+    static void Log(int aLevel, const char *aSubRegion, const char *aFormat, ...);
 
-private:
-    otbr::Ncp::ControllerOpenThread &mThread;
-    otBackboneRouterState            mBackboneRouterState;
-    SmcrouteManager                  mSmcrouteManager;
-
-    void Log(int aLevel, const char *aFormat, ...);
-    void BackboneUp(void);
-    void BackboneDown(void);
-    void EnterPrimary(void);
-    void ExitPrimary(void);
+    static otbrError Command(const char *aFormat, ...);
+    static void      Logv(int aLevel, const char aSubRegion[14], const char *aFormat, va_list list);
 };
 
 /**
@@ -85,4 +79,4 @@ private:
 
 } // namespace otbr
 
-#endif // BACKBONE_AGENT_HPP_
+#endif // BACKBONE_HELPER_HPP_

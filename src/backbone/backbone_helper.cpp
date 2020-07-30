@@ -28,61 +28,56 @@
 
 /**
  * @file
- *   This file includes definition for Thread backbone agent.
+ *   The file implements the Thread backbone agent.
  */
 
-#ifndef BACKBONE_AGENT_HPP_
-#define BACKBONE_AGENT_HPP_
-
-#include <openthread/backbone_router_ftd.h>
-
-#include "agent/ncp_openthread.hpp"
-#include "backbone/smcroute_manager.hpp"
+#include "backbone_helper.hpp"
 
 namespace otbr {
 
 namespace Backbone {
 
-/**
- * @addtogroup border-router-backbone-agent
- *
- * @brief
- *   This module includes definition for Thread backbone agent
- *
- * @{
- */
-
-/**
- * This class implements Thread backbone agent functionality.
- *
- */
-class BackboneAgent
+otbrError BackboneHelper::Command(const char *aFormat, ...)
 {
-public:
-    BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread);
-    void Init(void);
+    otbrError error = OTBR_ERROR_NONE;
+    char      cmd[kMaxSizeOfSystemCall];
+    int       rval;
+    va_list   args;
 
-    void HandleBackboneRouterState(void);
-    void HandleBackboneRouterLocal(void);
+    va_start(args, aFormat);
+    vsnprintf(cmd, sizeof(cmd), aFormat, args);
+    va_end(args);
 
-private:
-    otbr::Ncp::ControllerOpenThread &mThread;
-    otBackboneRouterState            mBackboneRouterState;
-    SmcrouteManager                  mSmcrouteManager;
+    Log(OTBR_LOG_INFO, "Command", "$ %s", cmd);
+    rval = system(cmd);
+    Log(OTBR_LOG_INFO, "Command", "$? = %d", rval);
 
-    void Log(int aLevel, const char *aFormat, ...);
-    void BackboneUp(void);
-    void BackboneDown(void);
-    void EnterPrimary(void);
-    void ExitPrimary(void);
-};
+    if (rval != 0)
+    {
+        errno = EREMOTEIO;
+        error = OTBR_ERROR_ERRNO;
+    }
 
-/**
- * @}
- */
+    return error;
+}
+
+void BackboneHelper::Log(int aLevel, const char *aSubRegion, const char *aFormat, ...)
+{
+    va_list ap;
+
+    va_start(ap, aFormat);
+    Logv(aLevel, aSubRegion, aFormat, ap);
+    va_end(ap);
+}
+
+void BackboneHelper::Logv(int aLevel, const char *aSubRegion, const char *aFormat, va_list ap)
+{
+    char log[kMaxLogLine];
+
+    snprintf(log, sizeof(log), "[Backbone/%s] %s", aSubRegion, aFormat);
+    otbrLogv(aLevel, log, ap);
+}
 
 } // namespace Backbone
 
 } // namespace otbr
-
-#endif // BACKBONE_AGENT_HPP_

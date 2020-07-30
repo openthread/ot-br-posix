@@ -28,6 +28,8 @@
 
 add_library(otbr-backbone
     backbone_agent.cpp
+    backbone_helper.cpp
+    smcroute_manager.cpp
 )
 target_compile_definitions(otbr-backbone PUBLIC
     OTBR_ENABLE_BACKBONE=1
@@ -35,5 +37,7 @@ target_compile_definitions(otbr-backbone PUBLIC
 target_link_libraries(otbr-backbone PRIVATE
     otbr-common
     otbr-utils
+    openthread-ftd
+    openthread-posix
 )
 

@@ -93,8 +93,8 @@ include(GNUInstallDirs)
 
 if (OTBR_BACKBONE)
     target_compile_definitions(otbr-config INTERFACE
-            OTBR_ENABLE_BACKBONE=1
-            )
+        OTBR_ENABLE_BACKBONE=1
+    )
 endif()
 
 if(OTBR_DBUS)

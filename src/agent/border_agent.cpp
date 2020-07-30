@@ -46,6 +46,7 @@
 
 #include "agent/border_agent.hpp"
 #include "agent/ncp.hpp"
+#include "agent/ncp_openthread.hpp"
 #include "agent/uris.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -87,6 +88,9 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp)
     : mPublisher(nullptr)
 #endif
     , mNcp(aNcp)
+#if OTBR_ENABLE_BACKBONE
+    , mBackboneAgent(reinterpret_cast<Ncp::ControllerOpenThread *>(aNcp))
+#endif
     , mThreadStarted(false)
 {
 }
@@ -105,6 +109,13 @@ void BorderAgent::Init(void)
 #endif
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
     mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
+
+#if OTBR_ENABLE_BACKBONE
+    mNcp->On(Ncp::kEventBackboneRouterState, HandleBackboneRouterState, this);
+    mNcp->On(Ncp::kEventBackboneRouterLocal, HandleBackboneRouterLocal, this);
+#endif
+
+    mBackboneAgent.Init();
 
     otbrLogResult("Check if Thread is up", mNcp->RequestEvent(Ncp::kEventThreadState));
     otbrLogResult("Check if PSKc is initialized", mNcp->RequestEvent(Ncp::kEventPSKc));
@@ -380,5 +391,36 @@ void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArgum
     uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));
     static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
 }
+
+#if OTBR_ENABLE_BACKBONE
+
+void BorderAgent::HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments)
+{
+    OT_UNUSED_VARIABLE(aEvent);
+    OT_UNUSED_VARIABLE(aArguments);
+    assert(aEvent == Ncp::kEventBackboneRouterState);
+
+    static_cast<BorderAgent *>(aContext)->HandleBackboneRouterState();
+}
+
+void BorderAgent::HandleBackboneRouterState(void)
+{
+    mBackboneAgent.HandleBackboneRouterState();
+}
+
+void BorderAgent::HandleBackboneRouterLocal(void *aContext, int aEvent, va_list aArguments)
+{
+    OT_UNUSED_VARIABLE(aEvent);
+    OT_UNUSED_VARIABLE(aArguments);
+    assert(aEvent == Ncp::kEventBackboneRouterLocal);
+
+    static_cast<BorderAgent *>(aContext)->HandleBackboneRouterLocal();
+}
+
+void BorderAgent::HandleBackboneRouterLocal(void)
+{
+    mBackboneAgent.HandleBackboneRouterLocal();
+}
+#endif
 
 } // namespace otbr
