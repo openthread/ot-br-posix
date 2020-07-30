@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python2
 #
 #  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
@@ -27,9 +27,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-import socket
-import sys
-import time
 import urllib2
 import json
 import re
@@ -40,7 +37,6 @@ rest_api_addr = "http://0.0.0.0:81"
 
 def get_data_from_url(url, result, index):
     response = urllib2.urlopen(urllib2.Request(url))
-    time_stamp = time.time()
     body = response.read()
     data = json.loads(body)
     result[index] = data
@@ -49,13 +45,13 @@ def get_data_from_url(url, result, index):
 def get_error_from_url(url, result, index):
     try:
         urllib2.urlopen(urllib2.Request(url))
-        assert (False)
+        assert False
 
     except urllib2.HTTPError as e:
-        assert (e == 404)
+        result[index] = e
 
 
-def create_multithread(func, url, thread_num, response_data):
+def create_multi_thread(func, url, thread_num, response_data):
     threads = [None] * thread_num
 
     for i in range(thread_num):
@@ -68,8 +64,16 @@ def create_multithread(func, url, thread_num, response_data):
         thread.join()
 
 
+def error404_check(data):
+    assert data is not None
+
+    assert (data.code == 404)
+
+    return True
+
+
 def diagnostics_check(data):
-    assert (data != None)
+    assert data is not None
 
     if len(data) == 0:
         return 1
@@ -86,17 +90,17 @@ def diagnostics_check(data):
         expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
         for key, value in expected_check_dict.items():
-            assert (diag.has_key(key))
+            assert (key in diag)
             assert (type(diag[key]) == value)
 
-        assert (None != re.match(ur'^[A-F0-9]{16}$', diag["ExtAddress"]))
+        assert (re.match(ur'^[A-F0-9]{16}$', diag["ExtAddress"]) is not None)
 
         mode = diag["Mode"]
         mode_expected_keys = [
             "RxOnWhenIdle", "SecureDataRequests", "DeviceType", "NetworkData"
         ]
         for key in mode_expected_keys:
-            assert (mode.has_key(key))
+            assert (key in mode)
             assert (type(mode[key]) == int)
 
         connectivity = diag["Connectivity"]
@@ -106,14 +110,14 @@ def diagnostics_check(data):
             "SedDatagramCount"
         ]
         for key in connectivity_expected_keys:
-            assert (connectivity.has_key(key))
+            assert (key in connectivity)
             assert (type(connectivity[key]) == int)
 
         route = diag["Route"]
-        assert (route.has_key("IdSequence"))
+        assert ("IdSequence" in route)
         assert (type(route["IdSequence"]) == int)
 
-        assert (route.has_key("RouteData"))
+        assert ("RouteData" in route)
         route_routedata = route["RouteData"]
         assert (type(route["RouteData"]) == list)
 
@@ -123,7 +127,7 @@ def diagnostics_check(data):
 
         for item in route_routedata:
             for key in routedata_expected_keys:
-                assert (item.has_key(key))
+                assert (key in item)
                 assert (type(item[key]) == int)
 
         leaderdata = diag["LeaderData"]
@@ -133,19 +137,19 @@ def diagnostics_check(data):
         ]
 
         for key in leaderdata_expected_keys:
-            assert (leaderdata.has_key(key))
+            assert (key in leaderdata)
             assert (type(leaderdata[key]) == int)
 
-        assert (None != re.match(ur'^[A-F0-9]{12}$', diag["NetworkData"]))
+        assert (re.match(ur'^[A-F0-9]{12}$', diag["NetworkData"]) is not None)
 
         ip6_address_list = diag["IP6AddressList"]
         assert (type(ip6_address_list) == list)
 
         for ip6_address in ip6_address_list:
             assert (type(ip6_address) == unicode)
-            assert (None != re.match(
+            assert (re.match(
                 ur'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-                ip6_address))
+                ip6_address) is not None)
 
         mac_counters = diag["MACCounters"]
         assert (type(mac_counters) == dict)
@@ -155,32 +159,32 @@ def diagnostics_check(data):
             "IfOutBroadcastPkts", "IfOutDiscards"
         ]
         for key in mac_counters_expected_keys:
-            assert (mac_counters.has_key(key))
+            assert (key in mac_counters)
             assert (type(mac_counters[key]) == int)
 
         child_table = diag["ChildTable"]
         assert (type(child_table) == list)
 
         for child in child_table:
-            assert (child.has_key("ChildId"))
+            assert ("ChildId" in child)
             assert (type(child["ChildId"]) == int)
-            assert (child.has_key("Timeout"))
+            assert ("Timeout" in child)
             assert (type(child["Timeout"]) == int)
-            assert (child.has_key("Mode"))
+            assert ("Mode" in child)
             mode = child["Mode"]
             assert (type(mode) == dict)
             for key in mode_expected_keys:
-                assert (mode.has_key(key))
+                assert (key in mode)
                 assert (type(mode[key]) == int)
 
         assert (type(diag["ChannelPages"]) == unicode)
-        assert (None != re.match(ur'^[A-F0-9]{2}$', diag["ChannelPages"]))
+        assert (re.match(ur'^[A-F0-9]{2}$', diag["ChannelPages"]) is not None)
 
     return 2
 
 
 def node_check(data):
-    assert (data != None)
+    assert data is not None
 
     expected_keys = [
         "State", "NumOfRouter", "RlocAddress", "NetworkName", "ExtAddress",
@@ -192,14 +196,14 @@ def node_check(data):
     expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
     for key, value in expected_check_dict.items():
-        assert (data.has_key(key))
+        assert (key in data)
         assert (type(data[key]) == value)
 
-    assert (None != re.match(
+    assert (re.match(
         ur'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-        data["RlocAddress"]))
-    assert (None != re.match(ur'^[A-F0-9]{16}$', data["ExtAddress"]))
-    assert (None != re.match(ur'[A-F0-9]{16}', data["ExtPanId"]))
+        data["RlocAddress"]) is not None)
+    assert (re.match(ur'^[A-F0-9]{16}$', data["ExtAddress"]) is not None)
+    assert (re.match(ur'[A-F0-9]{16}', data["ExtPanId"]) is not None)
 
     leaderdata = data["LeaderData"]
     leaderdata_expected_keys = [
@@ -208,26 +212,26 @@ def node_check(data):
     ]
 
     for key in leaderdata_expected_keys:
-        assert (leaderdata.has_key(key))
+        assert (key in leaderdata)
         assert (type(leaderdata[key]) == int)
 
     return True
 
 
 def node_rloc_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == unicode)
 
-    assert (None != re.match(
+    assert (re.match(
         ur'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-        data))
+        data) is not None)
 
     return True
 
 
 def node_rloc16_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == int)
 
@@ -235,16 +239,16 @@ def node_rloc16_check(data):
 
 
 def node_ext_address_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == unicode)
-    assert (None != re.match(ur'^[A-F0-9]{16}$', data))
+    assert (re.match(ur'^[A-F0-9]{16}$', data) is not None)
 
     return True
 
 
 def node_state_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == int)
 
@@ -252,7 +256,7 @@ def node_state_check(data):
 
 
 def node_network_name_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == unicode)
 
@@ -260,7 +264,7 @@ def node_network_name_check(data):
 
 
 def node_leader_data_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == dict)
 
@@ -270,14 +274,14 @@ def node_leader_data_check(data):
     ]
 
     for key in leaderdata_expected_keys:
-        assert (data.has_key(key))
+        assert (key in data)
         assert (type(data[key]) == int)
 
     return True
 
 
 def node_num_of_router_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == int)
 
@@ -285,7 +289,7 @@ def node_num_of_router_check(data):
 
 
 def node_ext_panid_check(data):
-    assert (data != None)
+    assert data is not None
 
     assert (type(data) == unicode)
 
@@ -297,7 +301,7 @@ def node_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_check(data) for data in response_data].count(True)
 
@@ -309,7 +313,7 @@ def node_rloc_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_rloc_check(data) for data in response_data].count(True)
 
@@ -321,7 +325,7 @@ def node_rloc16_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_rloc16_check(data) for data in response_data].count(True)
 
@@ -333,7 +337,7 @@ def node_ext_address_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_ext_address_check(data) for data in response_data].count(True)
 
@@ -345,7 +349,7 @@ def node_state_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_state_check(data) for data in response_data].count(True)
 
@@ -357,10 +361,10 @@ def node_network_name_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_network_name_check(data) for data in response_data
-            ].count(True)
+             ].count(True)
 
     print(" /node/network-name : all {}, valid {} ".format(thread_num, valid))
 
@@ -370,7 +374,7 @@ def node_leader_data_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_leader_data_check(data) for data in response_data].count(True)
 
@@ -382,10 +386,10 @@ def node_num_of_router_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_num_of_router_check(data) for data in response_data
-            ].count(True)
+             ].count(True)
 
     print(" /node/num-of-router : all {}, valid {} ".format(thread_num, valid))
 
@@ -395,7 +399,7 @@ def node_ext_panid_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_ext_panid_check(data) for data in response_data].count(True)
 
@@ -407,7 +411,7 @@ def diagnostics_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_data_from_url, url, thread_num, response_data)
+    create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = 0
     has_content = 0
@@ -428,9 +432,11 @@ def error_test(thread_num):
 
     response_data = [None] * thread_num
 
-    create_multithread(get_error_from_url, url, thread_num, response_data)
+    create_multi_thread(get_error_from_url, url, thread_num, response_data)
 
-    print(" error check complete ")
+    valid = [error404_check(data) for data in response_data].count(True)
+
+    print(" /hello : all {}, valid {} ".format(thread_num, valid))
 
 
 def main():
@@ -443,7 +449,7 @@ def main():
     node_leader_data_test(200)
     node_num_of_router_test(200)
     node_ext_panid_test(200)
-    diagnostics_test(200)
+    diagnostics_test(100)
     error_test(10)
 
     return 0
