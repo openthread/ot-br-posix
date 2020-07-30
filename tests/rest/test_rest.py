@@ -40,16 +40,13 @@ rest_api_addr = "http://localhost:81"
 
 def get_data_from_url(url, result, index):
 
-    try:
+    response = urllib2.urlopen(urllib2.Request(url))
+    time_stamp = time.time()
+    body = response.read()
+    data = json.loads(body)
+    result[index] = data
 
-        response = urllib2.urlopen(urllib2.Request(url))
-        time_stamp = time.time()
-        body = response.read()
-        data = json.loads(body)
-        result[index] = data
-
-    except:
-        result[index] = None
+    #result[index] = None
 
 
 def create_multithread(url, thread_num, response_data):
