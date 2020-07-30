@@ -65,6 +65,7 @@ otbr_install()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
+        "-DOTBR_REST=ON"
         "${otbr_options[@]}"
     )
 

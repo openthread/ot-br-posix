@@ -28,7 +28,6 @@
 
 add_subdirectory(agent)
 add_subdirectory(common)
-add_subdirectory(rest)
 
 if(OTBR_DBUS)
     add_subdirectory(dbus)
@@ -47,3 +46,8 @@ endif()
 if(OTBR_WEB)
     add_subdirectory(web)
 endif()
+
+if(OTBR_REST)
+    add_subdirectory(rest)
+endif()
+

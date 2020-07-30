@@ -44,6 +44,7 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
+    $<$<BOOL:${OTBR_REST}>:otbr-rest>
     openthread-cli-ftd
     openthread-ftd
     openthread-posix
@@ -51,7 +52,6 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-hdlc
     otbr-common
     otbr-utils
-    otbr-rest
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config)

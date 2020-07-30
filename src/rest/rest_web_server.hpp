@@ -60,7 +60,7 @@ private:
     Resource mResource;
 
     // For server configure
-    std::unique_ptr<sockaddr_in> mAddress;
+    sockaddr_in mAddress;
     int                          mListenFd;
 
     // For Connection
@@ -73,7 +73,7 @@ private:
 
     static const uint32_t                 kMaxServeNum;
     static const uint32_t                 kPortNumber;
-    static std::unique_ptr<RestWebServer> kRestWebServer;
+    static std::unique_ptr<RestWebServer> sRestWebServer;
 };
 
 } // namespace rest

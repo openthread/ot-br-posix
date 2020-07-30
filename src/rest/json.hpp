@@ -71,6 +71,7 @@ std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
 std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
+std::string Error2JsonString(int aErrorCode, std::string aErrorMessage);
 
 }; // namespace JSON
 
