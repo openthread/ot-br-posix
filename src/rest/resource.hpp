@@ -56,10 +56,10 @@ class Resource
 {
 public:
     Resource(ControllerOpenThread *aNcp);
-    void Init();
-    void Handle(Request &aRequest, Response &aResponse);
-    void HandleCallback(Request &aRequest, Response &aResponse);
-    void ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode);
+    void        Init();
+    void        Handle(Request &aRequest, Response &aResponse);
+    void        HandleCallback(Request &aRequest, Response &aResponse);
+    void        ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode);
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
     void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
@@ -75,7 +75,7 @@ private:
     void ExtendedPanId(Request &aRequest, Response &aResponse);
     void Rloc(Request &aRequest, Response &aResponse);
     void Diagnostic(Request &aRequest, Response &aResponse);
-    
+
     void DeleteOutDatedDiag();
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
 
@@ -91,10 +91,9 @@ private:
 
     otInstance *mInstance;
 
-    std::unordered_map<std::string, ResourceHandler>           mResourceMap;
-    std::unordered_map<int, std::string >           mErrorCodeMap;
-    std::unordered_map<std::string, DiagInfo> mDiagSet;
-
+    std::unordered_map<std::string, ResourceHandler> mResourceMap;
+    std::unordered_map<int, std::string>             mErrorCodeMap;
+    std::unordered_map<std::string, DiagInfo>        mDiagSet;
 };
 
 } // namespace rest

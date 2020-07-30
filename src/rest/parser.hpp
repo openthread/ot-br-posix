@@ -36,6 +36,8 @@
 
 #include <memory>
 
+#include "http_parser.h"
+
 #include "rest/request.hpp"
 
 namespace otbr {
@@ -49,6 +51,8 @@ public:
     void Process(const char *aBuf, int aLength);
 
 private:
+    
+    http_parser  test;
     std::shared_ptr<void> mParser;
     std::shared_ptr<void> mSettings;
 };

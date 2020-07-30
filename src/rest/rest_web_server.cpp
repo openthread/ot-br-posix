@@ -74,11 +74,10 @@ otbrError RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = aMainloop.mMaxFd < mListenFd ? mListenFd : aMainloop.mMaxFd;
 
-    
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         Connection *connection = it->second.get();
-        error      = connection->UpdateFdSet(aMainloop);
+        error                  = connection->UpdateFdSet(aMainloop);
     }
 
     return error;

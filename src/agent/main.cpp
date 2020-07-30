@@ -107,7 +107,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #endif
 #if OTBR_ENABLE_REST_SERVER
     ControllerOpenThread *ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    RestWebServer *       restServer     = RestWebServer::GetRestWebServer(ncpOpenThreadRest);
+    RestWebServer *       restServer        = RestWebServer::GetRestWebServer(ncpOpenThreadRest);
     restServer->Init();
 #endif
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
