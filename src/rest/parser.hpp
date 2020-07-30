@@ -53,9 +53,6 @@ public:
 private:
     http_parser          mParser;
     http_parser_settings mSettings;
-
-    // std::shared_ptr<void> mParser;
-    // std::shared_ptr<void> mSettings;
 };
 
 } // namespace rest
