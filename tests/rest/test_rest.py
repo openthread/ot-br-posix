@@ -35,7 +35,7 @@ import json
 import re
 from threading import Thread
 
-rest_api_addr = "http://localhost:81"
+rest_api_addr = "http://0.0.0.0:81"
 
 
 def get_data_from_url(url, result, index):
