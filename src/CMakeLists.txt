@@ -51,4 +51,3 @@ if(OTBR_REST)
     add_subdirectory(rest)
 endif()
 
-
