@@ -41,7 +41,7 @@ namespace otbr {
 namespace rest {
 
 // Timeout settings in microseconds
-static const uint32_t kCallbackTimeout = 4000000;
+static const uint32_t kCallbackTimeout = 2000000;
 static const uint32_t kWriteTimeout    = 10000000;
 static const uint32_t kReadTimeout     = 1000000;
 
@@ -109,10 +109,10 @@ otbrError Connection::UpdateTimeout(timeval &aTimeout)
         timeoutLen = kReadTimeout;
         break;
     case OTBR_REST_CONNECTION_CALLBACKWAIT:
-        timeoutLen = kWriteTimeout;
+        timeoutLen = kCallbackTimeout;
         break;
     case OTBR_REST_CONNECTION_WRITEWAIT:
-        timeoutLen = kCallbackTimeout;
+        timeoutLen = kWriteTimeout;
         break;
     case OTBR_REST_CONNECTION_COMPLETE:
         timeoutLen = 0;
@@ -260,10 +260,13 @@ otbrError Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
 
-    if (duration <= kWriteTimeout && FD_ISSET(mFd, &aWriteFdSet))
+    if (duration <= kWriteTimeout)
     {
-        // WriteFdSet is set, then try to write again
-        error = Write();
+        if (FD_ISSET(mFd, &aWriteFdSet))
+        {
+            // WriteFdSet is set, then try to write again
+            error = Write();
+        }
     }
     else
     { // Pass write timeout, just close the error

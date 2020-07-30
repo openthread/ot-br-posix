@@ -71,6 +71,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_RLOC_PATH, &Resource::Rloc);
 
     // HTTP Response code
+    mErrorCodeMap.emplace(200, OT_REST_RESOURCE_200);
     mErrorCodeMap.emplace(404, OT_REST_RESOURCE_404);
     mErrorCodeMap.emplace(408, OT_REST_RESOURCE_408);
     mErrorCodeMap.emplace(500, OT_REST_RESOURCE_500);
