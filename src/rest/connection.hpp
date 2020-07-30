@@ -49,11 +49,15 @@ enum ConnectionState
 {
     OTBR_REST_CONNECTION_INIT         = 0, ///< Init
     OTBR_REST_CONNECTION_READWAIT     = 1, ///< Wait to read
-    OTBR_REST_CONNECTION_CALLBACKWAIT = 2, ///< Wait for callback
-    OTBR_REST_CONNECTION_WRITEWAIT    = 3, ///< Wait for write
-    OTBR_REST_CONNECTION_COMPLETE     = 4, ///< Have sent response and wait to be deleted
+    OTBR_REST_CONNECTION_READTIMEOUT  = 2,
+    OTBR_REST_CONNECTION_CALLBACKWAIT = 3, ///< Wait for callback
+    OTBR_REST_CONNECTION_WRITEWAIT    = 4, ///< Wait for write
+    OTBR_REST_CONNECTION_WRITETIMEOUT  = 5,
+    OTBR_REST_CONNECTION_INTERNALERROR = 6,
+    OTBR_REST_CONNECTION_COMPLETE     =  5 , ///< Have sent response and wait to be deleted
 
 };
+
 class Connection
 {
 public:
@@ -68,6 +72,7 @@ public:
     bool WaitRelease();
 
 private:
+    
     otbrError UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     otbrError UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
     otbrError UpdateTimeout(timeval &aTimeout);
@@ -75,8 +80,10 @@ private:
     otbrError ProcessWaitCallback();
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
     otbrError Write();
-    void      Disconnect();
 
+    otbrError Handle();
+    void      Disconnect();
+    
     steady_clock::time_point mStartTime;
     int                      mFd;
     ConnectionState          mState;
@@ -85,7 +92,7 @@ private:
     Response mResponse;
     Request  mRequest;
 
-    std::unique_ptr<Parser> mParser;
+    Parser mParser;
     Resource *              mResource;
 };
 

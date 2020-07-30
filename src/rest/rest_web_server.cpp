@@ -41,7 +41,7 @@ namespace rest {
 
 const uint32_t                 RestWebServer::kMaxServeNum = 500;
 const uint32_t                 RestWebServer::kPortNumber  = 81;
-std::unique_ptr<RestWebServer> RestWebServer::kRestWebServer;
+std::unique_ptr<RestWebServer> RestWebServer::sRestWebServer;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
     : mResource(Resource(aNcp))
@@ -50,11 +50,11 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 
 RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
 {
-    if (kRestWebServer.get() == NULL)
+    if (sRestWebServer.get() == NULL)
     {
-        kRestWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(aNcp));
+        sRestWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(aNcp));
     }
-    return kRestWebServer.get();
+    return sRestWebServer.get();
 }
 
 otbrError RestWebServer::Init()
@@ -71,14 +71,13 @@ otbrError RestWebServer::Init()
 otbrError RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
     otbrError error = OTBR_ERROR_NONE;
-
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = aMainloop.mMaxFd < mListenFd ? mListenFd : aMainloop.mMaxFd;
 
-    Connection *connection;
+    
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
-        connection = it->second.get();
+        Connection *connection = it->second.get();
         error      = connection->UpdateFdSet(aMainloop);
     }
 
@@ -138,11 +137,9 @@ otbrError RestWebServer::InitializeListenFd()
     int         err    = errno;
     int         optval = 1;
 
-    mAddress = std::unique_ptr<sockaddr_in>(new sockaddr_in());
-
-    mAddress->sin_family      = AF_INET;
-    mAddress->sin_addr.s_addr = INADDR_ANY;
-    mAddress->sin_port        = htons(kPortNumber);
+    mAddress.sin_family      = AF_INET;
+    mAddress.sin_addr.s_addr = INADDR_ANY;
+    mAddress.sin_port        = htons(kPortNumber);
 
     mListenFd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -152,7 +149,7 @@ otbrError RestWebServer::InitializeListenFd()
 
     VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "sock opt");
 
-    ret = bind(mListenFd, reinterpret_cast<struct sockaddr *>(mAddress.get()), sizeof(sockaddr));
+    ret = bind(mListenFd, reinterpret_cast<struct sockaddr *>(&mAddress), sizeof(sockaddr));
 
     VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "bind");
 
@@ -182,7 +179,7 @@ otbrError RestWebServer::Accept(int aListenFd)
     sockaddr_in tmp;
     socklen_t   addrlen = sizeof(tmp);
 
-    fd  = accept(aListenFd, reinterpret_cast<struct sockaddr *>(mAddress.get()), &addrlen);
+    fd  = accept(aListenFd, reinterpret_cast<struct sockaddr *>(&mAddress), &addrlen);
     err = errno;
 
     VerifyOrExit(fd >= 0, err = errno, error = OTBR_ERROR_REST; errorMessage = "accept");

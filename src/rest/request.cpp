@@ -64,11 +64,11 @@ std::string Request::GetUrl()
 {
     std::string url = mUrl;
 
-    auto it = url.find("?");
+    size_t urlEnd = url.find("?");
 
-    if (it != std::string::npos)
+    if (urlEnd != std::string::npos)
     {
-        url = url.substr(0, static_cast<int>(it));
+        url = url.substr(0, urlEnd);
     }
 
     VerifyOrExit(url.size() > 0, url = "/");

@@ -50,11 +50,6 @@ struct DiagInfo
 {
     steady_clock::time_point      mStartTime;
     std::vector<otNetworkDiagTlv> mDiagContent;
-    DiagInfo(steady_clock::time_point aStartTime, std::vector<otNetworkDiagTlv> &aDiagContent)
-        : mStartTime(aStartTime)
-    {
-        mDiagContent.assign(aDiagContent.begin(), aDiagContent.end());
-    }
 };
 
 class Resource
@@ -64,7 +59,7 @@ public:
     void Init();
     void Handle(Request &aRequest, Response &aResponse);
     void HandleCallback(Request &aRequest, Response &aResponse);
-
+    void ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode);
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
     void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
@@ -80,10 +75,9 @@ private:
     void ExtendedPanId(Request &aRequest, Response &aResponse);
     void Rloc(Request &aRequest, Response &aResponse);
     void Diagnostic(Request &aRequest, Response &aResponse);
-    void ErrorHandler(Request &aRequest, Response &aResponse);
-
+    
     void DeleteOutDatedDiag();
-    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> aDiag);
+    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
 
     std::string GetDataNodeInfo();
     std::string GetDataExtendedAddr();
@@ -98,7 +92,9 @@ private:
     otInstance *mInstance;
 
     std::unordered_map<std::string, ResourceHandler>           mResourceMap;
-    std::unordered_map<std::string, std::unique_ptr<DiagInfo>> mDiagSet;
+    std::unordered_map<int, std::string >           mErrorCodeMap;
+    std::unordered_map<std::string, DiagInfo> mDiagSet;
+
 };
 
 } // namespace rest

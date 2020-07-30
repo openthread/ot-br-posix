@@ -38,7 +38,12 @@
 #define OT_LEADERDATA_PATH "/node/leader-data"
 #define OT_NUMOFROUTER_PATH "/node/num-of-router"
 #define OT_EXTPANID_PATH "/node/ext-panid"
-#define OT_REST_RESOURCE_NOT_FOUND "404 Not Found"
+#define OT_REST_RESOURCE_200 "200 OK"
+#define OT_REST_RESOURCE_404 "404 Not Found"
+#define OT_REST_RESOURCE_408 "408 Request Timeout"
+#define OT_REST_RESOURCE_500 "500 Internal Server Error"
+
+
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -49,22 +54,30 @@ namespace rest {
 
 static const char *  kMulticastAddrAllRouters = "ff02::2";
 static const uint8_t kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
-//  Timeout for delete outdated diagnostics in Microseconds
+//  Timeout(in Microseconds) for delete outdated diagnostics 
 static const uint32_t kDiagResetTimeout = 5000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
     : mInstance(aNcp->GetThreadHelper()->GetInstance())
 {
-    mResourceMap.insert(std::make_pair(OT_DIAGNOETIC_PATH, &Resource::Diagnostic));
-    mResourceMap.insert(std::make_pair(OT_NODE_PATH, &Resource::NodeInfo));
-    mResourceMap.insert(std::make_pair(OT_STATE_PATH, &Resource::State));
-    mResourceMap.insert(std::make_pair(OT_EXTADDRESS_PATH, &Resource::ExtendedAddr));
-    mResourceMap.insert(std::make_pair(OT_NETWORKNAME_PATH, &Resource::NetworkName));
-    mResourceMap.insert(std::make_pair(OT_RLOC16_PATH, &Resource::Rloc16));
-    mResourceMap.insert(std::make_pair(OT_LEADERDATA_PATH, &Resource::LeaderData));
-    mResourceMap.insert(std::make_pair(OT_NUMOFROUTER_PATH, &Resource::NumOfRoute));
-    mResourceMap.insert(std::make_pair(OT_EXTPANID_PATH, &Resource::ExtendedPanId));
-    mResourceMap.insert(std::make_pair(OT_RLOC_PATH, &Resource::Rloc));
+    // Resource Handler
+    mResourceMap.emplace(OT_DIAGNOETIC_PATH, &Resource::Diagnostic);
+    mResourceMap.emplace(OT_NODE_PATH, &Resource::NodeInfo);
+    mResourceMap.emplace(OT_STATE_PATH, &Resource::State);
+    mResourceMap.emplace(OT_EXTADDRESS_PATH, &Resource::ExtendedAddr);
+    mResourceMap.emplace(OT_NETWORKNAME_PATH, &Resource::NetworkName);
+    mResourceMap.emplace(OT_RLOC16_PATH, &Resource::Rloc16);
+    mResourceMap.emplace(OT_LEADERDATA_PATH, &Resource::LeaderData);
+    mResourceMap.emplace(OT_NUMOFROUTER_PATH, &Resource::NumOfRoute);
+    mResourceMap.emplace(OT_EXTPANID_PATH, &Resource::ExtendedPanId);
+    mResourceMap.emplace(OT_RLOC_PATH, &Resource::Rloc);
+
+    // HTTP Response code
+    mErrorCodeMap.emplace(404,OT_REST_RESOURCE_404);
+    mErrorCodeMap.emplace(408,OT_REST_RESOURCE_408);
+    mErrorCodeMap.emplace(500,OT_REST_RESOURCE_500);
+
+
 }
 
 void Resource::Init()
@@ -77,38 +90,47 @@ void Resource::Handle(Request &aRequest, Response &aResponse)
     std::string url = aRequest.GetUrl();
     auto        it  = mResourceMap.find(url);
     if (it != mResourceMap.end())
-    {
+    {   
         ResourceHandler resourceHandler = it->second;
         (this->*resourceHandler)(aRequest, aResponse);
     }
     else
     {
-        ErrorHandler(aRequest, aResponse);
+        ErrorHandler(aRequest, aResponse,404);
     }
 }
 
 void Resource::HandleCallback(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::vector<std::vector<otNetworkDiagTlv>> diagTestSet;
+    std::vector<std::vector<otNetworkDiagTlv>> diagContentSet;
 
     DeleteOutDatedDiag();
 
     for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it)
     {
-        diagTestSet.push_back(it->second->mDiagContent);
+        diagContentSet.push_back(it->second.mDiagContent);
     }
 
-    std::string bodyTest = JSON::Diag2JsonString(diagTestSet);
+    std::string body= JSON::Diag2JsonString(diagContentSet);
 
-    aResponse.SetBody(bodyTest);
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
+
+    aResponse.SetBody(body);
 }
 
-void Resource::ErrorHandler(Request &aRequest, Response &aResponse)
+void Resource::ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode)
 {
     OT_UNUSED_VARIABLE(aRequest);
-    std::string str = JSON::String2JsonString(aRequest.GetUrl());
-    aResponse.SetBody(str);
+    
+    std::string errorMessage = mErrorCodeMap[aErrorCode];
+    
+    std::string body=JSON::Error2JsonString(aErrorCode, errorMessage);
+    
+    aResponse.SetResponsCode(errorMessage);
+    aResponse.SetBody(body);
+
 }
 
 void Resource::NodeInfo(Request &aRequest, Response &aResponse)
@@ -143,7 +165,9 @@ void Resource::NodeInfo(Request &aRequest, Response &aResponse)
     }
 
     str = JSON::Node2JsonString(node);
-
+    
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -151,6 +175,8 @@ void Resource::ExtendedAddr(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataExtendedAddr();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -158,6 +184,8 @@ void Resource::State(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataState();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -165,6 +193,8 @@ void Resource::NetworkName(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataNetworkName();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -172,6 +202,8 @@ void Resource::LeaderData(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataLeaderData();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -179,6 +211,8 @@ void Resource::NumOfRoute(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataNumOfRoute();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -186,6 +220,8 @@ void Resource::Rloc16(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataRloc16();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -193,6 +229,8 @@ void Resource::ExtendedPanId(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataExtendedPanId();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -200,6 +238,8 @@ void Resource::Rloc(Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::string str = GetDataRloc();
+    std::string errorCode = mErrorCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
     aResponse.SetBody(str);
 }
 
@@ -234,8 +274,8 @@ void Resource::DeleteOutDatedDiag()
     auto eraseIt = mDiagSet.begin();
     for (eraseIt = mDiagSet.begin(); eraseIt != mDiagSet.end();)
     {
-        auto diagInfo = eraseIt->second.get();
-        auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo->mStartTime).count();
+        auto diagInfo = eraseIt->second;
+        auto duration = duration_cast<microseconds>(steady_clock::now() - diagInfo.mStartTime).count();
 
         if (duration >= kDiagResetTimeout)
         {
@@ -248,9 +288,13 @@ void Resource::DeleteOutDatedDiag()
     }
 }
 
-void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> aDiag)
-{
-    mDiagSet[aKey] = std::unique_ptr<DiagInfo>(new DiagInfo(steady_clock::now(), aDiag));
+void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv>& aDiag)
+{   
+    DiagInfo value;
+    value.mStartTime = steady_clock::now();
+    value.mDiagContent.assign(aDiag.begin(),aDiag.end());
+    mDiagSet[aKey] = value;
+
 }
 
 std::string Resource::GetDataNetworkName()

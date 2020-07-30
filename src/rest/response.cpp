@@ -37,7 +37,7 @@ Response::Response()
     : mCallback(false)
 {
     mProtocol = "HTTP/1.1";
-    mCode     = "200 OK";
+    //mCode     = "200 OK";
     mHeaderField.push_back("Content-Type");
     mHeaderValue.push_back("application/json");
 

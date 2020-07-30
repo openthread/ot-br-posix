@@ -49,15 +49,16 @@ Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource,
     : mStartTime(aStartTime)
     , mFd(aFd)
     , mState(OTBR_REST_CONNECTION_INIT)
+    , mParser(&mRequest)
     , mResource(aResource)
-{
+{   
 }
 
 void Connection::Init()
 {
-    mParser = std::unique_ptr<Parser>(new Parser(&mRequest));
-    mParser->Init();
+   mParser.Init();
 }
+
 
 void Connection::Disconnect()
 {
@@ -154,84 +155,97 @@ otbrError Connection::UpdateFdSet(otSysMainloopContext &aMainloop)
 otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
 {
     otbrError error    = OTBR_ERROR_NONE;
-    auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
     int       received;
     char      buf[2048];
     int       err;
+    auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
 
-    if (duration <= kReadTimeout)
-    {
-        if (FD_ISSET(mFd, &aReadFdSet) || mState == OTBR_REST_CONNECTION_INIT)
+    
+
+    VerifyOrExit(duration <= kReadTimeout, mState = OTBR_REST_CONNECTION_READTIMEOUT);
+    
+    VerifyOrExit(FD_ISSET(mFd, &aReadFdSet) || mState == OTBR_REST_CONNECTION_INIT);
+     
+    do
+    {   
+        mState = OTBR_REST_CONNECTION_READWAIT;
+        received = read(mFd, buf, sizeof(buf));
+        err      = errno;
+        if (received > 0)
         {
-            while (true)
-            {
-                received = read(mFd, buf, sizeof(buf));
-                err      = errno;
-
-                if (received <= 0)
-                {
-                    if (err != EINTR)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    // Normal parser process after a successful Read()
-                    mParser->Process(buf, received);
-                    // Parse(buf,received);
-                    // http_parser_execute(&mParser, &mSettings, buf, received);
-
-                    // Received the signal that a Request has been fully parsed, jump out of the loop
-                    if (mRequest.IsComplete())
-                    {
-                        shutdown(mFd, SHUT_RD);
-                        break;
-                    }
-                }
-            }
-
-            // Start to Handle the request
-            if (mRequest.IsComplete())
-            {
-                mResource->Handle(mRequest, mResponse);
-
-                if (mResponse.NeedCallback())
-                {
-                    // Set its state as Waitforcallback and refresh its timer
-                    mState     = OTBR_REST_CONNECTION_CALLBACKWAIT;
-                    mStartTime = steady_clock::now();
-                }
-                else
-                {
-                    // Normal Write back process.
-                    Write();
-                }
-            }
-            else
-            {
-                // 1. Catch the error
-                // 2. Client side has close this connection(received == 0).
-                VerifyOrExit(received > 0 || (received == -1 && (err == EAGAIN || err == EWOULDBLOCK)),
-                             error = OTBR_ERROR_REST);
-            }
+            mParser.Process(buf, received);
         }
+        
+    }while( ( received > 0 &&  !mRequest.IsComplete() )  || err == EINTR );
+    
+    
+    if(mRequest.IsComplete())
+    {
+        Handle();
     }
-    else
+    
+    if ( received == 0 )
     {
         Disconnect();
     }
+    
+    // 1. Catch the error
+    // 2. Client side has close this connection(received == 0).
+    VerifyOrExit( received >= 0 || (received == -1 && (err == EAGAIN || err == EWOULDBLOCK)),
+                     mState = OTBR_REST_CONNECTION_INTERNALERROR , error = OTBR_ERROR_REST);
 
+    
 exit:
+    
+    switch (mState)
+    {
+        case OTBR_REST_CONNECTION_READTIMEOUT:
+        
+        mResource->ErrorHandler(mRequest, mResponse, 408);
+        error = Write();
+        break;
+        
+        case OTBR_REST_CONNECTION_INTERNALERROR:
+        
+        mResource->ErrorHandler(mRequest, mResponse, 500);
+        error = Write();
+        break;
+        
+        default:
+        break;
+
+    }
     if (error == OTBR_ERROR_REST)
     {
         Disconnect();
     }
-    if (mState <= OTBR_REST_CONNECTION_READWAIT)
-    {
-        mState = OTBR_REST_CONNECTION_READWAIT;
-    }
+   
     return error;
+}
+
+otbrError Connection::Handle(){
+
+    otbrError error    = OTBR_ERROR_NONE;
+
+    shutdown(mFd, SHUT_RD);
+
+    mResource->Handle(mRequest, mResponse);
+
+    if (mResponse.NeedCallback())
+    {
+        // Set its state as Waitforcallback and refresh its timer
+        mState     = OTBR_REST_CONNECTION_CALLBACKWAIT;
+        mStartTime = steady_clock::now();
+    
+    }
+    else
+    {
+        // Normal Write back process.
+        error = Write();
+    }
+
+    return error;
+
 }
 
 otbrError Connection::ProcessWaitCallback()
@@ -243,7 +257,7 @@ otbrError Connection::ProcessWaitCallback()
     {
         // Handle Callback, then Write back response
         mResource->HandleCallback(mRequest, mResponse);
-        Write();
+        error = Write();
     }
 
     return error;
@@ -257,7 +271,7 @@ otbrError Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
     if (duration <= kWriteTimeout && FD_ISSET(mFd, &aWriteFdSet))
     {
         // WriteFdSet is set, then try to write again
-        Write();
+        error = Write();
     }
     else
     { // Pass write timeout, just close the error
@@ -305,10 +319,10 @@ otbrError Connection::Write()
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorCode;
-    int32_t     sendPointer;
+    int32_t     sendLength;
     int         err;
 
-    if (mState < OTBR_REST_CONNECTION_WRITEWAIT)
+    if (mState != OTBR_REST_CONNECTION_WRITEWAIT)
     {
         // Change its state when try write for the first time.
         mState        = OTBR_REST_CONNECTION_WRITEWAIT;
@@ -321,24 +335,24 @@ otbrError Connection::Write()
         Disconnect();
     }
 
-    sendPointer = write(mFd, mWriteContent.c_str(), mWriteContent.size());
+    sendLength = write(mFd, mWriteContent.c_str(), mWriteContent.size());
     err         = errno;
 
     // Write successfully
-    if (sendPointer == static_cast<int32_t>(mWriteContent.size()))
+    if (sendLength == static_cast<int32_t>(mWriteContent.size()))
     {
         Disconnect();
     }
-    else if (sendPointer >= 0)
+    else if (sendLength >= 0)
     {
         // Partly write
-        mWriteContent = mWriteContent.substr(sendPointer);
+        mWriteContent = mWriteContent.substr(sendLength);
     }
     else
     {
         if (errno == EINTR)
         {
-            Write();
+            error = Write();
         }
         else
         {
@@ -348,7 +362,7 @@ otbrError Connection::Write()
 
 exit:
 
-    if (error == OTBR_ERROR_REST)
+    if (error != OTBR_ERROR_NONE)
     {
         Disconnect();
     }
