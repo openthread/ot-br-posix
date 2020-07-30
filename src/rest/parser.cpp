@@ -101,32 +101,44 @@ static int OnHandlerData(http_parser *, const char *, size_t)
 
 Parser::Parser(Request *aRequest)
 {
-    mParser             = std::shared_ptr<http_parser>(new http_parser());
-    mSettings           = std::shared_ptr<http_parser_settings>(new http_parser_settings());
-    http_parser *parser = static_cast<http_parser *>(mParser.get());
-    parser->data        = aRequest;
+    // mParser             = std::shared_ptr<http_parser>(new http_parser());
+    // mSettings           = std::shared_ptr<http_parser_settings>(new http_parser_settings());
+    // http_parser *parser = static_cast<http_parser *>(mParser.get());
+    // parser->data        = aRequest;
+    mParser.data = aRequest;
 }
 
 void Parser::Init()
 {
-    http_parser *         parser         = static_cast<http_parser *>(mParser.get());
-    http_parser_settings *parser_setting = static_cast<http_parser_settings *>(mSettings.get());
-    parser_setting->on_message_begin     = OnMessageBegin;
-    parser_setting->on_url               = OnUrl;
-    parser_setting->on_status            = OnStatus;
-    parser_setting->on_header_field      = OnHandlerData;
-    parser_setting->on_header_value      = OnHandlerData;
-    parser_setting->on_body              = OnBody;
-    parser_setting->on_headers_complete  = OnHandler;
-    parser_setting->on_message_complete  = OnMessageComplete;
-    http_parser_init(parser, HTTP_REQUEST);
+    // http_parser *         parser         = static_cast<http_parser *>(mParser.get());
+    // http_parser_settings *parser_setting = static_cast<http_parser_settings *>(mSettings.get());
+    // parser_setting->on_message_begin     = OnMessageBegin;
+    // parser_setting->on_url               = OnUrl;
+    // parser_setting->on_status            = OnStatus;
+    // parser_setting->on_header_field      = OnHandlerData;
+    // parser_setting->on_header_value      = OnHandlerData;
+    // parser_setting->on_body              = OnBody;
+    // parser_setting->on_headers_complete  = OnHandler;
+    // parser_setting->on_message_complete  = OnMessageComplete;
+
+    mSettings.on_message_begin    = OnMessageBegin;
+    mSettings.on_url              = OnUrl;
+    mSettings.on_status           = OnStatus;
+    mSettings.on_header_field     = OnHandlerData;
+    mSettings.on_header_value     = OnHandlerData;
+    mSettings.on_body             = OnBody;
+    mSettings.on_headers_complete = OnHandler;
+    mSettings.on_message_complete = OnMessageComplete;
+    http_parser_init(&mParser, HTTP_REQUEST);
+    // http_parser_init(parser, HTTP_REQUEST);
 }
 
 void Parser::Process(const char *aBuf, int aLength)
 {
-    http_parser *         parser         = static_cast<http_parser *>(mParser.get());
-    http_parser_settings *parser_setting = static_cast<http_parser_settings *>(mSettings.get());
-    http_parser_execute(parser, parser_setting, aBuf, aLength);
+    // http_parser *         parser         = static_cast<http_parser *>(mParser.get());
+    // http_parser_settings *parser_setting = static_cast<http_parser_settings *>(mSettings.get());
+    // http_parser_execute(parser, parser_setting, aBuf, aLength);
+    http_parser_execute(&mParser, &mSettings, aBuf, aLength);
 }
 
 } // namespace rest

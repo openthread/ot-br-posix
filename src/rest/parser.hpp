@@ -51,10 +51,11 @@ public:
     void Process(const char *aBuf, int aLength);
 
 private:
-    
-    http_parser  test;
-    std::shared_ptr<void> mParser;
-    std::shared_ptr<void> mSettings;
+    http_parser          mParser;
+    http_parser_settings mSettings;
+
+    // std::shared_ptr<void> mParser;
+    // std::shared_ptr<void> mSettings;
 };
 
 } // namespace rest
