@@ -71,10 +71,28 @@ jobs:
     strategy:
       matrix:
         mdns: ["mDNSResponder", "avahi"]
-        rest: ["rest", ""]
     env:
       BUILD_TARGET: check
       OTBR_MDNS: ${{ matrix.mdns }}
+      OTBR_COVERAGE: 1
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Run
+      run: script/test build check
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+    
+  rest-check:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        rest: ["rest", ""]
+    env:
+      BUILD_TARGET: check
       OTBR_REST: ${{ matrix.rest }}
       OTBR_COVERAGE: 1
     steps:

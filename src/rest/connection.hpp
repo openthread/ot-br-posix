@@ -63,13 +63,13 @@ class Connection
 public:
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
-    void Init();
+    void Init(void);
 
     otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
 
     void UpdateFdSet(otSysMainloopContext &aMainloop);
 
-    bool IsComplete();
+    bool IsComplete(void);
 
 private:
     void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
@@ -77,12 +77,12 @@ private:
     void UpdateTimeout(timeval &aTimeout);
 
     otbrError ProcessWaitRead(fd_set &aReadFdSet);
-    otbrError ProcessWaitCallback();
+    otbrError ProcessWaitCallback(void);
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
-    otbrError Write();
+    otbrError Write(void);
 
-    otbrError Handle();
-    void      Disconnect();
+    otbrError Handle(void);
+    void      Disconnect(void);
 
     steady_clock::time_point mStartTime;
     int                      mFd;
@@ -99,4 +99,4 @@ private:
 } // namespace rest
 } // namespace otbr
 
-#endif
+#endif // OTBR_REST_CONNECTION_HPP_

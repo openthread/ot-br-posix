@@ -47,7 +47,7 @@ class RestWebServer
 public:
     static RestWebServer *GetRestWebServer(ControllerOpenThread *aNcp);
 
-    otbrError Init();
+    otbrError Init(void);
 
     void UpdateFdSet(otSysMainloopContext &aMainloop);
 
@@ -59,22 +59,21 @@ private:
 
     otbrError UpdateConnections(fd_set &aReadFdSet);
 
-    void CreateNewConnection(int aFd);
+    void CreateNewConnection(int32_t aFd);
 
-    otbrError Accept(int aListenFd);
+    otbrError Accept(int32_t aListenFd);
 
-    bool SetFdNonblocking(int fd);
+    bool SetFdNonblocking(int32_t fd);
 
-    otbrError InitializeListenFd();
-
+    otbrError InitializeListenFd(void);
+    // Resource handler
     Resource mResource;
     // For server configure
     sockaddr_in mAddress;
-    int         mListenFd;
-
+    int32_t     mListenFd;
     // For Connection
-    std::unordered_map<int, std::unique_ptr<Connection>> mConnectionSet;
-
+    std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
+    // Server
     static std::unique_ptr<RestWebServer> sRestWebServer;
 };
 

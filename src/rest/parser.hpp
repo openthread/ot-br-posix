@@ -36,7 +36,9 @@
 
 #include <memory>
 
-#include "http_parser.h"
+extern "C" {
+#include <http_parser.h>
+}
 
 #include "rest/request.hpp"
 
@@ -47,8 +49,8 @@ class Parser
 {
 public:
     Parser(Request *aRequest);
-    void Init();
-    void Process(const char *aBuf, int aLength);
+    void Init(void);
+    void Process(const char *aBuf, size_t aLength);
 
 private:
     http_parser          mParser;
@@ -58,4 +60,4 @@ private:
 } // namespace rest
 } // namespace otbr
 
-#endif
+#endif // OTBR_REST_PARSER_HPP_

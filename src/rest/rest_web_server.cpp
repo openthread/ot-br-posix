@@ -57,7 +57,7 @@ RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
     return sRestWebServer.get();
 }
 
-otbrError RestWebServer::Init()
+otbrError RestWebServer::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -125,13 +125,13 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
     return error;
 }
 
-otbrError RestWebServer::InitializeListenFd()
+otbrError RestWebServer::InitializeListenFd(void)
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorMessage;
-    int         ret;
-    int         err    = errno;
-    int         optval = 1;
+    int32_t     ret;
+    int32_t     err    = errno;
+    int32_t     optval = 1;
 
     mAddress.sin_family      = AF_INET;
     mAddress.sin_addr.s_addr = INADDR_ANY;
@@ -170,8 +170,8 @@ otbrError RestWebServer::Accept(int aListenFd)
 {
     std::string errorMessage;
     otbrError   error = OTBR_ERROR_NONE;
-    int         err;
-    int         fd;
+    int32_t     err;
+    int32_t     fd;
     sockaddr_in tmp;
     socklen_t   addrlen = sizeof(tmp);
 
@@ -213,12 +213,12 @@ void RestWebServer::CreateNewConnection(int aFd)
 
 bool RestWebServer::SetFdNonblocking(int fd)
 {
-    int  oldflags;
-    bool ret = true;
+    int32_t oldMode;
+    bool    ret = true;
 
-    oldflags = fcntl(fd, F_GETFL);
+    oldMode = fcntl(fd, F_GETFL);
 
-    VerifyOrExit(fcntl(fd, F_SETFL, oldflags | O_NONBLOCK) >= 0, ret = false);
+    VerifyOrExit(fcntl(fd, F_SETFL, oldMode | O_NONBLOCK) >= 0, ret = false);
 
 exit:
     return ret;

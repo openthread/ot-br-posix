@@ -31,36 +31,30 @@
 namespace otbr {
 namespace rest {
 
-Request::Request()
+Request::Request(void)
     : mComplete(false)
 {
 }
-void Request::SetUrl(const char *aString, int aLength)
+void Request::SetUrl(const char *aString, size_t aLength)
 {
     mUrl += std::string(aString, aLength);
 }
-
-void Request::SetStatus(const char *aString, int aLength)
-{
-    mStatus = std::string(aString, aLength);
-}
-
-void Request::SetBody(const char *aString, int aLength)
+void Request::SetBody(const char *aString, size_t aLength)
 {
     mBody += std::string(aString, aLength);
 }
 
-void Request::SetContentLength(int aContentLength)
+void Request::SetContentLength(size_t aContentLength)
 {
     mContentLength = aContentLength;
 }
 
-void Request::SetMethod(int aMethod)
+void Request::SetMethod(int32_t aMethod)
 {
     mMethod = aMethod;
 }
 
-std::string Request::GetUrl()
+std::string Request::GetUrl(void)
 {
     std::string url = mUrl;
 
@@ -77,17 +71,17 @@ exit:
     return url;
 }
 
-void Request::SetReadComplete()
+void Request::SetReadComplete(void)
 {
     mComplete = true;
 }
 
-void Request::ResetReadComplete()
+void Request::ResetReadComplete(void)
 {
     mComplete = false;
 }
 
-bool Request::IsComplete()
+bool Request::IsComplete(void)
 {
     return mComplete;
 }

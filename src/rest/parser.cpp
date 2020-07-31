@@ -34,18 +34,6 @@
 namespace otbr {
 namespace rest {
 
-static int OnStatus(http_parser *parser, const char *at, size_t len)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-
-    if (len > 0)
-    {
-        request->SetStatus(at, len);
-    }
-
-    return 0;
-}
-
 static int OnUrl(http_parser *parser, const char *at, size_t len)
 {
     Request *request = reinterpret_cast<Request *>(parser->data);
@@ -87,8 +75,10 @@ static int OnMessageBegin(http_parser *parser)
     return 0;
 }
 
-static int OnHandler(http_parser *)
+static int OnHeaderComplete(http_parser *parser)
 {
+    Request *request = reinterpret_cast<Request *>(parser->data);
+    request->SetMethod(parser->method);
     return 0;
 }
 
@@ -102,20 +92,20 @@ Parser::Parser(Request *aRequest)
     mParser.data = aRequest;
 }
 
-void Parser::Init()
+void Parser::Init(void)
 {
     mSettings.on_message_begin    = OnMessageBegin;
     mSettings.on_url              = OnUrl;
-    mSettings.on_status           = OnStatus;
+    mSettings.on_status           = OnHandlerData;
     mSettings.on_header_field     = OnHandlerData;
     mSettings.on_header_value     = OnHandlerData;
     mSettings.on_body             = OnBody;
-    mSettings.on_headers_complete = OnHandler;
+    mSettings.on_headers_complete = OnHeaderComplete;
     mSettings.on_message_complete = OnMessageComplete;
     http_parser_init(&mParser, HTTP_REQUEST);
 }
 
-void Parser::Process(const char *aBuf, int aLength)
+void Parser::Process(const char *aBuf, size_t aLength)
 {
     http_parser_execute(&mParser, &mSettings, aBuf, aLength);
 }

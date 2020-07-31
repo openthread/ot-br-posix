@@ -56,7 +56,7 @@ Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource,
 {
 }
 
-void Connection::Init()
+void Connection::Init(void)
 {
     mParser.Init();
 }
@@ -127,7 +127,7 @@ void Connection::UpdateFdSet(otSysMainloopContext &aMainloop)
     UpdateWriteFdSet(aMainloop.mWriteFdSet, aMainloop.mMaxFd);
 }
 
-void Connection::Disconnect()
+void Connection::Disconnect(void)
 {
     mState = OTBR_REST_CONNECTION_COMPLETE;
 
@@ -170,9 +170,9 @@ otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
 otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
 {
     otbrError error = OTBR_ERROR_NONE;
-    int       received;
+    int32_t   received;
     char      buf[2048];
-    int       err;
+    int32_t   err;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
 
     VerifyOrExit(duration <= kReadTimeout, mState = OTBR_REST_CONNECTION_READTIMEOUT);
@@ -225,7 +225,7 @@ exit:
     return error;
 }
 
-otbrError Connection::Handle()
+otbrError Connection::Handle(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -256,7 +256,7 @@ exit:
     return error;
 }
 
-otbrError Connection::ProcessWaitCallback()
+otbrError Connection::ProcessWaitCallback(void)
 {
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
@@ -291,12 +291,12 @@ otbrError Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
     return error;
 }
 
-otbrError Connection::Write()
+otbrError Connection::Write(void)
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorCode;
     int32_t     sendLength;
-    int         err;
+    int32_t     err;
 
     if (mState != OTBR_REST_CONNECTION_WRITEWAIT)
     {

@@ -33,11 +33,10 @@
 namespace otbr {
 namespace rest {
 
-Response::Response()
+Response::Response(void)
     : mCallback(false)
 {
     mProtocol = "HTTP/1.1 ";
-    // mCode     = "200 OK";
     mHeaderField.push_back("Content-Type");
     mHeaderValue.push_back("application/json");
 
@@ -45,43 +44,44 @@ Response::Response()
     mHeaderValue.push_back("*");
 }
 
-void Response::SetResponsCode(std::string aCode)
+void Response::SetResponsCode(std::string &aCode)
 {
     mCode = aCode;
 }
 
-void Response::SetCallback()
+void Response::SetCallback(void)
 {
     mCallback = true;
 }
 
-void Response::SetBody(std::string aBody)
+void Response::SetBody(std::string &aBody)
 {
     mBody = aBody;
 }
 
-std::string Response::GetBody()
+std::string Response::GetBody(void)
 {
     return mBody;
 }
 
-bool Response::NeedCallback()
+bool Response::NeedCallback(void)
 {
     return mCallback;
 }
 
-std::string Response::Serialize()
+std::string Response::Serialize(void)
 {
-    char          contentLength[10];
-    unsigned long index;
-    std::string   spacer = "\r\n";
-    std::string   ret(mProtocol + " " + mCode);
+    char        contentLength[10];
+    size_t      index;
+    std::string spacer = "\r\n";
+    std::string ret(mProtocol + " " + mCode);
+
     for (index = 0; index < mHeaderField.size(); index++)
     {
         ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
     }
 
-    snprintf(contentLength, 9, "%d", static_cast<int>(mBody.size()));
+    snprintf(contentLength, 9, "%d", static_cast<uint32_t>(mBody.size()));
 
     ret += spacer + "Content-Length: " + std::string(contentLength);
 
