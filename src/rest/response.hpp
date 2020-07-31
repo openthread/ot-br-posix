@@ -43,13 +43,13 @@ namespace rest {
 class Response
 {
 public:
-    Response();
-    void        SetBody(std::string aBody);
-    void        SetResponsCode(std::string aCode);
-    std::string Serialize();
-    bool        NeedCallback();
-    void        SetCallback();
-    std::string GetBody();
+    Response(void);
+    void        SetBody(std::string &aBody);
+    void        SetResponsCode(std::string &aCode);
+    std::string Serialize(void);
+    bool        NeedCallback(void);
+    void        SetCallback(void);
+    std::string GetBody(void);
 
 private:
     bool                     mCallback;
@@ -63,4 +63,4 @@ private:
 } // namespace rest
 } // namespace otbr
 
-#endif
+#endif // OTBR_REST_RESPONSE_HPP_

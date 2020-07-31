@@ -34,10 +34,9 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
+#include "agent/ncp_openthread.hpp"
 #include "openthread/netdiag.h"
 #include "openthread/thread_ftd.h"
-
-#include "agent/ncp_openthread.hpp"
 #include "utils/hex.hpp"
 
 namespace otbr {
@@ -45,14 +44,14 @@ namespace rest {
 
 struct Node
 {
-    int            role;
-    int            numOfRouter;
+    uint32_t       role;
+    uint32_t       numOfRouter;
     uint16_t       rloc16;
     const uint8_t *extPanId;
     const uint8_t *extAddress;
     otIp6Address   rlocAddress;
     otLeaderData   leaderData;
-    const char *   networkName;
+    std::string    networkName;
 };
 
 namespace JSON {
@@ -61,7 +60,7 @@ std::string Number2JsonString(const uint32_t aNumber);
 std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength);
 std::string CString2JsonString(const char *aBytes);
 std::string String2JsonString(std::string aString);
-std::string Node2JsonString(Node node);
+std::string Node2JsonString(const Node &aNode);
 std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet);
 std::string IpAddr2JsonString(const otIp6Address &aAddress);
 std::string Mode2JsonString(const otLinkModeConfig &aMode);
@@ -71,11 +70,11 @@ std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
 std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
-std::string Error2JsonString(int aErrorCode, std::string aErrorMessage);
+std::string Error2JsonString(uint32_t aErrorCode, const std::string &aErrorMessage);
 
 }; // namespace JSON
 
 } // namespace rest
 } // namespace otbr
 
-#endif
+#endif // OTBR_REST_JSON_HPP_

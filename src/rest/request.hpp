@@ -45,28 +45,26 @@ namespace rest {
 class Request
 {
 public:
-    Request();
+    Request(void);
 
-    void        SetUrl(const char *aString, int aLength);
-    void        SetStatus(const char *aString, int aLength);
-    void        SetBody(const char *aString, int aLength);
-    void        SetContentLength(int aContentLength);
-    void        SetMethod(int aMethod);
-    void        SetReadComplete();
-    void        ResetReadComplete();
-    std::string GetUrl();
-    bool        IsComplete();
+    void        SetUrl(const char *aString, size_t aLength);
+    void        SetBody(const char *aString, size_t aLength);
+    void        SetContentLength(size_t aContentLength);
+    void        SetMethod(int32_t aMethod);
+    void        SetReadComplete(void);
+    void        ResetReadComplete(void);
+    std::string GetUrl(void);
+    bool        IsComplete(void);
 
 private:
-    int          mMethod;
-    unsigned int mContentLength;
-    std::string  mUrl;
-    std::string  mStatus;
-    std::string  mBody;
-    bool         mComplete;
+    int32_t     mMethod;
+    size_t      mContentLength;
+    std::string mUrl;
+    std::string mBody;
+    bool        mComplete;
 };
 
 } // namespace rest
 } // namespace otbr
 
-#endif
+#endif // OTBR_REST_REQUEST_HPP_

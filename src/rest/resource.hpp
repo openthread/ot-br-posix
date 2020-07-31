@@ -31,8 +31,8 @@
  *   This file includes Handler definition for RESTful HTTP server.
  */
 
-#ifndef OTBR_REST_HANDLER_HPP_
-#define OTBR_REST_HANDLER_HPP_
+#ifndef OTBR_REST_RESOURCE_HPP_
+#define OTBR_REST_RESOURCE_HPP_
 
 #include <unordered_map>
 
@@ -52,11 +52,21 @@ struct DiagInfo
     std::vector<otNetworkDiagTlv> mDiagContent;
 };
 
+enum HttpMethod
+{
+    OTBR_REST_METHOD_DELETE = 0, ///< DELETE
+    OTBR_REST_METHOD_GET    = 1, ///< GET
+    OTBR_REST_METHOD_HEAD   = 2, ///< HEAD
+    OTBR_REST_METHOD_POST   = 3, ///< POST
+    OTBR_REST_METHOD_PUT    = 4, ///< PUT
+
+};
+
 class Resource
 {
 public:
     Resource(ControllerOpenThread *aNcp);
-    void        Init();
+    void        Init(void);
     void        Handle(Request &aRequest, Response &aResponse);
     void        HandleCallback(Request &aRequest, Response &aResponse);
     void        ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode);
@@ -64,39 +74,39 @@ public:
     void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
 
 private:
-    typedef void (Resource::*ResourceHandler)(Request &aRequest, Response &aResponse);
-    void NodeInfo(Request &aRequest, Response &aResponse);
-    void ExtendedAddr(Request &aRequest, Response &aResponse);
-    void State(Request &aRequest, Response &aResponse);
-    void NetworkName(Request &aRequest, Response &aResponse);
-    void LeaderData(Request &aRequest, Response &aResponse);
-    void NumOfRoute(Request &aRequest, Response &aResponse);
-    void Rloc16(Request &aRequest, Response &aResponse);
-    void ExtendedPanId(Request &aRequest, Response &aResponse);
-    void Rloc(Request &aRequest, Response &aResponse);
-    void Diagnostic(Request &aRequest, Response &aResponse);
+    typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
+    void NodeInfo(const Request &aRequest, Response &aResponse);
+    void ExtendedAddr(const Request &aRequest, Response &aResponse);
+    void State(const Request &aRequest, Response &aResponse);
+    void NetworkName(const Request &aRequest, Response &aResponse);
+    void LeaderData(const Request &aRequest, Response &aResponse);
+    void NumOfRoute(const Request &aRequest, Response &aResponse);
+    void Rloc16(const Request &aRequest, Response &aResponse);
+    void ExtendedPanId(const Request &aRequest, Response &aResponse);
+    void Rloc(const Request &aRequest, Response &aResponse);
+    void Diagnostic(const Request &aRequest, Response &aResponse);
 
-    void DeleteOutDatedDiag();
+    void DeleteOutDatedDiag(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
 
-    std::string GetDataNodeInfo();
-    std::string GetDataExtendedAddr();
-    std::string GetDataState();
-    std::string GetDataNetworkName();
-    std::string GetDataLeaderData();
-    std::string GetDataNumOfRoute();
-    std::string GetDataRloc16();
-    std::string GetDataExtendedPanId();
-    std::string GetDataRloc();
+    std::string GetDataNodeInfo(void);
+    std::string GetDataExtendedAddr(void);
+    std::string GetDataState(void);
+    std::string GetDataNetworkName(void);
+    std::string GetDataLeaderData(void);
+    std::string GetDataNumOfRoute(void);
+    std::string GetDataRloc16(void);
+    std::string GetDataExtendedPanId(void);
+    std::string GetDataRloc(void);
 
     otInstance *mInstance;
 
     std::unordered_map<std::string, ResourceHandler> mResourceMap;
-    std::unordered_map<int, std::string>             mErrorCodeMap;
+    std::unordered_map<int32_t, std::string>         mResponseCodeMap;
     std::unordered_map<std::string, DiagInfo>        mDiagSet;
 };
 
 } // namespace rest
 } // namespace otbr
 
-#endif
+#endif // OTBR_REST_RESOURCE_HPP_
