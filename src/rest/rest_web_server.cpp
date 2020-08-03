@@ -50,7 +50,7 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 
 RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
 {
-    if (sRestWebServer.get() == NULL)
+    if (sRestWebServer.get() == nullptr)
     {
         sRestWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(aNcp));
     }
@@ -211,7 +211,7 @@ void RestWebServer::CreateNewConnection(int aFd)
     }
 }
 
-bool RestWebServer::SetFdNonblocking(int fd)
+bool RestWebServer::SetFdNonblocking(int32_t fd)
 {
     int32_t oldMode;
     bool    ret = true;
