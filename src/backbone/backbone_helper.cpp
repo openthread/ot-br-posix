@@ -74,7 +74,7 @@ void BackboneHelper::Logv(int aLevel, const char *aSubRegion, const char *aForma
 {
     char log[kMaxLogLine];
 
-    snprintf(log, sizeof(log), "[Backbone/%s] %s", aSubRegion, aFormat);
+    snprintf(log, sizeof(log), "[Backbone.%s] %s", aSubRegion, aFormat);
     otbrLogv(aLevel, log, ap);
 }
 

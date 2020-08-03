@@ -26,56 +26,35 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes definition for Thread backbone agent.
- */
+#include "common/types.hpp"
 
-#ifndef BACKBONE_HELPER_HPP_
-#define BACKBONE_HELPER_HPP_
-
-#include <openthread/backbone_router_ftd.h>
-
-#include "agent/ncp_openthread.hpp"
+#include "common/byteswap.hpp"
 
 namespace otbr {
 
-namespace Backbone {
-
-/**
- * @addtogroup border-router-backbone-agent
- *
- * @brief
- *   This module includes definition for Thread backbone agent
- *
- * @{
- */
-
-/**
- * This class implements Thread backbone agent functionality.
- *
- */
-class BackboneHelper
+Ip6Address::Ip6Address(const otIp6Address aAddress)
 {
-public:
-    enum
+    static_assert(sizeof(*this) == sizeof(aAddress), "wrong Ip6Address size");
+    memcpy(this, &aAddress, sizeof(otIp6Address));
+}
+
+std::string Ip6Address::ToExtendedString() const
+{
+    char   buf[40]; // the extended string format must be 39 bytes long.
+    size_t pos = 0;
+
+    for (int i = 0; i < 8; i++)
     {
-        kMaxSizeOfSystemCall = 1024,
-        kMaxLogLine          = 1024,
-    };
+        sprintf(buf + pos, "%04x", htobe16(m16[i]));
+        pos += 4;
 
-    static void Log(int aLevel, const char *aSubRegion, const char *aFormat, ...);
+        if (i != 7)
+        {
+            buf[pos++] = ':';
+        }
+    }
 
-    static otbrError Command(const char *aFormat, ...);
-    static void      Logv(int aLevel, const char aSubRegion[14], const char *aFormat, va_list list);
-};
-
-/**
- * @}
- */
-
-} // namespace Backbone
+    return std::string(buf);
+}
 
 } // namespace otbr
-
-#endif // BACKBONE_HELPER_HPP_

@@ -30,27 +30,34 @@
 #       This script manipulates dns64 configuration.
 #
 
-smcroute_install() {
-    with SMCROUTE || return 0
-
-    sudo apt-get install --no-install-recommends -y smcroute
-}
-
 smcroute_uninstall() {
-    with SMCROUTE || return 0
+    if command -v systemctl; then
+        sudo systemctl stop smcroute || true
+    fi
 
-    smcroute_stop || true
-    sudo apt-get purge -y smcroute
+    sudo killall smcrouted || true
+
+    test -d $BUILD_DIR/smcroute || return 0
+
+    (cd $BUILD_DIR/smcroute &&
+        (test ! -f config.status || sudo make uninstall))
 }
 
-smcroute_start() {
-    with SMCROUTE || return 0
+smcroute_install() {
+    test -d $BUILD_DIR/smcroute || (cd $BUILD_DIR &&
+        git clone -b ip6_mf --depth 1 https://github.com/librasungirl/smcroute.git) || die 'Failed to download source code of smcroute!'
 
-    sudo systemctl restart smcroute
-}
+    (
+        cd $BUILD_DIR/smcroute
+        test -f configure || ./autogen.sh
+        test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+        make
+        sudo make install
 
-smcroute_stop() {
-    with SMCROUTE || return 0
+        if command -v systemctl; then
+            sudo systemctl enable smcroute
+            sudo systemctl restart smcroute
+        fi
 
-    sudo systemctl stop smcroute
+    )
 }

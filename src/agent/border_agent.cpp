@@ -95,7 +95,7 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp)
 {
 }
 
-void BorderAgent::Init(void)
+void BorderAgent::Init(const std::string &aThreadIfName, const std::string &aBackboneIfName)
 {
     memset(mNetworkName, 0, sizeof(mNetworkName));
     memset(mExtPanId, 0, sizeof(mExtPanId));
@@ -113,9 +113,10 @@ void BorderAgent::Init(void)
 #if OTBR_ENABLE_BACKBONE
     mNcp->On(Ncp::kEventBackboneRouterState, HandleBackboneRouterState, this);
     mNcp->On(Ncp::kEventBackboneRouterLocal, HandleBackboneRouterLocal, this);
+    mNcp->On(Ncp::kEventBackboneRouterMulticastListenerEvent, HandleBackboneRouterMulticastListenerEvent, this);
 #endif
 
-    mBackboneAgent.Init();
+    mBackboneAgent.Init(aThreadIfName, aBackboneIfName);
 
     otbrLogResult("Check if Thread is up", mNcp->RequestEvent(Ncp::kEventThreadState));
     otbrLogResult("Check if PSKc is initialized", mNcp->RequestEvent(Ncp::kEventPSKc));
@@ -421,6 +422,27 @@ void BorderAgent::HandleBackboneRouterLocal(void)
 {
     mBackboneAgent.HandleBackboneRouterLocal();
 }
+
+void BorderAgent::HandleBackboneRouterMulticastListenerEvent(void *aContext, int aEvent, va_list aArguments)
+{
+    OT_UNUSED_VARIABLE(aEvent);
+
+    otBackboneRouterMulticastListenerEvent event;
+    const otIp6Address *                   address;
+
+    assert(aEvent == Ncp::kEventBackboneRouterMulticastListenerEvent);
+
+    event   = static_cast<otBackboneRouterMulticastListenerEvent>(va_arg(aArguments, int));
+    address = va_arg(aArguments, const otIp6Address *);
+    static_cast<BorderAgent *>(aContext)->HandleBackboneRouterMulticastListenerEvent(event, *address);
+}
+
+void BorderAgent::HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                             const otIp6Address &                   aAddress)
+{
+    mBackboneAgent.HandleBackboneRouterMulticastListenerEvent(aEvent, aAddress);
+}
+
 #endif
 
 } // namespace otbr

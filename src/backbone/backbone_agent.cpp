@@ -31,12 +31,14 @@
  *   The file implements the Thread backbone agent.
  */
 
+#include "backbone_agent.hpp"
+
 #include <assert.h>
 #include <common/code_utils.hpp>
 #include <openthread/backbone_router_ftd.h>
 
-#include "backbone_agent.hpp"
 #include "backbone_helper.hpp"
+#include "utils/hex.hpp"
 
 namespace otbr {
 
@@ -48,9 +50,9 @@ BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread)
 {
 }
 
-void BackboneAgent::Init(void)
+void BackboneAgent::Init(const std::string &aThreadIfName, const std::string &aBackboneIfName)
 {
-    mSmcrouteManager.Init();
+    mSmcrouteManager.Init(aThreadIfName, aBackboneIfName);
 
     HandleBackboneRouterState();
     HandleBackboneRouterLocal();
@@ -121,13 +123,35 @@ void BackboneAgent::EnterPrimary(void)
 {
     Log(OTBR_LOG_INFO, "Backbone enters primary!");
 
-    mSmcrouteManager.Start();
+    mSmcrouteManager.Enable();
 }
 
 void BackboneAgent::ExitPrimary(void)
 {
     Log(OTBR_LOG_INFO, "Backbone exits primary to %d!", mBackboneRouterState);
-    mSmcrouteManager.Stop();
+    mSmcrouteManager.Disable();
+}
+
+void BackboneAgent::HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                               const otIp6Address &                   aAddress)
+{
+    Log(OTBR_LOG_INFO, "Multicast Listener event: %d, address: %s, IsPrimary: %s", aEvent,
+        Ip6Address(aAddress).ToExtendedString().c_str(), IsPrimary() ? "Y" : "N");
+
+    VerifyOrExit(IsPrimary());
+
+    switch (aEvent)
+    {
+    case OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED:
+        mSmcrouteManager.Add(Ip6Address(aAddress));
+        break;
+    case OT_BACKBONE_ROUTER_MULTICAST_LISTENER_REMOVED:
+        mSmcrouteManager.Remove(Ip6Address(aAddress));
+        break;
+    }
+
+exit:
+    return;
 }
 
 } // namespace Backbone

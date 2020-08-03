@@ -34,8 +34,11 @@
 #ifndef SMCROUTE_MANAGER_HPP_
 #define SMCROUTE_MANAGER_HPP_
 
+#include <set>
 #include <openthread/backbone_router_ftd.h>
+
 #include "agent/ncp_openthread.hpp"
+#include "backbone/backbone_helper.hpp"
 
 namespace otbr {
 
@@ -57,9 +60,29 @@ namespace Backbone {
 class SmcrouteManager
 {
 public:
-    void Init(void);
-    void Start(void);
-    void Stop(void);
+    explicit SmcrouteManager()
+        : mEnabled(false)
+    {
+    }
+
+    void Init(const std::string &aThreadIfName, const std::string &aBackboneIfName);
+    void Enable(void);
+    void Disable(void);
+
+    void Add(const Ip6Address &aAddress);
+    void Remove(const Ip6Address &aAddress);
+
+private:
+    std::set<Ip6Address> mListenerSet;
+    std::string          mThreadIfName;
+    std::string          mBackboneIfName;
+    bool                 mEnabled : 1;
+    void                 StartSmcrouteService(void);
+    otbrError            Flush(void) { return BackboneHelper::Command("smcroutectl flush"); }
+    otbrError            ForbidOutboundMulticast(void);
+    otbrError            AllowOutboundMulticast(void);
+    otbrError            AddRoute(const Ip6Address &aAddress);
+    otbrError            DeleteRoute(const Ip6Address &aAddress);
 };
 
 /**

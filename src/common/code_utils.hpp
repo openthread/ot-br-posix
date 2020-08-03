@@ -66,6 +66,24 @@
     } while (false)
 
 /**
+ * This macro verifies a given error status to be successful (compared against value zero (0)), otherwise, it emits a
+ * given error messages and exits the program.
+ *
+ * @param[in]  aStatus     A scalar error status to be evaluated against zero (0).
+ * @param[in]  aMessage    A message (text string) to print on failure.
+ *
+ */
+#define SuccessOrQuit(aStatus, aMessage)                                                \
+    do                                                                                  \
+    {                                                                                   \
+        if ((aStatus) != 0)                                                             \
+        {                                                                               \
+            fprintf(stderr, "\nFAILED %s:%d - %s\n", __FUNCTION__, __LINE__, aMessage); \
+            exit(-1);                                                                   \
+        }                                                                               \
+    } while (false)
+
+/**
  *  This checks for the specified condition, which is expected to
  *  commonly be true, and both executes @a ... and branches to the
  *  local label 'exit' if the condition is false.

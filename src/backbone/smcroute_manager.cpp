@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <common/code_utils.hpp>
+#include <unistd.h>
 #include <openthread/backbone_router_ftd.h>
 
 #include "backbone_agent.hpp"
@@ -43,27 +44,137 @@ namespace otbr {
 
 namespace Backbone {
 
-void SmcrouteManager::Init(void)
+void SmcrouteManager::Init(const std::string &aThreadIfName, const std::string &aBackboneIfName)
 {
+    assert(!mEnabled);
+
+    mThreadIfName   = aThreadIfName;
+    mBackboneIfName = aBackboneIfName;
+
+    StartSmcrouteService();
 }
 
-void SmcrouteManager::Start(void)
+void SmcrouteManager::Enable(void)
 {
-    otbrError error;
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(!mEnabled);
+
+    mEnabled = true;
+
+    Flush();
+    // Add mroute rules: 65520 (0xfff0) allow outbound for MA scope >= admin (4)`
+    SuccessOrExit(error = AllowOutboundMulticast());
+
+    // Add mroute rules for the current Multicast Listeners Table
+    for (const Ip6Address &address : mListenerSet)
+    {
+        AddRoute(address);
+    }
+
+exit:
+    BackboneHelper::Log(error != OTBR_ERROR_NONE ? OTBR_LOG_ERR : OTBR_LOG_INFO, "SmcrouteManager",
+                        "SmcrouteManager::Start => %s", otbrErrorString(error));
+}
+
+void SmcrouteManager::Disable(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mEnabled);
+
+    mEnabled = false;
+
+    Flush();
+
+    // Remove mroute rules for the current Multicast Listeners Table
+    for (const Ip6Address &address : mListenerSet)
+    {
+        DeleteRoute(address);
+    }
+
+    // Remove mroute rules: forbid outbound Multicast traffic
+    error = ForbidOutboundMulticast();
+
+exit:
+    BackboneHelper::Log(error != OTBR_ERROR_NONE ? OTBR_LOG_ERR : OTBR_LOG_INFO, "SmcrouteManager",
+                        "SmcrouteManager::Stop => %s", otbrErrorString(error));
+}
+
+void SmcrouteManager::StartSmcrouteService(void)
+{
+    otbrError                             error = OTBR_ERROR_NONE;
+    std::chrono::system_clock::time_point deadline;
 
     SuccessOrExit(error = BackboneHelper::Command("systemctl restart smcroute"));
 
+    deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
+
+    while (std::chrono::system_clock::now() < deadline)
+    {
+        usleep(10000);
+
+        VerifyOrExit((error = Flush()) != OTBR_ERROR_NONE);
+    }
+
 exit:
-    BackboneHelper::Log(OTBR_LOG_INFO, "SmcrouteManager","SmcrouteManager::Start => %s", otbrErrorString(error));
+    SuccessOrQuit(error, "failed to start smcroute service");
 }
 
-void SmcrouteManager::Stop(void)
+void SmcrouteManager::Add(const Ip6Address &aAddress)
 {
-    otbrError error;
+    otbrError error = OTBR_ERROR_NONE;
 
-    SuccessOrExit(error = BackboneHelper::Command("systemctl stop smcroute"));
+    assert(mListenerSet.find(aAddress) == mListenerSet.end());
+    mListenerSet.insert(aAddress);
+
+    VerifyOrExit(mEnabled);
+
+    Flush();
+    error = AddRoute(aAddress);
 exit:
-    BackboneHelper::Log(OTBR_LOG_INFO, "SmcrouteManager","SmcrouteManager::Stop => %s", otbrErrorString(error));
+    BackboneHelper::Log(error != OTBR_ERROR_NONE ? OTBR_LOG_ERR : OTBR_LOG_INFO, "SmcrouteManager",
+                        "SmcrouteManager::AddRoute %s => %s", aAddress.ToExtendedString().c_str(),
+                        otbrErrorString(error));
+}
+
+void SmcrouteManager::Remove(const Ip6Address &aAddress)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    assert(mListenerSet.find(aAddress) != mListenerSet.end());
+    mListenerSet.erase(aAddress);
+
+    VerifyOrExit(mEnabled);
+
+    Flush();
+    error = DeleteRoute(aAddress);
+exit:
+    BackboneHelper::Log(error != OTBR_ERROR_NONE ? OTBR_LOG_ERR : OTBR_LOG_INFO, "SmcrouteManager",
+                        "SmcrouteManager::RemoveRoute %s => %s", aAddress.ToExtendedString().c_str(),
+                        otbrErrorString(error));
+}
+
+otbrError SmcrouteManager::AllowOutboundMulticast(void)
+{
+    return BackboneHelper::Command("smcroutectl add %s :: :: 65520 %s", mThreadIfName.c_str(), mBackboneIfName.c_str());
+}
+
+otbrError SmcrouteManager::ForbidOutboundMulticast(void)
+{
+    return BackboneHelper::Command("smcroutectl remove %s :: :: 65520 %s", mThreadIfName.c_str(),
+                                   mBackboneIfName.c_str());
+}
+
+otbrError SmcrouteManager::AddRoute(const Ip6Address &aAddress)
+{
+    return BackboneHelper::Command("smcroutectl add %s :: %s %s", mBackboneIfName.c_str(),
+                                   aAddress.ToExtendedString().c_str(), mThreadIfName.c_str());
+}
+otbrError SmcrouteManager::DeleteRoute(const Ip6Address &aAddress)
+{
+    return BackboneHelper::Command("smcroutectl del %s :: %s %s", mBackboneIfName.c_str(),
+                                   aAddress.ToExtendedString().c_str(), mThreadIfName.c_str());
 }
 
 } // namespace Backbone

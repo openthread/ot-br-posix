@@ -73,7 +73,7 @@ public:
      * This method initialize border agent service.
      *
      */
-    void Init(void);
+    void Init(const std::string &aThreadIfName, const std::string &aBackboneIfName);
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -138,6 +138,10 @@ private:
     void        HandleBackboneRouterState(void);
     static void HandleBackboneRouterLocal(void *aContext, int aEvent, va_list aArguments);
     void        HandleBackboneRouterLocal(void);
+    static void HandleBackboneRouterMulticastListenerEvent(void *aContext, int aEvent, va_list aArguments);
+    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address &                   aAddress);
+
 #endif
 
     Mdns::Publisher *mPublisher;

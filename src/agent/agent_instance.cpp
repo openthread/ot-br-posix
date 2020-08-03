@@ -46,13 +46,13 @@ AgentInstance::AgentInstance(Ncp::Controller *aNcp)
 {
 }
 
-otbrError AgentInstance::Init(void)
+otbrError AgentInstance::Init(const std::string &aThreadIfName, const std::string &aBackboneIfName)
 {
     otbrError error = OTBR_ERROR_NONE;
 
     SuccessOrExit(error = mNcp->Init());
 
-    mBorderAgent.Init();
+    mBorderAgent.Init(aThreadIfName, aBackboneIfName);
 
 exit:
     otbrLogResult("Initialize OpenThread Border Router Agent", error);

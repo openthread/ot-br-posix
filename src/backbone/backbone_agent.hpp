@@ -60,10 +60,13 @@ class BackboneAgent
 {
 public:
     BackboneAgent(otbr::Ncp::ControllerOpenThread *aThread);
-    void Init(void);
+    void Init(const std::string &aThreadIfName, const std::string &aBackboneIfName);
 
     void HandleBackboneRouterState(void);
     void HandleBackboneRouterLocal(void);
+
+    void HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                    const otIp6Address &                   aAddress);
 
 private:
     otbr::Ncp::ControllerOpenThread &mThread;
@@ -75,6 +78,7 @@ private:
     void BackboneDown(void);
     void EnterPrimary(void);
     void ExitPrimary(void);
+    bool IsPrimary(void) { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
 };
 
 /**

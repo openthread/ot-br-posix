@@ -70,7 +70,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
      *
      */
-    otbrError Init(void);
+    otbrError Init(const std::string &aThreadIfName, const std::string &aBackboneIfName);
 
     /**
      * This method updates the file descriptor sets and timeout for mainloop.
