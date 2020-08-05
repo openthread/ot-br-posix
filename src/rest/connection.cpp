@@ -43,9 +43,10 @@ namespace otbr {
 namespace rest {
 
 // Timeout settings in microseconds
-static const uint32_t kCallbackTimeout = 2000000;
-static const uint32_t kWriteTimeout    = 10000000;
-static const uint32_t kReadTimeout     = 1000000;
+static const uint32_t kCallbackTimeout       = 10000000;
+static const uint32_t kCallbackCheckInterval = 500000;
+static const uint32_t kWriteTimeout          = 10000000;
+static const uint32_t kReadTimeout           = 1000000;
 
 Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd)
     : mStartTime(aStartTime)
@@ -91,7 +92,7 @@ void Connection::UpdateTimeout(timeval &aTimeout)
         timeoutLen = kReadTimeout;
         break;
     case OTBR_REST_CONNECTION_CALLBACKWAIT:
-        timeoutLen = kCallbackTimeout;
+        timeoutLen = kCallbackCheckInterval;
         break;
     case OTBR_REST_CONNECTION_WRITEWAIT:
         timeoutLen = kWriteTimeout;
@@ -208,13 +209,13 @@ exit:
     {
     case OTBR_REST_CONNECTION_READTIMEOUT:
 
-        mResource->ErrorHandler(mRequest, mResponse, 408);
+        mResource->ErrorHandler(mResponse, 408);
         error = Write();
         break;
 
     case OTBR_REST_CONNECTION_INTERNALERROR:
 
-        mResource->ErrorHandler(mRequest, mResponse, 500);
+        mResource->ErrorHandler(mResponse, 500);
         error = Write();
         break;
 
@@ -249,7 +250,7 @@ exit:
 
     if (mState == OTBR_REST_CONNECTION_INTERNALERROR)
     {
-        mResource->ErrorHandler(mRequest, mResponse, 500);
+        mResource->ErrorHandler(mResponse, 500);
         error = Write();
     }
 
@@ -261,8 +262,9 @@ otbrError Connection::ProcessWaitCallback(void)
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
 
-    if (duration >= kCallbackTimeout)
+    if (duration >= kCallbackTimeout || mResponse.IsComplete())
     {
+        otbrLog(OTBR_LOG_ERR, "check callback here" );
         // Handle Callback, then Write back response
         mResource->HandleCallback(mRequest, mResponse);
         error = Write();

@@ -50,6 +50,8 @@ public:
     bool        NeedCallback(void);
     void        SetCallback(void);
     std::string GetBody(void);
+    void        SetComplete();
+    bool        IsComplete();
 
 private:
     bool                     mCallback;
@@ -58,6 +60,7 @@ private:
     std::string              mCode;
     std::string              mProtocol;
     std::string              mBody;
+    bool                     mComplete;
 };
 
 } // namespace rest

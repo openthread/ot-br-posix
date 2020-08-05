@@ -42,6 +42,26 @@
 namespace otbr {
 namespace rest {
 
+enum HttpMethod
+{
+    OTBR_REST_METHOD_DELETE = 0, ///< DELETE
+    OTBR_REST_METHOD_GET    = 1, ///< GET
+    OTBR_REST_METHOD_HEAD   = 2, ///< HEAD
+    OTBR_REST_METHOD_POST   = 3, ///< POST
+    OTBR_REST_METHOD_PUT    = 4, ///< PUT
+
+};
+
+enum PostError
+{
+
+    OTBR_REST_POST_ERROR_NONE = 0,
+    OTBR_REST_POST_BAD_REQUEST= 1, 
+    OTBR_REST_POST_SET_FAIL   = 2, 
+};
+
+
+
 class Request
 {
 public:
@@ -51,10 +71,12 @@ public:
     void        SetBody(const char *aString, size_t aLength);
     void        SetContentLength(size_t aContentLength);
     void        SetMethod(int32_t aMethod);
+    int32_t     GetMethod() const;
+    std::string  GetBody() const;
     void        SetReadComplete(void);
     void        ResetReadComplete(void);
-    std::string GetUrl(void);
-    bool        IsComplete(void);
+    std::string GetUrl(void) const ;
+    bool        IsComplete(void) const;
 
 private:
     int32_t     mMethod;

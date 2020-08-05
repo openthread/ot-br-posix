@@ -35,6 +35,7 @@ namespace rest {
 
 Response::Response(void)
     : mCallback(false)
+    , mComplete(false)
 {
     mProtocol = "HTTP/1.1 ";
     mHeaderField.push_back("Content-Type");
@@ -42,6 +43,16 @@ Response::Response(void)
 
     mHeaderField.push_back("Access-Control-Allow-Origin");
     mHeaderValue.push_back("*");
+}
+
+void Response::SetComplete()
+{
+    mComplete = true;
+}
+
+bool Response::IsComplete()
+{
+    return mComplete == true;
 }
 
 void Response::SetResponsCode(std::string &aCode)
