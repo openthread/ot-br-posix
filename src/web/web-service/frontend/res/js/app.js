@@ -86,6 +86,7 @@
                 icon: 'add_circle_outline',
                 show: false,
             },
+
         ];
 
         $scope.thread = {
@@ -123,17 +124,16 @@
         };
         $scope.showPanels = function(index) {
             $scope.headerTitle = $scope.menu[index].title;
-            for (var i = 0; i <= 6; i++) {
+            for (var i = 0; i < 7; i++) {
                 $scope.menu[i].show = false;
             }
             $scope.menu[index].show = true;
             if (index == 1) {
                 $scope.isLoading = true;
-                $http.get('http://' + $scope.ipAddr + '/networks').then(function(response) {
+                $http.get('/available_network').then(function(response) {
                     $scope.isLoading = false;
-                    if (response.data.length > 0) {
-                        $scope.networksInfo = response.data;
-                        console.log($scope.networksInfo);
+                    if (response.data.error == 0) {
+                        $scope.networksInfo = response.data.result;
                     } else {
                         $scope.showScanAlert(event);
                     }
@@ -157,7 +157,7 @@
             }
             if (index == 6) {
                 $scope.dataInit();
-                $scope.showTopology();
+                $scope.showTopology()
             }
         };
 
@@ -215,8 +215,8 @@
                     index: index,
                 };
                 var httpRequest = $http({
-                    method: 'PUT',
-                    url: 'http://' + $scope.ipAddr + '/networks/current',
+                    method: 'POST',
+                    url: '/join_network',
                     data: data,
                 });
 
@@ -270,7 +270,7 @@
                 $scope.isForming = true;
                 var httpRequest = $http({
                     method: 'POST',
-                    url: 'http://' + $scope.ipAddr + '/networks',
+                    url: '/form_network',
                     data: data,
                 });
 
@@ -322,7 +322,7 @@
                 };
                 var httpRequest = $http({
                     method: 'POST',
-                    url: 'http://' + $scope.ipAddr + '/networks/current/prefix',
+                    url: '/add_prefix',
                     data: data,
                 });
 
@@ -347,8 +347,8 @@
                     prefix: $scope.setting.prefix,
                 };
                 var httpRequest = $http({
-                    method: 'DELETE',
-                    url: 'http://' + $scope.ipAddr + '/networks/current/prefix',
+                    method: 'POST',
+                    url: '/delete_prefix',
                     data: data,
                 });
 
@@ -367,7 +367,7 @@
             };
             var httpRequest = $http({
                 method: 'POST',
-                url: 'http://' + $scope.ipAddr + '/networks/current/commission',
+                url: '/commission',
                 data: data,
             });
             
@@ -383,7 +383,7 @@
             });
         };
 
-        $scope.restServerPort = '81';
+        $scope.restServerPort = '8081';
         $scope.ipAddr = window.location.hostname + ':' + $scope.restServerPort;
 
         // tooltipbasic information line
@@ -608,7 +608,7 @@
                 .style('visibility', 'hidden')
                 .text('a simple tooltip');
 
-            force = d3.layout.force()
+            force = d3.forceSimulation()
                 .gravity(.05)
 
             // tooltipline length

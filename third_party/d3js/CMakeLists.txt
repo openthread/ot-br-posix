@@ -27,6 +27,6 @@
 #
 
 install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.v3.js
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.v3.min.js
+    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.js
+    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.min.js
     DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/js)

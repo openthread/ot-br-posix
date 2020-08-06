@@ -137,11 +137,11 @@
               <tbody>
                 <tr ng-repeat="item in networksInfo track by $index">
                   <td>{{$index}}</td>
-                  <td>{{item.NetworkName}}</td>
-                  <td>{{item.ExtPanId}}</td>
-                  <td>{{item.PanId}}</td>
-                  <td>{{item.Channel}}</td>
-                  <td>{{item.MacAddress}}</td>
+                  <td>{{item.nn}}</td>
+                  <td>{{item.xp}}</td>
+                  <td>{{item.pi}}</td>
+                  <td>{{item.ch}}</td>
+                  <td>{{item.ha}}</td>
                   <td>
                     <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" ng-click="showJoinDialog($event, $index, item)">Join</button>
                   </td>
@@ -437,7 +437,7 @@
   <script src="res/js/angular-material.min.js"></script>
   <script src="res/js/angular-messages.min.js"></script>
   <script src="res/js/app.js"></script>
-  <script src="res/js/d3.v3.min.js"></script>
+  <script src="res/js/d3.min.js"></script>
 </body>
 
 </html>
