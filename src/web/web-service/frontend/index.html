@@ -137,11 +137,11 @@
               <tbody>
                 <tr ng-repeat="item in networksInfo track by $index">
                   <td>{{$index}}</td>
-                  <td>{{item.nn}}</td>
-                  <td>{{item.xp}}</td>
-                  <td>{{item.pi}}</td>
-                  <td>{{item.ch}}</td>
-                  <td>{{item.ha}}</td>
+                  <td>{{item.NetworkName}}</td>
+                  <td>{{item.ExtPanId}}</td>
+                  <td>{{item.PanId}}</td>
+                  <td>{{item.Channel}}</td>
+                  <td>{{item.MacAddress}}</td>
                   <td>
                     <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" ng-click="showJoinDialog($event, $index, item)">Join</button>
                   </td>
@@ -319,10 +319,10 @@
 
             <span class="status-title">&nbsp&nbspNetwork Name:&nbsp 
             </span>
-            <span class="status-content" ng-if="networksInfo.NetworkName"> {{ networksInfo.NetworkName }}</span>
+            <span class="status-content" ng-if="basicInfo.NetworkName"> {{ basicInfo.NetworkName }}</span>
             <span class="status-title">&nbsp&nbspLeader:&nbsp
             </span>
-            <span class="status-content" ng-if="networksInfo.LeaderData"> {{ networksInfo.LeaderData.LeaderRouterId }}&nbsp&nbsp
+            <span class="status-content" ng-if="basicInfo.LeaderData"> {{ basicInfo.LeaderData.LeaderRouterId }}&nbsp&nbsp
             </span>
             
             <span class="status-title">&nbsp&nbsp#Router:&nbsp

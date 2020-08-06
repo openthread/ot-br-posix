@@ -123,16 +123,17 @@
         };
         $scope.showPanels = function(index) {
             $scope.headerTitle = $scope.menu[index].title;
-            for (var i = 0; i < 6; i++) {
+            for (var i = 0; i <= 6; i++) {
                 $scope.menu[i].show = false;
             }
             $scope.menu[index].show = true;
             if (index == 1) {
                 $scope.isLoading = true;
-                $http.get('/available_network').then(function(response) {
+                $http.get('http://' + $scope.ipAddr + '/networks').then(function(response) {
                     $scope.isLoading = false;
-                    if (response.data.error == 0) {
-                        $scope.networksInfo = response.data.result;
+                    if (response.data.length > 0) {
+                        $scope.networksInfo = response.data;
+                        console.log($scope.networksInfo);
                     } else {
                         $scope.showScanAlert(event);
                     }
@@ -214,8 +215,8 @@
                     index: index,
                 };
                 var httpRequest = $http({
-                    method: 'POST',
-                    url: '/join_network',
+                    method: 'PUT',
+                    url: 'http://' + $scope.ipAddr + '/networks/current',
                     data: data,
                 });
 
@@ -269,7 +270,7 @@
                 $scope.isForming = true;
                 var httpRequest = $http({
                     method: 'POST',
-                    url: '/form_network',
+                    url: 'http://' + $scope.ipAddr + '/networks',
                     data: data,
                 });
 
@@ -321,7 +322,7 @@
                 };
                 var httpRequest = $http({
                     method: 'POST',
-                    url: '/add_prefix',
+                    url: 'http://' + $scope.ipAddr + '/networks/current/prefix',
                     data: data,
                 });
 
@@ -346,8 +347,8 @@
                     prefix: $scope.setting.prefix,
                 };
                 var httpRequest = $http({
-                    method: 'POST',
-                    url: '/delete_prefix',
+                    method: 'DELETE',
+                    url: 'http://' + $scope.ipAddr + '/networks/current/prefix',
                     data: data,
                 });
 
@@ -366,7 +367,7 @@
             };
             var httpRequest = $http({
                 method: 'POST',
-                url: '/commission',
+                url: 'http://' + $scope.ipAddr + '/networks/current/commission',
                 data: data,
             });
             
@@ -386,7 +387,7 @@
         $scope.ipAddr = window.location.hostname + ':' + $scope.restServerPort;
 
         // tooltipbasic information line
-        $scope.networksInfo = {
+        $scope.basicInfo = {
             'NetworkName' : 'Unknown',
             'LeaderData'  :{'LeaderRouterId' : 'Unknown'}
         }
@@ -420,8 +421,9 @@
 
             $http.get('http://' + $scope.ipAddr + '/node').then(function(response) {
 
-                $scope.networksInfo = response.data;
-                $scope.networksInfo.Rloc16 = $scope.intToHexString($scope.networksInfo.Rloc16,4);
+                $scope.basicInfo = response.data;
+                console.log(response.data);
+                $scope.basicInfo.Rloc16 = $scope.intToHexString($scope.basicInfo.Rloc16,4);
                 
             });
         }
@@ -442,12 +444,13 @@
             document.querySelectorAll('#Leader').forEach(e => e.style.display ? show(e) : hide(e))
         }
         $scope.intToHexString = function( num , len){
-            num  = num.toString(16);
-            var length = num.length;
-            while( length < len ){
-                num = '0' + num;
+            var value;
+            value  = num.toString(16);
+            
+            while( value.length < len ){
+                value = '0' + value;
             }
-            return num;
+            return value;
         }
         $scope.showTopology = function() {
             // tooltiprecord index of all node including child,leader and router
@@ -461,20 +464,23 @@
             };
             $http.get('http://' + $scope.ipAddr + '/diagnostics').then(function(response) {
 
-
+                
                 $scope.networksDiagInfo = response.data;
+                console.log(response.data);
                 for (var x of $scope.networksDiagInfo){
+                    console.log(x);
                     
                     x['RouteId'] = '0x' + (x['Rloc16'] >> 10).toString(16);
                     
                     x['Rloc16'] = '0x' + $scope.intToHexString(x['Rloc16'],4);
                     
                     x['LeaderData']['LeaderRouterId'] = '0x' + $scope.intToHexString(x['LeaderData']['LeaderRouterId'],2);
-                    
+                    console.log(x['LeaderData']['LeaderRouterId']);
                     for (var z of x['Route']['RouteData']){
+                        
                         z['RouteId'] = '0x' + $scope.intToHexString(z['RouteId'],2);
                     }
-                     
+                    
                 }
                 
                 count = 0;
@@ -493,7 +499,7 @@
 
                         $scope.graphInfo.nodes.push(x);
                         
-                        if (x['Rloc16'] === $scope.networksInfo.rloc16) {
+                        if (x['Rloc16'] === $scope.basicInfo.rloc16) {
                             $scope.nodeDetailInfo = x
                         }
                         count = count + 1;
@@ -501,7 +507,7 @@
                 }
                 // tooltip num of Router is based on the diagnostic information
                 $scope.NumOfRouter = count;
-
+                
                 // tooltip index for a second loop
                 src = 0;
                 // tooltip construct links 
@@ -560,7 +566,7 @@
                 // tooltip construct graph
                 $scope.drawGraph();
             })
-
+                
             // tooltip need timeout handler
         }
 
@@ -629,7 +635,7 @@
                 .attr('in', 'SourceGraphic');
                 
             json = $scope.graphInfo;
-            
+            console.log(json.nodes[0]);
             force
                 .nodes(json.nodes)
                 .links(json.links)
