@@ -10,7 +10,7 @@ https://github.com/DaveGamble/cJSON/releases
 
 ## Commit
 
-39853e5148dad8dc5d32ea2b00943cf4a0c6f120
+[39853e5148dad8dc5d32ea2b00943cf4a0c6f120](https://github.com/DaveGamble/cJSON/releases/tag/v1.7.13)
 
 ## License
 
