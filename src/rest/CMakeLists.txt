@@ -34,7 +34,6 @@ add_library( otbr-rest
     parser.cpp
     request.cpp
     response.cpp
-    
 )
 
 target_include_directories( otbr-rest 

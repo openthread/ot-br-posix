@@ -37,11 +37,10 @@
 #include <unordered_map>
 
 #include <openthread/border_router.h>
+
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
-
-
 
 using otbr::Ncp::ControllerOpenThread;
 using std::chrono::steady_clock;
@@ -49,37 +48,69 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-struct DiagInfo
-{
-    steady_clock::time_point      mStartTime;
-    std::vector<otNetworkDiagTlv> mDiagContent;
-};
-
-struct NetworksInfo
-{
-    steady_clock::time_point mStartTime;
-    otActiveScanResult       mNetworkContent;
-};
-
+/**
+ * This class implements the Resource handler for OTBR-REST.
+ *
+ */
 class Resource
 {
 public:
+    /**
+     * The constructor to initialize the Resource handler instance.
+     *
+     * @param[in]   aNcp  A pointer to the NCP controller.
+     *
+     */
     Resource(ControllerOpenThread *aNcp);
-    void        Init(void);
-    void        Handle(Request &aRequest, Response &aResponse);
-    void        HandleCallback(Request &aRequest, Response &aResponse);
-    void        ErrorHandler(Response &aResponse, int aErrorCode);
-    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-    void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
-    void        NetworksResponseHandler(Response *                             aResponse,
-                                        otError                                aError,
-                                        const std::vector<otActiveScanResult> &aResult);
 
+    /**
+     * This method initialize the Resource handler.
+     * 
+     *
+     */
+    void        Init(void);
+
+    /**
+     * This method is the main entry of resource handler, which find corresponding handler according to request url
+     * find the resource and set the content of response.
+     * 
+     * @param[in]      aRequest  A request instance referred by the Resource handler.
+     * @param[inout]   aResponse  A response instance will be set by the Resource handler.
+     *
+     */
+    void        Handle(Request &aRequest, Response &aResponse);
+
+    /**
+     * This method distributes a callback handler for each connection needs a callback.
+     * 
+     * @param[in]      aRequest  A request instance referred by the Resource handler.
+     * @param[inout]   aResponse  A response instance will be set by the Resource handler.
+     *
+     */
+    void        HandleCallback(Request &aRequest, Response &aResponse);
+
+    /**
+     * This method provides a quick handler, which could directly set response code of a response and set error code and error message to the request body.
+     * 
+     * @param[in]      aRequest  A request instance referred by the Resource handler.
+     * @param[inout]   aResponse  A response instance will be set by the Resource handler.
+     *
+     */
+    void        ErrorHandler(Response &aResponse, int aErrorCode);
+
+    /**
+     * This method is a pre-defined callback function used for call another private method when diagnostic information arrives.
+     * 
+     * @param[in]      aRequest  A request instance referred by the Resource handler.
+     * @param[inout]   aResponse  A response instance will be set by the Resource handler.
+     *
+     */
+    static void DiagnosticResponseHandler(otMessage            *aMessage, 
+                                          const otMessageInfo  *aMessageInfo, 
+                                          void                 *aContext);
+    
 private:
-    enum
-    {
-        kDefaultJoinerTimeout = 120, ///< Default timeout for Joiners, in seconds.
-    };
+    
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse);
     void ExtendedAddr(const Request &aRequest, Response &aResponse);
@@ -91,26 +122,9 @@ private:
     void ExtendedPanId(const Request &aRequest, Response &aResponse);
     void Rloc(const Request &aRequest, Response &aResponse);
     void Diagnostic(const Request &aRequest, Response &aResponse);
-    void Networks(const Request &aRequest, Response &aResponse);
-    void CurrentNetwork(const Request &aRequest, Response &aResponse);
-    void CurrentNetworkPrefix(const Request &aRequest, Response &aResponse);
-    void CurrentNetworkCommission(const Request &aRequest, Response &aResponse);
     
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
-    void HandleNetworkCallback(const Request &aRequest, Response &aResponse);
-    void PostNetworksCallback(const Request &aRequest, Response &aResponse);
-    void PutCurrentNetworksCallback(const Request &aRequest, Response &aResponse);
-    void DeleteOutDatedDiagnostic(void);
-    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
-    
-    void PostCurrentNetworkCommission(Response &aResponse);
-    void DeleteCurrentNetworkPrefix(Response &aResponse);
-    void PostCurrentNetworkPrefix(Response &aResponse);
-    void PutCurrentNetwork(Response &aResponse);
-    void GetCurrentNetwork(Response &aResponse);
-    void GetNetworks(Response &aResponse);
     void GetNodeInfo(Response &aResponse);
-    void GetDataNodeInfo( Response &aResponse);
     void GetDataExtendedAddr(Response &aResponse);
     void GetDataState(Response &aResponse);
     void GetDataNetworkName( Response &aResponse);
@@ -119,9 +133,11 @@ private:
     void GetDataRloc16( Response &aResponse);
     void GetDataExtendedPanId( Response &aResponse);
     void GetDataRloc( Response &aResponse);
-    
-    void PostNetworks(const Request &aRequest, Response &aResponse);
 
+    void DeleteOutDatedDiagnostic(void);
+    void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
+    void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+    
     otInstance *          mInstance;
     ControllerOpenThread *mNcp;
 

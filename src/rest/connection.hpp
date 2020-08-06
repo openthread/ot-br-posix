@@ -45,19 +45,6 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-enum ConnectionState
-{
-    OTBR_REST_CONNECTION_INIT          = 0, ///< Init
-    OTBR_REST_CONNECTION_READWAIT      = 1, ///< Wait to read
-    OTBR_REST_CONNECTION_READTIMEOUT   = 2, ///< Reach read timeout
-    OTBR_REST_CONNECTION_CALLBACKWAIT  = 3, ///< Wait for callback
-    OTBR_REST_CONNECTION_WRITEWAIT     = 4, ///< Wait for write
-    OTBR_REST_CONNECTION_WRITETIMEOUT  = 5, ///< Reach write timeout
-    OTBR_REST_CONNECTION_INTERNALERROR = 6, ///< occur internal call error
-    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< no longer need to be processed
-
-};
-
 /**
  * This class implements a Connection class of each socket connection .
  *
@@ -113,24 +100,24 @@ private:
     void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     void UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
     void UpdateTimeout(timeval &aTimeout);
-
     otbrError ProcessWaitRead(fd_set &aReadFdSet);
     otbrError ProcessWaitCallback(void);
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
     otbrError Write(void);
-
     otbrError Handle(void);
     void      Disconnect(void);
-
+    // Timestamp used for each check point of a connection
     steady_clock::time_point mStartTime;
     int                      mFd;
     ConnectionState          mState;
+    // Write buffer in case write multiple times
     std::string              mWriteContent;
 
     Response mResponse;
     Request  mRequest;
-
+    // HTTP parser instance
     Parser    mParser;
+    // Resource handler instance
     Resource *mResource;
 };
 

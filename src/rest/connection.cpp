@@ -42,10 +42,13 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-// Timeout settings in microseconds
+// The timeout (in microseconds) since a connection is in wait callback state
 static const uint32_t kCallbackTimeout       = 10000000;
+// The time interval (in microseconds) for checking again if there is a connection need callback.
 static const uint32_t kCallbackCheckInterval = 500000;
+// The timeout (in microseconds) since a connection is in wait write state
 static const uint32_t kWriteTimeout          = 10000000;
+// The timeout (in microseconds) since a connection is in wait read state
 static const uint32_t kReadTimeout           = 1000000;
 
 Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd)
@@ -278,14 +281,6 @@ otbrError Connection::ProcessWaitCallback(void)
 
     }
     
-    // if (duration >= kCallbackTimeout || mResponse.IsComplete())
-    // {
-    //     otbrLog(OTBR_LOG_ERR, "check callback here" );
-    //     // Handle Callback, then Write back response
-    //     mResource->HandleCallback(mRequest, mResponse);
-    //     error = Write();
-    // }
-
     return error;
 }
 
@@ -323,10 +318,7 @@ otbrError Connection::Write(void)
         mStartTime    = steady_clock::now();
         mWriteContent = mResponse.Serialize();
     }
-    otbrLog(OTBR_LOG_ERR, "request  method %d", mRequest.GetMethod() );
-    otbrLog(OTBR_LOG_ERR, "request  %s", mRequest.GetUrl().c_str() );
-    otbrLog(OTBR_LOG_ERR, "response %s", mWriteContent.c_str() );
-
+    
     VerifyOrExit(mWriteContent.size() > 0, error = OTBR_ERROR_REST);
 
     sendLength = write(mFd, mWriteContent.c_str(), mWriteContent.size());

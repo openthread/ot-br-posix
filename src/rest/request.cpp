@@ -64,7 +64,6 @@ std::string Request::GetBody() const
     return mBody;
 }
 
-
 std::string Request::GetUrl(void) const
 {
     std::string url = mUrl;
