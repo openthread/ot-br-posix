@@ -6,11 +6,7 @@ https://github.com/nodejs/http-parser/releases
 
 ## Version 
 
-2.9.4
-
-## Commit
-
-[2343fd6b5214b2ded2cdcf76de2bf60903bb90cd](https://github.com/nodejs/http-parser/releases/tag/v2.9.4)
+[2.9.4](https://github.com/nodejs/http-parser/releases/tag/v2.9.4)
 
 ## License
 
