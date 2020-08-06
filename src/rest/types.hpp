@@ -28,60 +28,72 @@
 
 /**
  * @file
- *   This file includes parser definition for RESTful HTTP server.
+ *   This file includes all needed types definitions for OTBR-REST.
  */
 
-#ifndef OTBR_REST_PARSER_HPP_
-#define OTBR_REST_PARSER_HPP_
+#ifndef OTBR_REST_TYPES_HPP_
+#define OTBR_REST_TYPES_HPP_
 
-#include <memory>
+#include <chrono>
+#include <vector>
 
-#include "rest/types.hpp"
+#include "openthread/netdiag.h"
 
-extern "C" {
-#include <http_parser.h>
-}
-
-#include "rest/request.hpp"
+using std::chrono::steady_clock;
 
 namespace otbr {
 namespace rest {
 
-/**
- * This class implements Parser class in OTBR-REST which is used to parse the data from read buffer and form a request.
- *
- */
-class Parser
+enum HttpMethod
 {
-public:
-    /**
-     * The constructor of a http request parser.
-     *
-     * @param[in]   aRequest  A pointer pointing to a request instance.
-     *
-     */
-    Parser(Request *aRequest);
+    OTBR_REST_METHOD_DELETE  = 0, ///< DELETE
+    OTBR_REST_METHOD_GET     = 1, ///< GET
+    OTBR_REST_METHOD_HEAD    = 2, ///< HEAD
+    OTBR_REST_METHOD_POST    = 3, ///< POST
+    OTBR_REST_METHOD_PUT     = 4, ///< PUT
+    OTBR_REST_METHOD_OPTIONS = 6, ///< OPTIONS
 
-    /**
-     * This method initialize the http-parser.
-     *
-     */
-    void Init(void);
+};
 
-    /**
-     * This method updates the file descriptor sets and timeout for mainloop.
-     *
-     * @param[in]    aBuf      A pointer pointing to read buffer.
-     * @param[in]    aLength   An integer indicates how much data is to be processed by parser.
-     */
-    void Process(const char *aBuf, size_t aLength);
+enum PostError
+{
+    OTBR_REST_POST_ERROR_NONE  = 0, ///< No error
+    OTBR_REST_POST_BAD_REQUEST = 1, ///< Bad request for post
+    OTBR_REST_POST_SET_FAIL    = 2, ///< Fail when set value
+};
 
-private:
-    http_parser          mParser;
-    http_parser_settings mSettings;
+enum ConnectionState
+{
+    OTBR_REST_CONNECTION_INIT          = 0, ///< Init
+    OTBR_REST_CONNECTION_READWAIT      = 1, ///< Wait to read
+    OTBR_REST_CONNECTION_READTIMEOUT   = 2, ///< Reach read timeout
+    OTBR_REST_CONNECTION_CALLBACKWAIT  = 3, ///< Wait for callback
+    OTBR_REST_CONNECTION_WRITEWAIT     = 4, ///< Wait for write
+    OTBR_REST_CONNECTION_WRITETIMEOUT  = 5, ///< Reach write timeout
+    OTBR_REST_CONNECTION_INTERNALERROR = 6, ///< occur internal call error
+    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< no longer need to be processed
+
+};
+
+struct Node
+{
+    uint32_t       mRole;
+    uint32_t       mNumOfRouter;
+    uint16_t       mRloc16;
+    const uint8_t *mExtPanId;
+    const uint8_t *mExtAddress;
+    otIp6Address   mRlocAddress;
+    otLeaderData   mLeaderData;
+    std::string    mNetworkName;
+};
+
+struct DiagInfo
+{
+    steady_clock::time_point      mStartTime;
+    std::vector<otNetworkDiagTlv> mDiagContent;
 };
 
 } // namespace rest
 } // namespace otbr
 
-#endif // OTBR_REST_PARSER_HPP_
+#endif // OTBR_REST_TYPES_HPP_

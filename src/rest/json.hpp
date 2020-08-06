@@ -34,43 +34,173 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
-#include "agent/ncp_openthread.hpp"
-#include "openthread/netdiag.h"
+#include "openthread/link.h"
 #include "openthread/thread_ftd.h"
+
+#include "agent/ncp_openthread.hpp"
+#include "agent/thread_helper.hpp"
+#include "rest/types.hpp"
 #include "utils/hex.hpp"
 
 namespace otbr {
 namespace rest {
 
-struct Node
-{
-    uint32_t       role;
-    uint32_t       numOfRouter;
-    uint16_t       rloc16;
-    const uint8_t *extPanId;
-    const uint8_t *extAddress;
-    otIp6Address   rlocAddress;
-    otLeaderData   leaderData;
-    std::string    networkName;
-};
-
+/**
+ * The functions within this namespace provide a tranformation from an object/string/number to a serialized Json string.
+ *
+ */
 namespace JSON {
 
+/**
+ * This method format an integer to a Json number and serialize it to a string.
+ *
+ * @param[in]   aNumber  an integer need to be format.
+ *
+ * @returns     a string serlialized by a Json number.
+ *
+ */
 std::string Number2JsonString(const uint32_t aNumber);
+
+/**
+ * This method format a Bytes array to a Json string and serialize it to a string.
+ *
+ * @param[in]   aBytes  a Bytes array representing a hex number.
+ *
+ * @returns     a string serlialized by a Json string.
+ *
+ */
 std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength);
-std::string CString2JsonString(const char *aBytes);
+
+/**
+ * This method format a C string to a Json string and serialize it to a string.
+ *
+ * @param[in]   aCString  a char pointer pointing to a C string.
+ *
+ * @returns     a string serlialized by a Json string.
+ *
+ */
+std::string CString2JsonString(const char *aCString);
+
+/**
+ * This method format a string to a Json string and serialize it to a string.
+ *
+ * @param[in]   aString  a string.
+ *
+ * @returns     a string serlialized by a Json string.
+ *
+ */
 std::string String2JsonString(std::string aString);
+
+/**
+ * This method format a Node object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aNode  a Node object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string Node2JsonString(const Node &aNode);
+
+/**
+ * This method format a vector including serveral Diagnostic object to a Json array and serialize it to a string.
+ *
+ * @param[in]   aDiagSet  a vector including serveral Diagnostic object.
+ *
+ * @returns     a string serlialized by a Json array.
+ *
+ */
 std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet);
+
+/**
+ * This method format an Ipv6Address to a Json string and serialize it to a string.
+ *
+ * @param[in]   aAddress  an Ip6Address object.
+ *
+ * @returns     a string serlialized by a Json string.
+ *
+ */
 std::string IpAddr2JsonString(const otIp6Address &aAddress);
+
+/**
+ * This method format a LinkModeConfig object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aMode  a LinkModeConfig object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string Mode2JsonString(const otLinkModeConfig &aMode);
+
+/**
+ * This method format a Connectivity object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aConnectivity  a Connectivity object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string Connectivity2JsonString(const otNetworkDiagConnectivity &aConnectivity);
+
+/**
+ * This method format a Route object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aRoute  a Route object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string Route2JsonString(const otNetworkDiagRoute &aRoute);
+
+/**
+ * This method format a RouteData object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aRouteData  a RouteData object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
+
+/**
+ * This method format a LeaderData object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aLeaderData  a LeaderData object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
+
+/**
+ * This method format a MacCounters object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aMacCounters  a MacCounters object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
+
+/**
+ * This method format a ChildEntry object to a Json object and serialize it to a string.
+ *
+ * @param[in]   aChildEntry  a ChildEntry object.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
-std::string Error2JsonString(uint32_t aErrorCode, const std::string &aErrorMessage);
+
+/**
+ * This method format an error code and an error message to a Json object and serialize it to a string.
+ *
+ * @param[in]   aErrorCode  error code such as 404.
+ * @param[in]   aErrorMessage  error message such as Not Found.
+ *
+ * @returns     a string serlialized by a Json object.
+ *
+ */
+std::string Error2JsonString(uint32_t aErrorCode, std::string aErrorMessage);
 
 }; // namespace JSON
 

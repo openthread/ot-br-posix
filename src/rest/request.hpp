@@ -38,23 +38,97 @@
 #include <vector>
 
 #include "common/code_utils.hpp"
+#include "rest/types.hpp"
 
 namespace otbr {
 namespace rest {
 
+/**
+ * This class implements an instance to host services used by border router.
+ *
+ */
 class Request
 {
 public:
+    /**
+     * The constructor to initialize Request instance.
+     *
+     */
     Request(void);
 
-    void        SetUrl(const char *aString, size_t aLength);
-    void        SetBody(const char *aString, size_t aLength);
-    void        SetContentLength(size_t aContentLength);
-    void        SetMethod(int32_t aMethod);
-    void        SetReadComplete(void);
-    void        ResetReadComplete(void);
-    std::string GetUrl(void);
-    bool        IsComplete(void);
+    /**
+     * This method set the Url field of a request.
+     *
+     * @param[in]  aString    A pointer points to url string.
+     * @param[in]  aLength    Length of the url string
+     *
+     */
+    void SetUrl(const char *aString, size_t aLength);
+
+    /**
+     * This method set the body field of a request.
+     *
+     * @param[in]  aString    A pointer points to body string.
+     * @param[in]  aLength    Length of the body string
+     *
+     */
+    void SetBody(const char *aString, size_t aLength);
+
+    /**
+     * This method set the content-length field of a request.
+     *
+     * @param[in]  aContentLength    An unsigned integer representing content-length.
+     *
+     */
+    void SetContentLength(size_t aContentLength);
+
+    /**
+     * This method set the method of the parsed request.
+     *
+     * @param[in]  aMethod    An integer representing request method.
+     *
+     */
+    void SetMethod(int32_t aMethod);
+
+    /**
+     * This method labels the request as complete which means it no longer need to be parsed one more time .
+     *
+     */
+    void SetReadComplete(void);
+
+    /**
+     * This method reset the request then it could be set by parser from start.
+     *
+     */
+    void ResetReadComplete(void);
+
+    /**
+     * This method return the HTTP method of this request.
+     *
+     * @returns a integer representing HTTP method.
+     */
+    int32_t GetMethod() const;
+
+    /**
+     * This method return the HTTP method of this request.
+     *
+     * @returns an integer representing HTTP method of this request.
+     */
+    std::string GetBody() const;
+
+    /**
+     * This method return the url for this request.
+     *
+     * @returns a string contains the url of this request.
+     */
+    std::string GetUrl(void) const;
+
+    /**
+     * This method indicates whether this request is parsed completely.
+     *
+     *
+     */
+    bool IsComplete(void) const;
 
 private:
     int32_t     mMethod;

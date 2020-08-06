@@ -28,6 +28,12 @@
 
 #include "rest/resource.hpp"
 
+#include "string.h"
+
+#include "utils/pskc.hpp"
+
+#define OT_PSKC_MAX_LENGTH 16
+#define OT_EXTENDED_PANID_LENGTH 8
 #define OT_DIAGNOETIC_PATH "/diagnostics"
 #define OT_NODE_PATH "/node"
 #define OT_RLOC_PATH "/node/rloc"
@@ -38,6 +44,10 @@
 #define OT_LEADERDATA_PATH "/node/leader-data"
 #define OT_NUMOFROUTER_PATH "/node/num-of-router"
 #define OT_EXTPANID_PATH "/node/ext-panid"
+#define OT_NETWORK_PATH "/networks"
+#define OT_NETWORK_CURRENT_PATH "/networks/current"
+#define OT_NETWORK_CURRENT_COMMISSION_PATH "/networks/commission"
+#define OT_NETWORK_CURRENT_PREFIX_PATH "/networks/current/prefix"
 #define OT_REST_RESOURCE_200 "200 OK"
 #define OT_REST_RESOURCE_201 "201 Created"
 #define OT_REST_RESOURCE_202 "202 Accepted"
@@ -56,16 +66,26 @@ using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
 
+using std::placeholders::_1;
+using std::placeholders::_2;
+
 namespace otbr {
 namespace rest {
 
-static const char *  kMulticastAddrAllRouters = "ff02::2";
-static const uint8_t kAllTlvTypes[]           = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
-//  Timeout(in Microseconds) for delete outdated diagnostics
-static const uint32_t kDiagResetTimeout = 5000000;
+// MulticastAddr
+static const char *kMulticastAddrAllRouters = "ff02::2";
+// Default TlvTypes for Diagnostic inforamtion
+static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
+//  Timeout(in Microseconds) for deleting outdated diagnostics
+static const uint32_t kDiagResetTimeout = 3000000;
+// Timeout(in Microseconds) for collecting diagnostics
+static const uint32_t kDiagCollectTimeout = 2000000;
+// Waittime after perform a factory reset.
+static const uint32_t kResetSleepInterval = 1000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
     : mInstance(aNcp->GetThreadHelper()->GetInstance())
+    , mNcp(aNcp)
 {
     // Resource Handler
     mResourceMap.emplace(OT_DIAGNOETIC_PATH, &Resource::Diagnostic);
@@ -78,6 +98,9 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_NUMOFROUTER_PATH, &Resource::NumOfRoute);
     mResourceMap.emplace(OT_EXTPANID_PATH, &Resource::ExtendedPanId);
     mResourceMap.emplace(OT_RLOC_PATH, &Resource::Rloc);
+
+    // Resource callback handler
+    mResourceCallbackMap.emplace(OT_DIAGNOETIC_PATH, &Resource::HandleDiagnosticCallback);
 
     // HTTP Response code
     mResponseCodeMap.emplace(200, OT_REST_RESOURCE_200);
@@ -104,6 +127,7 @@ void Resource::Handle(Request &aRequest, Response &aResponse)
 {
     std::string url = aRequest.GetUrl();
     auto        it  = mResourceMap.find(url);
+
     if (it != mResourceMap.end())
     {
         ResourceHandler resourceHandler = it->second;
@@ -111,172 +135,143 @@ void Resource::Handle(Request &aRequest, Response &aResponse)
     }
     else
     {
-        ErrorHandler(aRequest, aResponse, 404);
+        ErrorHandler(aResponse, 404);
     }
 }
 
 void Resource::HandleCallback(Request &aRequest, Response &aResponse)
+{
+    std::string url = aRequest.GetUrl();
+    auto        it  = mResourceCallbackMap.find(url);
+
+    if (it != mResourceCallbackMap.end())
+    {
+        ResourceHandler resourceHandler = it->second;
+        (this->*resourceHandler)(aRequest, aResponse);
+    }
+}
+
+void Resource::HandleDiagnosticCallback(const Request &aRequest, Response &aResponse)
 {
     OT_UNUSED_VARIABLE(aRequest);
     std::vector<std::vector<otNetworkDiagTlv>> diagContentSet;
     std::string                                body;
     std::string                                errorCode;
 
-    DeleteOutDatedDiag();
-
-    for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it)
+    auto duration = duration_cast<microseconds>(steady_clock::now() - aResponse.GetStartTime()).count();
+    if (duration >= kDiagCollectTimeout)
     {
-        diagContentSet.push_back(it->second.mDiagContent);
+        DeleteOutDatedDiagnostic();
+
+        for (auto it = mDiagSet.begin(); it != mDiagSet.end(); ++it)
+        {
+            diagContentSet.push_back(it->second.mDiagContent);
+        }
+
+        body      = JSON::Diag2JsonString(diagContentSet);
+        errorCode = mResponseCodeMap[200];
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetBody(body);
+        aResponse.SetComplete();
     }
-
-    body      = JSON::Diag2JsonString(diagContentSet);
-    errorCode = mResponseCodeMap[200];
-    aResponse.SetResponsCode(errorCode);
-
-    aResponse.SetBody(body);
 }
 
-void Resource::ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode)
+void Resource::ErrorHandler(Response &aResponse, int aErrorCode)
 {
-    OT_UNUSED_VARIABLE(aRequest);
     std::string errorMessage = mResponseCodeMap[aErrorCode];
     std::string body         = JSON::Error2JsonString(aErrorCode, errorMessage);
 
     aResponse.SetResponsCode(errorMessage);
     aResponse.SetBody(body);
+    aResponse.SetComplete();
 }
 
-void Resource::NodeInfo(const Request &aRequest, Response &aResponse)
+void Resource::GetNodeInfo(Response &aResponse)
 {
-    OT_UNUSED_VARIABLE(aRequest);
-
+    otbrError    error = OTBR_ERROR_NONE;
     Node         node;
     otRouterInfo routerInfo;
     uint8_t      maxRouterId;
-    std::string  str;
+    std::string  body;
     std::string  errorCode;
 
-    node.role        = otThreadGetDeviceRole(mInstance);
-    node.extAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
-    node.networkName = otThreadGetNetworkName(mInstance);
-    if (otThreadGetLeaderData(mInstance, &node.leaderData) == OT_ERROR_NONE)
-    {
-        // Default 0xff
-        node.leaderData.mLeaderRouterId = 255;
-    }
-    node.rloc16      = otThreadGetRloc16(mInstance);
-    node.extPanId    = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    node.rlocAddress = *otThreadGetRloc(mInstance);
-    node.numOfRouter = 0;
-    maxRouterId      = otThreadGetMaxRouterId(mInstance);
+    VerifyOrExit(otThreadGetLeaderData(mInstance, &node.mLeaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
 
+    node.mNumOfRouter = 0;
+    maxRouterId       = otThreadGetMaxRouterId(mInstance);
     for (uint8_t i = 0; i <= maxRouterId; ++i)
     {
         if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
         {
             continue;
         }
-        ++node.numOfRouter;
+        ++node.mNumOfRouter;
     }
 
-    str       = JSON::Node2JsonString(node);
+    node.mRole        = otThreadGetDeviceRole(mInstance);
+    node.mExtAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
+    node.mNetworkName = otThreadGetNetworkName(mInstance);
+    node.mRloc16      = otThreadGetRloc16(mInstance);
+    node.mExtPanId    = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
+    node.mRlocAddress = *otThreadGetRloc(mInstance);
+
+    body = JSON::Node2JsonString(node);
+    aResponse.SetBody(body);
+
+exit:
+    if (error == OTBR_ERROR_NONE)
+    {
+        errorCode = mResponseCodeMap[200];
+        aResponse.SetResponsCode(errorCode);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 500);
+    }
+}
+
+void Resource::NodeInfo(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetNodeInfo(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataExtendedAddr(Response &aResponse)
+{
+    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
+    std::string    errorCode;
+    std::string    body = JSON::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
+
+    aResponse.SetBody(body);
     errorCode = mResponseCodeMap[200];
     aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
 }
 
 void Resource::ExtendedAddr(const Request &aRequest, Response &aResponse)
 {
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataExtendedAddr();
-    std::string errorCode = mResponseCodeMap[200];
+    std::string errorCode;
 
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataExtendedAddr(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
 }
 
-void Resource::State(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataState();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-void Resource::NetworkName(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataNetworkName();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-void Resource::LeaderData(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataLeaderData();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-void Resource::NumOfRoute(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataNumOfRoute();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-void Resource::Rloc16(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataRloc16();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-void Resource::ExtendedPanId(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataExtendedPanId();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-void Resource::Rloc(const Request &aRequest, Response &aResponse)
-{
-    OT_UNUSED_VARIABLE(aRequest);
-    std::string str       = GetDataRloc();
-    std::string errorCode = mResponseCodeMap[200];
-
-    aResponse.SetResponsCode(errorCode);
-    aResponse.SetBody(str);
-}
-
-std::string Resource::GetDataExtendedAddr(void)
-{
-    const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
-
-    std::string str = JSON::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
-
-    return str;
-}
-
-std::string Resource::GetDataState(void)
+void Resource::GetDataState(Response &aResponse)
 {
     std::string state;
+    std::string errorCode;
     uint8_t     role;
     // 0 : disabled
     // 1 : detached
@@ -286,11 +281,209 @@ std::string Resource::GetDataState(void)
 
     role  = otThreadGetDeviceRole(mInstance);
     state = JSON::Number2JsonString(role);
-
-    return state;
+    aResponse.SetBody(state);
+    errorCode = mResponseCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
 }
 
-void Resource::DeleteOutDatedDiag(void)
+void Resource::State(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataState(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataNetworkName(Response &aResponse)
+{
+    std::string networkName;
+    std::string errorCode;
+
+    networkName = otThreadGetNetworkName(mInstance);
+    networkName = JSON::String2JsonString(networkName);
+
+    aResponse.SetBody(networkName);
+    errorCode = mResponseCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::NetworkName(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataNetworkName(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataLeaderData(Response &aResponse)
+{
+    otbrError    error = OTBR_ERROR_NONE;
+    otLeaderData leaderData;
+    std::string  body;
+    std::string  errorCode;
+
+    VerifyOrExit(otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+
+    body = JSON::LeaderData2JsonString(leaderData);
+
+    aResponse.SetBody(body);
+
+exit:
+    if (error == OTBR_ERROR_NONE)
+    {
+        errorCode = mResponseCodeMap[200];
+        aResponse.SetResponsCode(errorCode);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 500);
+    }
+}
+
+void Resource::LeaderData(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataLeaderData(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataNumOfRoute(Response &aResponse)
+{
+    uint8_t      count = 0;
+    uint8_t      maxRouterId;
+    otRouterInfo routerInfo;
+    maxRouterId = otThreadGetMaxRouterId(mInstance);
+    std::string body;
+    std::string errorCode;
+
+    for (uint8_t i = 0; i <= maxRouterId; ++i)
+    {
+        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
+        {
+            continue;
+        }
+        ++count;
+    }
+
+    body = JSON::Number2JsonString(count);
+
+    aResponse.SetBody(body);
+    errorCode = mResponseCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::NumOfRoute(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataNumOfRoute(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataRloc16(Response &aResponse)
+{
+    uint16_t    rloc16 = otThreadGetRloc16(mInstance);
+    std::string body;
+    std::string errorCode;
+
+    body = JSON::Number2JsonString(rloc16);
+
+    aResponse.SetBody(body);
+    errorCode = mResponseCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::Rloc16(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataRloc16(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataExtendedPanId(Response &aResponse)
+{
+    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
+    std::string    body     = JSON::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
+    std::string    errorCode;
+
+    aResponse.SetBody(body);
+    errorCode = mResponseCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::ExtendedPanId(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataExtendedPanId(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::GetDataRloc(Response &aResponse)
+{
+    otIp6Address rlocAddress = *otThreadGetRloc(mInstance);
+    std::string  body;
+    std::string  errorCode;
+
+    body = JSON::IpAddr2JsonString(rlocAddress);
+
+    aResponse.SetBody(body);
+    errorCode = mResponseCodeMap[200];
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::Rloc(const Request &aRequest, Response &aResponse)
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    {
+        GetDataRloc(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, 405);
+    }
+}
+
+void Resource::DeleteOutDatedDiagnostic(void)
 {
     auto eraseIt = mDiagSet.begin();
     for (eraseIt = mDiagSet.begin(); eraseIt != mDiagSet.end();)
@@ -318,98 +511,32 @@ void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag
     mDiagSet[aKey] = value;
 }
 
-std::string Resource::GetDataNetworkName(void)
-{
-    std::string str;
-
-    str = otThreadGetNetworkName(mInstance);
-    str = JSON::String2JsonString(str);
-
-    return str;
-}
-
-std::string Resource::GetDataLeaderData(void)
-{
-    otLeaderData leaderData;
-    std::string  str;
-
-    if (otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE)
-    {
-        leaderData.mLeaderRouterId = 255;
-    }
-    str = JSON::LeaderData2JsonString(leaderData);
-
-    return str;
-}
-
-std::string Resource::GetDataNumOfRoute(void)
-{
-    uint8_t      count = 0;
-    uint8_t      maxRouterId;
-    otRouterInfo routerInfo;
-    maxRouterId = otThreadGetMaxRouterId(mInstance);
-    std::string str;
-
-    for (uint8_t i = 0; i <= maxRouterId; ++i)
-    {
-        if (otThreadGetRouterInfo(mInstance, i, &routerInfo) != OT_ERROR_NONE)
-        {
-            continue;
-        }
-        ++count;
-    }
-
-    str = JSON::Number2JsonString(count);
-    return str;
-}
-
-std::string Resource::GetDataRloc16(void)
-{
-    uint16_t    rloc16 = otThreadGetRloc16(mInstance);
-    std::string str;
-
-    str = JSON::Number2JsonString(rloc16);
-
-    return str;
-}
-
-std::string Resource::GetDataExtendedPanId(void)
-{
-    const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    std::string    str      = JSON::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
-
-    return str;
-}
-
-std::string Resource::GetDataRloc(void)
-{
-    struct otIp6Address rlocAddress = *otThreadGetRloc(mInstance);
-    std::string         str;
-
-    str = JSON::IpAddr2JsonString(rlocAddress);
-
-    return str;
-}
-
 void Resource::Diagnostic(const Request &aRequest, Response &aResponse)
 {
+    otbrError error = OTBR_ERROR_NONE;
     OT_UNUSED_VARIABLE(aRequest);
     struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
 
-    aResponse.SetCallback();
-    if (otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE)
-    {
-        if (otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes)) !=
-            OT_ERROR_NONE)
-        {
-            otbrLog(OTBR_LOG_ERR, "multcast diag get fail");
-        }
-    }
+    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
+                     OT_ERROR_NONE,
+                 error = OTBR_ERROR_REST);
+    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE,
+                 error = OTBR_ERROR_REST);
+    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
+                     OT_ERROR_NONE,
+                 error = OTBR_ERROR_REST);
 
-    if (otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes)) != OT_ERROR_NONE)
+exit:
+
+    if (error == OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "self diag get fail");
+        aResponse.SetStartTime(steady_clock::now());
+        aResponse.SetCallback();
+    }
+    else
+    {
+        ErrorHandler(aResponse, 500);
     }
 }
 
@@ -424,7 +551,7 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
     std::vector<otNetworkDiagTlv> diagSet;
     otNetworkDiagTlv              diagTlv;
     otNetworkDiagIterator         iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
-    otError                       error    = OT_ERROR_NONE;
+    otError                       error;
     char                          rloc[7];
     std::string                   keyRloc = "0xffee";
 
@@ -437,7 +564,6 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
         }
         diagSet.push_back(diagTlv);
     }
-
     UpdateDiag(keyRloc, diagSet);
 }
 

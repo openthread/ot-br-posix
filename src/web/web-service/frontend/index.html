@@ -319,10 +319,10 @@
 
             <span class="status-title">&nbsp&nbspNetwork Name:&nbsp 
             </span>
-            <span class="status-content" ng-if="networksInfo.NetworkName"> {{ networksInfo.NetworkName }}</span>
+            <span class="status-content" ng-if="basicInfo.NetworkName"> {{ basicInfo.NetworkName }}</span>
             <span class="status-title">&nbsp&nbspLeader:&nbsp
             </span>
-            <span class="status-content" ng-if="networksInfo.LeaderData"> {{ networksInfo.LeaderData.LeaderRouterId }}&nbsp&nbsp
+            <span class="status-content" ng-if="basicInfo.LeaderData"> {{ basicInfo.LeaderData.LeaderRouterId }}&nbsp&nbsp
             </span>
             
             <span class="status-title">&nbsp&nbsp#Router:&nbsp
@@ -437,7 +437,7 @@
   <script src="res/js/angular-material.min.js"></script>
   <script src="res/js/angular-messages.min.js"></script>
   <script src="res/js/app.js"></script>
-  <script src="res/js/d3.v3.min.js"></script>
+  <script src="res/js/d3.min.js"></script>
 </body>
 
 </html>

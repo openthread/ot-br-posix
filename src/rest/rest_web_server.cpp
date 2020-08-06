@@ -39,8 +39,11 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-static const uint32_t          kMaxServeNum = 500;
-static const uint32_t          kPortNumber  = 81;
+// Maximum number of connection a server support at the same time.
+static const uint32_t kMaxServeNum = 500;
+// Port number used by Rest server.
+static const uint32_t kPortNumber = 8081;
+
 std::unique_ptr<RestWebServer> RestWebServer::sRestWebServer;
 
 RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
@@ -50,7 +53,7 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 
 RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
 {
-    if (sRestWebServer.get() == NULL)
+    if (sRestWebServer.get() == nullptr)
     {
         sRestWebServer = std::unique_ptr<RestWebServer>(new RestWebServer(aNcp));
     }
@@ -206,12 +209,12 @@ void RestWebServer::CreateNewConnection(int aFd)
     }
     else
     {
-        // Insert failed
+        // Add new connection failed
         close(aFd);
     }
 }
 
-bool RestWebServer::SetFdNonblocking(int fd)
+bool RestWebServer::SetFdNonblocking(int32_t fd)
 {
     int32_t oldMode;
     bool    ret = true;

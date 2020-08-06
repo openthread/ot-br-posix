@@ -42,15 +42,46 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
+/**
+ * This class implements a REST server.
+ *
+ */
 class RestWebServer
 {
 public:
+    /**
+     * a static function which call the constructor of REST server and return a pointer to the server instance.
+     *
+     * @param[in]   aNcp  A pointer to the NCP controller.
+     *
+     * @returns a pointer pointing to the static rest server instance.
+     *
+     */
     static RestWebServer *GetRestWebServer(ControllerOpenThread *aNcp);
 
+    /**
+     * This method initialize the REST server.
+     *
+     * @retval  OTBR_ERROR_NONE     REST server initialized successfully.
+     * @retval  OTBR_ERROR_REST     Failed due to rest error .
+     *
+     */
     otbrError Init(void);
 
+    /**
+     * This method updates the file descriptor sets and timeout for mainloop.
+     *
+     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     *
+     */
     void UpdateFdSet(otSysMainloopContext &aMainloop);
 
+    /**
+     * This method performs processing.
+     *
+     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
+     *
+     */
     otbrError Process(otSysMainloopContext &aMainloop);
 
 private:
@@ -66,14 +97,13 @@ private:
     bool SetFdNonblocking(int32_t fd);
 
     otbrError InitializeListenFd(void);
+
     // Resource handler
-    Resource mResource;
-    // For server configure
-    sockaddr_in mAddress;
-    int32_t     mListenFd;
-    // For Connection
+    Resource                                                 mResource;
+    sockaddr_in                                              mAddress;
+    int32_t                                                  mListenFd;
     std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
-    // Server
+    // REST server
     static std::unique_ptr<RestWebServer> sRestWebServer;
 };
 

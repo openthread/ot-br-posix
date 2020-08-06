@@ -38,6 +38,18 @@ namespace otbr {
 namespace rest {
 namespace JSON {
 
+cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
+{
+    char   hex[2 * aLength + 1];
+    cJSON *ret = nullptr;
+
+    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
+    hex[2 * aLength] = '\0';
+    ret              = cJSON_CreateString(hex);
+
+    return ret;
+}
+
 std::string String2JsonString(std::string aString)
 {
     std::string ret;
@@ -101,7 +113,7 @@ cJSON *IpAddr2Json(const otIp6Address &aAddress)
     uint16_t    twoBytes;
     char        ipAddrField[5];
 
-    for (int i = 0; i < 16; ++i)
+    for (size_t i = 0; i < 16; ++i)
     {
         if (i % 2 == 1)
         {
@@ -236,18 +248,6 @@ cJSON *LeaderData2Json(const otLeaderData &aLeaderData)
     return leaderData;
 }
 
-cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
-{
-    char   hex[2 * aLength + 1];
-    cJSON *ret = nullptr;
-
-    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
-    hex[2 * aLength] = '\0';
-    ret              = cJSON_CreateString(hex);
-
-    return ret;
-}
-
 std::string IpAddr2JsonString(const otIp6Address &aAddress)
 {
     std::string ret;
@@ -264,21 +264,21 @@ std::string Node2JsonString(const Node &aNode)
     cJSON *     node = cJSON_CreateObject();
     std::string ret;
 
-    cJSON_AddItemToObject(node, "State", cJSON_CreateNumber(aNode.role));
+    cJSON_AddItemToObject(node, "State", cJSON_CreateNumber(aNode.mRole));
 
-    cJSON_AddItemToObject(node, "NumOfRouter", cJSON_CreateNumber(aNode.numOfRouter));
+    cJSON_AddItemToObject(node, "NumOfRouter", cJSON_CreateNumber(aNode.mNumOfRouter));
 
-    cJSON_AddItemToObject(node, "RlocAddress", IpAddr2Json(aNode.rlocAddress));
+    cJSON_AddItemToObject(node, "RlocAddress", IpAddr2Json(aNode.mRlocAddress));
 
-    cJSON_AddItemToObject(node, "ExtAddress", Bytes2HexJson(aNode.extAddress, OT_EXT_ADDRESS_SIZE));
+    cJSON_AddItemToObject(node, "ExtAddress", Bytes2HexJson(aNode.mExtAddress, OT_EXT_ADDRESS_SIZE));
 
-    cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aNode.networkName.c_str()));
+    cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aNode.mNetworkName.c_str()));
 
-    cJSON_AddItemToObject(node, "Rloc16", cJSON_CreateNumber(aNode.rloc16));
+    cJSON_AddItemToObject(node, "Rloc16", cJSON_CreateNumber(aNode.mRloc16));
 
-    cJSON_AddItemToObject(node, "LeaderData", LeaderData2Json(aNode.leaderData));
+    cJSON_AddItemToObject(node, "LeaderData", LeaderData2Json(aNode.mLeaderData));
 
-    cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aNode.extPanId, OT_EXT_PAN_ID_SIZE));
+    cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aNode.mExtPanId, OT_EXT_PAN_ID_SIZE));
 
     ret = Json2String(node);
 
@@ -291,7 +291,10 @@ std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aD
 {
     cJSON *     diagInfo          = cJSON_CreateArray();
     cJSON *     diagInfoOfOneNode = nullptr;
+    cJSON *     addrList          = nullptr;
+    cJSON *     tableList         = nullptr;
     std::string ret;
+    uint64_t    timeout;
 
     for (auto diagItem : aDiagSet)
     {
@@ -307,75 +310,74 @@ std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aD
 
                 break;
             case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "Rloc16", cJSON_CreateNumber(diagTlv.mData.mAddr16));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_MODE:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "Mode", Mode2Json(diagTlv.mData.mMode));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_TIMEOUT:
-            {
-                uint64_t timeout = static_cast<uint64_t>(diagTlv.mData.mTimeout);
+
+                timeout = static_cast<uint64_t>(diagTlv.mData.mTimeout);
                 cJSON_AddItemToObject(diagInfoOfOneNode, "Timeout", cJSON_CreateNumber(timeout));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_CONNECTIVITY:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "Connectivity",
                                       Connectivity2Json(diagTlv.mData.mConnectivity));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "Route", Route2Json(diagTlv.mData.mRoute));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_LEADER_DATA:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "LeaderData", LeaderData2Json(diagTlv.mData.mLeaderData));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "NetworkData",
                                       Bytes2HexJson(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST:
-            {
-                cJSON *addrList = cJSON_CreateArray();
+
+                addrList = cJSON_CreateArray();
 
                 for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
                 {
                     cJSON_AddItemToArray(addrList, IpAddr2Json(diagTlv.mData.mIp6AddrList.mList[i]));
                 }
                 cJSON_AddItemToObject(diagInfoOfOneNode, "IP6AddressList", addrList);
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_MAC_COUNTERS:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "MACCounters", MacCounters2Json(diagTlv.mData.mMacCounters));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_BATTERY_LEVEL:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "BatteryLevel",
                                       cJSON_CreateNumber(diagTlv.mData.mBatteryLevel));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_SUPPLY_VOLTAGE:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "SupplyVoltage",
                                       cJSON_CreateNumber(diagTlv.mData.mSupplyVoltage));
-            }
 
-            break;
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE:
-            {
-                cJSON *tableList = cJSON_CreateArray();
+
+                tableList = cJSON_CreateArray();
 
                 for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
                 {
@@ -383,22 +385,21 @@ std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aD
                 }
 
                 cJSON_AddItemToObject(diagInfoOfOneNode, "ChildTable", tableList);
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_CHANNEL_PAGES:
-            {
+
                 cJSON_AddItemToObject(
                     diagInfoOfOneNode, "ChannelPages",
                     Bytes2HexJson(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount));
-            }
-            break;
+
+                break;
             case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
-            {
+
                 cJSON_AddItemToObject(diagInfoOfOneNode, "MaxChildTimeout",
                                       cJSON_CreateNumber(diagTlv.mData.mMaxChildTimeout));
-            }
 
-            break;
+                break;
             default:
                 break;
             }
@@ -503,9 +504,9 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
     return ret;
 }
 
-std::string CString2JsonString(const char *aString)
+std::string CString2JsonString(const char *aCString)
 {
-    cJSON *     cString = CString2Json(aString);
+    cJSON *     cString = CString2Json(aCString);
     std::string ret     = Json2String(cString);
 
     cJSON_Delete(cString);
@@ -513,7 +514,7 @@ std::string CString2JsonString(const char *aString)
     return ret;
 }
 
-std::string Error2JsonString(uint32_t aErrorCode, const std::string &aErrorMessage)
+std::string Error2JsonString(uint32_t aErrorCode, std::string aErrorMessage)
 {
     char        code[5];
     std::string ret;

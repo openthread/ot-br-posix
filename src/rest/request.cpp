@@ -54,7 +54,17 @@ void Request::SetMethod(int32_t aMethod)
     mMethod = aMethod;
 }
 
-std::string Request::GetUrl(void)
+int32_t Request::GetMethod() const
+{
+    return mMethod;
+}
+
+std::string Request::GetBody() const
+{
+    return mBody;
+}
+
+std::string Request::GetUrl(void) const
 {
     std::string url = mUrl;
 
@@ -81,7 +91,7 @@ void Request::ResetReadComplete(void)
     mComplete = false;
 }
 
-bool Request::IsComplete(void)
+bool Request::IsComplete(void) const
 {
     return mComplete;
 }

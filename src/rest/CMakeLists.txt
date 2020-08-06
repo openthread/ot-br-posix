@@ -34,7 +34,6 @@ add_library( otbr-rest
     parser.cpp
     request.cpp
     response.cpp
-    
 )
 
 target_include_directories( otbr-rest 
@@ -48,6 +47,7 @@ target_link_libraries(otbr-rest
     PRIVATE
         cjson
         http_parser
+        mbedtls
         otbr-config
         otbr-utils
         openthread-ftd

@@ -42,10 +42,14 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-// Timeout settings in microseconds
-static const uint32_t kCallbackTimeout = 2000000;
-static const uint32_t kWriteTimeout    = 10000000;
-static const uint32_t kReadTimeout     = 1000000;
+// The timeout (in microseconds) since a connection is in wait callback state
+static const uint32_t kCallbackTimeout = 10000000;
+// The time interval (in microseconds) for checking again if there is a connection need callback.
+static const uint32_t kCallbackCheckInterval = 500000;
+// The timeout (in microseconds) since a connection is in wait write state
+static const uint32_t kWriteTimeout = 10000000;
+// The timeout (in microseconds) since a connection is in wait read state
+static const uint32_t kReadTimeout = 1000000;
 
 Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd)
     : mStartTime(aStartTime)
@@ -91,7 +95,7 @@ void Connection::UpdateTimeout(timeval &aTimeout)
         timeoutLen = kReadTimeout;
         break;
     case OTBR_REST_CONNECTION_CALLBACKWAIT:
-        timeoutLen = kCallbackTimeout;
+        timeoutLen = kCallbackCheckInterval;
         break;
     case OTBR_REST_CONNECTION_WRITEWAIT:
         timeoutLen = kWriteTimeout;
@@ -208,13 +212,13 @@ exit:
     {
     case OTBR_REST_CONNECTION_READTIMEOUT:
 
-        mResource->ErrorHandler(mRequest, mResponse, 408);
+        mResource->ErrorHandler(mResponse, 408);
         error = Write();
         break;
 
     case OTBR_REST_CONNECTION_INTERNALERROR:
 
-        mResource->ErrorHandler(mRequest, mResponse, 500);
+        mResource->ErrorHandler(mResponse, 500);
         error = Write();
         break;
 
@@ -249,7 +253,7 @@ exit:
 
     if (mState == OTBR_REST_CONNECTION_INTERNALERROR)
     {
-        mResource->ErrorHandler(mRequest, mResponse, 500);
+        mResource->ErrorHandler(mResponse, 500);
         error = Write();
     }
 
@@ -261,11 +265,19 @@ otbrError Connection::ProcessWaitCallback(void)
     otbrError error    = OTBR_ERROR_NONE;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
 
-    if (duration >= kCallbackTimeout)
+    mResource->HandleCallback(mRequest, mResponse);
+
+    if (mResponse.IsComplete())
     {
-        // Handle Callback, then Write back response
-        mResource->HandleCallback(mRequest, mResponse);
         error = Write();
+    }
+    else
+    {
+        if (duration >= kCallbackTimeout)
+        {
+            mResource->ErrorHandler(mResponse, 404);
+            error = Write();
+        }
     }
 
     return error;
