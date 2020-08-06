@@ -6,11 +6,7 @@ https://github.com/d3/d3/releases
 
 ## Version
 
-5.16.0
-
-## Commit
-
-[7244e45e68af39c519f76667a03039d5b24dd453](https://github.com/d3/d3/releases/tag/v5.16.0)
+[5.16.0](https://github.com/d3/d3/releases/tag/v5.16.0)
 
 ## License
 
