@@ -49,13 +49,13 @@ namespace otbr {
 namespace rest {
 
 /**
- * This class implements a response class for OTBR_REST, it could be manipulated by connection instance and resource handler.
+ * This class implements a response class for OTBR_REST, it could be manipulated by connection instance and resource
+ * handler.
  *
  */
 class Response
 {
 public:
-    
     /**
      * The constructor to initialize a response instance.
      *
@@ -69,14 +69,14 @@ public:
      * @param[in] aBody a string to be set as response body.
      *
      */
-    void        SetBody(std::string &aBody);
+    void SetBody(std::string &aBody);
 
-     /**
+    /**
      * This method return a string contains the body field of this response.
      *
      * @returns A string containing the body field.
      */
-    std::string GetBody(void) const ;
+    std::string GetBody(void) const;
 
     /**
      * This method set the response code.
@@ -84,56 +84,57 @@ public:
      * @param[in] aCode a string representing response code such as "404 not found".
      *
      */
-    void        SetResponsCode(std::string &aCode);
-    
+    void SetResponsCode(std::string &aCode);
+
     /**
      * This method labels the response as need callback.
      *
      *
      */
-    void        SetCallback(void);
+    void SetCallback(void);
 
     /**
      * This method returns whether this response need to be processed by callback handler later.
      *
      * @returns  a bool value.
      */
-    bool        NeedCallback(void);
+    bool NeedCallback(void);
 
     /**
      * This method labels the response as complete which means all fields has been successfully set.
      *
      */
-    void        SetComplete();
+    void SetComplete();
 
     /**
      * This method returns whether a response is ready to be written to buffer.
-     * 
+     *
      * @returns  A bool value.
      */
-    bool        IsComplete();
+    bool IsComplete();
 
     /**
-     * This method is used to set a timestamp. when a callback is needed and this field tells callback handler when to collect all the data and form the response.
+     * This method is used to set a timestamp. when a callback is needed and this field tells callback handler when to
+     * collect all the data and form the response.
      *
      * @param[in] aStartTime a timestamp indicates when the response start to wait for callback.
      */
-    void        SetStartTime(steady_clock::time_point aStartTime);
+    void SetStartTime(steady_clock::time_point aStartTime);
 
     /**
      * This method returns a timestamp of start time.
-     * 
+     *
      * @returns  A timepoint object indicates start time.
      */
-    steady_clock::time_point   GetStartTime() const;
-    
+    steady_clock::time_point GetStartTime() const;
+
     /**
      * This method serialize a response to a string that could be sent by socket later.
-     * 
+     *
      * @returns  A string contains status line, headers and body of a response.
      */
     std::string Serialize(void);
-    
+
 private:
     bool                     mCallback;
     std::vector<std::string> mHeaderField;
@@ -142,7 +143,7 @@ private:
     std::string              mProtocol;
     std::string              mBody;
     bool                     mComplete;
-    steady_clock::time_point      mStartTime;
+    steady_clock::time_point mStartTime;
 };
 
 } // namespace rest

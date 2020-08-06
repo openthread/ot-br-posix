@@ -62,7 +62,7 @@ public:
      */
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
-     /**
+    /**
      * This method initialize the connection.
      *
      *
@@ -96,10 +96,9 @@ public:
     bool IsComplete(void);
 
 private:
-   
-    void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
-    void UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
-    void UpdateTimeout(timeval &aTimeout);
+    void      UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
+    void      UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
+    void      UpdateTimeout(timeval &aTimeout);
     otbrError ProcessWaitRead(fd_set &aReadFdSet);
     otbrError ProcessWaitCallback(void);
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
@@ -111,12 +110,12 @@ private:
     int                      mFd;
     ConnectionState          mState;
     // Write buffer in case write multiple times
-    std::string              mWriteContent;
+    std::string mWriteContent;
 
     Response mResponse;
     Request  mRequest;
     // HTTP parser instance
-    Parser    mParser;
+    Parser mParser;
     // Resource handler instance
     Resource *mResource;
 };

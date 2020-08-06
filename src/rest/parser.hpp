@@ -54,7 +54,6 @@ namespace rest {
 class Parser
 {
 public:
-    
     /**
      * The constructor of a http request parser.
      *

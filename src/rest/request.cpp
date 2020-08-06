@@ -54,7 +54,7 @@ void Request::SetMethod(int32_t aMethod)
     mMethod = aMethod;
 }
 
-int32_t Request::GetMethod()  const
+int32_t Request::GetMethod() const
 {
     return mMethod;
 }

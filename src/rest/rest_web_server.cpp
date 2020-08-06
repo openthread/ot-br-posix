@@ -40,9 +40,9 @@ namespace otbr {
 namespace rest {
 
 // Maximum number of connection a server support at the same time.
-static const uint32_t          kMaxServeNum = 500;
+static const uint32_t kMaxServeNum = 500;
 // Port number used by Rest server.
-static const uint32_t          kPortNumber  = 8081;
+static const uint32_t kPortNumber = 8081;
 
 std::unique_ptr<RestWebServer> RestWebServer::sRestWebServer;
 

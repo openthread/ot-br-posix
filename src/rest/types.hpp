@@ -46,20 +46,20 @@ namespace rest {
 
 enum HttpMethod
 {
-    OTBR_REST_METHOD_DELETE = 0, ///< DELETE
-    OTBR_REST_METHOD_GET    = 1, ///< GET
-    OTBR_REST_METHOD_HEAD   = 2, ///< HEAD
-    OTBR_REST_METHOD_POST   = 3, ///< POST
-    OTBR_REST_METHOD_PUT    = 4, ///< PUT
+    OTBR_REST_METHOD_DELETE  = 0, ///< DELETE
+    OTBR_REST_METHOD_GET     = 1, ///< GET
+    OTBR_REST_METHOD_HEAD    = 2, ///< HEAD
+    OTBR_REST_METHOD_POST    = 3, ///< POST
+    OTBR_REST_METHOD_PUT     = 4, ///< PUT
     OTBR_REST_METHOD_OPTIONS = 6, ///< OPTIONS
 
 };
 
 enum PostError
 {
-    OTBR_REST_POST_ERROR_NONE = 0, ///< No error
-    OTBR_REST_POST_BAD_REQUEST= 1, ///< Bad request for post
-    OTBR_REST_POST_SET_FAIL   = 2, ///< Fail when set value
+    OTBR_REST_POST_ERROR_NONE  = 0, ///< No error
+    OTBR_REST_POST_BAD_REQUEST = 1, ///< Bad request for post
+    OTBR_REST_POST_SET_FAIL    = 2, ///< Fail when set value
 };
 
 enum ConnectionState
@@ -77,7 +77,7 @@ enum ConnectionState
 
 struct Node
 {
-    uint32_t       mRole; 
+    uint32_t       mRole;
     uint32_t       mNumOfRouter;
     uint16_t       mRloc16;
     const uint8_t *mExtPanId;

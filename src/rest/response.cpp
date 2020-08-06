@@ -32,7 +32,9 @@
 
 #define OT_REST_RESPONSE_CONTENT_TYPE "application/json"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
-#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
+    "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
+    "Access-Control-Request-Headers"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "DELETE,GET,HEAD,OPTIONS,POST,PUT"
 
 namespace otbr {
@@ -44,7 +46,7 @@ Response::Response(void)
 {
     // HTTP protocol
     mProtocol = "HTTP/1.1 ";
-    
+
     // Pre-defined headers
     mHeaderField.push_back("Content-Type");
     mHeaderValue.push_back(OT_REST_RESPONSE_CONTENT_TYPE);
@@ -57,7 +59,6 @@ Response::Response(void)
 
     mHeaderField.push_back("Access-Control-Allow-Headers");
     mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS);
-
 }
 
 void Response::SetComplete()
@@ -65,14 +66,14 @@ void Response::SetComplete()
     mComplete = true;
 }
 
-void   Response::SetStartTime(steady_clock::time_point aStartTime)
+void Response::SetStartTime(steady_clock::time_point aStartTime)
 {
     mStartTime = aStartTime;
 }
 
-steady_clock::time_point   Response::GetStartTime() const
+steady_clock::time_point Response::GetStartTime() const
 {
-    return  mStartTime;
+    return mStartTime;
 }
 
 bool Response::IsComplete()

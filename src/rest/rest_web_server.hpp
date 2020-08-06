@@ -53,7 +53,7 @@ public:
      * a static function which call the constructor of REST server and return a pointer to the server instance.
      *
      * @param[in]   aNcp  A pointer to the NCP controller.
-     * 
+     *
      * @returns a pointer pointing to the static rest server instance.
      *
      */
@@ -97,11 +97,11 @@ private:
     bool SetFdNonblocking(int32_t fd);
 
     otbrError InitializeListenFd(void);
-    
+
     // Resource handler
-    Resource mResource;
-    sockaddr_in mAddress;
-    int32_t     mListenFd;
+    Resource                                                 mResource;
+    sockaddr_in                                              mAddress;
+    int32_t                                                  mListenFd;
     std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
     // REST server
     static std::unique_ptr<RestWebServer> sRestWebServer;

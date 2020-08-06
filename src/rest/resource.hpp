@@ -65,52 +65,51 @@ public:
 
     /**
      * This method initialize the Resource handler.
-     * 
+     *
      *
      */
-    void        Init(void);
+    void Init(void);
 
     /**
      * This method is the main entry of resource handler, which find corresponding handler according to request url
      * find the resource and set the content of response.
-     * 
+     *
      * @param[in]      aRequest  A request instance referred by the Resource handler.
      * @param[inout]   aResponse  A response instance will be set by the Resource handler.
      *
      */
-    void        Handle(Request &aRequest, Response &aResponse);
+    void Handle(Request &aRequest, Response &aResponse);
 
     /**
      * This method distributes a callback handler for each connection needs a callback.
-     * 
+     *
      * @param[in]      aRequest  A request instance referred by the Resource handler.
      * @param[inout]   aResponse  A response instance will be set by the Resource handler.
      *
      */
-    void        HandleCallback(Request &aRequest, Response &aResponse);
+    void HandleCallback(Request &aRequest, Response &aResponse);
 
     /**
-     * This method provides a quick handler, which could directly set response code of a response and set error code and error message to the request body.
-     * 
+     * This method provides a quick handler, which could directly set response code of a response and set error code and
+     * error message to the request body.
+     *
      * @param[in]      aRequest  A request instance referred by the Resource handler.
      * @param[inout]   aResponse  A response instance will be set by the Resource handler.
      *
      */
-    void        ErrorHandler(Response &aResponse, int aErrorCode);
+    void ErrorHandler(Response &aResponse, int aErrorCode);
 
     /**
-     * This method is a pre-defined callback function used for call another private method when diagnostic information arrives.
-     * 
+     * This method is a pre-defined callback function used for call another private method when diagnostic information
+     * arrives.
+     *
      * @param[in]      aRequest  A request instance referred by the Resource handler.
      * @param[inout]   aResponse  A response instance will be set by the Resource handler.
      *
      */
-    static void DiagnosticResponseHandler(otMessage            *aMessage, 
-                                          const otMessageInfo  *aMessageInfo, 
-                                          void                 *aContext);
-    
+    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
+
 private:
-    
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse);
     void ExtendedAddr(const Request &aRequest, Response &aResponse);
@@ -122,30 +121,30 @@ private:
     void ExtendedPanId(const Request &aRequest, Response &aResponse);
     void Rloc(const Request &aRequest, Response &aResponse);
     void Diagnostic(const Request &aRequest, Response &aResponse);
-    
+
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
     void GetNodeInfo(Response &aResponse);
     void GetDataExtendedAddr(Response &aResponse);
     void GetDataState(Response &aResponse);
-    void GetDataNetworkName( Response &aResponse);
-    void GetDataLeaderData( Response &aResponse);
-    void GetDataNumOfRoute( Response &aResponse);
-    void GetDataRloc16( Response &aResponse);
-    void GetDataExtendedPanId( Response &aResponse);
-    void GetDataRloc( Response &aResponse);
+    void GetDataNetworkName(Response &aResponse);
+    void GetDataLeaderData(Response &aResponse);
+    void GetDataNumOfRoute(Response &aResponse);
+    void GetDataRloc16(Response &aResponse);
+    void GetDataExtendedPanId(Response &aResponse);
+    void GetDataRloc(Response &aResponse);
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
     void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
-    
+
     otInstance *          mInstance;
     ControllerOpenThread *mNcp;
 
     std::unordered_map<std::string, ResourceHandler> mResourceMap;
     std::unordered_map<std::string, ResourceHandler> mResourceCallbackMap;
 
-    std::unordered_map<int32_t, std::string>      mResponseCodeMap;
-    std::unordered_map<std::string, DiagInfo>     mDiagSet;
+    std::unordered_map<int32_t, std::string>  mResponseCodeMap;
+    std::unordered_map<std::string, DiagInfo> mDiagSet;
 };
 
 } // namespace rest
