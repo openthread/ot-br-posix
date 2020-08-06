@@ -112,6 +112,7 @@ std::string Networks2JsonString(const std::vector<ActiveScanResult> aResults);
 std::string Error2JsonString(uint32_t aErrorCode, std::string aErrorMessage);
 Network JsonString2Network(std::string aString);
 std::string JsonString2String(std::string aString, std::string aKey);
+bool JsonString2Bool(std::string aString, std::string aKey);
 
 
 }; // namespace JSON

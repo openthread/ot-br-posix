@@ -50,6 +50,8 @@ enum HttpMethod
     OTBR_REST_METHOD_POST   = 3, ///< POST
     OTBR_REST_METHOD_PUT    = 4, ///< PUT
 
+     OTBR_REST_METHOD_OPTIONS    = 6, ///< PUT
+
 };
 
 enum PostError

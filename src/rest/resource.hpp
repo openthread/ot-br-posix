@@ -76,6 +76,10 @@ public:
                                         const std::vector<otActiveScanResult> &aResult);
 
 private:
+    enum
+    {
+        kDefaultJoinerTimeout = 120, ///< Default timeout for Joiners, in seconds.
+    };
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse);
     void ExtendedAddr(const Request &aRequest, Response &aResponse);
@@ -88,13 +92,22 @@ private:
     void Rloc(const Request &aRequest, Response &aResponse);
     void Diagnostic(const Request &aRequest, Response &aResponse);
     void Networks(const Request &aRequest, Response &aResponse);
-
+    void CurrentNetwork(const Request &aRequest, Response &aResponse);
+    void CurrentNetworkPrefix(const Request &aRequest, Response &aResponse);
+    void CurrentNetworkCommission(const Request &aRequest, Response &aResponse);
+    
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
     void HandleNetworkCallback(const Request &aRequest, Response &aResponse);
-
+    void PostNetworksCallback(const Request &aRequest, Response &aResponse);
+    void PutCurrentNetworksCallback(const Request &aRequest, Response &aResponse);
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
-
+    
+    void PostCurrentNetworkCommission(Response &aResponse);
+    void DeleteCurrentNetworkPrefix(Response &aResponse);
+    void PostCurrentNetworkPrefix(Response &aResponse);
+    void PutCurrentNetwork(Response &aResponse);
+    void GetCurrentNetwork(Response &aResponse);
     void GetNetworks(Response &aResponse);
     void GetNodeInfo(Response &aResponse);
     void GetDataNodeInfo( Response &aResponse);
@@ -106,7 +119,7 @@ private:
     void GetDataRloc16( Response &aResponse);
     void GetDataExtendedPanId( Response &aResponse);
     void GetDataRloc( Response &aResponse);
-
+    
     void PostNetworks(const Request &aRequest, Response &aResponse);
 
     otInstance *          mInstance;

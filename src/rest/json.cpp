@@ -614,22 +614,24 @@ Network JsonString2Network(std::string aString)
     cJSON* value;
     cJSON* jsonOut;
     Network network;
-   
+    otbrLog(OTBR_LOG_ERR, "start  %s", aString.c_str());
+    
     jsonOut  = cJSON_Parse(aString.c_str());
     value = cJSON_GetObjectItemCaseSensitive(jsonOut, "networkKey");
     if (cJSON_IsString(value) && (value->valuestring != nullptr))
     {   
         network.networkKey = std::string(value->valuestring);
+        otbrLog(OTBR_LOG_ERR, "network key", network.networkKey.c_str());
     }
 
     value = cJSON_GetObjectItemCaseSensitive(jsonOut, "prefix");
     if (cJSON_IsString(value) && (value->valuestring != nullptr))
     {   
         network.prefix = std::string(value->valuestring);
-        if (network.prefix.find('/') == std::string::npos)
-        {
-            network.prefix += "/64";
-        }
+        // if (network.prefix.find('/') == std::string::npos)
+        // {
+        //     network.prefix += "/64";
+        // }
     }
     
     value = cJSON_GetObjectItemCaseSensitive(jsonOut, "channel");
@@ -644,6 +646,7 @@ Network JsonString2Network(std::string aString)
     if (cJSON_IsString(value) && (value->valuestring != nullptr))
     {   
         network.networkName = std::string(value->valuestring);
+        otbrLog(OTBR_LOG_ERR, "panid %s", network.networkName.c_str());
     }
 
 
@@ -660,13 +663,14 @@ Network JsonString2Network(std::string aString)
     if (cJSON_IsString(value) && (value->valuestring != nullptr))
     {   
         network.panId = std::string(value->valuestring);
+        otbrLog(OTBR_LOG_ERR, "panid %s", network.panId.c_str());
     }
 
     value = cJSON_GetObjectItemCaseSensitive(jsonOut, "extPanId");
 
     if (cJSON_IsString(value) && (value->valuestring != nullptr))
     {   
-        network.panId = std::string(value->valuestring);
+        network.extPanId = std::string(value->valuestring);
     }
 
     value = cJSON_GetObjectItemCaseSensitive(jsonOut, "defaultRoute");
@@ -678,7 +682,7 @@ Network JsonString2Network(std::string aString)
     {
         network.defaultRoute = false;
     }
-
+    otbrLog(OTBR_LOG_ERR, "finish");
     return network;
 
     // otbr::Utils::Hex2Bytes(network.extPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
@@ -704,7 +708,18 @@ std::string JsonString2String(std::string aString, std::string aKey)
 
 
 }
-
+bool JsonString2Bool(std::string aString, std::string aKey)
+{
+    cJSON* value;
+    bool ret = false;
+    jsonOut  = cJSON_Parse(aString.c_str());
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, aKey.c_str());
+    if (cJSON_IsTrue(value)))
+    {   
+        ret = true;
+    }
+    return ret;
+}
 
 } // namespace JSON
 } // namespace rest

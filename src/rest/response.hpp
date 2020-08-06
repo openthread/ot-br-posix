@@ -34,8 +34,15 @@
 #ifndef OTBR_REST_RESPONSE_HPP_
 #define OTBR_REST_RESPONSE_HPP_
 
+#include <chrono>
 #include <string>
 #include <vector>
+
+
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::seconds;
+using std::chrono::steady_clock;
 
 namespace otbr {
 namespace rest {
@@ -52,7 +59,8 @@ public:
     std::string GetBody(void);
     void        SetComplete();
     bool        IsComplete();
-
+    void        SetStartTime(steady_clock::time_point aStartTime);
+    steady_clock::time_point   GetStartTime() const;
 private:
     bool                     mCallback;
     std::vector<std::string> mHeaderField;
@@ -61,6 +69,7 @@ private:
     std::string              mProtocol;
     std::string              mBody;
     bool                     mComplete;
+    steady_clock::time_point      mStartTime;
 };
 
 } // namespace rest
