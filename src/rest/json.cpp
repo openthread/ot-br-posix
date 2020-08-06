@@ -580,9 +580,9 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
     return ret;
 }
 
-std::string CString2JsonString(const char *aString)
+std::string CString2JsonString(const char *aCString)
 {
-    cJSON *     cString = CString2Json(aString);
+    cJSON *     cString = CString2Json(aCString);
     std::string ret     = Json2String(cString);
 
     cJSON_Delete(cString);

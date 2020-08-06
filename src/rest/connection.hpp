@@ -49,29 +49,67 @@ enum ConnectionState
 {
     OTBR_REST_CONNECTION_INIT          = 0, ///< Init
     OTBR_REST_CONNECTION_READWAIT      = 1, ///< Wait to read
-    OTBR_REST_CONNECTION_READTIMEOUT   = 2,
+    OTBR_REST_CONNECTION_READTIMEOUT   = 2, ///< Reach read timeout
     OTBR_REST_CONNECTION_CALLBACKWAIT  = 3, ///< Wait for callback
     OTBR_REST_CONNECTION_WRITEWAIT     = 4, ///< Wait for write
-    OTBR_REST_CONNECTION_WRITETIMEOUT  = 5,
-    OTBR_REST_CONNECTION_INTERNALERROR = 6,
-    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< Have sent response and wait to be deleted
+    OTBR_REST_CONNECTION_WRITETIMEOUT  = 5, ///< Reach write timeout
+    OTBR_REST_CONNECTION_INTERNALERROR = 6, ///< occur internal call error
+    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< no longer need to be processed
 
 };
 
+/**
+ * This class implements a Connection class of each socket connection .
+ *
+ */
 class Connection
 {
 public:
+    /**
+     * The constructor to initialize a socket connection instance.
+     *
+     * @param[in]   aStartTime  The reference time for each check point of a conneciton.
+     * @param[in]   aResource   A pointer a resource handler.
+     * @param[in]   aFd         The file descriptor for this conneciton.
+     *
+     */
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
+     /**
+     * This method initialize the connection.
+     *
+     *
+     */
     void Init(void);
 
+    /**
+     * This method performs processing.
+     *
+     * @param[in]       aReadFdSet    The read file descriptors.
+     * @param[in]       aWriteFdSet   The Write file descriptors.
+     *
+     */
     otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
 
+    /**
+     * This method updates the file descriptor sets and timeout for mainloop.
+     *
+     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     *
+     */
     void UpdateFdSet(otSysMainloopContext &aMainloop);
 
+    /**
+     * This method indicates whether this connection no longer need process.
+     *
+     * @retval  true     This connection could be released in next loop.
+     * @retval  false    This connection still need to be processed in next loop.
+     *
+     */
     bool IsComplete(void);
 
 private:
+   
     void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
     void UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
     void UpdateTimeout(timeval &aTimeout);

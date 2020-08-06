@@ -48,6 +48,14 @@ namespace rest {
 class Parser
 {
 public:
+    
+    /**
+     * The constructor of a http request parser.
+     *
+     * @param[in]   aInstance  The Thread instance.
+     * @param[in]   aNcp       The ncp controller.
+     *
+     */
     Parser(Request *aRequest);
     void Init(void);
     void Process(const char *aBuf, size_t aLength);
