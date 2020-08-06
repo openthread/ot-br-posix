@@ -35,13 +35,44 @@ namespace rest {
 
 Response::Response(void)
     : mCallback(false)
+    , mComplete(false)
 {
+
     mProtocol = "HTTP/1.1 ";
     mHeaderField.push_back("Content-Type");
     mHeaderValue.push_back("application/json");
 
     mHeaderField.push_back("Access-Control-Allow-Origin");
     mHeaderValue.push_back("*");
+    
+    mHeaderField.push_back("Access-Control-Allow-Methods");
+    mHeaderValue.push_back("GET,HEAD,OPTIONS,POST,PUT");
+    mHeaderField.push_back("Access-Control-Allow-Headers");
+    mHeaderValue.push_back("Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+
+
+
+}
+
+void Response::SetComplete()
+{
+    mComplete = true;
+}
+
+void   Response::SetStartTime(steady_clock::time_point aStartTime)
+{
+    mStartTime = aStartTime;
+}
+
+steady_clock::time_point   Response::GetStartTime() const
+{
+    return  mStartTime;
+}
+
+
+bool Response::IsComplete()
+{
+    return mComplete == true;
 }
 
 void Response::SetResponsCode(std::string &aCode)
@@ -83,7 +114,7 @@ std::string Response::Serialize(void)
 
     snprintf(contentLength, 9, "%d", static_cast<uint32_t>(mBody.size()));
 
-    ret += spacer + "Content-Length: " + std::string(contentLength);
+    //ret += spacer + "Content-Length: " + std::string(contentLength);
 
     ret += (spacer + spacer + mBody);
 

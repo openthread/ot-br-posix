@@ -36,9 +36,12 @@
 
 #include <unordered_map>
 
+#include <openthread/border_router.h>
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
+
+
 
 using otbr::Ncp::ControllerOpenThread;
 using std::chrono::steady_clock;
@@ -52,14 +55,10 @@ struct DiagInfo
     std::vector<otNetworkDiagTlv> mDiagContent;
 };
 
-enum HttpMethod
+struct NetworksInfo
 {
-    OTBR_REST_METHOD_DELETE = 0, ///< DELETE
-    OTBR_REST_METHOD_GET    = 1, ///< GET
-    OTBR_REST_METHOD_HEAD   = 2, ///< HEAD
-    OTBR_REST_METHOD_POST   = 3, ///< POST
-    OTBR_REST_METHOD_PUT    = 4, ///< PUT
-
+    steady_clock::time_point mStartTime;
+    otActiveScanResult       mNetworkContent;
 };
 
 class Resource
@@ -69,11 +68,18 @@ public:
     void        Init(void);
     void        Handle(Request &aRequest, Response &aResponse);
     void        HandleCallback(Request &aRequest, Response &aResponse);
-    void        ErrorHandler(Request &aRequest, Response &aResponse, int aErrorCode);
+    void        ErrorHandler(Response &aResponse, int aErrorCode);
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
     void        DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+    void        NetworksResponseHandler(Response *                             aResponse,
+                                        otError                                aError,
+                                        const std::vector<otActiveScanResult> &aResult);
 
 private:
+    enum
+    {
+        kDefaultJoinerTimeout = 120, ///< Default timeout for Joiners, in seconds.
+    };
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse);
     void ExtendedAddr(const Request &aRequest, Response &aResponse);
@@ -85,25 +91,45 @@ private:
     void ExtendedPanId(const Request &aRequest, Response &aResponse);
     void Rloc(const Request &aRequest, Response &aResponse);
     void Diagnostic(const Request &aRequest, Response &aResponse);
-
-    void DeleteOutDatedDiag(void);
+    void Networks(const Request &aRequest, Response &aResponse);
+    void CurrentNetwork(const Request &aRequest, Response &aResponse);
+    void CurrentNetworkPrefix(const Request &aRequest, Response &aResponse);
+    void CurrentNetworkCommission(const Request &aRequest, Response &aResponse);
+    
+    void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
+    void HandleNetworkCallback(const Request &aRequest, Response &aResponse);
+    void PostNetworksCallback(const Request &aRequest, Response &aResponse);
+    void PutCurrentNetworksCallback(const Request &aRequest, Response &aResponse);
+    void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
+    
+    void PostCurrentNetworkCommission(Response &aResponse);
+    void DeleteCurrentNetworkPrefix(Response &aResponse);
+    void PostCurrentNetworkPrefix(Response &aResponse);
+    void PutCurrentNetwork(Response &aResponse);
+    void GetCurrentNetwork(Response &aResponse);
+    void GetNetworks(Response &aResponse);
+    void GetNodeInfo(Response &aResponse);
+    void GetDataNodeInfo( Response &aResponse);
+    void GetDataExtendedAddr(Response &aResponse);
+    void GetDataState(Response &aResponse);
+    void GetDataNetworkName( Response &aResponse);
+    void GetDataLeaderData( Response &aResponse);
+    void GetDataNumOfRoute( Response &aResponse);
+    void GetDataRloc16( Response &aResponse);
+    void GetDataExtendedPanId( Response &aResponse);
+    void GetDataRloc( Response &aResponse);
+    
+    void PostNetworks(const Request &aRequest, Response &aResponse);
 
-    std::string GetDataNodeInfo(void);
-    std::string GetDataExtendedAddr(void);
-    std::string GetDataState(void);
-    std::string GetDataNetworkName(void);
-    std::string GetDataLeaderData(void);
-    std::string GetDataNumOfRoute(void);
-    std::string GetDataRloc16(void);
-    std::string GetDataExtendedPanId(void);
-    std::string GetDataRloc(void);
-
-    otInstance *mInstance;
+    otInstance *          mInstance;
+    ControllerOpenThread *mNcp;
 
     std::unordered_map<std::string, ResourceHandler> mResourceMap;
-    std::unordered_map<int32_t, std::string>         mResponseCodeMap;
-    std::unordered_map<std::string, DiagInfo>        mDiagSet;
+    std::unordered_map<std::string, ResourceHandler> mResourceCallbackMap;
+
+    std::unordered_map<int32_t, std::string>      mResponseCodeMap;
+    std::unordered_map<std::string, DiagInfo>     mDiagSet;
 };
 
 } // namespace rest

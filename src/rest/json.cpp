@@ -38,6 +38,18 @@ namespace otbr {
 namespace rest {
 namespace JSON {
 
+cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
+{
+    char   hex[2 * aLength + 1];
+    cJSON *ret = nullptr;
+
+    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
+    hex[2 * aLength] = '\0';
+    ret              = cJSON_CreateString(hex);
+
+    return ret;
+}
+
 std::string String2JsonString(std::string aString)
 {
     std::string ret;
@@ -79,6 +91,36 @@ cJSON *CString2Json(const char *aString)
     return jsonStr;
 }
 
+cJSON *Networks2Json(const std::vector<ActiveScanResult> aResults)
+{
+    cJSON *networks = cJSON_CreateArray();
+    cJSON *network  = nullptr;
+    for (const auto result : aResults)
+    {
+        network = cJSON_CreateObject();
+        
+        cJSON_AddItemToObject(network, "IsJoinable", cJSON_CreateNumber(result.mIsJoinable));
+
+        
+        cJSON_AddItemToObject(network, "NetworkName", cJSON_CreateString(result.mNetworkName.c_str()));
+
+        cJSON_AddItemToObject(network, "ExtPanId", Bytes2HexJson(result.mExtendedPanId, OT_EXT_PAN_ID_SIZE));
+
+        cJSON_AddItemToObject(network, "PanId", cJSON_CreateNumber(result.mPanId));
+
+        cJSON_AddItemToObject(network, "MacAddress", Bytes2HexJson(result.mExtAddress, OT_EXT_ADDRESS_SIZE));
+
+        cJSON_AddItemToObject(network, "Channel", cJSON_CreateNumber(result.mChannel));
+
+        cJSON_AddItemToObject(network, "Rssi", cJSON_CreateNumber(result.mRssi));
+
+        cJSON_AddItemToObject(network, "LQi", cJSON_CreateNumber(result.mLqi));
+
+        cJSON_AddItemToArray(networks, network);
+    }
+
+    return networks;
+}
 cJSON *Mode2Json(const otLinkModeConfig &aMode)
 {
     cJSON *mode = cJSON_CreateObject();
@@ -94,6 +136,33 @@ cJSON *Mode2Json(const otLinkModeConfig &aMode)
     return mode;
 }
 
+cJSON *Addr2Json(const uint8_t *aAddress, size_t aSize)
+{
+    cJSON *     addr          = nullptr;
+    std::string serilizedAddr = "";
+    uint16_t    twoBytes;
+    char        AddrField[5];
+
+    for (size_t i = 0; i < aSize; ++i)
+    {
+        if (i % 2 == 1)
+        {
+            twoBytes = (aAddress[i - 1] << 8) + aAddress[i];
+            sprintf(AddrField, "%x", twoBytes);
+            if (i > 1)
+            {
+                serilizedAddr += ":";
+            }
+            serilizedAddr += std::string(AddrField);
+        }
+    }
+
+    addr = cJSON_CreateString(serilizedAddr.c_str());
+
+    return addr;
+}
+
+
 cJSON *IpAddr2Json(const otIp6Address &aAddress)
 {
     cJSON *     ipAddr          = nullptr;
@@ -101,7 +170,7 @@ cJSON *IpAddr2Json(const otIp6Address &aAddress)
     uint16_t    twoBytes;
     char        ipAddrField[5];
 
-    for (int i = 0; i < 16; ++i)
+    for (size_t i = 0; i < 16; ++i)
     {
         if (i % 2 == 1)
         {
@@ -236,18 +305,6 @@ cJSON *LeaderData2Json(const otLeaderData &aLeaderData)
     return leaderData;
 }
 
-cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
-{
-    char   hex[2 * aLength + 1];
-    cJSON *ret = nullptr;
-
-    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
-    hex[2 * aLength] = '\0';
-    ret              = cJSON_CreateString(hex);
-
-    return ret;
-}
-
 std::string IpAddr2JsonString(const otIp6Address &aAddress)
 {
     std::string ret;
@@ -259,19 +316,39 @@ std::string IpAddr2JsonString(const otIp6Address &aAddress)
     return ret;
 }
 
+std::string Networks2JsonString(const std::vector<ActiveScanResult> aResults)
+{
+    std::string ret;
+    cJSON *     networks = Networks2Json(aResults);
+
+    ret = Json2String(networks);
+    cJSON_Delete(networks);
+
+    return ret;
+}
+
 std::string Node2JsonString(const Node &aNode)
 {
     cJSON *     node = cJSON_CreateObject();
     std::string ret;
-
+    cJSON_AddItemToObject(node, "MeshLocalAddress", IpAddr2Json(aNode.meshLocalAddress));
+    cJSON_AddItemToObject(node, "MeshLocalPrefix", Addr2Json(aNode.meshLocalPrefix,8));
+    cJSON_AddItemToObject(node, "PanId", cJSON_CreateNumber(aNode.panId));
+     
+    cJSON_AddItemToObject(node, "Channel", cJSON_CreateNumber(aNode.channel));
+    
+    cJSON_AddItemToObject(node, "Version", cJSON_CreateString(aNode.version));
+    
     cJSON_AddItemToObject(node, "State", cJSON_CreateNumber(aNode.role));
 
     cJSON_AddItemToObject(node, "NumOfRouter", cJSON_CreateNumber(aNode.numOfRouter));
 
     cJSON_AddItemToObject(node, "RlocAddress", IpAddr2Json(aNode.rlocAddress));
-
+    
     cJSON_AddItemToObject(node, "ExtAddress", Bytes2HexJson(aNode.extAddress, OT_EXT_ADDRESS_SIZE));
-
+    
+    cJSON_AddItemToObject(node, "Eui64", Bytes2HexJson(aNode.eui64.m8, OT_EXT_ADDRESS_SIZE));
+    
     cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aNode.networkName.c_str()));
 
     cJSON_AddItemToObject(node, "Rloc16", cJSON_CreateNumber(aNode.rloc16));
@@ -513,7 +590,7 @@ std::string CString2JsonString(const char *aString)
     return ret;
 }
 
-std::string Error2JsonString(uint32_t aErrorCode, const std::string &aErrorMessage)
+std::string Error2JsonString(uint32_t aErrorCode, std::string aErrorMessage)
 {
     char        code[5];
     std::string ret;
@@ -529,6 +606,118 @@ std::string Error2JsonString(uint32_t aErrorCode, const std::string &aErrorMessa
 
     cJSON_Delete(error);
 
+    return ret;
+}
+
+Network JsonString2Network(std::string aString)
+{
+    cJSON* value;
+    cJSON* jsonOut;
+    Network network;
+    otbrLog(OTBR_LOG_ERR, "start  %s", aString.c_str());
+    
+    jsonOut  = cJSON_Parse(aString.c_str());
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "networkKey");
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        network.networkKey = std::string(value->valuestring);
+        otbrLog(OTBR_LOG_ERR, "network key", network.networkKey.c_str());
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "prefix");
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        network.prefix = std::string(value->valuestring);
+        // if (network.prefix.find('/') == std::string::npos)
+        // {
+        //     network.prefix += "/64";
+        // }
+    }
+    
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "channel");
+
+    if (cJSON_IsNumber(value))
+    {   
+        network.channel = static_cast<uint32_t>(value->valueint);
+    }
+    
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "networkName");
+    
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        network.networkName = std::string(value->valuestring);
+        otbrLog(OTBR_LOG_ERR, "panid %s", network.networkName.c_str());
+    }
+
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "passphrase");
+
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        network.passphrase = std::string(value->valuestring);
+    }
+
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "panId");
+
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        network.panId = std::string(value->valuestring);
+        otbrLog(OTBR_LOG_ERR, "panid %s", network.panId.c_str());
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "extPanId");
+
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        network.extPanId = std::string(value->valuestring);
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, "defaultRoute");
+    if (cJSON_IsTrue(value))
+    {   
+        network.defaultRoute = true;
+    }
+    else
+    {
+        network.defaultRoute = false;
+    }
+    otbrLog(OTBR_LOG_ERR, "finish");
+    return network;
+
+    // otbr::Utils::Hex2Bytes(network.extPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
+    // otbr::Utils::Bytes2Hex(psk.ComputePskc(network.extPanIdBytes, network.networkName.c_str(), network.passphrase.c_str()), OT_PSKC_MAX_LENGTH,
+    //                        network.pskcStr);
+}
+
+std::string JsonString2String(std::string aString, std::string aKey)
+{
+    cJSON* value;
+    cJSON* jsonOut;
+    std::string ret;
+
+    jsonOut  = cJSON_Parse(aString.c_str());
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, aKey.c_str());
+    if (cJSON_IsString(value) && (value->valuestring != nullptr))
+    {   
+        ret = std::string(value->valuestring);
+    }
+
+    return ret;
+
+
+}
+bool JsonString2Bool(std::string aString, std::string aKey)
+{
+    cJSON* value;
+    bool ret = false;
+    jsonOut  = cJSON_Parse(aString.c_str());
+    value = cJSON_GetObjectItemCaseSensitive(jsonOut, aKey.c_str());
+    if (cJSON_IsTrue(value)))
+    {   
+        ret = true;
+    }
     return ret;
 }
 

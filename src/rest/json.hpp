@@ -34,21 +34,59 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
-#include "agent/ncp_openthread.hpp"
+#include "openthread/link.h"
 #include "openthread/netdiag.h"
 #include "openthread/thread_ftd.h"
+
+#include "agent/ncp_openthread.hpp"
+#include "agent/thread_helper.hpp"
 #include "utils/hex.hpp"
 
 namespace otbr {
 namespace rest {
 
+struct ActiveScanResult
+{
+     uint8_t       mExtAddress[OT_EXT_ADDRESS_SIZE+1];    ///< IEEE 802.15.4 Extended Address
+    std::string          mNetworkName;   ///< Thread Network Name
+    uint8_t             mExtendedPanId[OT_EXT_PAN_ID_SIZE + 1]; ///< Thread Extended PAN ID
+    std::vector<uint8_t> mSteeringData;  ///< Steering Data
+    uint16_t             mPanId;         ///< IEEE 802.15.4 PAN ID
+    uint16_t             mJoinerUdpPort; ///< Joiner UDP Port
+    uint8_t              mChannel;       ///< IEEE 802.15.4 Channel
+    int8_t               mRssi;          ///< RSSI (dBm)
+    uint8_t              mLqi;           ///< LQI
+    uint8_t              mVersion;       ///< Version
+    bool                 mIsNative;      ///< Native Commissioner flag
+    bool                 mIsJoinable;    ///< Joining Permitted flag
+};
+
+struct Network
+{
+    bool defaultRoute;
+    uint8_t channel;
+    std::string networkKey;
+    std::string prefix;
+    std::string networkName;
+    std::string panId;
+    std::string  passphrase;
+    std::string  extPanId;
+
+};
+
 struct Node
 {
+    const uint8_t * meshLocalPrefix;
+    uint16_t        panId;   
+    uint8_t         channel;
+    otExtAddress    eui64;
+    const char *   version;
     uint32_t       role;
     uint32_t       numOfRouter;
     uint16_t       rloc16;
     const uint8_t *extPanId;
     const uint8_t *extAddress;
+    otIp6Address   meshLocalAddress;
     otIp6Address   rlocAddress;
     otLeaderData   leaderData;
     std::string    networkName;
@@ -70,7 +108,12 @@ std::string RouteData2JsonString(const otNetworkDiagRouteData &aRouteData);
 std::string LeaderData2JsonString(const otLeaderData &aLeaderData);
 std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters);
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
-std::string Error2JsonString(uint32_t aErrorCode, const std::string &aErrorMessage);
+std::string Networks2JsonString(const std::vector<ActiveScanResult> aResults);
+std::string Error2JsonString(uint32_t aErrorCode, std::string aErrorMessage);
+Network JsonString2Network(std::string aString);
+std::string JsonString2String(std::string aString, std::string aKey);
+bool JsonString2Bool(std::string aString, std::string aKey);
+
 
 }; // namespace JSON
 
