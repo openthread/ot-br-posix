@@ -8,3 +8,6 @@
 [submodule "third_party/cJSON/repo"]
 	path = third_party/cJSON/repo
 	url = git@github.com:DaveGamble/cJSON.git
+[submodule "third_party/http-parser/repo"]
+	path = third_party/http-parser/repo
+	url = git@github.com:nodejs/http-parser.git
