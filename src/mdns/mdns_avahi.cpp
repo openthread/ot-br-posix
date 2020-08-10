@@ -511,6 +511,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     va_start(args, aType);
 
     VerifyOrExit(mState == kStateReady, errno = EAGAIN);
+    VerifyOrExit(mGroup != nullptr, ret = OTBR_ERROR_MDNS);
 
     for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
     {
