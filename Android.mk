@@ -58,28 +58,6 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := http_parser
-
-LOCAL_CPPFLAGS += -std=c++14
-
-LOCAL_SRC_FILES = \
-    third_party/http-parser/repo/http_parser.c \
-
-include $(BUILD_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := cjson
-
-LOCAL_CPPFLAGS += -std=c++14
-
-LOCAL_SRC_FILES = \
-    third_party/cJSON/repo/cJSON.c \
-
-include $(BUILD_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-
 $(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(LOCAL_PATH)/src/dbus/server/introspect.hpp
 
 $(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/introspect.xml
@@ -101,15 +79,12 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
-    $(OTBR_PROJECT_INCLUDES)\
-    $(LOCAL_PATH)/third_party/cJSON/repo \
-    $(LOCAL_PATH)/third_party/http-parser/repo \
+    $(OTBR_PROJECT_INCLUDES)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
     -DOTBR_PACKAGE_VERSION=\"0.2.0\" \
     -DOTBR_ENABLE_DBUS_SERVER=1 \
-    -DOTBR_ENABLE_REST_SERVER=1 \
     -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
     $(OTBR_PROJECT_CFLAGS) \
 
@@ -129,13 +104,6 @@ LOCAL_SRC_FILES := \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
-    src/rest/rest_web_server.cpp\
-    src/rest/connection.cpp\
-    src/rest/resource.cpp\
-    src/rest/json.cpp\
-    src/rest/parser.cpp\
-    src/rest/request.cpp\
-    src/rest/response.cpp\
     src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
@@ -144,8 +112,6 @@ LOCAL_STATIC_LIBRARIES += \
     libopenthread-ncp \
     libopenthread-cli \
     ot-core \
-    cjson \
-    http_parser \
 
 LOCAL_LDLIBS := \
     -lutil

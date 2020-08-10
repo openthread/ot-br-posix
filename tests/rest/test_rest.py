@@ -32,7 +32,7 @@ import json
 import re
 from threading import Thread
 
-rest_api_addr = "http://0.0.0.0:81"
+rest_api_addr = "http://0.0.0.0:8081"
 
 
 def get_data_from_url(url, result, index):
@@ -450,7 +450,7 @@ def main():
     node_num_of_router_test(200)
     node_ext_panid_test(200)
     diagnostics_test(100)
-    error404_test(10)
+    error404_test(200)
 
     return 0
 

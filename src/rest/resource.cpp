@@ -80,9 +80,10 @@ static const uint32_t kDiagResetTimeout = 3000000;
 static const uint32_t kDiagCollectTimeout = 2000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
-    : mInstance(aNcp->GetThreadHelper()->GetInstance())
-    , mNcp(aNcp)
-{
+    :mNcp(aNcp)
+{   
+    mInstance = mNcp->GetThreadHelper()->GetInstance();
+
     // Resource Handler
     mResourceMap.emplace(OT_DIAGNOETIC_PATH, &Resource::Diagnostic);
     mResourceMap.emplace(OT_NODE_PATH, &Resource::NodeInfo);
