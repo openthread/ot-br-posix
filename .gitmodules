@@ -5,3 +5,6 @@
 [submodule "third_party/d3js/repo"]
 	path = third_party/d3js/repo
 	url = git@github.com:d3/d3.git
+[submodule "third_party/cJSON/repo"]
+	path = third_party/cJSON/repo
+	url = git@github.com:DaveGamble/cJSON.git
