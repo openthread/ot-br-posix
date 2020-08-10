@@ -31,7 +31,6 @@
 #include <cerrno>
 
 #include <assert.h>
-
 #include <sys/time.h>
 
 using std::chrono::duration_cast;
@@ -65,7 +64,7 @@ void Connection::Init(void)
     mParser.Init();
 }
 
-void Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd)
+void Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const
 {
     if (mState == OTBR_REST_CONNECTION_READWAIT || mState == OTBR_REST_CONNECTION_INIT)
     {
@@ -74,7 +73,7 @@ void Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd)
     }
 }
 
-void Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd)
+void Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd) const
 {
     if (mState == OTBR_REST_CONNECTION_WRITEWAIT)
     {
@@ -83,7 +82,7 @@ void Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd)
     }
 }
 
-void Connection::UpdateTimeout(timeval &aTimeout)
+void Connection::UpdateTimeout(timeval &aTimeout) const
 {
     struct timeval timeout;
     uint32_t       timeoutLen = kReadTimeout;
@@ -124,7 +123,7 @@ void Connection::UpdateTimeout(timeval &aTimeout)
     }
 }
 
-void Connection::UpdateFdSet(otSysMainloopContext &aMainloop)
+void Connection::UpdateFdSet(otSysMainloopContext &aMainloop) const
 {
     UpdateTimeout(aMainloop.mTimeout);
     UpdateReadFdSet(aMainloop.mReadFdSet, aMainloop.mMaxFd);
@@ -174,9 +173,8 @@ otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
 otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
 {
     otbrError error = OTBR_ERROR_NONE;
-    int32_t   received;
+    int32_t   received, err;
     char      buf[2048];
-    int32_t   err;
     auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
 
     VerifyOrExit(duration <= kReadTimeout, mState = OTBR_REST_CONNECTION_READTIMEOUT);
@@ -192,7 +190,6 @@ otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
         {
             mParser.Process(buf, received);
         }
-
     } while ((received > 0 && !mRequest.IsComplete()) || err == EINTR);
 
     if (mRequest.IsComplete())
@@ -275,7 +272,7 @@ otbrError Connection::ProcessWaitCallback(void)
     {
         if (duration >= kCallbackTimeout)
         {
-            mResource->ErrorHandler(mResponse, 404);
+            mResource->ErrorHandler(mResponse, 500);
             error = Write();
         }
     }
@@ -351,7 +348,7 @@ exit:
     return error;
 }
 
-bool Connection::IsComplete()
+bool Connection::IsComplete() const
 {
     return mState == OTBR_REST_CONNECTION_COMPLETE;
 }

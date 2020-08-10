@@ -183,8 +183,6 @@ otbrError RestWebServer::Accept(int aListenFd)
 
     VerifyOrExit(fd >= 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "accept");
 
-    // Set up new connection
-
     VerifyOrExit(SetFdNonblocking(fd), err = errno, error = OTBR_ERROR_REST; errorMessage = "set nonblock");
 
     CreateNewConnection(fd);
@@ -209,7 +207,7 @@ void RestWebServer::CreateNewConnection(int aFd)
     }
     else
     {
-        // Add new connection failed
+        // failure on inserting new connection
         close(aFd);
     }
 }

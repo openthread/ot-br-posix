@@ -35,10 +35,12 @@ Request::Request(void)
     : mComplete(false)
 {
 }
+
 void Request::SetUrl(const char *aString, size_t aLength)
 {
     mUrl += std::string(aString, aLength);
 }
+
 void Request::SetBody(const char *aString, size_t aLength)
 {
     mBody += std::string(aString, aLength);

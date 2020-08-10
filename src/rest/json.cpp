@@ -84,6 +84,7 @@ std::string Json2String(const cJSON *aJson)
 exit:
     return ret;
 }
+
 cJSON *CString2Json(const char *aString)
 {
     cJSON *jsonStr = cJSON_CreateString(aString);

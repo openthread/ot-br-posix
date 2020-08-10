@@ -66,7 +66,7 @@ public:
     /**
      * This method set the response body.
      *
-     * @param[in] aBody a string to be set as response body.
+     * @param[in] aBody A string to be set as response body.
      *
      */
     void SetBody(std::string &aBody);
@@ -81,7 +81,7 @@ public:
     /**
      * This method set the response code.
      *
-     * @param[in] aCode a string representing response code such as "404 not found".
+     * @param[in] aCode A string representing response code such as "404 not found".
      *
      */
     void SetResponsCode(std::string &aCode);
@@ -94,9 +94,9 @@ public:
     void SetCallback(void);
 
     /**
-     * This method returns whether this response need to be processed by callback handler later.
+     * This method checks whether this response need to be processed by callback handler later.
      *
-     * @returns  a bool value.
+     * @returns  A bool value indicates whether this response need to be processed by callback handler later.
      */
     bool NeedCallback(void);
 
@@ -107,9 +107,9 @@ public:
     void SetComplete();
 
     /**
-     * This method returns whether a response is ready to be written to buffer.
+     * This method checks whether this response is ready to be written to buffer.
      *
-     * @returns  A bool value.
+     * @returns  A bool value indicates whether this response is ready to be written to buffer..
      */
     bool IsComplete();
 
@@ -117,7 +117,7 @@ public:
      * This method is used to set a timestamp. when a callback is needed and this field tells callback handler when to
      * collect all the data and form the response.
      *
-     * @param[in] aStartTime a timestamp indicates when the response start to wait for callback.
+     * @param[in] aStartTime A timestamp indicates when the response start to wait for callback.
      */
     void SetStartTime(steady_clock::time_point aStartTime);
 
@@ -133,7 +133,7 @@ public:
      *
      * @returns  A string contains status line, headers and body of a response.
      */
-    std::string Serialize(void);
+    std::string Serialize(void) const;
 
 private:
     bool                     mCallback;

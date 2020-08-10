@@ -53,17 +53,18 @@ class Connection
 {
 public:
     /**
-     * The constructor to initialize a socket connection instance.
+     * The constructor is to initialize a socket connection instance.
      *
-     * @param[in]   aStartTime  The reference time for each check point of a conneciton.
-     * @param[in]   aResource   A pointer a resource handler.
-     * @param[in]   aFd         The file descriptor for this conneciton.
+     * @param[in]   aStartTime  The reference start time of a conneciton which is set when created for the first time
+     * and maybe reset when transfer to wait callback or wait write state.
+     * @param[in]   aResource   A pointer to the resource handler.
+     * @param[in]   aFd         The file descriptor for the conneciton.
      *
      */
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
     /**
-     * This method initialize the connection.
+     * This method initializes the connection.
      *
      *
      */
@@ -73,7 +74,7 @@ public:
      * This method performs processing.
      *
      * @param[in]       aReadFdSet    The read file descriptors.
-     * @param[in]       aWriteFdSet   The Write file descriptors.
+     * @param[in]       aWriteFdSet   The write file descriptors.
      *
      */
     otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
@@ -84,40 +85,43 @@ public:
      * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void UpdateFdSet(otSysMainloopContext &aMainloop) const;
 
     /**
-     * This method indicates whether this connection no longer need process.
+     * This method indicates whether this connection no longer need to be processed.
      *
      * @retval  true     This connection could be released in next loop.
-     * @retval  false    This connection still need to be processed in next loop.
+     * @retval  false    This connection still needs to be processed in next loop.
      *
      */
-    bool IsComplete(void);
+    bool IsComplete(void) const;
 
 private:
-    void      UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd);
-    void      UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd);
-    void      UpdateTimeout(timeval &aTimeout);
+    void      UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const;
+    void      UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd) const;
+    void      UpdateTimeout(timeval &aTimeout) const;
     otbrError ProcessWaitRead(fd_set &aReadFdSet);
     otbrError ProcessWaitCallback(void);
     otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
     otbrError Write(void);
     otbrError Handle(void);
     void      Disconnect(void);
+
     // Timestamp used for each check point of a connection
     steady_clock::time_point mStartTime;
-    int                      mFd;
-    ConnectionState          mState;
-    // Write buffer in case write multiple times
-    std::string mWriteContent;
-
+    // File descriptor for this connection
+    int             mFd;
+    ConnectionState mState;
+    // Response instance binded to this connection
     Response mResponse;
-    Request  mRequest;
+    // Request instance binded to this connection
+    Request mRequest;
     // HTTP parser instance
     Parser mParser;
     // Resource handler instance
     Resource *mResource;
+    // Write buffer in case write multiple times
+    std::string mWriteContent;
 };
 
 } // namespace rest

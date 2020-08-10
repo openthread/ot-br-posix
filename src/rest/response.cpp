@@ -31,11 +31,11 @@
 #include <stdio.h>
 
 #define OT_REST_RESPONSE_CONTENT_TYPE "application/json"
-#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
+#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN *
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
     "Access-Control-Request-Headers"
-#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "DELETE,GET,HEAD,OPTIONS,POST,PUT"
+#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "GET"
 
 namespace otbr {
 namespace rest {
@@ -106,9 +106,9 @@ bool Response::NeedCallback(void)
     return mCallback;
 }
 
-std::string Response::Serialize(void)
+std::string Response::Serialize(void) const
 {
-    char        contentLength[10];
+    char        contentLength[20];
     size_t      index;
     std::string spacer = "\r\n";
     std::string ret(mProtocol + " " + mCode);
@@ -118,7 +118,7 @@ std::string Response::Serialize(void)
         ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
     }
 
-    snprintf(contentLength, 9, "%d", static_cast<uint32_t>(mBody.size()));
+    snprintf(contentLength, 19, "%d", static_cast<uint32_t>(mBody.size()));
     ret += spacer + "Content-Length: " + std::string(contentLength);
     ret += (spacer + spacer + mBody);
 

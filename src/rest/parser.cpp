@@ -26,10 +26,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "rest/parser.hpp"
+
 #include <string>
 #include <vector>
-
-#include "rest/parser.hpp"
 
 namespace otbr {
 namespace rest {

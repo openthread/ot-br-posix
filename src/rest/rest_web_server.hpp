@@ -54,13 +54,13 @@ public:
      *
      * @param[in]   aNcp  A pointer to the NCP controller.
      *
-     * @returns a pointer pointing to the static rest server instance.
+     * @returns A pointer pointing to the static rest server instance.
      *
      */
     static RestWebServer *GetRestWebServer(ControllerOpenThread *aNcp);
 
     /**
-     * This method initialize the REST server.
+     * This method initializes the REST server.
      *
      * @retval  OTBR_ERROR_NONE     REST server initialized successfully.
      * @retval  OTBR_ERROR_REST     Failed due to rest error .
@@ -85,23 +85,20 @@ public:
     otbrError Process(otSysMainloopContext &aMainloop);
 
 private:
-    // For service
     RestWebServer(ControllerOpenThread *aNcp);
-
     otbrError UpdateConnections(fd_set &aReadFdSet);
-
-    void CreateNewConnection(int32_t aFd);
-
+    void      CreateNewConnection(int32_t aFd);
     otbrError Accept(int32_t aListenFd);
-
-    bool SetFdNonblocking(int32_t fd);
-
     otbrError InitializeListenFd(void);
+    bool      SetFdNonblocking(int32_t fd);
 
     // Resource handler
-    Resource                                                 mResource;
-    sockaddr_in                                              mAddress;
-    int32_t                                                  mListenFd;
+    Resource mResource;
+    // Struct for server configuration
+    sockaddr_in mAddress;
+    // File descriptor for listening
+    int32_t mListenFd;
+    // Connection List
     std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
     // REST server
     static std::unique_ptr<RestWebServer> sRestWebServer;

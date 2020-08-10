@@ -55,7 +55,7 @@ class Parser
 {
 public:
     /**
-     * The constructor of a http request parser.
+     * The constructor of a http request parser instance.
      *
      * @param[in]   aRequest  A pointer pointing to a request instance.
      *
@@ -63,7 +63,7 @@ public:
     Parser(Request *aRequest);
 
     /**
-     * This method initialize the http-parser.
+     * This method initializea the http-parser.
      *
      */
     void Init(void);

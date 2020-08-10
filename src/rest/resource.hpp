@@ -56,7 +56,7 @@ class Resource
 {
 public:
     /**
-     * The constructor to initialize the Resource handler instance.
+     * The constructor initializes the resource handler instance.
      *
      * @param[in]   aNcp  A pointer to the NCP controller.
      *
@@ -78,7 +78,7 @@ public:
      * @param[inout]   aResponse  A response instance will be set by the Resource handler.
      *
      */
-    void Handle(Request &aRequest, Response &aResponse);
+    void Handle(Request &aRequest, Response &aResponse) const;
 
     /**
      * This method distributes a callback handler for each connection needs a callback.
@@ -97,7 +97,7 @@ public:
      * @param[inout]   aResponse  A response instance will be set by the Resource handler.
      *
      */
-    void ErrorHandler(Response &aResponse, int aErrorCode);
+    void ErrorHandler(Response &aResponse, int aErrorCode) const;
 
     /**
      * This method is a pre-defined callback function used for call another private method when diagnostic information
@@ -110,28 +110,29 @@ public:
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
 
 private:
-    typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
-    void NodeInfo(const Request &aRequest, Response &aResponse);
-    void ExtendedAddr(const Request &aRequest, Response &aResponse);
-    void State(const Request &aRequest, Response &aResponse);
-    void NetworkName(const Request &aRequest, Response &aResponse);
-    void LeaderData(const Request &aRequest, Response &aResponse);
-    void NumOfRoute(const Request &aRequest, Response &aResponse);
-    void Rloc16(const Request &aRequest, Response &aResponse);
-    void ExtendedPanId(const Request &aRequest, Response &aResponse);
-    void Rloc(const Request &aRequest, Response &aResponse);
-    void Diagnostic(const Request &aRequest, Response &aResponse);
-
+    typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
+    typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
+    void NodeInfo(const Request &aRequest, Response &aResponse) const;
+    void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
+    void State(const Request &aRequest, Response &aResponse) const;
+    void NetworkName(const Request &aRequest, Response &aResponse) const;
+    void LeaderData(const Request &aRequest, Response &aResponse) const;
+    void NumOfRoute(const Request &aRequest, Response &aResponse) const;
+    void Rloc16(const Request &aRequest, Response &aResponse) const;
+    void ExtendedPanId(const Request &aRequest, Response &aResponse) const;
+    void Rloc(const Request &aRequest, Response &aResponse) const;
+    void Diagnostic(const Request &aRequest, Response &aResponse) const;
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
-    void GetNodeInfo(Response &aResponse);
-    void GetDataExtendedAddr(Response &aResponse);
-    void GetDataState(Response &aResponse);
-    void GetDataNetworkName(Response &aResponse);
-    void GetDataLeaderData(Response &aResponse);
-    void GetDataNumOfRoute(Response &aResponse);
-    void GetDataRloc16(Response &aResponse);
-    void GetDataExtendedPanId(Response &aResponse);
-    void GetDataRloc(Response &aResponse);
+
+    void GetNodeInfo(Response &aResponse) const;
+    void GetDataExtendedAddr(Response &aResponse) const;
+    void GetDataState(Response &aResponse) const;
+    void GetDataNetworkName(Response &aResponse) const;
+    void GetDataLeaderData(Response &aResponse) const;
+    void GetDataNumOfRoute(Response &aResponse) const;
+    void GetDataRloc16(Response &aResponse) const;
+    void GetDataExtendedPanId(Response &aResponse) const;
+    void GetDataRloc(Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
@@ -140,8 +141,8 @@ private:
     otInstance *          mInstance;
     ControllerOpenThread *mNcp;
 
-    std::unordered_map<std::string, ResourceHandler> mResourceMap;
-    std::unordered_map<std::string, ResourceHandler> mResourceCallbackMap;
+    std::unordered_map<std::string, ResourceHandler>         mResourceMap;
+    std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
 
     std::unordered_map<int32_t, std::string>  mResponseCodeMap;
     std::unordered_map<std::string, DiagInfo> mDiagSet;
