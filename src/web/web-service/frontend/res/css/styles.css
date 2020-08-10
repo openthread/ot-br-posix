@@ -51,9 +51,9 @@ text {
 .tooltip {
     border: 1px solid grey;
     padding: 10px;
-    color: #333;
+    color: white;
     border-radius: 5px;
-    background-color: grey;
+    background-color: #696969;
     text-underline-color: white;
 }
 
@@ -84,6 +84,7 @@ text {
 .collapsible:hover {
     background-color: #a3a2a2;
 }
+
 
 .content {
     font-size: 13px;
