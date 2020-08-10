@@ -666,29 +666,12 @@
                 .text('a simple tooltip');
 
             force = d3.layout.force()
-                .gravity(.05)
-                .distance(100)
-                .charge(-100)
+                // .gravity(.05)
+                .distance(40)
+                // .charge(-100)
                 .size([len, len / (3 / 2)]);
 
-            // tooltipblur for node
-            filt = svg.append('defs')
-                .append('filter')
-                .attr({ id: 'f1', x: 0, y: 0, width: '150%', height: '150%' });
-            filt
-                .append('feOffset')
-                .attr({ result: 'offOut', 'in': 'sourceAlpha', dx: 1, dy: 1 });
-            filt
-                .append('feGaussianBlur')
-                .attr({ result: 'blurOut', 'in': 'offOut', stdDeviation: 1 });
-            feMerge = filt.append('feMerge');
-            feMerge
-                .append('feMergeNode')
-                .attr('in', 'offsetBlur');
-            feMerge
-                .append('feMergeNode')
-                .attr('in', 'SourceGraphic');
-                
+            
             json = $scope.graphInfo;
             console.log(json.nodes[0]);
             force
@@ -740,7 +723,7 @@
                     // Tooltip effect of mouseover on a node 
                     .on('mouseover', function(d) {
                         return tooltip.style('visibility', 'visible')
-                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
+                            .text(d.Rloc16 );
                     })
                     .on('mousemove', function() {
                         return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -763,7 +746,7 @@
                     })
                     .on('mouseover', function(d) {
                         return tooltip.style('visibility', 'visible')
-                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
+                            .text(d.Rloc16 );
                     })
                     .on('mousemove', function() {
                         return tooltip.style('top', (d3.event.pageY - 10) + 'px')
@@ -781,7 +764,7 @@
                 // .append('polygon')
                     // .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
                     .attr('fill', '#7e77f8')
-                    .style('filter', 'url(#f1)')
+                    
                     .style('stroke', '#484e46')
                     .style('stroke-width', '1px')
     
@@ -827,10 +810,12 @@
                 d3.selectAll('.Router')
                 .append('circle')
                 .attr('r', '8')
+                .style('stroke', '#484e46')
+                    .style('stroke-width', '1px')
                 // .append('polygon')
                 //     .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
                     .attr('fill', '#03e2dd')
-                    .style('filter', 'url(#f1)')
+                   
                     .attr('class', function(d) {
                         return 'Stroke';
                     })
@@ -839,7 +824,7 @@
                         d3.select(this).transition()
                         .attr('r','8');
                         return tooltip.style('visibility', 'visible')
-                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
+                            .text(d.Rloc16);
 
 
                     })
