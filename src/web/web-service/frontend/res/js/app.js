@@ -583,168 +583,143 @@
 
         
         $scope.drawGraph = function() {
-            function dragstarted(d) {
-                if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-                d.fx = d.x;
-                d.fy = d.y;
-              }
-              
-            function dragged(d) {
-                d.fx = d3.event.x;
-                d.fy = d3.event.y;
-              }
-              
-            function dragended(d) {
-                if (!d3.event.active) simulation.alphaTarget(0);
-                d.fx = null;
-                d.fy = null;
-              }
+            var json, svg, tooltip, force, filt, feMerge;
+            var scale, len;
 
             // tooltiperase former graph
             document.getElementById('topograph').innerHTML = '';
             scale = $scope.graphInfo.nodes.length;
             len = 125 * Math.sqrt(scale);
-            json = $scope.graphInfo;
 
-            //tooltipblur for node
+            // tooltiptopology graph
+            svg = d3.select('.d3graph').append('svg')
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10)) // tooltipclass to make it responsive
             
-            var tooltip = d3.select('body')
+                
+            // Legend
+            svg.append('circle')
+            .attr('cx',len-20)
+            .attr('cy',10).attr('r', 3)
+            .style('fill', "#7e77f8")
+            .style('stroke', '#484e46')
+            .style('stroke-width', '0.4px');
+            
+            svg.append('circle')
+            .attr("cx",len-20)
+            .attr('cy',20)
+            .attr('r', 3)
+            .style('fill', '#03e2dd')
+            .style('stroke', '#484e46')
+            .style('stroke-width', '0.4px');
+            
+            svg.append('circle')
+            .attr('cx',len-20)
+            .attr('cy',30)
+            .attr('r', 3)
+            .style('fill', '#aad4b0')
+            .style('stroke', '#484e46')
+            .style('stroke-width', '0.4px')
+            .style('stroke-dasharray','2 1');
+           
+            svg.append('circle')
+            .attr('cx',len-50)
+            .attr('cy',10).attr('r', 3)
+            .style('fill', '#ffffff')
+            .style('stroke', '#f39191')
+            .style('stroke-width', '0.4px');
+            
+            svg.append('text')
+            .attr('x', len-15)
+            .attr('y', 10)
+            .text('Leader')
+            .style('font-size', '4px')
+            .attr('alignment-baseline','middle');
+            
+            svg.append('text')
+            .attr('x', len-15)
+            .attr('y',20 )
+            .text('Router')
+            .style('font-size', '4px')
+            .attr('alignment-baseline','middle');
+            
+            svg.append('text')
+            .attr('x', len-15)
+            .attr('y',30 )
+            .text('Child')
+            .style('font-size', '4px')
+            .attr('alignment-baseline','middle');
+            svg.append('text')
+            .attr('x', len-45)
+            .attr('y',10 )
+            .text('Selected')
+            .style('font-size', '4px')
+            .attr('alignment-baseline','middle');
+
+            // tooltiptooltip style  for each node
+            tooltip = d3.select('body')
                 .append('div')
                 .attr('class', 'tooltip')
-                
                 .style('position', 'absolute')
                 .style('z-index', '10')
                 .style('visibility', 'hidden')
                 .text('a simple tooltip');
-            
-            const simulation = d3.forceSimulation()
-                .force("charge", d3.forceManyBody())
-               
-                .force("link", d3.forceLink().distance(40))
-                .force("center", d3.forceCenter(len/2, len /3))
+
+            force = d3.layout.force()
+                .gravity(.05)
+                .distance(100)
+                .charge(-100)
+                .size([len, len / (3 / 2)]);
+
+            // tooltipblur for node
+            filt = svg.append('defs')
+                .append('filter')
+                .attr({ id: 'f1', x: 0, y: 0, width: '150%', height: '150%' });
+            filt
+                .append('feOffset')
+                .attr({ result: 'offOut', 'in': 'sourceAlpha', dx: 1, dy: 1 });
+            filt
+                .append('feGaussianBlur')
+                .attr({ result: 'blurOut', 'in': 'offOut', stdDeviation: 1 });
+            feMerge = filt.append('feMerge');
+            feMerge
+                .append('feMergeNode')
+                .attr('in', 'offsetBlur');
+            feMerge
+                .append('feMergeNode')
+                .attr('in', 'SourceGraphic');
                 
-            const svg = d3.select('.d3graph').append('svg')
-                .attr('preserveAspectRatio', 'xMidYMid meet')
-                
-                .attr('viewBox', [0,0,len,len/(3/2)].join(' ')) // tooltipclass to make it responsive
-                .append('g');
-            
-                // Legend
-                svg.append('circle')
-                .attr('cx',len-20)
-                .attr('cy',10).attr('r', 3)
-                .style('fill', "#7e77f8")
-                .style('stroke', '#484e46')
-                .style('stroke-width', '0.4px');
-                
-                svg.append('circle')
-                .attr("cx",len-20)
-                .attr('cy',20)
-                .attr('r', 3)
-                .style('fill', '#03e2dd')
-                .style('stroke', '#484e46')
-                .style('stroke-width', '0.4px');
-                
-                svg.append('circle')
-                .attr('cx',len-20)
-                .attr('cy',30)
-                .attr('r', 3)
-                .style('fill', '#aad4b0')
-                .style('stroke', '#484e46')
-                .style('stroke-width', '0.4px')
-                .style('stroke-dasharray','2 1');
-               
-                svg.append('circle')
-                .attr('cx',len-50)
-                .attr('cy',10).attr('r', 3)
-                .style('fill', '#ffffff')
-                .style('stroke', '#f39191')
-                .style('stroke-width', '0.4px');
-                
-                svg.append('text')
-                .attr('x', len-15)
-                .attr('y', 10)
-                .text('Leader')
-                .style('font-size', '4px')
-                .attr('alignment-baseline','middle');
-                
-                svg.append('text')
-                .attr('x', len-15)
-                .attr('y',20 )
-                .text('Router')
-                .style('font-size', '4px')
-                .attr('alignment-baseline','middle');
-                
-                svg.append('text')
-                .attr('x', len-15)
-                .attr('y',30 )
-                .text('Child')
-                .style('font-size', '4px')
-                .attr('alignment-baseline','middle');
-                svg.append('text')
-                .attr('x', len-45)
-                .attr('y',10 )
-                .text('Selected')
-                .style('font-size', '4px')
-                .attr('alignment-baseline','middle');
-            
-            const link = svg.selectAll('.link')
+            json = $scope.graphInfo;
+            console.log(json.nodes[0]);
+            force
+                .nodes(json.nodes)
+                .links(json.links)
+                .start();
+
+
+            var link = svg.selectAll('.link')
                 .data(json.links)
+                .enter().append('line')
                 .attr('class', 'link')
-                .on('mousemove', function() {
-                    return tooltip.style('top', (d3.event.pageY - 10) + 'px')
-                        .style('left', (d3.event.pageX + 10) + 'px');
+                .style('stroke', '#908484')
+                // Tooltip dash line for link between child and parent
+                .style('stroke-dasharray', function(d) {
+                    if ('Timeout' in d.linkInfo) return '4 4';
+                    else return '0 0'
                 })
-                .on('mouseout', function() {
-                    return tooltip.style('visibility', 'hidden');
+                 // Tooltip line width representing link quality
+                .style('stroke-width', function(d) {
+                    if ('inQuality' in d.linkInfo)
+                        return Math.sqrt(d.linkInfo.inQuality/2);
+                    else return Math.sqrt(0.5)
                 })
-                .join((enter) => enter.append("line")
-                            .attr('class', 'link')
-                            .style('stroke', '#908484')
-                            .style('stroke-dasharray', function(d) {
-                                if ('Timeout' in d.linkInfo) return '4 4';
-                                else return '0 0'
-                            })
-                            .style('stroke-width', function(d) {
-                                if ('inQuality' in d.linkInfo)
-                                    return Math.sqrt(d.linkInfo.inQuality/3);
-                                else return Math.sqrt(0.5)
-                            })
-                            .on('mouseover', function(d) {
-                                return tooltip.style('visibility', 'visible')
-                                    .text(d.linkInfo);
-                            })
-                            .on('mousemove', function() {
-                                return tooltip.style('top', (d3.event.pageY - 10) + 'px')
-                                    .style('left', (d3.event.pageX + 10) + 'px');
-                            })
-                            .on('mouseout', function() {
-                                return tooltip.style('visibility', 'hidden');
-                            })
-                );
-            const nodeChild = svg.append('g')
-                .selectAll('circle')
-                .data(json.nodes)
-                .enter()
-                .filter(d => d.Role == 'Child')
-                .append('circle')
-                
-                .attr('r', '6')
-                .attr('fill', '#aad4b0')
-                .style('stroke', '#484e46')
-                .style('stroke-dasharray','2 1')
-                .style('stroke-width', '0.5px')
-                .attr('class', function(d) {
-                        return d.Rloc16;
-                })
-                .call(d3.drag()
-                .on('start', dragstarted)
-                .on('drag', dragged)
-                .on('end', dragended))
-                 .on('mouseover', function(d) {
+
+                // Tooltip effect of mouseover on a line
+                .on('mouseover', function(d) {
                     return tooltip.style('visibility', 'visible')
-                        .text(d.Rloc16);
+                        .text(d.linkInfo);
                 })
+
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
                         .style('left', (d3.event.pageX + 10) + 'px');
@@ -752,112 +727,162 @@
                 .on('mouseout', function() {
                     return tooltip.style('visibility', 'hidden');
                 });
-            
-            const nodeRouter = svg.append('g')
-                .selectAll('circle')
-                .data(json.nodes)
-                .enter()
-                .filter(d => d.Role != 'Child')
+
+
+                var node = svg.selectAll('.node')
+                    .data(json.nodes)
+                    .enter().append('g')
+                    .attr('class', function(d) {
+                        return d.Role;
+                    })
+                    .call(force.drag)
+
+                    // Tooltip effect of mouseover on a node 
+                    .on('mouseover', function(d) {
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
+                    })
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        return tooltip.style('visibility', 'hidden');
+                    });
+
+                d3.selectAll('.Child')
+                    .append('circle')
+                    .attr('r', '6')
+                    .attr('fill', '#aad4b0')
+                    .style('stroke', '#484e46')
+                    .style('stroke-dasharray','2 1')
+                    .style('stroke-width', '0.5px')
+    
+                    .attr('class', function(d) {
+                        return d.Rloc16;
+                    })
+                    .on('mouseover', function(d) {
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
+                    })
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        return tooltip.style('visibility', 'hidden');
+                    });
+
+
+                d3.selectAll('.Leader')
                 .append('circle')
-                
-                .attr('r', function(d){
-                    if (d.Role == 'Leader' ){
-                        return '8';
-                    }
-                    else {
-                        return '7'
-                    }
-                })
-                .attr('fill', function(d){
-                    if (d.Role == 'Leader'){
-                        return '#7e77f8';
-                    }
-                    else {
-                        return '#03e2dd';
-                    }
-                })
-                .style('stroke', '#484e46')
-                
-                .style('stroke-width', '1px')
-            
-                .attr('class', function(d) {
-                    return 'Stroke';
-                })
-                .call(d3.drag()
-                    .on('start', dragstarted)
-                    .on('drag', dragged)
-                    .on('end', dragended))
+                .attr('r', '8')
+
+                // .append('polygon')
+                    // .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
+                    .attr('fill', '#7e77f8')
+                    .style('filter', 'url(#f1)')
+                    .style('stroke', '#484e46')
+                    .style('stroke-width', '1px')
+    
+                    .attr('class', function(d) {
+                        return 'Stroke';
+                    })
+
+                    // The effect that node will become bigger when mouseover
                     .on('mouseover', function(d) {
                         d3.select(this).transition()
-                            .attr('r', function(d)
-                            {
-                                if (d.Role == 'Leader' ){
-                                    return '9';
-                            }
-                                else 
-                                {
-                                    return '8'
-                                }
-                            });
-                
+                        .attr('r','9');
+
+                        // d3.select(this).attr('transform', 'scale(1.25)');
                         return tooltip.style('visibility', 'visible')
-                                      .text(d.Rloc16 );
+                            .text(d.Rloc16);
 
-                })
-                .on('mousemove', function() {
-                    return tooltip.style('top', (d3.event.pageY - 10) + 'px')
-                                  .style('left', (d3.event.pageX + 10) + 'px');
-                })
-                .on('mouseout', function() {
-                
-                    d3.select(this).transition()
-                        .attr('r', function(d)
-                        {
-                            if (d.Role == 'Leader' ){
-                                return '8';
-                            }
-                            else 
-                            {
-                                return '7'
-                            }
-                        }
-                        );
-                    return tooltip.style('visibility', 'hidden');
+                    })
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).transition().attr('r','8');
 
-                })
+                        return tooltip.style('visibility', 'hidden');
 
-                   
-                .on('click', function(d) {
-                    d3.selectAll('.Stroke').style('stroke', '#484e46')
-                    .style('stroke-width', '1px');
-                    d3.select(this).style('stroke', '#f39191')
+                    })
+
+                    //  The effect that node will have a yellow edge when clicked
+                    .on('click', function(d) {
+                        d3.selectAll('.Stroke').style('stroke', '#484e46')
+                        .style('stroke-width', '1px');
+                        d3.select(this).style('stroke', '#f39191')
                                 .style('stroke-width', '1px');
-                    $scope.$apply(function() 
-                    {
-                        $scope.nodeDetailInfo = d;
-                        $scope.updateDetailLabel();
+
+
+                        $scope.$apply(function() {
+                            $scope.nodeDetailInfo = d;
+                            $scope.updateDetailLabel();
+                        });
+                    });
+
+                d3.selectAll('.Router')
+                .append('circle')
+                .attr('r', '8')
+                // .append('polygon')
+                //     .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
+                    .attr('fill', '#03e2dd')
+                    .style('filter', 'url(#f1)')
+                    .attr('class', function(d) {
+                        return 'Stroke';
+                    })
+                    .on('mouseover', function(d) {
+
+                        d3.select(this).transition()
+                        .attr('r','8');
+                        return tooltip.style('visibility', 'visible')
+                            .text('RLOC16: ' + d.Rloc16 + ' RouteId:  ' + d.RouteId);
+
+
+                    })
+                    .on('mousemove', function() {
+                        return tooltip.style('top', (d3.event.pageY - 10) + 'px')
+                            .style('left', (d3.event.pageX + 10) + 'px');
+                    })
+                    .on('mouseout', function() {
+                        d3.select(this).transition()
+                        .attr('r','7');
+                        return tooltip.style('visibility', 'hidden');
+
+                    })
+
+                    // The same effect as Leader
+                    .on('click', function(d) {
+                        d3.selectAll('.Stroke').style('stroke', '#484e46')
+                        .style('stroke-width', '1px');
+                        d3.select(this).style('stroke', '#f39191')
+                                .style('stroke-width', '1px');
+
+
+
+                        $scope.$apply(function() {
+                            $scope.nodeDetailInfo = d;
+                            $scope.updateDetailLabel();
+                        });
+                    });
+
+                force.on('tick', function() {
+                    link.attr('x1', function(d) { return d.source.x; })
+                        .attr('y1', function(d) { return d.source.y; })
+                        .attr('x2', function(d) { return d.target.x; })
+                        .attr('y2', function(d) { return d.target.y; });
+                    node.attr('transform', function(d) {
+                        return 'translate(' + d.x + ',' + d.y + ')';
                     });
                 });
             
-            simulation.nodes(json.nodes).force('link').links(json.links);
-            
-            simulation.on('tick', () => {
-                link
-                    .attr('x1', d => d.source.x)
-                    .attr('y1', d => d.source.y)
-                    .attr('x2', d => d.target.x)
-                    .attr('y2', d => d.target.y);
-                
-                   
-                nodeChild
-                    .attr('cx', node => node.x)
-                    .attr('cy', node => node.y);
-                nodeRouter
-                    .attr('cx', node => node.x)
-                    .attr('cy', node => node.y);
-                  });
+
             $scope.updateDetailLabel();
             $scope.graphisReady = true;
+
         }
     };
 })();
