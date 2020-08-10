@@ -31,7 +31,7 @@
 #include <stdio.h>
 
 #define OT_REST_RESPONSE_CONTENT_TYPE "application/json"
-#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN *
+#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
     "Access-Control-Request-Headers"
