@@ -30,8 +30,6 @@
 
 #include "string.h"
 
-#include "utils/pskc.hpp"
-
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
 #define OT_DIAGNOETIC_PATH "/diagnostics"
@@ -80,8 +78,6 @@ static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16,
 static const uint32_t kDiagResetTimeout = 3000000;
 // Timeout(in Microseconds) for collecting diagnostics
 static const uint32_t kDiagCollectTimeout = 2000000;
-// Waittime after perform a factory reset.
-static const uint32_t kResetSleepInterval = 1000000;
 
 Resource::Resource(ControllerOpenThread *aNcp)
     : mInstance(aNcp->GetThreadHelper()->GetInstance())

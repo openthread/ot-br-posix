@@ -47,7 +47,6 @@ target_link_libraries(otbr-rest
     PRIVATE
         cjson
         http_parser
-        mbedtls
         otbr-config
         otbr-utils
         openthread-ftd
