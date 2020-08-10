@@ -449,7 +449,7 @@ def main():
     node_leader_data_test(200)
     node_num_of_router_test(200)
     node_ext_panid_test(200)
-    diagnostics_test(100)
+    diagnostics_test(20)
     error404_test(200)
 
     return 0
