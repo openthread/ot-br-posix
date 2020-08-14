@@ -157,7 +157,7 @@
             }
             if (index == 6) {
                 $scope.dataInit();
-                $scope.showTopology()
+                $scope.showTopology();
             }
         };
 
@@ -760,10 +760,7 @@
                 d3.selectAll('.Leader')
                 .append('circle')
                 .attr('r', '8')
-
-                // .append('polygon')
-                    // .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
-                    .attr('fill', '#7e77f8')
+                .attr('fill', '#7e77f8')
                     
                     .style('stroke', '#484e46')
                     .style('stroke-width', '1px')
@@ -812,8 +809,6 @@
                 .attr('r', '8')
                 .style('stroke', '#484e46')
                     .style('stroke-width', '1px')
-                // .append('polygon')
-                //     .attr('points', '-7.5,10.44 7.5,10.44 12.12,-3.936 0,-12.63 -12.12,-3.936')
                     .attr('fill', '#03e2dd')
                    
                     .attr('class', function(d) {

@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes all needed types definitions for OTBR-REST.
+ *   This file includes types definitions for OTBR-REST.
  */
 
 #ifndef OTBR_REST_TYPES_HPP_
@@ -70,8 +70,8 @@ enum ConnectionState
     OTBR_REST_CONNECTION_CALLBACKWAIT  = 3, ///< Wait for callback
     OTBR_REST_CONNECTION_WRITEWAIT     = 4, ///< Wait for write
     OTBR_REST_CONNECTION_WRITETIMEOUT  = 5, ///< Reach write timeout
-    OTBR_REST_CONNECTION_INTERNALERROR = 6, ///< occur internal call error
-    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< no longer need to be processed
+    OTBR_REST_CONNECTION_INTERNALERROR = 6, ///< Occur internal call error
+    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< No longer need to be processed
 
 };
 
