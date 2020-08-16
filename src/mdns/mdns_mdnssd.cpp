@@ -344,23 +344,24 @@ exit:
     return;
 }
 
-otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
+otbrError PublisherMDnsSd::PublishService(uint16_t             aPort,
+                                          const char *         aName,
+                                          const char *         aType,
+                                          const TxtRecordList &aTxtRecords)
 {
     otbrError     ret   = OTBR_ERROR_NONE;
     int           error = 0;
-    va_list       args;
     uint8_t       txt[kMaxSizeOfTxtRecord];
     uint8_t *     cur        = txt;
     DNSServiceRef serviceRef = nullptr;
 
-    va_start(args, aType);
-
-    for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
+    for (const auto &record : aTxtRecords)
     {
-        const char * value        = va_arg(args, const char *);
-        const size_t nameLength   = strlen(name);
-        const size_t valueLength  = va_arg(args, size_t);
-        size_t       recordLength = nameLength + 1 + valueLength;
+        const char *   name         = record.first.c_str();
+        const size_t   nameLength   = record.first.size();
+        const uint8_t *value        = record.second.data();
+        const size_t   valueLength  = record.second.size();
+        size_t         recordLength = nameLength + 1 + valueLength;
 
         assert(nameLength > 0 && valueLength > 0 && recordLength < kMaxTextRecordSize);
 
@@ -383,8 +384,6 @@ otbrError PublisherMDnsSd::PublishService(uint16_t aPort, const char *aName, con
         memcpy(cur, value, valueLength);
         cur += valueLength;
     }
-
-    va_end(args);
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {

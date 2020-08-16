@@ -68,6 +68,7 @@ enum
     kEventThreadState,      ///< Thread State.
     kEventThreadVersion,    ///< Thread Version.
     kEventUdpForwardStream, ///< UDP forward stream arrived.
+    kEventDiscoveryRequest, ///< Joiner discovery request arrived.
 };
 
 /**

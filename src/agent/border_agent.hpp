@@ -34,7 +34,11 @@
 #ifndef OTBR_AGENT_BORDER_AGENT_HPP_
 #define OTBR_AGENT_BORDER_AGENT_HPP_
 
+#include <list>
+
 #include <stdint.h>
+
+#include <openthread/thread.h>
 
 #include "agent/ncp.hpp"
 #include "mdns/mdns.hpp"
@@ -124,13 +128,17 @@ private:
     void SetExtPanId(const uint8_t *aExtPanId);
     void SetThreadVersion(uint16_t aThreadVersion);
     void HandleThreadState(bool aStarted);
+    void HandleDiscoveryRequest(const otThreadDiscoveryRequestInfo &aInfo);
     void HandlePSKc(const uint8_t *aPSKc);
 
     static void HandlePSKc(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);
+    static void HandleDiscoveryRequest(void *aContext, int aEvent, va_list aArguments);
     static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
     static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
+
+    static std::vector<uint8_t> SerializeDiscoveryInfo(const otThreadDiscoveryRequestInfo &aInfo);
 
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
@@ -141,6 +149,8 @@ private:
     char     mNetworkName[kSizeNetworkName + 1];
     bool     mThreadStarted;
     bool     mPSKcInitialized;
+
+    std::list<otThreadDiscoveryRequestInfo> mDiscoveryInfos;
 };
 
 /**

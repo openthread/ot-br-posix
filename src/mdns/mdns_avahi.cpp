@@ -497,7 +497,10 @@ void PublisherAvahi::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet
     mPoller.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
 }
 
-otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
+otbrError PublisherAvahi::PublishService(uint16_t             aPort,
+                                         const char *         aName,
+                                         const char *         aType,
+                                         const TxtRecordList &aTxtRecords)
 {
     otbrError ret   = OTBR_ERROR_ERRNO;
     int       error = 0;
@@ -508,16 +511,15 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     va_list          args;
     size_t           used = 0;
 
-    va_start(args, aType);
-
     VerifyOrExit(mState == kStateReady, errno = EAGAIN);
     VerifyOrExit(mGroup != nullptr, ret = OTBR_ERROR_MDNS);
 
-    for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
+    for (const auto record : aTxtRecords)
     {
-        int         rval;
-        const char *value       = va_arg(args, const char *);
-        size_t      valueLength = va_arg(args, size_t);
+        int            rval;
+        const char *   name        = record.first.c_str();
+        const uint8_t *value       = record.second.data();
+        size_t         valueLength = record.second.size();
         // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
         size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + strlen(name) + valueLength + 1;
 

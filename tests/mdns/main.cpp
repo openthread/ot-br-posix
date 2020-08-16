@@ -87,9 +87,12 @@ void PublishSingleService(void *aContext, Mdns::State aState)
     assert(aContext == &sContext);
     if (aState == Mdns::kStateReady)
     {
-        otbrError err = sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp.", "nn", "cool",
-                                                            sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
-                                                            sizeof(xpanid), nullptr);
+        Mdns::Publisher::TxtRecordList txtRecords{
+            {"nn", std::vector<uint8_t>{'c', 'o', 'o', 'l'}},
+            {"xp", std::vector<uint8_t>{xpanid, xpanid + sizeof(xpanid)}},
+        };
+
+        otbrError err = sContext.mPublisher->PublishService(12345, "SingleService", "_meshcop._udp.", txtRecords);
 
         assert(err == OTBR_ERROR_NONE);
     }
@@ -102,14 +105,19 @@ void PublishMultipleServices(void *aContext, Mdns::State aState)
     assert(aContext == &sContext);
     if (aState == Mdns::kStateReady)
     {
-        otbrError err = sContext.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp.", "nn", "cool1",
-                                                            sizeof("cool1") - 1, "xp",
-                                                            reinterpret_cast<char *>(&xpanid), sizeof(xpanid), nullptr);
+        Mdns::Publisher::TxtRecordList txtRecords{
+            {"nn", std::vector<uint8_t>{'c', 'o', 'o', 'l', '1'}},
+            {"xp", std::vector<uint8_t>{xpanid, xpanid + sizeof(xpanid)}},
+        };
 
+        otbrError err = sContext.mPublisher->PublishService(12345, "MultipleService1", "_meshcop._udp.", txtRecords);
         assert(err == OTBR_ERROR_NONE);
-        err = sContext.mPublisher->PublishService(12345, "MultipleService2", "_meshcop._udp.", "nn", "cool2",
-                                                  sizeof("cool1") - 1, "xp", reinterpret_cast<char *>(&xpanid),
-                                                  sizeof(xpanid), nullptr);
+
+        txtRecords = Mdns::Publisher::TxtRecordList{
+            {"nn", std::vector<uint8_t>{'c', 'o', 'o', 'l', '2'}},
+            {"xp", std::vector<uint8_t>{xpanid, xpanid + sizeof(xpanid)}},
+        };
+        err = sContext.mPublisher->PublishService(12345, "MultipleService2", "_meshcop._udp.", txtRecords);
         assert(err == OTBR_ERROR_NONE);
     }
 }
@@ -126,15 +134,19 @@ void PublishUpdateServices(void *aContext, Mdns::State aState)
 
         if (!sContext.mUpdate)
         {
-            err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "cool",
-                                                      sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanidOld),
-                                                      sizeof(xpanidOld), nullptr);
+            Mdns::Publisher::TxtRecordList txtRecords{
+                {"nn", std::vector<uint8_t>{'c', 'o', 'o', 'l'}},
+                {"xp", std::vector<uint8_t>{xpanidOld, xpanidOld + sizeof(xpanidOld)}},
+            };
+            err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", txtRecords);
         }
         else
         {
-            err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", "nn", "coolcool",
-                                                      sizeof("coolcool") - 1, "xp",
-                                                      reinterpret_cast<char *>(&xpanidNew), sizeof(xpanidNew), nullptr);
+            Mdns::Publisher::TxtRecordList txtRecords{
+                {"nn", std::vector<uint8_t>{'c', 'o', 'o', 'l', 'c', 'o', 'o', 'l'}},
+                {"xp", std::vector<uint8_t>{xpanidNew, xpanidNew + sizeof(xpanidNew)}},
+            };
+            err = sContext.mPublisher->PublishService(12345, "UpdateService", "_meshcop._udp.", txtRecords);
         }
         assert(err == OTBR_ERROR_NONE);
     }

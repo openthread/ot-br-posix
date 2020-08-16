@@ -154,6 +154,12 @@ private:
     }
     void HandleStateChanged(otChangedFlags aFlags);
 
+    static void HandleDiscoveryRequest(const otThreadDiscoveryRequestInfo *aDiscoveryInfo, void *aContext)
+    {
+        static_cast<ControllerOpenThread *>(aContext)->HandleDiscoveryRequest(aDiscoveryInfo);
+    }
+    void HandleDiscoveryRequest(const otThreadDiscoveryRequestInfo *aDiscoveryInfo);
+
     otInstance *mInstance;
 
     otPlatformConfig                                                                mConfig;
