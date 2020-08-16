@@ -177,7 +177,6 @@
 
         function DialogController($scope, $mdDialog, $http, $interval, sharedProperties) {
             var index = sharedProperties.getIndex();
-            var networkInfo = sharedProperties.getNetworkInfo();
             $scope.isDisplay = false;
             $scope.thread = {
                 networkKey: '00112233445566778899aabbccddeeff',
@@ -575,7 +574,7 @@
 
         
         $scope.drawGraph = function() {
-            var json, svg, tooltip, force, filt, feMerge;
+            var json, svg, tooltip, force;
             var scale, len;
 
             // tooltiperase former graph
