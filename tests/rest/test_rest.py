@@ -442,7 +442,7 @@ def error_test(thread_num):
 
 
 def main():
-    node_check(200)
+    node_test(200)
     node_rloc_test(200)
     node_rloc16_test(200)
     node_ext_address_test(200)
