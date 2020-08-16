@@ -220,10 +220,6 @@
                     data: data,
                 });
 
-                data = {
-                    extPanId: networkInfo.xp,
-                    networkName: networkInfo.nn,
-                };
                 httpRequest.then(function successCallback(response) {
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
@@ -274,10 +270,6 @@
                     data: data,
                 });
 
-                data = {
-                    extPanId: $scope.thread.extPanId,
-                    networkName: $scope.thread.networkName,
-                };
                 httpRequest.then(function successCallback(response) {
                     $scope.res = response.data.result;
                     if (response.data.result == 'successful') {
