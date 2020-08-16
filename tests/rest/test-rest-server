@@ -48,7 +48,7 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d 7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
-    sudo "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}"/test_rest.py
+    sudo python3 "${CMAKE_CURRENT_SOURCE_DIR}"/test_rest.py
 }
 
 main "$@"
