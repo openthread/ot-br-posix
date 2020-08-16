@@ -76,7 +76,7 @@ std::string Request::GetUrl(void) const
     {
         url = url.substr(0, urlEnd);
     }
-    while(url.size() > 0 and url[url.size()-1] == '/')
+    while (url.size() > 0 and url[url.size() - 1] == '/')
     {
         url.pop_back();
     }
