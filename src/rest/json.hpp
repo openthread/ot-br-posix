@@ -88,7 +88,7 @@ std::string CString2JsonString(const char *aCString);
  * @returns     a string serlialized by a Json string.
  *
  */
-std::string String2JsonString(const std::string& aString);
+std::string String2JsonString(const std::string &aString);
 
 /**
  * This method formats a Node object to a Json object and serialize it to a string.
@@ -201,7 +201,7 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
  */
 std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
 
-}; // namespace JSON
+}; // namespace Json
 
 } // namespace rest
 } // namespace otbr

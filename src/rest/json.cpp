@@ -475,13 +475,10 @@ std::string CString2JsonString(const char *aCString)
 
 std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage)
 {
-    char        code[5];
     std::string ret;
     cJSON *     error = cJSON_CreateObject();
 
-    snprintf(code, 4, "%d", static_cast<int16_t>(aErrorCode));
-
-    cJSON_AddItemToObject(error, "ErrorCode", cJSON_CreateString(code));
+    cJSON_AddItemToObject(error, "ErrorCode", cJSON_CreateNumber(static_cast<int16_t>(aErrorCode)));
     cJSON_AddItemToObject(error, "ErrorMessage", cJSON_CreateString(aErrorMessage.c_str()));
 
     ret = Json2String(error);
