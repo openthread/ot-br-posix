@@ -28,4 +28,13 @@
 
 project(http_parser C)
 
-add_library(http_parser STATIC repo/http_parser.c repo/http_parser.h)
+add_library(http_parser 
+    STATIC 
+        repo/http_parser.c 
+        repo/http_parser.h
+)
+
+target_include_directories(http_parser
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/repo
+)

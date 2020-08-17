@@ -36,17 +36,11 @@ add_library( otbr-rest
     response.cpp
 )
 
-target_include_directories( otbr-rest 
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/third_party/http-parser/repo
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/third_party/cJSON/repo        
-)
-
 target_link_libraries(otbr-rest 
+    PUBLIC
+        http_parser
     PRIVATE
         cjson
-        http_parser
         otbr-config
         otbr-utils
         openthread-ftd
