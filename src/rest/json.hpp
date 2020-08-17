@@ -37,8 +37,6 @@
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"
 
-// #include "agent/ncp_openthread.hpp"
-// #include "agent/thread_helper.hpp"
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
 
@@ -90,7 +88,7 @@ std::string CString2JsonString(const char *aCString);
  * @returns     a string serlialized by a Json string.
  *
  */
-std::string String2JsonString(const std::string &aString);
+std::string String2JsonString(const std::string& aString);
 
 /**
  * This method formats a Node object to a Json object and serialize it to a string.
@@ -203,7 +201,7 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
  */
 std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
 
-}; // namespace Json
+}; // namespace JSON
 
 } // namespace rest
 } // namespace otbr

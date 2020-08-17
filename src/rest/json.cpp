@@ -479,7 +479,7 @@ std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessag
     std::string ret;
     cJSON *     error = cJSON_CreateObject();
 
-    snprintf(code, 5, "%d", static_cast<int16_t>(aErrorCode));
+    snprintf(code, 4, "%d", static_cast<int16_t>(aErrorCode));
 
     cJSON_AddItemToObject(error, "ErrorCode", cJSON_CreateString(code));
     cJSON_AddItemToObject(error, "ErrorMessage", cJSON_CreateString(aErrorMessage.c_str()));
