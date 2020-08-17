@@ -38,6 +38,8 @@
 
 #include <openthread/border_router.h>
 
+#include "agent/ncp_openthread.hpp"
+#include "agent/thread_helper.hpp"
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
@@ -94,17 +96,19 @@ public:
      * error message to the request body.
      *
      * @param[in]      aRequest  A request instance referred by the Resource handler.
-     * @param[inout]   aResponse  A response instance will be set by the Resource handler.
+     * @param[inout]   aErrorCode  An enum class represents the status code.
      *
      */
-    void ErrorHandler(Response &aResponse, int aErrorCode) const;
+    void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
 
     /**
      * This method is a pre-defined callback function used for call another private method when diagnostic information
      * arrives.
      *
-     * @param[in]      aRequest  A request instance referred by the Resource handler.
-     * @param[inout]   aResponse  A response instance will be set by the Resource handler.
+     * @param[in]      aMessage  A pointer to the message buffer containing the received Network Diagnostic
+     *                           Get response payload.
+     * @param[in]      aMessageInfo A pointer to the message info for @p aMessage .
+     * @param[in]      aContext    A pointer to application-specific context.
      *
      */
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
@@ -144,8 +148,8 @@ private:
     std::unordered_map<std::string, ResourceHandler>         mResourceMap;
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
 
-    std::unordered_map<int32_t, std::string>  mResponseCodeMap;
-    std::unordered_map<std::string, DiagInfo> mDiagSet;
+    std::unordered_map<HttpStatusCode, std::string> mResponseCodeMap;
+    std::unordered_map<std::string, DiagInfo>       mDiagSet;
 };
 
 } // namespace rest

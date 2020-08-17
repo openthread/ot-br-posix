@@ -43,17 +43,20 @@ namespace rest {
 
 // The timeout (in microseconds) since a connection is in wait callback state
 static const uint32_t kCallbackTimeout = 10000000;
+
 // The time interval (in microseconds) for checking again if there is a connection need callback.
 static const uint32_t kCallbackCheckInterval = 500000;
+
 // The timeout (in microseconds) since a connection is in wait write state
 static const uint32_t kWriteTimeout = 10000000;
+
 // The timeout (in microseconds) since a connection is in wait read state
 static const uint32_t kReadTimeout = 1000000;
 
 Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd)
-    : mStartTime(aStartTime)
+    : mTimeStamp(aStartTime)
     , mFd(aFd)
-    , mState(OTBR_REST_CONNECTION_INIT)
+    , mState(ConnectionState::kInit)
     , mParser(&mRequest)
     , mResource(aResource)
 {
@@ -66,7 +69,7 @@ void Connection::Init(void)
 
 void Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const
 {
-    if (mState == OTBR_REST_CONNECTION_READWAIT || mState == OTBR_REST_CONNECTION_INIT)
+    if (mState == ConnectionState::kReadWait || mState == ConnectionState::kInit)
     {
         FD_SET(mFd, &aReadFdSet);
         aMaxFd = aMaxFd < mFd ? mFd : aMaxFd;
@@ -75,7 +78,7 @@ void Connection::UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const
 
 void Connection::UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd) const
 {
-    if (mState == OTBR_REST_CONNECTION_WRITEWAIT)
+    if (mState == ConnectionState::kWriteWait)
     {
         FD_SET(mFd, &aWriteFdSet);
         aMaxFd = aMaxFd < mFd ? mFd : aMaxFd;
@@ -86,20 +89,20 @@ void Connection::UpdateTimeout(timeval &aTimeout) const
 {
     struct timeval timeout;
     uint32_t       timeoutLen = kReadTimeout;
-    auto           duration   = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    auto           duration   = duration_cast<microseconds>(steady_clock::now() - mTimeStamp).count();
 
     switch (mState)
     {
-    case OTBR_REST_CONNECTION_READWAIT:
+    case ConnectionState::kReadWait:
         timeoutLen = kReadTimeout;
         break;
-    case OTBR_REST_CONNECTION_CALLBACKWAIT:
+    case ConnectionState::kCallbackWait:
         timeoutLen = kCallbackCheckInterval;
         break;
-    case OTBR_REST_CONNECTION_WRITEWAIT:
+    case ConnectionState::kWriteWait:
         timeoutLen = kWriteTimeout;
         break;
-    case OTBR_REST_CONNECTION_COMPLETE:
+    case ConnectionState::kComplete:
         timeoutLen = 0;
         break;
     default:
@@ -132,7 +135,7 @@ void Connection::UpdateFdSet(otSysMainloopContext &aMainloop) const
 
 void Connection::Disconnect(void)
 {
-    mState = OTBR_REST_CONNECTION_COMPLETE;
+    mState = ConnectionState::kComplete;
 
     if (mFd != -1)
     {
@@ -141,23 +144,23 @@ void Connection::Disconnect(void)
     }
 }
 
-otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
+void Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
 {
     otbrError error = OTBR_ERROR_NONE;
 
     switch (mState)
     {
     // Initial state, directly read for the first time.
-    case OTBR_REST_CONNECTION_INIT:
-    case OTBR_REST_CONNECTION_READWAIT:
-        error = ProcessWaitRead(aReadFdSet);
+    case ConnectionState::kInit:
+    case ConnectionState::kReadWait:
+        ProcessWaitRead(aReadFdSet);
         break;
-    case OTBR_REST_CONNECTION_CALLBACKWAIT:
+    case ConnectionState::kCallbackWait:
         //  Wait for Callback process.
-        error = ProcessWaitCallback();
+        ProcessWaitCallback();
         break;
-    case OTBR_REST_CONNECTION_WRITEWAIT:
-        error = ProcessWaitWrite(aWriteFdSet);
+    case ConnectionState::kWriteWait:
+        ProcessWaitWrite(aWriteFdSet);
         break;
     default:
         assert(false);
@@ -167,23 +170,24 @@ otbrError Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
     {
         Disconnect();
     }
-    return error;
 }
 
-otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
+void Connection::ProcessWaitRead(fd_set &aReadFdSet)
 {
-    otbrError error = OTBR_ERROR_NONE;
-    int32_t   received, err;
+    otbrError error    = OTBR_ERROR_NONE;
+    int32_t   received = 0, err;
     char      buf[2048];
-    auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    auto      duration = duration_cast<microseconds>(steady_clock::now() - mTimeStamp).count();
 
-    VerifyOrExit(duration <= kReadTimeout, mState = OTBR_REST_CONNECTION_READTIMEOUT);
+    // Reach a read timeout, will send response about this timeout later.
+    VerifyOrExit(duration <= kReadTimeout, error = OTBR_ERROR_REST);
 
-    VerifyOrExit(FD_ISSET(mFd, &aReadFdSet) || mState == OTBR_REST_CONNECTION_INIT);
+    // It will succeed either fd is set or it is in kInit state.
+    VerifyOrExit(FD_ISSET(mFd, &aReadFdSet) || mState == ConnectionState::kInit);
 
     do
     {
-        mState   = OTBR_REST_CONNECTION_READWAIT;
+        mState   = ConnectionState::kReadWait;
         received = read(mFd, buf, sizeof(buf));
         err      = errno;
         if (received > 0)
@@ -197,124 +201,113 @@ otbrError Connection::ProcessWaitRead(fd_set &aReadFdSet)
         Handle();
     }
 
-    VerifyOrExit(received != 0, mState = OTBR_REST_CONNECTION_READTIMEOUT);
+    // Check first failure situation: received == 0 (indicate another side at least has closes its write side )
+    // and at the same time, the request has not been parsed completely.
+    VerifyOrExit(received != 0 || mRequest.IsComplete(), error = OTBR_ERROR_REST);
 
-    // Catch ret = -1 error, then try to send back a response that there is an internal error.
-    VerifyOrExit(received > 0 || (received == -1 && (err == EAGAIN || err == EWOULDBLOCK)),
-                 mState = OTBR_REST_CONNECTION_INTERNALERROR);
+    // Check second  failure situation : received = -1 error(indicates that our system call read raise an error )
+    // then try to send back a response that there is an internal error.
+    VerifyOrExit(received > 0 || (received == -1 && (err == EAGAIN || err == EWOULDBLOCK)), error = OTBR_ERROR_REST);
 
 exit:
-
-    switch (mState)
+    if (error != OTBR_ERROR_NONE)
     {
-    case OTBR_REST_CONNECTION_READTIMEOUT:
-
-        mResource->ErrorHandler(mResponse, 408);
-        error = Write();
-        break;
-
-    case OTBR_REST_CONNECTION_INTERNALERROR:
-
-        mResource->ErrorHandler(mResponse, 500);
-        error = Write();
-        break;
-
-    default:
-        break;
+        if (received < 0)
+        {
+            mResource->ErrorHandler(mResponse, HttpStatusCode::kStatusInternalServerError);
+            Write();
+        }
+        else
+        {
+            mResource->ErrorHandler(mResponse, HttpStatusCode::kStatusRequestTimeout);
+            Write();
+        }
     }
-
-    return error;
 }
 
-otbrError Connection::Handle(void)
+void Connection::Handle(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit((shutdown(mFd, SHUT_RD) == 0), mState = OTBR_REST_CONNECTION_INTERNALERROR);
+    // Try to close server read side here, because we have started to handle the request and no longler read from
+    // socket.
+    VerifyOrExit((shutdown(mFd, SHUT_RD) == 0), error = OTBR_ERROR_REST);
 
     mResource->Handle(mRequest, mResponse);
 
     if (mResponse.NeedCallback())
     {
-        // Set its state as Waitforcallback and refresh its timer
-        mState     = OTBR_REST_CONNECTION_CALLBACKWAIT;
-        mStartTime = steady_clock::now();
+        mState     = ConnectionState::kCallbackWait;
+        mTimeStamp = steady_clock::now();
     }
     else
     {
         // Normal Write back process.
-        error = Write();
+        Write();
     }
 
 exit:
 
-    if (mState == OTBR_REST_CONNECTION_INTERNALERROR)
+    if (error != OTBR_ERROR_NONE)
     {
-        mResource->ErrorHandler(mResponse, 500);
-        error = Write();
+        mResource->ErrorHandler(mResponse, HttpStatusCode::kStatusInternalServerError);
+        Write();
     }
-
-    return error;
 }
 
-otbrError Connection::ProcessWaitCallback(void)
+void Connection::ProcessWaitCallback(void)
 {
-    otbrError error    = OTBR_ERROR_NONE;
-    auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    auto duration = duration_cast<microseconds>(steady_clock::now() - mTimeStamp).count();
 
     mResource->HandleCallback(mRequest, mResponse);
 
     if (mResponse.IsComplete())
     {
-        error = Write();
+        Write();
     }
     else
     {
         if (duration >= kCallbackTimeout)
         {
-            mResource->ErrorHandler(mResponse, 500);
-            error = Write();
+            mResource->ErrorHandler(mResponse, HttpStatusCode::kStatusInternalServerError);
+            Write();
         }
     }
-
-    return error;
 }
 
-otbrError Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
+void Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
 {
-    otbrError error    = OTBR_ERROR_NONE;
-    auto      duration = duration_cast<microseconds>(steady_clock::now() - mStartTime).count();
+    auto duration = duration_cast<microseconds>(steady_clock::now() - mTimeStamp).count();
 
     if (duration <= kWriteTimeout)
     {
         if (FD_ISSET(mFd, &aWriteFdSet))
         {
-            // WriteFdSet is set, then try to write again
-            error = Write();
+            Write();
         }
     }
     else
-    { // Pass write timeout, just close the error
+    {
         Disconnect();
     }
-    return error;
 }
 
-otbrError Connection::Write(void)
+void Connection::Write(void)
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorCode;
     int32_t     sendLength;
     int32_t     err;
 
-    if (mState != OTBR_REST_CONNECTION_WRITEWAIT)
+    if (mState != ConnectionState::kWriteWait)
     {
         // Change its state when try write for the first time.
-        mState        = OTBR_REST_CONNECTION_WRITEWAIT;
-        mStartTime    = steady_clock::now();
+        mState        = ConnectionState::kWriteWait;
+        mTimeStamp    = steady_clock::now();
         mWriteContent = mResponse.Serialize();
     }
 
+    // Check we do have something to write.
     VerifyOrExit(mWriteContent.size() > 0, error = OTBR_ERROR_REST);
 
     sendLength = write(mFd, mWriteContent.c_str(), mWriteContent.size());
@@ -335,22 +328,26 @@ otbrError Connection::Write(void)
     {
         if (errno == EINTR)
         {
-            error = Write();
+            // Try again
+            Write();
         }
         else
         {
+            // There is an error when we write, if this, we directly disconnect this connection.
             VerifyOrExit(err == EAGAIN || err == EWOULDBLOCK, error = OTBR_ERROR_REST);
         }
     }
 
 exit:
-
-    return error;
+    if (error != OTBR_ERROR_NONE)
+    {
+        Disconnect();
+    }
 }
 
 bool Connection::IsComplete() const
 {
-    return mState == OTBR_REST_CONNECTION_COMPLETE;
+    return mState == ConnectionState::kComplete;
 }
 
 } // namespace rest

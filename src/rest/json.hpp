@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes json formater definition for RESTful HTTP server.
+ *   This file includes JSON formatter definition for RESTful HTTP server.
  */
 
 #ifndef OTBR_REST_JSON_HPP_
@@ -37,8 +37,8 @@
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"
 
-#include "agent/ncp_openthread.hpp"
-#include "agent/thread_helper.hpp"
+// #include "agent/ncp_openthread.hpp"
+// #include "agent/thread_helper.hpp"
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
 
@@ -50,7 +50,7 @@ namespace rest {
  * string.
  *
  */
-namespace JSON {
+namespace Json {
 
 /**
  * This method formats an integer to a Json number and serialize it to a string.
@@ -60,7 +60,7 @@ namespace JSON {
  * @returns     a string serlialized by a Json number.
  *
  */
-std::string Number2JsonString(uint32_t aNumber);
+std::string Number2JsonString(const uint32_t &aNumber);
 
 /**
  * This method formats a Bytes array to a Json string and serialize it to a string.
@@ -90,7 +90,7 @@ std::string CString2JsonString(const char *aCString);
  * @returns     a string serlialized by a Json string.
  *
  */
-std::string String2JsonString(std::string aString);
+std::string String2JsonString(const std::string &aString);
 
 /**
  * This method formats a Node object to a Json object and serialize it to a string.
@@ -100,7 +100,7 @@ std::string String2JsonString(std::string aString);
  * @returns     a string serlialized by a Json object.
  *
  */
-std::string Node2JsonString(const Node &aNode);
+std::string Node2JsonString(const NodeInfo &aNode);
 
 /**
  * This method formats a vector including serveral Diagnostic object to a Json array and serialize it to a string.
@@ -195,15 +195,15 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
 /**
  * This method formats an error code and an error message to a Json object and serialize it to a string.
  *
- * @param[in]   aErrorCode  Error code such as '404'.
+ * @param[in]   aErrorCode  An enum HttpStatusCode  such as '404'.
  * @param[in]   aErrorMessage  Error message such as '404 Not Found'.
  *
  * @returns     A string serlialized by a Json object.
  *
  */
-std::string Error2JsonString(uint32_t aErrorCode, std::string aErrorMessage);
+std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
 
-}; // namespace JSON
+}; // namespace Json
 
 } // namespace rest
 } // namespace otbr

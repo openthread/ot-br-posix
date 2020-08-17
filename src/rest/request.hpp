@@ -107,12 +107,12 @@ public:
      *
      * @returns A integer representing HTTP method.
      */
-    int32_t GetMethod() const;
+    HttpMethod GetMethod() const;
 
     /**
      * This method returns the HTTP method of this request.
      *
-     * @returns An integer representing HTTP method of this request.
+     * @returns A HttpMethod enum representing HTTP method of this request.
      */
     std::string GetBody() const;
 

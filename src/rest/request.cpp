@@ -56,9 +56,9 @@ void Request::SetMethod(int32_t aMethod)
     mMethod = aMethod;
 }
 
-int32_t Request::GetMethod() const
+HttpMethod Request::GetMethod() const
 {
-    return mMethod;
+    return static_cast<HttpMethod>(mMethod);
 }
 
 std::string Request::GetBody() const
@@ -76,7 +76,7 @@ std::string Request::GetUrl(void) const
     {
         url = url.substr(0, urlEnd);
     }
-    while (url.size() > 0 and url[url.size() - 1] == '/')
+    while (!url.empty() && url[url.size() - 1] == '/')
     {
         url.pop_back();
     }

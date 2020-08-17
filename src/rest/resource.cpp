@@ -32,33 +32,35 @@
 
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
-#define OT_DIAGNOETIC_PATH "/diagnostics"
-#define OT_NODE_PATH "/node"
-#define OT_RLOC_PATH "/node/rloc"
-#define OT_RLOC16_PATH "/node/rloc16"
-#define OT_EXTADDRESS_PATH "/node/ext-address"
-#define OT_STATE_PATH "/node/state"
-#define OT_NETWORKNAME_PATH "/node/network-name"
-#define OT_LEADERDATA_PATH "/node/leader-data"
-#define OT_NUMOFROUTER_PATH "/node/num-of-router"
-#define OT_EXTPANID_PATH "/node/ext-panid"
-#define OT_NETWORK_PATH "/networks"
-#define OT_NETWORK_CURRENT_PATH "/networks/current"
-#define OT_NETWORK_CURRENT_COMMISSION_PATH "/networks/commission"
-#define OT_NETWORK_CURRENT_PREFIX_PATH "/networks/current/prefix"
-#define OT_REST_RESOURCE_200 "200 OK"
-#define OT_REST_RESOURCE_201 "201 Created"
-#define OT_REST_RESOURCE_202 "202 Accepted"
-#define OT_REST_RESOURCE_204 "204 No Content"
-#define OT_REST_RESOURCE_400 "400 Bad Request"
-#define OT_REST_RESOURCE_404 "404 Not Found"
-#define OT_REST_RESOURCE_405 "405 Method Not Allowed"
-#define OT_REST_RESOURCE_408 "408 Request Timeout"
-#define OT_REST_RESOURCE_411 "411 Length Required"
-#define OT_REST_RESOURCE_415 "415 Unsupported Media Type"
-#define OT_REST_RESOURCE_500 "500 Internal Server Error"
-#define OT_REST_RESOURCE_501 "501 Not Implemented"
-#define OT_REST_RESOURCE_505 "505 HTTP Version Not Supported"
+
+#define OT_REST_RESOURCE_PATH_DIAGNOETIC "/diagnostics"
+#define OT_REST_RESOURCE_PATH_NODE "/node"
+#define OT_REST_RESOURCE_PATH_NODE_RLOC "/node/rloc"
+#define OT_REST_RESOURCE_PATH_NODE_RLOC16 "/node/rloc16"
+#define OT_REST_RESOURCE_PATH_NODE_EXTADDRESS "/node/ext-address"
+#define OT_REST_RESOURCE_PATH_NODE_STATE "/node/state"
+#define OT_REST_RESOURCE_PATH_NODE_NETWORKNAME "/node/network-name"
+#define OT_REST_RESOURCE_PATH_NODE_LEADERDATA "/node/leader-data"
+#define OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER "/node/num-of-router"
+#define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
+#define OT_REST_RESOURCE_PATH_NETWORK "/networks"
+#define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
+#define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
+#define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
+
+#define OT_REST_HTTP_STATUS_200 "200 OK"
+#define OT_REST_HTTP_STATUS_201 "201 Created"
+#define OT_REST_HTTP_STATUS_202 "202 Accepted"
+#define OT_REST_HTTP_STATUS_204 "204 No Content"
+#define OT_REST_HTTP_STATUS_400 "400 Bad Request"
+#define OT_REST_HTTP_STATUS_404 "404 Not Found"
+#define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
+#define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
+#define OT_REST_HTTP_STATUS_411 "411 Length Required"
+#define OT_REST_HTTP_STATUS_415 "415 Unsupported Media Type"
+#define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
+#define OT_REST_HTTP_STATUS_501 "501 Not Implemented"
+#define OT_REST_HTTP_STATUS_505 "505 HTTP Version Not Supported"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -72,10 +74,13 @@ namespace rest {
 
 // MulticastAddr
 static const char *kMulticastAddrAllRouters = "ff02::2";
+
 // Default TlvTypes for Diagnostic inforamtion
 static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
+
 // Timeout (in Microseconds) for deleting outdated diagnostics
 static const uint32_t kDiagResetTimeout = 3000000;
+
 // Timeout (in Microseconds) for collecting diagnostics
 static const uint32_t kDiagCollectTimeout = 2000000;
 
@@ -85,34 +90,34 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mInstance = mNcp->GetThreadHelper()->GetInstance();
 
     // Resource Handler
-    mResourceMap.emplace(OT_DIAGNOETIC_PATH, &Resource::Diagnostic);
-    mResourceMap.emplace(OT_NODE_PATH, &Resource::NodeInfo);
-    mResourceMap.emplace(OT_STATE_PATH, &Resource::State);
-    mResourceMap.emplace(OT_EXTADDRESS_PATH, &Resource::ExtendedAddr);
-    mResourceMap.emplace(OT_NETWORKNAME_PATH, &Resource::NetworkName);
-    mResourceMap.emplace(OT_RLOC16_PATH, &Resource::Rloc16);
-    mResourceMap.emplace(OT_LEADERDATA_PATH, &Resource::LeaderData);
-    mResourceMap.emplace(OT_NUMOFROUTER_PATH, &Resource::NumOfRoute);
-    mResourceMap.emplace(OT_EXTPANID_PATH, &Resource::ExtendedPanId);
-    mResourceMap.emplace(OT_RLOC_PATH, &Resource::Rloc);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::Diagnostic);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE, &Resource::NodeInfo);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_STATE, &Resource::State);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, &Resource::ExtendedAddr);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, &Resource::NetworkName);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC16, &Resource::Rloc16);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_LEADERDATA, &Resource::LeaderData);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, &Resource::NumOfRoute);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTPANID, &Resource::ExtendedPanId);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
 
     // Resource callback handler
-    mResourceCallbackMap.emplace(OT_DIAGNOETIC_PATH, &Resource::HandleDiagnosticCallback);
+    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::HandleDiagnosticCallback);
 
     // HTTP Response code
-    mResponseCodeMap.emplace(200, OT_REST_RESOURCE_200);
-    mResponseCodeMap.emplace(201, OT_REST_RESOURCE_201);
-    mResponseCodeMap.emplace(202, OT_REST_RESOURCE_202);
-    mResponseCodeMap.emplace(204, OT_REST_RESOURCE_204);
-    mResponseCodeMap.emplace(400, OT_REST_RESOURCE_400);
-    mResponseCodeMap.emplace(404, OT_REST_RESOURCE_404);
-    mResponseCodeMap.emplace(405, OT_REST_RESOURCE_405);
-    mResponseCodeMap.emplace(408, OT_REST_RESOURCE_408);
-    mResponseCodeMap.emplace(411, OT_REST_RESOURCE_411);
-    mResponseCodeMap.emplace(415, OT_REST_RESOURCE_415);
-    mResponseCodeMap.emplace(500, OT_REST_RESOURCE_500);
-    mResponseCodeMap.emplace(501, OT_REST_RESOURCE_501);
-    mResponseCodeMap.emplace(505, OT_REST_RESOURCE_505);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusOk, OT_REST_HTTP_STATUS_200);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusCreated, OT_REST_HTTP_STATUS_201);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusAccepted, OT_REST_HTTP_STATUS_202);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusNoContent, OT_REST_HTTP_STATUS_204);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusBadRequest, OT_REST_HTTP_STATUS_400);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusResourceNotFound, OT_REST_HTTP_STATUS_404);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusMethodNotAllowed, OT_REST_HTTP_STATUS_405);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusRequestTimeout, OT_REST_HTTP_STATUS_408);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusLengthRequired, OT_REST_HTTP_STATUS_411);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusUnsupportedMediaType, OT_REST_HTTP_STATUS_415);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusInternalServerError, OT_REST_HTTP_STATUS_500);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusNotImplemented, OT_REST_HTTP_STATUS_501);
+    mResponseCodeMap.emplace(HttpStatusCode::kStatusHttpVersionNotSupported, OT_REST_HTTP_STATUS_505);
 }
 
 void Resource::Init(void)
@@ -132,7 +137,7 @@ void Resource::Handle(Request &aRequest, Response &aResponse) const
     }
     else
     {
-        ErrorHandler(aResponse, 404);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusResourceNotFound);
     }
 }
 
@@ -165,18 +170,18 @@ void Resource::HandleDiagnosticCallback(const Request &aRequest, Response &aResp
             diagContentSet.push_back(it->second.mDiagContent);
         }
 
-        body      = JSON::Diag2JsonString(diagContentSet);
-        errorCode = mResponseCodeMap.at(200);
+        body      = Json::Diag2JsonString(diagContentSet);
+        errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
         aResponse.SetBody(body);
         aResponse.SetComplete();
     }
 }
 
-void Resource::ErrorHandler(Response &aResponse, int aErrorCode) const
+void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const
 {
     std::string errorMessage = mResponseCodeMap.at(aErrorCode);
-    std::string body         = JSON::Error2JsonString(aErrorCode, errorMessage);
+    std::string body         = Json::Error2JsonString(aErrorCode, errorMessage);
 
     aResponse.SetResponsCode(errorMessage);
     aResponse.SetBody(body);
@@ -185,12 +190,12 @@ void Resource::ErrorHandler(Response &aResponse, int aErrorCode) const
 
 void Resource::GetNodeInfo(Response &aResponse) const
 {
-    otbrError    error = OTBR_ERROR_NONE;
-    Node         node;
-    otRouterInfo routerInfo;
-    uint8_t      maxRouterId;
-    std::string  body;
-    std::string  errorCode;
+    otbrError       error = OTBR_ERROR_NONE;
+    struct NodeInfo node;
+    otRouterInfo    routerInfo;
+    uint8_t         maxRouterId;
+    std::string     body;
+    std::string     errorCode;
 
     VerifyOrExit(otThreadGetLeaderData(mInstance, &node.mLeaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
 
@@ -212,31 +217,31 @@ void Resource::GetNodeInfo(Response &aResponse) const
     node.mExtPanId    = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
     node.mRlocAddress = *otThreadGetRloc(mInstance);
 
-    body = JSON::Node2JsonString(node);
+    body = Json::Node2JsonString(node);
     aResponse.SetBody(body);
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = mResponseCodeMap.at(200);
+        errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
     }
     else
     {
-        ErrorHandler(aResponse, 500);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
     }
 }
 
 void Resource::NodeInfo(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetNodeInfo(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -244,10 +249,10 @@ void Resource::GetDataExtendedAddr(Response &aResponse) const
 {
     const uint8_t *extAddress = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
     std::string    errorCode;
-    std::string    body = JSON::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
+    std::string    body = Json::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -255,13 +260,13 @@ void Resource::ExtendedAddr(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataExtendedAddr(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -277,9 +282,9 @@ void Resource::GetDataState(Response &aResponse) const
     // 4 : leader
 
     role  = otThreadGetDeviceRole(mInstance);
-    state = JSON::Number2JsonString(role);
+    state = Json::Number2JsonString(role);
     aResponse.SetBody(state);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -287,13 +292,13 @@ void Resource::State(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataState(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -303,10 +308,10 @@ void Resource::GetDataNetworkName(Response &aResponse) const
     std::string errorCode;
 
     networkName = otThreadGetNetworkName(mInstance);
-    networkName = JSON::String2JsonString(networkName);
+    networkName = Json::String2JsonString(networkName);
 
     aResponse.SetBody(networkName);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -314,13 +319,13 @@ void Resource::NetworkName(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataNetworkName(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -333,32 +338,32 @@ void Resource::GetDataLeaderData(Response &aResponse) const
 
     VerifyOrExit(otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
 
-    body = JSON::LeaderData2JsonString(leaderData);
+    body = Json::LeaderData2JsonString(leaderData);
 
     aResponse.SetBody(body);
 
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = mResponseCodeMap.at(200);
+        errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
     }
     else
     {
-        ErrorHandler(aResponse, 500);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
     }
 }
 
 void Resource::LeaderData(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataLeaderData(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -380,10 +385,10 @@ void Resource::GetDataNumOfRoute(Response &aResponse) const
         ++count;
     }
 
-    body = JSON::Number2JsonString(count);
+    body = Json::Number2JsonString(count);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -391,13 +396,13 @@ void Resource::NumOfRoute(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataNumOfRoute(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -407,10 +412,10 @@ void Resource::GetDataRloc16(Response &aResponse) const
     std::string body;
     std::string errorCode;
 
-    body = JSON::Number2JsonString(rloc16);
+    body = Json::Number2JsonString(rloc16);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -418,24 +423,24 @@ void Resource::Rloc16(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataRloc16(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
 void Resource::GetDataExtendedPanId(Response &aResponse) const
 {
     const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    std::string    body     = JSON::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
+    std::string    body     = Json::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
     std::string    errorCode;
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -443,13 +448,13 @@ void Resource::ExtendedPanId(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataExtendedPanId(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -459,10 +464,10 @@ void Resource::GetDataRloc(Response &aResponse) const
     std::string  body;
     std::string  errorCode;
 
-    body = JSON::IpAddr2JsonString(rlocAddress);
+    body = Json::IpAddr2JsonString(rlocAddress);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(200);
+    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -470,13 +475,13 @@ void Resource::Rloc(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == OTBR_REST_METHOD_GET)
+    if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetDataRloc(aResponse);
     }
     else
     {
-        ErrorHandler(aResponse, 405);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
     }
 }
 
@@ -533,7 +538,7 @@ exit:
     }
     else
     {
-        ErrorHandler(aResponse, 500);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
     }
 }
 
@@ -557,7 +562,7 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
         if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS)
         {
             sprintf(rloc, "0x%04x", diagTlv.mData.mAddr16);
-            keyRloc = JSON::CString2JsonString(rloc);
+            keyRloc = Json::CString2JsonString(rloc);
         }
         diagSet.push_back(diagTlv);
     }

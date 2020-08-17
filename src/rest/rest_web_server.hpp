@@ -87,7 +87,7 @@ public:
 private:
     RestWebServer(ControllerOpenThread *aNcp);
     otbrError UpdateConnections(fd_set &aReadFdSet);
-    void      CreateNewConnection(int32_t aFd);
+    void      CreateNewConnection(int32_t &aFd);
     otbrError Accept(int32_t aListenFd);
     otbrError InitializeListenFd(void);
     bool      SetFdNonblocking(int32_t fd);
@@ -100,8 +100,6 @@ private:
     int32_t mListenFd;
     // Connection List
     std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
-    // REST server
-    static std::unique_ptr<RestWebServer> sRestWebServer;
 };
 
 } // namespace rest

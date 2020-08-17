@@ -57,7 +57,7 @@ public:
     /**
      * The constructor of a http request parser instance.
      *
-     * @param[in]   aRequest  A pointer pointing to a request instance.
+     * @param[in]   aRequest  A pointer to a request instance.
      *
      */
     Parser(Request *aRequest);
@@ -69,10 +69,11 @@ public:
     void Init(void);
 
     /**
-     * This method updates the file descriptor sets and timeout for mainloop.
+     * This method performs a parse process.
      *
      * @param[in]    aBuf      A pointer pointing to read buffer.
      * @param[in]    aLength   An integer indicates how much data is to be processed by parser.
+     *
      */
     void Process(const char *aBuf, size_t aLength);
 

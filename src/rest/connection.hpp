@@ -46,7 +46,7 @@ namespace otbr {
 namespace rest {
 
 /**
- * This class implements a Connection class of each socket connection .
+ * This class implements a Connection class of each socket connection.
  *
  */
 class Connection
@@ -77,7 +77,7 @@ public:
      * @param[in]       aWriteFdSet   The write file descriptors.
      *
      */
-    otbrError Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
+    void Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
 
     /**
      * This method updates the file descriptor sets and timeout for mainloop.
@@ -97,29 +97,37 @@ public:
     bool IsComplete(void) const;
 
 private:
-    void      UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const;
-    void      UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd) const;
-    void      UpdateTimeout(timeval &aTimeout) const;
-    otbrError ProcessWaitRead(fd_set &aReadFdSet);
-    otbrError ProcessWaitCallback(void);
-    otbrError ProcessWaitWrite(fd_set &aWriteFdSet);
-    otbrError Write(void);
-    otbrError Handle(void);
-    void      Disconnect(void);
+    void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const;
+    void UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd) const;
+    void UpdateTimeout(timeval &aTimeout) const;
+    void ProcessWaitRead(fd_set &aReadFdSet);
+    void ProcessWaitCallback(void);
+    void ProcessWaitWrite(fd_set &aWriteFdSet);
+    void Write(void);
+    void Handle(void);
+    void Disconnect(void);
 
     // Timestamp used for each check point of a connection
-    steady_clock::time_point mStartTime;
+    steady_clock::time_point mTimeStamp;
+
     // File descriptor for this connection
-    int             mFd;
+    int mFd;
+
+    // Enum indicates the state of this connection
     ConnectionState mState;
+
     // Response instance binded to this connection
     Response mResponse;
+
     // Request instance binded to this connection
     Request mRequest;
+
     // HTTP parser instance
     Parser mParser;
+
     // Resource handler instance
     Resource *mResource;
+
     // Write buffer in case write multiple times
     std::string mWriteContent;
 };

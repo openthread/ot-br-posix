@@ -28,13 +28,14 @@
 
 /**
  * @file
- *   This file includes types definitions for OTBR-REST.
+ *   This file includes type definitions for OTBR-REST.
  */
 
 #ifndef OTBR_REST_TYPES_HPP_
 #define OTBR_REST_TYPES_HPP_
 
 #include <chrono>
+#include <string>
 #include <vector>
 
 #include "openthread/netdiag.h"
@@ -44,38 +45,54 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace rest {
 
-enum HttpMethod
+enum class HttpMethod : std::uint8_t
 {
-    OTBR_REST_METHOD_DELETE  = 0, ///< DELETE
-    OTBR_REST_METHOD_GET     = 1, ///< GET
-    OTBR_REST_METHOD_HEAD    = 2, ///< HEAD
-    OTBR_REST_METHOD_POST    = 3, ///< POST
-    OTBR_REST_METHOD_PUT     = 4, ///< PUT
-    OTBR_REST_METHOD_OPTIONS = 6, ///< OPTIONS
+    kDelete  = 0, ///< DELETE
+    kGet     = 1, ///< GET
+    kHead    = 2, ///< HEAD
+    kPost    = 3, ///< POST
+    kPut     = 4, ///< PUT
+    kOptions = 6, ///< OPTIONS
 
 };
 
-enum PostError
+enum class HttpStatusCode : std::uint16_t
 {
-    OTBR_REST_POST_ERROR_NONE  = 0, ///< No error
-    OTBR_REST_POST_BAD_REQUEST = 1, ///< Bad request for post
-    OTBR_REST_POST_SET_FAIL    = 2, ///< Fail when set value
+    kStatusOk                      = 200,
+    kStatusCreated                 = 201,
+    kStatusAccepted                = 202,
+    kStatusNoContent               = 204,
+    kStatusBadRequest              = 400,
+    kStatusResourceNotFound        = 404,
+    kStatusMethodNotAllowed        = 405,
+    kStatusRequestTimeout          = 408,
+    kStatusLengthRequired          = 411,
+    kStatusUnsupportedMediaType    = 415,
+    kStatusInternalServerError     = 500,
+    kStatusNotImplemented          = 501,
+    kStatusHttpVersionNotSupported = 505
 };
 
-enum ConnectionState
+enum class PostError : std::uint8_t
 {
-    OTBR_REST_CONNECTION_INIT          = 0, ///< Init
-    OTBR_REST_CONNECTION_READWAIT      = 1, ///< Wait to read
-    OTBR_REST_CONNECTION_READTIMEOUT   = 2, ///< Reach read timeout
-    OTBR_REST_CONNECTION_CALLBACKWAIT  = 3, ///< Wait for callback
-    OTBR_REST_CONNECTION_WRITEWAIT     = 4, ///< Wait for write
-    OTBR_REST_CONNECTION_WRITETIMEOUT  = 5, ///< Reach write timeout
-    OTBR_REST_CONNECTION_INTERNALERROR = 6, ///< Occur internal call error
-    OTBR_REST_CONNECTION_COMPLETE      = 7, ///< No longer need to be processed
-
+    kPostErrorNone  = 0, ///< No error
+    kPostBadRequest = 1, ///< Bad request for post
+    kPostSetFail    = 2, ///< Fail when set value
 };
 
-struct Node
+enum class ConnectionState : std::uint8_t
+{
+    kInit          = 0, ///< Init
+    kReadWait      = 1, ///< Wait to read
+    kReadTimeout   = 2, ///< Reach read timeout
+    kCallbackWait  = 3, ///< Wait for callback
+    kWriteWait     = 4, ///< Wait for write
+    kWriteTimeout  = 5, ///< Reach write timeout
+    kInternalError = 6, ///< Occur internal call error
+    kComplete      = 7, ///< No longer need to be processed
+
+};
+struct NodeInfo
 {
     uint32_t       mRole;
     uint32_t       mNumOfRouter;

@@ -30,7 +30,7 @@
 
 #include <stdio.h>
 
-#define OT_REST_RESPONSE_CONTENT_TYPE "application/json"
+#define OT_REST_RESPONSE_CONTENT_TYPE_JSON "application/json"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
@@ -49,13 +49,13 @@ Response::Response(void)
 
     // Pre-defined headers
     mHeaderField.push_back("Content-Type");
-    mHeaderValue.push_back(OT_REST_RESPONSE_CONTENT_TYPE);
+    mHeaderValue.push_back(OT_REST_RESPONSE_CONTENT_TYPE_JSON);
 
     mHeaderField.push_back("Access-Control-Allow-Origin");
     mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN);
 
     mHeaderField.push_back("Access-Control-Allow-Methods");
-    mHeaderValue.push_back("DELETE,GET,HEAD,OPTIONS,POST,PUT");
+    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD);
 
     mHeaderField.push_back("Access-Control-Allow-Headers");
     mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS);
@@ -108,7 +108,6 @@ bool Response::NeedCallback(void)
 
 std::string Response::Serialize(void) const
 {
-    char        contentLength[20];
     size_t      index;
     std::string spacer = "\r\n";
     std::string ret(mProtocol + " " + mCode);
@@ -117,9 +116,7 @@ std::string Response::Serialize(void) const
     {
         ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
     }
-
-    snprintf(contentLength, 19, "%d", static_cast<uint32_t>(mBody.size()));
-    ret += spacer + "Content-Length: " + std::string(contentLength);
+    ret += spacer + "Content-Length: " + std::to_string(mBody.size());
     ret += (spacer + spacer + mBody);
 
     return ret;
