@@ -43,7 +43,8 @@ class Timer;
  * timer events and drives them.
  *
  */
-class TimerScheduler {
+class TimerScheduler
+{
 public:
     /**
      * This method returns the TimerScheduler singleton.
@@ -75,7 +76,7 @@ private:
     TimerScheduler() = default;
 
     // The timer list sorted by their Fire Time. Earlier timer comes first.
-    std::list<Timer*> mSortedTimerList;
+    std::list<Timer *> mSortedTimerList;
 };
 
 } // namespace otbr

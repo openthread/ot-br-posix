@@ -36,17 +36,13 @@
 
 #include <CppUTest/TestHarness.h>
 
-TEST_GROUP(TimerScheduler) {};
+TEST_GROUP(TimerScheduler){};
 
 TEST(TimerScheduler, TestSimpleTimer)
 {
-    int counter = 0;
-    otbr::Timer incTimer([&counter](const otbr::Timer&) {
-          ++counter;
-        });
-    otbr::Timer decTimer([&counter](const otbr::Timer&) {
-      --counter;
-    });
+    int         counter = 0;
+    otbr::Timer incTimer([&counter](const otbr::Timer &) { ++counter; });
+    otbr::Timer decTimer([&counter](const otbr::Timer &) { --counter; });
 
     incTimer.Start(otbr::Seconds(1));
     CHECK(counter == 0);
@@ -64,15 +60,9 @@ TEST(TimerScheduler, TestSimpleTimer)
 TEST(TimerScheduler, TestTimerOrder)
 {
     std::string out;
-    otbr::Timer printA([&out](const otbr::Timer&) {
-      out.push_back('A');
-    });
-    otbr::Timer printB([&out](const otbr::Timer&) {
-      out.push_back('B');
-    });
-    otbr::Timer printC([&out](const otbr::Timer&) {
-      out.push_back('C');
-    });
+    otbr::Timer printA([&out](const otbr::Timer &) { out.push_back('A'); });
+    otbr::Timer printB([&out](const otbr::Timer &) { out.push_back('B'); });
+    otbr::Timer printC([&out](const otbr::Timer &) { out.push_back('C'); });
 
     printA.Start(otbr::Seconds(2));
     printB.Start(otbr::Seconds(1));

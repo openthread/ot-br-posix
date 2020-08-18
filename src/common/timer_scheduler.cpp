@@ -42,7 +42,7 @@ void TimerScheduler::Add(Timer *aTimer)
 {
     mSortedTimerList.remove(aTimer);
 
-    for (auto it = mSortedTimerList.begin(); ; ++it)
+    for (auto it = mSortedTimerList.begin();; ++it)
     {
         if (it == mSortedTimerList.end() || (*it)->GetFireTime() > aTimer->GetFireTime())
         {

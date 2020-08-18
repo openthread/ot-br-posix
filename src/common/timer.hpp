@@ -42,7 +42,8 @@ namespace otbr {
  * This class implements delayed function call.
  *
  */
-class Timer {
+class Timer
+{
 public:
     friend class TimerScheduler;
 
@@ -61,7 +62,9 @@ public:
     explicit Timer(Callback aCallback)
         : mCallback(aCallback)
         , mFireTime(TimePoint::max())
-        , mIsRunning(false) {}
+        , mIsRunning(false)
+    {
+    }
 
     /**
      * This method starts the timer with given delay.
@@ -69,10 +72,7 @@ public:
      * @param  aDelay  The delay which the timer will fire after.
      *
      */
-    void Start(Duration aDelay)
-    {
-        Start(Clock::now() + aDelay);
-    }
+    void Start(Duration aDelay) { Start(Clock::now() + aDelay); }
 
     /**
      * This method starts the timer with given fire time.
@@ -116,7 +116,8 @@ public:
     TimePoint GetFireTime() const { return mFireTime; }
 
 private:
-    void Fire() {
+    void Fire()
+    {
         if (mIsRunning && mCallback != nullptr)
         {
             mCallback(*this);
@@ -124,9 +125,9 @@ private:
         Stop();
     }
 
-    Callback mCallback;
+    Callback  mCallback;
     TimePoint mFireTime;
-    bool mIsRunning;
+    bool      mIsRunning;
 };
 
 } // namespace otbr
