@@ -42,7 +42,6 @@ TEST(TimerScheduler, TestSimpleTimer)
 {
     int         counter = 0;
     otbr::Timer incTimer([&counter](const otbr::Timer &) { ++counter; });
-    otbr::Timer decTimer([&counter](const otbr::Timer &) { --counter; });
 
     incTimer.Start(otbr::Seconds(1));
     CHECK(counter == 0);
