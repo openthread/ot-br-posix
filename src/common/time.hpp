@@ -31,18 +31,26 @@
 
 #include "openthread-br/config.h"
 
+#include <chrono>
+
 #include <stdint.h>
 
 #include <sys/time.h>
 
 namespace otbr {
 
+using Clock        = std::chrono::steady_clock;
+using Duration     = std::chrono::steady_clock::duration;
+using TimePoint    = std::chrono::time_point<Clock>;
+using MicroSeconds = std::chrono::microseconds;
+using Seconds      = std::chrono::seconds;
+
 /**
- * This method returns the timestamp in miniseconds of @aTime.
+ * This method returns the timestamp in milliseconds of @aTime.
  *
  * @param[in]   aTime   The time to convert to timestamp.
  *
- * @returns timestamp in miniseconds.
+ * @returns timestamp in milliseconds.
  *
  */
 inline unsigned long GetTimestamp(const timeval &aTime)
@@ -51,9 +59,40 @@ inline unsigned long GetTimestamp(const timeval &aTime)
 }
 
 /**
- * This method returns the current timestamp in miniseconds.
+ * This function returns the timeval in microseconds.
  *
- * @returns Current timestamp in miniseconds.
+ * @param  aTimeval  The timeval to convert to microseconds.
+ *
+ * @returns timeval in microseconds.
+ *
+ */
+inline MicroSeconds GetMicroSeconds(const timeval &aTimeval)
+{
+    return MicroSeconds{aTimeval.tv_sec * 1000000 + aTimeval.tv_usec};
+}
+
+/**
+ * This function returns microseconds in timeval.
+ *
+ * @param  aMicroSeconds  the microseconds to convert to timeval.
+ *
+ * @returns microseconds in timeval.
+ *
+ */
+inline struct timeval GetTimeval(MicroSeconds aMicroSeconds)
+{
+    struct timeval ret;
+
+    ret.tv_sec  = aMicroSeconds.count() / 1000000;
+    ret.tv_usec = aMicroSeconds.count() % 1000000;
+
+    return ret;
+}
+
+/**
+ * This method returns the current timestamp in milliseconds.
+ *
+ * @returns Current timestamp in milliseconds.
  *
  */
 inline unsigned long GetNow(void)

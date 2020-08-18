@@ -47,6 +47,8 @@
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/time.hpp"
+#include "common/timer_scheduler.hpp"
 #include "common/types.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
@@ -83,8 +85,8 @@ enum
     OTBR_OPT_RADIO_VERSION,
 };
 
-// Default poll timeout.
-static const struct timeval kPollTimeout = {10, 0};
+// Default poll timeout (10 Seconds).
+static const otbr::MicroSeconds kPollTimeout(10 * 1000000);
 static const struct option  kOptions[]   = {
 #if OTBR_ENABLE_BACKBONE_ROUTER
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
@@ -104,7 +106,9 @@ static void HandleSignal(int aSignal)
 
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
-    int error = EXIT_FAILURE;
+    int                error   = EXIT_FAILURE;
+    otbr::MicroSeconds timeout = kPollTimeout;
+
 #if OTBR_ENABLE_DBUS_SERVER
     ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
     std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
@@ -127,7 +131,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         int                  rval;
 
         mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = kPollTimeout;
+        mainloop.mTimeout = otbr::GetTimeval(std::min(timeout, kPollTimeout));
 
         FD_ZERO(&mainloop.mReadFdSet);
         FD_ZERO(&mainloop.mWriteFdSet);
@@ -176,6 +180,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #if OTBR_ENABLE_DBUS_SERVER
             dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
 #endif
+            timeout = otbr::TimerScheduler::Get().Process(otbr::Clock::now());
         }
         else
         {

@@ -33,6 +33,7 @@ add_executable(otbr-test-unit
     test_event_emitter.cpp
     test_logging.cpp
     test_pskc.cpp
+    test_timer_scheduler.cpp
 )
 target_include_directories(otbr-test-unit PRIVATE
     ${CPPUTEST_INCLUDE_DIRS}

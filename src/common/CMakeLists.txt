@@ -28,6 +28,7 @@
 
 add_library(otbr-common
     logging.cpp
+    timer_scheduler.cpp
 )
 
 target_link_libraries(otbr-common
