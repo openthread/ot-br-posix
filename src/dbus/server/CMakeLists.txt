@@ -31,12 +31,23 @@ file(WRITE introspect.hpp "R\"INTROSPECT(")
 file(APPEND introspect.hpp ${OTBR_DBUS_INTROSPECT})
 file(APPEND introspect.hpp ")INTROSPECT\"")
 
+option(OTBR_ENABLE_LEGACY "enable legacy support")
+
 add_library(otbr-dbus-server STATIC
     dbus_agent.cpp
     dbus_object.cpp
     dbus_thread_object.cpp
     error_helper.cpp
 )
+
+if(OTBR_ENABLE_LEGACY)
+    target_compile_definitions(otbr-dbus-server PRIVATE
+        "OTBR_ENABLE_LEGACY=1"
+    )
+    target_include_directories(otbr-dbus-server PRIVATE
+        ${PROJECT_SOURCE_DIR}/${OTBR_LEGACY_INCLUDE}
+    )
+endif()
 
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
