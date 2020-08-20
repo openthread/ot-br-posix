@@ -54,7 +54,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     Json::FastWriter            jsonWriter;
     std::string                 response;
     int                         index;
-    std::string                 networkKey;
+    std::string                 masterKey;
     std::string                 prefix;
     bool                        defaultRoute;
     int                         ret = kWpanStatus_Ok;
@@ -64,7 +64,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
 
     VerifyOrExit(reader.parse(aJoinRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
     index        = root["index"].asUInt();
-    networkKey   = root["networkKey"].asString();
+    masterKey    = root["masterKey"].asString();
     prefix       = root["prefix"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
@@ -74,7 +74,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     }
 
     VerifyOrExit(client.FactoryReset(), ret = kWpanStatus_LeaveFailed);
-    VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("masterkey %s", masterKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(client.Execute("networkname %s", mNetworks[index].mNetworkName) != nullptr,
                  ret = kWpanStatus_SetFailed);
     VerifyOrExit(client.Execute("channel %u", mNetworks[index].mChannel) != nullptr, ret = kWpanStatus_SetFailed);
@@ -109,7 +109,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     otbr::Psk::Pskc             psk;
     char                        pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1];
     uint8_t                     extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
-    std::string                 networkKey;
+    std::string                 masterKey;
     std::string                 prefix;
     uint16_t                    channel;
     std::string                 networkName;
@@ -124,7 +124,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
 
     pskcStr[OT_PSKC_MAX_LENGTH * 2] = '\0'; // for manipulating with strlen
     VerifyOrExit(reader.parse(aFormRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    networkKey   = root["networkKey"].asString();
+    masterKey    = root["masterKey"].asString();
     prefix       = root["prefix"].asString();
     channel      = root["channel"].asUInt();
     networkName  = root["networkName"].asString();
@@ -143,7 +143,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     }
 
     VerifyOrExit(client.FactoryReset(), ret = kWpanStatus_LeaveFailed);
-    VerifyOrExit(client.Execute("masterkey %s", networkKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("masterkey %s", masterKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(client.Execute("networkname %s", networkName.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(client.Execute("channel %u", channel) != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(client.Execute("extpanid %s", extPanId.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
