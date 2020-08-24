@@ -53,8 +53,7 @@ target_link_libraries(otbr-web PRIVATE
     openthread-ftd
     openthread-posix
     mbedtls
-    Boost::filesystem
-    Boost::system
+    ${Boost_LIBRARIES}
     pthread
 )
 install(
