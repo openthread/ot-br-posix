@@ -146,6 +146,9 @@ jobs:
       with:
         submodules: true
     - name: Bootstrap
-      run: tests/scripts/bootstrap.sh
+      run: |
+        tests/scripts/bootstrap.sh
+        sudo pip3 install --system -U cmake==3.10.3
+        cmake --version | grep 3.10.3
     - name: Build
       run: script/test package

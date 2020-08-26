@@ -200,11 +200,11 @@
 
               <div layout="row">
                 <md-input-container flex="50">
-                  <label>Network Key</label>
-                  <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="networkKey" ng-model="thread.networkKey">
-                  <div ng-messages="threadForm.networkKey.$error">
+                  <label>Master Key</label>
+                  <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="masterKey" ng-model="thread.masterKey">
+                  <div ng-messages="threadForm.MasterKey.$error">
                     <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
-                      Network Key must be 32 hexadecimal digits long.
+                      Master Key must be 32 hexadecimal digits long.
                     </div>
                   </div>
                 </md-input-container>
@@ -237,7 +237,7 @@
               </md-input-container>
               <div>
                 <md-button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" type="submit" ng-click="showConfirm($event, (threadForm.networkName.$valid && threadForm.extPanId.$valid &&
-                threadForm.panId.$valid && threadForm.passphrase.$valid && threadForm.networkKey.$valid &&
+                threadForm.panId.$valid && threadForm.passphrase.$valid && threadForm.masterKey.$valid &&
                 threadForm.channel.$valid && threadForm.prefix.$valid))">Form</md-button>
               </div>
             </form>

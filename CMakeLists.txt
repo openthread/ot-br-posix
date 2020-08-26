@@ -107,6 +107,9 @@ endif()
 
 if(OTBR_WEB)
     pkg_check_modules(JSONCPP jsoncpp REQUIRED)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
+    set(Boost_USE_STATIC_RUNTIME OFF)
     find_package(Boost REQUIRED
         COMPONENTS filesystem system)
     set(OTBR_WEB_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/otbr-web)
