@@ -88,7 +88,7 @@
             extPanId: '1111111122222222',
             panId: '0x1234',
             passphrase: '123456',
-            networkKey: '00112233445566778899aabbccddeeff',
+            masterKey: '00112233445566778899aabbccddeeff',
             channel: 15,
             prefix: 'fd11:22::',
             defaultRoute: true,
@@ -170,7 +170,7 @@
             var networkInfo = sharedProperties.getNetworkInfo();
             $scope.isDisplay = false;
             $scope.thread = {
-                networkKey: '00112233445566778899aabbccddeeff',
+                masterKey: '00112233445566778899aabbccddeeff',
                 prefix: 'fd11:22::',
                 defaultRoute: true,
             };
@@ -199,7 +199,7 @@
                 };
                 $scope.isDisplay = true;
                 var data = {
-                    networkKey: $scope.thread.networkKey,
+                    masterKey: $scope.thread.masterKey,
                     prefix: $scope.thread.prefix,
                     defaultRoute: $scope.thread.defaultRoute,
                     index: index,
@@ -248,7 +248,7 @@
                     $scope.thread.defaultRoute = false;
                 };
                 var data = {
-                    networkKey: $scope.thread.networkKey,
+                    masterKey: $scope.thread.masterKey,
                     prefix: $scope.thread.prefix,
                     defaultRoute: $scope.thread.defaultRoute,
                     extPanId: $scope.thread.extPanId,
