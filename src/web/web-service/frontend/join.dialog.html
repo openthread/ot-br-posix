@@ -11,11 +11,11 @@
         <h5>Are you sure you want to JOIN this Thread Network?</h5>
         <div layout="row">
           <md-input-container flex="80">
-            <label>Network Key</label>
-            <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="networkKey" ng-model="thread.networkKey">
-            <div ng-messages="joinForm.networkKey.$error">
+            <label>Master Key</label>
+            <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="masterKey" ng-model="thread.masterKey">
+            <div ng-messages="joinForm.masterKey.$error">
               <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
-                Network Key must be hexadecimal digits and 32 characters long.
+                Master Key must be hexadecimal digits and 32 characters long.
               </div>
             </div>
           </md-input-container>
@@ -46,7 +46,7 @@
       Cancel
     </md-button>
     <!-- <span flex="40"></span> -->
-    <md-button md-autofocus flex class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" style="width: 90px; margin-left:30px;  margin-bottom: 15px" ng-click="join(joinForm.networkKey.$valid && joinForm.prefix.$valid)">
+    <md-button md-autofocus flex class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" style="width: 90px; margin-left:30px;  margin-bottom: 15px" ng-click="join(joinForm.masterKey.$valid && joinForm.prefix.$valid)">
       Join
     </md-button>
   </div>
