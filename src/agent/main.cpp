@@ -44,11 +44,14 @@
 
 #include "agent/agent_instance.hpp"
 #include "agent/ncp.hpp"
+#include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
-
-#include "agent/ncp_openthread.hpp"
+#if OTBR_ENABLE_REST_SERVER
+#include "rest/rest_web_server.hpp"
+using otbr::rest::RestWebServer;
+#endif
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
@@ -98,13 +101,16 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #if OTBR_ENABLE_DBUS_SERVER
     ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
     std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
-
     dbusAgent->Init();
 #else
     (void)aInterfaceName;
 #endif
+#if OTBR_ENABLE_REST_SERVER
+    ControllerOpenThread *ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
+    RestWebServer *       restServer        = RestWebServer::GetRestWebServer(ncpOpenThreadRest);
+    restServer->Init();
+#endif
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
-
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
 
@@ -125,6 +131,10 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 #if OTBR_ENABLE_DBUS_SERVER
         dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
                                mainloop.mTimeout);
+#endif
+
+#if OTBR_ENABLE_REST_SERVER
+        restServer->UpdateFdSet(mainloop);
 #endif
 
 #if OTBR_ENABLE_OPENWRT
@@ -149,6 +159,11 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             sThreadMutex.lock();
             UbusProcess(mainloop.mReadFdSet);
 #endif
+
+#if OTBR_ENABLE_REST_SERVER
+            restServer->Process(mainloop);
+#endif
+
             aInstance.Process(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER

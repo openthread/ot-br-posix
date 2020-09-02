@@ -1,6 +1,5 @@
-#!/bin/bash
 #
-#  Copyright (c) 2018, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,23 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-set -euxo pipefail
-
-main()
-{
-    SCAN_TMPDIR=./scan-tmp
-    (mkdir -p scan-build \
-        && cd scan-build \
-        && scan-build cmake -GNinja \
-            -DBUILD_TESTING=OFF \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_C_COMPILER=clang \
-            -DOTBR_DBUS=ON \
-            -DOTBR_WEB=ON \
-            -DOTBR_REST=ON \
-            .. \
-        && scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v ninja)
-    ! (grep "^<!-- BUGFILE $(pwd)" "${SCAN_TMPDIR}"/*/report-*.html | grep -v 'third_party') && echo 'Success'
-}
-
-main "$@"
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.js
+    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.min.js
+    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/js)

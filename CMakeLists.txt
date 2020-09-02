@@ -36,6 +36,7 @@ option(OTBR_DBUS          "Build DBus support" OFF)
 option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
 option(OTBR_WEB           "Build Web GUI" OFF)
+option(OTBR_REST          "Build Rest Server" OFF)
 
 
 if(NOT CMAKE_C_STANDARD)
@@ -95,6 +96,12 @@ if(OTBR_DBUS)
     pkg_get_variable(OTBR_DBUS_SYSTEM_BUS_SERVICES_DIR dbus-1 system_bus_services_dir)
     target_compile_definitions(otbr-config INTERFACE
         OTBR_ENABLE_DBUS_SERVER=1
+    )
+endif()
+
+if(OTBR_REST)
+    target_compile_definitions(otbr-config INTERFACE
+        OTBR_ENABLE_REST_SERVER=1
     )
 endif()
 
