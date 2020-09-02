@@ -26,19 +26,25 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set(OT_BACKBONE_ROUTER ON CACHE BOOL "enable backbone router feature" FORCE)
 set(OT_BORDER_AGENT ON CACHE BOOL "enable border agent" FORCE)
 set(OT_BORDER_ROUTER ON CACHE BOOL "enable border router feature" FORCE)
 set(OT_BUILD_EXECUTABLES OFF CACHE BOOL "disable building executables" FORCE)
 set(OT_BUILTIN_MBEDTLS_MANAGEMENT OFF CACHE BOOL "diable mbedTLS management" FORCE)
 set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner" FORCE)
 set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
+set(OT_DUA ON CACHE BOOL "enable Thread 1.2 DUA feature" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
 set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
+set(OT_MLR ON CACHE BOOL "enable Thread 1.2 MLR feature" FORCE)
 set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
 set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
 set(OT_PLATFORM_UDP ON CACHE BOOL "enable platform UDP" FORCE)
+set(OT_REFERENCE_DEVICE ON CACHE BOOL "enable reference device feature" FORCE)
+set(OT_SERVICE ON CACHE BOOL "enable service feature" FORCE)
+set(OT_THREAD_VERSION "1.2" CACHE STRING "enable Thread 1.2 features" FORCE)
 set(OT_UDP_FORWARD OFF CACHE BOOL "diable udp forward" FORCE)
 
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
