@@ -1272,13 +1272,13 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         {
             blobmsg_add_string(&mBuf, "state", "disable");
         }
-        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_WHITELIST)
+        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_ALLOWLIST)
         {
-            blobmsg_add_string(&mBuf, "state", "whitelist");
+            blobmsg_add_string(&mBuf, "state", "allowlist");
         }
-        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST)
+        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_DENYLIST)
         {
-            blobmsg_add_string(&mBuf, "state", "blacklist");
+            blobmsg_add_string(&mBuf, "state", "denylist");
         }
         else
         {
@@ -1607,13 +1607,13 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             {
                 otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_DISABLED);
             }
-            else if (strcmp(state, "whitelist") == 0)
+            else if (strcmp(state, "allowlist") == 0)
             {
-                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_WHITELIST);
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_ALLOWLIST);
             }
-            else if (strcmp(state, "blacklist") == 0)
+            else if (strcmp(state, "denylist") == 0)
             {
-                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST);
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_DENYLIST);
             }
         }
     }
