@@ -257,15 +257,15 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
 
     otbrLog(OTBR_LOG_INFO,
-            "Thread Attach, NetworkName:%s, PanId:0x%04x, ExtPanId:0x%02x%02x%02x%02x%02x%02x%02x%02x, Channel:%u, "
-            "MasterKey: Hidden, PSKc: Hidden",
+            "Attaching to Thread network, NetworkName:%s, PanId:0x%04x, ExtPanId:0x%02x%02x%02x%02x%02x%02x%02x%02x, "
+            "Channel:%u, MasterKey: Hidden, PSKc: Hidden",
             aNetworkName.c_str(), aPanId, extPanId.m8[0], extPanId.m8[1], extPanId.m8[2], extPanId.m8[3],
             extPanId.m8[4], extPanId.m8[5], extPanId.m8[6], extPanId.m8[7], channel);
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "Thread Attach Failed");
+        otbrLog(OTBR_LOG_ERR, "Failed to attach to Thread network: %s", otThreadErrorToString(error));
 
         if (aHandler)
         {
