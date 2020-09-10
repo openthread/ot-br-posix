@@ -43,6 +43,11 @@ function parse_args()
                 shift
                 shift
                 ;;
+            --backbone-interface | -B)
+                BACKBONE_INTERFACE_ARG="-B $2"
+                shift
+                shift
+                ;;
             --nat64-prefix)
                 NAT64_PREFIX=$2
                 shift
@@ -73,6 +78,7 @@ parse_args "$@"
 
 echo "RADIO_URL:" $RADIO_URL
 echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
+echo "BACKBONE_INTERFACE: $BACKBONE_INTERFACE_ARG"
 echo "NAT64_PREFIX:" $NAT64_PREFIX
 echo "AUTO_PREFIX_ROUTE:" $AUTO_PREFIX_ROUTE
 echo "AUTO_PREFIX_SLAAC:" $AUTO_PREFIX_SLAAC
@@ -82,7 +88,7 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
 
-echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -d7 $RADIO_URL\"" >/etc/default/otbr-agent
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME $BACKBONE_INTERFACE_ARG -d7 $RADIO_URL\"" >/etc/default/otbr-agent
 echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" >/etc/default/otbr-web
 
 /app/script/server
