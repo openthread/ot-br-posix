@@ -28,6 +28,7 @@
 
 #include "common/logging.hpp"
 
+#include "dbus/common/dbus_message_dump.hpp"
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
 #include "dbus/server/error_helper.hpp"
@@ -111,6 +112,11 @@ public:
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::DBus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        {
+            otbrLog(OTBR_LOG_DEBUG, "Replied:");
+            DumpDBusMessage(*reply);
+        }
         dbus_connection_send(mConnection, reply.get(), nullptr);
 
     exit:

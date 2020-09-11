@@ -33,6 +33,7 @@
 #include <dbus/dbus.h>
 
 #include "common/logging.hpp"
+#include "dbus/common/dbus_message_dump.hpp"
 #include "dbus/server/dbus_object.hpp"
 
 using std::placeholders::_1;
@@ -113,6 +114,10 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
         otbrLog(OTBR_LOG_INFO, "Handling method %s", memberName.c_str());
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        {
+            DumpDBusMessage(*aMessage);
+        }
         (iter->second)(request);
         handled = DBUS_HANDLER_RESULT_HANDLED;
     }

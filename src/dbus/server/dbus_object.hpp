@@ -39,6 +39,7 @@
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
 #include "dbus/common/constants.hpp"
+#include "dbus/common/dbus_message_dump.hpp"
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
 #include "dbus/server/dbus_request.hpp"
@@ -185,6 +186,12 @@ public:
 
         // invalidated_properties
         SuccessOrExit(error = DBusMessageEncode(&iter, std::vector<std::string>()));
+
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        {
+            otbrLog(OTBR_LOG_DEBUG, "Signal %s.%s", aInterfaceName.c_str(), aPropertyName.c_str());
+            DumpDBusMessage(*signalMsg);
+        }
 
         VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
 

@@ -27,6 +27,7 @@
 #
 
 add_library(otbr-dbus-common
+    dbus_message_dump.cpp
     dbus_message_helper.cpp
     error.cpp
     dbus_message_helper_openthread.cpp
