@@ -30,6 +30,7 @@
 readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
+readonly REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 
 otbr_uninstall()
 {
@@ -52,6 +53,13 @@ otbr_uninstall()
     fi
 }
 
+install_reference_device_deps()
+{
+    with REFERENCE_DEVICE || return 0
+
+    sudo apt-get install -y --no-install-recommends radvd
+}
+
 otbr_install()
 {
     local otbr_options=()
@@ -69,6 +77,12 @@ otbr_install()
         "${otbr_options[@]}"
     )
 
+    if [[ ${REFERENCE_DEVICE} == "1" ]]; then
+        otbr_options+=(
+            "-DOT_REFERENCE_DEVICE=ON"
+        )
+    fi
+
     (mkdir -p "${OTBR_TOP_BUILDDIR}" \
         && cd "${OTBR_TOP_BUILDDIR}" \
         && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
@@ -84,6 +98,8 @@ otbr_install()
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi
+
+    install_reference_device_deps
 }
 
 otbr_update()
