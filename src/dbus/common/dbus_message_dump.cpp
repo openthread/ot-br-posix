@@ -30,8 +30,8 @@
 
 #include <inttypes.h>
 
+#include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "core/common/code_utils.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -169,7 +169,7 @@ void DumpDBusMessage(DBusMessage &aMessage)
 {
     DBusMessageIter iter;
 
-    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), OT_NOOP);
+    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), OTBR_NOOP);
     otbrLog(OTBR_LOG_DEBUG, "{");
     DumpDBusMessage(&iter);
     otbrLog(OTBR_LOG_DEBUG, "}");
