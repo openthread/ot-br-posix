@@ -28,7 +28,7 @@
 
 #include "dbus_message_dump.hpp"
 
-#include <inttypes.h>
+#include <sstream>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -36,7 +36,7 @@
 namespace otbr {
 namespace DBus {
 
-static void DumpDBusMessage(DBusMessageIter *aIter)
+static void DumpDBusMessage(std::ostringstream &sout, DBusMessageIter *aIter)
 {
     int type = dbus_message_iter_get_arg_type(aIter);
 
@@ -49,7 +49,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             dbus_bool_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, value ? "true," : "false,");
+            sout << (value ? "true, " : "false, ");
             break;
         }
         case DBUS_TYPE_BYTE:
@@ -57,7 +57,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             uint8_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%u,", value);
+            sout << static_cast<int>(value) << ", ";
             break;
         }
         case DBUS_TYPE_INT16:
@@ -65,7 +65,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             int16_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%d,", value);
+            sout << value << ", ";
             break;
         }
         case DBUS_TYPE_UINT16:
@@ -73,7 +73,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             uint16_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%u,", value);
+            sout << value << ", ";
             break;
         }
         case DBUS_TYPE_INT32:
@@ -81,7 +81,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             int32_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%d,", value);
+            sout << value << ", ";
             break;
         }
         case DBUS_TYPE_UINT32:
@@ -89,7 +89,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             uint32_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%u,", value);
+            sout << value << ", ";
             break;
         }
         case DBUS_TYPE_INT64:
@@ -97,7 +97,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             int64_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%" PRId64 ",", value);
+            sout << value << ", ";
             break;
         }
         case DBUS_TYPE_UINT64:
@@ -105,7 +105,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             uint64_t value;
 
             dbus_message_iter_get_basic(aIter, &value);
-            otbrLog(OTBR_LOG_DEBUG, "%" PRIu64 ",", value);
+            sout << value << ", ";
             break;
         }
         case DBUS_TYPE_STRING:
@@ -113,7 +113,7 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             const char *buf;
 
             dbus_message_iter_get_basic(aIter, &buf);
-            otbrLog(OTBR_LOG_DEBUG, "%s,", buf);
+            sout << "\"" << buf << "\", ";
             break;
         }
         case DBUS_TYPE_ARRAY:
@@ -121,9 +121,9 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             DBusMessageIter subIter;
 
             dbus_message_iter_recurse(aIter, &subIter);
-            otbrLog(OTBR_LOG_DEBUG, "[");
-            DumpDBusMessage(&subIter);
-            otbrLog(OTBR_LOG_DEBUG, "]");
+            sout << "[ ";
+            DumpDBusMessage(sout, &subIter);
+            sout << "], ";
             break;
         }
         case DBUS_TYPE_STRUCT:
@@ -132,9 +132,9 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
             DBusMessageIter subIter;
 
             dbus_message_iter_recurse(aIter, &subIter);
-            otbrLog(OTBR_LOG_DEBUG, "{");
-            DumpDBusMessage(&subIter);
-            otbrLog(OTBR_LOG_DEBUG, "}");
+            sout << "{ ";
+            DumpDBusMessage(sout, &subIter);
+            sout << " }, ";
             break;
         }
         case DBUS_TYPE_DICT_ENTRY:
@@ -144,15 +144,15 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
 
             dbus_message_iter_recurse(aIter, &subIter);
             dbus_message_iter_get_basic(&subIter, &key);
-            otbrLog(OTBR_LOG_DEBUG, "%s:{", key);
+            sout << key << ":{ ";
             dbus_message_iter_next(&subIter);
             if (dbus_message_iter_get_arg_type(&subIter) == DBUS_TYPE_VARIANT)
             {
                 DBusMessageIter valueIter;
-                dbus_message_iter_recurse(aIter, &valueIter);
-                DumpDBusMessage(&valueIter);
+                dbus_message_iter_recurse(&subIter, &valueIter);
+                DumpDBusMessage(sout, &valueIter);
             }
-            otbrLog(OTBR_LOG_DEBUG, "}");
+            sout << "}, ";
             break;
         }
         case DBUS_TYPE_INVALID:
@@ -167,12 +167,15 @@ static void DumpDBusMessage(DBusMessageIter *aIter)
 
 void DumpDBusMessage(DBusMessage &aMessage)
 {
-    DBusMessageIter iter;
+    DBusMessageIter    iter;
+    std::ostringstream sout;
 
-    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), OTBR_NOOP);
-    otbrLog(OTBR_LOG_DEBUG, "{");
-    DumpDBusMessage(&iter);
-    otbrLog(OTBR_LOG_DEBUG, "}");
+    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter),
+                 otbrLog(OTBR_LOG_DEBUG, "Failed to iterate dbus message during dump"));
+    sout << "{ ";
+    DumpDBusMessage(sout, &iter);
+    sout << "}";
+    otbrLog(OTBR_LOG_DEBUG, sout.str().c_str());
 exit:
     return;
 }
