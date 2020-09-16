@@ -42,6 +42,12 @@ jobs:
 
   buildx:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - build_args: ""
+            push: yes
+          - build_args: "--build-arg OT_BACKBONE_CI=1"
     steps:
     - uses: actions/checkout@v2
       with:
@@ -63,6 +69,7 @@ jobs:
           --build-arg VERSION=${VERSION} \
           --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
           --build-arg VCS_REF=${GITHUB_SHA::8} \
+          ${{ matrix.build_args }} \
           ${TAGS} --file etc/docker/Dockerfile .
 
     - name: Docker Buildx (build)
@@ -70,7 +77,7 @@ jobs:
         docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
 
     - name: Docker Login
-      if: success() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request'
+      if: success() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -78,16 +85,16 @@ jobs:
         echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
 
     - name: Docker Buildx (push)
-      if: success() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request'
+      if: success() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
       run: |
         docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
 
     - name: Docker Check Manifest
-      if: always() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request'
+      if: always() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
       run: |
         docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
 
     - name: Clear
-      if: always() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request'
+      if: always() && github.repository == 'openthread/ot-br-posix' && github.event_name != 'pull_request' && matrix.push
       run: |
         rm -f ${HOME}/.docker/config.json
