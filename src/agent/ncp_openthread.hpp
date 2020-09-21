@@ -56,11 +56,12 @@ public:
     /**
      * This constructor initializes this object.
      *
-     * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aRadioUrl       The URL describes the radio chip.
+     * @param[in]   aInterfaceName          A string of the NCP interface name.
+     * @param[in]   aRadioUrl               The URL describes the radio chip.
+     * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      *
      */
-    ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl);
+    ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName);
 
     /**
      * This method initalize the NCP controller.
