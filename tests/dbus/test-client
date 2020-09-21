@@ -99,7 +99,7 @@ send "commissioner joiner add * ABCDEF\r\n"
 expect "Done"
 wait
 EOF
-    sleep 7
+    sleep 15
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.JoinerStart \
