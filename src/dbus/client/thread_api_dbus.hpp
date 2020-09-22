@@ -268,6 +268,18 @@ public:
     ClientError SetLinkMode(const LinkModeConfig &aConfig);
 
     /**
+     * This method sets the link supported channel mask.
+     *
+     * @param[in]   aChannelMask  The channel mask.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetSupportedChannelMask(uint32_t aChannelMask);
+
+    /**
      * This method gets the link operating mode.
      *
      * @param[out]  aConfig   The operating mode config.

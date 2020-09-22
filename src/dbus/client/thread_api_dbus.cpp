@@ -374,6 +374,11 @@ ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)
     return SetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);
 }
 
+ClientError ThreadApiDBus::SetSupportedChannelMask(const uint32_t aChannelMask)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_SUPPORTED_CHANNEL_MASK, aChannelMask);
+}
+
 ClientError ThreadApiDBus::GetLinkMode(LinkModeConfig &aConfig)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);

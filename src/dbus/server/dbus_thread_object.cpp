@@ -139,6 +139,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::SetLegacyUlaPrefixHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::SetLinkModeHandler, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SUPPORTED_CHANNEL_MASK,
+                               std::bind(&DBusThreadObject::SetSupportedChannelMaskHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::GetLinkModeHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
@@ -485,6 +487,19 @@ otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
     otCfg.mSecureDataRequests = cfg.mSecureDataRequests;
     otCfg.mRxOnWhenIdle       = cfg.mRxOnWhenIdle;
     error                     = otThreadSetLinkMode(threadHelper->GetInstance(), otCfg);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::SetSupportedChannelMaskHandler(DBusMessageIter &aIter)
+{
+    auto     threadHelper = mNcp->GetThreadHelper();
+    uint32_t channelMask;
+    otError  error = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, channelMask) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    error = otLinkSetSupportedChannelMask(threadHelper->GetInstance(), channelMask);
 
 exit:
     return error;

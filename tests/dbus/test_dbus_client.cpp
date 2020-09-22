@@ -113,10 +113,12 @@ int main()
         [](DeviceRole aRole) { printf("Device role changed to %d\n", static_cast<uint8_t>(aRole)); });
 
     api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
-        LinkModeConfig       cfg       = {true, true, false, true};
-        std::vector<uint8_t> masterKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+        LinkModeConfig       cfg            = {true, true, false, true};
+        std::vector<uint8_t> masterKey      = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                           0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-        uint16_t             channel   = 11;
+        uint16_t             channel        = 11;
+        uint32_t             channelMask    = 1 << channel;
+        uint32_t             channelMaskGet = 0;
 
         for (auto &&result : aResult)
         {
@@ -129,6 +131,10 @@ int main()
 
         cfg.mDeviceType = true;
         api->SetLinkMode(cfg);
+
+        api->SetSupportedChannelMask(channelMask);
+        api->GetSupportedChannelMask(channelMaskGet);
+        TEST_ASSERT(channelMaskGet == channelMask);
 
         api->Attach("Test", 0x3456, extpanid, masterKey, {}, 1 << channel,
                     [&api, channel, extpanid](ClientError aError) {

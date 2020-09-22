@@ -208,7 +208,7 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <property name="LinkSupportedChannelMask" type="u" access="read">
+    <property name="LinkSupportedChannelMask" type="u" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
