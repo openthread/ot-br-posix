@@ -27,11 +27,15 @@
 
 FROM ubuntu:bionic
 
-
+ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
+ARG REFERENCE_DEVICE
+
+ENV OT_BACKBONE_CI=${OT_BACKBONE_CI}
 ENV OTBR_OPTIONS=${OTBR_OPTIONS}
 ENV DEBIAN_FRONTEND noninteractive
 ENV PLATFORM ubuntu
+ENV REFERENCE_DEVICE=${REFERENCE_DEVICE}
 ENV RELEASE 1
 ENV NAT64 1
 ENV DNS64 1
@@ -52,6 +56,9 @@ ENV OTBR_BUILD_DEPS \
   build-essential \
   psmisc
 
+# Required for OpenThread Backbone CI
+ENV OTBR_OT_BACKBONE_CI_DEPS curl ca-certificates
+
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
   cmake \
@@ -64,16 +71,19 @@ RUN apt-get update \
   && ./script/bootstrap \
   && ./script/setup \
   && chmod 644 /etc/bind/named.conf.options \
-  && mv ./script /tmp \
-  && mv ./etc /tmp \
-  && find . -delete \
-  && rm -rf /usr/include \
-  && mv /tmp/script . \
-  && mv /tmp/etc . \
-  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_DOCKER_DEPS \
-  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
-  && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
-  && rm -rf /var/lib/apt/lists/*
+  && [ "${OT_BACKBONE_CI}" = "1" ] || ( \
+    mv ./script /tmp \
+    && mv ./etc /tmp \
+    && find . -delete \
+    && rm -rf /usr/include \
+    && mv /tmp/script . \
+    && mv /tmp/etc . \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_DOCKER_DEPS \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
+    && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
+    && rm -rf /var/lib/apt/lists/* \
+  ) \
+  && [ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS
 
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 

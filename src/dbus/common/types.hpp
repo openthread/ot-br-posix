@@ -366,7 +366,7 @@ struct MacCounters
     uint32_t mRxOther;
 
     /**
-     * The total number of frames dropped by MAC Filter module, for example received from blacklisted node.
+     * The total number of frames dropped by MAC Filter module, for example received from denylisted node.
      *
      */
     uint32_t mRxAddressFiltered;
