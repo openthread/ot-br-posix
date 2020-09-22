@@ -59,14 +59,17 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace Ncp {
 
-ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl)
+ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
+                                           const char *aRadioUrl,
+                                           const char *aBackboneInterfaceName)
     : mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
-    mConfig.mInterfaceName = aInterfaceName;
-    mConfig.mRadioUrl      = aRadioUrl;
-    mConfig.mSpeedUpFactor = 1;
+    mConfig.mInterfaceName         = aInterfaceName;
+    mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
+    mConfig.mRadioUrl              = aRadioUrl;
+    mConfig.mSpeedUpFactor         = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
@@ -303,9 +306,9 @@ void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandl
     mResetHandlers.emplace_back(std::move(aHandler));
 }
 
-Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl)
+Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName)
 {
-    return new ControllerOpenThread(aInterfaceName, aRadioUrl);
+    return new ControllerOpenThread(aInterfaceName, aRadioUrl, aBackboneInterfaceName);
 }
 
 /*

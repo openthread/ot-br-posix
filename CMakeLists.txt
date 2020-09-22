@@ -32,11 +32,12 @@ project(openthread-br VERSION 0.2.0)
 
 add_library(otbr-config INTERFACE)
 
-option(OTBR_DBUS          "Build DBus support" OFF)
-option(OTBR_OPENWRT       "Build OpenWrt support" OFF)
-option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
-option(OTBR_WEB           "Build Web GUI" OFF)
-option(OTBR_REST          "Build Rest Server" OFF)
+option(OTBR_BACKBONE_ROUTER  "Build Backbone Router" OFF)
+option(OTBR_DBUS             "Build DBus support" OFF)
+option(OTBR_OPENWRT          "Build OpenWrt support" OFF)
+option(OTBR_UNSECURE_JOIN    "Enable unsecure joining" OFF)
+option(OTBR_WEB              "Build Web GUI" OFF)
+option(OTBR_REST             "Build Rest Server" OFF)
 
 
 if(NOT CMAKE_C_STANDARD)
@@ -90,6 +91,15 @@ endif()
 
 find_package(PkgConfig)
 include(GNUInstallDirs)
+
+if (OTBR_BACKBONE_ROUTER)
+    target_compile_definitions(otbr-config INTERFACE
+            OTBR_ENABLE_BACKBONE_ROUTER=1
+    )
+    set(OT_THREAD_VERSION 1.2 CACHE STRING "Backbone Router requires Thread 1.2 or higher" FORCE)
+    set(OT_BACKBONE_ROUTER ON CACHE BOOL "Enable Backbone Router feature in OpenThread" FORCE)
+    set(OT_SERVICE ON CACHE BOOL "Backbone Router requires Thread network service" FORCE)
+endif()
 
 if(OTBR_DBUS)
     pkg_check_modules(DBUS REQUIRED dbus-1)

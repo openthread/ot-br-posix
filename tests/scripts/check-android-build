@@ -196,10 +196,11 @@ prepare_openthread()
     mv "${SRC_DIR}"/../../third_party/openthread/repo external/openthread
     cat >>buildspec.mk <<EOF
 
-USE_OTBR_DAEMON := 1  
+USE_OTBR_DAEMON := 1
 OPENTHREAD_PROJECT_CFLAGS := \
-    -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\" \
-    -DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1
+    -DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1 \
+    -DOPENTHREAD_CONFIG_FILE=\<openthread-config-android.h\> \
+    -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\"openthread-core-posix-config.h\"
 EOF
 }
 

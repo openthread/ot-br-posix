@@ -131,11 +131,14 @@ public:
     /**
      * This method creates a NCP Controller.
      *
-     * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aRadioUrl       The URL describes the radio chip.
+     * @param[in]   aInterfaceName          A string of the NCP interface name.
+     * @param[in]   aRadioUrl               The URL describes the radio chip.
+     * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      *
      */
-    static Controller *Create(const char *aInterfaceName, const char *aRadioUrl);
+    static Controller *Create(const char *aInterfaceName,
+                              const char *aRadioUrl,
+                              const char *aBackboneInterfaceName = nullptr);
 
     /**
      * This method destroys a NCP Controller.
