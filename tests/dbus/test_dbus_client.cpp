@@ -117,6 +117,8 @@ int main()
         std::vector<uint8_t> masterKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                           0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
         uint16_t             channel   = 11;
+        std::string          region;
+        uint32_t             channelMask;
 
         for (auto &&result : aResult)
         {
@@ -129,6 +131,18 @@ int main()
 
         cfg.mDeviceType = true;
         api->SetLinkMode(cfg);
+
+        api->SetRegion("US");
+        api->GetRegion(region);
+        TEST_ASSERT(region == "US");
+        api->GetSupportedChannelMask(channelMask);
+        TEST_ASSERT((channelMask & (1 << 26)) == 0);
+
+        api->SetRegion("WW");
+        api->GetRegion(region);
+        TEST_ASSERT(region == "WW");
+        api->GetSupportedChannelMask(channelMask);
+        TEST_ASSERT((channelMask & (1 << 26)) != 0);
 
         api->Attach("Test", 0x3456, extpanid, masterKey, {}, 1 << channel,
                     [&api, channel, extpanid](ClientError aError) {

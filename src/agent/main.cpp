@@ -47,6 +47,7 @@
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/region_code.hpp"
 #include "common/types.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
@@ -81,6 +82,7 @@ enum
     OTBR_OPT_VERSION        = 'V',
     OTBR_OPT_SHORTMAX       = 128,
     OTBR_OPT_RADIO_VERSION,
+    OTBR_OPT_REGION,
 };
 
 // Default poll timeout.
@@ -95,6 +97,7 @@ static const struct option  kOptions[]   = {
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
+    {"region", required_argument, nullptr, OTBR_OPT_REGION},
     {0, 0, 0, 0}};
 
 static void HandleSignal(int aSignal)
@@ -215,14 +218,16 @@ static void OnAllocateFailed(void)
 
 int main(int argc, char *argv[])
 {
-    int                    logLevel = OTBR_LOG_INFO;
-    int                    opt;
-    int                    ret                   = EXIT_SUCCESS;
-    const char *           interfaceName         = kDefaultInterfaceName;
-    const char *           backboneInterfaceName = "";
-    otbr::Ncp::Controller *ncp                   = nullptr;
-    bool                   verbose               = false;
-    bool                   printRadioVersion     = false;
+    int                              logLevel = OTBR_LOG_INFO;
+    int                              opt;
+    int                              ret                   = EXIT_SUCCESS;
+    const char *                     interfaceName         = kDefaultInterfaceName;
+    const char *                     backboneInterfaceName = "";
+    otbr::Ncp::Controller *          ncp                   = nullptr;
+    otbr::Ncp::ControllerOpenThread *ncpOpenThread         = nullptr;
+    bool                             verbose               = false;
+    bool                             printRadioVersion     = false;
+    otbr::RegionCode                 regionCode            = otbr::kRegionUnknown;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -267,6 +272,10 @@ int main(int argc, char *argv[])
             printRadioVersion = true;
             break;
 
+        case OTBR_OPT_REGION:
+            regionCode = otbr::StringToRegionCode(optarg);
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -278,13 +287,18 @@ int main(int argc, char *argv[])
     otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    ncp = otbr::Ncp::Controller::Create(interfaceName, argv[optind], backboneInterfaceName);
+    ncp           = otbr::Ncp::Controller::Create(interfaceName, argv[optind], backboneInterfaceName);
+    ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(ncp);
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 #if OTBR_ENABLE_BACKBONE_ROUTER
     otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
 #endif
+    otbrLog(OTBR_LOG_INFO, "Backbone interface %s",
+            backboneInterfaceName == nullptr ? "(null)" : backboneInterfaceName);
+    otbrLog(OTBR_LOG_INFO, "Region %s", otbr::RegionCodeToString(regionCode));
+    ncpOpenThread->SetRegionCode(regionCode);
 
     {
         otbr::AgentInstance instance(ncp);
@@ -298,16 +312,12 @@ int main(int argc, char *argv[])
 
         if (printRadioVersion)
         {
-            ControllerOpenThread *ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(ncp);
-
             PrintRadioVersion(ncpOpenThread->GetInstance());
             ExitNow(ret = EXIT_SUCCESS);
         }
 
 #if OTBR_ENABLE_OPENWRT
-        ControllerOpenThread *ncpThread = reinterpret_cast<ControllerOpenThread *>(ncp);
-
-        UbusServerInit(ncpThread, &sThreadMutex);
+        UbusServerInit(ncpOpenThread, &sThreadMutex);
         std::thread(UbusServerRun).detach();
 #endif
         SuccessOrExit(ret = Mainloop(instance, interfaceName));

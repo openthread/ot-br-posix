@@ -29,6 +29,7 @@
 add_library(otbr-common
     logging.cpp
     types.cpp
+    region_code.cpp
 )
 
 target_link_libraries(otbr-common

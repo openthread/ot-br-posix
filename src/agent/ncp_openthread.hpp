@@ -43,6 +43,7 @@
 
 #include "ncp.hpp"
 #include "agent/thread_helper.hpp"
+#include "common/region_code.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -87,6 +88,22 @@ public:
      *
      */
     otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
+
+    /**
+     * This method sets the region code.
+     *
+     * @param[in]   aCode   The region code.
+     *
+     */
+    void SetRegionCode(RegionCode aCode) { mRegionCode = aCode; }
+
+    /**
+     * This method gets the region code.
+     *
+     * @retval  The region code.
+     *
+     */
+    RegionCode GetRegionCode(void) { return mRegionCode; }
 
     /**
      * This method updates the fd_set to poll.
@@ -169,6 +186,7 @@ private:
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
     bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
+    RegionCode                                                                      mRegionCode;
 };
 
 } // namespace Ncp
