@@ -153,7 +153,7 @@ jobs:
     - name: Build
       run: script/test package
 
-  ot12-backbone-ci:
+  ot12-backbone:
     runs-on: ubuntu-18.04
     env:
       PACKET_VERIFICATION: 1
