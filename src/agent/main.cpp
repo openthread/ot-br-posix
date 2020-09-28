@@ -196,7 +196,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
+    fprintf(stderr, "Usage: %s [--reg region] [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
     otbr::Ncp::ControllerOpenThread *ncpOpenThread         = nullptr;
     bool                             verbose               = false;
     bool                             printRadioVersion     = false;
-    otbr::RegionCode                 regionCode            = otbr::kRegionUnknown;
+    std::string                      regionCode;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
             break;
 
         case OTBR_OPT_REGION:
-            regionCode = otbr::StringToRegionCode(optarg);
+            regionCode = optarg;
             break;
 
         default:
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
     ncp           = otbr::Ncp::Controller::Create(interfaceName, argv[optind], backboneInterfaceName);
-    ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(ncp);
+    ncpOpenThread = static_cast<ControllerOpenThread *>(ncp);
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
@@ -297,7 +297,10 @@ int main(int argc, char *argv[])
 #endif
     otbrLog(OTBR_LOG_INFO, "Backbone interface %s",
             backboneInterfaceName == nullptr ? "(null)" : backboneInterfaceName);
-    otbrLog(OTBR_LOG_INFO, "Region %s", otbr::RegionCodeToString(regionCode));
+    if (!regionCode.empty())
+    {
+        otbrLog(OTBR_LOG_INFO, "Region %s", regionCode.c_str());
+    }
     ncpOpenThread->SetRegionCode(regionCode);
 
     {

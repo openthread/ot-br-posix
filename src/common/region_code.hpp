@@ -29,25 +29,29 @@
 #ifndef OTBR_COMMON_REGION_CODE_HPP_
 #define OTBR_COMMON_REGION_CODE_HPP_
 
-#include <stdint.h>
+#include <string>
 
 namespace otbr {
 
-enum RegionCode
-{
-    kRegionWW      = 0, // < World wide
-    kRegionCA      = 1, // < Canada
-    kRegionUS      = 2, // < United States
-    kRegionUnknown = 3, // < Unknown
-};
+/**
+ * This method returns the supported channel mask for a region code.
+ *
+ *
+ * @param[in] aRegionCode   The region code.
+ * @returns The supported channel mask.
+ *
+ */
+uint32_t GetSupportedChannelMaskForRegion(const std::string &aRegionCode);
 
-RegionCode StringToRegionCode(const char *aRegionString);
-
-const char *RegionCodeToString(RegionCode aRegionCode);
-
-uint32_t GetSupportedChannelMaskForRegion(RegionCode aRegionCode);
-
-uint32_t GetPreferredChannelMaskForRegion(RegionCode aRegionCode);
+/**
+ * This method returns the preferred channel mask for a region code.
+ *
+ * @param[in] aRegionCode   The region code.
+ *
+ * @returns The preferred channel mask.
+ *
+ */
+uint32_t GetPreferredChannelMaskForRegion(const std::string &aRegionCode);
 
 } // namespace otbr
 

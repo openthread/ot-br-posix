@@ -95,7 +95,7 @@ public:
      * @param[in]   aCode   The region code.
      *
      */
-    void SetRegionCode(RegionCode aCode) { mRegionCode = aCode; }
+    void SetRegionCode(const std::string &aCode) { mRegionCode = aCode; }
 
     /**
      * This method gets the region code.
@@ -103,7 +103,7 @@ public:
      * @retval  The region code.
      *
      */
-    RegionCode GetRegionCode(void) { return mRegionCode; }
+    std::string GetRegionCode(void) { return mRegionCode; }
 
     /**
      * This method updates the fd_set to poll.
@@ -186,7 +186,7 @@ private:
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
     bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
-    RegionCode                                                                      mRegionCode;
+    std::string                                                                     mRegionCode;
 };
 
 } // namespace Ncp

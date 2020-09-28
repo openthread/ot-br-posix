@@ -187,8 +187,8 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     otExtendedPanId extPanId;
     otMasterKey     masterKey;
     otPskc          pskc;
-    uint32_t        preferredChannelMask = GetSupportedChannelMaskForRegion(mNcp->GetRegionCode());
-    uint32_t        supportedChannelMask = GetPreferredChannelMaskForRegion(mNcp->GetRegionCode());
+    uint32_t        preferredChannelMask = GetPreferredChannelMaskForRegion(mNcp->GetRegionCode());
+    uint32_t        supportedChannelMask = GetSupportedChannelMaskForRegion(mNcp->GetRegionCode());
     uint32_t        channelMask;
     uint8_t         channel;
 

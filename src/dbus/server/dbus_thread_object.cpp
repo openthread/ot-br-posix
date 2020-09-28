@@ -497,13 +497,10 @@ exit:
 
 otError DBusThreadObject::SetRegionHandler(DBusMessageIter &aIter)
 {
-    std::string regionName;
-    RegionCode  regionCode;
+    std::string regionCode;
     otError     error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, regionName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    regionCode = StringToRegionCode(regionName.c_str());
-    VerifyOrExit(regionCode != kRegionUnknown, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, regionCode) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     mNcp->SetRegionCode(regionCode);
 
 exit:
@@ -985,8 +982,8 @@ exit:
 
 otError DBusThreadObject::GetRegionHandler(DBusMessageIter &aIter)
 {
-    otError     error      = OT_ERROR_NONE;
-    std::string regionName = RegionCodeToString(mNcp->GetRegionCode());
+    otError     error = OT_ERROR_NONE;
+    std::string regionName(mNcp->GetRegionCode());
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, regionName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 

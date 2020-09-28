@@ -28,102 +28,40 @@
 
 #include "region_code.hpp"
 
-#include <string.h>
-#include <utility>
-
-#include "common/logging.hpp"
-
 namespace {
 
-enum : uint32_t
-{
-    kChannelMask11To24 = 0x1fff800,
-    kChannelMask11To25 = 0x3fff800,
-    kChannelMask11To26 = 0x7fff800,
-};
-}
+constexpr uint32_t kChannelMask11To24 = 0x1fff800;
+constexpr uint32_t kChannelMask11To25 = 0x3fff800;
+constexpr uint32_t kChannelMask11To26 = 0x7fff800;
+
+constexpr char kRegionCodeUS[] = "US";
+constexpr char kRegionCodeCA[] = "CA";
+
+} // namespace
 
 namespace otbr {
 
-static const std::pair<RegionCode, const char *> sRegionCodeNames[] = {
-    {kRegionWW, "WW"},
-    {kRegionCA, "CA"},
-    {kRegionUS, "US"},
-};
-
-RegionCode StringToRegionCode(const char *aRegionString)
+uint32_t GetSupportedChannelMaskForRegion(const std::string &aRegionCode)
 {
-    RegionCode code  = kRegionUnknown;
-    bool       found = false;
+    uint32_t mask = kChannelMask11To26;
 
-    for (const auto &p : sRegionCodeNames)
+    // US or CA
+    if (aRegionCode == kRegionCodeUS || aRegionCode == kRegionCodeCA)
     {
-        if (!strcmp(aRegionString, p.second))
-        {
-            code  = p.first;
-            found = true;
-        }
-    }
-
-    if (!found)
-    {
-        otbrLog(OTBR_LOG_WARNING, "Unknown region %s", aRegionString);
-    }
-    return code;
-}
-
-const char *RegionCodeToString(RegionCode aRegionCode)
-{
-    const char *name  = "Unknown";
-    bool        found = false;
-
-    for (const auto &p : sRegionCodeNames)
-    {
-        if (aRegionCode == p.first)
-        {
-            name  = p.second;
-            found = true;
-        }
-    }
-
-    if (!found)
-    {
-        otbrLog(OTBR_LOG_WARNING, "Unknown region code %d", static_cast<int>(aRegionCode));
-    }
-    return name;
-}
-
-uint32_t GetSupportedChannelMaskForRegion(RegionCode aRegionCode)
-{
-    uint32_t mask;
-
-    switch (aRegionCode)
-    {
-    case kRegionCA:
-    case kRegionUS:
         mask = kChannelMask11To25;
-        break;
-    default:
-        mask = kChannelMask11To26;
-        break;
     }
 
     return mask;
 }
 
-uint32_t GetPreferredChannelMaskForRegion(RegionCode aRegionCode)
+uint32_t GetPreferredChannelMaskForRegion(const std::string &aRegionCode)
 {
-    uint32_t mask;
+    uint32_t mask = kChannelMask11To26;
 
-    switch (aRegionCode)
+    // US or CA
+    if (aRegionCode == kRegionCodeUS || aRegionCode == kRegionCodeCA)
     {
-    case kRegionCA:
-    case kRegionUS:
         mask = kChannelMask11To24;
-        break;
-    default:
-        mask = kChannelMask11To26;
-        break;
     }
 
     return mask;
