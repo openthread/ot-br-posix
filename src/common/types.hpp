@@ -37,8 +37,11 @@
 #include "openthread-br/config.h"
 
 #include <stdint.h>
+#include <string.h>
 #include <string>
 #include <vector>
+
+#include <openthread/ip6.h>
 
 #ifndef IN6ADDR_ANY
 /**
@@ -64,7 +67,8 @@ enum otbrError
     OTBR_ERROR_DBUS       = -2, ///< DBus error.
     OTBR_ERROR_MDNS       = -3, ///< MDNS error.
     OTBR_ERROR_OPENTHREAD = -4, ///< OpenThread error.
-    OTBR_ERROR_REST       = -5  ///< Rest Server error.
+    OTBR_ERROR_REST       = -5, ///< Rest Server error.
+    OTBR_ERROR_SMCROUTE   = -6, ///< SMCRoute error.
 };
 
 namespace otbr {
@@ -110,12 +114,38 @@ public:
     }
 
     /**
+     * Constructor with an Thread Ip6 address.
+     *
+     * @param[in]   aAddress    The Thread Ip6 address.
+     *
+     */
+    Ip6Address(const otIp6Address &aAddress);
+
+    /**
+     * This method overloads `<` operator and compares if the Ip6 address is smaller than the other address.
+     *
+     * @param[in] aOther  The other Ip6 address to compare with.
+     *
+     * @returns  Whether the Ip6 address is smaller than the other address.
+     *
+     */
+    bool operator<(const Ip6Address &aOther) const { return memcmp(this, &aOther, sizeof(Ip6Address)) < 0; }
+
+    /**
      * Retrieve the 16-bit Thread locator.
      *
      * @returns RLOC16 or ALOC16.
      *
      */
     uint16_t ToLocator(void) const { return static_cast<uint16_t>(m8[14] << 8 | m8[15]); }
+
+    /**
+     * This method returns the string representation for the Ip6 address.
+     *
+     * @returns The string representation of the Ip6 address.
+     *
+     */
+    std::string ToString() const;
 
     union
     {

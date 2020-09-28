@@ -33,6 +33,7 @@ add_library(otbr-utils
     pskc.cpp
     steering_data.cpp
     strcpy_utils.cpp
+    system_utils.cpp
 )
 target_link_libraries(otbr-utils PRIVATE
     otbr-common

@@ -92,6 +92,7 @@ LOCAL_CPPFLAGS += -std=c++14
 
 LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
+    src/agent/instance_params.cpp \
     src/agent/border_agent.cpp \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \

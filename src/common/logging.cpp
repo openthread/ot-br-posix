@@ -163,11 +163,6 @@ const char *otbrErrorString(otbrError aError)
     return error;
 }
 
-void otbrLogResult(const char *aAction, otbrError aError)
-{
-    otbrLog((aError == OTBR_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING), "%s: %s", aAction, otbrErrorString(aError));
-}
-
 void otbrLogDeinit(void)
 {
     closelog();

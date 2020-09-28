@@ -28,8 +28,11 @@
 
 add_library(otbr-common
     logging.cpp
+    types.cpp
 )
 
 target_link_libraries(otbr-common
     PUBLIC otbr-config
+    openthread-ftd
+    openthread-posix
 )

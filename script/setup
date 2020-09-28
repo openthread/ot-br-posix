@@ -38,6 +38,7 @@
 . script/_dns64
 . script/_dhcpv6_pd
 . script/_network_manager
+. script/_smcroute
 . script/_swapfile
 . script/_sudo_extend
 . script/_disable_services
@@ -53,9 +54,11 @@ main()
     dhcpv6_pd_uninstall
     nat64_uninstall
     dns64_uninstall
+    smcroute_uninstall
     ipforward_uninstall
 
     ipforward_install
+    smcroute_install
     nat64_install
     dns64_install
     network_manager_install

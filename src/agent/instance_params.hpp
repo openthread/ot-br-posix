@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,80 +28,78 @@
 
 /**
  * @file
- *   This file includes definition for Thread border router agent instance.
+ *   This file includes definition for Thread border router agent instance parameters.
  */
 
-#ifndef OTBR_AGENT_AGENT_INSTANCE_HPP_
-#define OTBR_AGENT_AGENT_INSTANCE_HPP_
-
-#include "openthread-br/config.h"
-
-#include <stdarg.h>
-#include <stdint.h>
-#include <sys/select.h>
-#include <sys/types.h>
-
-#include "agent/border_agent.hpp"
-#include "agent/instance_params.hpp"
-#include "agent/ncp.hpp"
+#ifndef OTBR_AGENT_INSATNCE_PARAMS_HPP_
+#define OTBR_AGENT_INSATNCE_PARAMS_HPP_
 
 namespace otbr {
 
 /**
- * This class implements an instance to host services used by border router.
+ * This class represents the agent instance parameters.
  *
  */
-class AgentInstance
+class InstanceParams
 {
 public:
     /**
-     * The constructor to initialize the Thread border router agent instance.
+     * This method gets the single `InstanceParams` instance.
      *
-     * @param[in]   aNcp  A pointer to the NCP controller.
+     * @returns  The single `InstanceParams` instance.
      *
      */
-    AgentInstance(Ncp::Controller *aNcp);
-
-    ~AgentInstance(void);
+    static InstanceParams &Get(void);
 
     /**
-     * This method initialize the agent.
+     * This method sets the Thread network interface name.
      *
-     * @retval  OTBR_ERROR_NONE     Agent initialized successfully.
-     * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
+     * @param[in] aName  The Thread network interface name.
      *
      */
-    otbrError Init(void);
+    void SetThreadIfName(const char *aName);
 
     /**
-     * This method updates the file descriptor sets and timeout for mainloop.
+     * This method gets the Thread network interface name.
      *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     * @returns The Thread network interface name.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop);
+    const char *GetThreadIfName(void);
+
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    /**
+     * This method sets the Backbone network interface name.
+     *
+     * @param[in] aName  The Backbone network interface name.
+     *
+     */
+    void SetBackboneIfName(const char *aName);
 
     /**
-     * This method performs processing.
+     * This method gets the Backbone network interface name.
      *
-     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
-     *
-     */
-    void Process(const otSysMainloopContext &aMainloop);
-
-    /**
-     * This method return mNcp pointer.
-     *
-     * @retval  the pointer of mNcp.
+     * @returns The Backbone network interface name.
      *
      */
-    Ncp::Controller &GetNcp(void) { return *mNcp; }
+    const char *GetBackboneIfName(void);
+#endif
 
 private:
-    Ncp::Controller *mNcp;
-    BorderAgent      mBorderAgent;
+    InstanceParams()
+        : mThreadIfName(nullptr)
+#if OTBR_ENABLE_BACKBONE_ROUTER
+        , mBackboneIfName(nullptr)
+#endif
+    {
+    }
+
+    const char *mThreadIfName;
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    const char *mBackboneIfName;
+#endif
 };
 
 } // namespace otbr
 
-#endif // OTBR_AGENT_AGENT_INSTANCE_HPP_
+#endif // OTBR_AGENT_INSATNCE_PARAMS_HPP_

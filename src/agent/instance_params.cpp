@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,53 +28,39 @@
 
 /**
  * @file
- *   This file includes implementation for Thread border router agent instance.
+ *   The file implements the agent instance parameters.
  */
 
-#include "agent/agent_instance.hpp"
-
-#include <assert.h>
-
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
-
+#include "agent/instance_params.hpp"
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
-    : mNcp(aNcp)
-    , mBorderAgent(aNcp)
+InstanceParams &InstanceParams::Get(void)
 {
+    static InstanceParams sInstanceParams;
+
+    return sInstanceParams;
 }
 
-otbrError AgentInstance::Init(void)
+void InstanceParams::SetThreadIfName(const char *aName)
 {
-    otbrError error = OTBR_ERROR_NONE;
-
-    SuccessOrExit(error = mNcp->Init());
-
-    mBorderAgent.Init();
-
-exit:
-    otbrLogResult(error, "Initialize OpenThread Border Router Agent");
-    return error;
+    mThreadIfName = aName;
 }
 
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
+const char *InstanceParams::GetThreadIfName(void)
 {
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
+    return mThreadIfName;
 }
 
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
+#if OTBR_ENABLE_BACKBONE_ROUTER
+void InstanceParams::SetBackboneIfName(const char *aName)
 {
-    mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
+    mBackboneIfName = aName;
 }
 
-AgentInstance::~AgentInstance(void)
+const char *InstanceParams::GetBackboneIfName(void)
 {
-    Ncp::Controller::Destroy(mNcp);
+    return mBackboneIfName;
 }
+#endif
 
 } // namespace otbr

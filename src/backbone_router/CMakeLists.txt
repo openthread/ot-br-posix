@@ -1,6 +1,5 @@
-#!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,15 +26,13 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# shellcheck disable=SC2034
-SUDO_EXTEND_TIME=false
+add_library(otbr-backbone-router
+    backbone_agent.cpp
+    smcroute_manager.cpp
+)
 
-SWAP_REQUIRED=false
+target_link_libraries(otbr-backbone-router PRIVATE
+    otbr-common
+    otbr-utils
+)
 
-NAT64=1
-DNS64=1
-DHCPV6_PD=1
-NETWORK_MANAGER=1
-# disabled unless specifically added for the device
-NETWORK_MANAGER_WIFI=0
-BACKBONE_ROUTER=0
