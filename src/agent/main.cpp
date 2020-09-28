@@ -97,7 +97,7 @@ static const struct option  kOptions[]   = {
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
-    {"region", required_argument, nullptr, OTBR_OPT_REGION},
+    {"reg", required_argument, nullptr, OTBR_OPT_REGION},
     {0, 0, 0, 0}};
 
 static void HandleSignal(int aSignal)
