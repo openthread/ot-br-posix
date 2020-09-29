@@ -77,9 +77,8 @@ bool operator==(const otbr::DBus::ChildInfo &aLhs, const otbr::DBus::ChildInfo &
            aLhs.mNetworkDataVersion == aRhs.mNetworkDataVersion && aLhs.mLinkQualityIn == aRhs.mLinkQualityIn &&
            aLhs.mAverageRssi == aRhs.mAverageRssi && aLhs.mLastRssi == aRhs.mLastRssi &&
            aLhs.mFrameErrorRate == aRhs.mFrameErrorRate && aLhs.mMessageErrorRate == aRhs.mMessageErrorRate &&
-           aLhs.mRxOnWhenIdle == aRhs.mRxOnWhenIdle && aLhs.mSecureDataRequest == aRhs.mSecureDataRequest &&
-           aLhs.mFullThreadDevice == aRhs.mFullThreadDevice && aLhs.mFullNetworkData == aRhs.mFullNetworkData &&
-           aLhs.mIsStateRestoring == aRhs.mIsStateRestoring;
+           aLhs.mRxOnWhenIdle == aRhs.mRxOnWhenIdle && aLhs.mFullThreadDevice == aRhs.mFullThreadDevice &&
+           aLhs.mFullNetworkData == aRhs.mFullNetworkData && aLhs.mIsStateRestoring == aRhs.mIsStateRestoring;
 }
 
 bool operator==(const otbr::DBus::NeighborInfo &aLhs, const otbr::DBus::NeighborInfo &aRhs)
@@ -89,8 +88,8 @@ bool operator==(const otbr::DBus::NeighborInfo &aLhs, const otbr::DBus::Neighbor
            aLhs.mLinkQualityIn == aRhs.mLinkQualityIn && aLhs.mAverageRssi == aRhs.mAverageRssi &&
            aLhs.mLastRssi == aRhs.mLastRssi && aLhs.mFrameErrorRate == aRhs.mFrameErrorRate &&
            aLhs.mMessageErrorRate == aRhs.mMessageErrorRate && aLhs.mRxOnWhenIdle == aRhs.mRxOnWhenIdle &&
-           aLhs.mSecureDataRequest == aRhs.mSecureDataRequest && aLhs.mFullThreadDevice == aRhs.mFullThreadDevice &&
-           aLhs.mFullNetworkData == aRhs.mFullNetworkData && aLhs.mIsChild == aRhs.mIsChild;
+           aLhs.mFullThreadDevice == aRhs.mFullThreadDevice && aLhs.mFullNetworkData == aRhs.mFullNetworkData &&
+           aLhs.mIsChild == aRhs.mIsChild;
 }
 
 bool operator==(const otbr::DBus::LeaderData &aLhs, const otbr::DBus::LeaderData &aRhs)
@@ -251,8 +250,7 @@ TEST(DBusMessage, TestOtbrChannelQuality)
 TEST(DBusMessage, TestOtbrChildInfo)
 {
     DBusMessage *                             msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::ChildInfo>> setVals(
-        {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false, true}});
+    tuple<std::vector<otbr::DBus::ChildInfo>> setVals({{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false}});
     tuple<std::vector<otbr::DBus::ChildInfo>> getVals;
 
     CHECK(msg != nullptr);
@@ -268,8 +266,7 @@ TEST(DBusMessage, TestOtbrChildInfo)
 TEST(DBusMessage, TestOtbrNeighborInfo)
 {
     DBusMessage *                                msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::NeighborInfo>> setVals(
-        {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false, true}});
+    tuple<std::vector<otbr::DBus::NeighborInfo>> setVals({{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false}});
     tuple<std::vector<otbr::DBus::NeighborInfo>> getVals;
 
     CHECK(msg != nullptr);

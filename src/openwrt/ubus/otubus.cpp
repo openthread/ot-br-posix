@@ -828,11 +828,6 @@ int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
             strcat(mode, "r");
         }
 
-        if (neighborInfo.mSecureDataRequest)
-        {
-            strcat(mode, "s");
-        }
-
         if (neighborInfo.mFullThreadDevice)
         {
             strcat(mode, "d");
@@ -1155,11 +1150,6 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
             strcat(mode, "r");
         }
 
-        if (linkMode.mSecureDataRequests)
-        {
-            strcat(mode, "s");
-        }
-
         if (linkMode.mDeviceType)
         {
             strcat(mode, "d");
@@ -1390,10 +1380,9 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
             {
                 enum
                 {
-                    kModeRxOnWhenIdle      = 1 << 3, ///< If the device has its receiver on when not transmitting.
-                    kModeSecureDataRequest = 1 << 2, ///< If the device uses link layer security for all data requests.
-                    kModeFullThreadDevice  = 1 << 1, ///< If the device is an FTD.
-                    kModeFullNetworkData   = 1 << 0, ///< If the device requires the full Network Data.
+                    kModeRxOnWhenIdle     = 1 << 3, ///< If the device has its receiver on when not transmitting.
+                    kModeFullThreadDevice = 1 << 1, ///< If the device is an FTD.
+                    kModeFullNetworkData  = 1 << 0, ///< If the device requires the full Network Data.
                 };
                 const otNetworkDiagChildEntry &entry = diagTlv.mData.mChildTable.mTable[i];
 
@@ -1404,7 +1393,6 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
                 blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
 
                 mode = (entry.mMode.mRxOnWhenIdle ? kModeRxOnWhenIdle : 0) |
-                       (entry.mMode.mSecureDataRequests ? kModeSecureDataRequest : 0) |
                        (entry.mMode.mDeviceType ? kModeFullThreadDevice : 0) |
                        (entry.mMode.mNetworkData ? kModeFullNetworkData : 0);
                 blobmsg_add_u16(&mNetworkdataBuf, "mode", mode);
@@ -1530,10 +1518,6 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
                 {
                 case 'r':
                     linkMode.mRxOnWhenIdle = 1;
-                    break;
-
-                case 's':
-                    linkMode.mSecureDataRequests = 1;
                     break;
 
                 case 'd':
