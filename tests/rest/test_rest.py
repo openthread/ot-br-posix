@@ -98,7 +98,7 @@ def diagnostics_check(data):
 
         mode = diag["Mode"]
         mode_expected_keys = [
-            "RxOnWhenIdle", "SecureDataRequests", "DeviceType", "NetworkData"
+            "RxOnWhenIdle", "DeviceType", "NetworkData"
         ]
         for key in mode_expected_keys:
             assert (key in mode)

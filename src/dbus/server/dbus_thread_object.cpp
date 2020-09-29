@@ -480,11 +480,10 @@ otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
     otError          error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, cfg) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otCfg.mDeviceType         = cfg.mDeviceType;
-    otCfg.mNetworkData        = cfg.mNetworkData;
-    otCfg.mSecureDataRequests = cfg.mSecureDataRequests;
-    otCfg.mRxOnWhenIdle       = cfg.mRxOnWhenIdle;
-    error                     = otThreadSetLinkMode(threadHelper->GetInstance(), otCfg);
+    otCfg.mDeviceType   = cfg.mDeviceType;
+    otCfg.mNetworkData  = cfg.mNetworkData;
+    otCfg.mRxOnWhenIdle = cfg.mRxOnWhenIdle;
+    error               = otThreadSetLinkMode(threadHelper->GetInstance(), otCfg);
 
 exit:
     return error;
@@ -497,10 +496,9 @@ otError DBusThreadObject::GetLinkModeHandler(DBusMessageIter &aIter)
     LinkModeConfig   cfg;
     otError          error = OT_ERROR_NONE;
 
-    cfg.mDeviceType         = otCfg.mDeviceType;
-    cfg.mNetworkData        = otCfg.mNetworkData;
-    cfg.mSecureDataRequests = otCfg.mSecureDataRequests;
-    cfg.mRxOnWhenIdle       = otCfg.mRxOnWhenIdle;
+    cfg.mDeviceType   = otCfg.mDeviceType;
+    cfg.mNetworkData  = otCfg.mNetworkData;
+    cfg.mRxOnWhenIdle = otCfg.mRxOnWhenIdle;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, cfg) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -848,7 +846,6 @@ otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
         info.mFrameErrorRate     = childInfo.mFrameErrorRate;
         info.mMessageErrorRate   = childInfo.mMessageErrorRate;
         info.mRxOnWhenIdle       = childInfo.mRxOnWhenIdle;
-        info.mSecureDataRequest  = childInfo.mSecureDataRequest;
         info.mFullThreadDevice   = childInfo.mFullThreadDevice;
         info.mFullNetworkData    = childInfo.mFullNetworkData;
         info.mIsStateRestoring   = childInfo.mIsStateRestoring;
@@ -874,21 +871,20 @@ otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
     {
         NeighborInfo info;
 
-        info.mExtAddress        = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8);
-        info.mAge               = neighborInfo.mAge;
-        info.mRloc16            = neighborInfo.mRloc16;
-        info.mLinkFrameCounter  = neighborInfo.mLinkFrameCounter;
-        info.mMleFrameCounter   = neighborInfo.mMleFrameCounter;
-        info.mLinkQualityIn     = neighborInfo.mLinkQualityIn;
-        info.mAverageRssi       = neighborInfo.mAverageRssi;
-        info.mLastRssi          = neighborInfo.mLastRssi;
-        info.mFrameErrorRate    = neighborInfo.mFrameErrorRate;
-        info.mMessageErrorRate  = neighborInfo.mMessageErrorRate;
-        info.mRxOnWhenIdle      = neighborInfo.mRxOnWhenIdle;
-        info.mSecureDataRequest = neighborInfo.mSecureDataRequest;
-        info.mFullThreadDevice  = neighborInfo.mFullThreadDevice;
-        info.mFullNetworkData   = neighborInfo.mFullNetworkData;
-        info.mIsChild           = neighborInfo.mIsChild;
+        info.mExtAddress       = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8);
+        info.mAge              = neighborInfo.mAge;
+        info.mRloc16           = neighborInfo.mRloc16;
+        info.mLinkFrameCounter = neighborInfo.mLinkFrameCounter;
+        info.mMleFrameCounter  = neighborInfo.mMleFrameCounter;
+        info.mLinkQualityIn    = neighborInfo.mLinkQualityIn;
+        info.mAverageRssi      = neighborInfo.mAverageRssi;
+        info.mLastRssi         = neighborInfo.mLastRssi;
+        info.mFrameErrorRate   = neighborInfo.mFrameErrorRate;
+        info.mMessageErrorRate = neighborInfo.mMessageErrorRate;
+        info.mRxOnWhenIdle     = neighborInfo.mRxOnWhenIdle;
+        info.mFullThreadDevice = neighborInfo.mFullThreadDevice;
+        info.mFullNetworkData  = neighborInfo.mFullNetworkData;
+        info.mIsChild          = neighborInfo.mIsChild;
         neighborTable.push_back(info);
     }
 
