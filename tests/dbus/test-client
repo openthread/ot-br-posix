@@ -66,7 +66,7 @@ main()
         io.openthread.BorderRouter.JoinerStart \
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock 2>&1 || true) | grep NotFound
-    # The ot-cli-ftd node is used for test Thread join.
+    # The ot-cli-ftd node is used to test Thread attach.
     expect <<EOF &
 spawn ot-cli-ftd 3
 send "panid 0x7890\r\n"
@@ -90,7 +90,7 @@ expect "Done"
 wait
 EOF
     sleep 5
-    # The ot-cli-mtd node is used for test the child and neighbor table.
+    # The ot-cli-mtd node is used to test the child and neighbor table.
     expect <<EOF &
 spawn ot-cli-mtd 2
 send "panid 0x3456\r\n"
