@@ -27,6 +27,7 @@
  */
 
 #include <arpa/inet.h>
+#include <sstream>
 #include <sys/socket.h>
 
 #include "common/code_utils.hpp"
@@ -46,6 +47,81 @@ std::string Ip6Address::ToString() const
 
     VerifyOrDie(inet_ntop(AF_INET6, this->m8, strbuf, sizeof(strbuf)) != nullptr,
                 "Failed to convert Ip6 address to string");
+
+    return std::string(strbuf);
+}
+
+Ip6Address Ip6Address::ToSolicitedNodeMulticastAddress(void) const
+{
+    Ip6Address ma(Ip6Address::GetSolicitedMulticastAddressPrefix());
+
+    ma.m8[13] = m8[13];
+    ma.m8[14] = m8[14];
+    ma.m8[15] = m8[15];
+
+    return ma;
+}
+
+void Ip6Address::CopyTo(struct sockaddr_in6 &aSockAddr) const
+{
+    memset(&aSockAddr, 0, sizeof(aSockAddr));
+    CopyTo(aSockAddr.sin6_addr);
+    aSockAddr.sin6_family = AF_INET6;
+}
+
+void Ip6Address::CopyTo(struct in6_addr &aIn6Addr) const
+{
+    aIn6Addr.s6_addr32[0] = m32[0];
+    aIn6Addr.s6_addr32[1] = m32[1];
+    aIn6Addr.s6_addr32[2] = m32[2];
+    aIn6Addr.s6_addr32[3] = m32[3];
+}
+
+otbrError Ip6Address::FromString(const char *aStr, Ip6Address &aAddr)
+{
+    int ret;
+
+    ret = inet_pton(AF_INET6, aStr, &aAddr.m8);
+
+    return ret == 1 ? OTBR_ERROR_NONE : OTBR_ERROR_INVALID_ARGS;
+}
+
+Ip6Address Ip6Address::FromString(const char *aStr)
+{
+    Ip6Address addr;
+
+    SuccessOrDie(FromString(aStr, addr), "inet_pton failed");
+
+    return addr;
+}
+
+void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
+{
+    memcpy(reinterpret_cast<void *>(this), &aPrefix, sizeof(*this));
+}
+
+std::string Ip6Prefix::ToString() const
+{
+    std::stringbuf strBuilder;
+    char           strbuf[INET6_ADDRSTRLEN];
+
+    VerifyOrDie(inet_ntop(AF_INET6, mPrefix.m8, strbuf, sizeof(strbuf)) != nullptr,
+                "Failed to convert Ip6 prefix to string");
+
+    strBuilder.sputn(strbuf, strlen(strbuf));
+    strBuilder.sputc('/');
+
+    sprintf(strbuf, "%d", mLength);
+    strBuilder.sputn(strbuf, strlen(strbuf));
+
+    return strBuilder.str();
+}
+
+std::string MacAddress::ToString(void) const
+{
+    char strbuf[sizeof(m8) * 3];
+
+    snprintf(strbuf, sizeof(strbuf), "%02x:%02x:%02x:%02x:%02x:%02x", m8[0], m8[1], m8[2], m8[3], m8[4], m8[5]);
 
     return std::string(strbuf);
 }

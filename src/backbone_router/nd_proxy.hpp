@@ -28,51 +28,79 @@
 
 /**
  * @file
- *   This file includes definition for Thread Backbone agent.
+ *   This file includes definition for ICMPv6 Neighbor Advertisement (ND) proxy management.
  */
 
-#ifndef BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
-#define BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
+#ifndef ND_PROXY_HPP_
+#define ND_PROXY_HPP_
+
+#ifdef __APPLE__
+#define __APPLE_USE_RFC_3542
+#endif
+
+#include <inttypes.h>
+#include <libnetfilter_queue/libnetfilter_queue.h>
+#include <map>
+#include <netinet/in.h>
+#include <set>
+#include <string>
 
 #include <openthread/backbone_router_ftd.h>
 
-#include "agent/instance_params.hpp"
 #include "agent/ncp_openthread.hpp"
-#include "backbone_router/nd_proxy.hpp"
-#include "backbone_router/smcroute_manager.hpp"
+#include "common/types.hpp"
 
 namespace otbr {
 namespace BackboneRouter {
 
 /**
- * @addtogroup border-router-backbone
+ * @addtogroup border-router-bbr
  *
  * @brief
- *   This module includes definition for Thread Backbone agent.
+ *   This module includes definition for ND Proxy manager.
  *
  * @{
  */
 
 /**
- * This class implements Thread Backbone agent functionality.
+ * This class implements ND Proxy manager.
  *
  */
-class BackboneAgent
+class NdProxyManager
 {
 public:
     /**
-     * This constructor intiializes the `BackboneAgent` instance.
-     *
-     * @param[in] aNcp  The Thread instance.
+     * This constructor initializes a NdProxyManager instance.
      *
      */
-    BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp);
+    explicit NdProxyManager(otbr::Ncp::ControllerOpenThread &aNcp)
+        : mNcp(aNcp)
+        , mIcmp6RawSock(-1)
+        , mUnicastNsQueueSock(-1)
+        , mNfqHandler(nullptr)
+        , mNfqQueueHandler(nullptr)
+    {
+    }
 
     /**
-     * This method initializes the Backbone agent.
+     * This method initializes a ND Proxy manager instance.
      *
      */
     void Init(void);
+
+    /**
+     * This method enables the ND Proxy manager.
+     *
+     * @param[in] aDomainPrefix  The Domain Prefix.
+     *
+     */
+    void Enable(const Ip6Prefix &aDomainPrefix);
+
+    /**
+     * This method disables the ND Proxy manager.
+     *
+     */
+    void Disable(void);
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -100,31 +128,42 @@ public:
      */
     void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
 
-private:
-    void        OnBecomePrimary(void);
-    void        OnResignPrimary(void);
-    bool        IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
-    static void HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments);
-    void        HandleBackboneRouterState(void);
-    static void HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments);
-    void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
-                                                      const otIp6Prefix *               aDomainPrefix);
-    static void HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments);
-    void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
-    static void HandleBackboneRouterMulticastListenerEvent(void *aContext, int aEvent, va_list aArguments);
-    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
-                                                           const otIp6Address &                   aAddress);
+    void HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aDua);
 
-    static const char *StateToString(otBackboneRouterState aState);
+    bool IsEnabled(void) const { return mIcmp6RawSock >= 0; }
+
+private:
+    enum
+    {
+        kMaxICMP6PacketSize = 1500, ///< Max size of an ICMP6 packet in bytes.
+    };
+
+    void       SendNeighborAdvertisement(const Ip6Address &aTarget, const Ip6Address &aDst);
+    otbrError  UpdateMacAddress(void);
+    otbrError  InitIcmp6RawSocket(void);
+    void       FiniIcmp6RawSocket(void);
+    otbrError  InitNetfilterQueue(void);
+    void       FiniNetfilterQueue(void);
+    void       ProcessMulticastNeighborSolicition(void);
+    void       ProcessUnicastNeighborSolicition(void);
+    void       JoinSolicitedNodeMulticastGroup(const Ip6Address &aTarget) const;
+    void       LeaveSolicitedNodeMulticastGroup(const Ip6Address &aTarget) const;
+    static int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
+                                    struct nfgenmsg *    aNfMsg,
+                                    struct nfq_data *    aNfData,
+                                    void *               aContext);
+    int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler, struct nfgenmsg *aNfMsg, struct nfq_data *aNfData);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
-    otBackboneRouterState            mBackboneRouterState;
-    SMCRouteManager                  mSMCRouteManager;
-    NdProxyManager                   mNdProxyManager;
+    std::set<Ip6Address>             mNdProxySet;
+    uint32_t                         mBackboneIfIndex;
+    int                              mIcmp6RawSock;
+    int                              mUnicastNsQueueSock;
+    struct nfq_handle *              mNfqHandler;      ///< A pointer to an NFQUEUE handler.
+    struct nfq_q_handle *            mNfqQueueHandler; ///< A pointer to a newly created queue.
+    MacAddress                       mMacAddress;
     Ip6Prefix                        mDomainPrefix;
 };
-
-#endif // OTBR_ENABLE_BACKBONE_ROUTER
 
 /**
  * @}
@@ -132,3 +171,5 @@ private:
 
 } // namespace BackboneRouter
 } // namespace otbr
+
+#endif // ND_PROXY_HPP_

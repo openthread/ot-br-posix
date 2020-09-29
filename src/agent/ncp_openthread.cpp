@@ -124,6 +124,9 @@ otbrError ControllerOpenThread::Init(void)
     }
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
+    otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
+                                            this);
+    otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
     otBackboneRouterSetMulticastListenerCallback(
         mInstance, &ControllerOpenThread::HandleBackboneRouterMulticastListenerEvent, this);
 #endif
@@ -320,6 +323,32 @@ void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandl
 }
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
+void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+                                                                 otBackboneRouterDomainPrefixEvent aEvent,
+                                                                 const otIp6Prefix *               aDomainPrefix)
+{
+    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterDomainPrefixEvent(aEvent, aDomainPrefix);
+}
+
+void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
+                                                                 const otIp6Prefix *               aDomainPrefix)
+{
+    EventEmitter::Emit(kEventBackboneRouterDomainPrefixEvent, aEvent, aDomainPrefix);
+}
+
+void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(void *                       aContext,
+                                                            otBackboneRouterNdProxyEvent aEvent,
+                                                            const otIp6Address *         aAddress)
+{
+    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterNdProxyEvent(aEvent, aAddress);
+}
+
+void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent,
+                                                            const otIp6Address *         aAddress)
+{
+    EventEmitter::Emit(kEventBackboneRouterNdProxyEvent, aEvent, aAddress);
+}
+
 void ControllerOpenThread::HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
                                                                       otBackboneRouterMulticastListenerEvent aEvent,
                                                                       const otIp6Address *                   aAddress)
