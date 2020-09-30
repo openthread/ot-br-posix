@@ -74,13 +74,16 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     }
 
     VerifyOrExit(client.FactoryReset(), ret = kWpanStatus_LeaveFailed);
-    VerifyOrExit(client.Execute("masterkey %s", masterKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
-    VerifyOrExit(client.Execute("networkname %s", mNetworks[index].mNetworkName) != nullptr,
+    VerifyOrExit(client.Execute("dataset init new") != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("dataset masterkey %s", masterKey.c_str()) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("dataset networkname %s", mNetworks[index].mNetworkName) != nullptr,
                  ret = kWpanStatus_SetFailed);
-    VerifyOrExit(client.Execute("channel %u", mNetworks[index].mChannel) != nullptr, ret = kWpanStatus_SetFailed);
-    VerifyOrExit(client.Execute("extpanid %016" PRIx64, mNetworks[index].mExtPanId) != nullptr,
+    VerifyOrExit(client.Execute("dataset channel %u", mNetworks[index].mChannel) != nullptr,
                  ret = kWpanStatus_SetFailed);
-    VerifyOrExit(client.Execute("panid %u", mNetworks[index].mPanId) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("dataset extpanid %016" PRIx64, mNetworks[index].mExtPanId) != nullptr,
+                 ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("dataset panid %u", mNetworks[index].mPanId) != nullptr, ret = kWpanStatus_SetFailed);
+    VerifyOrExit(client.Execute("dataset commit active") != nullptr, ret = kWpanStatus_SetFailed);
     VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_JoinFailed);
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
