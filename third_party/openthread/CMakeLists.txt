@@ -41,13 +41,20 @@ set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
 set(OT_PLATFORM_UDP ON CACHE BOOL "enable platform UDP" FORCE)
 set(OT_UDP_FORWARD OFF CACHE BOOL "diable udp forward" FORCE)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(OT_LOG_LEVEL "DEBG" CACHE STRING "set OpenThread log level to DEBG" FORCE)
+else()
+    set(OT_LOG_LEVEL "INFO" CACHE STRING "set OpenThread log level to INFO" FORCE)
+endif()
+
+set(OT_LOG_LEVEL_DYNAMIC ON CACHE BOOL "enable dynamic log level control" FORCE)
+
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
 
 add_subdirectory(repo EXCLUDE_FROM_ALL)
 
 target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
-    "-DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_INFO"
     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
 )
