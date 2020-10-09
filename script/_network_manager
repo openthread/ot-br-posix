@@ -46,7 +46,7 @@ create_ap_connection()
 
 create_eth_connection()
 {
-    IFNAME=$(nmcli d | grep ethernet | cut -d" " -f1)
+    IFNAME=$(nmcli d | grep ethernet | cut -d" " -f1 | grep -v usb)
 
     sudo nmcli c add type ethernet ifname "${IFNAME}" con-name ${ETH_CONN}
     sudo nmcli c modify ${ETH_CONN} ipv6.method ignore
@@ -344,7 +344,7 @@ network_manager_install()
     sudo systemctl enable NetworkManager || die "Failed to enable NetworkManager."
 
     # Create AP connection only on raspbian platform.
-    if [ "$PLATFORM" = raspbian ]; then
+    if [ "$PLATFORM" = raspbian ] || with NETWORK_MANAGER_WIFI; then
         create_ap_helper_script
         sudo chmod a+x ${AP_HELPER_SCRIPT}
 
@@ -361,7 +361,7 @@ network_manager_install()
 
     sleep 15
 
-    if [ "$PLATFORM" = raspbian ]; then
+    if [ "$PLATFORM" = raspbian ] || with NETWORK_MANAGER_WIFI; then
         sudo nmcli c up ${AP_CONN}
     fi
 
@@ -382,7 +382,7 @@ network_manager_uninstall()
         sudo systemctl start NetworkManager
     fi
 
-    if [ "$PLATFORM" = raspbian ]; then
+    if [ "$PLATFORM" = raspbian ] || with NETWORK_MANAGER_WIFI; then
         sudo nmcli c down ${AP_CONN} || true
         sudo nmcli c delete ${AP_CONN} || true
     fi

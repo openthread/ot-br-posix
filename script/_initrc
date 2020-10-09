@@ -91,18 +91,16 @@ if [[ ! ${PLATFORM+x} ]]; then
         # Note: 'model' is a binary file with no newline
         PLATFORM=beagleboneblack
     else
-        PLATFORM=
+        case "${OSTYPE}" in
+            darwin*)
+                PLATFORM=macOS
+                ;;
+            *)
+                have_or_die lsb_release
+                PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
+                ;;
+        esac
     fi
-
-    case "${OSTYPE}" in
-        darwin*)
-            PLATFORM=macOS
-            ;;
-        *)
-            have_or_die lsb_release
-            PLATFORM=$(lsb_release -i | cut -c17- | tr '[:upper:]' '[:lower:]')
-            ;;
-    esac
 fi
 echo "Current platform is $PLATFORM"
 

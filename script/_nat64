@@ -156,6 +156,7 @@ nat64_start()
         service tayga start || die 'Failed to start tayga'
     elif have systemctl; then
         sudo systemctl start tayga || die 'Failed to start tayga!'
+        sudo systemctl enable tayga || die 'Failed to enable tayga!'
         sudo systemctl start otbr-nat44 || die 'Failed to start NAT44!'
     fi
 }
