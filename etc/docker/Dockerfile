@@ -51,10 +51,9 @@ ENV OTBR_DOCKER_REQS sudo
 ENV OTBR_DOCKER_DEPS git ca-certificates
 
 # Required and installed during build (script/bootstrap), could be removed
-ENV OTBR_BUILD_DEPS \
-  apt-utils \
-  build-essential \
-  psmisc
+ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-certificates \
+  libreadline-dev libncurses-dev libcpputest-dev libdbus-1-dev libavahi-common-dev \
+  libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev libjsoncpp-dev
 
 # Required for OpenThread Backbone CI
 ENV OTBR_OT_BACKBONE_CI_DEPS curl ca-certificates
