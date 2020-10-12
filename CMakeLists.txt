@@ -69,7 +69,7 @@ execute_process(
 
 if(OTBR_GIT_VERSION)
     set(OTBR_VERSION "${PROJECT_VERSION}-${OTBR_GIT_VERSION}")
-elseif(OTBR_GIT_VERSION)
+else()
     set(OTBR_VERSION "${PROJECT_VERSION}")
 endif()
 
