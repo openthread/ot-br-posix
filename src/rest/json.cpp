@@ -100,7 +100,6 @@ static cJSON *Mode2Json(const otLinkModeConfig &aMode)
     cJSON *mode = cJSON_CreateObject();
 
     cJSON_AddItemToObject(mode, "RxOnWhenIdle", cJSON_CreateNumber(aMode.mRxOnWhenIdle));
-    cJSON_AddItemToObject(mode, "SecureDataRequests", cJSON_CreateNumber(aMode.mSecureDataRequests));
     cJSON_AddItemToObject(mode, "DeviceType", cJSON_CreateNumber(aMode.mDeviceType));
     cJSON_AddItemToObject(mode, "NetworkData", cJSON_CreateNumber(aMode.mNetworkData));
 

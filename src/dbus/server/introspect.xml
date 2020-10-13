@@ -123,12 +123,11 @@
     <!--
       struct {
         bool rx_on_when_idle
-        bool secure_data_requests
         bool device_type (ftd or mtd)
         bool network_data (full or stable)
       }
     -->
-    <property name="LinkMode" type="(bbbb)" access="readwrite">
+    <property name="LinkMode" type="(bbb)" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
@@ -277,13 +276,12 @@
         uint16_t mFrameErrorRate;     ///< Frame error rate (0xffff->100%). Requires error tracking feature.
         uint16_t mMessageErrorRate;   ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
         bool     mRxOnWhenIdle;       ///< rx-on-when-idle
-        bool     mSecureDataRequest;  ///< Secure Data Requests
         bool     mFullThreadDevice;   ///< Full Thread Device
         bool     mFullNetworkData;    ///< Full Network Data
         bool     mIsStateRestoring;   ///< Is in restoring state
       }
     -->
-    <property name="ChildTable" type="a(tuuqqyyyyqqbbbbb)" access="read">
+    <property name="ChildTable" type="a(tuuqqyyyyqqbbbb)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
@@ -300,13 +298,12 @@
         uint16_t mFrameErrorRate;    ///< Frame error rate (0xffff->100%). Requires error tracking feature.
         uint16_t mMessageErrorRate;  ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
         bool     mRxOnWhenIdle;      ///< rx-on-when-idle
-        bool     mSecureDataRequest; ///< Secure Data Requests
         bool     mFullThreadDevice;  ///< Full Thread Device
         bool     mFullNetworkData;   ///< Full Network Data
         bool     mIsChild;           ///< Is the neighbor a child
       }
     -->
-    <property name="NeighborTable" type="a(tuquuyyyqqbbbbb)" access="read">
+    <property name="NeighborTable" type="a(tuquuyyyqqbbbb)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 

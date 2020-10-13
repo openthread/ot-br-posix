@@ -109,7 +109,6 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const LinkModeConfig &aConfi
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
 
     SuccessOrExit(error = DBusMessageEncode(&sub, aConfig.mRxOnWhenIdle));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aConfig.mSecureDataRequests));
     SuccessOrExit(error = DBusMessageEncode(&sub, aConfig.mDeviceType));
     SuccessOrExit(error = DBusMessageEncode(&sub, aConfig.mNetworkData));
 
@@ -128,7 +127,6 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, LinkModeConfig &aConfig)
     dbus_message_iter_recurse(aIter, &sub);
 
     SuccessOrExit(DBusMessageExtract(&sub, aConfig.mRxOnWhenIdle));
-    SuccessOrExit(DBusMessageExtract(&sub, aConfig.mSecureDataRequests));
     SuccessOrExit(DBusMessageExtract(&sub, aConfig.mDeviceType));
     SuccessOrExit(DBusMessageExtract(&sub, aConfig.mNetworkData));
 
@@ -321,8 +319,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const ChildInfo &aChildInfo)
     auto            args  = std::tie(aChildInfo.mExtAddress, aChildInfo.mTimeout, aChildInfo.mAge, aChildInfo.mRloc16,
                          aChildInfo.mChildId, aChildInfo.mNetworkDataVersion, aChildInfo.mLinkQualityIn,
                          aChildInfo.mAverageRssi, aChildInfo.mLastRssi, aChildInfo.mFrameErrorRate,
-                         aChildInfo.mMessageErrorRate, aChildInfo.mRxOnWhenIdle, aChildInfo.mSecureDataRequest,
-                         aChildInfo.mFullThreadDevice, aChildInfo.mFullNetworkData, aChildInfo.mIsStateRestoring);
+                         aChildInfo.mMessageErrorRate, aChildInfo.mRxOnWhenIdle, aChildInfo.mFullThreadDevice,
+                         aChildInfo.mFullNetworkData, aChildInfo.mIsStateRestoring);
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
     SuccessOrExit(error = ConvertToDBusMessage(&sub, args));
@@ -338,8 +336,8 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, ChildInfo &aChildInfo)
     auto            args  = std::tie(aChildInfo.mExtAddress, aChildInfo.mTimeout, aChildInfo.mAge, aChildInfo.mRloc16,
                          aChildInfo.mChildId, aChildInfo.mNetworkDataVersion, aChildInfo.mLinkQualityIn,
                          aChildInfo.mAverageRssi, aChildInfo.mLastRssi, aChildInfo.mFrameErrorRate,
-                         aChildInfo.mMessageErrorRate, aChildInfo.mRxOnWhenIdle, aChildInfo.mSecureDataRequest,
-                         aChildInfo.mFullThreadDevice, aChildInfo.mFullNetworkData, aChildInfo.mIsStateRestoring);
+                         aChildInfo.mMessageErrorRate, aChildInfo.mRxOnWhenIdle, aChildInfo.mFullThreadDevice,
+                         aChildInfo.mFullNetworkData, aChildInfo.mIsStateRestoring);
 
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
@@ -356,8 +354,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const NeighborInfo &aNeighbo
     auto            args  = std::tie(aNeighborInfo.mExtAddress, aNeighborInfo.mAge, aNeighborInfo.mRloc16,
                          aNeighborInfo.mLinkFrameCounter, aNeighborInfo.mMleFrameCounter, aNeighborInfo.mLinkQualityIn,
                          aNeighborInfo.mAverageRssi, aNeighborInfo.mLastRssi, aNeighborInfo.mFrameErrorRate,
-                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mSecureDataRequest,
-                         aNeighborInfo.mFullThreadDevice, aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
+                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mFullThreadDevice,
+                         aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
     SuccessOrExit(error = ConvertToDBusMessage(&sub, args));
@@ -373,8 +371,8 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, NeighborInfo &aNeighborInfo
     auto            args  = std::tie(aNeighborInfo.mExtAddress, aNeighborInfo.mAge, aNeighborInfo.mRloc16,
                          aNeighborInfo.mLinkFrameCounter, aNeighborInfo.mMleFrameCounter, aNeighborInfo.mLinkQualityIn,
                          aNeighborInfo.mAverageRssi, aNeighborInfo.mLastRssi, aNeighborInfo.mFrameErrorRate,
-                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mSecureDataRequest,
-                         aNeighborInfo.mFullThreadDevice, aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
+                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mFullThreadDevice,
+                         aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
 
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);

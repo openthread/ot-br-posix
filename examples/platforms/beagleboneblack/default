@@ -27,18 +27,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# We need to extend the default SUDO timeout
-# otherwise we have to enter sudo passwords multiple times :-(
-
 # shellcheck disable=SC2034
-SUDO_EXTEND_TIME=true
+SUDO_EXTEND_TIME=false
 
-# the beaglebone black does not have enough ram to build
-# so we enable a swapfile
-SWAP_REQUIRED=true
+SWAP_REQUIRED=false
 
-# NAT64 we have not tested ...
-NAT64=0
-DNS64=0
-DHCPV6_PD=0
-NETWORK_MANAGER=0
+NAT64=1
+DNS64=1
+DHCPV6_PD=1
+NETWORK_MANAGER=1
+# disabled unless specifically added for the device
+NETWORK_MANAGER_WIFI=0

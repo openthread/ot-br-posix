@@ -104,4 +104,6 @@
         goto exit;   \
     } while (false)
 
+#define OTBR_NOOP
+
 #endif // OTBR_COMMON_CODE_UTILS_HPP_

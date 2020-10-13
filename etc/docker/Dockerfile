@@ -48,7 +48,7 @@ WORKDIR /app
 ENV OTBR_DOCKER_REQS sudo
 
 # Required during build, could be removed
-ENV OTBR_DOCKER_DEPS git
+ENV OTBR_DOCKER_DEPS git ca-certificates
 
 # Required and installed during build (script/bootstrap), could be removed
 ENV OTBR_BUILD_DEPS \
