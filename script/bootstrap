@@ -86,6 +86,9 @@ install_packages_apt()
 
     # libjsoncpp
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
+
+    # nginx
+    sudo apt-get install --no-install-recommends -y nginx
 }
 
 install_packages_opkg()
@@ -109,11 +112,12 @@ install_packages_rpm()
     sudo $PM install -y tayga iptables
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget
+    sudo $PM install -y nginx
 }
 
 install_packages_brew()
 {
-    brew install boost cmake cpputest dbus jsoncpp ninja
+    brew install cmake cpputest dbus ninja nginx
 }
 
 install_packages_source()

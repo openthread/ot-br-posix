@@ -27,7 +27,10 @@
 #
 
 add_subdirectory(openthread)
-if(OTBR_WEB)
+if(OTBR_REST)
+    add_subdirectory(angular)
+    add_subdirectory(angular-material)
     add_subdirectory(cJSON)
     add_subdirectory(http-parser)
+    add_subdirectory(mdl)
 endif()

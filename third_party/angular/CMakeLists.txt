@@ -31,4 +31,4 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-animate.min.js
     ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-aria.min.js
     ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-messages.min.js
-    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/js)
+    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/js)

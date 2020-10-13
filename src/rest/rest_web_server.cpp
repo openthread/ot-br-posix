@@ -32,15 +32,15 @@
 
 #include <fcntl.h>
 
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
+using otbr::Ncp::ControllerOpenThread;
 using std::chrono::steady_clock;
 
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 // Maximum number of connection a server support at the same time.
 static const uint32_t kMaxServeNum = 500;
+
 // Port number used by Rest server.
 static const uint32_t kPortNumber = 8081;
 
@@ -83,7 +83,6 @@ void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
         connection->UpdateFdSet(aMainloop);
     }
 exit:
-
     return;
 }
 
@@ -201,7 +200,6 @@ exit:
         }
         otbrLog(OTBR_LOG_ERR, "rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
-
     return error;
 }
 
@@ -236,5 +234,5 @@ exit:
     return ret;
 }
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr

@@ -48,6 +48,43 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d 7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
+    expect <<EOF &
+spawn ot-cli-ftd 2
+send "masterkey 10112233445566778899aabbccddeefe\r\n"
+expect "Done"
+send "networkname hello\r\n"
+expect "Done"
+send "channel 20\r\n"
+expect "Done"
+send "panid 0xface\r\n"
+expect "Done"
+send "extpanid dead00beef00cafe\r\n"
+expect "Done"
+send "ifconfig up\r\n"
+expect "Done"
+send "thread start\r\n"
+expect "Done"
+wait
+EOF
+    expect <<EOF &
+spawn ot-cli-ftd 3
+send "masterkey 10112233445566778899aabbccddeefe\r\n"
+expect "Done"
+send "networkname hello\r\n"
+expect "Done"
+send "channel 20\r\n"
+expect "Done"
+send "panid 0xface\r\n"
+expect "Done"
+send "extpanid dead00beef00cafe\r\n"
+expect "Done"
+send "ifconfig up\r\n"
+expect "Done"
+send "thread start\r\n"
+expect "Done"
+wait
+EOF
+    sleep 10
     sudo python3 "${CMAKE_CURRENT_SOURCE_DIR}"/test_rest.py
 }
 

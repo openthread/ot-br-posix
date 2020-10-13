@@ -44,11 +44,8 @@
 #include "rest/request.hpp"
 #include "rest/response.hpp"
 
-using otbr::Ncp::ControllerOpenThread;
-using std::chrono::steady_clock;
-
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 /**
  * This class implements the Resource handler for OTBR-REST.
@@ -63,7 +60,7 @@ public:
      * @param[in]   aNcp  A pointer to the NCP controller.
      *
      */
-    Resource(ControllerOpenThread *aNcp);
+    Resource(otbr::Ncp::ControllerOpenThread *aNcp);
 
     /**
      * This method initialize the Resource handler.
@@ -97,25 +94,60 @@ public:
      *
      * @param[in]      aRequest  A request instance referred by the Resource handler.
      * @param[inout]   aErrorCode  An enum class represents the status code.
+     * @param[in]      aErrorDescription Detailed description of error message.
      *
      */
-    void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
+    void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode, std::string aErrorDescription) const;
 
     /**
      * This method is a pre-defined callback function used for call another private method when diagnostic information
      * arrives.
      *
      * @param[in]      aMessage  A pointer to the message buffer containing the received Network Diagnostic
-     *                           Get response payload.
-     * @param[in]      aMessageInfo A pointer to the message info for @p aMessage .
-     * @param[in]      aContext    A pointer to application-specific context.
-     *
+     * @param[in]   aMessageInfo A pointer to the message info for @p aMessage
+     * @param[in]       aContext    A pointer to application-specific context.
      */
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
+
+    /**
+     * This method handle conmmissione state change (callback function).
+     *
+     * @param[in]   aState      The state of commissioner.
+     * @param[in]   aContext    A pointer to the ubus context.
+     *
+     */
+    static void HandleStateChanged(otCommissionerState aState, void *aContext);
+
+    /**
+     * This method handle joiner event (callback function).
+     *
+     * @param[in]  aEvent       The joiner event type.
+     * @param[in]  aJoinerInfo  A pointer to the Joiner Info.
+     * @param[in]  aJoinerId    A pointer to the Joiner ID (if not known, it will be NULL).
+     * @param[in]  aContext     A pointer to application-specific context.
+     *
+     */
+    static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                  const otJoinerInfo *      aJoinerInfo,
+                                  const otExtAddress *      aJoinerId,
+                                  void *                    aContext);
+    /**
+     * This method is a pre-defined callback function used for binding with another callback function defined by
+     * thread_helper.
+     *
+     *
+     * @param[inout]  aResponse  A pointer pointing to a response instance.
+     * @param[in]     aError     otError represents error type.
+     * @param[in]     aResult    Scan result.
+     *
+     */
+    void NetworksResponseHandler(Response *aResponse, otError aError, const std::vector<otActiveScanResult> &aResult);
 
 private:
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
     typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
+
+    // RESTful API entry
     void NodeInfo(const Request &aRequest, Response &aResponse) const;
     void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
     void State(const Request &aRequest, Response &aResponse) const;
@@ -126,8 +158,24 @@ private:
     void ExtendedPanId(const Request &aRequest, Response &aResponse) const;
     void Rloc(const Request &aRequest, Response &aResponse) const;
     void Diagnostic(const Request &aRequest, Response &aResponse) const;
-    void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
+    void Networks(const Request &aRequest, Response &aResponse) const;
+    void CurrentNetwork(const Request &aRequest, Response &aResponse) const;
+    void CurrentNetworkPrefix(const Request &aRequest, Response &aResponse) const;
+    void CurrentNetworkCommission(const Request &aRequest, Response &aResponse) const;
 
+    // Callback Handler
+    void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
+    void PostNetworksCallback(const Request &aRequest, Response &aResponse);
+    void PutCurrentNetworkCallback(const Request &aRequest, Response &aResponse);
+    void CurrentNetworkCommissionCallback(const Request &aRequest, Response &aResponse);
+
+    void PostCurrentNetworkCommission(const Request &aRequest, Response &aResponse) const;
+    void DeleteCurrentNetworkPrefix(const Request &aRequest, Response &aResponse) const;
+    void GetCurrentNetworkPrefix(const Request &aRequest, Response &aResponse) const;
+    void PostCurrentNetworkPrefix(const Request &aRequest, Response &aResponse) const;
+    void PutCurrentNetwork(Response &aResponse) const;
+    void GetCurrentNetwork(Response &aResponse) const;
+    void GetNetworks(Response &aResponse) const;
     void GetNodeInfo(Response &aResponse) const;
     void GetDataExtendedAddr(Response &aResponse) const;
     void GetDataState(Response &aResponse) const;
@@ -137,22 +185,36 @@ private:
     void GetDataRloc16(Response &aResponse) const;
     void GetDataExtendedPanId(Response &aResponse) const;
     void GetDataRloc(Response &aResponse) const;
+    void PostNetworks(Response &aResponse) const;
 
+    // Methods that manipulate Diagnostic information
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
+
+    // private funtion that is called by punlic static function
     void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+    void HandleStateChanged(otCommissionerState aState) const;
+    void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                           const otJoinerInfo *      aJoinerInfo,
+                           const otExtAddress *      aJoinerId) const;
 
-    otInstance *          mInstance;
-    ControllerOpenThread *mNcp;
+    otInstance *                     mInstance;
+    otbr::Ncp::ControllerOpenThread *mNcp;
 
-    std::unordered_map<std::string, ResourceHandler>         mResourceMap;
+    // Resource Handler Map
+    std::unordered_map<std::string, ResourceHandler> mResourceMap;
+
+    // Reource Handler Map for those need callback
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
 
-    std::unordered_map<HttpStatusCode, std::string> mResponseCodeMap;
-    std::unordered_map<std::string, DiagInfo>       mDiagSet;
+    // Map from Status Code to Status description
+    std::unordered_map<HttpStatusCode, std::string, HttpStatusCodeHash> mResponseCodeMap;
+
+    // Map that maintain Diagnostic information
+    std::unordered_map<std::string, DiagInfo> mDiagSet;
 };
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_RESOURCE_HPP_

@@ -50,7 +50,7 @@
 #include "common/types.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
-using otbr::rest::RestWebServer;
+using otbr::Rest::RestWebServer;
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
 #include "dbus/server/dbus_agent.hpp"

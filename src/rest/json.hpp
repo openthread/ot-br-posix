@@ -28,20 +28,21 @@
 
 /**
  * @file
- *   This file includes JSON formatter definition for RESTful HTTP server.
+ *   This file includes JSON formater definition for RESTful HTTP server.
  */
 
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
 #include "openthread/link.h"
+#include "openthread/netdata.h"
 #include "openthread/thread_ftd.h"
 
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
 
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 /**
  * The functions within this namespace provides a tranformation from an object/string/number to a serialized Json
@@ -73,7 +74,7 @@ std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength);
 /**
  * This method formats a C string to a Json string and serialize it to a string.
  *
- * @param[in]   aCString  A char pointer pointing to a C string.
+ * @param[in]   aCString  A char pointer to a C string.
  *
  * @returns     A string serlialized by a Json string.
  *
@@ -103,7 +104,7 @@ std::string Node2JsonString(const NodeInfo &aNode);
 /**
  * This method formats a vector including serveral Diagnostic object to a Json array and serialize it to a string.
  *
- * @param[in]   aDiagSet  A vector including serveral Diagnostic object.
+ * @param[in]   aDiagSet   A vector including serveral Diagnostic object.
  *
  * @returns     A string serlialized by a Json array.
  *
@@ -119,6 +120,16 @@ std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aD
  *
  */
 std::string IpAddr2JsonString(const otIp6Address &aAddress);
+
+/**
+ * This method formats extracts prefixes from a list of config object and format them as Json Array.
+ *
+ * @param[in]   aConfig  An array of config object.
+ *
+ * @returns     A string serlialized by a Json Array.
+ *
+ */
+std::string PrefixList2JsonString(const std::vector<otBorderRouterConfig> &aConfig);
 
 /**
  * This method formats a LinkModeConfig object to a Json object and serialize it to a string.
@@ -191,19 +202,87 @@ std::string MacCounters2JsonString(const otNetworkDiagMacCounters &aMacCounters)
 std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntry);
 
 /**
- * This method formats an error code and an error message to a Json object and serialize it to a string.
+ * This method formats an array of scan results to a Json object and serialize it to a string.
  *
- * @param[in]   aErrorCode  An enum HttpStatusCode  such as '404'.
- * @param[in]   aErrorMessage  Error message such as '404 Not Found'.
+ * @param[in]   aResults  An array that contains scan results.
  *
  * @returns     A string serlialized by a Json object.
  *
  */
-std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
+std::string ScanNetworks2JsonString(const std::vector<ActiveScanResult> &aResults);
+
+/**
+ * This method formats an array of scan results to a Json object and serialize it to a string.
+ *
+ * @param[in]   aResults  An array that contains scan results.
+ *
+ * @returns     A string serlialized by a Json object.
+ *
+ */
+std::string Network2JsonString(const otOperationalDataset &aDataset);
+
+/**
+ * This method formats an error code and an error message to a Json object and serialize it to a string.
+ *
+ * @param[in]   aErrorCode  An enum HttpStatusCode such as '404'.
+ * @param[in]   aErrorMessage  Error message such as '404 Not Found'.
+ * @param[in]   aDescription   Detailed error information.
+ *
+ * @returns     A string serlialized by a Json object.
+ *
+ */
+std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage, std::string aDescription);
+
+/**
+ * This method decodes a json object to a NetworkConfiguration object .
+ *
+ * @param[in]   aString  A string contains Json object.
+ * @param[out]   aNetwork  A reference to a NetworkConfiguration instance that could be set within this method.
+ *
+ * @returns  A bool value that indicates whether the string could be decoded to the NetworkConfiguration object
+ *
+ */
+bool JsonString2NetworkConfiguration(std::string &aString, NetworkConfiguration &aNetwork);
+
+/**
+ * This method decodes a json object to a NetworkConfiguration object .
+ *
+ * @param[in]   aString  A string contains Json object.
+ * @param[in]   aKey  The key that may exist in the Json object.
+ * @param[inout]  aValue The string that is the value of the key in this Json object.
+ *
+ * @returns  A bool value that indicates whether the key exist in this Json object.
+ *
+ */
+bool JsonString2String(std::string aString, std::string aKey, std::string &aValue);
+
+/**
+ * This method decodes a json object to a bool value .
+ *
+ * @param[in]   aString  A string contains Json object.
+ * @param[in]   aKey  The key that may exist in the Json object.
+ * @param[inout] aValue  The bool value that is the value of the key in this Json object.
+ *
+ * @returns  A bool value that indicates whether the key exist in this Json object.
+ *
+ */
+bool JsonString2Bool(std::string aString, std::string aKey, bool &aValue);
+
+/**
+ * This method decodes a json object to a bool value .
+ *
+ * @param[in]   aString  A string contains Json object.
+ * @param[in]   aKey  The key that may exist in the Json object.
+ * @param[inout] aValue  The integer value that is the value of the key in this Json object.
+ *
+ * @returns  A bool value that indicates whether the key exist in this Json object.
+ *
+ */
+bool JsonString2Int(std::string aString, std::string aKey, int32_t &aValue);
 
 }; // namespace Json
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_JSON_HPP_

@@ -35,12 +35,12 @@ readonly REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 otbr_uninstall()
 {
     if have systemctl; then
-        sudo systemctl stop otbr-web otbr-agent || true
-        sudo systemctl disable otbr-web otbr-agent || true
-        ! sudo systemctl is-enabled otbr-web
+        sudo systemctl stop otbr-agent || true
+        sudo systemctl disable otbr-agent || true
+        ! sudo systemctl is-enabled
         ! sudo systemctl is-enabled otbr-agent
     fi
-    sudo killall otbr-web otbr-agent || true
+    sudo killall otbr-agent || true
 
     (
         if cd "${OTBR_TOP_BUILDDIR}"; then
@@ -72,7 +72,6 @@ otbr_install()
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
-        "-DOTBR_WEB=ON"
         "-DOTBR_REST=ON"
         "${otbr_options[@]}"
     )
@@ -92,9 +91,8 @@ otbr_install()
     if have systemctl; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
-        sudo systemctl enable otbr-web otbr-agent || true
+        sudo systemctl enable otbr-agent || true
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
-        sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi

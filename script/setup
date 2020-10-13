@@ -41,6 +41,7 @@
 . script/_swapfile
 . script/_sudo_extend
 . script/_disable_services
+. script/_nginx_server_install
 
 main()
 {
@@ -60,6 +61,7 @@ main()
     dns64_install
     network_manager_install
     dhcpv6_pd_install
+    nginx_server_install
     otbr_install
     . "$AFTER_HOOK"
 }

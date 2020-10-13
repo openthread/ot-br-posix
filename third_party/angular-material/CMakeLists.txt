@@ -28,7 +28,7 @@
 
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-material.min.js
-    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/js)
+    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/js)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-material.min.css
-    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/css)
+    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/css)
