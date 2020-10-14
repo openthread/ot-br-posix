@@ -828,11 +828,6 @@ int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
             strcat(mode, "r");
         }
 
-        if (neighborInfo.mSecureDataRequest)
-        {
-            strcat(mode, "s");
-        }
-
         if (neighborInfo.mFullThreadDevice)
         {
             strcat(mode, "d");
@@ -1155,11 +1150,6 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
             strcat(mode, "r");
         }
 
-        if (linkMode.mSecureDataRequests)
-        {
-            strcat(mode, "s");
-        }
-
         if (linkMode.mDeviceType)
         {
             strcat(mode, "d");
@@ -1272,13 +1262,13 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         {
             blobmsg_add_string(&mBuf, "state", "disable");
         }
-        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_WHITELIST)
+        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_ALLOWLIST)
         {
-            blobmsg_add_string(&mBuf, "state", "whitelist");
+            blobmsg_add_string(&mBuf, "state", "allowlist");
         }
-        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST)
+        else if (mode == OT_MAC_FILTER_ADDRESS_MODE_DENYLIST)
         {
-            blobmsg_add_string(&mBuf, "state", "blacklist");
+            blobmsg_add_string(&mBuf, "state", "denylist");
         }
         else
         {
@@ -1390,10 +1380,9 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
             {
                 enum
                 {
-                    kModeRxOnWhenIdle      = 1 << 3, ///< If the device has its receiver on when not transmitting.
-                    kModeSecureDataRequest = 1 << 2, ///< If the device uses link layer security for all data requests.
-                    kModeFullThreadDevice  = 1 << 1, ///< If the device is an FTD.
-                    kModeFullNetworkData   = 1 << 0, ///< If the device requires the full Network Data.
+                    kModeRxOnWhenIdle     = 1 << 3, ///< If the device has its receiver on when not transmitting.
+                    kModeFullThreadDevice = 1 << 1, ///< If the device is an FTD.
+                    kModeFullNetworkData  = 1 << 0, ///< If the device requires the full Network Data.
                 };
                 const otNetworkDiagChildEntry &entry = diagTlv.mData.mChildTable.mTable[i];
 
@@ -1404,7 +1393,6 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
                 blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
 
                 mode = (entry.mMode.mRxOnWhenIdle ? kModeRxOnWhenIdle : 0) |
-                       (entry.mMode.mSecureDataRequests ? kModeSecureDataRequest : 0) |
                        (entry.mMode.mDeviceType ? kModeFullThreadDevice : 0) |
                        (entry.mMode.mNetworkData ? kModeFullNetworkData : 0);
                 blobmsg_add_u16(&mNetworkdataBuf, "mode", mode);
@@ -1532,10 +1520,6 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
                     linkMode.mRxOnWhenIdle = 1;
                     break;
 
-                case 's':
-                    linkMode.mSecureDataRequests = 1;
-                    break;
-
                 case 'd':
                     linkMode.mDeviceType = 1;
                     break;
@@ -1607,13 +1591,13 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             {
                 otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_DISABLED);
             }
-            else if (strcmp(state, "whitelist") == 0)
+            else if (strcmp(state, "allowlist") == 0)
             {
-                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_WHITELIST);
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_ALLOWLIST);
             }
-            else if (strcmp(state, "blacklist") == 0)
+            else if (strcmp(state, "denylist") == 0)
             {
-                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_BLACKLIST);
+                otLinkFilterSetAddressMode(mController->GetInstance(), OT_MAC_FILTER_ADDRESS_MODE_DENYLIST);
             }
         }
     }

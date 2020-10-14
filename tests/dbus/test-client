@@ -43,6 +43,8 @@ on_exit()
     sudo killall ot-cli-mtd || true
     sudo rm "/etc/dbus-1/system.d/${OTBR_DBUS_SERVER_CONF}" || true
 
+    grep -iE 'ot-cli|otbr' </var/log/syslog
+
     return "${status}"
 }
 
@@ -51,10 +53,11 @@ main()
     sudo rm -rf tmp
     sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
     sudo service dbus reload
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -v -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
@@ -63,20 +66,7 @@ main()
         io.openthread.BorderRouter.JoinerStart \
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock 2>&1 || true) | grep NotFound
-    expect <<EOF &
-spawn ot-cli-mtd 2
-send "panid 0x3456\r\n"
-expect "Done"
-send "networkname Test\r\n"
-expect "Done"
-send "channel 11\r\n"
-expect "Done"
-send "ifconfig up\r\n"
-expect "Done"
-send "thread start\r\n"
-expect "Done"
-wait
-EOF
+    # The ot-cli-ftd node is used to test Thread attach.
     expect <<EOF &
 spawn ot-cli-ftd 3
 send "panid 0x7890\r\n"
@@ -99,7 +89,23 @@ send "commissioner joiner add * ABCDEF\r\n"
 expect "Done"
 wait
 EOF
-    sleep 7
+    sleep 5
+    # The ot-cli-mtd node is used to test the child and neighbor table.
+    expect <<EOF &
+spawn ot-cli-mtd 2
+send "panid 0x3456\r\n"
+expect "Done"
+send "networkname Test\r\n"
+expect "Done"
+send "channel 11\r\n"
+expect "Done"
+send "ifconfig up\r\n"
+expect "Done"
+send "thread start\r\n"
+expect "Done"
+wait
+EOF
+    sleep 5
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.JoinerStart \

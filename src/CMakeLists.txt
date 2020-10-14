@@ -46,3 +46,8 @@ endif()
 if(OTBR_WEB)
     add_subdirectory(web)
 endif()
+
+if(OTBR_REST)
+    add_subdirectory(rest)
+endif()
+

@@ -66,10 +66,9 @@ struct ActiveScanResult
 
 struct LinkModeConfig
 {
-    bool mRxOnWhenIdle;       ///< 1, if the sender has its receiver on when not transmitting. 0, otherwise.
-    bool mSecureDataRequests; ///< 1, if the sender uses IEEE 802.15.4 to secure all data requests. 0, otherwise.
-    bool mDeviceType;         ///< 1, if the sender is an FTD. 0, otherwise.
-    bool mNetworkData;        ///< 1, if the sender requires the full Network Data. 0, otherwise.
+    bool mRxOnWhenIdle; ///< 1, if the sender has its receiver on when not transmitting. 0, otherwise.
+    bool mDeviceType;   ///< 1, if the sender is an FTD. 0, otherwise.
+    bool mNetworkData;  ///< 1, if the sender requires the full Network Data. 0, otherwise.
 };
 
 struct Ip6Prefix
@@ -366,7 +365,7 @@ struct MacCounters
     uint32_t mRxOther;
 
     /**
-     * The total number of frames dropped by MAC Filter module, for example received from blacklisted node.
+     * The total number of frames dropped by MAC Filter module, for example received from denylisted node.
      *
      */
     uint32_t mRxAddressFiltered;
@@ -454,7 +453,6 @@ struct ChildInfo
     uint16_t mFrameErrorRate;     ///< Frame error rate (0xffff->100%). Requires error tracking feature.
     uint16_t mMessageErrorRate;   ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
     bool     mRxOnWhenIdle;       ///< rx-on-when-idle
-    bool     mSecureDataRequest;  ///< Secure Data Requests
     bool     mFullThreadDevice;   ///< Full Thread Device
     bool     mFullNetworkData;    ///< Full Network Data
     bool     mIsStateRestoring;   ///< Is in restoring state
@@ -462,21 +460,20 @@ struct ChildInfo
 
 struct NeighborInfo
 {
-    uint64_t mExtAddress;        ///< IEEE 802.15.4 Extended Address
-    uint32_t mAge;               ///< Time last heard
-    uint16_t mRloc16;            ///< RLOC16
-    uint32_t mLinkFrameCounter;  ///< Link Frame Counter
-    uint32_t mMleFrameCounter;   ///< MLE Frame Counter
-    uint8_t  mLinkQualityIn;     ///< Link Quality In
-    int8_t   mAverageRssi;       ///< Average RSSI
-    int8_t   mLastRssi;          ///< Last observed RSSI
-    uint16_t mFrameErrorRate;    ///< Frame error rate (0xffff->100%). Requires error tracking feature.
-    uint16_t mMessageErrorRate;  ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
-    bool     mRxOnWhenIdle;      ///< rx-on-when-idle
-    bool     mSecureDataRequest; ///< Secure Data Requests
-    bool     mFullThreadDevice;  ///< Full Thread Device
-    bool     mFullNetworkData;   ///< Full Network Data
-    bool     mIsChild;           ///< Is the neighbor a child
+    uint64_t mExtAddress;       ///< IEEE 802.15.4 Extended Address
+    uint32_t mAge;              ///< Time last heard
+    uint16_t mRloc16;           ///< RLOC16
+    uint32_t mLinkFrameCounter; ///< Link Frame Counter
+    uint32_t mMleFrameCounter;  ///< MLE Frame Counter
+    uint8_t  mLinkQualityIn;    ///< Link Quality In
+    int8_t   mAverageRssi;      ///< Average RSSI
+    int8_t   mLastRssi;         ///< Last observed RSSI
+    uint16_t mFrameErrorRate;   ///< Frame error rate (0xffff->100%). Requires error tracking feature.
+    uint16_t mMessageErrorRate; ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
+    bool     mRxOnWhenIdle;     ///< rx-on-when-idle
+    bool     mFullThreadDevice; ///< Full Thread Device
+    bool     mFullNetworkData;  ///< Full Network Data
+    bool     mIsChild;          ///< Is the neighbor a child
 };
 
 struct LeaderData

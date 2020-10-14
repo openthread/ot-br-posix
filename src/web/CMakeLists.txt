@@ -53,8 +53,7 @@ target_link_libraries(otbr-web PRIVATE
     openthread-ftd
     openthread-posix
     mbedtls
-    Boost::filesystem
-    Boost::system
+    ${Boost_LIBRARIES}
     pthread
 )
 install(
@@ -65,6 +64,7 @@ install(
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/angular ${CMAKE_CURRENT_BINARY_DIR}/angular)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/angular-material ${CMAKE_CURRENT_BINARY_DIR}/angular-material)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/mdl ${CMAKE_CURRENT_BINARY_DIR}/mdl)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/d3js ${CMAKE_CURRENT_BINARY_DIR}/d3js)
 
 install(DIRECTORY web-service/frontend
     DESTINATION ${OTBR_WEB_DATADIR}

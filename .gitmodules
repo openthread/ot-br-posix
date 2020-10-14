@@ -2,3 +2,12 @@
 	path = third_party/openthread/repo
 	url = https://github.com/openthread/openthread.git
 	branch = master
+[submodule "third_party/cJSON/repo"]
+	path = third_party/cJSON/repo
+	url = https://github.com/DaveGamble/cJSON.git
+[submodule "third_party/http-parser/repo"]
+	path = third_party/http-parser/repo
+	url = https://github.com/nodejs/http-parser.git
+[submodule "third_party/d3js/repo"]
+	path = third_party/d3js/repo
+	url = https://github.com/d3/d3.git

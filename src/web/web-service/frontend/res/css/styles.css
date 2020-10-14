@@ -17,6 +17,113 @@
 html, body {
   font-family: 'Roboto', 'Helvetica', sans-serif;
 }
+
+.link {
+    fill: none;
+    stroke: #666;
+    stroke-width: 3px;
+}
+
+.node circle {
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
+.node rect {
+    fill: #FFEBCD;
+}
+
+text {
+    font: 10px sans-serif;
+    pointer-events: none;
+}
+
+.status-title {
+    font-size: 14px;
+    color: black;
+}
+
+.status-content {
+    font-size: 13px;
+    color: grey;
+}
+
+.tooltip {
+    border: 2px solid #7d807d;
+    padding: 10px;
+    color: white;
+    border-radius: 4px;
+    background-color: #eebabf;
+    text-underline-color: white;
+}
+
+.tooltip .tooltiptext {
+    color: white;
+}
+
+.load_content {
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+}
+
+.collapsible {
+    background-color: #e7e7e7;
+    color: #2f2e2e;
+    cursor: pointer;
+    padding: 10px;
+    width: 100%;
+    border-radius: 20px;
+    text-align: center;
+    border: solid 2px #e7e7e7;
+    outline: none;
+    font-size: 15px;
+}
+
+.active,
+.collapsible:hover {
+    background-color: #a3a2a2;
+}
+
+
+.content {
+    font-size: 13px;
+    padding: 0 10px;
+    /*display: none;*/
+    overflow: hidden;
+    background-color: #e7e7e7;
+}
+
+.loader_container {
+    margin: auto;
+}
+
+.detailElement {
+    background-color: #F5F5F5;
+}
+
+.detailContentKey {
+    font-size: 14px;
+    background-color: #F5F5F5;
+}
+
+.detailContentValue {
+    font-size: 13px;
+    color: #001849;
+    background-color: #F5F5F5;
+}
+
+.detailContentContainer {
+    text-align: center;
+    background-color: #F5F5F5;
+}
+
+.detailContainer {
+    background-color: #F5F5F5;
+    height: 500px;
+    overflow-y: auto
+}
+
 .demo-avatar {
   width: 48px;
   height: 48px;
