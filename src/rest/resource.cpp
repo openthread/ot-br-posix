@@ -28,27 +28,28 @@
 
 #include "rest/resource.hpp"
 
-#include "string.h"
+#include <string.h>
 
 #include "utils/pskc.hpp"
 
-#define OT_PSKC_MAX_LENGTH 16
-#define OT_EXTENDED_PANID_LENGTH 8
+#define OT_REST_RESOURCE_VERSION "/v1"
 
-#define OT_REST_RESOURCE_PATH_DIAGNOSTIC "/v1/diagnostics"
-#define OT_REST_RESOURCE_PATH_NODE "/v1/node"
-#define OT_REST_RESOURCE_PATH_NODE_RLOC "/v1/node/rloc"
-#define OT_REST_RESOURCE_PATH_NODE_RLOC16 "/v1/node/rloc16"
-#define OT_REST_RESOURCE_PATH_NODE_EXTADDRESS "/v1/node/ext-address"
-#define OT_REST_RESOURCE_PATH_NODE_STATE "/v1/node/state"
-#define OT_REST_RESOURCE_PATH_NODE_NETWORKNAME "/v1/node/network-name"
-#define OT_REST_RESOURCE_PATH_NODE_LEADERDATA "/v1/node/leader-data"
-#define OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER "/v1/node/num-of-router"
-#define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/v1/node/ext-panid"
-#define OT_REST_RESOURCE_PATH_NETWORK "/v1/networks"
-#define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/v1/networks/current"
-#define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/v1/networks/current/commission"
-#define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/v1/networks/current/prefix"
+#define OT_REST_RESOURCE_PATH_DIAGNOSTIC OT_REST_RESOURCE_VERSION "/diagnostics"
+
+#define OT_REST_RESOURCE_PATH_NODE OT_REST_RESOURCE_VERSION "/node"
+#define OT_REST_RESOURCE_PATH_NODE_RLOC OT_REST_RESOURCE_PATH_NODE "/rloc"
+#define OT_REST_RESOURCE_PATH_NODE_RLOC16 OT_REST_RESOURCE_PATH_NODE "/rloc16"
+#define OT_REST_RESOURCE_PATH_NODE_EXTADDRESS OT_REST_RESOURCE_PATH_NODE "/ext-address"
+#define OT_REST_RESOURCE_PATH_NODE_STATE OT_REST_RESOURCE_PATH_NODE "/state"
+#define OT_REST_RESOURCE_PATH_NODE_NETWORKNAME OT_REST_RESOURCE_PATH_NODE "/network-name"
+#define OT_REST_RESOURCE_PATH_NODE_LEADERDATA OT_REST_RESOURCE_PATH_NODE "/leader-data"
+#define OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER OT_REST_RESOURCE_PATH_NODE "/num-of-router"
+#define OT_REST_RESOURCE_PATH_NODE_EXTPANID OT_REST_RESOURCE_PATH_NODE "/ext-panid"
+
+#define OT_REST_RESOURCE_PATH_NETWORKS OT_REST_RESOURCE_VERSION "/networks"
+#define OT_REST_RESOURCE_PATH_NETWORKS_CURRENT OT_REST_RESOURCE_PATH_NETWORKS "/current"
+#define OT_REST_RESOURCE_PATH_NETWORKS_CURRENT_COMMISSION OT_REST_RESOURCE_PATH_NETWORKS_CURRENT "/commission"
+#define OT_REST_RESOURCE_PATH_NETWORKS_CURRENT_PREFIX OT_REST_RESOURCE_PATH_NETWORKS_CURRENT "/prefix"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
 #define OT_REST_HTTP_STATUS_201 "201 Created"
@@ -82,9 +83,6 @@ namespace Rest {
 // MulticastAddr
 static const char *kMulticastAddrAllRouters = "ff02::2";
 
-// Default TlvTypes for Diagnostic inforamtion
-static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
-
 // Timeout (in Microseconds) for deleting outdated diagnostics
 static const uint32_t kDiagResetTimeout = 3000000;
 
@@ -94,7 +92,7 @@ static const uint32_t kDiagCollectTimeout = 2000000;
 // Interval (in Microseconds) should wait after a factory reset
 static const uint32_t kResetSleepInterval = 1000000;
 
-// Default timeout (in seconds ) for Joiners
+// Default timeout (in Seconds) for Joiners
 static const uint32_t kDefaultJoinerTimeout = 120;
 
 Resource::Resource(ControllerOpenThread *aNcp)
@@ -113,16 +111,16 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, &Resource::NumOfRoute);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTPANID, &Resource::ExtendedPanId);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORK, &Resource::Networks);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORK_CURRENT, &Resource::CurrentNetwork);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX, &Resource::CurrentNetworkPrefix);
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION, &Resource::CurrentNetworkCommission);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS, &Resource::Networks);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS_CURRENT, &Resource::CurrentNetwork);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS_CURRENT_PREFIX, &Resource::CurrentNetworkPrefix);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS_CURRENT_COMMISSION, &Resource::CurrentNetworkCommission);
 
     // Callback Handler
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTIC, &Resource::HandleDiagnosticCallback);
-    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_NETWORK, &Resource::PostNetworksCallback);
-    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_NETWORK_CURRENT, &Resource::PutCurrentNetworkCallback);
-    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION,
+    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS, &Resource::PostNetworksCallback);
+    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS_CURRENT, &Resource::PutCurrentNetworkCallback);
+    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_NETWORKS_CURRENT_COMMISSION,
                                  &Resource::CurrentNetworkCommissionCallback);
 
     // HTTP Response code
@@ -211,8 +209,6 @@ void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode, std:
 
 void Resource::CurrentNetworkPrefix(const Request &aRequest, Response &aResponse) const
 {
-    std::string errorCode;
-
     if (aRequest.GetMethod() == HttpMethod::kPost)
     {
         PostCurrentNetworkPrefix(aRequest, aResponse);
@@ -426,7 +422,7 @@ void Resource::PostCurrentNetworkCommission(const Request &aRequest, Response &a
     std::string errorDescription;
     PostError   error = PostError::kPostErrorNone;
 
-    err = otCommissionerStart(mInstance, &Resource::HandleStateChanged, &Resource::HandleJoinerEvent,
+    err = otCommissionerStart(mInstance, &Resource::HandleCommissionerStateChanged, &Resource::HandleJoinerEvent,
                               const_cast<Resource *>(this));
     VerifyOrExit(err == OT_ERROR_NONE, error = PostError::kPostSetFail,
                  errorDescription = "Failed at commissioner start: " + std::string(otThreadErrorToString(err)));
@@ -514,7 +510,11 @@ void Resource::PutCurrentNetworkCallback(const Request &aRequest, Response &aRes
     std::string     requestBody;
     otExtendedPanId extPanid;
     long            panid;
-    std::string     masterkey, prefix, extPanId, networkName, panId;
+    std::string     masterkey;
+    std::string     prefix;
+    std::string     extPanId;
+    std::string     networkName;
+    std::string     panId;
     int32_t         channel;
     char *          endptr;
     bool            defaultRoute;
@@ -913,7 +913,7 @@ void Resource::Rloc16(const Request &aRequest, Response &aResponse) const
 void Resource::GetDataExtendedPanId(Response &aResponse) const
 {
     const uint8_t *extPanId = reinterpret_cast<const uint8_t *>(otThreadGetExtendedPanId(mInstance));
-    std::string    body     = Json::Bytes2HexJsonString(extPanId, OT_EXT_PAN_ID_SIZE);
+    std::string    body     = Json::Bytes2HexJsonString(extPanId, OT_EXTENDED_PAN_ID_LENGTH);
     std::string    errorCode;
 
     aResponse.SetBody(body);
@@ -1003,23 +1003,23 @@ void Resource::PostNetworksCallback(const Request &aRequest, Response &aResponse
     std::string          requestBody;
     otbr::Psk::Pskc      psk;
     otBorderRouterConfig config;
-    char                 pskcStr[OT_PSKC_MAX_LENGTH * 2 + 1];
-    uint8_t              extPanIdBytes[OT_EXTENDED_PANID_LENGTH];
+    char                 pskcStr[OT_PSKC_LENGTH * 2 + 1];
+    uint8_t              extPanIdBytes[OT_EXTENDED_PAN_ID_LENGTH];
 
     auto duration = duration_cast<microseconds>(steady_clock::now() - aResponse.GetStartTime()).count();
 
     VerifyOrExit(aRequest.GetMethod() == HttpMethod::kPost, complete = false);
     VerifyOrExit(duration >= kResetSleepInterval, complete = false);
 
-    requestBody                     = aRequest.GetBody();
-    pskcStr[OT_PSKC_MAX_LENGTH * 2] = '\0';
+    requestBody                 = aRequest.GetBody();
+    pskcStr[OT_PSKC_LENGTH * 2] = '\0';
 
     VerifyOrExit(Json::JsonString2NetworkConfiguration(requestBody, network), error = PostError::kPostBadRequest,
                  errorDescription = "Failed at decode json : not valid");
 
-    otbr::Utils::Hex2Bytes(network.mExtPanId.c_str(), extPanIdBytes, OT_EXTENDED_PANID_LENGTH);
+    otbr::Utils::Hex2Bytes(network.mExtPanId.c_str(), extPanIdBytes, OT_EXTENDED_PAN_ID_LENGTH);
     otbr::Utils::Bytes2Hex(psk.ComputePskc(extPanIdBytes, network.mNetworkName.c_str(), network.mPassphrase.c_str()),
-                           OT_PSKC_MAX_LENGTH, pskcStr);
+                           OT_PSKC_LENGTH, pskcStr);
 
     VerifyOrExit(otbr::Utils::Hex2Bytes(network.mMasterKey.c_str(), masterKey.m8, sizeof(masterKey.m8)) ==
                      OT_MASTER_KEY_SIZE,
@@ -1139,7 +1139,7 @@ void Resource::NetworksResponseHandler(Response *                             aR
             {
                 result.mExtAddress[i] = r.mExtAddress.m8[i];
             }
-            for (int i = 0; i < OT_EXT_PAN_ID_SIZE; ++i)
+            for (int i = 0; i < OT_EXTENDED_PAN_ID_LENGTH; ++i)
             {
                 result.mExtendedPanId[i] = r.mExtendedPanId.m8[i];
             }
@@ -1197,6 +1197,8 @@ void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag
 
 void Resource::Diagnostic(const Request &aRequest, Response &aResponse) const
 {
+    static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
+
     OT_UNUSED_VARIABLE(aRequest);
     otError             err = OT_ERROR_NONE;
     std::string         errorDescription;
@@ -1261,12 +1263,12 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
     UpdateDiag(keyRloc, diagSet);
 }
 
-void Resource::HandleStateChanged(otCommissionerState aState, void *aContext)
+void Resource::HandleCommissionerStateChanged(otCommissionerState aState, void *aContext)
 {
-    static_cast<Resource *>(aContext)->HandleStateChanged(aState);
+    static_cast<Resource *>(aContext)->HandleCommissionerStateChanged(aState);
 }
 
-void Resource::HandleStateChanged(otCommissionerState aState) const
+void Resource::HandleCommissionerStateChanged(otCommissionerState aState) const
 {
     switch (aState)
     {

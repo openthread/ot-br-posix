@@ -63,7 +63,7 @@ public:
     Parser(Request *aRequest);
 
     /**
-     * This method initialize the http-parser.
+     * This method initializes the http-parser.
      *
      */
     void Init(void);
@@ -71,8 +71,8 @@ public:
     /**
      * This method performs a parse process.
      *
-     * @param[in]    aBuf      A pointer to read buffer.
-     * @param[in]    aLength   An integer indicates how much data is to be processed by parser.
+     * @param[in]  aBuf     A pointer to read buffer.
+     * @param[in]  aLength  An integer indicates how much data is to be processed by parser.
      *
      */
     void Process(const char *aBuf, size_t aLength);

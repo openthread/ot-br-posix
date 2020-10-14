@@ -105,7 +105,7 @@ public:
     /**
      * This method returns the HTTP method of this request.
      *
-     * @returns An enum class representing HTTP method.
+     * @returns The HTTP method.
      */
     HttpMethod GetMethod() const;
 

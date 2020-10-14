@@ -56,19 +56,19 @@ enum class HttpMethod : std::uint8_t
 
 enum class HttpStatusCode : std::uint16_t
 {
-    kStatusOk                      = 200, ///<  200 OK
-    kStatusCreated                 = 201, ///<  201 Created
-    kStatusAccepted                = 202, ///<  202 Accepted
-    kStatusNoContent               = 204, ///<  204 No Content
-    kStatusBadRequest              = 400, ///<  400 Bad Request
-    kStatusResourceNotFound        = 404, ///<  404 Resource Not Found
-    kStatusMethodNotAllowed        = 405, ///<  405 Method Not Allowed
-    kStatusRequestTimeout          = 408, ///<  408 Request Timeout
-    kStatusLengthRequired          = 411, ///<  411 Status Length Required
-    kStatusUnsupportedMediaType    = 415, ///<  415 Unsupported Media Type
-    kStatusInternalServerError     = 500, ///<  500 Internal Server Error
-    kStatusNotImplemented          = 501, ///<  501 Not Implemented
-    kStatusHttpVersionNotSupported = 505  ///<  Http Version Not Supported
+    kStatusOk                      = 200, ///< OK
+    kStatusCreated                 = 201, ///< Created
+    kStatusAccepted                = 202, ///< Accepted
+    kStatusNoContent               = 204, ///< No Content
+    kStatusBadRequest              = 400, ///< Bad Request
+    kStatusResourceNotFound        = 404, ///< Resource Not Found
+    kStatusMethodNotAllowed        = 405, ///< Method Not Allowed
+    kStatusRequestTimeout          = 408, ///< Request Timeout
+    kStatusLengthRequired          = 411, ///< Status Length Required
+    kStatusUnsupportedMediaType    = 415, ///< Unsupported Media Type
+    kStatusInternalServerError     = 500, ///< Internal Server Error
+    kStatusNotImplemented          = 501, ///< Not Implemented
+    kStatusHttpVersionNotSupported = 505, ///< Http Version Not Supported
 };
 
 struct HttpStatusCodeHash
@@ -98,6 +98,7 @@ enum class ConnectionState : std::uint8_t
     kComplete      = 7, ///< No longer need to be processed
 
 };
+
 struct ActiveScanResult
 {
     uint8_t              mExtAddress[OT_EXT_ADDRESS_SIZE + 1];   ///< IEEE 802.15.4 Extended Address
@@ -113,6 +114,7 @@ struct ActiveScanResult
     bool                 mIsNative;                              ///< Native Commissioner flag
     bool                 mIsJoinable;                            ///< Joining Permitted flag
 };
+
 struct NetworkConfiguration
 {
     bool        mDefaultRoute;
@@ -124,6 +126,7 @@ struct NetworkConfiguration
     std::string mPassphrase;
     std::string mExtPanId;
 };
+
 struct NodeInfo
 {
     std::string    mWpanService;
@@ -137,6 +140,7 @@ struct NodeInfo
     std::string    mNetworkName;
     std::string    mVersion;
 };
+
 struct DiagInfo
 {
     std::chrono::steady_clock::time_point mStartTime;

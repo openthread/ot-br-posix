@@ -103,20 +103,21 @@ public:
      * This method is a pre-defined callback function used for call another private method when diagnostic information
      * arrives.
      *
-     * @param[in]      aMessage  A pointer to the message buffer containing the received Network Diagnostic
-     * @param[in]   aMessageInfo A pointer to the message info for @p aMessage
-     * @param[in]       aContext    A pointer to application-specific context.
+     * @param[in]  aMessage      A pointer to the message buffer containing the received Network Diagnostic
+     * @param[in]  aMessageInfo  A pointer to the message info for @p aMessage
+     * @param[in]  aContext      A pointer to application-specific context.
+     *
      */
     static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
 
     /**
-     * This method handle conmmissione state change (callback function).
+     * This method handles commissioner state changes (callback function).
      *
-     * @param[in]   aState      The state of commissioner.
-     * @param[in]   aContext    A pointer to the ubus context.
+     * @param[in]  aState    The state of commissioner.
+     * @param[in]  aContext  A pointer to the Resource context.
      *
      */
-    static void HandleStateChanged(otCommissionerState aState, void *aContext);
+    static void HandleCommissionerStateChanged(otCommissionerState aState, void *aContext);
 
     /**
      * This method handle joiner event (callback function).
@@ -193,7 +194,7 @@ private:
 
     // private funtion that is called by punlic static function
     void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
-    void HandleStateChanged(otCommissionerState aState) const;
+    void HandleCommissionerStateChanged(otCommissionerState aState) const;
     void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
                            const otJoinerInfo *      aJoinerInfo,
                            const otExtAddress *      aJoinerId) const;

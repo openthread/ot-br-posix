@@ -43,14 +43,11 @@ static cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
     char hex[2 * aLength + 1];
 
     otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
-    hex[2 * aLength] = '\0';
-    for (size_t i = 0; i < 2 * aLength; i++)
+    for (auto &ch : hex)
     {
-        if (hex[i] <= 'Z' && hex[i] >= 'A')
-        {
-            hex[i] = hex[i] - ('Z' - 'z');
-        }
+        ch = tolower(ch);
     }
+
     return cJSON_CreateString(hex);
 }
 
@@ -127,10 +124,9 @@ static cJSON *CString2Json(const char *aString)
 static cJSON *ScanNetworks2Json(const std::vector<ActiveScanResult> &aResults)
 {
     cJSON *networks = cJSON_CreateArray();
-    cJSON *network  = nullptr;
-    for (const auto result : aResults)
+    for (const auto &result : aResults)
     {
-        network = cJSON_CreateObject();
+        cJSON *network = cJSON_CreateObject();
 
         cJSON_AddItemToObject(network, "IsJoinable", cJSON_CreateNumber(result.mIsJoinable));
         cJSON_AddItemToObject(network, "NetworkName", cJSON_CreateString(result.mNetworkName.c_str()));

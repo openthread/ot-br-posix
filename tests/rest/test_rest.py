@@ -27,15 +27,15 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-import urllib.request
-import urllib.error
-import urllib.parse
 import json
 import re
 import time
 from threading import Thread
+import urllib.request
+import urllib.error
+import urllib.parse
 
-rest_api_addr = "http://0.0.0.0:8081"
+REST_API_ADDR = "http://0.0.0.0:8081"
 
 def get_data_from_url(url, result, index):
     response = urllib.request.urlopen(urllib.request.Request(url))
@@ -290,7 +290,7 @@ def node_ext_panid_check(data):
 
 
 def node_test(thread_num):
-    url = rest_api_addr + "/v1/node"
+    url = REST_API_ADDR + "/v1/node"
 
     response_data = [None] * thread_num
 
@@ -302,7 +302,7 @@ def node_test(thread_num):
 
 
 def node_rloc_test(thread_num):
-    url = rest_api_addr + "/v1/node/rloc"
+    url = REST_API_ADDR + "/v1/node/rloc"
 
     response_data = [None] * thread_num
 
@@ -314,7 +314,7 @@ def node_rloc_test(thread_num):
 
 
 def node_rloc16_test(thread_num):
-    url = rest_api_addr + "/v1/node/rloc16"
+    url = REST_API_ADDR + "/v1/node/rloc16"
 
     response_data = [None] * thread_num
 
@@ -326,7 +326,7 @@ def node_rloc16_test(thread_num):
 
 
 def node_ext_address_test(thread_num):
-    url = rest_api_addr + "/v1/node/ext-address"
+    url = REST_API_ADDR + "/v1/node/ext-address"
 
     response_data = [None] * thread_num
 
@@ -338,7 +338,7 @@ def node_ext_address_test(thread_num):
 
 
 def node_state_test(thread_num):
-    url = rest_api_addr + "/v1/node/state"
+    url = REST_API_ADDR + "/v1/node/state"
 
     response_data = [None] * thread_num
 
@@ -350,7 +350,7 @@ def node_state_test(thread_num):
 
 
 def node_network_name_test(thread_num):
-    url = rest_api_addr + "/v1/node/network-name"
+    url = REST_API_ADDR + "/v1/node/network-name"
 
     response_data = [None] * thread_num
 
@@ -364,7 +364,7 @@ def node_network_name_test(thread_num):
 
 
 def node_leader_data_test(thread_num):
-    url = rest_api_addr + "/v1/node/leader-data"
+    url = REST_API_ADDR + "/v1/node/leader-data"
 
     response_data = [None] * thread_num
 
@@ -376,7 +376,7 @@ def node_leader_data_test(thread_num):
 
 
 def node_num_of_router_test(thread_num):
-    url = rest_api_addr + "/v1/node/num-of-router"
+    url = REST_API_ADDR + "/v1/node/num-of-router"
 
     response_data = [None] * thread_num
 
@@ -390,7 +390,7 @@ def node_num_of_router_test(thread_num):
 
 
 def node_ext_panid_test(thread_num):
-    url = rest_api_addr + "/v1/node/ext-panid"
+    url = REST_API_ADDR + "/v1/node/ext-panid"
 
     response_data = [None] * thread_num
 
@@ -402,7 +402,7 @@ def node_ext_panid_test(thread_num):
 
 
 def diagnostics_test(thread_num):
-    url = rest_api_addr + "/v1/diagnostics"
+    url = REST_API_ADDR + "/v1/diagnostics"
 
     response_data = [None] * thread_num
 
@@ -424,7 +424,7 @@ def diagnostics_test(thread_num):
 
 
 def error_test(thread_num):
-    url = rest_api_addr + "/v1/hello"
+    url = REST_API_ADDR + "/v1/hello"
 
     response_data = [None] * thread_num
 
@@ -436,7 +436,7 @@ def error_test(thread_num):
 
 
 def commissioner():
-    url = rest_api_addr + "/v1/networks/current/commission"
+    url = REST_API_ADDR + "/v1/networks/current/commission"
     data = {
         'passphase': '123445',
         'pskd': 'ABCDEF',
@@ -466,7 +466,7 @@ def commissioner():
 
 
 def add_remove_prefix():
-    url = rest_api_addr + "/v1/networks/current/prefix"
+    url = REST_API_ADDR + "/v1/networks/current/prefix"
     data = {
         'prefix': 'fd13:22::',
         'defaultRoute': True,
@@ -497,14 +497,14 @@ def add_remove_prefix():
 
 
 def form_network_test():
-    url = rest_api_addr + "/v1/node/network-name"
+    url = REST_API_ADDR + "/v1/node/network-name"
 
     response = urllib.request.urlopen(urllib.request.Request(url))
     body = response.read()
     data = json.loads(body)
     assert data != 'OpenThreadTest1'
 
-    url = rest_api_addr + "/v1/networks"
+    url = REST_API_ADDR + "/v1/networks"
     data = {
         'networkName': 'OpenThreadTest1',
         'extPanId': '1111111122222222',
@@ -525,7 +525,7 @@ def form_network_test():
 
     time.sleep(10)
 
-    url = rest_api_addr + "/v1/node/network-name"
+    url = REST_API_ADDR + "/v1/node/network-name"
     response = urllib.request.urlopen(urllib.request.Request(url))
     body = response.read()
     data = json.loads(body)
@@ -534,7 +534,7 @@ def form_network_test():
 
 
 def scan():
-    url = rest_api_addr + "/v1/networks"
+    url = REST_API_ADDR + "/v1/networks"
     response = urllib.request.urlopen(urllib.request.Request(url))
     body = response.read()
     data = json.loads(body)
@@ -549,7 +549,7 @@ def scan():
 
 
 def join():
-    url = rest_api_addr + "/v1/networks/current"
+    url = REST_API_ADDR + "/v1/networks/current"
 
     data = {
         'extPanId': 'dead00beef00cafe',
@@ -571,7 +571,7 @@ def join():
 
     time.sleep(10)
 
-    url = rest_api_addr + "/v1/diagnostics"
+    url = REST_API_ADDR + "/v1/diagnostics"
     response = urllib.request.urlopen(urllib.request.Request(url))
     body = response.read()
     data = json.loads(body)
