@@ -27,24 +27,22 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-nginx_server_install()
+readonly NGINX_CONF_DIR=/etc/nginx
+
+nginx_config_install()
 {
     if command -v nginx; then
+        sudo cp etc/rest/otbr-nginx.conf "${NGINX_CONF_DIR}"/sites-available/
+        sudo rm -rf "${NGINX_CONF_DIR}"/sites-enabled/default
+        sudo rm -rf "${NGINX_CONF_DIR}"/sites-enabled/otbr-nginx.conf
+        sudo ln -s "${NGINX_CONF_DIR}"/sites-available/otbr-nginx.conf "${NGINX_CONF_DIR}"/sites-enabled/
 
-        top_dir="$(pwd)"
-
-        nginx_conf_file=$(nginx -V 2>&1 | grep -o "\-\-conf-path=\(.*conf\)" | cut -d "=" -f2)
-
-        sudo rm "${nginx_conf_file}"
-
-        sudo cp "${top_dir}"/etc/rest/nginx.conf "${nginx_conf_file}"
-
-        sudo sed -i.bak "s:to be set:${top_dir}/src/rest/frontend:" "${nginx_conf_file}"
-
+        if have systemctl; then
+            sudo systemctl restart nginx
+        else
+            echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
+        fi
     else
-
         echo >&2 ' *** WARNING: nginx not found, please install nginx manually and run setup again'
-
     fi
-
 }

@@ -66,7 +66,7 @@ readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
 readonly LEADER_NODE_ID=1
 readonly JOINER_NODE_ID=2
 
-# HTTP Server
+# HTTP REST Server
 readonly OTBR_REST_HOST=127.0.0.1
 readonly OTBR_REST_PORT=8081
 readonly OTBR_REST_URL="http://${OTBR_REST_HOST}:${OTBR_REST_PORT}"
