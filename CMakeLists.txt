@@ -136,7 +136,7 @@ if(SYSTEMD_FOUND)
 endif()
 
 
-add_subdirectory(third_party EXCLUDE_FROM_ALL)
+add_subdirectory(third_party)
 add_subdirectory(src)
 add_subdirectory(tools)
 

@@ -27,8 +27,10 @@
 #
 
 install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular.min.js
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-animate.min.js
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-aria.min.js
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-messages.min.js
-    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/js)
+            repo/angular.min.js
+            repo/angular-animate.min.js
+            repo/angular-aria.min.js
+            repo/angular-messages.min.js
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr/frontend/res/js
+)

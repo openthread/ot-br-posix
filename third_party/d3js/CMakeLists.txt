@@ -27,6 +27,8 @@
 #
 
 install(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.js
-    ${CMAKE_CURRENT_SOURCE_DIR}/repo/d3.min.js
-    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/js)
+            repo/d3.js
+            repo/d3.min.js
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr/frontend/res/js
+)

@@ -26,9 +26,12 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+install(FILES repo/angular-material.min.js
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr/frontend/res/js
+)
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-material.min.js
-    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/js)
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/repo/angular-material.min.css
-    DESTINATION ${PROJECT_SOURCE_DIR}/src/rest/frontend/res/css)
+install(FILES repo/angular-material.min.css
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr/frontend/res/css
+)
