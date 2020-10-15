@@ -49,18 +49,10 @@
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
-#define OT_REST_HTTP_STATUS_201 "201 Created"
-#define OT_REST_HTTP_STATUS_202 "202 Accepted"
-#define OT_REST_HTTP_STATUS_204 "204 No Content"
-#define OT_REST_HTTP_STATUS_400 "400 Bad Request"
 #define OT_REST_HTTP_STATUS_404 "404 Not Found"
 #define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
-#define OT_REST_HTTP_STATUS_411 "411 Length Required"
-#define OT_REST_HTTP_STATUS_415 "415 Unsupported Media Type"
 #define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
-#define OT_REST_HTTP_STATUS_501 "501 Not Implemented"
-#define OT_REST_HTTP_STATUS_505 "505 HTTP Version Not Supported"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -93,18 +85,6 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusOk:
         httpStatus = OT_REST_HTTP_STATUS_200;
         break;
-    case HttpStatusCode::kStatusCreated:
-        httpStatus = OT_REST_HTTP_STATUS_201;
-        break;
-    case HttpStatusCode::kStatusAccepted:
-        httpStatus = OT_REST_HTTP_STATUS_202;
-        break;
-    case HttpStatusCode::kStatusNoContent:
-        httpStatus = OT_REST_HTTP_STATUS_204;
-        break;
-    case HttpStatusCode::kStatusBadRequest:
-        httpStatus = OT_REST_HTTP_STATUS_400;
-        break;
     case HttpStatusCode::kStatusResourceNotFound:
         httpStatus = OT_REST_HTTP_STATUS_404;
         break;
@@ -114,20 +94,8 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusRequestTimeout:
         httpStatus = OT_REST_HTTP_STATUS_408;
         break;
-    case HttpStatusCode::kStatusLengthRequired:
-        httpStatus = OT_REST_HTTP_STATUS_411;
-        break;
-    case HttpStatusCode::kStatusUnsupportedMediaType:
-        httpStatus = OT_REST_HTTP_STATUS_415;
-        break;
     case HttpStatusCode::kStatusInternalServerError:
         httpStatus = OT_REST_HTTP_STATUS_500;
-        break;
-    case HttpStatusCode::kStatusNotImplemented:
-        httpStatus = OT_REST_HTTP_STATUS_501;
-        break;
-    case HttpStatusCode::kStatusHttpVersionNotSupported:
-        httpStatus = OT_REST_HTTP_STATUS_505;
         break;
     }
 
