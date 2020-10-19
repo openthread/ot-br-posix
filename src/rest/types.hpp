@@ -58,19 +58,11 @@ enum class HttpMethod : std::uint8_t
 
 enum class HttpStatusCode : std::uint16_t
 {
-    kStatusOk                      = 200,
-    kStatusCreated                 = 201,
-    kStatusAccepted                = 202,
-    kStatusNoContent               = 204,
-    kStatusBadRequest              = 400,
-    kStatusResourceNotFound        = 404,
-    kStatusMethodNotAllowed        = 405,
-    kStatusRequestTimeout          = 408,
-    kStatusLengthRequired          = 411,
-    kStatusUnsupportedMediaType    = 415,
-    kStatusInternalServerError     = 500,
-    kStatusNotImplemented          = 501,
-    kStatusHttpVersionNotSupported = 505
+    kStatusOk                  = 200,
+    kStatusResourceNotFound    = 404,
+    kStatusMethodNotAllowed    = 405,
+    kStatusRequestTimeout      = 408,
+    kStatusInternalServerError = 500,
 };
 
 enum class PostError : std::uint8_t
