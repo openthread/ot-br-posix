@@ -61,8 +61,6 @@ otbrError RestWebServer::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    mResource.Init();
-
     error = InitializeListenFd();
 
     return error;

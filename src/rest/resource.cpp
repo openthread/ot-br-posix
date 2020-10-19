@@ -123,11 +123,6 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::HandleDiagnosticCallback);
 }
 
-void Resource::Init(void)
-{
-    otThreadSetReceiveDiagnosticGetCallback(mInstance, &Resource::DiagnosticResponseHandler, this);
-}
-
 void Resource::Handle(Request &aRequest, Response &aResponse) const
 {
     std::string url = aRequest.GetUrl();
@@ -518,31 +513,22 @@ void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag
 
 void Resource::Diagnostic(const Request &aRequest, Response &aResponse) const
 {
-    otbrError error = OTBR_ERROR_NONE;
+    otThreadSetReceiveDiagnosticGetCallback(mInstance, &Resource::DiagnosticResponseHandler,
+                                            const_cast<Resource *>(this));
     OT_UNUSED_VARIABLE(aRequest);
     struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
 
     VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
-                     OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
-    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
+                 OT_ERROR_NONE);
+    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE);
     VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
-                     OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
+                 OT_ERROR_NONE);
 
 exit:
 
-    if (error == OTBR_ERROR_NONE)
-    {
-        aResponse.SetStartTime(steady_clock::now());
-        aResponse.SetCallback();
-    }
-    else
-    {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
-    }
+    aResponse.SetStartTime(steady_clock::now());
+    aResponse.SetCallback();
 }
 
 void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)

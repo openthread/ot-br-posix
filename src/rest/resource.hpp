@@ -66,13 +66,6 @@ public:
     Resource(ControllerOpenThread *aNcp);
 
     /**
-     * This method initialize the Resource handler.
-     *
-     *
-     */
-    void Init(void);
-
-    /**
      * This method is the main entry of resource handler, which find corresponding handler according to request url
      * find the resource and set the content of response.
      *
