@@ -64,11 +64,11 @@ otbrError DBusAgent::Init(void)
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, mNcp));
     error         = mThreadObject->Init();
 exit:
-    dbus_error_free(&dbusError);
     if (error != OTBR_ERROR_NONE)
     {
         otbrLog(OTBR_LOG_ERR, "dbus error %s: %s", dbusError.name, dbusError.message);
     }
+    dbus_error_free(&dbusError);
     return error;
 }
 
