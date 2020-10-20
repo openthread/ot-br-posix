@@ -49,18 +49,10 @@
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
-#define OT_REST_HTTP_STATUS_201 "201 Created"
-#define OT_REST_HTTP_STATUS_202 "202 Accepted"
-#define OT_REST_HTTP_STATUS_204 "204 No Content"
-#define OT_REST_HTTP_STATUS_400 "400 Bad Request"
 #define OT_REST_HTTP_STATUS_404 "404 Not Found"
 #define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
-#define OT_REST_HTTP_STATUS_411 "411 Length Required"
-#define OT_REST_HTTP_STATUS_415 "415 Unsupported Media Type"
 #define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
-#define OT_REST_HTTP_STATUS_501 "501 Not Implemented"
-#define OT_REST_HTTP_STATUS_505 "505 HTTP Version Not Supported"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -84,6 +76,32 @@ static const uint32_t kDiagResetTimeout = 3000000;
 // Timeout (in Microseconds) for collecting diagnostics
 static const uint32_t kDiagCollectTimeout = 2000000;
 
+static std::string GetHttpStatus(HttpStatusCode aErrorCode)
+{
+    std::string httpStatus;
+
+    switch (aErrorCode)
+    {
+    case HttpStatusCode::kStatusOk:
+        httpStatus = OT_REST_HTTP_STATUS_200;
+        break;
+    case HttpStatusCode::kStatusResourceNotFound:
+        httpStatus = OT_REST_HTTP_STATUS_404;
+        break;
+    case HttpStatusCode::kStatusMethodNotAllowed:
+        httpStatus = OT_REST_HTTP_STATUS_405;
+        break;
+    case HttpStatusCode::kStatusRequestTimeout:
+        httpStatus = OT_REST_HTTP_STATUS_408;
+        break;
+    case HttpStatusCode::kStatusInternalServerError:
+        httpStatus = OT_REST_HTTP_STATUS_500;
+        break;
+    }
+
+    return httpStatus;
+}
+
 Resource::Resource(ControllerOpenThread *aNcp)
     : mNcp(aNcp)
 {
@@ -103,21 +121,6 @@ Resource::Resource(ControllerOpenThread *aNcp)
 
     // Resource callback handler
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::HandleDiagnosticCallback);
-
-    // HTTP Response code
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusOk, OT_REST_HTTP_STATUS_200);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusCreated, OT_REST_HTTP_STATUS_201);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusAccepted, OT_REST_HTTP_STATUS_202);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusNoContent, OT_REST_HTTP_STATUS_204);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusBadRequest, OT_REST_HTTP_STATUS_400);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusResourceNotFound, OT_REST_HTTP_STATUS_404);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusMethodNotAllowed, OT_REST_HTTP_STATUS_405);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusRequestTimeout, OT_REST_HTTP_STATUS_408);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusLengthRequired, OT_REST_HTTP_STATUS_411);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusUnsupportedMediaType, OT_REST_HTTP_STATUS_415);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusInternalServerError, OT_REST_HTTP_STATUS_500);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusNotImplemented, OT_REST_HTTP_STATUS_501);
-    mResponseCodeMap.emplace(HttpStatusCode::kStatusHttpVersionNotSupported, OT_REST_HTTP_STATUS_505);
 }
 
 void Resource::Init(void)
@@ -171,7 +174,7 @@ void Resource::HandleDiagnosticCallback(const Request &aRequest, Response &aResp
         }
 
         body      = Json::Diag2JsonString(diagContentSet);
-        errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
         aResponse.SetBody(body);
         aResponse.SetComplete();
@@ -180,7 +183,7 @@ void Resource::HandleDiagnosticCallback(const Request &aRequest, Response &aResp
 
 void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const
 {
-    std::string errorMessage = mResponseCodeMap.at(aErrorCode);
+    std::string errorMessage = GetHttpStatus(aErrorCode);
     std::string body         = Json::Error2JsonString(aErrorCode, errorMessage);
 
     aResponse.SetResponsCode(errorMessage);
@@ -223,7 +226,7 @@ void Resource::GetNodeInfo(Response &aResponse) const
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
     }
     else
@@ -252,7 +255,7 @@ void Resource::GetDataExtendedAddr(Response &aResponse) const
     std::string    body = Json::Bytes2HexJsonString(extAddress, OT_EXT_ADDRESS_SIZE);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -284,7 +287,7 @@ void Resource::GetDataState(Response &aResponse) const
     role  = otThreadGetDeviceRole(mInstance);
     state = Json::Number2JsonString(role);
     aResponse.SetBody(state);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -311,7 +314,7 @@ void Resource::GetDataNetworkName(Response &aResponse) const
     networkName = Json::String2JsonString(networkName);
 
     aResponse.SetBody(networkName);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -345,7 +348,7 @@ void Resource::GetDataLeaderData(Response &aResponse) const
 exit:
     if (error == OTBR_ERROR_NONE)
     {
-        errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
     }
     else
@@ -388,7 +391,7 @@ void Resource::GetDataNumOfRoute(Response &aResponse) const
     body = Json::Number2JsonString(count);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -415,7 +418,7 @@ void Resource::GetDataRloc16(Response &aResponse) const
     body = Json::Number2JsonString(rloc16);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -440,7 +443,7 @@ void Resource::GetDataExtendedPanId(Response &aResponse) const
     std::string    errorCode;
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 
@@ -467,7 +470,7 @@ void Resource::GetDataRloc(Response &aResponse) const
     body = Json::IpAddr2JsonString(rlocAddress);
 
     aResponse.SetBody(body);
-    errorCode = mResponseCodeMap.at(HttpStatusCode::kStatusOk);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
 }
 

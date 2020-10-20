@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        rest: ["rest", ""]
+        rest: ["rest-off", ""]
     env:
       BUILD_TARGET: check
       OTBR_REST: ${{ matrix.rest }}
