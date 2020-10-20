@@ -43,8 +43,6 @@ def get_data_from_url(url, result, index):
         body = response.read()
         data = json.loads(body)
         result[index] = data
-
-    
     except urllib.error.HTTPError as e:
         print(e.code)   
 
