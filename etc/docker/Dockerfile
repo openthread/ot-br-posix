@@ -29,17 +29,22 @@ FROM ubuntu:bionic
 
 ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
+ARG DNS64
+ARG NAT64
 ARG REFERENCE_DEVICE
+ARG RELEASE
 
-ENV OT_BACKBONE_CI=${OT_BACKBONE_CI}
+ENV OT_BACKBONE_CI=${OT_BACKBONE_CI:-0}
 ENV OTBR_OPTIONS=${OTBR_OPTIONS}
 ENV DEBIAN_FRONTEND noninteractive
 ENV PLATFORM ubuntu
-ENV REFERENCE_DEVICE=${REFERENCE_DEVICE}
-ENV RELEASE 1
-ENV NAT64 1
-ENV DNS64 1
+ENV REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
+ENV RELEASE=${RELEASE:-1}
+ENV NAT64=${NAT64:-1}
+ENV DNS64=${DNS64:-1}
 ENV DOCKER 1
+
+RUN env
 
 COPY . /app
 WORKDIR /app
@@ -51,10 +56,9 @@ ENV OTBR_DOCKER_REQS sudo
 ENV OTBR_DOCKER_DEPS git ca-certificates
 
 # Required and installed during build (script/bootstrap), could be removed
-ENV OTBR_BUILD_DEPS \
-  apt-utils \
-  build-essential \
-  psmisc
+ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-certificates \
+  libreadline-dev libncurses-dev libcpputest-dev libdbus-1-dev libavahi-common-dev \
+  libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev libjsoncpp-dev
 
 # Required for OpenThread Backbone CI
 ENV OTBR_OT_BACKBONE_CI_DEPS curl ca-certificates

@@ -208,9 +208,6 @@ private:
     // Reource Handler Map for those need callback
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
 
-    // Map from Status Code to Status description
-    std::unordered_map<HttpStatusCode, std::string, HttpStatusCodeHash> mResponseCodeMap;
-
     // Map that maintain Diagnostic information
     std::unordered_map<std::string, DiagInfo> mDiagSet;
 };

@@ -56,27 +56,12 @@ enum class HttpMethod : std::uint8_t
 
 enum class HttpStatusCode : std::uint16_t
 {
-    kStatusOk                      = 200, ///< OK
-    kStatusCreated                 = 201, ///< Created
-    kStatusAccepted                = 202, ///< Accepted
-    kStatusNoContent               = 204, ///< No Content
-    kStatusBadRequest              = 400, ///< Bad Request
-    kStatusResourceNotFound        = 404, ///< Resource Not Found
-    kStatusMethodNotAllowed        = 405, ///< Method Not Allowed
-    kStatusRequestTimeout          = 408, ///< Request Timeout
-    kStatusLengthRequired          = 411, ///< Status Length Required
-    kStatusUnsupportedMediaType    = 415, ///< Unsupported Media Type
-    kStatusInternalServerError     = 500, ///< Internal Server Error
-    kStatusNotImplemented          = 501, ///< Not Implemented
-    kStatusHttpVersionNotSupported = 505, ///< Http Version Not Supported
-};
-
-struct HttpStatusCodeHash
-{
-    template <typename HttpStatusCode> std::size_t operator()(HttpStatusCode t) const
-    {
-        return static_cast<std::size_t>(t);
-    }
+    kStatusOk                  = 200, ///< OK
+    kStatusBadRequest          = 400, ///< Bad Request
+    kStatusResourceNotFound    = 404, ///< Resource Not Found
+    kStatusMethodNotAllowed    = 405, ///< Method Not Allowed
+    kStatusRequestTimeout      = 408, ///< Request Timeout
+    kStatusInternalServerError = 500, ///< Internal Server Error
 };
 
 enum class PostError : std::uint8_t

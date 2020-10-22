@@ -146,6 +146,7 @@ do_prepare()
     if [[ ${OTBR_COVERAGE} == 1 ]]; then
         otbr_options+=("-DOTBR_COVERAGE=ON")
     fi
+
     if [[ ${OTBR_REST} == "rest-off" ]]; then
         otbr_options+=("-DOTBR_REST=OFF")
     else

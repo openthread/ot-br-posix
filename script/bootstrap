@@ -53,7 +53,7 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libdbus-1-dev
 
     # mDNS
-    sudo apt-get install --no-install-recommends -y libavahi-common-dev libavahi-client-dev avahi-daemon
+    sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon
 
     # Boost
     sudo apt-get install --no-install-recommends -y libboost-dev libboost-filesystem-dev libboost-system-dev
@@ -83,9 +83,6 @@ install_packages_apt()
             sudo apt-get install --no-install-recommends -y dhcpcd5
         fi
     }
-
-    # libjsoncpp
-    sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # nginx
     sudo apt-get install --no-install-recommends -y nginx
