@@ -25,7 +25,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:bionic
+FROM ubuntu:focal
 
 ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
@@ -61,7 +61,7 @@ ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-c
   libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev libjsoncpp-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl ca-certificates
+ENV OTBR_OT_BACKBONE_CI_DEPS curl
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
@@ -71,6 +71,7 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
+  && ([ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS) \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \
@@ -86,8 +87,7 @@ RUN apt-get update \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
     && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
     && rm -rf /var/lib/apt/lists/* \
-  ) \
-  && [ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS
+  )
 
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 
