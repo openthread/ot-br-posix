@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_library( otbr-rest 
+add_library(otbr-rest
     rest_web_server.cpp
     connection.cpp
     resource.cpp
@@ -36,7 +36,7 @@ add_library( otbr-rest
     response.cpp
 )
 
-target_link_libraries(otbr-rest 
+target_link_libraries(otbr-rest
     PUBLIC
         http_parser
     PRIVATE
