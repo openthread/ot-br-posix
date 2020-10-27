@@ -61,7 +61,7 @@ ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-c
   libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev libjsoncpp-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl
+ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
