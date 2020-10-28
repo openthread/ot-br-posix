@@ -32,6 +32,7 @@
  */
 
 #include "agent/instance_params.hpp"
+
 namespace otbr {
 
 InstanceParams &InstanceParams::Get(void)
@@ -40,27 +41,5 @@ InstanceParams &InstanceParams::Get(void)
 
     return sInstanceParams;
 }
-
-void InstanceParams::SetThreadIfName(const char *aName)
-{
-    mThreadIfName = aName;
-}
-
-const char *InstanceParams::GetThreadIfName(void)
-{
-    return mThreadIfName;
-}
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-void InstanceParams::SetBackboneIfName(const char *aName)
-{
-    mBackboneIfName = aName;
-}
-
-const char *InstanceParams::GetBackboneIfName(void)
-{
-    return mBackboneIfName;
-}
-#endif
 
 } // namespace otbr

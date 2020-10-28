@@ -35,4 +35,3 @@ target_link_libraries(otbr-backbone-router PRIVATE
     otbr-common
     otbr-utils
 )
-

@@ -57,7 +57,7 @@ public:
      * @param[in] aName  The Thread network interface name.
      *
      */
-    void SetThreadIfName(const char *aName);
+    void SetThreadIfName(const char *aName) { mThreadIfName = aName; }
 
     /**
      * This method gets the Thread network interface name.
@@ -65,7 +65,7 @@ public:
      * @returns The Thread network interface name.
      *
      */
-    const char *GetThreadIfName(void);
+    const char *GetThreadIfName(void) const { return mThreadIfName; }
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
     /**
@@ -74,7 +74,7 @@ public:
      * @param[in] aName  The Backbone network interface name.
      *
      */
-    void SetBackboneIfName(const char *aName);
+    void SetBackboneIfName(const char *aName) { mBackboneIfName = aName; }
 
     /**
      * This method gets the Backbone network interface name.
@@ -82,7 +82,7 @@ public:
      * @returns The Backbone network interface name.
      *
      */
-    const char *GetBackboneIfName(void);
+    const char *GetBackboneIfName(void) const { return mBackboneIfName; }
 #endif
 
 private:
