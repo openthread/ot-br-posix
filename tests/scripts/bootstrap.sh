@@ -155,7 +155,7 @@ case "$(uname)" in
             (mkdir -p docker-rpi-emu \
                 && cd docker-rpi-emu \
                 && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
-                && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git master \
+                && git fetch --depth 1 https://github.com/ryankurte/docker-rpi-emu.git pull/21/head \
                 && git checkout FETCH_HEAD)
 
             pip3 install git-archive-all
