@@ -36,7 +36,9 @@
 
 #include <stdint.h>
 
+#include "agent/instance_params.hpp"
 #include "agent/ncp.hpp"
+#include "backbone_router/backbone_agent.hpp"
 #include "mdns/mdns.hpp"
 
 namespace otbr {
@@ -134,6 +136,9 @@ private:
 
     Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    BackboneRouter::BackboneAgent mBackboneAgent;
+#endif
 
     uint8_t  mExtPanId[kSizeExtPanId];
     bool     mExtPanIdInitialized;

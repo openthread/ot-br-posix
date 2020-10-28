@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,55 +26,33 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes implementation for Thread border router agent instance.
- */
-
-#include "agent/agent_instance.hpp"
-
-#include <assert.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/types.hpp"
 
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
-    : mNcp(aNcp)
-    , mBorderAgent(aNcp)
+Ip6Address::Ip6Address(const otIp6Address &aAddress)
 {
+    static_assert(sizeof(*this) == sizeof(aAddress), "wrong Ip6Address size");
+
+    m32[0] = aAddress.mFields.m32[0];
+    m32[1] = aAddress.mFields.m32[1];
+    m32[2] = aAddress.mFields.m32[2];
+    m32[3] = aAddress.mFields.m32[3];
 }
 
-otbrError AgentInstance::Init(void)
+std::string Ip6Address::ToString() const
 {
-    otbrError error = OTBR_ERROR_NONE;
+    char strbuf[INET6_ADDRSTRLEN];
 
-    SuccessOrExit(error = mNcp->Init());
+    VerifyOrDie(inet_ntop(AF_INET6, this->m8, strbuf, sizeof(strbuf)) != nullptr,
+                "Failed to convert Ip6 address to string");
 
-    mBorderAgent.Init();
-
-exit:
-    otbrLogResult(error, "Initialize OpenThread Border Router Agent");
-    return error;
-}
-
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
-{
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
-}
-
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
-{
-    mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
-}
-
-AgentInstance::~AgentInstance(void)
-{
-    Ncp::Controller::Destroy(mNcp);
+    return std::string(strbuf);
 }
 
 } // namespace otbr
