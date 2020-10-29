@@ -34,12 +34,6 @@ set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner" FORCE)
 set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
-set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
-set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
-set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
-set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
-set(OT_PLATFORM_UDP ON CACHE BOOL "enable platform UDP" FORCE)
-set(OT_UDP_FORWARD OFF CACHE BOOL "diable udp forward" FORCE)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(OT_LOG_LEVEL "DEBG" CACHE STRING "set OpenThread log level to DEBG" FORCE)
@@ -48,6 +42,13 @@ else()
 endif()
 
 set(OT_LOG_LEVEL_DYNAMIC ON CACHE BOOL "enable dynamic log level control" FORCE)
+set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
+set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
+set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
+set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
+set(OT_PLATFORM_UDP ON CACHE BOOL "enable platform UDP" FORCE)
+set(OT_UDP_FORWARD OFF CACHE BOOL "diable udp forward" FORCE)
+
 
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
 
