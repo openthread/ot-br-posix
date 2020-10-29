@@ -35,14 +35,9 @@
 
 namespace otbr {
 
-Ip6Address::Ip6Address(const otIp6Address &aAddress)
+Ip6Address::Ip6Address(const uint8_t (&aAddress)[16])
 {
-    static_assert(sizeof(*this) == sizeof(aAddress), "wrong Ip6Address size");
-
-    m32[0] = aAddress.mFields.m32[0];
-    m32[1] = aAddress.mFields.m32[1];
-    m32[2] = aAddress.mFields.m32[2];
-    m32[3] = aAddress.mFields.m32[3];
+    memcpy(m8, aAddress, sizeof(m8));
 }
 
 std::string Ip6Address::ToString() const

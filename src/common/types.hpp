@@ -41,8 +41,6 @@
 #include <string>
 #include <vector>
 
-#include <openthread/ip6.h>
-
 #ifndef IN6ADDR_ANY
 /**
  * Any IPv6 address literal.
@@ -114,12 +112,12 @@ public:
     }
 
     /**
-     * Constructor with an Thread Ip6 address.
+     * Constructor with an Ip6 address.
      *
-     * @param[in]   aAddress    The Thread Ip6 address.
+     * @param[in]   aAddress    The Ip6 address.
      *
      */
-    Ip6Address(const otIp6Address &aAddress);
+    Ip6Address(const uint8_t (&aAddress)[16]);
 
     /**
      * This method overloads `<` operator and compares if the Ip6 address is smaller than the other address.
