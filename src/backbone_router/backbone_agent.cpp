@@ -109,15 +109,15 @@ void BackboneAgent::HandleBackboneRouterMulticastListenerEvent(otBackboneRouterM
                                                                const otIp6Address &                   aAddress)
 {
     otbrLog(OTBR_LOG_INFO, "BackboneAgent: Multicast Listener event: %d, address: %s, state: %s", aEvent,
-            Ip6Address(aAddress).ToString().c_str(), StateToString(mBackboneRouterState));
+            Ip6Address(aAddress.mFields.m8).ToString().c_str(), StateToString(mBackboneRouterState));
 
     switch (aEvent)
     {
     case OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED:
-        mSMCRouteManager.Add(Ip6Address(aAddress));
+        mSMCRouteManager.Add(Ip6Address(aAddress.mFields.m8));
         break;
     case OT_BACKBONE_ROUTER_MULTICAST_LISTENER_REMOVED:
-        mSMCRouteManager.Remove(Ip6Address(aAddress));
+        mSMCRouteManager.Remove(Ip6Address(aAddress.mFields.m8));
         break;
     }
 }
