@@ -37,6 +37,7 @@
 #include <chrono>
 #include <memory>
 
+#include <openthread/backbone_router_ftd.h>
 #include <openthread/instance.h>
 #include <openthread/openthread-system.h>
 
@@ -154,6 +155,12 @@ private:
         static_cast<ControllerOpenThread *>(aContext)->HandleStateChanged(aFlags);
     }
     void HandleStateChanged(otChangedFlags aFlags);
+
+    static void HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
+                                                           otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address *                   aAddress);
+    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address *                   aAddress);
 
     otInstance *mInstance;
 

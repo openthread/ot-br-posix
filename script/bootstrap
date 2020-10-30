@@ -43,7 +43,7 @@ install_packages_apt()
         libreadline-dev \
         libncurses-dev
 
-    sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
+    sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake automake autoconf pkg-config
 
     with RELEASE || sudo apt-get install --no-install-recommends -y libcpputest-dev
 
@@ -86,6 +86,9 @@ install_packages_apt()
 
     # libjsoncpp
     sudo apt-get install --no-install-recommends -y libjsoncpp1 libjsoncpp-dev
+
+    # reference device
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd
 }
 
 install_packages_opkg()
@@ -100,7 +103,7 @@ install_packages_rpm()
     else
         PM=yum
     fi
-    sudo $PM install -y gcc gcc-c++
+    sudo $PM install -y gcc gcc-c++ automake autoconf pkg-config
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel

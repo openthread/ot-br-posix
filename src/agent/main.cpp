@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     int                    opt;
     int                    ret                   = EXIT_SUCCESS;
     const char *           interfaceName         = kDefaultInterfaceName;
-    const char *           backboneInterfaceName = nullptr;
+    const char *           backboneInterfaceName = "";
     otbr::Ncp::Controller *ncp                   = nullptr;
     bool                   verbose               = false;
     bool                   printRadioVersion     = false;
@@ -282,11 +282,17 @@ int main(int argc, char *argv[])
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
-    otbrLog(OTBR_LOG_INFO, "Backbone interface %s",
-            backboneInterfaceName == nullptr ? "(null)" : backboneInterfaceName);
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
+#endif
 
     {
         otbr::AgentInstance instance(ncp);
+
+        otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
+#if OTBR_ENABLE_BACKBONE_ROUTER
+        otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
+#endif
 
         SuccessOrExit(ret = instance.Init());
 
