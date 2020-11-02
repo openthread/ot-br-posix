@@ -1304,10 +1304,12 @@ exit:
     return 0;
 }
 
-void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
+void UbusServer::HandleDiagnosticGetResponse(otError              aError,
+                                             otMessage *          aMessage,
+                                             const otMessageInfo *aMessageInfo,
+                                             void *               aContext)
 {
-    static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(aMessage,
-                                                                     *static_cast<const otMessageInfo *>(aMessageInfo));
+    static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(aError, aMessage, aMessageInfo);
 }
 
 static bool IsRoutingLocator(const otIp6Address *aAddress)
@@ -1322,7 +1324,7 @@ static bool IsRoutingLocator(const otIp6Address *aAddress)
             aAddress->mFields.m8[14] < kAloc16Mask && (aAddress->mFields.m8[14] & kRloc16ReservedBitMask) == 0);
 }
 
-void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo &aMessageInfo)
+void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
     uint16_t              rloc16;
     uint16_t              sockRloc16 = 0;
@@ -1331,6 +1333,8 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
     char                  xrloc[10];
     otNetworkDiagTlv      diagTlv;
     otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
+
+    SuccessOrExit(aError);
 
     char networkdata[20];
     sprintf(networkdata, "networkdata%d", sBufNum);
@@ -1409,6 +1413,12 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
     }
 
     blobmsg_close_table(&mNetworkdataBuf, sJsonUri);
+
+exit:
+    if (aError != OT_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_WARNING, "failed to receive diagnostic response: %s", otThreadErrorToString(aError));
+    }
 }
 
 int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
