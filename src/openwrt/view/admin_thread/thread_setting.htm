@@ -2,7 +2,6 @@
 	local ubus = require "ubus"
 	local sys = require "luci.sys"
 	local utl = require "luci.util"
-	local state = threadget("state").State
 
 	function connect_ubus(methods)
 		local result
@@ -17,6 +16,16 @@
 		return result
 	end
 
+	function threadget(action)
+		local result = connect_ubus(action)
+		
+		return result
+	end
+
+	local state = threadget("state").State
+
+
+
 	function addrlist()
 		local k, v
 		local l = { }
@@ -30,11 +39,7 @@
 		return l
 	end
 
-	function threadget(action)
-		local result = connect_ubus(action)
 
-		return result
-	end
 -%>
 <%+header%>
 
