@@ -545,13 +545,15 @@ exit:
     }
 }
 
-void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
+void Resource::DiagnosticResponseHandler(otError              aError,
+                                         otMessage *          aMessage,
+                                         const otMessageInfo *aMessageInfo,
+                                         void *               aContext)
 {
-    static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aMessage,
-                                                                 *static_cast<const otMessageInfo *>(aMessageInfo));
+    static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
 }
 
-void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo)
+void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
     std::vector<otNetworkDiagTlv> diagSet;
     otNetworkDiagTlv              diagTlv;
@@ -559,6 +561,10 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
     otError                       error;
     char                          rloc[7];
     std::string                   keyRloc = "0xffee";
+
+    SuccessOrExit(aError);
+
+    (void)aMessageInfo;
 
     while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
     {
@@ -570,6 +576,12 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
         diagSet.push_back(diagTlv);
     }
     UpdateDiag(keyRloc, diagSet);
+
+exit:
+    if (aError != OT_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_WARNING, "failed to get diagnostic data: %s", otThreadErrorToString(aError));
+    }
 }
 
 } // namespace rest
