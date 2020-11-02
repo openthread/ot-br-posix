@@ -1341,9 +1341,9 @@ void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage
     sJsonUri = blobmsg_open_table(&mNetworkdataBuf, networkdata);
     sBufNum++;
 
-    if (IsRoutingLocator(&aMessageInfo.mSockAddr))
+    if (IsRoutingLocator(&aMessageInfo->mSockAddr))
     {
-        sockRloc16 = aMessageInfo.mPeerAddr.mFields.m16[7];
+        sockRloc16 = aMessageInfo->mPeerAddr.mFields.m16[7];
         sprintf(xrloc, "0x%04x", sockRloc16);
         blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
     }
