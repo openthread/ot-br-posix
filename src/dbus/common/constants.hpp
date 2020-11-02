@@ -79,6 +79,7 @@
 #define OTBR_DBUS_PROPERTY_INSTANT_RSSI "InstantRssi"
 #define OTBR_DBUS_PROPERTY_RADIO_TX_POWER "RadioTxPower"
 #define OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES "ExternalRoutes"
+#define OTBR_DBUS_PROPERTY_REGION "Region"
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
 #define OTBR_ROLE_NAME_DETACHED "detached"
