@@ -29,6 +29,8 @@
 #ifndef OTBR_COMMON_CODE_UTILS_HPP_
 #define OTBR_COMMON_CODE_UTILS_HPP_
 
+#include <openthread/platform/toolchain.h>
+
 /**
  *  This aligns the pointer to @p aAlignType.
  *
@@ -141,5 +143,9 @@
     } while (false)
 
 #define OTBR_NOOP
+#define OTBR_UNUSED_VARIABLE(variable) ((void)(variable))
+
+#define OTBR_TOOL_PACKED_BEGIN OT_TOOL_PACKED_BEGIN
+#define OTBR_TOOL_PACKED_END OT_TOOL_PACKED_END
 
 #endif // OTBR_COMMON_CODE_UTILS_HPP_

@@ -41,6 +41,7 @@ add_executable(steering-data
 )
 target_link_libraries(steering-data PRIVATE
     otbr-config
+    otbr-common
     otbr-utils
     mbedtls
 )

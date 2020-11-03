@@ -173,6 +173,17 @@ private:
     }
     void HandleStateChanged(otChangedFlags aFlags);
 
+    static void HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+                                                      otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
+    void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
+
+    static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
+                                                 otBackboneRouterNdProxyEvent aEvent,
+                                                 const otIp6Address *         aAddress);
+    void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
+
     static void HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
                                                            otBackboneRouterMulticastListenerEvent aEvent,
                                                            const otIp6Address *                   aAddress);

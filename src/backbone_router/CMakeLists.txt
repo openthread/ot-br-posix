@@ -28,10 +28,12 @@
 
 add_library(otbr-backbone-router
     backbone_agent.cpp
+    nd_proxy.cpp
     smcroute_manager.cpp
 )
 
 target_link_libraries(otbr-backbone-router PRIVATE
     otbr-common
     otbr-utils
+    netfilter_queue
 )
