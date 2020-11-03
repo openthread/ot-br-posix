@@ -71,10 +71,7 @@ void Ip6Address::CopyTo(struct sockaddr_in6 &aSockAddr) const
 
 void Ip6Address::CopyTo(struct in6_addr &aIn6Addr) const
 {
-    aIn6Addr.s6_addr32[0] = m32[0];
-    aIn6Addr.s6_addr32[1] = m32[1];
-    aIn6Addr.s6_addr32[2] = m32[2];
-    aIn6Addr.s6_addr32[3] = m32[3];
+    memcpy(aIn6Addr.s6_addr, m8, sizeof(aIn6Addr.s6_addr));
 }
 
 otbrError Ip6Address::FromString(const char *aStr, Ip6Address &aAddr)
