@@ -236,7 +236,7 @@ public:
     /**
      * This method copies the Ip6 address to a `in6_addr` structure.
      *
-     * @param[out] aSockAddr  The `in6_addr` structure to copy the Ip6 adress to.
+     * @param[out] aIn6Addr  The `in6_addr` structure to copy the Ip6 adress to.
      *
      */
     void CopyTo(struct in6_addr &aIn6Addr) const;

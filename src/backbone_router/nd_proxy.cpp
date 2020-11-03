@@ -104,7 +104,6 @@ void NdProxyManager::Disable(void)
 
 exit:
     otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
-    return;
 }
 
 void NdProxyManager::Init(void)
@@ -251,7 +250,6 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
 
 exit:
     otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
-    return;
 }
 
 void NdProxyManager::ProcessUnicastNeighborSolicition(void)
@@ -292,8 +290,8 @@ void NdProxyManager::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEve
         }
 
         SendNeighborAdvertisement(target, Ip6Address::GetLinkLocalAllNodesMulticastAddress());
+        break;
     }
-    break;
     case OT_BACKBONE_ROUTER_NDPROXY_REMOVED:
         mNdProxySet.erase(target);
         LeaveSolicitedNodeMulticastGroup(target);
@@ -475,7 +473,7 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
                                          struct nfq_data *    aNfData,
                                          void *               aContext)
 {
-    return reinterpret_cast<NdProxyManager *>(aContext)->HandleNetfilterQueue(aNfQueueHandler, aNfMsg, aNfData);
+    return static_cast<NdProxyManager *>(aContext)->HandleNetfilterQueue(aNfQueueHandler, aNfMsg, aNfData);
 }
 
 int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
