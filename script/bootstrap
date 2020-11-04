@@ -43,7 +43,7 @@ install_packages_apt()
         libreadline-dev \
         libncurses-dev
 
-    sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake automake autoconf pkg-config
+    sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
 
     with RELEASE || sudo apt-get install --no-install-recommends -y libcpputest-dev
 
@@ -106,7 +106,7 @@ install_packages_rpm()
     else
         PM=yum
     fi
-    sudo $PM install -y gcc gcc-c++ automake autoconf pkg-config
+    sudo $PM install -y gcc gcc-c++
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel

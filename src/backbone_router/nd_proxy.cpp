@@ -48,10 +48,12 @@
 #error "Platform not supported"
 #endif
 
+#include "agent/instance_params.hpp"
 #include "backbone_router/constants.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#include "utils/system_utils.hpp"
 
 namespace otbr {
 namespace BackboneRouter {
