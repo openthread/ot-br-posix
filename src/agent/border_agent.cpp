@@ -180,6 +180,10 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+#endif
+
     if (mPublisher != nullptr)
     {
         mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
@@ -188,6 +192,9 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+#endif
     if (mPublisher != nullptr)
     {
         mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
