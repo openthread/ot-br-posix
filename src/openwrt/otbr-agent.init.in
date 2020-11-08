@@ -1,3 +1,4 @@
+#!/bin/sh /etc/rc.common
 #
 #  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
@@ -26,7 +27,6 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-#!/bin/sh /etc/rc.common
 
 START=90
 
