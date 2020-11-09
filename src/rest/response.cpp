@@ -88,7 +88,7 @@ void Response::SetResponsCode(std::string &aCode)
     mCode = aCode;
 }
 
-void Response::SetCallback(void)
+void Response::SetHasCallback(void)
 {
     mCallback = true;
 }

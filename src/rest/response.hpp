@@ -86,7 +86,7 @@ public:
      *
      *
      */
-    void SetCallback(void);
+    void SetHasCallback(void);
 
     /**
      * This method checks whether this response need to be processed by callback handler later.

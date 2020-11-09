@@ -437,7 +437,7 @@ void Resource::PostCurrentNetworkCommission(const Request &aRequest, Response &a
 exit:
     if (error == PostError::kPostErrorNone)
     {
-        aResponse.SetCallback();
+        aResponse.SetHasCallback();
 
         aResponse.SetStartTime(steady_clock::now());
     }
@@ -472,7 +472,7 @@ void Resource::CurrentNetwork(const Request &aRequest, Response &aResponse) cons
 void Resource::PutCurrentNetwork(Response &aResponse) const
 {
     otInstanceFactoryReset(mInstance);
-    aResponse.SetCallback();
+    aResponse.SetHasCallback();
     aResponse.SetStartTime(steady_clock::now());
 }
 
@@ -990,7 +990,7 @@ void Resource::Networks(const Request &aRequest, Response &aResponse) const
 void Resource::PostNetworks(Response &aResponse) const
 {
     otInstanceFactoryReset(mInstance);
-    aResponse.SetCallback();
+    aResponse.SetHasCallback();
     aResponse.SetStartTime(steady_clock::now());
 }
 
@@ -1118,7 +1118,7 @@ exit:
 
 void Resource::GetNetworks(Response &aResponse) const
 {
-    aResponse.SetCallback();
+    aResponse.SetHasCallback();
     aResponse.SetStartTime(steady_clock::now());
     auto threadHelper = mNcp->GetThreadHelper();
     threadHelper->Scan(std::bind(&Resource::NetworksResponseHandler, const_cast<Resource *>(this), &aResponse, _1, _2));
@@ -1235,7 +1235,7 @@ exit:
     if (error == OTBR_ERROR_NONE)
     {
         aResponse.SetStartTime(steady_clock::now());
-        aResponse.SetCallback();
+        aResponse.SetHasCallback();
     }
     else
     {
