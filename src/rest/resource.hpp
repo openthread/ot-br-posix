@@ -101,18 +101,6 @@ public:
      */
     void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
 
-    /**
-     * This method is a pre-defined callback function used for call another private method when diagnostic information
-     * arrives.
-     *
-     * @param[in]      aMessage  A pointer to the message buffer containing the received Network Diagnostic
-     *                           Get response payload.
-     * @param[in]      aMessageInfo A pointer to the message info for @p aMessage .
-     * @param[in]      aContext    A pointer to application-specific context.
-     *
-     */
-    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-
 private:
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
     typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
@@ -140,7 +128,12 @@ private:
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
-    void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
+
+    static void DiagnosticResponseHandler(otError              aError,
+                                          otMessage *          aMessage,
+                                          const otMessageInfo *aMessageInfo,
+                                          void *               aContext);
+    void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
     otInstance *          mInstance;
     ControllerOpenThread *mNcp;

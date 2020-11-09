@@ -85,16 +85,22 @@ void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr);
 void otbrLog(int aLevel, const char *aFormat, ...);
 
 /**
- * This function log a action result according to @p aError.
+ * This macro log a action result according to @p aError.
  *
  * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_INFO,
  * otherwise OTBR_LOG_WARNING.
  *
- * @param[in]   aAction The action description.
  * @param[in]   aError  The action result.
+ * @param[in]   aFormat Format string as in printf.
  *
  */
-void otbrLogResult(const char *aAction, otbrError aError);
+#define otbrLogResult(aError, aFormat, ...)                                                                \
+    do                                                                                                     \
+    {                                                                                                      \
+        otbrError _err = (aError);                                                                         \
+        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, aFormat ": %s", ##__VA_ARGS__, \
+                otbrErrorString(_err));                                                                    \
+    } while (0)
 
 /**
  * This function log at level @p aLevel.

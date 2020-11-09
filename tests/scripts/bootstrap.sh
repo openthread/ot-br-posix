@@ -126,7 +126,7 @@ case "$(uname)" in
         fi
 
         if [ "$BUILD_TARGET" == pretty-check ]; then
-            sudo apt-get install -y clang-format-10 shellcheck
+            sudo apt-get install -y clang-format-9 shellcheck
             sudo snap install shfmt
         fi
 

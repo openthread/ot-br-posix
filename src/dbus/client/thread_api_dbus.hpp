@@ -268,6 +268,17 @@ public:
     ClientError SetLinkMode(const LinkModeConfig &aConfig);
 
     /**
+     * This method sets the region.
+     *
+     * @param[in]   aRegion   The region, can be CA, US or WW.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     *
+     */
+    ClientError SetRegion(const std::string &aRegion);
+
+    /**
      * This method gets the link operating mode.
      *
      * @param[out]  aConfig   The operating mode config.
@@ -579,6 +590,17 @@ public:
      *
      */
     ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
+
+    /**
+     * This method gets the region.
+     *
+     * @param[out]  aRegion    The region, can be CA, US or WW.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     *
+     */
+    ClientError GetRegion(std::string &aRegion);
 
     /**
      * This method returns the network interface name the client is bound to.

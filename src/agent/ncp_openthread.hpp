@@ -37,11 +37,13 @@
 #include <chrono>
 #include <memory>
 
+#include <openthread/backbone_router_ftd.h>
 #include <openthread/instance.h>
 #include <openthread/openthread-system.h>
 
 #include "ncp.hpp"
 #include "agent/thread_helper.hpp"
+#include "common/region_code.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -86,6 +88,22 @@ public:
      *
      */
     otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
+
+    /**
+     * This method sets the region code.
+     *
+     * @param[in]   aCode   The region code.
+     *
+     */
+    void SetRegionCode(const std::string &aCode) { mRegionCode = aCode; }
+
+    /**
+     * This method gets the region code.
+     *
+     * @retval  The region code.
+     *
+     */
+    std::string GetRegionCode(void) { return mRegionCode; }
 
     /**
      * This method updates the fd_set to poll.
@@ -155,6 +173,23 @@ private:
     }
     void HandleStateChanged(otChangedFlags aFlags);
 
+    static void HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+                                                      otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
+    void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
+
+    static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
+                                                 otBackboneRouterNdProxyEvent aEvent,
+                                                 const otIp6Address *         aAddress);
+    void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
+
+    static void HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
+                                                           otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address *                   aAddress);
+    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address *                   aAddress);
+
     otInstance *mInstance;
 
     otPlatformConfig                                                                mConfig;
@@ -162,6 +197,7 @@ private:
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
     bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
+    std::string                                                                     mRegionCode;
 };
 
 } // namespace Ncp

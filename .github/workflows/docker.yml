@@ -45,9 +45,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - build_args: ""
+          - image_tag: "latest"
+            build_args: ""
             push: yes
-          - build_args: "--build-arg OT_BACKBONE_CI=1"
+          - image_tag: "reference-device"
+            build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg NAT64=0"
+            push: yes
+          - image_tag: "test"
+            build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg OT_BACKBONE_CI=1"
+            push: no
     steps:
     - uses: actions/checkout@v2
       with:
@@ -64,18 +70,18 @@ jobs:
       run: |
         DOCKER_IMAGE=openthread/otbr
         DOCKER_PLATFORMS=linux/amd64,linux/arm/v7,linux/arm64
-        VERSION=latest
+        VERSION=${{ matrix.image_tag }}
 
         TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
 
         echo ::set-output name=docker_image::${DOCKER_IMAGE}
         echo ::set-output name=version::${VERSION}
-        echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
+        echo ::set-output name=buildx_args::"--platform ${DOCKER_PLATFORMS} \
           --build-arg VERSION=${VERSION} \
           --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
           --build-arg VCS_REF=${GITHUB_SHA::8} \
           ${{ matrix.build_args }} \
-          ${TAGS} --file etc/docker/Dockerfile .
+          ${TAGS} --file etc/docker/Dockerfile ."
 
     - name: Docker Buildx (build)
       run: |

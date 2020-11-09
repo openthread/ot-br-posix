@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,53 +28,44 @@
 
 /**
  * @file
- *   This file includes implementation for Thread border router agent instance.
+ *   This file includes definition for Thread Backbone constants.
  */
 
-#include "agent/agent_instance.hpp"
+#ifndef BACKBONE_CONSTANTS_HPP_
+#define BACKBONE_CONSTANTS_HPP_
 
-#include <assert.h>
+#include <openthread/backbone_router_ftd.h>
 
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
+#include "agent/ncp_openthread.hpp"
+#include "backbone_router/nd_proxy.hpp"
+#include "backbone_router/smcroute_manager.hpp"
 
 namespace otbr {
+namespace BackboneRouter {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
-    : mNcp(aNcp)
-    , mBorderAgent(aNcp)
+/**
+ * @addtogroup border-router-bbr
+ *
+ * @brief
+ *   This module includes definition for Thread Backbone constants.
+ *
+ * @{
+ */
+
+/**
+ * Backbone configurations.
+ *
+ */
+enum
 {
-}
+    kDuaRecentTime = 20, ///< Time period (in seconds) during which a DUA registration is considered 'recent' at a BBR.
+};
 
-otbrError AgentInstance::Init(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
+/**
+ * @}
+ */
 
-    SuccessOrExit(error = mNcp->Init());
-
-    mBorderAgent.Init();
-
-exit:
-    otbrLogResult(error, "Initialize OpenThread Border Router Agent");
-    return error;
-}
-
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
-{
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
-}
-
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
-{
-    mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
-}
-
-AgentInstance::~AgentInstance(void)
-{
-    Ncp::Controller::Destroy(mNcp);
-}
-
+} // namespace BackboneRouter
 } // namespace otbr
+
+#endif // BACKBONE_CONSTANTS_HPP_

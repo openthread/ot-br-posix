@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,55 +26,45 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes implementation for Thread border router agent instance.
- */
+#include "region_code.hpp"
 
-#include "agent/agent_instance.hpp"
+namespace {
 
-#include <assert.h>
+constexpr uint32_t kChannelMask11To24 = 0x1fff800;
+constexpr uint32_t kChannelMask11To25 = 0x3fff800;
+constexpr uint32_t kChannelMask11To26 = 0x7fff800;
 
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
+constexpr char kRegionCodeUS[] = "US";
+constexpr char kRegionCodeCA[] = "CA";
+
+} // namespace
 
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
-    : mNcp(aNcp)
-    , mBorderAgent(aNcp)
+uint32_t GetSupportedChannelMaskForRegion(const std::string &aRegionCode)
 {
+    uint32_t mask = kChannelMask11To26;
+
+    // US or CA
+    if (aRegionCode == kRegionCodeUS || aRegionCode == kRegionCodeCA)
+    {
+        mask = kChannelMask11To25;
+    }
+
+    return mask;
 }
 
-otbrError AgentInstance::Init(void)
+uint32_t GetPreferredChannelMaskForRegion(const std::string &aRegionCode)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    uint32_t mask = kChannelMask11To26;
 
-    SuccessOrExit(error = mNcp->Init());
+    // US or CA
+    if (aRegionCode == kRegionCodeUS || aRegionCode == kRegionCodeCA)
+    {
+        mask = kChannelMask11To24;
+    }
 
-    mBorderAgent.Init();
-
-exit:
-    otbrLogResult(error, "Initialize OpenThread Border Router Agent");
-    return error;
-}
-
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
-{
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
-}
-
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
-{
-    mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
-}
-
-AgentInstance::~AgentInstance(void)
-{
-    Ncp::Controller::Destroy(mNcp);
+    return mask;
 }
 
 } // namespace otbr

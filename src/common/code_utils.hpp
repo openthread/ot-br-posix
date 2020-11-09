@@ -29,6 +29,8 @@
 #ifndef OTBR_COMMON_CODE_UTILS_HPP_
 #define OTBR_COMMON_CODE_UTILS_HPP_
 
+#include <openthread/platform/toolchain.h>
+
 /**
  *  This aligns the pointer to @p aAlignType.
  *
@@ -66,6 +68,24 @@
     } while (false)
 
 /**
+ * This macro verifies a given error status to be successful (compared against value zero (0)), otherwise, it emits a
+ * given error messages and exits the program.
+ *
+ * @param[in]  aStatus     A scalar error status to be evaluated against zero (0).
+ * @param[in]  aMessage    A message (text string) to print on failure.
+ *
+ */
+#define SuccessOrDie(aStatus, aMessage)                                                     \
+    do                                                                                      \
+    {                                                                                       \
+        if ((aStatus) != 0)                                                                 \
+        {                                                                                   \
+            otbrLog(OTBR_LOG_EMERG, "FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
+            exit(-1);                                                                       \
+        }                                                                                   \
+    } while (false)
+
+/**
  *  This checks for the specified condition, which is expected to
  *  commonly be true, and both executes @a ... and branches to the
  *  local label 'exit' if the condition is false.
@@ -83,6 +103,24 @@
             __VA_ARGS__;              \
             goto exit;                \
         }                             \
+    } while (false)
+
+/**
+ * This macro checks for the specified condition, which is expected to commonly be true,
+ * and both prints the message and terminates the program if the condition is false.
+ *
+ * @param[in]   aCondition  The condition to verify
+ * @param[in]   aMessage    A message (text string) to print on failure.
+ *
+ */
+#define VerifyOrDie(aCondition, aMessage)                                                   \
+    do                                                                                      \
+    {                                                                                       \
+        if (!(aCondition))                                                                  \
+        {                                                                                   \
+            otbrLog(OTBR_LOG_EMERG, "FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
+            exit(-1);                                                                       \
+        }                                                                                   \
     } while (false)
 
 /**
@@ -105,5 +143,9 @@
     } while (false)
 
 #define OTBR_NOOP
+#define OTBR_UNUSED_VARIABLE(variable) ((void)(variable))
+
+#define OTBR_TOOL_PACKED_BEGIN OT_TOOL_PACKED_BEGIN
+#define OTBR_TOOL_PACKED_END OT_TOOL_PACKED_END
 
 #endif // OTBR_COMMON_CODE_UTILS_HPP_

@@ -374,6 +374,11 @@ ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)
     return SetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);
 }
 
+ClientError ThreadApiDBus::SetRegion(const std::string &aRegion)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_REGION, aRegion);
+}
+
 ClientError ThreadApiDBus::GetLinkMode(LinkModeConfig &aConfig)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);
@@ -508,6 +513,11 @@ ClientError ThreadApiDBus::GetRadioTxPower(int8_t &aTxPower)
 ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
+}
+
+ClientError ThreadApiDBus::GetRegion(std::string &aRegion)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_REGION, aRegion);
 }
 
 std::string ThreadApiDBus::GetInterfaceName(void)

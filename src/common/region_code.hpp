@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,55 +26,33 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes implementation for Thread border router agent instance.
- */
+#ifndef OTBR_COMMON_REGION_CODE_HPP_
+#define OTBR_COMMON_REGION_CODE_HPP_
 
-#include "agent/agent_instance.hpp"
-
-#include <assert.h>
-
-#include "common/code_utils.hpp"
-#include "common/logging.hpp"
+#include <string>
 
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
-    : mNcp(aNcp)
-    , mBorderAgent(aNcp)
-{
-}
+/**
+ * This method returns the supported channel mask for a region code.
+ *
+ *
+ * @param[in] aRegionCode   The region code.
+ * @returns The supported channel mask.
+ *
+ */
+uint32_t GetSupportedChannelMaskForRegion(const std::string &aRegionCode);
 
-otbrError AgentInstance::Init(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    SuccessOrExit(error = mNcp->Init());
-
-    mBorderAgent.Init();
-
-exit:
-    otbrLogResult(error, "Initialize OpenThread Border Router Agent");
-    return error;
-}
-
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
-{
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
-}
-
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
-{
-    mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
-}
-
-AgentInstance::~AgentInstance(void)
-{
-    Ncp::Controller::Destroy(mNcp);
-}
+/**
+ * This method returns the preferred channel mask for a region code.
+ *
+ * @param[in] aRegionCode   The region code.
+ *
+ * @returns The preferred channel mask.
+ *
+ */
+uint32_t GetPreferredChannelMaskForRegion(const std::string &aRegionCode);
 
 } // namespace otbr
+
+#endif // OTBR_COMMON_REGION_CODE_HPP_
