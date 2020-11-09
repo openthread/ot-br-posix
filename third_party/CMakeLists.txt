@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_subdirectory(openthread EXCLUDE_FROM_ALL)
+add_subdirectory(openthread)
 
 if(OTBR_REST)
     add_subdirectory(angular)

@@ -46,3 +46,7 @@ endif()
 if(OTBR_REST)
     add_subdirectory(rest)
 endif()
+
+if (OTBR_BACKBONE_ROUTER)
+    add_subdirectory(backbone_router)
+endif()

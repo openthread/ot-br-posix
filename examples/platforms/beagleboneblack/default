@@ -38,3 +38,4 @@ DHCPV6_PD=1
 NETWORK_MANAGER=1
 # disabled unless specifically added for the device
 NETWORK_MANAGER_WIFI=0
+BACKBONE_ROUTER=0

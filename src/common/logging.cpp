@@ -132,7 +132,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
 
 const char *otbrErrorString(otbrError aError)
 {
-    const char *error = nullptr;
+    const char *error;
 
     switch (aError)
     {
@@ -156,16 +156,31 @@ const char *otbrErrorString(otbrError aError)
         error = "OpenThread error";
         break;
 
+    case OTBR_ERROR_SMCROUTE:
+        error = "SMCRoute error";
+        break;
+
+    case OTBR_ERROR_NOT_FOUND:
+        error = "Not found";
+        break;
+
+    case OTBR_ERROR_PARSE:
+        error = "Parse error";
+        break;
+
+    case OTBR_ERROR_NOT_IMPLEMENTED:
+        error = "Not implemented";
+        break;
+
+    case OTBR_ERROR_INVALID_ARGS:
+        error = "Invalid arguments";
+        break;
+
     default:
-        assert(false);
+        error = "Unknown";
     }
 
     return error;
-}
-
-void otbrLogResult(const char *aAction, otbrError aError)
-{
-    otbrLog((aError == OTBR_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING), "%s: %s", aAction, otbrErrorString(aError));
 }
 
 void otbrLogDeinit(void)

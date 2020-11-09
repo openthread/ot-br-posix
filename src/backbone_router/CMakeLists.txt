@@ -1,6 +1,5 @@
-#!/bin/bash
 #
-#  Copyright (c) 2018, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,48 +26,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-CLANG_FORMAT_VERSION="clang-format version 9.0"
+add_library(otbr-backbone-router
+    backbone_agent.cpp
+    nd_proxy.cpp
+    smcroute_manager.cpp
+)
 
-die()
-{
-    echo " *** ERROR: $*"
-    exit 1
-}
-
-# Aliases are not expanded when the shell is not interactive, unless the
-# expand_aliases shell option is set using shopt.
-shopt -s expand_aliases
-
-if command -v clang-format-9 >/dev/null; then
-    alias clang-format=clang-format-9
-elif command -v clang-format >/dev/null; then
-    case "$(clang-format --version)" in
-        "$CLANG_FORMAT_VERSION"*) ;;
-
-        *)
-            die "$(clang-format --version); clang-format 9.0 required"
-            ;;
-    esac
-else
-    die "clang-format 9.0 required"
-fi
-
-clang-format "$@" || die
-
-# ensure EOF newline
-REPLACE=no
-for arg; do
-    case $arg in
-        -i)
-            REPLACE=yes
-            ;;
-    esac
-done
-
-file=$arg
-
-[ $REPLACE != yes ] || {
-    [ -n "$(tail -c1 "$file")" ] && echo >>"$file"
-}
-
-exit 0
+target_link_libraries(otbr-backbone-router PRIVATE
+    otbr-common
+    otbr-utils
+    netfilter_queue
+)

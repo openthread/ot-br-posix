@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) 2018, The OpenThread Authors.
+#  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,49 +26,34 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+#   Description:
+#       This script manipulates smcroute configuration.
+#
 
-CLANG_FORMAT_VERSION="clang-format version 9.0"
-
-die()
+smcroute_uninstall()
 {
-    echo " *** ERROR: $*"
-    exit 1
+    with BACKBONE_ROUTER || return 0
+
+    sudo smcroutectl kill || true
+
+    test -d "$BUILD_DIR"/smcroute || return 0
+
+    (cd "$BUILD_DIR"/smcroute \
+        && (test ! -f config.status || sudo make uninstall))
 }
 
-# Aliases are not expanded when the shell is not interactive, unless the
-# expand_aliases shell option is set using shopt.
-shopt -s expand_aliases
+smcroute_install()
+{
+    with BACKBONE_ROUTER || return 0
 
-if command -v clang-format-9 >/dev/null; then
-    alias clang-format=clang-format-9
-elif command -v clang-format >/dev/null; then
-    case "$(clang-format --version)" in
-        "$CLANG_FORMAT_VERSION"*) ;;
+    test -d "$BUILD_DIR"/smcroute || (cd "$BUILD_DIR" \
+        && git clone -b ip6_mf --depth 1 https://github.com/librasungirl/smcroute.git) || die 'Failed to download source code of SMCRoute!'
 
-        *)
-            die "$(clang-format --version); clang-format 9.0 required"
-            ;;
-    esac
-else
-    die "clang-format 9.0 required"
-fi
-
-clang-format "$@" || die
-
-# ensure EOF newline
-REPLACE=no
-for arg; do
-    case $arg in
-        -i)
-            REPLACE=yes
-            ;;
-    esac
-done
-
-file=$arg
-
-[ $REPLACE != yes ] || {
-    [ -n "$(tail -c1 "$file")" ] && echo >>"$file"
+    (
+        cd "$BUILD_DIR"/smcroute || return 1
+        test -f configure || ./autogen.sh
+        test -f config.status || ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+        make
+        sudo make install
+    )
 }
-
-exit 0

@@ -757,21 +757,26 @@ public:
     /**
      * This method handle initial diagnostic get response.
      *
+     * @param[in]   aError          A error of receiving the diagnostic response.
      * @param[in]   aMessage        A pointer to the message.
      * @param[in]   aMessageInfo    A pointer to the message information.
      * @param[in]   aContext        A pointer to the context.
      *
      */
-    static void HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
+    static void HandleDiagnosticGetResponse(otError              aError,
+                                            otMessage *          aMessage,
+                                            const otMessageInfo *aMessageInfo,
+                                            void *               aContext);
 
     /**
      * This method handle diagnosticget response.
      *
+     * @param[in]   aError          A error of receiving the diagnostic response.
      * @param[in]   aMessage        A pointer to the message.
      * @param[in]   aMessageInfo    A pointer to the message information.
      *
      */
-    void HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo &aMessageInfo);
+    void HandleDiagnosticGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
 private:
     bool                       mIfFinishScan;

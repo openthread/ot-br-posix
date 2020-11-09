@@ -92,11 +92,13 @@ LOCAL_CPPFLAGS += -std=c++14
 
 LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
+    src/agent/instance_params.cpp \
     src/agent/border_agent.cpp \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
     src/common/logging.cpp \
+    src/common/region_code.cpp \
     src/dbus/common/dbus_message_dump.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \

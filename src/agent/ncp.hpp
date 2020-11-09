@@ -62,12 +62,16 @@ namespace Ncp {
  */
 enum
 {
-    kEventExtPanId,         ///< Extended PAN ID arrived.
-    kEventNetworkName,      ///< Network name arrived.
-    kEventPSKc,             ///< PSKc arrived.
-    kEventThreadState,      ///< Thread State.
-    kEventThreadVersion,    ///< Thread Version.
-    kEventUdpForwardStream, ///< UDP forward stream arrived.
+    kEventExtPanId,                             ///< Extended PAN ID arrived.
+    kEventNetworkName,                          ///< Network name arrived.
+    kEventPSKc,                                 ///< PSKc arrived.
+    kEventThreadState,                          ///< Thread State.
+    kEventThreadVersion,                        ///< Thread Version.
+    kEventUdpForwardStream,                     ///< UDP forward stream arrived.
+    kEventBackboneRouterState,                  ///< Backbone Router State.
+    kEventBackboneRouterDomainPrefixEvent,      ///< Backbone Router Domain Prefix event.
+    kEventBackboneRouterNdProxyEvent,           ///< Backbone Router ND Proxy event arrived.
+    kEventBackboneRouterMulticastListenerEvent, ///< Backbone Router Multicast Listener event arrived.
 };
 
 /**

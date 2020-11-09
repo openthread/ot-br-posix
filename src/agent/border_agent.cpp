@@ -46,6 +46,7 @@
 
 #include "agent/border_agent.hpp"
 #include "agent/ncp.hpp"
+#include "agent/ncp_openthread.hpp"
 #include "agent/uris.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -87,6 +88,9 @@ BorderAgent::BorderAgent(Ncp::Controller *aNcp)
     : mPublisher(nullptr)
 #endif
     , mNcp(aNcp)
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    , mBackboneAgent(*reinterpret_cast<Ncp::ControllerOpenThread *>(aNcp))
+#endif
     , mThreadStarted(false)
 {
 }
@@ -106,8 +110,12 @@ void BorderAgent::Init(void)
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
     mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
 
-    otbrLogResult("Check if Thread is up", mNcp->RequestEvent(Ncp::kEventThreadState));
-    otbrLogResult("Check if PSKc is initialized", mNcp->RequestEvent(Ncp::kEventPSKc));
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent.Init();
+#endif
+
+    otbrLogResult(mNcp->RequestEvent(Ncp::kEventThreadState), "Check if Thread is up");
+    otbrLogResult(mNcp->RequestEvent(Ncp::kEventPSKc), "Check if PSKc is initialized");
 }
 
 otbrError BorderAgent::Start(void)
@@ -131,7 +139,7 @@ otbrError BorderAgent::Start(void)
     ExitNow();
 
 exit:
-    otbrLogResult("Start Thread Border Agent", error);
+    otbrLogResult(error, "Start Thread Border Agent");
     return error;
 }
 
@@ -172,6 +180,10 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
                               int &    aMaxFd,
                               timeval &aTimeout)
 {
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+#endif
+
     if (mPublisher != nullptr)
     {
         mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
@@ -180,6 +192,9 @@ void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
 
 void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+#endif
     if (mPublisher != nullptr)
     {
         mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);

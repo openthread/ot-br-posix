@@ -98,40 +98,6 @@ public:
      *
      */
     void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode, std::string aErrorDescription) const;
-
-    /**
-     * This method is a pre-defined callback function used for call another private method when diagnostic information
-     * arrives.
-     *
-     * @param[in]  aMessage      A pointer to the message buffer containing the received Network Diagnostic
-     * @param[in]  aMessageInfo  A pointer to the message info for @p aMessage
-     * @param[in]  aContext      A pointer to application-specific context.
-     *
-     */
-    static void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
-
-    /**
-     * This method handles commissioner state changes (callback function).
-     *
-     * @param[in]  aState    The state of commissioner.
-     * @param[in]  aContext  A pointer to the Resource context.
-     *
-     */
-    static void HandleCommissionerStateChanged(otCommissionerState aState, void *aContext);
-
-    /**
-     * This method handle joiner event (callback function).
-     *
-     * @param[in]  aEvent       The joiner event type.
-     * @param[in]  aJoinerInfo  A pointer to the Joiner Info.
-     * @param[in]  aJoinerId    A pointer to the Joiner ID (if not known, it will be NULL).
-     * @param[in]  aContext     A pointer to application-specific context.
-     *
-     */
-    static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
-                                  const otJoinerInfo *      aJoinerInfo,
-                                  const otExtAddress *      aJoinerId,
-                                  void *                    aContext);
     /**
      * This method is a pre-defined callback function used for binding with another callback function defined by
      * thread_helper.
@@ -192,12 +158,24 @@ private:
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
 
-    // private funtion that is called by punlic static function
-    void DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo);
-    void HandleCommissionerStateChanged(otCommissionerState aState) const;
+    static void HandleCommissionerStateChanged(otCommissionerState aState, void *aContext);
+
+    void HandleCommissionerStateChanged(otCommissionerState aState);
+
+    static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
+                                  const otJoinerInfo *      aJoinerInfo,
+                                  const otExtAddress *      aJoinerId,
+                                  void *                    aContext);
+
     void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
                            const otJoinerInfo *      aJoinerInfo,
-                           const otExtAddress *      aJoinerId) const;
+                           const otExtAddress *      aJoinerId);
+
+    static void DiagnosticResponseHandler(otError              aError,
+                                          otMessage *          aMessage,
+                                          const otMessageInfo *aMessageInfo,
+                                          void *               aContext);
+    void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
     otInstance *                     mInstance;
     otbr::Ncp::ControllerOpenThread *mNcp;

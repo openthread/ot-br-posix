@@ -38,6 +38,8 @@ add_executable(otbr-agent
     ncp_openthread.hpp
     thread_helper.cpp
     thread_helper.hpp
+    instance_params.cpp
+    instance_params.hpp
 )
 
 target_link_libraries(otbr-agent PRIVATE
@@ -45,6 +47,7 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
+    $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
     openthread-cli-ftd
     openthread-ftd
     openthread-posix

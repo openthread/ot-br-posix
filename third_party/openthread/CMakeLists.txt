@@ -34,6 +34,14 @@ set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner" FORCE)
 set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(OT_LOG_LEVEL "DEBG" CACHE STRING "set OpenThread log level to DEBG" FORCE)
+else()
+    set(OT_LOG_LEVEL "INFO" CACHE STRING "set OpenThread log level to INFO" FORCE)
+endif()
+
+set(OT_LOG_LEVEL_DYNAMIC ON CACHE BOOL "enable dynamic log level control" FORCE)
 set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
 set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
@@ -47,8 +55,6 @@ add_subdirectory(repo EXCLUDE_FROM_ALL)
 
 target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
-    "-DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_INFO"
     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
 )
-
