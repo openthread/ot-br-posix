@@ -60,6 +60,11 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace Ncp {
 
+const otCliCommand ControllerOpenThread::sRegionCommand = {
+    "region",
+    &ControllerOpenThread::HandleRegionCommand,
+};
+
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
                                            const char *aRadioUrl,
                                            const char *aBackboneInterfaceName)
@@ -132,6 +137,7 @@ otbrError ControllerOpenThread::Init(void)
 #endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
+    otCliSetUserCommands(&sRegionCommand, 1, this);
 
 exit:
     return error;
@@ -320,6 +326,36 @@ void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point a
 void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
 {
     mResetHandlers.emplace_back(std::move(aHandler));
+}
+
+void ControllerOpenThread::HandleRegionCommand(void *aContext, uint8_t aArgLength, char **aArgs)
+{
+    ControllerOpenThread *controller = static_cast<ControllerOpenThread *>(aContext);
+    controller->HandleRegionCommand(aArgLength, aArgs);
+}
+
+void ControllerOpenThread::HandleRegionCommand(uint8_t aArgLength, char **aArgs)
+{
+    if (aArgLength == 0)
+    {
+        otCliOutputFormat("%s\nDone\n", mRegionCode.c_str());
+    }
+    else if (aArgLength == 1)
+    {
+        if (strnlen(aArgs[0], 3) == 2)
+        {
+            mRegionCode = aArgs[0];
+            otCliOutputFormat("Done\n");
+        }
+        else
+        {
+            otCliOutputFormat("Error: InvalidArgs\n");
+        }
+    }
+    else
+    {
+        otCliOutputFormat("Error: InvalidArgs\n");
+    }
 }
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
