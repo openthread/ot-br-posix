@@ -38,6 +38,7 @@
 
 #include "agent/instance_params.hpp"
 #include "agent/ncp_openthread.hpp"
+#include "backbone_router/nd_proxy.hpp"
 #include "backbone_router/smcroute_manager.hpp"
 
 namespace otbr {
@@ -73,20 +74,54 @@ public:
      */
     void Init(void);
 
+    /**
+     * This method updates the fd_set and timeout for mainloop.
+     *
+     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
+     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
+     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
+     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
+     * @param[inout]    aTimeout        A reference to the timeout.
+     *
+     */
+    void UpdateFdSet(fd_set & aReadFdSet,
+                     fd_set & aWriteFdSet,
+                     fd_set & aErrorFdSet,
+                     int &    aMaxFd,
+                     timeval &aTimeout) const;
+
+    /**
+     * This method performs border agent processing.
+     *
+     * @param[in]   aReadFdSet   A reference to read file descriptors.
+     * @param[in]   aWriteFdSet  A reference to write file descriptors.
+     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     *
+     */
+    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+
 private:
-    void               OnBecomePrimary(void);
-    void               OnResignPrimary(void);
-    bool               IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
-    static void        HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments);
-    void               HandleBackboneRouterState(void);
-    static void        HandleBackboneRouterMulticastListenerEvent(void *aContext, int aEvent, va_list aArguments);
-    void               HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
-                                                                  const otIp6Address &                   aAddress);
+    void        OnBecomePrimary(void);
+    void        OnResignPrimary(void);
+    bool        IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
+    static void HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments);
+    void        HandleBackboneRouterState(void);
+    static void HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments);
+    void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
+    static void HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments);
+    void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
+    static void HandleBackboneRouterMulticastListenerEvent(void *aContext, int aEvent, va_list aArguments);
+    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
+                                                           const otIp6Address &                   aAddress);
+
     static const char *StateToString(otBackboneRouterState aState);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
     otBackboneRouterState            mBackboneRouterState;
     SMCRouteManager                  mSMCRouteManager;
+    NdProxyManager                   mNdProxyManager;
+    Ip6Prefix                        mDomainPrefix;
 };
 
 #endif // OTBR_ENABLE_BACKBONE_ROUTER

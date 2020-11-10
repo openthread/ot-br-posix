@@ -38,8 +38,11 @@
 
 #include "agent/instance_params.hpp"
 #include "agent/ncp.hpp"
-#include "backbone_router/backbone_agent.hpp"
 #include "mdns/mdns.hpp"
+
+#if OTBR_ENABLE_BACKBONE_ROUTER
+#include "backbone_router/backbone_agent.hpp"
+#endif
 
 namespace otbr {
 
