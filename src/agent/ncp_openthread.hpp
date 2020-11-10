@@ -38,6 +38,7 @@
 #include <memory>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/cli.h>
 #include <openthread/instance.h>
 #include <openthread/openthread-system.h>
 
@@ -190,6 +191,9 @@ private:
     void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
                                                            const otIp6Address *                   aAddress);
 
+    static void HandleRegionCommand(void *aContext, uint8_t aArgLength, char **aArgs);
+    void        HandleRegionCommand(uint8_t aArgLength, char **aArgs);
+
     otInstance *mInstance;
 
     otPlatformConfig                                                                mConfig;
@@ -198,6 +202,8 @@ private:
     bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
     std::string                                                                     mRegionCode;
+
+    static const otCliCommand sRegionCommand;
 };
 
 } // namespace Ncp
