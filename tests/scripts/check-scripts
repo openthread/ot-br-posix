@@ -75,7 +75,6 @@ main()
     netstat -an | grep 80
     pidof tayga
     kill "${SERVICES_PID}"
-    sudo killall otbr-web || true
     sudo killall otbr-agent || true
     sudo service tayga stop || true
     killall ot-rcp

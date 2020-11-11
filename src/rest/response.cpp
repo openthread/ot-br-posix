@@ -35,16 +35,18 @@
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
     "Access-Control-Request-Headers"
-#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "GET"
+#define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD "*"
+
+using std::chrono::steady_clock;
 
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 Response::Response(void)
     : mCallback(false)
     , mComplete(false)
 {
-    // HTTP protocol
+    // HTTP protocol 1.1
     mProtocol = "HTTP/1.1 ";
 
     // Pre-defined headers
@@ -86,7 +88,7 @@ void Response::SetResponsCode(std::string &aCode)
     mCode = aCode;
 }
 
-void Response::SetCallback(void)
+void Response::SetHasCallback(void)
 {
     mCallback = true;
 }
@@ -122,5 +124,5 @@ std::string Response::Serialize(void) const
     return ret;
 }
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr

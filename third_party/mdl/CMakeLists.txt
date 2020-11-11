@@ -26,9 +26,16 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+install(FILES
+            repo/material.min.js
+            repo/material.min.js.map
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr/frontend/res/js
+)
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/repo/material.min.js
-    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/js)
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/repo/material.min.css
-    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/css)
+install(FILES
+            repo/material.min.css
+            repo/material.min.css.map
+        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr/frontend/res/css
+)

@@ -40,10 +40,8 @@
 
 #include "openthread/netdiag.h"
 
-using std::chrono::steady_clock;
-
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 enum class HttpMethod : std::uint8_t
 {
@@ -58,11 +56,12 @@ enum class HttpMethod : std::uint8_t
 
 enum class HttpStatusCode : std::uint16_t
 {
-    kStatusOk                  = 200,
-    kStatusResourceNotFound    = 404,
-    kStatusMethodNotAllowed    = 405,
-    kStatusRequestTimeout      = 408,
-    kStatusInternalServerError = 500,
+    kStatusOk                  = 200, ///< OK
+    kStatusBadRequest          = 400, ///< Bad Request
+    kStatusResourceNotFound    = 404, ///< Resource Not Found
+    kStatusMethodNotAllowed    = 405, ///< Method Not Allowed
+    kStatusRequestTimeout      = 408, ///< Request Timeout
+    kStatusInternalServerError = 500, ///< Internal Server Error
 };
 
 enum class PostError : std::uint8_t
@@ -84,25 +83,62 @@ enum class ConnectionState : std::uint8_t
     kComplete      = 7, ///< No longer need to be processed
 
 };
+
+struct ActiveScanResult
+{
+    uint8_t              mExtAddress[OT_EXT_ADDRESS_SIZE + 1];   ///< IEEE 802.15.4 Extended Address
+    std::string          mNetworkName;                           ///< Thread Network Name
+    uint8_t              mExtendedPanId[OT_EXT_PAN_ID_SIZE + 1]; ///< Thread Extended PAN ID
+    std::vector<uint8_t> mSteeringData;                          ///< Steering Data
+    uint16_t             mPanId;                                 ///< IEEE 802.15.4 PAN ID
+    uint16_t             mJoinerUdpPort;                         ///< Joiner UDP Port
+    uint8_t              mChannel;                               ///< IEEE 802.15.4 Channel
+    int8_t               mRssi;                                  ///< RSSI (dBm)
+    uint8_t              mLqi;                                   ///< LQI
+    uint8_t              mVersion;                               ///< Version
+    bool                 mIsNative;                              ///< Native Commissioner flag
+    bool                 mIsJoinable;                            ///< Joining Permitted flag
+};
+
+struct NetworkConfiguration
+{
+    bool        mDefaultRoute;
+    uint8_t     mChannel;
+    std::string mMasterKey;
+    std::string mPrefix;
+    std::string mNetworkName;
+    std::string mPanId;
+    std::string mPassphrase;
+    std::string mExtPanId;
+};
+
 struct NodeInfo
 {
+    std::string    mWpanService;
     uint32_t       mRole;
-    uint32_t       mNumOfRouter;
-    uint16_t       mRloc16;
+    uint16_t       mPanId;
+    uint8_t        mChannel;
+    otExtAddress   mEui64;
     const uint8_t *mExtPanId;
-    const uint8_t *mExtAddress;
-    otIp6Address   mRlocAddress;
-    otLeaderData   mLeaderData;
+    const uint8_t *mMeshLocalPrefix;
+    otIp6Address   mMeshLocalAddress;
     std::string    mNetworkName;
+    std::string    mVersion;
 };
 
 struct DiagInfo
 {
-    steady_clock::time_point      mStartTime;
-    std::vector<otNetworkDiagTlv> mDiagContent;
+    std::chrono::steady_clock::time_point mStartTime;
+    std::vector<otNetworkDiagTlv>         mDiagContent;
 };
 
-} // namespace rest
+struct NetworksInfo
+{
+    std::chrono::steady_clock::time_point mStartTime;
+    otActiveScanResult                    mNetworkContent;
+};
+
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_TYPES_HPP_

@@ -54,7 +54,6 @@ readonly OTBR_USE_WEB_COMMISSIONER="${USE_WEB_COMMISSIONER:-0}"
 readonly TEST_BASE=/tmp/test-otbr
 
 readonly OTBR_AGENT=otbr-agent
-readonly OTBR_WEB=otbr-web
 readonly OT_COMMISSIONER_CLI=commissioner-cli
 
 readonly STAGE_DIR="${TEST_BASE}/stage"
@@ -62,16 +61,15 @@ readonly BUILD_DIR="${TEST_BASE}/build"
 readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
-readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
 
 # The node ids
 readonly LEADER_NODE_ID=1
 readonly JOINER_NODE_ID=2
 
-# Web GUI
-readonly OTBR_WEB_HOST=127.0.0.1
-readonly OTBR_WEB_PORT=8773
-readonly OTBR_WEB_URL="http://${OTBR_WEB_HOST}:${OTBR_WEB_PORT}"
+# HTTP REST Server
+readonly OTBR_REST_HOST=127.0.0.1
+readonly OTBR_REST_PORT=8081
+readonly OTBR_REST_URL="http://${OTBR_REST_HOST}:${OTBR_REST_PORT}"
 
 #
 # NOTE Joiner pass phrase:
@@ -207,7 +205,6 @@ test_setup()
     exit_message="JOINER FAILED"
 
     executable_or_die "${OTBR_AGENT_PATH}"
-    executable_or_die "${OTBR_WEB_PATH}"
 
     # Remove flashes
     sudo rm -vrf "${TEST_BASE}/tmp"
@@ -234,7 +231,6 @@ test_teardown()
     write_syslog "EXIT ${EXIT_CODE} - output logs"
 
     sudo pkill -f "${OTBR_AGENT}" || true
-    sudo pkill -f "${OTBR_WEB}" || true
     sudo pkill -f "${OT_COMMISSIONER_CLI}" || true
     sudo pkill -f "${OT_CLI}" || true
     wait
@@ -284,24 +280,6 @@ ba_start()
     write_syslog "AGENT: start complete"
 }
 
-web_start()
-{
-    write_syslog "WEB: kill old"
-    sudo killall "${OTBR_WEB}" || true
-    write_syslog "WEB: starting"
-    (
-        set -e
-        set -x
-
-        cd "${ORIGIN_PWD}"
-        sudo "${OTBR_WEB_PATH}" -I "${TUN_NAME}" -p "${OTBR_WEB_PORT}" -a "${OTBR_WEB_HOST}" &
-    )
-    sleep 15
-
-    pidof ${OTBR_WEB} || die "WEB: failed to start"
-    write_syslog "WEB: start complete"
-}
-
 network_form()
 {
     readonly OT_PANID="$(random_panid)"
@@ -309,7 +287,7 @@ network_form()
     readonly OT_MASTER_KEY="$(random_masterkey)"
     readonly OT_CHANNEL="$(random_channel)"
 
-    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
+    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_REST_URL}"/v1/networks | grep "${OT_NETWORK_NAME}" || die "WEB: form failed"
     sleep 15
     # verify mDNS is working as expected.
     local mdns_result="${TEST_BASE}"/mdns_result.log
@@ -371,7 +349,7 @@ EOF
 
 web_commissioner_start()
 {
-    curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "${OTBR_WEB_URL}"/commission
+    curl --header "Content-Type: application/json" --request POST --data "{\"pskd\":\"${OT_JOINER_PASSPHRASE}\", \"passphrase\":\"${OT_AGENT_PASSPHRASE}\"}" "${OTBR_REST_URL}"/v1/networks/current/commission
     sleep 15
 }
 
@@ -403,7 +381,6 @@ main()
 {
     test_setup
     ba_start
-    web_start
     network_form
     if [[ ${OTBR_USE_WEB_COMMISSIONER} == 1 ]]; then
         web_commissioner_start

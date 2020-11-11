@@ -27,14 +27,15 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-import urllib.request
-import urllib.error
 import json
 import re
+import time
 from threading import Thread
+import urllib.request
+import urllib.error
+import urllib.parse
 
-rest_api_addr = "http://0.0.0.0:8081"
-
+REST_API_ADDR = "http://0.0.0.0:8081"
 
 def get_data_from_url(url, result, index):
     response = urllib.request.urlopen(urllib.request.Request(url))
@@ -85,8 +86,7 @@ def diagnostics_check(data):
             "ChildTable", "ChannelPages"
         ]
         expected_value_type = [
-            str, int, dict, dict, dict, dict, str, list, dict, list,
-            str
+            str, int, dict, dict, dict, dict, str, list, dict, list, str
         ]
         expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -94,7 +94,7 @@ def diagnostics_check(data):
             assert (key in diag)
             assert (type(diag[key]) == value)
 
-        assert (re.match(r'^[A-F0-9]{16}$', diag["ExtAddress"]) is not None)
+        assert (re.match(r'^[a-f0-9]{16}$', diag["ExtAddress"]) is not None)
 
         mode = diag["Mode"]
         mode_expected_keys = [
@@ -141,8 +141,6 @@ def diagnostics_check(data):
             assert (key in leaderdata)
             assert (type(leaderdata[key]) == int)
 
-        assert (re.match(r'^[A-F0-9]{12}$', diag["NetworkData"]) is not None)
-
         ip6_address_list = diag["IP6AddressList"]
         assert (type(ip6_address_list) == list)
 
@@ -179,7 +177,7 @@ def diagnostics_check(data):
                 assert (type(mode[key]) == int)
 
         assert (type(diag["ChannelPages"]) == str)
-        assert (re.match(r'^[A-F0-9]{2}$', diag["ChannelPages"]) is not None)
+        assert (re.match(r'^[a-f0-9]{2}$', diag["ChannelPages"]) is not None)
 
     return 2
 
@@ -188,11 +186,12 @@ def node_check(data):
     assert data is not None
 
     expected_keys = [
-        "State", "NumOfRouter", "RlocAddress", "NetworkName", "ExtAddress",
-        "Rloc16", "LeaderData", "ExtPanId"
+        "WPAN service", "NCP:State", "NCP:Version", "NCP:HardwareAddress",
+        "NCP:Channel", "Network:NodeType", "Network:Name", "Network:XPANID",
+        "Network:PANID", "IPv6:MeshLocalPrefix", "IPv6:MeshLocalAddress"
     ]
     expected_value_type = [
-        int, int, str, str, str, int, dict, str
+        str, int, str, str, int, int, str, str, int, str, str
     ]
     expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -202,19 +201,12 @@ def node_check(data):
 
     assert (re.match(
         r'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-        data["RlocAddress"]) is not None)
-    assert (re.match(r'^[A-F0-9]{16}$', data["ExtAddress"]) is not None)
-    assert (re.match(r'[A-F0-9]{16}', data["ExtPanId"]) is not None)
-
-    leaderdata = data["LeaderData"]
-    leaderdata_expected_keys = [
-        "PartitionId", "Weighting", "DataVersion", "StableDataVersion",
-        "LeaderRouterId"
-    ]
-
-    for key in leaderdata_expected_keys:
-        assert (key in leaderdata)
-        assert (type(leaderdata[key]) == int)
+        data["IPv6:MeshLocalAddress"]) is not None)
+    assert (re.match(r'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
+                     data["IPv6:MeshLocalPrefix"]) is not None)
+    assert (re.match(r'^[a-f0-9]{16}$', data["NCP:HardwareAddress"])
+            is not None)
+    assert (re.match(r'[a-f0-9]{16}', data["Network:XPANID"]) is not None)
 
     return True
 
@@ -243,7 +235,7 @@ def node_ext_address_check(data):
     assert data is not None
 
     assert (type(data) == str)
-    assert (re.match(r'^[A-F0-9]{16}$', data) is not None)
+    assert (re.match(r'^[a-f0-9]{16}$', data) is not None)
 
     return True
 
@@ -298,7 +290,7 @@ def node_ext_panid_check(data):
 
 
 def node_test(thread_num):
-    url = rest_api_addr + "/node"
+    url = REST_API_ADDR + "/v1/node"
 
     response_data = [None] * thread_num
 
@@ -306,11 +298,11 @@ def node_test(thread_num):
 
     valid = [node_check(data) for data in response_data].count(True)
 
-    print(" /node : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node : all {}, valid {} ".format(thread_num, valid))
 
 
 def node_rloc_test(thread_num):
-    url = rest_api_addr + "/node/rloc"
+    url = REST_API_ADDR + "/v1/node/rloc"
 
     response_data = [None] * thread_num
 
@@ -318,11 +310,11 @@ def node_rloc_test(thread_num):
 
     valid = [node_rloc_check(data) for data in response_data].count(True)
 
-    print(" /node/rloc : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/rloc : all {}, valid {} ".format(thread_num, valid))
 
 
 def node_rloc16_test(thread_num):
-    url = rest_api_addr + "/node/rloc16"
+    url = REST_API_ADDR + "/v1/node/rloc16"
 
     response_data = [None] * thread_num
 
@@ -330,11 +322,11 @@ def node_rloc16_test(thread_num):
 
     valid = [node_rloc16_check(data) for data in response_data].count(True)
 
-    print(" /node/rloc16 : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/rloc16 : all {}, valid {} ".format(thread_num, valid))
 
 
 def node_ext_address_test(thread_num):
-    url = rest_api_addr + "/node/ext-address"
+    url = REST_API_ADDR + "/v1/node/ext-address"
 
     response_data = [None] * thread_num
 
@@ -342,11 +334,11 @@ def node_ext_address_test(thread_num):
 
     valid = [node_ext_address_check(data) for data in response_data].count(True)
 
-    print(" /node/ext-address : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/ext-address : all {}, valid {} ".format(thread_num, valid))
 
 
 def node_state_test(thread_num):
-    url = rest_api_addr + "/node/state"
+    url = REST_API_ADDR + "/v1/node/state"
 
     response_data = [None] * thread_num
 
@@ -354,24 +346,25 @@ def node_state_test(thread_num):
 
     valid = [node_state_check(data) for data in response_data].count(True)
 
-    print(" /node/state : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/state : all {}, valid {} ".format(thread_num, valid))
 
 
 def node_network_name_test(thread_num):
-    url = rest_api_addr + "/node/network-name"
+    url = REST_API_ADDR + "/v1/node/network-name"
 
     response_data = [None] * thread_num
 
     create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_network_name_check(data) for data in response_data
-             ].count(True)
+            ].count(True)
 
-    print(" /node/network-name : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/network-name : all {}, valid {} ".format(
+        thread_num, valid))
 
 
 def node_leader_data_test(thread_num):
-    url = rest_api_addr + "/node/leader-data"
+    url = REST_API_ADDR + "/v1/node/leader-data"
 
     response_data = [None] * thread_num
 
@@ -379,24 +372,25 @@ def node_leader_data_test(thread_num):
 
     valid = [node_leader_data_check(data) for data in response_data].count(True)
 
-    print(" /node/leader-data : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/leader-data : all {}, valid {} ".format(thread_num, valid))
 
 
 def node_num_of_router_test(thread_num):
-    url = rest_api_addr + "/node/num-of-router"
+    url = REST_API_ADDR + "/v1/node/num-of-router"
 
     response_data = [None] * thread_num
 
     create_multi_thread(get_data_from_url, url, thread_num, response_data)
 
     valid = [node_num_of_router_check(data) for data in response_data
-             ].count(True)
+            ].count(True)
 
-    print(" /v1/node/num-of-router : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/num-of-router : all {}, valid {} ".format(
+        thread_num, valid))
 
 
 def node_ext_panid_test(thread_num):
-    url = rest_api_addr + "/node/ext-panid"
+    url = REST_API_ADDR + "/v1/node/ext-panid"
 
     response_data = [None] * thread_num
 
@@ -404,11 +398,11 @@ def node_ext_panid_test(thread_num):
 
     valid = [node_ext_panid_check(data) for data in response_data].count(True)
 
-    print(" /node/ext-panid : all {}, valid {} ".format(thread_num, valid))
+    print(" /v1/node/ext-panid : all {}, valid {} ".format(thread_num, valid))
 
 
 def diagnostics_test(thread_num):
-    url = rest_api_addr + "/diagnostics"
+    url = REST_API_ADDR + "/v1/diagnostics"
 
     response_data = [None] * thread_num
 
@@ -425,12 +419,12 @@ def diagnostics_test(thread_num):
             valid += 1
             has_content += 1
 
-    print(" /diagnostics : all {}, has content {}, valid {} ".format(
+    print(" /v1/diagnostics : all {}, has content {}, valid {} ".format(
         thread_num, has_content, valid))
 
 
 def error_test(thread_num):
-    url = rest_api_addr + "/hello"
+    url = REST_API_ADDR + "/v1/hello"
 
     response_data = [None] * thread_num
 
@@ -441,17 +435,167 @@ def error_test(thread_num):
     print(" /v1/hello : all {}, valid {} ".format(thread_num, valid))
 
 
+def commissioner():
+    url = REST_API_ADDR + "/v1/networks/current/commission"
+    data = {
+        'passphase': '123445',
+        'pskd': 'ABCDEF',
+    }
+    data = json.dumps(data).encode()
+    response = urllib.request.urlopen(
+        urllib.request.Request(url=url, data=data, method='POST'))
+    body = response.read()
+    data = json.loads(body)
+    assert data['pskd'] == 'ABCDEF'
+
+    data = {
+        'passphase': '123445',
+        'pskd': 'ABCDEF',
+    }
+    data = json.dumps(data).encode()
+    try:
+        urllib.request.urlopen(
+            urllib.request.Request(url=url, data=data, method='POST'))
+
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        data = json.loads(body)
+        assert data[
+            'ErrorDescription'] == 'Failed at commissioner start: Already'
+    print("commissioner  pass")
+
+
+def add_remove_prefix():
+    url = REST_API_ADDR + "/v1/networks/current/prefix"
+    data = {
+        'prefix': 'fd13:22::',
+        'defaultRoute': True,
+    }
+    data = json.dumps(data).encode()
+    response = urllib.request.urlopen(
+        urllib.request.Request(url=url, data=data, method='POST'))
+    body = response.read()
+    data = json.loads(body)
+    assert data['prefix'] == 'fd13:22::'
+    time.sleep(5)
+
+    response = urllib.request.urlopen(urllib.request.Request(url))
+    body = response.read()
+    data = json.loads(body)
+    assert 'fd13:22:0:0' in data
+
+    time.sleep(5)
+
+    data = {'prefix': 'fd13:22::'}
+    data = json.dumps(data).encode()
+    response = urllib.request.urlopen(
+        urllib.request.Request(url=url, data=data, method='DELETE'))
+    body = response.read()
+    data = json.loads(body)
+    assert 'fd13:22:0:0' not in data
+    print("add/remove prefix  pass")
+
+
+def form_network_test():
+    url = REST_API_ADDR + "/v1/node/network-name"
+
+    response = urllib.request.urlopen(urllib.request.Request(url))
+    body = response.read()
+    data = json.loads(body)
+    assert data != 'OpenThreadTest1'
+
+    url = REST_API_ADDR + "/v1/networks"
+    data = {
+        'networkName': 'OpenThreadTest1',
+        'extPanId': '1111111122222222',
+        'panId': '0x1234',
+        'passphrase': '123456',
+        'masterKey': '00112233445566778899aabbccddeeff',
+        'channel': 15,
+        'prefix': 'fd11:22::',
+        'defaultRoute': True,
+    }
+    data = json.dumps(data).encode()
+
+    response = urllib.request.urlopen(
+        urllib.request.Request(url=url, data=data, method='POST'))
+    body = response.read()
+    data = json.loads(body)
+    assert data['networkName'] == 'OpenThreadTest1'
+
+    time.sleep(10)
+
+    url = REST_API_ADDR + "/v1/node/network-name"
+    response = urllib.request.urlopen(urllib.request.Request(url))
+    body = response.read()
+    data = json.loads(body)
+    assert data == 'OpenThreadTest1'
+    print("form network pass")
+
+
+def scan():
+    url = REST_API_ADDR + "/v1/networks"
+    response = urllib.request.urlopen(urllib.request.Request(url))
+    body = response.read()
+    data = json.loads(body)
+
+    flag = False
+    for network in data:
+        if network['NetworkName'] == 'hello' and network['Channel'] == 20:
+            flag = True
+            break
+    assert flag
+    print("scan network pass")
+
+
+def join():
+    url = REST_API_ADDR + "/v1/networks/current"
+
+    data = {
+        'extPanId': 'dead00beef00cafe',
+        'panId': '0xface',
+        'channel': 20,
+        'networkName': 'hello',
+        'masterKey': '10112233445566778899aabbccddeefe',
+        'defaultRoute': False,
+        "prefix": 'fd17:22::'
+    }
+    data = json.dumps(data).encode()
+
+    response = urllib.request.urlopen(
+        urllib.request.Request(url=url, data=data, method='PUT'))
+
+    body = response.read()
+    data = json.loads(body)
+    assert data['masterKey'] == '10112233445566778899aabbccddeefe'
+
+    time.sleep(10)
+
+    url = REST_API_ADDR + "/v1/diagnostics"
+    response = urllib.request.urlopen(urllib.request.Request(url))
+    body = response.read()
+    data = json.loads(body)
+    assert len(data) > 1
+
+    print("join network pass")
+
+
 def main():
-    node_test(200)
-    node_rloc_test(200)
-    node_rloc16_test(200)
-    node_ext_address_test(200)
-    node_state_test(200)
-    node_network_name_test(200)
-    node_leader_data_test(200)
-    node_num_of_router_test(200)
-    node_ext_panid_test(200)
-    diagnostics_test(20)
+    join()
+    form_network_test()
+    scan()
+    add_remove_prefix()
+    commissioner()
+    node_test(100)
+    node_rloc_test(100)
+    node_rloc16_test(100)
+    node_ext_address_test(100)
+    node_state_test(100)
+    node_network_name_test(100)
+    node_leader_data_test(100)
+    node_num_of_router_test(100)
+    node_ext_panid_test(100)
+    diagnostics_test(10)
     error_test(10)
 
     return 0

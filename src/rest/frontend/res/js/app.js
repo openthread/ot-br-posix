@@ -89,6 +89,17 @@
 
         ];
 
+        $scope.RoleInt2String = 
+        {
+            0 : 'Disabled', 
+            1 : 'Detached',
+            2 : 'Child' ,
+            3 : 'Router',
+            4 : 'Leader'   
+
+        }
+
+        
         $scope.thread = {
             networkName: 'OpenThreadDemo',
             extPanId: '1111111122222222',
@@ -110,18 +121,63 @@
 
         $scope.isLoading = false;
 
-        $scope.showScanAlert = function(ev) {
+        $scope.showScanAlert = function(ev,response) {
+            var alertMessage;
+            if (response.status == 200)
+            {
+                alertMessage = 'No available thread network now'
+            }
+            else 
+            {   
+                if ('ErrorDescription' in response.data)
+                {
+                    alertMessage = response.data.ErrorDescription;
+                }
+                else if ('ErorMessage' in response.data)
+                {
+                    alertMessage= response.data.ErorMessage;
+                }
+                else
+                {
+                    alertMessage = 'Undefined response';
+                }
+            }
+           
             $mdDialog.show(
                 $mdDialog.alert()
                 .parent(angular.element(document.querySelector('#popupContainer')))
                 .clickOutsideToClose(true)
                 .title('Information')
-                .textContent('There is no available Thread network currently, please \
-                             wait a moment and retry it.')
+                .textContent(alertMessage)
                 .ariaLabel('Alert Dialog Demo')
                 .ok('Okay')
             );
         };
+        $scope.showStatusAlert = function(ev,response) {
+            var alertMessage;
+            if ('ErrorDescription' in response.data)
+            {
+                alertMessage = response.data.ErrorDescription;
+            }
+            else if ('ErrorMessage' in response.data)
+            {
+                alertMessage=  response.data.ErrorMessage ;
+            }
+            else
+            {
+                alertMessage = 'Undefined response';
+            }
+            $mdDialog.show(
+                $mdDialog.alert()
+                .parent(angular.element(document.querySelector('#popupContainer')))
+                .clickOutsideToClose(true)
+                .title('Information')
+                .textContent(alertMessage)
+                .ariaLabel('Alert Dialog Demo')
+                .ok('Okay')
+            );
+        };
+
         $scope.showPanels = function(index) {
             $scope.headerTitle = $scope.menu[index].title;
             for (var i = 0; i < 7; i++) {
@@ -130,34 +186,64 @@
             $scope.menu[index].show = true;
             if (index == 1) {
                 $scope.isLoading = true;
-                $http.get('/available_network').then(function(response) {
-                    $scope.isLoading = false;
-                    if (response.data.error == 0) {
-                        $scope.networksInfo = response.data.result;
-                    } else {
-                        $scope.showScanAlert(event);
-                    }
-                });
-            }
-            if (index == 3) {
-                $http.get('/get_properties').then(function(response) {
-                    console.log(response);
-                    if (response.data.error == 0) {
-                        var statusJson = response.data.result;
-                        $scope.status = [];
-                        for (var i = 0; i < Object.keys(statusJson).length; i++) {
-                            $scope.status.push({
-                                name: Object.keys(statusJson)[i],
-                                value: statusJson[Object.keys(statusJson)[i]],
-                                icon: 'res/img/icon-info.png',
-                            });
+                $http.get('/v1/networks').then(
+                    function successCallback(response) 
+                    {
+                        $scope.isLoading = false;
+                        if (response.status == 200  && response.data.length > 0)
+                        {
+                            $scope.networksInfo = response.data;
                         }
+                        else
+                        {    
+                            $scope.showScanAlert(event,response);
+                        }
+                    },
+                    function errorCallback(response)
+                    {
+                        $scope.isLoading = false;
+                        $scope.showScanAlert(event,response);
+                    
                     }
-                });
+                );
+            }
+
+            if (index == 3) {
+                $http.get('/v1/node').then(
+                    function successCallback(response) 
+                    {
+                        if (response.status == 200){
+                            var NodeInfo = response.data;
+                            $scope.status = [];
+                            for (var i = 0; i < Object.keys(NodeInfo).length; i++) {
+                                if (Object.keys(NodeInfo)[i] == 'Network:NodeType' || Object.keys(NodeInfo)[i]  == 'NCP:State' )
+                                {
+                                    NodeInfo[Object.keys(NodeInfo)[i]] = $scope.RoleInt2String[NodeInfo[Object.keys(NodeInfo)[i]]];
+                                }
+                                $scope.status.push
+                                ({
+                                    name: Object.keys(NodeInfo)[i],
+                                    value: NodeInfo[Object.keys(NodeInfo)[i]],
+                                    icon: 'res/img/icon-info.png',
+                                });
+                            }
+                        
+                        }
+                        else {
+                            $scope.showStatusAlert(event,response);
+                        }
+                    },
+                    function errorCallback(response){
+                        
+                        $scope.showStatusAlert(event,response);
+                    
+                    }
+
+                );
             }
             if (index == 6) {
                 $scope.dataInit();
-                $scope.showTopology();
+                $scope.showTopology(event);
             }
         };
 
@@ -166,6 +252,7 @@
             sharedProperties.setNetworkInfo(item);
             $scope.index = index;
             $mdDialog.show({
+                 
                 controller: DialogController,
                 templateUrl: 'join.dialog.html',
                 parent: angular.element(document.body),
@@ -176,7 +263,9 @@
         };
 
         function DialogController($scope, $mdDialog, $http, $interval, sharedProperties) {
+            
             var index = sharedProperties.getIndex();
+            var networkInfo = sharedProperties.getNetworkInfo();
             $scope.isDisplay = false;
             $scope.thread = {
                 masterKey: '00112233445566778899aabbccddeeff',
@@ -184,13 +273,35 @@
                 defaultRoute: true,
             };
 
-            $scope.showAlert = function(ev, result) {
+            $scope.showAlert = function(ev, response) {
+
+                var alertMessage;
+                if (response.status == 200)
+                {
+                    alertMessage = 'Successful'
+                }
+                else 
+                {   
+                    if ('ErrorDescription' in response.data)
+                    {
+                        alertMessage = response.data.ErrorDescription;
+                    }
+                    else if ('ErorMessage' in response.data)
+                    {
+                        alertMessage= response.data.ErorMessage;
+                    }
+                    else
+                    {
+                        alertMessage = 'Failed bacause of Undefined response';
+                    }
+                }
+                
                 $mdDialog.show(
                     $mdDialog.alert()
                     .parent(angular.element(document.querySelector('#popupContainer')))
                     .clickOutsideToClose(true)
                     .title('Information')
-                    .textContent('Join operation is ' + result)
+                    .textContent('Join operation is ' + alertMessage)
                     .ariaLabel('Alert Dialog Demo')
                     .ok('Okay')
                     .targetEvent(ev)
@@ -212,21 +323,30 @@
                     prefix: $scope.thread.prefix,
                     defaultRoute: $scope.thread.defaultRoute,
                     index: index,
+                    extPanId : networkInfo.ExtPanId,
+                    networkName : networkInfo.NetworkName,
+                    channel: networkInfo.Channel,
+                    panId : '0x' + networkInfo.PanId.toString(16)
                 };
                 var httpRequest = $http({
-                    method: 'POST',
-                    url: '/join_network',
+                    method: 'PUT',
+                    url: '/v1/networks/current',
                     data: data,
                 });
-
-                httpRequest.then(function successCallback(response) {
-                    $scope.res = response.data.result;
-                    if (response.data.result == 'successful') {
-                        $mdDialog.hide();
+                httpRequest.then(
+                    function successCallback(response) {
+                    
+                        if (response.status == 200) {
+                            $mdDialog.hide();
+                        }
+                        $scope.isDisplay = false;
+                        $scope.showAlert(event, response);
+                    },
+                    function errorCallback(response){
+                        $scope.isDisplay = false;
+                        $scope.showAlert(event, response);
                     }
-                    $scope.isDisplay = false;
-                    $scope.showAlert(event, response.data.result);
-                });
+                );
             };
 
             $scope.cancel = function() {
@@ -265,30 +385,59 @@
                 $scope.isForming = true;
                 var httpRequest = $http({
                     method: 'POST',
-                    url: '/form_network',
+                    url: '/v1/networks',
                     data: data,
                 });
 
-                httpRequest.then(function successCallback(response) {
-                    $scope.res = response.data.result;
-                    if (response.data.result == 'successful') {
-                        $mdDialog.hide();
+                httpRequest.then(
+                    function successCallback(response) {
+                        $scope.res = response.data.result;
+                        if (response.status == 200) {
+                            $mdDialog.hide();
+                        }
+                        $scope.isForming = false;
+                        $scope.showAlert(event, 'FORM', response);
+                    },
+                    function errorCallback(response){
+                        $scope.isForming = false;
+                        $scope.showAlert(event, 'FORM', response);
                     }
-                    $scope.isForming = false;
-                    $scope.showAlert(event, 'FORM', response.data.result);
-                });
+
+
+                );
             }, function() {
                 $mdDialog.cancel();
             });
         };
 
-        $scope.showAlert = function(ev, operation, result) {
+        $scope.showAlert = function(ev, operation, response) {
+            var alertMessage;
+            if (response.status == 200)
+            {
+                alertMessage = 'Successful';
+            }
+            else 
+            {
+                if ('ErrorDescription' in response.data)
+                {
+                    alertMessage = response.data.ErrorDescription;
+                }
+                else if ('ErorMessage' in response.data)
+                {
+                    alertMessage= response.data.ErorMessage;
+                }
+                else
+                {
+                    alertMessage = 'Failed bacause of Undefined response';
+                }
+            }
+
             $mdDialog.show(
                 $mdDialog.alert()
                 .parent(angular.element(document.querySelector('#popupContainer')))
                 .clickOutsideToClose(true)
                 .title('Information')
-                .textContent(operation + ' operation is ' + result)
+                .textContent(operation + ' operation is ' + alertMessage)
                 .ariaLabel('Alert Dialog Demo')
                 .ok('Okay')
                 .targetEvent(ev)
@@ -313,12 +462,18 @@
                 };
                 var httpRequest = $http({
                     method: 'POST',
-                    url: '/add_prefix',
+                    url: '/v1/networks/current/prefix',
                     data: data,
                 });
 
                 httpRequest.then(function successCallback(response) {
-                    $scope.showAlert(event, 'Add', response.data.result);
+                   
+                    $scope.showAlert(event, 'Add', response);
+                }
+                , function errorCallback(response){
+                    
+                    $scope.showAlert(event, 'Add', response);
+                    
                 });
             }, function() {
                 $mdDialog.cancel();
@@ -338,13 +493,16 @@
                     prefix: $scope.setting.prefix,
                 };
                 var httpRequest = $http({
-                    method: 'POST',
-                    url: '/delete_prefix',
+                    method: 'DELETE',
+                    url: '/v1/networks/current/prefix',
                     data: data,
                 });
 
                 httpRequest.then(function successCallback(response) {
-                    $scope.showAlert(event, 'Delete', response.data.result);
+                    $scope.showAlert(event, 'Delete', response);
+                }, function errorCallback(response){
+                    $scope.showAlert(event, 'Delete', response);
+                    
                 });
             }, function() {
                 $mdDialog.cancel();
@@ -358,24 +516,21 @@
             };
             var httpRequest = $http({
                 method: 'POST',
-                url: '/commission',
+                url: '/v1/networks/current/commission',
                 data: data,
             });
             
             ev.target.disabled = true;
             
             httpRequest.then(function successCallback(response) {
-                if (response.data.error == 0) {
-                    $scope.showAlert(event, 'Commission', 'success');
-                } else {
-                    $scope.showAlert(event, 'Commission', 'failed');
-                }
+                $scope.showAlert(event, 'Commission', response);
                 ev.target.disabled = false;
+            
+            }, function errorCallback(response){
+                $scope.showAlert(event, 'Commission', response);
+                
             });
         };
-
-        $scope.restServerPort = '8081';
-        $scope.ipAddr = window.location.hostname + ':' + $scope.restServerPort;
 
         // Basic information line
         $scope.basicInfo = {
@@ -389,7 +544,9 @@
         $scope.nodeDetailInfo = 'Unknown';
         // For response of Diagnostic
         $scope.networksDiagInfo = '';
-        $scope.graphisReady = false;
+        $scope.topologyIsReady = false;
+        $scope.topologyIsLoading = false;
+        
         $scope.detailList = {
             'ExtAddress': { 'title': false, 'content': true },
             'Rloc16': { 'title': false, 'content': true },
@@ -408,15 +565,23 @@
             'links': []
         }
 
-        $scope.dataInit = function() {
-
-            $http.get('http://' + $scope.ipAddr + '/node').then(function(response) {
-
-                $scope.basicInfo = response.data;
-                console.log(response.data);
-                $scope.basicInfo.Rloc16 = $scope.intToHexString($scope.basicInfo.Rloc16,4);
-                $scope.basicInfo.LeaderData.LeaderRouterId = '0x' + $scope.intToHexString($scope.basicInfo.LeaderData.LeaderRouterId,2);
+        $scope.dataInit = function(ev) {
+            $http.get('/v1/node/network-name').then(function(response)
+            {
+                $scope.basicInfo.NetworkName = response.data;
             });
+            $http.get('/v1/node/rloc16').then(function(response)
+            {
+                $scope.basicInfo.Rloc16 = response.data;
+                $scope.basicInfo.Rloc16 = $scope.intToHexString($scope.basicInfo.Rloc16,4);
+            });
+            $http.get('/v1/node/leader-data').then(function(response)
+            {
+                $scope.basicInfo.LeaderData = response.data;
+                $scope.basicInfo.LeaderData.LeaderRouterId = '0x' + $scope.intToHexString($scope.basicInfo.LeaderData.LeaderRouterId<<10,4);
+            });
+            
+           
         }
         $scope.isObject = function(obj) {
             return obj.constructor === Object;
@@ -438,130 +603,185 @@
             }
             return value;
         }
-        $scope.showTopology = function() {
-            var nodeMap = {}
-            var count, src, dist, rloc, child, rlocOfParent, rlocOfChild, diagOfNode, linkNode, childInfo;
 
-            $scope.graphisReady = false;
+        $scope.showTopologyAlert = function(ev,response) {
+            var alertMessage;
+            if (response.status == 200)
+            {
+                alertMessage = 'Empty diagnostic information returned, please check and try again later'
+            }
+            else 
+            {   
+                if ('ErrorDescription' in response.data)
+                {
+                    alertMessage = response.data.ErrorDescription;
+                }
+                else if ('ErorMessage' in response.data)
+                {
+                    alertMessage= response.data.ErorMessage;
+                }
+                else
+                {
+                    alertMessage = 'Undefined response';
+                }
+            }
+           
+            $mdDialog.show(
+                $mdDialog.alert()
+                .parent(angular.element(document.querySelector('#popupContainer')))
+                .clickOutsideToClose(true)
+                .title('Information')
+                .textContent(alertMessage)
+                .ariaLabel('Alert Dialog Demo')
+                .ok('Okay')
+            );
+        };
+
+        $scope.showTopology = function(event) {
+
+            // Is loading
+            $scope.topologyIsLoading = true;
+            $scope.topologyIsReady = false;
             $scope.graphInfo = {
                 'nodes': [],
                 'links': []
             };
-            $http.get('http://' + $scope.ipAddr + '/diagnostics').then(function(response) {
-
-                
-                $scope.networksDiagInfo = response.data;
-                for (diagOfNode of $scope.networksDiagInfo){
-                    
-                    diagOfNode['RouteId'] = '0x' + $scope.intToHexString(diagOfNode['Rloc16'] >> 10,2);
-                    
-                    diagOfNode['Rloc16'] = '0x' + $scope.intToHexString(diagOfNode['Rloc16'],4);
-                    
-                    diagOfNode['LeaderData']['LeaderRouterId'] = '0x' + $scope.intToHexString(diagOfNode['LeaderData']['LeaderRouterId'],2);
-                    for (linkNode of diagOfNode['Route']['RouteData']){
-                        linkNode['RouteId'] = '0x' + $scope.intToHexString(linkNode['RouteId'],2);
-                    }
+            $http.get('/v1/diagnostics').then(function successCallback(response) {
+                if (response.status == 200 && response.data.length > 0)
+                {
+                    $scope.topology(response);
+                    // Loads successfully
+                    $scope.topologyIsLoading = false;
+                    $scope.topologyIsReady = true;
                 }
-                
-                count = 0;
-                
-                for (diagOfNode of $scope.networksDiagInfo) {
-                    if ('ChildTable' in diagOfNode) {
-                        
-                        rloc = parseInt(diagOfNode['Rloc16'],16).toString(16);
-                        nodeMap[rloc] = count;
-                        
-                        if ( diagOfNode['RouteId'] == diagOfNode['LeaderData']['LeaderRouterId']) {
-                            diagOfNode['Role'] = 'Leader';
-                        } else {
-                            diagOfNode['Role'] = 'Router';
-                        }
+                else{
+                    // Not show anything
+                    $scope.topologyIsReady = false;
+                    $scope.topologyIsLoading = false;
+                    $scope.showTopologyAlert(event,response);
+                }
+            },
+            function errorCallback(response){
+                $scope.showTopologyAlert(event,response);
+                // Not show anything
+                $scope.topologyIsReady = false;
+                $scope.topologyIsLoading = false;
+            }
 
-                        $scope.graphInfo.nodes.push(diagOfNode);
+            
+            )
+        }
+
+        $scope.topology = function(response){
+            var nodeMap = {};
+            var count, src, dist, rloc, child, rlocOfParent, rlocOfChild, diagOfNode, linkNode, childInfo;
+            $scope.networksDiagInfo = response.data;
+                
+            for (diagOfNode of $scope.networksDiagInfo){
+                    
+                diagOfNode['RouteId'] = '0x' + $scope.intToHexString(diagOfNode['Rloc16'] >> 10,2);
+                    
+                diagOfNode['Rloc16'] = '0x' + $scope.intToHexString(diagOfNode['Rloc16'],4);
+                    
+                diagOfNode['LeaderData']['LeaderRouterId'] = '0x' +  $scope.intToHexString(diagOfNode['LeaderData']['LeaderRouterId'],2);
+ 
+                for (linkNode of diagOfNode['Route']['RouteData']){
+                    linkNode['RouteId'] = '0x' + $scope.intToHexString(linkNode['RouteId'],2);
+                }
+                    
+            }
+                
+            count = 0;
+                
+            for (diagOfNode of $scope.networksDiagInfo) {
+                if ('ChildTable' in diagOfNode) {
                         
-                        if (diagOfNode['Rloc16'] === $scope.basicInfo.rloc16) {
-                            $scope.nodeDetailInfo = diagOfNode
+                    rloc = parseInt(diagOfNode['Rloc16'],16).toString(16);
+                    nodeMap[rloc] = count;
+                        
+                    if (diagOfNode['RouteId'] == diagOfNode['LeaderData']['LeaderRouterId']) {
+                        diagOfNode['Role'] = 'Leader';
+                    }
+                    else {
+                        diagOfNode['Role'] = 'Router';
+                    }
+ 
+                    $scope.graphInfo.nodes.push(diagOfNode);
+                        
+                    if (diagOfNode['Rloc16'] === $scope.basicInfo.rloc16) {
+                        $scope.nodeDetailInfo = diagOfNode
+                    }
+                    count = count + 1;
+                }
+            }
+ 
+            $scope.NumOfRouter = count;
+                
+            // Index for a second loop
+            src = 0;
+ 
+            // Construct links
+            for (diagOfNode of $scope.networksDiagInfo) {
+                if ('ChildTable' in diagOfNode) {
+                    // Link bewtwen routers
+                    for (linkNode of diagOfNode['Route']['RouteData']) {
+                        rloc = ( parseInt(linkNode['RouteId'],16) << 10).toString(16);
+                        if (rloc in nodeMap) {
+                            dist = nodeMap[rloc];
+                            if (src < dist) {
+                                $scope.graphInfo.links.push({
+                                    'source': src,
+                                    'target': dist,
+                                    'linkInfo': {
+                                        'inQuality': linkNode['LinkQualityIn'],
+                                        'outQuality': linkNode['LinkQualityOut']
+                                    }
+                                });
+                            }
                         }
+                    }
+
+                    // Link between router and child
+                    for (childInfo of diagOfNode['ChildTable']) {
+                        child = {};
+                        rlocOfParent = parseInt(diagOfNode['Rloc16'],16).toString(16);
+                        rlocOfChild = (parseInt(diagOfNode['Rloc16'],16) + childInfo['ChildId']).toString(16);
+
+                        src = nodeMap[rlocOfParent];
+                            
+                        child['Rloc16'] = '0x' +  $scope.intToHexString(parseInt(diagOfNode['Rloc16'],16) + childInfo['ChildId'],4);
+                        child['RouteId'] = diagOfNode['RouteId'];
+                        nodeMap[rlocOfChild] = count;
+                        child['Role'] = 'Child';
+                        $scope.graphInfo.nodes.push(child);
+                        $scope.graphInfo.links.push({
+                            'source': src,
+                            'target': count,
+                            'linkInfo': {
+                                'Timeout': childInfo['Timeout'],
+                                'Mode': childInfo['Mode']
+                            }
+                        });
                         count = count + 1;
                     }
                 }
-                // Num of Router is based on the diagnostic information
-                $scope.NumOfRouter = count;
-                
-                // Index for a second loop
-                src = 0;
-                // Construct links 
-                for (diagOfNode of $scope.networksDiagInfo) {
-                    if ('ChildTable' in diagOfNode) {
-                        // Link bewtwen routers
-                        for (linkNode of diagOfNode['Route']['RouteData']) {
-                            rloc = ( parseInt(linkNode['RouteId'],16) << 10).toString(16);
-                            if (rloc in nodeMap) {
-                                dist = nodeMap[rloc];
-                                if (src < dist) {
-                                    $scope.graphInfo.links.push({
-                                        'source': src,
-                                        'target': dist,
-                                        'weight': 1,
-                                        'type': 0,
-                                        'linkInfo': {
-                                            'inQuality': linkNode['LinkQualityIn'],
-                                            'outQuality': linkNode['LinkQualityOut']
-                                        }
-                                    });
-                                }
-                            }
-                        }
-
-                        // Link between router and child 
-                        for (childInfo of diagOfNode['ChildTable']) {
-                            child = {};
-                            rlocOfParent = parseInt(diagOfNode['Rloc16'],16).toString(16);
-                            rlocOfChild = (parseInt(diagOfNode['Rloc16'],16) + childInfo['ChildId']).toString(16);
-
-                            src = nodeMap[rlocOfParent];
-                            
-                            child['Rloc16'] = '0x' + rlocOfChild;
-                            child['RouteId'] = diagOfNode['RouteId'];
-                            nodeMap[rlocOfChild] = count;
-                            child['Role'] = 'Child';
-                            $scope.graphInfo.nodes.push(child);
-                            $scope.graphInfo.links.push({
-                                'source': src,
-                                'target': count,
-                                'weight': 1,
-                                'type': 1,
-                                'linkInfo': {
-                                    'Timeout': childInfo['Timeout'],
-                                    'Mode': childInfo['Mode']
-                                }
-
-                            });
-
-                            count = count + 1;
-                        }
-                    }
-                    src = src + 1;
-                }
-               
-                $scope.drawGraph();
-            })
+                src = src + 1;
+            }
+            $scope.drawGraph();
         }
 
-        
         $scope.updateDetailLabel = function() {
             for (var detailInfoKey in $scope.detailList) {
                 $scope.detailList[detailInfoKey]['title'] = false;
             }
+ 
             for (var diagInfoKey in $scope.nodeDetailInfo) {
                 if (diagInfoKey in $scope.detailList) {
                     $scope.detailList[diagInfoKey]['title'] = true;
                 }
-
             }
         }
-
-        
+ 
         $scope.drawGraph = function() {
             var json, svg, tooltip, force;
             var scale, len;
@@ -571,20 +791,21 @@
             len = 125 * Math.sqrt(scale);
 
             // Topology graph
-            svg = d3.select('.d3graph').append('svg')
-                .attr('preserveAspectRatio', 'xMidYMid meet')
-                .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10));
+            svg = d3.select('.d3graph')
+                    .append('svg')
+                    .attr('preserveAspectRatio', 'xMidYMid meet')
+                    .attr('viewBox', '0, 0, ' + len.toString(10) + ', ' + (len / (3 / 2)).toString(10));
             
             // Legend
             svg.append('circle')
                 .attr('cx',len-20)
                 .attr('cy',10).attr('r', 3)
-                .style('fill', "#7e77f8")
+                .style('fill', '#7e77f8')
                 .style('stroke', '#484e46')
                 .style('stroke-width', '0.4px');
             
             svg.append('circle')
-                .attr("cx",len-20)
+                .attr('cx',len-20)
                 .attr('cy',20)
                 .attr('r', 3)
                 .style('fill', '#03e2dd')
@@ -627,7 +848,6 @@
                 .text('Child')
                 .style('font-size', '4px')
                 .attr('alignment-baseline','middle');
-            
             svg.append('text')
                 .attr('x', len-45)
                 .attr('y',10 )
@@ -635,7 +855,7 @@
                 .style('font-size', '4px')
                 .attr('alignment-baseline','middle');
 
-            // Tooltip style  for each node
+            // Tooltip style for each node
             tooltip = d3.select('body')
                 .append('div')
                 .attr('class', 'tooltip')
@@ -650,7 +870,7 @@
 
             
             json = $scope.graphInfo;
-           
+ 
             force
                 .nodes(json.nodes)
                 .links(json.links)
@@ -673,11 +893,12 @@
                         return Math.sqrt(item.linkInfo.inQuality/2);
                     else return Math.sqrt(0.5)
                 })
-                // Effect of mouseover on a line
+                // Tooltip effect of mouseover on a line
                 .on('mouseover', function(item) {
                     return tooltip.style('visibility', 'visible')
                         .text(item.linkInfo);
                 })
+
                 .on('mousemove', function() {
                     return tooltip.style('top', (d3.event.pageY - 10) + 'px')
                         .style('left', (d3.event.pageX + 10) + 'px');
@@ -691,10 +912,10 @@
                 .data(json.nodes)
                 .enter().append('g')
                 .attr('class', function(item) {
-                        return item.Role;
+                    return item.Role;
                 })
                 .call(force.drag)
-                // Tooltip effect of mouseover on a node 
+                // Tooltip effect of mouseover on a node
                 .on('mouseover', function(item) {
                     return tooltip.style('visibility', 'visible')
                                   .text(item.Rloc16 );
@@ -734,11 +955,10 @@
                 .append('circle')
                 .attr('r', '8')
                 .attr('fill', '#7e77f8')
+                    
                 .style('stroke', '#484e46')
                 .style('stroke-width', '1px')
-                .attr('class', function(item) {
-                    return 'Stroke';
-                })
+                .attr('class', 'Stroke')
                 // Effect that node will become bigger when mouseover
                 .on('mouseover', function(item) {
                     d3.select(this)
@@ -753,8 +973,9 @@
                 })
                 .on('mouseout', function() {
                     d3.select(this).transition().attr('r','8');
-                        return tooltip.style('visibility', 'hidden');
+                    return tooltip.style('visibility', 'hidden');
                 })
+
                 // Effect that node will have a yellow edge when clicked
                 .on('click', function(item) {
                     d3.selectAll('.Stroke')
@@ -768,6 +989,7 @@
                         $scope.updateDetailLabel();
                     });
                 });
+
             d3.selectAll('.Router')
                 .append('circle')
                 .attr('r', '8')
@@ -816,8 +1038,9 @@
                 });
             });
             
+
             $scope.updateDetailLabel();
-            $scope.graphisReady = true;
+            
 
         }
     };

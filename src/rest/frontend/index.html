@@ -49,7 +49,7 @@
   <meta name="msapplication-TileImage" content="images/touch/ms-touch-icon-144x144-precomposed.png">
   <meta name="msapplication-TileColor" content="#3372DF">
 
-  <link rel="shortcut icon" href="res/img/favicon.png">
+  <link rel="shortcut icon" href="res/img/favicon.ico">
 
   <!-- SEO: If your mobile URL is different from the desktop URL, add a canonical link to the desktop page https://developers.google.com/webmasters/smartphone-sites/feature-phones -->
   <!--
@@ -137,11 +137,11 @@
               <tbody>
                 <tr ng-repeat="item in networksInfo track by $index">
                   <td>{{$index}}</td>
-                  <td>{{item.nn}}</td>
-                  <td>{{item.xp}}</td>
-                  <td>{{item.pi}}</td>
-                  <td>{{item.ch}}</td>
-                  <td>{{item.ha}}</td>
+                  <td>{{item.NetworkName}}</td>
+                  <td>{{item.ExtPanId}}</td>
+                  <td>{{item.PanId}}</td>
+                  <td>{{item.Channel}}</td>
+                  <td>{{item.MacAddress}}</td>
                   <td>
                     <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" ng-click="showJoinDialog($event, $index, item)">Join</button>
                   </td>
@@ -283,7 +283,7 @@
                 </div>
               </form>
             </md-content>
-        </div>        
+        </div>
         <div class="demo-charts mdl-color--white  mdl-cell mdl-cell--12-col mdl-shadow--2dp mdl-grid" ng-show="menu[5].show">
           <h4>Commission</h4>
             <md-content layout-padding flex="100">
@@ -317,14 +317,14 @@
         <div class="demo-charts mdl-color--white mdl-shadow--2dp mdl-cell mdl-cell--12-col mdl-grid" ng-show="menu[6].show">
           <div>
 
-            <span class="status-title">&nbsp&nbspNetwork Name:&nbsp 
+            <span class="status-title">&nbsp&nbspNetwork Name:&nbsp
             </span>
             <span class="status-content" ng-if="basicInfo.NetworkName"> {{ basicInfo.NetworkName }}</span>
             <span class="status-title">&nbsp&nbspLeader:&nbsp
             </span>
             <span class="status-content" ng-if="basicInfo.LeaderData"> {{ basicInfo.LeaderData.LeaderRouterId }}&nbsp&nbsp
             </span>
-            
+
             <span class="status-title">&nbsp&nbsp#Router:&nbsp
             </span>
 
@@ -334,7 +334,7 @@
 
 
 
-            <button ng-disabled="!graphisReady" class="mdl-button mdl-js-button mdl-button--raised" ng-click="showTopology()">Reload</button>
+            <button ng-disabled="topologyIsLoading" class="mdl-button mdl-js-button mdl-button--raised" ng-click="showTopology()">Reload</button>
 
 
           </div>
@@ -343,18 +343,18 @@
         </div>
 
         <div class="mdl-graphs mdl-shadow--1dp  mdl-cell mdl-cell--9-col" ng-show="menu[6].show">
-          <div ng-show="graphisReady" class="d3graph" id="topograph">
+          <div ng-show="topologyIsReady" class="d3graph" id="topograph">
           </div>
 
 
-          <div ng-show="!graphisReady" class="load_content">
+          <div ng-show="topologyIsLoading" class="load_content">
             <div class="mdl-spinner mdl-js-spinner is-active"></div>
 
 
           </div>
 
         </div>
-        <div ng-show="graphisReady && menu[6].show " class="demo-cards  mdl-cell  mdl-cell--top mdl-cell--3-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing">
+        <div ng-show="topologyIsReady && menu[6].show " class="demo-cards  mdl-cell  mdl-cell--top mdl-cell--3-col mdl-cell--8-col-tablet mdl-grid mdl-grid--no-spacing">
           <div class="demo-updates mdl-card mdl-shadow--1dp mdl-cell mdl-cell--3-col mdl-cell--3-col-tablet mdl-cell--12-col-desktop">
             <div class="detailContainer">
                 <div class="detailElement" ng-if="isObject(detailList) && isObject(nodeDetailInfo)  "ng-repeat="(key, data) in detailList track by $index">

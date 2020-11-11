@@ -39,7 +39,6 @@ main()
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DOTBR_DBUS=ON \
-            -DOTBR_WEB=ON \
             -DOTBR_REST=ON \
             .. \
         && scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v ninja)

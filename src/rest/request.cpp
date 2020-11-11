@@ -29,7 +29,7 @@
 #include "rest/request.hpp"
 
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 Request::Request(void)
     : mComplete(false)
@@ -102,5 +102,5 @@ bool Request::IsComplete(void) const
     return mComplete;
 }
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr

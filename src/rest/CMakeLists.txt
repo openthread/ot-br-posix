@@ -41,8 +41,14 @@ target_link_libraries(otbr-rest
         http_parser
     PRIVATE
         cjson
+        mbedtls
         otbr-config
         otbr-utils
         openthread-ftd
         openthread-posix
+)
+
+install(DIRECTORY frontend
+        FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+        DESTINATION /var/otbr
 )

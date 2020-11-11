@@ -45,7 +45,7 @@ extern "C" {
 #include "rest/request.hpp"
 
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 /**
  * This class implements Parser class in OTBR-REST which is used to parse the data from read buffer and form a request.
@@ -63,7 +63,7 @@ public:
     Parser(Request *aRequest);
 
     /**
-     * This method initializea the http-parser.
+     * This method initializes the http-parser.
      *
      */
     void Init(void);
@@ -71,8 +71,8 @@ public:
     /**
      * This method performs a parse process.
      *
-     * @param[in]    aBuf      A pointer pointing to read buffer.
-     * @param[in]    aLength   An integer indicates how much data is to be processed by parser.
+     * @param[in]  aBuf     A pointer to read buffer.
+     * @param[in]  aLength  An integer indicates how much data is to be processed by parser.
      *
      */
     void Process(const char *aBuf, size_t aLength);
@@ -82,7 +82,7 @@ private:
     http_parser_settings mSettings;
 };
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_PARSER_HPP_

@@ -84,8 +84,8 @@ install_packages_apt()
         fi
     }
 
-    # libjsoncpp
-    sudo apt-get install --no-install-recommends -y libjsoncpp1 libjsoncpp-dev
+    # nginx
+    sudo apt-get install --no-install-recommends -y nginx
 
     # reference device
     without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd
@@ -115,11 +115,12 @@ install_packages_rpm()
     sudo $PM install -y tayga iptables
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget
+    sudo $PM install -y nginx
 }
 
 install_packages_brew()
 {
-    brew install boost cmake cpputest dbus jsoncpp ninja
+    brew install cmake cpputest dbus ninja nginx
 }
 
 install_packages_source()

@@ -109,7 +109,6 @@ do_build()
         "-DCMAKE_BUILD_TYPE=Debug"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
-        "-DOTBR_WEB=ON"
         "-DOTBR_UNSECURE_JOIN=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
@@ -161,7 +160,6 @@ do_package()
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DCMAKE_BUILD_TYPE=Release"
-        "-DOTBR_WEB=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 

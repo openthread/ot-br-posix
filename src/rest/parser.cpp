@@ -30,9 +30,8 @@
 
 #include <string>
 #include <vector>
-
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 static int OnUrl(http_parser *parser, const char *at, size_t len)
 {
@@ -110,5 +109,5 @@ void Parser::Process(const char *aBuf, size_t aLength)
     http_parser_execute(&mParser, &mSettings, aBuf, aLength);
 }
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr

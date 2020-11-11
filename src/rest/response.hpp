@@ -40,13 +40,8 @@
 
 #include "rest/types.hpp"
 
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
-using std::chrono::seconds;
-using std::chrono::steady_clock;
-
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 /**
  * This class implements a response class for OTBR_REST, it could be manipulated by connection instance and resource
@@ -91,7 +86,7 @@ public:
      *
      *
      */
-    void SetCallback(void);
+    void SetHasCallback(void);
 
     /**
      * This method checks whether this response need to be processed by callback handler later.
@@ -119,14 +114,14 @@ public:
      *
      * @param[in] aStartTime A timestamp indicates when the response start to wait for callback.
      */
-    void SetStartTime(steady_clock::time_point aStartTime);
+    void SetStartTime(std::chrono::steady_clock::time_point aStartTime);
 
     /**
      * This method returns a timestamp of start time.
      *
      * @returns  A timepoint object indicates start time.
      */
-    steady_clock::time_point GetStartTime() const;
+    std::chrono::steady_clock::time_point GetStartTime() const;
 
     /**
      * This method serialize a response to a string that could be sent by socket later.
@@ -136,17 +131,17 @@ public:
     std::string Serialize(void) const;
 
 private:
-    bool                     mCallback;
-    std::vector<std::string> mHeaderField;
-    std::vector<std::string> mHeaderValue;
-    std::string              mCode;
-    std::string              mProtocol;
-    std::string              mBody;
-    bool                     mComplete;
-    steady_clock::time_point mStartTime;
+    bool                                  mCallback;
+    std::vector<std::string>              mHeaderField;
+    std::vector<std::string>              mHeaderValue;
+    std::string                           mCode;
+    std::string                           mProtocol;
+    std::string                           mBody;
+    bool                                  mComplete;
+    std::chrono::steady_clock::time_point mStartTime;
 };
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_RESPONSE_HPP_

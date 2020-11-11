@@ -36,11 +36,8 @@
 
 #include "rest/connection.hpp"
 
-using otbr::Ncp::ControllerOpenThread;
-using std::chrono::steady_clock;
-
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 /**
  * This class implements a REST server.
@@ -54,10 +51,10 @@ public:
      *
      * @param[in]   aNcp  A pointer to the NCP controller.
      *
-     * @returns A pointer pointing to the static rest server instance.
+     * @returns A pointer to the static rest server instance.
      *
      */
-    static RestWebServer *GetRestWebServer(ControllerOpenThread *aNcp);
+    static RestWebServer *GetRestWebServer(otbr::Ncp::ControllerOpenThread *aNcp);
 
     /**
      * This method initializes the REST server.
@@ -85,7 +82,7 @@ public:
     otbrError Process(otSysMainloopContext &aMainloop);
 
 private:
-    RestWebServer(ControllerOpenThread *aNcp);
+    RestWebServer(otbr::Ncp::ControllerOpenThread *aNcp);
     otbrError UpdateConnections(fd_set &aReadFdSet);
     void      CreateNewConnection(int32_t &aFd);
     otbrError Accept(int32_t aListenFd);
@@ -94,15 +91,18 @@ private:
 
     // Resource handler
     Resource mResource;
+
     // Struct for server configuration
     sockaddr_in mAddress;
+
     // File descriptor for listening
     int32_t mListenFd;
+
     // Connection List
     std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
 };
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_REST_WEB_SERVER_HPP_

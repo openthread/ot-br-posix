@@ -41,7 +41,7 @@
 #include "rest/types.hpp"
 
 namespace otbr {
-namespace rest {
+namespace Rest {
 
 /**
  * This class implements an instance to host services used by border router.
@@ -105,7 +105,7 @@ public:
     /**
      * This method returns the HTTP method of this request.
      *
-     * @returns A integer representing HTTP method.
+     * @returns The HTTP method.
      */
     HttpMethod GetMethod() const;
 
@@ -138,7 +138,7 @@ private:
     bool        mComplete;
 };
 
-} // namespace rest
+} // namespace Rest
 } // namespace otbr
 
 #endif // OTBR_REST_REQUEST_HPP_

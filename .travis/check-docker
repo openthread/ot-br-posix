@@ -72,11 +72,11 @@ main()
 
     readonly OTBR_DOCKER_PID=$(docker run --rm -dit \
         --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
-        --privileged -p 8080:80 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr)
+        --privileged -p 8081:8081 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr)
     sleep 10
-    sudo lsof -i :8080
+    sudo lsof -i :8081
 
-    local -r OTBR_WEB_URL="http://127.0.0.1:8080"
+    local -r OTBR_REST_URL="http://127.0.0.1:8081"
     local -r OT_MASTER_KEY=00112233445566778899aabbccddeeff
     local -r OT_XPANID=0011223344556677
     local -r OT_PANID=0xface
@@ -84,8 +84,7 @@ main()
     local -r OT_CHANNEL=12
     local -r OT_NETWORK_NAME=OpenThreadDocker
 
-    curl "${OTBR_WEB_URL}"/index.html | grep 'What is OpenThread'
-    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success"
+    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_REST_URL}"/v1/networks | grep "${OT_PANID}"
 }
 
 main "$@"

@@ -39,5 +39,3 @@ target_include_directories(cjson
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/repo>
     $<INSTALL_INTERFACE:repo>
 )
-
-

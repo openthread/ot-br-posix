@@ -36,7 +36,6 @@ option(OTBR_BACKBONE_ROUTER  "Build Backbone Router" OFF)
 option(OTBR_DBUS             "Build DBus support" OFF)
 option(OTBR_OPENWRT          "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN    "Enable unsecure joining" OFF)
-option(OTBR_WEB              "Build Web GUI" OFF)
 option(OTBR_REST             "Build Rest Server" OFF)
 
 
@@ -115,16 +114,6 @@ if(OTBR_REST)
     )
 endif()
 
-if(OTBR_WEB)
-    pkg_check_modules(JSONCPP jsoncpp REQUIRED)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_MULTITHREADED ON)
-    set(Boost_USE_STATIC_RUNTIME OFF)
-    find_package(Boost REQUIRED
-        COMPONENTS filesystem system)
-    set(OTBR_WEB_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/otbr-web)
-endif()
-
 if(OTBR_OPENWRT)
     target_compile_definitions(otbr-config INTERFACE
         OTBR_ENABLE_OPENWRT=1
@@ -147,7 +136,7 @@ if(SYSTEMD_FOUND)
 endif()
 
 
-add_subdirectory(third_party EXCLUDE_FROM_ALL)
+add_subdirectory(third_party)
 add_subdirectory(src)
 add_subdirectory(tools)
 
