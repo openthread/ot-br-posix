@@ -57,6 +57,9 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent --reg WW -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region US | grep Done
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region | grep US
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region WW | grep Done
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
