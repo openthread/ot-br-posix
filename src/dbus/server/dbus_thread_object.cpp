@@ -433,6 +433,10 @@ void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
 exit:
+    if (error == OT_ERROR_NOT_FOUND)
+    {
+        error = OT_ERROR_NONE;
+    }
     aRequest.ReplyOtResult(error);
 }
 
