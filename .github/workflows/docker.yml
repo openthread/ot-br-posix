@@ -46,34 +46,24 @@ jobs:
       matrix:
         include:
           - image_tag: "latest"
-            build_args: ""
             base_image: "ubuntu:bionic"
-            platforms: "linux/arm/v7"
-            push: yes
-          - image_tag: "latest"
             build_args: ""
+            platforms: "linux/amd64,linux/arm/v7,linux/arm64"
+            push: yes
+          - image_tag: "focal"
             base_image: "ubuntu:focal"
+            build_args: ""
             platforms: "linux/amd64,linux/arm64"
             push: yes
           - image_tag: "reference-device"
-            build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg NAT64=0"
             base_image: "ubuntu:bionic"
-            platforms: "linux/arm/v7"
-            push: yes
-          - image_tag: "reference-device"
             build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg NAT64=0"
-            base_image: "ubuntu:focal"
-            platforms: "linux/amd64,linux/arm64"
+            platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: yes
           - image_tag: "test"
-            build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg OT_BACKBONE_CI=1"
             base_image: "ubuntu:bionic"
-            platforms: "linux/arm/v7"
-            push: no
-          - image_tag: "test"
             build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg OT_BACKBONE_CI=1"
-            base_image: "ubuntu:focal"
-            platforms: "linux/amd64,linux/arm64"
+            platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: no
     steps:
     - uses: actions/checkout@v2
