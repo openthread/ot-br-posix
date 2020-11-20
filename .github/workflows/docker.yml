@@ -46,6 +46,7 @@ jobs:
       matrix:
         include:
           - image_tag: "latest"
+            base_image: "ubuntu:bionic"
             build_args: ""
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: yes
@@ -55,10 +56,12 @@ jobs:
             platforms: "linux/amd64,linux/arm64"
             push: yes
           - image_tag: "reference-device"
+            base_image: "ubuntu:bionic"
             build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg NAT64=0"
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: yes
           - image_tag: "test"
+            base_image: "ubuntu:bionic"
             build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg OT_BACKBONE_CI=1"
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: no
