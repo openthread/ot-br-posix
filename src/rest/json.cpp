@@ -29,6 +29,7 @@
 #include "rest/json.hpp"
 
 #include "common/code_utils.hpp"
+#include "common/types.hpp"
 
 extern "C" {
 #include <cJSON.h>
@@ -108,20 +109,9 @@ static cJSON *Mode2Json(const otLinkModeConfig &aMode)
 
 static cJSON *IpAddr2Json(const otIp6Address &aAddress)
 {
-    std::string serilizedIpAddr;
-    char        ipAddrField[5];
+    Ip6Address addr(aAddress.mFields.m8);
 
-    for (size_t i = 0; i < 8; ++i)
-    {
-        sprintf(ipAddrField, "%x", aAddress.mFields.m16[i]);
-        if (i >= 1)
-        {
-            serilizedIpAddr += ":";
-        }
-        serilizedIpAddr += std::string(ipAddrField);
-    }
-
-    return cJSON_CreateString(serilizedIpAddr.c_str());
+    return cJSON_CreateString(addr.ToString().c_str());
 }
 
 static cJSON *ChildTableEntry2Json(const otNetworkDiagChildEntry &aChildEntry)
