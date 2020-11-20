@@ -1190,16 +1190,13 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
             uint8_t             tlvTypes[OT_NETWORK_DIAGNOSTIC_TYPELIST_MAX_ENTRIES];
             uint8_t             count             = 0;
             char                multicastAddr[10] = "ff03::2";
-            long                value;
 
             blob_buf_init(&mNetworkdataBuf, 0);
 
             SuccessOrExit(error = otIp6AddressFromString(multicastAddr, &address));
 
-            value             = 5;
-            tlvTypes[count++] = static_cast<uint8_t>(value);
-            value             = 16;
-            tlvTypes[count++] = static_cast<uint8_t>(value);
+            tlvTypes[count++] = static_cast<uint8_t>(OT_NETWORK_DIAGNOSTIC_TLV_ROUTE);
+            tlvTypes[count++] = static_cast<uint8_t>(OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE);
 
             sBufNum = 0;
             otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count);
@@ -1343,7 +1340,7 @@ void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage
 
     if (IsRoutingLocator(&aMessageInfo->mSockAddr))
     {
-        sockRloc16 = aMessageInfo->mPeerAddr.mFields.m16[7];
+        sockRloc16 = ntohs(aMessageInfo->mPeerAddr.mFields.m16[7]);
         sprintf(xrloc, "0x%04x", sockRloc16);
         blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
     }
