@@ -29,6 +29,7 @@
 
 import urllib.request
 import urllib.error
+import ipaddress
 import json
 import re
 from threading import Thread
@@ -200,9 +201,7 @@ def node_check(data):
         assert (key in data)
         assert (type(data[key]) == value)
 
-    assert (re.match(
-        r'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-        data["RlocAddress"]) is not None)
+    assert (type(ipaddress.ip_address(data["RlocAddress"])) is ipaddress.IPv6Address)
     assert (re.match(r'^[A-F0-9]{16}$', data["ExtAddress"]) is not None)
     assert (re.match(r'[A-F0-9]{16}', data["ExtPanId"]) is not None)
 
