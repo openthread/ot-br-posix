@@ -183,8 +183,8 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
                           ResultHandler               aHandler)
 
 {
-    otError         error = OT_ERROR_NONE;
-    otExtendedPanId extPanId;
+    otError         error    = OT_ERROR_NONE;
+    otExtendedPanId extPanId = UINT64_MAX;
     otMasterKey     masterKey;
     otPskc          pskc;
     uint32_t        preferredChannelMask = GetPreferredChannelMaskForRegion(mNcp->GetRegionCode());
@@ -210,7 +210,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     }
     else
     {
-        while (aExtPanId != UINT64_MAX)
+        while (extPanId == UINT64_MAX)
         {
             RandomFill(extPanId.m8, sizeof(extPanId.m8));
         }
