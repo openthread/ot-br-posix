@@ -19,6 +19,3 @@ jobs:
     - env: BUILD_TARGET="docker-check" OT_POSIX_CONFIG_RCP_BUS=SPI OTBR_COVERAGE=1 VERBOSE=1
     - env: BUILD_TARGET="openwrt-check" VERBOSE=1
     - env: BUILD_TARGET="meshcop" OTBR_COVERAGE=1 VERBOSE=1
-    - env: BUILD_TARGET="macOS"
-      os: osx
-      language: "generic"

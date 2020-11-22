@@ -1,0 +1,26 @@
+name: macOS
+
+on: [push, pull_request]
+
+jobs:
+
+  cancel-previous-runs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: rokroskar/workflow-run-cleanup-action@master
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      if: "github.ref != 'refs/heads/master'"
+
+  build-check:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: |
+        brew reinstall boost cmake cpputest dbus jsoncpp ninja
+    - name: Build
+      run: |
+        OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
