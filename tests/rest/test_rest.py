@@ -37,6 +37,9 @@ from threading import Thread
 rest_api_addr = "http://0.0.0.0:8081"
 
 
+def assert_is_ipv6_address(string):
+    assert (type(ipaddress.ip_address(string)) is ipaddress.IPv6Address)
+
 def get_data_from_url(url, result, index):
     response = urllib.request.urlopen(urllib.request.Request(url))
     body = response.read()
@@ -149,9 +152,7 @@ def diagnostics_check(data):
 
         for ip6_address in ip6_address_list:
             assert (type(ip6_address) == str)
-            assert (re.match(
-                r'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-                ip6_address) is not None)
+            assert_is_ipv6_address(ip6_address)
 
         mac_counters = diag["MACCounters"]
         assert (type(mac_counters) == dict)
@@ -201,7 +202,8 @@ def node_check(data):
         assert (key in data)
         assert (type(data[key]) == value)
 
-    assert (type(ipaddress.ip_address(data["RlocAddress"])) is ipaddress.IPv6Address)
+    assert_is_ipv6_address(data["RlocAddress"])
+
     assert (re.match(r'^[A-F0-9]{16}$', data["ExtAddress"]) is not None)
     assert (re.match(r'[A-F0-9]{16}', data["ExtPanId"]) is not None)
 
@@ -223,9 +225,7 @@ def node_rloc_check(data):
 
     assert (type(data) == str)
 
-    assert (re.match(
-        r'^[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+:[a-f0-9]+$',
-        data) is not None)
+    assert_is_ipv6_address(data)
 
     return True
 
