@@ -132,8 +132,6 @@ otbrError ControllerOpenThread::Init(void)
     otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
                                             this);
     otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
-    otBackboneRouterSetMulticastListenerCallback(
-        mInstance, &ControllerOpenThread::HandleBackboneRouterMulticastListenerEvent, this);
 #endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
@@ -383,19 +381,6 @@ void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdPr
                                                             const otIp6Address *         aAddress)
 {
     EventEmitter::Emit(kEventBackboneRouterNdProxyEvent, aEvent, aAddress);
-}
-
-void ControllerOpenThread::HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
-                                                                      otBackboneRouterMulticastListenerEvent aEvent,
-                                                                      const otIp6Address *                   aAddress)
-{
-    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterMulticastListenerEvent(aEvent, aAddress);
-}
-
-void ControllerOpenThread::HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
-                                                                      const otIp6Address *                   aAddress)
-{
-    EventEmitter::Emit(kEventBackboneRouterMulticastListenerEvent, aEvent, aAddress);
 }
 #endif
 

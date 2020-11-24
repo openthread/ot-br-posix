@@ -34,12 +34,6 @@
 #ifndef BACKBONE_CONSTANTS_HPP_
 #define BACKBONE_CONSTANTS_HPP_
 
-#include <openthread/backbone_router_ftd.h>
-
-#include "agent/ncp_openthread.hpp"
-#include "backbone_router/nd_proxy.hpp"
-#include "backbone_router/smcroute_manager.hpp"
-
 namespace otbr {
 namespace BackboneRouter {
 

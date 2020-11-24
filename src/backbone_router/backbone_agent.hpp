@@ -39,7 +39,6 @@
 #include "agent/instance_params.hpp"
 #include "agent/ncp_openthread.hpp"
 #include "backbone_router/nd_proxy.hpp"
-#include "backbone_router/smcroute_manager.hpp"
 
 namespace otbr {
 namespace BackboneRouter {
@@ -111,15 +110,11 @@ private:
                                                       const otIp6Prefix *               aDomainPrefix);
     static void HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
-    static void HandleBackboneRouterMulticastListenerEvent(void *aContext, int aEvent, va_list aArguments);
-    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
-                                                           const otIp6Address &                   aAddress);
 
     static const char *StateToString(otBackboneRouterState aState);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
     otBackboneRouterState            mBackboneRouterState;
-    SMCRouteManager                  mSMCRouteManager;
     NdProxyManager                   mNdProxyManager;
     Ip6Prefix                        mDomainPrefix;
 };

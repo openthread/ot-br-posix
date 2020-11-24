@@ -156,10 +156,6 @@ const char *otbrErrorString(otbrError aError)
         error = "OpenThread error";
         break;
 
-    case OTBR_ERROR_SMCROUTE:
-        error = "SMCRoute error";
-        break;
-
     case OTBR_ERROR_NOT_FOUND:
         error = "Not found";
         break;
