@@ -75,7 +75,7 @@ otbr_install()
             "-DOT_REFERENCE_DEVICE=ON"
         )
     fi
-    if [ with BACKBONE_ROUTER ]; then
+    if with BACKBONE_ROUTER; then
         otbr_options+=(
             "-DOTBR_BACKBONE_ROUTER=ON"
         )
