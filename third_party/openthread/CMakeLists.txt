@@ -34,6 +34,7 @@ set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner" FORCE)
 set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
+set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(OT_LOG_LEVEL "DEBG" CACHE STRING "set OpenThread log level to DEBG" FORCE)
