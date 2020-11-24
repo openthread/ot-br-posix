@@ -333,7 +333,7 @@ network_manager_install()
     if with DNS64; then
         # bind9 provides DNS service
         sudo sed -i 's/^#port=5353/port=0/g' /etc/dnsmasq.conf
-        sudo systemctl restart dnsmasq
+        sudo systemctl stop dnsmasq
     fi
 
     sudo systemctl daemon-reload
