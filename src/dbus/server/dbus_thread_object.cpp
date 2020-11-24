@@ -529,8 +529,7 @@ otError DBusThreadObject::GetDeviceRoleHandler(DBusMessageIter &aIter)
     auto         threadHelper = mNcp->GetThreadHelper();
     otDeviceRole role         = otThreadGetDeviceRole(threadHelper->GetInstance());
     std::string  roleName     = GetDeviceRoleName(role);
-    ;
-    otError error = OT_ERROR_NONE;
+    otError      error        = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, roleName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
