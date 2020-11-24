@@ -31,7 +31,6 @@ readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
 readonly REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
-readonly BACKBONE_ROUTER="${BACKBONE_ROUTER:-0}"
 
 otbr_uninstall()
 {
@@ -76,7 +75,7 @@ otbr_install()
             "-DOT_REFERENCE_DEVICE=ON"
         )
     fi
-    if [[ ${BACKBONE_ROUTER} == "1" ]]; then
+    if with BACKBONE_ROUTER; then
         otbr_options+=(
             "-DOTBR_BACKBONE_ROUTER=ON"
         )
