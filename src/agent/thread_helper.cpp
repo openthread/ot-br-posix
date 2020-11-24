@@ -210,7 +210,9 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     }
     else
     {
-        while (aExtPanId != UINT64_MAX)
+        *reinterpret_cast<uint64_t *>(&extPanId) = UINT64_MAX;
+
+        while (*reinterpret_cast<uint64_t *>(&extPanId) == UINT64_MAX)
         {
             RandomFill(extPanId.m8, sizeof(extPanId.m8));
         }
