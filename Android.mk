@@ -32,7 +32,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libotbr-dbus-client
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := optional
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 
@@ -68,7 +68,7 @@ $(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/intr
 
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := optional
 LOCAL_SHARED_LIBRARIES := libdbus
 
 LOCAL_C_INCLUDES := \
@@ -132,7 +132,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE := otbr-agent.conf
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := optional
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
 LOCAL_SRC_FILES := src/agent/otbr-agent.conf
