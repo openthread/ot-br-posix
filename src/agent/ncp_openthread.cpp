@@ -248,6 +248,8 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
 
 void ControllerOpenThread::Reset(void)
 {
+    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
+
     otInstanceFinalize(mInstance);
     otSysDeinit();
     Init();
@@ -435,5 +437,6 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 void otPlatReset(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
+
     sReset = true;
 }
