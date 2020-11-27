@@ -44,6 +44,8 @@ main()
     RELEASE=1 ./script/bootstrap
     ./script/bootstrap
     NAT64=1 ./script/setup
+    # re-run to ensure the script can run successfully multiple times
+    NAT64=1 ./script/setup
     SOCAT_OUTPUT=/tmp/ot-socat
 
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 >/dev/null 2>$SOCAT_OUTPUT &
