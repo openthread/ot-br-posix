@@ -72,15 +72,13 @@ static const char kDefaultInterfaceName[] = "wpan0";
 
 enum
 {
-#if OTBR_ENABLE_BACKBONE_ROUTER
     OTBR_OPT_BACKBONE_INTERFACE_NAME = 'B',
-#endif
-    OTBR_OPT_DEBUG_LEVEL    = 'd',
-    OTBR_OPT_HELP           = 'h',
-    OTBR_OPT_INTERFACE_NAME = 'I',
-    OTBR_OPT_VERBOSE        = 'v',
-    OTBR_OPT_VERSION        = 'V',
-    OTBR_OPT_SHORTMAX       = 128,
+    OTBR_OPT_DEBUG_LEVEL             = 'd',
+    OTBR_OPT_HELP                    = 'h',
+    OTBR_OPT_INTERFACE_NAME          = 'I',
+    OTBR_OPT_VERBOSE                 = 'v',
+    OTBR_OPT_VERSION                 = 'V',
+    OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
     OTBR_OPT_REGION,
 };
@@ -88,9 +86,7 @@ enum
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 static const struct option  kOptions[]   = {
-#if OTBR_ENABLE_BACKBONE_ROUTER
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
-#endif
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
     {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
@@ -229,20 +225,14 @@ int main(int argc, char *argv[])
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv,
-#if OTBR_ENABLE_BACKBONE_ROUTER
-                              "B:"
-#endif
-                              "d:hI:Vv",
-                              kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
-#if OTBR_ENABLE_BACKBONE_ROUTER
         case OTBR_OPT_BACKBONE_INTERFACE_NAME:
             backboneInterfaceName = optarg;
             break;
-#endif
+
         case OTBR_OPT_DEBUG_LEVEL:
             logLevel = atoi(optarg);
             VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
@@ -290,11 +280,8 @@ int main(int argc, char *argv[])
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
-#if OTBR_ENABLE_BACKBONE_ROUTER
     otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
-#endif
-    otbrLog(OTBR_LOG_INFO, "Backbone interface %s",
-            backboneInterfaceName == nullptr ? "(null)" : backboneInterfaceName);
+
     if (!regionCode.empty())
     {
         otbrLog(OTBR_LOG_INFO, "Region %s", regionCode.c_str());
@@ -305,9 +292,7 @@ int main(int argc, char *argv[])
         otbr::AgentInstance instance(ncp);
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
-#if OTBR_ENABLE_BACKBONE_ROUTER
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
-#endif
 
         SuccessOrExit(ret = instance.Init());
 

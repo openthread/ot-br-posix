@@ -119,11 +119,11 @@ private:
     Ip6Prefix                        mDomainPrefix;
 };
 
-#endif // OTBR_ENABLE_BACKBONE_ROUTER
-
 /**
  * @}
  */
 
 } // namespace BackboneRouter
 } // namespace otbr
+
+#endif // BACKBONE_ROUTER_BACKBONE_AGENT_HPP_

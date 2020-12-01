@@ -96,6 +96,7 @@ if (OTBR_BACKBONE_ROUTER)
     target_compile_definitions(otbr-config INTERFACE
             OTBR_ENABLE_BACKBONE_ROUTER=1
     )
+    set(OT_BACKBONE_ROUTER_DUA_NDPROXYING ON CACHE BOOL "Enable Backbone Router DUA ND Proxying in OpenThread" FORCE)
     set(OT_THREAD_VERSION 1.2 CACHE STRING "Backbone Router requires Thread 1.2 or higher" FORCE)
     set(OT_BACKBONE_ROUTER ON CACHE BOOL "Enable Backbone Router feature in OpenThread" FORCE)
     set(OT_SERVICE ON CACHE BOOL "Backbone Router requires Thread network service" FORCE)
