@@ -330,6 +330,12 @@ network_manager_install()
         return 0
     fi
 
+    if with DNS64; then
+        # bind9 provides DNS service
+        sudo sed -i 's/^#port=5353/port=0/g' /etc/dnsmasq.conf
+        sudo systemctl restart dnsmasq
+    fi
+
     sudo systemctl daemon-reload
 
     sudo systemctl stop wpa_supplicant || true
@@ -371,6 +377,12 @@ network_manager_install()
 network_manager_uninstall()
 {
     with NETWORK_MANAGER || return 0
+
+    if with DNS64; then
+        sudo systemctl stop dnsmasq
+        # revert changes to dnsmasq
+        sudo sed -i 's/^port=0/#port=5353/g' /etc/dnsmasq.conf
+    fi
 
     if ! have systemctl; then
         echo "This script requires systemctl!"
