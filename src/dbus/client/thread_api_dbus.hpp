@@ -339,9 +339,9 @@ public:
     ClientError GetExtPanId(uint64_t &aExtPanId);
 
     /**
-     * This method gets the extended pan id.
+     * This method gets the IEEE 802.15.4 channel.
      *
-     * @param[out]  aChannel   The extended pan id.
+     * @param[out]  aChannel   The IEEE 802.15.4 channel.
      *
      * @retval ERROR_NONE successfully performed the dbus function call
      * @retval ERROR_DBUS dbus encode/decode error

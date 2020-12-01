@@ -293,10 +293,9 @@ int main(int argc, char *argv[])
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
-#endif
     otbrLog(OTBR_LOG_INFO, "Backbone interface %s",
             backboneInterfaceName == nullptr ? "(null)" : backboneInterfaceName);
+#endif
     if (!regionCode.empty())
     {
         otbrLog(OTBR_LOG_INFO, "Region %s", regionCode.c_str());
