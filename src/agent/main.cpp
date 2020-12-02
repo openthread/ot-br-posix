@@ -107,17 +107,17 @@ static void HandleSignal(int aSignal)
 
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
-    int error = EXIT_FAILURE;
+    int                   error         = EXIT_FAILURE;
+    ControllerOpenThread &ncpOpenThread = static_cast<ControllerOpenThread &>(aInstance.GetNcp());
+
 #if OTBR_ENABLE_DBUS_SERVER
-    ControllerOpenThread *     ncpOpenThread = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    std::unique_ptr<DBusAgent> dbusAgent     = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, ncpOpenThread));
+    std::unique_ptr<DBusAgent> dbusAgent = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, &ncpOpenThread));
     dbusAgent->Init();
 #else
     (void)aInterfaceName;
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    ControllerOpenThread *ncpOpenThreadRest = reinterpret_cast<ControllerOpenThread *>(&aInstance.GetNcp());
-    RestWebServer *       restServer        = RestWebServer::GetRestWebServer(ncpOpenThreadRest);
+    RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);
     restServer->Init();
 #endif
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
@@ -155,13 +155,11 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
-#if OTBR_ENABLE_DBUS_SERVER
-        if (ncpOpenThread->IsResetRequested())
+        if (ncpOpenThread.IsResetRequested())
         {
-            ncpOpenThread->Reset();
+            ncpOpenThread.Reset();
             continue;
         }
-#endif
 
         if (rval >= 0)
         {
