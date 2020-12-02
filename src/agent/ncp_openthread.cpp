@@ -257,7 +257,8 @@ void ControllerOpenThread::Reset(void)
     {
         handler();
     }
-    sReset = false;
+    mTriedAttach = false;
+    sReset       = false;
 }
 
 bool ControllerOpenThread::IsResetRequested(void)
