@@ -33,7 +33,7 @@ on: [push, pull_request]
 jobs:
 
   cancel-previous-runs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: rokroskar/workflow-run-cleanup-action@master
       env:
@@ -50,7 +50,7 @@ jobs:
       run: script/make-pretty check
 
   android-check:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         mdns: ["mDNSResponder", ""]
@@ -67,7 +67,7 @@ jobs:
          ot-br-posix/tests/scripts/check-android-build"
 
   check:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         mdns: ["mDNSResponder", "avahi"]
@@ -87,7 +87,7 @@ jobs:
       uses: codecov/codecov-action@v1
 
   rest-check:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         rest: ["rest-off", ""]
@@ -107,7 +107,7 @@ jobs:
       uses: codecov/codecov-action@v1
 
   script-check:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
@@ -123,7 +123,7 @@ jobs:
       uses: codecov/codecov-action@v1
 
   scan-build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       BUILD_TARGET: scan-build
       CC: clang
@@ -138,7 +138,7 @@ jobs:
       run: tests/scripts/check-scan-build
 
   package:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       BUILD_TARGET: package
     steps:
@@ -154,7 +154,7 @@ jobs:
       run: script/test package
 
   thread-1-2-backbone:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       PACKET_VERIFICATION: 1
       REFERENCE_DEVICE: 1
