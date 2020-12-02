@@ -138,7 +138,7 @@ jobs:
       run: tests/scripts/check-scan-build
 
   package:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
     env:
       BUILD_TARGET: package
     steps:
