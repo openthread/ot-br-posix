@@ -54,6 +54,7 @@ install_common_dependencies()
         ninja-build \
         doxygen \
         expect \
+        net-tools \
         libboost-dev \
         libboost-filesystem-dev \
         libboost-system-dev \
