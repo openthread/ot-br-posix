@@ -175,6 +175,7 @@ int main()
                             TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
                             api->FactoryReset(nullptr);
+                            sleep(1);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);
                             TEST_ASSERT(extAddress != 0);
@@ -219,6 +220,7 @@ int main()
                             TEST_ASSERT(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
 
                             api->FactoryReset(nullptr);
+                            sleep(1);
                             TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", nullptr) ==
                                         ClientError::OT_ERROR_NOT_FOUND);
                             TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", [](ClientError aJoinError) {
