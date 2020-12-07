@@ -292,7 +292,7 @@ std::string WpanService::HandleStatusRequest()
         networkInfo["IPv6:MeshLocalPrefix"] = rval;
 
         meshLocalPrefix = rval;
-        meshLocalPrefix.resize(meshLocalPrefix.find('/'));
+        meshLocalPrefix.resize(meshLocalPrefix.find(":/"));
 
         VerifyOrExit((rval = client.Execute("ipaddr")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
 
