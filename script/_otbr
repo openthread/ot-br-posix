@@ -73,6 +73,8 @@ otbr_install()
     if [[ ${REFERENCE_DEVICE} == "1" ]]; then
         otbr_options+=(
             "-DOT_REFERENCE_DEVICE=ON"
+            "-DOT_DHCP6_CLIENT=ON"
+            "-DOT_DHCP6_SERVER=ON"
         )
     fi
     if with BACKBONE_ROUTER; then
