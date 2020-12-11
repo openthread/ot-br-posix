@@ -127,7 +127,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     while (true)
     {
         otSysMainloopContext mainloop;
-        int                  rval;
+        int                  rval = 0;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = kPollTimeout;
