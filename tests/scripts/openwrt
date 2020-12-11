@@ -45,20 +45,20 @@ do_prepare()
     echo 'src-link openthread /home/build/ot-br-posix/etc/openwrt' >feeds.conf
 
     docker start "${CONTAINER_NAME}"
-    docker exec -it "${CONTAINER_NAME}" scripts/feeds update base
-    docker exec -it "${CONTAINER_NAME}" scripts/feeds install libjson-c libubox libubus
+    docker exec "${CONTAINER_NAME}" scripts/feeds update base
+    docker exec "${CONTAINER_NAME}" scripts/feeds install libjson-c libubox libubus
 
     docker cp feeds.conf "${CONTAINER_NAME}":/home/build/openwrt/feeds.conf
-    docker exec -it "${CONTAINER_NAME}" sudo chown -R build:build /home/build/ot-br-posix /home/build/openwrt/feeds.conf /home/build/openwrt/bin
-    docker exec -it "${CONTAINER_NAME}" scripts/feeds update openthread
-    docker exec -it "${CONTAINER_NAME}" make defconfig
-    docker exec -it "${CONTAINER_NAME}" scripts/feeds install openthread-br
+    docker exec "${CONTAINER_NAME}" sudo chown -R build:build /home/build/ot-br-posix /home/build/openwrt/feeds.conf /home/build/openwrt/bin
+    docker exec "${CONTAINER_NAME}" scripts/feeds update openthread
+    docker exec "${CONTAINER_NAME}" make defconfig
+    docker exec "${CONTAINER_NAME}" scripts/feeds install openthread-br
 }
 
 do_build()
 {
-    docker exec -it "${CONTAINER_NAME}" make V=sc package/openthread-br/compile
-    docker exec -it "${CONTAINER_NAME}" find . -name "${PACKAGE_NAME}*.ipk" | grep "${PACKAGE_NAME}"
+    docker exec "${CONTAINER_NAME}" make V=sc package/openthread-br/compile
+    docker exec "${CONTAINER_NAME}" find . -name "${PACKAGE_NAME}*.ipk" | grep "${PACKAGE_NAME}"
 }
 
 do_clean()

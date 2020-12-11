@@ -45,7 +45,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Bootstrap
-      run: sudo BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
+      run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
       run: script/make-pretty check
 
