@@ -67,7 +67,6 @@ public:
      */
     const char *GetThreadIfName(void) const { return mThreadIfName; }
 
-#if OTBR_ENABLE_BACKBONE_ROUTER
     /**
      * This method sets the Backbone network interface name.
      *
@@ -83,21 +82,16 @@ public:
      *
      */
     const char *GetBackboneIfName(void) const { return mBackboneIfName; }
-#endif
 
 private:
     InstanceParams()
         : mThreadIfName(nullptr)
-#if OTBR_ENABLE_BACKBONE_ROUTER
         , mBackboneIfName(nullptr)
-#endif
     {
     }
 
     const char *mThreadIfName;
-#if OTBR_ENABLE_BACKBONE_ROUTER
     const char *mBackboneIfName;
-#endif
 };
 
 } // namespace otbr
