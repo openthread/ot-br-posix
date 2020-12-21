@@ -501,7 +501,7 @@ otError DBusThreadObject::SetRegionHandler(DBusMessageIter &aIter)
     otError     error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, regionCode) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    mNcp->SetRegionCode(regionCode);
+    error = mNcp->SetRegionCode(regionCode);
 
 exit:
     return error;
