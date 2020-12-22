@@ -28,7 +28,9 @@
 
 #include <openthread-br/config.h>
 
+#include <fstream>
 #include <mutex>
+#include <sstream>
 #include <thread>
 
 #include <errno.h>
@@ -72,25 +74,22 @@ static const char kDefaultInterfaceName[] = "wpan0";
 
 enum
 {
-#if OTBR_ENABLE_BACKBONE_ROUTER
     OTBR_OPT_BACKBONE_INTERFACE_NAME = 'B',
-#endif
-    OTBR_OPT_DEBUG_LEVEL    = 'd',
-    OTBR_OPT_HELP           = 'h',
-    OTBR_OPT_INTERFACE_NAME = 'I',
-    OTBR_OPT_VERBOSE        = 'v',
-    OTBR_OPT_VERSION        = 'V',
-    OTBR_OPT_SHORTMAX       = 128,
+    OTBR_OPT_DEBUG_LEVEL             = 'd',
+    OTBR_OPT_HELP                    = 'h',
+    OTBR_OPT_INTERFACE_NAME          = 'I',
+    OTBR_OPT_VERBOSE                 = 'v',
+    OTBR_OPT_VERSION                 = 'V',
+    OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
     OTBR_OPT_REGION,
+    OTBR_OPT_POWER_MAP,
 };
 
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 static const struct option  kOptions[]   = {
-#if OTBR_ENABLE_BACKBONE_ROUTER
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
-#endif
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
     {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
@@ -98,11 +97,44 @@ static const struct option  kOptions[]   = {
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
     {"reg", required_argument, nullptr, OTBR_OPT_REGION},
+    {"power-map", required_argument, nullptr, OTBR_OPT_POWER_MAP},
     {0, 0, 0, 0}};
 
 static void HandleSignal(int aSignal)
 {
     signal(aSignal, SIG_DFL);
+}
+
+otbrError LoadPowerMap(const char *aFile, otbr::Ncp::PowerMap *aPowerMap)
+{
+    otbrError     error = OTBR_ERROR_NONE;
+    std::ifstream fin(aFile);
+    std::string   line;
+
+    VerifyOrExit(fin, error = OTBR_ERROR_ERRNO);
+    while (std::getline(fin, line))
+    {
+        std::istringstream  lineStream(line);
+        std::string         region;
+        std::vector<int8_t> powerTable;
+
+        lineStream >> region;
+        if (!region.empty())
+        {
+            int power;
+            while (lineStream >> power)
+            {
+                powerTable.push_back(power);
+            }
+        }
+        VerifyOrExit(powerTable.size() > 0 &&
+                         powerTable.size() <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1,
+                     error = OTBR_ERROR_PARSE);
+        aPowerMap->emplace(region, powerTable);
+    }
+
+exit:
+    return error;
 }
 
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
@@ -223,26 +255,21 @@ int main(int argc, char *argv[])
     const char *                     backboneInterfaceName = "";
     otbr::Ncp::Controller *          ncp                   = nullptr;
     otbr::Ncp::ControllerOpenThread *ncpOpenThread         = nullptr;
-    bool                             verbose               = false;
-    bool                             printRadioVersion     = false;
+    otbr::Ncp::PowerMap              powerMap;
+    bool                             verbose           = false;
+    bool                             printRadioVersion = false;
     std::string                      regionCode;
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv,
-#if OTBR_ENABLE_BACKBONE_ROUTER
-                              "B:"
-#endif
-                              "d:hI:Vv",
-                              kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
-#if OTBR_ENABLE_BACKBONE_ROUTER
         case OTBR_OPT_BACKBONE_INTERFACE_NAME:
             backboneInterfaceName = optarg;
             break;
-#endif
+
         case OTBR_OPT_DEBUG_LEVEL:
             logLevel = atoi(optarg);
             VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
@@ -274,6 +301,10 @@ int main(int argc, char *argv[])
             regionCode = optarg;
             break;
 
+        case OTBR_OPT_POWER_MAP:
+            SuccessOrExit(LoadPowerMap(optarg, &powerMap));
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -285,31 +316,27 @@ int main(int argc, char *argv[])
     otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    ncp           = otbr::Ncp::Controller::Create(interfaceName, argv[optind], backboneInterfaceName);
+    ncp =
+        otbr::Ncp::Controller::Create(interfaceName, argv[optind], regionCode.c_str(), powerMap, backboneInterfaceName);
     ncpOpenThread = static_cast<ControllerOpenThread *>(ncp);
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
-#if OTBR_ENABLE_BACKBONE_ROUTER
     otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
-#endif
-    otbrLog(OTBR_LOG_INFO, "Backbone interface %s",
-            backboneInterfaceName == nullptr ? "(null)" : backboneInterfaceName);
-    if (!regionCode.empty())
-    {
-        otbrLog(OTBR_LOG_INFO, "Region %s", regionCode.c_str());
-    }
-    ncpOpenThread->SetRegionCode(regionCode);
 
     {
         otbr::AgentInstance instance(ncp);
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
-#if OTBR_ENABLE_BACKBONE_ROUTER
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
-#endif
 
         SuccessOrExit(ret = instance.Init());
+
+        if (!regionCode.empty())
+        {
+            otbrLog(OTBR_LOG_INFO, "Region %s", regionCode.c_str());
+            SuccessOrExit(ncpOpenThread->SetRegionCode(regionCode));
+        }
 
         if (printRadioVersion)
         {

@@ -61,10 +61,16 @@ public:
      *
      * @param[in]   aInterfaceName          A string of the NCP interface name.
      * @param[in]   aRadioUrl               The URL describes the radio chip.
+     * @param[in]   aRegionCode             The region code, empty string for not specified.
+     * @param[in]   aPowerMap               The power table for each region.
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      *
      */
-    ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName);
+    ControllerOpenThread(const char *    aInterfaceName,
+                         const char *    aRadioUrl,
+                         const char *    aRegionCode,
+                         const PowerMap &aPowerMap,
+                         const char *    aBackboneInterfaceName);
 
     /**
      * This method initalize the NCP controller.
@@ -96,7 +102,7 @@ public:
      * @param[in]   aCode   The region code.
      *
      */
-    void SetRegionCode(const std::string &aCode) { mRegionCode = aCode; }
+    otError SetRegionCode(const std::string &aCode);
 
     /**
      * This method gets the region code.
@@ -202,6 +208,8 @@ private:
     bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
     std::string                                                                     mRegionCode;
+    std::string                                                                     mOriginalRegionCode;
+    PowerMap                                                                        mPowerMap;
 
     static const otCliCommand sRegionCommand;
 };

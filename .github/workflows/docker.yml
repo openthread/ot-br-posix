@@ -40,6 +40,26 @@ jobs:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       if: "github.ref != 'refs/heads/master'"
 
+  docker-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rcp_bus: ["UART", "SPI"]
+    env:
+      OT_POSIX_CONFIG_RCP_BUS: ${{matrix.rcp_bus}}
+      OTBR_COVERAGE: 1
+      VERBOSE: 1
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      env:
+        BUILD_TARGET: "docker-check"
+      run: tests/scripts/bootstrap.sh
+    - name: Check
+      run: tests/scripts/check-docker
+
   buildx:
     runs-on: ubuntu-20.04
     strategy:
