@@ -61,20 +61,10 @@ using std::chrono::steady_clock;
 namespace otbr {
 namespace Ncp {
 
-const otCliCommand ControllerOpenThread::sRegionCommand = {
-    "region",
-    &ControllerOpenThread::HandleRegionCommand,
-};
-
-ControllerOpenThread::ControllerOpenThread(const char *    aInterfaceName,
-                                           const char *    aRadioUrl,
-                                           const char *    aRegionCode,
-                                           const PowerMap &aPowerMap,
-                                           const char *    aBackboneInterfaceName)
+ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
+                                           const char *aRadioUrl,
+                                           const char *aBackboneInterfaceName)
     : mTriedAttach(false)
-    , mRegionCode(aRegionCode)
-    , mOriginalRegionCode(aRegionCode)
-    , mPowerMap(aPowerMap)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
@@ -140,13 +130,7 @@ otbrError ControllerOpenThread::Init(void)
     otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
 #endif
 
-    if (!mRegionCode.empty())
-    {
-        VerifyOrExit(SetRegionCode(mRegionCode) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
-    }
-
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
-    otCliSetUserCommands(&sRegionCommand, 1, this);
 
 exit:
     return error;
@@ -263,7 +247,6 @@ void ControllerOpenThread::Reset(void)
 
     otInstanceFinalize(mInstance);
     otSysDeinit();
-    mRegionCode = mOriginalRegionCode;
     Init();
     for (auto &handler : mResetHandlers)
     {
@@ -341,68 +324,6 @@ void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandl
     mResetHandlers.emplace_back(std::move(aHandler));
 }
 
-otError ControllerOpenThread::SetRegionCode(const std::string &aCode)
-{
-    constexpr char kRegionWorldWide[] = "WW";
-    std::string    powerCode          = aCode;
-    otError        error              = OT_ERROR_NONE;
-
-    if (mPowerMap.find(aCode) == mPowerMap.end())
-    {
-        otbrLog(OTBR_LOG_WARNING, "Cannot find %s in power map, use WW instead", aCode.c_str());
-        powerCode = kRegionWorldWide;
-    }
-    VerifyOrExit(mPowerMap.find(powerCode) != mPowerMap.end(), error = OT_ERROR_NOT_FOUND);
-    mRegionCode = aCode;
-
-    for (size_t i = 0, channel = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN;
-         i < mPowerMap[powerCode].size() && channel <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX; i++, channel++)
-    {
-        SuccessOrExit(error = otPlatRadioSetChannelMaxTransmitPower(mInstance, channel, mPowerMap[powerCode][i]));
-    }
-
-exit:
-    return error;
-}
-
-void ControllerOpenThread::HandleRegionCommand(void *aContext, uint8_t aArgLength, char **aArgs)
-{
-    ControllerOpenThread *controller = static_cast<ControllerOpenThread *>(aContext);
-    controller->HandleRegionCommand(aArgLength, aArgs);
-}
-
-void ControllerOpenThread::HandleRegionCommand(uint8_t aArgLength, char **aArgs)
-{
-    if (aArgLength == 0)
-    {
-        otCliOutputFormat("%s\nDone\n", mRegionCode.c_str());
-    }
-    else if (aArgLength == 1)
-    {
-        if (strnlen(aArgs[0], 3) == 2)
-        {
-            otError error = SetRegionCode(aArgs[0]);
-
-            if (error != OT_ERROR_NONE)
-            {
-                otCliOutputFormat("Error%d: %s\n", error, otThreadErrorToString(error));
-            }
-            else
-            {
-                otCliOutputFormat("Done\n");
-            }
-        }
-        else
-        {
-            otCliOutputFormat("Error: InvalidArgs\n");
-        }
-    }
-    else
-    {
-        otCliOutputFormat("Error: InvalidArgs\n");
-    }
-}
-
 #if OTBR_ENABLE_BACKBONE_ROUTER
 void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
                                                                  otBackboneRouterDomainPrefixEvent aEvent,
@@ -431,13 +352,9 @@ void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdPr
 }
 #endif
 
-Controller *Controller::Create(const char *    aInterfaceName,
-                               const char *    aRadioUrl,
-                               const char *    aRegionCode,
-                               const PowerMap &aPowerMap,
-                               const char *    aBackboneInterfaceName)
+Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName)
 {
-    return new ControllerOpenThread(aInterfaceName, aRadioUrl, aRegionCode, aPowerMap, aBackboneInterfaceName);
+    return new ControllerOpenThread(aInterfaceName, aRadioUrl, aBackboneInterfaceName);
 }
 
 /*

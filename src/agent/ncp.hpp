@@ -138,16 +138,12 @@ public:
      *
      * @param[in]   aInterfaceName          A string of the NCP interface name.
      * @param[in]   aRadioUrl               The URL describes the radio chip.
-     * @param[in]   aRegionCode             The region code, empty string for not specified.
-     * @param[in]   aPowerMap               The power table for each region.
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      *
      */
-    static Controller *Create(const char *    aInterfaceName,
-                              const char *    aRadioUrl,
-                              const char *    aRegionCode,
-                              const PowerMap &aPowerMap,
-                              const char *    aBackboneInterfaceName = nullptr);
+    static Controller *Create(const char *aInterfaceName,
+                              const char *aRadioUrl,
+                              const char *aBackboneInterfaceName = nullptr);
 
     /**
      * This method destroys a NCP Controller.
