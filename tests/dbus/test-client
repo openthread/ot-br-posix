@@ -51,23 +51,13 @@ on_exit()
 main()
 {
     sudo rm -rf tmp
-    echo "US 20 20 20 20 20 20 20 20 20 20 20 20 20 20 18 127
-CA 20 20 20 20 20 20 20 20 20 20 20 20 20 20 18 127
-WW 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10" >/tmp/power_map
     sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
     sudo service dbus reload
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent --reg WW --power-map /tmp/power_map -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region | grep WW
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl txpower 50 | grep Done
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl txpower | grep 10
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region US | grep Done
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region | grep US
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl txpower | grep 20
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl region | grep WW
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
