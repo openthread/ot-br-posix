@@ -40,7 +40,6 @@
 #include <openthread/platform/radio.h>
 
 #include "common/byteswap.hpp"
-#include "common/region_code.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
@@ -140,8 +139,6 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::SetLegacyUlaPrefixHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::SetLinkModeHandler, this, _1));
-    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_REGION,
-                               std::bind(&DBusThreadObject::SetRegionHandler, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::GetLinkModeHandler, this, _1));
@@ -196,8 +193,6 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
                                std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_REGION,
-                               std::bind(&DBusThreadObject::GetRegionHandler, this, _1));
 
     return error;
 }
@@ -495,18 +490,6 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::SetRegionHandler(DBusMessageIter &aIter)
-{
-    std::string regionCode;
-    otError     error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, regionCode) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    error = mNcp->SetRegionCode(regionCode);
-
-exit:
-    return error;
-}
-
 otError DBusThreadObject::GetLinkModeHandler(DBusMessageIter &aIter)
 {
     auto             threadHelper = mNcp->GetThreadHelper();
@@ -680,9 +663,8 @@ exit:
 otError DBusThreadObject::GetSupportedChannelMaskHandler(DBusMessageIter &aIter)
 {
     auto     threadHelper = mNcp->GetThreadHelper();
-    uint32_t channelMask  = otLinkGetSupportedChannelMask(threadHelper->GetInstance()) &
-                           GetSupportedChannelMaskForRegion(mNcp->GetRegionCode());
-    otError error = OT_ERROR_NONE;
+    uint32_t channelMask  = otLinkGetSupportedChannelMask(threadHelper->GetInstance());
+    otError  error        = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, channelMask) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -974,17 +956,6 @@ otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, externalRouteTable) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRegionHandler(DBusMessageIter &aIter)
-{
-    otError     error = OT_ERROR_NONE;
-    std::string regionName(mNcp->GetRegionCode());
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, regionName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

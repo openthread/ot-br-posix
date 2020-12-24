@@ -70,6 +70,15 @@
 #define MBEDTLS_SSL_SRV_C
 #define MBEDTLS_SSL_TLS_C
 
+// Enable ECDSA support
+#define MBEDTLS_BASE64_C
+#define MBEDTLS_ECDH_C
+#define MBEDTLS_ECDSA_C
+#define MBEDTLS_ECDSA_DETERMINISTIC
+#define MBEDTLS_OID_C
+#define MBEDTLS_PEM_PARSE_C
+#define MBEDTLS_PK_WRITE_C
+
 #define MBEDTLS_NET_C
 #define MBEDTLS_TIMING_C
 

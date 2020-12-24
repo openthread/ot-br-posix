@@ -49,7 +49,6 @@
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "common/region_code.hpp"
 #include "common/types.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
@@ -82,8 +81,6 @@ enum
     OTBR_OPT_VERSION                 = 'V',
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
-    OTBR_OPT_REGION,
-    OTBR_OPT_POWER_MAP,
 };
 
 // Default poll timeout.
@@ -96,45 +93,11 @@ static const struct option  kOptions[]   = {
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
-    {"reg", required_argument, nullptr, OTBR_OPT_REGION},
-    {"power-map", required_argument, nullptr, OTBR_OPT_POWER_MAP},
     {0, 0, 0, 0}};
 
 static void HandleSignal(int aSignal)
 {
     signal(aSignal, SIG_DFL);
-}
-
-otbrError LoadPowerMap(const char *aFile, otbr::Ncp::PowerMap *aPowerMap)
-{
-    otbrError     error = OTBR_ERROR_NONE;
-    std::ifstream fin(aFile);
-    std::string   line;
-
-    VerifyOrExit(fin, error = OTBR_ERROR_ERRNO);
-    while (std::getline(fin, line))
-    {
-        std::istringstream  lineStream(line);
-        std::string         region;
-        std::vector<int8_t> powerTable;
-
-        lineStream >> region;
-        if (!region.empty())
-        {
-            int power;
-            while (lineStream >> power)
-            {
-                powerTable.push_back(power);
-            }
-        }
-        VerifyOrExit(powerTable.size() > 0 &&
-                         powerTable.size() <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1,
-                     error = OTBR_ERROR_PARSE);
-        aPowerMap->emplace(region, powerTable);
-    }
-
-exit:
-    return error;
 }
 
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
@@ -226,7 +189,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [--reg region] [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
@@ -258,7 +221,6 @@ int main(int argc, char *argv[])
     otbr::Ncp::PowerMap              powerMap;
     bool                             verbose           = false;
     bool                             printRadioVersion = false;
-    std::string                      regionCode;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -297,14 +259,6 @@ int main(int argc, char *argv[])
             printRadioVersion = true;
             break;
 
-        case OTBR_OPT_REGION:
-            regionCode = optarg;
-            break;
-
-        case OTBR_OPT_POWER_MAP:
-            SuccessOrExit(LoadPowerMap(optarg, &powerMap));
-            break;
-
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -316,8 +270,7 @@ int main(int argc, char *argv[])
     otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    ncp =
-        otbr::Ncp::Controller::Create(interfaceName, argv[optind], regionCode.c_str(), powerMap, backboneInterfaceName);
+    ncp           = otbr::Ncp::Controller::Create(interfaceName, argv[optind], backboneInterfaceName);
     ncpOpenThread = static_cast<ControllerOpenThread *>(ncp);
     VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
 
@@ -331,12 +284,6 @@ int main(int argc, char *argv[])
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
 
         SuccessOrExit(ret = instance.Init());
-
-        if (!regionCode.empty())
-        {
-            otbrLog(OTBR_LOG_INFO, "Region %s", regionCode.c_str());
-            SuccessOrExit(ncpOpenThread->SetRegionCode(regionCode));
-        }
 
         if (printRadioVersion)
         {

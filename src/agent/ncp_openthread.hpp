@@ -44,7 +44,6 @@
 
 #include "ncp.hpp"
 #include "agent/thread_helper.hpp"
-#include "common/region_code.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -61,16 +60,10 @@ public:
      *
      * @param[in]   aInterfaceName          A string of the NCP interface name.
      * @param[in]   aRadioUrl               The URL describes the radio chip.
-     * @param[in]   aRegionCode             The region code, empty string for not specified.
-     * @param[in]   aPowerMap               The power table for each region.
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      *
      */
-    ControllerOpenThread(const char *    aInterfaceName,
-                         const char *    aRadioUrl,
-                         const char *    aRegionCode,
-                         const PowerMap &aPowerMap,
-                         const char *    aBackboneInterfaceName);
+    ControllerOpenThread(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName);
 
     /**
      * This method initalize the NCP controller.
@@ -95,22 +88,6 @@ public:
      *
      */
     otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
-
-    /**
-     * This method sets the region code.
-     *
-     * @param[in]   aCode   The region code.
-     *
-     */
-    otError SetRegionCode(const std::string &aCode);
-
-    /**
-     * This method gets the region code.
-     *
-     * @retval  The region code.
-     *
-     */
-    std::string GetRegionCode(void) { return mRegionCode; }
 
     /**
      * This method updates the fd_set to poll.
@@ -197,9 +174,6 @@ private:
     void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
                                                            const otIp6Address *                   aAddress);
 
-    static void HandleRegionCommand(void *aContext, uint8_t aArgLength, char **aArgs);
-    void        HandleRegionCommand(uint8_t aArgLength, char **aArgs);
-
     otInstance *mInstance;
 
     otPlatformConfig                                                                mConfig;
@@ -207,11 +181,6 @@ private:
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
     bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
-    std::string                                                                     mRegionCode;
-    std::string                                                                     mOriginalRegionCode;
-    PowerMap                                                                        mPowerMap;
-
-    static const otCliCommand sRegionCommand;
 };
 
 } // namespace Ncp
