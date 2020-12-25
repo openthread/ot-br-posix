@@ -228,6 +228,30 @@ exit:
     return error;
 }
 
+ClientError ThreadApiDBus::Attach(const OtResultHandler &aHandler)
+{
+    ClientError error = ClientError::ERROR_NONE;
+
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
+    mAttachHandler = aHandler;
+
+    if (aHandler)
+    {
+        error = CallDBusMethodAsync(OTBR_DBUS_ATTACH_METHOD,
+                                    &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::AttachPendingCallHandler>);
+    }
+    else
+    {
+        error = CallDBusMethodSync(OTBR_DBUS_ATTACH_METHOD);
+    }
+    if (error != ClientError::ERROR_NONE)
+    {
+        mAttachHandler = nullptr;
+    }
+exit:
+    return error;
+}
+
 void ThreadApiDBus::AttachPendingCallHandler(DBusPendingCall *aPending)
 {
     ClientError       ret = ClientError::OT_ERROR_FAILED;
@@ -369,6 +393,11 @@ ClientError ThreadApiDBus::SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6
     return SetProperty(OTBR_DBUS_PROPERTY_LEGACY_ULA_PREFIX, aPrefix);
 }
 
+ClientError ThreadApiDBus::SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
+}
+
 ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);
@@ -508,6 +537,11 @@ ClientError ThreadApiDBus::GetRadioTxPower(int8_t &aTxPower)
 ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
+}
+
+ClientError ThreadApiDBus::GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
 }
 
 std::string ThreadApiDBus::GetInterfaceName(void)

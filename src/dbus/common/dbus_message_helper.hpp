@@ -583,6 +583,8 @@ otbrError DBusMessageToTuple(UniqueDBusMessage const &aMessage, std::tuple<Field
     return DBusMessageToTuple(*aMessage.get(), aValues);
 }
 
+bool IsDBusMessageEmpty(DBusMessage &aMessage);
+
 } // namespace DBus
 } // namespace otbr
 

@@ -268,6 +268,30 @@ exit:
     }
 }
 
+void ThreadHelper::Attach(ResultHandler aHandler)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
+    mAttachHandler = aHandler;
+
+    if (!otIp6IsEnabled(mInstance))
+    {
+        SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+    }
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        if (aHandler)
+        {
+            aHandler(error);
+        }
+        mAttachHandler = nullptr;
+    }
+}
+
 otError ThreadHelper::Reset(void)
 {
     mDeviceRoleHandlers.clear();
