@@ -203,7 +203,7 @@ public:
      */
     PublisherAvahi(int aProtocol, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext);
 
-    ~PublisherAvahi(void);
+    ~PublisherAvahi(void) override;
 
     /**
      * This method publishes or updates a service.
@@ -220,7 +220,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...);
+    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...) override;
 
     /**
      * This method starts the MDNS service.
@@ -229,7 +229,7 @@ public:
      * @retval OTBR_ERROR_MDNS  Failed to start MDNS service.
      *
      */
-    otbrError Start(void);
+    otbrError Start(void) override;
 
     /**
      * This method checks if publisher has been started.
@@ -238,13 +238,13 @@ public:
      * @retval false    Not started.
      *
      */
-    bool IsStarted(void) const;
+    bool IsStarted(void) const override;
 
     /**
      * This method stops the MDNS service.
      *
      */
-    void Stop(void);
+    void Stop(void) override;
 
     /**
      * This method performs avahi poll processing.
@@ -254,7 +254,7 @@ public:
      * @param[in]   aErrorFdSet         A reference to error file descriptors.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) override;
 
     /**
      * This method updates the fd_set and timeout for mainloop.
@@ -266,7 +266,11 @@ public:
      * @param[inout]    aTimeout        A reference to the timeout.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void UpdateFdSet(fd_set & aReadFdSet,
+                     fd_set & aWriteFdSet,
+                     fd_set & aErrorFdSet,
+                     int &    aMaxFd,
+                     timeval &aTimeout) override;
 
 private:
     enum
