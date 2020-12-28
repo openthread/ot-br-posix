@@ -177,5 +177,16 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::vector<int64_t> &
     return DBusMessageEncodePrimitive(aIter, aValue);
 }
 
+bool IsDBusMessageEmpty(DBusMessage &aMessage)
+{
+    DBusMessageIter iter;
+
+    if (!dbus_message_iter_init(&aMessage, &iter))
+    {
+        return true;
+    }
+    return dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID;
+}
+
 } // namespace DBus
 } // namespace otbr
