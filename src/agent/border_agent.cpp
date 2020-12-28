@@ -224,7 +224,7 @@ void BorderAgent::PublishService(void)
 
     assert(mThreadVersion != 0);
     // clang-format off
-    mPublisher->PublishService(nullptr, kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
+    mPublisher->PublishService(/* aHostName */ nullptr, kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
         "nn", mNetworkName, strlen(mNetworkName),
         "xp", &mExtPanId, sizeof(mExtPanId),
         "tv", versionString, strlen(versionString),

@@ -90,7 +90,7 @@ void PublishSingleServiceWithCustomHost(void *aContext, Mdns::State aState)
     hostAddr[1]  = 0x02;
     hostAddr[15] = 0x01;
 
-    assert(aContext == &sContext);
+    VerifyOrDie(aContext == &sContext, "unexpected context");
     if (aState == Mdns::kStateReady)
     {
         otbrError error;
@@ -102,6 +102,50 @@ void PublishSingleServiceWithCustomHost(void *aContext, Mdns::State aState)
                                                     sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
                                                     sizeof(xpanid), nullptr);
         SuccessOrDie(error, "cannot publish the service");
+    }
+}
+
+void PublishMultipleServicesWithCustomHost(void *aContext, Mdns::State aState)
+{
+    uint8_t    xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t    hostAddr[16]          = {0};
+    const char hostName1[]           = "custom-host-1";
+    const char hostName2[]           = "custom-host-2";
+
+    hostAddr[0]  = 0x20;
+    hostAddr[1]  = 0x02;
+    hostAddr[15] = 0x01;
+
+    VerifyOrDie(aContext == &sContext, "unexpected context");
+    if (aState == Mdns::kStateReady)
+    {
+        otbrError error;
+
+        error = sContext.mPublisher->PublishHost(hostName1, hostAddr, sizeof(hostAddr));
+        SuccessOrDie(error, "cannot publish the first host");
+
+        error = sContext.mPublisher->PublishService(hostName1, 12345, "MultipleService11", "_meshcop._udp.", "nn",
+                                                    "cool", sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
+                                                    sizeof(xpanid), nullptr);
+        SuccessOrDie(error, "cannot publish the first service");
+
+        error = sContext.mPublisher->PublishService(hostName1, 12345, "MultipleService12", "_meshcop._udp.", "nn",
+                                                    "cool", sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
+                                                    sizeof(xpanid), nullptr);
+        SuccessOrDie(error, "cannot publish the second service");
+
+        error = sContext.mPublisher->PublishHost(hostName2, hostAddr, sizeof(hostAddr));
+        SuccessOrDie(error, "cannot publish the second host");
+
+        error = sContext.mPublisher->PublishService(hostName2, 12345, "MultipleService21", "_meshcop._udp.", "nn",
+                                                    "cool", sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
+                                                    sizeof(xpanid), nullptr);
+        SuccessOrDie(error, "cannot publish the first service");
+
+        error = sContext.mPublisher->PublishService(hostName2, 12345, "MultipleService22", "_meshcop._udp.", "nn",
+                                                    "cool", sizeof("cool") - 1, "xp", reinterpret_cast<char *>(&xpanid),
+                                                    sizeof(xpanid), nullptr);
+        SuccessOrDie(error, "cannot publish the second service");
     }
 }
 
@@ -171,6 +215,21 @@ otbrError TestSingleServiceWithCustomHost(void)
 
     Mdns::Publisher *pub =
         Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, PublishSingleServiceWithCustomHost, &sContext);
+    sContext.mPublisher = pub;
+    SuccessOrExit(error = pub->Start());
+    Mainloop(*pub);
+
+exit:
+    Mdns::Publisher::Destroy(pub);
+    return error;
+}
+
+otbrError TestMultipleServicesWithCustomHost(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    Mdns::Publisher *pub =
+        Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, PublishMultipleServicesWithCustomHost, &sContext);
     sContext.mPublisher = pub;
     SuccessOrExit(error = pub->Start());
     Mainloop(*pub);
@@ -277,7 +336,7 @@ int main(int argc, char *argv[])
         break;
 
     case 'm':
-        ret = TestMultipleServices();
+        ret = argv[1][1] == 'c' ? TestMultipleServicesWithCustomHost() : TestMultipleServices();
         break;
 
     case 'u':

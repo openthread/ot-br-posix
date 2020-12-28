@@ -130,8 +130,8 @@ public:
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
-     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
      *
      */
     virtual otbrError UnpublishService(const char *aName, const char *aType) = 0;
@@ -158,8 +158,8 @@ public:
      *
      * @param[in]  aName  A host name.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully published or updated the host.
-     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the host.
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
      *
      */
     virtual otbrError UnpublishHost(const char *aName) = 0;
@@ -197,7 +197,7 @@ public:
      * This function creates a MDNS publisher.
      *
      * @param[in]   aProtocol           Protocol to use for publishing. AF_INET6, AF_INET or AF_UNSPEC.
-     * @param[in]   aDomain             The domain to register in. May be nullptr.
+     * @param[in]   aDomain             The domain to register in. Set nullptr to use default mDNS domain ("local.").
      * @param[in]   aHandler            The function to be called when this service state changed.
      * @param[in]   aContext            A pointer to application-specific context.
      *

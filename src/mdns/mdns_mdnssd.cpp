@@ -476,6 +476,9 @@ otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddres
     DNSRecordRef hostRecord;
     Host         newHost;
 
+    // Supports only IPv6 for now, may support IPv4 in the future.
+    VerifyOrExit(aAddressLength == OTBR_IP6_ADDRESS_SIZE, error = OTBR_ERROR_INVALID_ARGS);
+
     SuccessOrExit(ret = MakeFullName(fullName, sizeof(fullName), aName));
 
     if (mHostsConnection == nullptr)
@@ -550,8 +553,8 @@ void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnect
                                                DNSServiceFlags     aFlags,
                                                DNSServiceErrorType aErrorCode)
 {
-    (void)aHostsConnection;
-    (void)aFlags;
+    OTBR_UNUSED_VARIABLE(aHostsConnection);
+    OTBR_UNUSED_VARIABLE(aFlags);
 
     auto host =
         std::find_if(mHosts.begin(), mHosts.end(), [&](const Host &aHost) { return aHost.mRecord == aHostRecord; });

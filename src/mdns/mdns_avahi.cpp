@@ -583,26 +583,32 @@ exit:
 
 otbrError PublisherAvahi::UnpublishService(const char *aName, const char *aType)
 {
-    (void)aName;
-    (void)aType;
+    OTBR_UNUSED_VARIABLE(aName);
+    OTBR_UNUSED_VARIABLE(aType);
 
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    VerifyOrDie(false, "UnpublishService is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
 }
 
 otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
 {
-    (void)aName;
-    (void)aAddress;
-    (void)aAddressLength;
+    OTBR_UNUSED_VARIABLE(aName);
+    OTBR_UNUSED_VARIABLE(aAddress);
+    OTBR_UNUSED_VARIABLE(aAddressLength);
 
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    VerifyOrDie(false, "PublishHost is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
 }
 
 otbrError PublisherAvahi::UnpublishHost(const char *aName)
 {
-    (void)aName;
+    OTBR_UNUSED_VARIABLE(aName);
 
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    VerifyOrDie(false, "UnpublishHost is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
 }
 
 Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)

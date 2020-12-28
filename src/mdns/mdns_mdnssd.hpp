@@ -90,8 +90,8 @@ public:
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
-     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
      *
      */
     otbrError UnpublishService(const char *aName, const char *aType) override;
@@ -117,8 +117,8 @@ public:
      *
      * @param[in]  aName  A host name.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully published or updated the host.
-     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the host.
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
      *
      * @note  All services reside on this host should be un-published by UnpublishService.
      *
