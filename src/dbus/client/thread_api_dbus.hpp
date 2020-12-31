@@ -295,6 +295,18 @@ public:
     ClientError SetLinkMode(const LinkModeConfig &aConfig);
 
     /**
+     * This method sets the radio region.
+     *
+     * @param[in]   aRadioRegion  The radio region.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetRadioRegion(const std::string &aRadioRegion);
+
+    /**
      * This method gets the link operating mode.
      *
      * @param[out]  aConfig   The operating mode config.
@@ -618,6 +630,18 @@ public:
      *
      */
     ClientError GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset);
+
+    /**
+     * This method gets the radio region.
+     *
+     * @param[out]  aRadioRegion  The radio region.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetRadioRegion(std::string &aRadioRegion);
 
     /**
      * This method returns the network interface name the client is bound to.
