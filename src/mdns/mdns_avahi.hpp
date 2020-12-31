@@ -194,22 +194,22 @@ public:
      * The constructor to initialize a Publisher.
      *
      * @param[in]   aProtocol           The protocol used for publishing. IPv4, IPv6 or both.
-     * @param[in]   aHost               The name of host residing the services to be published.
-                                        nullptr to use default.
      * @param[in]   aDomain             The domain of the host. nullptr to use default.
      * @param[in]   aHandler            The function to be called when state changes.
      * @param[in]   aContext            A pointer to application-specific context.
      *
      */
-    PublisherAvahi(int aProtocol, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext);
+    PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext);
 
     ~PublisherAvahi(void) override;
 
     /**
      * This method publishes or updates a service.
      *
-     * @note only text record can be updated.
-     *
+     * @param[in]   aHostName           The name of the host which this service resides on. If NULL is provided,
+     *                                  this service resides on local host and it is the implementation to provide
+     *                                  specific host name. Otherwise, the caller MUST publish the host with method
+     *                                  PublishHost.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
@@ -220,7 +220,48 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...) override;
+    otbrError PublishService(const char *aHostName, uint16_t aPort, const char *aName, const char *aType, ...) override;
+
+    /**
+     * This method un-publishes a service.
+     *
+     * @param[in]   aName               The name of this service.
+     * @param[in]   aType               The type of this service.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
+     *
+     */
+    otbrError UnpublishService(const char *aName, const char *aType) override;
+
+    /**
+     * This method publishes or updates a host.
+     *
+     * Publishing a host is advertising an AAAA RR for the host name. This method should be called
+     * before a service with non-null host name is published.
+     *
+     * @param[in]  aName           The name of the host.
+     * @param[in]  aAddress        The address of the host.
+     * @param[in]  aAddressLength  The length of @p aAddress.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully published or updated the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the host.
+     *
+     */
+    otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) override;
+
+    /**
+     * This method un-publishes a host.
+     *
+     * @param[in]  aName  A host name.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
+     *
+     * @note  All services reside on this host should be un-published by UnpublishService.
+     *
+     */
+    otbrError UnpublishHost(const char *aName) override;
 
     /**
      * This method starts the MDNS service.
@@ -303,7 +344,6 @@ private:
     AvahiEntryGroup *mGroup;
     Poller           mPoller;
     int              mProtocol;
-    const char *     mHost;
     const char *     mDomain;
     State            mState;
     StateHandler     mStateHandler;

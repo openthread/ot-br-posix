@@ -305,16 +305,11 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
     }
 }
 
-PublisherAvahi::PublisherAvahi(int          aProtocol,
-                               const char * aHost,
-                               const char * aDomain,
-                               StateHandler aHandler,
-                               void *       aContext)
+PublisherAvahi::PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
     : mClient(nullptr)
     , mGroup(nullptr)
     , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
                                       : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
-    , mHost(aHost)
     , mDomain(aDomain)
     , mState(kStateIdle)
     , mStateHandler(aHandler)
@@ -497,7 +492,11 @@ void PublisherAvahi::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet
     mPoller.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
 }
 
-otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
+otbrError PublisherAvahi::PublishService(const char *aHostName,
+                                         uint16_t    aPort,
+                                         const char *aName,
+                                         const char *aType,
+                                         ...)
 {
     otbrError ret   = OTBR_ERROR_ERRNO;
     int       error = 0;
@@ -510,6 +509,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
 
     va_start(args, aType);
 
+    VerifyOrExit(aHostName == nullptr, ret = OTBR_ERROR_NOT_IMPLEMENTED);
     VerifyOrExit(mState == kStateReady, errno = EAGAIN);
     VerifyOrExit(mGroup != nullptr, ret = OTBR_ERROR_MDNS);
 
@@ -551,7 +551,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
 
     otbrLog(OTBR_LOG_INFO, "MDNS create service %s", aName);
     error = avahi_entry_group_add_service_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0),
-                                                 aName, aType, mDomain, mHost, aPort, last);
+                                                 aName, aType, mDomain, aHostName, aPort, last);
     SuccessOrExit(error);
 
     {
@@ -581,9 +581,39 @@ exit:
     return ret;
 }
 
-Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext)
+otbrError PublisherAvahi::UnpublishService(const char *aName, const char *aType)
 {
-    return new PublisherAvahi(aFamily, aHost, aDomain, aHandler, aContext);
+    OTBR_UNUSED_VARIABLE(aName);
+    OTBR_UNUSED_VARIABLE(aType);
+
+    VerifyOrDie(false, "UnpublishService is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
+}
+
+otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
+{
+    OTBR_UNUSED_VARIABLE(aName);
+    OTBR_UNUSED_VARIABLE(aAddress);
+    OTBR_UNUSED_VARIABLE(aAddressLength);
+
+    VerifyOrDie(false, "PublishHost is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
+}
+
+otbrError PublisherAvahi::UnpublishHost(const char *aName)
+{
+    OTBR_UNUSED_VARIABLE(aName);
+
+    VerifyOrDie(false, "UnpublishHost is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
+}
+
+Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)
+{
+    return new PublisherAvahi(aFamily, aDomain, aHandler, aContext);
 }
 
 void Publisher::Destroy(Publisher *aPublisher)
