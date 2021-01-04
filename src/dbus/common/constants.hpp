@@ -80,6 +80,7 @@
 #define OTBR_DBUS_PROPERTY_RADIO_TX_POWER "RadioTxPower"
 #define OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES "ExternalRoutes"
 #define OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS "ActiveDatasetTlvs"
+#define OTBR_DBUS_PROPERTY_RADIO_REGION "RadioRegion"
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
 #define OTBR_ROLE_NAME_DETACHED "detached"

@@ -99,6 +99,7 @@ int main()
     UniqueDBusConnection           connection;
     std::unique_ptr<ThreadApiDBus> api;
     uint64_t                       extpanid = 0xdead00beaf00cafe;
+    std::string                    region;
 
     dbus_error_init(&error);
     connection = UniqueDBusConnection(dbus_bus_get(DBUS_BUS_SYSTEM, &error));
@@ -111,6 +112,10 @@ int main()
 
     api->AddDeviceRoleHandler(
         [](DeviceRole aRole) { printf("Device role changed to %d\n", static_cast<uint8_t>(aRole)); });
+
+    TEST_ASSERT(api->SetRadioRegion("US") == ClientError::ERROR_NONE);
+    TEST_ASSERT(api->GetRadioRegion(region) == ClientError::ERROR_NONE);
+    TEST_ASSERT(region == "US");
 
     api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
         LinkModeConfig       cfg       = {true, false, true};
