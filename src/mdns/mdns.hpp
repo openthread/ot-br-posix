@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_MDNS_HPP_
 #define OTBR_AGENT_MDNS_HPP_
 
+#include <vector>
+
 #include <sys/select.h>
 
 #include "common/types.hpp"
@@ -41,25 +43,6 @@
 namespace otbr {
 
 namespace Mdns {
-
-/**
- * MDNS state values.
- *
- */
-enum State
-{
-    kStateIdle,  ///< Unable to publishing service.
-    kStateReady, ///< Ready for publishing service.
-};
-
-/**
- * This function pointer is called when MDNS service state changed.
- *
- * @param[in]   aContext        A pointer to application-specific context.
- * @param[in]   aState          The new state.
- *
- */
-typedef void (*StateHandler)(void *aContext, State aState);
 
 /**
  * @addtogroup border-router-mdns
@@ -77,6 +60,50 @@ typedef void (*StateHandler)(void *aContext, State aState);
 class Publisher
 {
 public:
+    /**
+     * This structure represents a name/value pair of the TXT record.
+     *
+     */
+    struct TxtEntry
+    {
+        const char *   mName;        ///< The name of the TXT entry.
+        const uint8_t *mValue;       ///< The value of the TXT entry.
+        size_t         mValueLength; ///< The length of the value of the TXT entry.
+
+        TxtEntry(const char *aName, const char *aValue)
+            : TxtEntry(aName, reinterpret_cast<const uint8_t *>(aValue), strlen(aValue))
+        {
+        }
+
+        TxtEntry(const char *aName, const uint8_t *aValue, size_t aValueLength)
+            : mName(aName)
+            , mValue(aValue)
+            , mValueLength(aValueLength)
+        {
+        }
+    };
+
+    typedef std::vector<TxtEntry> TxtList;
+
+    /**
+     * MDNS state values.
+     *
+     */
+    enum class State
+    {
+        kIdle,  ///< Unable to publishing service.
+        kReady, ///< Ready for publishing service.
+    };
+
+    /**
+     * This function pointer is called when MDNS service state changed.
+     *
+     * @param[in]   aContext        A pointer to application-specific context.
+     * @param[in]   aState          The new state.
+     *
+     */
+    typedef void (*StateHandler)(void *aContext, State aState);
+
     /**
      * This method starts the MDNS service.
      *
@@ -111,18 +138,17 @@ public:
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
-     * @param[in]   ...                 Pointers to null-terminated string of key and value for text record.
-     *                                  The last argument must be nullptr.
+     * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(const char *aHostName,
-                                     uint16_t    aPort,
-                                     const char *aName,
-                                     const char *aType,
-                                     ...) = 0;
+    virtual otbrError PublishService(const char *   aHostName,
+                                     uint16_t       aPort,
+                                     const char *   aName,
+                                     const char *   aType,
+                                     const TxtList &aTxtList) = 0;
 
     /**
      * This method un-publishes a service.

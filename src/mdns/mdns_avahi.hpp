@@ -213,14 +213,17 @@ public:
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
-     * @param[in]   ...                 Pointers to null-terminated string of key and value for text record.
-     *                                  The last argument must be nullptr.
+     * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(const char *aHostName, uint16_t aPort, const char *aName, const char *aType, ...) override;
+    otbrError PublishService(const char *   aHostName,
+                             uint16_t       aPort,
+                             const char *   aName,
+                             const char *   aType,
+                             const TxtList &aTxtList) override;
 
     /**
      * This method un-publishes a service.

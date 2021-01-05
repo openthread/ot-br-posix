@@ -167,7 +167,7 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
 PublisherMDnsSd::PublisherMDnsSd(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
     : mHostsConnection(nullptr)
     , mDomain(aDomain)
-    , mState(kStateIdle)
+    , mState(State::kIdle)
     , mStateHandler(aHandler)
     , mContext(aContext)
 {
@@ -181,19 +181,19 @@ PublisherMDnsSd::~PublisherMDnsSd(void)
 
 otbrError PublisherMDnsSd::Start(void)
 {
-    mState = kStateReady;
-    mStateHandler(mContext, kStateReady);
+    mState = State::kReady;
+    mStateHandler(mContext, State::kReady);
     return OTBR_ERROR_NONE;
 }
 
 bool PublisherMDnsSd::IsStarted(void) const
 {
-    return mState == kStateReady;
+    return mState == State::kReady;
 }
 
 void PublisherMDnsSd::Stop(void)
 {
-    VerifyOrExit(mState == kStateReady);
+    VerifyOrExit(mState == State::kReady);
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {
@@ -376,15 +376,14 @@ exit:
     return;
 }
 
-otbrError PublisherMDnsSd::PublishService(const char *aHostName,
-                                          uint16_t    aPort,
-                                          const char *aName,
-                                          const char *aType,
-                                          ...)
+otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
+                                          uint16_t       aPort,
+                                          const char *   aName,
+                                          const char *   aType,
+                                          const TxtList &aTxtList)
 {
     otbrError     ret   = OTBR_ERROR_NONE;
     int           error = 0;
-    va_list       args;
     uint8_t       txt[kMaxSizeOfTxtRecord];
     uint8_t *     cur        = txt;
     DNSServiceRef serviceRef = nullptr;
@@ -400,20 +399,19 @@ otbrError PublisherMDnsSd::PublishService(const char *aHostName,
         SuccessOrExit(error = MakeFullName(fullHostName, sizeof(fullHostName), aHostName));
     }
 
-    va_start(args, aType);
-
-    for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
+    for (const auto &txtEntry : aTxtList)
     {
-        const char * value        = va_arg(args, const char *);
-        const size_t nameLength   = strlen(name);
-        const size_t valueLength  = va_arg(args, size_t);
-        size_t       recordLength = nameLength + 1 + valueLength;
+        const char *   name         = txtEntry.mName;
+        const size_t   nameLength   = strlen(txtEntry.mName);
+        const uint8_t *value        = txtEntry.mValue;
+        const size_t   valueLength  = txtEntry.mValueLength;
+        size_t         recordLength = nameLength + 1 + valueLength;
 
         assert(nameLength > 0 && valueLength > 0 && recordLength < kMaxTextRecordSize);
 
         if (cur + recordLength >= txt + sizeof(txt))
         {
-            otbrLog(OTBR_LOG_WARNING, "Skip text record too much long: %s=%s", name, value);
+            otbrLog(OTBR_LOG_WARNING, "Skip text record too much long: name=%s, entry-length=%zu", name, recordLength);
             continue;
         }
 
@@ -430,8 +428,6 @@ otbrError PublisherMDnsSd::PublishService(const char *aHostName,
         memcpy(cur, value, valueLength);
         cur += valueLength;
     }
-
-    va_end(args);
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {
