@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright (c) 2020, The OpenThread Authors.
 #  All rights reserved.
@@ -26,46 +27,29 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-mdns
-    main.cpp
-)
+#
+# This script tests publishing single service with custom host name & address.
+#
 
-target_link_libraries(otbr-test-mdns PRIVATE
-    otbr-config
-    otbr-mdns
-)
+# shellcheck source=tests/mdns/test_init
+. "$(dirname "$0")/test_init"
 
-add_test(
-    NAME mdns-single
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single
-)
+main()
+{
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
+        start_publisher mc
 
-add_test(
-    NAME mdns-multiple
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple
-)
+        dns_sd_check MultipleService11 _meshcop._udp 'custom-host-1.local.'
+        dns_sd_check MultipleService12 _meshcop._udp 'custom-host-1.local.'
+        dns_sd_check_host 'custom-host-1.local.' '2002:0000:0000:0000:0000:0000:0000:0001'
 
-add_test(
-    NAME mdns-update
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-update
-)
+        dns_sd_check MultipleService21 _meshcop._udp 'custom-host-2.local.'
+        dns_sd_check MultipleService22 _meshcop._udp 'custom-host-2.local.'
+        dns_sd_check_host 'custom-host-2.local.' '2002:0000:0000:0000:0000:0000:0000:0001'
+    else
+        #TODO:
+        echo "not implemented yet"
+    fi
+}
 
-add_test(
-    NAME mdns-stop
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-stop
-)
-
-add_test(
-    NAME mdns-single-custom-host
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single-custom-host
-)
-
-add_test(
-    NAME mdns-multiple-custom-hosts
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple-custom-hosts
-)
-
-set_tests_properties(mdns-single mdns-multiple mdns-update mdns-stop mdns-single-custom-host mdns-multiple-custom-hosts
-    PROPERTIES
-        ENVIRONMENT "OTBR_MDNS=${OTBR_MDNS};OTBR_TEST_MDNS=$<TARGET_FILE:otbr-test-mdns>"
-)
+main "$@"

@@ -83,7 +83,7 @@ enum
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, nullptr, nullptr, HandleMdnsState, this))
+    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, HandleMdnsState, this))
 #else
     : mPublisher(nullptr)
 #endif
@@ -161,11 +161,11 @@ BorderAgent::~BorderAgent(void)
     }
 }
 
-void BorderAgent::HandleMdnsState(Mdns::State aState)
+void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
 {
     switch (aState)
     {
-    case Mdns::kStateReady:
+    case Mdns::Publisher::State::kReady:
         PublishService();
         break;
     default:
@@ -217,19 +217,15 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
 
 void BorderAgent::PublishService(void)
 {
-    const char *versionString = ThreadVersionToString(mThreadVersion);
-
     assert(mNetworkName[0] != '\0');
     assert(mExtPanIdInitialized);
-
     assert(mThreadVersion != 0);
-    // clang-format off
-    mPublisher->PublishService(kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
-        "nn", mNetworkName, strlen(mNetworkName),
-        "xp", &mExtPanId, sizeof(mExtPanId),
-        "tv", versionString, strlen(versionString),
-        nullptr);
-    // clang-format on
+
+    const char *             versionString = ThreadVersionToString(mThreadVersion);
+    Mdns::Publisher::TxtList txtList{{"nn", mNetworkName}, {"xp", mExtPanId, sizeof(mExtPanId)}, {"tv", versionString}};
+
+    mPublisher->PublishService(/* aHostName */ nullptr, kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
+                               txtList);
 }
 
 void BorderAgent::StartPublishService(void)

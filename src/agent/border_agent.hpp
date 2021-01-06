@@ -116,11 +116,11 @@ private:
      */
     void Stop(void);
 
-    static void HandleMdnsState(void *aContext, Mdns::State aState)
+    static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
     {
         static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
     }
-    void HandleMdnsState(Mdns::State aState);
+    void HandleMdnsState(Mdns::Publisher::State aState);
     void PublishService(void);
     void StartPublishService(void);
     void StopPublishService(void);
