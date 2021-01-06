@@ -47,8 +47,8 @@
 #include <thread>
 #include <vector>
 
-#include "mdns/mdns.hpp"
 #include "chromecast/internal/receiver/mdns/public/mojom/mdns.mojom.h"
+#include "mdns/mdns.hpp"
 
 #define MOJO_CONNECTOR_NS chromecast::external_mojo
 
@@ -95,18 +95,64 @@ public:
     /**
      * This method publishes or updates a service.
      *
+     * @param[in]   aHostName           The name of the host which this service resides on. If NULL is provided,
+     *                                  this service resides on local host and it is the implementation to provide
+     *                                  specific host name. Otherwise, the caller MUST publish the host with method
+     *                                  PublishHost.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
-     * @param[in]   ...                 Pointers to null-terminated string of key
-     *                                  and value for text record.
-     *                                  The last argument must be NULL.
+     * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...) override;
+    otbrError PublishService(const char *   aHostName,
+                             uint16_t       aPort,
+                             const char *   aName,
+                             const char *   aType,
+                             const TxtList &aTxtList) override;
+
+    /**
+     * This method un-publishes a service.
+     *
+     * @param[in]   aName               The name of this service.
+     * @param[in]   aType               The type of this service.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
+     *
+     */
+    otbrError UnpublishService(const char *aName, const char *aType) override;
+
+    /**
+     * This method publishes or updates a host.
+     *
+     * Publishing a host is advertising an A/AAAA RR for the host name. This method should be called
+     * before a service with non-null host name is published.
+     *
+     * @param[in]  aName           The name of the host.
+     * @param[in]  aAddress        The address of the host.
+     * @param[in]  aAddressLength  The length of @p aAddress.
+     *
+     * @retval  OTBR_ERROR_NONE          Successfully published or updated the host.
+     * @retval  OTBR_ERROR_INVALID_ARGS  The arguments are not valid.
+     * @retval  OTBR_ERROR_ERRNO         Failed to publish or update the host.
+     *
+     */
+    otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) override;
+
+    /**
+     * This method un-publishes a host.
+     *
+     * @param[in]  aName  A host name.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
+     *
+     */
+    otbrError UnpublishHost(const char *aName) override;
 
     /**
      * This method performs the MDNS processing.
@@ -143,10 +189,14 @@ public:
 private:
     static const int kMojoConnectRetrySeconds = 10;
 
+    static std::pair<std::string, std::string> SplitServiceType(const std::string &aType);
+
     void PublishServiceTask(uint16_t                        aPort,
                             const std::string &             aType,
                             const std::string &             aInstanceName,
                             const std::vector<std::string> &aText);
+
+    void UnpublishServiceTask(const std::string &aType, const std::string &aInstanceName);
 
     bool VerifyFileAccess(const char *aFile);
 
@@ -159,9 +209,9 @@ private:
     void mMojoDisconnectedCb(void);
     void mRegisterServiceCb(chromecast::mojom::MdnsResult aResult);
 
-    scoped_refptr<base::SingleThreadTaskRunner>           mMojoTaskRunner;
-    std::unique_ptr<std::thread>                          mMojoCoreThread;
-    base::Closure                                         mMojoCoreThreadQuitClosure;
+    scoped_refptr<base::SingleThreadTaskRunner>                   mMojoTaskRunner;
+    std::unique_ptr<std::thread>                                  mMojoCoreThread;
+    base::Closure                                                 mMojoCoreThreadQuitClosure;
     std::unique_ptr<chromecast::external_mojo::ExternalConnector> mConnector;
 
     chromecast::mojom::MdnsResponderPtr mResponder;

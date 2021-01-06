@@ -41,9 +41,9 @@
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
 
+#include "mdns_mojo.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "mdns_mojo.hpp"
 
 namespace otbr {
 namespace Mdns {
@@ -123,7 +123,7 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
         aConnector->BindInterface("chromecast", &mResponder);
         mConnector = std::move(aConnector);
-        mStateHandler(mContext, kStateReady);
+        mStateHandler(mContext, State::kReady);
     }
     else
     {
@@ -143,7 +143,7 @@ otbrError MdnsMojoPublisher::Start(void)
     mStarted = true;
     if (mResponder)
     {
-        mStateHandler(mContext, kStateReady);
+        mStateHandler(mContext, State::kReady);
     }
     else if (!mMojoCoreThread)
     {
@@ -177,27 +177,26 @@ void MdnsMojoPublisher::StopPublishTask(void)
     mPublishedServices.clear();
 }
 
-otbrError MdnsMojoPublisher::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
+otbrError MdnsMojoPublisher::PublishService(const char *   aHostName,
+                                            uint16_t       aPort,
+                                            const char *   aName,
+                                            const char *   aType,
+                                            const TxtList &aTxtList)
 {
     otbrError                error = OTBR_ERROR_NONE;
     std::vector<std::string> text;
-    va_list                  args;
-
-    va_start(args, aType);
 
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
-    for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
+    VerifyOrExit(aHostName == nullptr, error = OTBR_ERROR_NOT_IMPLEMENTED);
+    for (const auto &entry : aTxtList)
     {
-        const char *value = va_arg(args, const char *);
-        size_t valueLength = va_arg(args, size_t);
-
-        text.emplace_back(std::string(name) + "=" + std::string(value, value + valueLength));
+        text.emplace_back(std::string(entry.mName) + "=" +
+                          std::string(entry.mValue, entry.mValue + entry.mValueLength));
     }
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::PublishServiceTask, base::Unretained(this),
                                                         aPort, aType, aName, text));
 
 exit:
-    va_end(args);
     return error;
 }
 
@@ -206,26 +205,10 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
                                            const std::string &             aInstanceName,
                                            const std::vector<std::string> &aText)
 {
-    std::string            serviceName;
-    std::string            serviceProtocol;
-    std::string::size_type split = aType.rfind('.');
+    std::string serviceName;
+    std::string serviceProtocol;
 
-    // Remove the last trailing dot since the cast mdns will add one
-    if (split + 1 == aType.length())
-    {
-        split = aType.rfind('.', split - 1);
-    }
-
-    VerifyOrExit(split != std::string::npos);
-
-    serviceName     = aType.substr(0, split);
-    serviceProtocol = aType.substr(split + 1, std::string::npos);
-
-    // Remove the last trailing dot since the cast mdns will add one
-    if (serviceProtocol.back() == '.')
-    {
-        serviceProtocol.erase(serviceProtocol.size() - 1);
-    }
+    std::tie(serviceName, serviceProtocol) = SplitServiceType(aType);
 
     VerifyOrExit(!serviceName.empty() && !serviceProtocol.empty());
 
@@ -241,6 +224,31 @@ void MdnsMojoPublisher::PublishServiceTask(uint16_t                        aPort
 
 exit:
     return;
+}
+
+otbrError MdnsMojoPublisher::UnpublishService(const char *aName, const char *aType)
+{
+    std::string serviceName = SplitServiceType(aType).first;
+
+    mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnpublishServiceTask,
+                                                        base::Unretained(this), serviceName, aName));
+
+    return OTBR_ERROR_NONE;
+}
+
+void MdnsMojoPublisher::UnpublishServiceTask(const std::string &aServiceName, const std::string &aInstanceName)
+{
+    mResponder->UnregisterServiceInstance(aServiceName, aInstanceName, base::DoNothing());
+}
+
+otbrError MdnsMojoPublisher::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
+{
+    return OTBR_ERROR_NOT_IMPLEMENTED;
+}
+
+otbrError MdnsMojoPublisher::UnpublishHost(const char *aName)
+{
+    return OTBR_ERROR_NOT_IMPLEMENTED;
 }
 
 void MdnsMojoPublisher::UpdateFdSet(fd_set & aReadFdSet,
@@ -273,10 +281,36 @@ MdnsMojoPublisher::~MdnsMojoPublisher()
     }
 }
 
-Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext)
+std::pair<std::string, std::string> MdnsMojoPublisher::SplitServiceType(const std::string &aType)
+{
+    std::string            serviceName;
+    std::string            serviceProtocol;
+    std::string::size_type split = aType.rfind('.');
+
+    // Remove the last trailing dot since the cast mdns will add one
+    if (split + 1 == aType.length())
+    {
+        split = aType.rfind('.', split - 1);
+    }
+
+    VerifyOrExit(split != std::string::npos);
+
+    serviceName     = aType.substr(0, split);
+    serviceProtocol = aType.substr(split + 1, std::string::npos);
+
+    // Remove the last trailing dot since the cast mdns will add one
+    if (serviceProtocol.back() == '.')
+    {
+        serviceProtocol.erase(serviceProtocol.size() - 1);
+    }
+
+exit:
+    return {serviceName, serviceProtocol};
+}
+
+Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)
 {
     (void)aFamily;
-    (void)aHost;
     (void)aDomain;
 
     return new MdnsMojoPublisher(aHandler, aContext);
