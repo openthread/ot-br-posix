@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_MDNS_HPP_
 #define OTBR_AGENT_MDNS_HPP_
 
+#include <vector>
+
 #include <sys/select.h>
 
 #include "common/types.hpp"
@@ -41,25 +43,6 @@
 namespace otbr {
 
 namespace Mdns {
-
-/**
- * MDNS state values.
- *
- */
-enum State
-{
-    kStateIdle,  ///< Unable to publishing service.
-    kStateReady, ///< Ready for publishing service.
-};
-
-/**
- * This function pointer is called when MDNS service state changed.
- *
- * @param[in]   aContext        A pointer to application-specific context.
- * @param[in]   aState          The new state.
- *
- */
-typedef void (*StateHandler)(void *aContext, State aState);
 
 /**
  * @addtogroup border-router-mdns
@@ -77,6 +60,50 @@ typedef void (*StateHandler)(void *aContext, State aState);
 class Publisher
 {
 public:
+    /**
+     * This structure represents a name/value pair of the TXT record.
+     *
+     */
+    struct TxtEntry
+    {
+        const char *   mName;        ///< The name of the TXT entry.
+        const uint8_t *mValue;       ///< The value of the TXT entry.
+        size_t         mValueLength; ///< The length of the value of the TXT entry.
+
+        TxtEntry(const char *aName, const char *aValue)
+            : TxtEntry(aName, reinterpret_cast<const uint8_t *>(aValue), strlen(aValue))
+        {
+        }
+
+        TxtEntry(const char *aName, const uint8_t *aValue, size_t aValueLength)
+            : mName(aName)
+            , mValue(aValue)
+            , mValueLength(aValueLength)
+        {
+        }
+    };
+
+    typedef std::vector<TxtEntry> TxtList;
+
+    /**
+     * MDNS state values.
+     *
+     */
+    enum class State
+    {
+        kIdle,  ///< Unable to publishing service.
+        kReady, ///< Ready for publishing service.
+    };
+
+    /**
+     * This function pointer is called when MDNS service state changed.
+     *
+     * @param[in]   aContext        A pointer to application-specific context.
+     * @param[in]   aState          The new state.
+     *
+     */
+    typedef void (*StateHandler)(void *aContext, State aState);
+
     /**
      * This method starts the MDNS service.
      *
@@ -104,17 +131,64 @@ public:
     /**
      * This method publishes or updates a service.
      *
+     * @param[in]   aHostName           The name of the host which this service resides on. If NULL is provided,
+     *                                  this service resides on local host and it is the implementation to provide
+     *                                  specific host name. Otherwise, the caller MUST publish the host with method
+     *                                  PublishHost.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
-     * @param[in]   ...                 Pointers to null-terminated string of key and value for text record.
-     *                                  The last argument must be nullptr.
+     * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...) = 0;
+    virtual otbrError PublishService(const char *   aHostName,
+                                     uint16_t       aPort,
+                                     const char *   aName,
+                                     const char *   aType,
+                                     const TxtList &aTxtList) = 0;
+
+    /**
+     * This method un-publishes a service.
+     *
+     * @param[in]   aName               The name of this service.
+     * @param[in]   aType               The type of this service.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
+     *
+     */
+    virtual otbrError UnpublishService(const char *aName, const char *aType) = 0;
+
+    /**
+     * This method publishes or updates a host.
+     *
+     * Publishing a host is advertising an A/AAAA RR for the host name. This method should be called
+     * before a service with non-null host name is published.
+     *
+     * @param[in]  aName           The name of the host.
+     * @param[in]  aAddress        The address of the host.
+     * @param[in]  aAddressLength  The length of @p aAddress.
+     *
+     * @retval  OTBR_ERROR_NONE          Successfully published or updated the host.
+     * @retval  OTBR_ERROR_INVALID_ARGS  The arguments are not valid.
+     * @retval  OTBR_ERROR_ERRNO         Failed to publish or update the host.
+     *
+     */
+    virtual otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) = 0;
+
+    /**
+     * This method un-publishes a host.
+     *
+     * @param[in]  aName  A host name.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
+     *
+     */
+    virtual otbrError UnpublishHost(const char *aName) = 0;
 
     /**
      * This method performs the MDNS processing.
@@ -149,22 +223,17 @@ public:
      * This function creates a MDNS publisher.
      *
      * @param[in]   aProtocol           Protocol to use for publishing. AF_INET6, AF_INET or AF_UNSPEC.
-     * @param[in]   aHost               The host where these services is residing on.
-     * @param[in]   aDomain             The domain to register in.
+     * @param[in]   aDomain             The domain to register in. Set nullptr to use default mDNS domain ("local.").
      * @param[in]   aHandler            The function to be called when this service state changed.
      * @param[in]   aContext            A pointer to application-specific context.
      *
      * @returns A pointer to the newly created MDNS publisher.
      *
      */
-    static Publisher *Create(int          aProtocol,
-                             const char * aHost,
-                             const char * aDomain,
-                             StateHandler aHandler,
-                             void *       aContext);
+    static Publisher *Create(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext);
 
     /**
-     * This function destroies the MDNS publisher.
+     * This function destroys the MDNS publisher.
      *
      * @param[in]   aPublisher          A pointer to the publisher.
      *

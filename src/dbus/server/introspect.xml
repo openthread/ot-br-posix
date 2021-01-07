@@ -31,6 +31,9 @@
       <arg name="channel_mask" type="u"/>
     </method>
 
+    <method name="Attach">
+    </method>
+
     <method name="PermitUnsecureJoin">
       <arg name="port" type="q"/>
       <arg name="timeout" type="u"/>
@@ -332,6 +335,14 @@
       }
     -->
     <property name="ExternalRoutes" type="((ayy)qybb)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="ActiveDatasetTlvs" type="ay" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <property name="RadioRegion" type="s" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
   </interface>

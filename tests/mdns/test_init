@@ -98,6 +98,29 @@ dns_sd_check()
 }
 
 #######################################
+# Check if a host is regisered
+#
+# Arguments:
+#   $1  hostname
+#   $2  address
+#
+# Returns:
+#   0           Registered
+#   otherwise   Not registered
+#######################################
+dns_sd_check_host()
+{
+    # dns-sd will not exit
+    dns-sd -G v6 "$1" >"${DNS_SD_RESULT}" 2>&1 &
+    DNS_SD_PID=$!
+    sleep 1
+    kill "${DNS_SD_PID}"
+
+    cat "${DNS_SD_RESULT}"
+    grep "$2" "${DNS_SD_RESULT}"
+}
+
+#######################################
 # Check if a service is regisered
 #
 # Arguments:

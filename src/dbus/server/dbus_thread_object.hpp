@@ -86,6 +86,8 @@ private:
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
     otError SetLinkModeHandler(DBusMessageIter &aIter);
+    otError SetActiveDatasetTlvsHandler(DBusMessageIter &aIter);
+    otError SetRadioRegionHandler(DBusMessageIter &aIter);
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
@@ -113,6 +115,8 @@ private:
     otError GetInstantRssiHandler(DBusMessageIter &aIter);
     otError GetRadioTxPowerHandler(DBusMessageIter &aIter);
     otError GetExternalRoutesHandler(DBusMessageIter &aIter);
+    otError GetActiveDatasetTlvsHandler(DBusMessageIter &aIter);
+    otError GetRadioRegionHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
 

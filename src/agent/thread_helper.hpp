@@ -120,6 +120,17 @@ public:
                 ResultHandler               aHandler);
 
     /**
+     * This method attaches the device to the Thread network.
+     *
+     * @note The joiner start and the attach proccesses are exclusive, and the
+     *       network parameter will be set through the active dataset.
+     *
+     * @param[in]   aHandler        The attach result handler.
+     *
+     */
+    void Attach(ResultHandler aHandler);
+
+    /**
      * This method resets the OpenThread stack.
      *
      * @returns The error value of underlying OpenThread api calls.

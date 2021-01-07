@@ -305,18 +305,13 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
     }
 }
 
-PublisherAvahi::PublisherAvahi(int          aProtocol,
-                               const char * aHost,
-                               const char * aDomain,
-                               StateHandler aHandler,
-                               void *       aContext)
+PublisherAvahi::PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
     : mClient(nullptr)
     , mGroup(nullptr)
     , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
                                       : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
-    , mHost(aHost)
     , mDomain(aDomain)
-    , mState(kStateIdle)
+    , mState(State::kIdle)
     , mStateHandler(aHandler)
     , mContext(aContext)
 {
@@ -366,7 +361,7 @@ void PublisherAvahi::Stop(void)
         avahi_client_free(mClient);
         mClient = nullptr;
         mGroup  = nullptr;
-        mState  = kStateIdle;
+        mState  = State::kIdle;
         mStateHandler(mContext, mState);
     }
 }
@@ -439,7 +434,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         /* The server has startup successfully and registered its host
          * name on the network, so it's time to create our services */
         otbrLog(OTBR_LOG_INFO, "Avahi client ready.");
-        mState = kStateReady;
+        mState = State::kReady;
         CreateGroup(aClient);
         mStateHandler(mContext, mState);
         if (mGroup)
@@ -450,7 +445,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
 
     case AVAHI_CLIENT_FAILURE:
         otbrLog(OTBR_LOG_ERR, "Client failure: %s", avahi_strerror(avahi_client_errno(aClient)));
-        mState = kStateIdle;
+        mState = State::kIdle;
         mStateHandler(mContext, mState);
         break;
 
@@ -497,7 +492,11 @@ void PublisherAvahi::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet
     mPoller.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
 }
 
-otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, const char *aType, ...)
+otbrError PublisherAvahi::PublishService(const char *   aHostName,
+                                         uint16_t       aPort,
+                                         const char *   aName,
+                                         const char *   aType,
+                                         const TxtList &aTxtList)
 {
     otbrError ret   = OTBR_ERROR_ERRNO;
     int       error = 0;
@@ -505,19 +504,18 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
     AvahiStringList *last = nullptr;
     AvahiStringList *curr = buffer;
-    va_list          args;
     size_t           used = 0;
 
-    va_start(args, aType);
-
-    VerifyOrExit(mState == kStateReady, errno = EAGAIN);
+    VerifyOrExit(aHostName == nullptr, ret = OTBR_ERROR_NOT_IMPLEMENTED);
+    VerifyOrExit(mState == State::kReady, errno = EAGAIN);
     VerifyOrExit(mGroup != nullptr, ret = OTBR_ERROR_MDNS);
 
-    for (const char *name = va_arg(args, const char *); name; name = va_arg(args, const char *))
+    for (const auto &txtEntry : aTxtList)
     {
-        int         rval;
-        const char *value       = va_arg(args, const char *);
-        size_t      valueLength = va_arg(args, size_t);
+        int            rval;
+        const char *   name        = txtEntry.mName;
+        const uint8_t *value       = txtEntry.mValue;
+        size_t         valueLength = txtEntry.mValueLength;
         // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
         size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + strlen(name) + valueLength + 1;
 
@@ -551,7 +549,7 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
 
     otbrLog(OTBR_LOG_INFO, "MDNS create service %s", aName);
     error = avahi_entry_group_add_service_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0),
-                                                 aName, aType, mDomain, mHost, aPort, last);
+                                                 aName, aType, mDomain, aHostName, aPort, last);
     SuccessOrExit(error);
 
     {
@@ -565,7 +563,6 @@ otbrError PublisherAvahi::PublishService(uint16_t aPort, const char *aName, cons
     ret = OTBR_ERROR_NONE;
 
 exit:
-    va_end(args);
 
     if (error)
     {
@@ -581,9 +578,39 @@ exit:
     return ret;
 }
 
-Publisher *Publisher::Create(int aFamily, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext)
+otbrError PublisherAvahi::UnpublishService(const char *aName, const char *aType)
 {
-    return new PublisherAvahi(aFamily, aHost, aDomain, aHandler, aContext);
+    OTBR_UNUSED_VARIABLE(aName);
+    OTBR_UNUSED_VARIABLE(aType);
+
+    VerifyOrDie(false, "UnpublishService is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
+}
+
+otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
+{
+    OTBR_UNUSED_VARIABLE(aName);
+    OTBR_UNUSED_VARIABLE(aAddress);
+    OTBR_UNUSED_VARIABLE(aAddressLength);
+
+    VerifyOrDie(false, "PublishHost is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
+}
+
+otbrError PublisherAvahi::UnpublishHost(const char *aName)
+{
+    OTBR_UNUSED_VARIABLE(aName);
+
+    VerifyOrDie(false, "UnpublishHost is not implemented with avahi");
+
+    return OTBR_ERROR_NONE;
+}
+
+Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)
+{
+    return new PublisherAvahi(aFamily, aDomain, aHandler, aContext);
 }
 
 void Publisher::Destroy(Publisher *aPublisher)

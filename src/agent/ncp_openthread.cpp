@@ -64,7 +64,8 @@ namespace Ncp {
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
                                            const char *aRadioUrl,
                                            const char *aBackboneInterfaceName)
-    : mTriedAttach(false)
+    : mInstance(nullptr)
+    , mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 

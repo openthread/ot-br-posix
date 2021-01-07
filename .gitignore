@@ -105,6 +105,10 @@ tests/unit/unittest
 # Vim auto complete helper
 .ycm_extra_conf.py
 
+# CLion
+.idea/**
+cmake-build-*/**
+
 # Thread local storage
 ./tmp/
 *.data
