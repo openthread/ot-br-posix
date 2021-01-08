@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file defines bswap_* on macOS.
+ */
+
 #ifndef OTBR_COMMON_BYTESWAP_HPP_
 #define OTBR_COMMON_BYTESWAP_HPP_
 

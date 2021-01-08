@@ -38,6 +38,7 @@ option(OTBR_OPENWRT          "Build OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN    "Enable unsecure joining" OFF)
 option(OTBR_WEB              "Build Web GUI" OFF)
 option(OTBR_REST             "Build Rest Server" OFF)
+option(OTBR_DOC              "Build documentation" OFF)
 
 
 if(NOT CMAKE_C_STANDARD)
@@ -165,4 +166,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenThread Authors <openthread-users@googlegroups.com")
     set(CPACK_PACKAGE_CONTACT "OpenThread Authors <openthread-users@googlegroups.com")
     include(CPack)
+endif()
+
+if (OTBR_DOC)
+    add_subdirectory(doc)
 endif()

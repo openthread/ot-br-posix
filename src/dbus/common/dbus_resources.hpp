@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus message resource.
+ */
+
 #ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
 #define OTBR_DBUS_DBUS_RESOURCES_HPP_
 

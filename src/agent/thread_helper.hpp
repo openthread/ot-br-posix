@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ *   This file includes definitions for Thread helper.
+ */
+
 #ifndef OTBR_THREAD_HELPER_HPP_
 #define OTBR_THREAD_HELPER_HPP_
 
@@ -54,6 +59,9 @@ class ControllerOpenThread;
 namespace otbr {
 namespace agent {
 
+/**
+ * This class implements Thread helper.
+ */
 class ThreadHelper
 {
 public:

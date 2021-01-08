@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for a d-bus object.
+ */
+
 #ifndef OTBR_DBUS_DBUS_OBJECT_HPP_
 #define OTBR_DBUS_DBUS_OBJECT_HPP_
 

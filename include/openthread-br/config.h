@@ -26,6 +26,10 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes config file if defined.
+ */
 #ifndef OTBR_CONFIG_H_
 #define OTBR_CONFIG_H_
 

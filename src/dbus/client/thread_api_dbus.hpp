@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus client API.
+ */
+
 #ifndef OTBR_THREAD_API_DBUS_HPP_
 #define OTBR_THREAD_API_DBUS_HPP_
 

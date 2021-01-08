@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for time functions.
+ */
+
 #ifndef OTBR_COMMON_TIME_HPP_
 #define OTBR_COMMON_TIME_HPP_
 
