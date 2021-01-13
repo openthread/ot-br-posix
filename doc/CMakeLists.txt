@@ -41,5 +41,5 @@ if (DOXYGEN_FOUND)
         COMMENT "Generating documentation with Doxygen"
         VERBATIM)
 else()
-    message("Doxygen need to be installed to generate the doxygen documentation")
+    message("Doxygen must be installed to generate doxygen documentation")
 endif()

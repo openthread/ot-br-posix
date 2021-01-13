@@ -31,7 +31,7 @@ name: Documentation
 on:
   push:
     branches:
-      - master
+    - master
 
 jobs:
   cancel-previous-runs:
