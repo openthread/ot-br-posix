@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus agent.
+ */
+
 #ifndef OTBR_DBUS_AGENT_HPP_
 #define OTBR_DBUS_AGENT_HPP_
 

@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus server constants.
+ */
+
 #ifndef OTBR_DBUS_CONSTANTS_HPP_
 #define OTBR_DBUS_CONSTANTS_HPP_
 

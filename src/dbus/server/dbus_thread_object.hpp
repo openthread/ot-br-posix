@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for the d-bus object of OpenThread service.
+ */
+
 #ifndef OTBR_DBUS_THREAD_OBJECT_HPP_
 #define OTBR_DBUS_THREAD_OBJECT_HPP_
 

@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for a d-bus request.
+ */
+
 #include "common/logging.hpp"
 
 #include "dbus/common/dbus_message_dump.hpp"

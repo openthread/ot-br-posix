@@ -25,6 +25,12 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
+/**
+ * @file
+ * This file includes definitions for OpenThread daemon client.
+ */
+
 #ifndef OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 #define OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 

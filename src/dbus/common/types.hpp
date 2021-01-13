@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for types used by d-bus API.
+ */
+
 #ifndef OTBR_DBUS_COMMON_TYPES_HPP_
 #define OTBR_DBUS_COMMON_TYPES_HPP_
 

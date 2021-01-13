@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes utilities for manipulate d-bus message.
+ */
+
 #ifndef DBUS_MESSAGE_HELPER_HPP_
 #define DBUS_MESSAGE_HELPER_HPP_
 

@@ -26,6 +26,10 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file define logging interface.
+ */
 #ifndef OTBR_COMMON_LOGGING_HPP_
 #define OTBR_COMMON_LOGGING_HPP_
 

@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for helpers of handling errors.
+ */
+
 #ifndef OTBR_DBUS_SERVER_ERROR_HELPER_HPP_
 #define OTBR_DBUS_SERVER_ERROR_HELPER_HPP_
 

@@ -26,6 +26,10 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes utility macros for coding.
+ */
 #ifndef OTBR_COMMON_CODE_UTILS_HPP_
 #define OTBR_COMMON_CODE_UTILS_HPP_
 
