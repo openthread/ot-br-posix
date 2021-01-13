@@ -44,53 +44,10 @@
 #include <assert.h>
 
 #include "common/code_utils.hpp"
+#include "common/dns_utils.hpp"
 #include "common/logging.hpp"
 
 namespace otbr {
-
-// TODO: better to have SRP server provide separated service name labels.
-static otbrError SplitFullServiceName(const std::string &aFullName,
-                                      std::string &      aInstanceName,
-                                      std::string &      aType,
-                                      std::string &      aDomain)
-{
-    otbrError error = OTBR_ERROR_INVALID_ARGS;
-    size_t    dotPos[3];
-
-    dotPos[0] = aFullName.find_first_of('.');
-    VerifyOrExit(dotPos[0] != std::string::npos);
-
-    dotPos[1] = aFullName.find_first_of('.', dotPos[0] + 1);
-    VerifyOrExit(dotPos[1] != std::string::npos);
-
-    dotPos[2] = aFullName.find_first_of('.', dotPos[1] + 1);
-    VerifyOrExit(dotPos[2] != std::string::npos);
-
-    error         = OTBR_ERROR_NONE;
-    aInstanceName = aFullName.substr(0, dotPos[0]);
-    aType         = aFullName.substr(dotPos[0] + 1, dotPos[2] - dotPos[0] - 1);
-    aDomain       = aFullName.substr(dotPos[2] + 1, aFullName.size() - dotPos[2] - 1);
-
-exit:
-    return error;
-}
-
-// TODO: better to have the SRP server to provide separated host name.
-static otbrError SplitFullHostName(const std::string &aFullName, std::string &aHostName, std::string &aDomain)
-{
-    otbrError error = OTBR_ERROR_INVALID_ARGS;
-    size_t    dotPos;
-
-    dotPos = aFullName.find_first_of('.');
-    VerifyOrExit(dotPos != std::string::npos);
-
-    error     = OTBR_ERROR_NONE;
-    aHostName = aFullName.substr(0, dotPos);
-    aDomain   = aFullName.substr(dotPos + 1, aFullName.size() - dotPos - 1);
-
-exit:
-    return error;
-}
 
 static otError OtbrErrorToOtError(otbrError aError)
 {
@@ -232,7 +189,7 @@ void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t
         std::string serviceType;
         std::string serviceDomain;
 
-        SuccessOrExit(error = SplitFullServiceName(fullServiceName, serviceName, serviceType, serviceDomain));
+        SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
 
         update->mServiceNames.emplace_back(serviceName, serviceType);
 
