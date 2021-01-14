@@ -41,7 +41,7 @@
 #include <string>
 #include <vector>
 
-#include "common/code_utils.hpp"
+#include "common/toolchain.hpp"
 
 #ifndef IN6ADDR_ANY
 /**
