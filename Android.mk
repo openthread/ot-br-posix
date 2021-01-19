@@ -73,7 +73,7 @@ LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
 LOCAL_SHARED_LIBRARIES := libdbus
 
-ifeq ($(ANDROID_NDK),0)
+ifneq ($(ANDROID_NDK),1)
 LOCAL_SHARED_LIBRARIES += libcutils
 endif
 
