@@ -52,3 +52,12 @@ endif()
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
 )
+
+if(OTBR_DOC)
+add_custom_target(otbr-dbus-server-doc ALL
+    COMMAND gdbus-codegen --generate-docbook generated-docs ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml 
+    COMMAND xmlto html generated-docs-io.openthread.BorderRouter.xml
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    VERBATIM
+)
+endif()

@@ -35,11 +35,25 @@ if (DOXYGEN_FOUND)
     configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
     message("Doxygen build started")
 
+    add_custom_target(otbr-doc)
+
     add_custom_target(doxygen ALL
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating documentation with Doxygen"
         VERBATIM)
+    add_dependencies(otbr-doc doxygen)
+
+    if(OTBR_DBUS)
+        set(DBUS_DOC_SRC ${CMAKE_BINARY_DIR}/src/dbus/server/index.html)
+        set(DBUS_DOC_TARGET ${CMAKE_CURRENT_BINARY_DIR}/html/dbus-api.html)
+        add_custom_target(otbr-dbus-server-doc-copy ALL
+            COMMAND cp ${DBUS_DOC_SRC} ${DBUS_DOC_TARGET}
+            VERBATIM
+        )
+        add_dependencies(otbr-dbus-server-doc-copy otbr-dbus-server-doc)
+        add_dependencies(otbr-doc otbr-dbus-server-doc-copy)
+    endif()
 else()
     message("Doxygen must be installed to generate doxygen documentation")
 endif()

@@ -44,6 +44,17 @@
 namespace otbr {
 namespace DBus {
 
+/**
+ * @addtogroup border-router-dbus-server
+ *
+ * @brief
+ *   This module includes the <a href="dbus-api.html">dbus server api</a>.
+ *
+ * @{
+ * @}
+ *
+ */
+
 class DBusAgent;
 
 class DBusThreadObject : public DBusObject

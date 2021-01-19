@@ -49,13 +49,13 @@ jobs:
       with:
         submodules: true
     - name: Bootstrap
-      run: sudo apt-get install -y doxygen
+      run: sudo apt-get install -y doxygen libglib2.0-dev-bin xmlto
     - name: Generate
       run: |
         mkdir build-doc
         cd build-doc
         cmake -DBUILD_TESTING=OFF -DOTBR_DOC=ON ..
-        make doxygen
+        make otbr-doc
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
