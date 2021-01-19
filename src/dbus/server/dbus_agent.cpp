@@ -27,6 +27,7 @@
  */
 
 #include "dbus/server/dbus_agent.hpp"
+
 #include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
 
@@ -124,7 +125,7 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
             FD_SET(fd, &aReadFdSet);
         }
 
-        if ((flags & DBUS_WATCH_WRITABLE) && dbus_connection_has_messages_to_send(mConnection.get()))
+        if ((flags & DBUS_WATCH_WRITABLE))
         {
             FD_SET(fd, &aWriteFdSet);
         }
@@ -178,8 +179,7 @@ void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, con
         dbus_watch_handle(watch, flags);
     }
 
-    while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_get_dispatch_status(mConnection.get()) &&
-           dbus_connection_read_write_dispatch(mConnection.get(), 0))
+    while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_dispatch(mConnection.get()))
         ;
 }
 
