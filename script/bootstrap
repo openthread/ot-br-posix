@@ -88,7 +88,7 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libjsoncpp1 libjsoncpp-dev
 
     # reference device
-    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y iptables libnetfilter-queue1 libnetfilter-queue-dev
