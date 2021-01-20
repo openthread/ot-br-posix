@@ -49,7 +49,9 @@ jobs:
       with:
         submodules: true
     - name: Bootstrap
-      run: sudo apt-get install -y doxygen libglib2.0-dev-bin xmlto
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen libglib2.0-dev-bin xmlto
     - name: Generate
       run: |
         mkdir build-doc
