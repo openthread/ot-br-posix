@@ -51,7 +51,7 @@ jobs:
     - name: Bootstrap
       run: |
         sudo apt-get update
-        sudo apt-get install -y doxygen libglib2.0-dev-bin xmlto
+        sudo apt-get install -y doxygen libdbus-1-dev libglib2.0-dev-bin xmlto
     - name: Generate
       run: |
         mkdir build-doc
