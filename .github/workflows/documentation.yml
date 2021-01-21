@@ -56,7 +56,7 @@ jobs:
       run: |
         mkdir build-doc
         cd build-doc
-        cmake -DBUILD_TESTING=OFF -DOTBR_DOC=ON ..
+        cmake -DBUILD_TESTING=OFF -DOTBR_DOC=ON -DOTBR_DBUS=ON ..
         make otbr-doc
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
