@@ -26,6 +26,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definition for strcpy_safe().
+ */
+
 #ifndef OTBR_UTILS_STRCPY_UTILS_HPP_
 #define OTBR_UTILS_STRCPY_UTILS_HPP_
 

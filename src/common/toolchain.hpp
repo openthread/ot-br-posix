@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2019, The OpenThread Authors.
+ *    Copyright (c) 2021, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,30 +26,58 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef OTBR_COMMON_TOOLCHAIN_HPP_
+#define OTBR_COMMON_TOOLCHAIN_HPP_
+
 /**
- * @file
- * This file includes definitions for d-bus message resource.
+ * @def OTBR_TOOL_PACKED_BEGIN
+ *
+ * Compiler-specific indication that a class or struct must be byte packed.
+ *
  */
 
-#ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
-#define OTBR_DBUS_DBUS_RESOURCES_HPP_
+/**
+ * @def OTBR_TOOL_PACKED_END
+ *
+ * Compiler-specific indication at the end of a byte packed class or struct.
+ *
+ */
 
-#include <memory>
-#include <utility>
+// =========== TOOLCHAIN SELECTION : START ===========
 
-#include <dbus/dbus.h>
+#if defined(__GNUC__) || defined(__clang__) || defined(__CC_ARM) || defined(__TI_ARM__)
 
-namespace otbr {
-namespace DBus {
+// https://gcc.gnu.org/onlinedocs/gcc/Common-Variable-Attributes.html
+// http://www.keil.com/support/man/docs/armcc/armcc_chr1359124973480.htm
 
-struct DBusMessageDeleter
-{
-    void operator()(DBusMessage *aPointer) { dbus_message_unref(aPointer); }
-};
+#define OTBR_TOOL_PACKED_BEGIN
+#define OTBR_TOOL_PACKED_END __attribute__((packed))
 
-using UniqueDBusMessage = std::unique_ptr<DBusMessage, DBusMessageDeleter>;
+#elif defined(__ICCARM__) || defined(__ICC8051__)
 
-} // namespace DBus
-} // namespace otbr
+// http://supp.iar.com/FilesPublic/UPDINFO/004916/arm/doc/EWARM_DevelopmentGuide.ENU.pdf
 
-#endif // OTBR_DBUS_DBUS_RESOURCES_HPP_
+#include "intrinsics.h"
+
+#define OTBR_TOOL_PACKED_BEGIN __packed
+#define OTBR_TOOL_PACKED_END
+
+#elif defined(__SDCC)
+
+// Structures are packed by default in sdcc, as it primarily targets 8-bit MCUs.
+
+#define OTBR_TOOL_PACKED_BEGIN
+#define OTBR_TOOL_PACKED_END
+
+#else
+
+#error "Error: No valid Toolchain specified"
+
+// Symbols for Doxygen
+
+#define OTBR_TOOL_PACKED_BEGIN
+#define OTBR_TOOL_PACKED_END
+
+#endif
+
+#endif // OTBR_COMMON_TOOLCHAIN_HPP_

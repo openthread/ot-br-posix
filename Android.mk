@@ -28,7 +28,11 @@
 
 LOCAL_PATH := $(call my-dir)
 
-include $(LOCAL_PATH)/third_party/nest/mdns/mdns_mojom.mk
+ifeq ($(OTBR_ENABLE_ANDROID_MK),1)
+
+ifneq ($(OTBR_PROJECT_ANDROID_MK),)
+include $(OTBR_PROJECT_ANDROID_MK)
+endif
 
 include $(CLEAR_VARS)
 
@@ -72,6 +76,10 @@ LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
 LOCAL_SHARED_LIBRARIES := libdbus
+
+ifneq ($(ANDROID_NDK),1)
+LOCAL_SHARED_LIBRARIES += libcutils
+endif
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
@@ -125,23 +133,11 @@ LOCAL_SRC_FILES += \
     src/mdns/mdns_mdnssd.cpp \
 
 LOCAL_SHARED_LIBRARIES += libmdnssd
-else
-ifeq ($(OTBR_MDNS),mojo)
-LOCAL_CFLAGS += \
-    -DOTBR_ENABLE_MDNS_MOJO=1 \
-    $(NULL)
-
-LOCAL_SRC_FILES += \
-    third_party/nest/mdns/mdns_mojo.cpp \
-    $(NULL)
-
-# The generated header files are not in dependency chain.
-# Force dependency here
-LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/src/dbus/server/introspect.hpp
-LOCAL_STATIC_LIBRARIES += libmdns_mojom
-LOCAL_SHARED_LIBRARIES += libchrome libmojo
 endif
-endif
+
+LOCAL_SRC_FILES += $(OTBR_PROJECT_SRC_FILES)
+LOCAL_STATIC_LIBRARIES += $(OTBR_PROJECT_STATIC_LIBRARIES)
+LOCAL_SHARED_LIBRARIES += $(OTBR_PROJECT_SHARED_LIBRARIES)
 
 include $(BUILD_EXECUTABLE)
 
@@ -157,3 +153,4 @@ $(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf
 	sed -e 's/@OTBR_AGENT_USER@/root/g' -e 's/@OTBR_AGENT_GROUP@/root/g' $< > $@
 
 include $(BUILD_PREBUILT)
+endif # ifeq ($(OTBR_ENABLE_ANDROID_MK),1)

@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus client errors.
+ */
+
 #ifndef OTBR_DBUS_COMMON_ERROR_HPP_
 #define OTBR_DBUS_COMMON_ERROR_HPP_
 
@@ -34,6 +39,13 @@
 #include <dbus/dbus.h>
 
 namespace otbr {
+
+/**
+ * @namespace otbr::DBus
+ *
+ * @brief This namespace contains OpenThread Border Router DBus API.
+ *
+ */
 namespace DBus {
 
 enum class ClientError

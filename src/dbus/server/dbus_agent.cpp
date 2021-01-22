@@ -27,6 +27,7 @@
  */
 
 #include "dbus/server/dbus_agent.hpp"
+
 #include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
 
@@ -59,8 +60,8 @@ otbrError DBusAgent::Init(void)
     VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
                      requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
                  error = OTBR_ERROR_DBUS);
-    VerifyOrExit(dbus_connection_set_watch_functions(mConnection.get(), AddDBusWatch, RemoveDBusWatch, ToggleDBusWatch,
-                                                     this, nullptr));
+    VerifyOrExit(
+        dbus_connection_set_watch_functions(mConnection.get(), AddDBusWatch, RemoveDBusWatch, nullptr, this, nullptr));
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, mNcp));
     error         = mThreadObject->Init();
 exit:
@@ -74,7 +75,7 @@ exit:
 
 dbus_bool_t DBusAgent::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)
 {
-    static_cast<DBusAgent *>(aContext)->mWatches[aWatch] = true;
+    static_cast<DBusAgent *>(aContext)->mWatches.insert(aWatch);
     return TRUE;
 }
 
@@ -83,18 +84,12 @@ void DBusAgent::RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext)
     static_cast<DBusAgent *>(aContext)->mWatches.erase(aWatch);
 }
 
-void DBusAgent::ToggleDBusWatch(struct DBusWatch *aWatch, void *aContext)
-{
-    static_cast<DBusAgent *>(aContext)->mWatches[aWatch] = (dbus_watch_get_enabled(aWatch) ? true : false);
-}
-
 void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
                             fd_set &        aWriteFdSet,
                             fd_set &        aErrorFdSet,
                             int &           aMaxFd,
                             struct timeval &aTimeOut)
 {
-    DBusWatch *  watch = nullptr;
     unsigned int flags;
     int          fd;
 
@@ -103,14 +98,13 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
         aTimeOut = {0, 0};
     }
 
-    for (const auto &p : mWatches)
+    for (const auto &watch : mWatches)
     {
-        if (!p.second)
+        if (!dbus_watch_get_enabled(watch))
         {
             continue;
         }
 
-        watch = p.first;
         flags = dbus_watch_get_flags(watch);
         fd    = dbus_watch_get_unix_fd(watch);
 
@@ -124,7 +118,7 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
             FD_SET(fd, &aReadFdSet);
         }
 
-        if ((flags & DBUS_WATCH_WRITABLE) && dbus_connection_has_messages_to_send(mConnection.get()))
+        if ((flags & DBUS_WATCH_WRITABLE))
         {
             FD_SET(fd, &aWriteFdSet);
         }
@@ -140,18 +134,16 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
 
 void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    DBusWatch *  watch = nullptr;
     unsigned int flags;
     int          fd;
 
-    for (const auto &p : mWatches)
+    for (const auto &watch : mWatches)
     {
-        if (!p.second)
+        if (!dbus_watch_get_enabled(watch))
         {
             continue;
         }
 
-        watch = p.first;
         flags = dbus_watch_get_flags(watch);
         fd    = dbus_watch_get_unix_fd(watch);
 
@@ -178,8 +170,7 @@ void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, con
         dbus_watch_handle(watch, flags);
     }
 
-    while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_get_dispatch_status(mConnection.get()) &&
-           dbus_connection_read_write_dispatch(mConnection.get(), 0))
+    while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_dispatch(mConnection.get()))
         ;
 }
 

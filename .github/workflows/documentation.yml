@@ -1,5 +1,5 @@
 #
-##  Copyright (c) 2020, The OpenThread Authors.
+##  Copyright (c) 2021, The OpenThread Authors.
 ##  All rights reserved.
 ##
 ##  Redistribution and use in source and binary forms, with or without
@@ -26,30 +26,40 @@
 ##  POSSIBILITY OF SUCH DAMAGE.
 ##
 
-name: Raspbian
+name: Documentation
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
 
 jobs:
-
   cancel-previous-runs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: rokroskar/workflow-run-cleanup-action@master
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       if: "github.ref != 'refs/heads/master'"
 
-  raspbian-check:
-    runs-on: ubuntu-20.04
-    env:
-      IMAGE_URL: https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/2021-01-11-raspios-buster-armhf-lite.zip
-      BUILD_TARGET: raspbian-gcc
+  doxygen:
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: recursive
+        submodules: true
     - name: Bootstrap
-      run: tests/scripts/bootstrap.sh
-    - name: Build
-      run: tests/scripts/check-raspbian
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen libdbus-1-dev libglib2.0-dev-bin xmlto
+    - name: Generate
+      run: |
+        mkdir build-doc
+        cd build-doc
+        cmake -DBUILD_TESTING=OFF -DOTBR_DOC=ON -DOTBR_DBUS=ON ..
+        make otbr-doc
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build-doc/doc/html

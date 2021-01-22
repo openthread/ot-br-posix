@@ -26,10 +26,16 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus agent.
+ */
+
 #ifndef OTBR_DBUS_AGENT_HPP_
 #define OTBR_DBUS_AGENT_HPP_
 
 #include <functional>
+#include <set>
 #include <string>
 #include <sys/select.h>
 
@@ -92,7 +98,6 @@ public:
 private:
     static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
     static void        RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
-    static void        ToggleDBusWatch(struct DBusWatch *aWatch, void *aContext);
 
     static const struct timeval kPollTimeout;
 
@@ -106,8 +111,7 @@ private:
      * This map is used to track DBusWatch-es.
      *
      */
-    using WatchMap = std::map<DBusWatch *, bool>;
-    WatchMap mWatches;
+    std::set<DBusWatch *> mWatches;
 };
 
 } // namespace DBus

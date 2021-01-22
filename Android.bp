@@ -1,0 +1,109 @@
+//
+//  Copyright (c) 2021, The OpenThread Authors.
+//  All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//  1. Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//  3. Neither the name of the copyright holder nor the
+//     names of its contributors may be used to endorse or promote products
+//     derived from this software without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+//  POSSIBILITY OF SUCH DAMAGE.
+//
+
+soong_config_module_type {
+    name: "otbr_config_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "otbr",
+    bool_variables: ["enable_unsecure_join", "enable_legacy", "enable_android_bp", "disable_android_bp"],
+    value_variables: ["vendor_config_include_dir", "vendor_config_init_rc"],
+    properties: ["cflags", "enabled", "include_dirs", "init_rc"],
+}
+
+otbr_config_cc_defaults {
+    name: "otbr_config_defaults",
+    soong_config_variables: {
+        enable_unsecure_join: {
+            cflags: ["-DOTBR_ENABLE_UNSECURE_JOIN=1"]
+        },
+        enable_legacy: {
+            cflags: ["-DOTBR_ENABLE_LEGACY=1"]
+        },
+        vendor_config_include_dir: {
+            include_dirs: ["%s"]
+        },
+        vendor_config_init_rc: {
+            init_rc: ["%s"]
+        },
+        enable_android_bp: {
+            enabled: true,
+        },
+        disable_android_bp: {
+            enabled: false,
+        },
+    },
+}
+
+cc_binary {
+    name: "otbr-agent",
+    vendor: true,
+    defaults: ["otbr_config_defaults"],
+
+    include_dirs: [
+        "external/openthread/include",
+        "external/openthread/src",
+        "external/openthread/src/posix/platform/include",
+    ],
+
+    local_include_dirs: [
+        "include",
+        "src",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Wextra",
+        "-DOTBR_PACKAGE_VERSION=\"0.2.0\"",
+    ],
+
+    srcs: [
+        "src/agent/agent_instance.cpp",
+        "src/agent/instance_params.cpp",
+        "src/agent/border_agent.cpp",
+        "src/agent/main.cpp",
+        "src/agent/ncp_openthread.cpp",
+        "src/agent/thread_helper.cpp",
+        "src/common/logging.cpp",
+        "src/common/types.cpp",
+        "src/utils/event_emitter.cpp",
+        "src/utils/hex.cpp",
+        "src/utils/strcpy_utils.cpp",
+    ],
+
+    shared_libs: [
+        "libcutils",
+    ],
+
+    static_libs: [
+        "libopenthread-ncp",
+        "libopenthread-cli",
+        "ot-core",
+    ],
+
+    host_ldlibs: ["-lutil"],
+}

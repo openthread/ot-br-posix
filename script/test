@@ -132,6 +132,18 @@ do_check()
         && CTEST_OUTPUT_ON_FAILURE=1 ninja test)
 }
 
+do_doxygen()
+{
+    otbr_options=(
+        "-DOTBR_DOC=ON"
+    )
+
+    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
+        && cd "${OTBR_TOP_BUILDDIR}" \
+        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
+        && ninja doxygen)
+}
+
 do_prepare()
 {
     if [[ ${OTBR_OPTIONS} ]]; then
@@ -189,6 +201,9 @@ main()
                 ;;
             clean)
                 do_clean
+                ;;
+            doxygen)
+                do_doxygen
                 ;;
             help)
                 print_usage

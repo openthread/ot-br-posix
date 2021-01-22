@@ -26,6 +26,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for ubus API.
+ */
+
 #ifndef OTBR_AGENT_OTUBUS_HPP_
 #define OTBR_AGENT_OTUBUS_HPP_
 

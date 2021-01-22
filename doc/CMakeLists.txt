@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,38 +26,34 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-file(READ introspect.xml OTBR_DBUS_INTROSPECT)
-file(WRITE introspect.hpp "R\"INTROSPECT(")
-file(APPEND introspect.hpp ${OTBR_DBUS_INTROSPECT})
-file(APPEND introspect.hpp ")INTROSPECT\"")
+find_package(Doxygen)
 
-option(OTBR_ENABLE_LEGACY "enable legacy support")
+if (DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-add_library(otbr-dbus-server STATIC
-    dbus_agent.cpp
-    dbus_object.cpp
-    dbus_thread_object.cpp
-    error_helper.cpp
-)
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
 
-if(OTBR_ENABLE_LEGACY)
-    target_compile_definitions(otbr-dbus-server PRIVATE
-        "OTBR_ENABLE_LEGACY=1"
-    )
-    target_include_directories(otbr-dbus-server PRIVATE
-        ${PROJECT_SOURCE_DIR}/${OTBR_LEGACY_INCLUDE}
-    )
-endif()
+    add_custom_target(otbr-doc)
 
-target_link_libraries(otbr-dbus-server PUBLIC
-    otbr-dbus-common
-)
+    add_custom_target(doxygen ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating documentation with Doxygen"
+        VERBATIM)
+    add_dependencies(otbr-doc doxygen)
 
-if(OTBR_DOC)
-add_custom_target(otbr-dbus-server-doc ALL
-    COMMAND gdbus-codegen --generate-docbook generated-docs ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml 
-    COMMAND xmlto html generated-docs-io.openthread.BorderRouter.xml
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    VERBATIM
-)
+    if(OTBR_DBUS)
+        set(DBUS_DOC_SRC ${CMAKE_BINARY_DIR}/src/dbus/server/index.html)
+        set(DBUS_DOC_TARGET ${CMAKE_CURRENT_BINARY_DIR}/html/dbus-api.html)
+        add_custom_target(otbr-dbus-server-doc-copy ALL
+            COMMAND cp ${DBUS_DOC_SRC} ${DBUS_DOC_TARGET}
+            VERBATIM
+        )
+        add_dependencies(otbr-dbus-server-doc-copy otbr-dbus-server-doc)
+        add_dependencies(otbr-doc otbr-dbus-server-doc-copy)
+    endif()
+else()
+    message("Doxygen must be installed to generate doxygen documentation")
 endif()

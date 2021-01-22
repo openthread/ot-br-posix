@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for the d-bus object of OpenThread service.
+ */
+
 #ifndef OTBR_DBUS_THREAD_OBJECT_HPP_
 #define OTBR_DBUS_THREAD_OBJECT_HPP_
 
@@ -38,6 +43,17 @@
 
 namespace otbr {
 namespace DBus {
+
+/**
+ * @addtogroup border-router-dbus-server
+ *
+ * @brief
+ *   This module includes the <a href="dbus-api.html">dbus server api</a>.
+ *
+ * @{
+ * @}
+ *
+ */
 
 class DBusAgent;
 

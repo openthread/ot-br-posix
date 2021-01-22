@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes functions for handling d-bus client errors.
+ */
+
 #ifndef OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_
 #define OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_
 
