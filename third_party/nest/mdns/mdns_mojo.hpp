@@ -191,12 +191,17 @@ private:
 
     static std::pair<std::string, std::string> SplitServiceType(const std::string &aType);
 
-    void PublishServiceTask(uint16_t                        aPort,
-                            const std::string &             aType,
+    void PublishServiceTask(const std::string &             aHostInstanceName,
+                            const std::string &             aName,
+                            const std::string &             aTransport,
                             const std::string &             aInstanceName,
+                            uint16_t                        aPort,
                             const std::vector<std::string> &aText);
-
-    void UnpublishServiceTask(const std::string &aType, const std::string &aInstanceName);
+    void UnpublishServiceTask(const std::string &aName,
+                              const std::string &aInstanceName);
+    void PublishHostTask(const std::string &aInstanceName,
+                         const std::string &aIpv6Address);
+    void UnpublishHostTask(const std::string &aInstanceName);
 
     bool VerifyFileAccess(const char *aFile);
 
@@ -217,6 +222,7 @@ private:
     chromecast::mojom::MdnsResponderPtr mResponder;
 
     std::vector<std::pair<std::string, std::string>> mPublishedServices;
+    std::vector<std::string> mPublishedHosts;
 
     StateHandler mStateHandler;
     void *       mContext;
