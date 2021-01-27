@@ -64,18 +64,21 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
-$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(LOCAL_PATH)/src/dbus/server/introspect.hpp
-
-$(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/introspect.xml
-	echo 'R"INTROSPECT(' > $@
-	cat $+ >> $@
-	echo ')INTROSPECT"' >> $@
-
-
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
 LOCAL_SHARED_LIBRARIES := libdbus
+
+OTBR_GEN_HEADER_DIR := $(local-intermediates-dir)/gen
+OTBR_GEN_DBUS_INTROSPECT_HEADER := $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp
+
+$(OTBR_GEN_DBUS_INTROSPECT_HEADER): $(LOCAL_PATH)/src/dbus/server/introspect.xml
+	mkdir -p $(OTBR_GEN_HEADER_DIR)/dbus/server
+	echo 'R"INTROSPECT(' > $@
+	cat $+ >> $@
+	echo ')INTROSPECT"' >> $@
+
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp
 
 ifneq ($(ANDROID_NDK),1)
 LOCAL_SHARED_LIBRARIES += libcutils
@@ -89,6 +92,7 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
+    $(OTBR_GEN_HEADER_DIR) \
     $(OTBR_PROJECT_INCLUDES)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
@@ -99,6 +103,8 @@ LOCAL_CFLAGS += \
     $(OTBR_PROJECT_CFLAGS) \
 
 LOCAL_CPPFLAGS += -std=c++14
+
+LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER)
 
 LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
@@ -151,9 +157,14 @@ OTBR_AGENT_USER ?= root
 OTBR_AGENT_GROUP ?= root
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
-LOCAL_SRC_FILES := src/agent/otbr-agent.conf
-$(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
+OTBR_GEN_DBUS_CONF_DIR := $(local-intermediates-dir)/gen
+$(OTBR_GEN_DBUS_CONF_DIR)/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
+	mkdir -p $(OTBR_GEN_DBUS_CONF_DIR)
 	sed -e 's/@OTBR_AGENT_USER@/$(OTBR_AGENT_USER)/g' -e 's/@OTBR_AGENT_GROUP@/$(OTBR_AGENT_GROUP)/g' $< > $@
+
+# Dirty hack for Android.mk to copy config files from the intermediate directory.
+LOCAL_PATH := $(local-intermediates-dir)
+LOCAL_SRC_FILES := gen/otbr-agent.conf
 
 include $(BUILD_PREBUILT)
 endif # ifeq ($(OTBR_ENABLE_ANDROID_MK),1)
