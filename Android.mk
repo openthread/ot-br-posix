@@ -147,10 +147,13 @@ LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE := otbr-agent.conf
 LOCAL_MODULE_TAGS := eng
 
+OTBR_AGENT_USER ?= root
+OTBR_AGENT_GROUP ?= root
+
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
 LOCAL_SRC_FILES := src/agent/otbr-agent.conf
 $(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
-	sed -e 's/@OTBR_AGENT_USER@/root/g' -e 's/@OTBR_AGENT_GROUP@/root/g' $< > $@
+	sed -e 's/@OTBR_AGENT_USER@/$(OTBR_AGENT_USER)/g' -e 's/@OTBR_AGENT_GROUP@/$(OTBR_AGENT_GROUP)/g' $< > $@
 
 include $(BUILD_PREBUILT)
 endif # ifeq ($(OTBR_ENABLE_ANDROID_MK),1)
