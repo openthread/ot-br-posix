@@ -203,6 +203,7 @@ int main()
                             onMeshPrefix.mPreference = 0;
                             onMeshPrefix.mStable     = true;
 
+                            TEST_ASSERT(aErr == ClientError::ERROR_NONE);
                             TEST_ASSERT(api->GetChannel(channelResult) == OTBR_ERROR_NONE);
                             TEST_ASSERT(channelResult == channel);
                             TEST_ASSERT(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
@@ -217,7 +218,13 @@ int main()
                             TEST_ASSERT(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
 
-                            exit(static_cast<uint8_t>(aErr));
+                            api->FactoryReset(nullptr);
+                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", nullptr) ==
+                                        ClientError::OT_ERROR_NOT_FOUND);
+                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", [](ClientError aJoinError) {
+                                TEST_ASSERT(aJoinError == ClientError::OT_ERROR_NOT_FOUND);
+                                exit(0);
+                            }) == ClientError::ERROR_NONE);
                         });
                     });
     });
