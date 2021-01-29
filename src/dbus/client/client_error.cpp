@@ -97,8 +97,15 @@ ClientError CheckErrorMessage(DBusMessage *aMessage)
         std::string errorMsg;
         auto        args = std::tie(errorMsg);
 
-        VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, error = ClientError::ERROR_DBUS);
-        error = ConvertFromDBusErrorName(errorMsg);
+        if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_ERROR)
+        {
+            error = ConvertFromDBusErrorName(dbus_message_get_error_name(aMessage));
+        }
+        else
+        {
+            VerifyOrExit(DBusMessageToTuple(*aMessage, args) == OTBR_ERROR_NONE, error = ClientError::ERROR_DBUS);
+            error = ConvertFromDBusErrorName(errorMsg);
+        }
     }
 
 exit:

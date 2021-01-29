@@ -354,7 +354,6 @@ void ThreadApiDBus::JoinerStartPendingCallHandler(DBusPendingCall *aPending)
         ret = CheckErrorMessage(message.get());
     }
 
-    mJoinerHandler = nullptr;
     handler(ret);
 }
 
@@ -572,7 +571,8 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName)
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
     reply = UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&error);
@@ -613,7 +613,8 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName, co
     VerifyOrExit(otbr::DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
     reply = DBus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&error);
@@ -667,7 +668,8 @@ ClientError ThreadApiDBus::SetProperty(const std::string &aPropertyName, const V
     reply = DBus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&error);
@@ -691,11 +693,11 @@ template <typename ValType> ClientError ThreadApiDBus::GetProperty(const std::st
     reply = DBus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     SuccessOrExit(DBus::CheckErrorMessage(reply.get()));
-    VerifyOrExit(dbus_message_iter_init(reply.get(), &iter), ret = ClientError::OT_ERROR_FAILED);
-    VerifyOrExit(DBus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE,
-                 ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(dbus_message_iter_init(reply.get(), &iter), ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(DBus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
 
 exit:
     dbus_error_free(&error);

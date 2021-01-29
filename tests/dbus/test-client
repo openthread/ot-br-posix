@@ -87,9 +87,10 @@ send "commissioner start\r\n"
 expect "Commissioner: active"
 send "commissioner joiner add * ABCDEF\r\n"
 expect "Done"
+expect "Joiner end"
+send "commissioner stop\r\n"
 wait
 EOF
-    sleep 5
     # The ot-cli-mtd node is used to test the child and neighbor table.
     expect <<EOF &
 spawn ot-cli-mtd 2
