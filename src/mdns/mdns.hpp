@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for MDNS service.
+ *   This file includes definitions for mDNS publisher.
  */
 
 #ifndef OTBR_AGENT_MDNS_HPP_
@@ -103,6 +103,53 @@ public:
      *
      */
     typedef void (*StateHandler)(void *aContext, State aState);
+
+    /**
+     * This method reports the result of a service publication.
+     *
+     * @param[in]  aName     The service instance name.
+     * @param[in]  aType     The service type.
+     * @param[in]  aError    An error that indicates whether the service publication succeeds.
+     * @param[in]  aContext  A user context.
+     *
+     */
+    typedef void (*PublishServiceHandler)(const char *aName, const char *aType, otbrError aError, void *aContext);
+
+    /**
+     * This method reports the result of a host publication.
+     *
+     * @param[in]  aName     The host name.
+     * @param[in]  aError    An OTBR error that indicates whether the host publication succeeds.
+     * @param[in]  aContext  A user context.
+     *
+     */
+    typedef void (*PublishHostHandler)(const char *aName, otbrError aError, void *aContext);
+
+    /**
+     * This method sets the handler for service publication.
+     *
+     * @param[in]  aHandler  A handler which will be called when a service publication is finished.
+     * @param[in]  aContext  A user context which is associated to @p aHandler.
+     *
+     */
+    void SetPublishServiceHandler(PublishServiceHandler aHandler, void *aContext)
+    {
+        mServiceHandler        = aHandler;
+        mServiceHandlerContext = aContext;
+    }
+
+    /**
+     * This method sets the handler for host publication.
+     *
+     * @param[in]  aHandler  A handler which will be called when a host publication is finished.
+     * @param[in]  aContext  A user context which is associated to @p aHandler.
+     *
+     */
+    void SetPublishHostHandler(PublishHostHandler aHandler, void *aContext)
+    {
+        mHostHandler        = aHandler;
+        mHostHandlerContext = aContext;
+    }
 
     /**
      * This method starts the MDNS service.
@@ -239,6 +286,28 @@ public:
      *
      */
     static void Destroy(Publisher *aPublisher);
+
+    /**
+     * This function decides if two service types (names) are equal.
+     *
+     * Different implementations may or not append a dot ('.') to the service type (name)
+     * and we can not compare if two service type are equal with `strcmp`. This function
+     * ignores the trailing dot when comparing two service types.
+     *
+     * @param[in]  aFirstType   The first service type.
+     * @param[in]  aSecondType  The second service type.
+     *
+     * returns  A boolean that indicates whether the two service types are equal.
+     *
+     */
+    static bool IsServiceTypeEqual(const char *aFirstType, const char *aSecondType);
+
+protected:
+    PublishServiceHandler mServiceHandler        = nullptr;
+    void *                mServiceHandlerContext = nullptr;
+
+    PublishHostHandler mHostHandler        = nullptr;
+    void *             mHostHandlerContext = nullptr;
 };
 
 /**
