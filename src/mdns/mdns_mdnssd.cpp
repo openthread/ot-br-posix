@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file implements MDNS service based on avahi.
+ *   This file implements MDNS service based on mDnsSd.
  */
 
 #include "mdns/mdns_mdnssd.hpp"
@@ -47,6 +47,7 @@
 #include "common/time.hpp"
 #include "utils/strcpy_utils.hpp"
 
+#if OTBR_ENABLE_MDNS_MDNSSD
 namespace otbr {
 
 namespace Mdns {
@@ -165,11 +166,14 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
 }
 
 PublisherMDnsSd::PublisherMDnsSd(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
-    : mHostsConnection(nullptr)
+    : mHostsConnection(kDNSInvalidServiceRef)
     , mDomain(aDomain)
     , mState(State::kIdle)
     , mStateHandler(aHandler)
     , mContext(aContext)
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+    , mIsStarted(false)
+#endif
 {
     (void)aProtocol;
 }
@@ -181,8 +185,24 @@ PublisherMDnsSd::~PublisherMDnsSd(void)
 
 otbrError PublisherMDnsSd::Start(void)
 {
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+    mIsStarted = true;
+
+    otbrLog(OTBR_LOG_INFO, "MDNS start");
+
+    HidlMdnsInit(HandleMdnsStateUpdated, this);
+
+    if (HidlMdnsIsReady())
+    {
+        otbrLog(OTBR_LOG_INFO, "MDNS is ready");
+        mState = State::kReady;
+        mStateHandler(mContext, mState);
+    }
+#else
     mState = State::kReady;
     mStateHandler(mContext, State::kReady);
+#endif
+
     return OTBR_ERROR_NONE;
 }
 
@@ -193,6 +213,10 @@ bool PublisherMDnsSd::IsStarted(void) const
 
 void PublisherMDnsSd::Stop(void)
 {
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+    mIsStarted = false;
+#endif
+
     VerifyOrExit(mState == State::kReady);
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
@@ -203,19 +227,47 @@ void PublisherMDnsSd::Stop(void)
 
     mServices.clear();
 
-    if (mHostsConnection != nullptr)
+    if (mHostsConnection != kDNSInvalidServiceRef)
     {
         otbrLog(OTBR_LOG_INFO, "MDNS remove all hosts");
 
         // This effectively removes all hosts registered on this connection.
         DNSServiceRefDeallocate(mHostsConnection);
-        mHostsConnection = nullptr;
+        mHostsConnection = kDNSInvalidServiceRef;
         mHosts.clear();
     }
+
+    mState = State::kIdle;
 
 exit:
     return;
 }
+
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+void PublisherMDnsSd::HandleMdnsStateUpdated(DnsServiceState aState, void *aContext)
+{
+    static_cast<PublisherMDnsSd *>(aContext)->HandleMdnsStateUpdated(aState);
+}
+
+void PublisherMDnsSd::HandleMdnsStateUpdated(DnsServiceState aState)
+{
+    switch (aState)
+    {
+    case kDNSServiceStateIdle:
+        mState = State::kIdle;
+        mStateHandler(mContext, mState);
+        break;
+
+    case kDNSServiceStateIsReady:
+        if (mIsStarted)
+        {
+            mState = State::kReady;
+            mStateHandler(mContext, mState);
+        }
+        break;
+    }
+}
+#endif
 
 void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
                                   fd_set & aWriteFdSet,
@@ -223,10 +275,13 @@ void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
                                   int &    aMaxFd,
                                   timeval &aTimeout)
 {
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
-    (void)aTimeout;
+    OTBR_UNUSED_VARIABLE(aReadFdSet);
+    OTBR_UNUSED_VARIABLE(aWriteFdSet);
+    OTBR_UNUSED_VARIABLE(aErrorFdSet);
+    OTBR_UNUSED_VARIABLE(aMaxFd);
+    OTBR_UNUSED_VARIABLE(aTimeout);
 
+#if !OTBR_ENABLE_MDNS_MDNSSD_HIDL
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {
         int fd = DNSServiceRefSockFD(it->mService);
@@ -254,14 +309,17 @@ void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
             aMaxFd = fd;
         }
     }
+#endif
 }
 
 void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
-    std::vector<DNSServiceRef> readyServices;
+    OTBR_UNUSED_VARIABLE(aReadFdSet);
+    OTBR_UNUSED_VARIABLE(aWriteFdSet);
+    OTBR_UNUSED_VARIABLE(aErrorFdSet);
 
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
+#if !OTBR_ENABLE_MDNS_MDNSSD_HIDL
+    std::vector<DNSServiceRef> readyServices;
 
     for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
     {
@@ -292,6 +350,7 @@ void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSe
             otbrLog(OTBR_LOG_WARNING, "DNSServiceProcessResult failed: %s", DNSErrorToString(error));
         }
     }
+#endif
 }
 
 void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService,
@@ -341,15 +400,16 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
     {
         if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)))
         {
-            assert(aServiceRef == nullptr || aServiceRef == it->mService);
+            assert(aServiceRef == kDNSInvalidServiceRef || aServiceRef == it->mService);
             mServices.erase(it);
             DNSServiceRefDeallocate(aServiceRef);
-            aServiceRef = nullptr;
+            aServiceRef = kDNSInvalidServiceRef;
+            otbrLog(OTBR_LOG_INFO, "Discard service %s.%s", aName, aType);
             break;
         }
     }
 
-    assert(aServiceRef == nullptr);
+    assert(aServiceRef == kDNSInvalidServiceRef);
 }
 
 void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
@@ -370,6 +430,7 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
         strcpy_safe(service.mType, sizeof(service.mType), aType);
         service.mService = aServiceRef;
         mServices.push_back(service);
+        otbrLog(OTBR_LOG_INFO, "Record service %s.%s", aName, aType);
     }
 
 exit:
@@ -386,8 +447,10 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
     int           error = 0;
     uint8_t       txt[kMaxSizeOfTxtRecord];
     uint8_t *     cur        = txt;
-    DNSServiceRef serviceRef = nullptr;
+    DNSServiceRef serviceRef = kDNSInvalidServiceRef;
     char          fullHostName[kMaxSizeOfDomain];
+
+    VerifyOrExit(mState == State::kReady, ret = OTBR_ERROR_MDNS);
 
     if (aHostName != nullptr)
     {
@@ -433,8 +496,8 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
     {
         if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)))
         {
-            otbrLog(OTBR_LOG_INFO, "MDNS remove current service %s", aName);
-            DNSServiceUpdateRecord(it->mService, nullptr, 0, static_cast<uint16_t>(cur - txt), txt, 0);
+            otbrLog(OTBR_LOG_INFO, "MDNS updates current service %s", aName);
+            DNSServiceUpdateRecord(it->mService, kDNSInvalidRecordRef, 0, static_cast<uint16_t>(cur - txt), txt, 0);
             ExitNow();
         }
     }
@@ -442,7 +505,7 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
     SuccessOrExit(error = DNSServiceRegister(&serviceRef, 0, kDNSServiceInterfaceIndexAny, aName, aType, mDomain,
                                              (aHostName != nullptr) ? fullHostName : nullptr, htons(aPort),
                                              static_cast<uint16_t>(cur - txt), txt, HandleServiceRegisterResult, this));
-    if (serviceRef != nullptr)
+    if (serviceRef != kDNSInvalidServiceRef)
     {
         RecordService(aName, aType, serviceRef);
     }
@@ -460,8 +523,13 @@ exit:
 
 otbrError PublisherMDnsSd::UnpublishService(const char *aName, const char *aType)
 {
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mState == State::kReady, error = OTBR_ERROR_MDNS);
     DiscardService(aName, aType);
-    return OTBR_ERROR_NONE;
+
+exit:
+    return error;
 }
 
 otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
@@ -473,11 +541,12 @@ otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddres
     Host         newHost;
 
     // Supports only IPv6 for now, may support IPv4 in the future.
-    VerifyOrExit(aAddressLength == OTBR_IP6_ADDRESS_SIZE, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aAddressLength == OTBR_IP6_ADDRESS_SIZE, ret = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(mState == State::kReady, error = OTBR_ERROR_MDNS);
 
     SuccessOrExit(ret = MakeFullName(fullName, sizeof(fullName), aName));
 
-    if (mHostsConnection == nullptr)
+    if (mHostsConnection == kDNSInvalidServiceRef)
     {
         SuccessOrExit(error = DNSServiceCreateConnection(&mHostsConnection));
     }
@@ -522,6 +591,7 @@ otbrError PublisherMDnsSd::UnpublishHost(const char *aName)
         ExitNow();
     }
 
+    VerifyOrExit(mState == State::kReady, ret = OTBR_ERROR_MDNS);
     SuccessOrExit(error = DNSServiceRemoveRecord(mHostsConnection, host->mRecord, /* flags */ 0));
     mHosts.erase(host);
 
@@ -573,6 +643,8 @@ otbrError PublisherMDnsSd::MakeFullName(char *aFullName, size_t aFullNameLength,
     size_t      nameLength = strlen(aName);
     const char *domain     = (mDomain == nullptr) ? "local." : mDomain;
 
+    OTBR_UNUSED_VARIABLE(aFullNameLength);
+
     VerifyOrExit(nameLength <= kMaxSizeOfHost, error = OTBR_ERROR_INVALID_ARGS);
 
     assert(aFullNameLength >= nameLength + sizeof(".") + strlen(domain));
@@ -598,3 +670,4 @@ void Publisher::Destroy(Publisher *aPublisher)
 } // namespace Mdns
 
 } // namespace otbr
+#endif // OTBR_ENABLE_MDNS_MDNSSD

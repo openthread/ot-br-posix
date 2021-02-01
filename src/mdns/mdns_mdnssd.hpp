@@ -36,7 +36,14 @@
 
 #include <vector>
 
+#if OTBR_ENABLE_MDNS_MDNSSD
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+#include "hidl/1.0/hidl_mdns_api.hpp"
+#else
 #include <dns_sd.h>
+#define kDNSInvalidServiceRef nullptr
+#define kDNSInvalidRecordRef nullptr
+#endif
 
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
@@ -46,7 +53,7 @@ namespace otbr {
 namespace Mdns {
 
 /**
- * This class implements MDNS service with avahi.
+ * This class implements MDNS service with mDnsSd.
  *
  */
 class PublisherMDnsSd : public Publisher
@@ -179,7 +186,7 @@ public:
                      timeval &aTimeout) override;
 
 private:
-    void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = nullptr);
+    void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = kDNSInvalidServiceRef);
     void RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
 
     static void HandleServiceRegisterResult(DNSServiceRef         aService,
@@ -206,6 +213,11 @@ private:
                                          DNSServiceErrorType aErrorCode);
 
     otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
+
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+    static void HandleMdnsStateUpdated(DnsServiceState aState, void *aContext);
+    void        HandleMdnsStateUpdated(DnsServiceState aState);
+#endif
 
     enum
     {
@@ -240,6 +252,10 @@ private:
     State         mState;
     StateHandler  mStateHandler;
     void *        mContext;
+
+#if OTBR_ENABLE_MDNS_MDNSSD_HIDL
+    bool mIsStarted;
+#endif
 };
 
 /**
@@ -250,4 +266,5 @@ private:
 
 } // namespace otbr
 
+#endif // OTBR_ENABLE_MDNS_MDNSSD
 #endif // OTBR_AGENT_MDNS_MDNSSD_HPP_

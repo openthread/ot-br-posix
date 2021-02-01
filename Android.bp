@@ -30,7 +30,7 @@ soong_config_module_type {
     name: "otbr_config_cc_defaults",
     module_type: "cc_defaults",
     config_namespace: "otbr",
-    bool_variables: ["enable_unsecure_join", "enable_legacy", "enable_android_bp", "disable_android_bp"],
+    bool_variables: ["enable_unsecure_join", "enable_legacy", "enable_mdns_mdnssd", "enable_android_bp", "disable_android_bp"],
     value_variables: ["vendor_config_include_dir", "vendor_config_init_rc"],
     properties: ["cflags", "enabled", "include_dirs", "init_rc"],
 }
@@ -43,6 +43,12 @@ otbr_config_cc_defaults {
         },
         enable_legacy: {
             cflags: ["-DOTBR_ENABLE_LEGACY=1"]
+        },
+        enable_mdns_mdnssd: {
+            cflags: [
+                "-DOTBR_ENABLE_MDNS_MDNSSD=1",
+                "-DOTBR_ENABLE_MDNS_MDNSSD_HIDL=1"
+            ],
         },
         vendor_config_include_dir: {
             include_dirs: ["%s"]
@@ -90,6 +96,8 @@ cc_binary {
         "src/agent/thread_helper.cpp",
         "src/common/logging.cpp",
         "src/common/types.cpp",
+        "src/hidl/1.0/hidl_mdns.cpp",
+        "src/mdns/mdns_mdnssd.cpp",
         "src/utils/event_emitter.cpp",
         "src/utils/hex.cpp",
         "src/utils/strcpy_utils.cpp",
