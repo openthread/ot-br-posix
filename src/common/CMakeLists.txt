@@ -28,6 +28,7 @@
 
 add_library(otbr-common
     logging.cpp
+    ot_utils.cpp
     types.cpp
 )
 

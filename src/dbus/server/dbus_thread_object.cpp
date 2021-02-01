@@ -40,6 +40,7 @@
 #include <openthread/platform/radio.h>
 
 #include "common/byteswap.hpp"
+#include "common/ot_utils.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
@@ -50,43 +51,6 @@
 
 using std::placeholders::_1;
 using std::placeholders::_2;
-
-static std::string GetDeviceRoleName(otDeviceRole aRole)
-{
-    std::string roleName;
-
-    switch (aRole)
-    {
-    case OT_DEVICE_ROLE_DISABLED:
-        roleName = OTBR_ROLE_NAME_DISABLED;
-        break;
-    case OT_DEVICE_ROLE_DETACHED:
-        roleName = OTBR_ROLE_NAME_DETACHED;
-        break;
-    case OT_DEVICE_ROLE_CHILD:
-        roleName = OTBR_ROLE_NAME_CHILD;
-        break;
-    case OT_DEVICE_ROLE_ROUTER:
-        roleName = OTBR_ROLE_NAME_ROUTER;
-        break;
-    case OT_DEVICE_ROLE_LEADER:
-        roleName = OTBR_ROLE_NAME_LEADER;
-        break;
-    }
-
-    return roleName;
-}
-
-static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
-{
-    uint64_t val = 0;
-
-    for (size_t i = 0; i < sizeof(uint64_t); i++)
-    {
-        val = (val << 8) | aValue[i];
-    }
-    return val;
-}
 
 namespace otbr {
 namespace DBus {
@@ -207,14 +171,14 @@ otbrError DBusThreadObject::Init(void)
 
 void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
 {
-    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, GetDeviceRoleName(aDeviceRole));
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, DeviceRoleToString(aDeviceRole));
 }
 
 void DBusThreadObject::NcpResetHandler(void)
 {
     mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
-                          GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
+                          DeviceRoleToString(OT_DEVICE_ROLE_DISABLED));
 }
 
 void DBusThreadObject::ScanHandler(DBusRequest &aRequest)
@@ -239,8 +203,8 @@ void DBusThreadObject::ReplyScanResult(DBusRequest &                          aR
         {
             ActiveScanResult result;
 
-            result.mExtAddress    = ConvertOpenThreadUint64(r.mExtAddress.m8);
-            result.mExtendedPanId = ConvertOpenThreadUint64(r.mExtendedPanId.m8);
+            result.mExtAddress    = ArrayToUint64(r.mExtAddress.m8);
+            result.mExtendedPanId = ArrayToUint64(r.mExtendedPanId.m8);
             result.mNetworkName   = r.mNetworkName.m8;
             result.mSteeringData =
                 std::vector<uint8_t>(r.mSteeringData.m8, r.mSteeringData.m8 + r.mSteeringData.mLength);
@@ -523,7 +487,7 @@ otError DBusThreadObject::GetDeviceRoleHandler(DBusMessageIter &aIter)
 {
     auto         threadHelper = mNcp->GetThreadHelper();
     otDeviceRole role         = otThreadGetDeviceRole(threadHelper->GetInstance());
-    std::string  roleName     = GetDeviceRoleName(role);
+    std::string  roleName     = DeviceRoleToString(role);
     otError      error        = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, roleName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
@@ -563,7 +527,7 @@ otError DBusThreadObject::GetExtPanIdHandler(DBusMessageIter &aIter)
     uint64_t               extPanIdVal;
     otError                error = OT_ERROR_NONE;
 
-    extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
+    extPanIdVal = ArrayToUint64(extPanId->m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extPanIdVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -701,7 +665,7 @@ otError DBusThreadObject::GetExtendedAddressHandler(DBusMessageIter &aIter)
     auto                threadHelper    = mNcp->GetThreadHelper();
     otError             error           = OT_ERROR_NONE;
     const otExtAddress *addr            = otLinkGetExtendedAddress(threadHelper->GetInstance());
-    uint64_t            extendedAddress = ConvertOpenThreadUint64(addr->m8);
+    uint64_t            extendedAddress = ArrayToUint64(addr->m8);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extendedAddress) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -847,7 +811,7 @@ otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
     {
         ChildInfo info;
 
-        info.mExtAddress         = ConvertOpenThreadUint64(childInfo.mExtAddress.m8);
+        info.mExtAddress         = ArrayToUint64(childInfo.mExtAddress.m8);
         info.mTimeout            = childInfo.mTimeout;
         info.mAge                = childInfo.mAge;
         info.mChildId            = childInfo.mChildId;
@@ -883,7 +847,7 @@ otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
     {
         NeighborInfo info;
 
-        info.mExtAddress       = ConvertOpenThreadUint64(neighborInfo.mExtAddress.m8);
+        info.mExtAddress       = ArrayToUint64(neighborInfo.mExtAddress.m8);
         info.mAge              = neighborInfo.mAge;
         info.mRloc16           = neighborInfo.mRloc16;
         info.mLinkFrameCounter = neighborInfo.mLinkFrameCounter;

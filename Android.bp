@@ -79,7 +79,10 @@ cc_binary {
         "-Wall",
         "-Wextra",
         "-DOTBR_PACKAGE_VERSION=\"0.2.0\"",
+        "-DOTBR_ENABLE_HIDL_SERVER=1",
     ],
+
+    cppflags: ["-std=c++17"],
 
     srcs: [
         "src/agent/agent_instance.cpp",
@@ -89,13 +92,20 @@ cc_binary {
         "src/agent/ncp_openthread.cpp",
         "src/agent/thread_helper.cpp",
         "src/common/logging.cpp",
+        "src/common/ot_utils.cpp",
         "src/common/types.cpp",
+        "src/hidl/1.0/hidl_agent.cpp",
+        "src/hidl/1.0/hidl_settings.cpp",
+        "src/hidl/1.0/hidl_thread.cpp",
         "src/utils/event_emitter.cpp",
         "src/utils/hex.cpp",
         "src/utils/strcpy_utils.cpp",
     ],
 
     shared_libs: [
+        "android.hardware.thread@1.0",
+        "libhidlbase",
+        "libutils",
         "libcutils",
     ],
 

@@ -114,6 +114,7 @@ LOCAL_SRC_FILES := \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
     src/common/logging.cpp \
+    src/common/ot_utils.cpp \
     src/dbus/common/dbus_message_dump.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \

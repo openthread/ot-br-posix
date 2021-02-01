@@ -58,6 +58,11 @@ using otbr::rest::RestWebServer;
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
+#if OTBR_ENABLE_HIDL_SERVER
+#include "hidl/1.0/hidl_agent.hpp"
+using otbr::Hidl::HidlAgent;
+std::unique_ptr<HidlAgent> gHidlAgent = nullptr;
+#endif
 using otbr::Ncp::ControllerOpenThread;
 
 #if OTBR_ENABLE_OPENWRT
@@ -115,6 +120,11 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);
     restServer->Init();
 #endif
+
+#if OTBR_ENABLE_HIDL_SERVER
+    gHidlAgent->Init();
+#endif
+
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
@@ -142,6 +152,10 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         restServer->UpdateFdSet(mainloop);
 #endif
 
+#if OTBR_ENABLE_HIDL_SERVER
+        gHidlAgent->UpdateFdSet(mainloop);
+#endif
+
 #if OTBR_ENABLE_OPENWRT
         UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         sThreadMutex.unlock();
@@ -149,12 +163,6 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-
-        if (ncpOpenThread.IsResetRequested())
-        {
-            ncpOpenThread.Reset();
-            continue;
-        }
 
         if (rval >= 0)
         {
@@ -165,6 +173,10 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 #if OTBR_ENABLE_REST_SERVER
             restServer->Process(mainloop);
+#endif
+
+#if OTBR_ENABLE_HIDL_SERVER
+            gHidlAgent->Process(mainloop);
 #endif
 
             aInstance.Process(mainloop);
@@ -181,6 +193,11 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             error = OTBR_ERROR_ERRNO;
             otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
+        }
+
+        if (ncpOpenThread.IsResetRequested())
+        {
+            ncpOpenThread.Reset();
         }
     }
 
@@ -276,6 +293,17 @@ int main(int argc, char *argv[])
 
     otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
     otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
+
+#if OTBR_ENABLE_HIDL_SERVER
+    gHidlAgent = std::unique_ptr<HidlAgent>(new HidlAgent(ncpOpenThread));
+    VerifyOrDie(gHidlAgent != nullptr, "Create HIDL agent failed");
+
+    // When creating an OpenThread instance, OpenThread reads critical settings from HIDL Settings client to restore
+    // the network. Before reading settings from HIDL client, we must ensure that the HIDL Client has started working.
+    // Otherwise, the OpenThread can't restore the network correctly.
+    otbrLog(OTBR_LOG_INFO, "Waiting for the HIDL Settings client to start");
+    SuccessOrExit(ret = gHidlAgent->GetSettings().WaitingForClientToStart());
+#endif
 
     {
         otbr::AgentInstance instance(ncp);
