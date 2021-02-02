@@ -354,6 +354,7 @@ void ThreadApiDBus::JoinerStartPendingCallHandler(DBusPendingCall *aPending)
         ret = CheckErrorMessage(message.get());
     }
 
+    mJoinerHandler = nullptr;
     handler(ret);
 }
 
