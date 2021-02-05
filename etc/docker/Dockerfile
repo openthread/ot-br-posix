@@ -65,7 +65,7 @@ ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-c
   libnetfilter-queue-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov
+ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
@@ -75,7 +75,14 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
-  && ([ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS) \
+  && [ "${OT_BACKBONE_CI}" != "1" ] || ( \
+    apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS \
+    && MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-878.30.4 \
+    && wget -4 --no-check-certificate https://opensource.apple.com/tarballs/mDNSResponder/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+    && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+    && cd $MDNS_RESPONDER_SOURCE_NAME/mDNSPosix \
+    && make os=linux && sudo make install os=linux \
+    && cd - && rm -rf $MDNS_RESPONDER_SOURCE_NAME) \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \

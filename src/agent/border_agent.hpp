@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 
+#include "agent/advertising_proxy.hpp"
 #include "agent/instance_params.hpp"
 #include "agent/ncp.hpp"
 #include "mdns/mdns.hpp"
@@ -137,8 +138,12 @@ private:
     static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
 
-    Mdns::Publisher *mPublisher;
     Ncp::Controller *mNcp;
+    Mdns::Publisher *mPublisher;
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    AdvertisingProxy mAdvertisingProxy;
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     BackboneRouter::BackboneAgent mBackboneAgent;
 #endif

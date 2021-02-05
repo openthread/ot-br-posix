@@ -372,6 +372,7 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
 
     if (aError == kDNSServiceErr_NoError)
     {
+        otbrLog(OTBR_LOG_INFO, "[mdns] successfully registered service %s.%s", originalInstanceName.c_str(), aType);
         if (aFlags & kDNSServiceFlagsAdd)
         {
             RecordService(originalInstanceName.c_str(), aType, aServiceRef);
@@ -383,7 +384,7 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     }
     else
     {
-        otbrLog(OTBR_LOG_ERR, "[mdns] failed to register service %s: %s", originalInstanceName.c_str(),
+        otbrLog(OTBR_LOG_ERR, "[mdns] failed to register service %s.%s: %s", originalInstanceName.c_str(), aType,
                 DNSErrorToString(aError));
         DiscardService(originalInstanceName.c_str(), aType, aServiceRef);
     }
@@ -434,41 +435,6 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
     }
 }
 
-otbrError PublisherMDnsSd::MakeTxtRecord(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength)
-{
-    otbrError error = OTBR_ERROR_NONE;
-    uint8_t * cur   = aTxtData;
-
-    for (const auto &txtEntry : aTxtList)
-    {
-        const char *   name        = txtEntry.mName;
-        const size_t   nameLength  = strlen(txtEntry.mName);
-        const uint8_t *value       = txtEntry.mValue;
-        const size_t   valueLength = txtEntry.mValueLength;
-        const size_t   entryLength = nameLength + 1 + valueLength;
-
-        VerifyOrExit(nameLength > 0 && entryLength < kMaxTextEntrySize, error = OTBR_ERROR_INVALID_ARGS);
-        VerifyOrExit(cur + entryLength + 1 <= aTxtData + aTxtLength, error = OTBR_ERROR_INVALID_ARGS);
-
-        cur[0] = static_cast<uint8_t>(entryLength);
-        ++cur;
-
-        memcpy(cur, name, nameLength);
-        cur += nameLength;
-
-        cur[0] = '=';
-        ++cur;
-
-        memcpy(cur, value, valueLength);
-        cur += valueLength;
-    }
-
-    aTxtLength = cur - aTxtData;
-
-exit:
-    return error;
-}
-
 otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
                                           uint16_t       aPort,
                                           const char *   aName,
@@ -492,7 +458,7 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
         SuccessOrExit(error = MakeFullName(fullHostName, sizeof(fullHostName), aHostName));
     }
 
-    SuccessOrExit(ret = MakeTxtRecord(aTxtList, txt, txtLength));
+    SuccessOrExit(ret = EncodeTxtData(aTxtList, txt, txtLength));
 
     if (service != mServices.end())
     {

@@ -41,6 +41,8 @@
 #include <string>
 #include <vector>
 
+#include <openthread/error.h>
+
 #include "common/toolchain.hpp"
 
 #ifndef IN6ADDR_ANY
@@ -79,7 +81,18 @@ enum otbrError
     OTBR_ERROR_PARSE           = -8,  ///< Parse error.
     OTBR_ERROR_NOT_IMPLEMENTED = -9,  ///< Not implemented error.
     OTBR_ERROR_INVALID_ARGS    = -10, ///< Invalid arguments error.
+    OTBR_ERROR_DUPLICATED      = -11, ///< Duplicated operation, resource or name.
 };
+
+/**
+ * This function converts `otbrError` to `otError`.
+ *
+ * @param[in]  aError  An OTBR error.
+ *
+ * @returns  The corresponding OT error.
+ *
+ */
+otError OtbrErrorToOtError(otbrError aError);
 
 namespace otbr {
 

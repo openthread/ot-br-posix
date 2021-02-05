@@ -67,6 +67,7 @@ public:
     struct TxtEntry
     {
         const char *   mName;        ///< The name of the TXT entry.
+        size_t         mNameLength;  ///< The length of the name of the TXT entry.
         const uint8_t *mValue;       ///< The value of the TXT entry.
         size_t         mValueLength; ///< The length of the value of the TXT entry.
 
@@ -76,7 +77,13 @@ public:
         }
 
         TxtEntry(const char *aName, const uint8_t *aValue, size_t aValueLength)
+            : TxtEntry(aName, strlen(aName), aValue, aValueLength)
+        {
+        }
+
+        TxtEntry(const char *aName, size_t aNameLength, const uint8_t *aValue, size_t aValueLength)
             : mName(aName)
+            , mNameLength(aNameLength)
             , mValue(aValue)
             , mValueLength(aValueLength)
         {
@@ -302,7 +309,29 @@ public:
      */
     static bool IsServiceTypeEqual(const char *aFirstType, const char *aSecondType);
 
+    /**
+     * This function writes the TXT entry list to a TXT data buffer.
+     *
+     * The output data is in standard DNS-SD TXT data format.
+     * See RFC 6763 for details: https://tools.ietf.org/html/rfc6763#section-6.
+     *
+     * @param[in]     aTxtList    A TXT entry list.
+     * @param[out]    aTxtData    A TXT data buffer.
+     * @param[inout]  aTxtLength  As input, it is the length of the TXT data buffer;
+     *                            As output, it is the length of the TXT data written.
+     *
+     * @retval  OTBR_ERROR_NONE          Successfully write the TXT entry list.
+     * @retval  OTBR_ERROR_INVALID_ARGS  The input TXT data buffer cannot hold the TXT data.
+     *
+     */
+    static otbrError EncodeTxtData(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength);
+
 protected:
+    enum : uint8_t
+    {
+        kMaxTextEntrySize = 255,
+    };
+
     PublishServiceHandler mServiceHandler        = nullptr;
     void *                mServiceHandlerContext = nullptr;
 

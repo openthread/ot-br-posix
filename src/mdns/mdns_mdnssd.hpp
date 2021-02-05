@@ -187,7 +187,6 @@ private:
         kMaxSizeOfHost        = 128,
         kMaxSizeOfDomain      = kDNSServiceMaxDomainName,
         kMaxSizeOfServiceType = 69,
-        kMaxTextEntrySize     = 255,
     };
 
     struct Service
@@ -237,8 +236,6 @@ private:
                                          DNSRecordRef        aHostRecord,
                                          DNSServiceFlags     aFlags,
                                          DNSServiceErrorType aErrorCode);
-
-    static otbrError MakeTxtRecord(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength);
 
     otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
 
