@@ -479,7 +479,7 @@ otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
 exit:
     return error;
 #else
-    (void)aIter;
+    OTBR_UNUSED_VARIABLE(aIter);
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_LEGACY
@@ -801,7 +801,7 @@ otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &a
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
-    (void)aIter;
+    OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
@@ -830,7 +830,7 @@ otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
-    (void)aIter;
+    OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }

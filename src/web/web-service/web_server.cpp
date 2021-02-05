@@ -39,6 +39,8 @@
 
 #include <server_http.hpp>
 
+#include "common/code_utils.hpp"
+
 #define OT_ADD_PREFIX_PATH "^/add_prefix"
 #define OT_AVAILABLE_NETWORK_PATH "^/available_network$"
 #define OT_DELETE_PREFIX_PATH "^/delete_prefix"
@@ -355,13 +357,13 @@ std::string WebServer::HandleDeletePrefixRequest(const std::string &aDeletePrefi
 
 std::string WebServer::HandleGetStatusRequest(const std::string &aGetStatusRequest)
 {
-    (void)aGetStatusRequest;
+    OTBR_UNUSED_VARIABLE(aGetStatusRequest);
     return mWpanService.HandleStatusRequest();
 }
 
 std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest)
 {
-    (void)aGetAvailableNetworkRequest;
+    OTBR_UNUSED_VARIABLE(aGetAvailableNetworkRequest);
     return mWpanService.HandleAvailableNetworkRequest();
 }
 

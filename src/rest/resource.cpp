@@ -564,7 +564,7 @@ void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessa
 
     SuccessOrExit(aError);
 
-    (void)aMessageInfo;
+    OTBR_UNUSED_VARIABLE(aMessageInfo);
 
     while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
     {
