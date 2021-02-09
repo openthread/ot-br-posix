@@ -36,6 +36,7 @@
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
+#include <openthread/srp_server.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
@@ -129,6 +130,10 @@ otbrError ControllerOpenThread::Init(void)
     otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
                                             this);
     otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
+#endif
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));

@@ -50,6 +50,8 @@ main()
     elif have service; then
         sudo service rsyslog status || sudo service rsyslog start || die 'Failed to start rsyslog!'
         sudo service dbus status || sudo service dbus start || die 'Failed to start dbus!'
+        # Tolerate the mdns failure as it is installed for only CI docker.
+        sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
         sudo service avahi-daemon status || sudo service avahi-daemon start || die 'Failed to start avahi!'
         sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
         sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'

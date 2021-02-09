@@ -34,6 +34,44 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
+otError OtbrErrorToOtError(otbrError aError)
+{
+    otError error;
+
+    switch (aError)
+    {
+    case OTBR_ERROR_NONE:
+        error = OT_ERROR_NONE;
+        break;
+
+    case OTBR_ERROR_NOT_FOUND:
+        error = OT_ERROR_NOT_FOUND;
+        break;
+
+    case OTBR_ERROR_PARSE:
+        error = OT_ERROR_PARSE;
+        break;
+
+    case OTBR_ERROR_NOT_IMPLEMENTED:
+        error = OT_ERROR_NOT_IMPLEMENTED;
+        break;
+
+    case OTBR_ERROR_INVALID_ARGS:
+        error = OT_ERROR_INVALID_ARGS;
+        break;
+
+    case OTBR_ERROR_DUPLICATED:
+        error = OT_ERROR_DUPLICATED;
+        break;
+
+    default:
+        error = OT_ERROR_FAILED;
+        break;
+    }
+
+    return error;
+}
+
 namespace otbr {
 
 Ip6Address::Ip6Address(const uint8_t (&aAddress)[16])

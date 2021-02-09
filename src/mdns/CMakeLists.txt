@@ -27,30 +27,36 @@
 #
 
 if(OTBR_MDNS STREQUAL "avahi")
-add_library(otbr-mdns
-    mdns_avahi.cpp
-)
-target_compile_definitions(otbr-mdns PUBLIC
-    OTBR_ENABLE_MDNS_AVAHI=1
-)
-target_link_libraries(otbr-mdns PRIVATE
-    otbr-common
-    otbr-utils
-    avahi-client
-    avahi-common
-)
+    add_library(otbr-mdns
+        mdns.cpp
+        mdns_avahi.cpp
+    )
+    target_compile_definitions(otbr-mdns PUBLIC
+        OTBR_ENABLE_MDNS_AVAHI=1
+    )
+    target_link_libraries(otbr-mdns
+        PUBLIC
+            otbr-common
+        PRIVATE
+            otbr-utils
+            avahi-client
+            avahi-common
+    )
 endif()
 
 if(OTBR_MDNS STREQUAL "mDNSResponder")
-add_library(otbr-mdns
-    mdns_mdnssd.cpp
-)
-target_compile_definitions(otbr-mdns PUBLIC
-    OTBR_ENABLE_MDNS_MDNSSD=1
-)
-target_link_libraries(otbr-mdns PRIVATE
-    otbr-common
-    otbr-utils
-    dns_sd
-)
+    add_library(otbr-mdns
+        mdns.cpp
+        mdns_mdnssd.cpp
+    )
+    target_compile_definitions(otbr-mdns PUBLIC
+        OTBR_ENABLE_MDNS_MDNSSD=1
+    )
+    target_link_libraries(otbr-mdns
+        PUBLIC
+            otbr-common
+        PRIVATE
+            otbr-utils
+            dns_sd
+    )
 endif()

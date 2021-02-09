@@ -82,12 +82,15 @@ enum
 };
 
 BorderAgent::BorderAgent(Ncp::Controller *aNcp)
+    : mNcp(aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    : mPublisher(Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, HandleMdnsState, this))
-#else
-    : mPublisher(nullptr)
+    , mPublisher(Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, HandleMdnsState, this))
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    , mAdvertisingProxy(*reinterpret_cast<Ncp::ControllerOpenThread *>(aNcp), *mPublisher)
 #endif
-    , mNcp(aNcp)
+#else
+    , mPublisher(nullptr)
+#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     , mBackboneAgent(*reinterpret_cast<Ncp::ControllerOpenThread *>(aNcp))
 #endif
@@ -130,8 +133,12 @@ otbrError BorderAgent::Start(void)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
-
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventThreadVersion));
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mAdvertisingProxy.Start();
+#endif
+
     StartPublishService();
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 
@@ -147,6 +154,9 @@ void BorderAgent::Stop(void)
 {
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     StopPublishService();
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mAdvertisingProxy.Stop();
+#endif
 #endif
 }
 
