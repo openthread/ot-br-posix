@@ -129,6 +129,7 @@ private:
     void SetNetworkName(const char *aNetworkName);
     void SetExtPanId(const uint8_t *aExtPanId);
     void SetThreadVersion(uint16_t aThreadVersion);
+    void SetExtAddr(const uint8_t *aExtAddr);
     void HandleThreadState(bool aStarted);
     void HandlePSKc(const uint8_t *aPSKc);
 
@@ -137,6 +138,7 @@ private:
     static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
     static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
     static void HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
+    static void HandleExtAddr(void *aContext, int aEvent, va_list aArguments);
 
     Ncp::Controller *mNcp;
     Mdns::Publisher *mPublisher;
@@ -149,7 +151,9 @@ private:
 #endif
 
     uint8_t  mExtPanId[kSizeExtPanId];
+    uint8_t  mExtAddr[kSizeExtAddr];
     bool     mExtPanIdInitialized;
+    bool     mExtAddrInitialized;
     uint16_t mThreadVersion;
     char     mNetworkName[kSizeNetworkName + 1];
     bool     mThreadStarted;

@@ -311,6 +311,14 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
         EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
         break;
     }
+    case kEventExtAddr:
+    {
+        const otExtAddress *extAddr;
+
+        extAddr = otLinkGetExtendedAddress(mInstance);
+        EventEmitter::Emit(kEventExtAddr, extAddr);
+        break;
+    }
     default:
         assert(false);
         break;
