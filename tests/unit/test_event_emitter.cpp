@@ -31,6 +31,8 @@
 #include <CppUTest/TestHarness.h>
 #include <stdarg.h>
 
+#include "common/code_utils.hpp"
+
 static int   sCounter = 0;
 static int   sEvent   = 0;
 static void *sContext = nullptr;
@@ -41,7 +43,7 @@ static void HandleSingleEvent(void *aContext, int aEvent, va_list aArguments)
 
     CHECK_EQUAL(sContext, aContext);
     CHECK_EQUAL(sEvent, aEvent);
-    (void)aArguments;
+    OTBR_UNUSED_VARIABLE(aArguments);
 }
 
 static void HandleTestDifferentContextEvent(void *aContext, int aEvent, va_list aArguments)
@@ -78,7 +80,7 @@ static void HandleTestCallSequenceEvent(void *aContext, int aEvent, va_list aArg
 
     CHECK_EQUAL(sCounter, id);
 
-    (void)aArguments;
+    OTBR_UNUSED_VARIABLE(aArguments);
 }
 
 TEST_GROUP(EventEmitter){};

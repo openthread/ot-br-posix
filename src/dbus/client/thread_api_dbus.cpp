@@ -123,7 +123,7 @@ DBusHandlerResult ThreadApiDBus::sDBusMessageFilter(DBusConnection *aConnection,
 
 DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage)
 {
-    (void)aConnection;
+    OTBR_UNUSED_VARIABLE(aConnection);
 
     DBusMessageIter iter, subIter, dictEntryIter, valIter;
     std::string     interfaceName, propertyName, val;

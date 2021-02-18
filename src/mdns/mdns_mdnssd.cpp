@@ -211,7 +211,7 @@ PublisherMDnsSd::PublisherMDnsSd(int aProtocol, const char *aDomain, StateHandle
     , mStateHandler(aHandler)
     , mContext(aContext)
 {
-    (void)aProtocol;
+    OTBR_UNUSED_VARIABLE(aProtocol);
 }
 
 PublisherMDnsSd::~PublisherMDnsSd(void)
@@ -257,9 +257,9 @@ void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
                                   int &    aMaxFd,
                                   timeval &aTimeout)
 {
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
-    (void)aTimeout;
+    OTBR_UNUSED_VARIABLE(aWriteFdSet);
+    OTBR_UNUSED_VARIABLE(aErrorFdSet);
+    OTBR_UNUSED_VARIABLE(aTimeout);
 
     for (Service &service : mServices)
     {
@@ -296,8 +296,8 @@ void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSe
 {
     std::vector<DNSServiceRef> readyServices;
 
-    (void)aWriteFdSet;
-    (void)aErrorFdSet;
+    OTBR_UNUSED_VARIABLE(aWriteFdSet);
+    OTBR_UNUSED_VARIABLE(aErrorFdSet);
 
     for (Service &service : mServices)
     {

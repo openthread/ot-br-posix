@@ -109,7 +109,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     std::unique_ptr<DBusAgent> dbusAgent = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, &ncpOpenThread));
     dbusAgent->Init();
 #else
-    (void)aInterfaceName;
+    OTBR_UNUSED_VARIABLE(aInterfaceName);
 #endif
 #if OTBR_ENABLE_REST_SERVER
     RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);

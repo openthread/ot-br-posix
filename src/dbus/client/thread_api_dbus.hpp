@@ -684,7 +684,7 @@ private:
     static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aThreadApiDBus);
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
 
-    static void EmptyFree(void *aData) { (void)aData; }
+    static void EmptyFree(void *aData) { OTBR_UNUSED_VARIABLE(aData); }
 
     std::string mInterfaceName;
 
