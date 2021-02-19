@@ -33,6 +33,7 @@
 
 #include "mdns/mdns_avahi.hpp"
 
+#include <algorithm>
 #include <avahi-common/alternative.h>
 #include <avahi-common/error.h>
 #include <avahi-common/malloc.h>
@@ -307,7 +308,6 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
 
 PublisherAvahi::PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
     : mClient(nullptr)
-    , mGroup(nullptr)
     , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
                                       : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
     , mDomain(aDomain)
@@ -344,23 +344,12 @@ bool PublisherAvahi::IsStarted(void) const
 
 void PublisherAvahi::Stop(void)
 {
-    mServices.clear();
-
-    if (mGroup)
-    {
-        int error = avahi_entry_group_reset(mGroup);
-
-        if (error)
-        {
-            otbrLog(OTBR_LOG_ERR, "Failed to reset entry group: %s!", avahi_strerror(error));
-        }
-    }
+    FreeAllGroups();
 
     if (mClient)
     {
         avahi_client_free(mClient);
         mClient = nullptr;
-        mGroup  = nullptr;
         mState  = State::kIdle;
         mStateHandler(mContext, mState);
     }
@@ -378,10 +367,7 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
 
 void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState)
 {
-    assert(mGroup == aGroup || mGroup == nullptr);
-
     otbrLog(OTBR_LOG_INFO, "Avahi group change to state %d.", aState);
-    mGroup = aGroup;
 
     /* Called whenever the entry group state changes */
     switch (aState)
@@ -412,17 +398,124 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
     }
 }
 
-void PublisherAvahi::CreateGroup(AvahiClient *aClient)
+PublisherAvahi::Hosts::iterator PublisherAvahi::FindHost(const char *aHostName)
 {
-    VerifyOrExit(mGroup == nullptr);
+    assert(aHostName != nullptr);
 
-    VerifyOrExit((mGroup = avahi_entry_group_new(aClient, HandleGroupState, this)) != nullptr);
+    return std::find_if(mHosts.begin(), mHosts.end(), [aHostName](const Host &h) { return h.mHostName == aHostName; });
+}
+
+otbrError PublisherAvahi::CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+    Host      newHost;
+
+    assert(aHostName != nullptr);
+
+    newHost.mHostName = aHostName;
+    SuccessOrExit(ret = CreateGroup(aClient, newHost.mGroup));
+
+    mHosts.push_back(newHost);
+    aOutHostIt = mHosts.end() - 1;
 
 exit:
-    if (mGroup == nullptr)
+    return ret;
+}
+
+PublisherAvahi::Services::iterator PublisherAvahi::FindService(const char *aName, const char *aType)
+{
+    assert(aName != nullptr);
+    assert(aType != nullptr);
+
+    return std::find_if(mServices.begin(), mServices.end(),
+                        [aName, aType](const Service &s) { return s.mName == aName && s.mType == aType; });
+}
+
+otbrError PublisherAvahi::CreateService(AvahiClient &       aClient,
+                                        const char *        aName,
+                                        const char *        aType,
+                                        Services::iterator &aOutServiceIt)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+    Service   newService;
+
+    assert(aName != nullptr);
+    assert(aType != nullptr);
+
+    newService.mName = aName;
+    newService.mType = aType;
+    SuccessOrExit(ret = CreateGroup(aClient, newService.mGroup));
+
+    mServices.push_back(newService);
+    aOutServiceIt = mServices.end() - 1;
+
+exit:
+    return ret;
+}
+
+otbrError PublisherAvahi::CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+
+    VerifyOrExit(aOutGroup == nullptr, ret = OTBR_ERROR_INVALID_ARGS);
+
+    aOutGroup = avahi_entry_group_new(&aClient, HandleGroupState, this);
+    VerifyOrExit(aOutGroup != nullptr, ret = OTBR_ERROR_MDNS);
+
+exit:
+    if (ret == OTBR_ERROR_MDNS)
     {
-        otbrLog(OTBR_LOG_ERR, "avahi_entry_group_new() failed: %s", avahi_strerror(avahi_client_errno(aClient)));
+        otbrLog(OTBR_LOG_ERR, "Failed to create entry group for avahi error: %s",
+                avahi_strerror(avahi_client_errno(&aClient)));
     }
+
+    return ret;
+}
+
+otbrError PublisherAvahi::ResetGroup(AvahiEntryGroup *aGroup)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+
+    assert(aGroup != nullptr);
+
+    int error = avahi_entry_group_reset(aGroup);
+
+    if (error)
+    {
+        ret = OTBR_ERROR_MDNS;
+        otbrLog(OTBR_LOG_ERR, "Failed to reset entry group for avahi error: %s", avahi_strerror(error));
+    }
+
+    return ret;
+}
+
+void PublisherAvahi::FreeGroup(AvahiEntryGroup *aGroup)
+{
+    assert(aGroup != nullptr);
+
+    int error = avahi_entry_group_free(aGroup);
+
+    if (error)
+    {
+        otbrLog(OTBR_LOG_ERR, "Failed to free entry group for avahi error: %s", avahi_strerror(error));
+    }
+}
+
+void PublisherAvahi::FreeAllGroups()
+{
+    for (Service &service : mServices)
+    {
+        FreeGroup(service.mGroup);
+    }
+
+    mServices.clear();
+
+    for (Host &host : mHosts)
+    {
+        FreeGroup(host.mGroup);
+    }
+
+    mHosts.clear();
 }
 
 void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aState)
@@ -434,13 +527,9 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         /* The server has startup successfully and registered its host
          * name on the network, so it's time to create our services */
         otbrLog(OTBR_LOG_INFO, "Avahi client ready.");
-        mState = State::kReady;
-        CreateGroup(aClient);
+        mState  = State::kReady;
+        mClient = aClient;
         mStateHandler(mContext, mState);
-        if (mGroup)
-        {
-            avahi_entry_group_commit(mGroup);
-        }
         break;
 
     case AVAHI_CLIENT_FAILURE:
@@ -462,10 +551,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
          * might be caused by a host name change. We need to wait
          * for our own records to register until the host name is
          * properly esatblished. */
-        if (mGroup)
-        {
-            avahi_entry_group_reset(mGroup);
-        }
+        FreeAllGroups();
         break;
 
     case AVAHI_CLIENT_CONNECTING:
@@ -498,17 +584,27 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
                                          const char *   aType,
                                          const TxtList &aTxtList)
 {
-    otbrError ret   = OTBR_ERROR_ERRNO;
-    int       error = 0;
+    otbrError          ret   = OTBR_ERROR_NONE;
+    int                error = 0;
+    Services::iterator serviceIt;
+    const char *       safeHostName = (aHostName != nullptr) ? aHostName : "";
+    char               fullHostName[kMaxSizeOfHost];
     // aligned with AvahiStringList
     AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
     AvahiStringList *last = nullptr;
     AvahiStringList *curr = buffer;
     size_t           used = 0;
 
-    VerifyOrExit(aHostName == nullptr, ret = OTBR_ERROR_NOT_IMPLEMENTED);
-    VerifyOrExit(mState == State::kReady, errno = EAGAIN);
-    VerifyOrExit(mGroup != nullptr, ret = OTBR_ERROR_MDNS);
+    VerifyOrExit(mState == State::kReady, errno = EAGAIN, ret = OTBR_ERROR_ERRNO);
+    VerifyOrExit(mClient != nullptr, errno = EAGAIN, ret = OTBR_ERROR_ERRNO);
+    VerifyOrExit(aName != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aType != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
+
+    if (aHostName != nullptr)
+    {
+        SuccessOrExit(ret = MakeFullName(fullHostName, sizeof(fullHostName), aHostName));
+        aHostName = fullHostName;
+    }
 
     for (const auto &txtEntry : aTxtList)
     {
@@ -519,7 +615,7 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
         // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
         size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
 
-        VerifyOrExit(used + needed <= sizeof(buffer), errno = EMSGSIZE);
+        VerifyOrExit(used + needed <= sizeof(buffer), errno = EMSGSIZE, ret = OTBR_ERROR_ERRNO);
         curr->next = last;
         last       = curr;
         memcpy(curr->text, name, nameLength);
@@ -533,34 +629,35 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
         used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(buffer));
     }
 
-    for (Services::iterator it = mServices.begin(); it != mServices.end(); ++it)
+    serviceIt = FindService(aName, aType);
+
+    if (serviceIt == mServices.end())
     {
-        if (!strncmp(it->mName, aName, sizeof(it->mName)) && !strncmp(it->mType, aType, sizeof(it->mType)) &&
-            it->mPort == aPort)
-        {
-            otbrLog(OTBR_LOG_INFO, "MDNS update service %s", aName);
-            error = avahi_entry_group_update_service_txt_strlst(
-                mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0), aName, aType, mDomain, last);
-            SuccessOrExit(error);
-            ret = OTBR_ERROR_NONE;
-            ExitNow();
-        }
+        SuccessOrExit(ret = CreateService(*mClient, aName, aType, serviceIt));
+    }
+    else if (serviceIt->mHostName != safeHostName || serviceIt->mPort != aPort)
+    {
+        SuccessOrExit(ret = ResetGroup(serviceIt->mGroup));
+    }
+    else
+    {
+        otbrLog(OTBR_LOG_INFO, "MDNS update service %s for host '%s'", aName, safeHostName);
+        error = avahi_entry_group_update_service_txt_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol,
+                                                            AvahiPublishFlags{}, aName, aType, mDomain, last);
+        ExitNow();
     }
 
-    otbrLog(OTBR_LOG_INFO, "MDNS create service %s", aName);
-    error = avahi_entry_group_add_service_strlst(mGroup, AVAHI_IF_UNSPEC, mProtocol, static_cast<AvahiPublishFlags>(0),
+    otbrLog(OTBR_LOG_INFO, "MDNS create service %s for host '%s'", aName, safeHostName);
+    error = avahi_entry_group_add_service_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{},
                                                  aName, aType, mDomain, aHostName, aPort, last);
     SuccessOrExit(error);
 
-    {
-        Service service;
-        strcpy_safe(service.mName, sizeof(service.mName), aName);
-        strcpy_safe(service.mType, sizeof(service.mType), aType);
-        service.mPort = aPort;
-        mServices.push_back(service);
-    }
+    otbrLog(OTBR_LOG_INFO, "MDNS commit service %s", aName);
+    error = avahi_entry_group_commit(serviceIt->mGroup);
+    SuccessOrExit(error);
 
-    ret = OTBR_ERROR_NONE;
+    serviceIt->mHostName = safeHostName;
+    serviceIt->mPort     = aPort;
 
 exit:
 
@@ -580,32 +677,127 @@ exit:
 
 otbrError PublisherAvahi::UnpublishService(const char *aName, const char *aType)
 {
-    OTBR_UNUSED_VARIABLE(aName);
-    OTBR_UNUSED_VARIABLE(aType);
+    otbrError          ret   = OTBR_ERROR_NONE;
+    int                error = 0;
+    Services::iterator serviceIt;
 
-    VerifyOrDie(false, "UnpublishService is not implemented with avahi");
+    VerifyOrExit(aName != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aType != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
 
-    return OTBR_ERROR_NONE;
+    serviceIt = FindService(aName, aType);
+    VerifyOrExit(serviceIt != mServices.end());
+
+    otbrLog(OTBR_LOG_INFO, "MDNS delete service '%s'", aName);
+    error = avahi_entry_group_free(serviceIt->mGroup);
+    mServices.erase(serviceIt);
+
+exit:
+    if (error)
+    {
+        ret = OTBR_ERROR_MDNS;
+        otbrLog(OTBR_LOG_ERR, "Failed to delete service for avahi error: %s!", avahi_strerror(error));
+    }
+
+    return ret;
 }
 
 otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
 {
-    OTBR_UNUSED_VARIABLE(aName);
-    OTBR_UNUSED_VARIABLE(aAddress);
-    OTBR_UNUSED_VARIABLE(aAddressLength);
+    otbrError       ret   = OTBR_ERROR_NONE;
+    int             error = 0;
+    Hosts::iterator hostIt;
+    char            fullHostName[kMaxSizeOfHost];
+    AvahiAddress    address;
 
-    VerifyOrDie(false, "PublishHost is not implemented with avahi");
+    VerifyOrExit(mState == State::kReady, errno = EAGAIN, ret = OTBR_ERROR_ERRNO);
+    VerifyOrExit(mClient != nullptr, errno = EAGAIN, ret = OTBR_ERROR_ERRNO);
+    VerifyOrExit(aName != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aAddress != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aAddressLength == sizeof(address.data.ipv6.address), ret = OTBR_ERROR_INVALID_ARGS);
+    SuccessOrExit(ret = MakeFullName(fullHostName, sizeof(fullHostName), aName));
 
-    return OTBR_ERROR_NONE;
+    hostIt = FindHost(aName);
+
+    if (hostIt == mHosts.end())
+    {
+        SuccessOrExit(ret = CreateHost(*mClient, aName, hostIt));
+    }
+    else
+    {
+        // Check if the update is necessary
+        VerifyOrExit(memcmp(hostIt->mAddress.data.ipv6.address, aAddress, aAddressLength));
+        SuccessOrExit(ret = ResetGroup(hostIt->mGroup));
+    }
+
+    address.proto = AVAHI_PROTO_INET6;
+    memcpy(&address.data.ipv6.address[0], aAddress, aAddressLength);
+
+    otbrLog(OTBR_LOG_INFO, "MDNS create host '%s'", aName);
+    error = avahi_entry_group_add_address(hostIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6, AvahiPublishFlags{},
+                                          fullHostName, &address);
+    SuccessOrExit(error);
+
+    otbrLog(OTBR_LOG_INFO, "MDNS commit host '%s'", aName);
+    error = avahi_entry_group_commit(hostIt->mGroup);
+    SuccessOrExit(error);
+
+    hostIt->mAddress = address;
+
+exit:
+
+    if (error)
+    {
+        ret = OTBR_ERROR_MDNS;
+        otbrLog(OTBR_LOG_ERR, "Failed to publish host for avahi error: %s!", avahi_strerror(error));
+    }
+
+    if (ret == OTBR_ERROR_ERRNO)
+    {
+        otbrLog(OTBR_LOG_ERR, "Failed to publish host: %s!", strerror(errno));
+    }
+
+    return ret;
 }
 
 otbrError PublisherAvahi::UnpublishHost(const char *aName)
 {
-    OTBR_UNUSED_VARIABLE(aName);
+    otbrError       ret   = OTBR_ERROR_NONE;
+    int             error = 0;
+    Hosts::iterator hostIt;
 
-    VerifyOrDie(false, "UnpublishHost is not implemented with avahi");
+    VerifyOrExit(aName != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
 
-    return OTBR_ERROR_NONE;
+    hostIt = FindHost(aName);
+    VerifyOrExit(hostIt != mHosts.end());
+
+    otbrLog(OTBR_LOG_INFO, "MDNS delete host '%s'", aName);
+    error = avahi_entry_group_free(hostIt->mGroup);
+    mHosts.erase(hostIt);
+
+exit:
+    if (error)
+    {
+        ret = OTBR_ERROR_MDNS;
+        otbrLog(OTBR_LOG_ERR, "Failed to delete host for avahi error: %s!", avahi_strerror(error));
+    }
+
+    return ret;
+}
+
+otbrError PublisherAvahi::MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+
+    assert(aFullName != nullptr);
+    assert(aName != nullptr);
+
+    const char *domain = mDomain == nullptr ? "local." : mDomain;
+    const int   count  = snprintf(aFullName, aFullNameLength, "%s.%s", aName, domain);
+    VerifyOrExit(count >= 0, ret = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(static_cast<size_t>(count) < aFullNameLength, ret = OTBR_ERROR_INVALID_ARGS);
+
+exit:
+    return ret;
 }
 
 Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)

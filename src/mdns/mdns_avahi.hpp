@@ -328,29 +328,54 @@ private:
 
     struct Service
     {
-        char     mName[kMaxSizeOfServiceName];
-        char     mType[kMaxSizeOfServiceType];
-        uint16_t mPort;
+        std::string      mName;
+        std::string      mType;
+        std::string      mHostName;
+        uint16_t         mPort  = 0;
+        AvahiEntryGroup *mGroup = nullptr;
     };
 
     typedef std::vector<Service> Services;
 
+    struct Host
+    {
+        std::string      mHostName;
+        AvahiAddress     mAddress = {};
+        AvahiEntryGroup *mGroup   = nullptr;
+    };
+
+    typedef std::vector<Host> Hosts;
+
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    void        CreateGroup(AvahiClient *aClient);
+    Hosts::iterator FindHost(const char *aHostName);
+    otbrError       CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt);
+
+    Services::iterator FindService(const char *aName, const char *aType);
+    otbrError          CreateService(AvahiClient &       aClient,
+                                     const char *        aName,
+                                     const char *        aType,
+                                     Services::iterator &aOutServiceIt);
+
+    otbrError   CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
+    otbrError   ResetGroup(AvahiEntryGroup *aGroup);
+    void        FreeGroup(AvahiEntryGroup *aGroup);
+    void        FreeAllGroups();
     static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
     void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
 
-    Services         mServices;
-    AvahiClient *    mClient;
-    AvahiEntryGroup *mGroup;
-    Poller           mPoller;
-    int              mProtocol;
-    const char *     mDomain;
-    State            mState;
-    StateHandler     mStateHandler;
-    void *           mContext;
+    otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
+
+    AvahiClient *mClient;
+    Hosts        mHosts;
+    Services     mServices;
+    Poller       mPoller;
+    int          mProtocol;
+    const char * mDomain;
+    State        mState;
+    StateHandler mStateHandler;
+    void *       mContext;
 };
 
 } // namespace Mdns
