@@ -78,8 +78,6 @@ UbusServer &UbusServer::GetInstance(void)
 void UbusServer::Initialize(Ncp::ControllerOpenThread *aController)
 {
     sUbusServerInstance = new UbusServer(aController);
-    otThreadSetReceiveDiagnosticGetCallback(aController->GetInstance(), &UbusServer::HandleDiagnosticGetResponse,
-                                            sUbusServerInstance);
 }
 
 enum
@@ -1184,7 +1182,8 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
             tlvTypes[count++] = static_cast<uint8_t>(OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE);
 
             sBufNum = 0;
-            otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count);
+            otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count,
+                                      &UbusServer::HandleDiagnosticGetResponse, this);
             mSecond = time(nullptr);
         }
         goto exit;
