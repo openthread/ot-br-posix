@@ -33,6 +33,8 @@
 #ifndef OTBR_COMMON_CODE_UTILS_HPP_
 #define OTBR_COMMON_CODE_UTILS_HPP_
 
+#include "common/logging.hpp"
+
 /**
  *  This aligns the pointer to @p aAlignType.
  *
