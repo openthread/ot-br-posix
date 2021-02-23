@@ -28,7 +28,9 @@
 
 add_library(otbr-dbus-client
     client_error.cpp
+    client_error.hpp
     thread_api_dbus.cpp
+    thread_api_dbus.hpp
 )
 
 target_link_libraries(otbr-dbus-client PUBLIC
