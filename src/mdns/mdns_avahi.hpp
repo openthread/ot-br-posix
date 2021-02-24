@@ -364,6 +364,7 @@ private:
     void        FreeAllGroups();
     static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
     void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void        CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
 
     otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
 
