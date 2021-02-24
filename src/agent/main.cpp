@@ -189,7 +189,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
