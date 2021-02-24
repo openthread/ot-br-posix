@@ -360,7 +360,7 @@ private:
 
     otbrError   CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
     otbrError   ResetGroup(AvahiEntryGroup *aGroup);
-    void        FreeGroup(AvahiEntryGroup *aGroup);
+    otbrError   FreeGroup(AvahiEntryGroup *aGroup);
     void        FreeAllGroups();
     static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
     void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);

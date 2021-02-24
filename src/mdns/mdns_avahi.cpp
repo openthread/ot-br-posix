@@ -504,11 +504,10 @@ exit:
 
 otbrError PublisherAvahi::ResetGroup(AvahiEntryGroup *aGroup)
 {
-    otbrError error = OTBR_ERROR_NONE;
-
     assert(aGroup != nullptr);
 
-    int avahiError = avahi_entry_group_reset(aGroup);
+    otbrError error      = OTBR_ERROR_NONE;
+    int       avahiError = avahi_entry_group_reset(aGroup);
 
     if (avahiError)
     {
@@ -519,16 +518,20 @@ otbrError PublisherAvahi::ResetGroup(AvahiEntryGroup *aGroup)
     return error;
 }
 
-void PublisherAvahi::FreeGroup(AvahiEntryGroup *aGroup)
+otbrError PublisherAvahi::FreeGroup(AvahiEntryGroup *aGroup)
 {
     assert(aGroup != nullptr);
 
-    int avahiError = avahi_entry_group_free(aGroup);
+    otbrError error      = OTBR_ERROR_NONE;
+    int       avahiError = avahi_entry_group_free(aGroup);
 
     if (avahiError)
     {
+        error = OTBR_ERROR_MDNS;
         otbrLog(OTBR_LOG_ERR, "Failed to free entry group for avahi error: %s", avahi_strerror(avahiError));
     }
+
+    return error;
 }
 
 void PublisherAvahi::FreeAllGroups()
@@ -715,8 +718,7 @@ exit:
 
 otbrError PublisherAvahi::UnpublishService(const char *aName, const char *aType)
 {
-    otbrError          error      = OTBR_ERROR_NONE;
-    int                avahiError = 0;
+    otbrError          error = OTBR_ERROR_NONE;
     Services::iterator serviceIt;
 
     VerifyOrExit(aName != nullptr, error = OTBR_ERROR_INVALID_ARGS);
@@ -726,16 +728,10 @@ otbrError PublisherAvahi::UnpublishService(const char *aName, const char *aType)
     VerifyOrExit(serviceIt != mServices.end());
 
     otbrLog(OTBR_LOG_INFO, "[mdns] unpublish service %s.%s", aName, aType);
-    avahiError = avahi_entry_group_free(serviceIt->mGroup);
+    error = FreeGroup(serviceIt->mGroup);
     mServices.erase(serviceIt);
 
 exit:
-    if (avahiError)
-    {
-        error = OTBR_ERROR_MDNS;
-        otbrLog(OTBR_LOG_ERR, "Failed to delete service for avahi error: %s!", avahi_strerror(avahiError));
-    }
-
     return error;
 }
 
@@ -805,8 +801,7 @@ exit:
 
 otbrError PublisherAvahi::UnpublishHost(const char *aName)
 {
-    otbrError       error      = OTBR_ERROR_NONE;
-    int             avahiError = 0;
+    otbrError       error = OTBR_ERROR_NONE;
     Hosts::iterator hostIt;
 
     VerifyOrExit(aName != nullptr, error = OTBR_ERROR_INVALID_ARGS);
@@ -815,16 +810,10 @@ otbrError PublisherAvahi::UnpublishHost(const char *aName)
     VerifyOrExit(hostIt != mHosts.end());
 
     otbrLog(OTBR_LOG_INFO, "[mdns] delete host %s", aName);
-    avahiError = avahi_entry_group_free(hostIt->mGroup);
+    error = FreeGroup(hostIt->mGroup);
     mHosts.erase(hostIt);
 
 exit:
-    if (avahiError)
-    {
-        error = OTBR_ERROR_MDNS;
-        otbrLog(OTBR_LOG_ERR, "Failed to delete host for avahi error: %s!", avahi_strerror(avahiError));
-    }
-
     return error;
 }
 
