@@ -71,6 +71,7 @@ enum
     kEventBackboneRouterState,             ///< Backbone Router State.
     kEventBackboneRouterDomainPrefixEvent, ///< Backbone Router Domain Prefix event.
     kEventBackboneRouterNdProxyEvent,      ///< Backbone Router ND Proxy event arrived.
+    kEventExtAddr,                         ///< IEEE 802.15.4 Extended Address.
 };
 
 using PowerMap = std::map<std::string, std::vector<int8_t>>;

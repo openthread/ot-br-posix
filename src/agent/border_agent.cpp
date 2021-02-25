@@ -102,13 +102,16 @@ void BorderAgent::Init(void)
 {
     memset(mNetworkName, 0, sizeof(mNetworkName));
     memset(mExtPanId, 0, sizeof(mExtPanId));
+    memset(mExtAddr, 0, sizeof(mExtAddr));
     mExtPanIdInitialized = false;
+    mExtAddrInitialized  = false;
     mThreadVersion       = 0;
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
     mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
     mNcp->On(Ncp::kEventThreadVersion, HandleThreadVersion, this);
+    mNcp->On(Ncp::kEventExtAddr, HandleExtAddr, this);
 #endif
     mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
     mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
@@ -134,6 +137,7 @@ otbrError BorderAgent::Start(void)
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
     SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventThreadVersion));
+    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtAddr));
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Start();
@@ -229,10 +233,16 @@ void BorderAgent::PublishService(void)
 {
     assert(mNetworkName[0] != '\0');
     assert(mExtPanIdInitialized);
+    assert(mExtAddrInitialized);
     assert(mThreadVersion != 0);
 
     const char *             versionString = ThreadVersionToString(mThreadVersion);
-    Mdns::Publisher::TxtList txtList{{"nn", mNetworkName}, {"xp", mExtPanId, sizeof(mExtPanId)}, {"tv", versionString}};
+    Mdns::Publisher::TxtList txtList{{"nn", mNetworkName},
+                                     {"xp", mExtPanId, sizeof(mExtPanId)},
+                                     {"tv", versionString},
+                                     // "dd" represents for device discriminator which
+                                     // should always be the IEEE 802.15.4 extended address.
+                                     {"dd", mExtAddr, sizeof(mExtAddr)}};
 
     mPublisher->PublishService(/* aHostName */ nullptr, kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
                                txtList);
@@ -242,6 +252,7 @@ void BorderAgent::StartPublishService(void)
 {
     VerifyOrExit(mNetworkName[0] != '\0');
     VerifyOrExit(mExtPanIdInitialized);
+    VerifyOrExit(mExtAddrInitialized);
     VerifyOrExit(mThreadVersion != 0);
 
     if (mPublisher->IsStarted())
@@ -288,6 +299,18 @@ void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
 {
     memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
     mExtPanIdInitialized = true;
+#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
+    if (mThreadStarted)
+    {
+        StartPublishService();
+    }
+#endif
+}
+
+void BorderAgent::SetExtAddr(const uint8_t *aExtAddr)
+{
+    memcpy(mExtAddr, aExtAddr, sizeof(mExtAddr));
+    mExtAddrInitialized = true;
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     if (mThreadStarted)
     {
@@ -400,6 +423,16 @@ void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArgum
     // `uint16_t` has been promoted to `int`.
     uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));
     static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
+}
+
+void BorderAgent::HandleExtAddr(void *aContext, int aEvent, va_list aArguments)
+{
+    OT_UNUSED_VARIABLE(aEvent);
+
+    assert(aEvent == Ncp::kEventExtAddr);
+
+    const uint8_t *extAddr = va_arg(aArguments, const uint8_t *);
+    static_cast<BorderAgent *>(aContext)->SetExtAddr(extAddr);
 }
 
 } // namespace otbr

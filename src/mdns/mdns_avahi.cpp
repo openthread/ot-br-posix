@@ -501,7 +501,7 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
     otbrError ret   = OTBR_ERROR_ERRNO;
     int       error = 0;
     // aligned with AvahiStringList
-    AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
+    AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
     AvahiStringList *last = nullptr;
     AvahiStringList *curr = buffer;
     size_t           used = 0;

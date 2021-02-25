@@ -86,10 +86,11 @@ namespace otbr {
 
 enum
 {
-    kSizePSKc        = 16, ///< Size of PSKc.
-    kSizeNetworkName = 16, ///< Max size of Network Name.
-    kSizeExtPanId    = 8,  ///< Size of Extended PAN ID.
-    kSizeEui64       = 8,  ///< Size of Eui64.
+    kSizePSKc        = 16,         ///< Size of PSKc.
+    kSizeNetworkName = 16,         ///< Max size of Network Name.
+    kSizeExtPanId    = 8,          ///< Size of Extended PAN ID.
+    kSizeEui64       = 8,          ///< Size of Eui64.
+    kSizeExtAddr     = kSizeEui64, ///< Size of Extended Address.
 };
 
 static constexpr char kSolicitedMulticastAddressPrefix[]   = "ff02::01:ff00:0";
