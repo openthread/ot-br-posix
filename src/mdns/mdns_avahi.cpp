@@ -534,7 +534,7 @@ otbrError PublisherAvahi::FreeGroup(AvahiEntryGroup *aGroup)
     return error;
 }
 
-void PublisherAvahi::FreeAllGroups()
+void PublisherAvahi::FreeAllGroups(void)
 {
     for (Service &service : mServices)
     {
@@ -622,7 +622,7 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
     Services::iterator serviceIt    = mServices.end();
     const char *       safeHostName = (aHostName != nullptr) ? aHostName : "";
     const char *       logHostName  = (aHostName != nullptr) ? aHostName : "localhost";
-    char               fullHostName[kMaxSizeOfHost];
+    std::string        fullHostName;
     // aligned with AvahiStringList
     AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
     AvahiStringList *last = nullptr;
@@ -636,8 +636,8 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
 
     if (aHostName != nullptr)
     {
-        SuccessOrExit(error = MakeFullName(fullHostName, sizeof(fullHostName), aHostName));
-        aHostName = fullHostName;
+        fullHostName = MakeFullName(aHostName);
+        aHostName    = fullHostName.c_str();
     }
 
     for (const auto &txtEntry : aTxtList)
@@ -678,6 +678,11 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
         otbrLog(OTBR_LOG_INFO, "[mdns] update service %s.%s for host %s", aName, aType, logHostName);
         avahiError = avahi_entry_group_update_service_txt_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol,
                                                                  AvahiPublishFlags{}, aName, aType, mDomain, last);
+        if (avahiError == 0 && mServiceHandler != nullptr)
+        {
+            // The handler should be called even if the request can be processed synchronously
+            mServiceHandler(aName, aType, OTBR_ERROR_NONE, mServiceHandlerContext);
+        }
         ExitNow();
     }
 
@@ -701,10 +706,10 @@ exit:
         error = OTBR_ERROR_MDNS;
         otbrLog(OTBR_LOG_ERR, "Failed to publish service for avahi error: %s!", avahi_strerror(avahiError));
     }
-
-    if (error == OTBR_ERROR_ERRNO)
+    else if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to publish service: %s!", strerror(errno));
+        otbrLog(OTBR_LOG_ERR, "Failed to publish service: %s!",
+                error == OTBR_ERROR_ERRNO ? strerror(errno) : otbrErrorString(error));
     }
 
     if (error != OTBR_ERROR_NONE && serviceIt != mServices.end())
@@ -740,7 +745,7 @@ otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress
     otbrError       error      = OTBR_ERROR_NONE;
     int             avahiError = 0;
     Hosts::iterator hostIt     = mHosts.end();
-    char            fullHostName[kMaxSizeOfHost];
+    std::string     fullHostName;
     AvahiAddress    address;
 
     VerifyOrExit(mState == State::kReady, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
@@ -748,19 +753,28 @@ otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress
     VerifyOrExit(aName != nullptr, error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(aAddress != nullptr, error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(aAddressLength == sizeof(address.data.ipv6.address), error = OTBR_ERROR_INVALID_ARGS);
-    SuccessOrExit(error = MakeFullName(fullHostName, sizeof(fullHostName), aName));
 
-    hostIt = FindHost(aName);
+    fullHostName = MakeFullName(aName);
+    hostIt       = FindHost(aName);
 
     if (hostIt == mHosts.end())
     {
         SuccessOrExit(error = CreateHost(*mClient, aName, hostIt));
     }
-    else
+    else if (memcmp(hostIt->mAddress.data.ipv6.address, aAddress, aAddressLength))
     {
         // Check if the update is necessary
         VerifyOrExit(memcmp(hostIt->mAddress.data.ipv6.address, aAddress, aAddressLength));
         SuccessOrExit(error = ResetGroup(hostIt->mGroup));
+    }
+    else
+    {
+        if (avahiError == 0 && mHostHandler != nullptr)
+        {
+            // The handler should be called even if the request can be processed synchronously
+            mHostHandler(aName, OTBR_ERROR_NONE, mHostHandlerContext);
+        }
+        ExitNow();
     }
 
     address.proto = AVAHI_PROTO_INET6;
@@ -768,7 +782,7 @@ otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress
 
     otbrLog(OTBR_LOG_INFO, "[mdns] create host %s", aName);
     avahiError = avahi_entry_group_add_address(hostIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6,
-                                               AVAHI_PUBLISH_NO_REVERSE, fullHostName, &address);
+                                               AVAHI_PUBLISH_NO_REVERSE, fullHostName.c_str(), &address);
     SuccessOrExit(avahiError);
 
     otbrLog(OTBR_LOG_INFO, "[mdns] commit host %s", aName);
@@ -784,10 +798,10 @@ exit:
         error = OTBR_ERROR_MDNS;
         otbrLog(OTBR_LOG_ERR, "Failed to publish host for avahi error: %s!", avahi_strerror(avahiError));
     }
-
-    if (error == OTBR_ERROR_ERRNO)
+    else if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to publish host: %s!", strerror(errno));
+        otbrLog(OTBR_LOG_ERR, "Failed to publish host: %s!",
+                error == OTBR_ERROR_ERRNO ? strerror(errno) : otbrErrorString(error));
     }
 
     if (error != OTBR_ERROR_NONE && hostIt != mHosts.end())
@@ -817,20 +831,16 @@ exit:
     return error;
 }
 
-otbrError PublisherAvahi::MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName)
+std::string PublisherAvahi::MakeFullName(const char *aName)
 {
-    assert(aFullName != nullptr);
     assert(aName != nullptr);
 
-    otbrError   error  = OTBR_ERROR_NONE;
-    const char *domain = mDomain == nullptr ? "local." : mDomain;
-    const int   count  = snprintf(aFullName, aFullNameLength, "%s.%s", aName, domain);
+    std::string fullHostName(aName);
 
-    VerifyOrExit(count >= 0, error = OTBR_ERROR_INVALID_ARGS);
-    VerifyOrExit(static_cast<size_t>(count) < aFullNameLength, error = OTBR_ERROR_INVALID_ARGS);
+    fullHostName += '.';
+    fullHostName += (mDomain == nullptr ? "local." : mDomain);
 
-exit:
-    return error;
+    return fullHostName;
 }
 
 Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)

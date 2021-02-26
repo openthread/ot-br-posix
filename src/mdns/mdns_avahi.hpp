@@ -361,12 +361,12 @@ private:
     otbrError   CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
     otbrError   ResetGroup(AvahiEntryGroup *aGroup);
     otbrError   FreeGroup(AvahiEntryGroup *aGroup);
-    void        FreeAllGroups();
+    void        FreeAllGroups(void);
     static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
     void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
     void        CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
 
-    otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
+    std::string MakeFullName(const char *aName);
 
     AvahiClient *mClient;
     Hosts        mHosts;
