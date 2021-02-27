@@ -62,9 +62,6 @@ public:
     /**
      * This method initializes the REST server.
      *
-     * @retval  OTBR_ERROR_NONE     REST server initialized successfully.
-     * @retval  OTBR_ERROR_REST     Failed due to rest error .
-     *
      */
     void Init(void);
 
