@@ -34,6 +34,8 @@
 . "$(dirname "$0")"/_initrc
 # shellcheck source=script/_ipforward
 . script/_ipforward
+# shellcheck source=script/_border_routing
+. script/_border_routing
 
 readonly TUN="${TUN:-wpan0}"
 readonly RADIO_URL="${RADIO_URL:-spinel+hdlc+uart:///dev/ttyUSB0}"
@@ -59,9 +61,10 @@ main()
     killall_services
 
     trap on_exit INT TERM EXIT
+    accept_ra_enable
     ipforward_enable
     sudo sh -s <<EOF
-otbr-agent -I $TUN "${RADIO_URL}" &
+otbr-agent -I $TUN -B ${INFRA_IF_NAME} "${RADIO_URL}" &
 otbr-web -I $TUN &
 wait
 EOF

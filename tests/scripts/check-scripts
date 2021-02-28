@@ -43,9 +43,9 @@ main()
 {
     RELEASE=1 ./script/bootstrap
     ./script/bootstrap
-    NAT64=1 ./script/setup
+    INFRA_IF_NAME=eth0 NAT64=1 ./script/setup
     # re-run to ensure the script can run successfully multiple times
-    NAT64=1 ./script/setup
+    INFRA_IF_NAME=eth0 NAT64=1 ./script/setup
     SOCAT_OUTPUT=/tmp/ot-socat
 
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 >/dev/null 2>$SOCAT_OUTPUT &
@@ -68,7 +68,7 @@ main()
 
     # shellcheck disable=SC2094
     ot-rcp 1 >"${RCP_PTY}" <"${RCP_PTY}" &
-    RADIO_URL="spinel+hdlc+uart://${HOST_PTY}" ./script/console &
+    INFRA_IF_NAME=eth0 RADIO_URL="spinel+hdlc+uart://${HOST_PTY}" ./script/console &
     SERVICES_PID=$!
     sudo service tayga start
     echo 'Waiting for services to be ready...'

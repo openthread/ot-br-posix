@@ -54,6 +54,12 @@ install_packages_apt()
 
     # mDNS
     sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon
+    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-878.30.4 \
+        && cd /tmp \
+        && wget -4 --no-check-certificate https://opensource.apple.com/tarballs/mDNSResponder/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+        && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+        && cd $MDNS_RESPONDER_SOURCE_NAME/mDNSPosix \
+        && make os=linux && sudo make install os=linux)
 
     # Boost
     sudo apt-get install --no-install-recommends -y libboost-dev libboost-filesystem-dev libboost-system-dev
