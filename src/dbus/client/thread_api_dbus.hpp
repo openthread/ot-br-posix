@@ -38,7 +38,6 @@
 
 #include <dbus/dbus.h>
 
-#include "common/code_utils.hpp"
 #include "common/types.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/common/error.hpp"
@@ -685,7 +684,7 @@ private:
     static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aThreadApiDBus);
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
 
-    static void EmptyFree(void *aData) { OTBR_UNUSED_VARIABLE(aData); }
+    static void EmptyFree(void *) {}
 
     std::string mInterfaceName;
 
