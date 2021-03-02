@@ -108,15 +108,20 @@ private:
     static void HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments);
     void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
                                                       const otIp6Prefix *               aDomainPrefix);
+#if OTBR_ENABLE_DUA_ROUTING
     static void HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
+#endif
 
     static const char *StateToString(otBackboneRouterState aState);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
     otBackboneRouterState            mBackboneRouterState;
-    NdProxyManager                   mNdProxyManager;
     Ip6Prefix                        mDomainPrefix;
+
+#if OTBR_ENABLE_DUA_ROUTING
+    NdProxyManager mNdProxyManager;
+#endif
 };
 
 /**

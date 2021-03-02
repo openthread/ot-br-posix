@@ -34,6 +34,8 @@
 #ifndef ND_PROXY_HPP_
 #define ND_PROXY_HPP_
 
+#if OTBR_ENABLE_DUA_ROUTING
+
 #ifdef __APPLE__
 #define __APPLE_USE_RFC_3542
 #endif
@@ -186,4 +188,5 @@ private:
 } // namespace BackboneRouter
 } // namespace otbr
 
+#endif // OTBR_ENABLE_DUA_ROUTING
 #endif // ND_PROXY_HPP_

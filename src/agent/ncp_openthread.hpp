@@ -148,16 +148,12 @@ private:
     void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
                                                       const otIp6Prefix *               aDomainPrefix);
 
+#if OTBR_ENABLE_DUA_ROUTING
     static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
                                                  otBackboneRouterNdProxyEvent aEvent,
                                                  const otIp6Address *         aAddress);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
-
-    static void HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
-                                                           otBackboneRouterMulticastListenerEvent aEvent,
-                                                           const otIp6Address *                   aAddress);
-    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
-                                                           const otIp6Address *                   aAddress);
+#endif
 
     otInstance *mInstance;
 
