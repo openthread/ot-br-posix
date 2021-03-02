@@ -34,6 +34,7 @@
 #include "mdns/mdns_avahi.hpp"
 
 #include <algorithm>
+
 #include <avahi-common/alternative.h>
 #include <avahi-common/error.h>
 #include <avahi-common/malloc.h>
@@ -487,7 +488,7 @@ otbrError PublisherAvahi::CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aO
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(aOutGroup == nullptr, error = OTBR_ERROR_INVALID_ARGS);
+    assert(aOutGroup == nullptr);
 
     aOutGroup = avahi_entry_group_new(&aClient, HandleGroupState, this);
     VerifyOrExit(aOutGroup != nullptr, error = OTBR_ERROR_MDNS);
@@ -708,8 +709,7 @@ exit:
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to publish service: %s!",
-                error == OTBR_ERROR_ERRNO ? strerror(errno) : otbrErrorString(error));
+        otbrLog(OTBR_LOG_ERR, "Failed to publish service: %s!", otbrErrorString(error));
     }
 
     if (error != OTBR_ERROR_NONE && serviceIt != mServices.end())
@@ -763,13 +763,11 @@ otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress
     }
     else if (memcmp(hostIt->mAddress.data.ipv6.address, aAddress, aAddressLength))
     {
-        // Check if the update is necessary
-        VerifyOrExit(memcmp(hostIt->mAddress.data.ipv6.address, aAddress, aAddressLength));
         SuccessOrExit(error = ResetGroup(hostIt->mGroup));
     }
     else
     {
-        if (avahiError == 0 && mHostHandler != nullptr)
+        if (mHostHandler != nullptr)
         {
             // The handler should be called even if the request can be processed synchronously
             mHostHandler(aName, OTBR_ERROR_NONE, mHostHandlerContext);
@@ -800,8 +798,7 @@ exit:
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to publish host: %s!",
-                error == OTBR_ERROR_ERRNO ? strerror(errno) : otbrErrorString(error));
+        otbrLog(OTBR_LOG_ERR, "Failed to publish host: %s!", otbrErrorString(error));
     }
 
     if (error != OTBR_ERROR_NONE && hostIt != mHosts.end())

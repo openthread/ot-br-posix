@@ -358,13 +358,13 @@ private:
                                      const char *        aType,
                                      Services::iterator &aOutServiceIt);
 
-    otbrError   CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
-    otbrError   ResetGroup(AvahiEntryGroup *aGroup);
-    otbrError   FreeGroup(AvahiEntryGroup *aGroup);
-    void        FreeAllGroups(void);
-    static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
-    void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
-    void        CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
+    otbrError        CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
+    static otbrError ResetGroup(AvahiEntryGroup *aGroup);
+    static otbrError FreeGroup(AvahiEntryGroup *aGroup);
+    void             FreeAllGroups(void);
+    static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
+    void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
 
     std::string MakeFullName(const char *aName);
 
