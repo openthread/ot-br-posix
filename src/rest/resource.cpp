@@ -125,7 +125,6 @@ Resource::Resource(ControllerOpenThread *aNcp)
 
 void Resource::Init(void)
 {
-    otThreadSetReceiveDiagnosticGetCallback(mInstance, &Resource::DiagnosticResponseHandler, this);
 }
 
 void Resource::Handle(Request &aRequest, Response &aResponse) const
@@ -523,13 +522,15 @@ void Resource::Diagnostic(const Request &aRequest, Response &aResponse) const
     struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
 
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
-                     OT_ERROR_NONE,
+    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes),
+                                           &Resource::DiagnosticResponseHandler,
+                                           const_cast<Resource *>(this)) == OT_ERROR_NONE,
                  error = OTBR_ERROR_REST);
     VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE,
                  error = OTBR_ERROR_REST);
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
-                     OT_ERROR_NONE,
+    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes),
+                                           &Resource::DiagnosticResponseHandler,
+                                           const_cast<Resource *>(this)) == OT_ERROR_NONE,
                  error = OTBR_ERROR_REST);
 
 exit:
@@ -564,7 +565,7 @@ void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessa
 
     SuccessOrExit(aError);
 
-    (void)aMessageInfo;
+    OTBR_UNUSED_VARIABLE(aMessageInfo);
 
     while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
     {

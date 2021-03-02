@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for MDNS service.
+ *   This file includes definitions for mDNS publisher.
  */
 
 #ifndef OTBR_AGENT_MDNS_HPP_
@@ -67,6 +67,7 @@ public:
     struct TxtEntry
     {
         const char *   mName;        ///< The name of the TXT entry.
+        size_t         mNameLength;  ///< The length of the name of the TXT entry.
         const uint8_t *mValue;       ///< The value of the TXT entry.
         size_t         mValueLength; ///< The length of the value of the TXT entry.
 
@@ -76,7 +77,13 @@ public:
         }
 
         TxtEntry(const char *aName, const uint8_t *aValue, size_t aValueLength)
+            : TxtEntry(aName, strlen(aName), aValue, aValueLength)
+        {
+        }
+
+        TxtEntry(const char *aName, size_t aNameLength, const uint8_t *aValue, size_t aValueLength)
             : mName(aName)
+            , mNameLength(aNameLength)
             , mValue(aValue)
             , mValueLength(aValueLength)
         {
@@ -103,6 +110,53 @@ public:
      *
      */
     typedef void (*StateHandler)(void *aContext, State aState);
+
+    /**
+     * This method reports the result of a service publication.
+     *
+     * @param[in]  aName     The service instance name.
+     * @param[in]  aType     The service type.
+     * @param[in]  aError    An error that indicates whether the service publication succeeds.
+     * @param[in]  aContext  A user context.
+     *
+     */
+    typedef void (*PublishServiceHandler)(const char *aName, const char *aType, otbrError aError, void *aContext);
+
+    /**
+     * This method reports the result of a host publication.
+     *
+     * @param[in]  aName     The host name.
+     * @param[in]  aError    An OTBR error that indicates whether the host publication succeeds.
+     * @param[in]  aContext  A user context.
+     *
+     */
+    typedef void (*PublishHostHandler)(const char *aName, otbrError aError, void *aContext);
+
+    /**
+     * This method sets the handler for service publication.
+     *
+     * @param[in]  aHandler  A handler which will be called when a service publication is finished.
+     * @param[in]  aContext  A user context which is associated to @p aHandler.
+     *
+     */
+    void SetPublishServiceHandler(PublishServiceHandler aHandler, void *aContext)
+    {
+        mServiceHandler        = aHandler;
+        mServiceHandlerContext = aContext;
+    }
+
+    /**
+     * This method sets the handler for host publication.
+     *
+     * @param[in]  aHandler  A handler which will be called when a host publication is finished.
+     * @param[in]  aContext  A user context which is associated to @p aHandler.
+     *
+     */
+    void SetPublishHostHandler(PublishHostHandler aHandler, void *aContext)
+    {
+        mHostHandler        = aHandler;
+        mHostHandlerContext = aContext;
+    }
 
     /**
      * This method starts the MDNS service.
@@ -239,6 +293,50 @@ public:
      *
      */
     static void Destroy(Publisher *aPublisher);
+
+    /**
+     * This function decides if two service types (names) are equal.
+     *
+     * Different implementations may or not append a dot ('.') to the service type (name)
+     * and we can not compare if two service type are equal with `strcmp`. This function
+     * ignores the trailing dot when comparing two service types.
+     *
+     * @param[in]  aFirstType   The first service type.
+     * @param[in]  aSecondType  The second service type.
+     *
+     * returns  A boolean that indicates whether the two service types are equal.
+     *
+     */
+    static bool IsServiceTypeEqual(const char *aFirstType, const char *aSecondType);
+
+    /**
+     * This function writes the TXT entry list to a TXT data buffer.
+     *
+     * The output data is in standard DNS-SD TXT data format.
+     * See RFC 6763 for details: https://tools.ietf.org/html/rfc6763#section-6.
+     *
+     * @param[in]     aTxtList    A TXT entry list.
+     * @param[out]    aTxtData    A TXT data buffer.
+     * @param[inout]  aTxtLength  As input, it is the length of the TXT data buffer;
+     *                            As output, it is the length of the TXT data written.
+     *
+     * @retval  OTBR_ERROR_NONE          Successfully write the TXT entry list.
+     * @retval  OTBR_ERROR_INVALID_ARGS  The input TXT data buffer cannot hold the TXT data.
+     *
+     */
+    static otbrError EncodeTxtData(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength);
+
+protected:
+    enum : uint8_t
+    {
+        kMaxTextEntrySize = 255,
+    };
+
+    PublishServiceHandler mServiceHandler        = nullptr;
+    void *                mServiceHandlerContext = nullptr;
+
+    PublishHostHandler mHostHandler        = nullptr;
+    void *             mHostHandlerContext = nullptr;
 };
 
 /**

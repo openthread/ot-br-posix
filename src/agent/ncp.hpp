@@ -71,6 +71,7 @@ enum
     kEventBackboneRouterState,             ///< Backbone Router State.
     kEventBackboneRouterDomainPrefixEvent, ///< Backbone Router Domain Prefix event.
     kEventBackboneRouterNdProxyEvent,      ///< Backbone Router ND Proxy event arrived.
+    kEventExtAddr,                         ///< IEEE 802.15.4 Extended Address.
 };
 
 using PowerMap = std::map<std::string, std::vector<int8_t>>;
@@ -106,21 +107,6 @@ public:
      *
      */
     virtual void Process(const otSysMainloopContext &aMainloop) = 0;
-
-    /**
-     * This method reest the Ncp Controller.
-     *
-     */
-    virtual void Reset(void) = 0;
-
-    /**
-     * This method return whether reset is requested.
-     *
-     * @retval  TRUE  reset is requested.
-     * @retval  FALSE reset isn't requested.
-     *
-     */
-    virtual bool IsResetRequested(void) = 0;
 
     /**
      * This method request the event.

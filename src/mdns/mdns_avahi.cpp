@@ -501,7 +501,7 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
     otbrError ret   = OTBR_ERROR_ERRNO;
     int       error = 0;
     // aligned with AvahiStringList
-    AvahiStringList  buffer[kMaxSizeOfTxtRecord / sizeof(AvahiStringList)];
+    AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
     AvahiStringList *last = nullptr;
     AvahiStringList *curr = buffer;
     size_t           used = 0;
@@ -512,20 +512,20 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
 
     for (const auto &txtEntry : aTxtList)
     {
-        int            rval;
         const char *   name        = txtEntry.mName;
+        size_t         nameLength  = txtEntry.mNameLength;
         const uint8_t *value       = txtEntry.mValue;
         size_t         valueLength = txtEntry.mValueLength;
         // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
-        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + strlen(name) + valueLength + 1;
+        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
 
         VerifyOrExit(used + needed <= sizeof(buffer), errno = EMSGSIZE);
         curr->next = last;
         last       = curr;
-        rval       = sprintf(reinterpret_cast<char *>(curr->text), "%s=", name);
-        assert(rval > 0);
-        memcpy(curr->text + rval, value, valueLength);
-        curr->size = valueLength + static_cast<size_t>(rval);
+        memcpy(curr->text, name, nameLength);
+        curr->text[nameLength] = '=';
+        memcpy(curr->text + nameLength + 1, value, valueLength);
+        curr->size = nameLength + valueLength + 1;
         {
             const uint8_t *next = curr->text + curr->size;
             curr                = OTBR_ALIGNED(next, AvahiStringList *);

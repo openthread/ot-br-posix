@@ -33,6 +33,7 @@ add_executable(otbr-test-unit
     test_event_emitter.cpp
     test_logging.cpp
     test_pskc.cpp
+    test_task_runner.cpp
 )
 target_include_directories(otbr-test-unit PRIVATE
     ${CPPUTEST_INCLUDE_DIRS}
@@ -45,6 +46,7 @@ target_link_libraries(otbr-test-unit
     mbedtls
     otbr-common
     otbr-utils
+    pthread
 )
 add_test(
     NAME unit

@@ -79,16 +79,18 @@ enum otbrError
     OTBR_ERROR_PARSE           = -8,  ///< Parse error.
     OTBR_ERROR_NOT_IMPLEMENTED = -9,  ///< Not implemented error.
     OTBR_ERROR_INVALID_ARGS    = -10, ///< Invalid arguments error.
+    OTBR_ERROR_DUPLICATED      = -11, ///< Duplicated operation, resource or name.
 };
 
 namespace otbr {
 
 enum
 {
-    kSizePSKc        = 16, ///< Size of PSKc.
-    kSizeNetworkName = 16, ///< Max size of Network Name.
-    kSizeExtPanId    = 8,  ///< Size of Extended PAN ID.
-    kSizeEui64       = 8,  ///< Size of Eui64.
+    kSizePSKc        = 16,         ///< Size of PSKc.
+    kSizeNetworkName = 16,         ///< Max size of Network Name.
+    kSizeExtPanId    = 8,          ///< Size of Extended PAN ID.
+    kSizeEui64       = 8,          ///< Size of Eui64.
+    kSizeExtAddr     = kSizeEui64, ///< Size of Extended Address.
 };
 
 static constexpr char kSolicitedMulticastAddressPrefix[]   = "ff02::01:ff00:0";

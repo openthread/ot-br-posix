@@ -106,21 +106,6 @@ public:
     void Process(const otSysMainloopContext &aMainloop) override;
 
     /**
-     * This method reset the NCP controller.
-     *
-     */
-    void Reset(void) override;
-
-    /**
-     * This method return whether reset is requested.
-     *
-     * @retval  TRUE  reset is requested.
-     * @retval  FALSE reset isn't requested.
-     *
-     */
-    bool IsResetRequested(void) override;
-
-    /**
      * This method request the event.
      *
      * @param[in]   aEvent  The event id to request.
@@ -179,7 +164,6 @@ private:
     otPlatformConfig                                                                mConfig;
     std::unique_ptr<otbr::agent::ThreadHelper>                                      mThreadHelper;
     std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
-    bool                                                                            mTriedAttach;
     std::vector<std::function<void(void)>>                                          mResetHandlers;
 };
 

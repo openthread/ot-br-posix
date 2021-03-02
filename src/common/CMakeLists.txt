@@ -27,8 +27,18 @@
 #
 
 add_library(otbr-common
+    byteswap.hpp
+    code_utils.hpp
     logging.cpp
+    logging.hpp
+    mainloop.h
+    task_runner.cpp
+    task_runner.hpp
+    time.hpp
+    tlv.hpp
+    toolchain.hpp
     types.cpp
+    types.hpp
 )
 
 target_link_libraries(otbr-common

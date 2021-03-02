@@ -34,6 +34,7 @@
 #ifndef OTBR_AGENT_MDNS_MDNSSD_HPP_
 #define OTBR_AGENT_MDNS_MDNSSD_HPP_
 
+#include <array>
 #include <vector>
 
 #include <dns_sd.h>
@@ -179,8 +180,39 @@ public:
                      timeval &aTimeout) override;
 
 private:
+    enum
+    {
+        kMaxSizeOfTxtRecord   = 256,
+        kMaxSizeOfServiceName = kDNSServiceMaxServiceName,
+        kMaxSizeOfHost        = 128,
+        kMaxSizeOfDomain      = kDNSServiceMaxDomainName,
+        kMaxSizeOfServiceType = 69,
+    };
+
+    struct Service
+    {
+        char          mName[kMaxSizeOfServiceName];
+        char          mType[kMaxSizeOfServiceType];
+        DNSServiceRef mService;
+    };
+
+    struct Host
+    {
+        char                                       mName[kMaxSizeOfServiceName];
+        std::array<uint8_t, OTBR_IP6_ADDRESS_SIZE> mAddress;
+        DNSRecordRef                               mRecord;
+    };
+
+    typedef std::vector<Service>           Services;
+    typedef std::vector<Host>              Hosts;
+    typedef std::vector<Service>::iterator ServiceIterator;
+    typedef std::vector<Host>::iterator    HostIterator;
+
     void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = nullptr);
     void RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
+
+    otbrError DiscardHost(const char *aName, bool aSendGoodbye = true);
+    void      RecordHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength, DNSRecordRef aRecordRef);
 
     static void HandleServiceRegisterResult(DNSServiceRef         aService,
                                             const DNSServiceFlags aFlags,
@@ -207,35 +239,14 @@ private:
 
     otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
 
-    enum
-    {
-        kMaxSizeOfTxtRecord   = 128,
-        kMaxSizeOfServiceName = kDNSServiceMaxServiceName,
-        kMaxSizeOfHost        = 128,
-        kMaxSizeOfDomain      = kDNSServiceMaxDomainName,
-        kMaxSizeOfServiceType = 64,
-        kMaxTextRecordSize    = 255,
-    };
-
-    struct Service
-    {
-        char          mName[kMaxSizeOfServiceName];
-        char          mType[kMaxSizeOfServiceType];
-        DNSServiceRef mService;
-    };
-
-    struct Host
-    {
-        char         mName[kMaxSizeOfServiceName];
-        DNSRecordRef mRecord;
-    };
-
-    typedef std::vector<Service> Services;
-    typedef std::vector<Host>    Hosts;
+    ServiceIterator FindPublishedService(const char *aName, const char *aType);
+    ServiceIterator FindPublishedService(const DNSServiceRef &aServiceRef);
+    HostIterator    FindPublishedHost(const DNSRecordRef &aRecordRef);
+    HostIterator    FindPublishedHost(const char *aHostName);
 
     Services      mServices;
     Hosts         mHosts;
-    DNSServiceRef mHostsConnection;
+    DNSServiceRef mHostsRef;
     const char *  mDomain;
     State         mState;
     StateHandler  mStateHandler;

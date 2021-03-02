@@ -291,13 +291,12 @@ void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
     aRequest.ReplyOtResult(OT_ERROR_NONE);
     otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
-    mNcp->Reset();
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
-    mNcp->Reset();
     aRequest.ReplyOtResult(OT_ERROR_NONE);
+    otInstanceReset(mNcp->GetThreadHelper()->GetInstance());
 }
 
 void DBusThreadObject::JoinerStartHandler(DBusRequest &aRequest)
@@ -479,7 +478,7 @@ otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
 exit:
     return error;
 #else
-    (void)aIter;
+    OTBR_UNUSED_VARIABLE(aIter);
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_LEGACY
@@ -801,7 +800,7 @@ otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &a
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
-    (void)aIter;
+    OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
@@ -830,7 +829,7 @@ otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &
 exit:
     return error;
 #else  // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
-    (void)aIter;
+    OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }

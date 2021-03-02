@@ -36,6 +36,7 @@
 #include <openthread/cli.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
+#include <openthread/srp_server.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
@@ -52,7 +53,6 @@
 #include <ot-legacy-pairing-ext.h>
 #endif
 
-static bool sReset;
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::seconds;
@@ -65,7 +65,6 @@ ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
                                            const char *aRadioUrl,
                                            const char *aBackboneInterfaceName)
     : mInstance(nullptr)
-    , mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
@@ -129,6 +128,10 @@ otbrError ControllerOpenThread::Init(void)
     otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
                                             this);
     otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
+#endif
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
@@ -236,30 +239,10 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
         mTimers.erase(mTimers.begin());
     }
 
-    if (!mTriedAttach && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+    if (getenv("OTBR_NO_AUTO_ATTACH") == nullptr && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
-        mTriedAttach = true;
+        setenv("OTBR_NO_AUTO_ATTACH", "1", 0);
     }
-}
-
-void ControllerOpenThread::Reset(void)
-{
-    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
-
-    otInstanceFinalize(mInstance);
-    otSysDeinit();
-    Init();
-    for (auto &handler : mResetHandlers)
-    {
-        handler();
-    }
-    mTriedAttach = false;
-    sReset       = false;
-}
-
-bool ControllerOpenThread::IsResetRequested(void)
-{
-    return sReset;
 }
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
@@ -304,6 +287,14 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     case kEventThreadVersion:
     {
         EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
+        break;
+    }
+    case kEventExtAddr:
+    {
+        const otExtAddress *extAddr;
+
+        extAddr = otLinkGetExtendedAddress(mInstance);
+        EventEmitter::Emit(kEventExtAddr, extAddr);
         break;
     }
     default:
@@ -400,10 +391,3 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
 } // namespace Ncp
 } // namespace otbr
-
-void otPlatReset(otInstance *aInstance)
-{
-    OT_UNUSED_VARIABLE(aInstance);
-
-    sReset = true;
-}
