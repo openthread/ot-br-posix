@@ -33,6 +33,8 @@
 
 #include "backbone_router/nd_proxy.hpp"
 
+#if OTBR_ENABLE_DUA_ROUTING
+
 #include <openthread/backbone_router_ftd.h>
 
 #include <assert.h>
@@ -573,3 +575,5 @@ exit:
 
 } // namespace BackboneRouter
 } // namespace otbr
+
+#endif // OTBR_ENABLE_DUA_ROUTING
