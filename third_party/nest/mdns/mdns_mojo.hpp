@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "chromecast/internal/receiver/mdns/public/mojom/mdns.mojom.h"
+#include "common/task_runner.hpp"
 #include "mdns/mdns.hpp"
 
 #define MOJO_CONNECTOR_NS chromecast::external_mojo
@@ -220,6 +221,8 @@ private:
     std::unique_ptr<chromecast::external_mojo::ExternalConnector> mConnector;
 
     chromecast::mojom::MdnsResponderPtr mResponder;
+
+    TaskRunner mMainloopTaskRunner;
 
     std::vector<std::pair<std::string, std::string>> mPublishedServices;
     std::vector<std::string> mPublishedHosts;
