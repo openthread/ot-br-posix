@@ -169,7 +169,9 @@ jobs:
           submodules: true
       - name: Build OTBR Docker Image
         run: |
-          otbr_options="-DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON"
+#         We need the `-DOTBR_ADVERTISING_PROXY=ON` option because the `bbr_5_11_01.py` script is referring SRP server.
+#         This should be fixed by enhancing the test script to handle SRP server situations properly.
+          otbr_options="-DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOTBR_ADVERTISING_PROXY=ON -DOTBR_DUA_ROUTING=ON"
           otbr_image_name="otbr-ot12-backbone-ci"
           docker build -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
             --build-arg BACKBONE_ROUTER=1 \
@@ -192,7 +194,7 @@ jobs:
         run: |
           export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
           echo "CI_ENV=${CI_ENV}"
-          (cd third_party/openthread/repo && sudo -E ./script/test cert_bbr ./tests/scripts/thread-cert/backbone/*.py || (sudo chmod a+r *.log *.json *.pcap && false))
+          (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ./tests/scripts/thread-cert/backbone/*.py || (sudo chmod a+r *.log *.json *.pcap && false))
       - uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
