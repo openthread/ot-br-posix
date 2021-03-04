@@ -56,11 +56,11 @@ public:
     /**
      * This constructor initializes the Advertising Proxy object.
      *
-     * @param[in]  aNcp        A reference to the NCP controller.
-     * @param[in]  aPublisher  A reference to the mDNS publisher.
+     * @param[in]  aNcp     A reference to the NCP controller.
+     * @param[in]  aMDns    A reference to the mDNS publisher.
      *
      */
-    explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::MDns &aMDns);
 
     /**
      * This method starts the Advertising Proxy.
@@ -91,7 +91,7 @@ private:
     static void AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout, void *aContext);
     void        AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout);
 
-    static Mdns::Publisher::TxtList MakeTxtList(const otSrpServerService *aSrpService);
+    static Mdns::MDns::TxtList MakeTxtList(const otSrpServerService *aSrpService);
 
     static void PublishServiceHandler(const char *aName, const char *aType, otbrError aError, void *aContext);
     void        PublishServiceHandler(const char *aName, const char *aType, otbrError aError);
@@ -103,8 +103,8 @@ private:
     // A reference to the NCP controller, has no ownership.
     Ncp::ControllerOpenThread &mNcp;
 
-    // A reference to the mDNS publisher, has no ownership.
-    Mdns::Publisher &mPublisher;
+    // A reference to the mDNS service, has no ownership.
+    Mdns::MDns &mMDns;
 
     // A vector that tracks outstanding updates.
     std::vector<OutstandingUpdate> mOutstandingUpdates;

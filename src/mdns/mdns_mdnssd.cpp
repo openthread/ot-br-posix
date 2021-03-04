@@ -204,7 +204,7 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
     }
 }
 
-PublisherMDnsSd::PublisherMDnsSd(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
+MDnsSd::MDnsSd(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
     : mHostsRef(nullptr)
     , mDomain(aDomain)
     , mState(State::kIdle)
@@ -214,24 +214,24 @@ PublisherMDnsSd::PublisherMDnsSd(int aProtocol, const char *aDomain, StateHandle
     OTBR_UNUSED_VARIABLE(aProtocol);
 }
 
-PublisherMDnsSd::~PublisherMDnsSd(void)
+MDnsSd::~MDnsSd(void)
 {
     Stop();
 }
 
-otbrError PublisherMDnsSd::Start(void)
+otbrError MDnsSd::Start(void)
 {
     mState = State::kReady;
     mStateHandler(mContext, State::kReady);
     return OTBR_ERROR_NONE;
 }
 
-bool PublisherMDnsSd::IsStarted(void) const
+bool MDnsSd::IsStarted(void) const
 {
     return mState == State::kReady;
 }
 
-void PublisherMDnsSd::Stop(void)
+void MDnsSd::Stop(void)
 {
     VerifyOrExit(mState == State::kReady);
 
@@ -251,11 +251,7 @@ exit:
     return;
 }
 
-void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
-                                  fd_set & aWriteFdSet,
-                                  fd_set & aErrorFdSet,
-                                  int &    aMaxFd,
-                                  timeval &aTimeout)
+void MDnsSd::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout)
 {
     OTBR_UNUSED_VARIABLE(aWriteFdSet);
     OTBR_UNUSED_VARIABLE(aErrorFdSet);
@@ -292,7 +288,7 @@ void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
     }
 }
 
-void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void MDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
 {
     std::vector<DNSServiceRef> readyServices;
 
@@ -330,24 +326,23 @@ void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSe
     }
 }
 
-void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService,
-                                                  const DNSServiceFlags aFlags,
-                                                  DNSServiceErrorType   aError,
-                                                  const char *          aName,
-                                                  const char *          aType,
-                                                  const char *          aDomain,
-                                                  void *                aContext)
+void MDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService,
+                                         const DNSServiceFlags aFlags,
+                                         DNSServiceErrorType   aError,
+                                         const char *          aName,
+                                         const char *          aType,
+                                         const char *          aDomain,
+                                         void *                aContext)
 {
-    static_cast<PublisherMDnsSd *>(aContext)->HandleServiceRegisterResult(aService, aFlags, aError, aName, aType,
-                                                                          aDomain);
+    static_cast<MDnsSd *>(aContext)->HandleServiceRegisterResult(aService, aFlags, aError, aName, aType, aDomain);
 }
 
-void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aServiceRef,
-                                                  const DNSServiceFlags aFlags,
-                                                  DNSServiceErrorType   aError,
-                                                  const char *          aName,
-                                                  const char *          aType,
-                                                  const char *          aDomain)
+void MDnsSd::HandleServiceRegisterResult(DNSServiceRef         aServiceRef,
+                                         const DNSServiceFlags aFlags,
+                                         DNSServiceErrorType   aError,
+                                         const char *          aName,
+                                         const char *          aType,
+                                         const char *          aDomain)
 {
     OTBR_UNUSED_VARIABLE(aDomain);
 
@@ -399,7 +394,7 @@ exit:
     return;
 }
 
-void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
+void MDnsSd::DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
 {
     ServiceIterator service = FindPublishedService(aName, aType);
 
@@ -414,7 +409,7 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
     }
 }
 
-void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
+void MDnsSd::RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
 {
     ServiceIterator service = FindPublishedService(aName, aType);
 
@@ -435,11 +430,11 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
     }
 }
 
-otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
-                                          uint16_t       aPort,
-                                          const char *   aName,
-                                          const char *   aType,
-                                          const TxtList &aTxtList)
+otbrError MDnsSd::PublishService(const char *   aHostName,
+                                 uint16_t       aPort,
+                                 const char *   aName,
+                                 const char *   aType,
+                                 const TxtList &aTxtList)
 {
     otbrError       ret   = OTBR_ERROR_NONE;
     int             error = 0;
@@ -489,13 +484,13 @@ exit:
     return ret;
 }
 
-otbrError PublisherMDnsSd::UnpublishService(const char *aName, const char *aType)
+otbrError MDnsSd::UnpublishService(const char *aName, const char *aType)
 {
     DiscardService(aName, aType);
     return OTBR_ERROR_NONE;
 }
 
-otbrError PublisherMDnsSd::DiscardHost(const char *aName, bool aSendGoodbye)
+otbrError MDnsSd::DiscardHost(const char *aName, bool aSendGoodbye)
 {
     otbrError    ret   = OTBR_ERROR_NONE;
     int          error = 0;
@@ -530,10 +525,7 @@ exit:
     return ret;
 }
 
-void PublisherMDnsSd::RecordHost(const char *   aName,
-                                 const uint8_t *aAddress,
-                                 uint8_t        aAddressLength,
-                                 DNSRecordRef   aRecordRef)
+void MDnsSd::RecordHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength, DNSRecordRef aRecordRef)
 {
     HostIterator host = FindPublishedHost(aName);
 
@@ -558,7 +550,7 @@ void PublisherMDnsSd::RecordHost(const char *   aName,
     }
 }
 
-otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
+otbrError MDnsSd::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
 {
     otbrError    ret   = OTBR_ERROR_NONE;
     int          error = 0;
@@ -615,25 +607,24 @@ exit:
     return ret;
 }
 
-otbrError PublisherMDnsSd::UnpublishHost(const char *aName)
+otbrError MDnsSd::UnpublishHost(const char *aName)
 {
     return DiscardHost(aName);
 }
 
-void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnection,
-                                               DNSRecordRef        aHostRecord,
-                                               DNSServiceFlags     aFlags,
-                                               DNSServiceErrorType aErrorCode,
-                                               void *              aContext)
+void MDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnection,
+                                      DNSRecordRef        aHostRecord,
+                                      DNSServiceFlags     aFlags,
+                                      DNSServiceErrorType aErrorCode,
+                                      void *              aContext)
 {
-    static_cast<PublisherMDnsSd *>(aContext)->HandleRegisterHostResult(aHostsConnection, aHostRecord, aFlags,
-                                                                       aErrorCode);
+    static_cast<MDnsSd *>(aContext)->HandleRegisterHostResult(aHostsConnection, aHostRecord, aFlags, aErrorCode);
 }
 
-void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnection,
-                                               DNSRecordRef        aHostRecord,
-                                               DNSServiceFlags     aFlags,
-                                               DNSServiceErrorType aErrorCode)
+void MDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnection,
+                                      DNSRecordRef        aHostRecord,
+                                      DNSServiceFlags     aFlags,
+                                      DNSServiceErrorType aErrorCode)
 {
     OTBR_UNUSED_VARIABLE(aHostsConnection);
     OTBR_UNUSED_VARIABLE(aFlags);
@@ -667,7 +658,7 @@ exit:
     return;
 }
 
-otbrError PublisherMDnsSd::MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName)
+otbrError MDnsSd::MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName)
 {
     otbrError   error      = OTBR_ERROR_NONE;
     size_t      nameLength = strlen(aName);
@@ -685,39 +676,39 @@ exit:
     return error;
 }
 
-PublisherMDnsSd::ServiceIterator PublisherMDnsSd::FindPublishedService(const char *aName, const char *aType)
+MDnsSd::ServiceIterator MDnsSd::FindPublishedService(const char *aName, const char *aType)
 {
     return std::find_if(mServices.begin(), mServices.end(), [&aName, aType](const Service &service) {
         return strcmp(aName, service.mName) == 0 && IsServiceTypeEqual(aType, service.mType);
     });
 }
 
-PublisherMDnsSd::ServiceIterator PublisherMDnsSd::FindPublishedService(const DNSServiceRef &aServiceRef)
+MDnsSd::ServiceIterator MDnsSd::FindPublishedService(const DNSServiceRef &aServiceRef)
 {
     return std::find_if(mServices.begin(), mServices.end(),
                         [&aServiceRef](const Service &service) { return service.mService == aServiceRef; });
 }
 
-PublisherMDnsSd::HostIterator PublisherMDnsSd::FindPublishedHost(const DNSRecordRef &aRecordRef)
+MDnsSd::HostIterator MDnsSd::FindPublishedHost(const DNSRecordRef &aRecordRef)
 {
     return std::find_if(mHosts.begin(), mHosts.end(),
                         [&aRecordRef](const Host &host) { return host.mRecord == aRecordRef; });
 }
 
-PublisherMDnsSd::HostIterator PublisherMDnsSd::FindPublishedHost(const char *aHostName)
+MDnsSd::HostIterator MDnsSd::FindPublishedHost(const char *aHostName)
 {
     return std::find_if(mHosts.begin(), mHosts.end(),
                         [&aHostName](const Host &host) { return strcmp(host.mName, aHostName) == 0; });
 }
 
-Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)
+MDns *MDns::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)
 {
-    return new PublisherMDnsSd(aFamily, aDomain, aHandler, aContext);
+    return new MDnsSd(aFamily, aDomain, aHandler, aContext);
 }
 
-void Publisher::Destroy(Publisher *aPublisher)
+void MDns::Destroy(MDns *aMDns)
 {
-    delete static_cast<PublisherMDnsSd *>(aPublisher);
+    delete static_cast<MDnsSd *>(aMDns);
 }
 
 } // namespace Mdns

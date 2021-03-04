@@ -117,11 +117,11 @@ private:
      */
     void Stop(void);
 
-    static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
+    static void HandleMdnsState(void *aContext, Mdns::MDns::State aState)
     {
         static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
     }
-    void HandleMdnsState(Mdns::Publisher::State aState);
+    void HandleMdnsState(Mdns::MDns::State aState);
     void PublishService(void);
     void StartPublishService(void);
     void StopPublishService(void);
@@ -141,7 +141,7 @@ private:
     static void HandleExtAddr(void *aContext, int aEvent, va_list aArguments);
 
     Ncp::Controller *mNcp;
-    Mdns::Publisher *mPublisher;
+    Mdns::MDns *     mMDns;
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;

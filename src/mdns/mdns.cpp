@@ -39,7 +39,7 @@ namespace otbr {
 
 namespace Mdns {
 
-bool Publisher::IsServiceTypeEqual(const char *aFirstType, const char *aSecondType)
+bool MDns::IsServiceTypeEqual(const char *aFirstType, const char *aSecondType)
 {
     size_t firstLength  = strlen(aFirstType);
     size_t secondLength = strlen(aSecondType);
@@ -56,7 +56,7 @@ bool Publisher::IsServiceTypeEqual(const char *aFirstType, const char *aSecondTy
     return firstLength == secondLength && memcmp(aFirstType, aSecondType, firstLength) == 0;
 }
 
-otbrError Publisher::EncodeTxtData(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength)
+otbrError MDns::EncodeTxtData(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength)
 {
     otbrError error = OTBR_ERROR_NONE;
     uint8_t * cur   = aTxtData;

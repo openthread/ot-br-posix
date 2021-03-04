@@ -130,9 +130,9 @@ static otError OtbrErrorToOtError(otbrError aError)
     return error;
 }
 
-AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
+AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::MDns &aMDns)
     : mNcp(aNcp)
-    , mPublisher(aPublisher)
+    , mMDns(aMDns)
 {
 }
 
@@ -140,8 +140,8 @@ otbrError AdvertisingProxy::Start(void)
 {
     otSrpServerSetServiceUpdateHandler(GetInstance(), AdvertisingHandler, this);
 
-    mPublisher.SetPublishServiceHandler(PublishServiceHandler, this);
-    mPublisher.SetPublishHostHandler(PublishHostHandler, this);
+    mMDns.SetPublishServiceHandler(PublishServiceHandler, this);
+    mMDns.SetPublishHostHandler(PublishHostHandler, this);
 
     otbrLog(OTBR_LOG_INFO, "[adproxy] Started");
 
@@ -150,8 +150,8 @@ otbrError AdvertisingProxy::Start(void)
 
 void AdvertisingProxy::Stop()
 {
-    mPublisher.SetPublishServiceHandler(nullptr, nullptr);
-    mPublisher.SetPublishHostHandler(nullptr, nullptr);
+    mMDns.SetPublishServiceHandler(nullptr, nullptr);
+    mMDns.SetPublishHostHandler(nullptr, nullptr);
 
     // Outstanding updates will fail on the SRP server because of timeout.
     // TODO: handle this case gracefully.
@@ -215,13 +215,12 @@ void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t
     {
         // TODO: select a preferred address or advertise all addresses from SRP client.
         otbrLog(OTBR_LOG_INFO, "[adproxy] publish SRP host: %s", fullHostName);
-        SuccessOrExit(error =
-                          mPublisher.PublishHost(hostName.c_str(), hostAddress[0].mFields.m8, sizeof(hostAddress[0])));
+        SuccessOrExit(error = mMDns.PublishHost(hostName.c_str(), hostAddress[0].mFields.m8, sizeof(hostAddress[0])));
     }
     else
     {
         otbrLog(OTBR_LOG_INFO, "[adproxy] unpublish SRP host: %s", fullHostName);
-        SuccessOrExit(error = mPublisher.UnpublishHost(hostName.c_str()));
+        SuccessOrExit(error = mMDns.UnpublishHost(hostName.c_str()));
     }
 
     service = nullptr;
@@ -238,16 +237,16 @@ void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t
 
         if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
         {
-            Mdns::Publisher::TxtList txtList = MakeTxtList(service);
+            Mdns::MDns::TxtList txtList = MakeTxtList(service);
 
             otbrLog(OTBR_LOG_INFO, "[adproxy] publish SRP service: %s", fullServiceName);
-            SuccessOrExit(error = mPublisher.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
-                                                            serviceName.c_str(), serviceType.c_str(), txtList));
+            SuccessOrExit(error = mMDns.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
+                                                       serviceName.c_str(), serviceType.c_str(), txtList));
         }
         else
         {
             otbrLog(OTBR_LOG_INFO, "[adproxy] unpublish SRP service: %s", fullServiceName);
-            SuccessOrExit(error = mPublisher.UnpublishService(serviceName.c_str(), serviceType.c_str()));
+            SuccessOrExit(error = mMDns.UnpublishService(serviceName.c_str(), serviceType.c_str()));
         }
     }
 
@@ -280,7 +279,7 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
     {
         for (const auto &nameAndType : update->mServiceNames)
         {
-            if (aName != nameAndType.first || !Mdns::Publisher::IsServiceTypeEqual(aType, nameAndType.second.c_str()))
+            if (aName != nameAndType.first || !Mdns::MDns::IsServiceTypeEqual(aType, nameAndType.second.c_str()))
             {
                 continue;
             }
@@ -342,13 +341,13 @@ exit:
     }
 }
 
-Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService *aSrpService)
+Mdns::MDns::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService *aSrpService)
 {
-    const uint8_t *          txtData;
-    uint16_t                 txtDataLength = 0;
-    otDnsTxtEntryIterator    iterator;
-    otDnsTxtEntry            txtEntry;
-    Mdns::Publisher::TxtList txtList;
+    const uint8_t *       txtData;
+    uint16_t              txtDataLength = 0;
+    otDnsTxtEntryIterator iterator;
+    otDnsTxtEntry         txtEntry;
+    Mdns::MDns::TxtList   txtList;
 
     txtData = otSrpServerServiceGetTxtData(aSrpService, &txtDataLength);
 
