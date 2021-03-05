@@ -201,7 +201,7 @@ static struct timeval ToTimeVal(const microseconds &aTime)
     return val;
 };
 
-void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
+void ControllerOpenThread::Update(MainloopContext &aMainloop)
 {
     microseconds timeout = microseconds(aMainloop.mTimeout.tv_usec) + seconds(aMainloop.mTimeout.tv_sec);
     auto         now     = steady_clock::now();
@@ -227,7 +227,7 @@ void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
-void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
+void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 {
     auto now = steady_clock::now();
 

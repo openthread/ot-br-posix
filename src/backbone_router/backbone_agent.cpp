@@ -140,31 +140,21 @@ const char *BackboneAgent::StateToString(otBackboneRouterState aState)
 
     return ret;
 }
-void BackboneAgent::UpdateFdSet(fd_set & aReadFdSet,
-                                fd_set & aWriteFdSet,
-                                fd_set & aErrorFdSet,
-                                int &    aMaxFd,
-                                timeval &aTimeout) const
+void BackboneAgent::Update(MainloopContext &aMainloop)
 {
-    OTBR_UNUSED_VARIABLE(aReadFdSet);
-    OTBR_UNUSED_VARIABLE(aWriteFdSet);
-    OTBR_UNUSED_VARIABLE(aErrorFdSet);
-    OTBR_UNUSED_VARIABLE(aMaxFd);
-    OTBR_UNUSED_VARIABLE(aTimeout);
+    OTBR_UNUSED_VARIABLE(aMainloop);
 
 #if OTBR_ENABLE_DUA_ROUTING
-    mNdProxyManager.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    mNdProxyManager.Update(aMainloop);
 #endif
 }
 
-void BackboneAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void BackboneAgent::Process(const MainloopContext &aMainloop)
 {
-    OTBR_UNUSED_VARIABLE(aReadFdSet);
-    OTBR_UNUSED_VARIABLE(aWriteFdSet);
-    OTBR_UNUSED_VARIABLE(aErrorFdSet);
+    OTBR_UNUSED_VARIABLE(aMainloop);
 
 #if OTBR_ENABLE_DUA_ROUTING
-    mNdProxyManager.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    mNdProxyManager.Process(aMainloop);
 #endif
 }
 

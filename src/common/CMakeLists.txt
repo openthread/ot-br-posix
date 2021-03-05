@@ -31,7 +31,7 @@ add_library(otbr-common
     code_utils.hpp
     logging.cpp
     logging.hpp
-    mainloop.h
+    mainloop.hpp
     task_runner.cpp
     task_runner.hpp
     time.hpp

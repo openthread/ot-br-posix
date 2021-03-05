@@ -176,7 +176,7 @@ void Poller::TimeoutFree(AvahiTimeout &aTimer)
     }
 }
 
-void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout)
+void Poller::Update(MainloopContext &aMainloop)
 {
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
@@ -185,17 +185,17 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
 
         if (AVAHI_WATCH_IN & events)
         {
-            FD_SET(fd, &aReadFdSet);
+            FD_SET(fd, &aMainloop.mReadFdSet);
         }
 
         if (AVAHI_WATCH_OUT & events)
         {
-            FD_SET(fd, &aWriteFdSet);
+            FD_SET(fd, &aMainloop.mWriteFdSet);
         }
 
         if (AVAHI_WATCH_ERR & events)
         {
-            FD_SET(fd, &aErrorFdSet);
+            FD_SET(fd, &aMainloop.mErrorFdSet);
         }
 
         if (AVAHI_WATCH_HUP & events)
@@ -203,10 +203,7 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
             // TODO what do with this event type?
         }
 
-        if (aMaxFd < fd)
-        {
-            aMaxFd = fd;
-        }
+        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
 
         (*it)->mHappened = 0;
     }
@@ -224,8 +221,8 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
 
         if (static_cast<long>(timeout - now) <= 0)
         {
-            aTimeout.tv_usec = 0;
-            aTimeout.tv_sec  = 0;
+            aMainloop.mTimeout.tv_usec = 0;
+            aMainloop.mTimeout.tv_sec  = 0;
             break;
         }
         else
@@ -237,22 +234,22 @@ void Poller::UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aError
             sec  = static_cast<time_t>(timeout / 1000);
             usec = static_cast<suseconds_t>((timeout % 1000) * 1000);
 
-            if (sec < aTimeout.tv_sec)
+            if (sec < aMainloop.mTimeout.tv_sec)
             {
-                aTimeout.tv_sec = sec;
+                aMainloop.mTimeout.tv_sec = sec;
             }
-            else if (sec == aTimeout.tv_sec)
+            else if (sec == aMainloop.mTimeout.tv_sec)
             {
-                if (usec < aTimeout.tv_usec)
+                if (usec < aMainloop.mTimeout.tv_usec)
                 {
-                    aTimeout.tv_usec = usec;
+                    aMainloop.mTimeout.tv_usec = usec;
                 }
             }
         }
     }
 }
 
-void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void Poller::Process(const MainloopContext &aMainloop)
 {
     unsigned long now = GetNow();
 
@@ -263,17 +260,17 @@ void Poller::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const 
 
         (*it)->mHappened = 0;
 
-        if ((AVAHI_WATCH_IN & events) && FD_ISSET(fd, &aReadFdSet))
+        if ((AVAHI_WATCH_IN & events) && FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
             (*it)->mHappened |= AVAHI_WATCH_IN;
         }
 
-        if ((AVAHI_WATCH_OUT & events) && FD_ISSET(fd, &aWriteFdSet))
+        if ((AVAHI_WATCH_OUT & events) && FD_ISSET(fd, &aMainloop.mWriteFdSet))
         {
             (*it)->mHappened |= AVAHI_WATCH_OUT;
         }
 
-        if ((AVAHI_WATCH_ERR & events) && FD_ISSET(fd, &aErrorFdSet))
+        if ((AVAHI_WATCH_ERR & events) && FD_ISSET(fd, &aMainloop.mErrorFdSet))
         {
             (*it)->mHappened |= AVAHI_WATCH_ERR;
         }
@@ -598,18 +595,14 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
     }
 }
 
-void PublisherAvahi::UpdateFdSet(fd_set & aReadFdSet,
-                                 fd_set & aWriteFdSet,
-                                 fd_set & aErrorFdSet,
-                                 int &    aMaxFd,
-                                 timeval &aTimeout)
+void PublisherAvahi::Update(MainloopContext &aMainloop)
 {
-    mPoller.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    mPoller.Update(aMainloop);
 }
 
-void PublisherAvahi::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void PublisherAvahi::Process(const MainloopContext &aMainloop)
 {
-    mPoller.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    mPoller.Process(aMainloop);
 }
 
 otbrError PublisherAvahi::PublishService(const char *   aHostName,

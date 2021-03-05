@@ -37,6 +37,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "common/mainloop.hpp"
 #include "rest/parser.hpp"
 #include "rest/resource.hpp"
 
@@ -49,7 +50,7 @@ namespace rest {
  * This class implements a Connection class of each socket connection.
  *
  */
-class Connection
+class Connection : public MainloopProcessor
 {
 public:
     /**
@@ -71,21 +72,20 @@ public:
     void Init(void);
 
     /**
-     * This method performs processing.
+     * This method updates the mainloop context.
      *
-     * @param[in]       aReadFdSet    The read file descriptors.
-     * @param[in]       aWriteFdSet   The write file descriptors.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Process(fd_set &aReadFdSet, fd_set &aWriteFdSet);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method updates the file descriptor sets and timeout for mainloop.
+     * This method processes mainloop events.
      *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop) const;
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method indicates whether this connection no longer need to be processed.
@@ -100,9 +100,9 @@ private:
     void UpdateReadFdSet(fd_set &aReadFdSet, int &aMaxFd) const;
     void UpdateWriteFdSet(fd_set &aWriteFdSet, int &aMaxFd) const;
     void UpdateTimeout(timeval &aTimeout) const;
-    void ProcessWaitRead(fd_set &aReadFdSet);
+    void ProcessWaitRead(const fd_set &aReadFdSet);
     void ProcessWaitCallback(void);
-    void ProcessWaitWrite(fd_set &aWriteFdSet);
+    void ProcessWaitWrite(const fd_set &aWriteFdSet);
     void Write(void);
     void Handle(void);
     void Disconnect(void);

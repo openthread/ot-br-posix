@@ -90,20 +90,20 @@ public:
     otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
 
     /**
-     * This method updates the fd_set to poll.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop) override;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs the Thread processing.
+     * This method processes mainloop events.
      *
-     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const otSysMainloopContext &aMainloop) override;
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method request the event.

@@ -39,6 +39,7 @@
 #include "agent/advertising_proxy.hpp"
 #include "agent/instance_params.hpp"
 #include "agent/ncp.hpp"
+#include "common/mainloop.hpp"
 #include "mdns/mdns.hpp"
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
@@ -60,7 +61,7 @@ namespace otbr {
  * This class implements Thread border agent functionality.
  *
  */
-class BorderAgent
+class BorderAgent : public MainloopProcessor
 {
 public:
     /**
@@ -71,7 +72,7 @@ public:
      */
     BorderAgent(Ncp::Controller *aNcp);
 
-    ~BorderAgent(void);
+    ~BorderAgent(void) override;
 
     /**
      * This method initialize border agent service.
@@ -80,26 +81,20 @@ public:
     void Init(void);
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]  aReadFdSet   A reference to read file descriptors.
-     * @param[inout]  aWriteFdSet  A reference to write file descriptors.
-     * @param[inout]  aErrorFdSet  A reference to error file descriptors.
-     * @param[inout]  aMaxFd       A reference to the max file descriptor.
-     * @param[inout]  aTimeout     A reference to timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs border agent processing.
+     * This method processes mainloop events.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     /**

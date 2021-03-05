@@ -251,16 +251,8 @@ exit:
     return;
 }
 
-void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
-                                  fd_set & aWriteFdSet,
-                                  fd_set & aErrorFdSet,
-                                  int &    aMaxFd,
-                                  timeval &aTimeout)
+void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 {
-    OTBR_UNUSED_VARIABLE(aWriteFdSet);
-    OTBR_UNUSED_VARIABLE(aErrorFdSet);
-    OTBR_UNUSED_VARIABLE(aTimeout);
-
     for (Service &service : mServices)
     {
         assert(service.mService != nullptr);
@@ -269,12 +261,9 @@ void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
 
         assert(fd != -1);
 
-        FD_SET(fd, &aReadFdSet);
+        FD_SET(fd, &aMainloop.mReadFdSet);
 
-        if (fd > aMaxFd)
-        {
-            aMaxFd = fd;
-        }
+        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
     }
 
     if (mHostsRef != nullptr)
@@ -283,27 +272,21 @@ void PublisherMDnsSd::UpdateFdSet(fd_set & aReadFdSet,
 
         assert(fd != -1);
 
-        FD_SET(fd, &aReadFdSet);
+        FD_SET(fd, &aMainloop.mReadFdSet);
 
-        if (fd > aMaxFd)
-        {
-            aMaxFd = fd;
-        }
+        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
     }
 }
 
-void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 {
     std::vector<DNSServiceRef> readyServices;
-
-    OTBR_UNUSED_VARIABLE(aWriteFdSet);
-    OTBR_UNUSED_VARIABLE(aErrorFdSet);
 
     for (Service &service : mServices)
     {
         int fd = DNSServiceRefSockFD(service.mService);
 
-        if (FD_ISSET(fd, &aReadFdSet))
+        if (FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
             readyServices.push_back(service.mService);
         }
@@ -313,7 +296,7 @@ void PublisherMDnsSd::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSe
     {
         int fd = DNSServiceRefSockFD(mHostsRef);
 
-        if (FD_ISSET(fd, &aReadFdSet))
+        if (FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
             readyServices.push_back(mHostsRef);
         }
