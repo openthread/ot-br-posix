@@ -115,6 +115,7 @@ LOCAL_SRC_FILES := \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
     src/common/logging.cpp \
+    src/common/task_runner.cpp \
     src/dbus/common/dbus_message_dump.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
@@ -123,6 +124,7 @@ LOCAL_SRC_FILES := \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
+    src/mdns/mdns.cpp \
     src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
