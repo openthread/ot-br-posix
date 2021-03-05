@@ -41,7 +41,7 @@
 #include <mutex>
 #include <queue>
 
-#include "common/mainloop.h"
+#include "common/mainloop.hpp"
 
 namespace otbr {
 
@@ -50,7 +50,7 @@ namespace otbr {
  * tasks on the mainloop.
  *
  */
-class TaskRunner
+class TaskRunner : public MainloopProcessor
 {
 public:
     /**
@@ -69,7 +69,7 @@ public:
      * This destructor destroys the Task Runner instance.
      *
      */
-    ~TaskRunner(void);
+    ~TaskRunner(void) override;
 
     /**
      * This method posts a task to the task runner.
@@ -102,24 +102,20 @@ public:
     }
 
     /**
-     * This method updates the file descriptor and sets timeout for the mainloop.
+     * This method updates the mainloop context.
      *
-     * This method should only be called on the mainloop thread.
-     *
-     * @param[inout]  aMainloop  A reference to OpenThread mainloop context.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method processes events.
+     * This method processes mainloop events.
      *
-     * This method should only be called on the mainloop thread.
-     *
-     * @param[in]  aMainloop  A reference to OpenThread mainloop context.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const otSysMainloopContext &aMainloop);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     enum

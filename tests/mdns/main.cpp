@@ -54,19 +54,17 @@ int Mainloop(Mdns::Publisher &aPublisher)
 
     while (true)
     {
-        fd_set         readFdSet;
-        fd_set         writeFdSet;
-        fd_set         errorFdSet;
-        int            maxFd   = -1;
-        struct timeval timeout = {INT_MAX, INT_MAX};
+        MainloopContext mainloop;
 
-        FD_ZERO(&readFdSet);
-        FD_ZERO(&writeFdSet);
-        FD_ZERO(&errorFdSet);
+        mainloop.mMaxFd   = -1;
+        mainloop.mTimeout = {INT_MAX, INT_MAX};
+        FD_ZERO(&mainloop.mReadFdSet);
+        FD_ZERO(&mainloop.mWriteFdSet);
+        FD_ZERO(&mainloop.mErrorFdSet);
 
-        aPublisher.UpdateFdSet(readFdSet, writeFdSet, errorFdSet, maxFd, timeout);
-        rval =
-            select(maxFd + 1, &readFdSet, &writeFdSet, &errorFdSet, (timeout.tv_sec == INT_MAX ? nullptr : &timeout));
+        aPublisher.Update(mainloop);
+        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                      (mainloop.mTimeout.tv_sec == INT_MAX ? nullptr : &mainloop.mTimeout));
 
         if (rval < 0)
         {
@@ -74,7 +72,7 @@ int Mainloop(Mdns::Publisher &aPublisher)
             break;
         }
 
-        aPublisher.Process(readFdSet, writeFdSet, errorFdSet);
+        aPublisher.Process(mainloop);
     }
 
     return rval;

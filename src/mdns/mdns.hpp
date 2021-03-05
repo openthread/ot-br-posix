@@ -38,6 +38,7 @@
 
 #include <sys/select.h>
 
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -57,7 +58,7 @@ namespace Mdns {
  * This interface defines the functionality of MDNS service.
  *
  */
-class Publisher
+class Publisher : public MainloopProcessor
 {
 public:
     /**
@@ -244,34 +245,7 @@ public:
      */
     virtual otbrError UnpublishHost(const char *aName) = 0;
 
-    /**
-     * This method performs the MDNS processing.
-     *
-     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
-     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
-     *
-     */
-    virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) = 0;
-
-    /**
-     * This method updates the fd_set and timeout for mainloop.
-     *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
-     * @param[inout]    aTimeout        A reference to the timeout. Update this value if the MDNS service has
-     *                                  pending process in less than its current value.
-     *
-     */
-    virtual void UpdateFdSet(fd_set & aReadFdSet,
-                             fd_set & aWriteFdSet,
-                             fd_set & aErrorFdSet,
-                             int &    aMaxFd,
-                             timeval &aTimeout) = 0;
-
-    virtual ~Publisher(void) {}
+    virtual ~Publisher(void) = default;
 
     /**
      * This function creates a MDNS publisher.
