@@ -34,6 +34,10 @@
 #ifndef OTBR_REST_REST_WEB_SERVER_HPP_
 #define OTBR_REST_REST_WEB_SERVER_HPP_
 
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <sys/socket.h>
+
 #include "common/mainloop.hpp"
 #include "rest/connection.hpp"
 

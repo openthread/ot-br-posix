@@ -42,12 +42,13 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
 #include "agent/border_agent.hpp"
-#include "agent/ncp.hpp"
 #include "agent/ncp_openthread.hpp"
 #include "agent/uris.hpp"
+#include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
@@ -81,73 +82,68 @@ enum
     kBorderAgentUdpPort = 49191, ///< Thread commissioning port.
 };
 
-BorderAgent::BorderAgent(Ncp::Controller *aNcp)
+uint32_t BorderAgent::StateBitmap::ToUint32(void) const
+{
+    uint32_t bitmap = 0;
+
+    bitmap |= mConnectionMode & (0x07 << 0);
+    bitmap |= mThreadIfStatus & (0x03 << 3);
+    bitmap |= mAvailability & (0x03 << 5);
+    bitmap |= mBbrIsActive & (0x01 << 7);
+    bitmap |= mBbrIsPrimary & (0x01 << 8);
+
+    return bitmap;
+}
+
+BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     , mPublisher(Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, HandleMdnsState, this))
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    , mAdvertisingProxy(*reinterpret_cast<Ncp::ControllerOpenThread *>(aNcp), *mPublisher)
+    , mAdvertisingProxy(aNcp, *mPublisher)
 #endif
 #else
     , mPublisher(nullptr)
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(*reinterpret_cast<Ncp::ControllerOpenThread *>(aNcp))
+    , mBackboneAgent(aNcp)
 #endif
-    , mThreadStarted(false)
 {
 }
 
 void BorderAgent::Init(void)
 {
-    memset(mNetworkName, 0, sizeof(mNetworkName));
-    memset(mExtPanId, 0, sizeof(mExtPanId));
-    memset(mExtAddr, 0, sizeof(mExtAddr));
-    mExtPanIdInitialized = false;
-    mExtAddrInitialized  = false;
-    mThreadVersion       = 0;
-
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    mNcp->On(Ncp::kEventExtPanId, HandleExtPanId, this);
-    mNcp->On(Ncp::kEventNetworkName, HandleNetworkName, this);
-    mNcp->On(Ncp::kEventThreadVersion, HandleThreadVersion, this);
-    mNcp->On(Ncp::kEventExtAddr, HandleExtAddr, this);
-#endif
-    mNcp->On(Ncp::kEventThreadState, HandleThreadState, this);
-    mNcp->On(Ncp::kEventPSKc, HandlePSKc, this);
+    mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent.Init();
 #endif
 
-    otbrLogResult(mNcp->RequestEvent(Ncp::kEventThreadState), "Check if Thread is up");
-    otbrLogResult(mNcp->RequestEvent(Ncp::kEventPSKc), "Check if PSKc is initialized");
+    if (IsPskcInitialized() && IsThreadStarted())
+    {
+        Start();
+    }
+    else
+    {
+        Stop();
+    }
 }
 
 otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(mThreadStarted && mPSKcInitialized, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
+    VerifyOrExit(IsThreadStarted() && IsPskcInitialized(), errno = EAGAIN, error = OTBR_ERROR_ERRNO);
 
     // In case we didn't receive Thread down event.
     Stop();
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventNetworkName));
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtPanId));
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventThreadVersion));
-    SuccessOrExit(error = mNcp->RequestEvent(Ncp::kEventExtAddr));
-
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Start();
 #endif
-
     StartPublishService();
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-
-    // Suppress unused warning of label exit
-    ExitNow();
 
 exit:
     otbrLogResult(error, "Start Thread Border Agent");
@@ -162,6 +158,11 @@ void BorderAgent::Stop(void)
     mAdvertisingProxy.Stop();
 #endif
 #endif
+}
+
+void BorderAgent::HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
+{
+    static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
 }
 
 BorderAgent::~BorderAgent(void)
@@ -227,29 +228,85 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
 
 void BorderAgent::PublishService(void)
 {
-    assert(mNetworkName[0] != '\0');
-    assert(mExtPanIdInitialized);
-    assert(mExtAddrInitialized);
-    assert(mThreadVersion != 0);
+    StateBitmap              state;
+    uint32_t                 stateUint32;
+    otInstance *             instance    = mNcp.GetInstance();
+    const otExtendedPanId *  extPanId    = otThreadGetExtendedPanId(instance);
+    const otExtAddress *     extAddr     = otLinkGetExtendedAddress(instance);
+    const char *             networkName = otThreadGetNetworkName(instance);
+    Mdns::Publisher::TxtList txtList{{"rv", "1"}};
 
-    const char *             versionString = ThreadVersionToString(mThreadVersion);
-    Mdns::Publisher::TxtList txtList{{"nn", mNetworkName},
-                                     {"xp", mExtPanId, sizeof(mExtPanId)},
-                                     {"tv", versionString},
-                                     // "dd" represents for device discriminator which
-                                     // should always be the IEEE 802.15.4 extended address.
-                                     {"dd", mExtAddr, sizeof(mExtAddr)}};
+    txtList.emplace_back("nn", networkName);
+    txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
+    txtList.emplace_back("tv", ThreadVersionToString(otThreadGetVersion()));
 
-    mPublisher->PublishService(/* aHostName */ nullptr, kBorderAgentUdpPort, mNetworkName, kBorderAgentServiceType,
+    // "dd" represents for device discriminator which
+    // should always be the IEEE 802.15.4 extended address.
+    txtList.emplace_back("dd", extAddr->m8, sizeof(extAddr->m8));
+
+    state.mConnectionMode = kConnectionModePskc;
+    state.mAvailability   = kAvailabilityHigh;
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    state.mBbrIsActive  = otBackboneRouterGetState(instance) != OT_BACKBONE_ROUTER_STATE_DISABLED;
+    state.mBbrIsPrimary = otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_PRIMARY;
+#endif
+    switch (otThreadGetDeviceRole(instance))
+    {
+    case OT_DEVICE_ROLE_DISABLED:
+        state.mThreadIfStatus = kThreadIfStatusNotInitialized;
+        break;
+    case OT_DEVICE_ROLE_DETACHED:
+        state.mThreadIfStatus = kThreadIfStatusInitialized;
+        break;
+    default:
+        state.mThreadIfStatus = kThreadIfStatusActive;
+    }
+
+    stateUint32 = htobe32(state.ToUint32());
+    txtList.emplace_back("sb", reinterpret_cast<uint8_t *>(&stateUint32), sizeof(stateUint32));
+
+    if (state.mThreadIfStatus == kThreadIfStatusActive)
+    {
+        otError              error;
+        otOperationalDataset activeDataset;
+        uint64_t             activeTimestamp;
+        uint32_t             partitionId;
+
+        if ((error = otDatasetGetActive(instance, &activeDataset)) != OT_ERROR_NONE)
+        {
+            otbrLog(OTBR_LOG_WARNING, "failed to get active dataset: %s", otThreadErrorToString(error));
+        }
+        else
+        {
+            activeTimestamp = htobe64(activeDataset.mActiveTimestamp);
+            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestamp), sizeof(activeTimestamp));
+        }
+
+        partitionId = otThreadGetPartitionId(instance);
+        txtList.emplace_back("pt", reinterpret_cast<uint8_t *>(&partitionId), sizeof(partitionId));
+    }
+
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    if (state.mBbrIsActive)
+    {
+        otBackboneRouterConfig bbrConfig;
+        uint16_t               bbrPort = htobe16(BackboneAgent::kBackboneUdpPort);
+
+        otBackboneRouterGetConfig(instance, &bbrConfig);
+        txtList.emplace_back("sq", &bbrConfig.mSequenceNumber, sizeof(bbrConfig.mSequenceNumber));
+        txtList.emplace_back("bb", &bbrPort, sizeof(bbrPort));
+    }
+
+    txtList.emplace_back("dn", otThreadGetDomainName(instance));
+#endif
+
+    mPublisher->PublishService(/* aHostName */ nullptr, kBorderAgentUdpPort, networkName, kBorderAgentServiceType,
                                txtList);
 }
 
 void BorderAgent::StartPublishService(void)
 {
-    VerifyOrExit(mNetworkName[0] != '\0');
-    VerifyOrExit(mExtPanIdInitialized);
-    VerifyOrExit(mExtAddrInitialized);
-    VerifyOrExit(mThreadVersion != 0);
+    assert(mPublisher != nullptr && IsThreadStarted() && IsPskcInitialized());
 
     if (mPublisher->IsStarted())
     {
@@ -260,7 +317,6 @@ void BorderAgent::StartPublishService(void)
         mPublisher->Start();
     }
 
-exit:
     otbrLog(OTBR_LOG_INFO, "Start publishing service");
 }
 
@@ -277,158 +333,58 @@ exit:
     otbrLog(OTBR_LOG_INFO, "Stop publishing service");
 }
 
-void BorderAgent::SetNetworkName(const char *aNetworkName)
+void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
-    strcpy_safe(mNetworkName, sizeof(mNetworkName), aNetworkName);
+    VerifyOrExit(mPublisher != nullptr);
+    VerifyOrExit((aFlags & OT_CHANGED_THREAD_ROLE) || (aFlags & OT_CHANGED_THREAD_EXT_PANID) ||
+                 (aFlags & OT_CHANGED_THREAD_NETWORK_NAME) || (aFlags & OT_CHANGED_ACTIVE_DATASET) ||
+                 (aFlags & OT_CHANGED_THREAD_PARTITION_ID) || (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE) ||
+                 (aFlags & OT_CHANGED_PSKC));
 
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    if (mThreadStarted)
+    if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        // Restart publisher to publish new service name.
-        mPublisher->Stop();
-        StartPublishService();
-    }
-#endif
-}
+        otbrLog(OTBR_LOG_INFO, "Thread is %s", (IsThreadStarted() ? "up" : "down"));
 
-void BorderAgent::SetExtPanId(const uint8_t *aExtPanId)
-{
-    memcpy(mExtPanId, aExtPanId, sizeof(mExtPanId));
-    mExtPanIdInitialized = true;
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    if (mThreadStarted)
-    {
-        StartPublishService();
-    }
-#endif
-}
-
-void BorderAgent::SetExtAddr(const uint8_t *aExtAddr)
-{
-    memcpy(mExtAddr, aExtAddr, sizeof(mExtAddr));
-    mExtAddrInitialized = true;
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    if (mThreadStarted)
-    {
-        StartPublishService();
-    }
-#endif
-}
-
-void BorderAgent::SetThreadVersion(uint16_t aThreadVersion)
-{
-    mThreadVersion = aThreadVersion;
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    if (mThreadStarted)
-    {
-        StartPublishService();
-    }
-#endif
-}
-
-void BorderAgent::HandlePSKc(void *aContext, int aEvent, va_list aArguments)
-{
-    OT_UNUSED_VARIABLE(aEvent);
-
-    assert(aEvent == Ncp::kEventPSKc);
-
-    static_cast<BorderAgent *>(aContext)->HandlePSKc(va_arg(aArguments, const uint8_t *));
-}
-
-void BorderAgent::HandlePSKc(const uint8_t *aPSKc)
-{
-    mPSKcInitialized = false;
-
-    for (size_t i = 0; i < kSizePSKc; ++i)
-    {
-        if (aPSKc[i] != 0)
+        if (IsPskcInitialized() && IsThreadStarted())
         {
-            mPSKcInitialized = true;
+            Start();
+        }
+        else
+        {
+            Stop();
+        }
+    }
+    else if (IsPskcInitialized() && IsThreadStarted())
+    {
+        StartPublishService();
+    }
+
+exit:
+    return;
+}
+
+bool BorderAgent::IsThreadStarted(void) const
+{
+    otDeviceRole role = otThreadGetDeviceRole(mNcp.GetInstance());
+
+    return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
+}
+
+bool BorderAgent::IsPskcInitialized(void) const
+{
+    bool          initialized = false;
+    const otPskc *pskc        = otThreadGetPskc(mNcp.GetInstance());
+
+    for (uint8_t byte : pskc->m8)
+    {
+        if (byte != 0x00)
+        {
+            initialized = true;
             break;
         }
     }
 
-    if (mPSKcInitialized)
-    {
-        Start();
-    }
-    else
-    {
-        Stop();
-    }
-
-    otbrLog(OTBR_LOG_INFO, "PSKc is %s", (mPSKcInitialized ? "initialized" : "not initialized"));
-}
-
-void BorderAgent::HandleThreadState(bool aStarted)
-{
-    VerifyOrExit(mThreadStarted != aStarted);
-
-    mThreadStarted = aStarted;
-
-    if (aStarted)
-    {
-        SuccessOrExit(mNcp->RequestEvent(Ncp::kEventPSKc));
-        Start();
-    }
-    else
-    {
-        Stop();
-    }
-
-exit:
-    otbrLog(OTBR_LOG_INFO, "Thread is %s", (aStarted ? "up" : "down"));
-}
-
-void BorderAgent::HandleThreadState(void *aContext, int aEvent, va_list aArguments)
-{
-    OT_UNUSED_VARIABLE(aEvent);
-
-    assert(aEvent == Ncp::kEventThreadState);
-
-    int started = va_arg(aArguments, int);
-    static_cast<BorderAgent *>(aContext)->HandleThreadState(started);
-}
-
-void BorderAgent::HandleNetworkName(void *aContext, int aEvent, va_list aArguments)
-{
-    OT_UNUSED_VARIABLE(aEvent);
-
-    assert(aEvent == Ncp::kEventNetworkName);
-
-    const char *networkName = va_arg(aArguments, const char *);
-    static_cast<BorderAgent *>(aContext)->SetNetworkName(networkName);
-}
-
-void BorderAgent::HandleExtPanId(void *aContext, int aEvent, va_list aArguments)
-{
-    OT_UNUSED_VARIABLE(aEvent);
-
-    assert(aEvent == Ncp::kEventExtPanId);
-
-    const uint8_t *xpanid = va_arg(aArguments, const uint8_t *);
-    static_cast<BorderAgent *>(aContext)->SetExtPanId(xpanid);
-}
-
-void BorderAgent::HandleThreadVersion(void *aContext, int aEvent, va_list aArguments)
-{
-    OT_UNUSED_VARIABLE(aEvent);
-
-    assert(aEvent == Ncp::kEventThreadVersion);
-
-    // `uint16_t` has been promoted to `int`.
-    uint16_t threadVersion = static_cast<uint16_t>(va_arg(aArguments, int));
-    static_cast<BorderAgent *>(aContext)->SetThreadVersion(threadVersion);
-}
-
-void BorderAgent::HandleExtAddr(void *aContext, int aEvent, va_list aArguments)
-{
-    OT_UNUSED_VARIABLE(aEvent);
-
-    assert(aEvent == Ncp::kEventExtAddr);
-
-    const uint8_t *extAddr = va_arg(aArguments, const uint8_t *);
-    static_cast<BorderAgent *>(aContext)->SetExtAddr(extAddr);
+    return initialized;
 }
 
 } // namespace otbr

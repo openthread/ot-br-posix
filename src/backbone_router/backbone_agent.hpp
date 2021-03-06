@@ -60,6 +60,8 @@ namespace BackboneRouter {
 class BackboneAgent : public MainloopProcessor
 {
 public:
+    static constexpr uint16_t kBackboneUdpPort = 61631; ///< The BBR port.
+
     /**
      * This constructor intiializes the `BackboneAgent` instance.
      *
@@ -94,13 +96,17 @@ private:
     void        OnBecomePrimary(void);
     void        OnResignPrimary(void);
     bool        IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
-    static void HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments);
+    void        HandleThreadStateChanged(otChangedFlags aFlags);
     void        HandleBackboneRouterState(void);
-    static void HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments);
+    static void HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+                                                      otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
     void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
                                                       const otIp6Prefix *               aDomainPrefix);
 #if OTBR_ENABLE_DUA_ROUTING
-    static void HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments);
+    static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
+                                                 otBackboneRouterNdProxyEvent aEvent,
+                                                 const otIp6Address *         aAddress);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 

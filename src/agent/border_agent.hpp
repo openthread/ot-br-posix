@@ -34,11 +34,13 @@
 #ifndef OTBR_AGENT_BORDER_AGENT_HPP_
 #define OTBR_AGENT_BORDER_AGENT_HPP_
 
+#include <vector>
+
 #include <stdint.h>
 
 #include "agent/advertising_proxy.hpp"
 #include "agent/instance_params.hpp"
-#include "agent/ncp.hpp"
+#include "agent/ncp_openthread.hpp"
 #include "common/mainloop.hpp"
 #include "mdns/mdns.hpp"
 
@@ -67,10 +69,10 @@ public:
     /**
      * The constructor to initialize the Thread border agent.
      *
-     * @param[in]   aNcp            A pointer to the NCP controller.
+     * @param[in]  aNcp  A reference to the NCP controller.
      *
      */
-    BorderAgent(Ncp::Controller *aNcp);
+    BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp);
 
     ~BorderAgent(void) override;
 
@@ -97,46 +99,62 @@ public:
     void Process(const MainloopContext &aMainloop) override;
 
 private:
-    /**
-     * This method starts border agent service.
-     *
-     * @retval  OTBR_ERROR_NONE     Successfully started border agent.
-     * @retval  OTBR_ERROR_ERRNO    Failed to start border agent.
-     *
-     */
-    otbrError Start(void);
-
-    /**
-     * This method stops border agent service.
-     *
-     */
-    void Stop(void);
-
-    static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
+    enum : uint8_t
     {
-        static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
-    }
-    void HandleMdnsState(Mdns::Publisher::State aState);
-    void PublishService(void);
-    void StartPublishService(void);
-    void StopPublishService(void);
+        kConnectionModeDisabled = 0,
+        kConnectionModePskc     = 1,
+        kConnectionModePskd     = 2,
+        kConnectionModeVendor   = 3,
+    };
 
-    void SetNetworkName(const char *aNetworkName);
-    void SetExtPanId(const uint8_t *aExtPanId);
-    void SetThreadVersion(uint16_t aThreadVersion);
-    void SetExtAddr(const uint8_t *aExtAddr);
-    void HandleThreadState(bool aStarted);
-    void HandlePSKc(const uint8_t *aPSKc);
+    enum : uint8_t
+    {
+        kThreadIfStatusNotInitialized = 0,
+        kThreadIfStatusInitialized    = 1,
+        kThreadIfStatusActive         = 2,
+    };
 
-    static void HandlePSKc(void *aContext, int aEvent, va_list aArguments);
-    static void HandleThreadState(void *aContext, int aEvent, va_list aArguments);
-    static void HandleNetworkName(void *aContext, int aEvent, va_list aArguments);
-    static void HandleExtPanId(void *aContext, int aEvent, va_list aArguments);
-    static void HandleThreadVersion(void *aContext, int aEvent, va_list aArguments);
-    static void HandleExtAddr(void *aContext, int aEvent, va_list aArguments);
+    enum : uint8_t
+    {
+        kAvailabilityInfrequent = 0,
+        kAvailabilityHigh       = 1,
+    };
 
-    Ncp::Controller *mNcp;
-    Mdns::Publisher *mPublisher;
+    struct StateBitmap
+    {
+        uint32_t mConnectionMode : 3;
+        uint32_t mThreadIfStatus : 2;
+        uint32_t mAvailability : 2;
+        uint32_t mBbrIsActive : 1;
+        uint32_t mBbrIsPrimary : 1;
+
+        StateBitmap(void)
+            : mConnectionMode(0)
+            , mThreadIfStatus(0)
+            , mAvailability(0)
+            , mBbrIsActive(0)
+            , mBbrIsPrimary(0)
+        {
+        }
+
+        uint32_t ToUint32(void) const;
+    };
+
+    otbrError   Start(void);
+    void        Stop(void);
+    static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState);
+    void        HandleMdnsState(Mdns::Publisher::State aState);
+    void        PublishService(void);
+    void        StartPublishService(void);
+    void        StopPublishService(void);
+
+    void HandleThreadStateChanged(otChangedFlags aFlags);
+
+    bool IsThreadStarted(void) const;
+    bool IsPskcInitialized(void) const;
+
+    otbr::Ncp::ControllerOpenThread &mNcp;
+    Mdns::Publisher *                mPublisher;
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;
@@ -144,15 +162,6 @@ private:
 #if OTBR_ENABLE_BACKBONE_ROUTER
     BackboneRouter::BackboneAgent mBackboneAgent;
 #endif
-
-    uint8_t  mExtPanId[kSizeExtPanId];
-    uint8_t  mExtAddr[kSizeExtAddr];
-    bool     mExtPanIdInitialized;
-    bool     mExtAddrInitialized;
-    uint16_t mThreadVersion;
-    char     mNetworkName[kSizeNetworkName + 1];
-    bool     mThreadStarted;
-    bool     mPSKcInitialized;
 };
 
 /**

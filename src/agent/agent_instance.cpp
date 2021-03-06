@@ -40,7 +40,7 @@
 
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
+AgentInstance::AgentInstance(otbr::Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
     , mBorderAgent(aNcp)
 {
@@ -50,7 +50,7 @@ otbrError AgentInstance::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    SuccessOrExit(error = mNcp->Init());
+    SuccessOrExit(error = mNcp.Init());
 
     mBorderAgent.Init();
 
@@ -61,19 +61,14 @@ exit:
 
 void AgentInstance::Update(MainloopContext &aMainloop)
 {
-    mNcp->Update(aMainloop);
+    mNcp.Update(aMainloop);
     mBorderAgent.Update(aMainloop);
 }
 
 void AgentInstance::Process(const MainloopContext &aMainloop)
 {
-    mNcp->Process(aMainloop);
+    mNcp.Process(aMainloop);
     mBorderAgent.Process(aMainloop);
-}
-
-AgentInstance::~AgentInstance(void)
-{
-    Ncp::Controller::Destroy(mNcp);
 }
 
 } // namespace otbr
