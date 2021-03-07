@@ -129,7 +129,7 @@ LOCAL_SRC_FILES := \
     src/utils/strcpy_utils.cpp \
 
 LOCAL_STATIC_LIBRARIES += \
-    libopenthread-ncp \
+    ot-core \
     libopenthread-cli \
     ot-core \
 

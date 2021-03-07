@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
-#include <openthread/cli.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
 #include <openthread/srp_server.h>
@@ -107,7 +106,6 @@ otbrError ControllerOpenThread::Init(void)
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
-    otCliUartInit(mInstance);
 #if OTBR_ENABLE_LEGACY
     otLegacyInit();
 #endif
