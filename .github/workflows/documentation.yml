@@ -31,7 +31,7 @@ name: Documentation
 on:
   push:
     branches:
-    - master
+    - main
 
 jobs:
   cancel-previous-runs:
@@ -40,7 +40,7 @@ jobs:
     - uses: rokroskar/workflow-run-cleanup-action@master
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      if: "github.ref != 'refs/heads/master'"
+      if: "github.ref != 'refs/heads/main'"
 
   doxygen:
     runs-on: ubuntu-latest
