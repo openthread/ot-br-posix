@@ -55,6 +55,12 @@ namespace Mdns {
  * @{
  */
 
+enum ResourceRecordType : uint16_t
+{
+    kResourceRecordTypeA    = 1,  ///< Resource Record type A
+    kResourceRecordTypeAaaa = 28, ///< Resource Record type AAAA
+};
+
 /**
  * This interface defines the functionality of MDNS service.
  *

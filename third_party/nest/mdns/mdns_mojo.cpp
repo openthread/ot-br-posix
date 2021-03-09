@@ -45,6 +45,7 @@
 #include "mdns_mojo.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/types.hpp"
 
 namespace otbr {
 namespace Mdns {
@@ -116,6 +117,11 @@ void MdnsMojoPublisher::TearDownMojoThreads(void)
     mMojoTaskRunner = nullptr;
 
     mResponder = nullptr;
+
+    mServiceListener     = nullptr;
+    mServiceListenerImpl = nullptr;
+    mRecordListener      = nullptr;
+    mRecordListenerImpl  = nullptr;
 
     mMojoCoreThreadQuitClosure.Run();
 }
@@ -410,22 +416,219 @@ void MdnsMojoPublisher::UnpublishHostTask(const std::string &aInstanceName)
 
 void MdnsMojoPublisher::SubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
-    otbrLog(OTBR_LOG_WARNING, "SubscribeService is not implemented");
+    OTBR_UNUSED_VARIABLE(aInstanceName);
+
+    std::string name, transport;
+
+    std::tie(name, transport) = SplitServiceType(aType);
+    mMojoTaskRunner->PostTask(
+        FROM_HERE, base::BindOnce(&MdnsMojoPublisher::SubscribeServiceTask, base::Unretained(this), name, transport));
+}
+
+void MdnsMojoPublisher::SubscribeServiceTask(const std::string &aService, const std::string &aTransport)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] subscribe service %s.%s", aService.c_str(), aTransport.c_str());
+
+    if (mServiceListenerImpl == nullptr)
+    {
+        auto serviceListenerRequest = mojo::MakeRequest(&mServiceListener);
+
+        mResponder->AddListenerObserver(std::move(mServiceListener));
+        mServiceListenerImpl =
+            std::make_unique<MdnsDiscoveredServiceListenerImpl>(this, std::move(serviceListenerRequest));
+
+        otbrLog(OTBR_LOG_INFO, "[MdnsMojo] service listener observer added once");
+    }
+
+    mResponder->StartServiceListener(aService, aTransport);
 }
 
 void MdnsMojoPublisher::UnsubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
-    otbrLog(OTBR_LOG_WARNING, "UnsubscribeService is not implemented");
+    OTBR_UNUSED_VARIABLE(aInstanceName);
+
+    std::string name, transport;
+
+    std::tie(name, transport) = SplitServiceType(aType);
+    mMojoTaskRunner->PostTask(
+        FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnsubscribeServiceTask, base::Unretained(this), name, transport));
+}
+
+void MdnsMojoPublisher::UnsubscribeServiceTask(const std::string &aService, const std::string &aTransport)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] unsubscribe service %s.%s", aService.c_str(), aTransport.c_str());
+
+    mResponder->StopServiceListener(aService, aTransport);
 }
 
 void MdnsMojoPublisher::SubscribeHost(const std::string &aHostName)
 {
-    otbrLog(OTBR_LOG_WARNING, "SubscribeHost is not implemented");
+    mMojoTaskRunner->PostTask(FROM_HERE,
+                              base::BindOnce(&MdnsMojoPublisher::SubscribeHostTask, base::Unretained(this), aHostName));
+}
+
+void MdnsMojoPublisher::SubscribeHostTask(const std::string &aHostName)
+{
+    std::string fullHostName = aHostName + ".local";
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] subscribe host %s", fullHostName.c_str());
+
+    if (mRecordListenerImpl == nullptr)
+    {
+        auto recordListenerRequest = mojo::MakeRequest(&mRecordListener);
+
+        mResponder->AddRecordListenerObserver(std::move(mRecordListener));
+        mRecordListenerImpl =
+            std::make_unique<MdnsDiscoveredRecordListenerImpl>(this, std::move(recordListenerRequest));
+
+        otbrLog(OTBR_LOG_INFO, "[MdnsMojo] record listener observer added once");
+    }
+
+    mResponder->StartRecordListener(fullHostName, kResourceRecordTypeAaaa);
+    mResponder->StartRecordListener(fullHostName, kResourceRecordTypeA);
 }
 
 void MdnsMojoPublisher::UnsubscribeHost(const std::string &aHostName)
 {
-    otbrLog(OTBR_LOG_WARNING, "UnsubscribeHost is not implemented");
+    mMojoTaskRunner->PostTask(
+        FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnsubscribeHostTask, base::Unretained(this), aHostName));
+}
+
+void MdnsMojoPublisher::UnsubscribeHostTask(const std::string aHostName)
+{
+    std::string fullHostName = aHostName + ".local";
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] unsubscribe host %s", fullHostName.c_str());
+
+    mResponder->StopRecordListener(fullHostName, kResourceRecordTypeA);
+    mResponder->StopRecordListener(fullHostName, kResourceRecordTypeAaaa);
+}
+
+void MdnsMojoPublisher::NotifyDiscoveredServiceInstance(const std::string &                          aInstanceName,
+                                                        const std::string &                          aServiceName,
+                                                        const std::string &                          aTransport,
+                                                        chromecast::mojom::MdnsDiscoveredInstancePtr aInfo)
+{
+    std::vector<uint8_t> &    addressBytes = aInfo->address->address->address_bytes;
+    std::vector<std::string> &txtVector    = aInfo->text;
+
+    Publisher::DiscoveredInstanceInfo instanceInfo;
+
+    instanceInfo.mName     = aInstanceName;
+    instanceInfo.mHostName = NormalizeDomain(aInfo->host_name);
+
+    if (addressBytes.size() == sizeof(Ip6Address))
+    {
+        instanceInfo.mAddresses.push_back(Ip6Address(*reinterpret_cast<const uint8_t(*)[16]>(&addressBytes[0])));
+    }
+
+    instanceInfo.mPort     = aInfo->address->port;
+    instanceInfo.mPriority = aInfo->priority;
+    instanceInfo.mWeight   = aInfo->weight;
+    instanceInfo.mTxtData  = EncodeTxtRdata(txtVector);
+    instanceInfo.mTtl      = kMojoServiceInstanceDefaultTtl;
+
+    mMainloopTaskRunner.Post([=](void) {
+        if (mDiscoveredServiceInstanceCallback != nullptr)
+        {
+            mDiscoveredServiceInstanceCallback(aServiceName + "." + aTransport, instanceInfo);
+        }
+    });
+}
+
+void MdnsMojoPublisher::NotifyDiscoveredRecord(chromecast::mojom::MdnsDiscoveredRecordPtr aInfo)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] record discovered, name:%s type:%d len:%d", aInfo->name.c_str(), aInfo->type,
+            aInfo->rdata.size());
+
+    switch (aInfo->type)
+    {
+    case kResourceRecordTypeAaaa:
+    {
+        std::string                   hostName            = NormalizeDomain(aInfo->name);
+        std::string                   hostNameStripDomain = StripLocalDomain(hostName);
+        Ip6Address &                  address             = *reinterpret_cast<Ip6Address *>(&aInfo->rdata[0]);
+        Publisher::DiscoveredHostInfo hostInfo;
+
+        VerifyOrExit(aInfo->rdata.size() == sizeof(Ip6Address));
+
+        otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Host %s AAAA RR found: %s = %s", hostNameStripDomain.c_str(),
+                hostName.c_str(), address.ToString().c_str());
+
+        hostInfo.mHostName = hostName;
+        hostInfo.mAddresses.push_back(address);
+        hostInfo.mTtl = aInfo->ttl;
+
+        mMainloopTaskRunner.Post([=](void) {
+            if (mDiscoveredHostCallback != nullptr)
+            {
+                mDiscoveredHostCallback(hostNameStripDomain, hostInfo);
+            }
+        });
+    }
+
+    break;
+    default:
+        break;
+    }
+
+exit:
+    return;
+}
+
+std::vector<uint8_t> MdnsMojoPublisher::EncodeTxtRdata(const std::vector<std::string> &aTxtVector)
+{
+    std::vector<uint8_t> txtData;
+
+    if (aTxtVector.empty())
+    {
+        txtData.emplace_back('\0');
+    }
+    else
+    {
+        for (const std::string &txtKv : aTxtVector)
+        {
+            txtData.emplace_back(static_cast<uint8_t>(txtKv.size()));
+            txtData.insert(txtData.end(), txtKv.begin(), txtKv.end());
+        }
+    }
+
+    return txtData;
+}
+
+std::string MdnsMojoPublisher::StripLocalDomain(const std::string &aName)
+{
+    size_t      dotpos   = aName.find_last_of('.');
+    std::string stripped = aName;
+
+    VerifyOrExit(dotpos != std::string::npos);
+
+    // Ignore the dot if it's at the end.
+    if (dotpos == aName.size() - 1)
+    {
+        dotpos = aName.find_last_of('.', dotpos - 1);
+        VerifyOrExit(dotpos != std::string::npos);
+        VerifyOrExit(aName.substr(dotpos + 1, aName.size() - 2 - dotpos) == "local");
+    }
+    else
+    {
+        VerifyOrExit(aName.substr(dotpos + 1) == "local");
+    }
+
+    stripped = aName.substr(0, dotpos);
+
+exit:
+    return stripped;
+}
+
+std::string MdnsMojoPublisher::NormalizeDomain(const std::string &aName)
+{
+    std::string normalizedName = aName;
+
+    if (normalizedName.empty() || normalizedName.back() != '.')
+    {
+        normalizedName.append(".");
+    }
+
+    return normalizedName;
 }
 
 void MdnsMojoPublisher::Update(MainloopContext &aMainloop)
@@ -486,6 +689,61 @@ Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHan
 void Publisher::Destroy(Publisher *aPublisher)
 {
     delete aPublisher;
+}
+
+void MdnsMojoPublisher::MdnsDiscoveredServiceListenerImpl::OnServiceDiscovered(
+    const std::string &                          aInstanceName,
+    const std::string &                          aServiceName,
+    const std::string &                          aTransport,
+    chromecast::mojom::MdnsDiscoveredInstancePtr aInfo)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Service is updated: %s.%s.%s host %s", aInstanceName.c_str(),
+            aServiceName.c_str(), aTransport.c_str(), aInfo->host_name.c_str());
+
+    mOwner->NotifyDiscoveredServiceInstance(aInstanceName, aServiceName, aTransport, std::move(aInfo));
+}
+
+void MdnsMojoPublisher::MdnsDiscoveredServiceListenerImpl::OnServiceUpdated(
+    const std::string &                          aInstanceName,
+    const std::string &                          aServiceName,
+    const std::string &                          aTransport,
+    chromecast::mojom::MdnsDiscoveredInstancePtr aInfo)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Service is updated: %s.%s.%s host %s", aInstanceName.c_str(),
+            aServiceName.c_str(), aTransport.c_str(), aInfo->host_name.c_str());
+
+    mOwner->NotifyDiscoveredServiceInstance(aInstanceName, aServiceName, aTransport, std::move(aInfo));
+}
+
+void MdnsMojoPublisher::MdnsDiscoveredServiceListenerImpl::OnServiceRemoved(const std::string &aInstanceName,
+                                                                            const std::string &aServiceName,
+                                                                            const std::string &aTransport)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Service is removed: %s.%s.%s", aInstanceName.c_str(), aServiceName.c_str(),
+            aTransport.c_str());
+}
+
+void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordDiscovered(
+    chromecast::mojom::MdnsDiscoveredRecordPtr aInfo)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Record is discovered, name:%s type:%d len:%dB", aInfo->name.c_str(), aInfo->type,
+            aInfo->rdata.size());
+
+    mOwner->NotifyDiscoveredRecord(std::move(aInfo));
+}
+
+void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordUpdated(
+    chromecast::mojom::MdnsDiscoveredRecordPtr aInfo)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Record is updated, name:%s type:%d len:%dB", aInfo->name.c_str(), aInfo->type,
+            aInfo->rdata.size());
+
+    mOwner->NotifyDiscoveredRecord(std::move(aInfo));
+}
+
+void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordRemoved(const std::string &aName, uint16_t aType)
+{
+    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Record is removed, name:%s type:%d", aName.c_str(), aType);
 }
 
 } // namespace Mdns
