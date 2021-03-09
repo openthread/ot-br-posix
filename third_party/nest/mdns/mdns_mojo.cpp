@@ -226,10 +226,10 @@ otbrError MdnsMojoPublisher::PublishService(const char *   aHostName,
 {
     otbrError                error = OTBR_ERROR_NONE;
     std::vector<std::string> text;
-    std::string name;
-    std::string transport;
-    std::string hostName;
-    std::string instanceName = aName;
+    std::string              name;
+    std::string              transport;
+    std::string              hostName;
+    std::string              instanceName = aName;
 
     if (aHostName != nullptr)
     {
@@ -241,10 +241,10 @@ otbrError MdnsMojoPublisher::PublishService(const char *   aHostName,
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
     for (const auto &txtEntry : aTxtList)
     {
-        const char *name = txtEntry.mName;
-        size_t nameLength = txtEntry.mNameLength;
-        const char *value = reinterpret_cast<const char *>(txtEntry.mValue);
-        size_t valueLength = txtEntry.mValueLength;
+        const char *name        = txtEntry.mName;
+        size_t      nameLength  = txtEntry.mNameLength;
+        const char *value       = reinterpret_cast<const char *>(txtEntry.mValue);
+        size_t      valueLength = txtEntry.mValueLength;
 
         text.emplace_back(std::string(name, nameLength) + "=" + std::string(value, value + valueLength));
     }
@@ -264,58 +264,57 @@ void MdnsMojoPublisher::PublishServiceTask(const std::string &             aHost
 {
     mResponder->UnregisterServiceInstance(aName, aInstanceName, base::DoNothing());
 
-    otbrLog(OTBR_LOG_INFO, "register service: instance %s, name %s, protocol %s",
-            aInstanceName.c_str(), aName.c_str(), aTransport.c_str());
-    mResponder->RegisterServiceInstance(aHostInstanceName, aName, aTransport, aInstanceName, aPort, aText,
-        base::BindOnce([](MdnsMojoPublisher *aThis,
-                          const std::string &aName,
-                          const std::string &aTransport,
-                          const std::string &aInstanceName,
-                          chromecast::mojom::MdnsResult aResult) {
-            otbrError error = ConvertMdnsResultToOtbrError(aResult);
+    otbrLog(OTBR_LOG_INFO, "register service: instance %s, name %s, protocol %s", aInstanceName.c_str(), aName.c_str(),
+            aTransport.c_str());
+    mResponder->RegisterServiceInstance(
+        aHostInstanceName, aName, aTransport, aInstanceName, aPort, aText,
+        base::BindOnce(
+            [](MdnsMojoPublisher *aThis, const std::string &aName, const std::string &aTransport,
+               const std::string &aInstanceName, chromecast::mojom::MdnsResult aResult) {
+                otbrError error = ConvertMdnsResultToOtbrError(aResult);
 
-            otbrLog(OTBR_LOG_INFO, "register service result: %d", static_cast<int32_t>(aResult));
+                otbrLog(OTBR_LOG_INFO, "register service result: %d", static_cast<int32_t>(aResult));
 
-            // TODO: Actually, we should call the handles after mDNS probing and announcing.
-            // But this is not easy with current mojo mDNS APIs.
-            aThis->mMainloopTaskRunner.Post([=]() {
-                if (error == OTBR_ERROR_NONE)
-                {
-                    aThis->mPublishedServices.emplace_back(std::make_pair(aName, aInstanceName));
-                }
+                // TODO: Actually, we should call the handles after mDNS probing and announcing.
+                // But this is not easy with current mojo mDNS APIs.
+                aThis->mMainloopTaskRunner.Post([=]() {
+                    if (error == OTBR_ERROR_NONE)
+                    {
+                        aThis->mPublishedServices.emplace_back(std::make_pair(aName, aInstanceName));
+                    }
 
-                if (aThis->mHostHandler != nullptr)
-                {
-                    aThis->mServiceHandler(aInstanceName.c_str(), (aName + "." + aTransport).c_str(), error, aThis->mHostHandlerContext);
-                }
-            });
-        }, base::Unretained(this), aName, aTransport, aInstanceName));
+                    if (aThis->mHostHandler != nullptr)
+                    {
+                        aThis->mServiceHandler(aInstanceName.c_str(), (aName + "." + aTransport).c_str(), error,
+                                               aThis->mHostHandlerContext);
+                    }
+                });
+            },
+            base::Unretained(this), aName, aTransport, aInstanceName));
 }
 
 otbrError MdnsMojoPublisher::UnpublishService(const char *aInstanceName, const char *aType)
 {
-    otbrError error = OTBR_ERROR_NONE;
-    std::string name = SplitServiceType(aType).first;
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string name  = SplitServiceType(aType).first;
 
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
 
-    mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnpublishServiceTask, base::Unretained(this),
-                                                        name, aInstanceName));
+    mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnpublishServiceTask,
+                                                        base::Unretained(this), name, aInstanceName));
 
 exit:
     return error;
 }
 
-void MdnsMojoPublisher::UnpublishServiceTask(const std::string &aName,
-                                             const std::string &aInstanceName)
+void MdnsMojoPublisher::UnpublishServiceTask(const std::string &aName, const std::string &aInstanceName)
 {
-    otbrLog(OTBR_LOG_INFO, "unregister service name %s, instance %s",
-            aName.c_str(), aInstanceName.c_str());
+    otbrLog(OTBR_LOG_INFO, "unregister service name %s, instance %s", aName.c_str(), aInstanceName.c_str());
 
-    mResponder->UnregisterServiceInstance(aName, aInstanceName,
-        base::BindOnce([](chromecast::mojom::MdnsResult r) {
-            otbrLog(OTBR_LOG_INFO, "unregister service result %d", static_cast<int32_t>(r));
-        }));
+    mResponder->UnregisterServiceInstance(aName, aInstanceName, base::BindOnce([](chromecast::mojom::MdnsResult r) {
+                                              otbrLog(OTBR_LOG_INFO, "unregister service result %d",
+                                                      static_cast<int32_t>(r));
+                                          }));
 
     for (auto it = mPublishedServices.begin(); it != mPublishedServices.end(); ++it)
     {
@@ -330,11 +329,12 @@ void MdnsMojoPublisher::UnpublishServiceTask(const std::string &aName,
 otbrError MdnsMojoPublisher::PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength)
 {
     otbrError error = OTBR_ERROR_NONE;
-    char ipv6Address[INET6_ADDRSTRLEN];
+    char      ipv6Address[INET6_ADDRSTRLEN];
 
     // Currently supports only IPv6 addresses for custom host.
     VerifyOrExit(aAddressLength == OTBR_IP6_ADDRESS_SIZE, error = OTBR_ERROR_INVALID_ARGS);
-    VerifyOrExit(inet_ntop(AF_INET6, aAddress, ipv6Address, sizeof(ipv6Address)) != nullptr, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(inet_ntop(AF_INET6, aAddress, ipv6Address, sizeof(ipv6Address)) != nullptr,
+                 error = OTBR_ERROR_INVALID_ARGS);
 
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
 
@@ -345,38 +345,36 @@ exit:
     return error;
 }
 
-void MdnsMojoPublisher::PublishHostTask(const std::string &aInstanceName,
-                                        const std::string &aIpv6Address)
+void MdnsMojoPublisher::PublishHostTask(const std::string &aInstanceName, const std::string &aIpv6Address)
 {
-    otbrLog(OTBR_LOG_INFO, "register host: name = %s, address = %s",
-            aInstanceName.c_str(), aIpv6Address.c_str());
+    otbrLog(OTBR_LOG_INFO, "register host: name = %s, address = %s", aInstanceName.c_str(), aIpv6Address.c_str());
 
-    mResponder->UnregisterHost(aInstanceName,
-        base::BindOnce([=](chromecast::mojom::MdnsResult r) {
-            otbrLog(OTBR_LOG_INFO, "unregister host result: %d", static_cast<int32_t>(r));
-        }));
-    mResponder->RegisterHost(aInstanceName, {aIpv6Address},
-        base::BindOnce([](MdnsMojoPublisher *aThis,
-                          const std::string &aInstanceName,
-                          chromecast::mojom::MdnsResult aResult) {
-            otbrError error = ConvertMdnsResultToOtbrError(aResult);
+    mResponder->UnregisterHost(aInstanceName, base::BindOnce([=](chromecast::mojom::MdnsResult r) {
+                                   otbrLog(OTBR_LOG_INFO, "unregister host result: %d", static_cast<int32_t>(r));
+                               }));
+    mResponder->RegisterHost(
+        aInstanceName, {aIpv6Address},
+        base::BindOnce(
+            [](MdnsMojoPublisher *aThis, const std::string &aInstanceName, chromecast::mojom::MdnsResult aResult) {
+                otbrError error = ConvertMdnsResultToOtbrError(aResult);
 
-            otbrLog(OTBR_LOG_INFO, "register host result: %d", static_cast<int32_t>(aResult));
+                otbrLog(OTBR_LOG_INFO, "register host result: %d", static_cast<int32_t>(aResult));
 
-            // TODO: Actually, we should call the handles after mDNS probing and announcing.
-            // But this is not easy with current mojo mDNS APIs.
-            aThis->mMainloopTaskRunner.Post([=]() {
-                if (error == OTBR_ERROR_NONE)
-                {
-                    aThis->mPublishedHosts.emplace_back(aInstanceName);
-                }
+                // TODO: Actually, we should call the handles after mDNS probing and announcing.
+                // But this is not easy with current mojo mDNS APIs.
+                aThis->mMainloopTaskRunner.Post([=]() {
+                    if (error == OTBR_ERROR_NONE)
+                    {
+                        aThis->mPublishedHosts.emplace_back(aInstanceName);
+                    }
 
-                if (aThis->mHostHandler != nullptr)
-                {
-                    aThis->mHostHandler(aInstanceName.c_str(), error, aThis->mHostHandlerContext);
-                }
-            });
-        }, base::Unretained(this), aInstanceName));
+                    if (aThis->mHostHandler != nullptr)
+                    {
+                        aThis->mHostHandler(aInstanceName.c_str(), error, aThis->mHostHandlerContext);
+                    }
+                });
+            },
+            base::Unretained(this), aInstanceName));
 }
 
 otbrError MdnsMojoPublisher::UnpublishHost(const char *aName)
@@ -385,8 +383,8 @@ otbrError MdnsMojoPublisher::UnpublishHost(const char *aName)
 
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
 
-    mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnpublishHostTask, base::Unretained(this),
-                                                        aName));
+    mMojoTaskRunner->PostTask(FROM_HERE,
+                              base::BindOnce(&MdnsMojoPublisher::UnpublishHostTask, base::Unretained(this), aName));
 
 exit:
     return error;
@@ -396,10 +394,9 @@ void MdnsMojoPublisher::UnpublishHostTask(const std::string &aInstanceName)
 {
     otbrLog(OTBR_LOG_INFO, "unregister host: name = %s", aInstanceName.c_str());
 
-    mResponder->UnregisterHost(aInstanceName,
-        base::BindOnce([=](chromecast::mojom::MdnsResult r) {
-            otbrLog(OTBR_LOG_INFO, "unregister host result: %d", static_cast<int32_t>(r));
-        }));
+    mResponder->UnregisterHost(aInstanceName, base::BindOnce([=](chromecast::mojom::MdnsResult r) {
+                                   otbrLog(OTBR_LOG_INFO, "unregister host result: %d", static_cast<int32_t>(r));
+                               }));
 
     for (auto it = mPublishedHosts.begin(); it != mPublishedHosts.end(); ++it)
     {
@@ -411,38 +408,14 @@ void MdnsMojoPublisher::UnpublishHostTask(const std::string &aInstanceName)
     }
 }
 
-void MdnsMojoPublisher::UpdateFdSet(fd_set & aReadFdSet,
-                                    fd_set & aWriteFdSet,
-                                    fd_set & aErrorFdSet,
-                                    int &    aMaxFd,
-                                    timeval &aTimeout)
+void MdnsMojoPublisher::Update(MainloopContext &aMainloop)
 {
-    otSysMainloopContext mainloop;
-
-    mainloop.mReadFdSet = aReadFdSet;
-    mainloop.mWriteFdSet = aWriteFdSet;
-    mainloop.mErrorFdSet = aErrorFdSet;
-    mainloop.mMaxFd = aMaxFd;
-    mainloop.mTimeout = aTimeout;
-
-    mMainloopTaskRunner.UpdateFdSet(mainloop);
-
-    aReadFdSet = mainloop.mReadFdSet;
-    aWriteFdSet = mainloop.mWriteFdSet;
-    aErrorFdSet = mainloop.mErrorFdSet;
-    aMaxFd = mainloop.mMaxFd;
-    aTimeout = mainloop.mTimeout;
+    mMainloopTaskRunner.Update(aMainloop);
 }
 
-void MdnsMojoPublisher::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void MdnsMojoPublisher::Process(const MainloopContext &aMainloop)
 {
-    otSysMainloopContext mainloop;
-
-    mainloop.mReadFdSet = aReadFdSet;
-    mainloop.mWriteFdSet = aWriteFdSet;
-    mainloop.mErrorFdSet = aErrorFdSet;
-
-    mMainloopTaskRunner.Process(mainloop);
+    mMainloopTaskRunner.Process(aMainloop);
 }
 
 MdnsMojoPublisher::~MdnsMojoPublisher()

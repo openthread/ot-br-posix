@@ -156,34 +156,20 @@ public:
     otbrError UnpublishHost(const char *aName) override;
 
     /**
-     * This method performs the MDNS processing.
+     * This method updates the mainloop context.
      *
-     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
-     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) override;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method processes mainloop events.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p
-     *                                  aReadFdSet and @p aWriteFdSet.
-     * @param[inout]    aTimeout        A reference to the timeout. Update this
-     *                                  value if the MDNS service has pending
-     *                                  process in less than its current
-     *                                  value.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) override;
+    void Process(const MainloopContext &aMainloop) override;
 
     ~MdnsMojoPublisher(void) override;
 
@@ -198,10 +184,8 @@ private:
                             const std::string &             aInstanceName,
                             uint16_t                        aPort,
                             const std::vector<std::string> &aText);
-    void UnpublishServiceTask(const std::string &aName,
-                              const std::string &aInstanceName);
-    void PublishHostTask(const std::string &aInstanceName,
-                         const std::string &aIpv6Address);
+    void UnpublishServiceTask(const std::string &aName, const std::string &aInstanceName);
+    void PublishHostTask(const std::string &aInstanceName, const std::string &aIpv6Address);
     void UnpublishHostTask(const std::string &aInstanceName);
 
     bool VerifyFileAccess(const char *aFile);
@@ -225,7 +209,7 @@ private:
     TaskRunner mMainloopTaskRunner;
 
     std::vector<std::pair<std::string, std::string>> mPublishedServices;
-    std::vector<std::string> mPublishedHosts;
+    std::vector<std::string>                         mPublishedHosts;
 
     StateHandler mStateHandler;
     void *       mContext;
