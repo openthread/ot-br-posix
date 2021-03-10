@@ -62,7 +62,7 @@ void BackboneAgent::Init(void)
     mNdProxyManager.Init();
 #endif
 
-    HandleBackboneRouterState();
+    otBackboneRouterSetEnabled(mNcp.GetInstance(), /* aEnabled */ true);
 }
 
 void BackboneAgent::HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments)
