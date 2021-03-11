@@ -42,6 +42,7 @@
 #include <avahi-common/watch.h>
 
 #include "mdns.hpp"
+#include "common/mainloop.hpp"
 
 /**
  * @addtogroup border-router-mdns
@@ -116,7 +117,7 @@ namespace Mdns {
  * This class implements the AvahiPoll.
  *
  */
-class Poller
+class Poller : public MainloopProcessor
 {
 public:
     /**
@@ -126,26 +127,20 @@ public:
     Poller(void);
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method processes mainloop events.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method returns the AvahiPoll.
@@ -291,30 +286,20 @@ public:
     void Stop(void) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method updates the mainloop context.
      *
-     * @param[in]   aReadFdSet          A reference to read file descriptors.
-     * @param[in]   aWriteFdSet         A reference to write file descriptors.
-     * @param[in]   aErrorFdSet         A reference to error file descriptors.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) override;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method processes mainloop events.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) override;
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     enum
@@ -328,29 +313,55 @@ private:
 
     struct Service
     {
-        char     mName[kMaxSizeOfServiceName];
-        char     mType[kMaxSizeOfServiceType];
-        uint16_t mPort;
+        std::string      mName;
+        std::string      mType;
+        std::string      mHostName;
+        uint16_t         mPort  = 0;
+        AvahiEntryGroup *mGroup = nullptr;
     };
 
     typedef std::vector<Service> Services;
 
+    struct Host
+    {
+        std::string      mHostName;
+        AvahiAddress     mAddress = {};
+        AvahiEntryGroup *mGroup   = nullptr;
+    };
+
+    typedef std::vector<Host> Hosts;
+
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    void        CreateGroup(AvahiClient *aClient);
-    static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
-    void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    Hosts::iterator FindHost(const char *aHostName);
+    otbrError       CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt);
 
-    Services         mServices;
-    AvahiClient *    mClient;
-    AvahiEntryGroup *mGroup;
-    Poller           mPoller;
-    int              mProtocol;
-    const char *     mDomain;
-    State            mState;
-    StateHandler     mStateHandler;
-    void *           mContext;
+    Services::iterator FindService(const char *aName, const char *aType);
+    otbrError          CreateService(AvahiClient &       aClient,
+                                     const char *        aName,
+                                     const char *        aType,
+                                     Services::iterator &aOutServiceIt);
+
+    otbrError        CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
+    static otbrError ResetGroup(AvahiEntryGroup *aGroup);
+    static otbrError FreeGroup(AvahiEntryGroup *aGroup);
+    void             FreeAllGroups(void);
+    static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
+    void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
+
+    std::string MakeFullName(const char *aName);
+
+    AvahiClient *mClient;
+    Hosts        mHosts;
+    Services     mServices;
+    Poller       mPoller;
+    int          mProtocol;
+    const char * mDomain;
+    State        mState;
+    StateHandler mStateHandler;
+    void *       mContext;
 };
 
 } // namespace Mdns

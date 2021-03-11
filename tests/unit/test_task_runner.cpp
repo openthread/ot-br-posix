@@ -38,10 +38,10 @@ TEST_GROUP(TaskRunner){};
 
 TEST(TaskRunner, TestSingleThread)
 {
-    int                  rval;
-    int                  counter = 0;
-    otSysMainloopContext mainloop;
-    otbr::TaskRunner     taskRunner;
+    int                   rval;
+    int                   counter = 0;
+    otbr::MainloopContext mainloop;
+    otbr::TaskRunner      taskRunner;
 
     mainloop.mMaxFd   = -1;
     mainloop.mTimeout = {10, 0};
@@ -59,7 +59,7 @@ TEST(TaskRunner, TestSingleThread)
         });
     });
 
-    taskRunner.UpdateFdSet(mainloop);
+    taskRunner.Update(mainloop);
     rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                   &mainloop.mTimeout);
     CHECK_EQUAL(1, rval);
@@ -82,8 +82,8 @@ TEST(TaskRunner, TestMultipleThreads)
 
     while (counter.load() < 10)
     {
-        int                  rval;
-        otSysMainloopContext mainloop;
+        int                   rval;
+        otbr::MainloopContext mainloop;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = {10, 0};
@@ -92,7 +92,7 @@ TEST(TaskRunner, TestMultipleThreads)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        taskRunner.UpdateFdSet(mainloop);
+        taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
         CHECK_EQUAL(1, rval);
@@ -123,8 +123,8 @@ TEST(TaskRunner, TestPostAndWait)
 
     while (counter.load() < 10)
     {
-        int                  rval;
-        otSysMainloopContext mainloop;
+        int                   rval;
+        otbr::MainloopContext mainloop;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = {10, 0};
@@ -133,7 +133,7 @@ TEST(TaskRunner, TestPostAndWait)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        taskRunner.UpdateFdSet(mainloop);
+        taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
         CHECK_EQUAL(1, rval);

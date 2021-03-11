@@ -46,7 +46,9 @@ namespace BackboneRouter {
 BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
     , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
+#if OTBR_ENABLE_DUA_ROUTING
     , mNdProxyManager(aNcp)
+#endif
 {
 }
 
@@ -54,11 +56,13 @@ void BackboneAgent::Init(void)
 {
     mNcp.On(Ncp::kEventBackboneRouterState, HandleBackboneRouterState, this);
     mNcp.On(Ncp::kEventBackboneRouterDomainPrefixEvent, HandleBackboneRouterDomainPrefixEvent, this);
+
+#if OTBR_ENABLE_DUA_ROUTING
     mNcp.On(Ncp::kEventBackboneRouterNdProxyEvent, HandleBackboneRouterNdProxyEvent, this);
-
     mNdProxyManager.Init();
+#endif
 
-    HandleBackboneRouterState();
+    otBackboneRouterSetEnabled(mNcp.GetInstance(), /* aEnabled */ true);
 }
 
 void BackboneAgent::HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments)
@@ -99,10 +103,12 @@ void BackboneAgent::OnBecomePrimary(void)
 {
     otbrLog(OTBR_LOG_NOTICE, "BackboneAgent: Backbone Router becomes Primary!");
 
+#if OTBR_ENABLE_DUA_ROUTING
     if (mDomainPrefix.IsValid())
     {
         mNdProxyManager.Enable(mDomainPrefix);
     }
+#endif
 }
 
 void BackboneAgent::OnResignPrimary(void)
@@ -110,7 +116,9 @@ void BackboneAgent::OnResignPrimary(void)
     otbrLog(OTBR_LOG_NOTICE, "BackboneAgent: Backbone Router resigns Primary to %s!",
             StateToString(mBackboneRouterState));
 
+#if OTBR_ENABLE_DUA_ROUTING
     mNdProxyManager.Disable();
+#endif
 }
 
 const char *BackboneAgent::StateToString(otBackboneRouterState aState)
@@ -132,18 +140,22 @@ const char *BackboneAgent::StateToString(otBackboneRouterState aState)
 
     return ret;
 }
-void BackboneAgent::UpdateFdSet(fd_set & aReadFdSet,
-                                fd_set & aWriteFdSet,
-                                fd_set & aErrorFdSet,
-                                int &    aMaxFd,
-                                timeval &aTimeout) const
+void BackboneAgent::Update(MainloopContext &aMainloop)
 {
-    mNdProxyManager.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    OTBR_UNUSED_VARIABLE(aMainloop);
+
+#if OTBR_ENABLE_DUA_ROUTING
+    mNdProxyManager.Update(aMainloop);
+#endif
 }
 
-void BackboneAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void BackboneAgent::Process(const MainloopContext &aMainloop)
 {
-    mNdProxyManager.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    OTBR_UNUSED_VARIABLE(aMainloop);
+
+#if OTBR_ENABLE_DUA_ROUTING
+    mNdProxyManager.Process(aMainloop);
+#endif
 }
 
 void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments)
@@ -176,12 +188,16 @@ void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomain
 
     VerifyOrExit(IsPrimary() && aEvent != OT_BACKBONE_ROUTER_DOMAIN_PREFIX_REMOVED);
 
+#if OTBR_ENABLE_DUA_ROUTING
     mNdProxyManager.Disable();
     mNdProxyManager.Enable(mDomainPrefix);
+#endif
+
 exit:
     return;
 }
 
+#if OTBR_ENABLE_DUA_ROUTING
 void BackboneAgent::HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments)
 {
     OT_UNUSED_VARIABLE(aEvent);
@@ -200,6 +216,7 @@ void BackboneAgent::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEven
 {
     mNdProxyManager.HandleBackboneRouterNdProxyEvent(aEvent, aDua);
 }
+#endif
 
 } // namespace BackboneRouter
 } // namespace otbr

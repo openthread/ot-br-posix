@@ -127,7 +127,9 @@ otbrError ControllerOpenThread::Init(void)
 #if OTBR_ENABLE_BACKBONE_ROUTER
     otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
                                             this);
+#if OTBR_ENABLE_DUA_ROUTING
     otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
+#endif
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
@@ -199,7 +201,7 @@ static struct timeval ToTimeVal(const microseconds &aTime)
     return val;
 };
 
-void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
+void ControllerOpenThread::Update(MainloopContext &aMainloop)
 {
     microseconds timeout = microseconds(aMainloop.mTimeout.tv_usec) + seconds(aMainloop.mTimeout.tv_sec);
     auto         now     = steady_clock::now();
@@ -225,7 +227,7 @@ void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
-void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
+void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 {
     auto now = steady_clock::now();
 
@@ -330,6 +332,7 @@ void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(otBackboneRoute
     EventEmitter::Emit(kEventBackboneRouterDomainPrefixEvent, aEvent, aDomainPrefix);
 }
 
+#if OTBR_ENABLE_DUA_ROUTING
 void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(void *                       aContext,
                                                             otBackboneRouterNdProxyEvent aEvent,
                                                             const otIp6Address *         aAddress)
@@ -342,6 +345,7 @@ void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdPr
 {
     EventEmitter::Emit(kEventBackboneRouterNdProxyEvent, aEvent, aAddress);
 }
+#endif
 #endif
 
 Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName)

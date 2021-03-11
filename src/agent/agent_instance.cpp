@@ -59,17 +59,16 @@ exit:
     return error;
 }
 
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
+void AgentInstance::Update(MainloopContext &aMainloop)
 {
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
+    mNcp->Update(aMainloop);
+    mBorderAgent.Update(aMainloop);
 }
 
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
+void AgentInstance::Process(const MainloopContext &aMainloop)
 {
     mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
+    mBorderAgent.Process(aMainloop);
 }
 
 AgentInstance::~AgentInstance(void)
