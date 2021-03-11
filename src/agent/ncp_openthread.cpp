@@ -53,11 +53,6 @@
 #include <ot-legacy-pairing-ext.h>
 #endif
 
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
-using std::chrono::seconds;
-using std::chrono::steady_clock;
-
 namespace otbr {
 namespace Ncp {
 
@@ -190,56 +185,25 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
     mThreadHelper->StateChangedCallback(aFlags);
 }
 
-static struct timeval ToTimeVal(const microseconds &aTime)
-{
-    constexpr int  kUsPerSecond = 1000000;
-    struct timeval val;
-
-    val.tv_sec  = aTime.count() / kUsPerSecond;
-    val.tv_usec = aTime.count() % kUsPerSecond;
-
-    return val;
-};
-
 void ControllerOpenThread::Update(MainloopContext &aMainloop)
 {
-    microseconds timeout = microseconds(aMainloop.mTimeout.tv_usec) + seconds(aMainloop.mTimeout.tv_sec);
-    auto         now     = steady_clock::now();
+    mTaskRunner.Update(aMainloop);
 
     if (otTaskletsArePending(mInstance))
     {
-        timeout = microseconds::zero();
+        aMainloop.mTimeout = ToTimeval(Microseconds::zero());
     }
-    else if (!mTimers.empty())
-    {
-        if (mTimers.begin()->first < now)
-        {
-            timeout = microseconds::zero();
-        }
-        else
-        {
-            timeout = std::min(timeout, duration_cast<microseconds>(mTimers.begin()->first - now));
-        }
-    }
-
-    aMainloop.mTimeout = ToTimeVal(timeout);
 
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
 void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 {
-    auto now = steady_clock::now();
-
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
 
-    while (!mTimers.empty() && mTimers.begin()->first <= now)
-    {
-        mTimers.begin()->second();
-        mTimers.erase(mTimers.begin());
-    }
+    mTaskRunner.Process(aMainloop);
 
     if (getenv("OTBR_NO_AUTO_ATTACH") == nullptr && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
@@ -307,10 +271,9 @@ otbrError ControllerOpenThread::RequestEvent(int aEvent)
     return ret;
 }
 
-void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point aTimePoint,
-                                         const std::function<void(void)> &     aTask)
+void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
 {
-    mTimers.insert({aTimePoint, aTask});
+    mTaskRunner.Post(std::move(aDelay), std::move(aTask));
 }
 
 void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)

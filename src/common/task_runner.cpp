@@ -43,6 +43,7 @@
 namespace otbr {
 
 TaskRunner::TaskRunner(void)
+    : mTaskQueue(DelayedTask::Comparator{})
 {
     int flags;
 
@@ -69,39 +70,68 @@ TaskRunner::~TaskRunner(void)
     }
 }
 
-void TaskRunner::Post(const Task<void> &aTask)
+void TaskRunner::Post(const Task<void> aTask)
 {
-    PushTask(aTask);
+    Post(Milliseconds::zero(), std::move(aTask));
+}
+
+void TaskRunner::Post(Milliseconds aDelay, const Task<void> aTask)
+{
+    PushTask(aDelay, std::move(aTask));
 }
 
 void TaskRunner::Update(MainloopContext &aMainloop)
 {
     FD_SET(mEventFd[kRead], &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(mEventFd[kRead], aMainloop.mMaxFd);
+
+    if (!mTaskQueue.empty())
+    {
+        auto  now     = Clock::now();
+        auto &task    = mTaskQueue.top();
+        auto  delay   = std::chrono::duration_cast<Microseconds>(task.GetTimeExecute() - now);
+        auto  timeout = FromTimeval<Microseconds>(aMainloop.mTimeout);
+
+        if (task.GetTimeExecute() < now)
+        {
+            delay = Microseconds::zero();
+        }
+
+        if (delay <= timeout)
+        {
+            aMainloop.mTimeout.tv_sec  = delay.count() / 1000000;
+            aMainloop.mTimeout.tv_usec = delay.count() % 1000000;
+        }
+    }
 }
 
 void TaskRunner::Process(const MainloopContext &aMainloop)
 {
-    if (FD_ISSET(mEventFd[kRead], &aMainloop.mReadFdSet))
+    OTBR_UNUSED_VARIABLE(aMainloop);
+
+    ssize_t rval;
+
+    // Read any data in the pipe.
+    do
     {
         uint8_t n;
 
-        // Read any data in the pipe.
-        while (read(mEventFd[kRead], &n, sizeof(n)) == sizeof(n))
-        {
-        }
+        rval = read(mEventFd[kRead], &n, sizeof(n));
+    } while (rval > 0 || (rval == -1 && errno == EINTR));
 
-        PopTasks();
-    }
+    // Critical error happens, simply die.
+    VerifyOrDie(errno == EAGAIN || errno == EWOULDBLOCK, strerror(errno));
+
+    PopTasks();
 }
 
-void TaskRunner::PushTask(const Task<void> &aTask)
+void TaskRunner::PushTask(Milliseconds aDelay, const Task<void> aTask)
 {
     ssize_t                     rval;
     const uint8_t               kOne = 1;
     std::lock_guard<std::mutex> _(mTaskQueueMutex);
 
-    mTaskQueue.emplace(aTask);
+    mTaskQueue.emplace(aDelay, std::move(aTask));
     do
     {
         rval = write(mEventFd[kWrite], &kOne, sizeof(kOne));
@@ -130,9 +160,9 @@ void TaskRunner::PopTasks(void)
         {
             std::lock_guard<std::mutex> _(mTaskQueueMutex);
 
-            if (!mTaskQueue.empty())
+            if (!mTaskQueue.empty() && mTaskQueue.top().GetTimeExecute() <= Clock::now())
             {
-                task = std::move(mTaskQueue.front());
+                task = std::move(mTaskQueue.top().mTask);
                 mTaskQueue.pop();
             }
             else

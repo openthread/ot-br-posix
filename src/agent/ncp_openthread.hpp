@@ -42,8 +42,9 @@
 #include <openthread/instance.h>
 #include <openthread/openthread-system.h>
 
-#include "ncp.hpp"
+#include "agent/ncp.hpp"
 #include "agent/thread_helper.hpp"
+#include "common/task_runner.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -119,11 +120,11 @@ public:
     /**
      * This method posts a task to the timer
      *
-     * @param[in]   aTimePoint  The timepoint to trigger the task.
-     * @param[in]   aTask       The task function.
+     * @param[in]   aDelay  The delay in milliseconds before executing the task.
+     * @param[in]   aTask   The task function.
      *
      */
-    void PostTimerTask(std::chrono::steady_clock::time_point aTimePoint, const std::function<void(void)> &aTask);
+    void PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask);
 
     /**
      * This method registers a reset handler.
@@ -157,10 +158,10 @@ private:
 
     otInstance *mInstance;
 
-    otPlatformConfig                                                                mConfig;
-    std::unique_ptr<otbr::agent::ThreadHelper>                                      mThreadHelper;
-    std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
-    std::vector<std::function<void(void)>>                                          mResetHandlers;
+    otPlatformConfig                           mConfig;
+    std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
+    std::vector<std::function<void(void)>>     mResetHandlers;
+    TaskRunner                                 mTaskRunner;
 };
 
 } // namespace Ncp
