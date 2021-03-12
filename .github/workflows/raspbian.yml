@@ -53,5 +53,6 @@ jobs:
       run:
         sudo rm -rf $(which cmake)
         tests/scripts/bootstrap.sh
+        cmake --version
     - name: Build
       run: tests/scripts/check-raspbian
