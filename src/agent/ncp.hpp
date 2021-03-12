@@ -39,7 +39,7 @@
 #include <netinet/in.h>
 #include <stddef.h>
 
-#include "common/mainloop.h"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "utils/event_emitter.hpp"
 
@@ -80,7 +80,7 @@ using PowerMap = std::map<std::string, std::vector<int8_t>>;
  * This interface defines NCP Controller functionality.
  *
  */
-class Controller : public EventEmitter
+class Controller : public EventEmitter, public MainloopProcessor
 {
 public:
     /**
@@ -91,22 +91,6 @@ public:
      *
      */
     virtual otbrError Init(void) = 0;
-
-    /**
-     * This method updates the fd_set to poll.
-     *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
-     *
-     */
-    virtual void UpdateFdSet(otSysMainloopContext &aMainloop) = 0;
-
-    /**
-     * This method performs the Thread processing.
-     *
-     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
-     *
-     */
-    virtual void Process(const otSysMainloopContext &aMainloop) = 0;
 
     /**
      * This method request the event.
@@ -139,7 +123,7 @@ public:
      */
     static void Destroy(Controller *aController) { delete aController; }
 
-    virtual ~Controller(void) {}
+    virtual ~Controller(void) = default;
 };
 
 } // namespace Ncp

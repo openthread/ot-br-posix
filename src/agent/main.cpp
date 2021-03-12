@@ -50,6 +50,7 @@
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
@@ -130,8 +131,8 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
     while (!sShouldTerminate)
     {
-        otSysMainloopContext mainloop;
-        int                  rval;
+        otbr::MainloopContext mainloop;
+        int                   rval;
 
         mainloop.mMaxFd   = -1;
         mainloop.mTimeout = kPollTimeout;
@@ -140,15 +141,14 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        aInstance.UpdateFdSet(mainloop);
+        aInstance.Update(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER
-        dbusAgent->UpdateFdSet(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet, mainloop.mMaxFd,
-                               mainloop.mTimeout);
+        dbusAgent->Update(mainloop);
 #endif
 
 #if OTBR_ENABLE_REST_SERVER
-        restServer->UpdateFdSet(mainloop);
+        restServer->Update(mainloop);
 #endif
 
 #if OTBR_ENABLE_OPENWRT
@@ -173,7 +173,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             aInstance.Process(mainloop);
 
 #if OTBR_ENABLE_DBUS_SERVER
-            dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
+            dbusAgent->Process(mainloop);
 #endif
         }
         else if (errno != EINTR)

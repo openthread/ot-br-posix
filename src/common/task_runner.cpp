@@ -74,13 +74,13 @@ void TaskRunner::Post(const Task<void> &aTask)
     PushTask(aTask);
 }
 
-void TaskRunner::UpdateFdSet(otSysMainloopContext &aMainloop)
+void TaskRunner::Update(MainloopContext &aMainloop)
 {
     FD_SET(mEventFd[kRead], &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(mEventFd[kRead], aMainloop.mMaxFd);
 }
 
-void TaskRunner::Process(const otSysMainloopContext &aMainloop)
+void TaskRunner::Process(const MainloopContext &aMainloop)
 {
     if (FD_ISSET(mEventFd[kRead], &aMainloop.mReadFdSet))
     {

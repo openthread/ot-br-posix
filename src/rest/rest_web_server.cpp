@@ -65,7 +65,7 @@ void RestWebServer::Init(void)
     InitializeListenFd();
 }
 
-void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
+void RestWebServer::Update(MainloopContext &aMainloop)
 {
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, mListenFd);
@@ -73,29 +73,26 @@ void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         Connection *connection = it->second.get();
-        connection->UpdateFdSet(aMainloop);
+        connection->Update(aMainloop);
     }
 
     return;
 }
 
-otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
+void RestWebServer::Process(const MainloopContext &aMainloop)
 {
-    otbrError   error = OTBR_ERROR_NONE;
     Connection *connection;
 
-    error = UpdateConnections(aMainloop.mReadFdSet);
+    UpdateConnections(aMainloop.mReadFdSet);
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         connection = it->second.get();
-        connection->Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet);
+        connection->Process(aMainloop);
     }
-
-    return error;
 }
 
-otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
+void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)
 {
     otbrError error   = OTBR_ERROR_NONE;
     auto      eraseIt = mConnectionSet.begin();
@@ -121,7 +118,10 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
         error = Accept(mListenFd);
     }
 
-    return error;
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLog(OTBR_LOG_WARNING, "failed to accept new connection: %s", otbrErrorString(error));
+    }
 }
 
 void RestWebServer::InitializeListenFd(void)

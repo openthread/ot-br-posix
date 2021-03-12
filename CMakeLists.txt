@@ -34,6 +34,7 @@ add_library(otbr-config INTERFACE)
 
 option(OTBR_SRP_ADVERTISING_PROXY   "Enable Advertising Proxy" OFF)
 option(OTBR_BACKBONE_ROUTER         "Enable Backbone Router" OFF)
+option(OTBR_DUA_ROUTING             "Enable Backbone Router DUA Routing" OFF)
 option(OTBR_DBUS                    "Enable DBus support" OFF)
 option(OTBR_OPENWRT                 "Enable OpenWrt support" OFF)
 option(OTBR_UNSECURE_JOIN           "Enable unsecure joining" OFF)
@@ -104,10 +105,12 @@ if (OTBR_BACKBONE_ROUTER)
     target_compile_definitions(otbr-config INTERFACE
             OTBR_ENABLE_BACKBONE_ROUTER=1
     )
-    set(OT_BACKBONE_ROUTER_DUA_NDPROXYING ON CACHE BOOL "Enable Backbone Router DUA ND Proxying in OpenThread" FORCE)
-    set(OT_THREAD_VERSION 1.2 CACHE STRING "Backbone Router requires Thread 1.2 or higher" FORCE)
-    set(OT_BACKBONE_ROUTER ON CACHE BOOL "Enable Backbone Router feature in OpenThread" FORCE)
-    set(OT_SERVICE ON CACHE BOOL "Backbone Router requires Thread network service" FORCE)
+endif()
+
+if (OTBR_DUA_ROUTING)
+    target_compile_definitions(otbr-config INTERFACE
+            OTBR_ENABLE_DUA_ROUTING=1
+    )
 endif()
 
 if(OTBR_DBUS)

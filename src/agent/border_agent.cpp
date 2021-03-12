@@ -188,30 +188,26 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     }
 }
 
-void BorderAgent::UpdateFdSet(fd_set & aReadFdSet,
-                              fd_set & aWriteFdSet,
-                              fd_set & aErrorFdSet,
-                              int &    aMaxFd,
-                              timeval &aTimeout)
+void BorderAgent::Update(MainloopContext &aMainloop)
 {
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    mBackboneAgent.Update(aMainloop);
 #endif
 
     if (mPublisher != nullptr)
     {
-        mPublisher->UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+        mPublisher->Update(aMainloop);
     }
 }
 
-void BorderAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void BorderAgent::Process(const MainloopContext &aMainloop)
 {
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    mBackboneAgent.Process(aMainloop);
 #endif
     if (mPublisher != nullptr)
     {
-        mPublisher->Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+        mPublisher->Process(aMainloop);
     }
 }
 
