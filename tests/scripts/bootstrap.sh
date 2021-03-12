@@ -67,7 +67,8 @@ install_common_dependencies()
 
 install_openthread_binraries()
 {
-    pip3 install -U cmake
+    pip3 install scikit-build
+    pip3 install cmake==3.10.3
     cd third_party/openthread/repo
     mkdir -p build && cd build
 
@@ -122,7 +123,8 @@ case "$(uname)" in
         fi
 
         if [ "$BUILD_TARGET" == scan-build ]; then
-            pip3 install -U cmake
+            pip3 install scikit-build
+            pip3 install cmake==3.10.3
             sudo apt-get install --no-install-recommends -y clang clang-tools
         fi
 

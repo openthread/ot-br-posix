@@ -50,6 +50,8 @@ jobs:
       with:
         submodules: recursive
     - name: Bootstrap
-      run: tests/scripts/bootstrap.sh
+      run:
+        sudo rm -rf $(which cmake)
+        tests/scripts/bootstrap.sh
     - name: Build
       run: tests/scripts/check-raspbian
