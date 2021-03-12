@@ -32,6 +32,7 @@
 
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
+. script/_border_routing
 . script/_otbr
 . script/_ipforward
 . script/_nat64
@@ -49,6 +50,7 @@ main()
     setup_swapfile
     disable_services
     otbr_uninstall
+    border_routing_uninstall
     network_manager_uninstall
     dhcpv6_pd_uninstall
     nat64_uninstall
@@ -60,6 +62,7 @@ main()
     dns64_install
     network_manager_install
     dhcpv6_pd_install
+    border_routing_install
     otbr_install
     . "$AFTER_HOOK"
 }

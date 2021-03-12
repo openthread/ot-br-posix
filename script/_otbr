@@ -67,19 +67,29 @@ otbr_install()
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
         "-DOTBR_REST=ON"
+        "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+        "-DOTBR_MDNS=mDNSResponder"
+        "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "${otbr_options[@]}"
     )
+
+    if with BORDER_ROUTING; then
+        otbr_options+=(
+            "-DOTBR_BORDER_ROUTING=ON"
+        )
+    fi
+
+    if with BACKBONE_ROUTER; then
+        otbr_options+=(
+            "-DOTBR_BACKBONE_ROUTER=ON"
+        )
+    fi
 
     if [[ ${REFERENCE_DEVICE} == "1" ]]; then
         otbr_options+=(
             "-DOT_REFERENCE_DEVICE=ON"
             "-DOT_DHCP6_CLIENT=ON"
             "-DOT_DHCP6_SERVER=ON"
-        )
-    fi
-    if with BACKBONE_ROUTER; then
-        otbr_options+=(
-            "-DOTBR_BACKBONE_ROUTER=ON"
         )
     fi
 

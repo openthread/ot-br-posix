@@ -38,6 +38,12 @@ ipforward_install()
 net.ipv6.conf.all.forwarding = 1
 net.ipv4.ip_forward = 1
 EOF
+
+    # /proc/sys/net/ipv6/conf/* files are read-only in docker
+    # when building the image.
+    if without DOCKER; then
+        ipforward_enable
+    fi
 }
 
 ipforward_uninstall()

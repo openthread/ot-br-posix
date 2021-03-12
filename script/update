@@ -33,6 +33,7 @@
 
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
+. script/_border_routing
 . script/_otbr
 . script/_ipforward
 . script/_nat64
@@ -49,7 +50,9 @@ main()
     nat64_uninstall
     dns64_uninstall
     ipforward_uninstall
+    border_routing_uninstall
 
+    border_routing_install
     ipforward_install
     nat64_install
     dns64_install

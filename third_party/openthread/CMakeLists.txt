@@ -28,6 +28,7 @@
 
 set(OT_BORDER_AGENT ON CACHE BOOL "enable border agent" FORCE)
 set(OT_BORDER_ROUTER ON CACHE BOOL "enable border router feature" FORCE)
+set(OT_BORDER_ROUTING ${OTBR_BORDER_ROUTING} CACHE BOOL "enable border routing feature" FORCE)
 set(OT_BUILD_EXECUTABLES OFF CACHE BOOL "disable building executables" FORCE)
 set(OT_BUILTIN_MBEDTLS_MANAGEMENT OFF CACHE BOOL "diable mbedTLS management" FORCE)
 set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner" FORCE)

@@ -89,7 +89,8 @@ elseif(NOT OTBR_OPENWRT)
         RENAME otbr-agent)
 endif()
 
-install(FILES otbr-agent.default
+configure_file(otbr-agent.default.in otbr-agent.default)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.default
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/default
     RENAME otbr-agent
 )
