@@ -60,11 +60,11 @@ AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
 {
     if (aTimeout)
     {
-        mTimeout = otbr::GetNow() + otbr::GetTimestamp(*aTimeout);
+        mTimeout = otbr::Clock::now() + otbr::FromTimeval<otbr::Microseconds>(*aTimeout);
     }
     else
     {
-        mTimeout = 0;
+        mTimeout = otbr::Timepoint::min();
     }
 }
 
@@ -150,11 +150,11 @@ void Poller::TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout)
 {
     if (aTimeout == nullptr)
     {
-        aTimer->mTimeout = 0;
+        aTimer->mTimeout = Timepoint::min();
     }
     else
     {
-        aTimer->mTimeout = otbr::GetNow() + otbr::GetTimestamp(*aTimeout);
+        aTimer->mTimeout = Clock::now() + FromTimeval<Microseconds>(*aTimeout);
     }
 }
 
@@ -178,6 +178,8 @@ void Poller::TimeoutFree(AvahiTimeout &aTimer)
 
 void Poller::Update(MainloopContext &aMainloop)
 {
+    Timepoint now = Clock::now();
+
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
         int             fd     = (*it)->mFd;
@@ -208,42 +210,27 @@ void Poller::Update(MainloopContext &aMainloop)
         (*it)->mHappened = 0;
     }
 
-    unsigned long now = GetNow();
-
     for (Timers::iterator it = mTimers.begin(); it != mTimers.end(); ++it)
     {
-        unsigned long timeout = (*it)->mTimeout;
+        Timepoint timeout = (*it)->mTimeout;
 
-        if (timeout == 0)
+        if (timeout == Timepoint::min())
         {
             continue;
         }
 
-        if (static_cast<long>(timeout - now) <= 0)
+        if (timeout <= now)
         {
-            aMainloop.mTimeout.tv_usec = 0;
-            aMainloop.mTimeout.tv_sec  = 0;
+            aMainloop.mTimeout = ToTimeval(Microseconds::zero());
             break;
         }
         else
         {
-            time_t      sec;
-            suseconds_t usec;
+            auto delay = std::chrono::duration_cast<Microseconds>(timeout - now);
 
-            timeout -= now;
-            sec  = static_cast<time_t>(timeout / 1000);
-            usec = static_cast<suseconds_t>((timeout % 1000) * 1000);
-
-            if (sec < aMainloop.mTimeout.tv_sec)
+            if (delay < FromTimeval<Microseconds>(aMainloop.mTimeout))
             {
-                aMainloop.mTimeout.tv_sec = sec;
-            }
-            else if (sec == aMainloop.mTimeout.tv_sec)
-            {
-                if (usec < aMainloop.mTimeout.tv_usec)
-                {
-                    aMainloop.mTimeout.tv_usec = usec;
-                }
+                aMainloop.mTimeout = ToTimeval(delay);
             }
         }
     }
@@ -251,7 +238,8 @@ void Poller::Update(MainloopContext &aMainloop)
 
 void Poller::Process(const MainloopContext &aMainloop)
 {
-    unsigned long now = GetNow();
+    Timepoint                   now = Clock::now();
+    std::vector<AvahiTimeout *> expired;
 
     for (Watches::iterator it = mWatches.begin(); it != mWatches.end(); ++it)
     {
@@ -282,16 +270,14 @@ void Poller::Process(const MainloopContext &aMainloop)
         }
     }
 
-    std::vector<AvahiTimeout *> expired;
-
     for (Timers::iterator it = mTimers.begin(); it != mTimers.end(); ++it)
     {
-        if ((*it)->mTimeout == 0)
+        if ((*it)->mTimeout == Timepoint::min())
         {
             continue;
         }
 
-        if (static_cast<long>((*it)->mTimeout - now) <= 0)
+        if ((*it)->mTimeout <= now)
         {
             expired.push_back(*it);
         }
@@ -300,6 +286,7 @@ void Poller::Process(const MainloopContext &aMainloop)
     for (std::vector<AvahiTimeout *>::iterator it = expired.begin(); it != expired.end(); ++it)
     {
         AvahiTimeout *avahiTimeout = *it;
+
         avahiTimeout->mCallback(avahiTimeout, avahiTimeout->mContext);
     }
 }

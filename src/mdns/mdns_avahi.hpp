@@ -43,6 +43,7 @@
 
 #include "mdns.hpp"
 #include "common/mainloop.hpp"
+#include "common/time.hpp"
 
 /**
  * @addtogroup border-router-mdns
@@ -92,7 +93,7 @@ struct AvahiWatch
  */
 struct AvahiTimeout
 {
-    unsigned long        mTimeout;  ///< Absolute time when this timer timeout.
+    otbr::Timepoint      mTimeout;  ///< Absolute time when this timer timeout.
     AvahiTimeoutCallback mCallback; ///< The function to be called when timeout.
     void *               mContext;  ///< The pointer to application-specific context.
     void *               mPoller;   ///< The poller created this timer.
