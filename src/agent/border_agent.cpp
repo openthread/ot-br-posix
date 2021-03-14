@@ -61,7 +61,7 @@ namespace otbr {
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 
-static const char kBorderAgentServiceType[] = "_meshcop._udp."; ///< Border agent service type of mDNS
+static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
 
 /**
  * Locators
@@ -119,7 +119,7 @@ void BorderAgent::Init(void)
     mBackboneAgent.Init();
 #endif
 
-    if (IsPskcInitialized() && IsThreadStarted())
+    if (IsThreadStarted())
     {
         Start();
     }
@@ -133,7 +133,7 @@ otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(IsThreadStarted() && IsPskcInitialized(), errno = EAGAIN, error = OTBR_ERROR_ERRNO);
+    VerifyOrExit(IsThreadStarted(), errno = EAGAIN, error = OTBR_ERROR_ERRNO);
 
     // In case we didn't receive Thread down event.
     Stop();
@@ -142,7 +142,7 @@ otbrError BorderAgent::Start(void)
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Start();
 #endif
-    StartPublishService();
+    UpdateMeshCopService();
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 
 exit:
@@ -152,8 +152,10 @@ exit:
 
 void BorderAgent::Stop(void)
 {
+    otbrLog(OTBR_LOG_INFO, "stop Thread Border Agent");
+
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    StopPublishService();
+    mPublisher->Stop();
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Stop();
 #endif
@@ -181,7 +183,7 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     switch (aState)
     {
     case Mdns::Publisher::State::kReady:
-        PublishService();
+        UpdateMeshCopService();
         break;
     default:
         otbrLog(OTBR_LOG_WARNING, "MDNS service not available!");
@@ -226,7 +228,7 @@ static const char *ThreadVersionToString(uint16_t aThreadVersion)
     }
 }
 
-void BorderAgent::PublishService(void)
+void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
     uint32_t                 stateUint32;
@@ -235,6 +237,8 @@ void BorderAgent::PublishService(void)
     const otExtAddress *     extAddr     = otLinkGetExtendedAddress(instance);
     const char *             networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
+
+    otbrLog(OTBR_LOG_INFO, "publish meshcop service %s.%s.local.", networkName, kBorderAgentServiceType);
 
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
@@ -304,48 +308,59 @@ void BorderAgent::PublishService(void)
                                txtList);
 }
 
-void BorderAgent::StartPublishService(void)
+void BorderAgent::UnpublishMeshCopService(void)
 {
-    assert(mPublisher != nullptr && IsThreadStarted() && IsPskcInitialized());
+    assert(IsThreadStarted());
+    VerifyOrExit(!mNetworkName.empty());
 
-    if (mPublisher->IsStarted())
-    {
-        PublishService();
-    }
-    else
-    {
-        mPublisher->Start();
-    }
+    otbrLog(OTBR_LOG_INFO, "unpublish meshcop service %s.%s.local.", mNetworkName.c_str(), kBorderAgentServiceType);
 
-    otbrLog(OTBR_LOG_INFO, "Start publishing service");
-}
-
-void BorderAgent::StopPublishService(void)
-{
-    VerifyOrExit(mPublisher != nullptr);
-
-    if (mPublisher->IsStarted())
-    {
-        mPublisher->Stop();
-    }
+    mPublisher->UnpublishService(mNetworkName.c_str(), kBorderAgentServiceType);
 
 exit:
-    otbrLog(OTBR_LOG_INFO, "Stop publishing service");
+    return;
+}
+
+void BorderAgent::UpdateMeshCopService(void)
+{
+    assert(IsThreadStarted());
+
+    const char *networkName = otThreadGetNetworkName(mNcp.GetInstance());
+
+    VerifyOrExit(mPublisher->IsStarted(), mPublisher->Start());
+    VerifyOrExit(IsPskcInitialized(), UnpublishMeshCopService());
+
+    // In case the Thread network name changes, we need to unpublish
+    // current meshcop service.
+    //
+    // TODO: don't use Thread network name as service instance name.
+    // The network name is a TXT entry of the `_meshcop._udp` service
+    // and we should only update the mDNS service entry when network name
+    // changes but not republish a new service instance.
+    if (mNetworkName != networkName)
+    {
+        UnpublishMeshCopService();
+    }
+
+    PublishMeshCopService();
+    mNetworkName = networkName;
+
+exit:
+    return;
 }
 
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
     VerifyOrExit(mPublisher != nullptr);
-    VerifyOrExit((aFlags & OT_CHANGED_THREAD_ROLE) || (aFlags & OT_CHANGED_THREAD_EXT_PANID) ||
-                 (aFlags & OT_CHANGED_THREAD_NETWORK_NAME) || (aFlags & OT_CHANGED_ACTIVE_DATASET) ||
-                 (aFlags & OT_CHANGED_THREAD_PARTITION_ID) || (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE) ||
-                 (aFlags & OT_CHANGED_PSKC));
+    VerifyOrExit(aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
+                           OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_THREAD_PARTITION_ID |
+                           OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_PSKC));
 
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         otbrLog(OTBR_LOG_INFO, "Thread is %s", (IsThreadStarted() ? "up" : "down"));
 
-        if (IsPskcInitialized() && IsThreadStarted())
+        if (IsThreadStarted())
         {
             Start();
         }
@@ -354,9 +369,9 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
             Stop();
         }
     }
-    else if (IsPskcInitialized() && IsThreadStarted())
+    else if (IsThreadStarted())
     {
-        StartPublishService();
+        UpdateMeshCopService();
     }
 
 exit:

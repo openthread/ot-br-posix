@@ -105,6 +105,7 @@ private:
         kConnectionModePskc     = 1,
         kConnectionModePskd     = 2,
         kConnectionModeVendor   = 3,
+        kConnectionModeX509     = 4,
     };
 
     enum : uint8_t
@@ -144,9 +145,9 @@ private:
     void        Stop(void);
     static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState);
     void        HandleMdnsState(Mdns::Publisher::State aState);
-    void        PublishService(void);
-    void        StartPublishService(void);
-    void        StopPublishService(void);
+    void        PublishMeshCopService(void);
+    void        UnpublishMeshCopService(void);
+    void        UpdateMeshCopService(void);
 
     void HandleThreadStateChanged(otChangedFlags aFlags);
 
@@ -155,6 +156,7 @@ private:
 
     otbr::Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher *                mPublisher;
+    std::string                      mNetworkName;
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;
