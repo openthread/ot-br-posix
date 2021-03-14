@@ -58,6 +58,24 @@ echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
 apt-get update
 apt-get install -y --no-install-recommends git
 su -m -c 'script/bootstrap' pi
+
+# Repackage CMake with C/CXX option "-D_FILE_OFFSET_BITS=64".
+# This is a workaround for https://github.com/openthread/ot-br-posix/issues/728.
+# For more backgrounds, see https://gitlab.kitware.com/cmake/cmake/-/issues/20568.
+#
+# FIXME: Remove the workaround when QEMU or CMake fixes the issue.
+#
+(cd /tmp &&
+ wget "https://cmake.org/files/v3.16/cmake-3.16.4.tar.gz" &&
+ tar -xvzf cmake-3.16.4.tar.gz &&
+ cd cmake-3.16.4 &&
+ export CFLAGS="-D_FILE_OFFSET_BITS=64" &&
+ export CXXFLAGS="-D_FILE_OFFSET_BITS=64" &&
+ ./bootstrap --prefix=/usr --parallel=4 -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL=OFF
+ make -j4
+ sudo make install
+ cmake --version)
+
 su -m -c 'NETWORK_MANAGER=0 script/setup' pi
 EOF
 
