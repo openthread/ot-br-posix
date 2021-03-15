@@ -36,12 +36,14 @@
 
 #include <openthread-br/config.h>
 
+#include <chrono>
 #include <functional>
 #include <future>
 #include <mutex>
 #include <queue>
 
 #include "common/mainloop.hpp"
+#include "common/time.hpp"
 
 namespace otbr {
 
@@ -72,7 +74,7 @@ public:
     ~TaskRunner(void) override;
 
     /**
-     * This method posts a task to the task runner.
+     * This method posts a task to the task runner and returns immediately.
      *
      * Tasks are executed sequentially and follow the First-Come-First-Serve rule.
      * It is safe to call this method in different threads concurrently.
@@ -80,7 +82,18 @@ public:
      * @param[in]  aTask  The task to be executed.
      *
      */
-    void Post(const Task<void> &aTask);
+    void Post(const Task<void> aTask);
+
+    /**
+     * This method posts a task to the task runner and returns immediately.
+     *
+     * The task will be executed on the mainloop after `aDelay` milliseconds from now.
+     *
+     * @param[in]  aDelay  The delay before executing the task (in milliseconds).
+     * @param[in]  aTask   The task to be executed.
+     *
+     */
+    void Post(Milliseconds aDelay, const Task<void> aTask);
 
     /**
      * This method posts a task and waits for the completion of the task.
@@ -124,14 +137,43 @@ private:
         kWrite = 1,
     };
 
-    void PushTask(const Task<void> &aTask);
+    struct DelayedTask
+    {
+        friend class Comparator;
+
+        struct Comparator
+        {
+            bool operator()(const DelayedTask &aLhs, const DelayedTask &aRhs) const { return aRhs < aLhs; }
+        };
+
+        DelayedTask(Milliseconds aDelay, Task<void> aTask)
+            : mTimeCreated(Clock::now())
+            , mDelay(aDelay)
+            , mTask(std::move(aTask))
+        {
+        }
+
+        bool operator<(const DelayedTask &aOther) const
+        {
+            return GetTimeExecute() <= aOther.GetTimeExecute() ||
+                   (GetTimeExecute() == aOther.GetTimeExecute() && mTimeCreated < aOther.mTimeCreated);
+        }
+
+        Timepoint GetTimeExecute(void) const { return mTimeCreated + mDelay; }
+
+        Timepoint    mTimeCreated;
+        Milliseconds mDelay;
+        Task<void>   mTask;
+    };
+
+    void PushTask(Milliseconds aDelay, const Task<void> aTask);
     void PopTasks(void);
 
     // The event fds which are used to wakeup the mainloop
     // when there are pending tasks in the task queue.
     int mEventFd[2];
 
-    std::queue<Task<void>> mTaskQueue;
+    std::priority_queue<DelayedTask, std::vector<DelayedTask>, DelayedTask::Comparator> mTaskQueue;
 
     // The mutex which protects the `mTaskQueue` from being
     // simultaneously accessed by multiple threads.
