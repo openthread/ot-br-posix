@@ -28,7 +28,6 @@
 #
 
 readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
-readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
 readonly REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
 
@@ -93,11 +92,7 @@ otbr_install()
         )
     fi
 
-    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
-        && cd "${OTBR_TOP_BUILDDIR}" \
-        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
-        && ninja \
-        && sudo ninja install)
+    OTBR_CMAKE_NINJA_INSTALL=ON ./script/cmake-build "${otbr_options[@]}"
 
     if have systemctl; then
         sudo systemctl reload dbus
