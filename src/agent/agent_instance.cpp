@@ -40,7 +40,7 @@
 
 namespace otbr {
 
-AgentInstance::AgentInstance(otbr::Ncp::ControllerOpenThread &aNcp)
+AgentInstance::AgentInstance(Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
     , mBorderAgent(aNcp)
 {

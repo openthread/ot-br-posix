@@ -61,7 +61,7 @@ public:
      * @param[in]   aNcp  A reference to the NCP controller.
      *
      */
-    AgentInstance(otbr::Ncp::ControllerOpenThread &aNcp);
+    AgentInstance(Ncp::ControllerOpenThread &aNcp);
 
     /**
      * This method initialize the agent.

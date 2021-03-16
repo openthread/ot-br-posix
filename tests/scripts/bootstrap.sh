@@ -62,7 +62,8 @@ install_common_dependencies()
         libavahi-client-dev \
         libreadline-dev \
         libncurses-dev \
-        libjsoncpp-dev
+        libjsoncpp-dev \
+        coreutils
 }
 
 install_openthread_binraries()

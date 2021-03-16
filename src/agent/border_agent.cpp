@@ -45,9 +45,11 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
-#include "agent/border_agent.hpp"
 #include "agent/ncp_openthread.hpp"
 #include "agent/uris.hpp"
+#if OTBR_ENABLE_BACKBONE_ROUTER
+#include "backbone_router/backbone_agent.hpp"
+#endif
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -86,11 +88,11 @@ uint32_t BorderAgent::StateBitmap::ToUint32(void) const
 {
     uint32_t bitmap = 0;
 
-    bitmap |= mConnectionMode & (0x07 << 0);
-    bitmap |= mThreadIfStatus & (0x03 << 3);
-    bitmap |= mAvailability & (0x03 << 5);
-    bitmap |= mBbrIsActive & (0x01 << 7);
-    bitmap |= mBbrIsPrimary & (0x01 << 8);
+    bitmap |= mConnectionMode << 0;
+    bitmap |= mThreadIfStatus << 3;
+    bitmap |= mAvailability << 5;
+    bitmap |= mBbrIsActive << 7;
+    bitmap |= mBbrIsPrimary << 8;
 
     return bitmap;
 }
@@ -294,11 +296,11 @@ void BorderAgent::PublishMeshCopService(void)
     if (state.mBbrIsActive)
     {
         otBackboneRouterConfig bbrConfig;
-        uint16_t               bbrPort = htobe16(BackboneAgent::kBackboneUdpPort);
+        uint16_t               bbrPort = htobe16(BackboneRouter::BackboneAgent::kBackboneUdpPort);
 
         otBackboneRouterGetConfig(instance, &bbrConfig);
         txtList.emplace_back("sq", &bbrConfig.mSequenceNumber, sizeof(bbrConfig.mSequenceNumber));
-        txtList.emplace_back("bb", &bbrPort, sizeof(bbrPort));
+        txtList.emplace_back("bb", reinterpret_cast<const uint8_t *>(&bbrPort), sizeof(bbrPort));
     }
 
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
