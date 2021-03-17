@@ -89,7 +89,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogWarnWeb("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -155,7 +155,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogWarnWeb("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -195,7 +195,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogWarnWeb("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -232,7 +232,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogWarnWeb("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -375,7 +375,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogWarnWeb("Wpan service error: %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -414,7 +414,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
+        otbrLogWarnWeb("Error is %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -505,7 +505,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLog(OTBR_LOG_ERR, "error: %d", ret);
+        otbrLogWarnWeb("error: %d", ret);
     }
     response = jsonWriter.write(root);
 

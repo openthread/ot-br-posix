@@ -124,7 +124,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);
     restServer->Init();
 #endif
-    otbrLog(OTBR_LOG_INFO, "Border router agent started.");
+    otbrLogInfoAgent("Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
 
@@ -181,7 +181,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             sThreadMutex.lock();
 #endif
             error = OTBR_ERROR_ERRNO;
-            otbrLog(OTBR_LOG_ERR, "select() failed: %s", strerror(errno));
+            otbrLogCritAgent("select() failed: %s", strerror(errno));
             break;
         }
     }
@@ -207,19 +207,19 @@ static void PrintRadioVersion(otInstance *aInstance)
 
 static void OnAllocateFailed(void)
 {
-    otbrLog(OTBR_LOG_CRIT, "Allocate failure, exiting...");
+    otbrLogCritAgent("Allocate failure, exiting...");
     exit(1);
 }
 
 static int realmain(int argc, char *argv[])
 {
-    int         logLevel = OTBR_LOG_INFO;
-    int         opt;
-    int         ret                   = EXIT_SUCCESS;
-    const char *interfaceName         = kDefaultInterfaceName;
-    const char *backboneInterfaceName = "";
-    bool        verbose               = false;
-    bool        printRadioVersion     = false;
+    otbrLogLevel logLevel = OTBR_LOG_LEVEL_INFO;
+    int          opt;
+    int          ret                   = EXIT_SUCCESS;
+    const char * interfaceName         = kDefaultInterfaceName;
+    const char * backboneInterfaceName = "";
+    bool         verbose               = false;
+    bool         printRadioVersion     = false;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -232,8 +232,8 @@ static int realmain(int argc, char *argv[])
             break;
 
         case OTBR_OPT_DEBUG_LEVEL:
-            logLevel = atoi(optarg);
-            VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
+            logLevel = static_cast<otbrLogLevel>(atoi(optarg));
+            VerifyOrExit(logLevel >= OTBR_LOG_LEVEL_CRIT && logLevel <= OTBR_LOG_LEVEL_DEBG, ret = EXIT_FAILURE);
             break;
 
         case OTBR_OPT_INTERFACE_NAME:
@@ -266,12 +266,12 @@ static int realmain(int argc, char *argv[])
     }
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
-    otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
-    otbrLog(OTBR_LOG_INFO, "Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
+    otbrLogInfoAgent("Running %s", OTBR_PACKAGE_VERSION);
+    otbrLogInfoAgent("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    otbrLog(OTBR_LOG_INFO, "Thread interface: %s", interfaceName);
-    otbrLog(OTBR_LOG_INFO, "Backbone interface: %s", backboneInterfaceName);
+    otbrLogInfoAgent("Thread interface: %s", interfaceName);
+    otbrLogInfoAgent("Backbone interface: %s", backboneInterfaceName);
 
     {
         otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, argv[optind], backboneInterfaceName};

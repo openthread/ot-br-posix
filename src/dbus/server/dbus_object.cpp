@@ -113,8 +113,8 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
-        otbrLog(OTBR_LOG_INFO, "Handling method %s", memberName.c_str());
-        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        otbrLogInfoDbus("Handling method %s", memberName.c_str());
+        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
         {
             DumpDBusMessage(*aMessage);
         }
@@ -141,7 +141,7 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
     {
         auto propertyIter = mGetPropertyHandlers.find(interfaceName);
 
-        otbrLog(OTBR_LOG_INFO, "GetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
+        otbrLogInfoDbus("GetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
         VerifyOrExit(propertyIter != mGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
         {
             DBusMessageIter replyIter;
@@ -156,9 +156,9 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
 exit:
     if (error == OT_ERROR_NONE)
     {
-        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
         {
-            otbrLog(OTBR_LOG_DEBUG, "GetProperty %s.%s reply:", interfaceName.c_str(), propertyName.c_str());
+            otbrLogDebgDbus("GetProperty %s.%s reply:", interfaceName.c_str(), propertyName.c_str());
             DumpDBusMessage(*reply);
         }
 
@@ -166,8 +166,8 @@ exit:
     }
     else
     {
-        otbrLog(OTBR_LOG_WARNING, "GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
-                ConvertToDBusErrorName(error));
+        otbrLogWarnDbus("GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
+                        ConvertToDBusErrorName(error));
         aRequest.ReplyOtResult(error);
     }
 }
@@ -225,7 +225,7 @@ void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
     VerifyOrExit(DBusMessageExtract(&iter, propertyName) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
 
     propertyFullPath = interfaceName + "." + propertyName;
-    otbrLog(OTBR_LOG_INFO, "SetProperty %s", propertyFullPath.c_str());
+    otbrLogInfoDbus("SetProperty %s", propertyFullPath.c_str());
     {
         auto handlerIter = mSetPropertyHandlers.find(propertyFullPath);
 
@@ -236,8 +236,8 @@ void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
 exit:
     if (error != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "SetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
-                ConvertToDBusErrorName(error));
+        otbrLogWarnDbus("SetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
+                        ConvertToDBusErrorName(error));
     }
     aRequest.ReplyOtResult(error);
     return;

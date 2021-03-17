@@ -120,7 +120,7 @@ void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)
 
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "failed to accept new connection: %s", otbrErrorString(error));
+        otbrLogWarnRest("Failed to accept new connection: %s", otbrErrorString(error));
     }
 }
 
@@ -152,7 +152,7 @@ exit:
 
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
+        otbrLogWarnRest("InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
     }
 
     VerifyOrDie(error == OTBR_ERROR_NONE, "otbr rest server init error");
@@ -184,7 +184,7 @@ exit:
             close(fd);
             fd = -1;
         }
-        otbrLog(OTBR_LOG_ERR, "rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
+        otbrLogWarnRest("Rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
 
     return error;

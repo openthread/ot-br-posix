@@ -84,22 +84,19 @@ otbrError ControllerOpenThread::Init(void)
 
     switch (otbrLogGetLevel())
     {
-    case OTBR_LOG_EMERG:
-    case OTBR_LOG_ALERT:
-    case OTBR_LOG_CRIT:
+    case OTBR_LOG_LEVEL_CRIT:
         level = OT_LOG_LEVEL_CRIT;
         break;
-    case OTBR_LOG_ERR:
-    case OTBR_LOG_WARNING:
+    case OTBR_LOG_LEVEL_WARN:
         level = OT_LOG_LEVEL_WARN;
         break;
-    case OTBR_LOG_NOTICE:
+    case OTBR_LOG_LEVEL_NOTE:
         level = OT_LOG_LEVEL_NOTE;
         break;
-    case OTBR_LOG_INFO:
+    case OTBR_LOG_LEVEL_INFO:
         level = OT_LOG_LEVEL_INFO;
         break;
-    case OTBR_LOG_DEBUG:
+    case OTBR_LOG_LEVEL_DEBG:
         level = OT_LOG_LEVEL_DEBG;
         break;
     default:
@@ -215,7 +212,7 @@ const char *ControllerOpenThread::GetThreadVersion(void)
         version = "1.2.0";
         break;
     default:
-        otbrLog(OTBR_LOG_EMERG, "unexpected thread version %hu", otThreadGetVersion());
+        otbrLogCritAgent("Unexpected thread version %hu", otThreadGetVersion());
         exit(-1);
     }
     return version;
@@ -228,30 +225,28 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 {
     OT_UNUSED_VARIABLE(aLogRegion);
 
-    int otbrLogLevel;
+    otbrLogLevel otbrLogLevel;
 
     switch (aLogLevel)
     {
     case OT_LOG_LEVEL_NONE:
-        otbrLogLevel = OTBR_LOG_EMERG;
-        break;
     case OT_LOG_LEVEL_CRIT:
-        otbrLogLevel = OTBR_LOG_CRIT;
+        otbrLogLevel = OTBR_LOG_LEVEL_CRIT;
         break;
     case OT_LOG_LEVEL_WARN:
-        otbrLogLevel = OTBR_LOG_WARNING;
+        otbrLogLevel = OTBR_LOG_LEVEL_WARN;
         break;
     case OT_LOG_LEVEL_NOTE:
-        otbrLogLevel = OTBR_LOG_NOTICE;
+        otbrLogLevel = OTBR_LOG_LEVEL_NOTE;
         break;
     case OT_LOG_LEVEL_INFO:
-        otbrLogLevel = OTBR_LOG_INFO;
+        otbrLogLevel = OTBR_LOG_LEVEL_INFO;
         break;
     case OT_LOG_LEVEL_DEBG:
-        otbrLogLevel = OTBR_LOG_DEBUG;
+        otbrLogLevel = OTBR_LOG_LEVEL_DEBG;
         break;
     default:
-        otbrLogLevel = OTBR_LOG_DEBUG;
+        otbrLogLevel = OTBR_LOG_LEVEL_DEBG;
         break;
     }
 

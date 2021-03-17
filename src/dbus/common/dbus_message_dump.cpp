@@ -171,11 +171,11 @@ void DumpDBusMessage(DBusMessage &aMessage)
     std::ostringstream sout;
 
     VerifyOrExit(dbus_message_iter_init(&aMessage, &iter),
-                 otbrLog(OTBR_LOG_DEBUG, "Failed to iterate dbus message during dump"));
+                 otbrLogDebgDbus("Failed to iterate dbus message during dump"));
     sout << "{ ";
     DumpDBusMessage(sout, &iter);
     sout << "}";
-    otbrLog(OTBR_LOG_DEBUG, sout.str().c_str());
+    otbrLogDebgDbus(sout.str().c_str());
 exit:
     return;
 }

@@ -64,7 +64,7 @@ main()
     accept_ra_enable
     ipforward_enable
     {
-        echo "otbr-agent -I $TUN -B ${INFRA_IF_NAME} -d 7 -v '${RADIO_URL}' &"
+        echo "otbr-agent -I $TUN -B ${INFRA_IF_NAME} -d 4 -v '${RADIO_URL}' &"
         without WEB_GUI || echo "otbr-web -I $TUN &"
         echo wait
     } | sudo sh -s

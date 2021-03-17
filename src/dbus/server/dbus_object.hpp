@@ -192,9 +192,9 @@ public:
         // invalidated_properties
         SuccessOrExit(error = DBusMessageEncode(&iter, std::vector<std::string>()));
 
-        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
         {
-            otbrLog(OTBR_LOG_DEBUG, "Signal %s.%s", aInterfaceName.c_str(), aPropertyName.c_str());
+            otbrLogDebgDbus("Signal %s.%s", aInterfaceName.c_str(), aPropertyName.c_str());
             DumpDBusMessage(*signalMsg);
         }
 

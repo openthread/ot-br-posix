@@ -59,7 +59,15 @@ int ExecuteCommand(const char *aFormat, ...)
 
     exitCode = system(cmd);
 
-    otbrLog(exitCode == 0 ? OTBR_LOG_INFO : OTBR_LOG_WARNING, "$?=%-3d: %s", exitCode, cmd);
+    if (exitCode == 0)
+    {
+        otbrLogInfoAgent("$?=%-3d: %s", exitCode, cmd);
+    }
+    else
+    {
+        otbrLogWarnAgent("$?=%-3d: %s", exitCode, cmd);
+    }
+
     return exitCode;
 }
 

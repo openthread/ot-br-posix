@@ -145,13 +145,13 @@ otbrError BorderAgent::Start(void)
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 
 exit:
-    otbrLogResult(error, "Start Thread Border Agent");
+    otbrLogResultAgent(error, "Start Thread Border Agent");
     return error;
 }
 
 void BorderAgent::Stop(void)
 {
-    otbrLog(OTBR_LOG_INFO, "stop Thread Border Agent");
+    otbrLogInfoAgent("Stop Thread Border Agent");
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     mPublisher->Stop();
@@ -190,7 +190,7 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
         UpdateMeshCopService();
         break;
     default:
-        otbrLog(OTBR_LOG_WARNING, "MDNS service not available!");
+        otbrLogWarnAgent("MDNS service not available!");
         break;
     }
 }
@@ -228,7 +228,7 @@ void BorderAgent::PublishMeshCopService(void)
     const char *             networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
 
-    otbrLog(OTBR_LOG_INFO, "publish meshcop service %s.%s.local.", networkName, kBorderAgentServiceType);
+    otbrLogInfoAgent("Publish meshcop service %s.%s.local.", networkName, kBorderAgentServiceType);
 
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
@@ -268,7 +268,7 @@ void BorderAgent::PublishMeshCopService(void)
 
         if ((error = otDatasetGetActive(instance, &activeDataset)) != OT_ERROR_NONE)
         {
-            otbrLog(OTBR_LOG_WARNING, "failed to get active dataset: %s", otThreadErrorToString(error));
+            otbrLogWarnAgent("Failed to get active dataset: %s", otThreadErrorToString(error));
         }
         else
         {
@@ -303,7 +303,7 @@ void BorderAgent::UnpublishMeshCopService(void)
     assert(IsThreadStarted());
     VerifyOrExit(!mNetworkName.empty());
 
-    otbrLog(OTBR_LOG_INFO, "unpublish meshcop service %s.%s.local.", mNetworkName.c_str(), kBorderAgentServiceType);
+    otbrLogInfoAgent("Unpublish meshcop service %s.%s.local.", mNetworkName.c_str(), kBorderAgentServiceType);
 
     mPublisher->UnpublishService(mNetworkName.c_str(), kBorderAgentServiceType);
 
@@ -348,7 +348,7 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        otbrLog(OTBR_LOG_INFO, "Thread is %s", (IsThreadStarted() ? "up" : "down"));
+        otbrLogInfoAgent("Thread is %s", (IsThreadStarted() ? "up" : "down"));
 
         if (IsThreadStarted())
         {

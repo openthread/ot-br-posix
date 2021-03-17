@@ -81,14 +81,14 @@
  * @param[in]  aMessage    A message (text string) to print on failure.
  *
  */
-#define SuccessOrDie(aStatus, aMessage)                                                     \
-    do                                                                                      \
-    {                                                                                       \
-        if ((aStatus) != 0)                                                                 \
-        {                                                                                   \
-            otbrLog(OTBR_LOG_EMERG, "FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
-            exit(-1);                                                                       \
-        }                                                                                   \
+#define SuccessOrDie(aStatus, aMessage)                                              \
+    do                                                                               \
+    {                                                                                \
+        if ((aStatus) != 0)                                                          \
+        {                                                                            \
+            otbrLogCritAgent("FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
+            exit(-1);                                                                \
+        }                                                                            \
     } while (false)
 
 /**
@@ -119,14 +119,14 @@
  * @param[in]   aMessage    A message (text string) to print on failure.
  *
  */
-#define VerifyOrDie(aCondition, aMessage)                                                   \
-    do                                                                                      \
-    {                                                                                       \
-        if (!(aCondition))                                                                  \
-        {                                                                                   \
-            otbrLog(OTBR_LOG_EMERG, "FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
-            exit(-1);                                                                       \
-        }                                                                                   \
+#define VerifyOrDie(aCondition, aMessage)                                            \
+    do                                                                               \
+    {                                                                                \
+        if (!(aCondition))                                                           \
+        {                                                                            \
+            otbrLogCritAgent("FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
+            exit(-1);                                                                \
+        }                                                                            \
     } while (false)
 
 /**

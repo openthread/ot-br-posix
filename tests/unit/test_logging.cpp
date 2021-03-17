@@ -41,8 +41,8 @@ TEST(Logging, TestLoggingHigherLevel)
     char ident[20];
 
     sprintf(ident, "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO, true);
-    otbrLog(OTBR_LOG_DEBUG, "cool-higher");
+    otbrLogInit(ident, OTBR_LOG_LEVEL_INFO, true);
+    otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_AGENT_PREFIX, "cool-higher");
     otbrLogDeinit();
     sleep(0);
 
@@ -56,8 +56,8 @@ TEST(Logging, TestLoggingEqualLevel)
     char ident[20];
 
     sprintf(ident, "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO, true);
-    otbrLog(OTBR_LOG_INFO, "cool-equal");
+    otbrLogInit(ident, OTBR_LOG_LEVEL_INFO, true);
+    otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_AGENT_PREFIX, "cool-equal");
     otbrLogDeinit();
     sleep(0);
 
@@ -73,8 +73,8 @@ TEST(Logging, TestLoggingLowerLevel)
     char cmd[128];
 
     sprintf(ident, "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO, true);
-    otbrLog(OTBR_LOG_WARNING, "cool-lower");
+    otbrLogInit(ident, OTBR_LOG_LEVEL_INFO, true);
+    otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_AGENT_PREFIX, "cool-lower");
     otbrLogDeinit();
     sleep(0);
 
@@ -88,9 +88,9 @@ TEST(Logging, TestLoggingDump)
     char cmd[128];
 
     sprintf(ident, "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_DEBUG, true);
+    otbrLogInit(ident, OTBR_LOG_LEVEL_DEBG, true);
     const char s[] = "one super long string with lots of text";
-    otbrDump(OTBR_LOG_INFO, "foobar", s, sizeof(s));
+    otbrDump(OTBR_LOG_LEVEL_INFO, "foobar", s, sizeof(s));
     otbrLogDeinit();
     sleep(0);
 

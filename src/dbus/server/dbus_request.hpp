@@ -117,10 +117,10 @@ public:
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::DBus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
-        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
         {
-            otbrLog(OTBR_LOG_DEBUG, "Replied to %s.%s :", dbus_message_get_interface(mMessage),
-                    dbus_message_get_member(mMessage));
+            otbrLogDebgDbus("Replied to %s.%s :", dbus_message_get_interface(mMessage),
+                            dbus_message_get_member(mMessage));
             DumpDBusMessage(*reply);
         }
         dbus_connection_send(mConnection, reply.get(), nullptr);
@@ -138,10 +138,18 @@ public:
     void ReplyOtResult(otError aError)
     {
         UniqueDBusMessage reply{nullptr};
-        auto              logLevel = (aError == OT_ERROR_NONE) ? OTBR_LOG_INFO : OTBR_LOG_ERR;
 
-        otbrLog(logLevel, "Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
-                dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+        if (aError == OT_ERROR_NONE)
+        {
+            otbrLogInfoDbus("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
+                            dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+        }
+        else
+        {
+            otbrLogWarnDbus("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
+                            dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+        }
+
         if (aError == OT_ERROR_NONE)
         {
             reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage));

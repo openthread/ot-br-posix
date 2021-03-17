@@ -209,8 +209,8 @@ public:
      */
     static void LogOpenThreadResult(const char *aAction, otError aError)
     {
-        otbrLog((aError == OT_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING), "%s: %s", aAction,
-                otThreadErrorToString(aError));
+        otbrLog((aError == OT_ERROR_NONE ? OTBR_LOG_LEVEL_INFO : OTBR_LOG_LEVEL_WARN), OTBR_REGION_AGENT_PREFIX,
+                "%s: %s", aAction, otThreadErrorToString(aError));
     }
 
 private:
