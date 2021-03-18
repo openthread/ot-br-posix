@@ -31,6 +31,8 @@
 #include <cerrno>
 
 #include <assert.h>
+
+#include <sys/socket.h>
 #include <sys/time.h>
 
 using std::chrono::duration_cast;

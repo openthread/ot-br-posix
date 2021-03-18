@@ -34,7 +34,6 @@ add_executable(otbr-agent
     border_agent.cpp
     border_agent.hpp
     main.cpp
-    ncp.hpp
     uris.hpp
     ncp_openthread.cpp
     ncp_openthread.hpp

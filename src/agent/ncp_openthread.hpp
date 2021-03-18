@@ -42,8 +42,8 @@
 #include <openthread/instance.h>
 #include <openthread/openthread-system.h>
 
-#include "agent/ncp.hpp"
 #include "agent/thread_helper.hpp"
+#include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 
 namespace otbr {
@@ -53,9 +53,11 @@ namespace Ncp {
  * This interface defines NCP Controller functionality.
  *
  */
-class ControllerOpenThread : public Controller
+class ControllerOpenThread : public MainloopProcessor
 {
 public:
+    using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
+
     /**
      * This constructor initializes this object.
      *
@@ -72,7 +74,7 @@ public:
      * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
      *
      */
-    otbrError Init(void) override;
+    otbrError Init(void);
 
     /**
      * This method get mInstance pointer.
@@ -107,17 +109,6 @@ public:
     void Process(const MainloopContext &aMainloop) override;
 
     /**
-     * This method request the event.
-     *
-     * @param[in]   aEvent  The event id to request.
-     *
-     * @retval  OTBR_ERROR_NONE         Successfully requested the event.
-     * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
-     *
-     */
-    otbrError RequestEvent(int aEvent) override;
-
-    /**
      * This method posts a task to the timer
      *
      * @param[in]   aDelay  The delay in milliseconds before executing the task.
@@ -133,6 +124,8 @@ public:
      *
      */
     void RegisterResetHandler(std::function<void(void)> aHandler);
+
+    void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
 
     ~ControllerOpenThread(void) override;
 
@@ -162,6 +155,7 @@ private:
     std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
+    std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
 };
 
 } // namespace Ncp
