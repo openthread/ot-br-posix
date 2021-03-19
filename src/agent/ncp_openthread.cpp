@@ -56,6 +56,9 @@
 namespace otbr {
 namespace Ncp {
 
+static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
+static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
+
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
                                            const char *aRadioUrl,
                                            const char *aBackboneInterfaceName)
@@ -199,6 +202,25 @@ void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandl
 void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
 {
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
+}
+
+const char *ControllerOpenThread::GetThreadVersion(void)
+{
+    const char *version;
+
+    switch (otThreadGetVersion())
+    {
+    case kThreadVersion11:
+        version = "1.1.1";
+        break;
+    case kThreadVersion12:
+        version = "1.2.0";
+        break;
+    default:
+        otbrLog(OTBR_LOG_EMERG, "unexpected thread version %hu", otThreadGetVersion());
+        exit(-1);
+    }
+    return version;
 }
 
 /*

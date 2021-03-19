@@ -60,9 +60,6 @@
 
 namespace otbr {
 
-static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
-static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
-
 static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
 
 /**
@@ -216,20 +213,6 @@ void BorderAgent::Process(const MainloopContext &aMainloop)
     }
 }
 
-static const char *ThreadVersionToString(uint16_t aThreadVersion)
-{
-    switch (aThreadVersion)
-    {
-    case kThreadVersion11:
-        return "1.1.1";
-    case kThreadVersion12:
-        return "1.2.0";
-    default:
-        otbrLog(OTBR_LOG_ERR, "unexpected thread version %hu", aThreadVersion);
-        abort();
-    }
-}
-
 void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
@@ -244,7 +227,7 @@ void BorderAgent::PublishMeshCopService(void)
 
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
-    txtList.emplace_back("tv", ThreadVersionToString(otThreadGetVersion()));
+    txtList.emplace_back("tv", mNcp.GetThreadVersion());
 
     // "dd" represents for device discriminator which
     // should always be the IEEE 802.15.4 extended address.
