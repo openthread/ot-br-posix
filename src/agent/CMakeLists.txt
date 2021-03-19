@@ -49,6 +49,7 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
+    openthread-posix
     openthread-cli-ftd
     openthread-ftd
     openthread-posix

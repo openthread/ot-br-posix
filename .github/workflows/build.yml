@@ -62,7 +62,7 @@ jobs:
       env:
         OTBR_MDNS: ${{ matrix.mdns }}
       run: >
-        docker run --rm -v $PWD:/build/ot-br-posix openthread/android-trusty bash -c
+        docker run --rm -v $PWD:/build/ot-br-posix -v $PWD/third_party/openthread/repo:/build/external/openthread openthread/android-trusty bash -c
         "BUILD_TARGET=android-check ot-br-posix/tests/scripts/bootstrap.sh && \
          ot-br-posix/tests/scripts/check-android-build"
 
