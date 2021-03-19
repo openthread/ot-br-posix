@@ -162,19 +162,6 @@ uint8_t ThreadHelper::RandomChannelFromChannelMask(uint32_t aChannelMask)
     return channels[std::uniform_int_distribution<unsigned int>(0, numValidChannels - 1)(mRandomDevice)];
 }
 
-static otExtendedPanId ToOtExtendedPanId(uint64_t aExtPanId)
-{
-    otExtendedPanId extPanId;
-    uint64_t        mask = UINT8_MAX;
-
-    for (size_t i = 0; i < sizeof(uint64_t); i++)
-    {
-        extPanId.m8[i] = static_cast<uint8_t>((aExtPanId >> ((sizeof(uint64_t) - i - 1) * 8)) & mask);
-    }
-
-    return extPanId;
-}
-
 void ThreadHelper::Attach(const std::string &         aNetworkName,
                           uint16_t                    aPanId,
                           uint64_t                    aExtPanId,
@@ -205,7 +192,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 
     if (aExtPanId != UINT64_MAX)
     {
-        extPanId = ToOtExtendedPanId(aExtPanId);
+        extPanId = Uint64ToOtExtendedPanId(aExtPanId);
     }
     else
     {

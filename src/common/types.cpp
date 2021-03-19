@@ -30,11 +30,41 @@
 #include <sstream>
 #include <sys/socket.h>
 
+#include <openthread/dataset.h>
+
+#include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
+
+std::string HexToString(const uint8_t *aHex, uint16_t aLength)
+{
+    std::string str;
+    char        bytestr[3];
+
+    for (uint16_t i = 0; i < aLength; i++)
+    {
+        snprintf(bytestr, sizeof(bytestr), "%02x", aHex[i]);
+        str.append(bytestr);
+    }
+
+    return str;
+}
+
+otExtendedPanId Uint64ToOtExtendedPanId(uint64_t aExtPanId)
+{
+    otExtendedPanId extPanId;
+    uint64_t        mask = UINT8_MAX;
+
+    for (size_t i = 0; i < sizeof(uint64_t); i++)
+    {
+        extPanId.m8[i] = static_cast<uint8_t>((aExtPanId >> ((sizeof(uint64_t) - i - 1) * 8)) & mask);
+    }
+
+    return extPanId;
+}
 
 Ip6Address::Ip6Address(const uint8_t (&aAddress)[16])
 {
@@ -126,13 +156,13 @@ std::string Ip6Prefix::ToString() const
     return strBuilder.str();
 }
 
-std::string MacAddress::ToString(void) const
+std::string Ip6NetworkPrefix::ToString() const
 {
-    char strbuf[sizeof(m8) * 3];
+    char strbuf[INET6_ADDRSTRLEN];
 
-    snprintf(strbuf, sizeof(strbuf), "%02x:%02x:%02x:%02x:%02x:%02x", m8[0], m8[1], m8[2], m8[3], m8[4], m8[5]);
+    snprintf(strbuf, sizeof(strbuf), "%x:%x:%x:%x::0/64", htobe16(m16[0]), htobe16(m16[1]), htobe16(m16[2]),
+             htobe16(m16[3]));
 
     return std::string(strbuf);
 }
-
 } // namespace otbr
