@@ -134,7 +134,7 @@ do_doxygen()
         "-DOTBR_DOC=ON"
     )
 
-    OTBR_CMAKE_NINJA_TARGET="doxygen" ./script/cmake-build "${otbr_options[@]}"
+    TARGET="doxygen" ./script/cmake-build "${otbr_options[@]}"
 }
 
 do_prepare()
@@ -170,7 +170,7 @@ do_package()
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
-    OTBR_CMAKE_NINJA_TARGET="package" ./script/cmake-build "${otbr_options[@]}"
+    TARGET="package" ./script/cmake-build "${otbr_options[@]}"
 }
 
 main()
