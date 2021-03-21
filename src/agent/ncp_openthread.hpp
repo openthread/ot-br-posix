@@ -125,7 +125,21 @@ public:
      */
     void RegisterResetHandler(std::function<void(void)> aHandler);
 
+    /**
+     * This method adds a event listener for Thread state changes.
+     *
+     * @param[in]  aCallback  The callback to receive Thread state changed events.
+     *
+     */
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
+
+    /**
+     * This method returns the Thread protocol version as a string.
+     *
+     * @returns  A pointer to the Thread version string.
+     *
+     */
+    static const char *GetThreadVersion(void);
 
     ~ControllerOpenThread(void) override;
 

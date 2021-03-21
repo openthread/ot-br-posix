@@ -267,10 +267,11 @@ static int realmain(int argc, char *argv[])
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
     otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+    otbrLog(OTBR_LOG_INFO, "Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
-    otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
+    otbrLog(OTBR_LOG_INFO, "Thread interface: %s", interfaceName);
+    otbrLog(OTBR_LOG_INFO, "Backbone interface: %s", backboneInterfaceName);
 
     {
         otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, argv[optind], backboneInterfaceName};
