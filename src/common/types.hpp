@@ -119,7 +119,7 @@ static constexpr char kLinkLocalAllNodesMulticastAddress[] = "ff02::01";
  * @returns The string in hex format.
  *
  */
-std::string HexToString(const uint8_t *aHex, uint16_t aLength);
+std::string BytesToHexString(const uint8_t *aHex, uint16_t aLength);
 
 /**
  * This method converts the extended pan ID in uint64_t to otExtendedPanId.
@@ -129,7 +129,7 @@ std::string HexToString(const uint8_t *aHex, uint16_t aLength);
  * @returns The otExtendedPanId value.
  *
  */
-otExtendedPanId Uint64ToOtExtendedPanId(uint64_t aExtPanId);
+otExtendedPanId Uint64ToExtendedPanId(uint64_t aExtPanId);
 
 /**
  * This class implements the Ipv6 address functionality.
@@ -407,9 +407,10 @@ public:
      * Constructor with an 8-bytes prefix.
      *
      * @param[in] aPrefix  A pointer to the buffer containing the 8-bytes prefix.
+     * @param[in] aLength  The length of the prefix, it must be set to 8-bytes.
      *
      */
-    Ip6NetworkPrefix(const uint8_t *aPrefix) { memcpy(m8, aPrefix, sizeof(*this)); }
+    Ip6NetworkPrefix(const uint8_t *aPrefix, uint8_t aLength);
 
     /**
      * This method returns the string representation for the Ip6 network prefix.
@@ -452,7 +453,7 @@ public:
      * @returns The string representation of the MAC address.
      *
      */
-    std::string ToString(void) const { return HexToString(m8, sizeof(m8)); }
+    std::string ToString(void) const { return BytesToHexString(m8, sizeof(m8)); }
 
     union
     {
@@ -488,7 +489,7 @@ public:
      * @returns The string representation of the Extended address.
      *
      */
-    std::string ToString(void) const { return HexToString(m8, 8); };
+    std::string ToString(void) const { return BytesToHexString(m8, 8); };
 
     uint8_t m8[8];
 } OTBR_TOOL_PACKED_END;
@@ -520,7 +521,7 @@ public:
      * @returns The string representation of the extended Pan Id.
      *
      */
-    std::string ToString(void) const { return HexToString(m8, sizeof(m8)); };
+    std::string ToString(void) const { return BytesToHexString(m8, sizeof(m8)); };
 
     uint8_t m8[8];
 } OTBR_TOOL_PACKED_END;

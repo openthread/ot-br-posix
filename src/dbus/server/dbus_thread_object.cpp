@@ -299,7 +299,7 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
         otbrLog(OTBR_LOG_INFO,
                 "[dbus] Attach: NetworkName:%s, PanId:0x%04x, ExtPanId:0x%s, MaskerKey:[Hiden], Pskc:[Hiden], "
                 "ChannelMask:0x%08x",
-                name.c_str(), panid, otbr::ExtPanId(Uint64ToOtExtendedPanId(extPanId)).ToString().c_str(), channelMask);
+                name.c_str(), panid, otbr::ExtPanId(Uint64ToExtendedPanId(extPanId)).ToString().c_str(), channelMask);
 
         threadHelper->Attach(name, panid, extPanId, masterKey, pskc, channelMask,
                              [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
@@ -509,7 +509,7 @@ otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
     error = otThreadSetMeshLocalPrefix(threadHelper->GetInstance(), &prefix);
 
     otbrLog(OTBR_LOG_INFO, "[dbus] SetMeshLocalPrefix: Prefix:%s",
-            otbr::Ip6NetworkPrefix(prefix.m8).ToString().c_str());
+            otbr::Ip6NetworkPrefix(prefix.m8, sizeof(prefix.m8)).ToString().c_str());
 
 exit:
     return error;
@@ -524,7 +524,8 @@ otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     otSetLegacyUlaPrefix(&data[0]);
 
-    otbrLog(OTBR_LOG_INFO, "[dbus] SetLegacyUlaPrefix: Prefix:%s", otbr::Ip6NetworkPrefix(&data[0]).ToString().c_str());
+    otbrLog(OTBR_LOG_INFO, "[dbus] SetLegacyUlaPrefix: Prefix:%s",
+            otbr::Ip6NetworkPrefix(&data[0], static_cast<uint8_t>(data.size())).ToString().c_str());
 
 exit:
     return error;

@@ -39,7 +39,7 @@
 
 namespace otbr {
 
-std::string HexToString(const uint8_t *aHex, uint16_t aLength)
+std::string BytesToHexString(const uint8_t *aHex, uint16_t aLength)
 {
     std::string str;
     char        bytestr[3];
@@ -53,7 +53,7 @@ std::string HexToString(const uint8_t *aHex, uint16_t aLength)
     return str;
 }
 
-otExtendedPanId Uint64ToOtExtendedPanId(uint64_t aExtPanId)
+otExtendedPanId Uint64ToExtendedPanId(uint64_t aExtPanId)
 {
     otExtendedPanId extPanId;
     uint64_t        mask = UINT8_MAX;
@@ -137,6 +137,12 @@ Ip6Address Ip6Address::FromString(const char *aStr)
 void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
 {
     memcpy(reinterpret_cast<void *>(this), &aPrefix, sizeof(*this));
+}
+
+Ip6NetworkPrefix::Ip6NetworkPrefix(const uint8_t *aPrefix, uint8_t aLength)
+{
+    VerifyOrDie(aLength == sizeof(m8), "The network prefix length is not 8 bytes");
+    memcpy(m8, aPrefix, sizeof(*this));
 }
 
 std::string Ip6Prefix::ToString() const

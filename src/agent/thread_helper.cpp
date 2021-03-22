@@ -192,7 +192,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 
     if (aExtPanId != UINT64_MAX)
     {
-        extPanId = Uint64ToOtExtendedPanId(aExtPanId);
+        extPanId = Uint64ToExtendedPanId(aExtPanId);
     }
     else
     {
