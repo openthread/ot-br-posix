@@ -34,8 +34,10 @@ readonly REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
 otbr_uninstall()
 {
     if have systemctl; then
-        sudo systemctl stop otbr-web otbr-agent || true
-        sudo systemctl disable otbr-web otbr-agent || true
+        sudo systemctl stop otbr-web || true
+        sudo systemctl stop otbr-agent || true
+        sudo systemctl disable otbr-web || true
+        sudo systemctl disable otbr-agent || true
         ! sudo systemctl is-enabled otbr-web
         ! sudo systemctl is-enabled otbr-agent
     fi
@@ -73,6 +75,10 @@ otbr_install()
         "${otbr_options[@]}"
     )
 
+    if with WEB_GUI; then
+        otbr_options+=("-DOTBR_WEB=ON")
+    fi
+
     if with BORDER_ROUTING; then
         otbr_options+=(
             "-DOTBR_BORDER_ROUTING=ON"
@@ -95,12 +101,14 @@ otbr_install()
 
     (./script/cmake-build "${otbr_options[@]}" \
         && cd "${OTBR_TOP_BUILDDIR}" \
+        && ninja \
         && sudo ninja install)
 
     if have systemctl; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
-        sudo systemctl enable otbr-web otbr-agent || true
+        without WEB_GUI || sudo systemctl enable otbr-web || true
+        sudo systemctl enable otbr-agent || true
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
         sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else

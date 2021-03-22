@@ -98,6 +98,9 @@ install_packages_apt()
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y iptables libnetfilter-queue1 libnetfilter-queue-dev
+
+    # web dependencies
+    without WEB_GUI || command -v npm || sudo apt-get install -y nodejs npm
 }
 
 install_packages_opkg()
