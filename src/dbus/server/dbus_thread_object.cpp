@@ -1193,7 +1193,7 @@ otError DBusThreadObject::GetRadioRegionHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, radioRegion) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLog(OTBR_LOG_INFO, "[dbus] GetRadioRegion: Region:%w", radioRegion.c_str());
+    otbrLog(OTBR_LOG_INFO, "[dbus] GetRadioRegion: Region:%s", radioRegion.c_str());
 
 exit:
     return error;
