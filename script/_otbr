@@ -92,8 +92,8 @@ otbr_install()
         )
     fi
 
-    (./script/cmake-build "${otbr_options[@]}"
-        && cd "${OTBR_TOP_BUILDDIR}"
+    (./script/cmake-build "${otbr_options[@]}" \
+        && cd "${OTBR_TOP_BUILDDIR}" \
         && sudo ninja install)
 
     if have systemctl; then
