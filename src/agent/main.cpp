@@ -59,6 +59,9 @@ using otbr::rest::RestWebServer;
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
+#ifdef OTBR_ENABLE_VENDOR_BUS_SERVER
+#include "agent/vendor_bus.hpp"
+#endif
 using otbr::Ncp::ControllerOpenThread;
 
 #if OTBR_ENABLE_OPENWRT
@@ -124,6 +127,10 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);
     restServer->Init();
 #endif
+#ifdef OTBR_ENABLE_VENDOR_BUS_SERVER
+    otbrVendorBusInit(ncpOpenThread);
+#endif
+
     otbrLog(OTBR_LOG_INFO, "Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
@@ -150,6 +157,10 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         restServer->Update(mainloop);
 #endif
 
+#ifdef OTBR_ENABLE_VENDOR_BUS_SERVER
+        otbrVendorBusUpdate(mainloop);
+#endif
+
 #if OTBR_ENABLE_OPENWRT
         UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
         sThreadMutex.unlock();
@@ -167,6 +178,10 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 #if OTBR_ENABLE_REST_SERVER
             restServer->Process(mainloop);
+#endif
+
+#ifdef OTBR_ENABLE_VENDOR_BUS_SERVER
+            otbrVendorBusProcess(mainloop);
 #endif
 
             aInstance.Process(mainloop);
