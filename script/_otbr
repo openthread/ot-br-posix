@@ -92,7 +92,9 @@ otbr_install()
         )
     fi
 
-    INSTALL=1 ./script/cmake-build "${otbr_options[@]}"
+    (./script/cmake-build "${otbr_options[@]}"
+        && cd "${OTBR_TOP_BUILDDIR}"
+        && sudo ninja install)
 
     if have systemctl; then
         sudo systemctl reload dbus

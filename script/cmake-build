@@ -40,15 +40,11 @@
 #
 #  Compile with the specified ninja build target:
 #
-#      TARGET="${target}" script/cmake-build
+#      OTBR_TARGET="${target}" script/cmake-build
 #
 #  Compile with the specified build directory:
 #
-#      BUILDDIR="./build/temp" script/cmake-build
-#
-#  Compile and install the build target:
-#
-#      INSTALL=1 script/cmake-build
+#      OTBR_BUILD_DIR="./build/temp" script/cmake-build
 #
 #  Examples:
 #
@@ -56,7 +52,7 @@
 #
 #      script/cmake-build -DOTBR_DBUS=ON
 #
-#      BUILDDIR="./build/temp" TARGET="otbr-agent" INSTALL=1 script/cmake-build -DOTBR_DBUS=ON
+#      OTBR_BUILD_DIR="./build/temp" OTBR_TARGET="otbr-agent" script/cmake-build -DOTBR_DBUS=ON
 #
 
 # shellcheck source=script/_initrc
@@ -65,12 +61,11 @@
 readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_TOP_BUILD_DIR="${BUILD_DIR}/otbr"
 
-TARGET=${TARGET:-}
-INSTALL=${INSTALL:-}
+OTBR_TARGET=${OTBR_TARGET:-}
 
 main()
 {
-    local builddir="${BUILDDIR:-${OTBR_TOP_BUILD_DIR}}"
+    local builddir="${OTBR_BUILD_DIR:-${OTBR_TOP_BUILD_DIR}}"
 
     mkdir -p "${builddir}"
 
@@ -79,14 +74,10 @@ main()
 
         cmake -GNinja "${OTBR_TOP_SRCDIR}" "$@"
 
-        if [[ -n ${TARGET[*]} ]]; then
-            ninja "${TARGET[@]}"
+        if [[ -n ${OTBR_TARGET[*]} ]]; then
+            ninja "${OTBR_TARGET[@]}"
         else
             ninja
-        fi
-
-        if [[ ${INSTALL} == "1" ]]; then
-            sudo ninja install
         fi
     )
 }
