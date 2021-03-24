@@ -116,7 +116,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CPack)
 endif()
 
-option(OTBR_DOC "Build documentation" OFF)
 if (OTBR_DOC)
     add_subdirectory(doc)
 endif()
