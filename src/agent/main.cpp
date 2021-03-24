@@ -233,7 +233,9 @@ static int realmain(int argc, char *argv[])
 
         case OTBR_OPT_DEBUG_LEVEL:
             logLevel = static_cast<otbrLogLevel>(atoi(optarg));
-            VerifyOrExit(logLevel >= OTBR_LOG_LEVEL_CRIT && logLevel <= OTBR_LOG_LEVEL_DEBG, ret = EXIT_FAILURE);
+            VerifyOrExit(logLevel >= OTBR_LOG_LEVEL_CRIT, ret = EXIT_FAILURE);
+            // In case the user input the log level value of the old version.
+            logLevel = (logLevel > OTBR_LOG_LEVEL_DEBG) ? OTBR_LOG_LEVEL_DEBG : logLevel;
             break;
 
         case OTBR_OPT_INTERFACE_NAME:

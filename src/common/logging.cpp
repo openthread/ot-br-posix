@@ -38,6 +38,8 @@
 #include <sys/time.h>
 #include <syslog.h>
 
+#include <sstream>
+
 #include "common/code_utils.hpp"
 #include "common/time.hpp"
 
@@ -95,21 +97,18 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
 /** log to the syslog or log file */
 void otbrLog(otbrLogLevel aLevel, const char *aRegionPrefix, const char *aFormat, ...)
 {
-    const uint16_t kBufferSize = 1024;
-    va_list        ap;
-    std::string    logString;
-    char           buffer[kBufferSize];
+    const uint16_t    kBufferSize = 1024;
+    va_list           ap;
+    std::stringstream logStream;
+    char              buffer[kBufferSize];
 
     va_start(ap, aFormat);
 
     VerifyOrExit(aLevel <= sLevel);
     VerifyOrExit(vsnprintf(buffer, sizeof(buffer), aFormat, ap) > 0);
 
-    logString.append(sLevelString[aLevel]);
-    logString.append(aRegionPrefix);
-    logString.append(buffer);
-
-    syslog(ToSyslogLogLevel(aLevel), "%s", logString.c_str());
+    logStream << sLevelString[aLevel] << aRegionPrefix << buffer;
+    syslog(ToSyslogLogLevel(aLevel), "%s", logStream.str().c_str());
 
     va_end(ap);
 
