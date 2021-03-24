@@ -305,7 +305,7 @@ public:
 private:
     enum
     {
-        kMaxSizeOfTxtRecord   = 128,
+        kMaxSizeOfTxtRecord   = 256,
         kMaxSizeOfServiceName = AVAHI_LABEL_MAX,
         kMaxSizeOfHost        = AVAHI_LABEL_MAX,
         kMaxSizeOfDomain      = AVAHI_LABEL_MAX,

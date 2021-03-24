@@ -82,10 +82,10 @@ private:
     {
         typedef std::vector<std::pair<std::string, std::string>> ServiceNameList;
 
-        const otSrpServerHost *mHost = nullptr; // The SRP host which being published.
-        std::string            mHostName;       // The host name.
-        ServiceNameList        mServiceNames;   // The list of service instance and name pair.
-        uint32_t               mCount = 0;      // The number of outstanding updates.
+        const otSrpServerHost *mHost = nullptr;    // The SRP host which being published.
+        std::string            mHostName;          // The host name.
+        ServiceNameList        mServiceNames;      // The list of service instance and name pair.
+        uint32_t               mCallbackCount = 0; // The number of callbacks which we are waiting for.
     };
 
     static void AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout, void *aContext);

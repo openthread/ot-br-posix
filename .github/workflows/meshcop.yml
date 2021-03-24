@@ -54,6 +54,10 @@ jobs:
       run: |
         script/bootstrap
         script/test build
+    - name: mDNS service
+      env:
+        TEST_CASE: "mdns_service"
+      run: script/test meshcop
     - name: MTD
       env:
         OT_CLI: "ot-cli-mtd"

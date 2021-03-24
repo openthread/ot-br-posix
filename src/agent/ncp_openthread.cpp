@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
-#include <openthread/cli.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
 #include <openthread/srp_server.h>
@@ -55,6 +54,9 @@
 
 namespace otbr {
 namespace Ncp {
+
+static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
+static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 
 ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
                                            const char *aRadioUrl,
@@ -107,7 +109,6 @@ otbrError ControllerOpenThread::Init(void)
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
-    otCliUartInit(mInstance);
 #if OTBR_ENABLE_LEGACY
     otLegacyInit();
 #endif
@@ -118,14 +119,6 @@ otbrError ControllerOpenThread::Init(void)
         agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
-                                            this);
-#if OTBR_ENABLE_DUA_ROUTING
-    otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
-#endif
-#endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
@@ -139,20 +132,8 @@ exit:
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 {
-    if (aFlags & OT_CHANGED_THREAD_NETWORK_NAME)
-    {
-        EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
-    }
-
-    if (aFlags & OT_CHANGED_THREAD_EXT_PANID)
-    {
-        EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
-    }
-
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        bool attached = false;
-
         switch (otThreadGetDeviceRole(mInstance))
         {
         case OT_DEVICE_ROLE_DISABLED:
@@ -166,21 +147,16 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 #if OTBR_ENABLE_LEGACY
             otLegacyStart();
 #endif
-            attached = true;
             break;
         default:
             break;
         }
-
-        EventEmitter::Emit(kEventThreadState, attached);
     }
 
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE)
+    for (auto &stateCallback : mThreadStateChangedCallbacks)
     {
-        EventEmitter::Emit(kEventBackboneRouterState);
+        stateCallback(aFlags);
     }
-#endif
 
     mThreadHelper->StateChangedCallback(aFlags);
 }
@@ -211,66 +187,6 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
     }
 }
 
-otbrError ControllerOpenThread::RequestEvent(int aEvent)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    switch (aEvent)
-    {
-    case kEventExtPanId:
-    {
-        EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
-        break;
-    }
-    case kEventThreadState:
-    {
-        bool attached = false;
-
-        switch (otThreadGetDeviceRole(mInstance))
-        {
-        case OT_DEVICE_ROLE_CHILD:
-        case OT_DEVICE_ROLE_ROUTER:
-        case OT_DEVICE_ROLE_LEADER:
-            attached = true;
-            break;
-        default:
-            break;
-        }
-
-        EventEmitter::Emit(kEventThreadState, attached);
-        break;
-    }
-    case kEventNetworkName:
-    {
-        EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
-        break;
-    }
-    case kEventPSKc:
-    {
-        EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
-        break;
-    }
-    case kEventThreadVersion:
-    {
-        EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
-        break;
-    }
-    case kEventExtAddr:
-    {
-        const otExtAddress *extAddr;
-
-        extAddr = otLinkGetExtendedAddress(mInstance);
-        EventEmitter::Emit(kEventExtAddr, extAddr);
-        break;
-    }
-    default:
-        assert(false);
-        break;
-    }
-
-    return ret;
-}
-
 void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
 {
     mTaskRunner.Post(std::move(aDelay), std::move(aTask));
@@ -281,39 +197,28 @@ void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandl
     mResetHandlers.emplace_back(std::move(aHandler));
 }
 
-#if OTBR_ENABLE_BACKBONE_ROUTER
-void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
-                                                                 otBackboneRouterDomainPrefixEvent aEvent,
-                                                                 const otIp6Prefix *               aDomainPrefix)
+void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
 {
-    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterDomainPrefixEvent(aEvent, aDomainPrefix);
+    mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
-void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
-                                                                 const otIp6Prefix *               aDomainPrefix)
+const char *ControllerOpenThread::GetThreadVersion(void)
 {
-    EventEmitter::Emit(kEventBackboneRouterDomainPrefixEvent, aEvent, aDomainPrefix);
-}
+    const char *version;
 
-#if OTBR_ENABLE_DUA_ROUTING
-void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(void *                       aContext,
-                                                            otBackboneRouterNdProxyEvent aEvent,
-                                                            const otIp6Address *         aAddress)
-{
-    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterNdProxyEvent(aEvent, aAddress);
-}
-
-void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent,
-                                                            const otIp6Address *         aAddress)
-{
-    EventEmitter::Emit(kEventBackboneRouterNdProxyEvent, aEvent, aAddress);
-}
-#endif
-#endif
-
-Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName)
-{
-    return new ControllerOpenThread(aInterfaceName, aRadioUrl, aBackboneInterfaceName);
+    switch (otThreadGetVersion())
+    {
+    case kThreadVersion11:
+        version = "1.1.1";
+        break;
+    case kThreadVersion12:
+        version = "1.2.0";
+        break;
+    default:
+        otbrLog(OTBR_LOG_EMERG, "unexpected thread version %hu", otThreadGetVersion());
+        exit(-1);
+    }
+    return version;
 }
 
 /*

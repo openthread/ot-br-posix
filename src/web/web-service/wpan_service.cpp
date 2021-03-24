@@ -180,8 +180,14 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
     prefix       = root["prefix"].asString();
     defaultRoute = root["defaultRoute"].asBool();
 
+    if (prefix.find('/') == std::string::npos)
+    {
+        prefix += "/64";
+    }
+
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetGatewayFailed);
+    VerifyOrExit(client.Execute("netdata register") != nullptr, ret = kWpanStatus_SetGatewayFailed);
 exit:
 
     root.clear();
@@ -212,7 +218,13 @@ std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteReq
     VerifyOrExit(reader.parse(aDeleteRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
     prefix = root["prefix"].asString();
 
+    if (prefix.find('/') == std::string::npos)
+    {
+        prefix += "/64";
+    }
+
     VerifyOrExit(client.Execute("prefix remove %s", prefix.c_str()) != nullptr, ret = kWpanStatus_SetGatewayFailed);
+    VerifyOrExit(client.Execute("netdata register") != nullptr, ret = kWpanStatus_SetGatewayFailed);
 exit:
 
     root.clear();

@@ -34,6 +34,7 @@
 
 #include <mutex>
 
+#include <arpa/inet.h>
 #include <sys/eventfd.h>
 
 #include <openthread/commissioner.h>

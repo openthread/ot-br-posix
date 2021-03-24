@@ -202,13 +202,13 @@ void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t
     hostDeleted = otSrpServerHostIsDeleted(aHost);
 
     update->mHost = aHost;
-    update->mCount += !hostDeleted;
+    update->mCallbackCount += !hostDeleted;
     update->mHostName = hostName;
 
     service = nullptr;
     while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
     {
-        update->mCount += !otSrpServerServiceIsDeleted(service);
+        update->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
     }
 
     if (!hostDeleted)
@@ -252,7 +252,7 @@ void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t
     }
 
 exit:
-    if (error != OTBR_ERROR_NONE || update->mCount == 0)
+    if (error != OTBR_ERROR_NONE || update->mCallbackCount == 0)
     {
         if (error != OTBR_ERROR_NONE)
         {
@@ -285,14 +285,14 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
                 continue;
             }
 
-            if (aError != OTBR_ERROR_NONE || update->mCount == 1)
+            if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
             {
                 otSrpServerHandleServiceUpdateResult(GetInstance(), update->mHost, OtbrErrorToOtError(aError));
                 mOutstandingUpdates.erase(update);
             }
             else
             {
-                --update->mCount;
+                --update->mCallbackCount;
             }
             ExitNow();
         }
@@ -323,14 +323,14 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
             continue;
         }
 
-        if (aError != OTBR_ERROR_NONE || update->mCount == 1)
+        if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
         {
             otSrpServerHandleServiceUpdateResult(GetInstance(), update->mHost, OtbrErrorToOtError(aError));
             mOutstandingUpdates.erase(update);
         }
         else
         {
-            --update->mCount;
+            --update->mCallbackCount;
         }
         ExitNow();
     }

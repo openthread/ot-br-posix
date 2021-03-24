@@ -46,7 +46,6 @@
 #include <openthread/platform/radio.h>
 
 #include "agent/agent_instance.hpp"
-#include "agent/ncp.hpp"
 #include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -214,16 +213,13 @@ static void OnAllocateFailed(void)
 
 static int realmain(int argc, char *argv[])
 {
-    int                              logLevel = OTBR_LOG_INFO;
-    int                              opt;
-    int                              ret                   = EXIT_SUCCESS;
-    const char *                     interfaceName         = kDefaultInterfaceName;
-    const char *                     backboneInterfaceName = "";
-    otbr::Ncp::Controller *          ncp                   = nullptr;
-    otbr::Ncp::ControllerOpenThread *ncpOpenThread         = nullptr;
-    otbr::Ncp::PowerMap              powerMap;
-    bool                             verbose           = false;
-    bool                             printRadioVersion = false;
+    int         logLevel = OTBR_LOG_INFO;
+    int         opt;
+    int         ret                   = EXIT_SUCCESS;
+    const char *interfaceName         = kDefaultInterfaceName;
+    const char *backboneInterfaceName = "";
+    bool        verbose               = false;
+    bool        printRadioVersion     = false;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -271,17 +267,15 @@ static int realmain(int argc, char *argv[])
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
     otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+    otbrLog(OTBR_LOG_INFO, "Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    ncp           = otbr::Ncp::Controller::Create(interfaceName, argv[optind], backboneInterfaceName);
-    ncpOpenThread = static_cast<ControllerOpenThread *>(ncp);
-    VerifyOrExit(ncp != nullptr, ret = EXIT_FAILURE);
-
-    otbrLog(OTBR_LOG_INFO, "Thread interface %s", interfaceName);
-    otbrLog(OTBR_LOG_INFO, "Backbone interface %s", backboneInterfaceName);
+    otbrLog(OTBR_LOG_INFO, "Thread interface: %s", interfaceName);
+    otbrLog(OTBR_LOG_INFO, "Backbone interface: %s", backboneInterfaceName);
 
     {
-        otbr::AgentInstance instance(ncp);
+        otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, argv[optind], backboneInterfaceName};
+        otbr::AgentInstance             instance(ncpOpenThread);
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
@@ -290,12 +284,12 @@ static int realmain(int argc, char *argv[])
 
         if (printRadioVersion)
         {
-            PrintRadioVersion(ncpOpenThread->GetInstance());
+            PrintRadioVersion(ncpOpenThread.GetInstance());
             ExitNow(ret = EXIT_SUCCESS);
         }
 
 #if OTBR_ENABLE_OPENWRT
-        UbusServerInit(ncpOpenThread, &sThreadMutex);
+        UbusServerInit(&ncpOpenThread, &sThreadMutex);
         std::thread(UbusServerRun).detach();
 #endif
         SuccessOrExit(ret = Mainloop(instance, interfaceName));

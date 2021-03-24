@@ -188,12 +188,6 @@ EOF
 
 prepare_openthread()
 {
-    SRC_DIR="$(
-        cd "$(dirname "$0")"
-        pwd -P
-    )"
-    mkdir -p external
-    mv "${SRC_DIR}"/../../third_party/openthread/repo external/openthread
     cat >>buildspec.mk <<EOF
 
 USE_OTBR_DAEMON := 1
