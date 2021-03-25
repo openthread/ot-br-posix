@@ -26,35 +26,15 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: macOS
-
-on:
-  push:
-    branches-ignore:
-      - 'dependabot/**'
-  pull_request:
-    branches:
-      - 'main'
-
-jobs:
-
-  cancel-previous-runs:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: rokroskar/workflow-run-cleanup-action@master
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      if: "github.ref != 'refs/heads/main'"
-
-  build-check:
-    runs-on: macos-10.15
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Bootstrap
-      run: |
-        brew reinstall boost cmake cpputest dbus jsoncpp ninja
-    - name: Build
-      run: |
-        OTBR_OPTIONS='-DOTBR_MDNS=OFF' ./script/test build
+version: 2
+updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "third_party/openthread/repo"
+    commit-message:
+      prefix: "submodule"
+    rebase-strategy: "disabled"
+    open-pull-requests-limit: 1
