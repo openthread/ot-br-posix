@@ -37,7 +37,13 @@
 #include <array>
 #include <vector>
 
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+#include "mdns/vendor_mdnssd.hpp"
+#else
 #include <dns_sd.h>
+#define kDNSInvalidServiceRef nullptr
+#define kDNSInvalidRecordRef nullptr
+#endif
 
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
@@ -47,7 +53,7 @@ namespace otbr {
 namespace Mdns {
 
 /**
- * This class implements MDNS service with avahi.
+ * This class implements MDNS service with mdnssd.
  *
  */
 class PublisherMDnsSd : public Publisher
@@ -198,7 +204,7 @@ private:
     typedef std::vector<Service>::iterator ServiceIterator;
     typedef std::vector<Host>::iterator    HostIterator;
 
-    void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = nullptr);
+    void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = kDNSInvalidServiceRef);
     void RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
 
     otbrError DiscardHost(const char *aName, bool aSendGoodbye = true);
@@ -234,6 +240,11 @@ private:
     HostIterator    FindPublishedHost(const DNSRecordRef &aRecordRef);
     HostIterator    FindPublishedHost(const char *aHostName);
 
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+    static void HandleMdnsStateUpdated(DnsServiceState aState, void *aContext);
+    void        HandleMdnsStateUpdated(DnsServiceState aState);
+#endif
+
     Services      mServices;
     Hosts         mHosts;
     DNSServiceRef mHostsRef;
@@ -241,6 +252,10 @@ private:
     State         mState;
     StateHandler  mStateHandler;
     void *        mContext;
+
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+    bool mIsStarted;
+#endif
 };
 
 /**

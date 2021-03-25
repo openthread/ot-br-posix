@@ -205,11 +205,14 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
 }
 
 PublisherMDnsSd::PublisherMDnsSd(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
-    : mHostsRef(nullptr)
+    : mHostsRef(kDNSInvalidServiceRef)
     , mDomain(aDomain)
     , mState(State::kIdle)
     , mStateHandler(aHandler)
     , mContext(aContext)
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+    , mIsStarted(false)
+#endif
 {
     OTBR_UNUSED_VARIABLE(aProtocol);
 }
@@ -221,8 +224,22 @@ PublisherMDnsSd::~PublisherMDnsSd(void)
 
 otbrError PublisherMDnsSd::Start(void)
 {
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+    otbrLog(OTBR_LOG_INFO, "[mdns] MDNS start");
+
+    mIsStarted = true;
+    otbrVendorMdnsInit(HandleMdnsStateUpdated, this);
+
+    if (otbrVendorMdnsIsReady())
+    {
+        otbrLog(OTBR_LOG_INFO, "[mdns] MDNS is ready");
+        mState = State::kReady;
+        mStateHandler(mContext, mState);
+    }
+#else
     mState = State::kReady;
     mStateHandler(mContext, State::kReady);
+#endif
     return OTBR_ERROR_NONE;
 }
 
@@ -244,15 +261,49 @@ void PublisherMDnsSd::Stop(void)
 
     otbrLog(OTBR_LOG_INFO, "[mdns] remove all hosts");
     DNSServiceRefDeallocate(mHostsRef);
-    mHostsRef = nullptr;
+    mHostsRef = kDNSInvalidServiceRef;
+    mState    = State::kIdle;
     mHosts.clear();
+
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+    mIsStarted = false;
+#endif
 
 exit:
     return;
 }
 
+#ifdef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
+void PublisherMDnsSd::HandleMdnsStateUpdated(DnsServiceState aState, void *aContext)
+{
+    static_cast<PublisherMDnsSd *>(aContext)->HandleMdnsStateUpdated(aState);
+}
+
+void PublisherMDnsSd::HandleMdnsStateUpdated(DnsServiceState aState)
+{
+    switch (aState)
+    {
+    case kDNSServiceStateIdle:
+        mState = State::kIdle;
+        mStateHandler(mContext, mState);
+        break;
+
+    case kDNSServiceStateIsReady:
+        if (mIsStarted)
+        {
+            mState = State::kReady;
+            mStateHandler(mContext, mState);
+        }
+        break;
+    }
+}
+#endif
+
 void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 {
+    OTBR_UNUSED_VARIABLE(aMainloop);
+
+#ifndef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
     for (Service &service : mServices)
     {
         assert(service.mService != nullptr);
@@ -276,10 +327,12 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 
         aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
     }
+#endif
 }
 
 void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 {
+#ifndef OTBR_ENABLE_VENDOR_MDNS_MDNSSD
     std::vector<DNSServiceRef> readyServices;
 
     for (Service &service : mServices)
@@ -311,6 +364,7 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
             otbrLog(OTBR_LOG_WARNING, "[mdns] DNSServiceProcessResult failed: %s", DNSErrorToString(error));
         }
     }
+#endif
 }
 
 void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService,
@@ -384,11 +438,13 @@ exit:
 
 void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
 {
+    OTBR_UNUSED_VARIABLE(aServiceRef);
+
     ServiceIterator service = FindPublishedService(aName, aType);
 
     if (service != mServices.end())
     {
-        assert(aServiceRef == nullptr || aServiceRef == service->mService);
+        assert(aServiceRef == kDNSInvalidServiceRef || aServiceRef == service->mService);
 
         otbrLog(OTBR_LOG_INFO, "[mdns] remove service ref %p", service->mService);
 
@@ -429,8 +485,10 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
     uint8_t         txt[kMaxSizeOfTxtRecord];
     uint16_t        txtLength  = sizeof(txt);
     ServiceIterator service    = FindPublishedService(aName, aType);
-    DNSServiceRef   serviceRef = nullptr;
+    DNSServiceRef   serviceRef = kDNSInvalidServiceRef;
     char            fullHostName[kMaxSizeOfDomain];
+
+    VerifyOrExit(mState == State::kReady, ret = OTBR_ERROR_MDNS);
 
     if (aHostName != nullptr)
     {
@@ -448,7 +506,8 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
         otbrLog(OTBR_LOG_INFO, "[mdns] update service %s.%s", aName, aType);
 
         // Setting TTL to 0 to use default value.
-        SuccessOrExit(error = DNSServiceUpdateRecord(service->mService, nullptr, 0, txtLength, txt, /* ttl */ 0));
+        SuccessOrExit(
+            error = DNSServiceUpdateRecord(service->mService, kDNSInvalidServiceRef, 0, txtLength, txt, /* ttl */ 0));
 
         if (mServiceHandler != nullptr)
         {
@@ -474,8 +533,14 @@ exit:
 
 otbrError PublisherMDnsSd::UnpublishService(const char *aName, const char *aType)
 {
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mState == State::kReady, error = OTBR_ERROR_MDNS);
+
     DiscardService(aName, aType);
-    return OTBR_ERROR_NONE;
+
+exit:
+    return error;
 }
 
 otbrError PublisherMDnsSd::DiscardHost(const char *aName, bool aSendGoodbye)
@@ -484,7 +549,7 @@ otbrError PublisherMDnsSd::DiscardHost(const char *aName, bool aSendGoodbye)
     int          error = 0;
     HostIterator host  = FindPublishedHost(aName);
 
-    VerifyOrExit(mHostsRef != nullptr && host != mHosts.end());
+    VerifyOrExit(mHostsRef != kDNSInvalidServiceRef && host != mHosts.end());
 
     otbrLog(OTBR_LOG_INFO, "[mdns] remove host: %s (record ref: %p)", host->mName, host->mRecord);
 
@@ -553,7 +618,7 @@ otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddres
 
     SuccessOrExit(ret = MakeFullName(fullName, sizeof(fullName), aName));
 
-    if (mHostsRef == nullptr)
+    if (mHostsRef == kDNSInvalidServiceRef)
     {
         SuccessOrExit(error = DNSServiceCreateConnection(&mHostsRef));
     }
@@ -585,10 +650,10 @@ otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddres
 exit:
     if (error != kDNSServiceErr_NoError)
     {
-        if (mHostsRef != nullptr)
+        if (mHostsRef != kDNSInvalidServiceRef)
         {
             DNSServiceRefDeallocate(mHostsRef);
-            mHostsRef = nullptr;
+            mHostsRef = kDNSInvalidServiceRef;
         }
 
         ret = OTBR_ERROR_MDNS;
@@ -652,6 +717,8 @@ exit:
 
 otbrError PublisherMDnsSd::MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName)
 {
+    OTBR_UNUSED_VARIABLE(aFullNameLength);
+
     otbrError   error      = OTBR_ERROR_NONE;
     size_t      nameLength = strlen(aName);
     const char *domain     = (mDomain == nullptr) ? "local." : mDomain;
