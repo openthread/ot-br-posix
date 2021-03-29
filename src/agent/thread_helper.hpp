@@ -128,6 +128,14 @@ public:
                 ResultHandler               aHandler);
 
     /**
+     * This method detaches the device from the Thread network.
+     *
+     * @returns The error value of underlying OpenThread API calls.
+     *
+     */
+    otError Detach(void);
+
+    /**
      * This method attaches the device to the Thread network.
      *
      * @note The joiner start and the attach proccesses are exclusive, and the

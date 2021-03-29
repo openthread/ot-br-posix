@@ -292,6 +292,11 @@ exit:
     }
 }
 
+otError ThreadHelper::Detach(void)
+{
+    return otThreadSetEnabled(mInstance, false);
+}
+
 otError ThreadHelper::Reset(void)
 {
     mDeviceRoleHandlers.clear();
