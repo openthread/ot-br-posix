@@ -28,6 +28,7 @@
 
 #include <arpa/inet.h>
 #include <sstream>
+#include <stdlib.h>
 #include <sys/socket.h>
 
 #include "common/byteswap.hpp"
