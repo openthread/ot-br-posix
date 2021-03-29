@@ -111,25 +111,15 @@ static constexpr char kSolicitedMulticastAddressPrefix[]   = "ff02::01:ff00:0";
 static constexpr char kLinkLocalAllNodesMulticastAddress[] = "ff02::01";
 
 /**
- * This method converts the hex array to the string in hex format.
+ * This method converts the bytes array to the string in hex format.
  *
- * @param[in]  aHex     A pointer to the hex array.
- * @param[in]  aLength  The length of the hex array.
+ * @param[in]  aBytes   A pointer to the bytes array.
+ * @param[in]  aLength  The length of the bytes array.
  *
  * @returns The string in hex format.
  *
  */
-std::string BytesToHexString(const uint8_t *aHex, uint16_t aLength);
-
-/**
- * This method converts the extended pan ID in uint64_t to otExtendedPanId.
- *
- * @param[in] aExtPanId  The extended pan ID in uint64_t.
- *
- * @returns The otExtendedPanId value.
- *
- */
-otExtendedPanId Uint64ToExtendedPanId(uint64_t aExtPanId);
+std::string BytesToHexString(const uint8_t *aBytes, uint16_t aLength);
 
 /**
  * This class implements the Ipv6 address functionality.

@@ -31,6 +31,7 @@
 
 #include <openthread/border_router.h>
 #include <openthread/channel_monitor.h>
+#include <openthread/dataset.h>
 #include <openthread/instance.h>
 #include <openthread/joiner.h>
 #include <openthread/link_raw.h>
@@ -86,6 +87,19 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
         val = (val << 8) | aValue[i];
     }
     return val;
+}
+
+static otExtendedPanId Uint64ToExtendedPanId(uint64_t aExtPanId)
+{
+    otExtendedPanId extPanId;
+    uint64_t        mask = UINT8_MAX;
+
+    for (size_t i = 0; i < sizeof(uint64_t); i++)
+    {
+        extPanId.m8[i] = static_cast<uint8_t>((aExtPanId >> ((sizeof(uint64_t) - i - 1) * 8)) & mask);
+    }
+
+    return extPanId;
 }
 
 namespace otbr {
