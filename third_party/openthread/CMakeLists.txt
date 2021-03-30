@@ -68,7 +68,6 @@ if (OTBR_BACKBONE_ROUTER)
 endif()
 
 if (OT_THREAD_VERSION STREQUAL "1.2")
-    set(OT_DUA ON CACHE BOOL "Enable Thread 1.2 DUA by default")
     set(OT_MLR ON CACHE BOOL "Enable Thread 1.2 MLR by default")
 endif()
 
