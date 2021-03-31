@@ -243,8 +243,11 @@ void PublisherMDnsSd::Stop(void)
     mServices.clear();
 
     otbrLog(OTBR_LOG_INFO, "[mdns] remove all hosts");
-    DNSServiceRefDeallocate(mHostsRef);
-    mHostsRef = nullptr;
+    if (mHostsRef != nullptr)
+    {
+        DNSServiceRefDeallocate(mHostsRef);
+        mHostsRef = nullptr;
+    }
     mHosts.clear();
 
 exit:
