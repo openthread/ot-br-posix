@@ -294,7 +294,13 @@ exit:
 
 otError ThreadHelper::Detach(void)
 {
-    return otThreadSetEnabled(mInstance, false);
+    otError error = OT_ERROR_NONE;
+
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, false));
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, false));
+
+exit:
+    return error;
 }
 
 otError ThreadHelper::Reset(void)
