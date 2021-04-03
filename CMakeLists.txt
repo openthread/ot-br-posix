@@ -57,7 +57,7 @@ endif()
 add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
 
 if(NOT OTBR_NAME)
-    set(OTBR_NAME "\"OPENTHREAD_BR\"")
+    set(OTBR_NAME "OPENTHREAD_BR")
 endif()
 
 message(STATUS "Name: ${OTBR_NAME}")
