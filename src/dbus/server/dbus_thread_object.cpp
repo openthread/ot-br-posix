@@ -111,6 +111,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::ScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_METHOD,
                    std::bind(&DBusThreadObject::AttachHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DETACH_METHOD,
+                   std::bind(&DBusThreadObject::DetachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_FACTORY_RESET_METHOD,
                    std::bind(&DBusThreadObject::FactoryResetHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_RESET_METHOD,
@@ -285,6 +287,11 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
         threadHelper->Attach(name, panid, extPanId, masterKey, pskc, channelMask,
                              [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
     }
+}
+
+void DBusThreadObject::DetachHandler(DBusRequest &aRequest)
+{
+    aRequest.ReplyOtResult(mNcp->GetThreadHelper()->Detach());
 }
 
 void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
