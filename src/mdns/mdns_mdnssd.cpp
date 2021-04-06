@@ -446,6 +446,7 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
     if (service != mServices.end())
     {
         assert(aServiceRef == nullptr || aServiceRef == service->mService);
+        OTBR_UNUSED_VARIABLE(aServiceRef);
 
         otbrLog(OTBR_LOG_INFO, "[mdns] remove service ref %p", service->mService);
 
@@ -716,6 +717,7 @@ otbrError PublisherMDnsSd::MakeFullName(char *aFullName, size_t aFullNameLength,
     VerifyOrExit(nameLength <= kMaxSizeOfHost, error = OTBR_ERROR_INVALID_ARGS);
 
     assert(aFullNameLength >= nameLength + sizeof(".") + strlen(domain));
+    OTBR_UNUSED_VARIABLE(aFullNameLength);
 
     strcpy(aFullName, aName);
     strcpy(aFullName + nameLength, ".");
