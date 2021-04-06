@@ -53,6 +53,7 @@
 #include <ot-legacy-pairing-ext.h>
 #endif
 
+static bool sReset;
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::seconds;
@@ -65,6 +66,7 @@ ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
                                            const char *aRadioUrl,
                                            const char *aBackboneInterfaceName)
     : mInstance(nullptr)
+    , mTriedAttach(false)
 {
     memset(&mConfig, 0, sizeof(mConfig));
 
@@ -239,10 +241,30 @@ void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
         mTimers.erase(mTimers.begin());
     }
 
-    if (getenv("OTBR_NO_AUTO_ATTACH") == nullptr && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+    if (!mTriedAttach && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
-        setenv("OTBR_NO_AUTO_ATTACH", "1", 0);
+        mTriedAttach = true;
     }
+}
+
+void ControllerOpenThread::Reset(void)
+{
+    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
+
+    otInstanceFinalize(mInstance);
+    otSysDeinit();
+    Init();
+    for (auto &handler : mResetHandlers)
+    {
+        handler();
+    }
+    mTriedAttach = false;
+    sReset       = false;
+}
+
+bool ControllerOpenThread::IsResetRequested(void)
+{
+    return sReset;
 }
 
 otbrError ControllerOpenThread::RequestEvent(int aEvent)
@@ -391,3 +413,10 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
 } // namespace Ncp
 } // namespace otbr
+
+void otPlatReset(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    sReset = true;
+}

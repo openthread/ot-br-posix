@@ -109,6 +109,21 @@ public:
     virtual void Process(const otSysMainloopContext &aMainloop) = 0;
 
     /**
+     * This method reest the Ncp Controller.
+     *
+     */
+    virtual void Reset(void) = 0;
+
+    /**
+     * This method return whether reset is requested.
+     *
+     * @retval  TRUE  reset is requested.
+     * @retval  FALSE reset isn't requested.
+     *
+     */
+    virtual bool IsResetRequested(void) = 0;
+
+    /**
      * This method request the event.
      *
      * @param[in]   aEvent  The event id to request.

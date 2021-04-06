@@ -41,7 +41,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <assert.h>
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
 
@@ -84,11 +83,6 @@ enum
     OTBR_OPT_RADIO_VERSION,
 };
 
-static jmp_buf sResetJump;
-static bool    sShouldTerminate = false;
-
-void __gcov_flush();
-
 // Default poll timeout.
 static const struct timeval kPollTimeout = {10, 0};
 static const struct option  kOptions[]   = {
@@ -103,16 +97,13 @@ static const struct option  kOptions[]   = {
 
 static void HandleSignal(int aSignal)
 {
-    sShouldTerminate = true;
     signal(aSignal, SIG_DFL);
 }
 
 static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 {
-    int                   error         = EXIT_SUCCESS;
+    int                   error         = EXIT_FAILURE;
     ControllerOpenThread &ncpOpenThread = static_cast<ControllerOpenThread &>(aInstance.GetNcp());
-
-    OT_UNUSED_VARIABLE(ncpOpenThread);
 
 #if OTBR_ENABLE_DBUS_SERVER
     std::unique_ptr<DBusAgent> dbusAgent = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, &ncpOpenThread));
@@ -128,7 +119,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
 
-    while (!sShouldTerminate)
+    while (true)
     {
         otSysMainloopContext mainloop;
         int                  rval;
@@ -159,6 +150,12 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
+        if (ncpOpenThread.IsResetRequested())
+        {
+            ncpOpenThread.Reset();
+            continue;
+        }
+
         if (rval >= 0)
         {
 #if OTBR_ENABLE_OPENWRT
@@ -176,13 +173,13 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             dbusAgent->Process(mainloop.mReadFdSet, mainloop.mWriteFdSet, mainloop.mErrorFdSet);
 #endif
         }
-        else if (errno != EINTR)
+        else
         {
 #if OTBR_ENABLE_OPENWRT
             sThreadMutex.lock();
 #endif
             error = OTBR_ERROR_ERRNO;
-            otbrLog(OTBR_LOG_ERR, "select() failed: %s", strerror(errno));
+            otbrLog(OTBR_LOG_ERR, "select() failed", strerror(errno));
             break;
         }
     }
@@ -212,7 +209,7 @@ static void OnAllocateFailed(void)
     exit(1);
 }
 
-static int realmain(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int                              logLevel = OTBR_LOG_INFO;
     int                              opt;
@@ -305,29 +302,4 @@ static int realmain(int argc, char *argv[])
 
 exit:
     return ret;
-}
-
-void otPlatReset(otInstance *aInstance)
-{
-    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
-
-    otInstanceFinalize(aInstance);
-    otSysDeinit();
-
-    longjmp(sResetJump, 1);
-    assert(false);
-}
-
-int main(int argc, char *argv[])
-{
-    if (setjmp(sResetJump))
-    {
-        alarm(0);
-#if OPENTHREAD_ENABLE_COVERAGE
-        __gcov_flush();
-#endif
-        execvp(argv[0], argv);
-    }
-
-    return realmain(argc, argv);
 }

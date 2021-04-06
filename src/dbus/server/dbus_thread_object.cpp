@@ -291,12 +291,13 @@ void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
     aRequest.ReplyOtResult(OT_ERROR_NONE);
     otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
+    mNcp->Reset();
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
+    mNcp->Reset();
     aRequest.ReplyOtResult(OT_ERROR_NONE);
-    otInstanceReset(mNcp->GetThreadHelper()->GetInstance());
 }
 
 void DBusThreadObject::JoinerStartHandler(DBusRequest &aRequest)

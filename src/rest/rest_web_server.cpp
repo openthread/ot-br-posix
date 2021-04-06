@@ -32,8 +32,6 @@
 
 #include <fcntl.h>
 
-#include "utils/socket_utils.hpp"
-
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
@@ -59,14 +57,23 @@ RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
     return sServer;
 }
 
-void RestWebServer::Init(void)
+otbrError RestWebServer::Init(void)
 {
+    otbrError error = OTBR_ERROR_NONE;
+
     mResource.Init();
-    InitializeListenFd();
+
+    error = InitializeListenFd();
+
+    return error;
 }
 
 void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
 {
+    if (mListenFd == -1)
+    {
+        VerifyOrExit(InitializeListenFd() == OTBR_ERROR_NONE);
+    }
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, mListenFd);
 
@@ -75,6 +82,7 @@ void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
         Connection *connection = it->second.get();
         connection->UpdateFdSet(aMainloop);
     }
+exit:
 
     return;
 }
@@ -124,7 +132,7 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
     return error;
 }
 
-void RestWebServer::InitializeListenFd(void)
+otbrError RestWebServer::InitializeListenFd(void)
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorMessage;
@@ -136,7 +144,7 @@ void RestWebServer::InitializeListenFd(void)
     mAddress.sin_addr.s_addr = INADDR_ANY;
     mAddress.sin_port        = htons(kPortNumber);
 
-    mListenFd = SocketWithCloseExec(AF_INET, SOCK_STREAM, 0, kSocketNonBlock);
+    mListenFd = socket(AF_INET, SOCK_STREAM, 0);
     VerifyOrExit(mListenFd != -1, err = errno, error = OTBR_ERROR_REST, errorMessage = "socket");
 
     ret = setsockopt(mListenFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&optval), sizeof(optval));
@@ -148,14 +156,21 @@ void RestWebServer::InitializeListenFd(void)
     ret = listen(mListenFd, 5);
     VerifyOrExit(ret >= 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "listen");
 
-exit:
+    ret = SetFdNonblocking(mListenFd);
+    VerifyOrExit(ret, err = errno, error = OTBR_ERROR_REST, errorMessage = " set nonblock");
 
+exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
+        if (mListenFd != -1)
+        {
+            close(mListenFd);
+            mListenFd = -1;
+        }
+        otbrLog(OTBR_LOG_ERR, "otbr rest server init error %s : %s", errorMessage.c_str(), strerror(err));
     }
 
-    VerifyOrDie(error == OTBR_ERROR_NONE, "otbr rest server init error");
+    return error;
 }
 
 otbrError RestWebServer::Accept(int aListenFd)
