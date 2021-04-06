@@ -259,10 +259,10 @@ std::string WpanService::HandleStatusRequest()
     }
 
     VerifyOrExit((rval = client.Execute("version")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["OT-CTL:Version"] = rval;
+    networkInfo["OpenThread:Version"] = rval;
 
     VerifyOrExit((rval = client.Execute("version api")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["OT-CTL:Version API"] = rval;
+    networkInfo["OpenThread:Version API"] = rval;
 
     VerifyOrExit((rval = client.Execute("rcp version")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
     networkInfo["RCP:Version"] = rval;
