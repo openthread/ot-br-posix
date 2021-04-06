@@ -320,6 +320,7 @@ std::string WpanService::HandleStatusRequest()
 
             if (strstr(rval, linkLocalAddressToken) == rval)
             {
+                networkInfo["IPv6:LinkLocalAddress"] = rval;
                 continue;
             }
 
