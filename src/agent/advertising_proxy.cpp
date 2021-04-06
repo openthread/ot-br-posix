@@ -122,12 +122,17 @@ void AdvertisingProxy::Stop()
     otbrLog(OTBR_LOG_INFO, "[adproxy] Stopped");
 }
 
-void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout, void *aContext)
+void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
+                                          const otSrpServerHost *    aHost,
+                                          uint32_t                   aTimeout,
+                                          void *                     aContext)
 {
-    static_cast<AdvertisingProxy *>(aContext)->AdvertisingHandler(aHost, aTimeout);
+    static_cast<AdvertisingProxy *>(aContext)->AdvertisingHandler(aId, aHost, aTimeout);
 }
 
-void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout)
+void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
+                                          const otSrpServerHost *    aHost,
+                                          uint32_t                   aTimeout)
 {
     // TODO: There are corner cases that the `aHost` is freed by SRP server because
     // of timeout, but this `aHost` is passed back to SRP server and matches a newly
@@ -158,7 +163,7 @@ void AdvertisingProxy::AdvertisingHandler(const otSrpServerHost *aHost, uint32_t
     hostAddress = otSrpServerHostGetAddresses(aHost, &hostAddressNum);
     hostDeleted = otSrpServerHostIsDeleted(aHost);
 
-    update->mHost = aHost;
+    update->mId = aId;
     update->mCallbackCount += !hostDeleted;
     update->mHostName = hostName;
 
@@ -217,7 +222,7 @@ exit:
         }
 
         mOutstandingUpdates.pop_back();
-        otSrpServerHandleServiceUpdateResult(GetInstance(), aHost, OtbrErrorToOtError(error));
+        otSrpServerHandleServiceUpdateResult(GetInstance(), aId, OtbrErrorToOtError(error));
     }
 }
 
@@ -244,7 +249,7 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
 
             if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
             {
-                otSrpServerHandleServiceUpdateResult(GetInstance(), update->mHost, OtbrErrorToOtError(aError));
+                otSrpServerHandleServiceUpdateResult(GetInstance(), update->mId, OtbrErrorToOtError(aError));
                 mOutstandingUpdates.erase(update);
             }
             else
@@ -282,7 +287,7 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
 
         if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
         {
-            otSrpServerHandleServiceUpdateResult(GetInstance(), update->mHost, OtbrErrorToOtError(aError));
+            otSrpServerHandleServiceUpdateResult(GetInstance(), update->mId, OtbrErrorToOtError(aError));
             mOutstandingUpdates.erase(update);
         }
         else
