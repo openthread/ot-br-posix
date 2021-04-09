@@ -124,7 +124,9 @@ private:
     void               OnDiscoveryProxySubscribe(const char *aSubscription);
     static void        OnDiscoveryProxyUnsubscribe(void *aContext, const char *aFullName);
     void               OnDiscoveryProxyUnsubscribe(const char *aSubscription);
-    int                GetServiceSubscriptionCount(const std::string &aInstanceName, const std::string &aSubscription);
+    int                GetServiceSubscriptionCount(const std::string &aInstanceName,
+                                                   const std::string &aServiceName,
+                                                   const std::string &aHostName);
     static std::string TranslateDomain(const std::string &aName, const std::string &aTargetDomain);
     static void        CheckServiceNameSanity(const std::string &aType);
     static void        CheckHostnameSanity(const std::string &aHostName);
