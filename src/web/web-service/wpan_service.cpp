@@ -33,9 +33,11 @@
 
 #include "web/web-service/wpan_service.hpp"
 
-#include <inttypes.h>
 #include <sstream>
+
+#include <inttypes.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
@@ -457,31 +459,59 @@ exit:
 
 std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
 {
-    Json::Value  root;
-    Json::Reader reader;
-    int          ret = kWpanStatus_Ok;
-    std::string  pskd;
-    std::string  response;
+    Json::Value      root;
+    Json::Reader     reader;
+    Json::FastWriter jsonWriter;
+    int              ret = kWpanStatus_Ok;
+    std::string      pskd;
+    std::string      response;
+    const char *     rval;
 
     VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
     pskd = root["pskd"].asString();
+
     {
         otbr::Web::OpenThreadClient client;
-        const char *                rval;
 
         VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
-        rval = client.Execute("commissioner start");
-        VerifyOrExit(rval != nullptr, ret = kWpanStatus_Down);
-        rval = client.Execute("commissioner joiner add * %s", pskd.c_str());
-        VerifyOrExit(rval != nullptr, ret = kWpanStatus_Down);
-        root["error"] = ret;
+
+        for (int i = 0; i < 5; i++)
+        {
+            VerifyOrExit((rval = client.Execute("commissioner state")) != nullptr, ret = kWpanStatus_Down);
+
+            if (strcmp(rval, "disabled") == 0)
+            {
+                VerifyOrExit((rval = client.Execute("commissioner start")) != nullptr, ret = kWpanStatus_Down);
+            }
+            else if (strcmp(rval, "active") == 0)
+            {
+                VerifyOrExit(client.Execute("commissioner joiner add * %s", pskd.c_str()) != nullptr,
+                             ret = kWpanStatus_Down);
+                root["error"] = ret;
+                ExitNow();
+            }
+
+            sleep(1);
+        }
+
+        client.Execute("commissioner stop");
     }
+
+    ret = kWpanStatus_SetFailed;
+
 exit:
+
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+    root["error"]  = ret;
+
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
         otbrLog(OTBR_LOG_ERR, "error: %d", ret);
     }
+    response = jsonWriter.write(root);
+
     return response;
 }
 
