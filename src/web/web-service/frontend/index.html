@@ -290,16 +290,6 @@
               <form name="commissionForm">
                 <div layout="row">
                   <md-input-container flex="100">
-                    <label>Network Passphrase</label>
-                    <input required name="passphrase" ng-model="commission.passphrase">
-                    <div ng-messages="commissionForm.passphrase.$error">
-                      <div ng-message="required">This is required.</div>
-                    </div>
-                  </md-input-container>
-                </div>
-
-                <div layout="row">
-                  <md-input-container flex="100">
                     <label>Joiner PSKd</label>
                     <input required name="pskd" ng-model="commission.pskd">
                     <div ng-messages="commissionForm.pskd.$error">
