@@ -158,7 +158,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
         if (done != nullptr)
         {
             // remove trailing \r\n
-            if (done - rval > 2)
+            if (done - mBuffer > 2)
             {
                 done[-2] = '\0';
             }
