@@ -39,6 +39,7 @@
 #include <stdint.h>
 
 #include "agent/advertising_proxy.hpp"
+#include "agent/discovery_proxy.hpp"
 #include "agent/instance_params.hpp"
 #include "agent/ncp_openthread.hpp"
 #include "common/mainloop.hpp"
@@ -160,6 +161,9 @@ private:
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    Dnssd::DiscoveryProxy mDiscoveryProxy;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     BackboneRouter::BackboneAgent mBackboneAgent;
