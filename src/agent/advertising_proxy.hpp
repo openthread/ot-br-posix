@@ -82,14 +82,17 @@ private:
     {
         typedef std::vector<std::pair<std::string, std::string>> ServiceNameList;
 
-        const otSrpServerHost *mHost = nullptr;    // The SRP host which being published.
-        std::string            mHostName;          // The host name.
-        ServiceNameList        mServiceNames;      // The list of service instance and name pair.
-        uint32_t               mCallbackCount = 0; // The number of callbacks which we are waiting for.
+        otSrpServerServiceUpdateId mId;                // The ID of the SRP service update transaction.
+        std::string                mHostName;          // The host name.
+        ServiceNameList            mServiceNames;      // The list of service instance and name pair.
+        uint32_t                   mCallbackCount = 0; // The number of callbacks which we are waiting for.
     };
 
-    static void AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout, void *aContext);
-    void        AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout);
+    static void AdvertisingHandler(otSrpServerServiceUpdateId aId,
+                                   const otSrpServerHost *    aHost,
+                                   uint32_t                   aTimeout,
+                                   void *                     aContext);
+    void        AdvertisingHandler(otSrpServerServiceUpdateId aId, const otSrpServerHost *aHost, uint32_t aTimeout);
 
     static Mdns::Publisher::TxtList MakeTxtList(const otSrpServerService *aSrpService);
 

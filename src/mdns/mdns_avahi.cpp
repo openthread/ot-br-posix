@@ -820,6 +820,36 @@ std::string PublisherAvahi::MakeFullName(const char *aName)
     return fullHostName;
 }
 
+void PublisherAvahi::SubscribeService(const std::string &aType, const std::string &aInstanceName)
+{
+    OTBR_UNUSED_VARIABLE(aType);
+    OTBR_UNUSED_VARIABLE(aInstanceName);
+
+    VerifyOrDie(false, "SubscribeService is not implemented with avahi");
+}
+
+void PublisherAvahi::UnsubscribeService(const std::string &aType, const std::string &aInstanceName)
+{
+    OTBR_UNUSED_VARIABLE(aType);
+    OTBR_UNUSED_VARIABLE(aInstanceName);
+
+    VerifyOrDie(false, "UnsubscribeService is not implemented with avahi");
+}
+
+void PublisherAvahi::SubscribeHost(const std::string &aHostName)
+{
+    OTBR_UNUSED_VARIABLE(aHostName);
+
+    VerifyOrDie(false, "SubscribeHost is not implemented with avahi");
+}
+
+void PublisherAvahi::UnsubscribeHost(const std::string &aHostName)
+{
+    OTBR_UNUSED_VARIABLE(aHostName);
+
+    VerifyOrDie(false, "UnsubscribeHost is not implemented with avahi");
+}
+
 Publisher *Publisher::Create(int aFamily, const char *aDomain, StateHandler aHandler, void *aContext)
 {
     return new PublisherAvahi(aFamily, aDomain, aHandler, aContext);

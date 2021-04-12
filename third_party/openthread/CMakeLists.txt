@@ -74,6 +74,10 @@ endif()
 set(OT_COAP ON CACHE BOOL "Enable CoAP in OpenThread" FORCE)
 set(OT_COAPS ON CACHE BOOL "Enable secure CoAP in OpenThread" FORCE)
 
+if (OTBR_DNSSD_DISCOVERY_PROXY)
+    set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
+endif()
+
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
 
 add_subdirectory(repo EXCLUDE_FROM_ALL)

@@ -64,6 +64,11 @@ if (OTBR_SRP_ADVERTISING_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
 endif()
 
+option(OTBR_DNSSD_DISCOVERY_PROXY   "Enable DNS-SD Discovery Proxy support" OFF)
+if (OTBR_DNSSD_DISCOVERY_PROXY)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNSSD_DISCOVERY_PROXY=1)
+endif()
+
 option(OTBR_UNSECURE_JOIN "Enable unsecure joining" OFF)
 if(OTBR_UNSECURE_JOIN)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_UNSECURE_JOIN=1)
