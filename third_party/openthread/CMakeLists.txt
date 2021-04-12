@@ -71,8 +71,8 @@ if (OT_THREAD_VERSION STREQUAL "1.2")
     set(OT_MLR ON CACHE BOOL "Enable Thread 1.2 MLR by default")
 endif()
 
-set(OT_COAP ON CACHE BOOL "Enable CoAP in OpenThread" FORCE)
-set(OT_COAPS ON CACHE BOOL "Enable secure CoAP in OpenThread" FORCE)
+set(OT_COAP ON CACHE BOOL "Enable CoAP in OpenThread")
+set(OT_COAPS ON CACHE BOOL "Enable secure CoAP in OpenThread")
 
 if (OTBR_DNSSD_DISCOVERY_PROXY)
     set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
