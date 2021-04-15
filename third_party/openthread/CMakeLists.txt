@@ -71,6 +71,10 @@ if (OT_THREAD_VERSION STREQUAL "1.2")
     set(OT_MLR ON CACHE BOOL "Enable Thread 1.2 MLR by default")
 endif()
 
+if (OTBR_DNSSD_DISCOVERY_PROXY)
+    set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
+endif()
+
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
 
 add_subdirectory(repo EXCLUDE_FROM_ALL)

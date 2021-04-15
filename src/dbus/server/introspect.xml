@@ -46,6 +46,10 @@
       <arg name="channel_mask" type="u"/>
     </method>
 
+    <!-- Detach: Detach the current device from the Thread network. -->
+    <method name="Detach">
+    </method>
+
     <!-- PermitUnsecureJoin: Allow joining the network via unsecure traffic temporarily.
       @port: The port of the unsecure traffic.
       @timeout: The timeout for the permission.

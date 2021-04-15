@@ -33,9 +33,11 @@
 
 #include "web/web-service/wpan_service.hpp"
 
-#include <inttypes.h>
 #include <sstream>
+
+#include <inttypes.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
@@ -253,7 +255,7 @@ std::string WpanService::HandleStatusRequest()
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
     VerifyOrExit((rval = client.Execute("state")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["NCP:State"] = rval;
+    networkInfo["RCP:State"] = rval;
 
     if (!strcmp(rval, "disabled"))
     {
@@ -271,16 +273,22 @@ std::string WpanService::HandleStatusRequest()
     }
 
     VerifyOrExit((rval = client.Execute("version")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["NCP:Version"] = rval;
+    networkInfo["OpenThread:Version"] = rval;
+
+    VerifyOrExit((rval = client.Execute("version api")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    networkInfo["OpenThread:Version API"] = rval;
+
+    VerifyOrExit((rval = client.Execute("rcp version")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    networkInfo["RCP:Version"] = rval;
 
     VerifyOrExit((rval = client.Execute("eui64")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["NCP:HardwareAddress"] = rval;
+    networkInfo["RCP:EUI64"] = rval;
 
     VerifyOrExit((rval = client.Execute("channel")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["NCP:Channel"] = rval;
+    networkInfo["RCP:Channel"] = rval;
 
-    VerifyOrExit((rval = client.Execute("state")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["Network:NodeType"] = rval;
+    VerifyOrExit((rval = client.Execute("txpower")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    networkInfo["RCP:TxPower"] = rval;
 
     VerifyOrExit((rval = client.Execute("networkname")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
     networkInfo["Network:Name"] = rval;
@@ -291,20 +299,27 @@ std::string WpanService::HandleStatusRequest()
     VerifyOrExit((rval = client.Execute("panid")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
     networkInfo["Network:PANID"] = rval;
 
+    VerifyOrExit((rval = client.Execute("partitionid")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    networkInfo["Network:PartitionID"] = rval;
+
     {
         static const char kMeshLocalPrefixLocator[]       = "Mesh Local Prefix: ";
         static const char kMeshLocalAddressTokenLocator[] = "0:ff:fe00:";
-        std::string       meshLocalPrefix;
+        static const char localAddressToken[]             = "fd";
+        static const char linkLocalAddressToken[]         = "fe80";
+        std::string       meshLocalPrefix                 = "";
 
         VerifyOrExit((rval = client.Execute("dataset active")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
         rval = strstr(rval, kMeshLocalPrefixLocator);
-        rval += sizeof(kMeshLocalPrefixLocator) - 1;
-        *strstr(rval, "\r\n") = '\0';
+        if (rval != nullptr)
+        {
+            rval += sizeof(kMeshLocalPrefixLocator) - 1;
+            *strstr(rval, "\r\n")               = '\0';
+            networkInfo["IPv6:MeshLocalPrefix"] = rval;
 
-        networkInfo["IPv6:MeshLocalPrefix"] = rval;
-
-        meshLocalPrefix = rval;
-        meshLocalPrefix.resize(meshLocalPrefix.find(":/"));
+            meshLocalPrefix = rval;
+            meshLocalPrefix.resize(meshLocalPrefix.find(":/"));
+        }
 
         VerifyOrExit((rval = client.Execute("ipaddr")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
 
@@ -312,8 +327,14 @@ std::string WpanService::HandleStatusRequest()
         {
             char *meshLocalAddressToken = nullptr;
 
-            if (strstr(rval, meshLocalPrefix.c_str()) != rval)
+            if (strstr(rval, "> ") != nullptr)
             {
+                rval += 2;
+            }
+
+            if (strstr(rval, linkLocalAddressToken) == rval)
+            {
+                networkInfo["IPv6:LinkLocalAddress"] = rval;
                 continue;
             }
 
@@ -321,17 +342,34 @@ std::string WpanService::HandleStatusRequest()
 
             if (meshLocalAddressToken == nullptr)
             {
-                break;
-            }
+                if ((meshLocalPrefix.size() > 0) && (strstr(rval, meshLocalPrefix.c_str()) == rval))
+                {
+                    networkInfo["IPv6:MeshLocalAddress"] = rval;
+                    continue;
+                }
 
-            // In case this address is not ends with 0:ff:fe00:xxxx
-            if (strchr(meshLocalAddressToken + sizeof(kMeshLocalAddressTokenLocator) - 1, ':') != nullptr)
+                if (strstr(rval, localAddressToken) != rval)
+                {
+                    networkInfo["IPv6:GlobalAddress"] = rval;
+                }
+                else
+                {
+                    networkInfo["IPv6:LocalAddress"] = rval;
+                }
+            }
+            else
             {
-                break;
+                *meshLocalAddressToken              = '\0';
+                meshLocalPrefix                     = rval;
+                networkInfo["IPv6:MeshLocalPrefix"] = rval;
+                std::string la                      = networkInfo.get("IPv6:LocalAddress", "unknown").asString();
+                if (strstr(rval, la.c_str()) != nullptr)
+                {
+                    networkInfo["IPv6:MeshLocalAddress"] = networkInfo.get("IPv6:LocalAddress", "notfound").asString();
+                    networkInfo.removeMember("IPv6:LocalAddress");
+                }
             }
         }
-
-        networkInfo["IPv6:MeshLocalAddress"] = rval;
     }
 
 exit:
@@ -421,31 +459,59 @@ exit:
 
 std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
 {
-    Json::Value  root;
-    Json::Reader reader;
-    int          ret = kWpanStatus_Ok;
-    std::string  pskd;
-    std::string  response;
+    Json::Value      root;
+    Json::Reader     reader;
+    Json::FastWriter jsonWriter;
+    int              ret = kWpanStatus_Ok;
+    std::string      pskd;
+    std::string      response;
+    const char *     rval;
 
     VerifyOrExit(reader.parse(aCommissionRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
     pskd = root["pskd"].asString();
+
     {
         otbr::Web::OpenThreadClient client;
-        const char *                rval;
 
         VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
-        rval = client.Execute("commissioner start");
-        VerifyOrExit(rval != nullptr, ret = kWpanStatus_Down);
-        rval = client.Execute("commissioner joiner add * %s", pskd.c_str());
-        VerifyOrExit(rval != nullptr, ret = kWpanStatus_Down);
-        root["error"] = ret;
+
+        for (int i = 0; i < 5; i++)
+        {
+            VerifyOrExit((rval = client.Execute("commissioner state")) != nullptr, ret = kWpanStatus_Down);
+
+            if (strcmp(rval, "disabled") == 0)
+            {
+                VerifyOrExit((rval = client.Execute("commissioner start")) != nullptr, ret = kWpanStatus_Down);
+            }
+            else if (strcmp(rval, "active") == 0)
+            {
+                VerifyOrExit(client.Execute("commissioner joiner add * %s", pskd.c_str()) != nullptr,
+                             ret = kWpanStatus_Down);
+                root["error"] = ret;
+                ExitNow();
+            }
+
+            sleep(1);
+        }
+
+        client.Execute("commissioner stop");
     }
+
+    ret = kWpanStatus_SetFailed;
+
 exit:
+
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+    root["error"]  = ret;
+
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
         otbrLog(OTBR_LOG_ERR, "error: %d", ret);
     }
+    response = jsonWriter.write(root);
+
     return response;
 }
 

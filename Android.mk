@@ -111,11 +111,14 @@ LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
     src/agent/instance_params.cpp \
     src/agent/border_agent.cpp \
+    src/agent/discovery_proxy.cpp \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
+    src/common/dns_utils.cpp \
     src/common/logging.cpp \
     src/common/task_runner.cpp \
+    src/common/types.cpp \
     src/dbus/common/dbus_message_dump.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \

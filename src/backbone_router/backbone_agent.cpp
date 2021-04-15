@@ -104,6 +104,7 @@ void BackboneAgent::OnBecomePrimary(void)
 #if OTBR_ENABLE_DUA_ROUTING
     if (mDomainPrefix.IsValid())
     {
+        mDuaRoutingManager.Enable(mDomainPrefix);
         mNdProxyManager.Enable(mDomainPrefix);
     }
 #endif
@@ -115,6 +116,7 @@ void BackboneAgent::OnResignPrimary(void)
             StateToString(mBackboneRouterState));
 
 #if OTBR_ENABLE_DUA_ROUTING
+    mDuaRoutingManager.Disable();
     mNdProxyManager.Disable();
 #endif
 }
@@ -181,7 +183,10 @@ void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomain
     VerifyOrExit(IsPrimary() && aEvent != OT_BACKBONE_ROUTER_DOMAIN_PREFIX_REMOVED);
 
 #if OTBR_ENABLE_DUA_ROUTING
+    mDuaRoutingManager.Disable();
     mNdProxyManager.Disable();
+
+    mDuaRoutingManager.Enable(mDomainPrefix);
     mNdProxyManager.Enable(mDomainPrefix);
 #endif
 

@@ -69,9 +69,21 @@ void Ip6Address::CopyTo(struct sockaddr_in6 &aSockAddr) const
     aSockAddr.sin6_family = AF_INET6;
 }
 
+void Ip6Address::CopyFrom(const struct sockaddr_in6 &aSockAddr)
+{
+    CopyFrom(aSockAddr.sin6_addr);
+}
+
 void Ip6Address::CopyTo(struct in6_addr &aIn6Addr) const
 {
+    static_assert(sizeof(m8) == sizeof(aIn6Addr.s6_addr), "invalid IPv6 address size");
     memcpy(aIn6Addr.s6_addr, m8, sizeof(aIn6Addr.s6_addr));
+}
+
+void Ip6Address::CopyFrom(const struct in6_addr &aIn6Addr)
+{
+    static_assert(sizeof(m8) == sizeof(aIn6Addr.s6_addr), "invalid IPv6 address size");
+    memcpy(m8, aIn6Addr.s6_addr, sizeof(aIn6Addr.s6_addr));
 }
 
 otbrError Ip6Address::FromString(const char *aStr, Ip6Address &aAddr)
