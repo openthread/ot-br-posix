@@ -408,6 +408,26 @@ void MdnsMojoPublisher::UnpublishHostTask(const std::string &aInstanceName)
     }
 }
 
+void MdnsMojoPublisher::SubscribeService(const std::string &aType, const std::string &aInstanceName)
+{
+    otbrLog(OTBR_LOG_WARNING, "SubscribeService is not implemented");
+}
+
+void MdnsMojoPublisher::UnsubscribeService(const std::string &aType, const std::string &aInstanceName)
+{
+    otbrLog(OTBR_LOG_WARNING, "UnsubscribeService is not implemented");
+}
+
+void MdnsMojoPublisher::SubscribeHost(const std::string &aHostName)
+{
+    otbrLog(OTBR_LOG_WARNING, "SubscribeHost is not implemented");
+}
+
+void MdnsMojoPublisher::UnsubscribeHost(const std::string &aHostName)
+{
+    otbrLog(OTBR_LOG_WARNING, "UnsubscribeHost is not implemented");
+}
+
 void MdnsMojoPublisher::Update(MainloopContext &aMainloop)
 {
     mMainloopTaskRunner.Update(aMainloop);
