@@ -63,10 +63,10 @@ otbrError Publisher::EncodeTxtData(const TxtList &aTxtList, uint8_t *aTxtData, u
 
     for (const auto &txtEntry : aTxtList)
     {
-        const char *   name        = txtEntry.mName;
-        const size_t   nameLength  = txtEntry.mNameLength;
-        const uint8_t *value       = txtEntry.mValue;
-        const size_t   valueLength = txtEntry.mValueLength;
+        const char *   name        = txtEntry.mName.c_str();
+        const size_t   nameLength  = txtEntry.mName.length();
+        const uint8_t *value       = txtEntry.mValue.data();
+        const size_t   valueLength = txtEntry.mValue.size();
         const size_t   entryLength = nameLength + 1 + valueLength;
 
         VerifyOrExit(nameLength > 0 && nameLength <= kMaxTextEntrySize, error = OTBR_ERROR_INVALID_ARGS);
