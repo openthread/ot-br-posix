@@ -53,11 +53,11 @@ jobs:
       matrix:
         include:
           - name: "Border Router"
-            otbr_options: "-DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
+            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
             border_routing: 1
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
           - name: "Backbone Router"
-            otbr_options: "-DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON"
+            otbr_options: "-DOT_TREL=OFF -DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON"
             border_routing: 0
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
     name: ${{ matrix.name }}
