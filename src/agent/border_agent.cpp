@@ -43,6 +43,7 @@
 #include <unistd.h>
 
 #include <openthread/thread_ftd.h>
+#include <openthread/border_agent.h>
 #include <openthread/platform/toolchain.h>
 
 #include "agent/ncp_openthread.hpp"
@@ -70,15 +71,6 @@ enum
 {
     kAloc16Leader   = 0xfc00, ///< leader anycast locator.
     kInvalidLocator = 0xffff, ///< invalid locator.
-};
-
-/**
- * UDP ports
- *
- */
-enum
-{
-    kBorderAgentUdpPort = 49191, ///< Thread commissioning port.
 };
 
 uint32_t BorderAgent::StateBitmap::ToUint32(void) const
@@ -302,7 +294,7 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
 
-    mPublisher->PublishService(/* aHostName */ nullptr, kBorderAgentUdpPort, networkName, kBorderAgentServiceType,
+    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), networkName, kBorderAgentServiceType,
                                txtList);
 }
 

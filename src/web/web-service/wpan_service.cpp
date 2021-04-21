@@ -45,9 +45,6 @@
 namespace otbr {
 namespace Web {
 
-const char *WpanService::kBorderAgentHost = "127.0.0.1";
-const char *WpanService::kBorderAgentPort = "49191";
-
 #define WPAN_RESPONSE_SUCCESS "successful"
 #define WPAN_RESPONSE_FAILURE "failed"
 
