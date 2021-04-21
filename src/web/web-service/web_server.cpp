@@ -152,7 +152,6 @@ void WebServer::StopWebServer(void)
     } catch (const std::exception &e)
     {
         otbrLog(OTBR_LOG_CRIT, "[web] failed to stop web server: %s", e.what());
-        abort();
     }
 }
 
