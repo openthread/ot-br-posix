@@ -324,7 +324,7 @@ network_form()
     # verify mDNS is working as expected.
     local mdns_result="${TEST_BASE}"/mdns_result.log
     avahi-browse -aprt | tee "${mdns_result}"
-    OT_BORDER_AGENT_PORT=$(grep "${OT_NETWORK_NAME}" "${mdns_result}" | grep -o ';[0-9]\{5\};' | head -n1 | tr -d ';')
+    OT_BORDER_AGENT_PORT=$(grep -a "${OT_NETWORK_NAME}" "${mdns_result}" | grep -ao ';[0-9]\{5\};' | head -n1 | tr -d ';')
     rm "${mdns_result}"
 }
 
