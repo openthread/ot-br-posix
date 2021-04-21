@@ -42,8 +42,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <openthread/thread_ftd.h>
 #include <openthread/border_agent.h>
+#include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
 #include "agent/ncp_openthread.hpp"
@@ -294,8 +294,8 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
 
-    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), networkName, kBorderAgentServiceType,
-                               txtList);
+    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), networkName,
+                               kBorderAgentServiceType, txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)
