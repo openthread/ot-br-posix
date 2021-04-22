@@ -623,10 +623,10 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
 
     for (const auto &txtEntry : aTxtList)
     {
-        const char *   name        = txtEntry.mName;
-        size_t         nameLength  = txtEntry.mNameLength;
-        const uint8_t *value       = txtEntry.mValue;
-        size_t         valueLength = txtEntry.mValueLength;
+        const char *   name        = txtEntry.mName.c_str();
+        size_t         nameLength  = txtEntry.mName.length();
+        const uint8_t *value       = txtEntry.mValue.data();
+        size_t         valueLength = txtEntry.mValue.size();
         // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
         size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
 
