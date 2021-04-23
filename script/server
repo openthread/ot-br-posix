@@ -45,7 +45,7 @@ main()
         systemctl is-active rsyslog || sudo systemctl start rsyslog || die 'Failed to start rsyslog!'
         systemctl is-active dbus || sudo systemctl start dbus || die 'Failed to start dbus!'
         systemctl is-active avahi-daemon || sudo systemctl start avahi-daemon || die 'Failed to start avahi!'
-        systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
+        without WEB_GUI || systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
         systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
     elif have service; then
         sudo service rsyslog status || sudo service rsyslog start || die 'Failed to start rsyslog!'
@@ -54,7 +54,7 @@ main()
         sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
         sudo service avahi-daemon status || sudo service avahi-daemon start || die 'Failed to start avahi!'
         sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
-        sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
+        without WEB_GUI || sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
     else
         die 'Unable to find service manager. Try script/console to start in console mode!'
     fi

@@ -93,7 +93,7 @@ jobs:
       - name: Bootstrap OpenThread Test
         run: |
           sudo rm /etc/apt/sources.list.d/* && sudo apt-get update
-          sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build socat
+          sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build socat nodejs npm
           python3 -m pip install -r third_party/openthread/repo/tests/scripts/thread-cert/requirements.txt
       - name: Build OpenThread
         run: |

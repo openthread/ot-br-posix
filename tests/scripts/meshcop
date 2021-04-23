@@ -80,6 +80,10 @@ readonly OTBR_WEB_HOST=127.0.0.1
 readonly OTBR_WEB_PORT=8773
 readonly OTBR_WEB_URL="http://${OTBR_WEB_HOST}:${OTBR_WEB_PORT}"
 
+# External commissioner
+readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
+
 #
 # NOTE Joiner pass phrase:
 #   Must be at least 6 bytes long
@@ -330,9 +334,6 @@ network_form()
 
 ot_commissioner_build()
 {
-    readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
-    readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
-
     if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
         return 0
     fi
