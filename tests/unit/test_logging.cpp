@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "TEST"
+
 #include <CppUTest/TestHarness.h>
 
 #include <stdio.h>
@@ -42,7 +44,7 @@ TEST(Logging, TestLoggingHigherLevel)
 
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_LEVEL_INFO, true);
-    otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_AGENT_PREFIX, "cool-higher");
+    otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_LOG_TAG, "cool-higher");
     otbrLogDeinit();
     sleep(0);
 
@@ -57,7 +59,7 @@ TEST(Logging, TestLoggingEqualLevel)
 
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_LEVEL_INFO, true);
-    otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_AGENT_PREFIX, "cool-equal");
+    otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_LOG_TAG, "cool-equal");
     otbrLogDeinit();
     sleep(0);
 
@@ -74,7 +76,7 @@ TEST(Logging, TestLoggingLowerLevel)
 
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_LEVEL_INFO, true);
-    otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_AGENT_PREFIX, "cool-lower");
+    otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_LOG_TAG, "cool-lower");
     otbrLogDeinit();
     sleep(0);
 

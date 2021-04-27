@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/ncp_openthread.hpp"
 
 #include <assert.h>
@@ -212,7 +214,7 @@ const char *ControllerOpenThread::GetThreadVersion(void)
         version = "1.2.0";
         break;
     default:
-        otbrLogCritAgent("Unexpected thread version %hu", otThreadGetVersion());
+        otbrLogCrit("Unexpected thread version %hu", otThreadGetVersion());
         exit(-1);
     }
     return version;

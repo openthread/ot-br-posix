@@ -31,6 +31,8 @@
  *   The file implements the ND Proxy management.
  */
 
+#define OTBR_LOG_TAG "NDPROXY"
+
 #include "backbone_router/nd_proxy.hpp"
 
 #if OTBR_ENABLE_DUA_ROUTING
@@ -87,7 +89,7 @@ exit:
         FiniIcmp6RawSocket();
     }
 
-    otbrLogResultBbr(error, "NdProxyManager: %s", __FUNCTION__);
+    otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
 }
 
 void NdProxyManager::Disable(void)
@@ -107,7 +109,7 @@ void NdProxyManager::Disable(void)
                  error = OTBR_ERROR_ERRNO);
 
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: %s", __FUNCTION__);
+    otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
 }
 
 void NdProxyManager::Init(void)
@@ -183,7 +185,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
         // only process neighbor solicit
         VerifyOrExit(icmp6header->icmp6_type == ND_NEIGHBOR_SOLICIT, error = OTBR_ERROR_PARSE);
 
-        otbrLogDebgBbr("NdProxyManager: Received ND-NS from %s", src.ToString().c_str());
+        otbrLogDebg("NdProxyManager: Received ND-NS from %s", src.ToString().c_str());
 
         for (cmsghdr = CMSG_FIRSTHDR(&msghdr); cmsghdr; cmsghdr = CMSG_NXTHDR(&msghdr, cmsghdr))
         {
@@ -210,8 +212,8 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
                         }
                     }
 
-                    otbrLogDebgBbr("NdProxyManager: dst=%s, ifindex=%d, proxying=%s", dst.ToString().c_str(), ifindex,
-                                   found ? "Y" : "N");
+                    otbrLogDebg("NdProxyManager: dst=%s, ifindex=%d, proxying=%s", dst.ToString().c_str(), ifindex,
+                                found ? "Y" : "N");
                 }
                 break;
 
@@ -220,7 +222,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
                 {
                     int hops = *(int *)CMSG_DATA(cmsghdr);
 
-                    otbrLogDebgBbr("NdProxyManager: hops=%d (%s)", hops, hops == 255 ? "Good" : "Bad");
+                    otbrLogDebg("NdProxyManager: hops=%d (%s)", hops, hops == 255 ? "Good" : "Bad");
 
                     VerifyOrExit(hops == 255);
                 }
@@ -234,15 +236,15 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
             struct nd_neighbor_solicit *ns     = reinterpret_cast<struct nd_neighbor_solicit *>(packet);
             Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns->nd_ns_target);
 
-            otbrLogDebgBbr("NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s",
-                           src.ToString().c_str(), target.ToString().c_str());
+            otbrLogDebg("NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s", src.ToString().c_str(),
+                        target.ToString().c_str());
 
             SendNeighborAdvertisement(target, src);
         }
     }
 
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: %s", __FUNCTION__);
+    otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
 }
 
 void NdProxyManager::ProcessUnicastNeighborSolicition(void)
@@ -257,7 +259,7 @@ void NdProxyManager::ProcessUnicastNeighborSolicition(void)
     error = OTBR_ERROR_NONE;
 
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: %s", __FUNCTION__);
+    otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
 }
 
 void NdProxyManager::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aDua)
@@ -341,7 +343,7 @@ void NdProxyManager::SendNeighborAdvertisement(const Ip6Address &aTarget, const 
                  error = OTBR_ERROR_ERRNO);
 
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: %s", __FUNCTION__);
+    otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
 }
 
 otbrError NdProxyManager::UpdateMacAddress(void)
@@ -360,7 +362,7 @@ otbrError NdProxyManager::UpdateMacAddress(void)
     ExitNow(error = OTBR_ERROR_NOT_IMPLEMENTED);
 #endif
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: UpdateMacAddress to %s", mMacAddress.ToString().c_str());
+    otbrLogResult(error, "NdProxyManager: UpdateMacAddress to %s", mMacAddress.ToString().c_str());
     return error;
 }
 
@@ -430,7 +432,7 @@ otbrError NdProxyManager::InitNetfilterQueue(void)
     error = OTBR_ERROR_NONE;
 
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: %s", __FUNCTION__);
+    otbrLogResult(error, "NdProxyManager: %s", __FUNCTION__);
 
     if (error != OTBR_ERROR_NONE)
     {
@@ -491,7 +493,7 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
     if ((ph = nfq_get_msg_packet_hdr(aNfData)) != nullptr)
     {
         id = ntohl(ph->packet_id);
-        otbrLogDebgBbr("NdProxyManager: %s: id %d", __FUNCTION__, id);
+        otbrLogDebg("NdProxyManager: %s: id %d", __FUNCTION__, id);
     }
 
     VerifyOrExit((len = nfq_get_payload(aNfData, &data)) > 0, error = OTBR_ERROR_PARSE);
@@ -502,8 +504,8 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
 
     VerifyOrExit(ip6header->ip6_nxt == IPPROTO_ICMPV6);
 
-    otbrLogDebgBbr("NdProxyManager: Handle Neighbor Solicitation: from %s to %s", src.ToString().c_str(),
-                   dst.ToString().c_str());
+    otbrLogDebg("NdProxyManager: Handle Neighbor Solicitation: from %s to %s", src.ToString().c_str(),
+                dst.ToString().c_str());
 
     icmp6header = reinterpret_cast<struct icmp6_hdr *>(data + sizeof(struct ip6_hdr));
     VerifyOrExit(icmp6header->icmp6_type == ND_NEIGHBOR_SOLICIT);
@@ -514,8 +516,8 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
         struct nd_neighbor_solicit &ns = *reinterpret_cast<struct nd_neighbor_solicit *>(data + sizeof(struct ip6_hdr));
         Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns.nd_ns_target);
 
-        otbrLogDebgBbr("NdProxyManager: %s: target: %s, hoplimit %d", __FUNCTION__, target.ToString().c_str(),
-                       ip6header->ip6_hlim);
+        otbrLogDebg("NdProxyManager: %s: target: %s, hoplimit %d", __FUNCTION__, target.ToString().c_str(),
+                    ip6header->ip6_hlim);
         VerifyOrExit(ip6header->ip6_hlim == 255, error = OTBR_ERROR_PARSE);
         SendNeighborAdvertisement(target, src);
         verdict = NF_DROP;
@@ -524,8 +526,8 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
 exit:
     ret = nfq_set_verdict(aNfQueueHandler, id, verdict, len, data);
 
-    otbrLogResultBbr(error, "NdProxyManager: %s (nfq_set_verdict id  %d, ret %d verdict %d)", __FUNCTION__, id, ret,
-                     verdict);
+    otbrLogResult(error, "NdProxyManager: %s (nfq_set_verdict id  %d, ret %d verdict %d)", __FUNCTION__, id, ret,
+                  verdict);
 
     return ret;
 }
@@ -542,8 +544,8 @@ void NdProxyManager::JoinSolicitedNodeMulticastGroup(const Ip6Address &aTarget) 
     VerifyOrExit(setsockopt(mIcmp6RawSock, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) == 0,
                  error = OTBR_ERROR_ERRNO);
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: JoinSolicitedNodeMulticastGroup of %s: %s", aTarget.ToString().c_str(),
-                     solicitedMulticastAddress.ToString().c_str());
+    otbrLogResult(error, "NdProxyManager: JoinSolicitedNodeMulticastGroup of %s: %s", aTarget.ToString().c_str(),
+                  solicitedMulticastAddress.ToString().c_str());
 }
 
 void NdProxyManager::LeaveSolicitedNodeMulticastGroup(const Ip6Address &aTarget) const
@@ -558,8 +560,8 @@ void NdProxyManager::LeaveSolicitedNodeMulticastGroup(const Ip6Address &aTarget)
     VerifyOrExit(setsockopt(mIcmp6RawSock, IPPROTO_IPV6, IPV6_LEAVE_GROUP, &mreq, sizeof(mreq)) == 0,
                  error = OTBR_ERROR_ERRNO);
 exit:
-    otbrLogResultBbr(error, "NdProxyManager: LeaveSolicitedNodeMulticastGroup of %s: %s", aTarget.ToString().c_str(),
-                     solicitedMulticastAddress.ToString().c_str());
+    otbrLogResult(error, "NdProxyManager: LeaveSolicitedNodeMulticastGroup of %s: %s", aTarget.ToString().c_str(),
+                  solicitedMulticastAddress.ToString().c_str());
 }
 
 } // namespace BackboneRouter

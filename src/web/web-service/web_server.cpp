@@ -31,6 +31,8 @@
  *   This file implements the web server of border router
  */
 
+#define OTBR_LOG_TAG "WEB"
+
 #include "web/web-service/web_server.hpp"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -139,7 +141,7 @@ void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uin
         mServer->start();
     } catch (const std::exception &e)
     {
-        otbrLog(OTBR_LOG_CRIT, "[web] failed to start web server: %s", e.what());
+        otbrLogCrit("failed to start web server: %s", e.what());
         abort();
     }
 }
@@ -151,7 +153,7 @@ void WebServer::StopWebServer(void)
         mServer->stop();
     } catch (const std::exception &e)
     {
-        otbrLog(OTBR_LOG_CRIT, "[web] failed to stop web server: %s", e.what());
+        otbrLogCrit("failed to stop web server: %s", e.what());
     }
 }
 

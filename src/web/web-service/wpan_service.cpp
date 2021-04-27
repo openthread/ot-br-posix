@@ -31,6 +31,8 @@
  *   This file implements the wpan controller service
  */
 
+#define OTBR_LOG_TAG "WEB"
+
 #include "web/web-service/wpan_service.hpp"
 
 #include <sstream>
@@ -89,7 +91,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarnWeb("Wpan service error: %d", ret);
+        otbrLogWarn("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -155,7 +157,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarnWeb("Wpan service error: %d", ret);
+        otbrLogWarn("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -195,7 +197,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarnWeb("Wpan service error: %d", ret);
+        otbrLogWarn("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -232,7 +234,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarnWeb("Wpan service error: %d", ret);
+        otbrLogWarn("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -375,7 +377,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLogWarnWeb("Wpan service error: %d", ret);
+        otbrLogWarn("Wpan service error: %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -414,7 +416,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLogWarnWeb("Error is %d", ret);
+        otbrLogWarn("Error is %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -505,7 +507,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLogWarnWeb("error: %d", ret);
+        otbrLogWarn("error: %d", ret);
     }
     response = jsonWriter.write(root);
 

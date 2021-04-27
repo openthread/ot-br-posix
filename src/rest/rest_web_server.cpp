@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "REST"
+
 #include "rest/rest_web_server.hpp"
 
 #include <cerrno>
@@ -120,7 +122,7 @@ void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)
 
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarnRest("Failed to accept new connection: %s", otbrErrorString(error));
+        otbrLogWarn("Failed to accept new connection: %s", otbrErrorString(error));
     }
 }
 
@@ -152,7 +154,7 @@ exit:
 
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarnRest("InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
+        otbrLogWarn("InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
     }
 
     VerifyOrDie(error == OTBR_ERROR_NONE, "otbr rest server init error");
@@ -184,7 +186,7 @@ exit:
             close(fd);
             fd = -1;
         }
-        otbrLogWarnRest("Rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
+        otbrLogWarn("Rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
 
     return error;

@@ -48,8 +48,6 @@
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
 
-#include "common/logging.hpp"
-
 namespace otbr {
 namespace Ncp {
 class ControllerOpenThread;
@@ -207,11 +205,7 @@ public:
      * @param[in] aError    The action result.
      *
      */
-    static void LogOpenThreadResult(const char *aAction, otError aError)
-    {
-        otbrLog((aError == OT_ERROR_NONE ? OTBR_LOG_LEVEL_INFO : OTBR_LOG_LEVEL_WARN), OTBR_REGION_AGENT_PREFIX,
-                "%s: %s", aAction, otThreadErrorToString(aError));
-    }
+    static void LogOpenThreadResult(const char *aAction, otError aError);
 
 private:
     static void sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);

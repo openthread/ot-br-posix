@@ -31,6 +31,7 @@
  *   This file is the entry of the program, it starts a Web service.
  */
 #define OT_HTTP_PORT 80
+#define OTBR_LOG_TAG "WEB"
 
 #include "openthread-br/config.h"
 
@@ -55,7 +56,7 @@ static void HandleSignal(int aSignal)
 {
     signal(aSignal, SIG_DFL);
 
-    otbrLogCritWeb("Stopping web server");
+    otbrLogCrit("Stopping web server");
 
     if (sServer != nullptr)
     {
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
     }
 
     otbrLogInit(kSyslogIdent, logLevel, true);
-    otbrLogInfoWeb("Running %s", OTBR_PACKAGE_VERSION);
+    otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
 
     if (interfaceName == nullptr)
     {
@@ -131,7 +132,7 @@ int main(int argc, char **argv)
         printf("http port not specified, using default %d\n", port);
     }
 
-    otbrLogInfoWeb("Border router web started on %s", interfaceName);
+    otbrLogInfo("Border router web started on %s", interfaceName);
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);

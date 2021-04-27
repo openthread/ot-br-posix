@@ -124,7 +124,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
     RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);
     restServer->Init();
 #endif
-    otbrLogInfoAgent("Border router agent started.");
+    otbrLogInfo("Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
 
@@ -181,7 +181,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             sThreadMutex.lock();
 #endif
             error = OTBR_ERROR_ERRNO;
-            otbrLogCritAgent("select() failed: %s", strerror(errno));
+            otbrLogCrit("select() failed: %s", strerror(errno));
             break;
         }
     }
@@ -207,7 +207,7 @@ static void PrintRadioVersion(otInstance *aInstance)
 
 static void OnAllocateFailed(void)
 {
-    otbrLogCritAgent("Allocate failure, exiting...");
+    otbrLogCrit("Allocate failure, exiting...");
     exit(1);
 }
 
@@ -268,12 +268,12 @@ static int realmain(int argc, char *argv[])
     }
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
-    otbrLogInfoAgent("Running %s", OTBR_PACKAGE_VERSION);
-    otbrLogInfoAgent("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
+    otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
+    otbrLogInfo("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
 
-    otbrLogInfoAgent("Thread interface: %s", interfaceName);
-    otbrLogInfoAgent("Backbone interface: %s", backboneInterfaceName);
+    otbrLogInfo("Thread interface: %s", interfaceName);
+    otbrLogInfo("Backbone interface: %s", backboneInterfaceName);
 
     {
         otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, argv[optind], backboneInterfaceName};

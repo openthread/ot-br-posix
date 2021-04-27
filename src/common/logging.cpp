@@ -94,25 +94,47 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
     sLevel = aLevel;
 }
 
-/** log to the syslog or log file */
-void otbrLog(otbrLogLevel aLevel, const char *aRegionPrefix, const char *aFormat, ...)
+static const char *GetPrefix(const char *aLogTag)
 {
-    const uint16_t    kBufferSize = 1024;
-    va_list           ap;
-    std::stringstream logStream;
-    char              buffer[kBufferSize];
+    // Log prefix format : -xxx-----
+    const uint8_t kMaxTagSize = 7;
+    const uint8_t kBufferSize = kMaxTagSize + 3;
+    static char   prefix[kBufferSize];
+    uint8_t       tagLength = strlen(aLogTag) > kMaxTagSize ? kMaxTagSize : strlen(aLogTag);
+    int           index     = 0;
+
+    if (strlen(aLogTag) > 0)
+    {
+        prefix[0] = '-';
+        memcpy(&prefix[1], aLogTag, tagLength);
+
+        index = tagLength + 1;
+
+        memset(&prefix[index], '-', kMaxTagSize - tagLength + 1);
+        index += kMaxTagSize - tagLength + 1;
+    }
+
+    prefix[index++] = '\0';
+
+    return prefix;
+}
+
+/** log to the syslog or log file */
+void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
+{
+    const uint16_t kBufferSize = 1024;
+    va_list        ap;
+    char           buffer[kBufferSize];
 
     va_start(ap, aFormat);
 
-    VerifyOrExit(aLevel <= sLevel);
-    VerifyOrExit(vsnprintf(buffer, sizeof(buffer), aFormat, ap) > 0);
-
-    logStream << sLevelString[aLevel] << aRegionPrefix << buffer;
-    syslog(ToSyslogLogLevel(aLevel), "%s", logStream.str().c_str());
+    if ((aLevel <= sLevel) && (vsnprintf(buffer, sizeof(buffer), aFormat, ap) > 0))
+    {
+        syslog(ToSyslogLogLevel(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+    }
 
     va_end(ap);
 
-exit:
     return;
 }
 

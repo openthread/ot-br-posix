@@ -40,6 +40,10 @@
 
 #include "common/types.hpp"
 
+#ifndef OTBR_LOG_TAG
+#define OTBR_LOG_TAG ""
+#endif
+
 /**
  * Logging level.
  *
@@ -80,30 +84,11 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr);
  * This function log at level @p aLevel.
  *
  * @param[in]   aLevel         Log level of the logger.
- * @param[in]   aRegionPrefix  Log region prefix.
+ * @param[in]   aLogTag        Log tag.
  * @param[in]   aFormat        Format string as in printf.
  *
  */
-void otbrLog(otbrLogLevel aLevel, const char *aRegionPrefix, const char *aFormat, ...);
-
-/**
- * This macro log a action result according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]   aRegionPrefix  Log region prefix.
- * @param[in]   aError         The action result.
- * @param[in]   aFormat        Format string as in printf.
- *
- */
-#define otbrLogResult(aRegionPrefix, aError, aFormat, ...)                                                          \
-    do                                                                                                              \
-    {                                                                                                               \
-        otbrError _err = (aError);                                                                                  \
-        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_LEVEL_INFO : OTBR_LOG_LEVEL_WARN, aRegionPrefix, aFormat ": %s", \
-                ##__VA_ARGS__, otbrErrorString(_err));                                                              \
-    } while (0)
+void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...);
 
 /**
  * This function log at level @p aLevel.
@@ -142,537 +127,68 @@ const char *otbrErrorString(otbrError aError);
 void otbrLogDeinit(void);
 
 /**
- * Log region prefix string definitions.
- *
- */
-#define OTBR_REGION_AGENT_PREFIX "-AGENT---: "
-#define OTBR_REGION_MDNS_PREFIX "-MDNS----: "
-#define OTBR_REGION_DBUS_PREFIX "-DBUS----: "
-#define OTBR_REGION_UBUS_PREFIX "-UBUS----: "
-#define OTBR_REGION_REST_PREFIX "-REST----: "
-#define OTBR_REGION_BBR_PREFIX "-BBR-----: "
-#define OTBR_REGION_ADPROXY_PREFIX "-ADPROXY-: "
-#define OTBR_REGION_WEB_PREFIX "-WEB-----: "
-
-/**
- * @def otbrLogCritAgent
- *
- * This function generates a log with level critical for the Agent region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnAgent
- *
- * This function generates a log with level warning for the Agent region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteAgent
- *
- * This function generates a log with level note for the Agent region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoAgent
- *
- * This function generates a log with level info for the Agent region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgAgent
- *
- * This function generates a log with level debug for the Agent region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritAgent(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_AGENT_PREFIX, __VA_ARGS__)
-#define otbrLogWarnAgent(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_AGENT_PREFIX, __VA_ARGS__)
-#define otbrLogNoteAgent(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_AGENT_PREFIX, __VA_ARGS__)
-#define otbrLogInfoAgent(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_AGENT_PREFIX, __VA_ARGS__)
-#define otbrLogDebgAgent(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_AGENT_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultAgent
- *
- * This function logs a action result with the Agent region prefix according to @p aError.
+ * This macro log a action result according to @p aError.
  *
  * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
  * otherwise OTBR_LOG_LEVEL_WARN.
  *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
+ * @param[in]   aError    The action result.
+ * @param[in]   aFormat   Format string as in printf.
+ * @param[in]   ...       Arguments for the format specification.
  *
  */
-#define otbrLogResultAgent(aError, aFormat, ...) otbrLogResult(OTBR_REGION_AGENT_PREFIX, aError, aFormat, ##__VA_ARGS__)
+#define otbrLogResult(aError, aFormat, ...)                                                                        \
+    do                                                                                                             \
+    {                                                                                                              \
+        otbrError _err = (aError);                                                                                 \
+        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_LEVEL_INFO : OTBR_LOG_LEVEL_WARN, OTBR_LOG_TAG, aFormat ": %s", \
+                ##__VA_ARGS__, otbrErrorString(_err));                                                             \
+    } while (0)
 
 /**
- * @def otbrLogCritMdns
+ * @def LogCrit
  *
- * This function generates a log with level critical for the Mdns region.
+ * Logging at log level critical.
  *
- * @param[in]  ...  Arguments for the format specification.
- *
+ * @param[in] ...  Arguments for the format specification.
  *
  */
-
 /**
- * @def otbrLogWarnMdns
+ * @def LogWarn
  *
- * This function generates a log with level warning for the Mdns region.
+ * Logging at log level warnning.
  *
- * @param[in]  ...  Arguments for the format specification.
+ * @param[in] ...  Arguments for the format specification.
  *
  */
-
 /**
- * @def otbrLogNoteMdns
+ * @def LogNote
  *
- * This function generates a log with level note for the Mdns region.
+ * Logging at log level notice.
  *
- * @param[in]  ...  Arguments for the format specification.
+ * @param[in] ...  Arguments for the format specification.
  *
  */
-
 /**
- * @def otbrLogInfoMdns
+ * @def LogInfo
  *
- * This function generates a log with level info for the Mdns region.
+ * Logging at log level information.
  *
- * @param[in]  ...  Arguments for the format specification.
+ * @param[in] ...  Arguments for the format specification.
  *
  */
-
 /**
- * @def otbrLogDebgMdns
+ * @def LogDebg
  *
- * This function generates a log with level debug for the Mdns region.
+ * Logging at log level debug.
  *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritMdns(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_MDNS_PREFIX, __VA_ARGS__)
-#define otbrLogWarnMdns(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_MDNS_PREFIX, __VA_ARGS__)
-#define otbrLogNoteMdns(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_MDNS_PREFIX, __VA_ARGS__)
-#define otbrLogInfoMdns(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_MDNS_PREFIX, __VA_ARGS__)
-#define otbrLogDebgMdns(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_MDNS_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultMdns
- *
- * This function logs a action result with the Mdns region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
+ * @param[in] ...  Arguments for the format specification.
  *
  */
-#define otbrLogResultMdns(aError, aFormat, ...) otbrLogResult(OTBR_REGION_MDNS_PREFIX, aError, aFormat, ##__VA_ARGS__)
-
-/**
- * @def otbrLogCritDbus
- *
- * This function generates a log with level critical for the Dbus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnDbus
- *
- * This function generates a log with level warning for the Dbus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteDbus
- *
- * This function generates a log with level note for the Dbus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoDbus
- *
- * This function generates a log with level info for the Dbus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgDbus
- *
- * This function generates a log with level debug for the Dbus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritDbus(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_DBUS_PREFIX, __VA_ARGS__)
-#define otbrLogWarnDbus(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_DBUS_PREFIX, __VA_ARGS__)
-#define otbrLogNoteDbus(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_DBUS_PREFIX, __VA_ARGS__)
-#define otbrLogInfoDbus(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_DBUS_PREFIX, __VA_ARGS__)
-#define otbrLogDebgDbus(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_DBUS_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultDbus
- *
- * This function logs a action result with the Dbus region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
- *
- */
-#define otbrLogResultDbus(aError, aFormat, ...) otbrLogResult(OTBR_REGION_DBUS_PREFIX, aError, aFormat, ##__VA_ARGS__)
-
-/**
- * @def otbrLogCritUbus
- *
- * This function generates a log with level critical for the Ubus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnUbus
- *
- * This function generates a log with level warning for the Ubus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteUbus
- *
- * This function generates a log with level note for the Ubus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoUbus
- *
- * This function generates a log with level info for the Ubus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgUbus
- *
- * This function generates a log with level debug for the Ubus region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritUbus(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_UBUS_PREFIX, __VA_ARGS__)
-#define otbrLogWarnUbus(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_UBUS_PREFIX, __VA_ARGS__)
-#define otbrLogNoteUbus(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_UBUS_PREFIX, __VA_ARGS__)
-#define otbrLogInfoUbus(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_UBUS_PREFIX, __VA_ARGS__)
-#define otbrLogDebgUbus(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_UBUS_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultUbus
- *
- * This function logs a action result with the Ubus region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
- *
- */
-#define otbrLogResultUbus(aError, aFormat, ...) otbrLogResult(OTBR_REGION_UBUS_PREFIX, aError, aFormat, ##__VA_ARGS__)
-
-/**
- * @def otbrLogCritRest
- *
- * This function generates a log with level critical for the Rest region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnRest
- *
- * This function generates a log with level warning for the Rest region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteRest
- *
- * This function generates a log with level note for the Rest region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoRest
- *
- * This function generates a log with level info for the Rest region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgRest
- *
- * This function generates a log with level debug for the Rest region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritRest(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_REST_PREFIX, __VA_ARGS__)
-#define otbrLogWarnRest(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_REST_PREFIX, __VA_ARGS__)
-#define otbrLogNoteRest(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_REST_PREFIX, __VA_ARGS__)
-#define otbrLogInfoRest(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_REST_PREFIX, __VA_ARGS__)
-#define otbrLogDebgRest(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_REST_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultRest
- *
- * This function logs a action result with the Rest region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
- *
- */
-#define otbrLogResultRest(aError, aFormat, ...) otbrLogResult(OTBR_REGION_REST_PREFIX, aError, aFormat, ##__VA_ARGS__)
-
-/**
- * @def otbrLogCritBbr
- *
- * This function generates a log with level critical for the Bbr region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnBbr
- *
- * This function generates a log with level warning for the Bbr region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteBbr
- *
- * This function generates a log with level note for the Bbr region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoBbr
- *
- * This function generates a log with level info for the Bbr region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgBbr
- *
- * This function generates a log with level debug for the Bbr region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritBbr(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_BBR_PREFIX, __VA_ARGS__)
-#define otbrLogWarnBbr(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_BBR_PREFIX, __VA_ARGS__)
-#define otbrLogNoteBbr(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_BBR_PREFIX, __VA_ARGS__)
-#define otbrLogInfoBbr(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_BBR_PREFIX, __VA_ARGS__)
-#define otbrLogDebgBbr(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_BBR_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultBbr
- *
- * This function logs a action result with the Bbr region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
- *
- */
-#define otbrLogResultBbr(aError, aFormat, ...) otbrLogResult(OTBR_REGION_BBR_PREFIX, aError, aFormat, ##__VA_ARGS__)
-
-/**
- * @def otbrLogCritAdProxy
- *
- * This function generates a log with level critical for the AdProxy region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnAdProxy
- *
- * This function generates a log with level warning for the AdProxy region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteAdProxy
- *
- * This function generates a log with level note for the AdProxy region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoAdProxy
- *
- * This function generates a log with level info for the AdProxy region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgAdProxy
- *
- * This function generates a log with level debug for the AdProxy region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritAdProxy(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_ADPROXY_PREFIX, __VA_ARGS__)
-#define otbrLogWarnAdProxy(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_ADPROXY_PREFIX, __VA_ARGS__)
-#define otbrLogNoteAdProxy(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_ADPROXY_PREFIX, __VA_ARGS__)
-#define otbrLogInfoAdProxy(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_ADPROXY_PREFIX, __VA_ARGS__)
-#define otbrLogDebgAdProxy(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_ADPROXY_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultAdProxy
- *
- * This function logs a action result with the AdProxy region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
- *
- */
-#define otbrLogResultAdProxy(aError, aFormat, ...) \
-    otbrLogResult(OTBR_REGION_ADPROXY_PREFIX, aError, aFormat, ##__VA_ARGS__)
-
-/**
- * @def otbrLogCritWeb
- *
- * This function generates a log with level critical for the Web region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- *
- */
-
-/**
- * @def otbrLogWarnWeb
- *
- * This function generates a log with level warning for the Web region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogNoteWeb
- *
- * This function generates a log with level note for the Web region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogInfoWeb
- *
- * This function generates a log with level info for the Web region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-
-/**
- * @def otbrLogDebgWeb
- *
- * This function generates a log with level debug for the Web region.
- *
- * @param[in]  ...  Arguments for the format specification.
- *
- */
-#define otbrLogCritWeb(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_REGION_WEB_PREFIX, __VA_ARGS__)
-#define otbrLogWarnWeb(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_REGION_WEB_PREFIX, __VA_ARGS__)
-#define otbrLogNoteWeb(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_REGION_WEB_PREFIX, __VA_ARGS__)
-#define otbrLogInfoWeb(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_REGION_WEB_PREFIX, __VA_ARGS__)
-#define otbrLogDebgWeb(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_REGION_WEB_PREFIX, __VA_ARGS__)
-
-/**
- * @def otbrLogResultWeb
- *
- * This function logs a action result with the Web region prefix according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
- *
- * @param[in]  aError   The action result.
- * @param[in]  aFormat  Format string as in printf.
- *
- */
-#define otbrLogResultWeb(aError, aFormat, ...) otbrLogResult(OTBR_REGION_WEB_PREFIX, aError, aFormat, ##__VA_ARGS__)
+#define otbrLogCrit(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogWarn(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogNote(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogInfo(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogDebg(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_LOG_TAG, __VA_ARGS__)
 
 #endif // OTBR_COMMON_LOGGING_HPP_

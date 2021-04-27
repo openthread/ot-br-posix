@@ -45,6 +45,7 @@
 #include "agent/thread_helper.hpp"
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
+#include "common/types.hpp"
 
 namespace otbr {
 namespace Ncp {
