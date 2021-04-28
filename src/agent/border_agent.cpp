@@ -192,7 +192,7 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
         UpdateMeshCopService();
         break;
     default:
-        otbrLogWarn("MDNS service not available!");
+        otbrLogWarning("MDNS service not available!");
         break;
     }
 }
@@ -270,7 +270,7 @@ void BorderAgent::PublishMeshCopService(void)
 
         if ((error = otDatasetGetActive(instance, &activeDataset)) != OT_ERROR_NONE)
         {
-            otbrLogWarn("Failed to get active dataset: %s", otThreadErrorToString(error));
+            otbrLogWarning("Failed to get active dataset: %s", otThreadErrorToString(error));
         }
         else
         {

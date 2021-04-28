@@ -91,7 +91,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarn("Wpan service error: %d", ret);
+        otbrLogWarning("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -157,7 +157,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarn("Wpan service error: %d", ret);
+        otbrLogWarning("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -197,7 +197,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarn("Wpan service error: %d", ret);
+        otbrLogWarning("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -234,7 +234,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLogWarn("Wpan service error: %d", ret);
+        otbrLogWarning("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -377,7 +377,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLogWarn("Wpan service error: %d", ret);
+        otbrLogWarning("Wpan service error: %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -416,7 +416,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLogWarn("Error is %d", ret);
+        otbrLogWarning("Error is %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -507,7 +507,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLogWarn("error: %d", ret);
+        otbrLogWarning("error: %d", ret);
     }
     response = jsonWriter.write(root);
 

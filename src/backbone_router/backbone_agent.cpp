@@ -80,8 +80,8 @@ void BackboneAgent::HandleBackboneRouterState(void)
     otBackboneRouterState state      = otBackboneRouterGetState(mNcp.GetInstance());
     bool                  wasPrimary = (mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY);
 
-    otbrLogDebg("BackboneAgent: HandleBackboneRouterState: state=%d, mBackboneRouterState=%d", state,
-                mBackboneRouterState);
+    otbrLogDebug("BackboneAgent: HandleBackboneRouterState: state=%d, mBackboneRouterState=%d", state,
+                 mBackboneRouterState);
     VerifyOrExit(mBackboneRouterState != state);
 
     mBackboneRouterState = state;
@@ -101,7 +101,7 @@ exit:
 
 void BackboneAgent::OnBecomePrimary(void)
 {
-    otbrLogNote("BackboneAgent: Backbone Router becomes Primary!");
+    otbrLogNotice("BackboneAgent: Backbone Router becomes Primary!");
 
 #if OTBR_ENABLE_DUA_ROUTING
     if (mDomainPrefix.IsValid())
@@ -114,7 +114,7 @@ void BackboneAgent::OnBecomePrimary(void)
 
 void BackboneAgent::OnResignPrimary(void)
 {
-    otbrLogNote("BackboneAgent: Backbone Router resigns Primary to %s!", StateToString(mBackboneRouterState));
+    otbrLogNotice("BackboneAgent: Backbone Router resigns Primary to %s!", StateToString(mBackboneRouterState));
 
 #if OTBR_ENABLE_DUA_ROUTING
     mDuaRoutingManager.Disable();

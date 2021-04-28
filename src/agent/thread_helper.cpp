@@ -251,7 +251,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     {
         channelMask = otLinkGetSupportedChannelMask(mInstance) & aChannelMask;
     }
-    VerifyOrExit(channelMask != 0, otbrLogWarn("Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(channelMask != 0, otbrLogWarning("Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
 
     channel = RandomChannelFromChannelMask(channelMask);
     SuccessOrExit(otLinkSetChannel(mInstance, channel));
@@ -355,7 +355,7 @@ void ThreadHelper::JoinerCallback(otError aError)
 {
     if (aError != OT_ERROR_NONE)
     {
-        otbrLogWarn("Failed to join Thread network: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to join Thread network: %s", otThreadErrorToString(aError));
         mJoinerHandler(aError);
         mJoinerHandler = nullptr;
     }

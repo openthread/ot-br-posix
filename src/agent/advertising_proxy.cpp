@@ -265,7 +265,7 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("Failed to handle result of service %s", aName);
+        otbrLogWarning("Failed to handle result of service %s", aName);
     }
 }
 
@@ -302,7 +302,7 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("Failed to handle result of host %s", aName);
+        otbrLogWarning("Failed to handle result of host %s", aName);
     }
 }
 

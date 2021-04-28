@@ -38,11 +38,11 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-#include "common/types.hpp"
-
 #ifndef OTBR_LOG_TAG
-#define OTBR_LOG_TAG ""
+#error "OTBR_LOG_TAG is not defined"
 #endif
+
+#include "common/types.hpp"
 
 /**
  * Logging level.
@@ -50,11 +50,14 @@
  */
 typedef enum
 {
-    OTBR_LOG_LEVEL_CRIT, ///< Critical conditions.
-    OTBR_LOG_LEVEL_WARN, ///< Warning conditions.
-    OTBR_LOG_LEVEL_NOTE, ///< Normal but significant condition.
-    OTBR_LOG_LEVEL_INFO, ///< Informational.
-    OTBR_LOG_LEVEL_DEBG, ///< Debug-level messages.
+    OTBR_LOG_EMERG,   /* system is unusable */
+    OTBR_LOG_ALERT,   /* action must be taken immediately */
+    OTBR_LOG_CRIT,    /* critical conditions */
+    OTBR_LOG_ERR,     /* error conditions */
+    OTBR_LOG_WARNING, /* warning conditions */
+    OTBR_LOG_NOTICE,  /* normal but significant condition */
+    OTBR_LOG_INFO,    /* informational */
+    OTBR_LOG_DEBUG,   /* debug-level messages */
 } otbrLogLevel;
 
 /**
@@ -129,66 +132,100 @@ void otbrLogDeinit(void);
 /**
  * This macro log a action result according to @p aError.
  *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_LEVEL_INFO,
- * otherwise OTBR_LOG_LEVEL_WARN.
+ * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_INFO,
+ * otherwise OTBR_LOG_WARNING.
  *
  * @param[in]   aError    The action result.
  * @param[in]   aFormat   Format string as in printf.
  * @param[in]   ...       Arguments for the format specification.
  *
  */
-#define otbrLogResult(aError, aFormat, ...)                                                                        \
-    do                                                                                                             \
-    {                                                                                                              \
-        otbrError _err = (aError);                                                                                 \
-        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_LEVEL_INFO : OTBR_LOG_LEVEL_WARN, OTBR_LOG_TAG, aFormat ": %s", \
-                ##__VA_ARGS__, otbrErrorString(_err));                                                             \
+#define otbrLogResult(aError, aFormat, ...)                                                               \
+    do                                                                                                    \
+    {                                                                                                     \
+        otbrError _err = (aError);                                                                        \
+        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG, aFormat ": %s", \
+                ##__VA_ARGS__, otbrErrorString(_err));                                                    \
     } while (0)
 
 /**
- * @def LogCrit
+ * @def otbrLogEmerg
+ *
+ * Logging at log level emergency.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogAlert
+ *
+ * Logging at log level alert.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogCrit
  *
  * Logging at log level critical.
  *
  * @param[in] ...  Arguments for the format specification.
  *
  */
+
 /**
- * @def LogWarn
+ * @def otbrLogErr
+ *
+ * Logging at log level error.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogWarning
  *
  * Logging at log level warnning.
  *
  * @param[in] ...  Arguments for the format specification.
  *
  */
+
 /**
- * @def LogNote
+ * @def otbrLogNotice
  *
  * Logging at log level notice.
  *
  * @param[in] ...  Arguments for the format specification.
  *
  */
+
 /**
- * @def LogInfo
+ * @def otbrLogInfo
  *
  * Logging at log level information.
  *
  * @param[in] ...  Arguments for the format specification.
  *
  */
+
 /**
- * @def LogDebg
+ * @def otbrLogDebug
  *
  * Logging at log level debug.
  *
  * @param[in] ...  Arguments for the format specification.
  *
  */
-#define otbrLogCrit(...) otbrLog(OTBR_LOG_LEVEL_CRIT, OTBR_LOG_TAG, __VA_ARGS__)
-#define otbrLogWarn(...) otbrLog(OTBR_LOG_LEVEL_WARN, OTBR_LOG_TAG, __VA_ARGS__)
-#define otbrLogNote(...) otbrLog(OTBR_LOG_LEVEL_NOTE, OTBR_LOG_TAG, __VA_ARGS__)
-#define otbrLogInfo(...) otbrLog(OTBR_LOG_LEVEL_INFO, OTBR_LOG_TAG, __VA_ARGS__)
-#define otbrLogDebg(...) otbrLog(OTBR_LOG_LEVEL_DEBG, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogEmerg(...) otbrLog(OTBR_LOG_EMERG, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogAlert(...) otbrLog(OTBR_LOG_ALERT, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogCrit(...) otbrLog(OTBR_LOG_CRIT, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogErr(...) otbrLog(OTBR_LOG_ERR, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogWarning(...) otbrLog(OTBR_LOG_WARNING, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogNotice(...) otbrLog(OTBR_LOG_NOTICE, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogInfo(...) otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogDebug(...) otbrLog(OTBR_LOG_DEBUG, OTBR_LOG_TAG, __VA_ARGS__)
 
 #endif // OTBR_COMMON_LOGGING_HPP_

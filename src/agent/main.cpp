@@ -213,7 +213,7 @@ static void OnAllocateFailed(void)
 
 static int realmain(int argc, char *argv[])
 {
-    otbrLogLevel logLevel = OTBR_LOG_LEVEL_INFO;
+    otbrLogLevel logLevel = OTBR_LOG_INFO;
     int          opt;
     int          ret                   = EXIT_SUCCESS;
     const char * interfaceName         = kDefaultInterfaceName;
@@ -233,9 +233,7 @@ static int realmain(int argc, char *argv[])
 
         case OTBR_OPT_DEBUG_LEVEL:
             logLevel = static_cast<otbrLogLevel>(atoi(optarg));
-            VerifyOrExit(logLevel >= OTBR_LOG_LEVEL_CRIT, ret = EXIT_FAILURE);
-            // In case the user input the log level value of the old version.
-            logLevel = (logLevel > OTBR_LOG_LEVEL_DEBG) ? OTBR_LOG_LEVEL_DEBG : logLevel;
+            VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
             break;
 
         case OTBR_OPT_INTERFACE_NAME:

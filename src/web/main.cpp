@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     const char * interfaceName  = nullptr;
     const char * httpListenAddr = nullptr;
     const char * httpPort       = nullptr;
-    otbrLogLevel logLevel       = OTBR_LOG_LEVEL_INFO;
+    otbrLogLevel logLevel       = OTBR_LOG_INFO;
     int          ret            = 0;
     int          opt;
     uint16_t     port = OT_HTTP_PORT;

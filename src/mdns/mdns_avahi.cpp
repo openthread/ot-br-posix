@@ -317,7 +317,7 @@ otbrError PublisherAvahi::Start(void)
 
     if (avahiError)
     {
-        otbrLogWarn("Failed to create avahi client: %s!", avahi_strerror(avahiError));
+        otbrLogWarning("Failed to create avahi client: %s!", avahi_strerror(avahiError));
         error = OTBR_ERROR_MDNS;
     }
 
@@ -366,19 +366,19 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
         break;
 
     case AVAHI_ENTRY_GROUP_COLLISION:
-        otbrLogWarn("Name collision!");
+        otbrLogWarning("Name collision!");
         CallHostOrServiceCallback(aGroup, OTBR_ERROR_DUPLICATED);
         break;
 
     case AVAHI_ENTRY_GROUP_FAILURE:
         /* Some kind of failure happened while we were registering our services */
-        otbrLogWarn("Group failed: %s!", avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(aGroup))));
+        otbrLogWarning("Group failed: %s!", avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(aGroup))));
         CallHostOrServiceCallback(aGroup, OTBR_ERROR_MDNS);
         break;
 
     case AVAHI_ENTRY_GROUP_UNCOMMITED:
     case AVAHI_ENTRY_GROUP_REGISTERING:
-        otbrLogWarn("Group ready.");
+        otbrLogWarning("Group ready.");
         break;
 
     default:
@@ -481,7 +481,8 @@ otbrError PublisherAvahi::CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aO
 exit:
     if (error == OTBR_ERROR_MDNS)
     {
-        otbrLogWarn("Failed to create entry group for avahi error: %s", avahi_strerror(avahi_client_errno(&aClient)));
+        otbrLogWarning("Failed to create entry group for avahi error: %s",
+                       avahi_strerror(avahi_client_errno(&aClient)));
     }
 
     return error;
@@ -497,7 +498,7 @@ otbrError PublisherAvahi::ResetGroup(AvahiEntryGroup *aGroup)
     if (avahiError)
     {
         error = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to reset entry group for avahi error: %s", avahi_strerror(avahiError));
+        otbrLogWarning("Failed to reset entry group for avahi error: %s", avahi_strerror(avahiError));
     }
 
     return error;
@@ -513,7 +514,7 @@ otbrError PublisherAvahi::FreeGroup(AvahiEntryGroup *aGroup)
     if (avahiError)
     {
         error = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to free entry group for avahi error: %s", avahi_strerror(avahiError));
+        otbrLogWarning("Failed to free entry group for avahi error: %s", avahi_strerror(avahiError));
     }
 
     return error;
@@ -551,7 +552,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         break;
 
     case AVAHI_CLIENT_FAILURE:
-        otbrLogWarn("Client failure: %s", avahi_strerror(avahi_client_errno(aClient)));
+        otbrLogWarning("Client failure: %s", avahi_strerror(avahi_client_errno(aClient)));
         mState = State::kIdle;
         mStateHandler(mContext, mState);
         break;
@@ -560,7 +561,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         /* Let's drop our registered services. When the server is back
          * in AVAHI_SERVER_RUNNING state we will register them
          * again with the new host name. */
-        otbrLogWarn("Client collision: %s", avahi_strerror(avahi_client_errno(aClient)));
+        otbrLogWarning("Client collision: %s", avahi_strerror(avahi_client_errno(aClient)));
 
         // fall through
 
@@ -573,7 +574,7 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         break;
 
     case AVAHI_CLIENT_CONNECTING:
-        otbrLogDebg("Connecting to avahi server");
+        otbrLogDebug("Connecting to avahi server");
         break;
 
     default:
@@ -685,11 +686,11 @@ exit:
     if (avahiError)
     {
         error = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to publish service for avahi error: %s!", avahi_strerror(avahiError));
+        otbrLogWarning("Failed to publish service for avahi error: %s!", avahi_strerror(avahiError));
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("Failed to publish service: %s!", otbrErrorString(error));
+        otbrLogWarning("Failed to publish service: %s!", otbrErrorString(error));
     }
 
     if (error != OTBR_ERROR_NONE && serviceIt != mServices.end())
@@ -774,11 +775,11 @@ exit:
     if (avahiError)
     {
         error = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to publish host for avahi error: %s!", avahi_strerror(avahiError));
+        otbrLogWarning("Failed to publish host for avahi error: %s!", avahi_strerror(avahiError));
     }
     else if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("Failed to publish host: %s!", otbrErrorString(error));
+        otbrLogWarning("Failed to publish host: %s!", otbrErrorString(error));
     }
 
     if (error != OTBR_ERROR_NONE && hostIt != mHosts.end())

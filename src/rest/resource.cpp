@@ -583,7 +583,7 @@ void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessa
 exit:
     if (aError != OT_ERROR_NONE)
     {
-        otbrLogWarn("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
     }
 }
 

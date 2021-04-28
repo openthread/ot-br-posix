@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "LOG"
+
 #include "common/logging.hpp"
 
 #include <assert.h>
@@ -43,40 +45,10 @@
 #include "common/code_utils.hpp"
 #include "common/time.hpp"
 
-static otbrLogLevel sLevel            = OTBR_LOG_LEVEL_INFO;
-static const char   sLevelString[][7] = {
-    "[CRIT]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
+static otbrLogLevel sLevel            = OTBR_LOG_INFO;
+static const char   sLevelString[][8] = {
+    "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
 };
-
-static int ToSyslogLogLevel(otbrLogLevel aLogLevel)
-{
-    int logLevel;
-
-    switch (aLogLevel)
-    {
-    case OTBR_LOG_LEVEL_CRIT:
-        logLevel = LOG_CRIT;
-        break;
-    case OTBR_LOG_LEVEL_WARN:
-        logLevel = LOG_WARNING;
-        break;
-    case OTBR_LOG_LEVEL_NOTE:
-        logLevel = LOG_NOTICE;
-        break;
-    case OTBR_LOG_LEVEL_INFO:
-        logLevel = LOG_INFO;
-        break;
-    case OTBR_LOG_LEVEL_DEBG:
-        logLevel = LOG_DEBUG;
-        break;
-    default:
-        assert(false);
-        logLevel = LOG_DEBUG;
-        break;
-    }
-
-    return logLevel;
-}
 
 /** Get the current debug log level */
 otbrLogLevel otbrLogGetLevel(void)
@@ -88,7 +60,7 @@ otbrLogLevel otbrLogGetLevel(void)
 void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
 {
     assert(aIdent);
-    assert(aLevel >= OTBR_LOG_LEVEL_CRIT && aLevel <= OTBR_LOG_LEVEL_DEBG);
+    assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
 
     openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), LOG_USER);
     sLevel = aLevel;
@@ -130,7 +102,7 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 
     if ((aLevel <= sLevel) && (vsnprintf(buffer, sizeof(buffer), aFormat, ap) > 0))
     {
-        syslog(ToSyslogLogLevel(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+        syslog(static_cast<int>(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
     }
 
     va_end(ap);
@@ -145,7 +117,7 @@ void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list ap)
 
     if (aLevel <= sLevel)
     {
-        vsyslog(ToSyslogLogLevel(aLevel), aFormat, ap);
+        vsyslog(static_cast<int>(aLevel), aFormat, ap);
     }
 }
 
@@ -196,7 +168,7 @@ void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, siz
         }
         *ch = 0;
 
-        syslog(ToSyslogLogLevel(aLevel), "%s: %04x: %s", aPrefix, addr, hex);
+        syslog(static_cast<int>(aLevel), "%s: %04x: %s", aPrefix, addr, hex);
     }
 }
 

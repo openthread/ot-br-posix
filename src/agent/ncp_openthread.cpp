@@ -86,19 +86,22 @@ otbrError ControllerOpenThread::Init(void)
 
     switch (otbrLogGetLevel())
     {
-    case OTBR_LOG_LEVEL_CRIT:
+    case OTBR_LOG_EMERG:
+    case OTBR_LOG_ALERT:
+    case OTBR_LOG_CRIT:
         level = OT_LOG_LEVEL_CRIT;
         break;
-    case OTBR_LOG_LEVEL_WARN:
+    case OTBR_LOG_ERR:
+    case OTBR_LOG_WARNING:
         level = OT_LOG_LEVEL_WARN;
         break;
-    case OTBR_LOG_LEVEL_NOTE:
+    case OTBR_LOG_NOTICE:
         level = OT_LOG_LEVEL_NOTE;
         break;
-    case OTBR_LOG_LEVEL_INFO:
+    case OTBR_LOG_INFO:
         level = OT_LOG_LEVEL_INFO;
         break;
-    case OTBR_LOG_LEVEL_DEBG:
+    case OTBR_LOG_DEBUG:
         level = OT_LOG_LEVEL_DEBG;
         break;
     default:
@@ -214,7 +217,7 @@ const char *ControllerOpenThread::GetThreadVersion(void)
         version = "1.2.0";
         break;
     default:
-        otbrLogCrit("Unexpected thread version %hu", otThreadGetVersion());
+        otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
         exit(-1);
     }
     return version;
@@ -232,23 +235,25 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
     switch (aLogLevel)
     {
     case OT_LOG_LEVEL_NONE:
+        otbrLogLevel = OTBR_LOG_EMERG;
+        break;
     case OT_LOG_LEVEL_CRIT:
-        otbrLogLevel = OTBR_LOG_LEVEL_CRIT;
+        otbrLogLevel = OTBR_LOG_CRIT;
         break;
     case OT_LOG_LEVEL_WARN:
-        otbrLogLevel = OTBR_LOG_LEVEL_WARN;
+        otbrLogLevel = OTBR_LOG_WARNING;
         break;
     case OT_LOG_LEVEL_NOTE:
-        otbrLogLevel = OTBR_LOG_LEVEL_NOTE;
+        otbrLogLevel = OTBR_LOG_NOTICE;
         break;
     case OT_LOG_LEVEL_INFO:
-        otbrLogLevel = OTBR_LOG_LEVEL_INFO;
+        otbrLogLevel = OTBR_LOG_INFO;
         break;
     case OT_LOG_LEVEL_DEBG:
-        otbrLogLevel = OTBR_LOG_LEVEL_DEBG;
+        otbrLogLevel = OTBR_LOG_DEBUG;
         break;
     default:
-        otbrLogLevel = OTBR_LOG_LEVEL_DEBG;
+        otbrLogLevel = OTBR_LOG_DEBUG;
         break;
     }
 

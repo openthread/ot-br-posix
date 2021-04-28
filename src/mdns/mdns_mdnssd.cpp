@@ -368,7 +368,7 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
         if (error != kDNSServiceErr_NoError)
         {
-            otbrLogWarn("DNSServiceProcessResult failed: %s", DNSErrorToString(error));
+            otbrLogWarning("DNSServiceProcessResult failed: %s", DNSErrorToString(error));
         }
     }
 }
@@ -426,8 +426,8 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     }
     else
     {
-        otbrLogWarn("Failed to register service %s.%s: %s", originalInstanceName.c_str(), aType,
-                    DNSErrorToString(aError));
+        otbrLogWarning("Failed to register service %s.%s: %s", originalInstanceName.c_str(), aType,
+                       DNSErrorToString(aError));
         DiscardService(originalInstanceName.c_str(), aType, aServiceRef);
     }
 
@@ -527,7 +527,7 @@ exit:
     if (error != kDNSServiceErr_NoError)
     {
         ret = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to publish service for mdnssd error: %s!", DNSErrorToString(error));
+        otbrLogWarning("Failed to publish service for mdnssd error: %s!", DNSErrorToString(error));
     }
     return ret;
 }
@@ -568,7 +568,7 @@ exit:
     if (error != kDNSServiceErr_NoError)
     {
         ret = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to remove host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
+        otbrLogWarning("Failed to remove host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
     }
     return ret;
 }
@@ -652,7 +652,7 @@ exit:
         }
 
         ret = OTBR_ERROR_MDNS;
-        otbrLogWarn("Failed to publish/update host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
+        otbrLogWarning("Failed to publish/update host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
     }
     return ret;
 }
@@ -694,7 +694,8 @@ void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnect
     }
     else
     {
-        otbrLogWarn("failed to register host %s for mdnssd error: %s", hostName.c_str(), DNSErrorToString(aErrorCode));
+        otbrLogWarning("failed to register host %s for mdnssd error: %s", hostName.c_str(),
+                       DNSErrorToString(aErrorCode));
 
         DiscardHost(hostName.c_str(), /* aSendGoodbye */ false);
     }
@@ -801,7 +802,7 @@ void PublisherMDnsSd::OnServiceResolved(PublisherMDnsSd::ServiceSubscription &aS
 
 void PublisherMDnsSd::OnServiceResolveFailed(const ServiceSubscription &aService, DNSServiceErrorType aErrorCode)
 {
-    otbrLogWarn("Service %s resolving failed: code=%d", aService.mType.c_str(), aErrorCode);
+    otbrLogWarning("Service %s resolving failed: code=%d", aService.mType.c_str(), aErrorCode);
 }
 
 void PublisherMDnsSd::OnHostResolved(PublisherMDnsSd::HostSubscription &aHost)
@@ -818,7 +819,7 @@ void PublisherMDnsSd::OnHostResolved(PublisherMDnsSd::HostSubscription &aHost)
 void PublisherMDnsSd::OnHostResolveFailed(const PublisherMDnsSd::HostSubscription &aHost,
                                           DNSServiceErrorType                      aErrorCode)
 {
-    otbrLogWarn("Host %s resolving failed: code=%d", aHost.mHostName.c_str(), aErrorCode);
+    otbrLogWarning("Host %s resolving failed: code=%d", aHost.mHostName.c_str(), aErrorCode);
 }
 
 void PublisherMDnsSd::SubscribeHost(const std::string &aHostName)
@@ -988,7 +989,7 @@ exit:
 
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("failed to resolve service instance %s", aFullName);
+        otbrLogWarning("failed to resolve service instance %s", aFullName);
     }
 }
 
@@ -1029,33 +1030,33 @@ void PublisherMDnsSd::ServiceSubscription::HandleGetAddrInfoResult(DNSServiceRef
 
     Ip6Address address;
 
-    otbrLogDebg("DNSServiceGetAddrInfo reply: %d, flags=%u, host=%s, sa_family=%d", aErrorCode, aFlags, aHostName,
-                aAddress->sa_family);
+    otbrLogDebug("DNSServiceGetAddrInfo reply: %d, flags=%u, host=%s, sa_family=%d", aErrorCode, aFlags, aHostName,
+                 aAddress->sa_family);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
     VerifyOrExit((aFlags & kDNSServiceFlagsAdd) && aAddress->sa_family == AF_INET6);
 
     address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
     VerifyOrExit(!address.IsUnspecified() && !address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback(),
-                 otbrLogDebg("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
+                 otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
     mInstanceInfo.mAddresses.push_back(address);
     mInstanceInfo.mTtl = aTtl;
 
-    otbrLogDebg("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
+    otbrLogDebug("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
 
     mMDnsSd->OnServiceResolved(*this);
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
-        otbrLogWarn("DNSServiceGetAddrInfo failed: %d", aErrorCode);
+        otbrLogWarning("DNSServiceGetAddrInfo failed: %d", aErrorCode);
 
         mMDnsSd->OnServiceResolveFailed(*this, aErrorCode);
     }
     else if (mInstanceInfo.mAddresses.empty() && (aFlags & kDNSServiceFlagsMoreComing) == 0)
     {
-        otbrLogDebg("DNSServiceGetAddrInfo reply: no IPv6 address found");
+        otbrLogDebug("DNSServiceGetAddrInfo reply: no IPv6 address found");
         mInstanceInfo.mTtl = aTtl;
         mMDnsSd->OnServiceResolved(*this);
     }
@@ -1067,7 +1068,7 @@ void PublisherMDnsSd::HostSubscription::Resolve(void)
 
     assert(mServiceRef == nullptr);
 
-    otbrLogDebg("DNSServiceGetAddrInfo %s inf %d", fullHostName.c_str(), kDNSServiceInterfaceIndexAny);
+    otbrLogDebug("DNSServiceGetAddrInfo %s inf %d", fullHostName.c_str(), kDNSServiceInterfaceIndexAny);
 
     DNSServiceGetAddrInfo(&mServiceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny,
                           kDNSServiceProtocol_IPv6 | kDNSServiceProtocol_IPv4, fullHostName.c_str(),
@@ -1100,34 +1101,34 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
 
     Ip6Address address;
 
-    otbrLogDebg("DNSServiceGetAddrInfo reply: %d, flags=%u, host=%s, sa_family=%d", aErrorCode, aFlags, aHostName,
-                aAddress->sa_family);
+    otbrLogDebug("DNSServiceGetAddrInfo reply: %d, flags=%u, host=%s, sa_family=%d", aErrorCode, aFlags, aHostName,
+                 aAddress->sa_family);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
     VerifyOrExit((aFlags & kDNSServiceFlagsAdd) && aAddress->sa_family == AF_INET6);
 
     address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
     VerifyOrExit(!address.IsLinkLocal(),
-                 otbrLogDebg("DNSServiceGetAddrInfo ignore link-local address %s", address.ToString().c_str()));
+                 otbrLogDebug("DNSServiceGetAddrInfo ignore link-local address %s", address.ToString().c_str()));
 
     mHostInfo.mHostName = aHostName;
     mHostInfo.mAddresses.push_back(address);
     mHostInfo.mTtl = aTtl;
 
-    otbrLogDebg("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
+    otbrLogDebug("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
 
     mMDnsSd->OnHostResolved(*this);
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
-        otbrLogWarn("DNSServiceGetAddrInfo failed: %d", aErrorCode);
+        otbrLogWarning("DNSServiceGetAddrInfo failed: %d", aErrorCode);
 
         mMDnsSd->OnHostResolveFailed(*this, aErrorCode);
     }
     else if (mHostInfo.mAddresses.empty() && (aFlags & kDNSServiceFlagsMoreComing) == 0)
     {
-        otbrLogDebg("DNSServiceGetAddrInfo reply: no IPv6 address found");
+        otbrLogDebug("DNSServiceGetAddrInfo reply: no IPv6 address found");
         mHostInfo.mTtl = aTtl;
         mMDnsSd->OnHostResolved(*this);
     }

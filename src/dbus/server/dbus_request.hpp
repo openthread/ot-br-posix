@@ -121,9 +121,9 @@ public:
         VerifyOrExit(reply != nullptr);
         VerifyOrExit(otbr::DBus::TupleToDBusMessage(*reply, aReply) == OTBR_ERROR_NONE);
 
-        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
         {
-            otbrLogDebg("Replied to %s.%s :", dbus_message_get_interface(mMessage), dbus_message_get_member(mMessage));
+            otbrLogDebug("Replied to %s.%s :", dbus_message_get_interface(mMessage), dbus_message_get_member(mMessage));
             DumpDBusMessage(*reply);
         }
         dbus_connection_send(mConnection, reply.get(), nullptr);
@@ -149,8 +149,8 @@ public:
         }
         else
         {
-            otbrLogWarn("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
-                        dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+            otbrLogWarning("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
+                           dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
         }
 
         if (aError == OT_ERROR_NONE)

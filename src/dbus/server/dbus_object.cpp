@@ -116,7 +116,7 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
         otbrLogInfo("Handling method %s", memberName.c_str());
-        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
         {
             DumpDBusMessage(*aMessage);
         }
@@ -158,9 +158,9 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
 exit:
     if (error == OT_ERROR_NONE)
     {
-        if (otbrLogGetLevel() >= OTBR_LOG_LEVEL_DEBG)
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
         {
-            otbrLogDebg("GetProperty %s.%s reply:", interfaceName.c_str(), propertyName.c_str());
+            otbrLogDebug("GetProperty %s.%s reply:", interfaceName.c_str(), propertyName.c_str());
             DumpDBusMessage(*reply);
         }
 
@@ -168,8 +168,8 @@ exit:
     }
     else
     {
-        otbrLogWarn("GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
-                    ConvertToDBusErrorName(error));
+        otbrLogWarning("GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
+                       ConvertToDBusErrorName(error));
         aRequest.ReplyOtResult(error);
     }
 }
@@ -238,8 +238,8 @@ void DBusObject::SetPropertyMethodHandler(DBusRequest &aRequest)
 exit:
     if (error != OT_ERROR_NONE)
     {
-        otbrLogWarn("SetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
-                    ConvertToDBusErrorName(error));
+        otbrLogWarning("SetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
+                       ConvertToDBusErrorName(error));
     }
     aRequest.ReplyOtResult(error);
     return;

@@ -123,7 +123,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     {
         MdnsSubscription &subscription = mSubscriptions.back();
 
-        otbrLogDebg("subscriptions: %sx%d", subscription.ToString().c_str(), subscription.mSubscriptionCount);
+        otbrLogDebug("subscriptions: %sx%d", subscription.ToString().c_str(), subscription.mSubscriptionCount);
 
         if (GetServiceSubscriptionCount(instanceName, serviceName) == 1)
         {
@@ -141,7 +141,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("failed to subscribe %s: %s", fullName.c_str(), otbrErrorString(error));
+        otbrLogWarning("failed to subscribe %s: %s", fullName.c_str(), otbrErrorString(error));
     }
 }
 
@@ -192,7 +192,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
             mSubscriptions.erase(it);
         }
 
-        otbrLogDebg("service subscriptions: %sx%d", it->ToString().c_str(), it->mSubscriptionCount);
+        otbrLogDebug("service subscriptions: %sx%d", it->ToString().c_str(), it->mSubscriptionCount);
 
         if (GetServiceSubscriptionCount(instanceName, serviceName) == 0)
         {
@@ -209,7 +209,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("failed to unsubscribe %s: %s", fullName.c_str(), otbrErrorString(error));
+        otbrLogWarning("failed to unsubscribe %s: %s", fullName.c_str(), otbrErrorString(error));
     }
 }
 
@@ -302,7 +302,7 @@ std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std:
     targetName = hostName + "." + aTargetDomain;
 
 exit:
-    otbrLogDebg("translate domain: %s => %s", aName.c_str(), targetName.c_str());
+    otbrLogDebug("translate domain: %s => %s", aName.c_str(), targetName.c_str());
     return targetName;
 }
 

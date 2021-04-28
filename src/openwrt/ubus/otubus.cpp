@@ -1401,7 +1401,7 @@ void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage
 exit:
     if (aError != OT_ERROR_NONE)
     {
-        otbrLogWarn("Failed to receive diagnostic response: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to receive diagnostic response: %s", otThreadErrorToString(aError));
     }
 }
 
@@ -1681,7 +1681,7 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     mContext = ubus_connect(aPath);
     if (!mContext)
     {
-        otbrLogWarn("Ubus connect failed");
+        otbrLogWarning("Ubus connect failed");
         return -1;
     }
 
@@ -1694,7 +1694,7 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     /* Add a object */
     if (ubus_add_object(mContext, &otbr) != 0)
     {
-        otbrLogWarn("Ubus add obj failed");
+        otbrLogWarning("Ubus add obj failed");
         return -1;
     }
 
@@ -1716,7 +1716,7 @@ void UbusServer::InstallUbusObject(void)
 
     if (-1 == DisplayUbusInit(path))
     {
-        otbrLogWarn("Ubus connect failed");
+        otbrLogWarning("Ubus connect failed");
         return;
     }
 

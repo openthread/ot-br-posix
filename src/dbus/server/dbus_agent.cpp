@@ -69,7 +69,7 @@ otbrError DBusAgent::Init(void)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarn("Dbus error %s: %s", dbusError.name, dbusError.message);
+        otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
     }
     dbus_error_free(&dbusError);
     return error;
