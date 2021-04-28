@@ -64,6 +64,11 @@ Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource,
 {
 }
 
+Connection::~Connection(void)
+{
+    Disconnect();
+}
+
 void Connection::Init(void)
 {
     mParser.Init();

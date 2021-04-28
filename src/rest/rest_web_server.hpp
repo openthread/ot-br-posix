@@ -65,6 +65,12 @@ public:
     static RestWebServer *GetRestWebServer(ControllerOpenThread *aNcp);
 
     /**
+     * The destructor destroys the server instance.
+     *
+     */
+    ~RestWebServer(void) override;
+
+    /**
      * This method initializes the REST server.
      *
      */

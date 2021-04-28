@@ -269,6 +269,7 @@ ba_start()
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
+    sleep 5
     write_syslog "AGENT: starting"
 
     # we launch this in the background
