@@ -46,7 +46,7 @@ struct DnsNameInfo
 {
     std::string mInstanceName; ///< Instance name, or empty if the DNS name is not a service instance.
     std::string mServiceName;  ///< Service name, or empty if the DNS name is not a service or service instance.
-    std::string mHostName;     ///< Host name.
+    std::string mHostName;     ///< Host name, or empty if the DNS name is not a host name.
     std::string mDomain;       ///< Domain name.
 
     /**

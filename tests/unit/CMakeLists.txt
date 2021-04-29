@@ -30,6 +30,7 @@ add_executable(otbr-test-unit
     $<$<BOOL:${OTBR_DBUS}>:test_dbus_message.cpp>
     $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:test_mdns_mdnssd.cpp>
     main.cpp
+    test_dns_utils.cpp
     test_logging.cpp
     test_pskc.cpp
     test_task_runner.cpp
