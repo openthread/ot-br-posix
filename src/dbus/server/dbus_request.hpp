@@ -31,6 +31,10 @@
  * This file includes definitions for a d-bus request.
  */
 
+#ifndef OTBR_LOG_TAG
+#define OTBR_LOG_TAG "DBUS"
+#endif
+
 #include "common/logging.hpp"
 
 #include "dbus/common/dbus_message_dump.hpp"
@@ -119,8 +123,7 @@ public:
 
         if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
         {
-            otbrLog(OTBR_LOG_DEBUG, "Replied to %s.%s :", dbus_message_get_interface(mMessage),
-                    dbus_message_get_member(mMessage));
+            otbrLogDebug("Replied to %s.%s :", dbus_message_get_interface(mMessage), dbus_message_get_member(mMessage));
             DumpDBusMessage(*reply);
         }
         dbus_connection_send(mConnection, reply.get(), nullptr);
@@ -138,10 +141,18 @@ public:
     void ReplyOtResult(otError aError)
     {
         UniqueDBusMessage reply{nullptr};
-        auto              logLevel = (aError == OT_ERROR_NONE) ? OTBR_LOG_INFO : OTBR_LOG_ERR;
 
-        otbrLog(logLevel, "Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
-                dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+        if (aError == OT_ERROR_NONE)
+        {
+            otbrLogInfo("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
+                        dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+        }
+        else
+        {
+            otbrLogErr("Replied to %s.%s with result %s", dbus_message_get_interface(mMessage),
+                       dbus_message_get_member(mMessage), ConvertToDBusErrorName(aError));
+        }
+
         if (aError == OT_ERROR_NONE)
         {
             reply = UniqueDBusMessage(dbus_message_new_method_return(mMessage));

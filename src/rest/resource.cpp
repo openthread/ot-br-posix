@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "REST"
+
 #include "rest/resource.hpp"
 
 #include "string.h"
@@ -581,7 +583,7 @@ void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessa
 exit:
     if (aError != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "failed to get diagnostic data: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
     }
 }
 

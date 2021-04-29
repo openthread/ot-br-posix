@@ -33,6 +33,8 @@
 
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 
+#define OTBR_LOG_TAG "DPROXY"
+
 #include "agent/discovery_proxy.hpp"
 
 #include <algorithm>
@@ -69,7 +71,7 @@ void DiscoveryProxy::Start(void)
             OnHostDiscovered(aHostName, aHostInfo);
         });
 
-    otbrLog(OTBR_LOG_INFO, "[discproxy] started");
+    otbrLogInfo("started");
 }
 
 void DiscoveryProxy::Stop(void)
@@ -77,7 +79,7 @@ void DiscoveryProxy::Stop(void)
     otDnssdQuerySetCallbacks(mNcp.GetInstance(), nullptr, nullptr, nullptr);
     mMdnsPublisher.SetSubscriptionCallbacks(nullptr, nullptr);
 
-    otbrLog(OTBR_LOG_INFO, "[discproxy] stopped");
+    otbrLogInfo("stopped");
 }
 
 void DiscoveryProxy::OnDiscoveryProxySubscribe(void *aContext, const char *aFullName)
@@ -93,7 +95,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     MdnsSubscriptionList::iterator it;
     DnsNameType                    nameType = GetDnsNameType(fullName);
 
-    otbrLog(OTBR_LOG_INFO, "[discproxy] subscribe: %s", fullName.c_str());
+    otbrLogInfo("subscribe: %s", fullName.c_str());
 
     switch (nameType)
     {
@@ -121,8 +123,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     {
         MdnsSubscription &subscription = mSubscriptions.back();
 
-        otbrLog(OTBR_LOG_DEBUG, "[discproxy] subscriptions: %sx%d", subscription.ToString().c_str(),
-                subscription.mSubscriptionCount);
+        otbrLogDebug("subscriptions: %sx%d", subscription.ToString().c_str(), subscription.mSubscriptionCount);
 
         if (GetServiceSubscriptionCount(instanceName, serviceName) == 1)
         {
@@ -140,7 +141,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "[discproxy] failed to subscribe %s: %s", fullName.c_str(), otbrErrorString(error));
+        otbrLogWarning("failed to subscribe %s: %s", fullName.c_str(), otbrErrorString(error));
     }
 }
 
@@ -157,7 +158,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
     MdnsSubscriptionList::iterator it;
     DnsNameType                    nameType = GetDnsNameType(fullName);
 
-    otbrLog(OTBR_LOG_INFO, "[discproxy] unsubscribe: %s", fullName.c_str());
+    otbrLogInfo("unsubscribe: %s", fullName.c_str());
 
     switch (nameType)
     {
@@ -191,8 +192,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
             mSubscriptions.erase(it);
         }
 
-        otbrLog(OTBR_LOG_DEBUG, "[discproxy] service subscriptions: %sx%d", it->ToString().c_str(),
-                it->mSubscriptionCount);
+        otbrLogDebug("service subscriptions: %sx%d", it->ToString().c_str(), it->mSubscriptionCount);
 
         if (GetServiceSubscriptionCount(instanceName, serviceName) == 0)
         {
@@ -209,7 +209,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "[discproxy] failed to unsubscribe %s: %s", fullName.c_str(), otbrErrorString(error));
+        otbrLogWarning("failed to unsubscribe %s: %s", fullName.c_str(), otbrErrorString(error));
     }
 }
 
@@ -218,11 +218,10 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
 {
     otDnssdServiceInstanceInfo instanceInfo;
 
-    otbrLog(OTBR_LOG_INFO,
-            "[discproxy] service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
-            "weight %d",
-            aType.c_str(), aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
-            aInstanceInfo.mAddresses.size(), aInstanceInfo.mPort, aInstanceInfo.mPriority, aInstanceInfo.mWeight);
+    otbrLogInfo("service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
+                "weight %d",
+                aType.c_str(), aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
+                aInstanceInfo.mAddresses.size(), aInstanceInfo.mPort, aInstanceInfo.mPriority, aInstanceInfo.mWeight);
 
     CheckServiceNameSanity(aType);
     CheckHostnameSanity(aInstanceInfo.mHostName);
@@ -265,8 +264,8 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
 {
     otDnssdHostInfo hostInfo;
 
-    otbrLog(OTBR_LOG_INFO, "[discproxy] host discovered: %s hostname %s addresses %zu", aHostName.c_str(),
-            aHostInfo.mHostName.c_str(), aHostInfo.mAddresses.size());
+    otbrLogInfo("host discovered: %s hostname %s addresses %zu", aHostName.c_str(), aHostInfo.mHostName.c_str(),
+                aHostInfo.mAddresses.size());
 
     CheckHostnameSanity(aHostInfo.mHostName);
 
@@ -303,7 +302,7 @@ std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std:
     targetName = hostName + "." + aTargetDomain;
 
 exit:
-    otbrLog(OTBR_LOG_DEBUG, "[discproxy] translate domain: %s => %s", aName.c_str(), targetName.c_str());
+    otbrLogDebug("translate domain: %s => %s", aName.c_str(), targetName.c_str());
     return targetName;
 }
 

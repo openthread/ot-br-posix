@@ -30,6 +30,8 @@
 #define BYTE_ORDER_BIG_ENDIAN 1
 #endif
 
+#define OTBR_LOG_TAG "UBUS"
+
 #include "openwrt/ubus/otubus.hpp"
 
 #include <mutex>
@@ -1014,13 +1016,13 @@ void UbusServer::HandleStateChanged(otCommissionerState aState)
     switch (aState)
     {
     case OT_COMMISSIONER_STATE_DISABLED:
-        otbrLog(OTBR_LOG_INFO, "commissioner state disabled");
+        otbrLogInfo("Commissioner state disabled");
         break;
     case OT_COMMISSIONER_STATE_ACTIVE:
-        otbrLog(OTBR_LOG_INFO, "commissioner state active");
+        otbrLogInfo("Commissioner state active");
         break;
     case OT_COMMISSIONER_STATE_PETITION:
-        otbrLog(OTBR_LOG_INFO, "commissioner state petition");
+        otbrLogInfo("Commissioner state petition");
         break;
     }
 }
@@ -1043,19 +1045,19 @@ void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
     switch (aEvent)
     {
     case OT_COMMISSIONER_JOINER_START:
-        otbrLog(OTBR_LOG_INFO, "joiner start");
+        otbrLogInfo("Joiner start");
         break;
     case OT_COMMISSIONER_JOINER_CONNECTED:
-        otbrLog(OTBR_LOG_INFO, "joiner connected");
+        otbrLogInfo("Joiner connected");
         break;
     case OT_COMMISSIONER_JOINER_FINALIZE:
-        otbrLog(OTBR_LOG_INFO, "joiner finalize");
+        otbrLogInfo("Joiner finalize");
         break;
     case OT_COMMISSIONER_JOINER_END:
-        otbrLog(OTBR_LOG_INFO, "joiner end");
+        otbrLogInfo("Joiner end");
         break;
     case OT_COMMISSIONER_JOINER_REMOVED:
-        otbrLog(OTBR_LOG_INFO, "joiner remove");
+        otbrLogInfo("Joiner remove");
         break;
     }
 }
@@ -1399,7 +1401,7 @@ void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage
 exit:
     if (aError != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "failed to receive diagnostic response: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to receive diagnostic response: %s", otThreadErrorToString(aError));
     }
 }
 
@@ -1679,11 +1681,11 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     mContext = ubus_connect(aPath);
     if (!mContext)
     {
-        otbrLog(OTBR_LOG_ERR, "ubus connect failed");
+        otbrLogErr("Ubus connect failed");
         return -1;
     }
 
-    otbrLog(OTBR_LOG_INFO, "connected as %08x\n", mContext->local_id);
+    otbrLogInfo("Connected as %08x\n", mContext->local_id);
     mContext->connection_lost = UbusConnectionLost;
 
     /* file description */
@@ -1692,7 +1694,7 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     /* Add a object */
     if (ubus_add_object(mContext, &otbr) != 0)
     {
-        otbrLog(OTBR_LOG_ERR, "ubus add obj failed");
+        otbrLogErr("Ubus add obj failed");
         return -1;
     }
 
@@ -1714,11 +1716,11 @@ void UbusServer::InstallUbusObject(void)
 
     if (-1 == DisplayUbusInit(path))
     {
-        otbrLog(OTBR_LOG_ERR, "ubus connect failed");
+        otbrLogErr("Ubus connect failed");
         return;
     }
 
-    otbrLog(OTBR_LOG_INFO, "uloop run");
+    otbrLogInfo("Uloop run");
     uloop_run();
 
     DisplayUbusDone();

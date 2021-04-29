@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/thread_helper.hpp"
 
 #include <assert.h>
@@ -249,7 +251,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     {
         channelMask = otLinkGetSupportedChannelMask(mInstance) & aChannelMask;
     }
-    VerifyOrExit(channelMask != 0, otbrLog(OTBR_LOG_WARNING, "Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(channelMask != 0, otbrLogWarning("Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
 
     channel = RandomChannelFromChannelMask(channelMask);
     SuccessOrExit(otLinkSetChannel(mInstance, channel));
@@ -353,7 +355,7 @@ void ThreadHelper::JoinerCallback(otError aError)
 {
     if (aError != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "Failed to join Thread network: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to join Thread network: %s", otThreadErrorToString(aError));
         mJoinerHandler(aError);
         mJoinerHandler = nullptr;
     }
@@ -383,6 +385,18 @@ exit:
     }
 
     return error;
+}
+
+void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
+{
+    if (aError == OT_ERROR_NONE)
+    {
+        otbrLogInfo("%s: %s", aAction, otThreadErrorToString(aError));
+    }
+    else
+    {
+        otbrLogWarning("%s: %s", aAction, otThreadErrorToString(aError));
+    }
 }
 
 #if OTBR_ENABLE_UNSECURE_JOIN

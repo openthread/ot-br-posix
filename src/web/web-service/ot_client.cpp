@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "WEB"
+
 #include "web/web-service/ot_client.hpp"
 
 #include <openthread/platform/toolchain.h>
@@ -89,7 +91,7 @@ bool OpenThreadClient::Connect(void)
 
     if (ret == -1)
     {
-        otbrLog(OTBR_LOG_ERR, "OpenThread daemon is not running.");
+        otbrLogErr("OpenThread daemon is not running.");
     }
 
 exit:
@@ -110,7 +112,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 
     if (ret < 0)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to generate command: %s", strerror(errno));
+        otbrLogErr("Failed to generate command: %s", strerror(errno));
     }
 
     mBuffer[0] = '\n';
@@ -118,7 +120,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 
     if (ret == sizeof(mBuffer))
     {
-        otbrLog(OTBR_LOG_ERR, "Command exceeds maximum limit: %d", kBufferSize);
+        otbrLogErr("Command exceeds maximum limit: %d", kBufferSize);
     }
 
     mBuffer[ret] = '\n';
@@ -129,7 +131,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     if (count < ret)
     {
         mBuffer[ret] = '\0';
-        otbrLog(OTBR_LOG_ERR, "Failed to send command: %s", mBuffer);
+        otbrLogErr("Failed to send command: %s", mBuffer);
     }
 
     for (int i = 0; i < mTimeout; ++i)

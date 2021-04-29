@@ -31,6 +31,8 @@
  *   The file implements the ND Proxy management.
  */
 
+#define OTBR_LOG_TAG "NDPROXY"
+
 #include "backbone_router/nd_proxy.hpp"
 
 #if OTBR_ENABLE_DUA_ROUTING
@@ -183,7 +185,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
         // only process neighbor solicit
         VerifyOrExit(icmp6header->icmp6_type == ND_NEIGHBOR_SOLICIT, error = OTBR_ERROR_PARSE);
 
-        otbrLog(OTBR_LOG_DEBUG, "NdProxyManager: Received ND-NS from %s", src.ToString().c_str());
+        otbrLogDebug("NdProxyManager: Received ND-NS from %s", src.ToString().c_str());
 
         for (cmsghdr = CMSG_FIRSTHDR(&msghdr); cmsghdr; cmsghdr = CMSG_NXTHDR(&msghdr, cmsghdr))
         {
@@ -210,8 +212,8 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
                         }
                     }
 
-                    otbrLog(OTBR_LOG_DEBUG, "NdProxyManager: dst=%s, ifindex=%d, proxying=%s", dst.ToString().c_str(),
-                            ifindex, found ? "Y" : "N");
+                    otbrLogDebug("NdProxyManager: dst=%s, ifindex=%d, proxying=%s", dst.ToString().c_str(), ifindex,
+                                 found ? "Y" : "N");
                 }
                 break;
 
@@ -220,7 +222,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
                 {
                     int hops = *(int *)CMSG_DATA(cmsghdr);
 
-                    otbrLog(OTBR_LOG_DEBUG, "NdProxyManager: hops=%d (%s)", hops, hops == 255 ? "Good" : "Bad");
+                    otbrLogDebug("NdProxyManager: hops=%d (%s)", hops, hops == 255 ? "Good" : "Bad");
 
                     VerifyOrExit(hops == 255);
                 }
@@ -234,8 +236,8 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
             struct nd_neighbor_solicit *ns     = reinterpret_cast<struct nd_neighbor_solicit *>(packet);
             Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns->nd_ns_target);
 
-            otbrLog(OTBR_LOG_INFO, "NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s",
-                    src.ToString().c_str(), target.ToString().c_str());
+            otbrLogInfo("NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s", src.ToString().c_str(),
+                        target.ToString().c_str());
 
             SendNeighborAdvertisement(target, src);
         }
@@ -491,7 +493,7 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
     if ((ph = nfq_get_msg_packet_hdr(aNfData)) != nullptr)
     {
         id = ntohl(ph->packet_id);
-        otbrLog(OTBR_LOG_DEBUG, "NdProxyManager: %s: id %d", __FUNCTION__, id);
+        otbrLogDebug("NdProxyManager: %s: id %d", __FUNCTION__, id);
     }
 
     VerifyOrExit((len = nfq_get_payload(aNfData, &data)) > 0, error = OTBR_ERROR_PARSE);
@@ -502,8 +504,8 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
 
     VerifyOrExit(ip6header->ip6_nxt == IPPROTO_ICMPV6);
 
-    otbrLog(OTBR_LOG_DEBUG, "NdProxyManager: Handle Neighbor Solicitation: from %s to %s", src.ToString().c_str(),
-            dst.ToString().c_str());
+    otbrLogDebug("NdProxyManager: Handle Neighbor Solicitation: from %s to %s", src.ToString().c_str(),
+                 dst.ToString().c_str());
 
     icmp6header = reinterpret_cast<struct icmp6_hdr *>(data + sizeof(struct ip6_hdr));
     VerifyOrExit(icmp6header->icmp6_type == ND_NEIGHBOR_SOLICIT);
@@ -514,8 +516,8 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
         struct nd_neighbor_solicit &ns = *reinterpret_cast<struct nd_neighbor_solicit *>(data + sizeof(struct ip6_hdr));
         Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns.nd_ns_target);
 
-        otbrLog(OTBR_LOG_DEBUG, "NdProxyManager: %s: target: %s, hoplimit %d", __FUNCTION__, target.ToString().c_str(),
-                ip6header->ip6_hlim);
+        otbrLogDebug("NdProxyManager: %s: target: %s, hoplimit %d", __FUNCTION__, target.ToString().c_str(),
+                     ip6header->ip6_hlim);
         VerifyOrExit(ip6header->ip6_hlim == 255, error = OTBR_ERROR_PARSE);
         SendNeighborAdvertisement(target, src);
         verdict = NF_DROP;
