@@ -52,6 +52,14 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 {
 }
 
+RestWebServer::~RestWebServer(void)
+{
+    if (mListenFd != -1)
+    {
+        close(mListenFd);
+    }
+}
+
 RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
 {
     static RestWebServer *sServer = new RestWebServer(aNcp);

@@ -65,6 +65,12 @@ public:
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
     /**
+     * The desctructor destroys the connection instance.
+     *
+     */
+    ~Connection(void) override;
+
+    /**
      * This method initializes the connection.
      *
      *
