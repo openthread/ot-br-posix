@@ -405,7 +405,7 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     // should use the original `service->mName` to find associated SRP service.
     originalInstanceName = service->mName;
 
-    otbrLogIno("Received reply for service %s.%s", originalInstanceName.c_str(), aType);
+    otbrLogInfo("Received reply for service %s.%s", originalInstanceName.c_str(), aType);
 
     if (originalInstanceName != aName)
     {
