@@ -154,7 +154,7 @@ exit:
 
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarning("InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
+        otbrLogErr("InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
     }
 
     VerifyOrDie(error == OTBR_ERROR_NONE, "otbr rest server init error");
@@ -186,7 +186,7 @@ exit:
             close(fd);
             fd = -1;
         }
-        otbrLogWarning("Rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
+        otbrLogErr("Rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
 
     return error;

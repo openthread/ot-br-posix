@@ -61,7 +61,7 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
 exit:
     if (ret != kPskcStatus_Ok)
     {
-        otbrLogWarning("ExtPanId or NetworkName is nullptr");
+        otbrLogErr("ExtPanId or NetworkName is nullptr");
     }
     return;
 }

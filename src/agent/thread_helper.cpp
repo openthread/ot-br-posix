@@ -395,7 +395,7 @@ void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
     }
     else
     {
-        otbrLogCrit("%s: %s", aAction, otThreadErrorToString(aError));
+        otbrLogWarning("%s: %s", aAction, otThreadErrorToString(aError));
     }
 }
 

@@ -241,7 +241,7 @@ void PublisherMDnsSd::Stop(void)
 
     for (Service &service : mServices)
     {
-        otbrLogCrit("Remove service %s.%s", service.mName, service.mType);
+        otbrLogInfo("Remove service %s.%s", service.mName, service.mType);
         DNSServiceRefDeallocate(service.mService);
     }
     mServices.clear();
@@ -405,16 +405,16 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     // should use the original `service->mName` to find associated SRP service.
     originalInstanceName = service->mName;
 
-    otbrLogCrit("Received reply for service %s.%s", originalInstanceName.c_str(), aType);
+    otbrLogIno("Received reply for service %s.%s", originalInstanceName.c_str(), aType);
 
     if (originalInstanceName != aName)
     {
-        otbrLogCrit("Service %s.%s renamed to %s.%s", originalInstanceName.c_str(), aType, aName, aType);
+        otbrLogInfo("Service %s.%s renamed to %s.%s", originalInstanceName.c_str(), aType, aName, aType);
     }
 
     if (aError == kDNSServiceErr_NoError)
     {
-        otbrLogCrit("Successfully registered service %s.%s", originalInstanceName.c_str(), aType);
+        otbrLogInfo("Successfully registered service %s.%s", originalInstanceName.c_str(), aType);
         if (aFlags & kDNSServiceFlagsAdd)
         {
             RecordService(originalInstanceName.c_str(), aType, aServiceRef);
@@ -426,8 +426,8 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     }
     else
     {
-        otbrLogWarning("Failed to register service %s.%s: %s", originalInstanceName.c_str(), aType,
-                       DNSErrorToString(aError));
+        otbrLogErr("Failed to register service %s.%s: %s", originalInstanceName.c_str(), aType,
+                   DNSErrorToString(aError));
         DiscardService(originalInstanceName.c_str(), aType, aServiceRef);
     }
 
@@ -450,7 +450,7 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
         assert(aServiceRef == nullptr || aServiceRef == service->mService);
         OTBR_UNUSED_VARIABLE(aServiceRef);
 
-        otbrLogCrit("Remove service ref %p", service->mService);
+        otbrLogInfo("Remove service ref %p", service->mService);
 
         DNSServiceRefDeallocate(service->mService);
         mServices.erase(service);
@@ -465,7 +465,7 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
     {
         Service newService;
 
-        otbrLogCrit("Add service: %s.%s (ref: %p)", aName, aType, aServiceRef);
+        otbrLogInfo("Add service: %s.%s (ref: %p)", aName, aType, aServiceRef);
 
         strcpy(newService.mName, aName);
         strcpy(newService.mType, aType);
@@ -505,7 +505,7 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
 
     if (service != mServices.end())
     {
-        otbrLogCrit("Update service %s.%s", aName, aType);
+        otbrLogInfo("Update service %s.%s", aName, aType);
 
         // Setting TTL to 0 to use default value.
         SuccessOrExit(error = DNSServiceUpdateRecord(service->mService, nullptr, 0, txtLength, txt, /* ttl */ 0));
@@ -527,7 +527,7 @@ exit:
     if (error != kDNSServiceErr_NoError)
     {
         ret = OTBR_ERROR_MDNS;
-        otbrLogWarning("Failed to publish service for mdnssd error: %s!", DNSErrorToString(error));
+        otbrLogErr("Failed to publish service for mdnssd error: %s!", DNSErrorToString(error));
     }
     return ret;
 }
@@ -546,7 +546,7 @@ otbrError PublisherMDnsSd::DiscardHost(const char *aName, bool aSendGoodbye)
 
     VerifyOrExit(mHostsRef != nullptr && host != mHosts.end());
 
-    otbrLogCrit("Remove host: %s (record ref: %p)", host->mName, host->mRecord);
+    otbrLogInfo("Remove host: %s (record ref: %p)", host->mName, host->mRecord);
 
     if (aSendGoodbye)
     {
@@ -568,7 +568,7 @@ exit:
     if (error != kDNSServiceErr_NoError)
     {
         ret = OTBR_ERROR_MDNS;
-        otbrLogWarning("Failed to remove host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
+        otbrLogErr("Failed to remove host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
     }
     return ret;
 }
@@ -584,7 +584,7 @@ void PublisherMDnsSd::RecordHost(const char *   aName,
     {
         Host newHost;
 
-        otbrLogCrit("Add new host %s", aName);
+        otbrLogInfo("Add new host %s", aName);
 
         strcpy(newHost.mName, aName);
         std::copy(aAddress, aAddress + aAddressLength, newHost.mAddress.begin());
@@ -593,7 +593,7 @@ void PublisherMDnsSd::RecordHost(const char *   aName,
     }
     else
     {
-        otbrLogCrit("Update existing host %s", host->mName);
+        otbrLogInfo("Update existing host %s", host->mName);
 
         // The address of the host may be updated.
         std::copy(aAddress, aAddress + aAddressLength, host->mAddress.begin());
@@ -620,7 +620,7 @@ otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddres
 
     if (host != mHosts.end())
     {
-        otbrLogCrit("Update existing host %s", aName);
+        otbrLogInfo("Update existing host %s", aName);
         SuccessOrExit(error = DNSServiceUpdateRecord(mHostsRef, host->mRecord, kDNSServiceFlagsUnique, aAddressLength,
                                                      aAddress, /* ttl */ 0));
 
@@ -634,7 +634,7 @@ otbrError PublisherMDnsSd::PublishHost(const char *aName, const uint8_t *aAddres
     {
         DNSRecordRef record;
 
-        otbrLogCrit("Publish new host %s", aName);
+        otbrLogInfo("Publish new host %s", aName);
         SuccessOrExit(error = DNSServiceRegisterRecord(mHostsRef, &record, kDNSServiceFlagsUnique,
                                                        kDNSServiceInterfaceIndexAny, fullName, kDNSServiceType_AAAA,
                                                        kDNSServiceClass_IN, aAddressLength, aAddress, /* ttl */ 0,
@@ -652,7 +652,7 @@ exit:
         }
 
         ret = OTBR_ERROR_MDNS;
-        otbrLogWarning("Failed to publish/update host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
+        otbrLogErr("Failed to publish/update host %s for mdnssd error: %s!", aName, DNSErrorToString(error));
     }
     return ret;
 }
@@ -686,11 +686,11 @@ void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aHostsConnect
     VerifyOrExit(host != mHosts.end());
     hostName = host->mName;
 
-    otbrLogCrit("Received reply for host %s", hostName.c_str());
+    otbrLogInfo("Received reply for host %s", hostName.c_str());
 
     if (aErrorCode == kDNSServiceErr_NoError)
     {
-        otbrLogCrit("Successfully registered host %s", hostName.c_str());
+        otbrLogInfo("Successfully registered host %s", hostName.c_str());
     }
     else
     {

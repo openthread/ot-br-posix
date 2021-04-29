@@ -1681,7 +1681,7 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     mContext = ubus_connect(aPath);
     if (!mContext)
     {
-        otbrLogWarning("Ubus connect failed");
+        otbrLogErr("Ubus connect failed");
         return -1;
     }
 
@@ -1694,7 +1694,7 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     /* Add a object */
     if (ubus_add_object(mContext, &otbr) != 0)
     {
-        otbrLogWarning("Ubus add obj failed");
+        otbrLogErr("Ubus add obj failed");
         return -1;
     }
 
@@ -1716,7 +1716,7 @@ void UbusServer::InstallUbusObject(void)
 
     if (-1 == DisplayUbusInit(path))
     {
-        otbrLogWarning("Ubus connect failed");
+        otbrLogErr("Ubus connect failed");
         return;
     }
 

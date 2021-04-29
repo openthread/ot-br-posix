@@ -236,8 +236,8 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
             struct nd_neighbor_solicit *ns     = reinterpret_cast<struct nd_neighbor_solicit *>(packet);
             Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns->nd_ns_target);
 
-            otbrLogDebug("NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s",
-                         src.ToString().c_str(), target.ToString().c_str());
+            otbrLogInfo("NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s", src.ToString().c_str(),
+                        target.ToString().c_str());
 
             SendNeighborAdvertisement(target, src);
         }

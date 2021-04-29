@@ -130,7 +130,7 @@ const char *otbrErrorString(otbrError aError);
 void otbrLogDeinit(void);
 
 /**
- * This macro log a action result according to @p aError.
+ * This macro log an action result according to @p aError.
  *
  * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_INFO,
  * otherwise OTBR_LOG_WARNING.
@@ -151,7 +151,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogEmerg
  *
- * Logging at log level emergency.
+ * Log at level emergency.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -160,7 +160,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogAlert
  *
- * Logging at log level alert.
+ * Log at level alert.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -169,7 +169,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogCrit
  *
- * Logging at log level critical.
+ * Log at level critical.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -178,7 +178,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogErr
  *
- * Logging at log level error.
+ * Log at level error.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -187,7 +187,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogWarning
  *
- * Logging at log level warnning.
+ * Log at level warning.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -196,7 +196,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogNotice
  *
- * Logging at log level notice.
+ * Log at level notice.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -205,7 +205,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogInfo
  *
- * Logging at log level information.
+ * Log at level information.
  *
  * @param[in] ...  Arguments for the format specification.
  *
@@ -214,7 +214,7 @@ void otbrLogDeinit(void);
 /**
  * @def otbrLogDebug
  *
- * Logging at log level debug.
+ * Log at level debug.
  *
  * @param[in] ...  Arguments for the format specification.
  *

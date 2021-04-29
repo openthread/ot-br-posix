@@ -181,7 +181,7 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
             sThreadMutex.lock();
 #endif
             error = OTBR_ERROR_ERRNO;
-            otbrLogCrit("select() failed: %s", strerror(errno));
+            otbrLogErr("select() failed: %s", strerror(errno));
             break;
         }
     }

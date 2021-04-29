@@ -91,7 +91,7 @@ bool OpenThreadClient::Connect(void)
 
     if (ret == -1)
     {
-        otbrLogWarning("OpenThread daemon is not running.");
+        otbrLogErr("OpenThread daemon is not running.");
     }
 
 exit:
@@ -112,7 +112,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 
     if (ret < 0)
     {
-        otbrLogWarning("Failed to generate command: %s", strerror(errno));
+        otbrLogErr("Failed to generate command: %s", strerror(errno));
     }
 
     mBuffer[0] = '\n';
@@ -120,7 +120,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 
     if (ret == sizeof(mBuffer))
     {
-        otbrLogWarning("Command exceeds maximum limit: %d", kBufferSize);
+        otbrLogErr("Command exceeds maximum limit: %d", kBufferSize);
     }
 
     mBuffer[ret] = '\n';
@@ -131,7 +131,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     if (count < ret)
     {
         mBuffer[ret] = '\0';
-        otbrLogWarning("Failed to send command: %s", mBuffer);
+        otbrLogErr("Failed to send command: %s", mBuffer);
     }
 
     for (int i = 0; i < mTimeout; ++i)
