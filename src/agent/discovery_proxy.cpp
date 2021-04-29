@@ -89,41 +89,29 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(void *aContext, const char *aFull
 
 void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
 {
-    std::string                    fullName(aFullName);
-    otbrError                      error = OTBR_ERROR_NONE;
-    MdnsSubscriptionList::iterator it;
-    DnsNameInfo                    nameInfo = SplitFullDnsName(fullName);
+    std::string fullName(aFullName);
+    otbrError   error    = OTBR_ERROR_NONE;
+    DnsNameInfo nameInfo = SplitFullDnsName(fullName);
 
     otbrLogInfo("subscribe: %s", fullName.c_str());
-
-    it = std::find_if(mSubscriptions.begin(), mSubscriptions.end(), [&](const MdnsSubscription &aSubscription) {
-        return aSubscription.Matches(nameInfo.mInstanceName, nameInfo.mServiceName, nameInfo.mHostName,
-                                     nameInfo.mDomain);
-    });
-
-    VerifyOrExit(it == mSubscriptions.end(), it->mSubscriptionCount++);
 
     mSubscriptions.emplace_back(nameInfo.mInstanceName, nameInfo.mServiceName, nameInfo.mHostName, nameInfo.mDomain);
 
     {
         MdnsSubscription &subscription = mSubscriptions.back();
 
-        otbrLogDebug("subscriptions: %sx%d", subscription.ToString().c_str(), subscription.mSubscriptionCount);
+        otbrLog(OTBR_LOG_DEBUG, "[discproxy] subscriptions: %s", subscription.ToString().c_str());
 
-        if (GetServiceSubscriptionCount(nameInfo.mInstanceName, nameInfo.mServiceName, nameInfo.mHostName) == 1)
+        if (subscription.mHostName.empty())
         {
-            if (subscription.mHostName.empty())
-            {
-                mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
-            }
-            else
-            {
-                mMdnsPublisher.SubscribeHost(nameInfo.mHostName);
-            }
+            mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
+        }
+        else
+        {
+            mMdnsPublisher.SubscribeHost(nameInfo.mHostName);
         }
     }
 
-exit:
     if (error != OTBR_ERROR_NONE)
     {
         otbrLogWarning("failed to subscribe %s: %s", fullName.c_str(), otbrErrorString(error));
@@ -154,27 +142,16 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
     {
         MdnsSubscription &subscription = *it;
 
-        subscription.mSubscriptionCount--;
-        assert(subscription.mSubscriptionCount >= 0);
-
-        if (subscription.mSubscriptionCount == 0)
+        otbrLog(OTBR_LOG_DEBUG, "[discproxy] service subscriptions: %s", it->ToString().c_str());
+        if (subscription.mHostName.empty())
         {
-            mSubscriptions.erase(it);
+            mMdnsPublisher.UnsubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
         }
-
-        otbrLogDebug("service subscriptions: %sx%d", it->ToString().c_str(), it->mSubscriptionCount);
-
-        if (GetServiceSubscriptionCount(nameInfo.mInstanceName, nameInfo.mServiceName, nameInfo.mHostName) == 0)
+        else
         {
-            if (subscription.mHostName.empty())
-            {
-                mMdnsPublisher.UnsubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
-            }
-            else
-            {
-                mMdnsPublisher.UnsubscribeHost(nameInfo.mHostName);
-            }
+            mMdnsPublisher.UnsubscribeHost(nameInfo.mHostName);
         }
+        mSubscriptions.erase(it);
     }
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -274,19 +251,6 @@ std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std:
 exit:
     otbrLogDebug("translate domain: %s => %s", aName.c_str(), targetName.c_str());
     return targetName;
-}
-
-int DiscoveryProxy::GetServiceSubscriptionCount(const std::string &aInstanceName,
-                                                const std::string &aServiceName,
-                                                const std::string &aHostName)
-{
-    return std::accumulate(
-        mSubscriptions.begin(), mSubscriptions.end(), 0, [&](int aAccum, const MdnsSubscription &aSubscription) {
-            return aAccum + ((aSubscription.mInstanceName == aInstanceName &&
-                              aSubscription.mServiceName == aServiceName && aSubscription.mHostName == aHostName)
-                                 ? aSubscription.mSubscriptionCount
-                                 : 0);
-        });
 }
 
 void DiscoveryProxy::CheckServiceNameSanity(const std::string &aType)

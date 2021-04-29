@@ -86,10 +86,7 @@ private:
 
     struct MdnsSubscription
     {
-        explicit MdnsSubscription()
-            : mSubscriptionCount(0)
-        {
-        }
+        explicit MdnsSubscription() {}
 
         MdnsSubscription(std::string aInstanceName,
                          std::string aServiceName,
@@ -99,7 +96,6 @@ private:
             , mServiceName(std::move(aServiceName))
             , mHostName(std::move(aHostName))
             , mDomain(std::move(aDomain))
-            , mSubscriptionCount(1)
         {
         }
 
@@ -109,7 +105,6 @@ private:
         std::string mServiceName;
         std::string mHostName;
         std::string mDomain;
-        int         mSubscriptionCount;
         bool        Matches(const std::string &aInstanceName,
                             const std::string &aServiceName,
                             const std::string &aHostName,
@@ -124,9 +119,6 @@ private:
     void               OnDiscoveryProxySubscribe(const char *aSubscription);
     static void        OnDiscoveryProxyUnsubscribe(void *aContext, const char *aFullName);
     void               OnDiscoveryProxyUnsubscribe(const char *aSubscription);
-    int                GetServiceSubscriptionCount(const std::string &aInstanceName,
-                                                   const std::string &aServiceName,
-                                                   const std::string &aHostName);
     static std::string TranslateDomain(const std::string &aName, const std::string &aTargetDomain);
     static void        CheckServiceNameSanity(const std::string &aType);
     static void        CheckHostnameSanity(const std::string &aHostName);
