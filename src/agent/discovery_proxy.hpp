@@ -45,6 +45,7 @@
 #include <openthread/instance.h>
 
 #include "agent/ncp_openthread.hpp"
+#include "common/dns_utils.hpp"
 #include "mdns/mdns.hpp"
 
 namespace otbr {
@@ -84,49 +85,11 @@ private:
         kServiceTtlCapLimit = 10, // TTL cap limit for Discovery Proxy (in seconds).
     };
 
-    struct MdnsSubscription
-    {
-        explicit MdnsSubscription()
-            : mSubscriptionCount(0)
-        {
-        }
-
-        MdnsSubscription(std::string aInstanceName,
-                         std::string aServiceName,
-                         std::string aHostName,
-                         std::string aDomain)
-            : mInstanceName(std::move(aInstanceName))
-            , mServiceName(std::move(aServiceName))
-            , mHostName(std::move(aHostName))
-            , mDomain(std::move(aDomain))
-            , mSubscriptionCount(1)
-        {
-        }
-
-        std::string ToString(void) const;
-
-        std::string mInstanceName;
-        std::string mServiceName;
-        std::string mHostName;
-        std::string mDomain;
-        int         mSubscriptionCount;
-        bool        Matches(const std::string &aInstanceName,
-                            const std::string &aServiceName,
-                            const std::string &aHostName,
-                            const std::string &aDomain) const;
-        bool        MatchesServiceInstance(const std::string &aType, const std::string &aInstanceName) const;
-        bool        MatchesHost(const std::string &aHostName) const;
-    };
-
-    typedef std::vector<MdnsSubscription> MdnsSubscriptionList;
-
     static void        OnDiscoveryProxySubscribe(void *aContext, const char *aFullName);
     void               OnDiscoveryProxySubscribe(const char *aSubscription);
     static void        OnDiscoveryProxyUnsubscribe(void *aContext, const char *aFullName);
     void               OnDiscoveryProxyUnsubscribe(const char *aSubscription);
-    int                GetServiceSubscriptionCount(const std::string &aInstanceName,
-                                                   const std::string &aServiceName,
-                                                   const std::string &aHostName);
+    int                GetServiceSubscriptionCount(const DnsNameInfo &aNameInfo) const;
     static std::string TranslateDomain(const std::string &aName, const std::string &aTargetDomain);
     static void        CheckServiceNameSanity(const std::string &aType);
     static void        CheckHostnameSanity(const std::string &aHostName);
@@ -137,7 +100,6 @@ private:
 
     Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher &          mMdnsPublisher;
-    MdnsSubscriptionList       mSubscriptions;
 };
 
 } // namespace Dnssd
