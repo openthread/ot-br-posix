@@ -152,10 +152,11 @@ std::string Ip6Prefix::ToString() const
 
 std::string Ip6NetworkPrefix::ToString() const
 {
-    char strbuf[INET6_ADDRSTRLEN];
+    char            strbuf[INET6_ADDRSTRLEN];
+    struct in6_addr addr = {{{0}}};
 
-    snprintf(strbuf, sizeof(strbuf), "%x:%x:%x:%x::/64", htobe16(m16[0]), htobe16(m16[1]), htobe16(m16[2]),
-             htobe16(m16[3]));
+    memcpy(addr.s6_addr, m8, sizeof(Ip6NetworkPrefix));
+    inet_ntop(AF_INET6, &addr, strbuf, INET6_ADDRSTRLEN);
 
     return std::string(strbuf);
 }

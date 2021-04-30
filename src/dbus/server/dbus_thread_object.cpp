@@ -94,12 +94,9 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 static otExtendedPanId Uint64ToExtendedPanId(uint64_t aExtPanId)
 {
     otExtendedPanId extPanId;
-    uint64_t        mask = UINT8_MAX;
+    uint64_t *      pExtPanId = reinterpret_cast<uint64_t *>(&extPanId.m8[0]);
 
-    for (size_t i = 0; i < sizeof(uint64_t); i++)
-    {
-        extPanId.m8[i] = static_cast<uint8_t>((aExtPanId >> ((sizeof(uint64_t) - i - 1) * 8)) & mask);
-    }
+    *pExtPanId = htobe64(aExtPanId);
 
     return extPanId;
 }
