@@ -70,7 +70,7 @@ ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-c
   libnetfilter-queue-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential
+ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential clang
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
@@ -83,7 +83,7 @@ RUN apt-get update \
   && ([ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS) \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
-  && ./script/setup \
+  && ([ "${OT_BACKBONE_CI}" != "1" ] || CC=$(which clang) CXX=$(which clang++) ./script/setup) && ./script/setup \
   && chmod 644 /etc/bind/named.conf.options \
   && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
