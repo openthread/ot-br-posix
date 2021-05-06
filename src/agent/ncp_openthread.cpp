@@ -60,17 +60,22 @@ namespace Ncp {
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 
-ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
-                                           const char *aRadioUrl,
-                                           const char *aBackboneInterfaceName)
+ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
+                                           const std::vector<const char *> &aRadioUrls,
+                                           const char *                     aBackboneInterfaceName)
     : mInstance(nullptr)
 {
+    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
+
     memset(&mConfig, 0, sizeof(mConfig));
 
     mConfig.mInterfaceName         = aInterfaceName;
     mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
-    mConfig.mRadioUrl              = aRadioUrl;
-    mConfig.mSpeedUpFactor         = 1;
+    for (const char *url : aRadioUrls)
+    {
+        mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;
+    }
+    mConfig.mSpeedUpFactor = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)

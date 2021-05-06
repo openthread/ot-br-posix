@@ -36,6 +36,7 @@ set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
 set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
+set(OT_TREL ON CACHE BOOL "enable TREL")
 
 if (NOT OT_LOG_LEVEL)
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
