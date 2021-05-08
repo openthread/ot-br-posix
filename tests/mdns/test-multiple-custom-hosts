@@ -36,9 +36,9 @@
 
 main()
 {
-    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
-        start_publisher mc
+    start_publisher mc
 
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check MultipleService11 _meshcop._udp 'custom-host-1.local.'
         dns_sd_check MultipleService12 _meshcop._udp 'custom-host-1.local.'
         dns_sd_check_host 'custom-host-1.local.' '2002:0000:0000:0000:0000:0000:0000:0001'
@@ -47,8 +47,10 @@ main()
         dns_sd_check MultipleService22 _meshcop._udp 'custom-host-2.local.'
         dns_sd_check_host 'custom-host-2.local.' '2002:0000:0000:0000:0000:0000:0000:0001'
     else
-        #TODO:
-        echo "not implemented yet"
+        avahi_check 'MultipleService11;_meshcop._udp;local;custom-host-1.local;2002::1;12345;.*"xp=ABCDEFGH.\+"nn=cool"'
+        avahi_check 'MultipleService12;_meshcop._udp;local;custom-host-1.local;2002::1;12345;.*"xp=ABCDEFGH.\+"nn=cool"'
+        avahi_check 'MultipleService21;_meshcop._udp;local;custom-host-2.local;2002::1;12345;.*"xp=ABCDEFGH.\+"nn=cool"'
+        avahi_check 'MultipleService22;_meshcop._udp;local;custom-host-2.local;2002::1;12345;.*"xp=ABCDEFGH.\+"nn=cool"'
     fi
 }
 

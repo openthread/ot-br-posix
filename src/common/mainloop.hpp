@@ -34,32 +34,46 @@
 #ifndef OTBR_COMMON_OTBR_MAINLOOP_HPP_
 #define OTBR_COMMON_OTBR_MAINLOOP_HPP_
 
-#include "openthread-br/config.h"
+#include <openthread-br/config.h>
 
 #include <openthread/openthread-system.h>
 
-#else
-#include <sys/select.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace otbr {
 
 /**
- * This structure represents a context for a select() based mainloop.
+ * This type defines the mainloop context that contains context data
+ * for running a mainloop.
  *
  */
-typedef struct otSysMainloopContext
-{
-    fd_set         mReadFdSet;  ///< The read file descriptors.
-    fd_set         mWriteFdSet; ///< The write file descriptors.
-    fd_set         mErrorFdSet; ///< The error file descriptors.
-    int            mMaxFd;      ///< The max file descriptor.
-    struct timeval mTimeout;    ///< The timeout.
-} otSysMainloopContext;
+using MainloopContext = otSysMainloopContext;
 
-#ifdef __cplusplus
-} // end of extern "C"
-#endif
+/**
+ * This abstract class defines the interface of a mainloop processor
+ * which add fds to the mainloop context and handle fd events.
+ *
+ */
+class MainloopProcessor
+{
+public:
+    virtual ~MainloopProcessor(void) = default;
+
+    /**
+     * This method updates the mainloop context.
+     *
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
+     *
+     */
+    virtual void Update(MainloopContext &aMainloop) = 0;
+
+    /**
+     * This method processes mainloop events.
+     *
+     * @param[in]  aMainloop  A reference to the mainloop context.
+     *
+     */
+    virtual void Process(const MainloopContext &aMainloop) = 0;
+};
+
+} // namespace otbr
 
 #endif // OTBR_COMMON_OTBR_MAINLOOP_HPP_

@@ -28,7 +28,6 @@
 
 add_library(otbr-utils
     crc16.cpp
-    event_emitter.cpp
     hex.cpp
     pskc.cpp
     socket_utils.cpp

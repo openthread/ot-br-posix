@@ -292,6 +292,17 @@ exit:
     }
 }
 
+otError ThreadHelper::Detach(void)
+{
+    otError error = OT_ERROR_NONE;
+
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, false));
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, false));
+
+exit:
+    return error;
+}
+
 otError ThreadHelper::Reset(void)
 {
     mDeviceRoleHandlers.clear();
@@ -387,25 +398,23 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 
     if (aSeconds > 0)
     {
-        auto triggerTime = std::chrono::steady_clock::now() + std::chrono::seconds(aSeconds);
+        auto delay = Milliseconds(aSeconds * 1000);
 
-        if (mUnsecurePortCloseTime.find(aPort) == mUnsecurePortCloseTime.end() ||
-            mUnsecurePortCloseTime[aPort] < triggerTime)
-        {
-            mUnsecurePortCloseTime[aPort] = triggerTime;
-        }
+        ++mUnsecurePortRefCounter[aPort];
 
-        mNcp->PostTimerTask(triggerTime, [this, aPort]() {
-            auto         now = std::chrono::steady_clock::now();
-            otExtAddress noneAddress;
+        mNcp->PostTimerTask(delay, [this, aPort]() {
+            assert(mUnsecurePortRefCounter.find(aPort) != mUnsecurePortRefCounter.end());
+            assert(mUnsecurePortRefCounter[aPort] > 0);
 
-            // 0 to clean steering data
-            memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
-            if (now >= mUnsecurePortCloseTime[aPort])
+            if (--mUnsecurePortRefCounter[aPort] == 0)
             {
+                otExtAddress noneAddress;
+
+                // 0 to clean steering data
+                memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
                 (void)otIp6RemoveUnsecurePort(mInstance, aPort);
                 otThreadSetSteeringData(mInstance, &noneAddress);
-                mUnsecurePortCloseTime.erase(aPort);
+                mUnsecurePortRefCounter.erase(aPort);
             }
         });
     }

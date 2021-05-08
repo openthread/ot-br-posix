@@ -36,12 +36,14 @@
 
 #include <openthread-br/config.h>
 
+#include <chrono>
 #include <functional>
 #include <future>
 #include <mutex>
 #include <queue>
 
-#include "common/mainloop.h"
+#include "common/mainloop.hpp"
+#include "common/time.hpp"
 
 namespace otbr {
 
@@ -50,7 +52,7 @@ namespace otbr {
  * tasks on the mainloop.
  *
  */
-class TaskRunner
+class TaskRunner : public MainloopProcessor
 {
 public:
     /**
@@ -69,10 +71,10 @@ public:
      * This destructor destroys the Task Runner instance.
      *
      */
-    ~TaskRunner(void);
+    ~TaskRunner(void) override;
 
     /**
-     * This method posts a task to the task runner.
+     * This method posts a task to the task runner and returns immediately.
      *
      * Tasks are executed sequentially and follow the First-Come-First-Serve rule.
      * It is safe to call this method in different threads concurrently.
@@ -80,7 +82,18 @@ public:
      * @param[in]  aTask  The task to be executed.
      *
      */
-    void Post(const Task<void> &aTask);
+    void Post(const Task<void> aTask);
+
+    /**
+     * This method posts a task to the task runner and returns immediately.
+     *
+     * The task will be executed on the mainloop after `aDelay` milliseconds from now.
+     *
+     * @param[in]  aDelay  The delay before executing the task (in milliseconds).
+     * @param[in]  aTask   The task to be executed.
+     *
+     */
+    void Post(Milliseconds aDelay, const Task<void> aTask);
 
     /**
      * This method posts a task and waits for the completion of the task.
@@ -102,24 +115,20 @@ public:
     }
 
     /**
-     * This method updates the file descriptor and sets timeout for the mainloop.
+     * This method updates the mainloop context.
      *
-     * This method should only be called on the mainloop thread.
-     *
-     * @param[inout]  aMainloop  A reference to OpenThread mainloop context.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method processes events.
+     * This method processes mainloop events.
      *
-     * This method should only be called on the mainloop thread.
-     *
-     * @param[in]  aMainloop  A reference to OpenThread mainloop context.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const otSysMainloopContext &aMainloop);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     enum
@@ -128,14 +137,43 @@ private:
         kWrite = 1,
     };
 
-    void PushTask(const Task<void> &aTask);
+    struct DelayedTask
+    {
+        friend class Comparator;
+
+        struct Comparator
+        {
+            bool operator()(const DelayedTask &aLhs, const DelayedTask &aRhs) const { return aRhs < aLhs; }
+        };
+
+        DelayedTask(Milliseconds aDelay, Task<void> aTask)
+            : mTimeCreated(Clock::now())
+            , mDelay(aDelay)
+            , mTask(std::move(aTask))
+        {
+        }
+
+        bool operator<(const DelayedTask &aOther) const
+        {
+            return GetTimeExecute() <= aOther.GetTimeExecute() ||
+                   (GetTimeExecute() == aOther.GetTimeExecute() && mTimeCreated < aOther.mTimeCreated);
+        }
+
+        Timepoint GetTimeExecute(void) const { return mTimeCreated + mDelay; }
+
+        Timepoint    mTimeCreated;
+        Milliseconds mDelay;
+        Task<void>   mTask;
+    };
+
+    void PushTask(Milliseconds aDelay, const Task<void> aTask);
     void PopTasks(void);
 
     // The event fds which are used to wakeup the mainloop
     // when there are pending tasks in the task queue.
     int mEventFd[2];
 
-    std::queue<Task<void>> mTaskQueue;
+    std::priority_queue<DelayedTask, std::vector<DelayedTask>, DelayedTask::Comparator> mTaskQueue;
 
     // The mutex which protects the `mTaskQueue` from being
     // simultaneously accessed by multiple threads.

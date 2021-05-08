@@ -156,34 +156,70 @@ public:
     otbrError UnpublishHost(const char *aName) override;
 
     /**
-     * This method performs the MDNS processing.
+     * This method subscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * subscribes the service instance. Otherwise, this method subscribes the service.
      *
-     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
-     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
+     * mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify discovered service
+     * instances.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
+     * instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to subscribe, or empty to subscribe the service.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) override;
+    void SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method unsubscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * unsubscribes the service instance. Otherwise, this method unsubscribes the service.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p
-     *                                  aReadFdSet and @p aWriteFdSet.
-     * @param[inout]    aTimeout        A reference to the timeout. Update this
-     *                                  value if the MDNS service has pending
-     *                                  process in less than its current
-     *                                  value.
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) override;
+    void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method subscribes a given host.
+     *
+     * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void SubscribeHost(const std::string &aHostName) override;
+
+    /**
+     * This method unsubscribes a given host.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void UnsubscribeHost(const std::string &aHostName) override;
+
+    /**
+     * This method updates the mainloop context.
+     *
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
+     *
+     */
+    void Update(MainloopContext &aMainloop) override;
+
+    /**
+     * This method processes mainloop events.
+     *
+     * @param[in]  aMainloop  A reference to the mainloop context.
+     *
+     */
+    void Process(const MainloopContext &aMainloop) override;
 
     ~MdnsMojoPublisher(void) override;
 
@@ -198,10 +234,8 @@ private:
                             const std::string &             aInstanceName,
                             uint16_t                        aPort,
                             const std::vector<std::string> &aText);
-    void UnpublishServiceTask(const std::string &aName,
-                              const std::string &aInstanceName);
-    void PublishHostTask(const std::string &aInstanceName,
-                         const std::string &aIpv6Address);
+    void UnpublishServiceTask(const std::string &aName, const std::string &aInstanceName);
+    void PublishHostTask(const std::string &aInstanceName, const std::string &aIpv6Address);
     void UnpublishHostTask(const std::string &aInstanceName);
 
     bool VerifyFileAccess(const char *aFile);
@@ -225,7 +259,7 @@ private:
     TaskRunner mMainloopTaskRunner;
 
     std::vector<std::pair<std::string, std::string>> mPublishedServices;
-    std::vector<std::string> mPublishedHosts;
+    std::vector<std::string>                         mPublishedHosts;
 
     StateHandler mStateHandler;
     void *       mContext;

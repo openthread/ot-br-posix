@@ -90,7 +90,8 @@ send "commissioner joiner add * ABCDEF\r\n"
 expect "Done"
 expect "Joiner end"
 send "commissioner stop\r\n"
-wait
+set timeout -1
+expect eof
 EOF
     # The ot-cli-mtd node is used to test the child and neighbor table.
     expect <<EOF &
@@ -107,7 +108,8 @@ send "ifconfig up\r\n"
 expect "Done"
 send "thread start\r\n"
 expect "Done"
-wait
+set timeout -1
+expect eof
 EOF
     sleep 5
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
@@ -115,6 +117,11 @@ EOF
         io.openthread.BorderRouter.JoinerStart \
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep -e child -e router
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.Detach
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep disabled
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sleep 1
     sudo "${CMAKE_BINARY_DIR}"/tests/dbus/otbr-test-dbus-client

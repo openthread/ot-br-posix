@@ -28,14 +28,14 @@ OTBR includes a number of features, including:
 
 More information about Thread can be found at [threadgroup.org](http://threadgroup.org/). Thread is a registered trademark of the Thread Group, Inc.
 
-[ot-gh-action-build]: https://github.com/openthread/ot-br-posix/actions?query=workflow%3ABuild+branch%3Amaster+event%3Apush
-[ot-gh-action-build-svg]: https://github.com/openthread/ot-br-posix/workflows/Build/badge.svg?branch=master&event=push
-[ot-gh-action-docker]: https://github.com/openthread/ot-br-posix/actions?query=workflow%3ADocker+branch%3Amaster+event%3Apush
-[ot-gh-action-docker-svg]: https://github.com/openthread/ot-br-posix/workflows/Docker/badge.svg?branch=master&event=push
+[ot-gh-action-build]: https://github.com/openthread/ot-br-posix/actions?query=workflow%3ABuild+branch%3Amain+event%3Apush
+[ot-gh-action-build-svg]: https://github.com/openthread/ot-br-posix/workflows/Build/badge.svg?branch=main&event=push
+[ot-gh-action-docker]: https://github.com/openthread/ot-br-posix/actions?query=workflow%3ADocker+branch%3Amain+event%3Apush
+[ot-gh-action-docker-svg]: https://github.com/openthread/ot-br-posix/workflows/Docker/badge.svg?branch=main&event=push
 [otbr-travis]: https://travis-ci.org/openthread/ot-br-posix
-[otbr-travis-svg]: https://travis-ci.org/openthread/ot-br-posix.svg?branch=master
+[otbr-travis-svg]: https://travis-ci.org/openthread/ot-br-posix.svg?branch=main
 [otbr-codecov]: https://codecov.io/gh/openthread/ot-br-posix
-[otbr-codecov-svg]: https://codecov.io/gh/openthread/ot-br-posix/branch/master/graph/badge.svg
+[otbr-codecov-svg]: https://codecov.io/gh/openthread/ot-br-posix/branch/main/graph/badge.svg
 
 ## Getting started
 
@@ -49,9 +49,9 @@ If you're interested in contributing to OpenThread Border Router, read on.
 
 # Contributing
 
-We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/ot-br-posix/blob/master/CONTRIBUTING.md) for more information.
+We would love for you to contribute to OpenThread Border Router and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/ot-br-posix/blob/main/CONTRIBUTING.md) for more information.
 
-Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/ot-br-posix/blob/master/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/ot-br-posix/blob/master/STYLE_GUIDE.md).
+Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/ot-br-posix/blob/main/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/ot-br-posix/blob/main/STYLE_GUIDE.md).
 
 We follow the philosophy of [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all).
 
@@ -61,7 +61,7 @@ OpenThread Border Router follows the [Semantic Versioning guidelines](http://sem
 
 # License
 
-OpenThread Border Router is released under the [BSD 3-Clause license](https://github.com/openthread/ot-br-posix/blob/master/LICENSE). See the [`LICENSE`](https://github.com/openthread/ot-br-posix/blob/master/LICENSE) file for more information.
+OpenThread Border Router is released under the [BSD 3-Clause license](https://github.com/openthread/ot-br-posix/blob/main/LICENSE). See the [`LICENSE`](https://github.com/openthread/ot-br-posix/blob/main/LICENSE) file for more information.
 
 Please only use the OpenThread name and marks when accurately referencing this software distribution. Do not use the marks in a way that suggests you are endorsed by or otherwise affiliated with Nest, Google, or The Thread Group.
 

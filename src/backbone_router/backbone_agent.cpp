@@ -46,29 +46,31 @@ namespace BackboneRouter {
 BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
     , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
+#if OTBR_ENABLE_DUA_ROUTING
     , mNdProxyManager(aNcp)
+#endif
 {
 }
 
 void BackboneAgent::Init(void)
 {
-    mNcp.On(Ncp::kEventBackboneRouterState, HandleBackboneRouterState, this);
-    mNcp.On(Ncp::kEventBackboneRouterDomainPrefixEvent, HandleBackboneRouterDomainPrefixEvent, this);
-    mNcp.On(Ncp::kEventBackboneRouterNdProxyEvent, HandleBackboneRouterNdProxyEvent, this);
-
+    mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+    otBackboneRouterSetDomainPrefixCallback(mNcp.GetInstance(), &BackboneAgent::HandleBackboneRouterDomainPrefixEvent,
+                                            this);
+#if OTBR_ENABLE_DUA_ROUTING
+    otBackboneRouterSetNdProxyCallback(mNcp.GetInstance(), &BackboneAgent::HandleBackboneRouterNdProxyEvent, this);
     mNdProxyManager.Init();
+#endif
 
-    HandleBackboneRouterState();
+    otBackboneRouterSetEnabled(mNcp.GetInstance(), /* aEnabled */ true);
 }
 
-void BackboneAgent::HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments)
+void BackboneAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
-    OT_UNUSED_VARIABLE(aEvent);
-    OT_UNUSED_VARIABLE(aArguments);
-
-    assert(aEvent == Ncp::kEventBackboneRouterState);
-
-    static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterState();
+    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE)
+    {
+        HandleBackboneRouterState();
+    }
 }
 
 void BackboneAgent::HandleBackboneRouterState(void)
@@ -99,10 +101,13 @@ void BackboneAgent::OnBecomePrimary(void)
 {
     otbrLog(OTBR_LOG_NOTICE, "BackboneAgent: Backbone Router becomes Primary!");
 
+#if OTBR_ENABLE_DUA_ROUTING
     if (mDomainPrefix.IsValid())
     {
+        mDuaRoutingManager.Enable(mDomainPrefix);
         mNdProxyManager.Enable(mDomainPrefix);
     }
+#endif
 }
 
 void BackboneAgent::OnResignPrimary(void)
@@ -110,7 +115,10 @@ void BackboneAgent::OnResignPrimary(void)
     otbrLog(OTBR_LOG_NOTICE, "BackboneAgent: Backbone Router resigns Primary to %s!",
             StateToString(mBackboneRouterState));
 
+#if OTBR_ENABLE_DUA_ROUTING
+    mDuaRoutingManager.Disable();
     mNdProxyManager.Disable();
+#endif
 }
 
 const char *BackboneAgent::StateToString(otBackboneRouterState aState)
@@ -132,32 +140,30 @@ const char *BackboneAgent::StateToString(otBackboneRouterState aState)
 
     return ret;
 }
-void BackboneAgent::UpdateFdSet(fd_set & aReadFdSet,
-                                fd_set & aWriteFdSet,
-                                fd_set & aErrorFdSet,
-                                int &    aMaxFd,
-                                timeval &aTimeout) const
+
+void BackboneAgent::Update(MainloopContext &aMainloop)
 {
-    mNdProxyManager.UpdateFdSet(aReadFdSet, aWriteFdSet, aErrorFdSet, aMaxFd, aTimeout);
+    OTBR_UNUSED_VARIABLE(aMainloop);
+
+#if OTBR_ENABLE_DUA_ROUTING
+    mNdProxyManager.Update(aMainloop);
+#endif
 }
 
-void BackboneAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void BackboneAgent::Process(const MainloopContext &aMainloop)
 {
-    mNdProxyManager.Process(aReadFdSet, aWriteFdSet, aErrorFdSet);
+    OTBR_UNUSED_VARIABLE(aMainloop);
+
+#if OTBR_ENABLE_DUA_ROUTING
+    mNdProxyManager.Process(aMainloop);
+#endif
 }
 
-void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments)
+void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+                                                          otBackboneRouterDomainPrefixEvent aEvent,
+                                                          const otIp6Prefix *               aDomainPrefix)
 {
-    OT_UNUSED_VARIABLE(aEvent);
-
-    otBackboneRouterDomainPrefixEvent event;
-    const otIp6Prefix *               domainPrefix;
-
-    assert(aEvent == Ncp::kEventBackboneRouterDomainPrefixEvent);
-
-    event        = static_cast<otBackboneRouterDomainPrefixEvent>(va_arg(aArguments, int));
-    domainPrefix = va_arg(aArguments, const otIp6Prefix *);
-    static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterDomainPrefixEvent(event, domainPrefix);
+    static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterDomainPrefixEvent(aEvent, aDomainPrefix);
 }
 
 void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
@@ -176,30 +182,31 @@ void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomain
 
     VerifyOrExit(IsPrimary() && aEvent != OT_BACKBONE_ROUTER_DOMAIN_PREFIX_REMOVED);
 
+#if OTBR_ENABLE_DUA_ROUTING
+    mDuaRoutingManager.Disable();
     mNdProxyManager.Disable();
+
+    mDuaRoutingManager.Enable(mDomainPrefix);
     mNdProxyManager.Enable(mDomainPrefix);
+#endif
+
 exit:
     return;
 }
 
-void BackboneAgent::HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments)
+#if OTBR_ENABLE_DUA_ROUTING
+void BackboneAgent::HandleBackboneRouterNdProxyEvent(void *                       aContext,
+                                                     otBackboneRouterNdProxyEvent aEvent,
+                                                     const otIp6Address *         aAddress)
 {
-    OT_UNUSED_VARIABLE(aEvent);
-
-    otBackboneRouterNdProxyEvent event;
-    const otIp6Address *         address;
-
-    assert(aEvent == Ncp::kEventBackboneRouterNdProxyEvent);
-
-    event   = static_cast<otBackboneRouterNdProxyEvent>(va_arg(aArguments, int));
-    address = va_arg(aArguments, const otIp6Address *);
-    static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterNdProxyEvent(event, address);
+    static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterNdProxyEvent(aEvent, aAddress);
 }
 
 void BackboneAgent::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aDua)
 {
     mNdProxyManager.HandleBackboneRouterNdProxyEvent(aEvent, aDua);
 }
+#endif
 
 } // namespace BackboneRouter
 } // namespace otbr

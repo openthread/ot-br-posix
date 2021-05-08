@@ -36,37 +36,36 @@
 
 #include "openthread-br/config.h"
 
+#include <chrono>
+
 #include <stdint.h>
 
 #include <sys/time.h>
 
 namespace otbr {
 
-/**
- * This method returns the timestamp in miniseconds of @aTime.
- *
- * @param[in]   aTime   The time to convert to timestamp.
- *
- * @returns timestamp in miniseconds.
- *
- */
-inline unsigned long GetTimestamp(const timeval &aTime)
+using Seconds      = std::chrono::seconds;
+using Milliseconds = std::chrono::milliseconds;
+using Microseconds = std::chrono::microseconds;
+using Clock        = std::chrono::steady_clock;
+using Timepoint    = Clock::time_point;
+
+template <class D> D FromTimeval(const timeval &aTime)
 {
-    return static_cast<unsigned long>(aTime.tv_sec * 1000 + aTime.tv_usec / 1000);
+    return std::chrono::duration_cast<D>(Microseconds{aTime.tv_usec}) +
+           std::chrono::duration_cast<D>(Seconds{aTime.tv_sec});
 }
 
-/**
- * This method returns the current timestamp in miniseconds.
- *
- * @returns Current timestamp in miniseconds.
- *
- */
-inline unsigned long GetNow(void)
+template <class D> timeval ToTimeval(const D &aDuration)
 {
-    timeval now;
+    timeval      ret;
+    const size_t kMicrosecondsPeriod = 1000000;
+    auto         microseconds        = std::chrono::duration_cast<Microseconds>(aDuration).count();
 
-    gettimeofday(&now, nullptr);
-    return static_cast<unsigned long>(now.tv_sec * 1000 + now.tv_usec / 1000);
+    ret.tv_sec  = microseconds / kMicrosecondsPeriod;
+    ret.tv_usec = microseconds % kMicrosecondsPeriod;
+
+    return ret;
 }
 
 } // namespace otbr

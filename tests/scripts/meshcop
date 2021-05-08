@@ -29,9 +29,15 @@
 # Test thread commissioning along with openthread.
 #
 # Usage:
-#   ./meshcop         # test with latest openthread.
-#   NO_CLEAN=1 ./meshcop # test with existing binaries in ${TEST_BASE}.
+#   ./meshcop                        # test with latest openthread.
+#   NO_CLEAN=1 ./meshcop             # test with existing binaries in ${TEST_BASE}.
+#   TEST_CASE=mdns_service ./meshcop # test the meshcop mDNS service.
 set -euxo pipefail
+
+# The test case to run. available cases are:
+# - commissioning
+# - mdns_service
+readonly TEST_CASE="${TEST_CASE:-commissioning}"
 
 # Get our starting directory and remember it
 readonly ORIGIN_PWD="$(pwd)"
@@ -63,6 +69,7 @@ readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
 readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
 readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
 readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
+readonly OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
 
 # The node ids
 readonly LEADER_NODE_ID=1
@@ -194,7 +201,10 @@ build_dependencies()
     ot_cli=$(command -v "${OT_CLI}")
     ot_rcp=$(command -v "${OT_RCP}")
 
-    if [[ ${OTBR_USE_WEB_COMMISSIONER} != 1 ]]; then
+    if
+        [ "${TEST_CASE}" == "commissioning" ] \
+            && [[ ${OTBR_USE_WEB_COMMISSIONER} != 1 ]]
+    then
         ot_commissioner_build
     fi
 
@@ -330,7 +340,7 @@ ot_commissioner_build()
     (mkdir -p "${BUILD_DIR}/ot-commissioner" \
         && cd "${BUILD_DIR}/ot-commissioner" \
         && (git --git-dir=.git rev-parse --is-inside-work-tree || git --git-dir=.git init .) \
-        && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git master \
+        && git fetch --depth 1 https://github.com/openthread/ot-commissioner.git main \
         && git checkout FETCH_HEAD \
         && ./script/bootstrap.sh \
         && mkdir build && cd build \
@@ -399,7 +409,126 @@ EOF
     exit_message="JOINER SUCCESS COMPLETE"
 }
 
-main()
+scan_meshcop_service()
+{
+    if command -v dns-sd; then
+        timeout 2 dns-sd -Z _meshcop._udp local. || true
+    else
+        avahi-browse -aprt || true
+    fi
+}
+
+test_meshcop_service()
+{
+    local network_name="ot-test-net"
+    local xpanid="4142434445464748"
+    local xpanid_txt="ABCDEFGH"
+    local extaddr="4142434445464748"
+    local extaddr_txt="ABCDEFGH"
+    local passphrase="SECRET"
+    local service
+
+    test_setup
+    ba_start
+    sudo "${OT_CTL}" factoryreset
+    sleep 1
+    sudo "${OT_CTL}" dataset init new
+    sudo "${OT_CTL}" dataset networkname ${network_name}
+    sudo "${OT_CTL}" dataset extpanid ${xpanid}
+    sudo "${OT_CTL}" dataset pskc -p ${passphrase}
+    sudo "${OT_CTL}" dataset commit active
+    sudo "${OT_CTL}" ifconfig up
+    sudo "${OT_CTL}" extaddr ${extaddr}
+    sudo "${OT_CTL}" thread start
+    sleep 5
+
+    sudo "${OT_CTL}" state | grep "leader"
+
+    service="$(scan_meshcop_service)"
+    grep "${network_name}._meshcop\._udp" <<<"${service}"
+    grep "rv=1" <<<"${service}"
+    grep "tv=1\.2\.0" <<<"${service}"
+    grep "nn=${network_name}" <<<"${service}"
+    grep "xp=${xpanid_txt}" <<<"${service}"
+    grep "dd=${extaddr_txt}" <<<"${service}"
+
+    # TODO: enable the checks after enabling Thread 1.2 for tests.
+    #grep "dn=${domain_name}" <<< "${service}"
+    #grep "sq=" <<< "${service}"
+    #grep "bb=" <<< "${service}"
+
+    # The binary values are not printable with dns-sd.
+    grep "sb=" <<<"${service}"
+    grep "at=" <<<"${service}"
+    grep "pt=" <<<"${service}"
+
+    # Test if the meshcop service is unpublished when pskc is zeroed.
+    sudo "${OT_CTL}" dataset init active
+    sudo "${OT_CTL}" dataset pskc 00000000000000000000000000000000
+    sudo "${OT_CTL}" dataset commit active
+    sleep 2
+    service="$(scan_meshcop_service)"
+    if grep -q "${network_name}._meshcop\._udp" <<<"${service}"; then
+        die "unexpect meshcop service when PSKc is zeroed!"
+    fi
+
+    # Test if the meshcop service is published again when a non-zero
+    # PSKc is set back.
+    sudo "${OT_CTL}" dataset init active
+    sudo "${OT_CTL}" dataset pskc 11223344556677889900aabbccddeeff
+    sudo "${OT_CTL}" dataset commit active
+    sleep 2
+    service="$(scan_meshcop_service)"
+    grep "${network_name}._meshcop\._udp" <<<"${service}"
+
+    # Test if the meshcop service is unpublished and a new service
+    # is published when the network name is changed.
+    local new_network_name="ot-test-net-new"
+    sudo "${OT_CTL}" dataset init active
+    sudo "${OT_CTL}" dataset networkname ${new_network_name}
+    sudo "${OT_CTL}" dataset commit active
+    sleep 2
+    service="$(scan_meshcop_service)"
+    if grep -q "${network_name}._meshcop\._udp" <<<"${service}"; then
+        die "unexpect stale meshcop service!"
+    fi
+    grep "${new_network_name}._meshcop\._udp" <<<"${service}"
+    grep "nn=${new_network_name}" <<<"${service}"
+
+    # Test if the discriminator is updated when extaddr is changed.
+    local new_extaddr="4847464544434241"
+    local new_extaddr_txt="HGFEDCBA"
+    sudo "${OT_CTL}" thread stop
+    sudo "${OT_CTL}" extaddr ${new_extaddr}
+    sudo "${OT_CTL}" thread start
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep "${new_network_name}._meshcop\._udp" <<<"${service}"
+    grep "dd=${new_extaddr_txt}" <<<"${service}"
+
+    # Test if the meshcop service is unpublished when Thread is stopped.
+    sudo "${OT_CTL}" thread stop
+    sleep 2
+    service="$(scan_meshcop_service)"
+    if grep -q "${new_network_name}._meshcop\._udp" <<<"${service}"; then
+        die "unexpect meshcop service when Thread is stopped!"
+    fi
+
+    sudo "${OT_CTL}" thread start
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep "${new_network_name}._meshcop\._udp" <<<"${service}"
+
+    # Test if the the meshcop service is unpublished when otbr-agent exits.
+    sudo "${OT_CTL}" exit
+    sleep 2
+    service="$(scan_meshcop_service)"
+    if grep -q "${new_network_name}._meshcop\._udp" <<<"${service}"; then
+        die "unexpect meshcop service when otbr-agent exits!"
+    fi
+}
+
+test_commissioning()
 {
     test_setup
     ba_start
@@ -411,6 +540,15 @@ main()
         ot_commissioner_start
     fi
     joiner_start
+}
+
+main()
+{
+    if [ "${TEST_CASE}" == "mdns_service" ]; then
+        test_meshcop_service
+    else
+        test_commissioning
+    fi
 }
 
 main "$@"

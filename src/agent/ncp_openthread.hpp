@@ -42,8 +42,9 @@
 #include <openthread/instance.h>
 #include <openthread/openthread-system.h>
 
-#include "ncp.hpp"
 #include "agent/thread_helper.hpp"
+#include "common/mainloop.hpp"
+#include "common/task_runner.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -52,9 +53,11 @@ namespace Ncp {
  * This interface defines NCP Controller functionality.
  *
  */
-class ControllerOpenThread : public Controller
+class ControllerOpenThread : public MainloopProcessor
 {
 public:
+    using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
+
     /**
      * This constructor initializes this object.
      *
@@ -71,7 +74,7 @@ public:
      * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
      *
      */
-    otbrError Init(void) override;
+    otbrError Init(void);
 
     /**
      * This method get mInstance pointer.
@@ -90,40 +93,29 @@ public:
     otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
 
     /**
-     * This method updates the fd_set to poll.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop) override;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs the Thread processing.
+     * This method processes mainloop events.
      *
-     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
-     *
-     */
-    void Process(const otSysMainloopContext &aMainloop) override;
-
-    /**
-     * This method request the event.
-     *
-     * @param[in]   aEvent  The event id to request.
-     *
-     * @retval  OTBR_ERROR_NONE         Successfully requested the event.
-     * @retval  OTBR_ERROR_ERRNO        Failed to request the event.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    otbrError RequestEvent(int aEvent) override;
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method posts a task to the timer
      *
-     * @param[in]   aTimePoint  The timepoint to trigger the task.
-     * @param[in]   aTask       The task function.
+     * @param[in]   aDelay  The delay in milliseconds before executing the task.
+     * @param[in]   aTask   The task function.
      *
      */
-    void PostTimerTask(std::chrono::steady_clock::time_point aTimePoint, const std::function<void(void)> &aTask);
+    void PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask);
 
     /**
      * This method registers a reset handler.
@@ -132,6 +124,22 @@ public:
      *
      */
     void RegisterResetHandler(std::function<void(void)> aHandler);
+
+    /**
+     * This method adds a event listener for Thread state changes.
+     *
+     * @param[in]  aCallback  The callback to receive Thread state changed events.
+     *
+     */
+    void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
+
+    /**
+     * This method returns the Thread protocol version as a string.
+     *
+     * @returns  A pointer to the Thread version string.
+     *
+     */
+    static const char *GetThreadVersion(void);
 
     ~ControllerOpenThread(void) override;
 
@@ -148,23 +156,20 @@ private:
     void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
                                                       const otIp6Prefix *               aDomainPrefix);
 
+#if OTBR_ENABLE_DUA_ROUTING
     static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
                                                  otBackboneRouterNdProxyEvent aEvent,
                                                  const otIp6Address *         aAddress);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
-
-    static void HandleBackboneRouterMulticastListenerEvent(void *                                 aContext,
-                                                           otBackboneRouterMulticastListenerEvent aEvent,
-                                                           const otIp6Address *                   aAddress);
-    void        HandleBackboneRouterMulticastListenerEvent(otBackboneRouterMulticastListenerEvent aEvent,
-                                                           const otIp6Address *                   aAddress);
+#endif
 
     otInstance *mInstance;
 
-    otPlatformConfig                                                                mConfig;
-    std::unique_ptr<otbr::agent::ThreadHelper>                                      mThreadHelper;
-    std::multimap<std::chrono::steady_clock::time_point, std::function<void(void)>> mTimers;
-    std::vector<std::function<void(void)>>                                          mResetHandlers;
+    otPlatformConfig                           mConfig;
+    std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
+    std::vector<std::function<void(void)>>     mResetHandlers;
+    TaskRunner                                 mTaskRunner;
+    std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
 };
 
 } // namespace Ncp

@@ -36,11 +36,13 @@
 
 #include "openthread-br/config.h"
 
+#include <netinet/in.h>
 #include <stdint.h>
 #include <string.h>
 #include <string>
 #include <vector>
 
+#include "common/byteswap.hpp"
 #include "common/toolchain.hpp"
 
 #ifndef IN6ADDR_ANY
@@ -182,12 +184,38 @@ public:
     std::string ToString(void) const;
 
     /**
+     * This method indicates whether or not the Ip6 address is the Unspecified Address.
+     *
+     * @retval TRUE   If the Ip6 address is the Unspecified Address.
+     * @retval FALSE  If the Ip6 address is not the Unspecified Address.
+     *
+     */
+    bool IsUnspecified(void) const { return m64[0] == 0 && m64[1] == 0; }
+
+    /**
      * This method returns if the Ip6 address is a multicast address.
      *
      * @returns  Whether the Ip6 address is a multicast address.
      *
      */
     bool IsMulticast(void) const { return m8[0] == 0xff; }
+
+    /**
+     * This method returns if the Ip6 address is a link-local address.
+     *
+     * @returns  Whether the Ip6 address is a link-local address.
+     *
+     */
+    bool IsLinkLocal(void) const { return (m16[0] & bswap_16(0xffc0)) == bswap_16(0xfe80); }
+
+    /**
+     * This method returns whether or not the Ip6 address is the Loopback Address.
+     *
+     * @retval TRUE   If the Ip6 address is the Loopback Address.
+     * @retval FALSE  If the Ip6 address is not the Loopback Address.
+     *
+     */
+    bool IsLoopback(void) const { return (m32[0] == 0 && m32[1] == 0 && m32[2] == 0 && m32[3] == htobe32(1)); }
 
     /**
      * This function returns the wellknown Link Local All Nodes Multicast Address (ff02::1).
@@ -230,18 +258,34 @@ public:
     /**
      * This method copies the Ip6 address to a `sockaddr_in6` structure.
      *
-     * @param[out] aSockAddr  The `sockaddr_in6` structure to copy the Ip6 adress to.
+     * @param[out] aSockAddr  The `sockaddr_in6` structure to copy the Ip6 address to.
      *
      */
     void CopyTo(struct sockaddr_in6 &aSockAddr) const;
 
     /**
+     * This method copies the Ip6 address from a `sockaddr_in6` structure.
+     *
+     * @param[in] aSockAddr  The `sockaddr_in6` structure to copy the Ip6 address from.
+     *
+     */
+    void CopyFrom(const struct sockaddr_in6 &aSockAddr);
+
+    /**
      * This method copies the Ip6 address to a `in6_addr` structure.
      *
-     * @param[out] aIn6Addr  The `in6_addr` structure to copy the Ip6 adress to.
+     * @param[out] aIn6Addr  The `in6_addr` structure to copy the Ip6 address to.
      *
      */
     void CopyTo(struct in6_addr &aIn6Addr) const;
+
+    /**
+     * This method copies the Ip6 address from a `in6_addr` structure.
+     *
+     * @param[in] aIn6Addr  The `in6_addr` structure to copy the Ip6 address from.
+     *
+     */
+    void CopyFrom(const struct in6_addr &aIn6Addr);
 
     union
     {

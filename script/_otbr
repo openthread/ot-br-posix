@@ -28,7 +28,6 @@
 #
 
 readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
-readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
 readonly REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
 
@@ -67,8 +66,23 @@ otbr_install()
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
         "-DOTBR_REST=ON"
+        "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+        "-DOTBR_MDNS=mDNSResponder"
+        "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "${otbr_options[@]}"
     )
+
+    if with BORDER_ROUTING; then
+        otbr_options+=(
+            "-DOTBR_BORDER_ROUTING=ON"
+        )
+    fi
+
+    if with BACKBONE_ROUTER; then
+        otbr_options+=(
+            "-DOTBR_BACKBONE_ROUTER=ON"
+        )
+    fi
 
     if [[ ${REFERENCE_DEVICE} == "1" ]]; then
         otbr_options+=(
@@ -77,16 +91,9 @@ otbr_install()
             "-DOT_DHCP6_SERVER=ON"
         )
     fi
-    if with BACKBONE_ROUTER; then
-        otbr_options+=(
-            "-DOTBR_BACKBONE_ROUTER=ON"
-        )
-    fi
 
-    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
+    (./script/cmake-build "${otbr_options[@]}" \
         && cd "${OTBR_TOP_BUILDDIR}" \
-        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
-        && ninja \
         && sudo ninja install)
 
     if have systemctl; then

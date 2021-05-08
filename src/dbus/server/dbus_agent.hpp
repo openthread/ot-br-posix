@@ -39,6 +39,7 @@
 #include <string>
 #include <sys/select.h>
 
+#include "common/mainloop.hpp"
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
 #include "dbus/server/dbus_object.hpp"
@@ -49,7 +50,7 @@
 namespace otbr {
 namespace DBus {
 
-class DBusAgent
+class DBusAgent : public MainloopProcessor
 {
 public:
     /**
@@ -70,30 +71,20 @@ public:
     otbrError Init(void);
 
     /**
-     * This method performs the dbus select update.
+     * This method updates the mainloop context.
      *
-     * @param[out]      aReadFdSet   The read file descriptors.
-     * @param[out]      aWriteFdSet  The write file descriptors.
-     * @param[out]      aErorFdSet   The error file descriptors.
-     * @param[inout]    aMaxFd       The max file descriptor.
-     * @param[inout]    aTimeOut     The select timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set &        aReadFdSet,
-                     fd_set &        aWriteFdSet,
-                     fd_set &        aErrorFdSet,
-                     int &           aMaxFd,
-                     struct timeval &aTimeOut);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method processes the dbus I/O.
+     * This method processes mainloop events.
      *
-     * @param[in]       aReadFdSet   The read file descriptors.
-     * @param[in]       aWriteFdSet  The write file descriptors.
-     * @param[in]       aErorFdSet   The error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);

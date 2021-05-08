@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2020, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,73 +28,78 @@
 
 /**
  * @file
- * This file includes definitions for event emitter.
+ *   This file includes definition for DUA routing functionalities.
  */
 
-#ifndef OTBR_COMMON_EVENT_EMITTER_HPP_
-#define OTBR_COMMON_EVENT_EMITTER_HPP_
+#ifndef BACKBONE_ROUTER_DUA_ROUTING_MANAGER
+#define BACKBONE_ROUTER_DUA_ROUTING_MANAGER
 
-#include "openthread-br/config.h"
+#if OTBR_ENABLE_DUA_ROUTING
 
-#include <list>
-#include <map>
+#include <set>
+#include <openthread/backbone_router_ftd.h>
 
-#include <stdarg.h>
+#include "agent/instance_params.hpp"
+#include "agent/ncp_openthread.hpp"
+#include "utils/system_utils.hpp"
 
 namespace otbr {
+namespace BackboneRouter {
 
 /**
- * This class implements the basic functionality of an event emitter.
+ * @addtogroup border-router-backbone
+ *
+ * @brief
+ *   This module includes definition for DUA routing functionalities.
+ *
+ * @{
+ */
+
+/**
+ * This class implements the DUA routing manager.
  *
  */
-class EventEmitter
+class DuaRoutingManager
 {
-    /**
-     * This function pointer will be called when the @p aEvent is emitted.
-     *
-     * @param[in]   aContext    A pointer to application-specific context.
-     * @param[in]   aEvent      The emitted event id.
-     * @param[in]   aArguments  The arguments associated with this event.
-     *
-     */
-    typedef void (*Callback)(void *aContext, int aEvent, va_list aArguments);
-
 public:
     /**
-     * This method register an event handler for @p aEvent.
-     *
-     * @param[in]   aEvent      The event id.
-     * @param[in]   aCallback   The function poiner to be called.
-     * @param[in]   aContext    A pointer to application-specific context.
+     * This constructor initializes a DUA routing manager instance.
      *
      */
-    void On(int aEvent, Callback aCallback, void *aContext);
+    explicit DuaRoutingManager()
+        : mEnabled(false)
+    {
+    }
 
     /**
-     * This method deregister an event handler for @p aEvent.
-     *
-     * @param[in]   aEvent      The event id.
-     * @param[in]   aCallback   The function poiner to be called.
-     * @param[in]   aContext    A pointer to application-specific context.
+     * This method enables the DUA routing manager.
      *
      */
-    void Off(int aEvent, Callback aCallback, void *aContext);
+    void Enable(const Ip6Prefix &aDomainPrefix);
 
     /**
-     * This method emits an event.
-     *
-     * @param[in]   aEvent      The event id.
+     * This method disables the DUA routing manager.
      *
      */
-    void Emit(int aEvent, ...);
+    void Disable(void);
 
 private:
-    typedef std::pair<Callback, void *> Handler;
-    typedef std::list<Handler>          Handlers;
-    typedef std::map<int, Handlers>     Events;
-    Events                              mEvents;
+    void AddDefaultRouteToThread(void);
+    void DelDefaultRouteToThread(void);
+    void AddPolicyRouteToBackbone(void);
+    void DelPolicyRouteToBackbone(void);
+
+    Ip6Prefix mDomainPrefix;
+    bool      mEnabled : 1;
 };
 
+/**
+ * @}
+ */
+
+} // namespace BackboneRouter
 } // namespace otbr
 
-#endif // OTBR_COMMON_EVENT_EMITTER_HPP_
+#endif // OTBR_ENABLE_DUA_ROUTING
+
+#endif // BACKBONE_ROUTER_DUA_ROUTING_MANAGER

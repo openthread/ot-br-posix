@@ -34,6 +34,11 @@
 #ifndef OTBR_REST_REST_WEB_SERVER_HPP_
 #define OTBR_REST_REST_WEB_SERVER_HPP_
 
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <sys/socket.h>
+
+#include "common/mainloop.hpp"
 #include "rest/connection.hpp"
 
 using otbr::Ncp::ControllerOpenThread;
@@ -46,7 +51,7 @@ namespace rest {
  * This class implements a REST server.
  *
  */
-class RestWebServer
+class RestWebServer : public MainloopProcessor
 {
 public:
     /**
@@ -66,24 +71,24 @@ public:
     void Init(void);
 
     /**
-     * This method updates the file descriptor sets and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs processing.
+     * This method processes mainloop events.
      *
-     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    otbrError Process(otSysMainloopContext &aMainloop);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     RestWebServer(ControllerOpenThread *aNcp);
-    otbrError UpdateConnections(fd_set &aReadFdSet);
+    void      UpdateConnections(const fd_set &aReadFdSet);
     void      CreateNewConnection(int32_t &aFd);
     otbrError Accept(int32_t aListenFd);
     void      InitializeListenFd(void);

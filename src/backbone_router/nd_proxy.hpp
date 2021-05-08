@@ -34,6 +34,8 @@
 #ifndef ND_PROXY_HPP_
 #define ND_PROXY_HPP_
 
+#if OTBR_ENABLE_DUA_ROUTING
+
 #ifdef __APPLE__
 #define __APPLE_USE_RFC_3542
 #endif
@@ -48,6 +50,7 @@
 #include <openthread/backbone_router_ftd.h>
 
 #include "agent/ncp_openthread.hpp"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -66,7 +69,7 @@ namespace BackboneRouter {
  * This class implements ND Proxy manager.
  *
  */
-class NdProxyManager
+class NdProxyManager : public MainloopProcessor
 {
 public:
     /**
@@ -103,30 +106,20 @@ public:
     void Disable(void);
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) const;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs border agent processing.
+     * This method processes mainloop events.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method handles a Backbone Router ND Proxy event.
@@ -186,4 +179,5 @@ private:
 } // namespace BackboneRouter
 } // namespace otbr
 
+#endif // OTBR_ENABLE_DUA_ROUTING
 #endif // ND_PROXY_HPP_
