@@ -62,11 +62,8 @@ public:
     /**
      * This method initializes the REST server.
      *
-     * @retval  OTBR_ERROR_NONE     REST server initialized successfully.
-     * @retval  OTBR_ERROR_REST     Failed due to rest error .
-     *
      */
-    otbrError Init(void);
+    void Init(void);
 
     /**
      * This method updates the file descriptor sets and timeout for mainloop.
@@ -89,7 +86,7 @@ private:
     otbrError UpdateConnections(fd_set &aReadFdSet);
     void      CreateNewConnection(int32_t &aFd);
     otbrError Accept(int32_t aListenFd);
-    otbrError InitializeListenFd(void);
+    void      InitializeListenFd(void);
     bool      SetFdNonblocking(int32_t fd);
 
     // Resource handler

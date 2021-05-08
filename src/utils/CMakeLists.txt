@@ -31,6 +31,7 @@ add_library(otbr-utils
     event_emitter.cpp
     hex.cpp
     pskc.cpp
+    socket_utils.cpp
     steering_data.cpp
     strcpy_utils.cpp
     system_utils.cpp
