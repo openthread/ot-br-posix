@@ -437,7 +437,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" dataset init new
     sudo "${OT_CTL}" dataset networkname ${network_name}
     sudo "${OT_CTL}" dataset extpanid ${xpanid}
-    sudo "${OT_CTL}" dataset pskc -p ${passphrase}
+    sudo "${OT_CTL}" -- dataset pskc -p ${passphrase}
     sudo "${OT_CTL}" dataset commit active
     sudo "${OT_CTL}" ifconfig up
     sudo "${OT_CTL}" extaddr ${extaddr}
