@@ -49,7 +49,12 @@
 
 // Temporary solution before posix platform header files are cleaned up.
 #ifndef OPENTHREAD_POSIX_APP_SOCKET_NAME
-#define OPENTHREAD_POSIX_APP_SOCKET_NAME "/tmp/openthread.sock"
+#ifdef __linux__
+#define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/run/openthread-%s"
+#else
+#define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/tmp/openthread-%s"
+#endif
+#define OPENTHREAD_POSIX_APP_SOCKET_NAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME ".sock"
 #endif
 
 namespace otbr {
