@@ -48,20 +48,22 @@
 #include "utils/strcpy_utils.hpp"
 
 // Temporary solution before posix platform header files are cleaned up.
-#ifndef OPENTHREAD_POSIX_APP_SOCKET_NAME
+#ifndef OPENTHREAD_POSIX_DAEMON_SOCKET_NAME
 #ifdef __linux__
 #define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/run/openthread-%s"
 #else
 #define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/tmp/openthread-%s"
 #endif
-#define OPENTHREAD_POSIX_APP_SOCKET_NAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME ".sock"
+#define OPENTHREAD_POSIX_DAEMON_SOCKET_NAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME ".sock"
 #endif
 
 namespace otbr {
 namespace Web {
 
-OpenThreadClient::OpenThreadClient(void)
-    : mTimeout(kDefaultTimeout)
+OpenThreadClient::OpenThreadClient(const char *aNetifName)
+
+    : mNetifName(aNetifName)
+    , mTimeout(kDefaultTimeout)
     , mSocket(-1)
 {
 }
@@ -90,7 +92,12 @@ bool OpenThreadClient::Connect(void)
 
     memset(&sockname, 0, sizeof(struct sockaddr_un));
     sockname.sun_family = AF_UNIX;
-    strcpy_safe(sockname.sun_path, sizeof(sockname.sun_path), OPENTHREAD_POSIX_APP_SOCKET_NAME);
+    ret = snprintf(sockname.sun_path, sizeof(sockname.sun_path), OPENTHREAD_POSIX_DAEMON_SOCKET_NAME, mNetifName);
+
+    VerifyOrExit(ret >= 0 && static_cast<size_t>(ret) < sizeof(sockname.sun_path), {
+        errno = EINVAL;
+        ret   = -1;
+    });
 
     ret = connect(mSocket, reinterpret_cast<const struct sockaddr *>(&sockname), sizeof(struct sockaddr_un));
 
