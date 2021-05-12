@@ -209,6 +209,20 @@ void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallb
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
+void ControllerOpenThread::SoftReset(void)
+{
+    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
+
+    otInstanceFinalize(mInstance);
+    otSysDeinit();
+    Init();
+    for (auto &handler : mResetHandlers)
+    {
+        handler();
+    }
+    unsetenv("OTBR_NO_AUTO_ATTACH");
+}
+
 const char *ControllerOpenThread::GetThreadVersion(void)
 {
     const char *version;

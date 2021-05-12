@@ -137,6 +137,12 @@ public:
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
 
     /**
+     * This method does a soft reset of the OpenThread instance.
+     *
+     */
+    void SoftReset(void);
+
+    /**
      * This method returns the Thread protocol version as a string.
      *
      * @returns  A pointer to the Thread version string.
