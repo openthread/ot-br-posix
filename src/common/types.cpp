@@ -132,7 +132,7 @@ std::string Ip6Prefix::ToString() const
 {
     std::string    strPrefix = mPrefix.ToString();
     std::stringbuf strBuilder;
-    char           strbuf[3];
+    char           strbuf[5];
 
     strBuilder.sputn(strPrefix.c_str(), strPrefix.length());
     strBuilder.sputc('/');
