@@ -37,7 +37,6 @@ add_library(otbr-common
     task_runner.hpp
     time.hpp
     tlv.hpp
-    toolchain.hpp
     types.cpp
     types.hpp
 )

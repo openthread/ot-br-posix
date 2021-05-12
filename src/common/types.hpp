@@ -43,7 +43,6 @@
 #include <vector>
 
 #include "common/byteswap.hpp"
-#include "common/toolchain.hpp"
 
 #ifndef IN6ADDR_ANY
 /**
@@ -125,7 +124,6 @@ std::string BytesToHexString(const uint8_t *aBytes, uint16_t aLength);
  * This class implements the Ipv6 address functionality.
  *
  */
-OTBR_TOOL_PACKED_BEGIN
 class Ip6Address
 {
 public:
@@ -319,13 +317,12 @@ public:
     };
 
     static Ip6Address FromString(const char *aStr);
-} OTBR_TOOL_PACKED_END;
+};
 
 /**
  * This class represents a Ipv6 prefix.
  *
  */
-OTBR_TOOL_PACKED_BEGIN
 class Ip6Prefix
 {
 public:
@@ -375,7 +372,7 @@ public:
 
     Ip6Address mPrefix; ///< The IPv6 prefix.
     uint8_t    mLength; ///< The IPv6 prefix length (in bits).
-} OTBR_TOOL_PACKED_END;
+};
 
 /**
  * This class implements the Ipv6 network prefix functionality.
@@ -420,7 +417,6 @@ private:
 /**
  * This class represents an ethernet MAC address.
  */
-OTBR_TOOL_PACKED_BEGIN
 class MacAddress
 {
 public:
@@ -448,7 +444,7 @@ public:
         uint8_t  m8[6];
         uint16_t m16[3];
     };
-} OTBR_TOOL_PACKED_END;
+};
 
 /**
  * This class represents an extended MAC address.

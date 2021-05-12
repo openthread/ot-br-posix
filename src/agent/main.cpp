@@ -191,7 +191,8 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL\n", aProgramName);
+    fprintf(stderr, "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL [RADIO_URL]\n",
+            aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
 
@@ -213,13 +214,14 @@ static void OnAllocateFailed(void)
 
 static int realmain(int argc, char *argv[])
 {
-    otbrLogLevel logLevel = OTBR_LOG_INFO;
-    int          opt;
-    int          ret                   = EXIT_SUCCESS;
-    const char * interfaceName         = kDefaultInterfaceName;
-    const char * backboneInterfaceName = "";
-    bool         verbose               = false;
-    bool         printRadioVersion     = false;
+    otbrLogLevel              logLevel = OTBR_LOG_INFO;
+    int                       opt;
+    int                       ret                   = EXIT_SUCCESS;
+    const char *              interfaceName         = kDefaultInterfaceName;
+    const char *              backboneInterfaceName = "";
+    bool                      verbose               = false;
+    bool                      printRadioVersion     = false;
+    std::vector<const char *> radioUrls;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -268,13 +270,17 @@ static int realmain(int argc, char *argv[])
     otbrLogInit(kSyslogIdent, logLevel, verbose);
     otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
     otbrLogInfo("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
-    VerifyOrExit(optind < argc, ret = EXIT_FAILURE);
-
     otbrLogInfo("Thread interface: %s", interfaceName);
     otbrLogInfo("Backbone interface: %s", backboneInterfaceName);
 
+    for (int i = optind; i < argc; i++)
     {
-        otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, argv[optind], backboneInterfaceName};
+        otbrLogInfo("Radio URL: %s", argv[i]);
+        radioUrls.push_back(argv[i]);
+    }
+
+    {
+        otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, radioUrls, backboneInterfaceName};
         otbr::AgentInstance             instance(ncpOpenThread);
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);

@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env python3
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,55 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# shellcheck disable=SC2034
-NAT64=0
-DNS64=0
-DHCPV6_PD=0
-NETWORK_MANAGER=0
-BACKBONE_ROUTER=0
-BORDER_ROUTING=0
-WEB_GUI=1
-REST_API=1
+import sys
+import socket
+import binascii
+import syslog
+
+
+def main():
+    interface = sys.argv[1]
+    dst = sys.argv[2]
+    port = sys.argv[3]
+    payload = sys.argv[4]
+
+    log = '====otbr-agent=send_udp===  send_udp.py started'
+    syslog.syslog(syslog.LOG_ERR, log)
+    print(log)
+
+    log = 'dst %s' % dst
+    syslog.syslog(syslog.LOG_ERR, log)
+    print(log)
+
+    log = 'interface %s' % interface
+    syslog.syslog(syslog.LOG_ERR, log)
+    print(log)
+
+    log = 'port %s' % port
+    syslog.syslog(syslog.LOG_ERR, log)
+    print(log)
+
+    log = 'payload %s' % payload
+    syslog.syslog(syslog.LOG_ERR, log)
+    print(log)
+
+    byte_payload = binascii.unhexlify(payload)
+
+    try:
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        # Configure SO_BINDTODEVICE to bind the network interface.
+        sock.setsockopt(socket.SOL_SOCKET, 25, interface.encode('utf-8'))
+        sock.sendto(byte_payload, (dst, int(port)))
+    except Exception as e:
+        log = '====otbr-agent=send_udp=== sendto %s' % str(e)
+        syslog.syslog(syslog.LOG_ERR, log)
+        print(log)
+
+    sock.close()
+    log = '====otbr-agent=send_udp=== close'
+    syslog.syslog(syslog.LOG_ERR, log)
+    print(log)
+
+
+if __name__ == '__main__':
+    main()
