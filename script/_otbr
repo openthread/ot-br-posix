@@ -112,7 +112,7 @@ otbr_install()
         without WEB_GUI || sudo systemctl enable otbr-web || true
         sudo systemctl enable otbr-agent || true
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
-        sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
+        without WEB_GUI || sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi
