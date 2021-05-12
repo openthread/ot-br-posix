@@ -170,7 +170,7 @@ public:
      * @returns  Whether the Ip6 address is smaller than the other address.
      *
      */
-    bool operator<(const Ip6Address &aOther) const { return memcmp(this, &aOther, sizeof(Ip6Address)) < 0; }
+    bool operator<(const Ip6Address &aOther) const { return memcmp(m8, &aOther, sizeof(Ip6Address)) < 0; }
 
     /**
      * This method overloads `==` operator and compares if the Ip6 address is equal to the other address.
@@ -310,9 +310,6 @@ public:
      */
     void CopyFrom(const struct in6_addr &aIn6Addr);
 
-private:
-    static Ip6Address FromString(const char *aStr);
-
     union
     {
         uint8_t  m8[16];
@@ -320,6 +317,8 @@ private:
         uint32_t m32[4];
         uint64_t m64[2];
     };
+
+    static Ip6Address FromString(const char *aStr);
 } OTBR_TOOL_PACKED_END;
 
 /**
@@ -374,7 +373,6 @@ public:
      */
     bool IsValid(void) const { return mLength > 0 && mLength <= 128; }
 
-private:
     Ip6Address mPrefix; ///< The IPv6 prefix.
     uint8_t    mLength; ///< The IPv6 prefix length (in bits).
 } OTBR_TOOL_PACKED_END;
@@ -445,7 +443,6 @@ public:
      */
     std::string ToString(void) const { return BytesToHexString(m8, sizeof(m8)); }
 
-private:
     union
     {
         uint8_t  m8[6];
@@ -471,7 +468,7 @@ public:
      * @param[in]  aExtAddress  The extended MAC address.
      *
      */
-    ExtAddress(const otExtAddress &aExtAddress) { memcpy(this, &aExtAddress, sizeof(*this)); }
+    ExtAddress(const otExtAddress &aExtAddress) { memcpy(m8, &aExtAddress, sizeof(m8)); }
 
     /**
      * This method returns the string representation for the Extended address.
@@ -503,7 +500,7 @@ public:
      * @param[in] aExtPanId  The extended Pan Id.
      *
      */
-    ExtPanId(const otExtendedPanId &aExtPanId) { memcpy(this, &aExtPanId, sizeof(*this)); }
+    ExtPanId(const otExtendedPanId &aExtPanId) { memcpy(m8, &aExtPanId, sizeof(m8)); }
 
     /**
      * This method returns the string representation for the extended Pan Id.

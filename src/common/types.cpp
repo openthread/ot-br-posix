@@ -147,7 +147,7 @@ Ip6NetworkPrefix::Ip6NetworkPrefix(const uint8_t *aPrefix, uint8_t aLength)
 {
     OTBR_UNUSED_VARIABLE(aLength);
     assert(aLength == sizeof(m8));
-    memcpy(m8, aPrefix, sizeof(*this));
+    memcpy(m8, aPrefix, sizeof(m8));
 }
 
 std::string Ip6NetworkPrefix::ToString() const
