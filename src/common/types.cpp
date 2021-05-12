@@ -127,12 +127,6 @@ void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
     memcpy(reinterpret_cast<void *>(this), &aPrefix, sizeof(*this));
 }
 
-Ip6NetworkPrefix::Ip6NetworkPrefix(const uint8_t *aPrefix, uint8_t aLength)
-{
-    VerifyOrDie(aLength == sizeof(m8), "The network prefix length is not 8 bytes");
-    memcpy(m8, aPrefix, sizeof(*this));
-}
-
 std::string Ip6Prefix::ToString() const
 {
     std::stringbuf strBuilder;
@@ -148,6 +142,12 @@ std::string Ip6Prefix::ToString() const
     strBuilder.sputn(strbuf, strlen(strbuf));
 
     return strBuilder.str();
+}
+
+Ip6NetworkPrefix::Ip6NetworkPrefix(const uint8_t *aPrefix, uint8_t aLength)
+{
+    static_assert(aLength == sizeof(m8), "The network prefix length is not 8 bytes");
+    memcpy(m8, aPrefix, sizeof(*this));
 }
 
 std::string Ip6NetworkPrefix::ToString() const
