@@ -130,16 +130,14 @@ void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
 
 std::string Ip6Prefix::ToString() const
 {
+    std::string    strPrefix = mPrefix.ToString();
     std::stringbuf strBuilder;
-    char           strbuf[INET6_ADDRSTRLEN];
+    char           strbuf[3];
 
-    VerifyOrDie(inet_ntop(AF_INET6, mPrefix.m8, strbuf, sizeof(strbuf)) != nullptr,
-                "Failed to convert Ip6 prefix to string");
-
-    strBuilder.sputn(strbuf, strlen(strbuf));
+    strBuilder.sputn(strPrefix.c_str(), strPrefix.length());
     strBuilder.sputc('/');
 
-    sprintf(strbuf, "%d", mLength);
+    snprintf(strbuf, sizeof(strbuf), "%d", mLength);
     strBuilder.sputn(strbuf, strlen(strbuf));
 
     return strBuilder.str();

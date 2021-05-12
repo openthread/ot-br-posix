@@ -310,6 +310,9 @@ public:
      */
     void CopyFrom(const struct in6_addr &aIn6Addr);
 
+private:
+    static Ip6Address FromString(const char *aStr);
+
     union
     {
         uint8_t  m8[16];
@@ -317,10 +320,6 @@ public:
         uint32_t m32[4];
         uint64_t m64[2];
     };
-
-private:
-    static Ip6Address FromString(const char *aStr);
-
 } OTBR_TOOL_PACKED_END;
 
 /**
@@ -375,6 +374,7 @@ public:
      */
     bool IsValid(void) const { return mLength > 0 && mLength <= 128; }
 
+private:
     Ip6Address mPrefix; ///< The IPv6 prefix.
     uint8_t    mLength; ///< The IPv6 prefix length (in bits).
 } OTBR_TOOL_PACKED_END;
@@ -383,7 +383,6 @@ public:
  * This class implements the Ipv6 network prefix functionality.
  *
  */
-OTBR_TOOL_PACKED_BEGIN
 class Ip6NetworkPrefix
 {
 public:
@@ -410,6 +409,7 @@ public:
      */
     std::string ToString(void) const;
 
+private:
     union
     {
         uint8_t  m8[8];
@@ -417,7 +417,7 @@ public:
         uint32_t m32[2];
         uint64_t m64[1];
     };
-} OTBR_TOOL_PACKED_END;
+};
 
 /**
  * This class represents an ethernet MAC address.
@@ -445,6 +445,7 @@ public:
      */
     std::string ToString(void) const { return BytesToHexString(m8, sizeof(m8)); }
 
+private:
     union
     {
         uint8_t  m8[6];
@@ -455,7 +456,6 @@ public:
 /**
  * This class represents an extended MAC address.
  */
-OTBR_TOOL_PACKED_BEGIN
 class ExtAddress
 {
 public:
@@ -481,13 +481,13 @@ public:
      */
     std::string ToString(void) const { return BytesToHexString(m8, 8); };
 
+private:
     uint8_t m8[8];
-} OTBR_TOOL_PACKED_END;
+};
 
 /**
  * This class represents an extended Pan Id.
  */
-OTBR_TOOL_PACKED_BEGIN
 class ExtPanId
 {
 public:
@@ -513,8 +513,9 @@ public:
      */
     std::string ToString(void) const { return BytesToHexString(m8, sizeof(m8)); };
 
+private:
     uint8_t m8[8];
-} OTBR_TOOL_PACKED_END;
+};
 } // namespace otbr
 
 #endif // OTBR_COMMON_TYPES_HPP_

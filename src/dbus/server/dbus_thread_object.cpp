@@ -222,7 +222,7 @@ otbrError DBusThreadObject::Init(void)
 
 void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
 {
-    otbrLogInfo("DeviceRole:%s", GetDeviceRoleName(aDeviceRole).c_str());
+    otbrLogInfo("Handle Device Role, Role:%s", GetDeviceRoleName(aDeviceRole).c_str());
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, GetDeviceRoleName(aDeviceRole));
 }
 
@@ -237,7 +237,7 @@ void DBusThreadObject::ScanHandler(DBusRequest &aRequest)
 {
     auto threadHelper = mNcp->GetThreadHelper();
 
-    otbrLogInfo("Scan");
+    otbrLogInfo("Handle Scan");
     threadHelper->Scan(std::bind(&DBusThreadObject::ReplyScanResult, this, aRequest, _1, _2));
 }
 
@@ -308,7 +308,7 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     }
     else
     {
-        otbrLogInfo("Attach: NetworkName:%s, PanId:0x%04x, ExtPanId:0x%s, MaskerKey:[Hiden], Pskc:[Hiden], "
+        otbrLogInfo("Handle Attach, NetworkName:%s, PanId:0x%04x, ExtPanId:0x%s, MaskerKey:[Hiden], Pskc:[Hiden], "
                     "ChannelMask:0x%08x",
                     name.c_str(), panid, otbr::ExtPanId(Uint64ToExtendedPanId(extPanId)).ToString().c_str(),
                     channelMask);
@@ -325,14 +325,14 @@ void DBusThreadObject::DetachHandler(DBusRequest &aRequest)
 
 void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
-    otbrLogInfo("FactoryReset");
+    otbrLogInfo("Handle Factory Reset");
     aRequest.ReplyOtResult(OT_ERROR_NONE);
     otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
-    otbrLogInfo("Reset");
+    otbrLogInfo("Handle Reset");
     aRequest.ReplyOtResult(OT_ERROR_NONE);
     otInstanceReset(mNcp->GetThreadHelper()->GetInstance());
 }
@@ -349,7 +349,7 @@ void DBusThreadObject::JoinerStartHandler(DBusRequest &aRequest)
     }
     else
     {
-        otbrLogInfo("JoinerStart: Pskd:[Hiden], ProvisioningUrl:%s, VendorName:%s, VendorModel:%s, "
+        otbrLogInfo("Handle Joiner Start, Pskd:[Hiden], ProvisioningUrl:%s, VendorName:%s, VendorModel:%s, "
                     "VendorSwVersion:%s, VendorData:%s",
                     provisionUrl.c_str(), vendorName.c_str(), vendorModel.c_str(), vendorSwVersion.c_str(),
                     vendorData.c_str());
@@ -362,7 +362,7 @@ void DBusThreadObject::JoinerStopHandler(DBusRequest &aRequest)
 {
     auto threadHelper = mNcp->GetThreadHelper();
 
-    otbrLogInfo("JoinerStop");
+    otbrLogInfo("Handle Joiner Stop");
     otJoinerStop(threadHelper->GetInstance());
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
@@ -381,7 +381,7 @@ void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
     }
     else
     {
-        otbrLogInfo("PermitUnsecureJoin: Port:%d, Seconds:%d", port, timeout);
+        otbrLogInfo("Handle Permit Unsecure Join, Port:%d, Seconds:%d", port, timeout);
         aRequest.ReplyOtResult(threadHelper->PermitUnsecureJoin(port, timeout));
     }
 #else
@@ -414,7 +414,7 @@ void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterAddOnMeshPrefix(threadHelper->GetInstance(), &config));
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
-    otbrLogInfo("AddOnMeshPrefix: Prefix:%s, Preference:%u, Slaac:%u, Dhcp:%u, Configure:%u, DefaultRoute:%u, "
+    otbrLogInfo("Handle Add OnMesh Prefix, Prefix:%s, Preference:%u, Slaac:%u, Dhcp:%u, Configure:%u, DefaultRoute:%u, "
                 "OnMesh:%u, Stable:%u",
                 otbr::Ip6Prefix(config.mPrefix).ToString().c_str(), config.mPreference, config.mSlaac, config.mDhcp,
                 config.mConfigure, config.mDefaultRoute, config.mOnMesh, config.mStable);
@@ -439,7 +439,7 @@ void DBusThreadObject::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterRemoveOnMeshPrefix(threadHelper->GetInstance(), &prefix));
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
-    otbrLogInfo("RemoveOnMeshPrefix: Prefix:%s", otbr::Ip6Prefix(prefix).ToString().c_str());
+    otbrLogInfo("Handle Remove OnMesh Prefix, Prefix:%s", otbr::Ip6Prefix(prefix).ToString().c_str());
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -468,8 +468,8 @@ void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
         SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
     }
 
-    otbrLogInfo("AddExternalRoute: Prefix:%s, Preference:%u, Stable:%u", otbr::Ip6Prefix(prefix).ToString().c_str(),
-                otRoute.mPreference, otRoute.mStable);
+    otbrLogInfo("Handle Add External Route, Prefix:%s, Preference:%u, Stable:%u",
+                otbr::Ip6Prefix(prefix).ToString().c_str(), otRoute.mPreference, otRoute.mStable);
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -492,7 +492,7 @@ void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
     SuccessOrExit(error = otBorderRouterRemoveRoute(threadHelper->GetInstance(), &prefix));
     SuccessOrExit(error = otBorderRouterRegister(threadHelper->GetInstance()));
 
-    otbrLogInfo("RemoveExternalRoute: Prefix:%s", otbr::Ip6Prefix(prefix).ToString().c_str());
+    otbrLogInfo("Handle Remove External Route, Prefix:%s", otbr::Ip6Prefix(prefix).ToString().c_str());
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -518,7 +518,7 @@ otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
     memcpy(&prefix.m8, &data.front(), sizeof(prefix.m8));
     error = otThreadSetMeshLocalPrefix(threadHelper->GetInstance(), &prefix);
 
-    otbrLogInfo("SetMeshLocalPrefix: Prefix:%s",
+    otbrLogInfo("Handle Set Mesh Local Prefix, Prefix:%s",
                 otbr::Ip6NetworkPrefix(prefix.m8, sizeof(prefix.m8)).ToString().c_str());
 
 exit:
@@ -534,7 +534,7 @@ otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     otSetLegacyUlaPrefix(&data[0]);
 
-    otbrLogInfo("SetLegacyUlaPrefix: Prefix:%s",
+    otbrLogInfo("Handle Set Legacy Ula Prefix, Prefix:%s",
                 otbr::Ip6NetworkPrefix(&data[0], static_cast<uint8_t>(data.size())).ToString().c_str());
 
 exit:
@@ -559,8 +559,8 @@ otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
     otCfg.mRxOnWhenIdle = cfg.mRxOnWhenIdle;
     error               = otThreadSetLinkMode(threadHelper->GetInstance(), otCfg);
 
-    otbrLogInfo("SetLinkMode: DeviceType:%u, NetworkData:%u, RxOnWhenIdle:%u", cfg.mDeviceType, cfg.mNetworkData,
-                cfg.mRxOnWhenIdle);
+    otbrLogInfo("Handle Set Link Mode, DeviceType:%u, NetworkData:%u, RxOnWhenIdle:%u", cfg.mDeviceType,
+                cfg.mNetworkData, cfg.mRxOnWhenIdle);
 
 exit:
     return error;
@@ -579,8 +579,8 @@ otError DBusThreadObject::GetLinkModeHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, cfg) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetLinkMode: DeviceType:%u, NetworkData:%u, RxOnWhenIdle:%u", cfg.mDeviceType, cfg.mNetworkData,
-                cfg.mRxOnWhenIdle);
+    otbrLogInfo("Handle Get Link Mode, DeviceType:%u, NetworkData:%u, RxOnWhenIdle:%u", cfg.mDeviceType,
+                cfg.mNetworkData, cfg.mRxOnWhenIdle);
 
 exit:
     return error;
@@ -595,7 +595,7 @@ otError DBusThreadObject::GetDeviceRoleHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, roleName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetDeviceRole: Role:%s", roleName.c_str());
+    otbrLogInfo("Handle Get Device Role, Role:%s", roleName.c_str());
 
 exit:
     return error;
@@ -609,7 +609,7 @@ otError DBusThreadObject::GetNetworkNameHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetNetworkName: NetworkName:%s", networkName.c_str());
+    otbrLogInfo("Handle Get Network Name, NetworkName:%s", networkName.c_str());
 
 exit:
     return error;
@@ -623,7 +623,7 @@ otError DBusThreadObject::GetPanIdHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, panId) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetPanId: PanId:0x%04x", panId);
+    otbrLogInfo("Handle Get PanId, PanId:0x%04x", panId);
 
 exit:
     return error;
@@ -640,7 +640,7 @@ otError DBusThreadObject::GetExtPanIdHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extPanIdVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetExtPanId: ExtPanId:0x%s", otbr::ExtPanId(*extPanId).ToString().c_str());
+    otbrLogInfo("Handle Get ExtPanId, ExtPanId:0x%s", otbr::ExtPanId(*extPanId).ToString().c_str());
 
 exit:
     return error;
@@ -654,7 +654,7 @@ otError DBusThreadObject::GetChannelHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, channel) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetChannel: Channel:%u", channel);
+    otbrLogInfo("Handle Get Channel, Channel:%u", channel);
 
 exit:
     return error;
@@ -669,7 +669,7 @@ otError DBusThreadObject::GetMasterKeyHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, keyVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetMasterKey: MasterKey:[Hiden]");
+    otbrLogInfo("Handle Get Master Key, MasterKey:[Hiden]");
 
 exit:
     return error;
@@ -682,7 +682,7 @@ otError DBusThreadObject::GetCcaFailureRateHandler(DBusMessageIter &aIter)
     otError  error        = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, failureRate) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otbrLogInfo("GetCcaFailureRate: FailureRate:%u", failureRate);
+    otbrLogInfo("Handle Get Cca Failure Rate, FailureRate:%u", failureRate);
 
 exit:
     return error;
@@ -731,12 +731,12 @@ otError DBusThreadObject::GetLinkCountersHandler(DBusMessageIter &aIter)
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, counters) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
     otbrLogInfo(
-        "TxTotal:%u, TxUnicast:%u, TxBroadcast:%u, TxAckRequested:%u, TxAcked:%u, TxNoAckRequested: %u, "
-        "TxData:%u, "
-        "TxDataPoll:%u, TxBeacon:%u, TxBeaconRequest:%u, TxOther:%u, TxRetry:%u, TxErrCca:%u, TxErrAbort:%u, "
-        "TxErrBusyChannel:%u, RxTotal:%u, RxUnicast:%u, RxBroadcast:%u, RxData:%u, RxDataPoll:%u, RxBeacon:%u, "
-        "RxBeaconRequest:%u, RxOther:%u, RxAddressFiltered:%u, RxDestAddrFiltered:%u, RxDuplicated:%u, "
-        "RxErrNoFrame:%u, RxErrNoUnknownNeighbor:%u, RxErrInvalidSrcAddr:%u, RxErrSec:%u, RxErrFcs:%u, RxErrOther:%u",
+        "Handle Get Link Counters, TxTotal:%u, TxUnicast:%u, TxBroadcast:%u, TxAckRequested:%u, TxAcked:%u, "
+        "TxNoAckRequested:%u, TxData:%u, TxDataPoll:%u, TxBeacon:%u, TxBeaconRequest:%u, TxOther:%u, TxRetry:%u, "
+        "TxErrCca:%u, TxErrAbort:%u, TxErrBusyChannel:%u, RxTotal:%u, RxUnicast:%u, RxBroadcast:%u, RxData:%u, "
+        "RxDataPoll:%u, RxBeacon:%u, RxBeaconRequest:%u, RxOther:%u, RxAddressFiltered:%u, RxDestAddrFiltered:%u, "
+        "RxDuplicated:%u, RxErrNoFrame:%u, RxErrNoUnknownNeighbor:%u, RxErrInvalidSrcAddr:%u, RxErrSec:%u, "
+        "RxErrFcs:%u, RxErrOther:%u",
         counters.mTxTotal, counters.mTxUnicast, counters.mTxBroadcast, counters.mTxAckRequested, counters.mTxAcked,
         counters.mTxNoAckRequested, counters.mTxData, counters.mTxDataPoll, counters.mTxBeacon,
         counters.mTxBeaconRequest, counters.mTxOther, counters.mTxRetry, counters.mTxErrCca, counters.mTxErrAbort,
@@ -763,7 +763,7 @@ otError DBusThreadObject::GetIp6CountersHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, counters) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetIp6Counters: TxSuccess:%u, TxFailure:%u, RxSuccess:%u, RxFailure:%u", counters.mTxSuccess,
+    otbrLogInfo("Handle Get Ip6 Counters, TxSuccess:%u, TxFailure:%u, RxSuccess:%u, RxFailure:%u", counters.mTxSuccess,
                 counters.mTxFailure, counters.mRxSuccess, counters.mRxFailure);
 
 exit:
@@ -778,7 +778,7 @@ otError DBusThreadObject::GetSupportedChannelMaskHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, channelMask) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetSupportedChannelMask: ChannelMask:0x%08x", channelMask);
+    otbrLogInfo("Handle Get Supported Channel Mask, ChannelMask:0x%08x", channelMask);
 
 exit:
     return error;
@@ -792,7 +792,7 @@ otError DBusThreadObject::GetRloc16Handler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, rloc16) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetRloc16: Rloc16:0x%04x", rloc16);
+    otbrLogInfo("Handle Get Rloc16, Rloc16:0x%04x", rloc16);
 
 exit:
     return error;
@@ -807,7 +807,7 @@ otError DBusThreadObject::GetExtendedAddressHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, extendedAddress) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetExtendedAddress: ExtAddr:%s", otbr::ExtAddress(*addr).ToString().c_str());
+    otbrLogInfo("Handle Get Extended Address, ExtAddr:%s", otbr::ExtAddress(*addr).ToString().c_str());
 
 exit:
     return error;
@@ -824,7 +824,7 @@ otError DBusThreadObject::GetRouterIdHandler(DBusMessageIter &aIter)
                  error = OT_ERROR_INVALID_STATE);
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, info.mRouterId) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetRouterId: RouterId:0x%02x", info.mRouterId);
+    otbrLogInfo("Handle Get RouterId, RouterId:0x%02x", info.mRouterId);
 
 exit:
     return error;
@@ -845,8 +845,9 @@ otError DBusThreadObject::GetLeaderDataHandler(DBusMessageIter &aIter)
     leaderData.mLeaderRouterId    = data.mLeaderRouterId;
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, leaderData) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("getLeaderData: PartitionId:%u, Weighting:%u, DataVersion:%u, StableDataVersion:%u, LeaderRouterId:%u",
-                data.mPartitionId, data.mWeighting, data.mDataVersion, data.mStableDataVersion, data.mLeaderRouterId);
+    otbrLogInfo(
+        "Handle Get Leader Data: PartitionId:%u, Weighting:%u, DataVersion:%u, StableDataVersion:%u, LeaderRouterId:%u",
+        data.mPartitionId, data.mWeighting, data.mDataVersion, data.mStableDataVersion, data.mLeaderRouterId);
 
 exit:
     return error;
@@ -865,7 +866,7 @@ otError DBusThreadObject::GetNetworkDataHandler(DBusMessageIter &aIter)
     networkData = std::vector<uint8_t>(&data[0], &data[len]);
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkData) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetNetworkData");
+    otbrLogInfo("Handle Get Network Data");
 
 exit:
     return error;
@@ -884,7 +885,7 @@ otError DBusThreadObject::GetStableNetworkDataHandler(DBusMessageIter &aIter)
     networkData = std::vector<uint8_t>(&data[0], &data[len]);
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, networkData) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetStableNetworkData");
+    otbrLogInfo("Handle Get Stable Network Data");
 
 exit:
     return error;
@@ -898,7 +899,7 @@ otError DBusThreadObject::GetLocalLeaderWeightHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, weight) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetLocalLeaderWeight: Weight:%u", weight);
+    otbrLogInfo("Handle Get Local Leader Weight, Weight:%u", weight);
 
 exit:
     return error;
@@ -913,7 +914,7 @@ otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &a
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, cnt) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetChannelMonitorSampleCount: Count:%u", cnt);
+    otbrLogInfo("Handle Get Channel Monitor Sample Count, Count:%u", cnt);
 
 exit:
     return error;
@@ -932,7 +933,7 @@ otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &
     constexpr uint8_t           kNumChannels = sizeof(channelMask) * 8; // 8 bit per byte
     std::vector<ChannelQuality> quality;
 
-    otbrLogInfo("GetChannelMonitorAllChannelQualities: ChannelMask:0x%08x", channelMask);
+    otbrLogInfo("Handle Get Channel Monitor All Channel Qualities, ChannelMask:0x%08x", channelMask);
 
     for (uint8_t i = 0; i < kNumChannels; i++)
     {
@@ -963,7 +964,7 @@ otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
     otChildInfo            childInfo;
     std::vector<ChildInfo> childTable;
 
-    otbrLogInfo("GetChildTable:");
+    otbrLogInfo("Handle Get Child Table");
 
     while (otThreadGetChildInfoByIndex(threadHelper->GetInstance(), childIndex, &childInfo) == OT_ERROR_NONE)
     {
@@ -1010,7 +1011,7 @@ otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
     otNeighborInfo            neighborInfo;
     std::vector<NeighborInfo> neighborTable;
 
-    otbrLogInfo("GetNeighborTable:");
+    otbrLogInfo("Handle Get Neighbor Table");
 
     while (otThreadGetNextNeighborInfo(threadHelper->GetInstance(), &iter, &neighborInfo) == OT_ERROR_NONE)
     {
@@ -1057,7 +1058,7 @@ otError DBusThreadObject::GetPartitionIDHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, partitionId) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetPartitionId: PartitionId:%u", partitionId);
+    otbrLogInfo("Handle Get Partition Id, PartitionId:%u", partitionId);
 
 exit:
     return error;
@@ -1071,7 +1072,7 @@ otError DBusThreadObject::GetInstantRssiHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, rssi) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetInstantRssi: Rssi:%d", rssi);
+    otbrLogInfo("Handle Get Instant Rssi, Rssi:%d", rssi);
 
 exit:
     return error;
@@ -1087,7 +1088,7 @@ otError DBusThreadObject::GetRadioTxPowerHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, txPower) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetRadioTxPower: TxPower:%d", txPower);
+    otbrLogInfo("Handle Get Radio Tx Power, TxPower:%d", txPower);
 
 exit:
     return error;
@@ -1101,7 +1102,7 @@ otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
     otExternalRouteConfig      config;
     std::vector<ExternalRoute> externalRouteTable;
 
-    otbrLogInfo("GetExternalRoutes:");
+    otbrLogInfo("Handle Get External Routes");
 
     while (otNetDataGetNextRoute(threadHelper->GetInstance(), &iter, &config) == OT_ERROR_NONE)
     {
@@ -1141,7 +1142,7 @@ otError DBusThreadObject::SetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
     datasetTlvs.mLength = data.size();
     error               = otDatasetSetActiveTlvs(threadHelper->GetInstance(), &datasetTlvs);
 
-    otbrLogInfo("SetActiveDataset");
+    otbrLogInfo("Handle Set Active Dataset");
 
 exit:
     return error;
@@ -1159,7 +1160,7 @@ otError DBusThreadObject::GetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetActiveDataset");
+    otbrLogInfo("Handle Get Active Dataset");
 
 exit:
     return error;
@@ -1178,7 +1179,7 @@ otError DBusThreadObject::SetRadioRegionHandler(DBusMessageIter &aIter)
 
     error = otPlatRadioSetRegion(threadHelper->GetInstance(), regionCode);
 
-    otbrLogInfo("SetRadioRegion: Region:%s", radioRegion.c_str());
+    otbrLogInfo("Handle Set Radio Region, Region:%s", radioRegion.c_str());
 
 exit:
     return error;
@@ -1198,7 +1199,7 @@ otError DBusThreadObject::GetRadioRegionHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, radioRegion) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    otbrLogInfo("GetRadioRegion: Region:%s", radioRegion.c_str());
+    otbrLogInfo("Handle Get Radio Region, Region:%s", radioRegion.c_str());
 
 exit:
     return error;
