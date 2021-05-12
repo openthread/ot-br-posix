@@ -27,6 +27,7 @@
  */
 
 #include <arpa/inet.h>
+#include <assert.h>
 #include <sstream>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -146,7 +147,7 @@ std::string Ip6Prefix::ToString() const
 
 Ip6NetworkPrefix::Ip6NetworkPrefix(const uint8_t *aPrefix, uint8_t aLength)
 {
-    static_assert(aLength == sizeof(m8), "The network prefix length is not 8 bytes");
+    assert(aLength == sizeof(m8));
     memcpy(m8, aPrefix, sizeof(*this));
 }
 
