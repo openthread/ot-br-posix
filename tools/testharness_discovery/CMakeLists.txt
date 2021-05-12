@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,26 +26,19 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(pskc
-    pskc.cpp
-)
-target_link_libraries(pskc PRIVATE
-    otbr-config
-    otbr-common
-    otbr-utils
-    mbedtls
+install(
+        PROGRAMS testharness-discovery
+        DESTINATION sbin
 )
 
-add_executable(steering-data
-    steering_data.cpp
-)
-target_link_libraries(steering-data PRIVATE
-    otbr-config
-    otbr-common
-    otbr-utils
-    mbedtls
-)
-
-if ($ENV{REFERENCE_DEVICE})
-    add_subdirectory(testharness_discovery)
+if(OTBR_SYSTEMD_UNIT_DIR)
+    configure_file(testharness-discovery.service.in testharness-discovery.service)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/testharness-discovery.service
+            DESTINATION ${OTBR_SYSTEMD_UNIT_DIR}
+            )
+else()
+    configure_file(testharness-discovery.init.in testharness-discovery.init)
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/testharness-discovery.init
+            DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
+            RENAME testharness-discovery)
 endif()
