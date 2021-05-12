@@ -67,8 +67,6 @@ otbr_install()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
-        "-DOTBR_WEB=ON"
-        "-DOTBR_REST=ON"
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_MDNS=mDNSResponder"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
@@ -83,6 +81,10 @@ otbr_install()
         otbr_options+=(
             "-DOTBR_BORDER_ROUTING=ON"
         )
+    fi
+
+    if with REST_API; then
+        otbr_options+=("-DOTBR_REST=ON")
     fi
 
     if with BACKBONE_ROUTER; then
