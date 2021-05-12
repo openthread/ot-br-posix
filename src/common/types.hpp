@@ -471,7 +471,7 @@ public:
      * @param[in]  aExtAddress  The extended MAC address.
      *
      */
-    ExtAddress(const otExtAddress &aExtAddress) { memcpy(reinterpret_cast<void *>(this), &aExtAddress, sizeof(*this)); }
+    ExtAddress(const otExtAddress &aExtAddress) { memcpy(this, &aExtAddress, sizeof(*this)); }
 
     /**
      * This method returns the string representation for the Extended address.
@@ -503,7 +503,7 @@ public:
      * @param[in] aExtPanId  The extended Pan Id.
      *
      */
-    ExtPanId(const otExtendedPanId &aExtPanId) { memcpy(reinterpret_cast<void *>(this), &aExtPanId, sizeof(*this)); }
+    ExtPanId(const otExtendedPanId &aExtPanId) { memcpy(this, &aExtPanId, sizeof(*this)); }
 
     /**
      * This method returns the string representation for the extended Pan Id.
