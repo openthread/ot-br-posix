@@ -209,7 +209,7 @@ void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallb
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
-void ControllerOpenThread::SoftReset(void)
+void ControllerOpenThread::Reset(void)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 

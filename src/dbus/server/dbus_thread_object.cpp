@@ -300,7 +300,7 @@ void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 
     SuccessOrExit(error = mNcp->GetThreadHelper()->Detach());
     SuccessOrExit(otInstanceErasePersistentInfo(mNcp->GetThreadHelper()->GetInstance()));
-    mNcp->SoftReset();
+    mNcp->Reset();
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -308,7 +308,7 @@ exit:
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
-    mNcp->SoftReset();
+    mNcp->Reset();
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
