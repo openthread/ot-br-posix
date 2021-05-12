@@ -137,6 +137,12 @@ public:
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
 
     /**
+     * This method resets the OpenThread instance.
+     *
+     */
+    void Reset(void);
+
+    /**
      * This method returns the Thread protocol version as a string.
      *
      * @returns  A pointer to the Thread version string.
