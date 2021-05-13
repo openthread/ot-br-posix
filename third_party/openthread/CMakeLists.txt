@@ -79,7 +79,9 @@ if (OTBR_DNSSD_DISCOVERY_PROXY)
     set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
 endif()
 
-list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
+if (NOT OT_POSIX_SETTINGS_PATH)
+    set(OT_POSIX_SETTINGS_PATH "\"/var/lib/thread\"" CACHE STRING "set the directory to store Thread data" FORCE)
+endif()
 
 add_subdirectory(repo EXCLUDE_FROM_ALL)
 
