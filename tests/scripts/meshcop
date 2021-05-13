@@ -521,8 +521,8 @@ test_meshcop_service()
     service="$(scan_meshcop_service)"
     grep "${new_network_name}._meshcop\._udp" <<<"${service}"
 
-    # Test if the the meshcop service is unpublished when otbr-agent exits.
-    sudo "${OT_CTL}" exit
+    # Test if the the meshcop service is unpublished when otbr-agent stops.
+    sudo killall "${OTBR_AGENT}"
     sleep 2
     service="$(scan_meshcop_service)"
     if grep -q "${new_network_name}._meshcop\._udp" <<<"${service}"; then
