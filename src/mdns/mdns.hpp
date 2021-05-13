@@ -40,7 +40,6 @@
 
 #include <sys/select.h>
 
-#include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -60,7 +59,7 @@ namespace Mdns {
  * This interface defines the functionality of mDNS service.
  *
  */
-class Publisher : public MainloopProcessor
+class Publisher
 {
 public:
     /**

@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2021, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,64 +26,18 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes definition for Thread border router agent instance.
- */
-
-#ifndef OTBR_AGENT_AGENT_INSTANCE_HPP_
-#define OTBR_AGENT_AGENT_INSTANCE_HPP_
-
-#include "openthread-br/config.h"
-
-#include <stdarg.h>
-#include <stdint.h>
-#include <sys/select.h>
-#include <sys/types.h>
-
-#include "agent/instance_params.hpp"
-#include "border_agent/border_agent.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "common/mainloop.hpp"
+#include "common/mainloop_manager.hpp"
 
 namespace otbr {
 
-/**
- * This class implements an instance to host services used by border router.
- *
- */
-class AgentInstance
+MainloopProcessor::MainloopProcessor(void)
 {
-public:
-    /**
-     * The constructor to initialize the Thread border router agent instance.
-     *
-     * @param[in]   aNcp  A reference to the NCP controller.
-     *
-     */
-    AgentInstance(Ncp::ControllerOpenThread &aNcp);
+    MainloopManager::GetInstance().AddMainloopProcessor(this);
+}
 
-    /**
-     * This method initialize the agent.
-     *
-     * @retval  OTBR_ERROR_NONE     Agent initialized successfully.
-     * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
-     *
-     */
-    otbrError Init(void);
-
-    /**
-     * This method returns the NCP controller.
-     *
-     * @retval  the pointer of the NCP controller.
-     *
-     */
-    otbr::Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
-
-private:
-    otbr::Ncp::ControllerOpenThread &mNcp;
-    BorderAgent                      mBorderAgent;
-};
-
+MainloopProcessor::~MainloopProcessor(void)
+{
+    MainloopManager::GetInstance().RemoveMainloopProcessor(this);
+}
 } // namespace otbr
-
-#endif // OTBR_AGENT_AGENT_INSTANCE_HPP_

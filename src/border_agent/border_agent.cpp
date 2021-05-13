@@ -202,36 +202,6 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     }
 }
 
-void BorderAgent::Update(MainloopContext &aMainloop)
-{
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent.Update(aMainloop);
-#endif
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Update(aMainloop);
-#endif
-
-    if (mPublisher != nullptr)
-    {
-        mPublisher->Update(aMainloop);
-    }
-}
-
-void BorderAgent::Process(const MainloopContext &aMainloop)
-{
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent.Process(aMainloop);
-#endif
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Process(aMainloop);
-#endif
-
-    if (mPublisher != nullptr)
-    {
-        mPublisher->Process(aMainloop);
-    }
-}
-
 void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;

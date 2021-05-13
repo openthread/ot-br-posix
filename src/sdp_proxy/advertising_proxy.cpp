@@ -269,16 +269,6 @@ exit:
     return;
 }
 
-void AdvertisingProxy::Update(MainloopContext &aMainloop)
-{
-    mTaskRunner.Update(aMainloop);
-}
-
-void AdvertisingProxy::Process(const MainloopContext &aMainloop)
-{
-    mTaskRunner.Process(aMainloop);
-}
-
 otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate)
 {
     otbrError                 error = OTBR_ERROR_NONE;

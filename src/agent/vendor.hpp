@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, The OpenThread Authors.
+ *  Copyright (c) 2021, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -28,86 +28,34 @@
 
 /**
  * @file
- *   This file includes definitions for RESTful HTTP server.
+ *   This file includes definitions of the vendor server. The implementation of the
+ *   vendor server should be implemented by users.
  */
+#ifndef OTBR_AGENT_VENDOR_HPP_
+#define OTBR_AGENT_VENDOR_HPP_
 
-#ifndef OTBR_REST_REST_WEB_SERVER_HPP_
-#define OTBR_REST_REST_WEB_SERVER_HPP_
-
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <sys/socket.h>
-
-#include "common/mainloop.hpp"
-#include "rest/connection.hpp"
-
-using otbr::Ncp::ControllerOpenThread;
-using std::chrono::steady_clock;
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
-namespace rest {
+namespace vendor {
 
-/**
- * This class implements a REST server.
- *
- */
-class RestWebServer : public MainloopProcessor
+class VendorServer
 {
 public:
     /**
-     * The constructor to initialize a REST server.
+     * The constructor of vendor server.
      *
      * @param[in]  aNcp  A reference to the NCP controller.
      *
      */
-    RestWebServer(ControllerOpenThread &aNcp);
+    VendorServer(otbr::Ncp::ControllerOpenThread &aNcp);
 
     /**
-     * The destructor destroys the server instance.
-     *
-     */
-    ~RestWebServer(void) override;
-
-    /**
-     * This method initializes the REST server.
+     * This method initializes the vendor server.
      *
      */
     void Init(void);
-
-    /**
-     * This method updates the mainloop context.
-     *
-     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
-     *
-     */
-    void Update(MainloopContext &aMainloop) override;
-
-    /**
-     * This method processes mainloop events.
-     *
-     * @param[in]  aMainloop  A reference to the mainloop context.
-     *
-     */
-    void Process(const MainloopContext &aMainloop) override;
-
-private:
-    void      UpdateConnections(const fd_set &aReadFdSet);
-    void      CreateNewConnection(int32_t &aFd);
-    otbrError Accept(int32_t aListenFd);
-    void      InitializeListenFd(void);
-    bool      SetFdNonblocking(int32_t fd);
-
-    // Resource handler
-    Resource mResource;
-    // Struct for server configuration
-    sockaddr_in mAddress;
-    // File descriptor for listening
-    int32_t mListenFd;
-    // Connection List
-    std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
 };
-
-} // namespace rest
+} // namespace vendor
 } // namespace otbr
-
-#endif // OTBR_REST_REST_WEB_SERVER_HPP_
+#endif // OTBR_AGENT_VENDOR_HPP_

@@ -49,6 +49,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
+#include "common/mainloop_manager.hpp"
 #include "common/types.hpp"
 #include "ncp/ncp_openthread.hpp"
 #if OTBR_ENABLE_REST_SERVER
@@ -59,14 +60,13 @@ using otbr::rest::RestWebServer;
 #include "dbus/server/dbus_agent.hpp"
 using otbr::DBus::DBusAgent;
 #endif
-using otbr::Ncp::ControllerOpenThread;
-
 #if OTBR_ENABLE_OPENWRT
-extern void       UbusUpdateFdSet(fd_set &aReadFdSet, int &aMaxFd);
-extern void       UbusProcess(const fd_set &aReadFdSet);
-extern void       UbusServerRun(void);
-extern void       UbusServerInit(otbr::Ncp::ControllerOpenThread *aController, std::mutex *aNcpThreadMutex);
-static std::mutex sThreadMutex;
+#include "openwrt/ubus/otubus.hpp"
+using otbr::ubus::UBusAgent;
+#endif
+#if OTBR_ENABLE_VENDOR_SERVER
+#include "agent/vendor.hpp"
+using otbr::vendor::VendorServer;
 #endif
 
 static const char kSyslogIdent[]          = "otbr-agent";
@@ -83,6 +83,8 @@ enum
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
 };
+
+using otbr::MainloopManager;
 
 static jmp_buf sResetJump;
 static bool    sShouldTerminate = false;
@@ -107,23 +109,30 @@ static void HandleSignal(int aSignal)
     signal(aSignal, SIG_DFL);
 }
 
-static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
+static int Mainloop(otbr::AgentInstance &aInstance)
 {
-    int                   error         = EXIT_SUCCESS;
-    ControllerOpenThread &ncpOpenThread = static_cast<ControllerOpenThread &>(aInstance.GetNcp());
+    int error = EXIT_SUCCESS;
 
-    OT_UNUSED_VARIABLE(ncpOpenThread);
+#if OTBR_ENABLE_OPENWRT
+    UBusAgent ubusAgent{aInstance.GetNcp()};
+    ubusAgent.Init();
+#endif
+
+#if OTBR_ENABLE_REST_SERVER
+    RestWebServer restWebServer{aInstance.GetNcp()};
+    restWebServer.Init();
+#endif
 
 #if OTBR_ENABLE_DBUS_SERVER
-    std::unique_ptr<DBusAgent> dbusAgent = std::unique_ptr<DBusAgent>(new DBusAgent(aInterfaceName, &ncpOpenThread));
-    dbusAgent->Init();
-#else
-    OTBR_UNUSED_VARIABLE(aInterfaceName);
+    DBusAgent dbusAgent{aInstance.GetNcp()};
+    dbusAgent.Init();
 #endif
-#if OTBR_ENABLE_REST_SERVER
-    RestWebServer *restServer = RestWebServer::GetRestWebServer(&ncpOpenThread);
-    restServer->Init();
+
+#if OTBR_ENABLE_VENDOR_SERVER
+    VendorServer vendorServer{aInstance.GetNcp()};
+    vendorServer.Init();
 #endif
+
     otbrLogInfo("Border router agent started.");
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
@@ -140,46 +149,17 @@ static int Mainloop(otbr::AgentInstance &aInstance, const char *aInterfaceName)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        aInstance.Update(mainloop);
-
-#if OTBR_ENABLE_DBUS_SERVER
-        dbusAgent->Update(mainloop);
-#endif
-
-#if OTBR_ENABLE_REST_SERVER
-        restServer->Update(mainloop);
-#endif
-
-#if OTBR_ENABLE_OPENWRT
-        UbusUpdateFdSet(mainloop.mReadFdSet, mainloop.mMaxFd);
-        sThreadMutex.unlock();
-#endif
+        MainloopManager::GetInstance().Update(mainloop);
 
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
 
         if (rval >= 0)
         {
-#if OTBR_ENABLE_OPENWRT
-            sThreadMutex.lock();
-            UbusProcess(mainloop.mReadFdSet);
-#endif
-
-#if OTBR_ENABLE_REST_SERVER
-            restServer->Process(mainloop);
-#endif
-
-            aInstance.Process(mainloop);
-
-#if OTBR_ENABLE_DBUS_SERVER
-            dbusAgent->Process(mainloop);
-#endif
+            MainloopManager::GetInstance().Process(mainloop);
         }
         else if (errno != EINTR)
         {
-#if OTBR_ENABLE_OPENWRT
-            sThreadMutex.lock();
-#endif
             error = OTBR_ERROR_ERRNO;
             otbrLogErr("select() failed: %s", strerror(errno));
             break;
@@ -294,11 +274,7 @@ static int realmain(int argc, char *argv[])
             ExitNow(ret = EXIT_SUCCESS);
         }
 
-#if OTBR_ENABLE_OPENWRT
-        UbusServerInit(&ncpOpenThread, &sThreadMutex);
-        std::thread(UbusServerRun).detach();
-#endif
-        SuccessOrExit(ret = Mainloop(instance, interfaceName));
+        SuccessOrExit(ret = Mainloop(instance));
     }
 
     otbrLogDeinit();

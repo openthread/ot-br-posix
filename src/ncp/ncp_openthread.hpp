@@ -150,6 +150,14 @@ public:
      */
     static const char *GetThreadVersion(void);
 
+    /**
+     * This method returns the Thread network interface name.
+     *
+     * @returns  A pointer to the Thread network interface name string.
+     *
+     */
+    const char *GetInterfaceName(void) { return mConfig.mInterfaceName; }
+
     ~ControllerOpenThread(void) override;
 
 private:
