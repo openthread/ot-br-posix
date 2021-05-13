@@ -2,7 +2,6 @@
 	local ubus = require "ubus"
 	local sys = require "luci.sys"
 	local utl = require "luci.util"
-	local state = threadget("state").State
 
 	function connect_ubus(methods)
 		local result
@@ -17,6 +16,16 @@
 		return result
 	end
 
+	function threadget(action)
+		local result = connect_ubus(action)
+		
+		return result
+	end
+
+	local state = threadget("state").State
+
+
+
 	function addrlist()
 		local k, v
 		local l = { }
@@ -30,11 +39,7 @@
 		return l
 	end
 
-	function threadget(action)
-		local result = connect_ubus(action)
 
-		return result
-	end
 -%>
 <%+header%>
 
@@ -155,23 +160,13 @@
 			</div>
 		</div>
 		<div class="cbi-value">
-			<% if state == 'disabled' then %>
-			<label class="cbi-value-title" style="margin-right:5%;">LeaderPartitionId</label>
+			<label class="cbi-value-title" style="margin-right:5%;">PartitionId</label>
 			<div class="cbi-value-title">
-			<input type="text" name="leaderpartitionid" value="<%=threadget("leaderpartitionid").Leaderpartitionid%>" style="width:50%;"/>
-			</div>
-			<div style="margin-left:30%;margin-top:1%;">
-				<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:leaderpartitionid must be a number%></span>
-			</div>
-			<% else %>
-			<label class="cbi-value-title" style="margin-right:5%;">LeaderPartitionId</label>
-			<div class="cbi-value-title">
-			<input type="text" name="leaderpartitionid" value="<%=threadget("leaderpartitionid").Leaderpartitionid%>" readonly="readonly" style="width:50%;"/>
+			<%=threadget("partitionid").Partitionid%>
 			</div>
 			<div style="margin-left:30%;margin-top:1%;">
 				<span><img src="<%=resource .. "/cbi/help.gif"%>"/><%:can not change partitionid when thread network is started.%></span>
 			</div>
-			<% end %>
 		</div>
 		<div class="cbi-value">
 			<label class="cbi-value-title" style="margin-right:5%;">Leave</label>
@@ -385,18 +380,6 @@
 			var OK = re.exec(mode);
 			if (!OK) {
 				alert("mode must be consist of 'r', 's', 'd', 'n'");
-				return false;
-			}
-
-			var leaderpartitionid = document.forms["settingForm"]["leaderpartitionid"].value;
-			if (isNaN(leaderpartitionid)) {
-				alert("leaderpartitionid must be a number");
-				return false;
-			}
-
-			var leaderpartitionid = document.forms["settingForm"]["leaderpartitionid"].value;
-			if (isNaN(leaderpartitionid)) {
-				alert("leaderpartitionid must be a number");
 				return false;
 			}
 

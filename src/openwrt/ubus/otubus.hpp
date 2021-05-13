@@ -26,6 +26,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for ubus API.
+ */
+
 #ifndef OTBR_AGENT_OTUBUS_HPP_
 #define OTBR_AGENT_OTUBUS_HPP_
 
@@ -413,7 +418,7 @@ public:
                                   struct blob_attr *        aMsg);
 
     /**
-     * This method handle ubus get leaderpartitionid function request.
+     * This method handle ubus get partitionid function request.
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
@@ -424,29 +429,11 @@ public:
      * @retval 0   Successfully handler the request.
      *
      */
-    static int UbusLeaderPartitionIdHandler(struct ubus_context *     aContext,
-                                            struct ubus_object *      aObj,
-                                            struct ubus_request_data *aRequest,
-                                            const char *              aMethod,
-                                            struct blob_attr *        aMsg);
-
-    /**
-     * This method handle ubus set learderpartitionid function request.
-     *
-     * @param[in]   aContext    A pointer to the ubus context.
-     * @param[in]   aObj        A pointer to the ubus object.
-     * @param[in]   aRequest    A pointer to the ubus request.
-     * @param[in]   aMethod     A pointer to the ubus method.
-     * @param[in]   aMsg        A pointer to the ubus message.
-     *
-     * @retval 0   Successfully handler the request.
-     *
-     */
-    static int UbusSetLeaderPartitionIdHandler(struct ubus_context *     aContext,
-                                               struct ubus_object *      aObj,
-                                               struct ubus_request_data *aRequest,
-                                               const char *              aMethod,
-                                               struct blob_attr *        aMsg);
+    static int UbusPartitionIdHandler(struct ubus_context *     aContext,
+                                      struct ubus_object *      aObj,
+                                      struct ubus_request_data *aRequest,
+                                      const char *              aMethod,
+                                      struct blob_attr *        aMsg);
 
     /**
      * This method handle ubus get leaderdata function request.
@@ -757,21 +744,26 @@ public:
     /**
      * This method handle initial diagnostic get response.
      *
+     * @param[in]   aError          A error of receiving the diagnostic response.
      * @param[in]   aMessage        A pointer to the message.
      * @param[in]   aMessageInfo    A pointer to the message information.
      * @param[in]   aContext        A pointer to the context.
      *
      */
-    static void HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext);
+    static void HandleDiagnosticGetResponse(otError              aError,
+                                            otMessage *          aMessage,
+                                            const otMessageInfo *aMessageInfo,
+                                            void *               aContext);
 
     /**
      * This method handle diagnosticget response.
      *
+     * @param[in]   aError          A error of receiving the diagnostic response.
      * @param[in]   aMessage        A pointer to the message.
      * @param[in]   aMessageInfo    A pointer to the message information.
      *
      */
-    void HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo &aMessageInfo);
+    void HandleDiagnosticGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
 private:
     bool                       mIfFinishScan;

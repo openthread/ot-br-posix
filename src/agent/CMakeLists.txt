@@ -27,17 +27,22 @@
 #
 
 add_executable(otbr-agent
+    advertising_proxy.cpp
+    advertising_proxy.hpp
     agent_instance.cpp
     agent_instance.hpp
     border_agent.cpp
     border_agent.hpp
+    discovery_proxy.cpp
+    discovery_proxy.hpp
     main.cpp
-    ncp.hpp
     uris.hpp
     ncp_openthread.cpp
     ncp_openthread.hpp
     thread_helper.cpp
     thread_helper.hpp
+    instance_params.cpp
+    instance_params.hpp
 )
 
 target_link_libraries(otbr-agent PRIVATE
@@ -45,6 +50,8 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
+    $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
+    openthread-posix
     openthread-cli-ftd
     openthread-ftd
     openthread-posix
@@ -84,7 +91,8 @@ elseif(NOT OTBR_OPENWRT)
         RENAME otbr-agent)
 endif()
 
-install(FILES otbr-agent.default
+configure_file(otbr-agent.default.in otbr-agent.default)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.default
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/default
     RENAME otbr-agent
 )

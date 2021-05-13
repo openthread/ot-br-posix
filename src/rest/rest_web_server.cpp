@@ -26,11 +26,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "REST"
+
 #include "rest/rest_web_server.hpp"
 
 #include <cerrno>
 
 #include <fcntl.h>
+
+#include "utils/socket_utils.hpp"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -50,6 +54,14 @@ RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
 {
 }
 
+RestWebServer::~RestWebServer(void)
+{
+    if (mListenFd != -1)
+    {
+        close(mListenFd);
+    }
+}
+
 RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
 {
     static RestWebServer *sServer = new RestWebServer(aNcp);
@@ -57,51 +69,39 @@ RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
     return sServer;
 }
 
-otbrError RestWebServer::Init(void)
+void RestWebServer::Init(void)
 {
-    otbrError error = OTBR_ERROR_NONE;
-
-    error = InitializeListenFd();
-
-    return error;
+    InitializeListenFd();
 }
 
-void RestWebServer::UpdateFdSet(otSysMainloopContext &aMainloop)
+void RestWebServer::Update(MainloopContext &aMainloop)
 {
-    if (mListenFd == -1)
-    {
-        VerifyOrExit(InitializeListenFd() == OTBR_ERROR_NONE);
-    }
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, mListenFd);
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         Connection *connection = it->second.get();
-        connection->UpdateFdSet(aMainloop);
+        connection->Update(aMainloop);
     }
-exit:
 
     return;
 }
 
-otbrError RestWebServer::Process(otSysMainloopContext &aMainloop)
+void RestWebServer::Process(const MainloopContext &aMainloop)
 {
-    otbrError   error = OTBR_ERROR_NONE;
     Connection *connection;
 
-    error = UpdateConnections(aMainloop.mReadFdSet);
+    UpdateConnections(aMainloop.mReadFdSet);
 
     for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
     {
         connection = it->second.get();
-        connection->Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet);
+        connection->Process(aMainloop);
     }
-
-    return error;
 }
 
-otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
+void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)
 {
     otbrError error   = OTBR_ERROR_NONE;
     auto      eraseIt = mConnectionSet.begin();
@@ -127,10 +127,13 @@ otbrError RestWebServer::UpdateConnections(fd_set &aReadFdSet)
         error = Accept(mListenFd);
     }
 
-    return error;
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to accept new connection: %s", otbrErrorString(error));
+    }
 }
 
-otbrError RestWebServer::InitializeListenFd(void)
+void RestWebServer::InitializeListenFd(void)
 {
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorMessage;
@@ -142,7 +145,7 @@ otbrError RestWebServer::InitializeListenFd(void)
     mAddress.sin_addr.s_addr = INADDR_ANY;
     mAddress.sin_port        = htons(kPortNumber);
 
-    mListenFd = socket(AF_INET, SOCK_STREAM, 0);
+    mListenFd = SocketWithCloseExec(AF_INET, SOCK_STREAM, 0, kSocketNonBlock);
     VerifyOrExit(mListenFd != -1, err = errno, error = OTBR_ERROR_REST, errorMessage = "socket");
 
     ret = setsockopt(mListenFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&optval), sizeof(optval));
@@ -154,21 +157,14 @@ otbrError RestWebServer::InitializeListenFd(void)
     ret = listen(mListenFd, 5);
     VerifyOrExit(ret >= 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "listen");
 
-    ret = SetFdNonblocking(mListenFd);
-    VerifyOrExit(ret, err = errno, error = OTBR_ERROR_REST, errorMessage = " set nonblock");
-
 exit:
+
     if (error != OTBR_ERROR_NONE)
     {
-        if (mListenFd != -1)
-        {
-            close(mListenFd);
-            mListenFd = -1;
-        }
-        otbrLog(OTBR_LOG_ERR, "otbr rest server init error %s : %s", errorMessage.c_str(), strerror(err));
+        otbrLogErr("InitializeListenFd error %s : %s", errorMessage.c_str(), strerror(err));
     }
 
-    return error;
+    VerifyOrDie(error == OTBR_ERROR_NONE, "otbr rest server init error");
 }
 
 otbrError RestWebServer::Accept(int aListenFd)
@@ -197,7 +193,7 @@ exit:
             close(fd);
             fd = -1;
         }
-        otbrLog(OTBR_LOG_ERR, "rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
+        otbrLogErr("Rest server accept error: %s %s", errorMessage.c_str(), strerror(err));
     }
 
     return error;

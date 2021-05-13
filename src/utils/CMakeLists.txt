@@ -28,11 +28,12 @@
 
 add_library(otbr-utils
     crc16.cpp
-    event_emitter.cpp
     hex.cpp
     pskc.cpp
+    socket_utils.cpp
     steering_data.cpp
     strcpy_utils.cpp
+    system_utils.cpp
 )
 target_link_libraries(otbr-utils PRIVATE
     otbr-common

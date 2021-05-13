@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "REST"
+
 #include "rest/resource.hpp"
 
 #include "string.h"
@@ -65,7 +67,7 @@ namespace otbr {
 namespace rest {
 
 // MulticastAddr
-static const char *kMulticastAddrAllRouters = "ff02::2";
+static const char *kMulticastAddrAllRouters = "ff03::2";
 
 // Default TlvTypes for Diagnostic inforamtion
 static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
@@ -513,17 +515,16 @@ void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag
 
 void Resource::Diagnostic(const Request &aRequest, Response &aResponse) const
 {
-    otThreadSetReceiveDiagnosticGetCallback(mInstance, &Resource::DiagnosticResponseHandler,
-                                            const_cast<Resource *>(this));
     OT_UNUSED_VARIABLE(aRequest);
+
     struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
 
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
-                 OT_ERROR_NONE);
-    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE);
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes)) ==
-                 OT_ERROR_NONE);
+    SuccessOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes),
+                                            &Resource::DiagnosticResponseHandler, const_cast<Resource *>(this)));
+    SuccessOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress));
+    SuccessOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes),
+                                            &Resource::DiagnosticResponseHandler, const_cast<Resource *>(this)));
 
 exit:
 
@@ -531,13 +532,15 @@ exit:
     aResponse.SetCallback();
 }
 
-void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
+void Resource::DiagnosticResponseHandler(otError              aError,
+                                         otMessage *          aMessage,
+                                         const otMessageInfo *aMessageInfo,
+                                         void *               aContext)
 {
-    static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aMessage,
-                                                                 *static_cast<const otMessageInfo *>(aMessageInfo));
+    static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
 }
 
-void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInfo)
+void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
     std::vector<otNetworkDiagTlv> diagSet;
     otNetworkDiagTlv              diagTlv;
@@ -545,6 +548,10 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
     otError                       error;
     char                          rloc[7];
     std::string                   keyRloc = "0xffee";
+
+    SuccessOrExit(aError);
+
+    OTBR_UNUSED_VARIABLE(aMessageInfo);
 
     while ((error = otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv)) == OT_ERROR_NONE)
     {
@@ -556,6 +563,12 @@ void Resource::DiagnosticResponseHandler(otMessage *aMessage, const otMessageInf
         diagSet.push_back(diagTlv);
     }
     UpdateDiag(keyRloc, diagSet);
+
+exit:
+    if (aError != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
+    }
 }
 
 } // namespace rest

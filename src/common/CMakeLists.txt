@@ -27,9 +27,22 @@
 #
 
 add_library(otbr-common
+    byteswap.hpp
+    code_utils.hpp
+    dns_utils.cpp
     logging.cpp
+    logging.hpp
+    mainloop.hpp
+    task_runner.cpp
+    task_runner.hpp
+    time.hpp
+    tlv.hpp
+    types.cpp
+    types.hpp
 )
 
 target_link_libraries(otbr-common
     PUBLIC otbr-config
+    openthread-ftd
+    openthread-posix
 )

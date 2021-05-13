@@ -28,6 +28,12 @@
 
 LOCAL_PATH := $(call my-dir)
 
+ifeq ($(OTBR_ENABLE_ANDROID_MK),1)
+
+ifneq ($(OTBR_PROJECT_ANDROID_MK),)
+include $(OTBR_PROJECT_ANDROID_MK)
+endif
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
@@ -58,18 +64,25 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
-$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(LOCAL_PATH)/src/dbus/server/introspect.hpp
-
-$(LOCAL_PATH)/src/dbus/server/introspect.hpp: $(LOCAL_PATH)/src/dbus/server/introspect.xml
-	echo 'R"INTROSPECT(' > $@
-	cat $+ >> $@
-	echo ')INTROSPECT"' >> $@
-
-
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE := otbr-agent
 LOCAL_MODULE_TAGS := eng
 LOCAL_SHARED_LIBRARIES := libdbus
+
+OTBR_GEN_HEADER_DIR := $(local-intermediates-dir)/gen
+OTBR_GEN_DBUS_INTROSPECT_HEADER := $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp
+
+$(OTBR_GEN_DBUS_INTROSPECT_HEADER): $(LOCAL_PATH)/src/dbus/server/introspect.xml
+	mkdir -p $(OTBR_GEN_HEADER_DIR)/dbus/server
+	echo 'R"INTROSPECT(' > $@
+	cat $+ >> $@
+	echo ')INTROSPECT"' >> $@
+
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp
+
+ifneq ($(ANDROID_NDK),1)
+LOCAL_SHARED_LIBRARIES += libcutils
+endif
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
@@ -79,6 +92,7 @@ LOCAL_C_INCLUDES := \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
+    $(OTBR_GEN_HEADER_DIR) \
     $(OTBR_PROJECT_INCLUDES)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
@@ -90,13 +104,21 @@ LOCAL_CFLAGS += \
 
 LOCAL_CPPFLAGS += -std=c++14
 
+LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER)
+
 LOCAL_SRC_FILES := \
+    src/agent/advertising_proxy.cpp \
     src/agent/agent_instance.cpp \
+    src/agent/instance_params.cpp \
     src/agent/border_agent.cpp \
+    src/agent/discovery_proxy.cpp \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
+    src/common/dns_utils.cpp \
     src/common/logging.cpp \
+    src/common/task_runner.cpp \
+    src/common/types.cpp \
     src/dbus/common/dbus_message_dump.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
@@ -105,12 +127,12 @@ LOCAL_SRC_FILES := \
     src/dbus/server/dbus_object.cpp \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
-    src/utils/event_emitter.cpp \
+    src/mdns/mdns.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
 
 LOCAL_STATIC_LIBRARIES += \
-    libopenthread-ncp \
+    ot-core \
     libopenthread-cli \
     ot-core \
 
@@ -124,6 +146,10 @@ LOCAL_SRC_FILES += \
 LOCAL_SHARED_LIBRARIES += libmdnssd
 endif
 
+LOCAL_SRC_FILES += $(OTBR_PROJECT_SRC_FILES)
+LOCAL_STATIC_LIBRARIES += $(OTBR_PROJECT_STATIC_LIBRARIES)
+LOCAL_SHARED_LIBRARIES += $(OTBR_PROJECT_SHARED_LIBRARIES)
+
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
@@ -132,9 +158,18 @@ LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE := otbr-agent.conf
 LOCAL_MODULE_TAGS := eng
 
+OTBR_AGENT_USER ?= root
+OTBR_AGENT_GROUP ?= root
+
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/dbus-1/system.d
-LOCAL_SRC_FILES := src/agent/otbr-agent.conf
-$(LOCAL_PATH)/src/agent/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
-	sed -e 's/@OTBR_AGENT_USER@/root/g' -e 's/@OTBR_AGENT_GROUP@/root/g' $< > $@
+OTBR_GEN_DBUS_CONF_DIR := $(local-intermediates-dir)/gen
+$(OTBR_GEN_DBUS_CONF_DIR)/otbr-agent.conf: $(LOCAL_PATH)/src/agent/otbr-agent.conf.in
+	mkdir -p $(OTBR_GEN_DBUS_CONF_DIR)
+	sed -e 's/@OTBR_AGENT_USER@/$(OTBR_AGENT_USER)/g' -e 's/@OTBR_AGENT_GROUP@/$(OTBR_AGENT_GROUP)/g' $< > $@
+
+# Dirty hack for Android.mk to copy config files from the intermediate directory.
+LOCAL_PATH := $(local-intermediates-dir)
+LOCAL_SRC_FILES := gen/otbr-agent.conf
 
 include $(BUILD_PREBUILT)
+endif # ifeq ($(OTBR_ENABLE_ANDROID_MK),1)

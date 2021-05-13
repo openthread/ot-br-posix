@@ -174,6 +174,14 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
+    int                commitActiveDataset(otbr::Web::OpenThreadClient &aClient,
+                                           const std::string &          aMasterKey,
+                                           const std::string &          aNetworkName,
+                                           uint16_t                     aChannel,
+                                           uint64_t                     aExtPanId,
+                                           uint16_t                     aPanId);
+    static std::string escapeOtCliEscapable(const std::string &aArg);
+
     WpanNetworkInfo mNetworks[OT_SCANNED_NET_BUFFER_SIZE];
     int             mNetworksCount;
     char            mIfName[IFNAMSIZ];
@@ -203,9 +211,6 @@ private:
         kPropertyType_String = 0,
         kPropertyType_Data,
     };
-
-    static const char *kBorderAgentHost;
-    static const char *kBorderAgentPort;
 };
 
 } // namespace Web

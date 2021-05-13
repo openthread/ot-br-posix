@@ -42,7 +42,9 @@
 #include <sys/types.h>
 
 #include "agent/border_agent.hpp"
-#include "agent/ncp.hpp"
+#include "agent/instance_params.hpp"
+#include "agent/ncp_openthread.hpp"
+#include "common/mainloop.hpp"
 
 namespace otbr {
 
@@ -50,18 +52,16 @@ namespace otbr {
  * This class implements an instance to host services used by border router.
  *
  */
-class AgentInstance
+class AgentInstance : public MainloopProcessor
 {
 public:
     /**
      * The constructor to initialize the Thread border router agent instance.
      *
-     * @param[in]   aNcp  A pointer to the NCP controller.
+     * @param[in]   aNcp  A reference to the NCP controller.
      *
      */
-    AgentInstance(Ncp::Controller *aNcp);
-
-    ~AgentInstance(void);
+    AgentInstance(Ncp::ControllerOpenThread &aNcp);
 
     /**
      * This method initialize the agent.
@@ -73,32 +73,32 @@ public:
     otbrError Init(void);
 
     /**
-     * This method updates the file descriptor sets and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aMainloop   A reference to OpenThread mainloop context.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(otSysMainloopContext &aMainloop);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs processing.
+     * This method processes mainloop events.
      *
-     * @param[in]       aMainloop   A reference to OpenThread mainloop context.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const otSysMainloopContext &aMainloop);
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
-     * This method return mNcp pointer.
+     * This method returns the NCP controller.
      *
-     * @retval  the pointer of mNcp.
+     * @retval  the pointer of the NCP controller.
      *
      */
-    Ncp::Controller &GetNcp(void) { return *mNcp; }
+    otbr::Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
 
 private:
-    Ncp::Controller *mNcp;
-    BorderAgent      mBorderAgent;
+    otbr::Ncp::ControllerOpenThread &mNcp;
+    BorderAgent                      mBorderAgent;
 };
 
 } // namespace otbr

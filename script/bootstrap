@@ -54,6 +54,12 @@ install_packages_apt()
 
     # mDNS
     sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon
+    (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-878.30.4 \
+        && cd /tmp \
+        && wget -4 --no-check-certificate https://opensource.apple.com/tarballs/mDNSResponder/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+        && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+        && cd $MDNS_RESPONDER_SOURCE_NAME/mDNSPosix \
+        && make os=linux && sudo make install os=linux)
 
     # Boost
     sudo apt-get install --no-install-recommends -y libboost-dev libboost-filesystem-dev libboost-system-dev
@@ -74,18 +80,19 @@ install_packages_apt()
     without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y dnsmasq network-manager
 
     # dhcpcd5
-    without DHCPV6_PD || {
-        # More details can be found in issue: #122
-        if [ "$PLATFORM" = 'raspbian' ]; then
-            # TODO should figure out a better way to deal with this
-            sudo dpkg -i third_party/dhcpcd/dhcpcd5_6.11.5-1+rpt2_armhf.deb
-        else
-            sudo apt-get install --no-install-recommends -y dhcpcd5
-        fi
-    }
+    without DHCPV6_PD || sudo apt-get install --no-install-recommends -y dhcpcd5
 
     # libjsoncpp
     sudo apt-get install --no-install-recommends -y libjsoncpp1 libjsoncpp-dev
+
+    # reference device
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils
+
+    # backbone-router
+    without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y iptables libnetfilter-queue1 libnetfilter-queue-dev
+
+    # web dependencies
+    without WEB_GUI || command -v npm || sudo apt-get install -y nodejs npm
 }
 
 install_packages_opkg()

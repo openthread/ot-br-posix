@@ -28,18 +28,56 @@
 
 set(OT_BORDER_AGENT ON CACHE BOOL "enable border agent" FORCE)
 set(OT_BORDER_ROUTER ON CACHE BOOL "enable border router feature" FORCE)
+set(OT_BORDER_ROUTING ${OTBR_BORDER_ROUTING} CACHE BOOL "enable border routing feature" FORCE)
 set(OT_BUILD_EXECUTABLES OFF CACHE BOOL "disable building executables" FORCE)
 set(OT_BUILTIN_MBEDTLS_MANAGEMENT OFF CACHE BOOL "diable mbedTLS management" FORCE)
 set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner" FORCE)
 set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
+set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
+set(OT_TREL ON CACHE BOOL "enable TREL")
+
+if (NOT OT_LOG_LEVEL)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(OT_LOG_LEVEL "DEBG" CACHE STRING "set OpenThread log level to DEBG" FORCE)
+    else()
+        set(OT_LOG_LEVEL "INFO" CACHE STRING "set OpenThread log level to INFO" FORCE)
+    endif()
+endif()
+
+set(OT_LOG_LEVEL_DYNAMIC ON CACHE BOOL "enable dynamic log level control" FORCE)
 set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
 set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
 set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
 set(OT_PLATFORM_UDP ON CACHE BOOL "enable platform UDP" FORCE)
 set(OT_UDP_FORWARD OFF CACHE BOOL "diable udp forward" FORCE)
+set(OT_BACKBONE_ROUTER_DUA_NDPROXYING ${OTBR_DUA_ROUTING} CACHE BOOL "Configure DUA ND Proxy feature in OpenThread" FORCE)
+
+if (OTBR_SRP_ADVERTISING_PROXY)
+    set(OT_SRP_SERVER ON CACHE BOOL "enable SRP server" FORCE)
+    set(OT_ECDSA ON CACHE BOOL "enable ECDSA" FORCE)
+    set(OT_SERVICE ON CACHE BOOL "enable service" FORCE)
+    set(OT_EXTERNAL_HEAP ON CACHE BOOL "enable external heap" FORCE)
+endif()
+
+if (OTBR_BACKBONE_ROUTER)
+    set(OT_THREAD_VERSION 1.2 CACHE STRING "Backbone Router requires Thread 1.2 or higher" FORCE)
+    set(OT_BACKBONE_ROUTER ON CACHE BOOL "Enable Backbone Router feature in OpenThread" FORCE)
+    set(OT_SERVICE ON CACHE BOOL "Backbone Router requires Thread network service" FORCE)
+endif()
+
+if (OT_THREAD_VERSION STREQUAL "1.2")
+    set(OT_MLR ON CACHE BOOL "Enable Thread 1.2 MLR by default")
+endif()
+
+set(OT_COAP ON CACHE BOOL "Enable CoAP in OpenThread")
+set(OT_COAPS ON CACHE BOOL "Enable secure CoAP in OpenThread")
+
+if (OTBR_DNSSD_DISCOVERY_PROXY)
+    set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
+endif()
 
 list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
 
@@ -47,8 +85,7 @@ add_subdirectory(repo EXCLUDE_FROM_ALL)
 
 target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
-    "-DOPENTHREAD_CONFIG_LOG_LEVEL=OT_LOG_LEVEL_INFO"
     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
+    "-DOPENTHREAD_CONFIG_TMF_PROXY_DUA_ENABLE=$<BOOL:${OTBR_DUA_ROUTING}>"
 )
-

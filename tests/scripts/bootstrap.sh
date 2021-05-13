@@ -54,6 +54,7 @@ install_common_dependencies()
         ninja-build \
         doxygen \
         expect \
+        net-tools \
         libboost-dev \
         libboost-filesystem-dev \
         libboost-system-dev \
@@ -61,7 +62,8 @@ install_common_dependencies()
         libavahi-client-dev \
         libreadline-dev \
         libncurses-dev \
-        libjsoncpp-dev
+        libjsoncpp-dev \
+        coreutils
 }
 
 install_openthread_binraries()
@@ -126,7 +128,7 @@ case "$(uname)" in
         fi
 
         if [ "$BUILD_TARGET" == pretty-check ]; then
-            sudo apt-get install -y clang-format-10 shellcheck
+            sudo apt-get install -y clang-format-9 shellcheck
             sudo snap install shfmt
         fi
 

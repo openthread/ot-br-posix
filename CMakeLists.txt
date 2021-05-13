@@ -27,18 +27,14 @@
 #
 
 cmake_minimum_required(VERSION 3.10.2)
-project(openthread-br VERSION 0.2.0)
+project(openthread-br VERSION 0.3.0)
 
 
 add_library(otbr-config INTERFACE)
 
-option(OTBR_BACKBONE_ROUTER  "Build Backbone Router" OFF)
-option(OTBR_DBUS             "Build DBus support" OFF)
-option(OTBR_OPENWRT          "Build OpenWrt support" OFF)
-option(OTBR_UNSECURE_JOIN    "Enable unsecure joining" OFF)
-option(OTBR_WEB              "Build Web GUI" OFF)
-option(OTBR_REST             "Build Rest Server" OFF)
+set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
 
+include("${PROJECT_SOURCE_DIR}/etc/cmake/options.cmake")
 
 if(NOT CMAKE_C_STANDARD)
     set(CMAKE_C_STANDARD 99)
@@ -60,17 +56,24 @@ endif()
 
 add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
 
+if(NOT OTBR_NAME)
+    set(OTBR_NAME "OPENTHREAD_BR")
+endif()
 
-execute_process(
-    COMMAND git describe --dirty --always
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE OTBR_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+message(STATUS "Name: ${OTBR_NAME}")
 
-if(OTBR_GIT_VERSION)
-    set(OTBR_VERSION "${PROJECT_VERSION}-${OTBR_GIT_VERSION}")
-else()
-    set(OTBR_VERSION "${PROJECT_VERSION}")
+if(NOT OTBR_VERSION)
+    execute_process(
+        COMMAND git describe --dirty --always 2>/dev/null
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE OTBR_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if(OTBR_GIT_VERSION)
+        set(OTBR_VERSION "${PROJECT_VERSION}-${OTBR_GIT_VERSION}")
+    else()
+        set(OTBR_VERSION "${PROJECT_VERSION}")
+    endif()
 endif()
 
 message(STATUS "Version: ${OTBR_VERSION}")
@@ -81,7 +84,7 @@ target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_definitions(otbr-config INTERFACE
-    "OTBR_PACKAGE_NAME=\"OPENTHREAD_BR\""
+    "OTBR_PACKAGE_NAME=\"${OTBR_NAME}\""
     "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
 )
 
@@ -89,53 +92,7 @@ if(BUILD_SHARED_LIBS)
     target_link_libraries(otbr-config INTERFACE -Wl,--unresolved-symbols=ignore-in-shared-libs)
 endif()
 
-find_package(PkgConfig)
 include(GNUInstallDirs)
-
-if (OTBR_BACKBONE_ROUTER)
-    target_compile_definitions(otbr-config INTERFACE
-            OTBR_ENABLE_BACKBONE_ROUTER=1
-    )
-    set(OT_THREAD_VERSION 1.2 CACHE STRING "Backbone Router requires Thread 1.2 or higher" FORCE)
-    set(OT_BACKBONE_ROUTER ON CACHE BOOL "Enable Backbone Router feature in OpenThread" FORCE)
-    set(OT_SERVICE ON CACHE BOOL "Backbone Router requires Thread network service" FORCE)
-endif()
-
-if(OTBR_DBUS)
-    pkg_check_modules(DBUS REQUIRED dbus-1)
-    pkg_get_variable(OTBR_DBUS_SYSTEM_BUS_SERVICES_DIR dbus-1 system_bus_services_dir)
-    target_compile_definitions(otbr-config INTERFACE
-        OTBR_ENABLE_DBUS_SERVER=1
-    )
-endif()
-
-if(OTBR_REST)
-    target_compile_definitions(otbr-config INTERFACE
-        OTBR_ENABLE_REST_SERVER=1
-    )
-endif()
-
-if(OTBR_WEB)
-    pkg_check_modules(JSONCPP jsoncpp REQUIRED)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_MULTITHREADED ON)
-    set(Boost_USE_STATIC_RUNTIME OFF)
-    find_package(Boost REQUIRED
-        COMPONENTS filesystem system)
-    set(OTBR_WEB_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/otbr-web)
-endif()
-
-if(OTBR_OPENWRT)
-    target_compile_definitions(otbr-config INTERFACE
-        OTBR_ENABLE_OPENWRT=1
-    )
-endif()
-
-if(OTBR_UNSECURE_JOIN)
-    target_compile_definitions(otbr-config INTERFACE
-        OTBR_ENABLE_UNSECURE_JOIN=1
-    )
-endif()
 
 set(OTBR_MDNS "avahi" CACHE STRING "MDNS service provider")
 set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
@@ -164,4 +121,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenThread Authors <openthread-users@googlegroups.com")
     set(CPACK_PACKAGE_CONTACT "OpenThread Authors <openthread-users@googlegroups.com")
     include(CPack)
+endif()
+
+if (OTBR_DOC)
+    add_subdirectory(doc)
 endif()

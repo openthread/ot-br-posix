@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes utilities for manipulate d-bus message.
+ */
+
 #ifndef DBUS_MESSAGE_HELPER_HPP_
 #define DBUS_MESSAGE_HELPER_HPP_
 
@@ -582,6 +587,8 @@ otbrError DBusMessageToTuple(UniqueDBusMessage const &aMessage, std::tuple<Field
 {
     return DBusMessageToTuple(*aMessage.get(), aValues);
 }
+
+bool IsDBusMessageEmpty(DBusMessage &aMessage);
 
 } // namespace DBus
 } // namespace otbr

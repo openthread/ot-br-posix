@@ -30,10 +30,13 @@
 #define BYTE_ORDER_BIG_ENDIAN 1
 #endif
 
+#define OTBR_LOG_TAG "UBUS"
+
 #include "openwrt/ubus/otubus.hpp"
 
 #include <mutex>
 
+#include <arpa/inet.h>
 #include <sys/eventfd.h>
 
 #include <openthread/commissioner.h>
@@ -78,8 +81,6 @@ UbusServer &UbusServer::GetInstance(void)
 void UbusServer::Initialize(Ncp::ControllerOpenThread *aController)
 {
     sUbusServerInstance = new UbusServer(aController);
-    otThreadSetReceiveDiagnosticGetCallback(aController->GetInstance(), &UbusServer::HandleDiagnosticGetResponse,
-                                            sUbusServerInstance);
 }
 
 enum
@@ -132,10 +133,6 @@ static const struct blobmsg_policy setMasterkeyPolicy[SET_NETWORK_MAX] = {
 
 static const struct blobmsg_policy setModePolicy[SET_NETWORK_MAX] = {
     [SETNETWORK] = {.name = "mode", .type = BLOBMSG_TYPE_STRING},
-};
-
-static const struct blobmsg_policy setLeaderPartitionIdPolicy[SET_NETWORK_MAX] = {
-    [SETNETWORK] = {.name = "leaderpartitionid", .type = BLOBMSG_TYPE_INT32},
 };
 
 static const struct blobmsg_policy macfilterAddPolicy[SET_NETWORK_MAX] = {
@@ -191,9 +188,7 @@ static const struct ubus_method otbrMethods[] = {
     {"parent", &UbusServer::UbusParentHandler, 0, 0, nullptr, 0},
     {"mode", &UbusServer::UbusModeHandler, 0, 0, nullptr, 0},
     {"setmode", &UbusServer::UbusSetModeHandler, 0, 0, setModePolicy, ARRAY_SIZE(setModePolicy)},
-    {"leaderpartitionid", &UbusServer::UbusLeaderPartitionIdHandler, 0, 0, nullptr, 0},
-    {"setleaderpartitionid", &UbusServer::UbusSetLeaderPartitionIdHandler, 0, 0, setLeaderPartitionIdPolicy,
-     ARRAY_SIZE(setLeaderPartitionIdPolicy)},
+    {"partitionid", &UbusServer::UbusPartitionIdHandler, 0, 0, nullptr, 0},
     {"leave", &UbusServer::UbusLeaveHandler, 0, 0, nullptr, 0},
     {"leaderdata", &UbusServer::UbusLeaderdataHandler, 0, 0, nullptr, 0},
     {"networkdata", &UbusServer::UbusNetworkdataHandler, 0, 0, nullptr, 0},
@@ -535,22 +530,13 @@ int UbusServer::UbusSetModeHandler(struct ubus_context *     aContext,
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "mode");
 }
 
-int UbusServer::UbusLeaderPartitionIdHandler(struct ubus_context *     aContext,
-                                             struct ubus_object *      aObj,
-                                             struct ubus_request_data *aRequest,
-                                             const char *              aMethod,
-                                             struct blob_attr *        aMsg)
+int UbusServer::UbusPartitionIdHandler(struct ubus_context *     aContext,
+                                       struct ubus_object *      aObj,
+                                       struct ubus_request_data *aRequest,
+                                       const char *              aMethod,
+                                       struct blob_attr *        aMsg)
 {
-    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "leaderpartitionid");
-}
-
-int UbusServer::UbusSetLeaderPartitionIdHandler(struct ubus_context *     aContext,
-                                                struct ubus_object *      aObj,
-                                                struct ubus_request_data *aRequest,
-                                                const char *              aMethod,
-                                                struct blob_attr *        aMsg)
-{
-    return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "leaderpartitionid");
+    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "partitionid");
 }
 
 int UbusServer::UbusLeaveHandler(struct ubus_context *     aContext,
@@ -1030,13 +1016,13 @@ void UbusServer::HandleStateChanged(otCommissionerState aState)
     switch (aState)
     {
     case OT_COMMISSIONER_STATE_DISABLED:
-        otbrLog(OTBR_LOG_INFO, "commissioner state disabled");
+        otbrLogInfo("Commissioner state disabled");
         break;
     case OT_COMMISSIONER_STATE_ACTIVE:
-        otbrLog(OTBR_LOG_INFO, "commissioner state active");
+        otbrLogInfo("Commissioner state active");
         break;
     case OT_COMMISSIONER_STATE_PETITION:
-        otbrLog(OTBR_LOG_INFO, "commissioner state petition");
+        otbrLogInfo("Commissioner state petition");
         break;
     }
 }
@@ -1059,19 +1045,19 @@ void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
     switch (aEvent)
     {
     case OT_COMMISSIONER_JOINER_START:
-        otbrLog(OTBR_LOG_INFO, "joiner start");
+        otbrLogInfo("Joiner start");
         break;
     case OT_COMMISSIONER_JOINER_CONNECTED:
-        otbrLog(OTBR_LOG_INFO, "joiner connected");
+        otbrLogInfo("Joiner connected");
         break;
     case OT_COMMISSIONER_JOINER_FINALIZE:
-        otbrLog(OTBR_LOG_INFO, "joiner finalize");
+        otbrLogInfo("Joiner finalize");
         break;
     case OT_COMMISSIONER_JOINER_END:
-        otbrLog(OTBR_LOG_INFO, "joiner end");
+        otbrLogInfo("Joiner end");
         break;
     case OT_COMMISSIONER_JOINER_REMOVED:
-        otbrLog(OTBR_LOG_INFO, "joiner remove");
+        otbrLogInfo("Joiner remove");
         break;
     }
 }
@@ -1161,9 +1147,9 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         }
         blobmsg_add_string(&mBuf, "Mode", mode);
     }
-    else if (!strcmp(aAction, "leaderpartitionid"))
+    else if (!strcmp(aAction, "partitionid"))
     {
-        blobmsg_add_u32(&mBuf, "Leaderpartitionid", otThreadGetLocalLeaderPartitionId(mController->GetInstance()));
+        blobmsg_add_u32(&mBuf, "Partitionid", otThreadGetPartitionId(mController->GetInstance()));
     }
     else if (!strcmp(aAction, "leaderdata"))
     {
@@ -1190,19 +1176,17 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
             uint8_t             tlvTypes[OT_NETWORK_DIAGNOSTIC_TYPELIST_MAX_ENTRIES];
             uint8_t             count             = 0;
             char                multicastAddr[10] = "ff03::2";
-            long                value;
 
             blob_buf_init(&mNetworkdataBuf, 0);
 
             SuccessOrExit(error = otIp6AddressFromString(multicastAddr, &address));
 
-            value             = 5;
-            tlvTypes[count++] = static_cast<uint8_t>(value);
-            value             = 16;
-            tlvTypes[count++] = static_cast<uint8_t>(value);
+            tlvTypes[count++] = static_cast<uint8_t>(OT_NETWORK_DIAGNOSTIC_TLV_ROUTE);
+            tlvTypes[count++] = static_cast<uint8_t>(OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE);
 
             sBufNum = 0;
-            otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count);
+            otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count,
+                                      &UbusServer::HandleDiagnosticGetResponse, this);
             mSecond = time(nullptr);
         }
         goto exit;
@@ -1304,10 +1288,12 @@ exit:
     return 0;
 }
 
-void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo *aMessageInfo, void *aContext)
+void UbusServer::HandleDiagnosticGetResponse(otError              aError,
+                                             otMessage *          aMessage,
+                                             const otMessageInfo *aMessageInfo,
+                                             void *               aContext)
 {
-    static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(aMessage,
-                                                                     *static_cast<const otMessageInfo *>(aMessageInfo));
+    static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(aError, aMessage, aMessageInfo);
 }
 
 static bool IsRoutingLocator(const otIp6Address *aAddress)
@@ -1322,7 +1308,7 @@ static bool IsRoutingLocator(const otIp6Address *aAddress)
             aAddress->mFields.m8[14] < kAloc16Mask && (aAddress->mFields.m8[14] & kRloc16ReservedBitMask) == 0);
 }
 
-void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessageInfo &aMessageInfo)
+void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo)
 {
     uint16_t              rloc16;
     uint16_t              sockRloc16 = 0;
@@ -1332,14 +1318,16 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
     otNetworkDiagTlv      diagTlv;
     otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
 
+    SuccessOrExit(aError);
+
     char networkdata[20];
     sprintf(networkdata, "networkdata%d", sBufNum);
     sJsonUri = blobmsg_open_table(&mNetworkdataBuf, networkdata);
     sBufNum++;
 
-    if (IsRoutingLocator(&aMessageInfo.mSockAddr))
+    if (IsRoutingLocator(&aMessageInfo->mSockAddr))
     {
-        sockRloc16 = aMessageInfo.mPeerAddr.mFields.m16[7];
+        sockRloc16 = ntohs(aMessageInfo->mPeerAddr.mFields.m16[7]);
         sprintf(xrloc, "0x%04x", sockRloc16);
         blobmsg_add_string(&mNetworkdataBuf, "rloc", xrloc);
     }
@@ -1409,6 +1397,12 @@ void UbusServer::HandleDiagnosticGetResponse(otMessage *aMessage, const otMessag
     }
 
     blobmsg_close_table(&mNetworkdataBuf, sJsonUri);
+
+exit:
+    if (aError != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to receive diagnostic response: %s", otThreadErrorToString(aError));
+    }
 }
 
 int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
@@ -1534,17 +1528,6 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             }
 
             SuccessOrExit(error = otThreadSetLinkMode(mController->GetInstance(), linkMode));
-        }
-    }
-    else if (!strcmp(aAction, "leaderpartitionid"))
-    {
-        struct blob_attr *tb[SET_NETWORK_MAX];
-
-        blobmsg_parse(setLeaderPartitionIdPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-        if (tb[SETNETWORK] != nullptr)
-        {
-            uint32_t input = blobmsg_get_u32(tb[SETNETWORK]);
-            otThreadSetLocalLeaderPartitionId(mController->GetInstance(), input);
         }
     }
     else if (!strcmp(aAction, "macfilteradd"))
@@ -1698,11 +1681,11 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     mContext = ubus_connect(aPath);
     if (!mContext)
     {
-        otbrLog(OTBR_LOG_ERR, "ubus connect failed");
+        otbrLogErr("Ubus connect failed");
         return -1;
     }
 
-    otbrLog(OTBR_LOG_INFO, "connected as %08x\n", mContext->local_id);
+    otbrLogInfo("Connected as %08x\n", mContext->local_id);
     mContext->connection_lost = UbusConnectionLost;
 
     /* file description */
@@ -1711,7 +1694,7 @@ int UbusServer::DisplayUbusInit(const char *aPath)
     /* Add a object */
     if (ubus_add_object(mContext, &otbr) != 0)
     {
-        otbrLog(OTBR_LOG_ERR, "ubus add obj failed");
+        otbrLogErr("Ubus add obj failed");
         return -1;
     }
 
@@ -1733,11 +1716,11 @@ void UbusServer::InstallUbusObject(void)
 
     if (-1 == DisplayUbusInit(path))
     {
-        otbrLog(OTBR_LOG_ERR, "ubus connect failed");
+        otbrLogErr("Ubus connect failed");
         return;
     }
 
-    otbrLog(OTBR_LOG_INFO, "uloop run");
+    otbrLogInfo("Uloop run");
     uloop_run();
 
     DisplayUbusDone();

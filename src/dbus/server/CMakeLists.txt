@@ -26,10 +26,13 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-file(READ introspect.xml OTBR_DBUS_INTROSPECT)
-file(WRITE introspect.hpp "R\"INTROSPECT(")
-file(APPEND introspect.hpp ${OTBR_DBUS_INTROSPECT})
-file(APPEND introspect.hpp ")INTROSPECT\"")
+add_custom_target(otbr-dbus-introspect-header ALL
+    COMMAND echo "R\"INTROSPECT(" > introspect.hpp
+    COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml >> introspect.hpp
+    COMMAND echo ")INTROSPECT\"" >> introspect.hpp
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    VERBATIM
+)
 
 option(OTBR_ENABLE_LEGACY "enable legacy support")
 
@@ -39,6 +42,12 @@ add_library(otbr-dbus-server STATIC
     dbus_thread_object.cpp
     error_helper.cpp
 )
+
+target_include_directories(otbr-dbus-server PRIVATE
+    ${PROJECT_BINARY_DIR}/src
+)
+
+add_dependencies(otbr-dbus-server otbr-dbus-introspect-header)
 
 if(OTBR_ENABLE_LEGACY)
     target_compile_definitions(otbr-dbus-server PRIVATE
@@ -52,3 +61,12 @@ endif()
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
 )
+
+if(OTBR_DOC)
+add_custom_target(otbr-dbus-server-doc ALL
+    COMMAND gdbus-codegen --generate-docbook generated-docs ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml 
+    COMMAND xmlto html generated-docs-io.openthread.BorderRouter.xml
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    VERBATIM
+)
+endif()

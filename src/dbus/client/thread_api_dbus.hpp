@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for d-bus client API.
+ */
+
 #ifndef OTBR_THREAD_API_DBUS_HPP_
 #define OTBR_THREAD_API_DBUS_HPP_
 
@@ -124,6 +129,21 @@ public:
                        const std::vector<uint8_t> &aPSKc,
                        uint32_t                    aChannelMask,
                        const OtResultHandler &     aHandler);
+
+    /**
+     * This method attaches the device to the Thread network.
+     *
+     * The network parameters will be set with the active dataset under this
+     * circumstance.
+     *
+     * @param[in]   aHandler        The attach result handler.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError Attach(const OtResultHandler &aHandler);
 
     /**
      * This method performs a factory reset.
@@ -256,6 +276,18 @@ public:
     ClientError SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
 
     /**
+     * This method sets the active operational dataset.
+     *
+     * @param[out]  aDataset    The active operational dataset
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset);
+
+    /**
      * This method sets the link operating mode.
      *
      * @param[in]   aConfig   The operating mode config.
@@ -266,6 +298,18 @@ public:
      *
      */
     ClientError SetLinkMode(const LinkModeConfig &aConfig);
+
+    /**
+     * This method sets the radio region.
+     *
+     * @param[in]   aRadioRegion  The radio region.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetRadioRegion(const std::string &aRadioRegion);
 
     /**
      * This method gets the link operating mode.
@@ -581,6 +625,30 @@ public:
     ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
 
     /**
+     * This method gets the active operational dataset
+     *
+     * @param[out]  aDataset    The active operational dataset
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset);
+
+    /**
+     * This method gets the radio region.
+     *
+     * @param[out]  aRadioRegion  The radio region.
+     *
+     * @retval ERROR_NONE successfully performed the dbus function call
+     * @retval ERROR_DBUS dbus encode/decode error
+     * @retval ...        OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetRadioRegion(std::string &aRadioRegion);
+
+    /**
      * This method returns the network interface name the client is bound to.
      *
      * @returns The network interface name.
@@ -616,7 +684,7 @@ private:
     static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aThreadApiDBus);
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
 
-    static void EmptyFree(void *aData) { (void)aData; }
+    static void EmptyFree(void *) {}
 
     std::string mInterfaceName;
 

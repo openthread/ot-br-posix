@@ -123,7 +123,7 @@ DBusHandlerResult ThreadApiDBus::sDBusMessageFilter(DBusConnection *aConnection,
 
 DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage)
 {
-    (void)aConnection;
+    OTBR_UNUSED_VARIABLE(aConnection);
 
     DBusMessageIter iter, subIter, dictEntryIter, valIter;
     std::string     interfaceName, propertyName, val;
@@ -219,6 +219,30 @@ ClientError ThreadApiDBus::Attach(const std::string &         aNetworkName,
     else
     {
         error = CallDBusMethodSync(OTBR_DBUS_ATTACH_METHOD, args);
+    }
+    if (error != ClientError::ERROR_NONE)
+    {
+        mAttachHandler = nullptr;
+    }
+exit:
+    return error;
+}
+
+ClientError ThreadApiDBus::Attach(const OtResultHandler &aHandler)
+{
+    ClientError error = ClientError::ERROR_NONE;
+
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
+    mAttachHandler = aHandler;
+
+    if (aHandler)
+    {
+        error = CallDBusMethodAsync(OTBR_DBUS_ATTACH_METHOD,
+                                    &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::AttachPendingCallHandler>);
+    }
+    else
+    {
+        error = CallDBusMethodSync(OTBR_DBUS_ATTACH_METHOD);
     }
     if (error != ClientError::ERROR_NONE)
     {
@@ -369,9 +393,19 @@ ClientError ThreadApiDBus::SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6
     return SetProperty(OTBR_DBUS_PROPERTY_LEGACY_ULA_PREFIX, aPrefix);
 }
 
+ClientError ThreadApiDBus::SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
+}
+
 ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);
+}
+
+ClientError ThreadApiDBus::SetRadioRegion(const std::string &aRadioRegion)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_RADIO_REGION, aRadioRegion);
 }
 
 ClientError ThreadApiDBus::GetLinkMode(LinkModeConfig &aConfig)
@@ -510,6 +544,16 @@ ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExtern
     return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
 }
 
+ClientError ThreadApiDBus::GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
+}
+
+ClientError ThreadApiDBus::GetRadioRegion(std::string &aRadioRegion)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_RADIO_REGION, aRadioRegion);
+}
+
 std::string ThreadApiDBus::GetInterfaceName(void)
 {
     return mInterfaceName;
@@ -528,7 +572,8 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName)
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
     reply = UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&error);
@@ -569,7 +614,8 @@ ClientError ThreadApiDBus::CallDBusMethodSync(const std::string &aMethodName, co
     VerifyOrExit(otbr::DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
     reply = DBus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&error);
@@ -623,7 +669,8 @@ ClientError ThreadApiDBus::SetProperty(const std::string &aPropertyName, const V
     reply = DBus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     ret = DBus::CheckErrorMessage(reply.get());
 exit:
     dbus_error_free(&error);
@@ -647,11 +694,11 @@ template <typename ValType> ClientError ThreadApiDBus::GetProperty(const std::st
     reply = DBus::UniqueDBusMessage(
         dbus_connection_send_with_reply_and_block(mConnection, message.get(), DBUS_TIMEOUT_USE_DEFAULT, &error));
 
-    VerifyOrExit(!dbus_error_is_set(&error) && reply != nullptr, ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(!dbus_error_is_set(&error), ret = DBus::ConvertFromDBusErrorName(error.message));
+    VerifyOrExit(reply != nullptr, ret = ClientError::ERROR_DBUS);
     SuccessOrExit(DBus::CheckErrorMessage(reply.get()));
-    VerifyOrExit(dbus_message_iter_init(reply.get(), &iter), ret = ClientError::OT_ERROR_FAILED);
-    VerifyOrExit(DBus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE,
-                 ret = ClientError::OT_ERROR_FAILED);
+    VerifyOrExit(dbus_message_iter_init(reply.get(), &iter), ret = ClientError::ERROR_DBUS);
+    VerifyOrExit(DBus::DBusMessageExtractFromVariant(&iter, aValue) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);
 
 exit:
     dbus_error_free(&error);

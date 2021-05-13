@@ -25,6 +25,12 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
+/**
+ * @file
+ * This file includes definitions for OpenThread daemon client.
+ */
+
 #ifndef OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 #define OTBR_WEB_WEB_SERVICE_OT_CLIENT_HPP_
 
@@ -64,8 +70,11 @@ public:
     /**
      * This constructor creates an OpenThread client.
      *
+     * @param[in]   aNetifName  The Thread network interface name.
+     *
      */
-    OpenThreadClient(void);
+    OpenThreadClient(const char *aNetifName);
+
     /**
      * This destructor destories an OpenThread client.
      *
@@ -118,9 +127,10 @@ private:
         kDefaultTimeout = 800,  ///< Default timeout(ms) waiting for a command finish.
     };
 
-    char mBuffer[kBufferSize];
-    int  mTimeout; /// Timeout in milliseconds
-    int  mSocket;
+    const char *mNetifName;
+    char        mBuffer[kBufferSize];
+    int         mTimeout; /// Timeout in milliseconds
+    int         mSocket;
 };
 
 } // namespace Web

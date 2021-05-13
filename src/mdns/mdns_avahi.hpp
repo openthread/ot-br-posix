@@ -42,6 +42,8 @@
 #include <avahi-common/watch.h>
 
 #include "mdns.hpp"
+#include "common/mainloop.hpp"
+#include "common/time.hpp"
 
 /**
  * @addtogroup border-router-mdns
@@ -91,7 +93,7 @@ struct AvahiWatch
  */
 struct AvahiTimeout
 {
-    unsigned long        mTimeout;  ///< Absolute time when this timer timeout.
+    otbr::Timepoint      mTimeout;  ///< Absolute time when this timer timeout.
     AvahiTimeoutCallback mCallback; ///< The function to be called when timeout.
     void *               mContext;  ///< The pointer to application-specific context.
     void *               mPoller;   ///< The poller created this timer.
@@ -116,7 +118,7 @@ namespace Mdns {
  * This class implements the AvahiPoll.
  *
  */
-class Poller
+class Poller : public MainloopProcessor
 {
 public:
     /**
@@ -126,26 +128,20 @@ public:
     Poller(void);
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method processes mainloop events.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method returns the AvahiPoll.
@@ -194,33 +190,127 @@ public:
      * The constructor to initialize a Publisher.
      *
      * @param[in]   aProtocol           The protocol used for publishing. IPv4, IPv6 or both.
-     * @param[in]   aHost               The name of host residing the services to be published.
-                                        nullptr to use default.
      * @param[in]   aDomain             The domain of the host. nullptr to use default.
      * @param[in]   aHandler            The function to be called when state changes.
      * @param[in]   aContext            A pointer to application-specific context.
      *
      */
-    PublisherAvahi(int aProtocol, const char *aHost, const char *aDomain, StateHandler aHandler, void *aContext);
+    PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext);
 
-    ~PublisherAvahi(void);
+    ~PublisherAvahi(void) override;
 
     /**
      * This method publishes or updates a service.
      *
-     * @note only text record can be updated.
-     *
+     * @param[in]   aHostName           The name of the host which this service resides on. If NULL is provided,
+     *                                  this service resides on local host and it is the implementation to provide
+     *                                  specific host name. Otherwise, the caller MUST publish the host with method
+     *                                  PublishHost.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
      * @param[in]   aPort               The port number of this service.
-     * @param[in]   ...                 Pointers to null-terminated string of key and value for text record.
-     *                                  The last argument must be nullptr.
+     * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(uint16_t aPort, const char *aName, const char *aType, ...);
+    otbrError PublishService(const char *   aHostName,
+                             uint16_t       aPort,
+                             const char *   aName,
+                             const char *   aType,
+                             const TxtList &aTxtList) override;
+
+    /**
+     * This method un-publishes a service.
+     *
+     * @param[in]   aName               The name of this service.
+     * @param[in]   aType               The type of this service.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
+     *
+     */
+    otbrError UnpublishService(const char *aName, const char *aType) override;
+
+    /**
+     * This method publishes or updates a host.
+     *
+     * Publishing a host is advertising an AAAA RR for the host name. This method should be called
+     * before a service with non-null host name is published.
+     *
+     * @param[in]  aName           The name of the host.
+     * @param[in]  aAddress        The address of the host.
+     * @param[in]  aAddressLength  The length of @p aAddress.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully published or updated the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the host.
+     *
+     */
+    otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) override;
+
+    /**
+     * This method un-publishes a host.
+     *
+     * @param[in]  aName  A host name.
+     *
+     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
+     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
+     *
+     * @note  All services reside on this host should be un-published by UnpublishService.
+     *
+     */
+    otbrError UnpublishHost(const char *aName) override;
+
+    /**
+     * This method subscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * subscribes the service instance. Otherwise, this method subscribes the service.
+     *
+     * mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify discovered service
+     * instances.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
+     * instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to subscribe, or empty to subscribe the service.
+     *
+     */
+    void SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method unsubscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * unsubscribes the service instance. Otherwise, this method unsubscribes the service.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
+     *
+     */
+    void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method subscribes a given host.
+     *
+     * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void SubscribeHost(const std::string &aHostName) override;
+
+    /**
+     * This method unsubscribes a given host.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void UnsubscribeHost(const std::string &aHostName) override;
 
     /**
      * This method starts the MDNS service.
@@ -229,7 +319,7 @@ public:
      * @retval OTBR_ERROR_MDNS  Failed to start MDNS service.
      *
      */
-    otbrError Start(void);
+    otbrError Start(void) override;
 
     /**
      * This method checks if publisher has been started.
@@ -238,40 +328,34 @@ public:
      * @retval false    Not started.
      *
      */
-    bool IsStarted(void) const;
+    bool IsStarted(void) const override;
 
     /**
      * This method stops the MDNS service.
      *
      */
-    void Stop(void);
+    void Stop(void) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method updates the mainloop context.
      *
-     * @param[in]   aReadFdSet          A reference to read file descriptors.
-     * @param[in]   aWriteFdSet         A reference to write file descriptors.
-     * @param[in]   aErrorFdSet         A reference to error file descriptors.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method processes mainloop events.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     enum
     {
-        kMaxSizeOfTxtRecord   = 128,
+        kMaxSizeOfTxtRecord   = 256,
         kMaxSizeOfServiceName = AVAHI_LABEL_MAX,
         kMaxSizeOfHost        = AVAHI_LABEL_MAX,
         kMaxSizeOfDomain      = AVAHI_LABEL_MAX,
@@ -280,30 +364,55 @@ private:
 
     struct Service
     {
-        char     mName[kMaxSizeOfServiceName];
-        char     mType[kMaxSizeOfServiceType];
-        uint16_t mPort;
+        std::string      mName;
+        std::string      mType;
+        std::string      mHostName;
+        uint16_t         mPort  = 0;
+        AvahiEntryGroup *mGroup = nullptr;
     };
 
     typedef std::vector<Service> Services;
 
+    struct Host
+    {
+        std::string      mHostName;
+        AvahiAddress     mAddress = {};
+        AvahiEntryGroup *mGroup   = nullptr;
+    };
+
+    typedef std::vector<Host> Hosts;
+
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    void        CreateGroup(AvahiClient *aClient);
-    static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
-    void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    Hosts::iterator FindHost(const char *aHostName);
+    otbrError       CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt);
 
-    Services         mServices;
-    AvahiClient *    mClient;
-    AvahiEntryGroup *mGroup;
-    Poller           mPoller;
-    int              mProtocol;
-    const char *     mHost;
-    const char *     mDomain;
-    State            mState;
-    StateHandler     mStateHandler;
-    void *           mContext;
+    Services::iterator FindService(const char *aName, const char *aType);
+    otbrError          CreateService(AvahiClient &       aClient,
+                                     const char *        aName,
+                                     const char *        aType,
+                                     Services::iterator &aOutServiceIt);
+
+    otbrError        CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
+    static otbrError ResetGroup(AvahiEntryGroup *aGroup);
+    static otbrError FreeGroup(AvahiEntryGroup *aGroup);
+    void             FreeAllGroups(void);
+    static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
+    void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
+
+    std::string MakeFullName(const char *aName);
+
+    AvahiClient *mClient;
+    Hosts        mHosts;
+    Services     mServices;
+    Poller       mPoller;
+    int          mProtocol;
+    const char * mDomain;
+    State        mState;
+    StateHandler mStateHandler;
+    void *       mContext;
 };
 
 } // namespace Mdns

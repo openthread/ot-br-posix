@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ *   This file includes definitions for Thread helper.
+ */
+
 #ifndef OTBR_THREAD_HELPER_HPP_
 #define OTBR_THREAD_HELPER_HPP_
 
@@ -43,8 +48,6 @@
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
 
-#include "common/logging.hpp"
-
 namespace otbr {
 namespace Ncp {
 class ControllerOpenThread;
@@ -54,6 +57,9 @@ class ControllerOpenThread;
 namespace otbr {
 namespace agent {
 
+/**
+ * This class implements Thread helper.
+ */
 class ThreadHelper
 {
 public:
@@ -120,6 +126,25 @@ public:
                 ResultHandler               aHandler);
 
     /**
+     * This method detaches the device from the Thread network.
+     *
+     * @returns The error value of underlying OpenThread API calls.
+     *
+     */
+    otError Detach(void);
+
+    /**
+     * This method attaches the device to the Thread network.
+     *
+     * @note The joiner start and the attach proccesses are exclusive, and the
+     *       network parameter will be set through the active dataset.
+     *
+     * @param[in]   aHandler        The attach result handler.
+     *
+     */
+    void Attach(ResultHandler aHandler);
+
+    /**
      * This method resets the OpenThread stack.
      *
      * @returns The error value of underlying OpenThread api calls.
@@ -180,11 +205,7 @@ public:
      * @param[in] aError    The action result.
      *
      */
-    static void LogOpenThreadResult(const char *aAction, otError aError)
-    {
-        otbrLog((aError == OT_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING), "%s: %s", aAction,
-                otThreadErrorToString(aError));
-    }
+    static void LogOpenThreadResult(const char *aAction, otError aError);
 
 private:
     static void sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
@@ -205,7 +226,7 @@ private:
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 
-    std::map<uint16_t, std::chrono::steady_clock::time_point> mUnsecurePortCloseTime;
+    std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 
     ResultHandler mAttachHandler;
     ResultHandler mJoinerHandler;

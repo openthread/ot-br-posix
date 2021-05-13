@@ -25,15 +25,24 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-FROM ubuntu:bionic
+ARG BASE_IMAGE=ubuntu:bionic
+FROM ${BASE_IMAGE}
 
+ARG INFRA_IF_NAME
+ARG BORDER_ROUTING
+ARG BACKBONE_ROUTER
 ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
 ARG DNS64
 ARG NAT64
 ARG REFERENCE_DEVICE
 ARG RELEASE
+ARG REST_API
+ARG WEB_GUI
 
+ENV INFRA_IF_NAME=${INFRA_IF_NAME:-eth0}
+ENV BORDER_ROUTING=${BORDER_ROUTING:-1}
+ENV BACKBONE_ROUTER=${BACKBONE_ROUTER:-1}
 ENV OT_BACKBONE_CI=${OT_BACKBONE_CI:-0}
 ENV OTBR_OPTIONS=${OTBR_OPTIONS}
 ENV DEBIAN_FRONTEND noninteractive
@@ -42,6 +51,8 @@ ENV REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 ENV RELEASE=${RELEASE:-1}
 ENV NAT64=${NAT64:-1}
 ENV DNS64=${DNS64:-1}
+ENV WEB_GUI=${WEB_GUI:-1}
+ENV REST_API=${REST_API:-1}
 ENV DOCKER 1
 
 RUN env
@@ -58,10 +69,11 @@ ENV OTBR_DOCKER_DEPS git ca-certificates
 # Required and installed during build (script/bootstrap), could be removed
 ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-certificates \
   libreadline-dev libncurses-dev libcpputest-dev libdbus-1-dev libavahi-common-dev \
-  libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev libjsoncpp-dev
+  libavahi-client-dev libboost-dev libboost-filesystem-dev libboost-system-dev libjsoncpp-dev \
+  libnetfilter-queue-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl ca-certificates
+ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
@@ -71,11 +83,12 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
+  && ([ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS) \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \
   && chmod 644 /etc/bind/named.conf.options \
-  && [ "${OT_BACKBONE_CI}" = "1" ] || ( \
+  && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
     && mv ./etc /tmp \
     && find . -delete \
@@ -86,8 +99,7 @@ RUN apt-get update \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
     && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
     && rm -rf /var/lib/apt/lists/* \
-  ) \
-  && [ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS
+  ))
 
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 

@@ -26,8 +26,17 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definitions for a d-bus object.
+ */
+
 #ifndef OTBR_DBUS_DBUS_OBJECT_HPP_
 #define OTBR_DBUS_DBUS_OBJECT_HPP_
+
+#ifndef OTBR_LOG_TAG
+#define OTBR_LOG_TAG "DBUS"
+#endif
 
 #include <functional>
 #include <memory>
@@ -189,7 +198,7 @@ public:
 
         if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
         {
-            otbrLog(OTBR_LOG_DEBUG, "Signal %s.%s", aInterfaceName.c_str(), aPropertyName.c_str());
+            otbrLogDebug("Signal %s.%s", aInterfaceName.c_str(), aPropertyName.c_str());
             DumpDBusMessage(*signalMsg);
         }
 

@@ -26,6 +26,11 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file
+ * This file includes definition for the API to dump d-bus message.
+ */
+
 #ifndef OTBR_AGENT_DBUS_MESSAGE_DUMP_HPP_
 #define OTBR_AGENT_DBUS_MESSAGE_DUMP_HPP_
 

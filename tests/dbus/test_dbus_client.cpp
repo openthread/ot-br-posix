@@ -99,6 +99,7 @@ int main()
     UniqueDBusConnection           connection;
     std::unique_ptr<ThreadApiDBus> api;
     uint64_t                       extpanid = 0xdead00beaf00cafe;
+    std::string                    region;
 
     dbus_error_init(&error);
     connection = UniqueDBusConnection(dbus_bus_get(DBUS_BUS_SYSTEM, &error));
@@ -111,6 +112,10 @@ int main()
 
     api->AddDeviceRoleHandler(
         [](DeviceRole aRole) { printf("Device role changed to %d\n", static_cast<uint8_t>(aRole)); });
+
+    TEST_ASSERT(api->SetRadioRegion("US") == ClientError::ERROR_NONE);
+    TEST_ASSERT(api->GetRadioRegion(region) == ClientError::ERROR_NONE);
+    TEST_ASSERT(region == "US");
 
     api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
         LinkModeConfig       cfg       = {true, false, true};
@@ -134,7 +139,9 @@ int main()
                     [&api, channel, extpanid](ClientError aError) {
                         printf("Attach result %d\n", static_cast<int>(aError));
                         sleep(10);
-                        uint64_t extpanidCheck;
+                        uint64_t             extpanidCheck;
+                        std::vector<uint8_t> activeDataset;
+
                         if (aError == OTBR_ERROR_NONE)
                         {
                             std::string                           name;
@@ -166,6 +173,7 @@ int main()
                             TEST_ASSERT(api->GetPartitionId(partitionId) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->GetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);
@@ -178,10 +186,13 @@ int main()
                         {
                             exit(-1);
                         }
-                        api->Attach("Test", 0x5678, extpanid, {}, {}, UINT32_MAX, [&api](ClientError aErr) {
+                        TEST_ASSERT(api->SetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
+                        api->Attach([&api, channel, extpanid](ClientError aErr) {
                             uint8_t                routerId;
                             otbr::DBus::LeaderData leaderData;
                             uint8_t                leaderWeight;
+                            uint16_t               channelResult;
+                            uint64_t               extpanidCheck;
                             Ip6Prefix              prefix;
                             OnMeshPrefix           onMeshPrefix = {};
 
@@ -192,6 +203,12 @@ int main()
                             onMeshPrefix.mPreference = 0;
                             onMeshPrefix.mStable     = true;
 
+                            TEST_ASSERT(aErr == ClientError::ERROR_NONE);
+                            TEST_ASSERT(api->GetChannel(channelResult) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(channelResult == channel);
+                            TEST_ASSERT(api->GetExtPanId(extpanidCheck) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(extpanidCheck == extpanid);
+
                             TEST_ASSERT(api->GetLocalLeaderWeight(leaderWeight) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetLeaderData(leaderData) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetRouterId(routerId) == OTBR_ERROR_NONE);
@@ -201,7 +218,13 @@ int main()
                             TEST_ASSERT(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
 
-                            exit(static_cast<uint8_t>(aErr));
+                            api->FactoryReset(nullptr);
+                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", nullptr) ==
+                                        ClientError::OT_ERROR_NOT_FOUND);
+                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", [](ClientError aJoinError) {
+                                TEST_ASSERT(aJoinError == ClientError::OT_ERROR_NOT_FOUND);
+                                exit(0);
+                            }) == ClientError::ERROR_NONE);
                         });
                     });
     });
