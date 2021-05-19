@@ -113,6 +113,11 @@ otbr_install()
         sudo systemctl enable otbr-agent || true
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
         without WEB_GUI || sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
+
+        if [[ ${REFERENCE_DEVICE} == "1" ]]; then
+            sudo systemctl enable testharness-discovery || true
+            sudo systemctl is-enabled testharness-discovery || die 'Failed to enable otbr-agent!'
+        fi
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi
