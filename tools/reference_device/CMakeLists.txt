@@ -26,6 +26,13 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+
+install(
+        DIRECTORY ${CMAKE_SOURCE_DIR}/script/reference-device
+        FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        DESTINATION /home/pi
+)
+
 install(
         PROGRAMS testharness-discovery
         DESTINATION sbin
