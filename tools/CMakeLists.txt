@@ -47,5 +47,5 @@ target_link_libraries(steering-data PRIVATE
 )
 
 if ($ENV{REFERENCE_DEVICE})
-    add_subdirectory(testharness_discovery)
+    add_subdirectory(reference_device)
 endif()
