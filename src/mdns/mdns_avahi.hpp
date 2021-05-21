@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <avahi-client/client.h>
+#include <avahi-client/lookup.h>
 #include <avahi-client/publish.h>
 #include <avahi-common/domain.h>
 #include <avahi-common/watch.h>
@@ -380,7 +381,123 @@ private:
         AvahiEntryGroup *mGroup   = nullptr;
     };
 
-    typedef std::vector<Host> Hosts;
+    struct Subscription
+    {
+        PublisherAvahi *      mPublisherAvahi;
+        AvahiServiceResolver *mServiceResolver;
+
+        explicit Subscription(PublisherAvahi &aPublisherAvahi)
+            : mPublisherAvahi(&aPublisherAvahi)
+            , mServiceResolver(nullptr)
+        {
+        }
+
+        void Release(void);
+    };
+
+    struct ServiceSubscription : public Subscription
+    {
+        explicit ServiceSubscription(PublisherAvahi &aPublisherAvahi, std::string aType, std::string aInstanceName)
+            : Subscription(aPublisherAvahi)
+            , mType(std::move(aType))
+            , mInstanceName(std::move(aInstanceName))
+        {
+        }
+
+        void Browse(void);
+        void Resolve(uint32_t aInterfaceIndex, const char *aInstanceName, const char *aType, const char *aDomain);
+        void GetAddrInfo(uint32_t aInterfaceIndex);
+
+        static void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
+                                       AvahiIfIndex           aInterfaceIndex,
+                                       AvahiProtocol          aProtocol,
+                                       AvahiBrowserEvent      aEvent,
+                                       const char *           aName,
+                                       const char *           aType,
+                                       const char *           aDomain,
+                                       AvahiLookupResultFlags aFlags,
+                                       void *                 aContext);
+
+        void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
+                                AvahiIfIndex           aInterfaceIndex,
+                                AvahiProtocol          aProtocol,
+                                AvahiBrowserEvent      aEvent,
+                                const char *           aName,
+                                const char *           aType,
+                                const char *           aDomain,
+                                AvahiLookupResultFlags aFlags);
+
+        static void HandleResolveResult(AvahiServiceResolver * aServiceResolver,
+                                        AvahiIfIndex           aInterfaceIndex,
+                                        AvahiProtocol          Protocol,
+                                        AvahiResolverEvent     aEvent,
+                                        const char *           aName,
+                                        const char *           aType,
+                                        const char *           aDomain,
+                                        const char *           aHostName,
+                                        const AvahiAddress *   aAddress,
+                                        uint16_t               aPort,
+                                        AvahiStringList *      aTxt,
+                                        AvahiLookupResultFlags aFlags,
+                                        void *                 aContext);
+
+        void HandleResolveResult(AvahiServiceResolver * aServiceResolver,
+                                 AvahiIfIndex           aInterfaceIndex,
+                                 AvahiProtocol          Protocol,
+                                 AvahiResolverEvent     aEvent,
+                                 const char *           aName,
+                                 const char *           aType,
+                                 const char *           aDomain,
+                                 const char *           aHostName,
+                                 const AvahiAddress *   aAddress,
+                                 uint16_t               aPort,
+                                 AvahiStringList *      aTxt,
+                                 AvahiLookupResultFlags aFlags);
+
+        std::string            mType;
+        std::string            mInstanceName;
+        DiscoveredInstanceInfo mInstanceInfo;
+    };
+
+    struct HostSubscription : public Subscription
+    {
+        explicit HostSubscription(PublisherAvahi &aMDnsSd, std::string aHostName)
+            : Subscription(aMDnsSd)
+            , mHostName(std::move(aHostName))
+        {
+        }
+
+        void        Resolve(void);
+        static void HandleResolveResult(AvahiRecordBrowser *   aRecordBrowser,
+                                        AvahiIfIndex           aInterfaceIndex,
+                                        AvahiProtocol          aProtocol,
+                                        AvahiBrowserEvent      aEvent,
+                                        const char *           aName,
+                                        uint16_t               aClazz,
+                                        uint16_t               aType,
+                                        const void *           aRdata,
+                                        size_t                 aSize,
+                                        AvahiLookupResultFlags aFlags,
+                                        void *                 aContext);
+
+        void HandleResolveResult(AvahiRecordBrowser *   aRecordBrowser,
+                                 AvahiIfIndex           aInterfaceIndex,
+                                 AvahiProtocol          aProtocol,
+                                 AvahiBrowserEvent      aEvent,
+                                 const char *           aName,
+                                 uint16_t               aClazz,
+                                 uint16_t               aType,
+                                 const void *           aRdata,
+                                 size_t                 aSize,
+                                 AvahiLookupResultFlags aFlags);
+
+        std::string        mHostName;
+        DiscoveredHostInfo mHostInfo;
+    };
+
+    typedef std::vector<Host>                Hosts;
+    typedef std::vector<ServiceSubscription> ServiceSubscriptionList;
+    typedef std::vector<HostSubscription>    HostSubscriptionList;
 
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
@@ -404,6 +521,11 @@ private:
 
     std::string MakeFullName(const char *aName);
 
+    void        OnServiceResolved(ServiceSubscription &aService);
+    static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
+    void        OnHostResolved(HostSubscription &aHost);
+    void        OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode);
+
     AvahiClient *mClient;
     Hosts        mHosts;
     Services     mServices;
@@ -413,6 +535,9 @@ private:
     State        mState;
     StateHandler mStateHandler;
     void *       mContext;
+
+    ServiceSubscriptionList mSubscribedServices;
+    HostSubscriptionList    mSubscribedHosts;
 };
 
 } // namespace Mdns
