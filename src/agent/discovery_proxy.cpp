@@ -157,12 +157,12 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
         subscription.mSubscriptionCount--;
         assert(subscription.mSubscriptionCount >= 0);
 
+        otbrLogDebug("service subscriptions: %sx%d", it->ToString().c_str(), it->mSubscriptionCount);
+
         if (subscription.mSubscriptionCount == 0)
         {
             mSubscriptions.erase(it);
         }
-
-        otbrLogDebug("service subscriptions: %sx%d", it->ToString().c_str(), it->mSubscriptionCount);
 
         if (GetServiceSubscriptionCount(nameInfo.mInstanceName, nameInfo.mServiceName, nameInfo.mHostName) == 0)
         {
