@@ -140,6 +140,9 @@ LOCAL_LDLIBS := \
     -lutil
 
 ifeq ($(OTBR_MDNS),mDNSResponder)
+LOCAL_CFLAGS += \
+    -DOTBR_ENABLE_MDNS_MDNSSD=1 \
+
 LOCAL_SRC_FILES += \
     src/mdns/mdns_mdnssd.cpp \
 
