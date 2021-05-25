@@ -383,12 +383,10 @@ private:
 
     struct Subscription
     {
-        PublisherAvahi *      mPublisherAvahi;
-        AvahiServiceResolver *mServiceResolver;
+        PublisherAvahi *mPublisherAvahi;
 
         explicit Subscription(PublisherAvahi &aPublisherAvahi)
             : mPublisherAvahi(&aPublisherAvahi)
-            , mServiceResolver(nullptr)
         {
         }
 

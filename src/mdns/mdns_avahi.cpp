@@ -296,9 +296,8 @@ void Poller::Process(const MainloopContext &aMainloop)
 
 PublisherAvahi::PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext)
     : mClient(nullptr)
-    , mProtocol(aProtocol == AF_INET6  ? AVAHI_PROTO_INET6
-                : aProtocol == AF_INET ? AVAHI_PROTO_INET
-                                       : AVAHI_PROTO_UNSPEC)
+    , mProtocol(aProtocol == AF_INET6 ? AVAHI_PROTO_INET6
+                                      : aProtocol == AF_INET ? AVAHI_PROTO_INET : AVAHI_PROTO_UNSPEC)
     , mDomain(aDomain)
     , mState(State::kIdle)
     , mStateHandler(aHandler)
@@ -926,7 +925,6 @@ void PublisherAvahi::Subscription::Release(void)
 
 void PublisherAvahi::ServiceSubscription::Browse(void)
 {
-    assert(mServiceResolver == nullptr);
     assert(mPublisherAvahi->mClient != nullptr);
 
     otbrLogInfo("browse service %s", mType.c_str());
