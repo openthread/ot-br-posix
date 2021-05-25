@@ -51,7 +51,7 @@ namespace otbr {
 namespace Mdns {
 
 /**
- * This class implements MDNS service with avahi.
+ * This class implements MDNS service with mDNSResponder.
  *
  */
 class PublisherMDnsSd : public Publisher

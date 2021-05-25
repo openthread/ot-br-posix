@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/ncp_openthread.hpp"
 
 #include <assert.h>
@@ -58,17 +60,22 @@ namespace Ncp {
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 
-ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
-                                           const char *aRadioUrl,
-                                           const char *aBackboneInterfaceName)
+ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
+                                           const std::vector<const char *> &aRadioUrls,
+                                           const char *                     aBackboneInterfaceName)
     : mInstance(nullptr)
 {
+    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
+
     memset(&mConfig, 0, sizeof(mConfig));
 
     mConfig.mInterfaceName         = aInterfaceName;
     mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
-    mConfig.mRadioUrl              = aRadioUrl;
-    mConfig.mSpeedUpFactor         = 1;
+    for (const char *url : aRadioUrls)
+    {
+        mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;
+    }
+    mConfig.mSpeedUpFactor = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
@@ -202,6 +209,20 @@ void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallb
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
+void ControllerOpenThread::Reset(void)
+{
+    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
+
+    otInstanceFinalize(mInstance);
+    otSysDeinit();
+    Init();
+    for (auto &handler : mResetHandlers)
+    {
+        handler();
+    }
+    unsetenv("OTBR_NO_AUTO_ATTACH");
+}
+
 const char *ControllerOpenThread::GetThreadVersion(void)
 {
     const char *version;
@@ -215,7 +236,7 @@ const char *ControllerOpenThread::GetThreadVersion(void)
         version = "1.2.0";
         break;
     default:
-        otbrLog(OTBR_LOG_EMERG, "unexpected thread version %hu", otThreadGetVersion());
+        otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
         exit(-1);
     }
     return version;
@@ -228,7 +249,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 {
     OT_UNUSED_VARIABLE(aLogRegion);
 
-    int otbrLogLevel;
+    otbrLogLevel otbrLogLevel;
 
     switch (aLogLevel)
     {

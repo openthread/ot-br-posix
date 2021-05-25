@@ -49,7 +49,6 @@ set -ex
 
 export LC_ALL=C
 export DEBIAN_FRONTEND=noninteractive
-export RELEASE=1
 
 echo "127.0.0.1 \$(hostname)" >> /etc/hosts
 chown -R pi:pi /home/pi/repo
@@ -57,7 +56,7 @@ cd /home/pi/repo
 echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
 apt-get update
 apt-get install -y --no-install-recommends git python3-pip
-su -m -c 'script/bootstrap' pi
+su -c 'RELEASE=1 script/bootstrap' pi
 
 # Pin CMake version to 3.10.3 for issue https://github.com/openthread/ot-br-posix/issues/728.
 # For more background, see https://gitlab.kitware.com/cmake/cmake/-/issues/20568.
@@ -66,7 +65,7 @@ pip3 install scikit-build
 pip3 install cmake==3.10.3
 cmake --version
 
-su -m -c 'NETWORK_MANAGER=0 script/setup' pi
+su -c 'RELEASE=1 NETWORK_MANAGER=0 script/setup' pi
 EOF
 
     (

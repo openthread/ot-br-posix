@@ -31,6 +31,8 @@
  *   This file includes implementation for Thread border router agent instance.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/agent_instance.hpp"
 
 #include <assert.h>

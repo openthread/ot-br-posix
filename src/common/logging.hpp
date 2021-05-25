@@ -38,13 +38,17 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#ifndef OTBR_LOG_TAG
+#error "OTBR_LOG_TAG is not defined"
+#endif
+
 #include "common/types.hpp"
 
 /**
- * Logging level, which is identical to syslog
+ * Logging level.
  *
  */
-enum
+typedef enum
 {
     OTBR_LOG_EMERG,   /* system is unusable */
     OTBR_LOG_ALERT,   /* action must be taken immediately */
@@ -54,12 +58,12 @@ enum
     OTBR_LOG_NOTICE,  /* normal but significant condition */
     OTBR_LOG_INFO,    /* informational */
     OTBR_LOG_DEBUG,   /* debug-level messages */
-};
+} otbrLogLevel;
 
 /**
  * Get current log level
  */
-int otbrLogGetLevel(void);
+otbrLogLevel otbrLogGetLevel(void);
 
 /**
  * Control log to syslog
@@ -77,7 +81,17 @@ void otbrLogEnableSyslog(bool aEnabled);
  * @param[in]   aPrintStderr    Whether to log to stderr.
  *
  */
-void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr);
+void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr);
+
+/**
+ * This function log at level @p aLevel.
+ *
+ * @param[in]   aLevel         Log level of the logger.
+ * @param[in]   aLogTag        Log tag.
+ * @param[in]   aFormat        Format string as in printf.
+ *
+ */
+void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...);
 
 /**
  * This function log at level @p aLevel.
@@ -86,34 +100,7 @@ void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr);
  * @param[in]   aFormat Format string as in printf.
  *
  */
-void otbrLog(int aLevel, const char *aFormat, ...);
-
-/**
- * This macro log a action result according to @p aError.
- *
- * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_INFO,
- * otherwise OTBR_LOG_WARNING.
- *
- * @param[in]   aError  The action result.
- * @param[in]   aFormat Format string as in printf.
- *
- */
-#define otbrLogResult(aError, aFormat, ...)                                                                \
-    do                                                                                                     \
-    {                                                                                                      \
-        otbrError _err = (aError);                                                                         \
-        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, aFormat ": %s", ##__VA_ARGS__, \
-                otbrErrorString(_err));                                                                    \
-    } while (0)
-
-/**
- * This function log at level @p aLevel.
- *
- * @param[in]   aLevel  Log level of the logger.
- * @param[in]   aFormat Format string as in printf.
- *
- */
-void otbrLogv(int aLevel, const char *aFormat, va_list);
+void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list);
 
 /**
  * This function dump memory as hex string at level @p aLevel.
@@ -124,7 +111,7 @@ void otbrLogv(int aLevel, const char *aFormat, va_list);
  * @param[in]   aSize   The size of memory in bytes to be dumped.
  *
  */
-void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize);
+void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, size_t aSize);
 
 /**
  * This function converts error code to string.
@@ -141,5 +128,104 @@ const char *otbrErrorString(otbrError aError);
  *
  */
 void otbrLogDeinit(void);
+
+/**
+ * This macro log an action result according to @p aError.
+ *
+ * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_INFO,
+ * otherwise OTBR_LOG_WARNING.
+ *
+ * @param[in]   aError    The action result.
+ * @param[in]   aFormat   Format string as in printf.
+ * @param[in]   ...       Arguments for the format specification.
+ *
+ */
+#define otbrLogResult(aError, aFormat, ...)                                                               \
+    do                                                                                                    \
+    {                                                                                                     \
+        otbrError _err = (aError);                                                                        \
+        otbrLog(_err == OTBR_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG, aFormat ": %s", \
+                ##__VA_ARGS__, otbrErrorString(_err));                                                    \
+    } while (0)
+
+/**
+ * @def otbrLogEmerg
+ *
+ * Log at level emergency.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogAlert
+ *
+ * Log at level alert.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogCrit
+ *
+ * Log at level critical.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogErr
+ *
+ * Log at level error.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogWarning
+ *
+ * Log at level warning.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogNotice
+ *
+ * Log at level notice.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogInfo
+ *
+ * Log at level information.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+
+/**
+ * @def otbrLogDebug
+ *
+ * Log at level debug.
+ *
+ * @param[in] ...  Arguments for the format specification.
+ *
+ */
+#define otbrLogEmerg(...) otbrLog(OTBR_LOG_EMERG, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogAlert(...) otbrLog(OTBR_LOG_ALERT, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogCrit(...) otbrLog(OTBR_LOG_CRIT, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogErr(...) otbrLog(OTBR_LOG_ERR, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogWarning(...) otbrLog(OTBR_LOG_WARNING, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogNotice(...) otbrLog(OTBR_LOG_NOTICE, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogInfo(...) otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, __VA_ARGS__)
+#define otbrLogDebug(...) otbrLog(OTBR_LOG_DEBUG, OTBR_LOG_TAG, __VA_ARGS__)
 
 #endif // OTBR_COMMON_LOGGING_HPP_

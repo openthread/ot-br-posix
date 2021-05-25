@@ -144,7 +144,7 @@ void TaskRunner::PushTask(Milliseconds aDelay, const Task<void> aTask)
 
     // We are blocked because there are already data (written by other concurrent callers in
     // different threads) in the pipe, and the mEventFd[kRead] should be readable now.
-    otbrLog(OTBR_LOG_WARNING, "failed to write fd %d: %s", mEventFd[kWrite], strerror(errno));
+    otbrLogWarning("Failed to write fd %d: %s", mEventFd[kWrite], strerror(errno));
 
 exit:
     return;
