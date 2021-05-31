@@ -389,8 +389,6 @@ private:
             : mPublisherAvahi(&aPublisherAvahi)
         {
         }
-
-        void Release(void);
     };
 
     struct ServiceSubscription : public Subscription
@@ -399,9 +397,12 @@ private:
             : Subscription(aPublisherAvahi)
             , mType(std::move(aType))
             , mInstanceName(std::move(aInstanceName))
+            , mServiceBrowser(nullptr)
+            , mServiceResolver(nullptr)
         {
         }
 
+        void Release(void);
         void Browse(void);
         void Resolve(uint32_t aInterfaceIndex, const char *aInstanceName, const char *aType, const char *aDomain);
         void GetAddrInfo(uint32_t aInterfaceIndex);
@@ -455,6 +456,8 @@ private:
         std::string            mType;
         std::string            mInstanceName;
         DiscoveredInstanceInfo mInstanceInfo;
+        AvahiServiceBrowser *  mServiceBrowser;
+        AvahiServiceResolver * mServiceResolver;
     };
 
     struct HostSubscription : public Subscription
@@ -462,9 +465,11 @@ private:
         explicit HostSubscription(PublisherAvahi &aMDnsSd, std::string aHostName)
             : Subscription(aMDnsSd)
             , mHostName(std::move(aHostName))
+            , mRecordBrowser(nullptr)
         {
         }
 
+        void        Release(void);
         void        Resolve(void);
         static void HandleResolveResult(AvahiRecordBrowser *   aRecordBrowser,
                                         AvahiIfIndex           aInterfaceIndex,
@@ -489,8 +494,9 @@ private:
                                  size_t                 aSize,
                                  AvahiLookupResultFlags aFlags);
 
-        std::string        mHostName;
-        DiscoveredHostInfo mHostInfo;
+        std::string         mHostName;
+        DiscoveredHostInfo  mHostInfo;
+        AvahiRecordBrowser *mRecordBrowser;
     };
 
     typedef std::vector<Host>                Hosts;
