@@ -48,6 +48,9 @@ jobs:
 
   meshcop:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mdns: ["mDNSResponder", "avahi"]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -55,8 +58,11 @@ jobs:
     - name: Bootstrap
       env:
         BUILD_TARGET: "meshcop"
+        OTBR_MDNS: ${{ matrix.mdns }}
       run: tests/scripts/bootstrap.sh
     - name: Build
+      env:
+        OTBR_MDNS: ${{ matrix.mdns }}
       run: |
         script/bootstrap
         script/test build
