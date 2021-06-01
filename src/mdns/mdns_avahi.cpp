@@ -924,9 +924,10 @@ void PublisherAvahi::ServiceSubscription::Browse(void)
     assert(mPublisherAvahi->mClient != nullptr);
 
     otbrLogInfo("browse service %s", mType.c_str());
-    if (!(mServiceBrowser = avahi_service_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6,
-                                                      mType.c_str(), mPublisherAvahi->mDomain,
-                                                      static_cast<AvahiLookupFlags>(0), HandleBrowseResult, this)))
+    mServiceBrowser =
+        avahi_service_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6, mType.c_str(),
+                                  mPublisherAvahi->mDomain, static_cast<AvahiLookupFlags>(0), HandleBrowseResult, this);
+    if (!mServiceBrowser)
     {
         otbrLogWarning("failed to browse service %s: %s", mType.c_str(),
                        avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient)));
@@ -970,9 +971,10 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
                                                              const char *           aDomain,
                                                              AvahiLookupResultFlags aFlags)
 {
+    OTBR_UNUSED_VARIABLE(aServiceBrowser);
     OTBR_UNUSED_VARIABLE(aProtocol);
 
-    VerifyOrExit(mServiceBrowser == aServiceBrowser);
+    assert(mServiceBrowser == aServiceBrowser);
 
     otbrLogInfo("browse service reply: %s.%s%s inf %u, flags=%u", aName, aType, aDomain, aInterfaceIndex, aFlags);
 
@@ -984,7 +986,6 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
     {
         Resolve(aInterfaceIndex, aName, aType, aDomain);
     }
-exit:
     if (mServiceBrowser != nullptr)
     {
         avahi_service_browser_free(mServiceBrowser);
@@ -998,9 +999,10 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t    aInterfaceIndex,
                                                   const char *aDomain)
 {
     otbrLogInfo("resolve service %s %s %s inf %d", aInstanceName, aType, aDomain, aInterfaceIndex);
-    if (!(mServiceResolver = avahi_service_resolver_new(mPublisherAvahi->mClient, aInterfaceIndex, AVAHI_PROTO_INET6,
-                                                        aInstanceName, aType, aDomain, AVAHI_PROTO_INET6,
-                                                        static_cast<AvahiLookupFlags>(0), HandleResolveResult, this)))
+    mServiceResolver = avahi_service_resolver_new(mPublisherAvahi->mClient, aInterfaceIndex, AVAHI_PROTO_INET6,
+                                                  aInstanceName, aType, aDomain, AVAHI_PROTO_INET6,
+                                                  static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+    if (!mServiceResolver)
     {
         otbrLogErr("failed to resolve serivce %s: %s", mType.c_str(),
                    avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient)));
@@ -1039,6 +1041,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
                                                               AvahiStringList *      aTxt,
                                                               AvahiLookupResultFlags aFlags)
 {
+    OT_UNUSED_VARIABLE(aServiceResolver);
     OT_UNUSED_VARIABLE(aInterfaceIndex);
     OT_UNUSED_VARIABLE(aProtocol);
     OT_UNUSED_VARIABLE(aType);
@@ -1048,7 +1051,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     Ip6Address address;
     size_t     totalTxtSize = 0;
 
-    VerifyOrExit(mServiceResolver == aServiceResolver);
+    assert(mServiceResolver == aServiceResolver);
     VerifyOrExit(
         aEvent == AVAHI_RESOLVER_FOUND,
         otbrLogErr("failed to resolve service: %s", avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient))));
@@ -1108,9 +1111,10 @@ void PublisherAvahi::HostSubscription::Resolve(void)
     std::string fullHostName = mHostName + ".local.";
 
     otbrLogDebug("resolve host %s inf %d", fullHostName.c_str(), AVAHI_IF_UNSPEC);
-    if (!(mRecordBrowser = avahi_record_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6,
-                                                    fullHostName.c_str(), AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_AAAA,
-                                                    static_cast<AvahiLookupFlags>(0), HandleResolveResult, this)))
+    mRecordBrowser = avahi_record_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6,
+                                              fullHostName.c_str(), AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_AAAA,
+                                              static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+    if (!mRecordBrowser)
     {
         otbrLogErr("failed to resolve host %s: %s", fullHostName.c_str(),
                    avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient)));
@@ -1153,7 +1157,7 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser * 
     OTBR_UNUSED_VARIABLE(aFlags);
 
     Ip6Address address = *static_cast<const uint8_t(*)[16]>(aRdata);
-    VerifyOrExit(mRecordBrowser == aRecordBrowser);
+    assert(mRecordBrowser == aRecordBrowser);
     VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified());
     VerifyOrExit(aSize == 16, otbrLogErr("unexpected address data length: %u", aSize));
     otbrLogInfo("resolved host address: %s", address.ToString().c_str());
