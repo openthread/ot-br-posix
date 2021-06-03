@@ -49,6 +49,8 @@ namespace Web {
 
 #define WPAN_RESPONSE_SUCCESS "successful"
 #define WPAN_RESPONSE_FAILURE "failed"
+#define CREDENTIAL_TYPE_MASTER_KEY "masterKeyType"
+#define CREDENTIAL_TYPE_PSKD "pskdType"
 
 std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinRequest)
 {
@@ -57,7 +59,9 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     Json::FastWriter            jsonWriter;
     std::string                 response;
     int                         index;
+    std::string                 credentialType;
     std::string                 masterKey;
+    std::string                 pskd;
     std::string                 prefix;
     bool                        defaultRoute;
     int                         ret = kWpanStatus_Ok;
@@ -66,10 +70,12 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
     VerifyOrExit(reader.parse(aJoinRequest.c_str(), root) == true, ret = kWpanStatus_ParseRequestFailed);
-    index        = root["index"].asUInt();
-    masterKey    = root["masterKey"].asString();
-    prefix       = root["prefix"].asString();
-    defaultRoute = root["defaultRoute"].asBool();
+    index          = root["index"].asUInt();
+    credentialType = root["credentialType"].asString();
+    masterKey      = root["masterKey"].asString();
+    pskd           = root["pskd"].asString();
+    prefix         = root["prefix"].asString();
+    defaultRoute   = root["defaultRoute"].asBool();
 
     if (prefix.find('/') == std::string::npos)
     {
@@ -77,9 +83,24 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     }
 
     VerifyOrExit(client.FactoryReset(), ret = kWpanStatus_LeaveFailed);
-    VerifyOrExit((ret = commitActiveDataset(client, masterKey, mNetworks[index].mNetworkName, mNetworks[index].mChannel,
-                                            mNetworks[index].mExtPanId, mNetworks[index].mPanId)) == kWpanStatus_Ok);
-    VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
+
+    if (credentialType == CREDENTIAL_TYPE_MASTER_KEY)
+    {
+        VerifyOrExit(
+            (ret = commitActiveDataset(client, masterKey, mNetworks[index].mNetworkName, mNetworks[index].mChannel,
+                                       mNetworks[index].mExtPanId, mNetworks[index].mPanId)) == kWpanStatus_Ok);
+        VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
+    }
+    else if (credentialType == CREDENTIAL_TYPE_PSKD)
+    {
+        VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
+        VerifyOrExit(client.Execute("joiner start %s", pskd.c_str()) != nullptr, ret = kWpanStatus_JoinFailed);
+    }
+    else
+    {
+        ExitNow(ret = kWpanStatus_SetFailed);
+    }
+
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_JoinFailed);
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetFailed);

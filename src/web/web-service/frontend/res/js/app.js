@@ -208,7 +208,9 @@
                 };
                 $scope.isDisplay = true;
                 var data = {
+                    credentialType: $scope.thread.credentialType,
                     masterKey: $scope.thread.masterKey,
+                    pskd: $scope.thread.pskd,
                     prefix: $scope.thread.prefix,
                     defaultRoute: $scope.thread.defaultRoute,
                     index: index,
