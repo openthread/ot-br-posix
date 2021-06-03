@@ -98,7 +98,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     }
     else
     {
-        ExitNow(ret = kWpanStatus_SetFailed);
+        ExitNow(ret = kWpanStatus_JoinFailed);
     }
 
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_JoinFailed);
