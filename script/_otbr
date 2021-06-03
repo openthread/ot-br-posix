@@ -92,7 +92,7 @@ otbr_install()
         )
     fi
 
-    if without OTBR_MDNS; then
+    if [[ -z ${OTBR_MDNS:-} ]]; then
         otbr_options+=(
             "-DOTBR_MDNS=mDNSResponder"
         )
