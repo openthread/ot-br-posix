@@ -69,6 +69,7 @@ otbr_install()
         "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
+        "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
         "${otbr_options[@]}"
     )
 
@@ -89,12 +90,6 @@ otbr_install()
     if with BACKBONE_ROUTER; then
         otbr_options+=(
             "-DOTBR_BACKBONE_ROUTER=ON"
-        )
-    fi
-
-    if [[ -z ${OTBR_MDNS:-} ]]; then
-        otbr_options+=(
-            "-DOTBR_MDNS=mDNSResponder"
         )
     fi
 
