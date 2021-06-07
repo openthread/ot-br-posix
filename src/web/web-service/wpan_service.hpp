@@ -177,6 +177,7 @@ private:
     int                formActiveDataset(otbr::Web::OpenThreadClient &aClient,
                                          const std::string &          aMasterKey,
                                          const std::string &          aNetworkName,
+                                         const std::string &          aPskc,
                                          uint16_t                     aChannel,
                                          uint64_t                     aExtPanId,
                                          uint16_t                     aPanId);
