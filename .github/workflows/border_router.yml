@@ -96,7 +96,7 @@ jobs:
             --build-arg REFERENCE_DEVICE=1 \
             --build-arg OT_BACKBONE_CI=1 \
             --build-arg NAT64=0 \
-            --build-arg OTBR_MDNS="${{ matrix.otbr_mdns }}" \
+            --build-arg MDNS="${{ matrix.otbr_mdns }}" \
             --build-arg OTBR_OPTIONS="${otbr_options}"
       - name: Bootstrap OpenThread Test
         run: |
