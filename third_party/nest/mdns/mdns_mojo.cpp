@@ -31,6 +31,8 @@
  *   This file includes implementation for MDNS service based on mojo.
  */
 
+#define OTBR_LOG_TAG "MDNS"
+
 #include <arpa/inet.h>
 #include <unistd.h>
 
@@ -86,7 +88,7 @@ static otbrError ConvertMdnsResultToOtbrError(chromecast::mojom::MdnsResult aRes
 
 void MdnsMojoPublisher::LaunchMojoThreads(void)
 {
-    otbrLog(OTBR_LOG_INFO, "chromeTask");
+    otbrLogInfo("chromeTask");
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
@@ -101,8 +103,8 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
 
     if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
     {
-        otbrLog(OTBR_LOG_WARNING, "Cannot access %s, will wait until file is ready",
-                chromecast::external_mojo::GetBrokerPath().c_str());
+        otbrLogWarning("Cannot access %s, will wait until file is ready",
+                       chromecast::external_mojo::GetBrokerPath().c_str());
     }
 
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)));
@@ -136,7 +138,7 @@ MdnsMojoPublisher::MdnsMojoPublisher(StateHandler aHandler, void *aContext)
 
 void MdnsMojoPublisher::ConnectToMojo(void)
 {
-    otbrLog(OTBR_LOG_INFO, "Connecting to Mojo");
+    otbrLogInfo("Connecting to Mojo");
 
     if (!VerifyFileAccess(chromecast::external_mojo::GetBrokerPath().c_str()))
     {
@@ -159,7 +161,7 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
 {
     if (aConnector)
     {
-        otbrLog(OTBR_LOG_INFO, "Mojo connected");
+        otbrLogInfo("Mojo connected");
         aConnector->set_connection_error_callback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
         aConnector->BindInterface("chromecast", &mResponder);
@@ -247,12 +249,10 @@ otbrError MdnsMojoPublisher::PublishService(const char *   aHostName,
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
     for (const auto &txtEntry : aTxtList)
     {
-        const char *name        = txtEntry.mName;
-        size_t      nameLength  = txtEntry.mNameLength;
-        const char *value       = reinterpret_cast<const char *>(txtEntry.mValue);
-        size_t      valueLength = txtEntry.mValueLength;
+        const char *value       = reinterpret_cast<const char *>(txtEntry.mValue.data());
+        size_t      valueLength = txtEntry.mValue.size();
 
-        text.emplace_back(std::string(name, nameLength) + "=" + std::string(value, value + valueLength));
+        text.emplace_back(txtEntry.mName + "=" + std::string(value, value + valueLength));
     }
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::PublishServiceTask, base::Unretained(this),
                                                         hostName, name, transport, instanceName, aPort, text));
@@ -270,8 +270,8 @@ void MdnsMojoPublisher::PublishServiceTask(const std::string &             aHost
 {
     mResponder->UnregisterServiceInstance(aName, aInstanceName, base::DoNothing());
 
-    otbrLog(OTBR_LOG_INFO, "register service: instance %s, name %s, protocol %s", aInstanceName.c_str(), aName.c_str(),
-            aTransport.c_str());
+    otbrLogInfo("register service: instance %s, name %s, protocol %s", aInstanceName.c_str(), aName.c_str(),
+                aTransport.c_str());
     mResponder->RegisterServiceInstance(
         aHostInstanceName, aName, aTransport, aInstanceName, aPort, aText,
         base::BindOnce(
@@ -279,7 +279,7 @@ void MdnsMojoPublisher::PublishServiceTask(const std::string &             aHost
                const std::string &aInstanceName, chromecast::mojom::MdnsResult aResult) {
                 otbrError error = ConvertMdnsResultToOtbrError(aResult);
 
-                otbrLog(OTBR_LOG_INFO, "register service result: %d", static_cast<int32_t>(aResult));
+                otbrLogInfo("register service result: %d", static_cast<int32_t>(aResult));
 
                 // TODO: Actually, we should call the handles after mDNS probing and announcing.
                 // But this is not easy with current mojo mDNS APIs.
@@ -315,11 +315,10 @@ exit:
 
 void MdnsMojoPublisher::UnpublishServiceTask(const std::string &aName, const std::string &aInstanceName)
 {
-    otbrLog(OTBR_LOG_INFO, "unregister service name %s, instance %s", aName.c_str(), aInstanceName.c_str());
+    otbrLogInfo("unregister service name %s, instance %s", aName.c_str(), aInstanceName.c_str());
 
     mResponder->UnregisterServiceInstance(aName, aInstanceName, base::BindOnce([](chromecast::mojom::MdnsResult r) {
-                                              otbrLog(OTBR_LOG_INFO, "unregister service result %d",
-                                                      static_cast<int32_t>(r));
+                                              otbrLogInfo("unregister service result %d", static_cast<int32_t>(r));
                                           }));
 
     for (auto it = mPublishedServices.begin(); it != mPublishedServices.end(); ++it)
@@ -353,10 +352,10 @@ exit:
 
 void MdnsMojoPublisher::PublishHostTask(const std::string &aInstanceName, const std::string &aIpv6Address)
 {
-    otbrLog(OTBR_LOG_INFO, "register host: name = %s, address = %s", aInstanceName.c_str(), aIpv6Address.c_str());
+    otbrLogInfo("register host: name = %s, address = %s", aInstanceName.c_str(), aIpv6Address.c_str());
 
     mResponder->UnregisterHost(aInstanceName, base::BindOnce([=](chromecast::mojom::MdnsResult r) {
-                                   otbrLog(OTBR_LOG_INFO, "unregister host result: %d", static_cast<int32_t>(r));
+                                   otbrLogInfo("unregister host result: %d", static_cast<int32_t>(r));
                                }));
     mResponder->RegisterHost(
         aInstanceName, {aIpv6Address},
@@ -364,7 +363,7 @@ void MdnsMojoPublisher::PublishHostTask(const std::string &aInstanceName, const 
             [](MdnsMojoPublisher *aThis, const std::string &aInstanceName, chromecast::mojom::MdnsResult aResult) {
                 otbrError error = ConvertMdnsResultToOtbrError(aResult);
 
-                otbrLog(OTBR_LOG_INFO, "register host result: %d", static_cast<int32_t>(aResult));
+                otbrLogInfo("register host result: %d", static_cast<int32_t>(aResult));
 
                 // TODO: Actually, we should call the handles after mDNS probing and announcing.
                 // But this is not easy with current mojo mDNS APIs.
@@ -398,10 +397,10 @@ exit:
 
 void MdnsMojoPublisher::UnpublishHostTask(const std::string &aInstanceName)
 {
-    otbrLog(OTBR_LOG_INFO, "unregister host: name = %s", aInstanceName.c_str());
+    otbrLogInfo("unregister host: name = %s", aInstanceName.c_str());
 
     mResponder->UnregisterHost(aInstanceName, base::BindOnce([=](chromecast::mojom::MdnsResult r) {
-                                   otbrLog(OTBR_LOG_INFO, "unregister host result: %d", static_cast<int32_t>(r));
+                                   otbrLogInfo("unregister host result: %d", static_cast<int32_t>(r));
                                }));
 
     for (auto it = mPublishedHosts.begin(); it != mPublishedHosts.end(); ++it)
@@ -427,7 +426,7 @@ void MdnsMojoPublisher::SubscribeService(const std::string &aType, const std::st
 
 void MdnsMojoPublisher::SubscribeServiceTask(const std::string &aService, const std::string &aTransport)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] subscribe service %s.%s", aService.c_str(), aTransport.c_str());
+    otbrLogInfo("[MdnsMojo] subscribe service %s.%s", aService.c_str(), aTransport.c_str());
 
     if (mServiceListenerImpl == nullptr)
     {
@@ -437,7 +436,7 @@ void MdnsMojoPublisher::SubscribeServiceTask(const std::string &aService, const 
         mServiceListenerImpl =
             std::make_unique<MdnsDiscoveredServiceListenerImpl>(this, std::move(serviceListenerRequest));
 
-        otbrLog(OTBR_LOG_INFO, "[MdnsMojo] service listener observer added once");
+        otbrLogInfo("[MdnsMojo] service listener observer added once");
     }
 
     mResponder->StartServiceListener(aService, aTransport);
@@ -456,7 +455,7 @@ void MdnsMojoPublisher::UnsubscribeService(const std::string &aType, const std::
 
 void MdnsMojoPublisher::UnsubscribeServiceTask(const std::string &aService, const std::string &aTransport)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] unsubscribe service %s.%s", aService.c_str(), aTransport.c_str());
+    otbrLogInfo("[MdnsMojo] unsubscribe service %s.%s", aService.c_str(), aTransport.c_str());
 
     mResponder->StopServiceListener(aService, aTransport);
 }
@@ -470,7 +469,7 @@ void MdnsMojoPublisher::SubscribeHost(const std::string &aHostName)
 void MdnsMojoPublisher::SubscribeHostTask(const std::string &aHostName)
 {
     std::string fullHostName = aHostName + ".local";
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] subscribe host %s", fullHostName.c_str());
+    otbrLogInfo("[MdnsMojo] subscribe host %s", fullHostName.c_str());
 
     if (mRecordListenerImpl == nullptr)
     {
@@ -480,7 +479,7 @@ void MdnsMojoPublisher::SubscribeHostTask(const std::string &aHostName)
         mRecordListenerImpl =
             std::make_unique<MdnsDiscoveredRecordListenerImpl>(this, std::move(recordListenerRequest));
 
-        otbrLog(OTBR_LOG_INFO, "[MdnsMojo] record listener observer added once");
+        otbrLogInfo("[MdnsMojo] record listener observer added once");
     }
 
     mResponder->StartRecordListener(fullHostName, kResourceRecordTypeAaaa);
@@ -496,7 +495,7 @@ void MdnsMojoPublisher::UnsubscribeHost(const std::string &aHostName)
 void MdnsMojoPublisher::UnsubscribeHostTask(const std::string aHostName)
 {
     std::string fullHostName = aHostName + ".local";
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] unsubscribe host %s", fullHostName.c_str());
+    otbrLogInfo("[MdnsMojo] unsubscribe host %s", fullHostName.c_str());
 
     mResponder->StopRecordListener(fullHostName, kResourceRecordTypeA);
     mResponder->StopRecordListener(fullHostName, kResourceRecordTypeAaaa);
@@ -536,8 +535,8 @@ void MdnsMojoPublisher::NotifyDiscoveredServiceInstance(const std::string &     
 
 void MdnsMojoPublisher::NotifyDiscoveredRecord(chromecast::mojom::MdnsDiscoveredRecordPtr aInfo)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] record discovered, name:%s type:%d len:%d", aInfo->name.c_str(), aInfo->type,
-            aInfo->rdata.size());
+    otbrLogInfo("[MdnsMojo] record discovered, name:%s type:%d len:%d", aInfo->name.c_str(), aInfo->type,
+                aInfo->rdata.size());
 
     switch (aInfo->type)
     {
@@ -550,8 +549,8 @@ void MdnsMojoPublisher::NotifyDiscoveredRecord(chromecast::mojom::MdnsDiscovered
 
         VerifyOrExit(aInfo->rdata.size() == sizeof(Ip6Address));
 
-        otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Host %s AAAA RR found: %s = %s", hostNameStripDomain.c_str(),
-                hostName.c_str(), address.ToString().c_str());
+        otbrLogInfo("[MdnsMojo] Host %s AAAA RR found: %s = %s", hostNameStripDomain.c_str(), hostName.c_str(),
+                    address.ToString().c_str());
 
         hostInfo.mHostName = hostName;
         hostInfo.mAddresses.push_back(address);
@@ -697,8 +696,8 @@ void MdnsMojoPublisher::MdnsDiscoveredServiceListenerImpl::OnServiceDiscovered(
     const std::string &                          aTransport,
     chromecast::mojom::MdnsDiscoveredInstancePtr aInfo)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Service is updated: %s.%s.%s host %s", aInstanceName.c_str(),
-            aServiceName.c_str(), aTransport.c_str(), aInfo->host_name.c_str());
+    otbrLogInfo("[MdnsMojo] Service is updated: %s.%s.%s host %s", aInstanceName.c_str(), aServiceName.c_str(),
+                aTransport.c_str(), aInfo->host_name.c_str());
 
     mOwner->NotifyDiscoveredServiceInstance(aInstanceName, aServiceName, aTransport, std::move(aInfo));
 }
@@ -709,8 +708,8 @@ void MdnsMojoPublisher::MdnsDiscoveredServiceListenerImpl::OnServiceUpdated(
     const std::string &                          aTransport,
     chromecast::mojom::MdnsDiscoveredInstancePtr aInfo)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Service is updated: %s.%s.%s host %s", aInstanceName.c_str(),
-            aServiceName.c_str(), aTransport.c_str(), aInfo->host_name.c_str());
+    otbrLogInfo("[MdnsMojo] Service is updated: %s.%s.%s host %s", aInstanceName.c_str(), aServiceName.c_str(),
+                aTransport.c_str(), aInfo->host_name.c_str());
 
     mOwner->NotifyDiscoveredServiceInstance(aInstanceName, aServiceName, aTransport, std::move(aInfo));
 }
@@ -719,15 +718,15 @@ void MdnsMojoPublisher::MdnsDiscoveredServiceListenerImpl::OnServiceRemoved(cons
                                                                             const std::string &aServiceName,
                                                                             const std::string &aTransport)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Service is removed: %s.%s.%s", aInstanceName.c_str(), aServiceName.c_str(),
-            aTransport.c_str());
+    otbrLogInfo("[MdnsMojo] Service is removed: %s.%s.%s", aInstanceName.c_str(), aServiceName.c_str(),
+                aTransport.c_str());
 }
 
 void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordDiscovered(
     chromecast::mojom::MdnsDiscoveredRecordPtr aInfo)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Record is discovered, name:%s type:%d len:%dB", aInfo->name.c_str(), aInfo->type,
-            aInfo->rdata.size());
+    otbrLogInfo("[MdnsMojo] Record is discovered, name:%s type:%d len:%dB", aInfo->name.c_str(), aInfo->type,
+                aInfo->rdata.size());
 
     mOwner->NotifyDiscoveredRecord(std::move(aInfo));
 }
@@ -735,15 +734,15 @@ void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordDiscovered(
 void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordUpdated(
     chromecast::mojom::MdnsDiscoveredRecordPtr aInfo)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Record is updated, name:%s type:%d len:%dB", aInfo->name.c_str(), aInfo->type,
-            aInfo->rdata.size());
+    otbrLogInfo("[MdnsMojo] Record is updated, name:%s type:%d len:%dB", aInfo->name.c_str(), aInfo->type,
+                aInfo->rdata.size());
 
     mOwner->NotifyDiscoveredRecord(std::move(aInfo));
 }
 
 void MdnsMojoPublisher::MdnsDiscoveredRecordListenerImpl::OnRecordRemoved(const std::string &aName, uint16_t aType)
 {
-    otbrLog(OTBR_LOG_INFO, "[MdnsMojo] Record is removed, name:%s type:%d", aName.c_str(), aType);
+    otbrLogInfo("[MdnsMojo] Record is removed, name:%s type:%d", aName.c_str(), aType);
 }
 
 } // namespace Mdns
