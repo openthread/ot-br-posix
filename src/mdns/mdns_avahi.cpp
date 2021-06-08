@@ -760,8 +760,8 @@ otbrError PublisherAvahi::PublishHost(const char *aName, const uint8_t *aAddress
     memcpy(&address.data.ipv6.address[0], aAddress, aAddressLength);
 
     otbrLogInfo("Create host %s", aName);
-    avahiError = avahi_entry_group_add_address(hostIt->mGroup, AVAHI_IF_UNSPEC, mProtocol,
-                                               AVAHI_PUBLISH_NO_REVERSE, fullHostName.c_str(), &address);
+    avahiError = avahi_entry_group_add_address(hostIt->mGroup, AVAHI_IF_UNSPEC, mProtocol, AVAHI_PUBLISH_NO_REVERSE,
+                                               fullHostName.c_str(), &address);
     SuccessOrExit(avahiError);
 
     otbrLogInfo("Commit host %s", aName);
