@@ -40,6 +40,12 @@
             </div>
           </md-input-container>
         </div>
+         <div layout="row"> 
+          <md-button ng-show="joinForm.pskd.$valid" class="mdl-button--raised" ng-click="qrcode()">
+           Get Connect QR Code
+          </md-button>
+         </div>
+         <br>
         <div layout="row">
           <md-input-container flex="80">
             <label>Prefix</label>

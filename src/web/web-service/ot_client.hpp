@@ -102,6 +102,17 @@ public:
     char *Execute(const char *aFormat, ...);
 
     /**
+     * This method reads from OpenThread CLI.
+     *
+     * @param[in]   response    The expected read response.
+     * @param[in]   timeout     Timeout for the read, in ms.
+     *
+     * @returns A pointer to the output if the expected response is found, otherwise nullptr.
+     *
+     */
+    char *Read(const char *response, int timeout);
+
+    /**
      * This method scans Thread network.
      *
      * @param[out]  aNetworks   A pointer to the buffer to store network information.

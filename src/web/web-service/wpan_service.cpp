@@ -52,6 +52,39 @@ namespace Web {
 #define CREDENTIAL_TYPE_MASTER_KEY "masterKeyType"
 #define CREDENTIAL_TYPE_PSKD "pskdType"
 
+std::string WpanService::HandleGetQRCodeRequest()
+{
+    Json::Value                 root, networkInfo;
+    Json::FastWriter            jsonWriter;
+    std::string                 response;
+    int                         ret = kWpanStatus_Ok;
+    otbr::Web::OpenThreadClient client(mIfName);
+    char *                      rval;
+
+    VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
+
+    // eui64 is the only required information to generate the QR code.
+    VerifyOrExit((rval = client.Execute("eui64")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+
+exit:
+
+    root.clear();
+    root["result"] = WPAN_RESPONSE_SUCCESS;
+
+    if (ret == kWpanStatus_Ok)
+    {
+        root["eui64"] = rval;
+    }
+    else
+    {
+        root["result"] = WPAN_RESPONSE_FAILURE;
+        otbrLogErr("Wpan service error: %d", ret);
+    }
+
+    response = jsonWriter.write(root);
+    return response;
+}
+
 std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinRequest)
 {
     Json::Value                 root;
@@ -66,6 +99,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     bool                        defaultRoute;
     int                         ret = kWpanStatus_Ok;
     otbr::Web::OpenThreadClient client(mIfName);
+    char *                      rval;
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -95,6 +129,23 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     {
         VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
         VerifyOrExit(client.Execute("joiner start %s", pskd.c_str()) != nullptr, ret = kWpanStatus_JoinFailed);
+        VerifyOrExit((rval = client.Read("Join ", 5000)) != nullptr, ret = kWpanStatus_JoinFailed);
+        if (strstr(rval, "Join success"))
+        {
+            ExitNow();
+        }
+        else if (strstr(rval, "Join failed [NotFound]"))
+        {
+            ExitNow(ret = kWpanStatus_JoinFailed_NotFound);
+        }
+        else if (strstr(rval, "Join failed [Security]"))
+        {
+            ExitNow(ret = kWpanStatus_JoinFailed_Security);
+        }
+        else
+        {
+            ExitNow(ret = kWpanStatus_JoinFailed);
+        }
     }
     else
     {
@@ -104,6 +155,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     VerifyOrExit(client.Execute("thread start") != nullptr, ret = kWpanStatus_JoinFailed);
     VerifyOrExit(client.Execute("prefix add %s paso%s", prefix.c_str(), (defaultRoute ? "r" : "")) != nullptr,
                  ret = kWpanStatus_SetFailed);
+
 exit:
 
     root.clear();
@@ -115,6 +167,17 @@ exit:
         otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
+
+    root["message"] = "";
+    if (ret == kWpanStatus_JoinFailed_NotFound)
+    {
+        root["message"] = "Please make sure this joiner has been added by an active commissioner.";
+    }
+    else if (ret == kWpanStatus_JoinFailed_Security)
+    {
+        root["message"] = "Please make sure the provided PSKd matches the one given to the commissioner.";
+    }
+
     response = jsonWriter.write(root);
     return response;
 }

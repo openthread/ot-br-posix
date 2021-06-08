@@ -74,6 +74,14 @@ class WpanService
 {
 public:
     /**
+     * This method handles http request to get information to generate QR code.
+     *
+     * @returns The string to the http response of getting QR code.
+     *
+     */
+    std::string HandleGetQRCodeRequest(void);
+
+    /**
      * This method handles the http request to join network.
      *
      * @param[in]  aJoinRequest  A reference to the http request of joining network.
@@ -196,6 +204,8 @@ private:
         kWpanStatus_FormFailed,
         kWpanStatus_GetPropertyFailed,
         kWpanStatus_JoinFailed,
+        kWpanStatus_JoinFailed_NotFound,
+        kWpanStatus_JoinFailed_Security,
         kWpanStatus_LeaveFailed,
         kWpanStatus_NetworkNotFound,
         kWpanStatus_Offline,

@@ -97,6 +97,7 @@ public:
 private:
     typedef std::string (*HttpRequestCallback)(const std::string &aRequest, void *aUserData);
     static std::string HandleJoinNetworkRequest(const std::string &aJoinRequest, void *aUserData);
+    static std::string HandleGetQRCodeRequest(const std::string &aGetQRCodeRequest, void *aUserData);
     static std::string HandleFormNetworkRequest(const std::string &aFormRequest, void *aUserData);
     static std::string HandleAddPrefixRequest(const std::string &aAddPrefixRequest, void *aUserData);
     static std::string HandleDeletePrefixRequest(const std::string &aDeletePrefixRequest, void *aUserData);
@@ -106,6 +107,7 @@ private:
     static std::string HandleCommission(const std::string &aCommissionRequest, void *aUserData);
 
     std::string HandleJoinNetworkRequest(const std::string &aJoinRequest);
+    std::string HandleGetQRCodeRequest(const std::string &aGetQRCodeRequest);
     std::string HandleFormNetworkRequest(const std::string &aFormRequest);
     std::string HandleAddPrefixRequest(const std::string &aAddPrefixRequest);
     std::string HandleDeletePrefixRequest(const std::string &aDeletePrefixRequest);
@@ -114,6 +116,7 @@ private:
     std::string HandleCommission(const std::string &aCommissionRequest);
 
     void HandleHttpRequest(const char *aUrl, const char *aMethod, HttpRequestCallback aCallback);
+    void ResponseGetQRCode(void);
     void ResponseJoinNetwork(void);
     void ResponseFormNetwork(void);
     void ResponseAddOnMeshPrefix(void);
