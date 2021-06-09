@@ -120,9 +120,8 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
 
     if (credentialType == CREDENTIAL_TYPE_MASTER_KEY)
     {
-        VerifyOrExit(
-          (ret = joinActiveDataset(client, masterKey, mNetworks[index].mChannel, mNetworks[index].mPanId)) == 
-          kWpanStatus_Ok);
+        VerifyOrExit((ret = joinActiveDataset(client, masterKey, mNetworks[index].mChannel, mNetworks[index].mPanId)) ==
+                     kWpanStatus_Ok);
         VerifyOrExit(client.Execute("ifconfig up") != nullptr, ret = kWpanStatus_JoinFailed);
     }
     else if (credentialType == CREDENTIAL_TYPE_PSKD)
