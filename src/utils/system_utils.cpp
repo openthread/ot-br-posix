@@ -31,6 +31,8 @@
  *   The file implements POSIX system utilities.
  */
 
+#define OTBR_LOG_TAG "UTILS"
+
 #include "system_utils.hpp"
 
 #include <stdarg.h>
@@ -59,7 +61,15 @@ int ExecuteCommand(const char *aFormat, ...)
 
     exitCode = system(cmd);
 
-    otbrLog(exitCode == 0 ? OTBR_LOG_INFO : OTBR_LOG_WARNING, "$?=%-3d: %s", exitCode, cmd);
+    if (exitCode == 0)
+    {
+        otbrLogInfo("$?=%-3d: %s", exitCode, cmd);
+    }
+    else
+    {
+        otbrLogWarning("$?=%-3d: %s", exitCode, cmd);
+    }
+
     return exitCode;
 }
 

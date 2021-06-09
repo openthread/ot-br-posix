@@ -34,8 +34,10 @@ readonly REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
 otbr_uninstall()
 {
     if have systemctl; then
-        sudo systemctl stop otbr-web otbr-agent || true
-        sudo systemctl disable otbr-web otbr-agent || true
+        sudo systemctl stop otbr-web || true
+        sudo systemctl stop otbr-agent || true
+        sudo systemctl disable otbr-web || true
+        sudo systemctl disable otbr-agent || true
         ! sudo systemctl is-enabled otbr-web
         ! sudo systemctl is-enabled otbr-agent
     fi
@@ -64,18 +66,25 @@ otbr_install()
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
-        "-DOTBR_WEB=ON"
-        "-DOTBR_REST=ON"
+        "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_MDNS=mDNSResponder"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "${otbr_options[@]}"
     )
 
+    if with WEB_GUI; then
+        otbr_options+=("-DOTBR_WEB=ON")
+    fi
+
     if with BORDER_ROUTING; then
         otbr_options+=(
             "-DOTBR_BORDER_ROUTING=ON"
         )
+    fi
+
+    if with REST_API; then
+        otbr_options+=("-DOTBR_REST=ON")
     fi
 
     if with BACKBONE_ROUTER; then
@@ -94,14 +103,21 @@ otbr_install()
 
     (./script/cmake-build "${otbr_options[@]}" \
         && cd "${OTBR_TOP_BUILDDIR}" \
+        && ninja \
         && sudo ninja install)
 
     if have systemctl; then
         sudo systemctl reload dbus
         sudo systemctl daemon-reload
-        sudo systemctl enable otbr-web otbr-agent || true
+        without WEB_GUI || sudo systemctl enable otbr-web || true
+        sudo systemctl enable otbr-agent || true
         sudo systemctl is-enabled otbr-agent || die 'Failed to enable otbr-agent!'
-        sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
+        without WEB_GUI || sudo systemctl is-enabled otbr-web || die 'Failed to enable otbr-web!'
+
+        if [[ ${REFERENCE_DEVICE} == "1" ]]; then
+            sudo systemctl enable testharness-discovery || true
+            sudo systemctl is-enabled testharness-discovery || die 'Failed to enable otbr-agent!'
+        fi
     else
         echo >&2 ' *** WARNING: systemctl not found. otbr cannot start on boot.'
     fi

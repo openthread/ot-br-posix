@@ -70,8 +70,11 @@ public:
     /**
      * This constructor creates an OpenThread client.
      *
+     * @param[in]   aNetifName  The Thread network interface name.
+     *
      */
-    OpenThreadClient(void);
+    OpenThreadClient(const char *aNetifName);
+
     /**
      * This destructor destories an OpenThread client.
      *
@@ -124,9 +127,10 @@ private:
         kDefaultTimeout = 800,  ///< Default timeout(ms) waiting for a command finish.
     };
 
-    char mBuffer[kBufferSize];
-    int  mTimeout; /// Timeout in milliseconds
-    int  mSocket;
+    const char *mNetifName;
+    char        mBuffer[kBufferSize];
+    int         mTimeout; /// Timeout in milliseconds
+    int         mSocket;
 };
 
 } // namespace Web

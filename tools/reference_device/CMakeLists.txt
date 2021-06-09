@@ -1,6 +1,5 @@
-#!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,12 +26,26 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# shellcheck disable=SC2034
-NAT64=0
-DNS64=0
-DHCPV6_PD=0
-NETWORK_MANAGER=0
-BACKBONE_ROUTER=0
-BORDER_ROUTING=0
-WEB_GUI=1
-REST_API=1
+
+install(
+        DIRECTORY ${CMAKE_SOURCE_DIR}/script/reference-device
+        FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+        DESTINATION /home/pi
+)
+
+install(
+        PROGRAMS testharness-discovery
+        DESTINATION sbin
+)
+
+if(OTBR_SYSTEMD_UNIT_DIR)
+    configure_file(testharness-discovery.service.in testharness-discovery.service)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/testharness-discovery.service
+            DESTINATION ${OTBR_SYSTEMD_UNIT_DIR}
+            )
+else()
+    configure_file(testharness-discovery.init.in testharness-discovery.init)
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/testharness-discovery.init
+            DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
+            RENAME testharness-discovery)
+endif()

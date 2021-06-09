@@ -45,3 +45,7 @@ target_link_libraries(steering-data PRIVATE
     otbr-utils
     mbedtls
 )
+
+if ($ENV{REFERENCE_DEVICE})
+    add_subdirectory(reference_device)
+endif()

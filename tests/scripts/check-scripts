@@ -72,7 +72,7 @@ main()
     SERVICES_PID=$!
     sudo service tayga start
     echo 'Waiting for services to be ready...'
-    sleep 10
+    sleep 30
     check_otbr_agent
     netstat -an | grep 80
     pidof tayga

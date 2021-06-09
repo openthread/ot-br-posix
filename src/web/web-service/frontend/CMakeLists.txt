@@ -1,6 +1,5 @@
-#!/bin/sh
 #
-#  Copyright (c) 2017, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,12 +26,32 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# shellcheck disable=SC2034
-NAT64=0
-DNS64=0
-DHCPV6_PD=0
-NETWORK_MANAGER=0
-BACKBONE_ROUTER=0
-BORDER_ROUTING=0
-WEB_GUI=1
-REST_API=1
+set(NPM_CSS_DEPENDENCIES
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular-material/angular-material.min.css
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/material-design-lite/material.min.css
+)
+set(NPM_JS_DEPENDENCIES
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular-animate/angular-animate.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular-aria/angular-aria.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular-material/angular-material.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular-messages/angular-messages.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/angular/angular.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/d3/d3.min.js
+    ${CMAKE_CURRENT_BINARY_DIR}/node_modules/material-design-lite/material.min.js
+)
+
+add_custom_target(otbr-web-frontend
+    COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/package.json .
+    COMMAND npm install)
+
+install(FILES index.html join.dialog.html
+    DESTINATION ${OTBR_WEB_DATADIR}/frontend)
+
+install(DIRECTORY res
+    DESTINATION ${OTBR_WEB_DATADIR}/frontend)
+
+install(FILES ${NPM_JS_DEPENDENCIES}
+    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/js)
+
+install(FILES ${NPM_CSS_DEPENDENCIES}
+    DESTINATION ${OTBR_WEB_DATADIR}/frontend/res/css)

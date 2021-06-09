@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "LOG"
+
 #include "common/logging.hpp"
 
 #include <assert.h>
@@ -38,49 +40,89 @@
 #include <sys/time.h>
 #include <syslog.h>
 
+#include <sstream>
+
+#include "common/code_utils.hpp"
 #include "common/time.hpp"
 
-static int sLevel = LOG_INFO;
+static otbrLogLevel sLevel            = OTBR_LOG_INFO;
+static const char   sLevelString[][8] = {
+    "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
+};
 
 /** Get the current debug log level */
-int otbrLogGetLevel(void)
+otbrLogLevel otbrLogGetLevel(void)
 {
     return sLevel;
 }
 
 /** Initialize logging */
-void otbrLogInit(const char *aIdent, int aLevel, bool aPrintStderr)
+void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
 {
     assert(aIdent);
-    assert(aLevel >= LOG_EMERG && aLevel <= LOG_DEBUG);
+    assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
 
     openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), LOG_USER);
     sLevel = aLevel;
 }
 
-/** log to the syslog or log file */
-void otbrLog(int aLevel, const char *aFormat, ...)
+static const char *GetPrefix(const char *aLogTag)
 {
-    va_list ap;
+    // Log prefix format : -xxx-----
+    const uint8_t kMaxTagSize = 7;
+    const uint8_t kBufferSize = kMaxTagSize + 3;
+    static char   prefix[kBufferSize];
+    uint8_t       tagLength = strlen(aLogTag) > kMaxTagSize ? kMaxTagSize : strlen(aLogTag);
+    int           index     = 0;
 
-    va_start(ap, aFormat);
-    otbrLogv(aLevel, aFormat, ap);
-    va_end(ap);
+    if (strlen(aLogTag) > 0)
+    {
+        prefix[0] = '-';
+        memcpy(&prefix[1], aLogTag, tagLength);
+
+        index = tagLength + 1;
+
+        memset(&prefix[index], '-', kMaxTagSize - tagLength + 1);
+        index += kMaxTagSize - tagLength + 1;
+    }
+
+    prefix[index++] = '\0';
+
+    return prefix;
 }
 
 /** log to the syslog or log file */
-void otbrLogv(int aLevel, const char *aFormat, va_list ap)
+void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
+{
+    const uint16_t kBufferSize = 1024;
+    va_list        ap;
+    char           buffer[kBufferSize];
+
+    va_start(ap, aFormat);
+
+    if ((aLevel <= sLevel) && (vsnprintf(buffer, sizeof(buffer), aFormat, ap) > 0))
+    {
+        syslog(static_cast<int>(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+    }
+
+    va_end(ap);
+
+    return;
+}
+
+/** log to the syslog or log file */
+void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list ap)
 {
     assert(aFormat);
 
     if (aLevel <= sLevel)
     {
-        vsyslog(aLevel, aFormat, ap);
+        vsyslog(static_cast<int>(aLevel), aFormat, ap);
     }
 }
 
 /** Hex dump data to the log */
-void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
+void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
 {
     static const char kHexChars[] = "0123456789abcdef";
     assert(aPrefix && (aMemory || aSize == 0));
@@ -126,7 +168,7 @@ void otbrDump(int aLevel, const char *aPrefix, const void *aMemory, size_t aSize
         }
         *ch = 0;
 
-        syslog(aLevel, "%s: %04x: %s", aPrefix, addr, hex);
+        syslog(static_cast<int>(aLevel), "%s: %04x: %s", aPrefix, addr, hex);
     }
 }
 

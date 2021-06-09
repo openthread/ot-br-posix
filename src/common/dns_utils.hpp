@@ -37,26 +37,54 @@
 #include "common/types.hpp"
 
 /**
- * This enum represents a DNS name type.
+ * This structure represents DNS Name information.
+ *
+ * @sa SplitFullDnsName
  *
  */
-enum DnsNameType
+struct DnsNameInfo
 {
-    kDnsNameTypeUnknown,
-    kDnsNameTypeService,
-    kDnsNameTypeInstance,
-    kDnsNameTypeHost,
+    std::string mInstanceName; ///< Instance name, or empty if the DNS name is not a service instance.
+    std::string mServiceName;  ///< Service name, or empty if the DNS name is not a service or service instance.
+    std::string mHostName;     ///< Host name, or empty if the DNS name is not a host name.
+    std::string mDomain;       ///< Domain name.
+
+    /**
+     * This method returns if the DNS name is a service instance.
+     *
+     * @returns Whether the DNS name is a service instance.
+     *
+     */
+    bool IsServiceInstance(void) const { return !mInstanceName.empty(); };
+
+    /**
+     * This method returns if the DNS name is a service.
+     *
+     * @returns Whether the DNS name is a service.
+     *
+     */
+    bool IsService(void) const { return !mServiceName.empty() && mInstanceName.empty(); }
+
+    /**
+     * This method returns if the DNS name is a host.
+     *
+     * @returns Whether the DNS name is a host.
+     *
+     */
+    bool IsHost(void) const { return mServiceName.empty(); }
 };
 
 /**
- * This function gets the DNS name type.
+ * This method splits a full DNS name into name components.
  *
- * @param[in] aFullName The DNS name.
+ * @param[in] aName     The full DNS name to dissect.
  *
- * @returns  The DNS name type.
+ * @returns  A `DnsNameInfo` structure containing DNS name information.
+ *
+ * @sa DnsNameInfo
  *
  */
-DnsNameType GetDnsNameType(const std::string &aFullName);
+DnsNameInfo SplitFullDnsName(const std::string &aName);
 
 /**
  * This function splits a full service name into components.

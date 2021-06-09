@@ -80,6 +80,10 @@ readonly OTBR_WEB_HOST=127.0.0.1
 readonly OTBR_WEB_PORT=8773
 readonly OTBR_WEB_URL="http://${OTBR_WEB_HOST}:${OTBR_WEB_PORT}"
 
+# External commissioner
+readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
+
 #
 # NOTE Joiner pass phrase:
 #   Must be at least 6 bytes long
@@ -269,6 +273,7 @@ ba_start()
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
+    sleep 5
     write_syslog "AGENT: starting"
 
     # we launch this in the background
@@ -324,15 +329,12 @@ network_form()
     # verify mDNS is working as expected.
     local mdns_result="${TEST_BASE}"/mdns_result.log
     avahi-browse -aprt | tee "${mdns_result}"
-    grep -q "${OT_NETWORK_NAME}" "${mdns_result}"
+    OT_BORDER_AGENT_PORT=$(grep -a "${OT_NETWORK_NAME}" "${mdns_result}" | grep -ao ';[0-9]\{5\};' | head -n1 | tr -d ';')
     rm "${mdns_result}"
 }
 
 ot_commissioner_build()
 {
-    readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
-    readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
-
     if [[ -x ${OT_COMMISSIONER_PATH} ]]; then
         return 0
     fi
@@ -366,7 +368,7 @@ set timeout 1
 expect_after {
     timeout { exit 1 }
 }
-send "start :: 49191\n"
+send "start :: $OT_BORDER_AGENT_PORT\n"
 expect "done"
 sleep 5
 send "active\n"
@@ -519,8 +521,8 @@ test_meshcop_service()
     service="$(scan_meshcop_service)"
     grep "${new_network_name}._meshcop\._udp" <<<"${service}"
 
-    # Test if the the meshcop service is unpublished when otbr-agent exits.
-    sudo "${OT_CTL}" exit
+    # Test if the the meshcop service is unpublished when otbr-agent stops.
+    sudo killall "${OTBR_AGENT}"
     sleep 2
     service="$(scan_meshcop_service)"
     if grep -q "${new_network_name}._meshcop\._udp" <<<"${service}"; then

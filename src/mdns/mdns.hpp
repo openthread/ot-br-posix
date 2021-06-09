@@ -35,6 +35,7 @@
 #define OTBR_AGENT_MDNS_HPP_
 
 #include <functional>
+#include <string>
 #include <vector>
 
 #include <sys/select.h>
@@ -74,10 +75,8 @@ public:
      */
     struct TxtEntry
     {
-        const char *   mName;        ///< The name of the TXT entry.
-        size_t         mNameLength;  ///< The length of the name of the TXT entry.
-        const uint8_t *mValue;       ///< The value of the TXT entry.
-        size_t         mValueLength; ///< The length of the value of the TXT entry.
+        std::string          mName;  ///< The name of the TXT entry.
+        std::vector<uint8_t> mValue; ///< The value of the TXT entry.
 
         TxtEntry(const char *aName, const char *aValue)
             : TxtEntry(aName, reinterpret_cast<const uint8_t *>(aValue), strlen(aValue))
@@ -90,10 +89,8 @@ public:
         }
 
         TxtEntry(const char *aName, size_t aNameLength, const uint8_t *aValue, size_t aValueLength)
-            : mName(aName)
-            , mNameLength(aNameLength)
-            , mValue(aValue)
-            , mValueLength(aValueLength)
+            : mName(aName, aNameLength)
+            , mValue(aValue, aValue + aValueLength)
         {
         }
     };

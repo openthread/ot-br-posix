@@ -26,6 +26,13 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+pkg_check_modules(JSONCPP jsoncpp REQUIRED)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS filesystem system)
+set(OTBR_WEB_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/otbr-web)
+
 add_executable(otbr-web
     main.cpp
     web-service/ot_client.cpp
@@ -61,14 +68,9 @@ install(
     DESTINATION sbin
 )
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/angular ${CMAKE_CURRENT_BINARY_DIR}/angular)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/angular-material ${CMAKE_CURRENT_BINARY_DIR}/angular-material)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/mdl ${CMAKE_CURRENT_BINARY_DIR}/mdl)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/d3js ${CMAKE_CURRENT_BINARY_DIR}/d3js)
+add_subdirectory(web-service/frontend)
 
-install(DIRECTORY web-service/frontend
-    DESTINATION ${OTBR_WEB_DATADIR}
-)
+add_dependencies(otbr-web otbr-web-frontend)
 
 if(OTBR_SYSTEMD_UNIT_DIR)
     configure_file(otbr-web.service.in otbr-web.service)

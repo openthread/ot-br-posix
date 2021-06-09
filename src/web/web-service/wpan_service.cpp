@@ -31,6 +31,8 @@
  *   This file implements the wpan controller service
  */
 
+#define OTBR_LOG_TAG "WEB"
+
 #include "web/web-service/wpan_service.hpp"
 
 #include <sstream>
@@ -44,9 +46,6 @@
 
 namespace otbr {
 namespace Web {
-
-const char *WpanService::kBorderAgentHost = "127.0.0.1";
-const char *WpanService::kBorderAgentPort = "49191";
 
 #define WPAN_RESPONSE_SUCCESS "successful"
 #define WPAN_RESPONSE_FAILURE "failed"
@@ -62,7 +61,7 @@ std::string WpanService::HandleJoinNetworkRequest(const std::string &aJoinReques
     std::string                 prefix;
     bool                        defaultRoute;
     int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -92,7 +91,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -117,7 +116,7 @@ std::string WpanService::HandleFormNetworkRequest(const std::string &aFormReques
     uint64_t                    extPanId;
     bool                        defaultRoute;
     int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -158,7 +157,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -174,7 +173,7 @@ std::string WpanService::HandleAddPrefixRequest(const std::string &aAddPrefixReq
     std::string                 prefix;
     bool                        defaultRoute;
     int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -198,7 +197,7 @@ exit:
     root["error"]  = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -213,7 +212,7 @@ std::string WpanService::HandleDeletePrefixRequest(const std::string &aDeleteReq
     std::string                 response;
     std::string                 prefix;
     int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_SetFailed);
 
@@ -235,7 +234,7 @@ exit:
     root["error"] = ret;
     if (ret != kWpanStatus_Ok)
     {
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogErr("Wpan service error: %d", ret);
         root["result"] = WPAN_RESPONSE_FAILURE;
     }
     response = jsonWriter.write(root);
@@ -248,7 +247,7 @@ std::string WpanService::HandleStatusRequest()
     Json::FastWriter            jsonWriter;
     std::string                 response, networkName, extPanId, propertyValue;
     int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
     char *                      rval;
 
     networkInfo["WPAN service"] = "uninitialized";
@@ -378,7 +377,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLog(OTBR_LOG_ERR, "wpan service error: %d", ret);
+        otbrLogErr("Wpan service error: %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -391,7 +390,7 @@ std::string WpanService::HandleAvailableNetworkRequest()
     Json::FastWriter            jsonWriter;
     std::string                 response;
     int                         ret = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
 
     VerifyOrExit(client.Connect(), ret = kWpanStatus_ScanFailed);
     VerifyOrExit((mNetworksCount = client.Scan(mNetworks, sizeof(mNetworks) / sizeof(mNetworks[0]))) > 0,
@@ -417,7 +416,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLog(OTBR_LOG_ERR, "Error is %d", ret);
+        otbrLogErr("Error is %d", ret);
     }
     root["error"] = ret;
     response      = jsonWriter.write(root);
@@ -427,7 +426,7 @@ exit:
 int WpanService::GetWpanServiceStatus(std::string &aNetworkName, std::string &aExtPanId) const
 {
     int                         status = kWpanStatus_Ok;
-    otbr::Web::OpenThreadClient client;
+    otbr::Web::OpenThreadClient client(mIfName);
     const char *                rval;
 
     VerifyOrExit(client.Connect(), status = kWpanStatus_Uninitialized);
@@ -471,7 +470,7 @@ std::string WpanService::HandleCommission(const std::string &aCommissionRequest)
     pskd = root["pskd"].asString();
 
     {
-        otbr::Web::OpenThreadClient client;
+        otbr::Web::OpenThreadClient client(mIfName);
 
         VerifyOrExit(client.Connect(), ret = kWpanStatus_Uninitialized);
 
@@ -508,7 +507,7 @@ exit:
     if (ret != kWpanStatus_Ok)
     {
         root["result"] = WPAN_RESPONSE_FAILURE;
-        otbrLog(OTBR_LOG_ERR, "error: %d", ret);
+        otbrLogErr("error: %d", ret);
     }
     response = jsonWriter.write(root);
 
