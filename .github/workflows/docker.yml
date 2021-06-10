@@ -83,12 +83,23 @@ jobs:
             push: yes
           - image_tag: "reference-device"
             base_image: "ubuntu:bionic"
-            build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BORDER_ROUTING=0 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_MLR=ON' --build-arg NAT64=0"
+            build_args: >-
+              --build-arg REFERENCE_DEVICE=1
+              --build-arg BORDER_ROUTING=0
+              --build-arg BACKBONE_ROUTER=1
+              --build-arg NAT64=0
+              --build-arg WEB_GUI=0
+              --build-arg REST_API=0
+              --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_MLR=ON'
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: yes
           - image_tag: "test"
             base_image: "ubuntu:bionic"
-            build_args: "--build-arg REFERENCE_DEVICE=1 --build-arg BACKBONE_ROUTER=1 --build-arg OTBR_OPTIONS='-DOT_DUA=ON -DOT_MLR=ON' --build-arg OT_BACKBONE_CI=1"
+            build_args: >-
+              --build-arg OT_BACKBONE_CI=1
+              --build-arg REFERENCE_DEVICE=1
+              --build-arg BACKBONE_ROUTER=1
+              --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_MLR=ON'
             platforms: "linux/amd64,linux/arm/v7,linux/arm64"
             push: no
     steps:

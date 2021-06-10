@@ -296,14 +296,20 @@ void DBusThreadObject::DetachHandler(DBusRequest &aRequest)
 
 void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
-    aRequest.ReplyOtResult(OT_ERROR_NONE);
-    otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
+    otError error = OT_ERROR_NONE;
+
+    SuccessOrExit(error = mNcp->GetThreadHelper()->Detach());
+    SuccessOrExit(otInstanceErasePersistentInfo(mNcp->GetThreadHelper()->GetInstance()));
+    mNcp->Reset();
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
 {
+    mNcp->Reset();
     aRequest.ReplyOtResult(OT_ERROR_NONE);
-    otInstanceReset(mNcp->GetThreadHelper()->GetInstance());
 }
 
 void DBusThreadObject::JoinerStartHandler(DBusRequest &aRequest)

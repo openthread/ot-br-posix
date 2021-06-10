@@ -211,9 +211,6 @@ private:
         kPropertyType_String = 0,
         kPropertyType_Data,
     };
-
-    static const char *kBorderAgentHost;
-    static const char *kBorderAgentPort;
 };
 
 } // namespace Web

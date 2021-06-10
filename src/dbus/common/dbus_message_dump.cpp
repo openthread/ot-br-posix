@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "DBUS"
+
 #include "dbus_message_dump.hpp"
 
 #include <sstream>
@@ -170,12 +172,11 @@ void DumpDBusMessage(DBusMessage &aMessage)
     DBusMessageIter    iter;
     std::ostringstream sout;
 
-    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter),
-                 otbrLog(OTBR_LOG_DEBUG, "Failed to iterate dbus message during dump"));
+    VerifyOrExit(dbus_message_iter_init(&aMessage, &iter), otbrLogDebug("Failed to iterate dbus message during dump"));
     sout << "{ ";
     DumpDBusMessage(sout, &iter);
     sout << "}";
-    otbrLog(OTBR_LOG_DEBUG, sout.str().c_str());
+    otbrLogDebug(sout.str().c_str());
 exit:
     return;
 }

@@ -27,30 +27,71 @@
  */
 
 #include "common/dns_utils.hpp"
+
+#include <assert.h>
+
 #include "common/code_utils.hpp"
 
-DnsNameType GetDnsNameType(const std::string &aFullName)
+static bool NameEndsWithDot(const std::string &aName)
 {
-    size_t      transportPos = aFullName.rfind("._udp.");
-    size_t      dotPos;
-    DnsNameType nameType = kDnsNameTypeUnknown;
+    return !aName.empty() && aName.back() == '.';
+}
+
+DnsNameInfo SplitFullDnsName(const std::string &aName)
+{
+    size_t      transportPos;
+    DnsNameInfo nameInfo;
+    std::string fullName = aName;
+
+    if (!NameEndsWithDot(fullName))
+    {
+        fullName += '.';
+    }
+
+    transportPos = fullName.rfind("._udp.");
 
     if (transportPos == std::string::npos)
     {
-        transportPos = aFullName.rfind("._tcp.");
+        transportPos = fullName.rfind("._tcp.");
     }
 
-    VerifyOrExit(transportPos != std::string::npos, nameType = kDnsNameTypeHost);
-    VerifyOrExit(transportPos > 0);
+    if (transportPos == std::string::npos)
+    {
+        // host.domain or domain
+        size_t dotPos = fullName.find_first_of('.');
 
-    dotPos = aFullName.find_last_of('.', transportPos - 1);
-    VerifyOrExit(dotPos != std::string::npos, nameType = kDnsNameTypeService);
-    VerifyOrExit(dotPos > 0);
+        assert(dotPos != std::string::npos);
 
-    nameType = kDnsNameTypeInstance;
+        // host.domain
+        nameInfo.mHostName = fullName.substr(0, dotPos);
+        nameInfo.mDomain   = fullName.substr(dotPos + 1, fullName.length() - dotPos - 1);
+    }
+    else
+    {
+        // service or service instance
+        size_t dotPos = transportPos > 0 ? fullName.find_last_of('.', transportPos - 1) : std::string::npos;
 
-exit:
-    return nameType;
+        nameInfo.mDomain = fullName.substr(transportPos + 6); // 6 is the length of "._tcp." or "._udp."
+
+        if (dotPos == std::string::npos)
+        {
+            // service.domain
+            nameInfo.mServiceName = fullName.substr(0, transportPos + 5);
+        }
+        else
+        {
+            // instance.service.domain
+            nameInfo.mInstanceName = fullName.substr(0, dotPos);
+            nameInfo.mServiceName  = fullName.substr(dotPos + 1, transportPos + 4 - dotPos);
+        }
+    }
+
+    if (!NameEndsWithDot(nameInfo.mDomain))
+    {
+        nameInfo.mDomain += '.';
+    }
+
+    return nameInfo;
 }
 
 otbrError SplitFullServiceInstanceName(const std::string &aFullName,
@@ -58,22 +99,14 @@ otbrError SplitFullServiceInstanceName(const std::string &aFullName,
                                        std::string &      aType,
                                        std::string &      aDomain)
 {
-    otbrError error = OTBR_ERROR_INVALID_ARGS;
-    size_t    dotPos[3];
+    otbrError   error    = OTBR_ERROR_NONE;
+    DnsNameInfo nameInfo = SplitFullDnsName(aFullName);
 
-    dotPos[0] = aFullName.find_first_of('.');
-    VerifyOrExit(dotPos[0] != std::string::npos);
+    VerifyOrExit(nameInfo.IsServiceInstance(), error = OTBR_ERROR_INVALID_ARGS);
 
-    dotPos[1] = aFullName.find_first_of('.', dotPos[0] + 1);
-    VerifyOrExit(dotPos[1] != std::string::npos);
-
-    dotPos[2] = aFullName.find_first_of('.', dotPos[1] + 1);
-    VerifyOrExit(dotPos[2] != std::string::npos);
-
-    error         = OTBR_ERROR_NONE;
-    aInstanceName = aFullName.substr(0, dotPos[0]);
-    aType         = aFullName.substr(dotPos[0] + 1, dotPos[2] - dotPos[0] - 1);
-    aDomain       = aFullName.substr(dotPos[2] + 1, aFullName.size() - dotPos[2] - 1);
+    aInstanceName = std::move(nameInfo.mInstanceName);
+    aType         = std::move(nameInfo.mServiceName);
+    aDomain       = std::move(nameInfo.mDomain);
 
 exit:
     return error;
@@ -81,18 +114,13 @@ exit:
 
 otbrError SplitFullServiceName(const std::string &aFullName, std::string &aType, std::string &aDomain)
 {
-    otbrError error = OTBR_ERROR_INVALID_ARGS;
-    size_t    dotPos[2];
+    otbrError   error    = OTBR_ERROR_NONE;
+    DnsNameInfo nameInfo = SplitFullDnsName(aFullName);
 
-    dotPos[0] = aFullName.find_first_of('.');
-    VerifyOrExit(dotPos[0] != std::string::npos);
+    VerifyOrExit(nameInfo.IsService(), error = OTBR_ERROR_INVALID_ARGS);
 
-    dotPos[1] = aFullName.find_first_of('.', dotPos[0] + 1);
-    VerifyOrExit(dotPos[1] != std::string::npos);
-
-    error   = OTBR_ERROR_NONE;
-    aType   = aFullName.substr(0, dotPos[1]);
-    aDomain = aFullName.substr(dotPos[1] + 1);
+    aType   = std::move(nameInfo.mServiceName);
+    aDomain = std::move(nameInfo.mDomain);
 
 exit:
     return error;
@@ -100,15 +128,13 @@ exit:
 
 otbrError SplitFullHostName(const std::string &aFullName, std::string &aHostName, std::string &aDomain)
 {
-    otbrError error = OTBR_ERROR_INVALID_ARGS;
-    size_t    dotPos;
+    otbrError   error    = OTBR_ERROR_NONE;
+    DnsNameInfo nameInfo = SplitFullDnsName(aFullName);
 
-    dotPos = aFullName.find_first_of('.');
-    VerifyOrExit(dotPos != std::string::npos);
+    VerifyOrExit(nameInfo.IsHost(), error = OTBR_ERROR_INVALID_ARGS);
 
-    error     = OTBR_ERROR_NONE;
-    aHostName = aFullName.substr(0, dotPos);
-    aDomain   = aFullName.substr(dotPos + 1, aFullName.size() - dotPos - 1);
+    aHostName = std::move(nameInfo.mHostName);
+    aDomain   = std::move(nameInfo.mDomain);
 
 exit:
     return error;

@@ -41,6 +41,7 @@
 
 #include <base/task_scheduler/post_task.h>
 #include <chromecast/external_mojo/public/cpp/external_connector.h>
+#include <mojo/public/cpp/bindings/binding.h>
 
 #include <memory>
 #include <string>
@@ -48,6 +49,8 @@
 #include <vector>
 
 #include "chromecast/internal/receiver/mdns/public/mojom/mdns.mojom.h"
+
+#include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "mdns/mdns.hpp"
 
@@ -224,7 +227,64 @@ public:
     ~MdnsMojoPublisher(void) override;
 
 private:
-    static const int kMojoConnectRetrySeconds = 10;
+    static const int kMojoConnectRetrySeconds       = 10;
+    static const int kMojoServiceInstanceDefaultTtl = 10;
+
+    class MdnsDiscoveredServiceListenerImpl : public chromecast::mojom::MdnsDiscoveredServiceListener
+    {
+    public:
+        MdnsDiscoveredServiceListenerImpl(
+            MdnsMojoPublisher *                                                      aOwner,
+            mojo::InterfaceRequest<chromecast::mojom::MdnsDiscoveredServiceListener> aRequest)
+            : mOwner(aOwner)
+            , mBinding(this, std::move(aRequest))
+        {
+        }
+
+        void OnServiceDiscovered(const std::string &                          aInstanceName,
+                                 const std::string &                          aServiceName,
+                                 const std::string &                          aTransport,
+                                 chromecast::mojom::MdnsDiscoveredInstancePtr aInfo) override;
+
+        void OnServiceUpdated(const std::string &                          aInstanceName,
+                              const std::string &                          aServiceName,
+                              const std::string &                          aTransport,
+                              chromecast::mojom::MdnsDiscoveredInstancePtr aInfo) override;
+
+        void OnServiceRemoved(const std::string &aInstanceName,
+                              const std::string &aServiceName,
+                              const std::string &aTransport) override;
+
+    private:
+        MdnsMojoPublisher *                                             mOwner;
+        mojo::Binding<chromecast::mojom::MdnsDiscoveredServiceListener> mBinding;
+
+        DISALLOW_COPY_AND_ASSIGN(MdnsDiscoveredServiceListenerImpl);
+    };
+
+    class MdnsDiscoveredRecordListenerImpl : public chromecast::mojom::MdnsDiscoveredRecordListener
+    {
+    public:
+        MdnsDiscoveredRecordListenerImpl(
+            MdnsMojoPublisher *                                                     aOwner,
+            mojo::InterfaceRequest<chromecast::mojom::MdnsDiscoveredRecordListener> aRequest)
+            : mOwner(aOwner)
+            , mBinding(this, std::move(aRequest))
+        {
+        }
+
+        void OnRecordDiscovered(chromecast::mojom::MdnsDiscoveredRecordPtr aInfo) override;
+
+        void OnRecordUpdated(chromecast::mojom::MdnsDiscoveredRecordPtr aInfo) override;
+
+        void OnRecordRemoved(const std::string &name, uint16_t type) override;
+
+    private:
+        MdnsMojoPublisher *                                            mOwner;
+        mojo::Binding<chromecast::mojom::MdnsDiscoveredRecordListener> mBinding;
+
+        DISALLOW_COPY_AND_ASSIGN(MdnsDiscoveredRecordListenerImpl);
+    };
 
     static std::pair<std::string, std::string> SplitServiceType(const std::string &aType);
 
@@ -242,12 +302,28 @@ private:
 
     void StopPublishTask(void);
 
+    void SubscribeServiceTask(const std::string &aService, const std::string &aTransport);
+    void UnsubscribeServiceTask(const std::string &aService, const std::string &aTransport);
+
+    void SubscribeHostTask(const std::string &aHostName);
+    void UnsubscribeHostTask(const std::string aHostName);
+
     void LaunchMojoThreads(void);
     void TearDownMojoThreads(void);
     void ConnectToMojo(void);
     void mMojoConnectCb(std::unique_ptr<chromecast::external_mojo::ExternalConnector> aConnector);
     void mMojoDisconnectedCb(void);
     void mRegisterServiceCb(chromecast::mojom::MdnsResult aResult);
+
+    void NotifyDiscoveredServiceInstance(const std::string &                          aInstanceName,
+                                         const std::string &                          aServiceName,
+                                         const std::string &                          aTransport,
+                                         chromecast::mojom::MdnsDiscoveredInstancePtr info);
+    void NotifyDiscoveredRecord(chromecast::mojom::MdnsDiscoveredRecordPtr info);
+
+    static std::vector<uint8_t> EncodeTxtRdata(const std::vector<std::string> &aTxtVector);
+    static std::string          StripLocalDomain(const std::string &aName);
+    static std::string          NormalizeDomain(const std::string &aName);
 
     scoped_refptr<base::SingleThreadTaskRunner>                   mMojoTaskRunner;
     std::unique_ptr<std::thread>                                  mMojoCoreThread;
@@ -264,6 +340,11 @@ private:
     StateHandler mStateHandler;
     void *       mContext;
     bool         mStarted;
+
+    chromecast::mojom::MdnsDiscoveredServiceListenerPtr mServiceListener;
+    std::unique_ptr<MdnsDiscoveredServiceListenerImpl>  mServiceListenerImpl;
+    chromecast::mojom::MdnsDiscoveredRecordListenerPtr  mRecordListener;
+    std::unique_ptr<MdnsDiscoveredRecordListenerImpl>   mRecordListenerImpl;
 
     MdnsMojoPublisher(const MdnsMojoPublisher &) = delete;
     MdnsMojoPublisher &operator=(const MdnsMojoPublisher &) = delete;

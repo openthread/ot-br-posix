@@ -31,6 +31,8 @@
  *   The file implements the Thread Backbone agent.
  */
 
+#define OTBR_LOG_TAG "BBA"
+
 #include "backbone_router/backbone_agent.hpp"
 
 #include <assert.h>
@@ -78,8 +80,8 @@ void BackboneAgent::HandleBackboneRouterState(void)
     otBackboneRouterState state      = otBackboneRouterGetState(mNcp.GetInstance());
     bool                  wasPrimary = (mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY);
 
-    otbrLog(OTBR_LOG_DEBUG, "BackboneAgent: HandleBackboneRouterState: state=%d, mBackboneRouterState=%d", state,
-            mBackboneRouterState);
+    otbrLogDebug("BackboneAgent: HandleBackboneRouterState: state=%d, mBackboneRouterState=%d", state,
+                 mBackboneRouterState);
     VerifyOrExit(mBackboneRouterState != state);
 
     mBackboneRouterState = state;
@@ -99,7 +101,7 @@ exit:
 
 void BackboneAgent::OnBecomePrimary(void)
 {
-    otbrLog(OTBR_LOG_NOTICE, "BackboneAgent: Backbone Router becomes Primary!");
+    otbrLogNotice("BackboneAgent: Backbone Router becomes Primary!");
 
 #if OTBR_ENABLE_DUA_ROUTING
     if (mDomainPrefix.IsValid())
@@ -112,8 +114,7 @@ void BackboneAgent::OnBecomePrimary(void)
 
 void BackboneAgent::OnResignPrimary(void)
 {
-    otbrLog(OTBR_LOG_NOTICE, "BackboneAgent: Backbone Router resigns Primary to %s!",
-            StateToString(mBackboneRouterState));
+    otbrLogNotice("BackboneAgent: Backbone Router resigns Primary to %s!", StateToString(mBackboneRouterState));
 
 #if OTBR_ENABLE_DUA_ROUTING
     mDuaRoutingManager.Disable();

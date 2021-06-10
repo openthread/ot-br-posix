@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "DBUS"
+
 #include "dbus/server/dbus_agent.hpp"
 
 #include "common/logging.hpp"
@@ -67,7 +69,7 @@ otbrError DBusAgent::Init(void)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "dbus error %s: %s", dbusError.name, dbusError.message);
+        otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
     }
     dbus_error_free(&dbusError);
     return error;

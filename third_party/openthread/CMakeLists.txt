@@ -36,6 +36,7 @@ set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
 set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
+set(OT_TREL ON CACHE BOOL "enable TREL")
 
 if (NOT OT_LOG_LEVEL)
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -71,11 +72,16 @@ if (OT_THREAD_VERSION STREQUAL "1.2")
     set(OT_MLR ON CACHE BOOL "Enable Thread 1.2 MLR by default")
 endif()
 
+set(OT_COAP ON CACHE BOOL "Enable CoAP in OpenThread")
+set(OT_COAPS ON CACHE BOOL "Enable secure CoAP in OpenThread")
+
 if (OTBR_DNSSD_DISCOVERY_PROXY)
     set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
 endif()
 
-list(APPEND OT_PLATFORM_DEFINES "-DOPENTHREAD_CONFIG_POSIX_SETTINGS_PATH=\"/var/lib/thread\"")
+if (NOT OT_POSIX_SETTINGS_PATH)
+    set(OT_POSIX_SETTINGS_PATH "\"/var/lib/thread\"" CACHE STRING "set the directory to store Thread data" FORCE)
+endif()
 
 add_subdirectory(repo EXCLUDE_FROM_ALL)
 

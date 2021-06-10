@@ -56,17 +56,24 @@ endif()
 
 add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
 
+if(NOT OTBR_NAME)
+    set(OTBR_NAME "OPENTHREAD_BR")
+endif()
 
-execute_process(
-    COMMAND git describe --dirty --always
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE OTBR_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+message(STATUS "Name: ${OTBR_NAME}")
 
-if(OTBR_GIT_VERSION)
-    set(OTBR_VERSION "${PROJECT_VERSION}-${OTBR_GIT_VERSION}")
-else()
-    set(OTBR_VERSION "${PROJECT_VERSION}")
+if(NOT OTBR_VERSION)
+    execute_process(
+        COMMAND git describe --dirty --always 2>/dev/null
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE OTBR_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if(OTBR_GIT_VERSION)
+        set(OTBR_VERSION "${PROJECT_VERSION}-${OTBR_GIT_VERSION}")
+    else()
+        set(OTBR_VERSION "${PROJECT_VERSION}")
+    endif()
 endif()
 
 message(STATUS "Version: ${OTBR_VERSION}")
@@ -77,7 +84,7 @@ target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_definitions(otbr-config INTERFACE
-    "OTBR_PACKAGE_NAME=\"OPENTHREAD_BR\""
+    "OTBR_PACKAGE_NAME=\"${OTBR_NAME}\""
     "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
 )
 
