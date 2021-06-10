@@ -104,13 +104,13 @@ public:
     /**
      * This method reads from OpenThread CLI.
      *
-     * @param[in]   response    The expected read response.
-     * @param[in]   timeout     Timeout for the read, in ms.
+     * @param[in]   aResponse    The expected read response.
+     * @param[in]   aTimeout     Timeout for the read, in ms.
      *
      * @returns A pointer to the output if the expected response is found, otherwise nullptr.
      *
      */
-    char *Read(const char *response, int timeout);
+    char *Read(const char *aResponse, int aTimeout);
 
     /**
      * This method scans Thread network.

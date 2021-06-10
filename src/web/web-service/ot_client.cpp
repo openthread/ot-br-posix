@@ -186,21 +186,21 @@ exit:
     return rval;
 }
 
-char *OpenThreadClient::Read(const char *response, int timeout)
+char *OpenThreadClient::Read(const char *aResponse, int aTimeout)
 {
     ssize_t count    = 0;
     size_t  rxLength = 0;
     char *  found;
     char *  rval = nullptr;
 
-    for (int i = 0; i < timeout; ++i)
+    for (int i = 0; i < aTimeout; ++i)
     {
         count = read(mSocket, &mBuffer[rxLength], sizeof(mBuffer) - rxLength);
         VerifyOrExit(count > 0);
         rxLength += count;
 
         mBuffer[rxLength] = '\0';
-        found             = strstr(mBuffer, response);
+        found             = strstr(mBuffer, aResponse);
 
         if (found != nullptr)
         {
