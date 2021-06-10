@@ -77,6 +77,12 @@ public:
      */
     void Stop();
 
+    /**
+     * This method publishes all registered hosts and services.
+     *
+     */
+    void PublishAllHostsAndServices(void);
+
 private:
     struct OutstandingUpdate
     {
@@ -100,6 +106,8 @@ private:
     void        PublishServiceHandler(const char *aName, const char *aType, otbrError aError);
     static void PublishHostHandler(const char *aName, otbrError aError, void *aContext);
     void        PublishHostHandler(const char *aName, otbrError aError);
+
+    otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
 
     otInstance *GetInstance(void) { return mNcp.GetInstance(); }
 
