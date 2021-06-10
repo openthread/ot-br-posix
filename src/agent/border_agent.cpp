@@ -114,25 +114,14 @@ void BorderAgent::Init(void)
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent.Init();
 #endif
-
-    if (IsThreadStarted())
-    {
-        Start();
-    }
-    else
-    {
-        Stop();
-    }
+    Start();
 }
 
 otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(IsThreadStarted(), errno = EAGAIN, error = OTBR_ERROR_ERRNO);
-
-    // In case we didn't receive Thread down event.
-    Stop();
+    otBorderAgentStart(mNcp.GetInstance());
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
@@ -146,7 +135,6 @@ otbrError BorderAgent::Start(void)
 
 #endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 
-exit:
     otbrLogResult(error, "Start Thread Border Agent");
     return error;
 }
@@ -156,7 +144,6 @@ void BorderAgent::Stop(void)
     otbrLogInfo("Stop Thread Border Agent");
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    mPublisher->Stop();
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Stop();
 #endif
@@ -165,6 +152,7 @@ void BorderAgent::Stop(void)
     mDiscoveryProxy.Stop();
 #endif
 
+    UpdateMeshCopService();
 #endif
 }
 
@@ -305,7 +293,6 @@ void BorderAgent::PublishMeshCopService(void)
 
 void BorderAgent::UnpublishMeshCopService(void)
 {
-    assert(IsThreadStarted());
     VerifyOrExit(!mNetworkName.empty());
 
     otbrLogInfo("Unpublish meshcop service %s.%s.local.", mNetworkName.c_str(), kBorderAgentServiceType);
@@ -318,12 +305,12 @@ exit:
 
 void BorderAgent::UpdateMeshCopService(void)
 {
-    assert(IsThreadStarted());
-
     const char *networkName = otThreadGetNetworkName(mNcp.GetInstance());
 
-    VerifyOrExit(mPublisher->IsStarted(), mPublisher->Start());
-    VerifyOrExit(IsPskcInitialized(), UnpublishMeshCopService());
+    if (!mPublisher->IsStarted())
+    {
+        mPublisher->Start();
+    }
 
     // In case the Thread network name changes, we need to unpublish
     // current meshcop service.
@@ -336,11 +323,9 @@ void BorderAgent::UpdateMeshCopService(void)
     {
         UnpublishMeshCopService();
     }
-
     PublishMeshCopService();
     mNetworkName = networkName;
 
-exit:
     return;
 }
 
@@ -351,23 +336,7 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
                            OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_THREAD_PARTITION_ID |
                            OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_PSKC));
 
-    if (aFlags & OT_CHANGED_THREAD_ROLE)
-    {
-        otbrLogInfo("Thread is %s", (IsThreadStarted() ? "up" : "down"));
-
-        if (IsThreadStarted())
-        {
-            Start();
-        }
-        else
-        {
-            Stop();
-        }
-    }
-    else if (IsThreadStarted())
-    {
-        UpdateMeshCopService();
-    }
+    UpdateMeshCopService();
 
 exit:
     return;
