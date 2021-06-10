@@ -159,8 +159,8 @@ public:
      */
     enum class State
     {
-        kIdle,  ///< Unable to publish service.
-        kReady, ///< Ready to publish service.
+        kIdle,      ///< Unable to publish service.
+        kReady,     ///< Ready to publish service.
         kRestarted, ///< Recently restarted.
     };
 
