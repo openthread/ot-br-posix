@@ -245,8 +245,8 @@ void AdvertisingProxy::PublishAllHostsAndServices(void)
 {
     const otSrpServerHost *host = nullptr;
 
-    otbrLogErr("Publish all services");
-    while ((host = otSrpServerGetNextHost(GetInstance(), host)) != nullptr)
+    otbrLogInfo("Publish all hosts and services");
+    while ((host = otSrpServerGetNextHost(GetInstance(), host)))
     {
         PublishHostAndItsServices(host, nullptr);
     }
@@ -279,7 +279,7 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
         aUpdate->mCallbackCount += !hostDeleted;
         aUpdate->mHostName = hostName;
         service            = nullptr;
-        while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
+        while ((service = otSrpServerHostGetNextService(aHost, service)))
         {
             aUpdate->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
         }
@@ -299,7 +299,7 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     }
 
     service = nullptr;
-    while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
+    while ((service = otSrpServerHostGetNextService(aHost, service)))
     {
         const char *fullServiceName = otSrpServerServiceGetFullName(service);
         std::string serviceName;

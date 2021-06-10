@@ -192,7 +192,9 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
         UpdateMeshCopService();
         break;
     case Mdns::Publisher::State::kRestarted:
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
         mAdvertisingProxy.PublishAllHostsAndServices();
+#endif
         break;
     default:
         otbrLogWarning("MDNS service not available!");
