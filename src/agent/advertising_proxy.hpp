@@ -107,7 +107,7 @@ private:
     static void PublishHostHandler(const char *aName, otbrError aError, void *aContext);
     void        PublishHostHandler(const char *aName, otbrError aError);
 
-    otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
+    otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, otSrpServerServiceUpdateId aId, bool aMakeUpdate);
 
     otInstance *GetInstance(void) { return mNcp.GetInstance(); }
 
