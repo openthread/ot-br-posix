@@ -136,12 +136,6 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
                                           const otSrpServerHost *    aHost,
                                           uint32_t                   aTimeout)
 {
-    // TODO: There are corner cases that the `aHost` is freed by SRP server because
-    // of timeout, but this `aHost` is passed back to SRP server and matches a newly
-    // allocated otSrpServerHost object which has the same pointer value as this
-    // `aHost`. This results in mismatching of the outstanding SRP updates. Solutions
-    // are cleaning up the outstanding update entries before timing out or using
-    // incremental ID to match oustanding SRP updates.
     OTBR_UNUSED_VARIABLE(aTimeout);
 
     OutstandingUpdate *update;
@@ -262,9 +256,6 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     uint8_t                   hostAddressNum;
     bool                      hostDeleted;
     const otSrpServerService *service;
-
-    mOutstandingUpdates.resize(mOutstandingUpdates.size() + 1);
-    aUpdate = &mOutstandingUpdates.back();
 
     fullHostName = otSrpServerHostGetFullName(aHost);
 
