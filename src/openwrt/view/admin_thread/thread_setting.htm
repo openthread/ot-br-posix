@@ -44,7 +44,7 @@
 <%+header%>
 
 <h2><%:Thread Network: %><%=threadget("networkname").NetworkName%><%: (wpan0)%></h2>
-<div> The Network Configuration section covers physical settings of the Thread Network such as channel, PAN ID. Per interface related settings like masterkey or MAC-filter are grouped in the Interface Configuration.</div>
+<div> The Network Configuration section covers physical settings of the Thread Network such as channel, PAN ID. Per interface related settings like networkkey or MAC-filter are grouped in the Interface Configuration.</div>
 <br />
 
 <form class="inline" action="<%=url('admin/network/thread_handler_setting')%>" method="post" id="settingForm" name="settingForm" onsubmit="return validateForm()">
@@ -190,9 +190,9 @@
 	<!-- Thread Security -->
 	<div style="width:60%;margin-left:10%;" id="securitydiv">
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Master Key</label>
+			<label class="cbi-value-title" style="margin-right:5%;">Network Key</label>
 			<div class="cbi-value-title">
-				<input type="text" name="masterkey" value="<%=threadget("masterkey").Masterkey%>" style="width:60%;"/>
+				<input type="text" name="networkkey" value="<%=threadget("networkkey").Networkkey%>" style="width:60%;"/>
 			</div>
 		</div>
 		<div class="cbi-value">
@@ -383,9 +383,9 @@
 				return false;
 			}
 
-			var masterkey = document.forms["settingForm"]["masterkey"].value;
-			if (masterkey.length != 32) {
-				alert("Masterkey length must be 32 bytes");
+			var networkkey = document.forms["settingForm"]["networkkey"].value;
+			if (networkkey.length != 32) {
+				alert("Networkkey length must be 32 bytes");
 				return false;
 			}
 
