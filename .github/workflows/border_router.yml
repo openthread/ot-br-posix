@@ -52,14 +52,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: "Border Router"
+          - name: "Border Router (mDNSResponder)"
             otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
             border_routing: 1
+            otbr_mdns: "mDNSResponder"
+            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
+          - name: "Border Router (Avahi)"
+            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
+            border_routing: 1
+            otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
           - name: "Backbone Router"
             otbr_options: "-DOT_TREL=OFF -DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON"
             border_routing: 0
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
+
     name: ${{ matrix.name }}
     env:
       PACKET_VERIFICATION: 1
@@ -89,6 +96,7 @@ jobs:
             --build-arg REFERENCE_DEVICE=1 \
             --build-arg OT_BACKBONE_CI=1 \
             --build-arg NAT64=0 \
+            --build-arg MDNS="${{ matrix.otbr_mdns }}" \
             --build-arg OTBR_OPTIONS="${otbr_options}"
       - name: Bootstrap OpenThread Test
         run: |
