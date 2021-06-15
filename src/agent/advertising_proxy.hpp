@@ -107,7 +107,15 @@ private:
     static void PublishHostHandler(const char *aName, otbrError aError, void *aContext);
     void        PublishHostHandler(const char *aName, otbrError aError);
 
-    otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *update);
+    /**
+     * This method publishes a specified host and its services. It also makes a OutstandingUpdate object when needed.
+     *
+     * @param[in]  aHost      A pointer to the host.
+     * @param[in]  aUpdate    A pointer to the output OutstandingUpdate object. When it's not null, the method will fill
+     * its fields, otherwise it's ignored.
+     *
+     */
+    otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
 
     otInstance *GetInstance(void) { return mNcp.GetInstance(); }
 

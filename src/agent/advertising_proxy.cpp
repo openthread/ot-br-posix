@@ -248,7 +248,7 @@ exit:
     return;
 }
 
-otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *update)
+otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate)
 {
     otbrError                 error = OTBR_ERROR_NONE;
     const char *              fullHostName;
@@ -267,14 +267,14 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     hostAddress = otSrpServerHostGetAddresses(aHost, &hostAddressNum);
     hostDeleted = otSrpServerHostIsDeleted(aHost);
 
-    if (update)
+    if (aUpdate)
     {
-        update->mCallbackCount += !hostDeleted;
-        update->mHostName = hostName;
-        service           = nullptr;
+        aUpdate->mCallbackCount += !hostDeleted;
+        aUpdate->mHostName = hostName;
+        service            = nullptr;
         while ((service = otSrpServerHostGetNextService(aHost, service)))
         {
-            update->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
+            aUpdate->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
         }
     }
 
@@ -301,9 +301,9 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
 
         SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
 
-        if (update)
+        if (aUpdate)
         {
-            update->mServiceNames.emplace_back(serviceName, serviceType);
+            aUpdate->mServiceNames.emplace_back(serviceName, serviceType);
         }
 
         if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
