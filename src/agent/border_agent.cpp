@@ -190,8 +190,6 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     {
     case Mdns::Publisher::State::kReady:
         UpdateMeshCopService();
-        break;
-    case Mdns::Publisher::State::kRestarted:
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
         mAdvertisingProxy.PublishAllHostsAndServices();
 #endif
