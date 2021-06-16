@@ -162,6 +162,8 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
     if (aConnector)
     {
         otbrLogInfo("Mojo connected");
+        mPublishedServices.clear();
+        mPublishedHosts.clear();
         aConnector->set_connection_error_callback(
             base::BindOnce(&MdnsMojoPublisher::mMojoDisconnectedCb, base::Unretained(this)));
         aConnector->BindInterface("chromecast", &mResponder);
@@ -178,7 +180,11 @@ void MdnsMojoPublisher::mMojoConnectCb(std::unique_ptr<MOJO_CONNECTOR_NS::Extern
 
 void MdnsMojoPublisher::mMojoDisconnectedCb(void)
 {
+    otbrLogInfo("Disconnected, will reconnect.");
     mConnector = nullptr;
+    mMojoTaskRunner->PostDelayedTask(FROM_HERE,
+                                     base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)),
+                                     base::TimeDelta::FromSeconds(kMojoConnectRetrySeconds));
 }
 
 otbrError MdnsMojoPublisher::Start(void)
