@@ -71,7 +71,10 @@
 #define MBEDTLS_SSL_SRV_C
 #define MBEDTLS_SSL_TLS_C
 
-// Enable ECDSA support
+// Enable CoAPS PSK support
+#define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+
+// Enable CoAPS ECDSA support
 #define MBEDTLS_BASE64_C
 #define MBEDTLS_ECDH_C
 #define MBEDTLS_ECDSA_C
