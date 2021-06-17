@@ -26,32 +26,32 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-LOCAL_SOURCE_DIR := $(abspath $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../../..)
+LOCAL_SOURCE_DIR:=$(abspath $(realpath $(dir $(lastword $(MAKEFILE_LIST))))/../../..)
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := openthread-br
-PKG_LICENSE := BSD-3-Clause
-PKG_LICENSE_FILES := LICENSE
-PKG_RELEASE := 1
-PKG_VERSION := 1.0
+PKG_NAME:=openthread-br
+PKG_LICENSE:=BSD-3-Clause
+PKG_LICENSE_FILES:=LICENSE
+PKG_RELEASE:=1
+PKG_VERSION:=1.0
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-CMAKE_SOURCE_DIR = $(LOCAL_SOURCE_DIR)
-CMAKE_OPTIONS = \
+CMAKE_SOURCE_DIR=$(LOCAL_SOURCE_DIR)
+CMAKE_OPTIONS+= \
 	-DBUILD_TESTING=OFF \
 	-DCMAKE_INSTALL_PREFIX=/usr \
 	-DOTBR_MDNS=OFF \
-	-DOT_READLINE="" \
+	-DOT_READLINE=OFF \
 	-DOTBR_OPENWRT=ON
 
 define Package/openthread-br
-	SECTION := base
-	CATEGORY := Network
-	TITLE := OpenThread Border Router
-	DEPENDS := +libstdcpp +libjson-c +libubus +libblobmsg-json
+	SECTION:=base
+	CATEGORY:=Network
+	TITLE:=OpenThread Border Router
+	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json
 endef
 
 define Package/openthread-br/description
