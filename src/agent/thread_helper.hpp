@@ -111,7 +111,7 @@ public:
      * @param[in]   aNetworkName    The network name.
      * @param[in]   aPanId          The pan id, UINT16_MAX for random.
      * @param[in]   aExtPanId       The extended pan id, UINT64_MAX for random.
-     * @param[in]   aMasterKey      The master key, empty for random.
+     * @param[in]   aNetworkKey     The network key, empty for random.
      * @param[in]   aPSKc           The pre-shared commissioner key, empty for random.
      * @param[in]   aChannelMask    A bitmask for valid channels, will random select one.
      * @param[in]   aHandler        The attach result handler.
@@ -120,7 +120,7 @@ public:
     void Attach(const std::string &         aNetworkName,
                 uint16_t                    aPanId,
                 uint64_t                    aExtPanId,
-                const std::vector<uint8_t> &aMasterKey,
+                const std::vector<uint8_t> &aNetworkKey,
                 const std::vector<uint8_t> &aPSKc,
                 uint32_t                    aChannelMask,
                 ResultHandler               aHandler);

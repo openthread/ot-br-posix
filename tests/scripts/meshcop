@@ -144,7 +144,7 @@ random_xpanid()
     printf "%04x%04x%04x%04x" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}"
 }
 
-random_masterkey()
+random_networkkey()
 {
     printf "%04x%04x%04x%04x%04x%04x%04x%04x" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}" "${RANDOM}"
 }
@@ -321,10 +321,10 @@ network_form()
 {
     readonly OT_PANID="$(random_panid)"
     readonly OT_XPANID="$(random_xpanid)"
-    readonly OT_MASTER_KEY="$(random_masterkey)"
+    readonly OT_NETWORK_KEY="$(random_networkkey)"
     readonly OT_CHANNEL="$(random_channel)"
 
-    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
+    curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_NETWORK_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
     sleep 15
     # verify mDNS is working as expected.
     local mdns_result="${TEST_BASE}"/mdns_result.log

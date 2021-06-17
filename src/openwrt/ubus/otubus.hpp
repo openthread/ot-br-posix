@@ -292,7 +292,7 @@ public:
                                   struct blob_attr *        aMsg);
 
     /**
-     * This method handle ubus get masterkey function request.
+     * This method handle ubus get networkkey function request.
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
@@ -303,14 +303,14 @@ public:
      * @retval 0   Successfully handler the request.
      *
      */
-    static int UbusMasterkeyHandler(struct ubus_context *     aContext,
-                                    struct ubus_object *      aObj,
-                                    struct ubus_request_data *aRequest,
-                                    const char *              aMethod,
-                                    struct blob_attr *        aMsg);
+    static int UbusNetworkkeyHandler(struct ubus_context *     aContext,
+                                     struct ubus_object *      aObj,
+                                     struct ubus_request_data *aRequest,
+                                     const char *              aMethod,
+                                     struct blob_attr *        aMsg);
 
     /**
-     * This method handle ubus set masterkey function request.
+     * This method handle ubus set networkkey function request.
      *
      * @param[in]   aContext    A pointer to the ubus context.
      * @param[in]   aObj        A pointer to the ubus object.
@@ -321,11 +321,11 @@ public:
      * @retval 0   Successfully handler the request.
      *
      */
-    static int UbusSetMasterkeyHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
-                                       struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg);
+    static int UbusSetNetworkkeyHandler(struct ubus_context *     aContext,
+                                        struct ubus_object *      aObj,
+                                        struct ubus_request_data *aRequest,
+                                        const char *              aMethod,
+                                        struct blob_attr *        aMsg);
 
     /**
      * This method handle ubus get rloc16 function request.

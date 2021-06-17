@@ -200,13 +200,13 @@ ClientError ThreadApiDBus::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 ClientError ThreadApiDBus::Attach(const std::string &         aNetworkName,
                                   uint16_t                    aPanId,
                                   uint64_t                    aExtPanId,
-                                  const std::vector<uint8_t> &aMasterKey,
+                                  const std::vector<uint8_t> &aNetworkKey,
                                   const std::vector<uint8_t> &aPSKc,
                                   uint32_t                    aChannelMask,
                                   const OtResultHandler &     aHandler)
 {
     ClientError error = ClientError::ERROR_NONE;
-    const auto  args  = std::tie(aMasterKey, aPanId, aNetworkName, aExtPanId, aPSKc, aChannelMask);
+    const auto  args  = std::tie(aNetworkKey, aPanId, aNetworkName, aExtPanId, aPSKc, aChannelMask);
 
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
     mAttachHandler = aHandler;
@@ -444,9 +444,9 @@ ClientError ThreadApiDBus::GetChannel(uint16_t &aChannel)
     return GetProperty(OTBR_DBUS_PROPERTY_CHANNEL, aChannel);
 }
 
-ClientError ThreadApiDBus::GetMasterKey(std::vector<uint8_t> &aMasterKey)
+ClientError ThreadApiDBus::GetNetworkKey(std::vector<uint8_t> &aNetworkKey)
 {
-    return GetProperty(OTBR_DBUS_PROPERTY_MASTER_KEY, aMasterKey);
+    return GetProperty(OTBR_DBUS_PROPERTY_NETWORK_KEY, aNetworkKey);
 }
 
 ClientError ThreadApiDBus::GetCcaFailureRate(uint16_t &aFailureRate)
