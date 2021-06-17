@@ -64,7 +64,7 @@ message(STATUS "Name: ${OTBR_NAME}")
 
 if(NOT OTBR_VERSION)
     execute_process(
-        COMMAND git describe --dirty --always 2>/dev/null
+        COMMAND git describe --dirty --always
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE OTBR_GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
     )
