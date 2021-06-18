@@ -34,6 +34,8 @@
 #ifndef BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
 #define BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+
 #include <openthread/backbone_router_ftd.h>
 
 #include "agent/instance_params.hpp"
@@ -128,5 +130,7 @@ private:
 
 } // namespace BackboneRouter
 } // namespace otbr
+
+#endif // OTBR_ENABLE_BACKBONE_ROUTER
 
 #endif // BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
