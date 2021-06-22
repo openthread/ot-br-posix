@@ -222,12 +222,18 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
                                       const Mdns::Publisher::DiscoveredHostInfo &aHostInfo)
 {
     otDnssdHostInfo     hostInfo;
-    const otDnssdQuery *query = nullptr;
+    const otDnssdQuery *query            = nullptr;
+    std::string         resolvedHostName = aHostInfo.mHostName;
 
     otbrLogInfo("host discovered: %s hostname %s addresses %zu", aHostName.c_str(), aHostInfo.mHostName.c_str(),
                 aHostInfo.mAddresses.size());
 
-    CheckHostnameSanity(aHostInfo.mHostName);
+    if (resolvedHostName.empty())
+    {
+        resolvedHostName = aHostName + ".local.";
+    }
+
+    CheckHostnameSanity(resolvedHostName);
 
     hostInfo.mAddressNum = aHostInfo.mAddresses.size();
     if (!aHostInfo.mAddresses.empty())
@@ -257,7 +263,7 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
 
         if (hostName == aHostName)
         {
-            std::string hostFullName = TranslateDomain(aHostInfo.mHostName, domain);
+            std::string hostFullName = TranslateDomain(resolvedHostName, domain);
 
             otDnssdQueryHandleDiscoveredHost(mNcp.GetInstance(), hostFullName.c_str(), &hostInfo);
         }

@@ -1,0 +1,29 @@
+config("ot_br_client_config") {
+  include_dirs = [
+    "src",
+    "include",
+  ]
+}
+
+pkg_config("dbus_config") {
+  pkg_deps = [
+    "dbus-1",
+  ]
+}
+
+static_library("ot_br_client") {
+  output_name = "libot_br_client"
+
+  sources = [
+    "src/dbus/client/client_error.cpp",
+    "src/dbus/client/thread_api_dbus.cpp",
+    "src/dbus/common/dbus_message_helper.cpp",
+    "src/dbus/common/dbus_message_helper_openthread.cpp",
+    "src/dbus/common/error.cpp",
+  ]
+
+  public_configs = [
+    ":ot_br_client_config",
+    ":dbus_config",
+  ]
+}

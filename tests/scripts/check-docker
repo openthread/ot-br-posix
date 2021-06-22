@@ -80,7 +80,7 @@ main()
     sudo lsof -i :8080
 
     local -r OTBR_WEB_URL="http://127.0.0.1:8080"
-    local -r OT_MASTER_KEY=00112233445566778899aabbccddeeff
+    local -r OT_NETWORK_KEY=00112233445566778899aabbccddeeff
     local -r OT_XPANID=0011223344556677
     local -r OT_PANID=0xface
     local -r OT_AGENT_PASSPHRASE=123456
@@ -88,7 +88,7 @@ main()
     local -r OT_NETWORK_NAME=OpenThreadDocker
 
     curl "${OTBR_WEB_URL}"/index.html | grep 'What is OpenThread'
-    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success"
+    curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_NETWORK_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success"
 }
 
 main "$@"

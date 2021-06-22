@@ -136,93 +136,19 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
                                           const otSrpServerHost *    aHost,
                                           uint32_t                   aTimeout)
 {
-    // TODO: There are corner cases that the `aHost` is freed by SRP server because
-    // of timeout, but this `aHost` is passed back to SRP server and matches a newly
-    // allocated otSrpServerHost object which has the same pointer value as this
-    // `aHost`. This results in mismatching of the outstanding SRP updates. Solutions
-    // are cleaning up the outstanding update entries before timing out or using
-    // incremental ID to match oustanding SRP updates.
     OTBR_UNUSED_VARIABLE(aTimeout);
 
-    otbrError                 error = OTBR_ERROR_NONE;
-    const char *              fullHostName;
-    std::string               hostName;
-    std::string               hostDomain;
-    const otIp6Address *      hostAddress;
-    uint8_t                   hostAddressNum;
-    bool                      hostDeleted;
-    const otSrpServerService *service;
-    OutstandingUpdate *       update;
+    OutstandingUpdate *update = nullptr;
+    otbrError          error  = OTBR_ERROR_NONE;
 
-    mOutstandingUpdates.resize(mOutstandingUpdates.size() + 1);
-    update = &mOutstandingUpdates.back();
-
-    fullHostName = otSrpServerHostGetFullName(aHost);
-
-    otbrLogInfo("Advertise SRP service updates: host=%s", fullHostName);
-
-    SuccessOrExit(error = SplitFullHostName(fullHostName, hostName, hostDomain));
-    hostAddress = otSrpServerHostGetAddresses(aHost, &hostAddressNum);
-    hostDeleted = otSrpServerHostIsDeleted(aHost);
-
+    mOutstandingUpdates.emplace_back();
+    update      = &mOutstandingUpdates.back();
     update->mId = aId;
-    update->mCallbackCount += !hostDeleted;
-    update->mHostName = hostName;
 
-    service = nullptr;
-    while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
-    {
-        update->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
-    }
+    error = PublishHostAndItsServices(aHost, update);
 
-    if (!hostDeleted)
-    {
-        // TODO: select a preferred address or advertise all addresses from SRP client.
-        otbrLogInfo("Publish SRP host: %s", fullHostName);
-        SuccessOrExit(error =
-                          mPublisher.PublishHost(hostName.c_str(), hostAddress[0].mFields.m8, sizeof(hostAddress[0])));
-    }
-    else
-    {
-        otbrLogInfo("Unpublish SRP host: %s", fullHostName);
-        SuccessOrExit(error = mPublisher.UnpublishHost(hostName.c_str()));
-    }
-
-    service = nullptr;
-    while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
-    {
-        const char *fullServiceName = otSrpServerServiceGetFullName(service);
-        std::string serviceName;
-        std::string serviceType;
-        std::string serviceDomain;
-
-        SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
-
-        update->mServiceNames.emplace_back(serviceName, serviceType);
-
-        if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
-        {
-            Mdns::Publisher::TxtList txtList = MakeTxtList(service);
-
-            otbrLogInfo("Publish SRP service: %s", fullServiceName);
-            SuccessOrExit(error = mPublisher.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
-                                                            serviceName.c_str(), serviceType.c_str(), txtList));
-        }
-        else
-        {
-            otbrLogInfo("Unpublish SRP service: %s", fullServiceName);
-            SuccessOrExit(error = mPublisher.UnpublishService(serviceName.c_str(), serviceType.c_str()));
-        }
-    }
-
-exit:
     if (error != OTBR_ERROR_NONE || update->mCallbackCount == 0)
     {
-        if (error != OTBR_ERROR_NONE)
-        {
-            otbrLogInfo("Failed to advertise SRP service updates %p", aHost);
-        }
-
         mOutstandingUpdates.pop_back();
         otSrpServerHandleServiceUpdateResult(GetInstance(), aId, OtbrErrorToOtError(error));
     }
@@ -304,6 +230,103 @@ exit:
     {
         otbrLogWarning("Failed to handle result of host %s", aName);
     }
+}
+
+void AdvertisingProxy::PublishAllHostsAndServices(void)
+{
+    const otSrpServerHost *host = nullptr;
+
+    VerifyOrExit(mPublisher.IsStarted(), mPublisher.Start());
+
+    otbrLogInfo("Publish all hosts and services");
+    while ((host = otSrpServerGetNextHost(GetInstance(), host)))
+    {
+        PublishHostAndItsServices(host, nullptr);
+    }
+
+exit:
+    return;
+}
+
+otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate)
+{
+    otbrError                 error = OTBR_ERROR_NONE;
+    const char *              fullHostName;
+    std::string               hostName;
+    std::string               hostDomain;
+    const otIp6Address *      hostAddress;
+    uint8_t                   hostAddressNum;
+    bool                      hostDeleted;
+    const otSrpServerService *service;
+
+    fullHostName = otSrpServerHostGetFullName(aHost);
+
+    otbrLogInfo("Advertise SRP service updates: host=%s", fullHostName);
+
+    SuccessOrExit(error = SplitFullHostName(fullHostName, hostName, hostDomain));
+    hostAddress = otSrpServerHostGetAddresses(aHost, &hostAddressNum);
+    hostDeleted = otSrpServerHostIsDeleted(aHost);
+
+    if (aUpdate)
+    {
+        aUpdate->mCallbackCount += !hostDeleted;
+        aUpdate->mHostName = hostName;
+        service            = nullptr;
+        while ((service = otSrpServerHostGetNextService(aHost, service)))
+        {
+            aUpdate->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
+        }
+    }
+
+    if (!hostDeleted)
+    {
+        // TODO: select a preferred address or advertise all addresses from SRP client.
+        otbrLogInfo("Publish SRP host: %s", fullHostName);
+        SuccessOrExit(error =
+                          mPublisher.PublishHost(hostName.c_str(), hostAddress[0].mFields.m8, sizeof(hostAddress[0])));
+    }
+    else
+    {
+        otbrLogInfo("Unpublish SRP host: %s", fullHostName);
+        SuccessOrExit(error = mPublisher.UnpublishHost(hostName.c_str()));
+    }
+
+    service = nullptr;
+    while ((service = otSrpServerHostGetNextService(aHost, service)))
+    {
+        const char *fullServiceName = otSrpServerServiceGetFullName(service);
+        std::string serviceName;
+        std::string serviceType;
+        std::string serviceDomain;
+
+        SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
+
+        if (aUpdate)
+        {
+            aUpdate->mServiceNames.emplace_back(serviceName, serviceType);
+        }
+
+        if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
+        {
+            Mdns::Publisher::TxtList txtList = MakeTxtList(service);
+
+            otbrLogInfo("Publish SRP service: %s", fullServiceName);
+            SuccessOrExit(error = mPublisher.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
+                                                            serviceName.c_str(), serviceType.c_str(), txtList));
+        }
+        else
+        {
+            otbrLogInfo("Unpublish SRP service: %s", fullServiceName);
+            SuccessOrExit(error = mPublisher.UnpublishService(serviceName.c_str(), serviceType.c_str()));
+        }
+    }
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogInfo("Failed to advertise SRP service updates %p", aHost);
+    }
+    return error;
 }
 
 Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService *aSrpService)

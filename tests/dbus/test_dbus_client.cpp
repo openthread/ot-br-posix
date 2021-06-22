@@ -118,10 +118,10 @@ int main()
     TEST_ASSERT(region == "US");
 
     api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
-        LinkModeConfig       cfg       = {true, false, true};
-        std::vector<uint8_t> masterKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-                                          0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-        uint16_t             channel   = 11;
+        LinkModeConfig       cfg        = {true, false, true};
+        std::vector<uint8_t> networkKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                                           0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+        uint16_t             channel    = 11;
 
         for (auto &&result : aResult)
         {
@@ -135,7 +135,7 @@ int main()
         cfg.mDeviceType = true;
         api->SetLinkMode(cfg);
 
-        api->Attach("Test", 0x3456, extpanid, masterKey, {}, 1 << channel,
+        api->Attach("Test", 0x3456, extpanid, networkKey, {}, 1 << channel,
                     [&api, channel, extpanid](ClientError aError) {
                         printf("Attach result %d\n", static_cast<int>(aError));
                         sleep(10);

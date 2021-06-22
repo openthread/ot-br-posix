@@ -55,9 +55,9 @@ static void *      sJsonUri            = nullptr;
 static int         sBufNum;
 static std::mutex *sNcpThreadMutex;
 
-const static int PANID_LENGTH     = 10;
-const static int XPANID_LENGTH    = 64;
-const static int MASTERKEY_LENGTH = 64;
+const static int PANID_LENGTH      = 10;
+const static int XPANID_LENGTH     = 64;
+const static int NETWORKKEY_LENGTH = 64;
 
 UbusServer::UbusServer(Ncp::ControllerOpenThread *aController)
     : mIfFinishScan(false)
@@ -98,7 +98,7 @@ enum
 
 enum
 {
-    MASTERKEY,
+    NETWORKKEY,
     NETWORKNAME,
     EXTPANID,
     PANID,
@@ -127,8 +127,8 @@ static const struct blobmsg_policy setPskcPolicy[SET_NETWORK_MAX] = {
     [SETNETWORK] = {.name = "pskc", .type = BLOBMSG_TYPE_STRING},
 };
 
-static const struct blobmsg_policy setMasterkeyPolicy[SET_NETWORK_MAX] = {
-    [SETNETWORK] = {.name = "masterkey", .type = BLOBMSG_TYPE_STRING},
+static const struct blobmsg_policy setNetworkkeyPolicy[SET_NETWORK_MAX] = {
+    [SETNETWORK] = {.name = "networkkey", .type = BLOBMSG_TYPE_STRING},
 };
 
 static const struct blobmsg_policy setModePolicy[SET_NETWORK_MAX] = {
@@ -157,7 +157,7 @@ static const struct blobmsg_policy addJoinerPolicy[ADD_JOINER_MAX] = {
 };
 
 static const struct blobmsg_policy mgmtsetPolicy[MGMTSET_MAX] = {
-    [MASTERKEY]   = {.name = "masterkey", .type = BLOBMSG_TYPE_STRING},
+    [NETWORKKEY]  = {.name = "networkkey", .type = BLOBMSG_TYPE_STRING},
     [NETWORKNAME] = {.name = "networkname", .type = BLOBMSG_TYPE_STRING},
     [EXTPANID]    = {.name = "extpanid", .type = BLOBMSG_TYPE_STRING},
     [PANID]       = {.name = "panid", .type = BLOBMSG_TYPE_STRING},
@@ -178,8 +178,9 @@ static const struct ubus_method otbrMethods[] = {
     {"rloc16", &UbusServer::UbusRloc16Handler, 0, 0, nullptr, 0},
     {"extpanid", &UbusServer::UbusExtPanIdHandler, 0, 0, nullptr, 0},
     {"setextpanid", &UbusServer::UbusSetExtPanIdHandler, 0, 0, setExtPanIdPolicy, ARRAY_SIZE(setExtPanIdPolicy)},
-    {"masterkey", &UbusServer::UbusMasterkeyHandler, 0, 0, nullptr, 0},
-    {"setmasterkey", &UbusServer::UbusSetMasterkeyHandler, 0, 0, setMasterkeyPolicy, ARRAY_SIZE(setMasterkeyPolicy)},
+    {"networkkey", &UbusServer::UbusNetworkkeyHandler, 0, 0, nullptr, 0},
+    {"setnetworkkey", &UbusServer::UbusSetNetworkkeyHandler, 0, 0, setNetworkkeyPolicy,
+     ARRAY_SIZE(setNetworkkeyPolicy)},
     {"pskc", &UbusServer::UbusPskcHandler, 0, 0, nullptr, 0},
     {"setpskc", &UbusServer::UbusSetPskcHandler, 0, 0, setPskcPolicy, ARRAY_SIZE(setPskcPolicy)},
     {"threadstart", &UbusServer::UbusThreadStartHandler, 0, 0, nullptr, 0},
@@ -458,22 +459,22 @@ int UbusServer::UbusSetPskcHandler(struct ubus_context *     aContext,
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "pskc");
 }
 
-int UbusServer::UbusMasterkeyHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
-                                     struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg)
+int UbusServer::UbusNetworkkeyHandler(struct ubus_context *     aContext,
+                                      struct ubus_object *      aObj,
+                                      struct ubus_request_data *aRequest,
+                                      const char *              aMethod,
+                                      struct blob_attr *        aMsg)
 {
-    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "masterkey");
+    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkkey");
 }
 
-int UbusServer::UbusSetMasterkeyHandler(struct ubus_context *     aContext,
-                                        struct ubus_object *      aObj,
-                                        struct ubus_request_data *aRequest,
-                                        const char *              aMethod,
-                                        struct blob_attr *        aMsg)
+int UbusServer::UbusSetNetworkkeyHandler(struct ubus_context *     aContext,
+                                         struct ubus_object *      aObj,
+                                         struct ubus_request_data *aRequest,
+                                         const char *              aMethod,
+                                         struct blob_attr *        aMsg)
 {
-    return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "masterkey");
+    return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkkey");
 }
 
 int UbusServer::UbusThreadStartHandler(struct ubus_context *     aContext,
@@ -864,11 +865,11 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
     SuccessOrExit(error = otDatasetGetActive(mController->GetInstance(), &dataset));
 
     blobmsg_parse(mgmtsetPolicy, MGMTSET_MAX, tb, blob_data(aMsg), blob_len(aMsg));
-    if (tb[MASTERKEY] != nullptr)
+    if (tb[NETWORKKEY] != nullptr)
     {
-        dataset.mComponents.mIsMasterKeyPresent = true;
-        VerifyOrExit((length = Hex2Bin(blobmsg_get_string(tb[MASTERKEY]), dataset.mMasterKey.m8,
-                                       sizeof(dataset.mMasterKey.m8))) == OT_MASTER_KEY_SIZE,
+        dataset.mComponents.mIsNetworkKeyPresent = true;
+        VerifyOrExit((length = Hex2Bin(blobmsg_get_string(tb[NETWORKKEY]), dataset.mNetworkKey.m8,
+                                       sizeof(dataset.mNetworkKey.m8))) == OT_NETWORK_KEY_SIZE,
                      error = OT_ERROR_PARSE);
         length = 0;
     }
@@ -1100,18 +1101,18 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         sprintf(rloc, "0x%04x", otThreadGetRloc16(mController->GetInstance()));
         blobmsg_add_string(&mBuf, "rloc16", rloc);
     }
-    else if (!strcmp(aAction, "masterkey"))
+    else if (!strcmp(aAction, "networkkey"))
     {
-        char           outputKey[MASTERKEY_LENGTH] = "";
-        const uint8_t *key = reinterpret_cast<const uint8_t *>(otThreadGetMasterKey(mController->GetInstance()));
-        OutputBytes(key, OT_MASTER_KEY_SIZE, outputKey);
-        blobmsg_add_string(&mBuf, "Masterkey", outputKey);
+        char           outputKey[NETWORKKEY_LENGTH] = "";
+        const uint8_t *key = reinterpret_cast<const uint8_t *>(otThreadGetNetworkKey(mController->GetInstance()));
+        OutputBytes(key, OT_NETWORK_KEY_SIZE, outputKey);
+        blobmsg_add_string(&mBuf, "Networkkey", outputKey);
     }
     else if (!strcmp(aAction, "pskc"))
     {
-        char          outputPskc[MASTERKEY_LENGTH] = "";
-        const otPskc *pskc                         = otThreadGetPskc(mController->GetInstance());
-        OutputBytes(pskc->m8, OT_MASTER_KEY_SIZE, outputPskc);
+        char          outputPskc[NETWORKKEY_LENGTH] = "";
+        const otPskc *pskc                          = otThreadGetPskc(mController->GetInstance());
+        OutputBytes(pskc->m8, OT_NETWORK_KEY_SIZE, outputPskc);
         blobmsg_add_string(&mBuf, "pskc", outputPskc);
     }
     else if (!strcmp(aAction, "extpanid"))
@@ -1456,18 +1457,18 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             error = otLinkSetPanId(mController->GetInstance(), static_cast<otPanId>(value));
         }
     }
-    else if (!strcmp(aAction, "masterkey"))
+    else if (!strcmp(aAction, "networkkey"))
     {
         struct blob_attr *tb[SET_NETWORK_MAX];
 
-        blobmsg_parse(setMasterkeyPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
+        blobmsg_parse(setNetworkkeyPolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
         if (tb[SETNETWORK] != nullptr)
         {
-            otMasterKey key;
-            char *      masterkey = blobmsg_get_string(tb[SETNETWORK]);
+            otNetworkKey key;
+            char *       networkkey = blobmsg_get_string(tb[SETNETWORK]);
 
-            VerifyOrExit(Hex2Bin(masterkey, key.m8, sizeof(key.m8)) == OT_MASTER_KEY_SIZE, error = OT_ERROR_PARSE);
-            SuccessOrExit(error = otThreadSetMasterKey(mController->GetInstance(), &key));
+            VerifyOrExit(Hex2Bin(networkkey, key.m8, sizeof(key.m8)) == OT_NETWORK_KEY_SIZE, error = OT_ERROR_PARSE);
+            SuccessOrExit(error = otThreadSetNetworkKey(mController->GetInstance(), &key));
         }
     }
     else if (!strcmp(aAction, "pskc"))
