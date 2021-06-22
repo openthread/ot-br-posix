@@ -11,15 +11,41 @@
         <h5>Are you sure you want to JOIN this Thread Network?</h5>
         <div layout="row">
           <md-input-container flex="80">
-            <label>Master Key</label>
-            <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="masterKey" ng-model="thread.masterKey">
-            <div ng-messages="joinForm.masterKey.$error">
+            <label>Credential Type</label>
+            <md-select name="credentialType" ng-model="thread.credentialType" required>
+              <md-option value="networkKeyType">Network Key</md-option>
+              <md-option value="pskdType">PSKd</md-option>
+            </md-select>
+          </md-input-container>
+        </div>
+        <div layout="row">
+          <md-input-container ng-show="thread.credentialType=='networkKeyType'" flex="80">
+            <label>Network Key</label>
+            <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="networkKey" ng-model="thread.networkKey">
+            <div ng-messages="joinForm.networkKey.$error">
               <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
-                Master Key must be hexadecimal digits and 32 characters long.
+                Network Key must be hexadecimal digits and 32 characters long.
+              </div>
+            </div>
+         </md-input-container>
+        </div>
+        <div layout="row">
+          <md-input-container ng-show="thread.credentialType=='pskdType'" flex="80">
+          <label>PSKd</label>
+          <input required minlength="6" maxlength="32" ng-pattern="/^((?![IOQZ])[0-9A-Z]){6,32}$/" name="pskd" ng-model="thread.pskd">
+            <div ng-messages="joinForm.pskd.$error">
+              <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
+                PSKd must be 6 to 32 characters long and must contain uppercase alphanumeric characters only (excluding I, O, Q and Z).
               </div>
             </div>
           </md-input-container>
         </div>
+         <div layout="row"> 
+          <md-button ng-show="joinForm.pskd.$valid" class="mdl-button--raised" ng-click="qrcode()">
+           Get Connect QR Code
+          </md-button>
+         </div>
+         <br>
         <div layout="row">
           <md-input-container flex="80">
             <label>Prefix</label>
@@ -46,7 +72,7 @@
       Cancel
     </md-button>
     <!-- <span flex="40"></span> -->
-    <md-button md-autofocus flex class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" style="width: 90px; margin-left:30px;  margin-bottom: 15px" ng-click="join(joinForm.masterKey.$valid && joinForm.prefix.$valid)">
+    <md-button md-autofocus flex class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-button show-modal" style="width: 90px; margin-left:30px;  margin-bottom: 15px" ng-click="join(joinForm.networkKey.$valid && joinForm.prefix.$valid)">
       Join
     </md-button>
   </div>
