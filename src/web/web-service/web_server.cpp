@@ -50,6 +50,7 @@
 #define OT_FORM_NETWORK_PATH "^/form_network$"
 #define OT_GET_NETWORK_PATH "^/get_properties$"
 #define OT_JOIN_NETWORK_PATH "^/join_network$"
+#define OT_GET_QRCODE_PATH "^/get_qrcode$"
 #define OT_SET_NETWORK_PATH "^/settings$"
 #define OT_COMMISSIONER_START_PATH "^/commission$"
 #define OT_REQUEST_METHOD_GET "GET"
@@ -127,6 +128,7 @@ void WebServer::StartWebServer(const char *aIfName, const char *aListenAddr, uin
     mServer->config.port = aPort;
     mWpanService.SetInterfaceName(aIfName);
     Init();
+    ResponseGetQRCode();
     ResponseJoinNetwork();
     ResponseFormNetwork();
     ResponseAddOnMeshPrefix();
@@ -274,6 +276,13 @@ std::string WebServer::HandleJoinNetworkRequest(const std::string &aJoinRequest,
     return webServer->HandleJoinNetworkRequest(aJoinRequest);
 }
 
+std::string WebServer::HandleGetQRCodeRequest(const std::string &aGetQRCodeRequest, void *aUserData)
+{
+    WebServer *webServer = static_cast<WebServer *>(aUserData);
+
+    return webServer->HandleGetQRCodeRequest(aGetQRCodeRequest);
+}
+
 std::string WebServer::HandleFormNetworkRequest(const std::string &aFormRequest, void *aUserData)
 {
     WebServer *webServer = static_cast<WebServer *>(aUserData);
@@ -322,6 +331,11 @@ void WebServer::ResponseJoinNetwork(void)
     HandleHttpRequest(OT_JOIN_NETWORK_PATH, OT_REQUEST_METHOD_POST, HandleJoinNetworkRequest);
 }
 
+void WebServer::ResponseGetQRCode(void)
+{
+    HandleHttpRequest(OT_GET_QRCODE_PATH, OT_REQUEST_METHOD_GET, HandleGetQRCodeRequest);
+}
+
 void WebServer::ResponseFormNetwork(void)
 {
     HandleHttpRequest(OT_FORM_NETWORK_PATH, OT_REQUEST_METHOD_POST, HandleFormNetworkRequest);
@@ -355,6 +369,12 @@ void WebServer::ResponseCommission(void)
 std::string WebServer::HandleJoinNetworkRequest(const std::string &aJoinRequest)
 {
     return mWpanService.HandleJoinNetworkRequest(aJoinRequest);
+}
+
+std::string WebServer::HandleGetQRCodeRequest(const std::string &aGetQRCodeRequest)
+{
+    OTBR_UNUSED_VARIABLE(aGetQRCodeRequest);
+    return mWpanService.HandleGetQRCodeRequest();
 }
 
 std::string WebServer::HandleFormNetworkRequest(const std::string &aFormRequest)

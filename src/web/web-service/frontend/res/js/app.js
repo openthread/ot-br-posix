@@ -94,7 +94,7 @@
             extPanId: '1111111122222222',
             panId: '0x1234',
             passphrase: '123456',
-            masterKey: '00112233445566778899aabbccddeeff',
+            networkKey: '00112233445566778899aabbccddeeff',
             channel: 15,
             prefix: 'fd11:22::',
             defaultRoute: true,
@@ -179,22 +179,62 @@
             var index = sharedProperties.getIndex();
             $scope.isDisplay = false;
             $scope.thread = {
-                masterKey: '00112233445566778899aabbccddeeff',
+                networkKey: '00112233445566778899aabbccddeeff',
                 prefix: 'fd11:22::',
                 defaultRoute: true,
             };
 
-            $scope.showAlert = function(ev, result) {
+            $scope.showAlert = function(ev, message) {
                 $mdDialog.show(
                     $mdDialog.alert()
                     .parent(angular.element(document.querySelector('#popupContainer')))
                     .clickOutsideToClose(true)
                     .title('Information')
-                    .textContent('Join operation is ' + result)
+                    .textContent(message)
                     .ariaLabel('Alert Dialog Demo')
                     .ok('Okay')
                     .targetEvent(ev)
                 );
+            };
+
+            $scope.showQRAlert = function(ev, message) {
+                $mdDialog.show(
+                    $mdDialog.alert()
+                    .parent(angular.element(document.querySelector('#popupContainer')))
+                    .clickOutsideToClose(true)
+                    .title('Information')
+                    .textContent(message)
+                    .ariaLabel('Alert Dialog Demo')
+                    .ok('Okay')
+                    .targetEvent(ev)
+                    .multiple(true)
+                );
+            };
+
+            $scope.showQRCode = function(ev, image) {
+              $mdDialog.show({
+                targetEvent: ev,
+                parent: angular.element(document.querySelector('#popupContainer')),
+                  template:
+                    '<md-dialog>' +
+                    '  <md-dialog-content>' +
+                    '  <h6 style="margin: 10px 10px 10px 10px; "><b>Open your OT Commissioner Android App to scan the Connect QR Code</b></h6>' +
+                    '  <div layout="row">' +
+                    '  <img ng-src="' + image + '" alt="qr code" style="display: block; margin-left: auto; margin-right: auto; width:40%"></img>' +
+                    '  </div>' +
+                    '  <md-dialog-actions>' +
+                    '    <md-button ng-click="closeDialog()" class="md-primary">' +
+                    '      Close' +
+                    '    </md-button>' +
+                    '  </md-dialog-actions>' +
+                    '</md-dialog>',
+                   controller: function DialogController($scope, $mdDialog) {
+                    $scope.closeDialog = function() {
+                    $mdDialog.hide();
+                    }
+                },
+                    multiple: true
+             });
             };
 
             $scope.join = function(valid) {
@@ -208,7 +248,9 @@
                 };
                 $scope.isDisplay = true;
                 var data = {
-                    masterKey: $scope.thread.masterKey,
+                    credentialType: $scope.thread.credentialType,
+                    networkKey: $scope.thread.networkKey,
+                    pskd: $scope.thread.pskd,
                     prefix: $scope.thread.prefix,
                     defaultRoute: $scope.thread.defaultRoute,
                     index: index,
@@ -225,12 +267,28 @@
                         $mdDialog.hide();
                     }
                     $scope.isDisplay = false;
-                    $scope.showAlert(event, response.data.result);
+                    $scope.showAlert(event, "Join operation is " + response.data.result + ". " + response.data.message);
                 });
             };
 
             $scope.cancel = function() {
                 $mdDialog.cancel();
+            };
+
+            $scope.qrcode = function() {
+                $scope.isLoading = false;
+                $http.get('/get_qrcode').then(function(response) {
+                    console.log(response);
+                    $scope.res = response.data.result;
+                    if (response.data.result == 'successful') {
+                        var image = "http://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=v%3D1%26%26eui%3D" + response.data.eui64 +"%26%26cc%3D" + $scope.thread.pskd +"&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L";
+                        $scope.showQRCode(event, image);
+                    } else {
+                        $scope.showQRAlert(event, "sorry, can not generate the QR code.");
+                    }   
+                    $scope.isDisplay = true;       
+                    
+                });
             };
         };
 
@@ -253,7 +311,7 @@
                     $scope.thread.defaultRoute = false;
                 };
                 var data = {
-                    masterKey: $scope.thread.masterKey,
+                    networkKey: $scope.thread.networkKey,
                     prefix: $scope.thread.prefix,
                     defaultRoute: $scope.thread.defaultRoute,
                     extPanId: $scope.thread.extPanId,

@@ -35,6 +35,8 @@
 
 #include "backbone_router/backbone_agent.hpp"
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+
 #include <assert.h>
 #include <net/if.h>
 
@@ -211,3 +213,5 @@ void BackboneAgent::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEven
 
 } // namespace BackboneRouter
 } // namespace otbr
+
+#endif // OTBR_ENABLE_BACKBONE_ROUTER

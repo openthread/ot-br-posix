@@ -115,6 +115,9 @@ LOCAL_SRC_FILES := \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
+    src/backbone_router/backbone_agent.cpp \
+    src/backbone_router/dua_routing_manager.cpp \
+    src/backbone_router/nd_proxy.cpp \
     src/common/dns_utils.cpp \
     src/common/logging.cpp \
     src/common/task_runner.cpp \
