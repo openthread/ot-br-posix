@@ -361,6 +361,7 @@ private:
         kMaxSizeOfHost        = AVAHI_LABEL_MAX,
         kMaxSizeOfDomain      = AVAHI_LABEL_MAX,
         kMaxSizeOfServiceType = AVAHI_LABEL_MAX,
+        kDefaultTtl           = 10,
     };
 
     struct Service

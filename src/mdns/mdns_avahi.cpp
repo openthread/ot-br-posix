@@ -1074,7 +1074,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     // TODO priority
     // TODO weight
     // TODO use a more proper TTL
-    mInstanceInfo.mTtl = 10;
+    mInstanceInfo.mTtl = kDefaultTtl;
     for (auto p = aTxt; p; p = avahi_string_list_get_next(p))
     {
         totalTxtSize += avahi_string_list_get_size(p) + 1;
@@ -1166,7 +1166,7 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser * 
     mHostInfo.mHostName = std::string(aName) + ".";
     mHostInfo.mAddresses.push_back(std::move(address));
     // TODO: Use a more proper TTL
-    mHostInfo.mTtl = 10;
+    mHostInfo.mTtl = kDefaultTtl;
     mPublisherAvahi->OnHostResolved(*this);
 
 exit:
