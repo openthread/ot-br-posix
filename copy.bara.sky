@@ -26,6 +26,21 @@
 #
 """Copybara configuration for synchronizing public main branch to private main branch."""
 
+CHECKOUT_SUBMODULES = [
+    "        submodules: false",
+    "    - name: Install OpenThread SSH Key",
+    "      uses: shimataro/ssh-key-action@v2",
+    "      with:",
+    "        key: $${{ secrets.OPENTHREAD_SSH_KEY }}",
+    "        if_key_exists: replace",
+    "        known_hosts: unnecessary",
+    "    - name: Checkout Submodules",
+    "      run: |",
+    "        git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch main third_party/openthread/repo",
+    "        git clone https://github.com/DaveGamble/cJSON.git --depth 1 third_party/cJSON/repo",
+    "        git clone https://github.com/nodejs/http-parser.git --depth 1 third_party/http-parser/repo",
+]
+
 
 def replace_line(line, replace_lines, paths=None):
     return core.replace(before=line + "\n",
@@ -46,8 +61,6 @@ core.workflow(
     origin_files=glob(
         include=["**"],
         exclude=[
-            # Remove GitHub Actions because GitHub Actions don't have access to internal repositories.
-            ".github/workflows/**",
             # Remove dependabot configuration.
             ".github/dependabot.yml"
         ],
@@ -64,9 +77,23 @@ core.workflow(
         ],
     ),
     transformations=[
+        # Use SSH Key to checkout submodules
+        replace_line("        submodules: true",
+                     CHECKOUT_SUBMODULES,
+                     paths=glob([".github/workflows/**"])),
+        replace_line("        submodules: recursive",
+                     CHECKOUT_SUBMODULES,
+                     paths=glob([".github/workflows/**"])),
+
         # Switch submodules to internal repositories.
         replace_line("\turl = https://github.com/openthread/openthread.git", [
-            "\turl = https://github.com/openthread/openthread-internal.git",
+            "\turl = git@github.com:openthread/openthread-internal.git",
+        ],
+                     paths=glob([".gitmodules"])),
+
+        # Choose corresponding branch (main/stable)
+        replace_line("\tbranch = main", [
+            "\tbranch = .",
         ],
                      paths=glob([".gitmodules"])),
     ],
