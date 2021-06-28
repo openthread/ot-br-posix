@@ -80,9 +80,9 @@ jobs:
       INTER_OP_BBR: 0
       BORDER_ROUTING: ${{ matrix.border_routing }}
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: false
+    - uses: actions/checkout@v2
+      with:
+        submodules: false
     - name: Install OpenThread SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
@@ -94,44 +94,44 @@ jobs:
         git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch main third_party/openthread/repo
         git clone https://github.com/DaveGamble/cJSON.git --depth 1 third_party/cJSON/repo
         git clone https://github.com/nodejs/http-parser.git --depth 1 third_party/http-parser/repo
-      - name: Build OTBR Docker Image
-        run: |
-          # We need the `-DOT_SRP_SERVER=ON` option because the `bbr_5_11_01.py` script is referring SRP server.
-          # This should be fixed by enhancing the test script to handle SRP server situations properly.
-          otbr_options="${{ matrix.otbr_options }}"
-          otbr_image_name="otbr-ot12-backbone-ci"
-          docker build -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
-            --build-arg BORDER_ROUTING=${{ matrix.border_routing }} \
-            --build-arg INFRA_IF_NAME=eth0 \
-            --build-arg BACKBONE_ROUTER=1 \
-            --build-arg REFERENCE_DEVICE=1 \
-            --build-arg OT_BACKBONE_CI=1 \
-            --build-arg NAT64=0 \
-            --build-arg MDNS="${{ matrix.otbr_mdns }}" \
-            --build-arg OTBR_OPTIONS="${otbr_options}"
-      - name: Bootstrap OpenThread Test
-        run: |
-          sudo rm /etc/apt/sources.list.d/* && sudo apt-get update
-          sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build socat nodejs npm
-          python3 -m pip install -r third_party/openthread/repo/tests/scripts/thread-cert/requirements.txt
-      - name: Build OpenThread
-        run: |
-          (cd third_party/openthread/repo && ./script/test build)
-      - name: Get Thread-Wireshark
-        run: |
-          (cd third_party/openthread/repo && ./script/test get_thread_wireshark)
-      - name: Run Test
-        run: |
-          export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
-          echo "CI_ENV=${CI_ENV}"
-          (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r *.log *.json *.pcap && false))
-      - uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
-        with:
-          name: thread-1-2-backbone-results
-          path: |
-            third_party/openthread/repo/*.pcap
-            third_party/openthread/repo/*.json
-            third_party/openthread/repo/*.log
-      - name: Codecov
-        uses: codecov/codecov-action@v1
+    - name: Build OTBR Docker Image
+      run: |
+        # We need the `-DOT_SRP_SERVER=ON` option because the `bbr_5_11_01.py` script is referring SRP server.
+        # This should be fixed by enhancing the test script to handle SRP server situations properly.
+        otbr_options="${{ matrix.otbr_options }}"
+        otbr_image_name="otbr-ot12-backbone-ci"
+        docker build -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
+          --build-arg BORDER_ROUTING=${{ matrix.border_routing }} \
+          --build-arg INFRA_IF_NAME=eth0 \
+          --build-arg BACKBONE_ROUTER=1 \
+          --build-arg REFERENCE_DEVICE=1 \
+          --build-arg OT_BACKBONE_CI=1 \
+          --build-arg NAT64=0 \
+          --build-arg MDNS="${{ matrix.otbr_mdns }}" \
+          --build-arg OTBR_OPTIONS="${otbr_options}"
+    - name: Bootstrap OpenThread Test
+      run: |
+        sudo rm /etc/apt/sources.list.d/* && sudo apt-get update
+        sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build socat nodejs npm
+        python3 -m pip install -r third_party/openthread/repo/tests/scripts/thread-cert/requirements.txt
+    - name: Build OpenThread
+      run: |
+        (cd third_party/openthread/repo && ./script/test build)
+    - name: Get Thread-Wireshark
+      run: |
+        (cd third_party/openthread/repo && ./script/test get_thread_wireshark)
+    - name: Run Test
+      run: |
+        export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
+        echo "CI_ENV=${CI_ENV}"
+        (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r *.log *.json *.pcap && false))
+    - uses: actions/upload-artifact@v2
+      if: ${{ failure() }}
+      with:
+        name: thread-1-2-backbone-results
+        path: |
+          third_party/openthread/repo/*.pcap
+          third_party/openthread/repo/*.json
+          third_party/openthread/repo/*.log
+    - name: Codecov
+      uses: codecov/codecov-action@v1
