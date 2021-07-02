@@ -111,6 +111,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::ScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_METHOD,
                    std::bind(&DBusThreadObject::AttachHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DETACH_METHOD,
+                   std::bind(&DBusThreadObject::DetachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_FACTORY_RESET_METHOD,
                    std::bind(&DBusThreadObject::FactoryResetHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_RESET_METHOD,
@@ -157,8 +159,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetExtPanIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL,
                                std::bind(&DBusThreadObject::GetChannelHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MASTER_KEY,
-                               std::bind(&DBusThreadObject::GetMasterKeyHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NETWORK_KEY,
+                               std::bind(&DBusThreadObject::GetNetworkKeyHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CCA_FAILURE_RATE,
                                std::bind(&DBusThreadObject::GetCcaFailureRateHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_COUNTERS,
@@ -266,11 +268,11 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     std::string          name;
     uint16_t             panid;
     uint64_t             extPanId;
-    std::vector<uint8_t> masterKey;
+    std::vector<uint8_t> networkKey;
     std::vector<uint8_t> pskc;
     uint32_t             channelMask;
 
-    auto args = std::tie(masterKey, panid, name, extPanId, pskc, channelMask);
+    auto args = std::tie(networkKey, panid, name, extPanId, pskc, channelMask);
 
     if (IsDBusMessageEmpty(*aRequest.GetMessage()))
     {
@@ -282,16 +284,26 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     }
     else
     {
-        threadHelper->Attach(name, panid, extPanId, masterKey, pskc, channelMask,
+        threadHelper->Attach(name, panid, extPanId, networkKey, pskc, channelMask,
                              [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
     }
 }
 
+void DBusThreadObject::DetachHandler(DBusRequest &aRequest)
+{
+    aRequest.ReplyOtResult(mNcp->GetThreadHelper()->Detach());
+}
+
 void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
 {
-    aRequest.ReplyOtResult(OT_ERROR_NONE);
-    otInstanceFactoryReset(mNcp->GetThreadHelper()->GetInstance());
+    otError error = OT_ERROR_NONE;
+
+    SuccessOrExit(error = mNcp->GetThreadHelper()->Detach());
+    SuccessOrExit(otInstanceErasePersistentInfo(mNcp->GetThreadHelper()->GetInstance()));
     mNcp->Reset();
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
@@ -583,11 +595,11 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetMasterKeyHandler(DBusMessageIter &aIter)
+otError DBusThreadObject::GetNetworkKeyHandler(DBusMessageIter &aIter)
 {
     auto                 threadHelper = mNcp->GetThreadHelper();
-    const otMasterKey *  masterKey    = otThreadGetMasterKey(threadHelper->GetInstance());
-    std::vector<uint8_t> keyVal(masterKey->m8, masterKey->m8 + sizeof(masterKey->m8));
+    const otNetworkKey * networkKey   = otThreadGetNetworkKey(threadHelper->GetInstance());
+    std::vector<uint8_t> keyVal(networkKey->m8, networkKey->m8 + sizeof(networkKey->m8));
     otError              error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, keyVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);

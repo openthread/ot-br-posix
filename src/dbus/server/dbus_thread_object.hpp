@@ -86,6 +86,7 @@ private:
 
     void ScanHandler(DBusRequest &aRequest);
     void AttachHandler(DBusRequest &aRequest);
+    void DetachHandler(DBusRequest &aRequest);
     void LeaveHandler(DBusRequest &aRequest);
     void FactoryResetHandler(DBusRequest &aRequest);
     void ResetHandler(DBusRequest &aRequest);
@@ -111,7 +112,7 @@ private:
     otError GetPanIdHandler(DBusMessageIter &aIter);
     otError GetExtPanIdHandler(DBusMessageIter &aIter);
     otError GetChannelHandler(DBusMessageIter &aIter);
-    otError GetMasterKeyHandler(DBusMessageIter &aIter);
+    otError GetNetworkKeyHandler(DBusMessageIter &aIter);
     otError GetCcaFailureRateHandler(DBusMessageIter &aIter);
     otError GetLinkCountersHandler(DBusMessageIter &aIter);
     otError GetIp6CountersHandler(DBusMessageIter &aIter);

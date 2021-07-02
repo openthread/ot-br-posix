@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "REST"
+
 #include "rest/resource.hpp"
 
 #include "string.h"
@@ -65,7 +67,7 @@ namespace otbr {
 namespace rest {
 
 // MulticastAddr
-static const char *kMulticastAddrAllRouters = "ff02::2";
+static const char *kMulticastAddrAllRouters = "ff03::2";
 
 // Default TlvTypes for Diagnostic inforamtion
 static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
@@ -581,7 +583,7 @@ void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessa
 exit:
     if (aError != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "failed to get diagnostic data: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to get diagnostic data: %s", otThreadErrorToString(aError));
     }
 }
 

@@ -59,7 +59,7 @@ function thread_handler_setting()
 	local panid = luci.http.formvalue("panid")
 	local extpanid = luci.http.formvalue("extpanid")
 	local mode = luci.http.formvalue("mode")
-	local masterkey = luci.http.formvalue("masterkey")
+	local networkkey = luci.http.formvalue("networkkey")
 	local pskc = luci.http.formvalue("pskc")
 	local macfilter = luci.http.formvalue("macfilterselect")
 	local macfilteradd = luci.http.formvalue("macfilteradd")
@@ -111,12 +111,12 @@ function thread_handler_setting()
 			conn:call("otbr", "setpanid", { panid = panid })
 			conn:call("otbr", "setextpanid", { extpanid = extpanid })
 			conn:call("otbr", "setmode", { mode = mode })
-			conn:call("otbr", "setmasterkey", { masterkey = masterkey })
+			conn:call("otbr", "setnetworkkey", { networkkey = networkkey })
 			conn:call("otbr", "setpskc", { pskc = pskc })
 			conn:call("otbr", "macfiltersetstate", { state = macfilter })
 			result = conn:call("otbr", "threadstart", {})
 		else
-			result = conn:call("otbr", "mgmtset", { masterkey = masterkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = pskc })
+			result = conn:call("otbr", "mgmtset", { networkkey = networkkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = pskc })
 			conn:call("otbr", "macfiltersetstate", { state = macfilter })
 		end
 		vError = result.Error
@@ -195,7 +195,7 @@ function thread_attach()
 	local http = require "luci.http"
 	local panid = luci.http.formvalue("panid")
 	local channel = luci.http.formvalue("channel") + 0
-	local masterkey = luci.http.formvalue("masterkey")
+	local networkkey = luci.http.formvalue("networkkey")
 
 	local conn = ubus.connect()
 
@@ -205,7 +205,7 @@ function thread_attach()
 
 	conn:call("otbr", "setpanid", { panid = panid })
 	conn:call("otbr", "setchannel", { channel = channel })
-	conn:call("otbr", "setmasterkey", { masterkey = masterkey })
+	conn:call("otbr", "setnetworkkey", { networkkey = networkkey })
 	result = conn:call("otbr", "threadstart", {})
 	vError = result.Error
 

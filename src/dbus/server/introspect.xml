@@ -28,7 +28,7 @@
     </method>
 
     <!-- Attach: Attach the current device to the Thread network.
-      @masterkey: The 128-bit network master key, empty for random.
+      @networkkey: The 128-bit network network key, empty for random.
       @panid: The 16-bit panid, UINT16_MAX for any.
       @networkname: The Thread network name.
       @extpanid: The 64-bit extended panid, UINT64_MAX for random.
@@ -38,12 +38,16 @@
       You can also call this method with no arugment to use the current active network dataset.
     -->
     <method name="Attach">
-      <arg name="masterkey" type="ay"/>
+      <arg name="networkkey" type="ay"/>
       <arg name="panid" type="q"/>
       <arg name="networkname" type="s"/>
       <arg name="extpanid" type="t"/>
       <arg name="pskc" type="ay"/>
       <arg name="channel_mask" type="u"/>
+    </method>
+
+    <!-- Detach: Detach the current device from the Thread network. -->
+    <method name="Detach">
     </method>
 
     <!-- PermitUnsecureJoin: Allow joining the network via unsecure traffic temporarily.

@@ -34,10 +34,13 @@
 #ifndef OTBR_AGENT_MDNS_HPP_
 #define OTBR_AGENT_MDNS_HPP_
 
+#include <functional>
+#include <string>
 #include <vector>
 
 #include <sys/select.h>
 
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -53,11 +56,17 @@ namespace Mdns {
  * @{
  */
 
+enum ResourceRecordType : uint16_t
+{
+    kResourceRecordTypeA    = 1,  ///< Resource Record type A
+    kResourceRecordTypeAaaa = 28, ///< Resource Record type AAAA
+};
+
 /**
  * This interface defines the functionality of MDNS service.
  *
  */
-class Publisher
+class Publisher : public MainloopProcessor
 {
 public:
     /**
@@ -66,10 +75,8 @@ public:
      */
     struct TxtEntry
     {
-        const char *   mName;        ///< The name of the TXT entry.
-        size_t         mNameLength;  ///< The length of the name of the TXT entry.
-        const uint8_t *mValue;       ///< The value of the TXT entry.
-        size_t         mValueLength; ///< The length of the value of the TXT entry.
+        std::string          mName;  ///< The name of the TXT entry.
+        std::vector<uint8_t> mValue; ///< The value of the TXT entry.
 
         TxtEntry(const char *aName, const char *aValue)
             : TxtEntry(aName, reinterpret_cast<const uint8_t *>(aValue), strlen(aValue))
@@ -82,10 +89,8 @@ public:
         }
 
         TxtEntry(const char *aName, size_t aNameLength, const uint8_t *aValue, size_t aValueLength)
-            : mName(aName)
-            , mNameLength(aNameLength)
-            , mValue(aValue)
-            , mValueLength(aValueLength)
+            : mName(aName, aNameLength)
+            , mValue(aValue, aValue + aValueLength)
         {
         }
     };
@@ -93,13 +98,75 @@ public:
     typedef std::vector<TxtEntry> TxtList;
 
     /**
+     * This structure represents information of a discovered service instance.
+     *
+     */
+    struct DiscoveredInstanceInfo
+    {
+        /**
+         * Constructor to initialize a `DiscoveredInstanceInfo` instance.
+         *
+         */
+        DiscoveredInstanceInfo(void)
+            : mPort(0)
+            , mPriority(0)
+            , mWeight(0)
+            , mTtl(0)
+        {
+        }
+
+        std::string             mName;      ///< Instance name.
+        std::string             mHostName;  ///< Full host name.
+        std::vector<Ip6Address> mAddresses; ///< IPv6 addresses.
+        uint16_t                mPort;      ///< Port.
+        uint16_t                mPriority;  ///< Service priority.
+        uint16_t                mWeight;    ///< Service weight.
+        std::vector<uint8_t>    mTxtData;   ///< TXT RDATA bytes.
+        uint32_t                mTtl;       ///< Service TTL.
+    };
+
+    /**
+     * This structure represents information of a discovered host.
+     *
+     */
+    struct DiscoveredHostInfo
+    {
+        /**
+         * Constructor to initialize a `DiscoveredHostInfo` instance.
+         *
+         */
+        DiscoveredHostInfo(void)
+            : mTtl(0)
+        {
+        }
+
+        std::string             mHostName;  ///< Full host name.
+        std::vector<Ip6Address> mAddresses; ///< IP6 addresses.
+        uint32_t                mTtl;       ///< Host TTL.
+    };
+
+    /**
+     * This function is called to notify a discovered service instance.
+     *
+     */
+    using DiscoveredServiceInstanceCallback =
+        std::function<void(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo)>;
+
+    /**
+     * This function is called to notify a discovered host.
+     *
+     */
+    using DiscoveredHostCallback =
+        std::function<void(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo)>;
+
+    /**
      * MDNS state values.
      *
      */
     enum class State
     {
-        kIdle,  ///< Unable to publishing service.
-        kReady, ///< Ready for publishing service.
+        kIdle,  ///< Unable to publish service.
+        kReady, ///< Ready to publish service.
     };
 
     /**
@@ -245,33 +312,72 @@ public:
     virtual otbrError UnpublishHost(const char *aName) = 0;
 
     /**
-     * This method performs the MDNS processing.
+     * This method subscribes a given service or service instance.
      *
-     * @param[in]   aReadFdSet          A reference to fd_set ready for reading.
-     * @param[in]   aWriteFdSet         A reference to fd_set ready for writing.
-     * @param[in]   aErrorFdSet         A reference to fd_set with error occurred.
+     * If @p aInstanceName is not empty, this method subscribes the service instance. Otherwise, this method subscribes
+     * the service. mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify
+     * discovered service instances.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
+     * instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to subscribe, or empty to subscribe the service.
      *
      */
-    virtual void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) = 0;
+    virtual void SubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method unsubscribes a given service or service instance.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
-     * @param[inout]    aTimeout        A reference to the timeout. Update this value if the MDNS service has
-     *                                  pending process in less than its current value.
+     * If @p aInstanceName is not empty, this method unsubscribes the service instance. Otherwise, this method
+     * unsubscribes the service.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
      *
      */
-    virtual void UpdateFdSet(fd_set & aReadFdSet,
-                             fd_set & aWriteFdSet,
-                             fd_set & aErrorFdSet,
-                             int &    aMaxFd,
-                             timeval &aTimeout) = 0;
+    virtual void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
 
-    virtual ~Publisher(void) {}
+    /**
+     * This method subscribes a given host.
+     *
+     * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    virtual void SubscribeHost(const std::string &aHostName) = 0;
+
+    /**
+     * This method unsubscribes a given host.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    virtual void UnsubscribeHost(const std::string &aHostName) = 0;
+
+    /**
+     * This method sets the callbacks for subscriptions.
+     *
+     * @param[in] aInstanceCallback     The callback function to receive discovered service instances.
+     * @param[in] aHostCallback         The callback function to receive discovered hosts.
+     *
+     */
+    void SetSubscriptionCallbacks(DiscoveredServiceInstanceCallback aInstanceCallback,
+                                  DiscoveredHostCallback            aHostCallback)
+    {
+        mDiscoveredServiceInstanceCallback = std::move(aInstanceCallback);
+        mDiscoveredHostCallback            = std::move(aHostCallback);
+    }
+
+    virtual ~Publisher(void) = default;
 
     /**
      * This function creates a MDNS publisher.
@@ -337,6 +443,9 @@ protected:
 
     PublishHostHandler mHostHandler        = nullptr;
     void *             mHostHandlerContext = nullptr;
+
+    DiscoveredServiceInstanceCallback mDiscoveredServiceInstanceCallback = nullptr;
+    DiscoveredHostCallback            mDiscoveredHostCallback            = nullptr;
 };
 
 /**

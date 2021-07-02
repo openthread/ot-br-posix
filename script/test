@@ -42,7 +42,6 @@ readonly OTBR_COVERAGE="${OTBR_COVERAGE:-0}"
 readonly OTBR_MDNS="${OTBR_MDNS:-}"
 readonly OTBR_REST="${OTBR_REST:-}"
 readonly OTBR_OPTIONS="${OTBR_OPTIONS:-}"
-readonly OTBR_TOP_SRCDIR="$PWD"
 readonly OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 
 #######################################
@@ -114,10 +113,7 @@ do_build()
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
-    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
-        && cd "${OTBR_TOP_BUILDDIR}" \
-        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
-        && ninja)
+    ./script/cmake-build "${otbr_options[@]}"
 }
 
 do_clean()
@@ -138,10 +134,7 @@ do_doxygen()
         "-DOTBR_DOC=ON"
     )
 
-    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
-        && cd "${OTBR_TOP_BUILDDIR}" \
-        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
-        && ninja doxygen)
+    OTBR_TARGET="doxygen" ./script/cmake-build "${otbr_options[@]}"
 }
 
 do_prepare()
@@ -177,10 +170,7 @@ do_package()
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
-    (mkdir -p "${OTBR_TOP_BUILDDIR}" \
-        && cd "${OTBR_TOP_BUILDDIR}" \
-        && cmake -GNinja "${OTBR_TOP_SRCDIR}" "${otbr_options[@]}" \
-        && ninja package)
+    OTBR_TARGET="package" ./script/cmake-build "${otbr_options[@]}"
 }
 
 main()

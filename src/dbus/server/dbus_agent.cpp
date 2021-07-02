@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "DBUS"
+
 #include "dbus/server/dbus_agent.hpp"
 
 #include "common/logging.hpp"
@@ -67,7 +69,7 @@ otbrError DBusAgent::Init(void)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_ERR, "dbus error %s: %s", dbusError.name, dbusError.message);
+        otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
     }
     dbus_error_free(&dbusError);
     return error;
@@ -84,18 +86,14 @@ void DBusAgent::RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext)
     static_cast<DBusAgent *>(aContext)->mWatches.erase(aWatch);
 }
 
-void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
-                            fd_set &        aWriteFdSet,
-                            fd_set &        aErrorFdSet,
-                            int &           aMaxFd,
-                            struct timeval &aTimeOut)
+void DBusAgent::Update(MainloopContext &aMainloop)
 {
     unsigned int flags;
     int          fd;
 
     if (dbus_connection_get_dispatch_status(mConnection.get()) == DBUS_DISPATCH_DATA_REMAINS)
     {
-        aTimeOut = {0, 0};
+        aMainloop.mTimeout = {0, 0};
     }
 
     for (const auto &watch : mWatches)
@@ -115,24 +113,21 @@ void DBusAgent::UpdateFdSet(fd_set &        aReadFdSet,
 
         if (flags & DBUS_WATCH_READABLE)
         {
-            FD_SET(fd, &aReadFdSet);
+            FD_SET(fd, &aMainloop.mReadFdSet);
         }
 
         if ((flags & DBUS_WATCH_WRITABLE))
         {
-            FD_SET(fd, &aWriteFdSet);
+            FD_SET(fd, &aMainloop.mWriteFdSet);
         }
 
-        FD_SET(fd, &aErrorFdSet);
+        FD_SET(fd, &aMainloop.mErrorFdSet);
 
-        if (fd > aMaxFd)
-        {
-            aMaxFd = fd;
-        }
+        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
     }
 }
 
-void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet)
+void DBusAgent::Process(const MainloopContext &aMainloop)
 {
     unsigned int flags;
     int          fd;
@@ -152,17 +147,17 @@ void DBusAgent::Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, con
             continue;
         }
 
-        if ((flags & DBUS_WATCH_READABLE) && !FD_ISSET(fd, &aReadFdSet))
+        if ((flags & DBUS_WATCH_READABLE) && !FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
             flags &= static_cast<unsigned int>(~DBUS_WATCH_READABLE);
         }
 
-        if ((flags & DBUS_WATCH_WRITABLE) && !FD_ISSET(fd, &aWriteFdSet))
+        if ((flags & DBUS_WATCH_WRITABLE) && !FD_ISSET(fd, &aMainloop.mWriteFdSet))
         {
             flags &= static_cast<unsigned int>(~DBUS_WATCH_WRITABLE);
         }
 
-        if (FD_ISSET(fd, &aErrorFdSet))
+        if (FD_ISSET(fd, &aMainloop.mErrorFdSet))
         {
             flags |= DBUS_WATCH_ERROR;
         }

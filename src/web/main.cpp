@@ -31,6 +31,7 @@
  *   This file is the entry of the program, it starts a Web service.
  */
 #define OT_HTTP_PORT 80
+#define OTBR_LOG_TAG "WEB"
 
 #include "openthread-br/config.h"
 
@@ -55,7 +56,7 @@ static void HandleSignal(int aSignal)
 {
     signal(aSignal, SIG_DFL);
 
-    otbrLog(OTBR_LOG_CRIT, "Stopping web server");
+    otbrLogCrit("Stopping web server");
 
     if (sServer != nullptr)
     {
@@ -70,13 +71,13 @@ static void PrintVersion(void)
 
 int main(int argc, char **argv)
 {
-    const char *interfaceName  = nullptr;
-    const char *httpListenAddr = nullptr;
-    const char *httpPort       = nullptr;
-    int         logLevel       = OTBR_LOG_INFO;
-    int         ret            = 0;
-    int         opt;
-    uint16_t    port = OT_HTTP_PORT;
+    const char * interfaceName  = nullptr;
+    const char * httpListenAddr = nullptr;
+    const char * httpPort       = nullptr;
+    otbrLogLevel logLevel       = OTBR_LOG_INFO;
+    int          ret            = 0;
+    int          opt;
+    uint16_t     port = OT_HTTP_PORT;
 
     while ((opt = getopt(argc, argv, "d:I:p:va:")) != -1)
     {
@@ -86,7 +87,7 @@ int main(int argc, char **argv)
             httpListenAddr = optarg;
             break;
         case 'd':
-            logLevel = atoi(optarg);
+            logLevel = static_cast<otbrLogLevel>(atoi(optarg));
             break;
         case 'I':
             interfaceName = optarg;
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
     }
 
     otbrLogInit(kSyslogIdent, logLevel, true);
-    otbrLog(OTBR_LOG_INFO, "Running %s", OTBR_PACKAGE_VERSION);
+    otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
 
     if (interfaceName == nullptr)
     {
@@ -131,7 +132,7 @@ int main(int argc, char **argv)
         printf("http port not specified, using default %d\n", port);
     }
 
-    otbrLog(OTBR_LOG_INFO, "border router web started on %s", interfaceName);
+    otbrLogInfo("Border router web started on %s", interfaceName);
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);

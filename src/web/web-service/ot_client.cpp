@@ -26,6 +26,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "WEB"
+
 #include "web/web-service/ot_client.hpp"
 
 #include <openthread/platform/toolchain.h>
@@ -46,15 +48,22 @@
 #include "utils/strcpy_utils.hpp"
 
 // Temporary solution before posix platform header files are cleaned up.
-#ifndef OPENTHREAD_POSIX_APP_SOCKET_NAME
-#define OPENTHREAD_POSIX_APP_SOCKET_NAME "/tmp/openthread.sock"
+#ifndef OPENTHREAD_POSIX_DAEMON_SOCKET_NAME
+#ifdef __linux__
+#define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/run/openthread-%s"
+#else
+#define OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME "/tmp/openthread-%s"
+#endif
+#define OPENTHREAD_POSIX_DAEMON_SOCKET_NAME OPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME ".sock"
 #endif
 
 namespace otbr {
 namespace Web {
 
-OpenThreadClient::OpenThreadClient(void)
-    : mTimeout(kDefaultTimeout)
+OpenThreadClient::OpenThreadClient(const char *aNetifName)
+
+    : mNetifName(aNetifName)
+    , mTimeout(kDefaultTimeout)
     , mSocket(-1)
 {
 }
@@ -83,13 +92,18 @@ bool OpenThreadClient::Connect(void)
 
     memset(&sockname, 0, sizeof(struct sockaddr_un));
     sockname.sun_family = AF_UNIX;
-    strcpy_safe(sockname.sun_path, sizeof(sockname.sun_path), OPENTHREAD_POSIX_APP_SOCKET_NAME);
+    ret = snprintf(sockname.sun_path, sizeof(sockname.sun_path), OPENTHREAD_POSIX_DAEMON_SOCKET_NAME, mNetifName);
+
+    VerifyOrExit(ret >= 0 && static_cast<size_t>(ret) < sizeof(sockname.sun_path), {
+        errno = EINVAL;
+        ret   = -1;
+    });
 
     ret = connect(mSocket, reinterpret_cast<const struct sockaddr *>(&sockname), sizeof(struct sockaddr_un));
 
     if (ret == -1)
     {
-        otbrLog(OTBR_LOG_ERR, "OpenThread daemon is not running.");
+        otbrLogErr("OpenThread daemon is not running.");
     }
 
 exit:
@@ -110,7 +124,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 
     if (ret < 0)
     {
-        otbrLog(OTBR_LOG_ERR, "Failed to generate command: %s", strerror(errno));
+        otbrLogErr("Failed to generate command: %s", strerror(errno));
     }
 
     mBuffer[0] = '\n';
@@ -118,7 +132,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 
     if (ret == sizeof(mBuffer))
     {
-        otbrLog(OTBR_LOG_ERR, "Command exceeds maximum limit: %d", kBufferSize);
+        otbrLogErr("Command exceeds maximum limit: %d", kBufferSize);
     }
 
     mBuffer[ret] = '\n';
@@ -129,7 +143,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     if (count < ret)
     {
         mBuffer[ret] = '\0';
-        otbrLog(OTBR_LOG_ERR, "Failed to send command: %s", mBuffer);
+        otbrLogErr("Failed to send command: %s", mBuffer);
     }
 
     for (int i = 0; i < mTimeout; ++i)
@@ -158,11 +172,38 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
         if (done != nullptr)
         {
             // remove trailing \r\n
-            if (done - rval > 2)
+            if (done - mBuffer > 2)
             {
                 done[-2] = '\0';
             }
 
+            rval = mBuffer;
+            break;
+        }
+    }
+
+exit:
+    return rval;
+}
+
+char *OpenThreadClient::Read(const char *aResponse, int aTimeout)
+{
+    ssize_t count    = 0;
+    size_t  rxLength = 0;
+    char *  found;
+    char *  rval = nullptr;
+
+    for (int i = 0; i < aTimeout; ++i)
+    {
+        count = read(mSocket, &mBuffer[rxLength], sizeof(mBuffer) - rxLength);
+        VerifyOrExit(count > 0);
+        rxLength += count;
+
+        mBuffer[rxLength] = '\0';
+        found             = strstr(mBuffer, aResponse);
+
+        if (found != nullptr)
+        {
             rval = mBuffer;
             break;
         }

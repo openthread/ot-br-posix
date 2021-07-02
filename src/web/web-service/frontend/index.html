@@ -200,11 +200,11 @@
 
               <div layout="row">
                 <md-input-container flex="50">
-                  <label>Master Key</label>
-                  <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="masterKey" ng-model="thread.masterKey">
-                  <div ng-messages="threadForm.MasterKey.$error">
+                  <label>Network Key</label>
+                  <input required minlength="32" maxlength="32" ng-pattern="/^[0-9a-fA-F]{32}$/" name="networkKey" ng-model="thread.networkKey">
+                  <div ng-messages="threadForm.NetworkKey.$error">
                     <div ng-message-exp="['required', 'minlength', 'maxlength', 'pattern']">
-                      Master Key must be 32 hexadecimal digits long.
+                      Network Key must be 32 hexadecimal digits long.
                     </div>
                   </div>
                 </md-input-container>
@@ -237,7 +237,7 @@
               </md-input-container>
               <div>
                 <md-button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" type="submit" ng-click="showConfirm($event, (threadForm.networkName.$valid && threadForm.extPanId.$valid &&
-                threadForm.panId.$valid && threadForm.passphrase.$valid && threadForm.masterKey.$valid &&
+                threadForm.panId.$valid && threadForm.passphrase.$valid && threadForm.networkKey.$valid &&
                 threadForm.channel.$valid && threadForm.prefix.$valid))">Form</md-button>
               </div>
             </form>
@@ -288,16 +288,6 @@
           <h4>Commission</h4>
             <md-content layout-padding flex="100">
               <form name="commissionForm">
-                <div layout="row">
-                  <md-input-container flex="100">
-                    <label>Network Passphrase</label>
-                    <input required name="passphrase" ng-model="commission.passphrase">
-                    <div ng-messages="commissionForm.passphrase.$error">
-                      <div ng-message="required">This is required.</div>
-                    </div>
-                  </md-input-container>
-                </div>
-
                 <div layout="row">
                   <md-input-container flex="100">
                     <label>Joiner PSKd</label>

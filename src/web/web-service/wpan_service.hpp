@@ -74,6 +74,14 @@ class WpanService
 {
 public:
     /**
+     * This method handles http request to get information to generate QR code.
+     *
+     * @returns The string to the http response of getting QR code.
+     *
+     */
+    std::string HandleGetQRCodeRequest(void);
+
+    /**
      * This method handles the http request to join network.
      *
      * @param[in]  aJoinRequest  A reference to the http request of joining network.
@@ -174,12 +182,17 @@ public:
     std::string CommissionDevice(const char *aPskd, const char *aNetworkPassword);
 
 private:
-    int                commitActiveDataset(otbr::Web::OpenThreadClient &aClient,
-                                           const std::string &          aMasterKey,
-                                           const std::string &          aNetworkName,
-                                           uint16_t                     aChannel,
-                                           uint64_t                     aExtPanId,
-                                           uint16_t                     aPanId);
+    int                formActiveDataset(otbr::Web::OpenThreadClient &aClient,
+                                         const std::string &          aNetworkKey,
+                                         const std::string &          aNetworkName,
+                                         const std::string &          aPskc,
+                                         uint16_t                     aChannel,
+                                         uint64_t                     aExtPanId,
+                                         uint16_t                     aPanId);
+    int                joinActiveDataset(otbr::Web::OpenThreadClient &aClient,
+                                         const std::string &          aNetworkKey,
+                                         uint16_t                     aChannel,
+                                         uint16_t                     aPanId);
     static std::string escapeOtCliEscapable(const std::string &aArg);
 
     WpanNetworkInfo mNetworks[OT_SCANNED_NET_BUFFER_SIZE];
@@ -196,6 +209,8 @@ private:
         kWpanStatus_FormFailed,
         kWpanStatus_GetPropertyFailed,
         kWpanStatus_JoinFailed,
+        kWpanStatus_JoinFailed_NotFound,
+        kWpanStatus_JoinFailed_Security,
         kWpanStatus_LeaveFailed,
         kWpanStatus_NetworkNotFound,
         kWpanStatus_Offline,
@@ -211,9 +226,6 @@ private:
         kPropertyType_String = 0,
         kPropertyType_Data,
     };
-
-    static const char *kBorderAgentHost;
-    static const char *kBorderAgentPort;
 };
 
 } // namespace Web

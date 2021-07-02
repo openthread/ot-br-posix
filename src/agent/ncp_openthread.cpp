@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/ncp_openthread.hpp"
 
 #include <assert.h>
@@ -33,7 +35,6 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
-#include <openthread/cli.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
 #include <openthread/srp_server.h>
@@ -53,27 +54,28 @@
 #include <ot-legacy-pairing-ext.h>
 #endif
 
-static bool sReset;
-using std::chrono::duration_cast;
-using std::chrono::microseconds;
-using std::chrono::seconds;
-using std::chrono::steady_clock;
-
 namespace otbr {
 namespace Ncp {
 
-ControllerOpenThread::ControllerOpenThread(const char *aInterfaceName,
-                                           const char *aRadioUrl,
-                                           const char *aBackboneInterfaceName)
+static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
+static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
+
+ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
+                                           const std::vector<const char *> &aRadioUrls,
+                                           const char *                     aBackboneInterfaceName)
     : mInstance(nullptr)
-    , mTriedAttach(false)
 {
+    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
+
     memset(&mConfig, 0, sizeof(mConfig));
 
     mConfig.mInterfaceName         = aInterfaceName;
     mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
-    mConfig.mRadioUrl              = aRadioUrl;
-    mConfig.mSpeedUpFactor         = 1;
+    for (const char *url : aRadioUrls)
+    {
+        mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;
+    }
+    mConfig.mSpeedUpFactor = 1;
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
@@ -114,7 +116,6 @@ otbrError ControllerOpenThread::Init(void)
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
-    otCliUartInit(mInstance);
 #if OTBR_ENABLE_LEGACY
     otLegacyInit();
 #endif
@@ -125,12 +126,6 @@ otbrError ControllerOpenThread::Init(void)
         agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    otBackboneRouterSetDomainPrefixCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent,
-                                            this);
-    otBackboneRouterSetNdProxyCallback(mInstance, &ControllerOpenThread::HandleBackboneRouterNdProxyEvent, this);
-#endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
@@ -144,20 +139,8 @@ exit:
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 {
-    if (aFlags & OT_CHANGED_THREAD_NETWORK_NAME)
-    {
-        EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
-    }
-
-    if (aFlags & OT_CHANGED_THREAD_EXT_PANID)
-    {
-        EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
-    }
-
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        bool attached = false;
-
         switch (otThreadGetDeviceRole(mInstance))
         {
         case OT_DEVICE_ROLE_DISABLED:
@@ -171,80 +154,59 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 #if OTBR_ENABLE_LEGACY
             otLegacyStart();
 #endif
-            attached = true;
             break;
         default:
             break;
         }
-
-        EventEmitter::Emit(kEventThreadState, attached);
     }
 
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    if (aFlags & OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE)
+    for (auto &stateCallback : mThreadStateChangedCallbacks)
     {
-        EventEmitter::Emit(kEventBackboneRouterState);
+        stateCallback(aFlags);
     }
-#endif
 
     mThreadHelper->StateChangedCallback(aFlags);
 }
 
-static struct timeval ToTimeVal(const microseconds &aTime)
+void ControllerOpenThread::Update(MainloopContext &aMainloop)
 {
-    constexpr int  kUsPerSecond = 1000000;
-    struct timeval val;
-
-    val.tv_sec  = aTime.count() / kUsPerSecond;
-    val.tv_usec = aTime.count() % kUsPerSecond;
-
-    return val;
-};
-
-void ControllerOpenThread::UpdateFdSet(otSysMainloopContext &aMainloop)
-{
-    microseconds timeout = microseconds(aMainloop.mTimeout.tv_usec) + seconds(aMainloop.mTimeout.tv_sec);
-    auto         now     = steady_clock::now();
+    mTaskRunner.Update(aMainloop);
 
     if (otTaskletsArePending(mInstance))
     {
-        timeout = microseconds::zero();
+        aMainloop.mTimeout = ToTimeval(Microseconds::zero());
     }
-    else if (!mTimers.empty())
-    {
-        if (mTimers.begin()->first < now)
-        {
-            timeout = microseconds::zero();
-        }
-        else
-        {
-            timeout = std::min(timeout, duration_cast<microseconds>(mTimers.begin()->first - now));
-        }
-    }
-
-    aMainloop.mTimeout = ToTimeVal(timeout);
 
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
-void ControllerOpenThread::Process(const otSysMainloopContext &aMainloop)
+void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 {
-    auto now = steady_clock::now();
-
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
 
-    while (!mTimers.empty() && mTimers.begin()->first <= now)
-    {
-        mTimers.begin()->second();
-        mTimers.erase(mTimers.begin());
-    }
+    mTaskRunner.Process(aMainloop);
 
-    if (!mTriedAttach && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+    if (getenv("OTBR_NO_AUTO_ATTACH") == nullptr && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
-        mTriedAttach = true;
+        setenv("OTBR_NO_AUTO_ATTACH", "1", 0);
     }
+}
+
+void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
+{
+    mTaskRunner.Post(std::move(aDelay), std::move(aTask));
+}
+
+void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
+{
+    mResetHandlers.emplace_back(std::move(aHandler));
+}
+
+void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
+{
+    mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
 void ControllerOpenThread::Reset(void)
@@ -258,117 +220,26 @@ void ControllerOpenThread::Reset(void)
     {
         handler();
     }
-    mTriedAttach = false;
-    sReset       = false;
+    unsetenv("OTBR_NO_AUTO_ATTACH");
 }
 
-bool ControllerOpenThread::IsResetRequested(void)
+const char *ControllerOpenThread::GetThreadVersion(void)
 {
-    return sReset;
-}
+    const char *version;
 
-otbrError ControllerOpenThread::RequestEvent(int aEvent)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    switch (aEvent)
+    switch (otThreadGetVersion())
     {
-    case kEventExtPanId:
-    {
-        EventEmitter::Emit(kEventExtPanId, otThreadGetExtendedPanId(mInstance));
+    case kThreadVersion11:
+        version = "1.1.1";
         break;
-    }
-    case kEventThreadState:
-    {
-        bool attached = false;
-
-        switch (otThreadGetDeviceRole(mInstance))
-        {
-        case OT_DEVICE_ROLE_CHILD:
-        case OT_DEVICE_ROLE_ROUTER:
-        case OT_DEVICE_ROLE_LEADER:
-            attached = true;
-            break;
-        default:
-            break;
-        }
-
-        EventEmitter::Emit(kEventThreadState, attached);
+    case kThreadVersion12:
+        version = "1.2.0";
         break;
-    }
-    case kEventNetworkName:
-    {
-        EventEmitter::Emit(kEventNetworkName, otThreadGetNetworkName(mInstance));
-        break;
-    }
-    case kEventPSKc:
-    {
-        EventEmitter::Emit(kEventPSKc, otThreadGetPskc(mInstance));
-        break;
-    }
-    case kEventThreadVersion:
-    {
-        EventEmitter::Emit(kEventThreadVersion, otThreadGetVersion());
-        break;
-    }
-    case kEventExtAddr:
-    {
-        const otExtAddress *extAddr;
-
-        extAddr = otLinkGetExtendedAddress(mInstance);
-        EventEmitter::Emit(kEventExtAddr, extAddr);
-        break;
-    }
     default:
-        assert(false);
-        break;
+        otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
+        exit(-1);
     }
-
-    return ret;
-}
-
-void ControllerOpenThread::PostTimerTask(std::chrono::steady_clock::time_point aTimePoint,
-                                         const std::function<void(void)> &     aTask)
-{
-    mTimers.insert({aTimePoint, aTask});
-}
-
-void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
-{
-    mResetHandlers.emplace_back(std::move(aHandler));
-}
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
-                                                                 otBackboneRouterDomainPrefixEvent aEvent,
-                                                                 const otIp6Prefix *               aDomainPrefix)
-{
-    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterDomainPrefixEvent(aEvent, aDomainPrefix);
-}
-
-void ControllerOpenThread::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
-                                                                 const otIp6Prefix *               aDomainPrefix)
-{
-    EventEmitter::Emit(kEventBackboneRouterDomainPrefixEvent, aEvent, aDomainPrefix);
-}
-
-void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(void *                       aContext,
-                                                            otBackboneRouterNdProxyEvent aEvent,
-                                                            const otIp6Address *         aAddress)
-{
-    static_cast<ControllerOpenThread *>(aContext)->HandleBackboneRouterNdProxyEvent(aEvent, aAddress);
-}
-
-void ControllerOpenThread::HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent,
-                                                            const otIp6Address *         aAddress)
-{
-    EventEmitter::Emit(kEventBackboneRouterNdProxyEvent, aEvent, aAddress);
-}
-#endif
-
-Controller *Controller::Create(const char *aInterfaceName, const char *aRadioUrl, const char *aBackboneInterfaceName)
-{
-    return new ControllerOpenThread(aInterfaceName, aRadioUrl, aBackboneInterfaceName);
+    return version;
 }
 
 /*
@@ -378,7 +249,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 {
     OT_UNUSED_VARIABLE(aLogRegion);
 
-    int otbrLogLevel;
+    otbrLogLevel otbrLogLevel;
 
     switch (aLogLevel)
     {
@@ -413,10 +284,3 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
 } // namespace Ncp
 } // namespace otbr
-
-void otPlatReset(otInstance *aInstance)
-{
-    OT_UNUSED_VARIABLE(aInstance);
-
-    sReset = true;
-}

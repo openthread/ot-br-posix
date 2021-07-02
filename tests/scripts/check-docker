@@ -45,7 +45,10 @@ on_exit()
 
 main()
 {
-    docker build -t otbr --build-arg OTBR_OPTIONS=-DOT_POSIX_CONFIG_RCP_BUS="${OT_POSIX_CONFIG_RCP_BUS}" -f etc/docker/Dockerfile .
+    docker build -t otbr \
+        --build-arg OTBR_OPTIONS=-DOT_POSIX_CONFIG_RCP_BUS="${OT_POSIX_CONFIG_RCP_BUS}" \
+        --build-arg BACKBONE_ROUTER=0 \
+        -f etc/docker/Dockerfile .
 
     # SPI simulation is not available yet, so just verify the binary runs
     if [[ ${OT_POSIX_CONFIG_RCP_BUS} == SPI ]]; then
@@ -72,12 +75,12 @@ main()
 
     readonly OTBR_DOCKER_PID=$(docker run --rm -d \
         --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
-        --privileged -p 8080:80 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr)
+        --privileged -p 8080:80 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr --backbone-interface eth0)
     sleep 10
     sudo lsof -i :8080
 
     local -r OTBR_WEB_URL="http://127.0.0.1:8080"
-    local -r OT_MASTER_KEY=00112233445566778899aabbccddeeff
+    local -r OT_NETWORK_KEY=00112233445566778899aabbccddeeff
     local -r OT_XPANID=0011223344556677
     local -r OT_PANID=0xface
     local -r OT_AGENT_PASSPHRASE=123456
@@ -85,7 +88,7 @@ main()
     local -r OT_NETWORK_NAME=OpenThreadDocker
 
     curl "${OTBR_WEB_URL}"/index.html | grep 'What is OpenThread'
-    curl --header "Content-Type: application/json" --request POST --data "{\"masterKey\":\"${OT_MASTER_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success"
+    curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_NETWORK_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success"
 }
 
 main "$@"

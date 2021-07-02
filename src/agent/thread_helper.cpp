@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/thread_helper.hpp"
 
 #include <assert.h>
@@ -176,7 +178,7 @@ static otExtendedPanId ToOtExtendedPanId(uint64_t aExtPanId)
 void ThreadHelper::Attach(const std::string &         aNetworkName,
                           uint16_t                    aPanId,
                           uint64_t                    aExtPanId,
-                          const std::vector<uint8_t> &aMasterKey,
+                          const std::vector<uint8_t> &aNetworkKey,
                           const std::vector<uint8_t> &aPSKc,
                           uint32_t                    aChannelMask,
                           ResultHandler               aHandler)
@@ -184,7 +186,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 {
     otError         error = OT_ERROR_NONE;
     otExtendedPanId extPanId;
-    otMasterKey     masterKey;
+    otNetworkKey    networkKey;
     otPskc          pskc;
     uint32_t        channelMask;
     uint8_t         channel;
@@ -192,7 +194,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
     mAttachHandler = aHandler;
-    VerifyOrExit(aMasterKey.empty() || aMasterKey.size() == sizeof(masterKey.m8), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aNetworkKey.empty() || aNetworkKey.size() == sizeof(networkKey.m8), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aChannelMask != 0, error = OT_ERROR_INVALID_ARGS);
 
@@ -215,13 +217,13 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
         }
     }
 
-    if (!aMasterKey.empty())
+    if (!aNetworkKey.empty())
     {
-        memcpy(masterKey.m8, &aMasterKey[0], sizeof(masterKey.m8));
+        memcpy(networkKey.m8, &aNetworkKey[0], sizeof(networkKey.m8));
     }
     else
     {
-        RandomFill(masterKey.m8, sizeof(masterKey.m8));
+        RandomFill(networkKey.m8, sizeof(networkKey.m8));
     }
 
     if (!aPSKc.empty())
@@ -241,7 +243,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     SuccessOrExit(error = otThreadSetNetworkName(mInstance, aNetworkName.c_str()));
     SuccessOrExit(error = otLinkSetPanId(mInstance, aPanId));
     SuccessOrExit(error = otThreadSetExtendedPanId(mInstance, &extPanId));
-    SuccessOrExit(error = otThreadSetMasterKey(mInstance, &masterKey));
+    SuccessOrExit(error = otThreadSetNetworkKey(mInstance, &networkKey));
 
     channelMask = otPlatRadioGetPreferredChannelMask(mInstance) & aChannelMask;
 
@@ -249,7 +251,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     {
         channelMask = otLinkGetSupportedChannelMask(mInstance) & aChannelMask;
     }
-    VerifyOrExit(channelMask != 0, otbrLog(OTBR_LOG_WARNING, "Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(channelMask != 0, otbrLogWarning("Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
 
     channel = RandomChannelFromChannelMask(channelMask);
     SuccessOrExit(otLinkSetChannel(mInstance, channel));
@@ -290,6 +292,17 @@ exit:
         }
         mAttachHandler = nullptr;
     }
+}
+
+otError ThreadHelper::Detach(void)
+{
+    otError error = OT_ERROR_NONE;
+
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, false));
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, false));
+
+exit:
+    return error;
 }
 
 otError ThreadHelper::Reset(void)
@@ -342,7 +355,7 @@ void ThreadHelper::JoinerCallback(otError aError)
 {
     if (aError != OT_ERROR_NONE)
     {
-        otbrLog(OTBR_LOG_WARNING, "Failed to join Thread network: %s", otThreadErrorToString(aError));
+        otbrLogWarning("Failed to join Thread network: %s", otThreadErrorToString(aError));
         mJoinerHandler(aError);
         mJoinerHandler = nullptr;
     }
@@ -374,6 +387,18 @@ exit:
     return error;
 }
 
+void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
+{
+    if (aError == OT_ERROR_NONE)
+    {
+        otbrLogInfo("%s: %s", aAction, otThreadErrorToString(aError));
+    }
+    else
+    {
+        otbrLogWarning("%s: %s", aAction, otThreadErrorToString(aError));
+    }
+}
+
 #if OTBR_ENABLE_UNSECURE_JOIN
 otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 {
@@ -387,25 +412,23 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 
     if (aSeconds > 0)
     {
-        auto triggerTime = std::chrono::steady_clock::now() + std::chrono::seconds(aSeconds);
+        auto delay = Milliseconds(aSeconds * 1000);
 
-        if (mUnsecurePortCloseTime.find(aPort) == mUnsecurePortCloseTime.end() ||
-            mUnsecurePortCloseTime[aPort] < triggerTime)
-        {
-            mUnsecurePortCloseTime[aPort] = triggerTime;
-        }
+        ++mUnsecurePortRefCounter[aPort];
 
-        mNcp->PostTimerTask(triggerTime, [this, aPort]() {
-            auto         now = std::chrono::steady_clock::now();
-            otExtAddress noneAddress;
+        mNcp->PostTimerTask(delay, [this, aPort]() {
+            assert(mUnsecurePortRefCounter.find(aPort) != mUnsecurePortRefCounter.end());
+            assert(mUnsecurePortRefCounter[aPort] > 0);
 
-            // 0 to clean steering data
-            memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
-            if (now >= mUnsecurePortCloseTime[aPort])
+            if (--mUnsecurePortRefCounter[aPort] == 0)
             {
+                otExtAddress noneAddress;
+
+                // 0 to clean steering data
+                memset(&noneAddress.m8, 0, sizeof(noneAddress.m8));
                 (void)otIp6RemoveUnsecurePort(mInstance, aPort);
                 otThreadSetSteeringData(mInstance, &noneAddress);
-                mUnsecurePortCloseTime.erase(aPort);
+                mUnsecurePortRefCounter.erase(aPort);
             }
         });
     }

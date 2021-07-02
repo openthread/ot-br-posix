@@ -28,6 +28,8 @@
 ARG BASE_IMAGE=ubuntu:bionic
 FROM ${BASE_IMAGE}
 
+ARG INFRA_IF_NAME
+ARG BORDER_ROUTING
 ARG BACKBONE_ROUTER
 ARG OT_BACKBONE_CI
 ARG OTBR_OPTIONS
@@ -35,9 +37,15 @@ ARG DNS64
 ARG NAT64
 ARG REFERENCE_DEVICE
 ARG RELEASE
+ARG REST_API
+ARG WEB_GUI
+ARG MDNS
 
-ENV BACKBONE_ROUTER=${BACKBONE_ROUTER:-0}
+ENV INFRA_IF_NAME=${INFRA_IF_NAME:-eth0}
+ENV BORDER_ROUTING=${BORDER_ROUTING:-1}
+ENV BACKBONE_ROUTER=${BACKBONE_ROUTER:-1}
 ENV OT_BACKBONE_CI=${OT_BACKBONE_CI:-0}
+ENV OTBR_MDNS=${MDNS:-mDNSResponder}
 ENV OTBR_OPTIONS=${OTBR_OPTIONS}
 ENV DEBIAN_FRONTEND noninteractive
 ENV PLATFORM ubuntu
@@ -45,6 +53,8 @@ ENV REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 ENV RELEASE=${RELEASE:-1}
 ENV NAT64=${NAT64:-1}
 ENV DNS64=${DNS64:-1}
+ENV WEB_GUI=${WEB_GUI:-1}
+ENV REST_API=${REST_API:-1}
 ENV DOCKER 1
 
 RUN env
@@ -75,19 +85,12 @@ ENV OTBR_NORELEASE_DEPS \
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
-  && [ "${OT_BACKBONE_CI}" != "1" ] || ( \
-    apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS \
-    && MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-878.30.4 \
-    && wget -4 --no-check-certificate https://opensource.apple.com/tarballs/mDNSResponder/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
-    && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz \
-    && cd $MDNS_RESPONDER_SOURCE_NAME/mDNSPosix \
-    && make os=linux && sudo make install os=linux \
-    && cd - && rm -rf $MDNS_RESPONDER_SOURCE_NAME) \
+  && ([ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS) \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \
   && chmod 644 /etc/bind/named.conf.options \
-  && [ "${OT_BACKBONE_CI}" = "1" ] || ( \
+  && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
     && mv ./etc /tmp \
     && find . -delete \
@@ -98,7 +101,7 @@ RUN apt-get update \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $OTBR_BUILD_DEPS  \
     && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
     && rm -rf /var/lib/apt/lists/* \
-  )
+  ))
 
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 

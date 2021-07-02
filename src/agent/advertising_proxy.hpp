@@ -77,19 +77,28 @@ public:
      */
     void Stop();
 
+    /**
+     * This method publishes all registered hosts and services.
+     *
+     */
+    void PublishAllHostsAndServices(void);
+
 private:
     struct OutstandingUpdate
     {
         typedef std::vector<std::pair<std::string, std::string>> ServiceNameList;
 
-        const otSrpServerHost *mHost = nullptr; // The SRP host which being published.
-        std::string            mHostName;       // The host name.
-        ServiceNameList        mServiceNames;   // The list of service instance and name pair.
-        uint32_t               mCount = 0;      // The number of outstanding updates.
+        otSrpServerServiceUpdateId mId;                // The ID of the SRP service update transaction.
+        std::string                mHostName;          // The host name.
+        ServiceNameList            mServiceNames;      // The list of service instance and name pair.
+        uint32_t                   mCallbackCount = 0; // The number of callbacks which we are waiting for.
     };
 
-    static void AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout, void *aContext);
-    void        AdvertisingHandler(const otSrpServerHost *aHost, uint32_t aTimeout);
+    static void AdvertisingHandler(otSrpServerServiceUpdateId aId,
+                                   const otSrpServerHost *    aHost,
+                                   uint32_t                   aTimeout,
+                                   void *                     aContext);
+    void        AdvertisingHandler(otSrpServerServiceUpdateId aId, const otSrpServerHost *aHost, uint32_t aTimeout);
 
     static Mdns::Publisher::TxtList MakeTxtList(const otSrpServerService *aSrpService);
 
@@ -97,6 +106,21 @@ private:
     void        PublishServiceHandler(const char *aName, const char *aType, otbrError aError);
     static void PublishHostHandler(const char *aName, otbrError aError, void *aContext);
     void        PublishHostHandler(const char *aName, otbrError aError);
+
+    /**
+     * This method publishes a specified host and its services.
+     *
+     * It also makes a OutstandingUpdate object when needed.
+     *
+     * @param[in]  aHost         A pointer to the host.
+     * @param[in]  aUpdate       A pointer to the output OutstandingUpdate object. When it's not null, the method will
+     *                           fill its fields, otherwise it's ignored.
+     *
+     * @retval  OTBR_ERROR_NONE  Successfully published the host and its services.
+     * @retval  ...              Failed to publish the host and/or its services.
+     *
+     */
+    otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
 
     otInstance *GetInstance(void) { return mNcp.GetInstance(); }
 

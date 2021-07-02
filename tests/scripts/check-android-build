@@ -180,6 +180,8 @@ LOCAL_MODULE_TAGS := eng
 DBUS_HEADERS := \$(wildcard \$(LOCAL_PATH)/mDNSShared/*.h)
 LOCAL_COPY_HEADERS := \$(DBUS_HEADERS:\$(LOCAL_PATH)/%=%)
 
+LOCAL_EXPORT_C_INCLUDE_DIRS := \$(LOCAL_PATH)/mDNSShared
+
 LOCAL_CFLAGS := -O2 -g -W -Wall -D_GNU_SOURCE -DHAVE_IPV6 -DNOT_HAVE_SA_LEN -DUSES_NETLINK -DTARGET_OS_LINUX -fno-strict-aliasing -DHAVE_LINUX -DMDNS_DEBUGMSGS=0
 
 include \$(BUILD_SHARED_LIBRARY)
@@ -188,12 +190,6 @@ EOF
 
 prepare_openthread()
 {
-    SRC_DIR="$(
-        cd "$(dirname "$0")"
-        pwd -P
-    )"
-    mkdir -p external
-    mv "${SRC_DIR}"/../../third_party/openthread/repo external/openthread
     cat >>buildspec.mk <<EOF
 
 USE_OTBR_DAEMON := 1
@@ -226,6 +222,8 @@ main()
 
     test -f out/target/product/generic/system/bin/otbr-agent
     test -f out/target/product/generic/system/etc/dbus-1/system.d/otbr-agent.conf
+
+    [[ ${OTBR_MDNS} != mDNSResponder ]] || test out/target/product/generic/system/lib/libmdnssd.so
 }
 
 main "$@"

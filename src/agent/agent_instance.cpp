@@ -31,6 +31,8 @@
  *   This file includes implementation for Thread border router agent instance.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include "agent/agent_instance.hpp"
 
 #include <assert.h>
@@ -40,7 +42,7 @@
 
 namespace otbr {
 
-AgentInstance::AgentInstance(Ncp::Controller *aNcp)
+AgentInstance::AgentInstance(Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
     , mBorderAgent(aNcp)
 {
@@ -50,7 +52,7 @@ otbrError AgentInstance::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    SuccessOrExit(error = mNcp->Init());
+    SuccessOrExit(error = mNcp.Init());
 
     mBorderAgent.Init();
 
@@ -59,22 +61,16 @@ exit:
     return error;
 }
 
-void AgentInstance::UpdateFdSet(otSysMainloopContext &aMainloop)
+void AgentInstance::Update(MainloopContext &aMainloop)
 {
-    mNcp->UpdateFdSet(aMainloop);
-    mBorderAgent.UpdateFdSet(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet, aMainloop.mMaxFd,
-                             aMainloop.mTimeout);
+    mNcp.Update(aMainloop);
+    mBorderAgent.Update(aMainloop);
 }
 
-void AgentInstance::Process(const otSysMainloopContext &aMainloop)
+void AgentInstance::Process(const MainloopContext &aMainloop)
 {
-    mNcp->Process(aMainloop);
-    mBorderAgent.Process(aMainloop.mReadFdSet, aMainloop.mWriteFdSet, aMainloop.mErrorFdSet);
-}
-
-AgentInstance::~AgentInstance(void)
-{
-    Ncp::Controller::Destroy(mNcp);
+    mNcp.Process(aMainloop);
+    mBorderAgent.Process(aMainloop);
 }
 
 } // namespace otbr

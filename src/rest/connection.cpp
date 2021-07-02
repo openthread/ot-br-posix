@@ -31,6 +31,8 @@
 #include <cerrno>
 
 #include <assert.h>
+
+#include <sys/socket.h>
 #include <sys/time.h>
 
 using std::chrono::duration_cast;
@@ -60,6 +62,11 @@ Connection::Connection(steady_clock::time_point aStartTime, Resource *aResource,
     , mParser(&mRequest)
     , mResource(aResource)
 {
+}
+
+Connection::~Connection(void)
+{
+    Disconnect();
 }
 
 void Connection::Init(void)
@@ -126,7 +133,7 @@ void Connection::UpdateTimeout(timeval &aTimeout) const
     }
 }
 
-void Connection::UpdateFdSet(otSysMainloopContext &aMainloop) const
+void Connection::Update(MainloopContext &aMainloop)
 {
     UpdateTimeout(aMainloop.mTimeout);
     UpdateReadFdSet(aMainloop.mReadFdSet, aMainloop.mMaxFd);
@@ -144,7 +151,7 @@ void Connection::Disconnect(void)
     }
 }
 
-void Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
+void Connection::Process(const MainloopContext &aMainloop)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -153,14 +160,14 @@ void Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
     // Initial state, directly read for the first time.
     case ConnectionState::kInit:
     case ConnectionState::kReadWait:
-        ProcessWaitRead(aReadFdSet);
+        ProcessWaitRead(aMainloop.mReadFdSet);
         break;
     case ConnectionState::kCallbackWait:
         //  Wait for Callback process.
         ProcessWaitCallback();
         break;
     case ConnectionState::kWriteWait:
-        ProcessWaitWrite(aWriteFdSet);
+        ProcessWaitWrite(aMainloop.mWriteFdSet);
         break;
     default:
         assert(false);
@@ -172,7 +179,7 @@ void Connection::Process(fd_set &aReadFdSet, fd_set &aWriteFdSet)
     }
 }
 
-void Connection::ProcessWaitRead(fd_set &aReadFdSet)
+void Connection::ProcessWaitRead(const fd_set &aReadFdSet)
 {
     otbrError error    = OTBR_ERROR_NONE;
     int32_t   received = 0, err;
@@ -275,7 +282,7 @@ void Connection::ProcessWaitCallback(void)
     }
 }
 
-void Connection::ProcessWaitWrite(fd_set &aWriteFdSet)
+void Connection::ProcessWaitWrite(const fd_set &aWriteFdSet)
 {
     auto duration = duration_cast<microseconds>(steady_clock::now() - mTimeStamp).count();
 

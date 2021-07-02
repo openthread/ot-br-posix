@@ -35,10 +35,14 @@
 #define OTBR_AGENT_MDNS_MDNSSD_HPP_
 
 #include <array>
+#include <map>
+#include <utility>
 #include <vector>
 
+#include <assert.h>
 #include <dns_sd.h>
 
+#include "common/code_utils.hpp"
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
 
@@ -47,7 +51,7 @@ namespace otbr {
 namespace Mdns {
 
 /**
- * This class implements MDNS service with avahi.
+ * This class implements MDNS service with mDNSResponder.
  *
  */
 class PublisherMDnsSd : public Publisher
@@ -130,6 +134,56 @@ public:
     otbrError UnpublishHost(const char *aName) override;
 
     /**
+     * This method subscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * subscribes the service instance. Otherwise, this method subscribes the service.
+     *
+     * mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify discovered service
+     * instances.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
+     * instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to subscribe, or empty to subscribe the service.
+     *
+     */
+    void SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method unsubscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * unsubscribes the service instance. Otherwise, this method unsubscribes the service.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
+     *
+     */
+    void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method subscribes a given host.
+     *
+     * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void SubscribeHost(const std::string &aHostName) override;
+
+    /**
+     * This method unsubscribes a given host.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void UnsubscribeHost(const std::string &aHostName) override;
+
+    /**
      * This method starts the MDNS service.
      *
      * @retval OTBR_ERROR_NONE  Successfully started MDNS service;
@@ -154,30 +208,20 @@ public:
     void Stop(void) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method updates the mainloop context.
      *
-     * @param[in]   aReadFdSet          A reference to read file descriptors.
-     * @param[in]   aWriteFdSet         A reference to write file descriptors.
-     * @param[in]   aErrorFdSet         A reference to error file descriptors.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) override;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method processes mainloop events.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) override;
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     enum
@@ -203,10 +247,124 @@ private:
         DNSRecordRef                               mRecord;
     };
 
-    typedef std::vector<Service>           Services;
-    typedef std::vector<Host>              Hosts;
-    typedef std::vector<Service>::iterator ServiceIterator;
-    typedef std::vector<Host>::iterator    HostIterator;
+    struct Subscription
+    {
+        PublisherMDnsSd *mMDnsSd;
+        DNSServiceRef    mServiceRef;
+
+        explicit Subscription(PublisherMDnsSd &aMDnsSd)
+            : mMDnsSd(&aMDnsSd)
+            , mServiceRef(nullptr)
+        {
+        }
+
+        void Release(void);
+        void DeallocateServiceRef(void);
+    };
+
+    struct ServiceSubscription : public Subscription
+    {
+        explicit ServiceSubscription(PublisherMDnsSd &aMDnsSd, std::string aType, std::string aInstanceName)
+            : Subscription(aMDnsSd)
+            , mType(std::move(aType))
+            , mInstanceName(std::move(aInstanceName))
+        {
+        }
+
+        void Browse(void);
+        void Resolve(uint32_t aInterfaceIndex, const char *aInstanceName, const char *aType, const char *aDomain);
+        void GetAddrInfo(uint32_t aInterfaceIndex);
+
+        static void HandleBrowseResult(DNSServiceRef       aServiceRef,
+                                       DNSServiceFlags     aFlags,
+                                       uint32_t            aInterfaceIndex,
+                                       DNSServiceErrorType aErrorCode,
+                                       const char *        aInstanceName,
+                                       const char *        aType,
+                                       const char *        aDomain,
+                                       void *              aContext);
+        void        HandleBrowseResult(DNSServiceRef       aServiceRef,
+                                       DNSServiceFlags     aFlags,
+                                       uint32_t            aInterfaceIndex,
+                                       DNSServiceErrorType aErrorCode,
+                                       const char *        aInstanceName,
+                                       const char *        aType,
+                                       const char *        aDomain);
+        static void HandleResolveResult(DNSServiceRef        aServiceRef,
+                                        DNSServiceFlags      aFlags,
+                                        uint32_t             aInterfaceIndex,
+                                        DNSServiceErrorType  aErrorCode,
+                                        const char *         aFullName,
+                                        const char *         aHostTarget,
+                                        uint16_t             aPort, // In network byte order.
+                                        uint16_t             aTxtLen,
+                                        const unsigned char *aTxtRecord,
+                                        void *               aContext);
+        void        HandleResolveResult(DNSServiceRef        aServiceRef,
+                                        DNSServiceFlags      aFlags,
+                                        uint32_t             aInterfaceIndex,
+                                        DNSServiceErrorType  aErrorCode,
+                                        const char *         aFullName,
+                                        const char *         aHostTarget,
+                                        uint16_t             aPort, // In network byte order.
+                                        uint16_t             aTxtLen,
+                                        const unsigned char *aTxtRecord);
+        static void HandleGetAddrInfoResult(DNSServiceRef          aServiceRef,
+                                            DNSServiceFlags        aFlags,
+                                            uint32_t               aInterfaceIndex,
+                                            DNSServiceErrorType    aErrorCode,
+                                            const char *           aHostName,
+                                            const struct sockaddr *aAddress,
+                                            uint32_t               aTtl,
+                                            void *                 aContext);
+        void        HandleGetAddrInfoResult(DNSServiceRef          aServiceRef,
+                                            DNSServiceFlags        aFlags,
+                                            uint32_t               aInterfaceIndex,
+                                            DNSServiceErrorType    aErrorCode,
+                                            const char *           aHostName,
+                                            const struct sockaddr *aAddress,
+                                            uint32_t               aTtl);
+
+        std::string            mType;
+        std::string            mInstanceName;
+        DiscoveredInstanceInfo mInstanceInfo;
+    };
+
+    struct HostSubscription : public Subscription
+    {
+        explicit HostSubscription(PublisherMDnsSd &aMDnsSd, std::string aHostName)
+            : Subscription(aMDnsSd)
+            , mHostName(std::move(aHostName))
+        {
+        }
+
+        void        Resolve(void);
+        static void HandleResolveResult(DNSServiceRef          aServiceRef,
+                                        DNSServiceFlags        aFlags,
+                                        uint32_t               aInterfaceIndex,
+                                        DNSServiceErrorType    aErrorCode,
+                                        const char *           aHostName,
+                                        const struct sockaddr *aAddress,
+                                        uint32_t               aTtl,
+                                        void *                 aContext);
+        void        HandleResolveResult(DNSServiceRef          aServiceRef,
+                                        DNSServiceFlags        aFlags,
+                                        uint32_t               aInterfaceIndex,
+                                        DNSServiceErrorType    aErrorCode,
+                                        const char *           aHostName,
+                                        const struct sockaddr *aAddress,
+                                        uint32_t               aTtl);
+
+        std::string        mHostName;
+        DiscoveredHostInfo mHostInfo;
+    };
+
+    typedef std::vector<Service>             Services;
+    typedef std::vector<Host>                Hosts;
+    typedef std::vector<Service>::iterator   ServiceIterator;
+    typedef std::vector<Host>::iterator      HostIterator;
+    typedef std::vector<ServiceSubscription> ServiceSubscriptionList;
+    typedef std::vector<HostSubscription>    HostSubscriptionList;
 
     void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = nullptr);
     void RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
@@ -244,6 +402,11 @@ private:
     HostIterator    FindPublishedHost(const DNSRecordRef &aRecordRef);
     HostIterator    FindPublishedHost(const char *aHostName);
 
+    void        OnServiceResolved(ServiceSubscription &aService);
+    static void OnServiceResolveFailed(const ServiceSubscription &aService, DNSServiceErrorType aErrorCode);
+    void        OnHostResolved(HostSubscription &aHost);
+    void        OnHostResolveFailed(const HostSubscription &aHost, DNSServiceErrorType aErrorCode);
+
     Services      mServices;
     Hosts         mHosts;
     DNSServiceRef mHostsRef;
@@ -251,6 +414,9 @@ private:
     State         mState;
     StateHandler  mStateHandler;
     void *        mContext;
+
+    ServiceSubscriptionList mSubscribedServices;
+    HostSubscriptionList    mSubscribedHosts;
 };
 
 /**

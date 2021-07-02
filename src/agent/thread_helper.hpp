@@ -48,8 +48,6 @@
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
 
-#include "common/logging.hpp"
-
 namespace otbr {
 namespace Ncp {
 class ControllerOpenThread;
@@ -113,7 +111,7 @@ public:
      * @param[in]   aNetworkName    The network name.
      * @param[in]   aPanId          The pan id, UINT16_MAX for random.
      * @param[in]   aExtPanId       The extended pan id, UINT64_MAX for random.
-     * @param[in]   aMasterKey      The master key, empty for random.
+     * @param[in]   aNetworkKey     The network key, empty for random.
      * @param[in]   aPSKc           The pre-shared commissioner key, empty for random.
      * @param[in]   aChannelMask    A bitmask for valid channels, will random select one.
      * @param[in]   aHandler        The attach result handler.
@@ -122,10 +120,18 @@ public:
     void Attach(const std::string &         aNetworkName,
                 uint16_t                    aPanId,
                 uint64_t                    aExtPanId,
-                const std::vector<uint8_t> &aMasterKey,
+                const std::vector<uint8_t> &aNetworkKey,
                 const std::vector<uint8_t> &aPSKc,
                 uint32_t                    aChannelMask,
                 ResultHandler               aHandler);
+
+    /**
+     * This method detaches the device from the Thread network.
+     *
+     * @returns The error value of underlying OpenThread API calls.
+     *
+     */
+    otError Detach(void);
 
     /**
      * This method attaches the device to the Thread network.
@@ -199,11 +205,7 @@ public:
      * @param[in] aError    The action result.
      *
      */
-    static void LogOpenThreadResult(const char *aAction, otError aError)
-    {
-        otbrLog((aError == OT_ERROR_NONE ? OTBR_LOG_INFO : OTBR_LOG_WARNING), "%s: %s", aAction,
-                otThreadErrorToString(aError));
-    }
+    static void LogOpenThreadResult(const char *aAction, otError aError);
 
 private:
     static void sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
@@ -224,7 +226,7 @@ private:
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 
-    std::map<uint16_t, std::chrono::steady_clock::time_point> mUnsecurePortCloseTime;
+    std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 
     ResultHandler mAttachHandler;
     ResultHandler mJoinerHandler;

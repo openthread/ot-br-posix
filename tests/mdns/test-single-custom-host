@@ -36,14 +36,13 @@
 
 main()
 {
-    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
-        start_publisher sc
+    start_publisher sc
 
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         dns_sd_check SingleService _meshcop._udp 'custom-host.local.'
         dns_sd_check_host 'custom-host.local.' '2002:0000:0000:0000:0000:0000:0000:0001'
     else
-        #TODO:
-        echo "not implemented yet"
+        avahi_check 'SingleService;_meshcop._udp;local;custom-host.local;2002::1;12345;.*"xp=ABCDEFGH.\+"nn=cool"'
     fi
 }
 

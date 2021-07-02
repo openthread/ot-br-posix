@@ -34,11 +34,15 @@
 #ifndef BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
 #define BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
 
+#if OTBR_ENABLE_BACKBONE_ROUTER
+
 #include <openthread/backbone_router_ftd.h>
 
 #include "agent/instance_params.hpp"
 #include "agent/ncp_openthread.hpp"
+#include "backbone_router/dua_routing_manager.hpp"
 #include "backbone_router/nd_proxy.hpp"
+#include "common/mainloop.hpp"
 
 namespace otbr {
 namespace BackboneRouter {
@@ -56,9 +60,11 @@ namespace BackboneRouter {
  * This class implements Thread Backbone agent functionality.
  *
  */
-class BackboneAgent
+class BackboneAgent : public MainloopProcessor
 {
 public:
+    static constexpr uint16_t kBackboneUdpPort = 61631; ///< The BBR port.
+
     /**
      * This constructor intiializes the `BackboneAgent` instance.
      *
@@ -74,49 +80,48 @@ public:
     void Init(void);
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling read.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the current max fd in @p aReadFdSet and @p aWriteFdSet.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) const;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs border agent processing.
+     * This method processes mainloop events.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     void        OnBecomePrimary(void);
     void        OnResignPrimary(void);
     bool        IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }
-    static void HandleBackboneRouterState(void *aContext, int aEvent, va_list aArguments);
+    void        HandleThreadStateChanged(otChangedFlags aFlags);
     void        HandleBackboneRouterState(void);
-    static void HandleBackboneRouterDomainPrefixEvent(void *aContext, int aEvent, va_list aArguments);
+    static void HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+                                                      otBackboneRouterDomainPrefixEvent aEvent,
+                                                      const otIp6Prefix *               aDomainPrefix);
     void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
                                                       const otIp6Prefix *               aDomainPrefix);
-    static void HandleBackboneRouterNdProxyEvent(void *aContext, int aEvent, va_list aArguments);
+#if OTBR_ENABLE_DUA_ROUTING
+    static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
+                                                 otBackboneRouterNdProxyEvent aEvent,
+                                                 const otIp6Address *         aAddress);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
+#endif
 
     static const char *StateToString(otBackboneRouterState aState);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
     otBackboneRouterState            mBackboneRouterState;
-    NdProxyManager                   mNdProxyManager;
     Ip6Prefix                        mDomainPrefix;
+#if OTBR_ENABLE_DUA_ROUTING
+    NdProxyManager    mNdProxyManager;
+    DuaRoutingManager mDuaRoutingManager;
+#endif
 };
 
 /**
@@ -125,5 +130,7 @@ private:
 
 } // namespace BackboneRouter
 } // namespace otbr
+
+#endif // OTBR_ENABLE_BACKBONE_ROUTER
 
 #endif // BACKBONE_ROUTER_BACKBONE_AGENT_HPP_

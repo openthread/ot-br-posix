@@ -70,8 +70,11 @@ public:
     /**
      * This constructor creates an OpenThread client.
      *
+     * @param[in]   aNetifName  The Thread network interface name.
+     *
      */
-    OpenThreadClient(void);
+    OpenThreadClient(const char *aNetifName);
+
     /**
      * This destructor destories an OpenThread client.
      *
@@ -99,6 +102,17 @@ public:
     char *Execute(const char *aFormat, ...);
 
     /**
+     * This method reads from OpenThread CLI.
+     *
+     * @param[in]   aResponse    The expected read response.
+     * @param[in]   aTimeout     Timeout for the read, in ms.
+     *
+     * @returns A pointer to the output if the expected response is found, otherwise nullptr.
+     *
+     */
+    char *Read(const char *aResponse, int aTimeout);
+
+    /**
      * This method scans Thread network.
      *
      * @param[out]  aNetworks   A pointer to the buffer to store network information.
@@ -124,9 +138,10 @@ private:
         kDefaultTimeout = 800,  ///< Default timeout(ms) waiting for a command finish.
     };
 
-    char mBuffer[kBufferSize];
-    int  mTimeout; /// Timeout in milliseconds
-    int  mSocket;
+    const char *mNetifName;
+    char        mBuffer[kBufferSize];
+    int         mTimeout; /// Timeout in milliseconds
+    int         mSocket;
 };
 
 } // namespace Web

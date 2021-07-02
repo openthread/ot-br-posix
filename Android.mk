@@ -111,11 +111,17 @@ LOCAL_SRC_FILES := \
     src/agent/agent_instance.cpp \
     src/agent/instance_params.cpp \
     src/agent/border_agent.cpp \
+    src/agent/discovery_proxy.cpp \
     src/agent/main.cpp \
     src/agent/ncp_openthread.cpp \
     src/agent/thread_helper.cpp \
+    src/backbone_router/backbone_agent.cpp \
+    src/backbone_router/dua_routing_manager.cpp \
+    src/backbone_router/nd_proxy.cpp \
+    src/common/dns_utils.cpp \
     src/common/logging.cpp \
     src/common/task_runner.cpp \
+    src/common/types.cpp \
     src/dbus/common/dbus_message_dump.cpp \
     src/dbus/common/dbus_message_helper.cpp \
     src/dbus/common/dbus_message_helper_openthread.cpp \
@@ -125,12 +131,11 @@ LOCAL_SRC_FILES := \
     src/dbus/server/dbus_thread_object.cpp \
     src/dbus/server/error_helper.cpp \
     src/mdns/mdns.cpp \
-    src/utils/event_emitter.cpp \
     src/utils/hex.cpp \
     src/utils/strcpy_utils.cpp \
 
 LOCAL_STATIC_LIBRARIES += \
-    libopenthread-ncp \
+    ot-core \
     libopenthread-cli \
     ot-core \
 
@@ -138,6 +143,9 @@ LOCAL_LDLIBS := \
     -lutil
 
 ifeq ($(OTBR_MDNS),mDNSResponder)
+LOCAL_CFLAGS += \
+    -DOTBR_ENABLE_MDNS_MDNSSD=1 \
+
 LOCAL_SRC_FILES += \
     src/mdns/mdns_mdnssd.cpp \
 

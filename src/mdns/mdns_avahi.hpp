@@ -37,11 +37,14 @@
 #include <vector>
 
 #include <avahi-client/client.h>
+#include <avahi-client/lookup.h>
 #include <avahi-client/publish.h>
 #include <avahi-common/domain.h>
 #include <avahi-common/watch.h>
 
 #include "mdns.hpp"
+#include "common/mainloop.hpp"
+#include "common/time.hpp"
 
 /**
  * @addtogroup border-router-mdns
@@ -91,7 +94,7 @@ struct AvahiWatch
  */
 struct AvahiTimeout
 {
-    unsigned long        mTimeout;  ///< Absolute time when this timer timeout.
+    otbr::Timepoint      mTimeout;  ///< Absolute time when this timer timeout.
     AvahiTimeoutCallback mCallback; ///< The function to be called when timeout.
     void *               mContext;  ///< The pointer to application-specific context.
     void *               mPoller;   ///< The poller created this timer.
@@ -116,7 +119,7 @@ namespace Mdns {
  * This class implements the AvahiPoll.
  *
  */
-class Poller
+class Poller : public MainloopProcessor
 {
 public:
     /**
@@ -126,26 +129,20 @@ public:
     Poller(void);
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method updates the mainloop context.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void UpdateFdSet(fd_set &aReadFdSet, fd_set &aWriteFdSet, fd_set &aErrorFdSet, int &aMaxFd, timeval &aTimeout);
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method processes mainloop events.
      *
-     * @param[in]   aReadFdSet   A reference to read file descriptors.
-     * @param[in]   aWriteFdSet  A reference to write file descriptors.
-     * @param[in]   aErrorFdSet  A reference to error file descriptors.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet);
+    void Process(const MainloopContext &aMainloop) override;
 
     /**
      * This method returns the AvahiPoll.
@@ -267,6 +264,56 @@ public:
     otbrError UnpublishHost(const char *aName) override;
 
     /**
+     * This method subscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * subscribes the service instance. Otherwise, this method subscribes the service.
+     *
+     * mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify discovered service
+     * instances.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
+     * instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to subscribe, or empty to subscribe the service.
+     *
+     */
+    void SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method unsubscribes a given service or service instance. If @p aInstanceName is not empty, this method
+     * unsubscribes the service instance. Otherwise, this method unsubscribes the service.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
+     *
+     * @param[in]  aType          The service type.
+     * @param[in]  aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
+     *
+     */
+    void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+
+    /**
+     * This method subscribes a given host.
+     *
+     * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
+     *
+     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void SubscribeHost(const std::string &aHostName) override;
+
+    /**
+     * This method unsubscribes a given host.
+     *
+     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
+     *
+     * @param[in]  aHostName    The host name (without domain).
+     *
+     */
+    void UnsubscribeHost(const std::string &aHostName) override;
+
+    /**
      * This method starts the MDNS service.
      *
      * @retval OTBR_ERROR_NONE  Successfully started MDNS service;
@@ -291,35 +338,25 @@ public:
     void Stop(void) override;
 
     /**
-     * This method performs avahi poll processing.
+     * This method updates the mainloop context.
      *
-     * @param[in]   aReadFdSet          A reference to read file descriptors.
-     * @param[in]   aWriteFdSet         A reference to write file descriptors.
-     * @param[in]   aErrorFdSet         A reference to error file descriptors.
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Process(const fd_set &aReadFdSet, const fd_set &aWriteFdSet, const fd_set &aErrorFdSet) override;
+    void Update(MainloopContext &aMainloop) override;
 
     /**
-     * This method updates the fd_set and timeout for mainloop.
+     * This method processes mainloop events.
      *
-     * @param[inout]    aReadFdSet      A reference to fd_set for polling read.
-     * @param[inout]    aWriteFdSet     A reference to fd_set for polling write.
-     * @param[inout]    aErrorFdSet     A reference to fd_set for polling error.
-     * @param[inout]    aMaxFd          A reference to the max file descriptor.
-     * @param[inout]    aTimeout        A reference to the timeout.
+     * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void UpdateFdSet(fd_set & aReadFdSet,
-                     fd_set & aWriteFdSet,
-                     fd_set & aErrorFdSet,
-                     int &    aMaxFd,
-                     timeval &aTimeout) override;
+    void Process(const MainloopContext &aMainloop) override;
 
 private:
     enum
     {
-        kMaxSizeOfTxtRecord   = 128,
+        kMaxSizeOfTxtRecord   = 1024,
         kMaxSizeOfServiceName = AVAHI_LABEL_MAX,
         kMaxSizeOfHost        = AVAHI_LABEL_MAX,
         kMaxSizeOfDomain      = AVAHI_LABEL_MAX,
@@ -328,29 +365,183 @@ private:
 
     struct Service
     {
-        char     mName[kMaxSizeOfServiceName];
-        char     mType[kMaxSizeOfServiceType];
-        uint16_t mPort;
+        std::string      mName;
+        std::string      mType;
+        std::string      mHostName;
+        uint16_t         mPort  = 0;
+        AvahiEntryGroup *mGroup = nullptr;
     };
 
     typedef std::vector<Service> Services;
 
+    struct Host
+    {
+        std::string      mHostName;
+        AvahiAddress     mAddress = {};
+        AvahiEntryGroup *mGroup   = nullptr;
+    };
+
+    struct Subscription
+    {
+        PublisherAvahi *mPublisherAvahi;
+
+        explicit Subscription(PublisherAvahi &aPublisherAvahi)
+            : mPublisherAvahi(&aPublisherAvahi)
+        {
+        }
+    };
+
+    struct ServiceSubscription : public Subscription
+    {
+        explicit ServiceSubscription(PublisherAvahi &aPublisherAvahi, std::string aType, std::string aInstanceName)
+            : Subscription(aPublisherAvahi)
+            , mType(std::move(aType))
+            , mInstanceName(std::move(aInstanceName))
+            , mServiceBrowser(nullptr)
+            , mServiceResolver(nullptr)
+        {
+        }
+
+        void Release(void);
+        void Browse(void);
+        void Resolve(uint32_t aInterfaceIndex, const char *aInstanceName, const char *aType, const char *aDomain);
+        void GetAddrInfo(uint32_t aInterfaceIndex);
+
+        static void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
+                                       AvahiIfIndex           aInterfaceIndex,
+                                       AvahiProtocol          aProtocol,
+                                       AvahiBrowserEvent      aEvent,
+                                       const char *           aName,
+                                       const char *           aType,
+                                       const char *           aDomain,
+                                       AvahiLookupResultFlags aFlags,
+                                       void *                 aContext);
+
+        void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
+                                AvahiIfIndex           aInterfaceIndex,
+                                AvahiProtocol          aProtocol,
+                                AvahiBrowserEvent      aEvent,
+                                const char *           aName,
+                                const char *           aType,
+                                const char *           aDomain,
+                                AvahiLookupResultFlags aFlags);
+
+        static void HandleResolveResult(AvahiServiceResolver * aServiceResolver,
+                                        AvahiIfIndex           aInterfaceIndex,
+                                        AvahiProtocol          Protocol,
+                                        AvahiResolverEvent     aEvent,
+                                        const char *           aName,
+                                        const char *           aType,
+                                        const char *           aDomain,
+                                        const char *           aHostName,
+                                        const AvahiAddress *   aAddress,
+                                        uint16_t               aPort,
+                                        AvahiStringList *      aTxt,
+                                        AvahiLookupResultFlags aFlags,
+                                        void *                 aContext);
+
+        void HandleResolveResult(AvahiServiceResolver * aServiceResolver,
+                                 AvahiIfIndex           aInterfaceIndex,
+                                 AvahiProtocol          Protocol,
+                                 AvahiResolverEvent     aEvent,
+                                 const char *           aName,
+                                 const char *           aType,
+                                 const char *           aDomain,
+                                 const char *           aHostName,
+                                 const AvahiAddress *   aAddress,
+                                 uint16_t               aPort,
+                                 AvahiStringList *      aTxt,
+                                 AvahiLookupResultFlags aFlags);
+
+        std::string            mType;
+        std::string            mInstanceName;
+        DiscoveredInstanceInfo mInstanceInfo;
+        AvahiServiceBrowser *  mServiceBrowser;
+        AvahiServiceResolver * mServiceResolver;
+    };
+
+    struct HostSubscription : public Subscription
+    {
+        explicit HostSubscription(PublisherAvahi &aMDnsSd, std::string aHostName)
+            : Subscription(aMDnsSd)
+            , mHostName(std::move(aHostName))
+            , mRecordBrowser(nullptr)
+        {
+        }
+
+        void        Release(void);
+        void        Resolve(void);
+        static void HandleResolveResult(AvahiRecordBrowser *   aRecordBrowser,
+                                        AvahiIfIndex           aInterfaceIndex,
+                                        AvahiProtocol          aProtocol,
+                                        AvahiBrowserEvent      aEvent,
+                                        const char *           aName,
+                                        uint16_t               aClazz,
+                                        uint16_t               aType,
+                                        const void *           aRdata,
+                                        size_t                 aSize,
+                                        AvahiLookupResultFlags aFlags,
+                                        void *                 aContext);
+
+        void HandleResolveResult(AvahiRecordBrowser *   aRecordBrowser,
+                                 AvahiIfIndex           aInterfaceIndex,
+                                 AvahiProtocol          aProtocol,
+                                 AvahiBrowserEvent      aEvent,
+                                 const char *           aName,
+                                 uint16_t               aClazz,
+                                 uint16_t               aType,
+                                 const void *           aRdata,
+                                 size_t                 aSize,
+                                 AvahiLookupResultFlags aFlags);
+
+        std::string         mHostName;
+        DiscoveredHostInfo  mHostInfo;
+        AvahiRecordBrowser *mRecordBrowser;
+    };
+
+    typedef std::vector<Host>                Hosts;
+    typedef std::vector<ServiceSubscription> ServiceSubscriptionList;
+    typedef std::vector<HostSubscription>    HostSubscriptionList;
+
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    void        CreateGroup(AvahiClient *aClient);
-    static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
-    void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    Hosts::iterator FindHost(const char *aHostName);
+    otbrError       CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt);
 
-    Services         mServices;
-    AvahiClient *    mClient;
-    AvahiEntryGroup *mGroup;
-    Poller           mPoller;
-    int              mProtocol;
-    const char *     mDomain;
-    State            mState;
-    StateHandler     mStateHandler;
-    void *           mContext;
+    Services::iterator FindService(const char *aName, const char *aType);
+    otbrError          CreateService(AvahiClient &       aClient,
+                                     const char *        aName,
+                                     const char *        aType,
+                                     Services::iterator &aOutServiceIt);
+
+    otbrError        CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
+    static otbrError ResetGroup(AvahiEntryGroup *aGroup);
+    static otbrError FreeGroup(AvahiEntryGroup *aGroup);
+    void             FreeAllGroups(void);
+    static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
+    void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
+
+    std::string MakeFullName(const char *aName);
+
+    void        OnServiceResolved(ServiceSubscription &aService);
+    static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
+    void        OnHostResolved(HostSubscription &aHost);
+    void        OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode);
+
+    AvahiClient *mClient;
+    Hosts        mHosts;
+    Services     mServices;
+    Poller       mPoller;
+    int          mProtocol;
+    const char * mDomain;
+    State        mState;
+    StateHandler mStateHandler;
+    void *       mContext;
+
+    ServiceSubscriptionList mSubscribedServices;
+    HostSubscriptionList    mSubscribedHosts;
 };
 
 } // namespace Mdns
