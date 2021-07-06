@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,58 +27,26 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-mdns
-    main.cpp
-)
+#
+# This script tests publishing multiple services.
+#
 
-target_link_libraries(otbr-test-mdns PRIVATE
-    otbr-config
-    otbr-mdns
-)
+# shellcheck source=tests/mdns/test_init
+. "$(dirname "$0")/test_init"
 
-add_test(
-    NAME mdns-single
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single
-)
+main()
+{
+    start_publisher t
 
-add_test(
-    NAME mdns-multiple
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple
-)
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype1'
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype2' && exit 1
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype3'
+    else
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype1._sub._meshcop._udp'
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype2._sub._meshcop._udp' && exit 1
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype3._sub._meshcop._udp'
+    fi
+}
 
-add_test(
-    NAME mdns-update
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-update
-)
-
-add_test(
-    NAME mdns-stop
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-stop
-)
-
-add_test(
-    NAME mdns-single-custom-host
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single-custom-host
-)
-
-add_test(
-    NAME mdns-multiple-custom-hosts
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple-custom-hosts
-)
-
-add_test(
-    NAME mdns-service-subtypes
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-service-subtypes
-)
-
-set_tests_properties(
-    mdns-single
-    mdns-multiple
-    mdns-update
-    mdns-stop
-    mdns-single-custom-host
-    mdns-multiple-custom-hosts
-    mdns-service-subtypes
-    PROPERTIES
-        ENVIRONMENT "OTBR_MDNS=${OTBR_MDNS};OTBR_TEST_MDNS=$<TARGET_FILE:otbr-test-mdns>"
-)
+main "$@"

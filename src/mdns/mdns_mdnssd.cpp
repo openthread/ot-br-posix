@@ -412,17 +412,9 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
         otbrLogInfo("Service %s.%s renamed to %s.%s", originalInstanceName.c_str(), aType, aName, aType);
     }
 
-    if (aError == kDNSServiceErr_NoError)
+    if (aError == kDNSServiceErr_NoError && (aFlags & kDNSServiceFlagsAdd))
     {
         otbrLogInfo("Successfully registered service %s.%s", originalInstanceName.c_str(), aType);
-        if (aFlags & kDNSServiceFlagsAdd)
-        {
-            RecordService(originalInstanceName.c_str(), aType, aServiceRef);
-        }
-        else
-        {
-            DiscardService(originalInstanceName.c_str(), aType, aServiceRef);
-        }
     }
     else
     {
@@ -457,7 +449,10 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
     }
 }
 
-void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
+void PublisherMDnsSd::RecordService(const char *  aName,
+                                    const char *  aType,
+                                    const char *  aRegType,
+                                    DNSServiceRef aServiceRef)
 {
     ServiceIterator service = FindPublishedService(aName, aType);
 
@@ -469,25 +464,34 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
 
         strcpy(newService.mName, aName);
         strcpy(newService.mType, aType);
+        newService.mRegType = aRegType;
         newService.mService = aServiceRef;
         mServices.push_back(newService);
     }
     else
     {
+        assert(service->mRegType == aRegType);
         assert(service->mService == aServiceRef);
     }
 }
 
-otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
-                                          uint16_t       aPort,
-                                          const char *   aName,
-                                          const char *   aType,
-                                          const TxtList &aTxtList)
+bool PublisherMDnsSd::IsServiceOutdated(const Service &service, const std::string &aNewRegType)
+{
+    return service.mRegType != aNewRegType;
+}
+
+otbrError PublisherMDnsSd::PublishService(const char *       aHostName,
+                                          uint16_t           aPort,
+                                          const char *       aName,
+                                          const char *       aType,
+                                          const SubTypeList &aSubTypeList,
+                                          const TxtList &    aTxtList)
 {
     otbrError       ret   = OTBR_ERROR_NONE;
     int             error = 0;
     uint8_t         txt[kMaxSizeOfTxtRecord];
     uint16_t        txtLength  = sizeof(txt);
+    std::string     regType    = MakeRegType(aType, aSubTypeList);
     ServiceIterator service    = FindPublishedService(aName, aType);
     DNSServiceRef   serviceRef = nullptr;
     char            fullHostName[kMaxSizeOfDomain];
@@ -503,7 +507,7 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
 
     SuccessOrExit(ret = EncodeTxtData(aTxtList, txt, txtLength));
 
-    if (service != mServices.end())
+    if (service != mServices.end() && !IsServiceOutdated(*service, regType))
     {
         otbrLogInfo("Update service %s.%s", aName, aType);
 
@@ -514,14 +518,20 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
         {
             mServiceHandler(aName, aType, DNSErrorToOtbrError(error), mServiceHandlerContext);
         }
+
+        ExitNow();
     }
-    else
+
+    if (service != mServices.end())
     {
-        SuccessOrExit(error = DNSServiceRegister(&serviceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny, aName, aType,
-                                                 mDomain, (aHostName != nullptr) ? fullHostName : nullptr, htons(aPort),
-                                                 txtLength, txt, HandleServiceRegisterResult, this));
-        RecordService(aName, aType, serviceRef);
+        // Service is outdated and needs to be recreated.
+        DiscardService(aName, aType, serviceRef);
     }
+
+    SuccessOrExit(error = DNSServiceRegister(&serviceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny, aName,
+                                             regType.c_str(), mDomain, (aHostName != nullptr) ? fullHostName : nullptr,
+                                             htons(aPort), txtLength, txt, HandleServiceRegisterResult, this));
+    RecordService(aName, aType, regType.c_str(), serviceRef);
 
 exit:
     if (error != kDNSServiceErr_NoError)
@@ -726,6 +736,20 @@ otbrError PublisherMDnsSd::MakeFullName(char *aFullName, size_t aFullNameLength,
 
 exit:
     return error;
+}
+
+std::string PublisherMDnsSd::MakeRegType(const char *aType, const SubTypeList &aSubTypeList)
+{
+    // See `regtype` parameter of the DNSServiceRegister() function for more information.
+    std::string fullType(aType);
+
+    for (const std::string &subType : aSubTypeList)
+    {
+        fullType += ',';
+        fullType += subType;
+    }
+
+    return fullType;
 }
 
 PublisherMDnsSd::ServiceIterator PublisherMDnsSd::FindPublishedService(const char *aName, const char *aType)
