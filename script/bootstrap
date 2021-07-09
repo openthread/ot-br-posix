@@ -83,7 +83,7 @@ install_packages_apt()
     without DHCPV6_PD || sudo apt-get install --no-install-recommends -y dhcpcd5
 
     # libjsoncpp
-    sudo apt-get install --no-install-recommends -y libjsoncpp1 libjsoncpp-dev
+    sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # reference device
     without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils
