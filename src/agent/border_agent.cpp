@@ -300,7 +300,7 @@ void BorderAgent::PublishMeshCopService(void)
 #endif
 
     mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), networkName,
-                               kBorderAgentServiceType, txtList);
+                               kBorderAgentServiceType, Mdns::Publisher::SubTypeList{}, txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)

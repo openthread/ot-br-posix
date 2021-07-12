@@ -470,6 +470,14 @@ exit:
     return error;
 }
 
+bool PublisherAvahi::IsServiceOutdated(const Service &    aService,
+                                       const char *       aNewHostName,
+                                       uint16_t           aNewPort,
+                                       const SubTypeList &aNewSubTypeList)
+{
+    return aService.mHostName != aNewHostName || aService.mPort != aNewPort || aService.mSubTypeList != aNewSubTypeList;
+}
+
 otbrError PublisherAvahi::CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup)
 {
     otbrError error = OTBR_ERROR_NONE;
@@ -593,11 +601,12 @@ void PublisherAvahi::Process(const MainloopContext &aMainloop)
     mPoller.Process(aMainloop);
 }
 
-otbrError PublisherAvahi::PublishService(const char *   aHostName,
-                                         uint16_t       aPort,
-                                         const char *   aName,
-                                         const char *   aType,
-                                         const TxtList &aTxtList)
+otbrError PublisherAvahi::PublishService(const char *       aHostName,
+                                         uint16_t           aPort,
+                                         const char *       aName,
+                                         const char *       aType,
+                                         const SubTypeList &aSubTypeList,
+                                         const TxtList &    aTxtList)
 {
     otbrError          error        = OTBR_ERROR_NONE;
     int                avahiError   = 0;
@@ -651,7 +660,7 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
     {
         SuccessOrExit(error = CreateService(*mClient, aName, aType, serviceIt));
     }
-    else if (serviceIt->mHostName != safeHostName || serviceIt->mPort != aPort)
+    else if (IsServiceOutdated(*serviceIt, safeHostName, aPort, aSubTypeList))
     {
         SuccessOrExit(error = ResetGroup(serviceIt->mGroup));
     }
@@ -674,12 +683,23 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
                                              aType, mDomain, aHostName, aPort, last);
     SuccessOrExit(avahiError);
 
+    for (const std::string &subType : aSubTypeList)
+    {
+        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), aName, aType);
+        std::string fullSubType = subType + "._sub." + aType;
+        avahiError =
+            avahi_entry_group_add_service_subtype(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{},
+                                                  aName, aType, mDomain, fullSubType.c_str());
+        SuccessOrExit(avahiError);
+    }
+
     otbrLogInfo("Commit service %s.%s", aName, aType);
     avahiError = avahi_entry_group_commit(serviceIt->mGroup);
     SuccessOrExit(avahiError);
 
-    serviceIt->mHostName = safeHostName;
-    serviceIt->mPort     = aPort;
+    serviceIt->mSubTypeList = aSubTypeList;
+    serviceIt->mHostName    = safeHostName;
+    serviceIt->mPort        = aPort;
 
 exit:
 
