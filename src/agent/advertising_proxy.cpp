@@ -282,7 +282,8 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
         aUpdate->mCallbackCount += !hostDeleted;
         aUpdate->mHostName = hostName;
         service            = nullptr;
-        while ((service = otSrpServerHostGetNextService(aHost, service)))
+        while ((service = otSrpServerHostFindNextService(aHost, service, OT_SRP_SERVER_FLAGS_BASE_TYPE_SERVICE_ONLY,
+                                                         /* aServiceName */ nullptr, /* aInstanceName */ nullptr)))
         {
             aUpdate->mCallbackCount += !hostDeleted && !otSrpServerServiceIsDeleted(service);
         }
@@ -302,7 +303,8 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     }
 
     service = nullptr;
-    while ((service = otSrpServerHostGetNextService(aHost, service)))
+    while ((service = otSrpServerHostFindNextService(aHost, service, OT_SRP_SERVER_FLAGS_BASE_TYPE_SERVICE_ONLY,
+                                                     /* aServiceName */ nullptr, /* aInstanceName */ nullptr)))
     {
         const char *fullServiceName = otSrpServerServiceGetFullName(service);
         std::string serviceName;
@@ -318,11 +320,13 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
 
         if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
         {
-            Mdns::Publisher::TxtList txtList = MakeTxtList(service);
+            Mdns::Publisher::TxtList     txtList     = MakeTxtList(service);
+            Mdns::Publisher::SubTypeList subTypeList = MakeSubTypeList(service);
 
             otbrLogInfo("Publish SRP service: %s", fullServiceName);
             SuccessOrExit(error = mPublisher.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
-                                                            serviceName.c_str(), serviceType.c_str(), txtList));
+                                                            serviceName.c_str(), serviceType.c_str(), subTypeList,
+                                                            txtList));
         }
         else
         {
@@ -357,6 +361,32 @@ Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService 
     }
 
     return txtList;
+}
+
+Mdns::Publisher::SubTypeList AdvertisingProxy::MakeSubTypeList(const otSrpServerService *aSrpService)
+{
+    const otSrpServerHost *      host         = otSrpServerServiceGetHost(aSrpService);
+    const char *                 instanceName = otSrpServerServiceGetInstanceName(aSrpService);
+    const otSrpServerService *   subService   = nullptr;
+    Mdns::Publisher::SubTypeList subTypeList;
+
+    while ((subService = otSrpServerHostFindNextService(
+                host, subService, (OT_SRP_SERVER_SERVICE_FLAG_SUB_TYPE | OT_SRP_SERVER_SERVICE_FLAG_ACTIVE),
+                /* aServiceName */ nullptr, instanceName)) != nullptr)
+    {
+        char subLabel[OT_DNS_MAX_LABEL_SIZE];
+
+        if (otSrpServerServiceGetServiceSubTypeLabel(subService, subLabel, sizeof(subLabel)) == OT_ERROR_NONE)
+        {
+            subTypeList.emplace_back(subLabel);
+        }
+        else
+        {
+            otbrLogWarning("Failed to retrieve subtype of SRP service: %s", otSrpServerServiceGetFullName(aSrpService));
+        }
+    }
+
+    return subTypeList;
 }
 
 } // namespace otbr
