@@ -313,7 +313,7 @@ otbrError MdnsMojoPublisher::UnpublishService(const char *aInstanceName, const c
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
 
     mMojoTaskRunner->PostTask(FROM_HERE, base::BindOnce(&MdnsMojoPublisher::UnpublishServiceTask,
-                                                        base::Unretained(this), name, aInstanceName));
+                                                        base::Unretained(this), name, std::string(aInstanceName)));
 
 exit:
     return error;
@@ -395,7 +395,8 @@ otbrError MdnsMojoPublisher::UnpublishHost(const char *aName)
     VerifyOrExit(mConnector != nullptr, error = OTBR_ERROR_MDNS);
 
     mMojoTaskRunner->PostTask(FROM_HERE,
-                              base::BindOnce(&MdnsMojoPublisher::UnpublishHostTask, base::Unretained(this), aName));
+                              base::BindOnce(&MdnsMojoPublisher::UnpublishHostTask,
+                                             base::Unretained(this), std::string(aName)));
 
 exit:
     return error;
