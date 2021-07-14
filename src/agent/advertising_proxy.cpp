@@ -177,8 +177,13 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
 
             if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
             {
-                otSrpServerHandleServiceUpdateResult(GetInstance(), update->mId, OtbrErrorToOtError(aError));
+                otSrpServerServiceUpdateId updateId = update->mId;
+
+                // Erase before notifying OpenThread, because there are chances that new
+                // elements may be added to `otSrpServerHandleServiceUpdateResult` and
+                // the iterator will be invalidated.
                 mOutstandingUpdates.erase(update);
+                otSrpServerHandleServiceUpdateResult(GetInstance(), updateId, OtbrErrorToOtError(aError));
             }
             else
             {
@@ -215,8 +220,13 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
 
         if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
         {
-            otSrpServerHandleServiceUpdateResult(GetInstance(), update->mId, OtbrErrorToOtError(aError));
+            otSrpServerServiceUpdateId updateId = update->mId;
+
+            // Erase before notifying OpenThread, because there are chances that new
+            // elements may be added to `otSrpServerHandleServiceUpdateResult` and
+            // the iterator will be invalidated.
             mOutstandingUpdates.erase(update);
+            otSrpServerHandleServiceUpdateResult(GetInstance(), updateId, OtbrErrorToOtError(aError));
         }
         else
         {
