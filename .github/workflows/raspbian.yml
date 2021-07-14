@@ -54,7 +54,18 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: recursive
+        submodules: false
+    - name: Install OpenThread SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.OPENTHREAD_SSH_KEY }}
+        if_key_exists: replace
+        known_hosts: unnecessary
+    - name: Checkout Submodules
+      run: |
+        git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch main third_party/openthread/repo
+        git clone https://github.com/DaveGamble/cJSON.git --depth 1 third_party/cJSON/repo
+        git clone https://github.com/nodejs/http-parser.git --depth 1 third_party/http-parser/repo
     - name: Bootstrap
       run: tests/scripts/bootstrap.sh
     - name: Build
