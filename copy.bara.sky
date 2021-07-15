@@ -1,0 +1,100 @@
+#  Copyright (c) 2021, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+"""Copybara configuration for synchronizing public main branch to private main branch."""
+
+CHECKOUT_SUBMODULES = [
+    "        submodules: false",
+    "    - name: Install OpenThread SSH Key",
+    "      uses: shimataro/ssh-key-action@v2",
+    "      with:",
+    "        key: $${{ secrets.OPENTHREAD_SSH_KEY }}",
+    "        if_key_exists: replace",
+    "        known_hosts: unnecessary",
+    "    - name: Checkout Submodules",
+    "      run: |",
+    "        git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch main third_party/openthread/repo",
+    "        git clone https://github.com/DaveGamble/cJSON.git --depth 1 third_party/cJSON/repo",
+    "        git clone https://github.com/nodejs/http-parser.git --depth 1 third_party/http-parser/repo",
+]
+
+
+def replace_line(line, replace_lines, paths=None):
+    return core.replace(before=line + "\n",
+                        after="".join([l + '\n' for l in replace_lines]),
+                        paths=paths,
+                        multiline=True)
+
+
+core.workflow(
+    name="default",
+    mode="ITERATIVE",
+    authoring=authoring.pass_thru(
+        "OpenThread Shanghai Team <openthread-sha@google.com>"),
+    origin=git.github_origin(
+        url="git@github.com:openthread/ot-br-posix.git",
+        ref="main",
+    ),
+    origin_files=glob(
+        include=["**"],
+        exclude=[
+            # Remove dependabot configuration.
+            ".github/dependabot.yml"
+        ],
+    ),
+    destination=git.github_destination(
+        url="git@github.com:openthread/ot-br-posix-internal.git",
+        fetch="main",
+        push="main",
+    ),
+    destination_files=glob(
+        include=["**"],
+        exclude=[
+            "copy.bara.sky",
+        ],
+    ),
+    transformations=[
+        # Use SSH Key to checkout submodules
+        replace_line("        submodules: true",
+                     CHECKOUT_SUBMODULES,
+                     paths=glob([".github/workflows/**"])),
+        replace_line("        submodules: recursive",
+                     CHECKOUT_SUBMODULES,
+                     paths=glob([".github/workflows/**"])),
+
+        # Switch submodules to internal repositories.
+        replace_line("\turl = https://github.com/openthread/openthread.git", [
+            "\turl = git@github.com:openthread/openthread-internal.git",
+        ],
+                     paths=glob([".gitmodules"])),
+
+        # Choose corresponding branch (main/stable)
+        replace_line("\tbranch = main", [
+            "\tbranch = .",
+        ],
+                     paths=glob([".gitmodules"])),
+    ],
+)
