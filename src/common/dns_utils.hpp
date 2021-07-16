@@ -75,6 +75,16 @@ struct DnsNameInfo
 };
 
 /**
+ * This method checks whether a name is a local service.
+ *
+ * @param[in] aName     The full DNS name to check.
+ *
+ * @returns  Whether a name is a local service
+ *
+ */
+bool NameIsLocalService(const std::string &aName);
+
+/**
  * This method splits a full DNS name into name components.
  *
  * @param[in] aName     The full DNS name to dissect.

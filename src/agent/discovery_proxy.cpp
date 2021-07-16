@@ -40,8 +40,11 @@
 #include <algorithm>
 #include <string>
 
+#include <arpa/inet.h>
 #include <assert.h>
+#include <netdb.h>
 
+#include <openthread/dns.h>
 #include <openthread/dnssd_server.h>
 
 #include "common/code_utils.hpp"
@@ -93,10 +96,14 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     otbrError   error    = OTBR_ERROR_NONE;
     DnsNameInfo nameInfo = SplitFullDnsName(fullName);
 
-    otbrLogInfo("subscribe: %s", fullName.c_str());
-
-    if (GetServiceSubscriptionCount(nameInfo) == 1)
+    if (!NameIsLocalService(aFullName))
     {
+        otbrLogInfo("recursive query name: %s", fullName.c_str());
+        QeueryRecursive(aFullName);
+    }
+    else if (GetServiceSubscriptionCount(nameInfo) == 1)
+    {
+        otbrLogInfo("subscribe: %s", fullName.c_str());
         if (nameInfo.mHostName.empty())
         {
             mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
@@ -126,7 +133,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
 
     otbrLogInfo("unsubscribe: %s", fullName.c_str());
 
-    if (GetServiceSubscriptionCount(nameInfo) == 1)
+    if (NameIsLocalService(aFullName) && GetServiceSubscriptionCount(nameInfo) == 1)
     {
         if (nameInfo.mHostName.empty())
         {
@@ -331,6 +338,49 @@ void DiscoveryProxy::CheckHostnameSanity(const std::string &aHostName)
 uint32_t DiscoveryProxy::CapTtl(uint32_t aTtl)
 {
     return std::min(aTtl, static_cast<uint32_t>(kServiceTtlCapLimit));
+}
+
+void DiscoveryProxy::QeueryRecursive(const std::string &aFullName)
+{
+    struct addrinfo           hints;
+    struct addrinfo *         result = nullptr;
+    otDnssdHostInfo           hostInfo;
+    std::vector<otIp6Address> addresses;
+    otIp6Prefix               nat64Prefix;
+
+    SuccessOrExit(otDnsGetNat64Prefix(mNcp.GetInstance(), &nat64Prefix));
+    memset(&hostInfo, 0, sizeof(hostInfo));
+    hostInfo.mTtl = kServiceTtlCapLimit;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    SuccessOrExit(getaddrinfo(aFullName.c_str(), nullptr, &hints, &result));
+    VerifyOrExit(result != nullptr);
+
+    for (struct addrinfo *iter = result; iter != nullptr; iter = iter->ai_next)
+    {
+        struct sockaddr_in *addr           = reinterpret_cast<struct sockaddr_in *>(iter->ai_addr);
+        otIp6Address        translatedAddr = nat64Prefix.mPrefix;
+
+        hostInfo.mAddressNum++;
+        translatedAddr.mFields.m32[3] = addr->sin_addr.s_addr;
+        addresses.push_back(translatedAddr);
+        {
+            char str[100];
+            inet_ntop(AF_INET6, &translatedAddr, str, sizeof(str));
+            otbrLogInfo("NAT64 addr %s", str);
+        }
+    }
+    hostInfo.mAddresses = addresses.data();
+
+    otDnssdQueryHandleDiscoveredHost(mNcp.GetInstance(), aFullName.c_str(), &hostInfo);
+
+exit:
+    if (result != nullptr)
+    {
+        freeaddrinfo(result);
+    }
 }
 
 } // namespace Dnssd

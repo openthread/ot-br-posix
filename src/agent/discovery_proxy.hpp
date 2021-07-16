@@ -97,6 +97,7 @@ private:
                                            const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void OnHostDiscovered(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aHostInfo);
     static uint32_t CapTtl(uint32_t aTtl);
+    void            QeueryRecursive(const std::string &aName);
 
     Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher &          mMdnsPublisher;

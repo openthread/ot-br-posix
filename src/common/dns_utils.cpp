@@ -37,6 +37,17 @@ static bool NameEndsWithDot(const std::string &aName)
     return !aName.empty() && aName.back() == '.';
 }
 
+bool NameIsLocalService(const std::string &aName)
+{
+    std::string fullName = aName;
+
+    if (!NameEndsWithDot(fullName))
+    {
+        fullName += '.';
+    }
+    return fullName.find("._udp.") != std::string::npos || fullName.find("._tcp.") != std::string::npos;
+}
+
 DnsNameInfo SplitFullDnsName(const std::string &aName)
 {
     size_t      transportPos;
