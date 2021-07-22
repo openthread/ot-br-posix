@@ -81,6 +81,11 @@ jobs:
             build_args: ""
             platforms: "linux/amd64,linux/arm64"
             push: yes
+          - image_tag: "hirsute"
+            base_image: "ubuntu:hirsute"
+            build_args: ""
+            platforms: "linux/amd64,linux/arm64"
+            push: yes
           - image_tag: "reference-device"
             base_image: "ubuntu:bionic"
             build_args: >-
