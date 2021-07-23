@@ -30,11 +30,13 @@ name: Border Router
 
 on:
   push:
-    branches-ignore:
-      - 'dependabot/**'
+    branches:
+      - 'main'
+      - 'stable'
   pull_request:
     branches:
       - 'main'
+      - 'stable'
 
 jobs:
 
@@ -91,7 +93,7 @@ jobs:
         known_hosts: unnecessary
     - name: Checkout Submodules
       run: |
-        git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch main third_party/openthread/repo
+        git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch "${GITHUB_BASE_REF:-$(git branch --show-current)}" third_party/openthread/repo
         git clone https://github.com/DaveGamble/cJSON.git --depth 1 third_party/cJSON/repo
         git clone https://github.com/nodejs/http-parser.git --depth 1 third_party/http-parser/repo
     - name: Build OTBR Docker Image
