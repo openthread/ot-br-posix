@@ -423,6 +423,7 @@ scan_meshcop_service()
 test_meshcop_service()
 {
     local network_name="ot-test-net"
+    local service_name='OpenThread_BorderRouter'
     local xpanid="4142434445464748"
     local xpanid_txt="ABCDEFGH"
     local extaddr="4142434445464748"
@@ -447,7 +448,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" state | grep "leader"
 
     service="$(scan_meshcop_service)"
-    grep "${network_name}._meshcop\._udp" <<<"${service}"
+    grep "${service_name}._meshcop\._udp" <<<"${service}"
     grep "rv=1" <<<"${service}"
     grep "tv=1\.2\.0" <<<"${service}"
     grep "nn=${network_name}" <<<"${service}"
@@ -470,7 +471,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${network_name}._meshcop\._udp" <<<"${service}"; then
+    if grep -q "${service_name}._meshcop\._udp" <<<"${service}"; then
         die "unexpect meshcop service when PSKc is zeroed!"
     fi
 
@@ -481,20 +482,17 @@ test_meshcop_service()
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    grep "${network_name}._meshcop\._udp" <<<"${service}"
+    grep "${service_name}._meshcop\._udp" <<<"${service}"
 
-    # Test if the meshcop service is unpublished and a new service
-    # is published when the network name is changed.
+    # Test if the meshcop service's 'nn' field is updated
+    # when the network name is changed.
     local new_network_name="ot-test-net-new"
     sudo "${OT_CTL}" dataset init active
     sudo "${OT_CTL}" dataset networkname ${new_network_name}
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${network_name}._meshcop\._udp" <<<"${service}"; then
-        die "unexpect stale meshcop service!"
-    fi
-    grep "${new_network_name}._meshcop\._udp" <<<"${service}"
+    grep "${service_name}._meshcop\._udp" <<<"${service}"
     grep "nn=${new_network_name}" <<<"${service}"
 
     # Test if the discriminator is updated when extaddr is changed.
@@ -505,7 +503,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" thread start
     sleep 5
     service="$(scan_meshcop_service)"
-    grep "${new_network_name}._meshcop\._udp" <<<"${service}"
+    grep "${service_name}._meshcop\._udp" <<<"${service}"
     grep "dd=${new_extaddr_txt}" <<<"${service}"
 
     # Test if the meshcop service is unpublished when Thread is stopped.
@@ -519,13 +517,13 @@ test_meshcop_service()
     sudo "${OT_CTL}" thread start
     sleep 5
     service="$(scan_meshcop_service)"
-    grep "${new_network_name}._meshcop\._udp" <<<"${service}"
+    grep "${service_name}._meshcop\._udp" <<<"${service}"
 
     # Test if the the meshcop service is unpublished when otbr-agent stops.
     sudo killall "${OTBR_AGENT}"
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${new_network_name}._meshcop\._udp" <<<"${service}"; then
+    if grep -q "${service_name}._meshcop\._udp" <<<"${service}"; then
         die "unexpect meshcop service when otbr-agent exits!"
     fi
 }

@@ -54,11 +54,11 @@
 #endif
 
 #ifndef OTBR_PRODUCT_NAME
-#define OTBR_PRODUCT_NAME "border router"
+#define OTBR_PRODUCT_NAME "BorderRouter"
 #endif
 
 #ifndef OTBR_MESHCOP_SERVICE_NAME
-#define OTBR_MESHCOP_SERVICE_NAME OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME
+#define OTBR_MESHCOP_SERVICE_NAME OTBR_VENDOR_NAME "_" OTBR_PRODUCT_NAME
 #endif
 
 namespace otbr {
