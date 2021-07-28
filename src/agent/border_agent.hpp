@@ -49,6 +49,18 @@
 #include "backbone_router/backbone_agent.hpp"
 #endif
 
+#ifndef OTBR_VENDOR_NAME
+#define OTBR_VENDOR_NAME "OpenThread"
+#endif
+
+#ifndef OTBR_PRODUCT_NAME
+#define OTBR_PRODUCT_NAME "border router"
+#endif
+
+#ifndef OTBR_MESHCOP_SERVICE_NAME
+#define OTBR_MESHCOP_SERVICE_NAME OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME
+#endif
+
 namespace otbr {
 
 /**

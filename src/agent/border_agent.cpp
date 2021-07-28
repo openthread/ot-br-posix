@@ -63,7 +63,8 @@
 
 namespace otbr {
 
-static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
+static const char kBorderAgentServiceType[] = "_meshcop._udp";           ///< Border agent service type of mDNS
+static const char kBorderAgentServiceName[] = OTBR_MESHCOP_SERVICE_NAME; ///< Border agent service name of mDNS
 
 /**
  * Locators
@@ -233,7 +234,7 @@ void BorderAgent::PublishMeshCopService(void)
     const char *             networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
 
-    otbrLogInfo("Publish meshcop service %s.%s.local.", networkName, kBorderAgentServiceType);
+    otbrLogInfo("Publish meshcop service %s.%s.local.", kBorderAgentServiceName, kBorderAgentServiceType);
 
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
@@ -299,7 +300,7 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
 
-    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), networkName,
+    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), kBorderAgentServiceName,
                                kBorderAgentServiceType, Mdns::Publisher::SubTypeList{}, txtList);
 }
 
@@ -308,9 +309,9 @@ void BorderAgent::UnpublishMeshCopService(void)
     assert(IsThreadStarted());
     VerifyOrExit(!mNetworkName.empty());
 
-    otbrLogInfo("Unpublish meshcop service %s.%s.local.", mNetworkName.c_str(), kBorderAgentServiceType);
+    otbrLogInfo("Unpublish meshcop service %s.%s.local.", kBorderAgentServiceName, kBorderAgentServiceType);
 
-    mPublisher->UnpublishService(mNetworkName.c_str(), kBorderAgentServiceType);
+    mPublisher->UnpublishService(kBorderAgentServiceName, kBorderAgentServiceType);
 
 exit:
     return;
@@ -324,18 +325,6 @@ void BorderAgent::UpdateMeshCopService(void)
 
     VerifyOrExit(mPublisher->IsStarted(), mPublisher->Start());
     VerifyOrExit(IsPskcInitialized(), UnpublishMeshCopService());
-
-    // In case the Thread network name changes, we need to unpublish
-    // current meshcop service.
-    //
-    // TODO: don't use Thread network name as service instance name.
-    // The network name is a TXT entry of the `_meshcop._udp` service
-    // and we should only update the mDNS service entry when network name
-    // changes but not republish a new service instance.
-    if (mNetworkName != networkName)
-    {
-        UnpublishMeshCopService();
-    }
 
     PublishMeshCopService();
     mNetworkName = networkName;
