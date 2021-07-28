@@ -221,8 +221,15 @@ int main()
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", nullptr) ==
                                         ClientError::OT_ERROR_NOT_FOUND);
-                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", [](ClientError aJoinError) {
+                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", [&api](ClientError aJoinError) {
+                                DeviceRole deviceRole;
+
                                 TEST_ASSERT(aJoinError == ClientError::OT_ERROR_NOT_FOUND);
+
+                                api->FactoryReset(nullptr);
+                                api->GetDeviceRole(deviceRole);
+                                TEST_ASSERT(deviceRole == otbr::DBus::OTBR_DEVICE_ROLE_DISABLED);
+
                                 exit(0);
                             }) == ClientError::ERROR_NONE);
                         });
