@@ -167,7 +167,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
         rxLength += count;
 
         mBuffer[rxLength] = '\0';
-        done              = strstr(mBuffer, "Done\r\n");
+        done              = strstr(mBuffer, "Done\r\n> ");
 
         if (done != nullptr)
         {
