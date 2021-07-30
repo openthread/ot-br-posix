@@ -311,6 +311,9 @@ void otPlatReset(otInstance *aInstance)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
+#if OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE && OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
+    otBorderAgentStop(instance);
+#endif
     otInstanceFinalize(aInstance);
     otSysDeinit();
 
