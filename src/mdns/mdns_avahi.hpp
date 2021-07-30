@@ -531,6 +531,11 @@ private:
     void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
     void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
 
+    static otbrError TxtListToAvahiStringList(const TxtList &   aTxtList,
+                                              AvahiStringList * aBuffer,
+                                              size_t            aBufferSize,
+                                              AvahiStringList *&aHead);
+
     std::string MakeFullName(const char *aName);
 
     void        OnServiceResolved(ServiceSubscription &aService);

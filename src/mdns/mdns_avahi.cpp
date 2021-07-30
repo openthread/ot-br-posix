@@ -614,11 +614,6 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     const char *       safeHostName = (aHostName != nullptr) ? aHostName : "";
     const char *       logHostName  = (aHostName != nullptr) ? aHostName : "localhost";
     std::string        fullHostName;
-    // aligned with AvahiStringList
-    AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
-    AvahiStringList *last = nullptr;
-    AvahiStringList *curr = buffer;
-    size_t           used = 0;
 
     VerifyOrExit(mState == State::kReady, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
     VerifyOrExit(mClient != nullptr, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
@@ -629,29 +624,6 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     {
         fullHostName = MakeFullName(aHostName);
         aHostName    = fullHostName.c_str();
-    }
-
-    for (const auto &txtEntry : aTxtList)
-    {
-        const char *   name        = txtEntry.mName.c_str();
-        size_t         nameLength  = txtEntry.mName.length();
-        const uint8_t *value       = txtEntry.mValue.data();
-        size_t         valueLength = txtEntry.mValue.size();
-        // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
-        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
-
-        VerifyOrExit(used + needed <= sizeof(buffer), errno = EMSGSIZE, error = OTBR_ERROR_ERRNO);
-        curr->next = last;
-        last       = curr;
-        memcpy(curr->text, name, nameLength);
-        curr->text[nameLength] = '=';
-        memcpy(curr->text + nameLength + 1, value, valueLength);
-        curr->size = nameLength + valueLength + 1;
-        {
-            const uint8_t *next = curr->text + curr->size;
-            curr                = OTBR_ALIGNED(next, AvahiStringList *);
-        }
-        used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(buffer));
     }
 
     serviceIt = FindService(aName, aType);
@@ -666,9 +638,13 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     }
     else
     {
+        // aligned with AvahiStringList
+        AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
+        AvahiStringList *head = nullptr;
+        SuccessOrExit(error = TxtListToAvahiStringList(aTxtList, buffer, sizeof(buffer), head));
         otbrLogInfo("Update service %s.%s for host %s", aName, aType, logHostName);
         avahiError = avahi_entry_group_update_service_txt_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol,
-                                                                 AvahiPublishFlags{}, aName, aType, mDomain, last);
+                                                                 AvahiPublishFlags{}, aName, aType, mDomain, head);
         if (avahiError == 0 && mServiceHandler != nullptr)
         {
             // The handler should be called even if the request can be processed synchronously
@@ -825,6 +801,44 @@ otbrError PublisherAvahi::UnpublishHost(const char *aName)
     error = FreeGroup(hostIt->mGroup);
     mHosts.erase(hostIt);
 
+exit:
+    return error;
+}
+
+otbrError PublisherAvahi::TxtListToAvahiStringList(const TxtList &   aTxtList,
+                                                   AvahiStringList * aBuffer,
+                                                   size_t            aBufferSize,
+                                                   AvahiStringList *&aHead)
+{
+    otbrError        error = OTBR_ERROR_NONE;
+    size_t           used  = 0;
+    AvahiStringList *last  = nullptr;
+    AvahiStringList *curr  = aBuffer;
+    aHead                  = nullptr;
+    for (const auto &txtEntry : aTxtList)
+    {
+        const char *   name        = txtEntry.mName.c_str();
+        size_t         nameLength  = txtEntry.mName.length();
+        const uint8_t *value       = txtEntry.mValue.data();
+        size_t         valueLength = txtEntry.mValue.size();
+        // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
+        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
+
+        VerifyOrExit(used + needed <= aBufferSize, errno = EMSGSIZE, error = OTBR_ERROR_ERRNO);
+        curr->next = last;
+        last       = curr;
+        memcpy(curr->text, name, nameLength);
+        curr->text[nameLength] = '=';
+        memcpy(curr->text + nameLength + 1, value, valueLength);
+        curr->size = nameLength + valueLength + 1;
+        {
+            const uint8_t *next = curr->text + curr->size;
+            curr                = OTBR_ALIGNED(next, AvahiStringList *);
+        }
+        used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(aBuffer));
+    }
+    SuccessOrExit(error);
+    aHead = last;
 exit:
     return error;
 }
