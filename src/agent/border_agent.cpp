@@ -121,6 +121,8 @@ otbrError BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
+    otBorderAgentStart(mNcp.GetInstance());
+
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Start();
