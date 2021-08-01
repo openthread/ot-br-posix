@@ -63,8 +63,9 @@
 
 namespace otbr {
 
-static const char kBorderAgentServiceType[] = "_meshcop._udp";           ///< Border agent service type of mDNS
-static const char kBorderAgentServiceName[] = OTBR_MESHCOP_SERVICE_NAME; ///< Border agent service name of mDNS
+static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
+static const char kBorderAgentServiceInstanceName[] =
+    OTBR_MESHCOP_SERVICE_INSTANCE_NAME; ///< Border agent service name of mDNS
 
 /**
  * Locators
@@ -234,7 +235,7 @@ void BorderAgent::PublishMeshCopService(void)
     const char *             networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
 
-    otbrLogInfo("Publish meshcop service %s.%s.local.", kBorderAgentServiceName, kBorderAgentServiceType);
+    otbrLogInfo("Publish meshcop service %s.%s.local.", kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
@@ -300,8 +301,9 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
 
-    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), kBorderAgentServiceName,
-                               kBorderAgentServiceType, Mdns::Publisher::SubTypeList{}, txtList);
+    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance),
+                               kBorderAgentServiceInstanceName, kBorderAgentServiceType, Mdns::Publisher::SubTypeList{},
+                               txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)
@@ -309,9 +311,9 @@ void BorderAgent::UnpublishMeshCopService(void)
     assert(IsThreadStarted());
     VerifyOrExit(!mNetworkName.empty());
 
-    otbrLogInfo("Unpublish meshcop service %s.%s.local.", kBorderAgentServiceName, kBorderAgentServiceType);
+    otbrLogInfo("Unpublish meshcop service %s.%s.local.", kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
-    mPublisher->UnpublishService(kBorderAgentServiceName, kBorderAgentServiceType);
+    mPublisher->UnpublishService(kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
 exit:
     return;
