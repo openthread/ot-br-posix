@@ -86,6 +86,7 @@ private:
 
     void ScanHandler(DBusRequest &aRequest);
     void AttachHandler(DBusRequest &aRequest);
+    void AttachToHandler(DBusRequest &aRequest);
     void DetachHandler(DBusRequest &aRequest);
     void LeaveHandler(DBusRequest &aRequest);
     void FactoryResetHandler(DBusRequest &aRequest);

@@ -118,13 +118,49 @@ EOF
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep -e child -e router
+
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.Detach
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep disabled
+
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sleep 1
+
     sudo "${CMAKE_BINARY_DIR}"/tests/dbus/otbr-test-dbus-client
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
+    sleep 1
+
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.Attach \
+        array:byte: \
+        uint16:0xffff \
+        string:OpenThread \
+        uint64:0xffffffffffffffff \
+        array:byte: \
+        uint32:0xffffffff
+
+    local dataset="0x0e,0x08,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x33,0x08,0x00,0x00,0x00,"
+    dataset+="0x00,0x00,0x01,0x00,0x00,0x34,0x04,0x00,0x04,0x80,0x88,0x00,0x03,0x00,0x00,0x0d,"
+    dataset+="0x35,0x06,0x00,0x04,0x00,0x1f,0xff,0xe0,0x02,0x08,0xae,0x9b,0xd4,0x19,0x59,0x55,"
+    dataset+="0x56,0x43,0x07,0x08,0xfd,0xc2,0x04,0x93,0xa7,0x64,0x6c,0x28,0x05,0x10,0x3c,0x2e,"
+    dataset+="0x53,0xb6,0xd6,0x42,0xc5,0x9e,0x25,0x79,0xe4,0x3a,0x5a,0x0d,0xb2,0xfb,0x03,0x0f,"
+    dataset+="0x4f,0x70,0x65,0x6e,0x54,0x68,0x72,0x65,0x61,0x64,0x2d,0x32,0x36,0x35,0x38,0x01,"
+    dataset+="0x02,0x26,0x58,0x04,0x10,0x84,0xd7,0x14,0x51,0x72,0xb9,0xdc,0x74,0x22,0x45,0xe7,"
+    dataset+="0x89,0x97,0x87,0xd3,0xb2,0x0c,0x04,0x02,0xa0,0xff,0xf8"
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.AttachTo \
+        "array:byte:${dataset}"
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep "Active Timestamp: 2"
+
+    sleep 310
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep "Active Timestamp: 2"
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl networkkey | grep 3c2e53b6d642c59e2579e43a5a0db2fb
 }
 
 main "$@"

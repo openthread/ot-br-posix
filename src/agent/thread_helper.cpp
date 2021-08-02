@@ -50,7 +50,6 @@
 
 namespace otbr {
 namespace agent {
-
 ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp)
     : mInstance(aInstance)
     , mNcp(aNcp)
@@ -98,7 +97,7 @@ void ThreadHelper::Scan(ScanHandler aHandler)
     mScanResults.clear();
 
     error =
-        otLinkActiveScan(mInstance, /*scanChannels =*/0, /*scanDuration=*/0, &ThreadHelper::sActiveScanHandler, this);
+        otLinkActiveScan(mInstance, /*scanChannels =*/0, /*scanDuration=*/0, &ThreadHelper::ActiveScanHandler, this);
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -122,7 +121,7 @@ void ThreadHelper::RandomFill(void *aBuf, size_t size)
     }
 }
 
-void ThreadHelper::sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper)
+void ThreadHelper::ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper)
 {
     ThreadHelper *helper = static_cast<ThreadHelper *>(aThreadHelper);
 
@@ -193,7 +192,6 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
 
     VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
-    mAttachHandler = aHandler;
     VerifyOrExit(aNetworkKey.empty() || aNetworkKey.size() == sizeof(networkKey.m8), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aChannelMask != 0, error = OT_ERROR_INVALID_ARGS);
@@ -259,6 +257,8 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     SuccessOrExit(error = otThreadSetPskc(mInstance, &pskc));
 
     SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+    mAttachHandler = aHandler;
+
 exit:
     if (error != OT_ERROR_NONE)
     {
@@ -266,7 +266,6 @@ exit:
         {
             aHandler(error);
         }
-        mAttachHandler = nullptr;
     }
 }
 
@@ -275,13 +274,13 @@ void ThreadHelper::Attach(ResultHandler aHandler)
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
-    mAttachHandler = aHandler;
 
     if (!otIp6IsEnabled(mInstance))
     {
         SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
     }
     SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+    mAttachHandler = aHandler;
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -290,7 +289,6 @@ exit:
         {
             aHandler(error);
         }
-        mAttachHandler = nullptr;
     }
 }
 
@@ -325,14 +323,16 @@ void ThreadHelper::JoinerStart(const std::string &aPskd,
 
     VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
-    mJoinerHandler = aHandler;
 
     if (!otIp6IsEnabled(mInstance))
     {
         SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
     }
-    error = otJoinerStart(mInstance, aPskd.c_str(), aProvisioningUrl.c_str(), aVendorName.c_str(), aVendorModel.c_str(),
-                          aVendorSwVersion.c_str(), aVendorData.c_str(), sJoinerCallback, this);
+    SuccessOrExit(error = otJoinerStart(mInstance, aPskd.c_str(), aProvisioningUrl.c_str(), aVendorName.c_str(),
+                                        aVendorModel.c_str(), aVendorSwVersion.c_str(), aVendorData.c_str(),
+                                        JoinerCallback, this));
+    mJoinerHandler = aHandler;
+
 exit:
     if (error != OT_ERROR_NONE)
     {
@@ -340,11 +340,10 @@ exit:
         {
             aHandler(error);
         }
-        mJoinerHandler = nullptr;
     }
 }
 
-void ThreadHelper::sJoinerCallback(otError aError, void *aThreadHelper)
+void ThreadHelper::JoinerCallback(otError aError, void *aThreadHelper)
 {
     ThreadHelper *helper = static_cast<ThreadHelper *>(aThreadHelper);
 
@@ -397,6 +396,70 @@ void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
     {
         otbrLogWarning("%s: %s", aAction, otThreadErrorToString(aError));
     }
+}
+
+void ThreadHelper::AttachTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHandler aHandler)
+{
+    otError              error = OT_ERROR_NONE;
+    otOperationalDataset emptyDataset{};
+    otDeviceRole         role = otThreadGetDeviceRole(mInstance);
+
+    assert(aHandler != nullptr);
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
+
+    if (role == OT_DEVICE_ROLE_DISABLED || role == OT_DEVICE_ROLE_DETACHED)
+    {
+        otOperationalDataset existingDataset;
+
+        error = otDatasetGetActive(mInstance, &existingDataset);
+        VerifyOrExit(error == OT_ERROR_NONE || error == OT_ERROR_NOT_FOUND);
+
+        if (error == OT_ERROR_NOT_FOUND)
+        {
+            otOperationalDatasetTlvs datasetTlvs;
+
+            VerifyOrExit(aDatasetTlvs.size() <= sizeof(datasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
+            std::copy(aDatasetTlvs.begin(), aDatasetTlvs.end(), datasetTlvs.mTlvs);
+            datasetTlvs.mLength = aDatasetTlvs.size();
+
+            SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
+
+            if (!otIp6IsEnabled(mInstance))
+            {
+                SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+            }
+            SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+
+            ExitNow();
+        }
+
+        ExitNow(error = OT_ERROR_INVALID_STATE);
+    }
+
+    SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, aDatasetTlvs.data(),
+                                                      aDatasetTlvs.size(), MgmtSetResponseHandler, this));
+    mAttachHandler = aHandler;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        if (aHandler)
+        {
+            aHandler(error);
+        }
+    }
+}
+
+void ThreadHelper::MgmtSetResponseHandler(otError aResult, void *aContext)
+{
+    static_cast<ThreadHelper *>(aContext)->MgmtSetResponseHandler(aResult);
+}
+
+void ThreadHelper::MgmtSetResponseHandler(otError aResult)
+{
+    assert(mAttachHandler != nullptr);
+    mAttachHandler(aResult);
+    mAttachHandler = nullptr;
 }
 
 #if OTBR_ENABLE_UNSECURE_JOIN

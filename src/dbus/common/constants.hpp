@@ -46,6 +46,7 @@
 
 #define OTBR_DBUS_SCAN_METHOD "Scan"
 #define OTBR_DBUS_ATTACH_METHOD "Attach"
+#define OTBR_DBUS_ATTACH_TO_NETWORK_METHOD "AttachTo"
 #define OTBR_DBUS_DETACH_METHOD "Detach"
 #define OTBR_DBUS_FACTORY_RESET_METHOD "FactoryReset"
 #define OTBR_DBUS_RESET_METHOD "Reset"

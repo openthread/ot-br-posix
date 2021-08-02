@@ -713,5 +713,11 @@ void ThreadApiDBus::sHandleDBusPendingCall(DBusPendingCall *aPending, void *aThr
     (api->*Handler)(aPending);
 }
 
+ClientError ThreadApiDBus::AttachTo(const std::vector<uint8_t> &aDataset)
+{
+    auto args = std::tie(aDataset);
+    return CallDBusMethodSync(OTBR_DBUS_ATTACH_TO_NETWORK_METHOD, args);
+}
+
 } // namespace DBus
 } // namespace otbr

@@ -111,6 +111,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::ScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_METHOD,
                    std::bind(&DBusThreadObject::AttachHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_TO_NETWORK_METHOD,
+                   std::bind(&DBusThreadObject::AttachToHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DETACH_METHOD,
                    std::bind(&DBusThreadObject::DetachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_FACTORY_RESET_METHOD,
@@ -286,6 +288,24 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     {
         threadHelper->Attach(name, panid, extPanId, networkKey, pskc, channelMask,
                              [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
+    }
+}
+
+void DBusThreadObject::AttachToHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t> dataset;
+    otError              error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+    mNcp->GetThreadHelper()->AttachTo(dataset, [aRequest](otError error) mutable { aRequest.ReplyOtResult(error); });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
     }
 }
 

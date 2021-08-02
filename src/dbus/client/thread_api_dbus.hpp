@@ -146,6 +146,22 @@ public:
     ClientError Attach(const OtResultHandler &aHandler);
 
     /**
+     * This method attaches the device to the specified Thread network.
+     *
+     * @param  aDataset  The Operational Dataset that contains parameter values of the Thread network to attach to. It
+     * must have a valid Delay Timer and Pending Timestamp.
+     *
+     * @retval ERROR_NONE                  successfully requested the Thread network migration.
+     * @retval ERROR_DBUS                  dbus encode/decode error.
+     * @retval OT_ERROR_REJECTED           the request was rejected by the leader.
+     * @retval OT_ERROR_FAILED             an invalid response was received.
+     * @retval OT_ERROR_ABORT              the CoAP transaction was reset by peer.
+     * @retval OT_ERROR_RESPONSE_TIMEOUT   no response or acknowledgment received during timeout period.
+     *
+     */
+    ClientError AttachTo(const std::vector<uint8_t> &aDataset);
+
+    /**
      * This method performs a factory reset.
      *
      * @param[in]   aHandler        The reset result handler.

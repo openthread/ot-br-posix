@@ -67,6 +67,7 @@ static const std::pair<otError, const char *> sErrorNames[] = {
     {OT_ERROR_NOT_TMF, OPENTHREAD_ERROR_PREFIX ".NotTmf"},
     {OT_ERROR_NOT_LOWPAN_DATA_FRAME, OPENTHREAD_ERROR_PREFIX ".NonLowpanDatatFrame"},
     {OT_ERROR_LINK_MARGIN_LOW, OPENTHREAD_ERROR_PREFIX ".LinkMarginLow"},
+    {OT_ERROR_REJECTED, OPENTHREAD_ERROR_PREFIX ".Rejected"},
 };
 
 namespace otbr {
