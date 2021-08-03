@@ -80,7 +80,6 @@ ControllerOpenThread::ControllerOpenThread(const char *                     aInt
 
 ControllerOpenThread::~ControllerOpenThread(void)
 {
-    otInstanceFinalize(mInstance);
     otSysDeinit();
 }
 
@@ -116,6 +115,8 @@ otbrError ControllerOpenThread::Init(void)
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
+    assert(mInstance != nullptr);
+
 #if OTBR_ENABLE_LEGACY
     otLegacyInit();
 #endif
@@ -213,8 +214,9 @@ void ControllerOpenThread::Reset(void)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
-    otInstanceFinalize(mInstance);
     otSysDeinit();
+    mInstance = nullptr;
+
     Init();
     for (auto &handler : mResetHandlers)
     {

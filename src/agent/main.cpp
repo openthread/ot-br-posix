@@ -309,9 +309,10 @@ exit:
 
 void otPlatReset(otInstance *aInstance)
 {
+    OT_UNUSED_VARIABLE(aInstance);
+
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
-    otInstanceFinalize(aInstance);
     otSysDeinit();
 
     longjmp(sResetJump, 1);
