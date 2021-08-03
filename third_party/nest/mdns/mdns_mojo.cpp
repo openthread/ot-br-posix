@@ -232,11 +232,12 @@ void MdnsMojoPublisher::StopPublishTask(void)
     mPublishedHosts.clear();
 }
 
-otbrError MdnsMojoPublisher::PublishService(const char *   aHostName,
-                                            uint16_t       aPort,
-                                            const char *   aName,
-                                            const char *   aType,
-                                            const TxtList &aTxtList)
+otbrError MdnsMojoPublisher::PublishService(const char *       aHostName,
+                                            uint16_t           aPort,
+                                            const char *       aName,
+                                            const char *       aType,
+                                            const SubTypeList &aSubTypeList,
+                                            const TxtList &    aTxtList)
 {
     otbrError                error = OTBR_ERROR_NONE;
     std::vector<std::string> text;
