@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
@@ -26,51 +27,26 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-name: Documentation
+#
+# This script tests publishing multiple services.
+#
 
-on:
-  push:
-    branches:
-      - 'main'
+# shellcheck source=tests/mdns/test_init
+. "$(dirname "$0")/test_init"
 
-jobs:
-  cancel-previous-runs:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: rokroskar/workflow-run-cleanup-action@master
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      if: "github.ref != 'refs/heads/main'"
+main()
+{
+    start_publisher t
 
-  doxygen:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: false
-    - name: Install OpenThread SSH Key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.OPENTHREAD_SSH_KEY }}
-        if_key_exists: replace
-        known_hosts: unnecessary
-    - name: Checkout Submodules
-      run: |
-        git clone git@github.com:openthread/openthread-internal.git --depth 1 --branch "${GITHUB_BASE_REF:-$(git branch --show-current)}" third_party/openthread/repo
-        git clone https://github.com/DaveGamble/cJSON.git --depth 1 third_party/cJSON/repo
-        git clone https://github.com/nodejs/http-parser.git --depth 1 third_party/http-parser/repo
-    - name: Bootstrap
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y doxygen libdbus-1-dev libglib2.0-dev-bin xmlto
-    - name: Generate
-      run: |
-        mkdir build-doc
-        cd build-doc
-        cmake -DBUILD_TESTING=OFF -DOTBR_DOC=ON -DOTBR_DBUS=ON ..
-        make otbr-doc
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build-doc/doc/html
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype1'
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype2' && exit 1
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype3'
+    else
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype1._sub._meshcop._udp'
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype2._sub._meshcop._udp' && exit 1
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype3._sub._meshcop._udp'
+    fi
+}
+
+main "$@"
