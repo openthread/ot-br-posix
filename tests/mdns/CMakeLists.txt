@@ -65,7 +65,19 @@ add_test(
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple-custom-hosts
 )
 
-set_tests_properties(mdns-single mdns-multiple mdns-update mdns-stop mdns-single-custom-host mdns-multiple-custom-hosts
+add_test(
+    NAME mdns-service-subtypes
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-service-subtypes
+)
+
+set_tests_properties(
+    mdns-single
+    mdns-multiple
+    mdns-update
+    mdns-stop
+    mdns-single-custom-host
+    mdns-multiple-custom-hosts
+    mdns-service-subtypes
     PROPERTIES
         ENVIRONMENT "OTBR_MDNS=${OTBR_MDNS};OTBR_TEST_MDNS=$<TARGET_FILE:otbr-test-mdns>"
 )

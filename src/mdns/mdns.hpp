@@ -95,7 +95,8 @@ public:
         }
     };
 
-    typedef std::vector<TxtEntry> TxtList;
+    typedef std::vector<TxtEntry>    TxtList;
+    typedef std::vector<std::string> SubTypeList;
 
     /**
      * This structure represents information of a discovered service instance.
@@ -256,20 +257,22 @@ public:
      *                                  this service resides on local host and it is the implementation to provide
      *                                  specific host name. Otherwise, the caller MUST publish the host with method
      *                                  PublishHost.
+     * @param[in]   aPort               The port number of this service.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
-     * @param[in]   aPort               The port number of this service.
+     * @param[in]   aSubTypeList        A list of service subtypes.
      * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(const char *   aHostName,
-                                     uint16_t       aPort,
-                                     const char *   aName,
-                                     const char *   aType,
-                                     const TxtList &aTxtList) = 0;
+    virtual otbrError PublishService(const char *       aHostName,
+                                     uint16_t           aPort,
+                                     const char *       aName,
+                                     const char *       aType,
+                                     const SubTypeList &aSubTypeList,
+                                     const TxtList &    aTxtList) = 0;
 
     /**
      * This method un-publishes a service.
