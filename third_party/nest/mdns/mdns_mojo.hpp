@@ -116,7 +116,7 @@ public:
                              uint16_t           aPort,
                              const char *       aName,
                              const char *       aType,
-                             const SubTypeList &aSubTypeList,  // TODO(b/194883087): Supprot subtypes
+                             const SubTypeList &aSubTypeList,
                              const TxtList &    aTxtList) override;
 
     /**
@@ -294,6 +294,7 @@ private:
                             const std::string &             aTransport,
                             const std::string &             aInstanceName,
                             uint16_t                        aPort,
+                            const SubTypeList &             aSubTypeList,
                             const std::vector<std::string> &aText);
     void UnpublishServiceTask(const std::string &aName, const std::string &aInstanceName);
     void PublishHostTask(const std::string &aInstanceName, const std::string &aIpv6Address);
@@ -314,7 +315,15 @@ private:
     void ConnectToMojo(void);
     void mMojoConnectCb(std::unique_ptr<chromecast::external_mojo::ExternalConnector> aConnector);
     void mMojoDisconnectedCb(void);
-    void mRegisterServiceCb(chromecast::mojom::MdnsResult aResult);
+    void RegisterServiceInstanceCb(const std::string &           aName,
+                                   const std::string &           aTransport,
+                                   const std::string &           aInstanceName,
+                                   const SubTypeList &           aSubTypeList,
+                                   chromecast::mojom::MdnsResult aResult);
+    void UpdateSubtypesCb(const std::string &           aName,
+                          const std::string &           aTransport,
+                          const std::string &           aInstanceName,
+                          chromecast::mojom::MdnsResult aResult);
 
     void NotifyDiscoveredServiceInstance(const std::string &                          aInstanceName,
                                          const std::string &                          aServiceName,
