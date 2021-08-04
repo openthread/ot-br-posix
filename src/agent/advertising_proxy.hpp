@@ -100,7 +100,8 @@ private:
                                    void *                     aContext);
     void        AdvertisingHandler(otSrpServerServiceUpdateId aId, const otSrpServerHost *aHost, uint32_t aTimeout);
 
-    static Mdns::Publisher::TxtList MakeTxtList(const otSrpServerService *aSrpService);
+    static Mdns::Publisher::TxtList     MakeTxtList(const otSrpServerService *aSrpService);
+    static Mdns::Publisher::SubTypeList MakeSubTypeList(const otSrpServerService *aSrpService);
 
     static void PublishServiceHandler(const char *aName, const char *aType, otbrError aError, void *aContext);
     void        PublishServiceHandler(const char *aName, const char *aType, otbrError aError);
