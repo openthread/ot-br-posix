@@ -405,7 +405,7 @@ void ThreadHelper::AttachTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHand
     otDeviceRole         role = otThreadGetDeviceRole(mInstance);
 
     assert(aHandler != nullptr);
-    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_BUSY);
 
     if (role == OT_DEVICE_ROLE_DISABLED || role == OT_DEVICE_ROLE_DETACHED)
     {
@@ -458,6 +458,17 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult, void *aContext)
 void ThreadHelper::MgmtSetResponseHandler(otError aResult)
 {
     assert(mAttachHandler != nullptr);
+
+    switch (aResult)
+    {
+    case OT_ERROR_NONE:
+    case OT_ERROR_REJECTED:
+        break;
+    default:
+        aResult = OT_ERROR_FAILED;
+        break;
+    }
+
     mAttachHandler(aResult);
     mAttachHandler = nullptr;
 }
