@@ -373,6 +373,7 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
         if (serviceIt != mServices.end())
         {
             char *alternativeName = avahi_alternative_service_name(serviceIt->mName.c_str());
+            assert(alternativeName != nullptr);
             otbrLogInfo("Re-publishing service %s using an alternative name: %s", serviceIt->mName.c_str(),
                         alternativeName);
             serviceIt->mName = alternativeName;
