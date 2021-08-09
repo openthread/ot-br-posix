@@ -296,10 +296,10 @@ void MdnsMojoPublisher::PublishServiceTask(const std::string &             aHost
                         aThis->mPublishedServices.emplace_back(std::make_pair(aName, aInstanceName));
                     }
 
-                    if (aThis->mHostHandler != nullptr)
+                    if (aThis->mServiceHandler != nullptr)
                     {
                         aThis->mServiceHandler(aInstanceName.c_str(), (aName + "." + aTransport).c_str(), error,
-                                               aThis->mHostHandlerContext);
+                                               aThis->mServiceHandlerContext);
                     }
                 });
             },
