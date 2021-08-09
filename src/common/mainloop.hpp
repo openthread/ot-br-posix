@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definitions for NCP service.
+ *   This file includes definitions for mainloop processor.
  */
 
 #ifndef OTBR_COMMON_OTBR_MAINLOOP_HPP_
@@ -41,15 +41,14 @@
 namespace otbr {
 
 /**
- * This type defines the mainloop context that contains context data
- * for running a mainloop.
+ * This type defines the context data for running a mainloop.
  *
  */
 using MainloopContext = otSysMainloopContext;
 
 /**
  * This abstract class defines the interface of a mainloop processor
- * which add fds to the mainloop context and handle fd events.
+ * which adds fds to the mainloop context and handles fds events.
  *
  */
 class MainloopProcessor
