@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for MDNS service.
+ *   This file includes definition for mDNS service.
  */
 
 #ifndef OTBR_AGENT_MDNS_MDNSSD_HPP_
@@ -51,7 +51,7 @@ namespace otbr {
 namespace Mdns {
 
 /**
- * This class implements MDNS service with mDNSResponder.
+ * This class implements mDNS service with mDNSResponder.
  *
  */
 class PublisherMDnsSd : public Publisher
@@ -186,10 +186,10 @@ public:
     void UnsubscribeHost(const std::string &aHostName) override;
 
     /**
-     * This method starts the MDNS service.
+     * This method starts the mDNS service.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started MDNS service;
-     * @retval OTBR_ERROR_MDNS  Failed to start MDNS service.
+     * @retval OTBR_ERROR_NONE  Successfully started mDNS service;
+     * @retval OTBR_ERROR_MDNS  Failed to start mDNS service.
      *
      */
     otbrError Start(void) override;
@@ -204,7 +204,7 @@ public:
     bool IsStarted(void) const override;
 
     /**
-     * This method stops the MDNS service.
+     * This method stops the mDNS service.
      *
      */
     void Stop(void) override;

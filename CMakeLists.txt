@@ -94,7 +94,7 @@ endif()
 
 include(GNUInstallDirs)
 
-set(OTBR_MDNS "avahi" CACHE STRING "MDNS service provider")
+set(OTBR_MDNS "avahi" CACHE STRING "mDNS service provider")
 set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
 
 pkg_check_modules(SYSTEMD systemd)
