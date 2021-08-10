@@ -367,9 +367,21 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
         break;
 
     case AVAHI_ENTRY_GROUP_COLLISION:
+    {
         otbrLogErr("Name collision!");
-        CallHostOrServiceCallback(aGroup, OTBR_ERROR_DUPLICATED);
+        Services::iterator serviceIt = FindService(aGroup);
+        if (serviceIt != mServices.end())
+        {
+            char *alternativeName = avahi_alternative_service_name(serviceIt->mName.c_str());
+            assert(alternativeName != nullptr);
+            otbrLogInfo("Re-publishing service %s using an alternative name: %s", serviceIt->mName.c_str(),
+                        alternativeName);
+            serviceIt->mName = alternativeName;
+            avahi_free(alternativeName);
+            RetryPublishService(serviceIt);
+        }
         break;
+    }
 
     case AVAHI_ENTRY_GROUP_FAILURE:
         /* Some kind of failure happened while we were registering our services */
@@ -413,6 +425,51 @@ void PublisherAvahi::CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrErro
     }
 }
 
+otbrError PublisherAvahi::RetryPublishService(const Services::iterator &aServiceIt)
+{
+    otbrError error      = OTBR_ERROR_NONE;
+    int       avahiError = 0;
+    Service & service    = *aServiceIt;
+    // aligned with AvahiStringList
+    AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
+    AvahiStringList *head = nullptr;
+
+    SuccessOrExit(error = TxtListToAvahiStringList(service.mTxtList, buffer, sizeof(buffer), head));
+    avahiError = avahi_entry_group_add_service_strlst(service.mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{},
+                                                      service.mName.c_str(), service.mType.c_str(), mDomain,
+                                                      service.mHostName.c_str(), service.mPort, head);
+    SuccessOrExit(avahiError);
+
+    for (const std::string &subType : service.mSubTypeList)
+    {
+        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), service.mName.c_str(), service.mType.c_str());
+        std::string fullSubType = subType + "._sub." + service.mType;
+        avahiError              = avahi_entry_group_add_service_subtype(service.mGroup, AVAHI_IF_UNSPEC, mProtocol,
+                                                           AvahiPublishFlags{}, service.mName.c_str(),
+                                                           service.mType.c_str(), mDomain, fullSubType.c_str());
+        SuccessOrExit(avahiError);
+    }
+
+    otbrLogInfo("Commit service %s.%s", service.mName.c_str(), service.mType.c_str());
+    avahiError = avahi_entry_group_commit(service.mGroup);
+    SuccessOrExit(avahiError);
+
+exit:
+    if (avahiError)
+    {
+        error = OTBR_ERROR_MDNS;
+        otbrLogErr("Failed to retry publishing service for avahi error: %s!", avahi_strerror(avahiError));
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogErr("Failed to retry publishing service: %s!", otbrErrorString(error));
+        FreeGroup(service.mGroup);
+        mServices.erase(aServiceIt);
+    }
+
+    return error;
+}
+
 PublisherAvahi::Hosts::iterator PublisherAvahi::FindHost(const char *aHostName)
 {
     assert(aHostName != nullptr);
@@ -446,6 +503,12 @@ PublisherAvahi::Services::iterator PublisherAvahi::FindService(const char *aName
     return std::find_if(mServices.begin(), mServices.end(), [aName, aType](const Service &aService) {
         return aService.mName == aName && aService.mType == aType;
     });
+}
+
+PublisherAvahi::Services::iterator PublisherAvahi::FindService(AvahiEntryGroup *aGroup)
+{
+    return std::find_if(mServices.begin(), mServices.end(),
+                        [aGroup](const Service &aService) { return aService.mGroup == aGroup; });
 }
 
 otbrError PublisherAvahi::CreateService(AvahiClient &       aClient,
@@ -616,9 +679,9 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     std::string        fullHostName;
     // aligned with AvahiStringList
     AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
-    AvahiStringList *last = nullptr;
-    AvahiStringList *curr = buffer;
-    size_t           used = 0;
+    AvahiStringList *head = nullptr;
+
+    SuccessOrExit(error = TxtListToAvahiStringList(aTxtList, buffer, sizeof(buffer), head));
 
     VerifyOrExit(mState == State::kReady, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
     VerifyOrExit(mClient != nullptr, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
@@ -629,29 +692,6 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     {
         fullHostName = MakeFullName(aHostName);
         aHostName    = fullHostName.c_str();
-    }
-
-    for (const auto &txtEntry : aTxtList)
-    {
-        const char *   name        = txtEntry.mName.c_str();
-        size_t         nameLength  = txtEntry.mName.length();
-        const uint8_t *value       = txtEntry.mValue.data();
-        size_t         valueLength = txtEntry.mValue.size();
-        // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
-        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
-
-        VerifyOrExit(used + needed <= sizeof(buffer), errno = EMSGSIZE, error = OTBR_ERROR_ERRNO);
-        curr->next = last;
-        last       = curr;
-        memcpy(curr->text, name, nameLength);
-        curr->text[nameLength] = '=';
-        memcpy(curr->text + nameLength + 1, value, valueLength);
-        curr->size = nameLength + valueLength + 1;
-        {
-            const uint8_t *next = curr->text + curr->size;
-            curr                = OTBR_ALIGNED(next, AvahiStringList *);
-        }
-        used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(buffer));
     }
 
     serviceIt = FindService(aName, aType);
@@ -668,19 +708,20 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     {
         otbrLogInfo("Update service %s.%s for host %s", aName, aType, logHostName);
         avahiError = avahi_entry_group_update_service_txt_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol,
-                                                                 AvahiPublishFlags{}, aName, aType, mDomain, last);
+                                                                 AvahiPublishFlags{}, aName, aType, mDomain, head);
         if (avahiError == 0 && mServiceHandler != nullptr)
         {
             // The handler should be called even if the request can be processed synchronously
             mServiceHandler(aName, aType, OTBR_ERROR_NONE, mServiceHandlerContext);
         }
+        serviceIt->mTxtList = aTxtList;
         ExitNow();
     }
 
     otbrLogInfo("Create service %s.%s for host %s", aName, aType, logHostName);
     avahiError =
         avahi_entry_group_add_service_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{}, aName,
-                                             aType, mDomain, aHostName, aPort, last);
+                                             aType, mDomain, aHostName, aPort, head);
     SuccessOrExit(avahiError);
 
     for (const std::string &subType : aSubTypeList)
@@ -700,6 +741,7 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     serviceIt->mSubTypeList = aSubTypeList;
     serviceIt->mHostName    = safeHostName;
     serviceIt->mPort        = aPort;
+    serviceIt->mTxtList     = aTxtList;
 
 exit:
 
@@ -825,6 +867,45 @@ otbrError PublisherAvahi::UnpublishHost(const char *aName)
     error = FreeGroup(hostIt->mGroup);
     mHosts.erase(hostIt);
 
+exit:
+    return error;
+}
+
+otbrError PublisherAvahi::TxtListToAvahiStringList(const TxtList &   aTxtList,
+                                                   AvahiStringList * aBuffer,
+                                                   size_t            aBufferSize,
+                                                   AvahiStringList *&aHead)
+{
+    otbrError        error = OTBR_ERROR_NONE;
+    size_t           used  = 0;
+    AvahiStringList *last  = nullptr;
+    AvahiStringList *curr  = aBuffer;
+
+    aHead = nullptr;
+    for (const auto &txtEntry : aTxtList)
+    {
+        const char *   name        = txtEntry.mName.c_str();
+        size_t         nameLength  = txtEntry.mName.length();
+        const uint8_t *value       = txtEntry.mValue.data();
+        size_t         valueLength = txtEntry.mValue.size();
+        // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
+        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
+
+        VerifyOrExit(used + needed <= aBufferSize, errno = EMSGSIZE, error = OTBR_ERROR_ERRNO);
+        curr->next = last;
+        last       = curr;
+        memcpy(curr->text, name, nameLength);
+        curr->text[nameLength] = '=';
+        memcpy(curr->text + nameLength + 1, value, valueLength);
+        curr->size = nameLength + valueLength + 1;
+        {
+            const uint8_t *next = curr->text + curr->size;
+            curr                = OTBR_ALIGNED(next, AvahiStringList *);
+        }
+        used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(aBuffer));
+    }
+    SuccessOrExit(error);
+    aHead = last;
 exit:
     return error;
 }

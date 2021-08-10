@@ -374,6 +374,7 @@ private:
         std::string      mHostName;
         uint16_t         mPort  = 0;
         AvahiEntryGroup *mGroup = nullptr;
+        TxtList          mTxtList;
     };
 
     typedef std::vector<Service> Services;
@@ -514,6 +515,7 @@ private:
     otbrError       CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt);
 
     Services::iterator FindService(const char *aName, const char *aType);
+    Services::iterator FindService(AvahiEntryGroup *aGroup);
     otbrError          CreateService(AvahiClient &       aClient,
                                      const char *        aName,
                                      const char *        aType,
@@ -530,6 +532,12 @@ private:
     static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
     void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
     void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
+    otbrError        RetryPublishService(const Services::iterator &aServiceIt);
+
+    static otbrError TxtListToAvahiStringList(const TxtList &   aTxtList,
+                                              AvahiStringList * aBuffer,
+                                              size_t            aBufferSize,
+                                              AvahiStringList *&aHead);
 
     std::string MakeFullName(const char *aName);
 
