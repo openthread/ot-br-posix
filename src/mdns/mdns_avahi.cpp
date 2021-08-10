@@ -680,6 +680,7 @@ otbrError PublisherAvahi::PublishService(const char *       aHostName,
     // aligned with AvahiStringList
     AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
     AvahiStringList *head = nullptr;
+
     SuccessOrExit(error = TxtListToAvahiStringList(aTxtList, buffer, sizeof(buffer), head));
 
     VerifyOrExit(mState == State::kReady, errno = EAGAIN, error = OTBR_ERROR_ERRNO);
@@ -879,6 +880,7 @@ otbrError PublisherAvahi::TxtListToAvahiStringList(const TxtList &   aTxtList,
     size_t           used  = 0;
     AvahiStringList *last  = nullptr;
     AvahiStringList *curr  = aBuffer;
+
     aHead                  = nullptr;
     for (const auto &txtEntry : aTxtList)
     {
