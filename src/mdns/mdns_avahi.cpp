@@ -881,7 +881,7 @@ otbrError PublisherAvahi::TxtListToAvahiStringList(const TxtList &   aTxtList,
     AvahiStringList *last  = nullptr;
     AvahiStringList *curr  = aBuffer;
 
-    aHead                  = nullptr;
+    aHead = nullptr;
     for (const auto &txtEntry : aTxtList)
     {
         const char *   name        = txtEntry.mName.c_str();
