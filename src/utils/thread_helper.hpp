@@ -145,6 +145,15 @@ public:
     void Attach(ResultHandler aHandler);
 
     /**
+     * This method makes all nodes in the current network attach to the network specified by the dataset TLVs.
+     *
+     * @param[in] aDatasetTlvs  The dataset TLVs.
+     * @param[in] aHandler      The result handler.
+     *
+     */
+    void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHandler aHandler);
+
+    /**
      * This method resets the OpenThread stack.
      *
      * @returns The error value of underlying OpenThread api calls.
@@ -208,11 +217,14 @@ public:
     static void LogOpenThreadResult(const char *aAction, otError aError);
 
 private:
-    static void sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
+    static void ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
     void        ActiveScanHandler(otActiveScanResult *aResult);
 
-    static void sJoinerCallback(otError aError, void *aThreadHelper);
+    static void JoinerCallback(otError aError, void *aThreadHelper);
     void        JoinerCallback(otError aResult);
+
+    static void MgmtSetResponseHandler(otError aResult, void *aContext);
+    void        MgmtSetResponseHandler(otError aResult);
 
     void    RandomFill(void *aBuf, size_t size);
     uint8_t RandomChannelFromChannelMask(uint32_t aChannelMask);
