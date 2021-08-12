@@ -7,7 +7,6 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_C_INCLUDES := \
-    external/gtest/include \
     $(NULL)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
@@ -30,6 +29,7 @@ include external/gwifi/libchrome-cros/generate_mojom_sources.mk
 MDNS_MOJOM_SRCS := $(gen_src)
 
 LOCAL_SHARED_LIBRARIES += libchrome libmojo
+LOCAL_STATIC_LIBRARIES += libgtest_prod
 
 include $(BUILD_STATIC_LIBRARY)
 endif

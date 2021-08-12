@@ -87,7 +87,6 @@ endif
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/src \
-    external/gtest/include \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
@@ -137,6 +136,7 @@ LOCAL_STATIC_LIBRARIES += \
     ot-core \
     libopenthread-cli \
     ot-core \
+    libgtest_prod
 
 LOCAL_LDLIBS := \
     -lutil
