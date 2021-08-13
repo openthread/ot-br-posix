@@ -51,13 +51,13 @@ namespace Mdns {
  * @addtogroup border-router-mdns
  *
  * @brief
- *   This module includes definition for MDNS service.
+ *   This module includes definition for mDNS service.
  *
  * @{
  */
 
 /**
- * This interface defines the functionality of MDNS service.
+ * This interface defines the functionality of mDNS service.
  *
  */
 class Publisher : public MainloopProcessor
@@ -155,7 +155,7 @@ public:
         std::function<void(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo)>;
 
     /**
-     * MDNS state values.
+     * mDNS state values.
      *
      */
     enum class State
@@ -165,7 +165,7 @@ public:
     };
 
     /**
-     * This function pointer is called when MDNS service state changed.
+     * This function pointer is called when mDNS service state changed.
      *
      * @param[in]   aContext        A pointer to application-specific context.
      * @param[in]   aState          The new state.
@@ -221,16 +221,16 @@ public:
     }
 
     /**
-     * This method starts the MDNS service.
+     * This method starts the mDNS service.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started MDNS service;
-     * @retval OTBR_ERROR_MDNS  Failed to start MDNS service.
+     * @retval OTBR_ERROR_NONE  Successfully started mDNS service;
+     * @retval OTBR_ERROR_MDNS  Failed to start mDNS service.
      *
      */
     virtual otbrError Start(void) = 0;
 
     /**
-     * This method stops the MDNS service.
+     * This method stops the mDNS service.
      *
      */
     virtual void Stop(void) = 0;
@@ -377,20 +377,20 @@ public:
     virtual ~Publisher(void) = default;
 
     /**
-     * This function creates a MDNS publisher.
+     * This function creates a mDNS publisher.
      *
      * @param[in]   aProtocol           Protocol to use for publishing. AF_INET6, AF_INET or AF_UNSPEC.
      * @param[in]   aDomain             The domain to register in. Set nullptr to use default mDNS domain ("local.").
      * @param[in]   aHandler            The function to be called when this service state changed.
      * @param[in]   aContext            A pointer to application-specific context.
      *
-     * @returns A pointer to the newly created MDNS publisher.
+     * @returns A pointer to the newly created mDNS publisher.
      *
      */
     static Publisher *Create(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext);
 
     /**
-     * This function destroys the MDNS publisher.
+     * This function destroys the mDNS publisher.
      *
      * @param[in]   aPublisher          A pointer to the publisher.
      *

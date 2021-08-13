@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for MDNS service based on avahi.
+ *   This file includes definition for mDNS service based on avahi.
  */
 
 #ifndef OTBR_AGENT_MDNS_AVAHI_HPP_
@@ -50,7 +50,7 @@
  * @addtogroup border-router-mdns
  *
  * @brief
- *   This module includes definition for avahi-based MDNS service.
+ *   This module includes definition for avahi-based mDNS service.
  *
  * @{
  */
@@ -181,7 +181,7 @@ private:
 };
 
 /**
- * This class implements MDNS service with avahi.
+ * This class implements mDNS service with avahi.
  *
  */
 class PublisherAvahi : public Publisher
@@ -316,10 +316,10 @@ public:
     void UnsubscribeHost(const std::string &aHostName) override;
 
     /**
-     * This method starts the MDNS service.
+     * This method starts the mDNS service.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started MDNS service;
-     * @retval OTBR_ERROR_MDNS  Failed to start MDNS service.
+     * @retval OTBR_ERROR_NONE  Successfully started mDNS service;
+     * @retval OTBR_ERROR_MDNS  Failed to start mDNS service.
      *
      */
     otbrError Start(void) override;
@@ -334,7 +334,7 @@ public:
     bool IsStarted(void) const override;
 
     /**
-     * This method stops the MDNS service.
+     * This method stops the mDNS service.
      *
      */
     void Stop(void) override;
