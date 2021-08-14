@@ -103,6 +103,9 @@ readonly OT_NETWORK_NAME=MyTestNetwork
 # The TUN device for OpenThread border router.
 readonly TUN_NAME=wpan0
 
+# The default meshcop service instance name
+readonly OT_SERVICE_INSTANCE='OpenThread_BorderRouter'
+
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"
 echo "TEST_BASE: ${TEST_BASE}"
 echo "ABS_TOP_SRCDIR=${ABS_TOP_SRCDIR}"
@@ -328,8 +331,8 @@ network_form()
     sleep 15
     # verify mDNS is working as expected.
     local mdns_result="${TEST_BASE}"/mdns_result.log
-    avahi-browse -aprt | tee "${mdns_result}"
-    OT_BORDER_AGENT_PORT=$(grep -a "${OT_NETWORK_NAME}" "${mdns_result}" | grep -ao ';[0-9]\{5\};' | head -n1 | tr -d ';')
+    avahi-browse -art | tee "${mdns_result}"
+    OT_BORDER_AGENT_PORT=$(grep -GA3 '^=.\+'"${OT_SERVICE_INSTANCE}"'.\+_meshcop._udp' "${mdns_result}" | head -n4 | grep port | grep -ao '[0-9]\{5\}')
     rm "${mdns_result}"
 }
 
@@ -423,7 +426,6 @@ scan_meshcop_service()
 test_meshcop_service()
 {
     local network_name="ot-test-net"
-    local service_name='OpenThread_BorderRouter'
     local xpanid="4142434445464748"
     local xpanid_txt="ABCDEFGH"
     local extaddr="4142434445464748"
@@ -448,7 +450,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" state | grep "leader"
 
     service="$(scan_meshcop_service)"
-    grep "${service_name}._meshcop\._udp" <<<"${service}"
+    grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
     grep "rv=1" <<<"${service}"
     grep "tv=1\.2\.0" <<<"${service}"
     grep "nn=${network_name}" <<<"${service}"
@@ -471,7 +473,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${service_name}._meshcop\._udp" <<<"${service}"; then
+    if grep -q "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"; then
         die "unexpect meshcop service when PSKc is zeroed!"
     fi
 
@@ -482,7 +484,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    grep "${service_name}._meshcop\._udp" <<<"${service}"
+    grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
 
     # Test if the meshcop service's 'nn' field is updated
     # when the network name is changed.
@@ -492,7 +494,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    grep "${service_name}._meshcop\._udp" <<<"${service}"
+    grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
     grep "nn=${new_network_name}" <<<"${service}"
 
     # Test if the discriminator is updated when extaddr is changed.
@@ -503,7 +505,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" thread start
     sleep 5
     service="$(scan_meshcop_service)"
-    grep "${service_name}._meshcop\._udp" <<<"${service}"
+    grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
     grep "dd=${new_extaddr_txt}" <<<"${service}"
 
     # Test if the meshcop service is unpublished when Thread is stopped.
@@ -517,13 +519,13 @@ test_meshcop_service()
     sudo "${OT_CTL}" thread start
     sleep 5
     service="$(scan_meshcop_service)"
-    grep "${service_name}._meshcop\._udp" <<<"${service}"
+    grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
 
     # Test if the the meshcop service is unpublished when otbr-agent stops.
     sudo killall "${OTBR_AGENT}"
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${service_name}._meshcop\._udp" <<<"${service}"; then
+    if grep -q "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"; then
         die "unexpect meshcop service when otbr-agent exits!"
     fi
 }
