@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
+#include <time.h>
 
 #include <string>
 
@@ -46,10 +47,30 @@
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/tlv.hpp"
 #include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace agent {
+namespace {
+const Tlv *FindTlv(uint8_t aTlvType, const uint8_t *aTlvs, int aTlvsSize)
+{
+    const Tlv *result = nullptr;
+
+    for (const Tlv *tlv = reinterpret_cast<const Tlv *>(aTlvs);
+         reinterpret_cast<const uint8_t *>(tlv) + sizeof(Tlv) < aTlvs + aTlvsSize; tlv = tlv->GetNext())
+    {
+        if (tlv->GetType() == aTlvType)
+        {
+            ExitNow(result = tlv);
+        }
+    }
+
+exit:
+    return result;
+}
+} // namespace
+
 ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp)
     : mInstance(aInstance)
     , mNcp(aNcp)
@@ -400,12 +421,35 @@ void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
 
 void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHandler aHandler)
 {
-    otError              error = OT_ERROR_NONE;
-    otOperationalDataset emptyDataset{};
-    otDeviceRole         role = otThreadGetDeviceRole(mInstance);
+    constexpr uint32_t kDelayTimerMilliseconds = 300 * 1000;
+
+    otError                  error = OT_ERROR_NONE;
+    otOperationalDatasetTlvs datasetTlvs;
+    otOperationalDataset     dataset;
+    otOperationalDataset     emptyDataset{};
+    otDeviceRole             role = otThreadGetDeviceRole(mInstance);
+    Tlv *                    tlv;
+    uint64_t                 pendingTimestamp = 0;
+    timespec                 currentTime;
 
     assert(aHandler != nullptr);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_BUSY);
+
+    VerifyOrExit(aDatasetTlvs.size() <= sizeof(datasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
+    std::copy(aDatasetTlvs.begin(), aDatasetTlvs.end(), datasetTlvs.mTlvs);
+    datasetTlvs.mLength = aDatasetTlvs.size();
+
+    SuccessOrExit(error = otDatasetParseTlvs(&datasetTlvs, &dataset));
+    VerifyOrExit(dataset.mComponents.mIsActiveTimestampPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsNetworkKeyPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsNetworkNamePresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsExtendedPanIdPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsMeshLocalPrefixPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsPanIdPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsChannelPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsPskcPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsSecurityPolicyPresent, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(dataset.mComponents.mIsChannelMaskPresent, error = OT_ERROR_INVALID_ARGS);
 
     if (role == OT_DEVICE_ROLE_DISABLED || role == OT_DEVICE_ROLE_DETACHED)
     {
@@ -415,12 +459,6 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
         VerifyOrExit(error == OT_ERROR_NONE || error == OT_ERROR_NOT_FOUND);
 
         VerifyOrExit(error == OT_ERROR_NOT_FOUND, error = OT_ERROR_INVALID_STATE);
-
-        otOperationalDatasetTlvs datasetTlvs;
-
-        VerifyOrExit(aDatasetTlvs.size() <= sizeof(datasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
-        std::copy(aDatasetTlvs.begin(), aDatasetTlvs.end(), datasetTlvs.mTlvs);
-        datasetTlvs.mLength = aDatasetTlvs.size();
 
         SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
 
@@ -434,8 +472,33 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
         ExitNow();
     }
 
-    SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, aDatasetTlvs.data(),
-                                                      aDatasetTlvs.size(), MgmtSetResponseHandler, this));
+    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr &&
+                     FindTlv(OT_MESHCOP_TLV_DELAYTIMER, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr,
+                 error = OT_ERROR_INVALID_ARGS);
+
+    // There must be sufficient space for a Pending Timestamp TLV and a Delay Timer TLV.
+    VerifyOrExit(
+        static_cast<int>(datasetTlvs.mLength +
+                         (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint64_t))    // Pending Timestamp TLV (10 bytes)
+                         + (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t))) // Delay Timer TLV (6 bytes)
+            <= int{sizeof(datasetTlvs.mTlvs)},
+        error = OT_ERROR_INVALID_ARGS);
+
+    tlv = reinterpret_cast<Tlv *>(datasetTlvs.mTlvs + datasetTlvs.mLength);
+    tlv->SetType(OT_MESHCOP_TLV_PENDINGTIMESTAMP);
+    clock_gettime(CLOCK_REALTIME, &currentTime);
+    pendingTimestamp |= (static_cast<uint64_t>(currentTime.tv_sec) << 16);
+    pendingTimestamp |= (((static_cast<uint64_t>(currentTime.tv_nsec) * 32768 / 1000000000) & 0x7fff) << 1);
+    tlv->SetValue(pendingTimestamp);
+
+    tlv = tlv->GetNext();
+    tlv->SetType(OT_MESHCOP_TLV_DELAYTIMER);
+    tlv->SetValue(kDelayTimerMilliseconds);
+
+    datasetTlvs.mLength = reinterpret_cast<uint8_t *>(tlv->GetNext()) - datasetTlvs.mTlvs;
+
+    SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
+                                                      MgmtSetResponseHandler, this));
     mAttachHandler = aHandler;
 
 exit:

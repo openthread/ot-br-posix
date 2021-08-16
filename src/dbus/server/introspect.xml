@@ -48,7 +48,7 @@
 
     <!-- AttachAllNodesTo: Request to attach all nodes to the specified Thread network.
       @dataset: The Operational Dataset that contains parameter values of the Thread network
-                to attach to. It must have a valid Delay Timer and Pending Timestamp.
+                to attach to. It must be a full dataset.
     -->
     <method name="AttachAllNodesTo">
       <arg name="dataset" type="ay"/>
