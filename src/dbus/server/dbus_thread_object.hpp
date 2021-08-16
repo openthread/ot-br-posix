@@ -80,6 +80,7 @@ public:
 
 private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
+    void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
     void NcpResetHandler(void);
 
     void ScanHandler(DBusRequest &aRequest);
