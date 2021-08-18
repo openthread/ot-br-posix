@@ -143,8 +143,8 @@ private:
     static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState);
     void        HandleMdnsState(Mdns::Publisher::State aState);
     void        PublishMeshCopService(void);
-    void        UnpublishMeshCopService(void);
     void        UpdateMeshCopService(void);
+    void        UnpublishMeshCopService(void);
 #if OTBR_ENABLE_DBUS_SERVER
     void HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate);
 #endif
