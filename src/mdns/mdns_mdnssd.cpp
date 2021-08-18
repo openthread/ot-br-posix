@@ -435,12 +435,13 @@ exit:
 
 void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
 {
+    OT_UNUSED_VARIABLE(aServiceRef);
+
     ServiceIterator service = FindPublishedService(aName, aType);
 
     if (service != mServices.end())
     {
         assert(aServiceRef == nullptr || aServiceRef == service->mService);
-        OTBR_UNUSED_VARIABLE(aServiceRef);
 
         otbrLogInfo("Remove service ref %p", service->mService);
 
