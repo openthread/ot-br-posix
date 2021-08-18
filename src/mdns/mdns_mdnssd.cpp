@@ -435,7 +435,7 @@ exit:
 
 void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef)
 {
-    OT_UNUSED_VARIABLE(aServiceRef);
+    OTBR_UNUSED_VARIABLE(aServiceRef);
 
     ServiceIterator service = FindPublishedService(aName, aType);
 
