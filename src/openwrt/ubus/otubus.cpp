@@ -915,8 +915,9 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
     {
         otCommissionerStop(mController->GetInstance());
     }
-    SuccessOrExit(
-        error = otDatasetSendMgmtActiveSet(mController->GetInstance(), &dataset, tlvs, static_cast<uint8_t>(length)));
+    SuccessOrExit(error = otDatasetSendMgmtActiveSet(mController->GetInstance(), &dataset, tlvs,
+                                                     static_cast<uint8_t>(length), /* aCallback */ nullptr,
+                                                     /* aContext */ nullptr));
 exit:
     AppendResult(error, aContext, aRequest);
     return 0;
