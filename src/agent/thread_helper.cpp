@@ -82,6 +82,30 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
             }
         }
     }
+
+    if (aFlags & OT_CHANGED_ACTIVE_DATASET)
+    {
+        ActiveDatasetChangedCallback();
+    }
+}
+
+void ThreadHelper::ActiveDatasetChangedCallback()
+{
+    otError                  error;
+    otOperationalDatasetTlvs datasetTlvs;
+
+    SuccessOrExit(error = otDatasetGetActiveTlvs(mInstance, &datasetTlvs));
+
+    for (const auto &handler : mActiveDatasetChangeHandlers)
+    {
+        handler(datasetTlvs);
+    }
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Error handling active dataset change: %s", otThreadErrorToString(error));
+    }
 }
 
 void ThreadHelper::AddDeviceRoleHandler(DeviceRoleHandler aHandler)
@@ -445,6 +469,11 @@ exit:
     return error;
 }
 #endif
+
+void ThreadHelper::AddActiveDatasetChangeHandler(DatasetChangeHandler aHandler)
+{
+    mActiveDatasetChangeHandlers.push_back(std::move(aHandler));
+}
 
 } // namespace agent
 } // namespace otbr
