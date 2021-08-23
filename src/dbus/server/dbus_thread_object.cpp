@@ -205,6 +205,10 @@ otbrError DBusThreadObject::Init(void)
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
 
+    // Internal only methods
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD,
+                   std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
+
     return error;
 }
 
@@ -289,6 +293,25 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     {
         threadHelper->Attach(name, panid, extPanId, networkKey, pskc, channelMask,
                              [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
+    }
+}
+
+void DBusThreadObject::AttachAllNodesToHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t> dataset;
+    otError              error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+    mNcp->GetThreadHelper()->AttachAllNodesTo(dataset,
+                                              [aRequest](otError error) mutable { aRequest.ReplyOtResult(error); });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
     }
 }
 

@@ -146,6 +146,24 @@ public:
     ClientError Attach(const OtResultHandler &aHandler);
 
     /**
+     * This method attaches the device to the specified Thread network. If already attached to a network, sends a
+     * request to migrate the existing network.
+     *
+     * @param  aDataset  The Operational Dataset that contains parameter values of the Thread network to attach to. It
+     * must have a valid Delay Timer and Pending Timestamp.
+     *
+     * @retval ERROR_NONE              successfully requested the Thread network migration.
+     * @retval ERROR_DBUS              dbus encode/decode error.
+     * @retval OT_ERROR_REJECTED       the request was rejected by the leader.
+     * @retval OT_ERROR_FAILED         failed to send the request.
+     * @retval OT_ERROR_INVALID_STATE  the device is attaching.
+     * @retval OT_ERROR_INVALID_ARGS   arguments are invalid.
+     * @retval OT_ERROR_BUSY           there is an ongoing request.
+     *
+     */
+    ClientError AttachAllNodesTo(const std::vector<uint8_t> &aDataset);
+
+    /**
      * This method performs a factory reset.
      *
      * @param[in]   aHandler        The reset result handler.
