@@ -33,6 +33,12 @@ project(openthread-br VERSION 0.3.0)
 add_library(otbr-config INTERFACE)
 
 set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
+set(OTBR_VENDOR_NAME "OpenThread" CACHE STRING "The vendor name")
+set(OTBR_PRODUCT_NAME "BorderRouter" CACHE STRING "The product name")
+set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
+set(OTBR_MDNS "avahi" CACHE STRING "mDNS service provider")
+
+set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
 
 include("${PROJECT_SOURCE_DIR}/etc/cmake/options.cmake")
 
@@ -56,11 +62,7 @@ endif()
 
 add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
 
-if(NOT OTBR_NAME)
-    set(OTBR_NAME "OPENTHREAD_BR")
-endif()
-
-message(STATUS "Name: ${OTBR_NAME}")
+message(STATUS "OTBR package name: ${OTBR_NAME}")
 
 if(NOT OTBR_VERSION)
     execute_process(
@@ -78,12 +80,13 @@ endif()
 
 message(STATUS "Version: ${OTBR_VERSION}")
 
-
 target_include_directories(otbr-config INTERFACE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_definitions(otbr-config INTERFACE
+    "OTBR_VENDOR_NAME=\"${OTBR_VENDOR_NAME}\""
+    "OTBR_PRODUCT_NAME=\"${OTBR_PRODUCT_NAME}\""
     "OTBR_PACKAGE_NAME=\"${OTBR_NAME}\""
     "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
 )
@@ -93,9 +96,6 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 include(GNUInstallDirs)
-
-set(OTBR_MDNS "avahi" CACHE STRING "mDNS service provider")
-set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
 
 pkg_check_modules(SYSTEMD systemd)
 
