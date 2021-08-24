@@ -1103,16 +1103,20 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
     }
     else if (!strcmp(aAction, "networkkey"))
     {
-        char           outputKey[NETWORKKEY_LENGTH] = "";
-        const uint8_t *key = reinterpret_cast<const uint8_t *>(otThreadGetNetworkKey(mController->GetInstance()));
-        OutputBytes(key, OT_NETWORK_KEY_SIZE, outputKey);
+        char         outputKey[NETWORKKEY_LENGTH] = "";
+        otNetworkKey key;
+
+        otThreadGetNetworkKey(mController->GetInstance(), &key);
+        OutputBytes(key.m8, OT_NETWORK_KEY_SIZE, outputKey);
         blobmsg_add_string(&mBuf, "Networkkey", outputKey);
     }
     else if (!strcmp(aAction, "pskc"))
     {
-        char          outputPskc[NETWORKKEY_LENGTH] = "";
-        const otPskc *pskc                          = otThreadGetPskc(mController->GetInstance());
-        OutputBytes(pskc->m8, OT_NETWORK_KEY_SIZE, outputPskc);
+        char   outputPskc[NETWORKKEY_LENGTH] = "";
+        otPskc pskc;
+
+        otThreadGetPskc(mController->GetInstance(), &pskc);
+        OutputBytes(pskc.m8, OT_NETWORK_KEY_SIZE, outputPskc);
         blobmsg_add_string(&mBuf, "pskc", outputPskc);
     }
     else if (!strcmp(aAction, "extpanid"))
