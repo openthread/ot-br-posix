@@ -586,6 +586,11 @@
     <property name="ThreadVersion" type="q" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
+
+    <!-- Eui64: The IEEE EUI-64 of this Thread interface. -->
+    <property name="Eui64" type="t" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

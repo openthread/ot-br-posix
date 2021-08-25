@@ -133,6 +133,11 @@ main()
         io.openthread.BorderRouter.JoinerStart \
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock 2>&1 || true) | grep NotFound
+
+    # Verify Eui64 property. 0x18b4300000000001 = 1780100529276321793
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:Eui64 \
+        | grep '1780100529276321793'
+
     # The ot-cli-ftd node is used to test Thread attach.
     expect <<EOF &
 spawn ot-cli-ftd 3
