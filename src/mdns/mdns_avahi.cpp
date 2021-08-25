@@ -935,7 +935,7 @@ void PublisherAvahi::SubscribeService(const std::string &aType, const std::strin
     }
     else
     {
-        mSubscribedServices.back().Resolve(AVAHI_IF_UNSPEC, aInstanceName.c_str(), aType.c_str(), "local.");
+        mSubscribedServices.back().Resolve(AVAHI_IF_UNSPEC, mProtocol, aInstanceName.c_str(), aType.c_str(), "local.");
     }
 }
 
@@ -1026,7 +1026,7 @@ void PublisherAvahi::ServiceSubscription::Browse(void)
 
     otbrLogInfo("browse service %s", mType.c_str());
     mServiceBrowser =
-        avahi_service_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6, mType.c_str(),
+        avahi_service_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, mPublisherAvahi->mProtocol, mType.c_str(),
                                   mPublisherAvahi->mDomain, static_cast<AvahiLookupFlags>(0), HandleBrowseResult, this);
     if (!mServiceBrowser)
     {
@@ -1077,7 +1077,7 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
 
     assert(mServiceBrowser == aServiceBrowser);
 
-    otbrLogInfo("browse service reply: %s.%s%s inf %u, flags=%u", aName, aType, aDomain, aInterfaceIndex, aFlags);
+    otbrLogInfo("browse service reply: %s.%s.%s inf %u, flags=%u", aName, aType, aDomain, aInterfaceIndex, aFlags);
 
     if (aEvent == AVAHI_BROWSER_FAILURE)
     {
@@ -1085,7 +1085,7 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
     }
     else
     {
-        Resolve(aInterfaceIndex, aName, aType, aDomain);
+        Resolve(aInterfaceIndex, aProtocol, aName, aType, aDomain);
     }
     if (mServiceBrowser != nullptr)
     {
@@ -1094,15 +1094,16 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
     }
 }
 
-void PublisherAvahi::ServiceSubscription::Resolve(uint32_t    aInterfaceIndex,
-                                                  const char *aInstanceName,
-                                                  const char *aType,
-                                                  const char *aDomain)
+void PublisherAvahi::ServiceSubscription::Resolve(uint32_t      aInterfaceIndex,
+                                                  AvahiProtocol aProtocol,
+                                                  const char *  aInstanceName,
+                                                  const char *  aType,
+                                                  const char *  aDomain)
 {
     otbrLogInfo("resolve service %s %s %s inf %d", aInstanceName, aType, aDomain, aInterfaceIndex);
-    mServiceResolver = avahi_service_resolver_new(mPublisherAvahi->mClient, aInterfaceIndex, AVAHI_PROTO_INET6,
-                                                  aInstanceName, aType, aDomain, AVAHI_PROTO_INET6,
-                                                  static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+    mServiceResolver =
+        avahi_service_resolver_new(mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName, aType, aDomain,
+                                   AVAHI_PROTO_INET6, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
     if (!mServiceResolver)
     {
         otbrLogErr("failed to resolve serivce %s: %s", mType.c_str(),
@@ -1213,7 +1214,7 @@ void PublisherAvahi::HostSubscription::Resolve(void)
     std::string fullHostName = mHostName + ".local.";
 
     otbrLogDebug("resolve host %s inf %d", fullHostName.c_str(), AVAHI_IF_UNSPEC);
-    mRecordBrowser = avahi_record_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, AVAHI_PROTO_INET6,
+    mRecordBrowser = avahi_record_browser_new(mPublisherAvahi->mClient, AVAHI_IF_UNSPEC, mPublisherAvahi->mProtocol,
                                               fullHostName.c_str(), AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_AAAA,
                                               static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
     if (!mRecordBrowser)
