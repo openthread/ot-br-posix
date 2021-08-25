@@ -94,4 +94,7 @@
 #define OTBR_ROLE_NAME_ROUTER "router"
 #define OTBR_ROLE_NAME_LEADER "leader"
 
+// Internal only methods
+#define OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD "AttachAllNodesTo"
+
 #endif // OTBR_DBUS_CONSTANTS_HPP_
