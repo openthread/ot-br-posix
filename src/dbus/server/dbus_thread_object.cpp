@@ -158,6 +158,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetPanIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTPANID,
                                std::bind(&DBusThreadObject::GetExtPanIdHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EUI64,
+                               std::bind(&DBusThreadObject::GetEui64Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL,
                                std::bind(&DBusThreadObject::GetChannelHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NETWORK_KEY,
@@ -1084,6 +1086,23 @@ void DBusThreadObject::ActiveDatasetChangeHandler(const otOperationalDatasetTlvs
     std::vector<uint8_t> value(aDatasetTlvs.mLength);
     std::copy(aDatasetTlvs.mTlvs, aDatasetTlvs.mTlvs + aDatasetTlvs.mLength, value.begin());
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, value);
+}
+
+otError DBusThreadObject::GetEui64Handler(DBusMessageIter &aIter)
+{
+    auto         threadHelper = mNcp->GetThreadHelper();
+    otError      error        = OT_ERROR_NONE;
+    otExtAddress extAddr;
+    uint64_t     eui64;
+
+    otLinkGetFactoryAssignedIeeeEui64(threadHelper->GetInstance(), &extAddr);
+
+    eui64 = ConvertOpenThreadUint64(extAddr.m8);
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, eui64) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
 }
 
 } // namespace DBus
