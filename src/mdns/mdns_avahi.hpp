@@ -408,7 +408,11 @@ private:
 
         void Release(void);
         void Browse(void);
-        void Resolve(uint32_t aInterfaceIndex, const char *aInstanceName, const char *aType, const char *aDomain);
+        void Resolve(uint32_t      aInterfaceIndex,
+                     AvahiProtocol aProtocol,
+                     const char *  aInstanceName,
+                     const char *  aType,
+                     const char *  aDomain);
         void GetAddrInfo(uint32_t aInterfaceIndex);
 
         static void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
