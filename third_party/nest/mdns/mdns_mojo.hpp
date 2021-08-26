@@ -35,11 +35,9 @@
 #define OTBR_AGENT_MDNS_MOJO_HPP__
 
 #include <base/macros.h>
-#include <base/message_loop/message_loop.h>
-#include <base/message_loop/message_pump_for_io.h>
 #include <chromecast/external_mojo/public/cpp/common.h>
 
-#include <base/task_scheduler/post_task.h>
+#include <base/task/post_task.h>
 #include <chromecast/external_mojo/public/cpp/external_connector.h>
 #include <mojo/public/cpp/bindings/binding.h>
 

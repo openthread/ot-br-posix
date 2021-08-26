@@ -7,7 +7,6 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_C_INCLUDES := \
-    external/libchrome \
     external/gtest/include \
     $(NULL)
 
@@ -23,10 +22,10 @@ LOCAL_MOJOM_FILES := \
 
 LOCAL_MOJOM_TYPEMAP_FILES :=
 
-LIB_MOJO_ROOT := external/libchrome
+LIB_MOJO_ROOT := external/gwifi/libchrome-cros
 LOCAL_SOURCE_ROOT := chromium/src
 
-include external/libchrome/generate_mojom_sources.mk
+include external/gwifi/libchrome-cros/generate_mojom_sources.mk
 
 MDNS_MOJOM_SRCS := $(gen_src)
 
