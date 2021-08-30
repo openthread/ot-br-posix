@@ -283,7 +283,7 @@ bool OpenThreadClient::FactoryReset(void)
     Execute("factoryreset");
     signal(SIGPIPE, handler);
     Disconnect();
-    sleep(1);
+    sleep(4);
     VerifyOrExit(rval = Connect());
 
     result = Execute("version");
