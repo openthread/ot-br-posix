@@ -453,6 +453,7 @@ void PublisherMDnsSd::DiscardService(const char *aName, const char *aType, DNSSe
 void PublisherMDnsSd::RecordService(const char *  aName,
                                     const char *  aType,
                                     const char *  aRegType,
+                                    uint16_t      aPort,
                                     DNSServiceRef aServiceRef)
 {
     ServiceIterator service = FindPublishedService(aName, aType);
@@ -467,6 +468,7 @@ void PublisherMDnsSd::RecordService(const char *  aName,
         strcpy(newService.mType, aType);
         newService.mRegType = aRegType;
         newService.mService = aServiceRef;
+        newService.mPort    = aPort;
         mServices.push_back(newService);
     }
     else
@@ -476,9 +478,9 @@ void PublisherMDnsSd::RecordService(const char *  aName,
     }
 }
 
-bool PublisherMDnsSd::IsServiceOutdated(const Service &service, const std::string &aNewRegType)
+bool PublisherMDnsSd::IsServiceOutdated(const Service &service, const std::string &aNewRegType, int aNewPort)
 {
-    return service.mRegType != aNewRegType;
+    return service.mRegType != aNewRegType || service.mPort != aNewPort;
 }
 
 otbrError PublisherMDnsSd::PublishService(const char *       aHostName,
@@ -508,7 +510,7 @@ otbrError PublisherMDnsSd::PublishService(const char *       aHostName,
 
     SuccessOrExit(ret = EncodeTxtData(aTxtList, txt, txtLength));
 
-    if (service != mServices.end() && !IsServiceOutdated(*service, regType))
+    if (service != mServices.end() && !IsServiceOutdated(*service, regType, aPort))
     {
         otbrLogInfo("Update service %s.%s", aName, aType);
 
@@ -532,7 +534,7 @@ otbrError PublisherMDnsSd::PublishService(const char *       aHostName,
     SuccessOrExit(error = DNSServiceRegister(&serviceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny, aName,
                                              regType.c_str(), mDomain, (aHostName != nullptr) ? fullHostName : nullptr,
                                              htons(aPort), txtLength, txt, HandleServiceRegisterResult, this));
-    RecordService(aName, aType, regType.c_str(), serviceRef);
+    RecordService(aName, aType, regType.c_str(), aPort, serviceRef);
 
 exit:
     if (error != kDNSServiceErr_NoError)
