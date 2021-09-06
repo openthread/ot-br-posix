@@ -1116,7 +1116,7 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         otPskc pskc;
 
         otThreadGetPskc(mController->GetInstance(), &pskc);
-        OutputBytes(pskc.m8, OT_NETWORK_KEY_SIZE, outputPskc);
+        OutputBytes(pskc.m8, OT_PSKC_MAX_SIZE, outputPskc);
         blobmsg_add_string(&mBuf, "pskc", outputPskc);
     }
     else if (!strcmp(aAction, "extpanid"))
