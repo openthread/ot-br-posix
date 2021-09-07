@@ -54,6 +54,7 @@ jobs:
         submodules: true
     - name: Bootstrap
       run: |
+        rm -f '/usr/local/bin/2to3'
         brew update
         brew reinstall boost cmake cpputest dbus jsoncpp ninja
     - name: Build
