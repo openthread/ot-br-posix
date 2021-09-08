@@ -597,11 +597,12 @@ exit:
 
 otError DBusThreadObject::GetNetworkKeyHandler(DBusMessageIter &aIter)
 {
-    auto                 threadHelper = mNcp->GetThreadHelper();
-    const otNetworkKey * networkKey   = otThreadGetNetworkKey(threadHelper->GetInstance());
-    std::vector<uint8_t> keyVal(networkKey->m8, networkKey->m8 + sizeof(networkKey->m8));
-    otError              error = OT_ERROR_NONE;
+    auto         threadHelper = mNcp->GetThreadHelper();
+    otNetworkKey networkKey;
+    otError      error = OT_ERROR_NONE;
 
+    otThreadGetNetworkKey(threadHelper->GetInstance(), &networkKey);
+    std::vector<uint8_t> keyVal(networkKey.m8, networkKey.m8 + sizeof(networkKey.m8));
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, keyVal) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:

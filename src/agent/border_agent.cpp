@@ -373,10 +373,12 @@ bool BorderAgent::IsThreadStarted(void) const
 
 bool BorderAgent::IsPskcInitialized(void) const
 {
-    bool          initialized = false;
-    const otPskc *pskc        = otThreadGetPskc(mNcp.GetInstance());
+    bool   initialized = false;
+    otPskc pskc;
 
-    for (uint8_t byte : pskc->m8)
+    otThreadGetPskc(mNcp.GetInstance(), &pskc);
+
+    for (uint8_t byte : pskc.m8)
     {
         if (byte != 0x00)
         {
