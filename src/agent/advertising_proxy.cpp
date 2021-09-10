@@ -161,13 +161,15 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
 
 void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aType, otbrError aError)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    std::vector<OutstandingUpdate>::iterator next;
 
     otbrLogInfo("Handle publish service '%s.%s' result: %d", aName, aType, aError);
 
-    // TODO: there may be same names between two SRP updates.
-    for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); ++update)
+    // Note: There may be same service names in multiple SRP updates.
+    for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); update = next)
     {
+        next = update + 1;
+
         for (const auto &nameAndType : update->mServiceNames)
         {
             if (aName != nameAndType.first || !Mdns::Publisher::IsServiceTypeEqual(aType, nameAndType.second.c_str()))
@@ -182,21 +184,15 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
                 // Erase before notifying OpenThread, because there are chances that new
                 // elements may be added to `otSrpServerHandleServiceUpdateResult` and
                 // the iterator will be invalidated.
-                mOutstandingUpdates.erase(update);
+                next = mOutstandingUpdates.erase(update);
                 otSrpServerHandleServiceUpdateResult(GetInstance(), updateId, OtbrErrorToOtError(aError));
             }
             else
             {
                 --update->mCallbackCount;
             }
-            ExitNow();
+            break;
         }
-    }
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLogWarning("Failed to handle result of service %s", aName);
     }
 }
 
@@ -207,12 +203,15 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError, v
 
 void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
 {
-    otbrError error = OTBR_ERROR_NONE;
+    std::vector<OutstandingUpdate>::iterator next;
 
     otbrLogInfo("Handle publish host '%s' result: %d", aName, aError);
 
-    for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); ++update)
+    // Note: There may be same host names in multiple SRP updates.
+    for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); update = next)
     {
+        next = update + 1;
+
         if (aName != update->mHostName)
         {
             continue;
@@ -225,20 +224,13 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
             // Erase before notifying OpenThread, because there are chances that new
             // elements may be added to `otSrpServerHandleServiceUpdateResult` and
             // the iterator will be invalidated.
-            mOutstandingUpdates.erase(update);
+            next = mOutstandingUpdates.erase(update);
             otSrpServerHandleServiceUpdateResult(GetInstance(), updateId, OtbrErrorToOtError(aError));
         }
         else
         {
             --update->mCallbackCount;
         }
-        ExitNow();
-    }
-
-exit:
-    if (error != OTBR_ERROR_NONE)
-    {
-        otbrLogWarning("Failed to handle result of host %s", aName);
     }
 }
 
