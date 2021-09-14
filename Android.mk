@@ -87,6 +87,8 @@ endif
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/src \
+    external/libchrome \
+    external/gtest/include \
     external/openthread/include \
     external/openthread/src \
     external/openthread/src/posix/platform/include \

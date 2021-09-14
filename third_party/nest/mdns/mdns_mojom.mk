@@ -7,6 +7,8 @@ LOCAL_MODULE_TAGS := eng
 LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_C_INCLUDES := \
+    external/libchrome \
+    external/gtest/include \
     $(NULL)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
@@ -21,10 +23,10 @@ LOCAL_MOJOM_FILES := \
 
 LOCAL_MOJOM_TYPEMAP_FILES :=
 
-LIB_MOJO_ROOT := external/gwifi/libchrome-cros
+LIB_MOJO_ROOT := external/libchrome
 LOCAL_SOURCE_ROOT := chromium/src
 
-include external/gwifi/libchrome-cros/generate_mojom_sources.mk
+include external/libchrome/generate_mojom_sources.mk
 
 MDNS_MOJOM_SRCS := $(gen_src)
 

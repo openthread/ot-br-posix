@@ -41,8 +41,6 @@
 #include <base/bind_helpers.h>
 #include <base/command_line.h>
 #include <base/logging.h>
-#include <base/run_loop.h>
-#include <base/task/single_thread_task_executor.h>
 #include <mojo/core/embedder/embedder.h>
 #include <mojo/core/embedder/scoped_ipc_support.h>
 
@@ -94,7 +92,7 @@ void MdnsMojoPublisher::LaunchMojoThreads(void)
     base::CommandLine::Init(0, NULL);
     base::AtExitManager exitManager;
 
-    base::SingleThreadTaskExecutor mainLoop(base::MessagePumpType::IO);
+    base::MessageLoopForIO mainLoop;
     base::RunLoop          runLoop;
 
     mojo::core::Init();
