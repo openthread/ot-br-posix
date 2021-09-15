@@ -110,7 +110,7 @@ jobs:
           --build-arg OT_BACKBONE_CI=1 \
           --build-arg NAT64=0 \
           --build-arg MDNS="${{ matrix.otbr_mdns }}" \
-          --build-arg OTBR_OPTIONS="${otbr_options}"
+          --build-arg OTBR_OPTIONS="${otbr_options} -DCMAKE_CXX_FLAGS='-DOPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF=1'"
     - name: Bootstrap OpenThread Test
       run: |
         sudo rm /etc/apt/sources.list.d/* && sudo apt-get update

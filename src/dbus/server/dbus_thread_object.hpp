@@ -82,10 +82,12 @@ public:
 
 private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
+    void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
     void NcpResetHandler(void);
 
     void ScanHandler(DBusRequest &aRequest);
     void AttachHandler(DBusRequest &aRequest);
+    void AttachAllNodesToHandler(DBusRequest &aRequest);
     void DetachHandler(DBusRequest &aRequest);
     void LeaveHandler(DBusRequest &aRequest);
     void FactoryResetHandler(DBusRequest &aRequest);
@@ -111,6 +113,7 @@ private:
     otError GetNetworkNameHandler(DBusMessageIter &aIter);
     otError GetPanIdHandler(DBusMessageIter &aIter);
     otError GetExtPanIdHandler(DBusMessageIter &aIter);
+    otError GetEui64Handler(DBusMessageIter &aIter);
     otError GetChannelHandler(DBusMessageIter &aIter);
     otError GetNetworkKeyHandler(DBusMessageIter &aIter);
     otError GetCcaFailureRateHandler(DBusMessageIter &aIter);

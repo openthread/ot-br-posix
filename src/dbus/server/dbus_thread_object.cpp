@@ -105,6 +105,7 @@ otbrError DBusThreadObject::Init(void)
     auto      threadHelper = mNcp->GetThreadHelper();
 
     threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    threadHelper->AddActiveDatasetChangeHandler(std::bind(&DBusThreadObject::ActiveDatasetChangeHandler, this, _1));
     mNcp->RegisterResetHandler(std::bind(&DBusThreadObject::NcpResetHandler, this));
 
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCAN_METHOD,
@@ -157,6 +158,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetPanIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTPANID,
                                std::bind(&DBusThreadObject::GetExtPanIdHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EUI64,
+                               std::bind(&DBusThreadObject::GetEui64Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL,
                                std::bind(&DBusThreadObject::GetChannelHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NETWORK_KEY,
@@ -204,6 +207,10 @@ otbrError DBusThreadObject::Init(void)
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
 
+    // Internal only methods
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD,
+                   std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
+
     return error;
 }
 
@@ -215,6 +222,8 @@ void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
 void DBusThreadObject::NcpResetHandler(void)
 {
     mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    mNcp->GetThreadHelper()->AddActiveDatasetChangeHandler(
+        std::bind(&DBusThreadObject::ActiveDatasetChangeHandler, this, _1));
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
                           GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
@@ -286,6 +295,25 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     {
         threadHelper->Attach(name, panid, extPanId, networkKey, pskc, channelMask,
                              [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
+    }
+}
+
+void DBusThreadObject::AttachAllNodesToHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t> dataset;
+    otError              error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+    mNcp->GetThreadHelper()->AttachAllNodesTo(dataset,
+                                              [aRequest](otError error) mutable { aRequest.ReplyOtResult(error); });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
     }
 }
 
@@ -1048,6 +1076,30 @@ otError DBusThreadObject::GetRadioRegionHandler(DBusMessageIter &aIter)
     radioRegion[1] = static_cast<char>(regionCode & 0xff);
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, radioRegion) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+void DBusThreadObject::ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs)
+{
+    std::vector<uint8_t> value(aDatasetTlvs.mLength);
+    std::copy(aDatasetTlvs.mTlvs, aDatasetTlvs.mTlvs + aDatasetTlvs.mLength, value.begin());
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, value);
+}
+
+otError DBusThreadObject::GetEui64Handler(DBusMessageIter &aIter)
+{
+    auto         threadHelper = mNcp->GetThreadHelper();
+    otError      error        = OT_ERROR_NONE;
+    otExtAddress extAddr;
+    uint64_t     eui64;
+
+    otLinkGetFactoryAssignedIeeeEui64(threadHelper->GetInstance(), &extAddr);
+
+    eui64 = ConvertOpenThreadUint64(extAddr.m8);
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, eui64) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

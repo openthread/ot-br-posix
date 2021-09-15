@@ -31,6 +31,7 @@ include external/libchrome/generate_mojom_sources.mk
 MDNS_MOJOM_SRCS := $(gen_src)
 
 LOCAL_SHARED_LIBRARIES += libchrome libmojo
+LOCAL_STATIC_LIBRARIES += libgtest_prod
 
 include $(BUILD_STATIC_LIBRARY)
 endif

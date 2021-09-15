@@ -138,6 +138,7 @@ LOCAL_STATIC_LIBRARIES += \
     ot-core \
     libopenthread-cli \
     ot-core \
+    libgtest_prod
 
 LOCAL_LDLIBS := \
     -lutil
