@@ -39,7 +39,7 @@
 
 #include <base/task/post_task.h>
 #include <chromecast/external_mojo/public/cpp/external_connector.h>
-#include <mojo/public/cpp/bindings/binding.h>
+#include <mojo/public/cpp/bindings/receiver.h>
 
 #include <memory>
 #include <string>
@@ -255,8 +255,8 @@ private:
                               const std::string &aTransport) override;
 
     private:
-        MdnsMojoPublisher *                                             mOwner;
-        mojo::Binding<chromecast::mojom::MdnsDiscoveredServiceListener> mBinding;
+        MdnsMojoPublisher *                                              mOwner;
+        mojo::Receiver<chromecast::mojom::MdnsDiscoveredServiceListener> mBinding;
 
         DISALLOW_COPY_AND_ASSIGN(MdnsDiscoveredServiceListenerImpl);
     };
@@ -279,8 +279,8 @@ private:
         void OnRecordRemoved(const std::string &name, uint16_t type) override;
 
     private:
-        MdnsMojoPublisher *                                            mOwner;
-        mojo::Binding<chromecast::mojom::MdnsDiscoveredRecordListener> mBinding;
+        MdnsMojoPublisher *                                             mOwner;
+        mojo::Receiver<chromecast::mojom::MdnsDiscoveredRecordListener> mBinding;
 
         DISALLOW_COPY_AND_ASSIGN(MdnsDiscoveredRecordListenerImpl);
     };
