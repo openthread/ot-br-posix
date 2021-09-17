@@ -111,14 +111,19 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 }
 
 /** log to the syslog or log file */
-void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list ap)
+void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
 {
     assert(aFormat);
 
     if (aLevel <= sLevel)
     {
-        vsyslog(static_cast<int>(aLevel), aFormat, ap);
+        otbrLogvNoFilter(aLevel, aFormat, aArgList);
     }
+}
+
+void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
+{
+    vsyslog(static_cast<int>(aLevel), aFormat, aArgList);
 }
 
 /** Hex dump data to the log */

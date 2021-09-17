@@ -280,7 +280,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
     va_list ap;
     va_start(ap, aFormat);
-    otbrLogv(otbrLogLevel, aFormat, ap);
+    otbrLogvNoFilter(otbrLogLevel, aFormat, ap);
     va_end(ap);
 }
 
