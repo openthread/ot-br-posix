@@ -183,10 +183,12 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetStableNetworkDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LOCAL_LEADER_WEIGHT,
                                std::bind(&DBusThreadObject::GetLocalLeaderWeightHandler, this, _1));
+#if OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL_MONITOR_SAMPLE_COUNT,
                                std::bind(&DBusThreadObject::GetChannelMonitorSampleCountHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL_MONITOR_ALL_CHANNEL_QUALITIES,
                                std::bind(&DBusThreadObject::GetChannelMonitorAllChannelQualities, this, _1));
+#endif
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHILD_TABLE,
                                std::bind(&DBusThreadObject::GetChildTableHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NEIGHBOR_TABLE_PROEPRTY,
