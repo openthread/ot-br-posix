@@ -45,7 +45,7 @@
 #include "dbus/server/dbus_object.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
 
-#include "agent/ncp_openthread.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace DBus {

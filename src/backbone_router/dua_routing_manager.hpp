@@ -40,7 +40,7 @@
 #include <openthread/backbone_router_ftd.h>
 
 #include "agent/instance_params.hpp"
-#include "agent/ncp_openthread.hpp"
+#include "ncp/ncp_openthread.hpp"
 #include "utils/system_utils.hpp"
 
 namespace otbr {

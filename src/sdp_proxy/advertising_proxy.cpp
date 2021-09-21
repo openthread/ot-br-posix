@@ -33,7 +33,7 @@
 
 #define OTBR_LOG_TAG "ADPROXY"
 
-#include "agent/advertising_proxy.hpp"
+#include "sdp_proxy/advertising_proxy.hpp"
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 

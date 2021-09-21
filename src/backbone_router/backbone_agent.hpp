@@ -39,10 +39,10 @@
 #include <openthread/backbone_router_ftd.h>
 
 #include "agent/instance_params.hpp"
-#include "agent/ncp_openthread.hpp"
 #include "backbone_router/dua_routing_manager.hpp"
 #include "backbone_router/nd_proxy.hpp"
 #include "common/mainloop.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace BackboneRouter {

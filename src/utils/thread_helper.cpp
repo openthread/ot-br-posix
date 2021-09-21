@@ -28,7 +28,7 @@
 
 #define OTBR_LOG_TAG "AGENT"
 
-#include "agent/thread_helper.hpp"
+#include "utils/thread_helper.hpp"
 
 #include <assert.h>
 #include <limits.h>
@@ -43,10 +43,10 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
-#include "agent/ncp_openthread.hpp"
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace agent {

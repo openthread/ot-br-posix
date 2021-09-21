@@ -41,10 +41,10 @@
 #include <sys/select.h>
 #include <sys/types.h>
 
-#include "agent/border_agent.hpp"
 #include "agent/instance_params.hpp"
-#include "agent/ncp_openthread.hpp"
+#include "border_agent/border_agent.hpp"
 #include "common/mainloop.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 

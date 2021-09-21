@@ -46,11 +46,11 @@
 #include <openthread/platform/radio.h>
 
 #include "agent/agent_instance.hpp"
-#include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
+#include "ncp/ncp_openthread.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
 using otbr::rest::RestWebServer;

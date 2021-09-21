@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2021, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,18 +26,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_library(otbr-utils
-    crc16.cpp
-    hex.cpp
-    pskc.cpp
-    socket_utils.cpp
-    steering_data.cpp
-    strcpy_utils.cpp
-    system_utils.cpp
-    thread_helper.cpp
-    thread_helper.hpp
+add_library(otbr-sdp-proxy
+    advertising_proxy.cpp
+    advertising_proxy.hpp
+    discovery_proxy.cpp
+    discovery_proxy.hpp
 )
-target_link_libraries(otbr-utils PRIVATE
+
+target_link_libraries(otbr-sdp-proxy PRIVATE
+    $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     otbr-common
-    mbedtls
 )

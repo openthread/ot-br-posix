@@ -33,7 +33,7 @@
 
 #define OTBR_LOG_TAG "AGENT"
 
-#include "agent/border_agent.hpp"
+#include "border_agent/border_agent.hpp"
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -48,8 +48,8 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
-#include "agent/ncp_openthread.hpp"
 #include "agent/uris.hpp"
+#include "ncp/ncp_openthread.hpp"
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
