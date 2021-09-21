@@ -375,6 +375,7 @@ void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
               &config.mPrefix.mPrefix.mFields.m8[0]);
     config.mPrefix.mLength = onMeshPrefix.mPrefix.mLength;
     config.mPreference     = onMeshPrefix.mPreference;
+    config.mPreferred      = onMeshPrefix.mPreferred;
     config.mSlaac          = onMeshPrefix.mSlaac;
     config.mDhcp           = onMeshPrefix.mDhcp;
     config.mConfigure      = onMeshPrefix.mConfigure;
