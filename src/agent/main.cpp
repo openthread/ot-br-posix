@@ -285,7 +285,8 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, radioUrls, backboneInterfaceName};
+        otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, radioUrls, backboneInterfaceName,
+                                                      /* DryRun */ printRadioVersion};
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);

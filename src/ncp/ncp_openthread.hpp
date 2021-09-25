@@ -62,14 +62,16 @@ public:
     /**
      * This constructor initializes this object.
      *
-     * @param[in] aInterfaceName          A string of the NCP interface name.
-     * @param[in] aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
-     * @param[in] aBackboneInterfaceName  The Backbone network interface name.
+     * @param[in]   aInterfaceName          A string of the NCP interface name.
+     * @param[in]   aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
+     * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
+     * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      *
      */
     ControllerOpenThread(const char *                     aInterfaceName,
                          const std::vector<const char *> &aRadioUrls,
-                         const char *                     aBackboneInterfaceName);
+                         const char *                     aBackboneInterfaceName,
+                         bool                             aDryRun);
 
     /**
      * This method initalize the NCP controller.
