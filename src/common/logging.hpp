@@ -96,11 +96,22 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 /**
  * This function log at level @p aLevel.
  *
- * @param[in]   aLevel  Log level of the logger.
- * @param[in]   aFormat Format string as in printf.
+ * @param[in]   aLevel   Log level of the logger.
+ * @param[in]   aFormat  Format string as in printf.
+ * @param[in]   aArgList The variable-length arguments list.
  *
  */
-void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list);
+void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList);
+
+/**
+ * This function writes logs without filtering with the log level.
+ *
+ * @param[in]   aLevel  Log level of the logger.
+ * @param[in]   aFormat Format string as in printf.
+ * @param[in]   aArgList The variable-length arguments list.
+ *
+ */
+void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList);
 
 /**
  * This function dump memory as hex string at level @p aLevel.
