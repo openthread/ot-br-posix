@@ -57,6 +57,11 @@ jobs:
             border_routing: 1
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
+          - name: "Border Router (mDNSResponder,TREL)"
+            otbr_options: "-DOT_TREL=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
+            border_routing: 1
+            otbr_mdns: "mDNSResponder"
+            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
           - name: "Border Router (Avahi)"
             otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
             border_routing: 1
