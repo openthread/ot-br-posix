@@ -156,7 +156,12 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
 
 void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aType, otbrError aError, void *aContext)
 {
-    static_cast<AdvertisingProxy *>(aContext)->PublishServiceHandler(aName, aType, aError);
+    std::string       name(aName);
+    std::string       type(aType);
+    AdvertisingProxy *thisPtr = static_cast<AdvertisingProxy *>(aContext);
+
+    thisPtr->mTaskRunner.Post(
+        [name, type, aError, thisPtr]() { thisPtr->PublishServiceHandler(name.c_str(), type.c_str(), aError); });
 }
 
 void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aType, otbrError aError)
@@ -168,9 +173,10 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
     // TODO: there may be same names between two SRP updates.
     for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); ++update)
     {
-        for (const auto &nameAndType : update->mServiceNames)
+        for (auto nameAndType = update->mServiceNames.begin(); nameAndType != update->mServiceNames.end();
+             ++nameAndType)
         {
-            if (aName != nameAndType.first || !Mdns::Publisher::IsServiceTypeEqual(aType, nameAndType.second.c_str()))
+            if (aName != nameAndType->first || !Mdns::Publisher::IsServiceTypeEqual(aType, nameAndType->second.c_str()))
             {
                 continue;
             }
@@ -187,6 +193,7 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
             }
             else
             {
+                update->mServiceNames.erase(nameAndType);
                 --update->mCallbackCount;
             }
             ExitNow();
@@ -202,7 +209,10 @@ exit:
 
 void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError, void *aContext)
 {
-    static_cast<AdvertisingProxy *>(aContext)->PublishHostHandler(aName, aError);
+    std::string       name(aName);
+    AdvertisingProxy *thisPtr = static_cast<AdvertisingProxy *>(aContext);
+
+    thisPtr->mTaskRunner.Post([name, aError, thisPtr]() { thisPtr->PublishHostHandler(name.c_str(), aError); });
 }
 
 void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
@@ -213,7 +223,7 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
 
     for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); ++update)
     {
-        if (aName != update->mHostName)
+        if (update->mHostNamePublished || aName != update->mHostName)
         {
             continue;
         }
@@ -230,6 +240,7 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
         }
         else
         {
+            update->mHostNamePublished = true;
             --update->mCallbackCount;
         }
         ExitNow();
@@ -256,6 +267,16 @@ void AdvertisingProxy::PublishAllHostsAndServices(void)
 
 exit:
     return;
+}
+
+void AdvertisingProxy::Update(MainloopContext &aMainloop)
+{
+    mTaskRunner.Update(aMainloop);
+}
+
+void AdvertisingProxy::Process(const MainloopContext &aMainloop)
+{
+    mTaskRunner.Process(aMainloop);
 }
 
 otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate)
