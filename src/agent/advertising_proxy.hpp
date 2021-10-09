@@ -42,6 +42,8 @@
 #include <openthread/srp_server.h>
 
 #include "agent/ncp_openthread.hpp"
+#include "common/mainloop.hpp"
+#include "common/task_runner.hpp"
 #include "mdns/mdns.hpp"
 
 namespace otbr {
@@ -50,7 +52,7 @@ namespace otbr {
  * This class implements the Advertising Proxy.
  *
  */
-class AdvertisingProxy
+class AdvertisingProxy : public MainloopProcessor
 {
 public:
     /**
@@ -83,15 +85,32 @@ public:
      */
     void PublishAllHostsAndServices(void);
 
+    /**
+     * This method updates the mainloop context.
+     *
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
+     *
+     */
+    void Update(MainloopContext &aMainloop) override;
+
+    /**
+     * This method processes mainloop events.
+     *
+     * @param[in]  aMainloop  A reference to the mainloop context.
+     *
+     */
+    void Process(const MainloopContext &aMainloop) override;
+
 private:
     struct OutstandingUpdate
     {
         typedef std::vector<std::pair<std::string, std::string>> ServiceNameList;
 
-        otSrpServerServiceUpdateId mId;                // The ID of the SRP service update transaction.
-        std::string                mHostName;          // The host name.
-        ServiceNameList            mServiceNames;      // The list of service instance and name pair.
-        uint32_t                   mCallbackCount = 0; // The number of callbacks which we are waiting for.
+        otSrpServerServiceUpdateId mId;                    // The ID of the SRP service update transaction.
+        std::string                mHostName;              // The host name.
+        ServiceNameList            mServiceNames;          // The list of service instance and name pairs to be updated.
+        uint32_t                   mCallbackCount     = 0; // The number of callbacks which we are waiting for.
+        bool                       mHostNamePublished = false; // Is the host name already published?
     };
 
     static void AdvertisingHandler(otSrpServerServiceUpdateId aId,
@@ -133,6 +152,9 @@ private:
 
     // A vector that tracks outstanding updates.
     std::vector<OutstandingUpdate> mOutstandingUpdates;
+
+    // Task runner for running tasks in the context of the main thread.
+    TaskRunner mTaskRunner;
 };
 
 } // namespace otbr

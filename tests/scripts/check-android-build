@@ -42,7 +42,7 @@ set -x
 prepare_dbus()
 {
     DBUS_SOURCE=dbus-1.4.26
-    wget -nv "https://dbus.freedesktop.org/releases/dbus/${DBUS_SOURCE}.tar.gz"
+    wget --tries 4 --no-check-certificate --quiet "https://dbus.freedesktop.org/releases/dbus/${DBUS_SOURCE}.tar.gz"
     tar xvf "${DBUS_SOURCE}.tar.gz"
     (cd "${DBUS_SOURCE}" && ./configure --prefix= --exec-prefix=/usr \
         && sed -i '/HAVE_BACKTRACE/d' config.h \
@@ -162,7 +162,7 @@ prepare_libmdnssd()
 
     [[ ${OTBR_MDNS} == mDNSResponder ]] || return 0
 
-    wget -nv "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
+    wget --tries 4 --no-check-certificate --quiet "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
     tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz"
     cat >"${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
