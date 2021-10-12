@@ -372,13 +372,21 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
         Services::iterator serviceIt = FindService(aGroup);
         if (serviceIt != mServices.end())
         {
-            char *alternativeName = avahi_alternative_service_name(serviceIt->mName.c_str());
-            assert(alternativeName != nullptr);
-            otbrLogInfo("Re-publishing service %s using an alternative name: %s", serviceIt->mName.c_str(),
-                        alternativeName);
-            serviceIt->mName = alternativeName;
+            Service &   service         = *serviceIt;
+            const char *hostName        = service.mHostName.c_str();
+            char *      alternativeName = nullptr;
+            uint16_t    port            = service.mPort;
+            ResetGroup(service.mGroup);
+            if (service.mHostName == "")
+            {
+                hostName = nullptr;
+            }
+            alternativeName = avahi_alternative_service_name(service.mName.c_str());
+            service.mName   = alternativeName;
             avahi_free(alternativeName);
-            RetryPublishService(serviceIt);
+            service.mPort = 0; // To mark the service as outdated
+            PublishService(hostName, port, service.mName.c_str(), service.mType.c_str(), service.mSubTypeList,
+                           service.mTxtList);
         }
         break;
     }
@@ -423,51 +431,6 @@ void PublisherAvahi::CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrErro
             mServiceHandler(serviceIt->mName.c_str(), serviceIt->mType.c_str(), aError, mServiceHandlerContext);
         }
     }
-}
-
-otbrError PublisherAvahi::RetryPublishService(const Services::iterator &aServiceIt)
-{
-    otbrError error      = OTBR_ERROR_NONE;
-    int       avahiError = 0;
-    Service & service    = *aServiceIt;
-    // aligned with AvahiStringList
-    AvahiStringList  buffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
-    AvahiStringList *head = nullptr;
-
-    SuccessOrExit(error = TxtListToAvahiStringList(service.mTxtList, buffer, sizeof(buffer), head));
-    avahiError = avahi_entry_group_add_service_strlst(service.mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{},
-                                                      service.mName.c_str(), service.mType.c_str(), mDomain,
-                                                      service.mHostName.c_str(), service.mPort, head);
-    SuccessOrExit(avahiError);
-
-    for (const std::string &subType : service.mSubTypeList)
-    {
-        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), service.mName.c_str(), service.mType.c_str());
-        std::string fullSubType = subType + "._sub." + service.mType;
-        avahiError              = avahi_entry_group_add_service_subtype(service.mGroup, AVAHI_IF_UNSPEC, mProtocol,
-                                                           AvahiPublishFlags{}, service.mName.c_str(),
-                                                           service.mType.c_str(), mDomain, fullSubType.c_str());
-        SuccessOrExit(avahiError);
-    }
-
-    otbrLogInfo("Commit service %s.%s", service.mName.c_str(), service.mType.c_str());
-    avahiError = avahi_entry_group_commit(service.mGroup);
-    SuccessOrExit(avahiError);
-
-exit:
-    if (avahiError)
-    {
-        error = OTBR_ERROR_MDNS;
-        otbrLogErr("Failed to retry publishing service for avahi error: %s!", avahi_strerror(avahiError));
-    }
-    else if (error != OTBR_ERROR_NONE)
-    {
-        otbrLogErr("Failed to retry publishing service: %s!", otbrErrorString(error));
-        FreeGroup(service.mGroup);
-        mServices.erase(aServiceIt);
-    }
-
-    return error;
 }
 
 PublisherAvahi::Hosts::iterator PublisherAvahi::FindHost(const char *aHostName)
