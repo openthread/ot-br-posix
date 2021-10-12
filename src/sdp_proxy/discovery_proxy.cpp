@@ -35,7 +35,7 @@
 
 #define OTBR_LOG_TAG "DPROXY"
 
-#include "agent/discovery_proxy.hpp"
+#include "sdp_proxy/discovery_proxy.hpp"
 
 #include <algorithm>
 #include <string>

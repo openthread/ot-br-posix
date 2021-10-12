@@ -43,8 +43,8 @@
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 
-#include "agent/ncp_openthread.hpp"
 #include "common/logging.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace ubus {

@@ -38,12 +38,12 @@
 
 #include <stdint.h>
 
-#include "agent/advertising_proxy.hpp"
-#include "agent/discovery_proxy.hpp"
 #include "agent/instance_params.hpp"
-#include "agent/ncp_openthread.hpp"
 #include "common/mainloop.hpp"
 #include "mdns/mdns.hpp"
+#include "ncp/ncp_openthread.hpp"
+#include "sdp_proxy/advertising_proxy.hpp"
+#include "sdp_proxy/discovery_proxy.hpp"
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"

@@ -44,9 +44,9 @@
 #include <openthread/dnssd_server.h>
 #include <openthread/instance.h>
 
-#include "agent/ncp_openthread.hpp"
 #include "common/dns_utils.hpp"
 #include "mdns/mdns.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace Dnssd {

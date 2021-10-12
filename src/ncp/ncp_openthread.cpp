@@ -28,7 +28,7 @@
 
 #define OTBR_LOG_TAG "AGENT"
 
-#include "agent/ncp_openthread.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 #include <assert.h>
 #include <stdio.h>
