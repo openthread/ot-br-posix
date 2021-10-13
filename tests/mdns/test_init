@@ -98,6 +98,30 @@ dns_sd_check()
 }
 
 #######################################
+# Check if a service is registered with
+# a given type.
+#
+# Arguments:
+#   $1  Name
+#   $2  Type
+#
+# Returns:
+#   0           Registered
+#   otherwise   Not registered
+#######################################
+dns_sd_check_type()
+{
+    # dns-sd will not exit
+    dns-sd -B "$2" local >"${DNS_SD_RESULT}" 2>&1 &
+    DNS_SD_PID=$!
+    sleep 1
+    kill "${DNS_SD_PID}"
+
+    cat "${DNS_SD_RESULT}"
+    grep "$1" "${DNS_SD_RESULT}"
+}
+
+#######################################
 # Check if a host is regisered
 #
 # Arguments:
@@ -121,10 +145,12 @@ dns_sd_check_host()
 }
 
 #######################################
-# Check if a service is regisered
+# Check if a service is registered
 #
 # Arguments:
 #   $1  Expected avahi query result string
+#   $2  Service type. If omitted, all
+#       services will be examined.
 #
 # Returns:
 #   0           Registered
@@ -132,5 +158,8 @@ dns_sd_check_host()
 #######################################
 avahi_check()
 {
-    avahi-browse -aprt | tee | grep "$1"
+    local service_type
+    (($# == 2)) && service_type="$2" || service_type="-a"
+
+    avahi-browse -prt "$service_type" | tee | grep "$1"
 }

@@ -63,9 +63,10 @@ namespace agent {
 class ThreadHelper
 {
 public:
-    using DeviceRoleHandler = std::function<void(otDeviceRole)>;
-    using ScanHandler       = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
-    using ResultHandler     = std::function<void(otError)>;
+    using DeviceRoleHandler    = std::function<void(otDeviceRole)>;
+    using ScanHandler          = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
+    using ResultHandler        = std::function<void(otError)>;
+    using DatasetChangeHandler = std::function<void(const otOperationalDatasetTlvs &)>;
 
     /**
      * The constructor of a Thread helper.
@@ -83,6 +84,13 @@ public:
      *
      */
     void AddDeviceRoleHandler(DeviceRoleHandler aHandler);
+
+    /**
+     * This method adds a callback for active dataset change.
+     *
+     * @param[in]  aHandler   The active dataset change handler.
+     */
+    void AddActiveDatasetChangeHandler(DatasetChangeHandler aHandler);
 
     /**
      * This method permits unsecure join on port.
@@ -143,6 +151,15 @@ public:
      *
      */
     void Attach(ResultHandler aHandler);
+
+    /**
+     * This method makes all nodes in the current network attach to the network specified by the dataset TLVs.
+     *
+     * @param[in] aDatasetTlvs  The dataset TLVs.
+     * @param[in] aHandler      The result handler.
+     *
+     */
+    void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHandler aHandler);
 
     /**
      * This method resets the OpenThread stack.
@@ -208,14 +225,19 @@ public:
     static void LogOpenThreadResult(const char *aAction, otError aError);
 
 private:
-    static void sActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
+    static void ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
     void        ActiveScanHandler(otActiveScanResult *aResult);
 
-    static void sJoinerCallback(otError aError, void *aThreadHelper);
+    static void JoinerCallback(otError aError, void *aThreadHelper);
     void        JoinerCallback(otError aResult);
+
+    static void MgmtSetResponseHandler(otError aResult, void *aContext);
+    void        MgmtSetResponseHandler(otError aResult);
 
     void    RandomFill(void *aBuf, size_t size);
     uint8_t RandomChannelFromChannelMask(uint32_t aChannelMask);
+
+    void ActiveDatasetChangedCallback();
 
     otInstance *mInstance;
 
@@ -224,7 +246,8 @@ private:
     ScanHandler                     mScanHandler;
     std::vector<otActiveScanResult> mScanResults;
 
-    std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
+    std::vector<DeviceRoleHandler>    mDeviceRoleHandlers;
+    std::vector<DatasetChangeHandler> mActiveDatasetChangeHandlers;
 
     std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 

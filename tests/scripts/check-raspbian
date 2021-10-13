@@ -54,7 +54,7 @@ echo "127.0.0.1 \$(hostname)" >> /etc/hosts
 chown -R pi:pi /home/pi/repo
 cd /home/pi/repo
 echo 1 | sudo tee /proc/sys/net/ipv6/conf/all/disable_ipv6
-apt-get update
+apt-get update --allow-releaseinfo-change
 apt-get install -y --no-install-recommends git python3-pip
 su -c 'RELEASE=1 script/bootstrap' pi
 

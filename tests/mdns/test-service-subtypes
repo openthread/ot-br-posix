@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
@@ -26,15 +27,26 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-version: 2
-updates:
-  - package-ecosystem: "gitsubmodule"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    allow:
-      - dependency-name: "third_party/openthread/repo"
-    commit-message:
-      prefix: "submodule"
-    rebase-strategy: "disabled"
-    open-pull-requests-limit: 1
+#
+# This script tests publishing multiple services.
+#
+
+# shellcheck source=tests/mdns/test_init
+. "$(dirname "$0")/test_init"
+
+main()
+{
+    start_publisher t
+
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype1'
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype2' && exit 1
+        dns_sd_check_type 'ServiceWithSubTypes' '_meshcop._udp,_subtype3'
+    else
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype1._sub._meshcop._udp'
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype2._sub._meshcop._udp' && exit 1
+        avahi_check 'ServiceWithSubTypes;_meshcop._udp;' '_subtype3._sub._meshcop._udp'
+    fi
+}
+
+main "$@"

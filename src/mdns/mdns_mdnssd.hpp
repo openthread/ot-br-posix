@@ -77,20 +77,22 @@ public:
      *                                  this service resides on local host and it is the implementation to provide
      *                                  specific host name. Otherwise, the caller MUST publish the host with method
      *                                  PublishHost.
+     * @param[in]   aPort               The port number of this service.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
-     * @param[in]   aPort               The port number of this service.
+     * @param[in]   aSubTypeList        A list of service subtypes.
      * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(const char *   aHostName,
-                             uint16_t       aPort,
-                             const char *   aName,
-                             const char *   aType,
-                             const TxtList &aTxtList) override;
+    otbrError PublishService(const char *       aHostName,
+                             uint16_t           aPort,
+                             const char *       aName,
+                             const char *       aType,
+                             const SubTypeList &aSubTypeList,
+                             const TxtList &    aTxtList) override;
 
     /**
      * This method un-publishes a service.
@@ -237,7 +239,9 @@ private:
     {
         char          mName[kMaxSizeOfServiceName];
         char          mType[kMaxSizeOfServiceType];
+        std::string   mRegType; ///< Service type with optional subtypes separated by commas
         DNSServiceRef mService;
+        uint16_t      mPort = 0;
     };
 
     struct Host
@@ -366,8 +370,13 @@ private:
     typedef std::vector<ServiceSubscription> ServiceSubscriptionList;
     typedef std::vector<HostSubscription>    HostSubscriptionList;
 
-    void DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = nullptr);
-    void RecordService(const char *aName, const char *aType, DNSServiceRef aServiceRef);
+    void        DiscardService(const char *aName, const char *aType, DNSServiceRef aServiceRef = nullptr);
+    void        RecordService(const char *  aName,
+                              const char *  aType,
+                              const char *  aRegType,
+                              uint16_t      aPort,
+                              DNSServiceRef aServiceRef);
+    static bool IsServiceOutdated(const Service &service, const std::string &aNewRegType, int aNewPort);
 
     otbrError DiscardHost(const char *aName, bool aSendGoodbye = true);
     void      RecordHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength, DNSRecordRef aRecordRef);
@@ -395,7 +404,8 @@ private:
                                          DNSServiceFlags     aFlags,
                                          DNSServiceErrorType aErrorCode);
 
-    otbrError MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
+    otbrError          MakeFullName(char *aFullName, size_t aFullNameLength, const char *aName);
+    static std::string MakeRegType(const char *aType, const SubTypeList &aSubTypeList);
 
     ServiceIterator FindPublishedService(const char *aName, const char *aType);
     ServiceIterator FindPublishedService(const DNSServiceRef &aServiceRef);

@@ -207,20 +207,22 @@ public:
      *                                  this service resides on local host and it is the implementation to provide
      *                                  specific host name. Otherwise, the caller MUST publish the host with method
      *                                  PublishHost.
+     * @param[in]   aPort               The port number of this service.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
-     * @param[in]   aPort               The port number of this service.
+     * @param[in]   aSubTypeList        A list of service subtypes.
      * @param[in]   aTxtList            A list of TXT name/value pairs.
      *
      * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(const char *   aHostName,
-                             uint16_t       aPort,
-                             const char *   aName,
-                             const char *   aType,
-                             const TxtList &aTxtList) override;
+    otbrError PublishService(const char *       aHostName,
+                             uint16_t           aPort,
+                             const char *       aName,
+                             const char *       aType,
+                             const SubTypeList &aSubTypeList,
+                             const TxtList &    aTxtList) override;
 
     /**
      * This method un-publishes a service.
@@ -361,12 +363,14 @@ private:
         kMaxSizeOfHost        = AVAHI_LABEL_MAX,
         kMaxSizeOfDomain      = AVAHI_LABEL_MAX,
         kMaxSizeOfServiceType = AVAHI_LABEL_MAX,
+        kDefaultTtl           = 10,
     };
 
     struct Service
     {
         std::string      mName;
         std::string      mType;
+        SubTypeList      mSubTypeList;
         std::string      mHostName;
         uint16_t         mPort  = 0;
         AvahiEntryGroup *mGroup = nullptr;
@@ -404,7 +408,11 @@ private:
 
         void Release(void);
         void Browse(void);
-        void Resolve(uint32_t aInterfaceIndex, const char *aInstanceName, const char *aType, const char *aDomain);
+        void Resolve(uint32_t      aInterfaceIndex,
+                     AvahiProtocol aProtocol,
+                     const char *  aInstanceName,
+                     const char *  aType,
+                     const char *  aDomain);
         void GetAddrInfo(uint32_t aInterfaceIndex);
 
         static void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
@@ -514,6 +522,10 @@ private:
                                      const char *        aName,
                                      const char *        aType,
                                      Services::iterator &aOutServiceIt);
+    static bool        IsServiceOutdated(const Service &    aService,
+                                         const char *       aNewHostName,
+                                         uint16_t           aNewPort,
+                                         const SubTypeList &aNewSubTypeList);
 
     otbrError        CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
     static otbrError ResetGroup(AvahiEntryGroup *aGroup);
