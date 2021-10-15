@@ -71,6 +71,7 @@ static const std::pair<ClientError, const char *> sErrorNames[] = {
     {ClientError::OT_ERROR_NOT_TMF, OTBR_OPENTHREAD_ERROR_PREFIX ".NotTmf"},
     {ClientError::OT_ERROR_NOT_LOWPAN_DATA_FRAME, OTBR_OPENTHREAD_ERROR_PREFIX ".NonLowpanDatatFrame"},
     {ClientError::OT_ERROR_LINK_MARGIN_LOW, OTBR_OPENTHREAD_ERROR_PREFIX ".LinkMarginLow"},
+    {ClientError::OT_ERROR_REJECTED, OTBR_OPENTHREAD_ERROR_PREFIX ".Rejected"},
 };
 
 ClientError ConvertFromDBusErrorName(const std::string &aErrorName)
