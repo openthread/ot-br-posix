@@ -47,5 +47,5 @@ rt_tables_install()
 
     # Increase ancillary buffer size to allow for a larger number of multicast groups
     # Required for NdProxyManager::JoinSolicitedNodeMulticastGroup
-    sudo sh -c 'echo 65536 > /proc/sys/net/core/optmem_max'
+    sudo sh -c 'sysctl -w net.core.optmem_max=65536'
 }
