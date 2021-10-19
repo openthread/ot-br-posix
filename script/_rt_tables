@@ -44,4 +44,8 @@ rt_tables_install()
     rt_tables_uninstall
 
     sudo sh -c 'echo "88 openthread" >>/etc/iproute2/rt_tables'
+
+    # Increase ancillary buffer size to allow for a larger number of multicast groups
+    # Required for NdProxyManager::JoinSolicitedNodeMulticastGroup
+    sudo sh -c 'echo 65536 > /proc/sys/net/core/optmem_max'
 }
