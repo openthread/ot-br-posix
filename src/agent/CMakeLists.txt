@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2020-2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,20 +27,10 @@
 #
 
 add_executable(otbr-agent
-    advertising_proxy.cpp
-    advertising_proxy.hpp
     agent_instance.cpp
     agent_instance.hpp
-    border_agent.cpp
-    border_agent.hpp
-    discovery_proxy.cpp
-    discovery_proxy.hpp
     main.cpp
     uris.hpp
-    ncp_openthread.cpp
-    ncp_openthread.hpp
-    thread_helper.cpp
-    thread_helper.hpp
     instance_params.cpp
     instance_params.hpp
 )
@@ -54,14 +44,16 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-posix
     openthread-cli-ftd
     openthread-ftd
-    openthread-posix
     openthread-spinel-rcp
     openthread-hdlc
+    otbr-border-agent
+    otbr-sdp-proxy
+    otbr-ncp
     otbr-common
     otbr-utils
 )
 
-add_dependencies(otbr-agent ot-ctl print-ot-config)
+add_dependencies(otbr-agent ot-ctl print-ot-config otbr-border-agent otbr-sdp-proxy otbr-utils otbr-ncp)
 install(TARGETS otbr-agent DESTINATION sbin)
 
 if(CMAKE_VERSION VERSION_LESS 3.13)

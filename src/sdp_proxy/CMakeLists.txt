@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2021, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,31 +26,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-dbus-client
-    test_dbus_client.cpp
-)
-target_link_libraries(otbr-test-dbus-client PRIVATE
-    otbr-dbus-client
+add_library(otbr-sdp-proxy
+    advertising_proxy.cpp
+    advertising_proxy.hpp
+    discovery_proxy.cpp
+    discovery_proxy.hpp
 )
 
-add_executable(otbr-test-dbus-server
-    test_dbus_server.cpp
+target_link_libraries(otbr-sdp-proxy PRIVATE
+    $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
+    otbr-common
 )
-target_link_libraries(otbr-test-dbus-server PRIVATE
-    otbr-dbus-server
-)
-add_test(
-    NAME dbus-server
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-server
-)
-set_tests_properties(dbus-server PROPERTIES
-    ENVIRONMENT CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-)
-add_test(
-    NAME dbus-client
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-client
-)
-set_tests_properties(dbus-client PROPERTIES
-    ENVIRONMENT CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
-)
-set_tests_properties(dbus-client PROPERTIES TIMEOUT 420)

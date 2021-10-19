@@ -38,11 +38,11 @@
 
 #include <openthread/border_router.h>
 
-#include "agent/ncp_openthread.hpp"
-#include "agent/thread_helper.hpp"
+#include "ncp/ncp_openthread.hpp"
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
+#include "utils/thread_helper.hpp"
 
 using otbr::Ncp::ControllerOpenThread;
 using std::chrono::steady_clock;

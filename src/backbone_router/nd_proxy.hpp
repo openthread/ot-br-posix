@@ -49,9 +49,9 @@
 
 #include <openthread/backbone_router_ftd.h>
 
-#include "agent/ncp_openthread.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace BackboneRouter {

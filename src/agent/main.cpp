@@ -45,12 +45,16 @@
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
 
+#if __ANDROID__ && OPENTHREAD_ENABLE_ANDROID_PROPERTY
+#include <cutils/properties.h>
+#endif
+
 #include "agent/agent_instance.hpp"
-#include "agent/ncp_openthread.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
+#include "ncp/ncp_openthread.hpp"
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
 using otbr::rest::RestWebServer;
@@ -212,9 +216,26 @@ static void OnAllocateFailed(void)
     exit(1);
 }
 
+static otbrLogLevel GetDefaultLogLevel(void)
+{
+    otbrLogLevel level = OTBR_LOG_INFO;
+
+#if __ANDROID__ && OPENTHREAD_ENABLE_ANDROID_PROPERTY
+    char value[PROPERTY_VALUE_MAX];
+
+    property_get("ro.build.type", value, "user");
+    if (!strcmp(value, "user"))
+    {
+        level = OTBR_LOG_WARNING;
+    }
+#endif
+
+    return level;
+}
+
 static int realmain(int argc, char *argv[])
 {
-    otbrLogLevel              logLevel = OTBR_LOG_INFO;
+    otbrLogLevel              logLevel = GetDefaultLogLevel();
     int                       opt;
     int                       ret                   = EXIT_SUCCESS;
     const char *              interfaceName         = kDefaultInterfaceName;

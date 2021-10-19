@@ -38,8 +38,8 @@
 
 #include <openthread/link.h>
 
-#include "agent/ncp_openthread.hpp"
 #include "dbus/server/dbus_object.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -86,6 +86,7 @@ private:
 
     void ScanHandler(DBusRequest &aRequest);
     void AttachHandler(DBusRequest &aRequest);
+    void AttachAllNodesToHandler(DBusRequest &aRequest);
     void DetachHandler(DBusRequest &aRequest);
     void LeaveHandler(DBusRequest &aRequest);
     void FactoryResetHandler(DBusRequest &aRequest);

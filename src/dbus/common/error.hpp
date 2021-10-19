@@ -217,6 +217,11 @@ enum class ClientError
     OT_ERROR_LINK_MARGIN_LOW = 34,
 
     /**
+     * Request rejected.
+     */
+    OT_ERROR_REJECTED = 37,
+
+    /**
      * Generic error (should not use).
      */
     OT_ERROR_GENERIC = 255,

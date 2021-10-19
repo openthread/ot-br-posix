@@ -46,6 +46,14 @@
       <arg name="channel_mask" type="u"/>
     </method>
 
+    <!-- AttachAllNodesTo: Request to attach all nodes to the specified Thread network.
+      @dataset: The Operational Dataset that contains parameter values of the Thread network
+                to attach to. It must be a full dataset.
+    -->
+    <method name="AttachAllNodesTo">
+      <arg name="dataset" type="ay"/>
+    </method>
+
     <!-- Detach: Detach the current device from the Thread network. -->
     <method name="Detach">
     </method>
