@@ -156,7 +156,7 @@ public:
      * @returns  A pointer to the Thread network interface name string.
      *
      */
-    const char *GetInterfaceName(void) { return mConfig.mInterfaceName; }
+    const char *GetInterfaceName(void) const { return mConfig.mInterfaceName; }
 
     ~ControllerOpenThread(void) override;
 
