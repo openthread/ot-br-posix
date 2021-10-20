@@ -60,17 +60,4 @@ exit:
     otbrLogResult(error, "Initialize OpenThread Border Router Agent");
     return error;
 }
-
-void AgentInstance::Update(MainloopContext &aMainloop)
-{
-    mNcp.Update(aMainloop);
-    mBorderAgent.Update(aMainloop);
-}
-
-void AgentInstance::Process(const MainloopContext &aMainloop)
-{
-    mNcp.Process(aMainloop);
-    mBorderAgent.Process(aMainloop);
-}
-
 } // namespace otbr

@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2020, The OpenThread Authors.
+ *    Copyright (c) 2021, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -28,83 +28,82 @@
 
 /**
  * @file
- * This file includes definitions for d-bus agent.
+ *   This file includes definitions for mainloop manager.
  */
 
-#ifndef OTBR_DBUS_AGENT_HPP_
-#define OTBR_DBUS_AGENT_HPP_
+#ifndef OTBR_COMMON_MAINLOOP_MANAGER_HPP_
+#define OTBR_COMMON_MAINLOOP_MANAGER_HPP_
 
-#include <functional>
-#include <set>
-#include <string>
-#include <sys/select.h>
+#include <openthread-br/config.h>
+
+#include <openthread/openthread-system.h>
+
+#include <list>
 
 #include "common/mainloop.hpp"
-#include "dbus/common/dbus_message_helper.hpp"
-#include "dbus/common/dbus_resources.hpp"
-#include "dbus/server/dbus_object.hpp"
-#include "dbus/server/dbus_thread_object.hpp"
-
 #include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
-namespace DBus {
 
-class DBusAgent : public MainloopProcessor
+/**
+ * This class implements the mainloop manager.
+ *
+ */
+class MainloopManager
 {
 public:
     /**
-     * The constructor of dbus agent.
-     *
-     * @param[in]  aNcp  A reference to the NCP controller.
+     * The constructor to initialize the mainloop manager.
      *
      */
-    DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp);
+    MainloopManager() = default;
 
     /**
-     * This method initializes the dbus agent.
+     * This method returns the singleton instance of the mainloop manager.
      *
-     * @returns The intialization error.
+     * @retval  A reference to the mainloop manager.
      *
      */
-    otbrError Init(void);
+    static MainloopManager &GetInstance(void)
+    {
+        static MainloopManager sMainloopManager;
+        return sMainloopManager;
+    }
 
     /**
-     * This method updates the mainloop context.
+     * This method adds a mainloop processors to the mainloop managger.
+     *
+     * @param[in] aMainloopProcessor   A pointer to the mainloop processor.
+     *
+     */
+    void AddMainloopProcessor(MainloopProcessor *aMainloopProcessor);
+
+    /**
+     * This method removes a mainloop processors from the mainloop managger.
+     *
+     * @param[in] aMainloopProcessor   A pointer to the mainloop processor.
+     *
+     */
+    void RemoveMainloopProcessor(MainloopProcessor *aMainloopProcessor);
+
+    /**
+     * This method updates the mainloop context of all mainloop processors.
      *
      * @param[inout]  aMainloop  A reference to the mainloop to be updated.
      *
      */
-    void Update(MainloopContext &aMainloop) override;
+    void Update(MainloopContext &aMainloop);
 
     /**
-     * This method processes mainloop events.
+     * This method processes mainloop events of all mainloop processors.
      *
      * @param[in]  aMainloop  A reference to the mainloop context.
      *
      */
-    void Process(const MainloopContext &aMainloop) override;
+    void Process(const MainloopContext &aMainloop);
 
 private:
-    static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
-    static void        RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
-
-    static const struct timeval kPollTimeout;
-
-    std::string                       mInterfaceName;
-    std::unique_ptr<DBusThreadObject> mThreadObject;
-    using UniqueDBusConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>;
-    UniqueDBusConnection             mConnection;
-    otbr::Ncp::ControllerOpenThread &mNcp;
-
-    /**
-     * This map is used to track DBusWatch-es.
-     *
-     */
-    std::set<DBusWatch *> mWatches;
+    std::list<MainloopProcessor *> mMainloopProcessorList;
 };
-
-} // namespace DBus
 } // namespace otbr
-
-#endif // OTBR_DBUS_AGENT_HPP_
+#endif // OTBR_COMMON_MAINLOOP_MANAGER_HPP_

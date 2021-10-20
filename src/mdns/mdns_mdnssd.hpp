@@ -43,6 +43,7 @@
 #include <dns_sd.h>
 
 #include "common/code_utils.hpp"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
 
@@ -54,7 +55,7 @@ namespace Mdns {
  * This class implements mDNS service with mDNSResponder.
  *
  */
-class PublisherMDnsSd : public Publisher
+class PublisherMDnsSd : public MainloopProcessor, public Publisher
 {
 public:
     /**

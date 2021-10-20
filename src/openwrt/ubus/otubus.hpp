@@ -45,6 +45,8 @@
 #include <openthread/udp.h>
 
 #include "common/code_utils.hpp"
+#include "common/mainloop.hpp"
+#include "ncp/ncp_openthread.hpp"
 
 extern "C" {
 #include <libubox/blobmsg_json.h>
@@ -76,8 +78,9 @@ public:
      * Constructor
      *
      * @param[in]  aController  A pointer to OpenThread Controller structure.
+     * @param[in]  aMutex       A pointer to mutex.
      */
-    static void Initialize(Ncp::ControllerOpenThread *aController);
+    static void Initialize(Ncp::ControllerOpenThread *aController, std::mutex *aMutex);
 
     /**
      * This method return the instance of the global UbusServer.
@@ -772,6 +775,7 @@ private:
     struct blob_buf            mBuf;
     struct blob_buf            mNetworkdataBuf;
     Ncp::ControllerOpenThread *mController;
+    std::mutex *               mNcpThreadMutex;
     time_t                     mSecond;
     enum
     {
@@ -782,8 +786,9 @@ private:
      * Constructor
      *
      * @param[in]  aController  The pointer to OpenThread Controller structure.
+     * @param[in]  aMutex       A pointer to mutex.
      */
-    UbusServer(Ncp::ControllerOpenThread *aController);
+    UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMutex);
 
     /**
      * This method start scan.
@@ -1118,6 +1123,50 @@ private:
      *
      */
     void AppendResult(otError aError, struct ubus_context *aContext, struct ubus_request_data *aRequest);
+};
+
+class UBusAgent : public MainloopProcessor
+{
+public:
+    /**
+     * The constructor to initialize the UBus agent.
+     *
+     * @param[in]  aNcp  A reference to the NCP controller.
+     *
+     */
+    UBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
+        : mNcp(aNcp)
+        , mThreadMutex()
+    {
+    }
+
+    /**
+     * This method initializes the UBus agent.
+     *
+     */
+    void Init(void);
+
+    /**
+     * This method updates the mainloop context.
+     *
+     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
+     *
+     */
+    void Update(MainloopContext &aMainloop) override;
+
+    /**
+     * This method processes mainloop events.
+     *
+     * @param[in]  aMainloop  A reference to the mainloop context.
+     *
+     */
+    void Process(const MainloopContext &aMainloop) override;
+
+private:
+    static void UbusServerRun(void) { otbr::ubus::UbusServer::GetInstance().InstallUbusObject(); }
+
+    otbr::Ncp::ControllerOpenThread &mNcp;
+    std::mutex                       mThreadMutex;
 };
 } // namespace ubus
 } // namespace otbr

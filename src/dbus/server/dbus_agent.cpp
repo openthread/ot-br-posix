@@ -38,8 +38,8 @@ namespace DBus {
 
 const struct timeval DBusAgent::kPollTimeout = {0, 0};
 
-DBusAgent::DBusAgent(const std::string &aInterfaceName, otbr::Ncp::ControllerOpenThread *aNcp)
-    : mInterfaceName(aInterfaceName)
+DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
+    : mInterfaceName(aNcp.GetInterfaceName())
     , mNcp(aNcp)
 {
 }
@@ -64,7 +64,7 @@ otbrError DBusAgent::Init(void)
                  error = OTBR_ERROR_DBUS);
     VerifyOrExit(
         dbus_connection_set_watch_functions(mConnection.get(), AddDBusWatch, RemoveDBusWatch, nullptr, this, nullptr));
-    mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, mNcp));
+    mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp));
     error         = mThreadObject->Init();
 exit:
     if (error != OTBR_ERROR_NONE)

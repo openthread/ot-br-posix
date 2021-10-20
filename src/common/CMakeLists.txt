@@ -32,7 +32,10 @@ add_library(otbr-common
     dns_utils.cpp
     logging.cpp
     logging.hpp
+    mainloop.cpp
     mainloop.hpp
+    mainloop_manager.cpp
+    mainloop_manager.hpp
     task_runner.cpp
     task_runner.hpp
     time.hpp

@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2021, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -25,65 +25,36 @@
  *    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *    POSSIBILITY OF SUCH DAMAGE.
  */
+#include <assert.h>
 
-/**
- * @file
- *   This file includes definition for Thread border router agent instance.
- */
-
-#ifndef OTBR_AGENT_AGENT_INSTANCE_HPP_
-#define OTBR_AGENT_AGENT_INSTANCE_HPP_
-
-#include "openthread-br/config.h"
-
-#include <stdarg.h>
-#include <stdint.h>
-#include <sys/select.h>
-#include <sys/types.h>
-
-#include "agent/instance_params.hpp"
-#include "border_agent/border_agent.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "common/mainloop_manager.hpp"
 
 namespace otbr {
 
-/**
- * This class implements an instance to host services used by border router.
- *
- */
-class AgentInstance
+void MainloopManager::AddMainloopProcessor(MainloopProcessor *aMainloopProcessor)
 {
-public:
-    /**
-     * The constructor to initialize the Thread border router agent instance.
-     *
-     * @param[in]   aNcp  A reference to the NCP controller.
-     *
-     */
-    AgentInstance(Ncp::ControllerOpenThread &aNcp);
+    assert(aMainloopProcessor != nullptr);
+    mMainloopProcessorList.emplace_back(aMainloopProcessor);
+}
 
-    /**
-     * This method initialize the agent.
-     *
-     * @retval  OTBR_ERROR_NONE     Agent initialized successfully.
-     * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
-     *
-     */
-    otbrError Init(void);
+void MainloopManager::RemoveMainloopProcessor(MainloopProcessor *aMainloopProcessor)
+{
+    mMainloopProcessorList.remove(aMainloopProcessor);
+}
 
-    /**
-     * This method returns the NCP controller.
-     *
-     * @retval  the pointer of the NCP controller.
-     *
-     */
-    otbr::Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
+void MainloopManager::Update(MainloopContext &aMainloop)
+{
+    for (auto &mainloopProcessor : mMainloopProcessorList)
+    {
+        mainloopProcessor->Update(aMainloop);
+    }
+}
 
-private:
-    otbr::Ncp::ControllerOpenThread &mNcp;
-    BorderAgent                      mBorderAgent;
-};
-
+void MainloopManager::Process(const MainloopContext &aMainloop)
+{
+    for (auto &mainloopProcessor : mMainloopProcessorList)
+    {
+        mainloopProcessor->Process(aMainloop);
+    }
+}
 } // namespace otbr
-
-#endif // OTBR_AGENT_AGENT_INSTANCE_HPP_

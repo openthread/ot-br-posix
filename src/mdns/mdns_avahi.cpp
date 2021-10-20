@@ -654,16 +654,6 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
     }
 }
 
-void PublisherAvahi::Update(MainloopContext &aMainloop)
-{
-    mPoller.Update(aMainloop);
-}
-
-void PublisherAvahi::Process(const MainloopContext &aMainloop)
-{
-    mPoller.Process(aMainloop);
-}
-
 otbrError PublisherAvahi::PublishService(const char *       aHostName,
                                          uint16_t           aPort,
                                          const char *       aName,
