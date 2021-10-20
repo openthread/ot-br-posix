@@ -27,15 +27,15 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 ### BEGIN INIT INFO
-# Provides:          otbr-forward-safeguard
+# Provides:          otbr-firewall
 # Required-Start:
 # Required-Stop:
 # Should-Start:
 # Should-Stop:
 # Default-Start:     2 3 4 5
 # Default-Stop:
-# Short-Description: iptables packet forwarding safeguard
-# Description:       This is required by OTBR to enable packet forwarding safeguard.
+# Short-Description: OTBR firewall
+# Description:       This service sets up firewall for OTBR.
 ### END INIT INFO
 
 THREAD_IF="wpan0"

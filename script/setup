@@ -43,7 +43,7 @@
 . script/_swapfile
 . script/_sudo_extend
 . script/_disable_services
-. script/_forward_safeguard
+. script/_firewall
 
 main()
 {
@@ -59,9 +59,9 @@ main()
     dns64_uninstall
     rt_tables_uninstall
     ipforward_uninstall
-    forward_safeguard_uninstall
+    firewall_uninstall
 
-    forward_safeguard_install
+    firewall_install
     ipforward_install
     rt_tables_install
     nat64_install

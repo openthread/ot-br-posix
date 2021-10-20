@@ -27,46 +27,46 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-FORWARD_SAFEGUARD_SERVICE=/etc/init.d/otbr-forward-safeguard
+FIREWALL_SERVICE=/etc/init.d/otbr-firewall
 
 sudo modprobe ip6table_filter || true
 
-forward_safeguard_uninstall()
+firewall_uninstall()
 {
     if have systemctl; then
-        sudo systemctl disable otbr-forward-safeguard || true
+        sudo systemctl disable otbr-firewall || true
     fi
     # systemctl disable doesn't remove sym-links
     if have update-rc.d; then
-        sudo update-rc.d otbr-forward-safeguard remove || true
+        sudo update-rc.d otbr-firewall remove || true
     fi
-    test ! -f $FORWARD_SAFEGUARD_SERVICE || sudo rm $FORWARD_SAFEGUARD_SERVICE
+    test ! -f $FIREWALL_SERVICE || sudo rm $FIREWALL_SERVICE
 }
 
-forward_safeguard_install()
+firewall_install()
 {
-    sudo cp script/otbr-forward-safeguard $FORWARD_SAFEGUARD_SERVICE
-    sudo chmod a+x $FORWARD_SAFEGUARD_SERVICE
+    sudo cp script/otbr-firewall $FIREWALL_SERVICE
+    sudo chmod a+x $FIREWALL_SERVICE
     if have systemctl; then
-        sudo systemctl enable otbr-forward-safeguard || die 'Unable to enable forward safeguard service!'
-        sudo systemctl start otbr-forward-safeguard || die 'Unable to start forward safeguard service!'
+        sudo systemctl enable otbr-firewall || die 'Failed to enable firewall service!'
+        sudo systemctl start otbr-firewall || die 'Failed to start firewall service!'
     fi
 }
 
-forward_safeguard_start()
+firewall_start()
 {
     if with DOCKER; then
-        service otbr-forward-safeguard start || die 'Failed to start forward safeguard'
+        service otbr-firewall start || die 'Failed to start firewall service'
     elif have systemctl; then
-        sudo systemctl start otbr-forward-safeguard || die 'Failed to start forward safeguard'
+        sudo systemctl start otbr-firewall || die 'Failed to start firewall service'
     fi
 }
 
-forward_safeguard_stop()
+firewall_stop()
 {
     if with DOCKER; then
-        service otbr-forward-safeguard stop || true
+        service otbr-firewall stop || true
     elif have systemctl; then
-        sudo systemctl stop otbr-forward-safeguard || true
+        sudo systemctl stop otbr-firewall || true
     fi
 }

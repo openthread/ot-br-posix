@@ -94,7 +94,7 @@ install_packages_apt()
     # web dependencies
     without WEB_GUI || command -v npm || sudo apt-get install -y nodejs npm
 
-    # forward safeguard
+    # firewall
     sudo apt-get install -y iptables ipset
 }
 
