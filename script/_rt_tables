@@ -51,5 +51,6 @@ rt_tables_install()
         sudo sh -c 'echo "" >>/etc/sysctl.conf'
         sudo sh -c 'echo "# OpenThread configuration" >>/etc/sysctl.conf'
         sudo sh -c 'echo "net.core.optmem_max=65536" >>/etc/sysctl.conf'
+        sudo sh -c 'sysctl -p /etc/sysctl.conf'
     fi
 }
