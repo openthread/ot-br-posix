@@ -89,10 +89,13 @@ install_packages_apt()
     without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils
 
     # backbone-router
-    without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y iptables libnetfilter-queue1 libnetfilter-queue-dev
+    without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
 
     # web dependencies
     without WEB_GUI || command -v npm || sudo apt-get install -y nodejs npm
+
+    # firewall
+    sudo apt-get install -y iptables ipset
 }
 
 install_packages_opkg()
