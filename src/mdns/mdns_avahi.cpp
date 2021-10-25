@@ -376,6 +376,7 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
             const char *hostName        = service.mHostName.c_str();
             char *      alternativeName = nullptr;
             uint16_t    port            = service.mPort;
+
             ResetGroup(service.mGroup);
             if (service.mHostName == "")
             {
