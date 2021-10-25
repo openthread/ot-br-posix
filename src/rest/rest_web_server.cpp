@@ -48,8 +48,8 @@ static const uint32_t kMaxServeNum = 500;
 // Port number used by Rest server.
 static const uint32_t kPortNumber = 8081;
 
-RestWebServer::RestWebServer(ControllerOpenThread *aNcp)
-    : mResource(Resource(aNcp))
+RestWebServer::RestWebServer(ControllerOpenThread &aNcp)
+    : mResource(Resource(&aNcp))
     , mListenFd(-1)
 {
 }
@@ -60,13 +60,6 @@ RestWebServer::~RestWebServer(void)
     {
         close(mListenFd);
     }
-}
-
-RestWebServer *RestWebServer::GetRestWebServer(ControllerOpenThread *aNcp)
-{
-    static RestWebServer *sServer = new RestWebServer(aNcp);
-
-    return sServer;
 }
 
 void RestWebServer::Init(void)
@@ -80,26 +73,12 @@ void RestWebServer::Update(MainloopContext &aMainloop)
     FD_SET(mListenFd, &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, mListenFd);
 
-    for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
-    {
-        Connection *connection = it->second.get();
-        connection->Update(aMainloop);
-    }
-
     return;
 }
 
 void RestWebServer::Process(const MainloopContext &aMainloop)
 {
-    Connection *connection;
-
     UpdateConnections(aMainloop.mReadFdSet);
-
-    for (auto it = mConnectionSet.begin(); it != mConnectionSet.end(); ++it)
-    {
-        connection = it->second.get();
-        connection->Process(aMainloop);
-    }
 }
 
 void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)

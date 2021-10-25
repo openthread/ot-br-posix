@@ -144,24 +144,6 @@ const char *BackboneAgent::StateToString(otBackboneRouterState aState)
     return ret;
 }
 
-void BackboneAgent::Update(MainloopContext &aMainloop)
-{
-    OTBR_UNUSED_VARIABLE(aMainloop);
-
-#if OTBR_ENABLE_DUA_ROUTING
-    mNdProxyManager.Update(aMainloop);
-#endif
-}
-
-void BackboneAgent::Process(const MainloopContext &aMainloop)
-{
-    OTBR_UNUSED_VARIABLE(aMainloop);
-
-#if OTBR_ENABLE_DUA_ROUTING
-    mNdProxyManager.Process(aMainloop);
-#endif
-}
-
 void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
                                                           otBackboneRouterDomainPrefixEvent aEvent,
                                                           const otIp6Prefix *               aDomainPrefix)

@@ -33,6 +33,7 @@ add_executable(otbr-agent
     uris.hpp
     instance_params.cpp
     instance_params.hpp
+    vendor.hpp
 )
 
 target_link_libraries(otbr-agent PRIVATE

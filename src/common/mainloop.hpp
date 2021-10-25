@@ -54,7 +54,9 @@ using MainloopContext = otSysMainloopContext;
 class MainloopProcessor
 {
 public:
-    virtual ~MainloopProcessor(void) = default;
+    MainloopProcessor(void);
+
+    virtual ~MainloopProcessor(void);
 
     /**
      * This method updates the mainloop context.

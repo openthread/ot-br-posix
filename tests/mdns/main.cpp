@@ -38,6 +38,8 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
+#include "common/mainloop.hpp"
+#include "common/mainloop_manager.hpp"
 #include "mdns/mdns.hpp"
 
 using namespace otbr;
@@ -48,7 +50,7 @@ static struct Context
     bool             mUpdate;
 } sContext;
 
-int Mainloop(Mdns::Publisher &aPublisher)
+int RunMainloop(void)
 {
     int rval = 0;
 
@@ -62,7 +64,7 @@ int Mainloop(Mdns::Publisher &aPublisher)
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
 
-        aPublisher.Update(mainloop);
+        MainloopManager::GetInstance().Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       (mainloop.mTimeout.tv_sec == INT_MAX ? nullptr : &mainloop.mTimeout));
 
@@ -72,7 +74,7 @@ int Mainloop(Mdns::Publisher &aPublisher)
             break;
         }
 
-        aPublisher.Process(mainloop);
+        MainloopManager::GetInstance().Process(mainloop);
     }
 
     return rval;
@@ -255,7 +257,7 @@ otbrError TestSingleServiceWithCustomHost(void)
         Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, PublishSingleServiceWithCustomHost, &sContext);
     sContext.mPublisher = pub;
     SuccessOrExit(error = pub->Start());
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);
@@ -270,7 +272,7 @@ otbrError TestMultipleServicesWithCustomHost(void)
         Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, PublishMultipleServicesWithCustomHost, &sContext);
     sContext.mPublisher = pub;
     SuccessOrExit(error = pub->Start());
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);
@@ -284,7 +286,7 @@ otbrError TestSingleService(void)
     Mdns::Publisher *pub = Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, PublishSingleService, &sContext);
     sContext.mPublisher  = pub;
     SuccessOrExit(ret = pub->Start());
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);
@@ -299,7 +301,7 @@ otbrError TestMultipleServices(void)
         Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, PublishMultipleServices, &sContext);
     sContext.mPublisher = pub;
     SuccessOrExit(ret = pub->Start());
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);
@@ -316,7 +318,7 @@ otbrError TestUpdateService(void)
     SuccessOrExit(ret = pub->Start());
     sContext.mUpdate = true;
     PublishUpdateServices(&sContext, Mdns::Publisher::State::kReady);
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);
@@ -333,7 +335,7 @@ otbrError TestServiceSubTypes(void)
     SuccessOrExit(ret = pub->Start());
     sContext.mUpdate = true;
     PublishServiceSubTypes(&sContext, Mdns::Publisher::State::kReady);
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);
@@ -361,11 +363,11 @@ otbrError TestStopService(void)
     SuccessOrExit(ret = pub->Start());
     signal(SIGUSR1, RecoverSignal);
     signal(SIGUSR2, RecoverSignal);
-    Mainloop(*pub);
+    RunMainloop();
     sContext.mPublisher->Stop();
-    Mainloop(*pub);
+    RunMainloop();
     SuccessOrExit(ret = sContext.mPublisher->Start());
-    Mainloop(*pub);
+    RunMainloop();
 
 exit:
     Mdns::Publisher::Destroy(pub);

@@ -116,6 +116,8 @@ LOCAL_SRC_FILES := \
     src/border_agent/border_agent.cpp \
     src/common/dns_utils.cpp \
     src/common/logging.cpp \
+    src/common/mainloop.cpp \
+    src/common/mainloop_manager.cpp \
     src/common/task_runner.cpp \
     src/common/types.cpp \
     src/dbus/common/dbus_message_dump.cpp \
