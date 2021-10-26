@@ -45,7 +45,7 @@
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
 
-#if __ANDROID__ && OPENTHREAD_ENABLE_ANDROID_PROPERTY
+#if __ANDROID__ && OTBR_CONFIG_ANDROID_PROPERTY_ENABLE
 #include <cutils/properties.h>
 #endif
 
@@ -116,6 +116,8 @@ static void HandleSignal(int aSignal)
 static int Mainloop(otbr::AgentInstance &aInstance)
 {
     int error = EXIT_SUCCESS;
+
+    OTBR_UNUSED_VARIABLE(aInstance);
 
 #if OTBR_ENABLE_OPENWRT
     UBusAgent ubusAgent{aInstance.GetNcp()};
@@ -200,7 +202,7 @@ static otbrLogLevel GetDefaultLogLevel(void)
 {
     otbrLogLevel level = OTBR_LOG_INFO;
 
-#if __ANDROID__ && OPENTHREAD_ENABLE_ANDROID_PROPERTY
+#if __ANDROID__ && OTBR_CONFIG_ANDROID_PROPERTY_ENABLE
     char value[PROPERTY_VALUE_MAX];
 
     property_get("ro.build.type", value, "user");
