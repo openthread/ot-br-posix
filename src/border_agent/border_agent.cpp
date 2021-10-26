@@ -63,6 +63,8 @@
 
 namespace otbr {
 
+static const char kVendorName[]             = OTBR_VENDOR_NAME;
+static const char kProductName[]            = OTBR_PRODUCT_NAME;
 static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
 static const char kBorderAgentServiceInstanceName[] =
     OTBR_MESHCOP_SERVICE_INSTANCE_NAME; ///< Border agent service name of mDNS
@@ -214,6 +216,8 @@ void BorderAgent::PublishMeshCopService(void)
 
     otbrLogInfo("Publish meshcop service %s.%s.local.", kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
+    txtList.emplace_back("vn", kVendorName);
+    txtList.emplace_back("mn", kProductName);
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
     txtList.emplace_back("tv", mNcp.GetThreadVersion());
