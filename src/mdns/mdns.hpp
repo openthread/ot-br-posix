@@ -97,26 +97,14 @@ public:
      */
     struct DiscoveredInstanceInfo
     {
-        /**
-         * Constructor to initialize a `DiscoveredInstanceInfo` instance.
-         *
-         */
-        DiscoveredInstanceInfo(void)
-            : mPort(0)
-            , mPriority(0)
-            , mWeight(0)
-            , mTtl(0)
-        {
-        }
-
-        std::string             mName;      ///< Instance name.
-        std::string             mHostName;  ///< Full host name.
-        std::vector<Ip6Address> mAddresses; ///< IPv6 addresses.
-        uint16_t                mPort;      ///< Port.
-        uint16_t                mPriority;  ///< Service priority.
-        uint16_t                mWeight;    ///< Service weight.
-        std::vector<uint8_t>    mTxtData;   ///< TXT RDATA bytes.
-        uint32_t                mTtl;       ///< Service TTL.
+        std::string             mName;         ///< Instance name.
+        std::string             mHostName;     ///< Full host name.
+        std::vector<Ip6Address> mAddresses;    ///< IPv6 addresses.
+        uint16_t                mPort     = 0; ///< Port.
+        uint16_t                mPriority = 0; ///< Service priority.
+        uint16_t                mWeight   = 0; ///< Service weight.
+        std::vector<uint8_t>    mTxtData;      ///< TXT RDATA bytes.
+        uint32_t                mTtl = 0;      ///< Service TTL.
     };
 
     /**
@@ -125,18 +113,9 @@ public:
      */
     struct DiscoveredHostInfo
     {
-        /**
-         * Constructor to initialize a `DiscoveredHostInfo` instance.
-         *
-         */
-        DiscoveredHostInfo(void)
-            : mTtl(0)
-        {
-        }
-
         std::string             mHostName;  ///< Full host name.
         std::vector<Ip6Address> mAddresses; ///< IP6 addresses.
-        uint32_t                mTtl;       ///< Host TTL.
+        uint32_t                mTtl = 0;   ///< Host TTL.
     };
 
     /**
