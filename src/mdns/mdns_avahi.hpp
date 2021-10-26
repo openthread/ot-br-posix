@@ -520,7 +520,6 @@ private:
     static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
     void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
     void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
-    otbrError        RetryPublishService(const Services::iterator &aServiceIt);
 
     static otbrError TxtListToAvahiStringList(const TxtList &   aTxtList,
                                               AvahiStringList * aBuffer,
