@@ -35,7 +35,7 @@ add_library(otbr-config INTERFACE)
 set(OTBR_INFRA_IF_NAME "wlan0" CACHE STRING "The infrastructure interface name")
 set(OTBR_VENDOR_NAME "OpenThread" CACHE STRING "The vendor name")
 set(OTBR_PRODUCT_NAME "BorderRouter" CACHE STRING "The product name")
-set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
+set(OTBR_NAME "${OTBR_VENDOR_NAME} ${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
 set(OTBR_MDNS "avahi" CACHE STRING "mDNS service provider")
 
 set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")

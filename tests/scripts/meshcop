@@ -104,7 +104,11 @@ readonly OT_NETWORK_NAME=MyTestNetwork
 readonly TUN_NAME=wpan0
 
 # The default meshcop service instance name
-readonly OT_SERVICE_INSTANCE='OpenThread_BorderRouter'
+if [ "$TEST_CASE" = 'mdns_service' ]; then
+    readonly OT_SERVICE_INSTANCE='OpenThread\\032BorderRouter'
+else
+    readonly OT_SERVICE_INSTANCE='OpenThread BorderRouter'
+fi
 
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"
 echo "TEST_BASE: ${TEST_BASE}"
