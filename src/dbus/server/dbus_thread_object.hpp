@@ -72,12 +72,6 @@ public:
                      const std::string &              aInterfaceName,
                      otbr::Ncp::ControllerOpenThread *aNcp);
 
-    /**
-     * This method initializes the dbus thread object.
-     *
-     * @returns The initialization error.
-     *
-     */
     otbrError Init(void) override;
 
 private:
