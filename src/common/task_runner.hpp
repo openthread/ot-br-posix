@@ -109,7 +109,7 @@ public:
     {
         std::promise<T> pro;
 
-        Post([&]() { pro.set_value(aTask()); });
+        Post([&pro, &aTask]() { pro.set_value(aTask()); });
 
         return pro.get_future().get();
     }

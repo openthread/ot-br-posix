@@ -154,21 +154,22 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
     }
 }
 
-void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aType, otbrError aError, void *aContext)
+void AdvertisingProxy::PublishServiceHandler(const std::string &aName,
+                                             const std::string &aType,
+                                             otbrError          aError,
+                                             void *             aContext)
 {
-    std::string       name(aName);
-    std::string       type(aType);
     AdvertisingProxy *thisPtr = static_cast<AdvertisingProxy *>(aContext);
 
     thisPtr->mTaskRunner.Post(
-        [name, type, aError, thisPtr]() { thisPtr->PublishServiceHandler(name.c_str(), type.c_str(), aError); });
+        [thisPtr, aName, aType, aError]() { thisPtr->PublishServiceHandler(aName, aType, aError); });
 }
 
-void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aType, otbrError aError)
+void AdvertisingProxy::PublishServiceHandler(const std::string &aName, const std::string &aType, otbrError aError)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    otbrLogInfo("Handle publish service '%s.%s' result: %d", aName, aType, aError);
+    otbrLogInfo("Handle publish service '%s.%s' result: %d", aName.c_str(), aType.c_str(), aError);
 
     // TODO: there may be same names between two SRP updates.
     for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); ++update)
@@ -176,7 +177,7 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
         for (auto nameAndType = update->mServiceNames.begin(); nameAndType != update->mServiceNames.end();
              ++nameAndType)
         {
-            if (aName != nameAndType->first || !Mdns::Publisher::IsServiceTypeEqual(aType, nameAndType->second.c_str()))
+            if (aName != nameAndType->first || !Mdns::Publisher::IsServiceTypeEqual(aType, nameAndType->second))
             {
                 continue;
             }
@@ -203,23 +204,22 @@ void AdvertisingProxy::PublishServiceHandler(const char *aName, const char *aTyp
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarning("Failed to handle result of service %s", aName);
+        otbrLogWarning("Failed to handle result of service %s.%s", aName.c_str(), aType.c_str());
     }
 }
 
-void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError, void *aContext)
+void AdvertisingProxy::PublishHostHandler(const std::string &aName, otbrError aError, void *aContext)
 {
-    std::string       name(aName);
     AdvertisingProxy *thisPtr = static_cast<AdvertisingProxy *>(aContext);
 
-    thisPtr->mTaskRunner.Post([name, aError, thisPtr]() { thisPtr->PublishHostHandler(name.c_str(), aError); });
+    thisPtr->mTaskRunner.Post([thisPtr, aName, aError]() { thisPtr->PublishHostHandler(aName, aError); });
 }
 
-void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
+void AdvertisingProxy::PublishHostHandler(const std::string &aName, otbrError aError)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    otbrLogInfo("Handle publish host '%s' result: %d", aName, aError);
+    otbrLogInfo("Handle publish host '%s' result: %d", aName.c_str(), aError);
 
     for (auto update = mOutstandingUpdates.begin(); update != mOutstandingUpdates.end(); ++update)
     {
@@ -249,7 +249,7 @@ void AdvertisingProxy::PublishHostHandler(const char *aName, otbrError aError)
 exit:
     if (error != OTBR_ERROR_NONE)
     {
-        otbrLogWarning("Failed to handle result of host %s", aName);
+        otbrLogWarning("Failed to handle result of host %s", aName.c_str());
     }
 }
 
@@ -302,15 +302,17 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
 
     if (!hostDeleted)
     {
+        std::vector<uint8_t> firstHostAddress{std::begin(hostAddress[0].mFields.m8),
+                                              std::end(hostAddress[0].mFields.m8)};
+
         // TODO: select a preferred address or advertise all addresses from SRP client.
         otbrLogInfo("Publish SRP host: %s", fullHostName);
-        SuccessOrExit(error =
-                          mPublisher.PublishHost(hostName.c_str(), hostAddress[0].mFields.m8, sizeof(hostAddress[0])));
+        SuccessOrExit(error = mPublisher.PublishHost(hostName, firstHostAddress));
     }
     else
     {
         otbrLogInfo("Unpublish SRP host: %s", fullHostName);
-        SuccessOrExit(error = mPublisher.UnpublishHost(hostName.c_str()));
+        SuccessOrExit(error = mPublisher.UnpublishHost(hostName));
     }
 
     service = nullptr;
@@ -335,14 +337,13 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
             Mdns::Publisher::SubTypeList subTypeList = MakeSubTypeList(service);
 
             otbrLogInfo("Publish SRP service: %s", fullServiceName);
-            SuccessOrExit(error = mPublisher.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
-                                                            serviceName.c_str(), serviceType.c_str(), subTypeList,
-                                                            txtList));
+            SuccessOrExit(error = mPublisher.PublishService(hostName, otSrpServerServiceGetPort(service), serviceName,
+                                                            serviceType, subTypeList, txtList));
         }
         else
         {
             otbrLogInfo("Unpublish SRP service: %s", fullServiceName);
-            SuccessOrExit(error = mPublisher.UnpublishService(serviceName.c_str(), serviceType.c_str()));
+            SuccessOrExit(error = mPublisher.UnpublishService(serviceName, serviceType));
         }
     }
 

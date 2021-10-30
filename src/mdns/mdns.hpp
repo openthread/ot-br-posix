@@ -160,7 +160,10 @@ public:
      * @param[in]  aContext  A user context.
      *
      */
-    typedef void (*PublishServiceHandler)(const char *aName, const char *aType, otbrError aError, void *aContext);
+    typedef void (*PublishServiceHandler)(const std::string &aName,
+                                          const std::string &aType,
+                                          otbrError          aError,
+                                          void *             aContext);
 
     /**
      * This method reports the result of a host publication.
@@ -170,7 +173,7 @@ public:
      * @param[in]  aContext  A user context.
      *
      */
-    typedef void (*PublishHostHandler)(const char *aName, otbrError aError, void *aContext);
+    typedef void (*PublishHostHandler)(const std::string &aName, otbrError aError, void *aContext);
 
     /**
      * This method sets the handler for service publication.
@@ -225,10 +228,10 @@ public:
     /**
      * This method publishes or updates a service.
      *
-     * @param[in]   aHostName           The name of the host which this service resides on. If NULL is provided,
-     *                                  this service resides on local host and it is the implementation to provide
-     *                                  specific host name. Otherwise, the caller MUST publish the host with method
-     *                                  PublishHost.
+     * @param[in]   aHostName           The name of the host which this service resides on. If an empty string is
+     *                                  provided, this service resides on local host and it is the implementation
+     *                                  to provide specific host name. Otherwise, the caller MUST publish the host
+     *                                  with method PublishHost.
      * @param[in]   aPort               The port number of this service.
      * @param[in]   aName               The name of this service.
      * @param[in]   aType               The type of this service.
@@ -239,10 +242,10 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(const char *       aHostName,
+    virtual otbrError PublishService(const std::string &aHostName,
                                      uint16_t           aPort,
-                                     const char *       aName,
-                                     const char *       aType,
+                                     const std::string &aName,
+                                     const std::string &aType,
                                      const SubTypeList &aSubTypeList,
                                      const TxtList &    aTxtList) = 0;
 
@@ -256,24 +259,23 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
      *
      */
-    virtual otbrError UnpublishService(const char *aName, const char *aType) = 0;
+    virtual otbrError UnpublishService(const std::string &aName, const std::string &aType) = 0;
 
     /**
      * This method publishes or updates a host.
      *
-     * Publishing a host is advertising an A/AAAA RR for the host name. This method should be called
-     * before a service with non-null host name is published.
+     * Publishing a host is advertising an AAAA RR for the host name. This method should be called
+     * before a service with non-empty host name is published.
      *
-     * @param[in]  aName           The name of the host.
-     * @param[in]  aAddress        The address of the host.
-     * @param[in]  aAddressLength  The length of @p aAddress.
+     * @param[in]  aName     The name of the host.
+     * @param[in]  aAddress  The address of the host.
      *
      * @retval  OTBR_ERROR_NONE          Successfully published or updated the host.
      * @retval  OTBR_ERROR_INVALID_ARGS  The arguments are not valid.
      * @retval  OTBR_ERROR_ERRNO         Failed to publish or update the host.
      *
      */
-    virtual otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) = 0;
+    virtual otbrError PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress) = 0;
 
     /**
      * This method un-publishes a host.
@@ -284,7 +286,7 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
      *
      */
-    virtual otbrError UnpublishHost(const char *aName) = 0;
+    virtual otbrError UnpublishHost(const std::string &aName) = 0;
 
     /**
      * This method subscribes a given service or service instance.
@@ -357,15 +359,13 @@ public:
     /**
      * This function creates a mDNS publisher.
      *
-     * @param[in]   aProtocol           Protocol to use for publishing. AF_INET6, AF_INET or AF_UNSPEC.
-     * @param[in]   aDomain             The domain to register in. Set nullptr to use default mDNS domain ("local.").
-     * @param[in]   aHandler            The function to be called when this service state changed.
-     * @param[in]   aContext            A pointer to application-specific context.
+     * @param[in] aHandler  The function to be called when this service state changed.
+     * @param[in] aContext  A pointer to application-specific context.
      *
      * @returns A pointer to the newly created mDNS publisher.
      *
      */
-    static Publisher *Create(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext);
+    static Publisher *Create(StateHandler aHandler, void *aContext);
 
     /**
      * This function destroys the mDNS publisher.
@@ -388,7 +388,7 @@ public:
      * returns  A boolean that indicates whether the two service types are equal.
      *
      */
-    static bool IsServiceTypeEqual(const char *aFirstType, const char *aSecondType);
+    static bool IsServiceTypeEqual(std::string aFirstType, std::string aSecondType);
 
     /**
      * This function writes the TXT entry list to a TXT data buffer.
@@ -398,14 +398,12 @@ public:
      *
      * @param[in]     aTxtList    A TXT entry list.
      * @param[out]    aTxtData    A TXT data buffer.
-     * @param[inout]  aTxtLength  As input, it is the length of the TXT data buffer;
-     *                            As output, it is the length of the TXT data written.
      *
      * @retval  OTBR_ERROR_NONE          Successfully write the TXT entry list.
-     * @retval  OTBR_ERROR_INVALID_ARGS  The input TXT data buffer cannot hold the TXT data.
+     * @retval  OTBR_ERROR_INVALID_ARGS  The @p aTxtList includes invalid TXT entry.
      *
      */
-    static otbrError EncodeTxtData(const TxtList &aTxtList, uint8_t *aTxtData, uint16_t &aTxtLength);
+    static otbrError EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t> &aTxtData);
 
 protected:
     enum : uint8_t
