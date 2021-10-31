@@ -61,7 +61,7 @@ public:
     /**
      * This method updates the mainloop context.
      *
-     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
+     * @param[inout] aMainloop  A reference to the mainloop to be updated.
      *
      */
     virtual void Update(MainloopContext &aMainloop) = 0;
@@ -69,7 +69,7 @@ public:
     /**
      * This method processes mainloop events.
      *
-     * @param[in]  aMainloop  A reference to the mainloop context.
+     * @param[in] aMainloop  A reference to the mainloop context.
      *
      */
     virtual void Process(const MainloopContext &aMainloop) = 0;

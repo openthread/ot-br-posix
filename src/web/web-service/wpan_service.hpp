@@ -148,7 +148,7 @@ public:
     /**
      * This method sets the Thread interface name.
      *
-     * @param[in]  aIfName  The pointer to the Thread interface name.
+     * @param[in] aIfName  The pointer to the Thread interface name.
      *
      */
     void SetInterfaceName(const char *aIfName)
@@ -160,12 +160,12 @@ public:
     /**
      * This method gets status of wpan service.
      *
-     * @param[inout]  aNetworkName  The pointer to the network name.
-     * @param[inout]  aIfName       The pointer to the extended PAN ID.
+     * @param[inout] aNetworkName  The pointer to the network name.
+     * @param[inout] aIfName       The pointer to the extended PAN ID.
      *
-     * @retval kWpanStatus_OK        Successfully started the Thread service.
-     * @retval kWpanStatus_Offline   Not started the Thread service.
-     * @retval kWpanStatus_Down      The Thread service was down.
+     * @retval kWpanStatus_OK       Successfully started the Thread service.
+     * @retval kWpanStatus_Offline  Not started the Thread service.
+     * @retval kWpanStatus_Down     The Thread service was down.
      *
      */
     int GetWpanServiceStatus(std::string &aNetworkName, std::string &aExtPanId) const;
@@ -173,8 +173,8 @@ public:
     /**
      * This method starts commissioner and wait for a device to join
      *
-     * @param[in]  aPskd                Joiner pskd
-     * @param[in]  aNetworkPassword     Network password
+     * @param[in] aPskd             Joiner pskd
+     * @param[in] aNetworkPassword  Network password
      *
      * @returns The string to the http response of getting available networks.
      *

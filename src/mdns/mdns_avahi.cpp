@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file implements mDNS service based on avahi.
+ *   This file implements mDNS publisher based on avahi.
  */
 
 #define OTBR_LOG_TAG "MDNS"

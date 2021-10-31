@@ -37,7 +37,7 @@ set(OTBR_VENDOR_NAME "OpenThread" CACHE STRING "The vendor name")
 set(OTBR_PRODUCT_NAME "BorderRouter" CACHE STRING "The product name")
 set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
 set(OTBR_MESHCOP_SERVICE_INSTANCE_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The OTBR MeshCoP service instance name")
-set(OTBR_MDNS "avahi" CACHE STRING "mDNS service provider")
+set(OTBR_MDNS "avahi" CACHE STRING "mDNS publisher provider")
 
 set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
 

@@ -199,7 +199,7 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
 #endif
         break;
     default:
-        otbrLogWarning("mDNS service not available!");
+        otbrLogWarning("mDNS publisher not available!");
         break;
     }
 }

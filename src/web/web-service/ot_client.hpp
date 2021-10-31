@@ -70,7 +70,7 @@ public:
     /**
      * This constructor creates an OpenThread client.
      *
-     * @param[in]   aNetifName  The Thread network interface name.
+     * @param[in] aNetifName  The Thread network interface name.
      *
      */
     OpenThreadClient(const char *aNetifName);
@@ -84,8 +84,8 @@ public:
     /**
      * This method connects to OpenThread daemon.
      *
-     * @retval  true    Successfully connected to the daemon.
-     * @retval  false   Failed to connected to the daemon.
+     * @retval TRUE   Successfully connected to the daemon.
+     * @retval FALSE  Failed to connected to the daemon.
      *
      */
     bool Connect(void);
@@ -93,8 +93,8 @@ public:
     /**
      * This method executes OpenThread CLI.
      *
-     * @param[in]   aFormat     C style format string.
-     * @param[in]   ...         C style format arguments.
+     * @param[in] aFormat  C style format string.
+     * @param[in] ...      C style format arguments.
      *
      * @returns A pointer to the output if succeeded, otherwise nullptr.
      *
@@ -104,8 +104,8 @@ public:
     /**
      * This method reads from OpenThread CLI.
      *
-     * @param[in]   aResponse    The expected read response.
-     * @param[in]   aTimeout     Timeout for the read, in ms.
+     * @param[in] aResponse  The expected read response.
+     * @param[in] aTimeout   Timeout for the read, in ms.
      *
      * @returns A pointer to the output if the expected response is found, otherwise nullptr.
      *
@@ -115,8 +115,8 @@ public:
     /**
      * This method scans Thread network.
      *
-     * @param[out]  aNetworks   A pointer to the buffer to store network information.
-     * @param[in]   aLength     Number of entries in @p aNetworks.
+     * @param[out] aNetworks  A pointer to the buffer to store network information.
+     * @param[in]  aLength    Number of entries in @p aNetworks.
      *
      * @returns Number of entries found. 0 if none found.
      *

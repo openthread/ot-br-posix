@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for mDNS service.
+ *   This file includes definition for mDNS publisher.
  */
 
 #ifndef OTBR_AGENT_MDNS_MDNSSD_HPP_
@@ -52,7 +52,7 @@ namespace otbr {
 namespace Mdns {
 
 /**
- * This class implements mDNS service with mDNSResponder.
+ * This class implements mDNS publisher with mDNSResponder.
  *
  */
 class PublisherMDnsSd : public MainloopProcessor, public Publisher

@@ -111,9 +111,9 @@ public:
     /**
      * This method handles a Backbone Router ND Proxy event.
      *
-     * @param[in] aEvent    The Backbone Router ND Proxy event type.
-     * @param[in] aDua      The Domain Unicast Address of the ND Proxy, or `nullptr` if @p `aEvent` is
-     *                      `OT_BACKBONE_ROUTER_NDPROXY_CLEARED`.
+     * @param[in] aEvent  The Backbone Router ND Proxy event type.
+     * @param[in] aDua    The Domain Unicast Address of the ND Proxy, or `nullptr` if @p `aEvent` is
+     *                    `OT_BACKBONE_ROUTER_NDPROXY_CLEARED`.
      *
      */
     void HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aDua);
@@ -121,7 +121,7 @@ public:
     /**
      * This method returns if the ND Proxy manager is enabled.
      *
-     * @returns  If the ND Proxy manager is enabled;
+     * @returns If the ND Proxy manager is enabled;
      *
      */
     bool IsEnabled(void) const { return mIcmp6RawSock >= 0; }

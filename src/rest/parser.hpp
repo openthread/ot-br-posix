@@ -57,7 +57,7 @@ public:
     /**
      * The constructor of a http request parser instance.
      *
-     * @param[in]   aRequest  A pointer to a request instance.
+     * @param[in] aRequest  A pointer to a request instance.
      *
      */
     Parser(Request *aRequest);
@@ -71,8 +71,8 @@ public:
     /**
      * This method performs a parse process.
      *
-     * @param[in]    aBuf      A pointer pointing to read buffer.
-     * @param[in]    aLength   An integer indicates how much data is to be processed by parser.
+     * @param[in] aBuf     A pointer pointing to read buffer.
+     * @param[in] aLength  An integer indicates how much data is to be processed by parser.
      *
      */
     void Process(const char *aBuf, size_t aLength);

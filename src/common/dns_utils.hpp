@@ -77,9 +77,9 @@ struct DnsNameInfo
 /**
  * This method splits a full DNS name into name components.
  *
- * @param[in] aName     The full DNS name to dissect.
+ * @param[in] aName  The full DNS name to dissect.
  *
- * @returns  A `DnsNameInfo` structure containing DNS name information.
+ * @returns A `DnsNameInfo` structure containing DNS name information.
  *
  * @sa DnsNameInfo
  *

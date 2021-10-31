@@ -55,8 +55,8 @@ public:
     /**
      * The constructor of dbus request.
      *
-     * @param[in]   aConnection   The dbus connection.
-     * @param[in]   aMessage      The incoming dbus message.
+     * @param[in] aConnection  The dbus connection.
+     * @param[in] aMessage     The incoming dbus message.
      *
      */
     DBusRequest(DBusConnection *aConnection, DBusMessage *aMessage)
@@ -70,7 +70,7 @@ public:
     /**
      * The copy constructor of dbus request.
      *
-     * @param[in]   aOther    The object to be copied from.
+     * @param[in] aOther  The object to be copied from.
      *
      */
     DBusRequest(const DBusRequest &aOther)
@@ -83,7 +83,7 @@ public:
     /**
      * The assignment operator of dbus request.
      *
-     * @param[in]   aOther    The object to be copied from.
+     * @param[in] aOther  The object to be copied from.
      *
      */
     DBusRequest &operator=(const DBusRequest &aOther)
@@ -95,7 +95,7 @@ public:
     /**
      * This method returns the message sent to call the d-bus method.
      *
-     * @returns   The dbus message.
+     * @returns The dbus message.
      *
      */
     DBusMessage *GetMessage(void) { return mMessage; }
@@ -103,7 +103,7 @@ public:
     /**
      * This method returns underlying d-bus connection.
      *
-     * @returns   The dbus connection.
+     * @returns The dbus connection.
      *
      */
     DBusConnection *GetConnection(void) { return mConnection; }

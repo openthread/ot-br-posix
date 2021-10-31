@@ -50,25 +50,25 @@
  */
 typedef enum
 {
-    OTBR_LOG_EMERG,   /* system is unusable */
-    OTBR_LOG_ALERT,   /* action must be taken immediately */
-    OTBR_LOG_CRIT,    /* critical conditions */
-    OTBR_LOG_ERR,     /* error conditions */
-    OTBR_LOG_WARNING, /* warning conditions */
-    OTBR_LOG_NOTICE,  /* normal but significant condition */
-    OTBR_LOG_INFO,    /* informational */
-    OTBR_LOG_DEBUG,   /* debug-level messages */
+    OTBR_LOG_EMERG,   ///< System is unusable
+    OTBR_LOG_ALERT,   ///< Action must be taken immediately
+    OTBR_LOG_CRIT,    ///< Critical conditions
+    OTBR_LOG_ERR,     ///< Error conditions
+    OTBR_LOG_WARNING, ///< Warning conditions
+    OTBR_LOG_NOTICE,  ///< Normal but significant condition
+    OTBR_LOG_INFO,    ///< Informational
+    OTBR_LOG_DEBUG,   ///< Debug level messages
 } otbrLogLevel;
 
 /**
- * Get current log level
+ * Get current log level.
  */
 otbrLogLevel otbrLogGetLevel(void);
 
 /**
- * Control log to syslog
+ * Control log to syslog.
  *
- * @param[in] enable true to log to/via syslog
+ * @param[in] enable  True to log to/via syslog.
  *
  */
 void otbrLogEnableSyslog(bool aEnabled);
@@ -76,9 +76,9 @@ void otbrLogEnableSyslog(bool aEnabled);
 /**
  * This function initialize the logging service.
  *
- * @param[in]   aIdent          Identity of the logger.
- * @param[in]   aLevel          Log level of the logger.
- * @param[in]   aPrintStderr    Whether to log to stderr.
+ * @param[in] aIdent        Identity of the logger.
+ * @param[in] aLevel        Log level of the logger.
+ * @param[in] aPrintStderr  Whether to log to stderr.
  *
  */
 void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr);
@@ -86,9 +86,9 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr);
 /**
  * This function log at level @p aLevel.
  *
- * @param[in]   aLevel         Log level of the logger.
- * @param[in]   aLogTag        Log tag.
- * @param[in]   aFormat        Format string as in printf.
+ * @param[in] aLevel   Log level of the logger.
+ * @param[in] aLogTag  Log tag.
+ * @param[in] aFormat  Format string as in printf.
  *
  */
 void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...);
@@ -96,9 +96,9 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 /**
  * This function log at level @p aLevel.
  *
- * @param[in]   aLevel   Log level of the logger.
- * @param[in]   aFormat  Format string as in printf.
- * @param[in]   aArgList The variable-length arguments list.
+ * @param[in] aLevel    Log level of the logger.
+ * @param[in] aFormat   Format string as in printf.
+ * @param[in] aArgList  The variable-length arguments list.
  *
  */
 void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList);
@@ -106,9 +106,9 @@ void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList);
 /**
  * This function writes logs without filtering with the log level.
  *
- * @param[in]   aLevel  Log level of the logger.
- * @param[in]   aFormat Format string as in printf.
- * @param[in]   aArgList The variable-length arguments list.
+ * @param[in] aLevel    Log level of the logger.
+ * @param[in] aFormat   Format string as in printf.
+ * @param[in] aArgList  The variable-length arguments list.
  *
  */
 void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList);
@@ -116,10 +116,10 @@ void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList
 /**
  * This function dump memory as hex string at level @p aLevel.
  *
- * @param[in]   aLevel  Log level of the logger.
- * @param[in]   aPrefix String before dumping memory.
- * @param[in]   aMemory The pointer to the memory to be dumped.
- * @param[in]   aSize   The size of memory in bytes to be dumped.
+ * @param[in] aLevel   Log level of the logger.
+ * @param[in] aPrefix  String before dumping memory.
+ * @param[in] aMemory  The pointer to the memory to be dumped.
+ * @param[in] aSize    The size of memory in bytes to be dumped.
  *
  */
 void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, size_t aSize);
@@ -127,7 +127,7 @@ void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, siz
 /**
  * This function converts error code to string.
  *
- * @param[in]   aError      The error code.
+ * @param[in] aError  The error code.
  *
  * @returns The string information of error.
  *
@@ -146,9 +146,9 @@ void otbrLogDeinit(void);
  * If @p aError is OTBR_ERROR_NONE, the log level will be OTBR_LOG_INFO,
  * otherwise OTBR_LOG_WARNING.
  *
- * @param[in]   aError    The action result.
- * @param[in]   aFormat   Format string as in printf.
- * @param[in]   ...       Arguments for the format specification.
+ * @param[in] aError   The action result.
+ * @param[in] aFormat  Format string as in printf.
+ * @param[in] ...      Arguments for the format specification.
  *
  */
 #define otbrLogResult(aError, aFormat, ...)                                                               \

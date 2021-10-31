@@ -117,7 +117,7 @@ public:
     /**
      * Constructor with an 16-bit Thread locator.
      *
-     * @param[in]   aLocator    16-bit Thread locator, RLOC or ALOC.
+     * @param[in] aLocator  The 16-bit Thread locator, RLOC or ALOC.
      *
      */
     Ip6Address(uint16_t aLocator)
@@ -132,7 +132,7 @@ public:
     /**
      * Constructor with an Ip6 address.
      *
-     * @param[in]   aAddress    The Ip6 address.
+     * @param[in] aAddress  The Ip6 address.
      *
      */
     Ip6Address(const uint8_t (&aAddress)[16]);
@@ -142,7 +142,7 @@ public:
      *
      * @param[in] aOther  The other Ip6 address to compare with.
      *
-     * @returns  Whether the Ip6 address is smaller than the other address.
+     * @returns Whether the Ip6 address is smaller than the other address.
      *
      */
     bool operator<(const Ip6Address &aOther) const { return memcmp(this, &aOther, sizeof(Ip6Address)) < 0; }
@@ -152,7 +152,7 @@ public:
      *
      * @param[in] aOther  The other Ip6 address to compare with.
      *
-     * @returns  Whether the Ip6 address is equal to the other address.
+     * @returns Whether the Ip6 address is equal to the other address.
      *
      */
     bool operator==(const Ip6Address &aOther) const { return m64[0] == aOther.m64[0] && m64[1] == aOther.m64[1]; }
@@ -193,7 +193,7 @@ public:
     /**
      * This method returns if the Ip6 address is a multicast address.
      *
-     * @returns  Whether the Ip6 address is a multicast address.
+     * @returns Whether the Ip6 address is a multicast address.
      *
      */
     bool IsMulticast(void) const { return m8[0] == 0xff; }
@@ -201,7 +201,7 @@ public:
     /**
      * This method returns if the Ip6 address is a link-local address.
      *
-     * @returns  Whether the Ip6 address is a link-local address.
+     * @returns Whether the Ip6 address is a link-local address.
      *
      */
     bool IsLinkLocal(void) const { return (m16[0] & bswap_16(0xffc0)) == bswap_16(0xfe80); }
@@ -244,8 +244,8 @@ public:
     /**
      * This function converts Ip6 addresses from text to `Ip6Address`.
      *
-     * @param[in]   aStr    The Ip6 address text.
-     * @param[out]  aAddr   A reference to `Ip6Address` to output the Ip6 address.
+     * @param[in]  aStr   The Ip6 address text.
+     * @param[out] aAddr  A reference to `Ip6Address` to output the Ip6 address.
      *
      * @retval OTBR_ERROR_NONE          If the Ip6 address was successfully converted.
      * @retval OTBR_ERROR_INVALID_ARGS  If @p `aStr` is not a valid string representing of Ip6 address.
@@ -335,7 +335,7 @@ public:
     /**
      * This method returns if the Ip6 prefix is valid.
      *
-     * @returns  If the Ip6 prefix is valid.
+     * @returns If the Ip6 prefix is valid.
      *
      */
     bool IsValid(void) const { return mLength > 0 && mLength <= 128; }

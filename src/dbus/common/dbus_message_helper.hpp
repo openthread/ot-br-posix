@@ -486,11 +486,11 @@ constexpr otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<FieldTypes
 /**
  * This function converts a value to a d-bus variant.
  *
- * @param[out]  aIter    The message iterator pointing to the variant.
- * @param[in]   aValue    The value input.
+ * @param[out] aIter   The message iterator pointing to the variant.
+ * @param[in]  aValue  The value input.
  *
- * @retval  OTBR_ERROR_NONE   Successfully encoded to the variant.
- * @retval  OTBR_ERROR_DBUS   Failed to encode to the variant.
+ * @retval OTBR_ERROR_NONE  Successfully encoded to the variant.
+ * @retval OTBR_ERROR_DBUS  Failed to encode to the variant.
  */
 template <typename ValueType> otbrError DBusMessageEncodeToVariant(DBusMessageIter *aIter, const ValueType &aValue)
 {
@@ -512,11 +512,11 @@ exit:
 /**
  * This function converts a d-bus variant to a value.
  *
- * @param[in]   aIter     The message iterator pointing to the variant.
- * @param[out]  aValue    The value output.
+ * @param[in]  aIter   The message iterator pointing to the variant.
+ * @param[out] aValue  The value output.
  *
- * @retval  OTBR_ERROR_NONE   Successfully decoded the variant.
- * @retval  OTBR_ERROR_DBUS   Failed to decode the variant.
+ * @retval OTBR_ERROR_NONE  Successfully decoded the variant.
+ * @retval OTBR_ERROR_DBUS  Failed to decode the variant.
  */
 template <typename ValueType> otbrError DBusMessageExtractFromVariant(DBusMessageIter *aIter, ValueType &aValue)
 {
@@ -535,11 +535,11 @@ exit:
 /**
  * This function converts a d-bus message to a tuple of C++ types.
  *
- * @param[in]   aMessage  The dbus message to decode.
- * @param[out]  aValues   The tuple output.
+ * @param[in]  aMessage  The dbus message to decode.
+ * @param[out] aValues   The tuple output.
  *
- * @retval  OTBR_ERROR_NONE   Successfully decoded the message.
- * @retval  OTBR_ERROR_DBUS   Failed to decode the message.
+ * @retval OTBR_ERROR_NONE  Successfully decoded the message.
+ * @retval OTBR_ERROR_DBUS  Failed to decode the message.
  */
 template <typename... FieldTypes>
 otbrError DBusMessageToTuple(DBusMessage &aMessage, std::tuple<FieldTypes...> &aValues)
@@ -558,11 +558,11 @@ exit:
 /**
  * This function converts a tuple of C++ types to a d-bus message.
  *
- * @param[out]  aMessage  The dbus message output.
- * @param[in]   aValues   The tuple to encode.
+ * @param[out] aMessage  The dbus message output.
+ * @param[in]  aValues   The tuple to encode.
  *
- * @retval  OTBR_ERROR_NONE   Successfully encoded the message.
- * @retval  OTBR_ERROR_DBUS   Failed to encode the message.
+ * @retval OTBR_ERROR_NONE  Successfully encoded the message.
+ * @retval OTBR_ERROR_DBUS  Failed to encode the message.
  */
 template <typename... FieldTypes>
 otbrError TupleToDBusMessage(DBusMessage &aMessage, const std::tuple<FieldTypes...> &aValues)
@@ -576,11 +576,11 @@ otbrError TupleToDBusMessage(DBusMessage &aMessage, const std::tuple<FieldTypes.
 /**
  * This function converts a d-bus message to a tuple of C++ types.
  *
- * @param[in]   aMessage  The dbus message to decode.
- * @param[out]  aValues   The tuple output.
+ * @param[in]  aMessage  The dbus message to decode.
+ * @param[out] aValues   The tuple output.
  *
- * @retval  OTBR_ERROR_NONE   Successfully decoded the message.
- * @retval  OTBR_ERROR_DBUS   Failed to decode the message.
+ * @retval OTBR_ERROR_NONE  Successfully decoded the message.
+ * @retval OTBR_ERROR_DBUS  Failed to decode the message.
  */
 template <typename... FieldTypes>
 otbrError DBusMessageToTuple(UniqueDBusMessage const &aMessage, std::tuple<FieldTypes...> &aValues)

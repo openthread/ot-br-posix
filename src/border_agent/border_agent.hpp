@@ -82,7 +82,7 @@ public:
     /**
      * The constructor to initialize the Thread border agent.
      *
-     * @param[in]  aNcp  A reference to the NCP controller.
+     * @param[in] aNcp  A reference to the NCP controller.
      *
      */
     BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp);

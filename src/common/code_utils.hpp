@@ -44,10 +44,10 @@
 /**
  *  This aligns the pointer to @p aAlignType.
  *
- *  @param[in]  aMem        A pointer to arbitrary memory.
- *  @param[in]  aAlignType  The type to align with and convert the pointer to this type.
+ *  @param[in] aMem        A pointer to arbitrary memory.
+ *  @param[in] aAlignType  The type to align with and convert the pointer to this type.
  *
- *  @returns A @aAlignType pointer to aligned memory.
+ *  @returns A pointer to aligned memory.
  *
  */
 #define OTBR_ALIGNED(aMem, aAlignType) \
@@ -65,7 +65,7 @@
  *  commonly be successful, and branches to the local label 'exit' if
  *  the status is unsuccessful.
  *
- *  @param[in]  aStatus     A scalar status to be evaluated against zero (0).
+ *  @param[in] aStatus  A scalar status to be evaluated against zero (0).
  *
  */
 #define SuccessOrExit(aStatus) \
@@ -81,8 +81,8 @@
  * This macro verifies a given error status to be successful (compared against value zero (0)), otherwise, it emits a
  * given error messages and exits the program.
  *
- * @param[in]  aStatus     A scalar error status to be evaluated against zero (0).
- * @param[in]  aMessage    A message (text string) to print on failure.
+ * @param[in] aStatus   A scalar error status to be evaluated against zero (0).
+ * @param[in] aMessage  A message (text string) to print on failure.
  *
  */
 #define SuccessOrDie(aStatus, aMessage)                                          \
@@ -100,9 +100,9 @@
  *  commonly be true, and both executes @a ... and branches to the
  *  local label 'exit' if the condition is false.
  *
- *  @param[in]  aCondition  A Boolean expression to be evaluated.
- *  @param[in]  ...         An expression or block to execute when the
- *                          assertion fails.
+ *  @param[in] aCondition  A Boolean expression to be evaluated.
+ *  @param[in] ...         An expression or block to execute when the
+ *                         assertion fails.
  *
  */
 #define VerifyOrExit(aCondition, ...) \
@@ -119,8 +119,8 @@
  * This macro checks for the specified condition, which is expected to commonly be true,
  * and both prints the message and terminates the program if the condition is false.
  *
- * @param[in]   aCondition  The condition to verify
- * @param[in]   aMessage    A message (text string) to print on failure.
+ * @param[in] aCondition  The condition to verify
+ * @param[in] aMessage    A message (text string) to print on failure.
  *
  */
 #define VerifyOrDie(aCondition, aMessage)                                        \
@@ -141,8 +141,8 @@
  *        failure for the overall exit status of the enclosing
  *        function body.
  *
- *  @param[in]  ...         An optional expression or block to execute
- *                          when the assertion fails.
+ *  @param[in] ...  An optional expression or block to execute
+ *                  when the assertion fails.
  *
  */
 #define ExitNow(...) \

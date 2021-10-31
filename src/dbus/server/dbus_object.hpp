@@ -70,8 +70,8 @@ public:
     /**
      * The constructor of a d-bus object.
      *
-     * @param[in]   aConnection   The dbus-connection the object bounds to.
-     * @param[in]   aObjectPath   The path of the object.
+     * @param[in] aConnection  The dbus-connection the object bounds to.
+     * @param[in] aObjectPath  The path of the object.
      *
      */
     DBusObject(DBusConnection *aConnection, const std::string &aObjectPath);
@@ -81,8 +81,8 @@ public:
      *
      * This method will register the object to the d-bus library.
      *
-     * @retval  OTBR_ERROR_NONE   Successfully registered the object.
-     * @retval  OTBR_ERROR_DBUS   Failed to ragister an object.
+     * @retval OTBR_ERROR_NONE  Successfully registered the object.
+     * @retval OTBR_ERROR_DBUS  Failed to ragister an object.
      *
      */
     virtual otbrError Init(void);
@@ -90,9 +90,9 @@ public:
     /**
      * This method registers the method handler.
      *
-     * @param[in]   aInterfaceName    The interface name.
-     * @param[in]   aMethodName       The method name.
-     * @param[in]   aHandler          The method handler.
+     * @param[in] aInterfaceName  The interface name.
+     * @param[in] aMethodName     The method name.
+     * @param[in] aHandler        The method handler.
      *
      */
     void RegisterMethod(const std::string &      aInterfaceName,
@@ -102,9 +102,9 @@ public:
     /**
      * This method registers the get handler for a property.
      *
-     * @param[in]   aInterfaceName    The interface name.
-     * @param[in]   aMethodName       The method name.
-     * @param[in]   aHandler          The method handler.
+     * @param[in] aInterfaceName  The interface name.
+     * @param[in] aMethodName     The method name.
+     * @param[in] aHandler        The method handler.
      *
      */
     void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
@@ -114,9 +114,9 @@ public:
     /**
      * This method registers the set handler for a property.
      *
-     * @param[in]   aInterfaceName    The interface name.
-     * @param[in]   aMethodName       The method name.
-     * @param[in]   aHandler          The method handler.
+     * @param[in] aInterfaceName  The interface name.
+     * @param[in] aMethodName     The method name.
+     * @param[in] aHandler        The method handler.
      *
      */
     void RegisterSetPropertyHandler(const std::string &        aInterfaceName,
@@ -126,9 +126,9 @@ public:
     /**
      * This method sends a signal.
      *
-     * @param[in]   aInterfaceName    The interface name.
-     * @param[in]   aSignalName       The signal name.
-     * @param[in]   aArgs             The tuple to be encoded into the signal.
+     * @param[in] aInterfaceName  The interface name.
+     * @param[in] aSignalName     The signal name.
+     * @param[in] aArgs           The tuple to be encoded into the signal.
      *
      * @retval OTBR_ERROR_NONE  Signal successfully sent.
      * @retval OTBR_ERROR_DBUS  Failed to send the signal.
@@ -155,9 +155,9 @@ public:
     /**
      * This method sends a property changed signal.
      *
-     * @param[in]   aInterfaceName    The interface name.
-     * @param[in]   aPropertyName     The property name.
-     * @param[in]   aValue            New value of the property.
+     * @param[in] aInterfaceName  The interface name.
+     * @param[in] aPropertyName   The property name.
+     * @param[in] aValue          New value of the property.
      *
      * @retval OTBR_ERROR_NONE  Signal successfully sent.
      * @retval OTBR_ERROR_DBUS  Failed to send the signal.

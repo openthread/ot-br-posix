@@ -45,7 +45,7 @@ public:
     /**
      * The constructor of vendor server.
      *
-     * @param[in]  aNcp  A reference to the NCP controller.
+     * @param[in] aNcp  A reference to the NCP controller.
      *
      */
     VendorServer(otbr::Ncp::ControllerOpenThread &aNcp);

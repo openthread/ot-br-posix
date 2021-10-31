@@ -56,7 +56,7 @@ public:
     /**
      * The constructor of dbus agent.
      *
-     * @param[in]  aNcp  A reference to the NCP controller.
+     * @param[in] aNcp  A reference to the NCP controller.
      *
      */
     DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp);
