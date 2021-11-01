@@ -71,159 +71,28 @@ public:
 
     ~PublisherMDnsSd(void) override;
 
-    /**
-     * This method publishes or updates a service.
-     *
-     * @param[in]   aHostName           The name of the host which this service resides on. If NULL is provided,
-     *                                  this service resides on local host and it is the implementation to provide
-     *                                  specific host name. Otherwise, the caller MUST publish the host with method
-     *                                  PublishHost.
-     * @param[in]   aPort               The port number of this service.
-     * @param[in]   aName               The name of this service.
-     * @param[in]   aType               The type of this service.
-     * @param[in]   aSubTypeList        A list of service subtypes.
-     * @param[in]   aTxtList            A list of TXT name/value pairs.
-     *
-     * @retval  OTBR_ERROR_NONE     Successfully published or updated the service.
-     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
-     *
-     */
+    // Implementation of Mdns::Publisher.
+
     otbrError PublishService(const char *       aHostName,
                              uint16_t           aPort,
                              const char *       aName,
                              const char *       aType,
                              const SubTypeList &aSubTypeList,
                              const TxtList &    aTxtList) override;
-
-    /**
-     * This method un-publishes a service.
-     *
-     * @param[in]   aName               The name of this service.
-     * @param[in]   aType               The type of this service.
-     *
-     * @retval  OTBR_ERROR_NONE     Successfully un-published the service.
-     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the service.
-     *
-     */
     otbrError UnpublishService(const char *aName, const char *aType) override;
-
-    /**
-     * This method publishes or updates a host.
-     *
-     * Publishing a host is advertising an AAAA RR for the host name. This method should be called
-     * before a service with non-null host name is published.
-     *
-     * @param[in]  aName           The name of the host.
-     * @param[in]  aAddress        The address of the host.
-     * @param[in]  aAddressLength  The length of @p aAddress.
-     *
-     * @retval  OTBR_ERROR_NONE     Successfully published or updated the host.
-     * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the host.
-     *
-     */
     otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) override;
-
-    /**
-     * This method un-publishes a host.
-     *
-     * @param[in]  aName  A host name.
-     *
-     * @retval  OTBR_ERROR_NONE     Successfully un-published the host.
-     * @retval  OTBR_ERROR_ERRNO    Failed to un-publish the host.
-     *
-     * @note  All services reside on this host should be un-published by UnpublishService.
-     *
-     */
     otbrError UnpublishHost(const char *aName) override;
-
-    /**
-     * This method subscribes a given service or service instance. If @p aInstanceName is not empty, this method
-     * subscribes the service instance. Otherwise, this method subscribes the service.
-     *
-     * mDNS implementations should use the `DiscoveredServiceInstanceCallback` function to notify discovered service
-     * instances.
-     *
-     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
-     * instance.
-     *
-     * @param[in]  aType          The service type.
-     * @param[in]  aInstanceName  The service instance to subscribe, or empty to subscribe the service.
-     *
-     */
-    void SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
-
-    /**
-     * This method unsubscribes a given service or service instance. If @p aInstanceName is not empty, this method
-     * unsubscribes the service instance. Otherwise, this method unsubscribes the service.
-     *
-     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
-     *
-     * @param[in]  aType          The service type.
-     * @param[in]  aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
-     *
-     */
-    void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
-
-    /**
-     * This method subscribes a given host.
-     *
-     * mDNS implementations should use the `DiscoveredHostCallback` function to notify discovered hosts.
-     *
-     * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
-     *
-     * @param[in]  aHostName    The host name (without domain).
-     *
-     */
-    void SubscribeHost(const std::string &aHostName) override;
-
-    /**
-     * This method unsubscribes a given host.
-     *
-     * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
-     *
-     * @param[in]  aHostName    The host name (without domain).
-     *
-     */
-    void UnsubscribeHost(const std::string &aHostName) override;
-
-    /**
-     * This method starts the mDNS service.
-     *
-     * @retval OTBR_ERROR_NONE  Successfully started mDNS service;
-     * @retval OTBR_ERROR_MDNS  Failed to start mDNS service.
-     *
-     */
+    void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+    void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+    void      SubscribeHost(const std::string &aHostName) override;
+    void      UnsubscribeHost(const std::string &aHostName) override;
     otbrError Start(void) override;
+    bool      IsStarted(void) const override;
+    void      Stop(void) override;
 
-    /**
-     * This method checks if publisher has been started.
-     *
-     * @retval true     Already started.
-     * @retval false    Not started.
-     *
-     */
-    bool IsStarted(void) const override;
+    // Implementation of MainloopProcessor.
 
-    /**
-     * This method stops the mDNS service.
-     *
-     */
-    void Stop(void) override;
-
-    /**
-     * This method updates the mainloop context.
-     *
-     * @param[inout]  aMainloop  A reference to the mainloop to be updated.
-     *
-     */
     void Update(MainloopContext &aMainloop) override;
-
-    /**
-     * This method processes mainloop events.
-     *
-     * @param[in]  aMainloop  A reference to the mainloop context.
-     *
-     */
     void Process(const MainloopContext &aMainloop) override;
 
 private:
