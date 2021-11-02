@@ -110,6 +110,32 @@ exit:
     return ret == 0;
 }
 
+void OpenThreadClient::DiscardRead(void)
+{
+    fd_set  readFdSet;
+    timeval timeout = {0, 0};
+    ssize_t count;
+    int     ret;
+
+    for (;;)
+    {
+        FD_ZERO(&readFdSet);
+        FD_SET(mSocket, &readFdSet);
+
+        ret = select(mSocket + 1, &readFdSet, nullptr, nullptr, &timeout);
+        if (ret <= 0)
+        {
+            break;
+        }
+
+        count = read(mSocket, mBuffer, sizeof(mBuffer));
+        if (count <= 0)
+        {
+            break;
+        }
+    }
+}
+
 char *OpenThreadClient::Execute(const char *aFormat, ...)
 {
     va_list args;
@@ -117,6 +143,8 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     char *  rval = nullptr;
     ssize_t count;
     size_t  rxLength = 0;
+
+    DiscardRead();
 
     va_start(args, aFormat);
     ret = vsnprintf(&mBuffer[1], sizeof(mBuffer) - 1, aFormat, args);
