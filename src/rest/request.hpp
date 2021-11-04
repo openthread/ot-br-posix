@@ -59,8 +59,8 @@ public:
     /**
      * This method sets the Url field of a request.
      *
-     * @param[in]  aString    A pointer points to url string.
-     * @param[in]  aLength    Length of the url string
+     * @param[in] aString  A pointer points to url string.
+     * @param[in] aLength  Length of the url string
      *
      */
     void SetUrl(const char *aString, size_t aLength);
@@ -68,8 +68,8 @@ public:
     /**
      * This method sets the body field of a request.
      *
-     * @param[in]  aString    A pointer points to body string.
-     * @param[in]  aLength    Length of the body string
+     * @param[in] aString  A pointer points to body string.
+     * @param[in] aLength  Length of the body string
      *
      */
     void SetBody(const char *aString, size_t aLength);
@@ -77,7 +77,7 @@ public:
     /**
      * This method sets the content-length field of a request.
      *
-     * @param[in]  aContentLength    An unsigned integer representing content-length.
+     * @param[in] aContentLength  An unsigned integer representing content-length.
      *
      */
     void SetContentLength(size_t aContentLength);
@@ -85,7 +85,7 @@ public:
     /**
      * This method sets the method of the parsed request.
      *
-     * @param[in]  aMethod    An integer representing request method.
+     * @param[in] aMethod  An integer representing request method.
      *
      */
     void SetMethod(int32_t aMethod);

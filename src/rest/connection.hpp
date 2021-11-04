@@ -56,10 +56,12 @@ public:
     /**
      * The constructor is to initialize a socket connection instance.
      *
-     * @param[in]   aStartTime  The reference start time of a conneciton which is set when created for the first time
-     * and maybe reset when transfer to wait callback or wait write state.
-     * @param[in]   aResource   A pointer to the resource handler.
-     * @param[in]   aFd         The file descriptor for the conneciton.
+     * @param[in] aStartTime  The reference start time of a connection which
+     *                        is set when created for the first time and maybe
+     *                        reset when transfer to wait callback or wait write
+     *                        state.
+     * @param[in] aResource   A pointer to the resource handler.
+     * @param[in] aFd         The file descriptor for the connection.
      *
      */
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
@@ -83,8 +85,8 @@ public:
     /**
      * This method indicates whether this connection no longer need to be processed.
      *
-     * @retval  true     This connection could be released in next loop.
-     * @retval  false    This connection still needs to be processed in next loop.
+     * @retval TRUE   This connection could be released in next loop.
+     * @retval FALSE  This connection still needs to be processed in next loop.
      *
      */
     bool IsComplete(void) const;

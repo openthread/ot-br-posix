@@ -60,7 +60,7 @@ public:
      *
      * Will use the default interfacename
      *
-     * @param[in]   aConnection     The dbus connection.
+     * @param[in] aConnection  The dbus connection.
      *
      */
     ThreadApiDBus(DBusConnection *aConnection);
@@ -68,8 +68,8 @@ public:
     /**
      * The constructor of a d-bus object.
      *
-     * @param[in]   aConnection     The dbus connection.
-     * @param[in]   aInterfaceName  The network interface name.
+     * @param[in] aConnection     The dbus connection.
+     * @param[in] aInterfaceName  The network interface name.
      *
      */
     ThreadApiDBus(DBusConnection *aConnection, const std::string &aInterfaceName);
@@ -77,7 +77,7 @@ public:
     /**
      * This method adds a callback for device role change.
      *
-     * @param[in]   aHandler  The device role handler.
+     * @param[in] aHandler  The device role handler.
      *
      */
     void AddDeviceRoleHandler(const DeviceRoleHandler &aHandler);
@@ -85,12 +85,12 @@ public:
     /**
      * This method permits unsecure join on port.
      *
-     * @param[in]   aPort     The port number.
-     * @param[in]   aSeconds  The timeout to close the port, 0 for never close.
+     * @param[in] aPort     The port number.
+     * @param[in] aSeconds  The timeout to close the port, 0 for never close.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds);
@@ -98,28 +98,28 @@ public:
     /**
      * This method performs a Thread network scan.
      *
-     * @param[in]   aHandler  The scan result handler.
+     * @param[in] aHandler  The scan result handler.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError Scan(const ScanHandler &aHandler);
 
     /**
      * This method attaches the device to the Thread network.
-     * @param[in]   aNetworkName    The network name.
-     * @param[in]   aPanId          The pan id, UINT16_MAX for random.
-     * @param[in]   aExtPanId       The extended pan id, UINT64_MAX for random.
-     * @param[in]   aNetworkKey     The network key, empty for random.
-     * @param[in]   aPSKc           The pre-shared commissioner key, empty for random.
-     * @param[in]   aChannelMask    A bitmask for valid channels, will random select one.
-     * @param[in]   aHandler        The attach result handler.
+     * @param[in] aNetworkName  The network name.
+     * @param[in] aPanId        The pan id, UINT16_MAX for random.
+     * @param[in] aExtPanId     The extended pan id, UINT64_MAX for random.
+     * @param[in] aNetworkKey   The network key, empty for random.
+     * @param[in] aPSKc         The pre-shared commissioner key, empty for random.
+     * @param[in] aChannelMask  A bitmask for valid channels, will random select one.
+     * @param[in] aHandler      The attach result handler.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError Attach(const std::string &         aNetworkName,
@@ -136,11 +136,11 @@ public:
      * The network parameters will be set with the active dataset under this
      * circumstance.
      *
-     * @param[in]   aHandler        The attach result handler.
+     * @param[in] aHandler  The attach result handler.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError Attach(const OtResultHandler &aHandler);
@@ -150,8 +150,8 @@ public:
      *
      * If the device has already attached to a network, send a request to migrate the existing network.
      *
-     * @param[in]  aDataset  The Operational Dataset that contains parameter values of the Thread network to attach
-     *                       to. It must have a valid Delay Timer and Pending Timestamp.
+     * @param[in] aDataset  The Operational Dataset that contains parameter values of the Thread network to attach
+     *                      to. It must have a valid Delay Timer and Pending Timestamp.
      *
      * @retval ERROR_NONE              Successfully requested the Thread network migration.
      * @retval ERROR_DBUS              D-Bus encode/decode error.
@@ -167,11 +167,11 @@ public:
     /**
      * This method performs a factory reset.
      *
-     * @param[in]   aHandler        The reset result handler.
+     * @param[in] aHandler  The reset result handler.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError FactoryReset(const OtResultHandler &aHandler);
@@ -179,9 +179,9 @@ public:
     /**
      * This method performs a soft reset.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError Reset(void);
@@ -191,17 +191,17 @@ public:
      *
      * @note The joiner start and the attach proccesses are exclusive
      *
-     * @param[in]   aPskd             The pre-shared key for device.
-     * @param[in]   aProvisioningUrl  The provision url.
-     * @param[in]   aVendorName       The vendor name.
-     * @param[in]   aVendorModel      The vendor model.
-     * @param[in]   aVendorSwVersion  The vendor software version.
-     * @param[in]   aVendorData       The vendor custom data.
-     * @param[in]   aHandler          The join result handler.
+     * @param[in] aPskd             The pre-shared key for device.
+     * @param[in] aProvisioningUrl  The provision url.
+     * @param[in] aVendorName       The vendor name.
+     * @param[in] aVendorModel      The vendor model.
+     * @param[in] aVendorSwVersion  The vendor software version.
+     * @param[in] aVendorData       The vendor custom data.
+     * @param[in] aHandler          The join result handler.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError JoinerStart(const std::string &    aPskd,
@@ -215,9 +215,9 @@ public:
     /**
      * This method stops the joiner process
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError JoinerStop(void);
@@ -225,11 +225,11 @@ public:
     /**
      * This method adds a on-mesh address prefix.
      *
-     * @param[in]   aPrefix     The address prefix.
+     * @param[in] aPrefix  The address prefix.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError AddOnMeshPrefix(const OnMeshPrefix &aPrefix);
@@ -237,11 +237,11 @@ public:
     /**
      * This method removes a on-mesh address prefix.
      *
-     * @param[in]   aPrefix     The address prefix.
+     * @param[in] aPrefix  The address prefix.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError RemoveOnMeshPrefix(const Ip6Prefix &aPrefix);
@@ -249,11 +249,11 @@ public:
     /**
      * This method adds an external route.
      *
-     * @param[in]   aExternalroute  The external route config
+     * @param[in] aExternalroute  The external route config
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError AddExternalRoute(const ExternalRoute &aExternalRoute);
@@ -261,11 +261,11 @@ public:
     /**
      * This method removes an external route.
      *
-     * @param[in]   aPrefix         The route prefix.
+     * @param[in] aPrefix  The route prefix.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError RemoveExternalRoute(const Ip6Prefix &aPrefix);
@@ -273,11 +273,11 @@ public:
     /**
      * This method sets the mesh-local prefix.
      *
-     * @param[in]   aPrefix     The address prefix.
+     * @param[in] aPrefix The address prefix.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
@@ -285,11 +285,11 @@ public:
     /**
      * This method sets the legacy prefix of ConnectIP.
      *
-     * @param[in]   aPrefix     The address prefix.
+     * @param[in] aPrefix  The address prefix.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
@@ -297,11 +297,11 @@ public:
     /**
      * This method sets the active operational dataset.
      *
-     * @param[out]  aDataset    The active operational dataset
+     * @param[out] aDataset  The active operational dataset
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset);
@@ -309,11 +309,11 @@ public:
     /**
      * This method sets the link operating mode.
      *
-     * @param[in]   aConfig   The operating mode config.
+     * @param[in] aConfig  The operating mode config.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError SetLinkMode(const LinkModeConfig &aConfig);
@@ -321,11 +321,11 @@ public:
     /**
      * This method sets the radio region.
      *
-     * @param[in]   aRadioRegion  The radio region.
+     * @param[in] aRadioRegion  The radio region.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError SetRadioRegion(const std::string &aRadioRegion);
@@ -333,11 +333,11 @@ public:
     /**
      * This method gets the link operating mode.
      *
-     * @param[out]  aConfig   The operating mode config.
+     * @param[out] aConfig  The operating mode config.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetLinkMode(LinkModeConfig &aConfig);
@@ -345,11 +345,11 @@ public:
     /**
      * This method gets the current device role.
      *
-     * @param[out]  aDeviceRole   The device role
+     * @param[out] aDeviceRole  The device role
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetDeviceRole(DeviceRole &aDeviceRole);
@@ -357,11 +357,11 @@ public:
     /**
      * This method gets the network name.
      *
-     * @param[out]  aName   The network name.
+     * @param[out] aName  The network name.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetNetworkName(std::string &aName);
@@ -369,11 +369,11 @@ public:
     /**
      * This method gets the network pan id.
      *
-     * @param[out]  aPanId  The pan id.
+     * @param[out] aPanId  The pan id.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetPanId(uint16_t &aPanId);
@@ -381,11 +381,11 @@ public:
     /**
      * This method gets the extended pan id.
      *
-     * @param[out]  aExtPanId   The extended pan id.
+     * @param[out] aExtPanId  The extended pan id.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetExtPanId(uint64_t &aExtPanId);
@@ -393,11 +393,11 @@ public:
     /**
      * This method gets the extended pan id.
      *
-     * @param[out]  aChannel   The extended pan id.
+     * @param[out] aChannel  The extended pan id.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetChannel(uint16_t &aChannel);
@@ -405,11 +405,11 @@ public:
     /**
      * This method gets the network network key.
      *
-     * @param[out]  aNetworkKey   The network network key.
+     * @param[out] aNetworkKey  The network network key.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetNetworkKey(std::vector<uint8_t> &aNetworkKey);
@@ -417,11 +417,11 @@ public:
     /**
      * This method gets the Clear Channel Assessment failure rate.
      *
-     * @param[out]  aFailureRate   The failure rate.
+     * @param[out] aFailureRate  The failure rate.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetCcaFailureRate(uint16_t &aFailureRate);
@@ -429,11 +429,11 @@ public:
     /**
      * This method gets the mac level statistics counters.
      *
-     * @param[out]  aCounters    The statistic counters.
+     * @param[out] aCounters  The statistic counters.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetLinkCounters(MacCounters &aCounters); // For telemetry
@@ -441,11 +441,11 @@ public:
     /**
      * This method gets the ip level statistics counters.
      *
-     * @param[out]  aCounters    The statistic counters.
+     * @param[out] aCounters  The statistic counters.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetIp6Counters(IpCounters &aCounters); // For telemetry
@@ -453,11 +453,11 @@ public:
     /**
      * This method gets the supported channel mask.
      *
-     * @param[out]  aChannelMask   The channel mask.
+     * @param[out] aChannelMask  The channel mask.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetSupportedChannelMask(uint32_t &aChannelMask);
@@ -465,11 +465,11 @@ public:
     /**
      * This method gets the Thread routing locator
      *
-     * @param[out]  aRloc16   The routing locator
+     * @param[out] aRloc16  The routing locator
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetRloc16(uint16_t &aRloc16);
@@ -477,11 +477,11 @@ public:
     /**
      * This method gets 802.15.4 extended address
      *
-     * @param[out]  aExtendedAddress    The extended address
+     * @param[out] aExtendedAddress  The extended address
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetExtendedAddress(uint64_t &aExtendedAddress);
@@ -489,12 +489,12 @@ public:
     /**
      * This method gets the node's router id.
      *
-     * @param[out]  aRouterId     The router id.
+     * @param[out] aRouterId  The router id.
      *
-     * @retval ERROR_NONE            Successfully performed the dbus function call.
-     * @retval ERROR_DBUS            dbus encode/decode error
-     * @retval OT_ERROR_INVALID_STATE     The node is not a router.
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE              Successfully performed the dbus function call.
+     * @retval ERROR_DBUS              dbus encode/decode error.
+     * @retval OT_ERROR_INVALID_STATE  The node is not a router.
+     * @retval ...                     OpenThread defined error value otherwise.
      *
      */
     ClientError GetRouterId(uint8_t &aRouterId);
@@ -502,11 +502,11 @@ public:
     /**
      * This method gets the network's leader data.
      *
-     * @param[out]  aLeaderData   The leader data.
+     * @param[out] aLeaderData  The leader data.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetLeaderData(LeaderData &aLeaderData);
@@ -514,11 +514,11 @@ public:
     /**
      * This method gets the network data.
      *
-     * @param[out]  aNetworkData   The network data.
+     * @param[out] aNetworkData  The network data.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetNetworkData(std::vector<uint8_t> &aNetworkData);
@@ -526,11 +526,11 @@ public:
     /**
      * This method gets the stable network data.
      *
-     * @param[out]  aNetworkData   The stable network data.
+     * @param[out] aNetworkData  The stable network data.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetStableNetworkData(std::vector<uint8_t> &aNetworkData);
@@ -538,11 +538,11 @@ public:
     /**
      * This method gets the node's local leader weight.
      *
-     * @param[out]  aWeight     The local leader weight.
+     * @param[out] aWeight  The local leader weight.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetLocalLeaderWeight(uint8_t &aWeight);
@@ -550,11 +550,11 @@ public:
     /**
      * This method gets the channel monitor sample count.
      *
-     * @param[out]  aSampleCount     The channel monitor sample count.
+     * @param[out] aSampleCount  The channel monitor sample count.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetChannelMonitorSampleCount(uint32_t &aSampleCount);
@@ -562,11 +562,11 @@ public:
     /**
      * This method gets the channel qualities
      *
-     * @param[out]  aChannelQualities     The channel qualities.
+     * @param[out] aChannelQualities  The channel qualities.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetChannelMonitorAllChannelQualities(std::vector<ChannelQuality> &aChannelQualities);
@@ -574,11 +574,11 @@ public:
     /**
      * This method gets the child table.
      *
-     * @param[out]  aChildTable     The child table.
+     * @param[out] aChildTable  The child table.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetChildTable(std::vector<ChildInfo> &aChildTable);
@@ -586,11 +586,11 @@ public:
     /**
      * This method gets the neighbor table.
      *
-     * @param[out]  aNeighborTable     The neighbor table.
+     * @param[out] aNeighborTable  The neighbor table.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetNeighborTable(std::vector<NeighborInfo> &aNeighborTable);
@@ -598,11 +598,11 @@ public:
     /**
      * This method gets the network's parition id.
      *
-     * @param[out]  aPartitionId      The partition id.
+     * @param[out] aPartitionId  The partition id.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetPartitionId(uint32_t &aPartitionId);
@@ -610,11 +610,11 @@ public:
     /**
      * This method gets the rssi of the latest packet.
      *
-     * @param[out]  aRssi      The rssi of the latest packet.
+     * @param[out] aRssi  The rssi of the latest packet.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetInstantRssi(int8_t &aRssi);
@@ -622,11 +622,11 @@ public:
     /**
      * This method gets the radio transmit power.
      *
-     * @param[out]  aTxPower    The radio transmit power.
+     * @param[out] aTxPower  The radio transmit power.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetRadioTxPower(int8_t &aTxPower);
@@ -634,11 +634,11 @@ public:
     /**
      * This method gets the external route table
      *
-     * @param[out]  aExternalRoutes   The external route table
+     * @param[out] aExternalRoutes  The external route table
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
@@ -646,11 +646,11 @@ public:
     /**
      * This method gets the active operational dataset
      *
-     * @param[out]  aDataset    The active operational dataset
+     * @param[out] aDataset  The active operational dataset
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset);
@@ -658,11 +658,11 @@ public:
     /**
      * This method gets the radio region.
      *
-     * @param[out]  aRadioRegion  The radio region.
+     * @param[out] aRadioRegion  The radio region.
      *
-     * @retval ERROR_NONE successfully performed the dbus function call
-     * @retval ERROR_DBUS dbus encode/decode error
-     * @retval ...        OpenThread defined error value otherwise
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
      *
      */
     ClientError GetRadioRegion(std::string &aRadioRegion);

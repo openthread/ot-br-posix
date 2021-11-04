@@ -63,9 +63,9 @@ public:
     /**
      * This constructor of dbus thread object.
      *
-     * @param[in]       aConnection     The dbus connection.
-     * @param[in]       aInterfaceName  The dbus interface name.
-     * @param[in]       aNcp            The ncp controller
+     * @param[in] aConnection     The dbus connection.
+     * @param[in] aInterfaceName  The dbus interface name.
+     * @param[in] aNcp            The ncp controller
      *
      */
     DBusThreadObject(DBusConnection *                 aConnection,

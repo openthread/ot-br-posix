@@ -62,9 +62,9 @@ public:
     /**
      * This constructor initializes this object.
      *
-     * @param[in]   aInterfaceName          A string of the NCP interface name.
-     * @param[in]   aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
-     * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
+     * @param[in] aInterfaceName          A string of the NCP interface name.
+     * @param[in] aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
+     * @param[in] aBackboneInterfaceName  The Backbone network interface name.
      *
      */
     ControllerOpenThread(const char *                     aInterfaceName,
@@ -74,7 +74,7 @@ public:
     /**
      * This method initalize the NCP controller.
      *
-     * @retval  OTBR_ERROR_NONE     Successfully initialized NCP controller.
+     * @retval OTBR_ERROR_NONE  Successfully initialized NCP controller.
      *
      */
     otbrError Init(void);
@@ -82,7 +82,7 @@ public:
     /**
      * This method get mInstance pointer.
      *
-     * @retval  the pointer of mInstance.
+     * @retval The pointer of mInstance.
      *
      */
     otInstance *GetInstance(void) { return mInstance; }
@@ -90,7 +90,7 @@ public:
     /**
      * This method gets the thread functionality helper.
      *
-     * @retval  the pointer to the helper object.
+     * @retval The pointer to the helper object.
      *
      */
     otbr::agent::ThreadHelper *GetThreadHelper(void) { return mThreadHelper.get(); }
@@ -101,8 +101,8 @@ public:
     /**
      * This method posts a task to the timer
      *
-     * @param[in]   aDelay  The delay in milliseconds before executing the task.
-     * @param[in]   aTask   The task function.
+     * @param[in] aDelay  The delay in milliseconds before executing the task.
+     * @param[in] aTask   The task function.
      *
      */
     void PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask);
@@ -110,7 +110,7 @@ public:
     /**
      * This method registers a reset handler.
      *
-     * @param[in]   aHandler  The handler function.
+     * @param[in] aHandler  The handler function.
      *
      */
     void RegisterResetHandler(std::function<void(void)> aHandler);
@@ -118,7 +118,7 @@ public:
     /**
      * This method adds a event listener for Thread state changes.
      *
-     * @param[in]  aCallback  The callback to receive Thread state changed events.
+     * @param[in] aCallback  The callback to receive Thread state changed events.
      *
      */
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
@@ -132,7 +132,7 @@ public:
     /**
      * This method returns the Thread protocol version as a string.
      *
-     * @returns  A pointer to the Thread version string.
+     * @returns A pointer to the Thread version string.
      *
      */
     static const char *GetThreadVersion(void);
@@ -140,7 +140,7 @@ public:
     /**
      * This method returns the Thread network interface name.
      *
-     * @returns  A pointer to the Thread network interface name string.
+     * @returns A pointer to the Thread network interface name string.
      *
      */
     const char *GetInterfaceName(void) const { return mConfig.mInterfaceName; }

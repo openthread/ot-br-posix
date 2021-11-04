@@ -46,7 +46,7 @@ public:
     /**
      * This method gets the single `InstanceParams` instance.
      *
-     * @returns  The single `InstanceParams` instance.
+     * @returns The single `InstanceParams` instance.
      *
      */
     static InstanceParams &Get(void);

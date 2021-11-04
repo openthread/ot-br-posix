@@ -56,8 +56,8 @@ public:
     /**
      * This constructor initializes the Advertising Proxy object.
      *
-     * @param[in]  aNcp        A reference to the NCP controller.
-     * @param[in]  aPublisher  A reference to the mDNS publisher.
+     * @param[in] aNcp        A reference to the NCP controller.
+     * @param[in] aPublisher  A reference to the mDNS publisher.
      *
      */
     explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
@@ -65,8 +65,8 @@ public:
     /**
      * This method starts the Advertising Proxy.
      *
-     * @retval  OTBR_ERROR_NONE  Successfully started the Advertising Proxy.
-     * @retval  ...              Failed to start the Advertising Proxy.
+     * @retval OTBR_ERROR_NONE  Successfully started the Advertising Proxy.
+     * @retval ...              Failed to start the Advertising Proxy.
      *
      */
     otbrError Start(void);

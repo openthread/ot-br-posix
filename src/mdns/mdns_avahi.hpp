@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file includes definition for mDNS service based on avahi.
+ *   This file includes definition for mDNS publisher based on avahi.
  */
 
 #ifndef OTBR_AGENT_MDNS_AVAHI_HPP_
@@ -50,7 +50,7 @@
  * @addtogroup border-router-mdns
  *
  * @brief
- *   This module includes definition for avahi-based mDNS service.
+ *   This module includes definition for avahi-based mDNS publisher.
  *
  * @{
  */
@@ -71,11 +71,11 @@ struct AvahiWatch
     /**
      * The constructor to initialize an Avahi watch.
      *
-     * @param[in]   aFd         The file descriptor to watch.
-     * @param[in]   aEvents     The events to watch.
-     * @param[in]   aCallback   The function to be called when events happend on this file descriptor.
-     * @param[in]   aContext    A pointer to application-specific context.
-     * @param[in]   aPoller     The Poller this watcher belongs to.
+     * @param[in] aFd        The file descriptor to watch.
+     * @param[in] aEvents    The events to watch.
+     * @param[in] aCallback  The function to be called when events happend on this file descriptor.
+     * @param[in] aContext   A pointer to application-specific context.
+     * @param[in] aPoller    The Poller this watcher belongs to.
      *
      */
     AvahiWatch(int aFd, AvahiWatchEvent aEvents, AvahiWatchCallback aCallback, void *aContext, void *aPoller)
@@ -102,10 +102,10 @@ struct AvahiTimeout
     /**
      * The constructor to initialize an AvahiTimeout.
      *
-     * @param[in]   aTimeout    A pointer to the time after which the callback should be called.
-     * @param[in]   aCallback   The function to be called after timeout.
-     * @param[in]   aContext    A pointer to application-specific context.
-     * @param[in]   aPoller     The Poller this timeout belongs to.
+     * @param[in] aTimeout   A pointer to the time after which the callback should be called.
+     * @param[in] aCallback  The function to be called after timeout.
+     * @param[in] aContext   A pointer to application-specific context.
+     * @param[in] aPoller    The Poller this timeout belongs to.
      *
      */
     AvahiTimeout(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext, void *aPoller);
@@ -170,7 +170,7 @@ private:
 };
 
 /**
- * This class implements mDNS service with avahi.
+ * This class implements mDNS publisher with avahi.
  *
  */
 class PublisherAvahi : public Publisher

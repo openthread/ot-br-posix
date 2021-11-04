@@ -62,9 +62,9 @@ public:
     /**
      * This method computes the PSKc.
      *
-     * @param[in]  aExtPanId      a pointer to extended PAN ID.
-     * @param[in]  aNetworkName   a pointer to network name.
-     * @param[in]  aPassphrase    a pointer to passphrase.
+     * @param[in] aExtPanId     A pointer to extended PAN ID.
+     * @param[in] aNetworkName  A pointer to network name.
+     * @param[in] aPassphrase   A pointer to passphrase.
      *
      * @returns The pointer to PSKc value.
      *

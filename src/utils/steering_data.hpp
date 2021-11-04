@@ -57,7 +57,7 @@ public:
     /**
      * This method initializes the bloom filter.
      *
-     * @param[in]   aLength         Length of the bloom filter in bytes.
+     * @param[in] aLength  The length of the bloom filter in bytes.
      *
      */
     void Init(uint8_t aLength);
@@ -77,7 +77,7 @@ public:
     /**
      * This method sets bit @p aBit.
      *
-     * @param[in]  aBit  The bit offset.
+     * @param[in] aBit  The bit offset.
      *
      */
     void SetBit(uint8_t aBit) { mBloomFilter[mLength - 1 - (aBit / 8)] |= 1 << (aBit % 8); }
@@ -85,7 +85,7 @@ public:
     /**
      * This method computes the Bloom Filter.
      *
-     * @param[in]  aJoinerId  Extended address
+     * @param[in] aJoinerId  Extended address
      *
      */
     void ComputeBloomFilter(const uint8_t *aJoinerId);
@@ -93,8 +93,8 @@ public:
     /**
      * This method computes joiner id from EUI64.
      *
-     * @param[in]   aEui64      A pointer to EUI64.
-     * @param[out]  aJoinerId   A pointer to receive joiner id. This pointer can be the same as @p aEui64.
+     * @param[in]  aEui64     A pointer to EUI64.
+     * @param[out] aJoinerId  A pointer to receive joiner id. This pointer can be the same as @p aEui64.
      *
      */
     static void ComputeJoinerId(const uint8_t *aEui64, uint8_t *aJoinerId);

@@ -57,7 +57,7 @@ public:
     /**
      * The constructor to initialize the Thread border router agent instance.
      *
-     * @param[in]   aNcp  A reference to the NCP controller.
+     * @param[in] aNcp  A reference to the NCP controller.
      *
      */
     AgentInstance(Ncp::ControllerOpenThread &aNcp);
@@ -65,8 +65,8 @@ public:
     /**
      * This method initialize the agent.
      *
-     * @retval  OTBR_ERROR_NONE     Agent initialized successfully.
-     * @retval  OTBR_ERROR_ERRNO    Failed due to error indicated in errno.
+     * @retval OTBR_ERROR_NONE   Agent initialized successfully.
+     * @retval OTBR_ERROR_ERRNO  Failed due to error indicated in errno.
      *
      */
     otbrError Init(void);
@@ -74,7 +74,7 @@ public:
     /**
      * This method returns the NCP controller.
      *
-     * @retval  the pointer of the NCP controller.
+     * @returns The pointer of the NCP controller.
      *
      */
     otbr::Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }

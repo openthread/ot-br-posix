@@ -66,7 +66,7 @@ public:
     /**
      * This method set the response body.
      *
-     * @param[in] aBody A string to be set as response body.
+     * @param[in] aBody  A string to be set as response body.
      *
      */
     void SetBody(std::string &aBody);
@@ -81,7 +81,7 @@ public:
     /**
      * This method set the response code.
      *
-     * @param[in] aCode A string representing response code such as "404 not found".
+     * @param[in] aCode  A string representing response code such as "404 not found".
      *
      */
     void SetResponsCode(std::string &aCode);
@@ -96,7 +96,7 @@ public:
     /**
      * This method checks whether this response need to be processed by callback handler later.
      *
-     * @returns  A bool value indicates whether this response need to be processed by callback handler later.
+     * @returns A bool value indicates whether this response need to be processed by callback handler later.
      */
     bool NeedCallback(void);
 
@@ -109,7 +109,7 @@ public:
     /**
      * This method checks whether this response is ready to be written to buffer.
      *
-     * @returns  A bool value indicates whether this response is ready to be written to buffer..
+     * @returns A bool value indicates whether this response is ready to be written to buffer..
      */
     bool IsComplete();
 
@@ -117,21 +117,21 @@ public:
      * This method is used to set a timestamp. when a callback is needed and this field tells callback handler when to
      * collect all the data and form the response.
      *
-     * @param[in] aStartTime A timestamp indicates when the response start to wait for callback.
+     * @param[in] aStartTime  A timestamp indicates when the response start to wait for callback.
      */
     void SetStartTime(steady_clock::time_point aStartTime);
 
     /**
      * This method returns a timestamp of start time.
      *
-     * @returns  A timepoint object indicates start time.
+     * @returns A timepoint object indicates start time.
      */
     steady_clock::time_point GetStartTime() const;
 
     /**
      * This method serialize a response to a string that could be sent by socket later.
      *
-     * @returns  A string contains status line, headers and body of a response.
+     * @returns A string contains status line, headers and body of a response.
      */
     std::string Serialize(void) const;
 

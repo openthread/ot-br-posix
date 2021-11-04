@@ -28,7 +28,7 @@
 
 /**
  * @file
- *   This file implements mDNS service based on mDNSResponder.
+ *   This file implements mDNS publisher based on mDNSResponder.
  */
 
 #define OTBR_LOG_TAG "MDNS"
