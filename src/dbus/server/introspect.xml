@@ -175,6 +175,22 @@
       <arg name="prefix" type="(ayy)"/>
     </method>
 
+    <!-- UpdateMeshCopTxt: Update multiple entries in the TXT record.
+      @key: The key of the entry.
+      @value: The value of the entry.
+
+      The prefix structure is:
+      <literallayout>
+        struct {
+          string key
+          uint8[] value
+        }
+      </literallayout>
+    -->
+    <method name="UpdateMeshCopTxt">
+      <arg name="update" type="a(say)" direction="in"/>
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

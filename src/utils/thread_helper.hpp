@@ -63,9 +63,10 @@ namespace agent {
 class ThreadHelper
 {
 public:
-    using DeviceRoleHandler = std::function<void(otDeviceRole)>;
-    using ScanHandler       = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
-    using ResultHandler     = std::function<void(otError)>;
+    using DeviceRoleHandler       = std::function<void(otDeviceRole)>;
+    using ScanHandler             = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
+    using ResultHandler           = std::function<void(otError)>;
+    using UpdateMeshCopTxtHandler = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
 
     /**
      * The constructor of a Thread helper.
@@ -207,6 +208,32 @@ public:
      */
     void StateChangedCallback(otChangedFlags aFlags);
 
+#if OTBR_ENABLE_DBUS_SERVER
+    /**
+     * This method sets a callback for calls of UpdateMeshCopTxt D-Bus API.
+     *
+     * @param[in] aHandler  The handler on MeshCoP TXT changes.
+     *
+     */
+    void SetUpdateMeshCopTxtHandler(UpdateMeshCopTxtHandler aHandler)
+    {
+        mUpdateMeshCopTxtHandler = std::move(aHandler);
+    }
+
+    /**
+     * This method handles MeshCoP TXT updates done by UpdateMeshCopTxt D-Bus API.
+     *
+     * @param[in] aUpdate  The key-value pairs to be updated in the TXT record.
+     */
+    void OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>> aUpdate)
+    {
+        if (mUpdateMeshCopTxtHandler)
+        {
+            mUpdateMeshCopTxtHandler(std::move(aUpdate));
+        }
+    }
+#endif
+
     /**
      * This method logs OpenThread action result.
      *
@@ -244,6 +271,10 @@ private:
     ResultHandler mJoinerHandler;
 
     std::random_device mRandomDevice;
+
+#if OTBR_ENABLE_DBUS_SERVER
+    UpdateMeshCopTxtHandler mUpdateMeshCopTxtHandler;
+#endif
 };
 
 } // namespace agent

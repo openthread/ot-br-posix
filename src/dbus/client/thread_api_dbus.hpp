@@ -675,6 +675,17 @@ public:
      */
     std::string GetInterfaceName(void);
 
+    /**
+     * This method updates the TXT record of MeshCoP service.
+     *
+     * @param[in] aUpdate  The updated key-value entries.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     */
+    ClientError UpdateMeshCopTxt(std::vector<TxtEntry> &aUpdate);
+
 private:
     ClientError CallDBusMethodSync(const std::string &aMethodName);
     ClientError CallDBusMethodAsync(const std::string &aMethodName, DBusPendingCallNotifyFunction aFunction);

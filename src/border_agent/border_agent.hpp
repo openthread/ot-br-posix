@@ -155,6 +155,10 @@ private:
     Mdns::Publisher *                mPublisher;
     std::string                      mNetworkName;
 
+#if OTBR_ENABLE_DBUS_SERVER
+    std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
+#endif
+
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;
 #endif

@@ -719,5 +719,11 @@ ClientError ThreadApiDBus::AttachAllNodesTo(const std::vector<uint8_t> &aDataset
     return CallDBusMethodSync(OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD, args);
 }
 
+ClientError ThreadApiDBus::UpdateMeshCopTxt(std::vector<TxtEntry> &aUpdate)
+{
+    auto args = std::tie(aUpdate);
+    return CallDBusMethodSync(OTBR_DBUS_UPDATE_MESHCOP_TXT_METHOD, args);
+}
+
 } // namespace DBus
 } // namespace otbr
