@@ -95,7 +95,7 @@ uint32_t BorderAgent::StateBitmap::ToUint32(void) const
 BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    , mPublisher(Mdns::Publisher::Create(AF_UNSPEC, /* aDomain */ nullptr, HandleMdnsState, this))
+    , mPublisher(Mdns::Publisher::Create(HandleMdnsState, this))
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     , mAdvertisingProxy(aNcp, *mPublisher)
 #endif
@@ -282,9 +282,8 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
 
-    mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance),
-                               kBorderAgentServiceInstanceName, kBorderAgentServiceType, Mdns::Publisher::SubTypeList{},
-                               txtList);
+    mPublisher->PublishService(/* aHostName */ "", otBorderAgentGetUdpPort(instance), kBorderAgentServiceInstanceName,
+                               kBorderAgentServiceType, Mdns::Publisher::SubTypeList{}, txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)

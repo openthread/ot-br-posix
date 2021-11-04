@@ -104,10 +104,13 @@ private:
     static Mdns::Publisher::TxtList     MakeTxtList(const otSrpServerService *aSrpService);
     static Mdns::Publisher::SubTypeList MakeSubTypeList(const otSrpServerService *aSrpService);
 
-    static void PublishServiceHandler(const char *aName, const char *aType, otbrError aError, void *aContext);
-    void        PublishServiceHandler(const char *aName, const char *aType, otbrError aError);
-    static void PublishHostHandler(const char *aName, otbrError aError, void *aContext);
-    void        PublishHostHandler(const char *aName, otbrError aError);
+    static void PublishServiceHandler(const std::string &aName,
+                                      const std::string &aType,
+                                      otbrError          aError,
+                                      void *             aContext);
+    void        PublishServiceHandler(const std::string &aName, const std::string &aType, otbrError aError);
+    static void PublishHostHandler(const std::string &aName, otbrError aError, void *aContext);
+    void        PublishHostHandler(const std::string &aName, otbrError aError);
 
     /**
      * This method publishes a specified host and its services.

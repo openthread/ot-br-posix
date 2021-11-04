@@ -179,25 +179,23 @@ public:
     /**
      * The constructor to initialize a Publisher.
      *
-     * @param[in]   aProtocol           The protocol used for publishing. IPv4, IPv6 or both.
-     * @param[in]   aDomain             The domain of the host. nullptr to use default.
-     * @param[in]   aHandler            The function to be called when state changes.
-     * @param[in]   aContext            A pointer to application-specific context.
+     * @param[in] aHandler  The function to be called when state changes.
+     * @param[in] aContext  A pointer to application-specific context.
      *
      */
-    PublisherAvahi(int aProtocol, const char *aDomain, StateHandler aHandler, void *aContext);
+    PublisherAvahi(StateHandler aHandler, void *aContext);
 
     ~PublisherAvahi(void) override;
 
-    otbrError PublishService(const char *       aHostName,
+    otbrError PublishService(const std::string &aHostName,
                              uint16_t           aPort,
-                             const char *       aName,
-                             const char *       aType,
+                             const std::string &aName,
+                             const std::string &aType,
                              const SubTypeList &aSubTypeList,
                              const TxtList &    aTxtList) override;
-    otbrError UnpublishService(const char *aName, const char *aType) override;
-    otbrError PublishHost(const char *aName, const uint8_t *aAddress, uint8_t aAddressLength) override;
-    otbrError UnpublishHost(const char *aName) override;
+    otbrError UnpublishService(const std::string &aName, const std::string &aType) override;
+    otbrError PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress) override;
+    otbrError UnpublishHost(const std::string &aName) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      SubscribeHost(const std::string &aHostName) override;
@@ -207,15 +205,8 @@ public:
     void      Stop(void) override;
 
 private:
-    enum
-    {
-        kMaxSizeOfTxtRecord   = 1024,
-        kMaxSizeOfServiceName = AVAHI_LABEL_MAX,
-        kMaxSizeOfHost        = AVAHI_LABEL_MAX,
-        kMaxSizeOfDomain      = AVAHI_LABEL_MAX,
-        kMaxSizeOfServiceType = AVAHI_LABEL_MAX,
-        kDefaultTtl           = 10,
-    };
+    static constexpr size_t   kMaxSizeOfTxtRecord = 1024;
+    static constexpr uint32_t kDefaultTtl         = 10; // In seconds.
 
     struct Service
     {
@@ -260,11 +251,10 @@ private:
 
         void Release(void);
         void Browse(void);
-        void Resolve(uint32_t      aInterfaceIndex,
-                     AvahiProtocol aProtocol,
-                     const char *  aInstanceName,
-                     const char *  aType,
-                     const char *  aDomain);
+        void Resolve(uint32_t           aInterfaceIndex,
+                     AvahiProtocol      aProtocol,
+                     const std::string &aInstanceName,
+                     const std::string &aType);
         void GetAddrInfo(uint32_t aInterfaceIndex);
 
         static void HandleBrowseResult(AvahiServiceBrowser *  aServiceBrowser,
@@ -366,17 +356,17 @@ private:
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    Hosts::iterator FindHost(const char *aHostName);
-    otbrError       CreateHost(AvahiClient &aClient, const char *aHostName, Hosts::iterator &aOutHostIt);
+    Hosts::iterator FindHost(const std::string &aHostName);
+    otbrError       CreateHost(AvahiClient &aClient, const std::string &aHostName, Hosts::iterator &aOutHostIt);
 
-    Services::iterator FindService(const char *aName, const char *aType);
+    Services::iterator FindService(const std::string &aName, const std::string &aType);
     Services::iterator FindService(AvahiEntryGroup *aGroup);
     otbrError          CreateService(AvahiClient &       aClient,
-                                     const char *        aName,
-                                     const char *        aType,
+                                     const std::string & aName,
+                                     const std::string & aType,
                                      Services::iterator &aOutServiceIt);
     static bool        IsServiceOutdated(const Service &    aService,
-                                         const char *       aNewHostName,
+                                         const std::string &aNewHostName,
                                          uint16_t           aNewPort,
                                          const SubTypeList &aNewSubTypeList);
 
@@ -393,7 +383,7 @@ private:
                                               size_t            aBufferSize,
                                               AvahiStringList *&aHead);
 
-    std::string MakeFullName(const char *aName);
+    static std::string MakeFullName(const std::string &aName);
 
     void        OnServiceResolved(ServiceSubscription &aService);
     static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
@@ -404,8 +394,6 @@ private:
     Hosts        mHosts;
     Services     mServices;
     Poller       mPoller;
-    int          mProtocol;
-    const char * mDomain;
     State        mState;
     StateHandler mStateHandler;
     void *       mContext;
