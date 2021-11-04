@@ -41,11 +41,14 @@ def assert_is_ipv6_address(string):
     assert (type(ipaddress.ip_address(string)) is ipaddress.IPv6Address)
 
 def get_data_from_url(url, result, index):
-    response = urllib.request.urlopen(urllib.request.Request(url))
-    body = response.read()
-    data = json.loads(body)
-    result[index] = data
 
+    try:    
+        response = urllib.request.urlopen(urllib.request.Request(url))
+        body = response.read()
+        data = json.loads(body)
+        result[index] = data
+    except urllib.error.HTTPError as e:
+        print(e.code)   
 
 def get_error_from_url(url, result, index):
     try:

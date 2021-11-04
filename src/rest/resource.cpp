@@ -125,10 +125,6 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::HandleDiagnosticCallback);
 }
 
-void Resource::Init(void)
-{
-}
-
 void Resource::Handle(Request &aRequest, Response &aResponse) const
 {
     std::string url = aRequest.GetUrl();
@@ -519,33 +515,21 @@ void Resource::UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag
 
 void Resource::Diagnostic(const Request &aRequest, Response &aResponse) const
 {
-    otbrError error = OTBR_ERROR_NONE;
     OT_UNUSED_VARIABLE(aRequest);
+
     struct otIp6Address rloc16address = *otThreadGetRloc(mInstance);
     struct otIp6Address multicastAddress;
 
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes),
-                                           &Resource::DiagnosticResponseHandler,
-                                           const_cast<Resource *>(this)) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
-    VerifyOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
-    VerifyOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes),
-                                           &Resource::DiagnosticResponseHandler,
-                                           const_cast<Resource *>(this)) == OT_ERROR_NONE,
-                 error = OTBR_ERROR_REST);
+    SuccessOrExit(otThreadSendDiagnosticGet(mInstance, &rloc16address, kAllTlvTypes, sizeof(kAllTlvTypes),
+                                            &Resource::DiagnosticResponseHandler, const_cast<Resource *>(this)));
+    SuccessOrExit(otIp6AddressFromString(kMulticastAddrAllRouters, &multicastAddress));
+    SuccessOrExit(otThreadSendDiagnosticGet(mInstance, &multicastAddress, kAllTlvTypes, sizeof(kAllTlvTypes),
+                                            &Resource::DiagnosticResponseHandler, const_cast<Resource *>(this)));
 
 exit:
 
-    if (error == OTBR_ERROR_NONE)
-    {
-        aResponse.SetStartTime(steady_clock::now());
-        aResponse.SetCallback();
-    }
-    else
-    {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
-    }
+    aResponse.SetStartTime(steady_clock::now());
+    aResponse.SetCallback();
 }
 
 void Resource::DiagnosticResponseHandler(otError              aError,

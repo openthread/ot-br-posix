@@ -58,6 +58,12 @@ wait
 EOF
     trap on_exit EXIT
     sleep 5
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
+    sleep 1
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl ifconfig up
+    sleep 1
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread start
+    sleep 3
     sudo python3 "${CMAKE_CURRENT_SOURCE_DIR}"/test_rest.py
 }
 

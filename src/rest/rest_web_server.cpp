@@ -64,7 +64,6 @@ RestWebServer::~RestWebServer(void)
 
 void RestWebServer::Init(void)
 {
-    mResource.Init();
     InitializeListenFd();
 }
 

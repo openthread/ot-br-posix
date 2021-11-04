@@ -39,3 +39,7 @@ set_tests_properties(rest-server PROPERTIES
 set_tests_properties(rest-server PROPERTIES
                     LABELS "TESTREST" 
 )
+
+set_tests_properties(rest-server PROPERTIES
+                    TIMEOUT 60 
+)
