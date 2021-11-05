@@ -70,7 +70,7 @@ namespace rest {
 static const char *kMulticastAddrAllRouters = "ff03::2";
 
 // Default TlvTypes for Diagnostic inforamtion
-static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 18, 19};
+static const uint8_t kAllTlvTypes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 15, 16, 17, 19};
 
 // Timeout (in Microseconds) for deleting outdated diagnostics
 static const uint32_t kDiagResetTimeout = 3000000;
