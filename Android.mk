@@ -132,6 +132,7 @@ LOCAL_SRC_FILES := \
     src/ncp/ncp_openthread.cpp \
     src/sdp_proxy/advertising_proxy.cpp \
     src/sdp_proxy/discovery_proxy.cpp \
+    src/utils/dns_utils.cpp \
     src/utils/hex.cpp \
     src/utils/thread_helper.cpp \
     src/utils/strcpy_utils.cpp \

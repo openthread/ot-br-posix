@@ -28,6 +28,7 @@
 
 add_library(otbr-utils
     crc16.cpp
+    dns_utils.cpp
     hex.cpp
     pskc.cpp
     socket_utils.cpp
