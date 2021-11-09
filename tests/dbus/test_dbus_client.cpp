@@ -216,7 +216,7 @@ int main()
                             TEST_ASSERT(api->GetRouterId(routerId) == OTBR_ERROR_NONE);
                             TEST_ASSERT(routerId == leaderData.mLeaderRouterId);
 
-                            TEST_ASSERT(api->UpdateMeshCopTxt(updatedTxtEntries) == OTBR_ERROR_NONE);
+                            TEST_ASSERT(api->UpdateVendorMeshCopTxtEntries(updatedTxtEntries) == OTBR_ERROR_NONE);
 
                             CheckExternalRoute(api.get(), prefix);
                             TEST_ASSERT(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);

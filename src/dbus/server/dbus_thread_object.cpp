@@ -133,7 +133,7 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD,
                    std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
-    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_MESHCOP_TXT_METHOD,
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_VENDOR_MESHCOP_TXT_METHOD,
                    std::bind(&DBusThreadObject::UpdateMeshCopTxtHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
@@ -1073,6 +1073,10 @@ void DBusThreadObject::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     for (const auto &entry : updatedTxtEntries)
     {
         update[entry.mKey] = entry.mValue;
+    }
+    for (const auto reservedKey : {"rv", "tv", "sb", "nn", "xp", "at", "pt", "dn", "sq", "bb", "omr"})
+    {
+        VerifyOrExit(!update.count(reservedKey), error = OT_ERROR_INVALID_ARGS);
     }
     threadHelper->OnUpdateMeshCopTxt(std::move(update));
 

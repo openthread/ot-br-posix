@@ -59,17 +59,22 @@ scan_meshcop_service()
 
 update_meshcop_txt_and_check()
 {
-    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateMeshCopTxt --object-path /io/openthread/BorderRouter/wpan0 "[('vn',[118,101,110,100,111,114])]"
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('nn',[97])]" || true
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "nn=OpenThread" <<<"${service}"
+
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('vn',[118,101,110,100,111,114])]"
     sleep 5
     service="$(scan_meshcop_service)"
     grep --binary-files=text "vn=vendor" <<<"${service}"
 
-    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateMeshCopTxt --object-path /io/openthread/BorderRouter/wpan0 "[]"
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[]"
     sleep 5
     service="$(scan_meshcop_service)"
     grep --binary-files=text "vn=OpenThread" <<<"${service}"
 
-    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateMeshCopTxt --object-path /io/openthread/BorderRouter/wpan0 "[('A',[97,98,99]),('B',[49,50])]"
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('A',[97,98,99]),('B',[49,50])]"
     sleep 5
     service="$(scan_meshcop_service)"
     grep --binary-files=text "A=abc" <<<"${service}"

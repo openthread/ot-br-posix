@@ -145,6 +145,9 @@ private:
     void        PublishMeshCopService(void);
     void        UnpublishMeshCopService(void);
     void        UpdateMeshCopService(void);
+#if OTBR_ENABLE_DBUS_SERVER
+    void HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate);
+#endif
 
     void HandleThreadStateChanged(otChangedFlags aFlags);
 

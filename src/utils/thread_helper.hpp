@@ -210,7 +210,7 @@ public:
 
 #if OTBR_ENABLE_DBUS_SERVER
     /**
-     * This method sets a callback for calls of UpdateMeshCopTxt D-Bus API.
+     * This method sets a callback for calls of UpdateVendorMeshCopTxtEntries D-Bus API.
      *
      * @param[in] aHandler  The handler on MeshCoP TXT changes.
      *
@@ -221,7 +221,7 @@ public:
     }
 
     /**
-     * This method handles MeshCoP TXT updates done by UpdateMeshCopTxt D-Bus API.
+     * This method handles MeshCoP TXT updates done by UpdateVendorMeshCopTxtEntries D-Bus API.
      *
      * @param[in] aUpdate  The key-value pairs to be updated in the TXT record.
      */

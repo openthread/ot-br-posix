@@ -117,11 +117,7 @@ void BorderAgent::Init(void)
 
 #if OTBR_ENABLE_DBUS_SERVER
     mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
-        this->mMeshCopTxtUpdate = std::move(aUpdate);
-        if (IsThreadStarted())
-        {
-            this->UpdateMeshCopService();
-        }
+        HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
     });
 #endif
 
@@ -347,6 +343,17 @@ void BorderAgent::UpdateMeshCopService(void)
 exit:
     return;
 }
+
+#if OTBR_ENABLE_DBUS_SERVER
+void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate)
+{
+    this->mMeshCopTxtUpdate = std::move(aUpdate);
+    if (IsThreadStarted())
+    {
+        this->UpdateMeshCopService();
+    }
+}
+#endif
 
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
