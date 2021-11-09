@@ -182,6 +182,7 @@ void MdnsMojoPublisher::mMojoDisconnectedCb(void)
 {
     otbrLogInfo("Disconnected, will reconnect.");
     mConnector = nullptr;
+    mServiceListenerImpl = nullptr;
     mMojoTaskRunner->PostDelayedTask(FROM_HERE,
                                      base::BindOnce(&MdnsMojoPublisher::ConnectToMojo, base::Unretained(this)),
                                      base::TimeDelta::FromSeconds(kMojoConnectRetrySeconds));
