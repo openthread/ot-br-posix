@@ -224,6 +224,7 @@ public:
      * This method handles MeshCoP TXT updates done by UpdateVendorMeshCopTxtEntries D-Bus API.
      *
      * @param[in] aUpdate  The key-value pairs to be updated in the TXT record.
+     *
      */
     void OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>> aUpdate)
     {

@@ -690,6 +690,7 @@ public:
      * @retval ERROR_NONE  Successfully performed the dbus function call
      * @retval ERROR_DBUS  dbus encode/decode error
      * @retval ...         OpenThread defined error value otherwise
+     *
      */
     ClientError UpdateVendorMeshCopTxtEntries(std::vector<TxtEntry> &aUpdate);
 
