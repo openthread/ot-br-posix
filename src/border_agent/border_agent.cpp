@@ -115,6 +115,12 @@ void BorderAgent::Init(void)
 {
     mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 
+#if OTBR_ENABLE_DBUS_SERVER
+    mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
+        HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
+    });
+#endif
+
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent.Init();
 #endif
@@ -282,6 +288,29 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
 
+#if OTBR_ENABLE_DBUS_SERVER
+    for (const auto &entry : mMeshCopTxtUpdate)
+    {
+        const std::string &         key   = entry.first;
+        const std::vector<uint8_t> &value = entry.second;
+        bool                        found = false;
+
+        for (auto &addedEntry : txtList)
+        {
+            if (addedEntry.mName == key)
+            {
+                addedEntry.mValue = value;
+                found             = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            txtList.emplace_back(key.c_str(), value.data(), value.size());
+        }
+    }
+#endif
+
     mPublisher->PublishService(/* aHostName */ "", otBorderAgentGetUdpPort(instance), kBorderAgentServiceInstanceName,
                                kBorderAgentServiceType, Mdns::Publisher::SubTypeList{}, txtList);
 }
@@ -314,6 +343,17 @@ void BorderAgent::UpdateMeshCopService(void)
 exit:
     return;
 }
+
+#if OTBR_ENABLE_DBUS_SERVER
+void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate)
+{
+    this->mMeshCopTxtUpdate = std::move(aUpdate);
+    if (IsThreadStarted())
+    {
+        this->UpdateMeshCopService();
+    }
+}
+#endif
 
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {

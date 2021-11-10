@@ -73,6 +73,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const LeaderData &aLeaderDat
 otbrError DBusMessageExtract(DBusMessageIter *aIter, LeaderData &aLeaderData);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const ChannelQuality &aQuality);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, ChannelQuality &aQuality);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const TxtEntry &aTxtEntry);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, TxtEntry &aTxtEntry);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -175,6 +177,18 @@ template <> struct DBusTypeTrait<std::vector<ChildInfo>>
     // array of struct of { uint64, uint32, uint32, uint16, uint16, uint8, uint8,
     //                      uint8, uint8, uint16, uint16, bool, bool, bool, bool }
     static constexpr const char *TYPE_AS_STRING = "a(tuuqqyyyyqqbbbb)";
+};
+
+template <> struct DBusTypeTrait<TxtEntry>
+{
+    // struct of { string, array<uint8> }
+    static constexpr const char *TYPE_AS_STRING = "(say)";
+};
+
+template <> struct DBusTypeTrait<std::vector<TxtEntry>>
+{
+    // array of struct of { string, array<uint8> }
+    static constexpr const char *TYPE_AS_STRING = "a(say)";
 };
 
 template <> struct DBusTypeTrait<int8_t>

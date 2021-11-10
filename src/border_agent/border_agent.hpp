@@ -145,6 +145,9 @@ private:
     void        PublishMeshCopService(void);
     void        UnpublishMeshCopService(void);
     void        UpdateMeshCopService(void);
+#if OTBR_ENABLE_DBUS_SERVER
+    void HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate);
+#endif
 
     void HandleThreadStateChanged(otChangedFlags aFlags);
 
@@ -154,6 +157,10 @@ private:
     otbr::Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher *                mPublisher;
     std::string                      mNetworkName;
+
+#if OTBR_ENABLE_DBUS_SERVER
+    std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
+#endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;

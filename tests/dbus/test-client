@@ -48,6 +48,39 @@ on_exit()
     return "${status}"
 }
 
+scan_meshcop_service()
+{
+    if command -v dns-sd; then
+        timeout 5 dns-sd -Z _meshcop._udp local. || true
+    else
+        avahi-browse -aprt || true
+    fi
+}
+
+update_meshcop_txt_and_check()
+{
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('nn',[97])]" || true
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "nn=OpenThread" <<<"${service}"
+
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('vn',[118,101,110,100,111,114])]"
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "vn=vendor" <<<"${service}"
+
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[]"
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "vn=OpenThread" <<<"${service}"
+
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('A',[97,98,99]),('B',[49,50])]"
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "A=abc" <<<"${service}"
+    grep --binary-files=text "B=12" <<<"${service}"
+}
+
 main()
 {
     sudo rm -rf tmp
@@ -57,6 +90,14 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
     sleep 5
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl ifconfig up
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread start
+
+    sleep 10
+
+    update_meshcop_txt_and_check
+
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sleep 1
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \

@@ -48,6 +48,7 @@ using otbr::DBus::Ip6Prefix;
 using otbr::DBus::LinkModeConfig;
 using otbr::DBus::OnMeshPrefix;
 using otbr::DBus::ThreadApiDBus;
+using otbr::DBus::TxtEntry;
 
 #define TEST_ASSERT(x)                                              \
     do                                                              \
@@ -195,6 +196,7 @@ int main()
                             uint64_t               extpanidCheck;
                             Ip6Prefix              prefix;
                             OnMeshPrefix           onMeshPrefix = {};
+                            std::vector<TxtEntry>  updatedTxtEntries{TxtEntry{"B", {97, 98, 99}}};
 
                             prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
                             prefix.mLength = 64;
@@ -213,6 +215,8 @@ int main()
                             TEST_ASSERT(api->GetLeaderData(leaderData) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetRouterId(routerId) == OTBR_ERROR_NONE);
                             TEST_ASSERT(routerId == leaderData.mLeaderRouterId);
+
+                            TEST_ASSERT(api->UpdateVendorMeshCopTxtEntries(updatedTxtEntries) == OTBR_ERROR_NONE);
 
                             CheckExternalRoute(api.get(), prefix);
                             TEST_ASSERT(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);

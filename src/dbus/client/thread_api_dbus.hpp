@@ -675,6 +675,25 @@ public:
      */
     std::string GetInterfaceName(void);
 
+    /**
+     * This method sets multiple vendor-specific entries for the TXT record of the MeshCoP service.
+     *
+     * @note
+     * - The @p aUpdate must contain all vendor-specific TXT entries you want to update. The latest call will supersede
+     * previous calls.
+     * - If @p aUpdate contains thread-specific entries like 'nn', 'at', the whole update will be rejected.
+     * - If @p aUpdate contains a key which is already published in TXT record, it will be updated according to @p
+     * aUpdate.
+     *
+     * @param[in] aUpdate  The updated key-value entries.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError UpdateVendorMeshCopTxtEntries(std::vector<TxtEntry> &aUpdate);
+
 private:
     ClientError CallDBusMethodSync(const std::string &aMethodName);
     ClientError CallDBusMethodAsync(const std::string &aMethodName, DBusPendingCallNotifyFunction aFunction);

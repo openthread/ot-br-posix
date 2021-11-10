@@ -490,6 +490,12 @@ struct LeaderData
     uint8_t  mLeaderRouterId;    ///< Leader Router ID
 };
 
+struct TxtEntry
+{
+    std::string          mKey;
+    std::vector<uint8_t> mValue;
+};
+
 } // namespace DBus
 } // namespace otbr
 
