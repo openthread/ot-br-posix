@@ -37,6 +37,7 @@ set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
 set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
 set(OT_TREL ON CACHE BOOL "enable TREL")
+set(OT_LINK_METRICS_SUBJECT ON CACHE BOOL "enable link metrics subject" FORCE)
 
 if (NOT OT_LOG_LEVEL)
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
