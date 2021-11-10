@@ -47,6 +47,7 @@
 #include "common/code_utils.hpp"
 #include "common/dns_utils.hpp"
 #include "common/logging.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 namespace Dnssd {
@@ -147,7 +148,8 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
                                          const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     otDnssdServiceInstanceInfo instanceInfo;
-    const otDnssdQuery *       query = nullptr;
+    const otDnssdQuery *       query                 = nullptr;
+    std::string                unescapedInstanceName = DnsUtils::UnescapeInstanceName(aInstanceInfo.mName);
 
     otbrLogInfo("service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
                 "weight %d",
@@ -204,11 +206,11 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
             continue;
         }
 
-        if (serviceName == aType && (instanceName.empty() || instanceName == aInstanceInfo.mName))
+        if (serviceName == aType && (instanceName.empty() || instanceName == unescapedInstanceName))
         {
             std::string serviceFullName  = aType + "." + domain;
             std::string hostName         = TranslateDomain(aInstanceInfo.mHostName, domain);
-            std::string instanceFullName = aInstanceInfo.mName + "." + serviceFullName;
+            std::string instanceFullName = unescapedInstanceName + "." + serviceFullName;
 
             instanceInfo.mFullName = instanceFullName.c_str();
             instanceInfo.mHostName = hostName.c_str();
