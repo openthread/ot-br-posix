@@ -131,6 +131,7 @@ public:
 
 private:
     void Disconnect(void);
+    void DiscardRead(void);
 
     enum
     {
