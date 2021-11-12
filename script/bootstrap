@@ -86,7 +86,8 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # reference device
-    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils python3-pip
+    without REFERENCE_DEVICE || pip3 install zeroconf
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y iptables libnetfilter-queue1 libnetfilter-queue-dev

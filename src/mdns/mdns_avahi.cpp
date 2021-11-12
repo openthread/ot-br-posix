@@ -1030,7 +1030,7 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
     otbrLogInfo("resolve service %s %s inf %d", aInstanceName.c_str(), aType.c_str(), aInterfaceIndex);
     mServiceResolver = avahi_service_resolver_new(
         mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName.c_str(), aType.c_str(),
-        /* domain */ nullptr, AVAHI_PROTO_INET6, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+        /* domain */ nullptr, AVAHI_IF_UNSPEC, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
     if (!mServiceResolver)
     {
         otbrLogErr("failed to resolve serivce %s: %s", mType.c_str(),
@@ -1089,16 +1089,20 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     mInstanceInfo.mName     = aName;
     mInstanceInfo.mHostName = std::string(aHostName) + ".";
     mInstanceInfo.mPort     = aPort;
-    avahi_address_snprint(buf, sizeof(buf), aAddress);
-    VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(buf, address),
-                 otbrLogErr("failed to parse the IP address: %s", buf));
+    if (aProtocol == AVAHI_PROTO_INET6)
+    {
+        avahi_address_snprint(buf, sizeof(buf), aAddress);
+        VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(buf, address),
+                     otbrLogErr("failed to parse the IP address: %s", buf));
 
-    otbrLogDebug("resolve service reply: flags=%u, host=%s", aFlags, aHostName);
+        otbrLogDebug("resolve service reply: flags=%u, host=%s", aFlags, aHostName);
 
-    VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
-                 otbrLogDebug("ignoring address %s", address.ToString().c_str()));
+        VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() &&
+                         !address.IsUnspecified(),
+                     otbrLogDebug("ignoring address %s", address.ToString().c_str()));
 
-    mInstanceInfo.mAddresses.push_back(address);
+        mInstanceInfo.mAddresses.push_back(address);
+    }
 
     // TODO priority
     // TODO weight
