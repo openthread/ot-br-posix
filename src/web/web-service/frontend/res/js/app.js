@@ -93,7 +93,7 @@
             networkName: 'OpenThreadDemo',
             extPanId: '1111111122222222',
             panId: '0x1234',
-            passphrase: '123456',
+            passphrase: 'j01Nme',
             networkKey: '00112233445566778899aabbccddeeff',
             channel: 15,
             prefix: 'fd11:22::',
