@@ -27,6 +27,24 @@
       <arg name="scan_result" type="a(tstayqqqqyybb)" direction="out"/> 
     </method>
 
+    <!-- Energy Scan: Perform a Thread energy scan.
+      @scanDuration: The 32-bit duration time for the scan of each channel, in milliseconds.
+
+      @result: array of energy scan results.
+
+      The result struture definition is:
+      <literallayout>
+        struct {
+          uint8  channel
+          int8_t max_rssi
+        }
+      </literallayout>
+    -->
+    <method name="EnergyScan">
+      <arg name="scanduration" type="u"/>
+      <arg name="result" type="a(yy)" direction="out"/> 
+    </method>
+
     <!-- Attach: Attach the current device to the Thread network.
       @networkkey: The 128-bit network network key, empty for random.
       @panid: The 16-bit panid, UINT16_MAX for any.

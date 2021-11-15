@@ -101,6 +101,38 @@ exit:
     return error;
 }
 
+otbrError DBusMessageExtract(DBusMessageIter *aIter, EnergyScanResult &aResult)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aResult.mChannel));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aResult.mMaxRssi));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const EnergyScanResult &aResult)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aResult.mChannel));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aResult.mMaxRssi));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const LinkModeConfig &aConfig)
 {
     otbrError       error = OTBR_ERROR_NONE;
