@@ -109,7 +109,7 @@ public:
      * This method performs an IEEE 802.15.4 Energy Scan.
      *
      * @param[in] aScanDuration  The duration for the scan, in milliseconds.
-     * @param[in] aHandler  The scan result handler.
+     * @param[in] aHandler       The scan result handler.
      *
      */
     void EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler);
