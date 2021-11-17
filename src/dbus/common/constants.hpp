@@ -45,6 +45,7 @@
 #define OTBR_DBUS_OBJECT_PREFIX "/io/openthread/BorderRouter/"
 
 #define OTBR_DBUS_SCAN_METHOD "Scan"
+#define OTBR_DBUS_ENERGY_SCAN_METHOD "EnergyScan"
 #define OTBR_DBUS_ATTACH_METHOD "Attach"
 #define OTBR_DBUS_DETACH_METHOD "Detach"
 #define OTBR_DBUS_FACTORY_RESET_METHOD "FactoryReset"

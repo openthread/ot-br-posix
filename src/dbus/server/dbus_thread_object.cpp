@@ -109,6 +109,8 @@ otbrError DBusThreadObject::Init(void)
 
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCAN_METHOD,
                    std::bind(&DBusThreadObject::ScanHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ENERGY_SCAN_METHOD,
+                   std::bind(&DBusThreadObject::EnergyScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_METHOD,
                    std::bind(&DBusThreadObject::AttachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DETACH_METHOD,
@@ -260,6 +262,50 @@ void DBusThreadObject::ReplyScanResult(DBusRequest &                          aR
             result.mVersion       = r.mVersion;
             result.mIsNative      = r.mIsNative;
             result.mIsJoinable    = r.mIsJoinable;
+
+            results.emplace_back(result);
+        }
+
+        aRequest.Reply(std::tie(results));
+    }
+}
+
+void DBusThreadObject::EnergyScanHandler(DBusRequest &aRequest)
+{
+    otError  error        = OT_ERROR_NONE;
+    auto     threadHelper = mNcp->GetThreadHelper();
+    uint32_t scanDuration;
+
+    auto args = std::tie(scanDuration);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    threadHelper->EnergyScan(scanDuration, std::bind(&DBusThreadObject::ReplyEnergyScanResult, this, aRequest, _1, _2));
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObject::ReplyEnergyScanResult(DBusRequest &                          aRequest,
+                                             otError                                aError,
+                                             const std::vector<otEnergyScanResult> &aResult)
+{
+    std::vector<EnergyScanResult> results;
+
+    if (aError != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(aError);
+    }
+    else
+    {
+        for (const auto &r : aResult)
+        {
+            EnergyScanResult result;
+
+            result.mChannel = r.mChannel;
+            result.mMaxRssi = r.mMaxRssi;
 
             results.emplace_back(result);
         }
