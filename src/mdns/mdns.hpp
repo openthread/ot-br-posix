@@ -233,7 +233,9 @@ public:
      *                          to provide specific host name. Otherwise, the caller MUST publish the host
      *                          with method PublishHost.
      * @param[in] aPort         The port number of this service.
-     * @param[in] aName         The name of this service.
+     * @param[in] aName         The name of this service. Note that the published service name may be different from the
+     *                          original name due to renaming. You should always pass in the original name here to make
+     *                          sure you are referring to the intended service.
      * @param[in] aType         The type of this service.
      * @param[in] aSubTypeList  A list of service subtypes.
      * @param[in] aTxtList      A list of TXT name/value pairs.
@@ -252,7 +254,9 @@ public:
     /**
      * This method un-publishes a service.
      *
-     * @param[in] aName  The name of this service.
+     * @param[in] aName  The name of this service. Note that the published service name may be different from the
+     *                   original name due to renaming. You should always pass in the original name here to make
+     *                   sure you are referring to the intended service.
      * @param[in] aType  The type of this service.
      *
      * @retval OTBR_ERROR_NONE   Successfully un-published the service.

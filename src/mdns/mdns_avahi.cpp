@@ -376,8 +376,8 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
             uint16_t port            = service.mPort;
 
             ResetGroup(service.mGroup);
-            alternativeName = avahi_alternative_service_name(service.mName.c_str());
-            service.mName   = alternativeName;
+            alternativeName      = avahi_alternative_service_name(service.mCurrentName.c_str());
+            service.mCurrentName = alternativeName;
             avahi_free(alternativeName);
             service.mPort = 0; // To mark the service as outdated
             PublishService(service.mHostName, port, service.mName, service.mType, service.mSubTypeList,
@@ -470,8 +470,9 @@ otbrError PublisherAvahi::CreateService(AvahiClient &       aClient,
     otbrError error = OTBR_ERROR_NONE;
     Service   newService;
 
-    newService.mName = aName;
-    newService.mType = aType;
+    newService.mName        = aName;
+    newService.mCurrentName = aName;
+    newService.mType        = aType;
     SuccessOrExit(error = CreateGroup(aClient, newService.mGroup));
 
     mServices.push_back(newService);
@@ -640,9 +641,11 @@ otbrError PublisherAvahi::PublishService(const std::string &aHostName,
     }
     else
     {
-        otbrLogInfo("Update service %s.%s for host %s", aName.c_str(), aType.c_str(), logHostName.c_str());
+        otbrLogInfo("Update service %s.%s for host %s", serviceIt->mCurrentName.c_str(), aType.c_str(),
+                    logHostName.c_str());
         avahiError = avahi_entry_group_update_service_txt_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-                                                                 AvahiPublishFlags{}, aName.c_str(), aType.c_str(),
+                                                                 AvahiPublishFlags{}, serviceIt->mCurrentName.c_str(),
+                                                                 aType.c_str(),
                                                                  /* domain */ nullptr, head);
         if (avahiError == 0 && mServiceHandler != nullptr)
         {
@@ -653,23 +656,27 @@ otbrError PublisherAvahi::PublishService(const std::string &aHostName,
         ExitNow();
     }
 
-    otbrLogInfo("Create service %s.%s for host %s", aName.c_str(), aType.c_str(), logHostName.c_str());
-    avahiError = avahi_entry_group_add_service_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-                                                      AvahiPublishFlags{}, aName.c_str(), aType.c_str(),
-                                                      /* domain */ nullptr, fullHostName.c_str(), aPort, head);
+    otbrLogInfo("Create service %s.%s for host %s", serviceIt->mCurrentName.c_str(), aType.c_str(),
+                logHostName.c_str());
+    avahiError =
+        avahi_entry_group_add_service_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
+                                             AvahiPublishFlags{}, serviceIt->mCurrentName.c_str(), aType.c_str(),
+                                             /* domain */ nullptr, fullHostName.c_str(), aPort, head);
     SuccessOrExit(avahiError);
 
     for (const std::string &subType : aSubTypeList)
     {
-        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), aName.c_str(), aType.c_str());
+        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), serviceIt->mCurrentName.c_str(),
+                    aType.c_str());
         std::string fullSubType = subType + "._sub." + aType;
-        avahiError = avahi_entry_group_add_service_subtype(serviceIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-                                                           AvahiPublishFlags{}, aName.c_str(), aType.c_str(),
-                                                           /* domain */ nullptr, fullSubType.c_str());
+        avahiError =
+            avahi_entry_group_add_service_subtype(serviceIt->mGroup, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
+                                                  AvahiPublishFlags{}, serviceIt->mCurrentName.c_str(), aType.c_str(),
+                                                  /* domain */ nullptr, fullSubType.c_str());
         SuccessOrExit(avahiError);
     }
 
-    otbrLogInfo("Commit service %s.%s", aName.c_str(), aType.c_str());
+    otbrLogInfo("Commit service %s.%s", serviceIt->mCurrentName.c_str(), aType.c_str());
     avahiError = avahi_entry_group_commit(serviceIt->mGroup);
     SuccessOrExit(avahiError);
 
@@ -707,7 +714,7 @@ otbrError PublisherAvahi::UnpublishService(const std::string &aName, const std::
     serviceIt = FindService(aName, aType);
     VerifyOrExit(serviceIt != mServices.end());
 
-    otbrLogInfo("Unpublish service %s.%s", aName.c_str(), aType.c_str());
+    otbrLogInfo("Unpublish service %s.%s", serviceIt->mCurrentName.c_str(), aType.c_str());
     error = FreeGroup(serviceIt->mGroup);
     mServices.erase(serviceIt);
 
