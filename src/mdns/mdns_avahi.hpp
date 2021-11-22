@@ -211,6 +211,7 @@ private:
     struct Service
     {
         std::string      mName;
+        std::string      mCurrentName; // The current instance name. May be different from mName due to renaming.
         std::string      mType;
         SubTypeList      mSubTypeList;
         std::string      mHostName;
