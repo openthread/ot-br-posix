@@ -165,7 +165,7 @@
                   <input required md-maxlength="16" name="networkName" ng-model="thread.networkName">
                   <div ng-messages="threadForm.networkName.$error">
                     <div ng-message="required">This is required.</div>
-                    <div ng-message="md-maxlength">The Netowork Name must be no more than 16 characters long.</div>
+                    <div ng-message="md-maxlength">The Network Name must be no more than 16 characters long.</div>
                   </div>
                 </md-input-container>
 
@@ -190,10 +190,11 @@
                 </md-input-container>
 
                 <md-input-container flex="50">
-                  <label>Passphrase</label>
-                  <input required name="passphrase" ng-model="thread.passphrase">
+                  <label>Passphrase/Commissioner Credential</label>
+                  <input required name="passphrase" ng-minlength="6" maxlength="255" ng-model="thread.passphrase">
                   <div ng-messages="threadForm.passphrase.$error">
                     <div ng-message="required">This is required.</div>
+                    <div ng-message="minlength">The Passphrase must be a string between 6 and 255 characters.</div>
                   </div>
                 </md-input-container>
               </div>

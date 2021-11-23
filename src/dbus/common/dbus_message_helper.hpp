@@ -53,6 +53,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const otbrError &aError);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, otbrError &aError);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const ActiveScanResult &aScanResult);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, ActiveScanResult &aScanResult);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const EnergyScanResult &aResult);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, EnergyScanResult &aResult);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const LinkModeConfig &aConfig);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, LinkModeConfig &aConfig);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const Ip6Prefix &aPrefix);
@@ -164,6 +166,12 @@ template <> struct DBusTypeTrait<ActiveScanResult>
     // struct of { uint64, string, uint64, array<uint8>, uint16, uint16, uint8,
     //             uint8, uint8, uint8, bool, bool }
     static constexpr const char *TYPE_AS_STRING = "(tstayqqyyyybb)";
+};
+
+template <> struct DBusTypeTrait<EnergyScanResult>
+{
+    // struct of { uint8, int8_t }
+    static constexpr const char *TYPE_AS_STRING = "(yy)";
 };
 
 template <> struct DBusTypeTrait<ChannelQuality>

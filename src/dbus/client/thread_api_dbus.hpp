@@ -53,6 +53,7 @@ class ThreadApiDBus
 public:
     using DeviceRoleHandler = std::function<void(DeviceRole)>;
     using ScanHandler       = std::function<void(const std::vector<ActiveScanResult> &)>;
+    using EnergyScanHandler = std::function<void(const std::vector<EnergyScanResult> &)>;
     using OtResultHandler   = std::function<void(ClientError)>;
 
     /**
@@ -106,6 +107,21 @@ public:
      *
      */
     ClientError Scan(const ScanHandler &aHandler);
+
+    /**
+     * This method performs an IEEE 802.15.4 Energy Scan.
+     *
+     * @param[in] aScanDuration  The duration for the scan for each channel, in milliseconds. Note that maximum value
+     *                           for the duration is currently 65535. If it's the duration is larger than that, the
+     *                           handler will get an INVALID_ARGS error code.
+     * @param[in] aHandler       The energy scan result handler.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError EnergyScan(uint32_t aScanDuration, const EnergyScanHandler &aHandler);
 
     /**
      * This method attaches the device to the Thread network.
@@ -721,6 +737,7 @@ private:
     void        JoinerStartPendingCallHandler(DBusPendingCall *aPending);
     static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aThreadApiDBus);
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
+    void        EnergyScanPendingCallHandler(DBusPendingCall *aPending);
 
     static void EmptyFree(void *) {}
 
@@ -728,10 +745,11 @@ private:
 
     DBusConnection *mConnection;
 
-    ScanHandler     mScanHandler;
-    OtResultHandler mAttachHandler;
-    OtResultHandler mFactoryResetHandler;
-    OtResultHandler mJoinerHandler;
+    ScanHandler       mScanHandler;
+    EnergyScanHandler mEnergyScanHandler;
+    OtResultHandler   mAttachHandler;
+    OtResultHandler   mFactoryResetHandler;
+    OtResultHandler   mJoinerHandler;
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 };

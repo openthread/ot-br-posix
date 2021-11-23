@@ -69,6 +69,12 @@ struct ActiveScanResult
     bool                 mIsJoinable;    ///< Joining Permitted flag
 };
 
+struct EnergyScanResult
+{
+    uint8_t mChannel; ///< IEEE 802.15.4 Channel
+    int8_t  mMaxRssi; ///< The max RSSI (dBm)
+};
+
 struct LinkModeConfig
 {
     bool mRxOnWhenIdle; ///< 1, if the sender has its receiver on when not transmitting. 0, otherwise.

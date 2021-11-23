@@ -192,6 +192,39 @@ void ThreadApiDBus::ScanPendingCallHandler(DBusPendingCall *aPending)
     mScanHandler = nullptr;
 }
 
+ClientError ThreadApiDBus::EnergyScan(uint32_t aScanDuration, const EnergyScanHandler &aHandler)
+{
+    ClientError error = ClientError::ERROR_NONE;
+    const auto  args  = std::tie(aScanDuration);
+
+    VerifyOrExit(mEnergyScanHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
+    mEnergyScanHandler = aHandler;
+
+    error = CallDBusMethodAsync(OTBR_DBUS_ENERGY_SCAN_METHOD, args,
+                                &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::EnergyScanPendingCallHandler>);
+    if (error != ClientError::ERROR_NONE)
+    {
+        mEnergyScanHandler = nullptr;
+    }
+exit:
+    return error;
+}
+
+void ThreadApiDBus::EnergyScanPendingCallHandler(DBusPendingCall *aPending)
+{
+    std::vector<EnergyScanResult> results;
+    UniqueDBusMessage             message(dbus_pending_call_steal_reply(aPending));
+    auto                          args = std::tie(results);
+
+    if (message != nullptr)
+    {
+        DBusMessageToTuple(*message, args);
+    }
+
+    mEnergyScanHandler(results);
+    mEnergyScanHandler = nullptr;
+}
+
 ClientError ThreadApiDBus::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 {
     return CallDBusMethodSync(OTBR_DBUS_PERMIT_UNSECURE_JOIN_METHOD, std::tie(aPort, aSeconds));

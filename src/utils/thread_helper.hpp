@@ -65,6 +65,7 @@ class ThreadHelper
 public:
     using DeviceRoleHandler       = std::function<void(otDeviceRole)>;
     using ScanHandler             = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
+    using EnergyScanHandler       = std::function<void(otError, const std::vector<otEnergyScanResult> &)>;
     using ResultHandler           = std::function<void(otError)>;
     using UpdateMeshCopTxtHandler = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
 
@@ -103,6 +104,15 @@ public:
      *
      */
     void Scan(ScanHandler aHandler);
+
+    /**
+     * This method performs an IEEE 802.15.4 Energy Scan.
+     *
+     * @param[in] aScanDuration  The duration for the scan, in milliseconds.
+     * @param[in] aHandler       The scan result handler.
+     *
+     */
+    void EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler);
 
     /**
      * This method attaches the device to the Thread network.
@@ -248,6 +258,9 @@ private:
     static void ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
     void        ActiveScanHandler(otActiveScanResult *aResult);
 
+    static void EnergyScanCallback(otEnergyScanResult *aResult, void *aThreadHelper);
+    void        EnergyScanCallback(otEnergyScanResult *aResult);
+
     static void JoinerCallback(otError aError, void *aThreadHelper);
     void        JoinerCallback(otError aResult);
 
@@ -263,6 +276,8 @@ private:
 
     ScanHandler                     mScanHandler;
     std::vector<otActiveScanResult> mScanResults;
+    EnergyScanHandler               mEnergyScanHandler;
+    std::vector<otEnergyScanResult> mEnergyScanResults;
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
 

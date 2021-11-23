@@ -43,6 +43,7 @@
 using otbr::DBus::ActiveScanResult;
 using otbr::DBus::ClientError;
 using otbr::DBus::DeviceRole;
+using otbr::DBus::EnergyScanResult;
 using otbr::DBus::ExternalRoute;
 using otbr::DBus::Ip6Prefix;
 using otbr::DBus::LinkModeConfig;
@@ -101,6 +102,8 @@ int main()
     std::unique_ptr<ThreadApiDBus> api;
     uint64_t                       extpanid = 0xdead00beaf00cafe;
     std::string                    region;
+    uint32_t                       scanDuration = 1000; // 1s for each channel
+    bool                           stepDone     = false;
 
     dbus_error_init(&error);
     connection = UniqueDBusConnection(dbus_bus_get(DBUS_BUS_SYSTEM, &error));
@@ -118,7 +121,25 @@ int main()
     TEST_ASSERT(api->GetRadioRegion(region) == ClientError::ERROR_NONE);
     TEST_ASSERT(region == "US");
 
-    api->Scan([&api, extpanid](const std::vector<ActiveScanResult> &aResult) {
+    api->EnergyScan(scanDuration, [&stepDone](const std::vector<EnergyScanResult> &aResult) {
+        TEST_ASSERT(!aResult.empty());
+        printf("Energy Scan:\n");
+        for (auto &result : aResult)
+        {
+            printf("channel %d rssi %d\n", result.mChannel, result.mMaxRssi);
+        }
+
+        stepDone = true;
+    });
+
+    while (!stepDone)
+    {
+        dbus_connection_read_write_dispatch(connection.get(), 0);
+    }
+
+    stepDone = false;
+
+    api->Scan([&api, extpanid, &stepDone](const std::vector<ActiveScanResult> &aResult) {
         LinkModeConfig       cfg        = {true, false, true};
         std::vector<uint8_t> networkKey = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                            0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
@@ -137,7 +158,7 @@ int main()
         api->SetLinkMode(cfg);
 
         api->Attach("Test", 0x3456, extpanid, networkKey, {}, 1 << channel,
-                    [&api, channel, extpanid](ClientError aError) {
+                    [&api, channel, extpanid, &stepDone](ClientError aError) {
                         printf("Attach result %d\n", static_cast<int>(aError));
                         sleep(10);
                         uint64_t             extpanidCheck;
@@ -188,7 +209,7 @@ int main()
                             exit(-1);
                         }
                         TEST_ASSERT(api->SetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
-                        api->Attach([&api, channel, extpanid](ClientError aErr) {
+                        api->Attach([&api, channel, extpanid, &stepDone](ClientError aErr) {
                             uint8_t                routerId;
                             otbr::DBus::LeaderData leaderData;
                             uint8_t                leaderWeight;
@@ -225,22 +246,23 @@ int main()
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", nullptr) ==
                                         ClientError::OT_ERROR_NOT_FOUND);
-                            TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", [&api](ClientError aJoinError) {
-                                DeviceRole deviceRole;
+                            TEST_ASSERT(api->JoinerStart(
+                                            "ABCDEF", "", "", "", "", "", [&api, &stepDone](ClientError aJoinError) {
+                                                DeviceRole deviceRole;
 
-                                TEST_ASSERT(aJoinError == ClientError::OT_ERROR_NOT_FOUND);
+                                                TEST_ASSERT(aJoinError == ClientError::OT_ERROR_NOT_FOUND);
 
-                                api->FactoryReset(nullptr);
-                                api->GetDeviceRole(deviceRole);
-                                TEST_ASSERT(deviceRole == otbr::DBus::OTBR_DEVICE_ROLE_DISABLED);
+                                                api->FactoryReset(nullptr);
+                                                api->GetDeviceRole(deviceRole);
+                                                TEST_ASSERT(deviceRole == otbr::DBus::OTBR_DEVICE_ROLE_DISABLED);
 
-                                exit(0);
-                            }) == ClientError::ERROR_NONE);
+                                                stepDone = true;
+                                            }) == ClientError::ERROR_NONE);
                         });
                     });
     });
 
-    while (true)
+    while (!stepDone)
     {
         dbus_connection_read_write_dispatch(connection.get(), 0);
     }
