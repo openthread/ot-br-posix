@@ -68,6 +68,7 @@ static const char kProductName[]            = OTBR_PRODUCT_NAME;
 static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
 static const char kBorderAgentServiceInstanceName[] =
     OTBR_MESHCOP_SERVICE_INSTANCE_NAME; ///< Border agent service name of mDNS
+static constexpr int kBorderAgentServiceDummyPort = 49152;
 
 /**
  * Locators
@@ -166,7 +167,6 @@ void BorderAgent::Stop(void)
     otbrLogInfo("Stop Thread Border Agent");
 
 #if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-    mPublisher->Stop();
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Stop();
 #endif
@@ -174,7 +174,7 @@ void BorderAgent::Stop(void)
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mDiscoveryProxy.Stop();
 #endif
-
+    UpdateMeshCopService();
 #endif
 }
 
@@ -219,6 +219,7 @@ void BorderAgent::PublishMeshCopService(void)
     const otExtAddress *     extAddr     = otLinkGetExtendedAddress(instance);
     const char *             networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
+    int                      port;
 
     otbrLogInfo("Publish meshcop service %s.%s.local.", kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
@@ -287,6 +288,18 @@ void BorderAgent::PublishMeshCopService(void)
 
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
+    if (otBorderAgentGetState(instance) != OT_BORDER_AGENT_STATE_STOPPED)
+    {
+        port = otBorderAgentGetUdpPort(instance);
+    }
+    else
+    {
+        // When thread interface is not active, the border agent is not started, thus it's not listening to any port and
+        // not handling requests. In such situation, we use a dummy port number for publishing the MeshCoP service to
+        // advertise the status of the border router. One can learn the thread interface status from `sb` entry so it
+        // doesn't have to send requests to the dummy port when border agent is not running.
+        port = kBorderAgentServiceDummyPort;
+    }
 
 #if OTBR_ENABLE_DBUS_SERVER
     for (const auto &entry : mMeshCopTxtUpdate)
@@ -311,35 +324,21 @@ void BorderAgent::PublishMeshCopService(void)
     }
 #endif
 
-    mPublisher->PublishService(/* aHostName */ "", otBorderAgentGetUdpPort(instance), kBorderAgentServiceInstanceName,
-                               kBorderAgentServiceType, Mdns::Publisher::SubTypeList{}, txtList);
+    mPublisher->PublishService(/* aHostName */ "", port, kBorderAgentServiceInstanceName, kBorderAgentServiceType,
+                               Mdns::Publisher::SubTypeList{}, txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)
 {
-    assert(IsThreadStarted());
-    VerifyOrExit(!mNetworkName.empty());
-
     otbrLogInfo("Unpublish meshcop service %s.%s.local.", kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
     mPublisher->UnpublishService(kBorderAgentServiceInstanceName, kBorderAgentServiceType);
-
-exit:
-    return;
 }
 
 void BorderAgent::UpdateMeshCopService(void)
 {
-    assert(IsThreadStarted());
-
-    const char *networkName = otThreadGetNetworkName(mNcp.GetInstance());
-
     VerifyOrExit(mPublisher->IsStarted(), mPublisher->Start());
-    VerifyOrExit(IsPskcInitialized(), UnpublishMeshCopService());
-
     PublishMeshCopService();
-    mNetworkName = networkName;
-
 exit:
     return;
 }
@@ -375,11 +374,11 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
             Stop();
         }
     }
-    else if (IsThreadStarted())
+    else if (aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
+                       OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE))
     {
         UpdateMeshCopService();
     }
-
 exit:
     return;
 }
