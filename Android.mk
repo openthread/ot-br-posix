@@ -135,6 +135,7 @@ LOCAL_SRC_FILES := \
     src/sdp_proxy/discovery_proxy.cpp \
     src/utils/dns_utils.cpp \
     src/utils/hex.cpp \
+    src/utils/string_utils.cpp \
     src/utils/thread_helper.cpp \
 
 LOCAL_STATIC_LIBRARIES += \

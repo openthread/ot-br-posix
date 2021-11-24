@@ -127,7 +127,7 @@ void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList
 }
 
 /** Hex dump data to the log */
-void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, size_t aSize)
+void otbrDump(otbrLogLevel aLevel, const char *aLogTag, const char *aPrefix, const void *aMemory, size_t aSize)
 {
     static const char kHexChars[] = "0123456789abcdef";
     assert(aPrefix && (aMemory || aSize == 0));
@@ -173,7 +173,7 @@ void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, siz
         }
         *ch = 0;
 
-        syslog(static_cast<int>(aLevel), "%s: %04x: %s", aPrefix, addr, hex);
+        otbrLog(aLevel, aLogTag, "%s: %04x: %s", aPrefix, addr, hex);
     }
 }
 

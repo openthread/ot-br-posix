@@ -79,4 +79,10 @@ if(OTBR_UNSECURE_JOIN)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_UNSECURE_JOIN=1)
 endif()
 
+option(OTBR_TREL "Enable TREL link support." OFF)
+if(OTBR_TREL)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TREL=1)
+endif()
+
+
 option(OTBR_WEB "Enable Web GUI" OFF)

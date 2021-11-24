@@ -92,7 +92,7 @@ TEST(Logging, TestLoggingDump)
     sprintf(ident, "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_DEBUG, true);
     const char s[] = "one super long string with lots of text";
-    otbrDump(OTBR_LOG_INFO, "foobar", s, sizeof(s));
+    otbrDump(OTBR_LOG_INFO, "Test", "foobar", s, sizeof(s));
     otbrLogDeinit();
     sleep(0);
 

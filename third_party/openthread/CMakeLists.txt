@@ -40,7 +40,7 @@ if (NOT OT_THREAD_VERSION EQUAL "1.1")
     set(OT_LINK_METRICS_SUBJECT ON CACHE BOOL "enable link metrics subject" FORCE)
 endif()
 set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
-set(OT_TREL ON CACHE BOOL "enable TREL")
+set(OT_TREL ${OTBR_TREL} CACHE BOOL "enable TREL" FORCE)
 
 if (NOT OT_LOG_LEVEL)
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")

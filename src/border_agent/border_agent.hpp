@@ -50,6 +50,7 @@
 #include "ncp/ncp_openthread.hpp"
 #include "sdp_proxy/advertising_proxy.hpp"
 #include "sdp_proxy/discovery_proxy.hpp"
+#include "trel_dnssd/trel_dnssd.hpp"
 
 #ifndef OTBR_VENDOR_NAME
 #define OTBR_VENDOR_NAME "OpenThread"
@@ -175,6 +176,9 @@ private:
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     Dnssd::DiscoveryProxy mDiscoveryProxy;
+#endif
+#if OTBR_ENABLE_TREL
+    TrelDnssd::TrelDnssd mTrelDnssd;
 #endif
 };
 
