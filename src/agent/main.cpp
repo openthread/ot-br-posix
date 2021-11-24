@@ -91,13 +91,12 @@ enum
 using otbr::MainloopManager;
 
 static jmp_buf sResetJump;
-static bool    sShouldTerminate = false;
 
 void __gcov_flush();
 
 // Default poll timeout.
-static const struct timeval kPollTimeout = {10, 0};
-static const struct option  kOptions[]   = {
+static const otbr::Seconds kPollTimeout(10);
+static const struct option kOptions[] = {
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
@@ -109,7 +108,7 @@ static const struct option  kOptions[]   = {
 
 static void HandleSignal(int aSignal)
 {
-    sShouldTerminate = true;
+    MainloopManager::GetInstance().BreakMainloop();
     signal(aSignal, SIG_DFL);
 }
 
@@ -143,32 +142,13 @@ static int Mainloop(otbr::AgentInstance &aInstance)
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
 
-    while (!sShouldTerminate)
     {
-        otbr::MainloopContext mainloop;
-        int                   rval;
+        int rval = MainloopManager::GetInstance().RunMainloop(kPollTimeout);
 
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = kPollTimeout;
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        MainloopManager::GetInstance().Update(mainloop);
-
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-
-        if (rval >= 0)
-        {
-            MainloopManager::GetInstance().Process(mainloop);
-        }
-        else if (errno != EINTR)
+        if (rval == -1)
         {
             error = OTBR_ERROR_ERRNO;
-            otbrLogErr("select() failed: %s", strerror(errno));
-            break;
+            otbrLogErr("Mainloop exited with error: %s", strerror(errno));
         }
     }
 

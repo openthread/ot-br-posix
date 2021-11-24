@@ -52,34 +52,15 @@ static struct Context
     bool             mUpdate;
 } sContext;
 
-int RunMainloop(void)
+static void RecoverSignal(int aSignal)
 {
-    int rval = 0;
+    MainloopManager::GetInstance().BreakMainloop();
+    signal(aSignal, SIG_DFL);
+}
 
-    while (true)
-    {
-        MainloopContext mainloop;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = {INT_MAX, INT_MAX};
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        MainloopManager::GetInstance().Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      (mainloop.mTimeout.tv_sec == INT_MAX ? nullptr : &mainloop.mTimeout));
-
-        if (rval < 0)
-        {
-            perror("select");
-            break;
-        }
-
-        MainloopManager::GetInstance().Process(mainloop);
-    }
-
-    return rval;
+static int RunMainloop(void)
+{
+    return MainloopManager::GetInstance().RunMainloop();
 }
 
 void PublishSingleServiceWithCustomHost(void *aContext, Mdns::Publisher::State aState)
@@ -339,18 +320,6 @@ otbrError TestServiceSubTypes(void)
 exit:
     Mdns::Publisher::Destroy(pub);
     return ret;
-}
-
-void RecoverSignal(int aSignal)
-{
-    if (aSignal == SIGUSR1)
-    {
-        signal(SIGUSR1, SIG_DFL);
-    }
-    else if (aSignal == SIGUSR2)
-    {
-        signal(SIGUSR2, SIG_DFL);
-    }
 }
 
 otbrError TestStopService(void)

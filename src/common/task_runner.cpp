@@ -61,12 +61,11 @@ TaskRunner::~TaskRunner(void)
     if (mEventFd[kRead] != -1)
     {
         close(mEventFd[kRead]);
-        mEventFd[kRead] = -1;
     }
+
     if (mEventFd[kWrite] != -1)
     {
         close(mEventFd[kWrite]);
-        mEventFd[kWrite] = -1;
     }
 }
 

@@ -28,70 +28,54 @@
 
 #include "common/task_runner.hpp"
 
+#include "common/mainloop_manager.hpp"
+
 #include <atomic>
 #include <mutex>
 #include <thread>
 
 #include <CppUTest/TestHarness.h>
 
+using otbr::MainloopManager;
+using otbr::TaskRunner;
+
 TEST_GROUP(TaskRunner){};
 
 TEST(TaskRunner, TestSingleThread)
 {
-    int                   rval;
-    int                   counter = 0;
-    otbr::MainloopContext mainloop;
-    otbr::TaskRunner      taskRunner;
-
-    mainloop.mMaxFd   = -1;
-    mainloop.mTimeout = {10, 0};
-
-    FD_ZERO(&mainloop.mReadFdSet);
-    FD_ZERO(&mainloop.mWriteFdSet);
-    FD_ZERO(&mainloop.mErrorFdSet);
+    int        counter = 0;
+    TaskRunner taskRunner;
 
     // Increase the `counter` to 3.
     taskRunner.Post([&]() {
         ++counter;
         taskRunner.Post([&]() {
             ++counter;
-            taskRunner.Post([&]() { ++counter; });
+            taskRunner.Post([&]() {
+                ++counter;
+                MainloopManager::GetInstance().BreakMainloop();
+            });
         });
     });
 
-    taskRunner.Update(mainloop);
-    rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                  &mainloop.mTimeout);
-    CHECK_EQUAL(1, rval);
+    MainloopManager::GetInstance().RunMainloop();
 
-    taskRunner.Process(mainloop);
     CHECK_EQUAL(3, counter);
 }
 
 TEST(TaskRunner, TestTasksOrder)
 {
-    std::string           str;
-    otbr::TaskRunner      taskRunner;
-    int                   rval;
-    otbr::MainloopContext mainloop;
+    std::string str;
+    TaskRunner  taskRunner;
 
     taskRunner.Post([&]() { str.push_back('a'); });
     taskRunner.Post([&]() { str.push_back('b'); });
-    taskRunner.Post([&]() { str.push_back('c'); });
+    taskRunner.Post([&]() {
+        str.push_back('c');
+        MainloopManager::GetInstance().BreakMainloop();
+    });
 
-    mainloop.mMaxFd   = -1;
-    mainloop.mTimeout = {2, 0};
-
-    FD_ZERO(&mainloop.mReadFdSet);
-    FD_ZERO(&mainloop.mWriteFdSet);
-    FD_ZERO(&mainloop.mErrorFdSet);
-
-    taskRunner.Update(mainloop);
-    rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                  &mainloop.mTimeout);
-    CHECK_TRUE(rval == 1);
-
-    taskRunner.Process(mainloop);
+    MainloopManager::GetInstance().RunMainloop();
 
     // Make sure the tasks are executed in the order of posting.
     STRCMP_EQUAL("abc", str.c_str());
@@ -100,34 +84,24 @@ TEST(TaskRunner, TestTasksOrder)
 TEST(TaskRunner, TestMultipleThreads)
 {
     std::atomic<int>         counter{0};
-    otbr::TaskRunner         taskRunner;
+    TaskRunner               taskRunner;
     std::vector<std::thread> threads;
 
     // Increase the `counter` to 10 in separate threads.
     for (size_t i = 0; i < 10; ++i)
     {
-        threads.emplace_back([&]() { taskRunner.Post([&]() { ++counter; }); });
+        threads.emplace_back([&]() {
+            taskRunner.Post([&]() {
+                ++counter;
+                if (counter.load() == 10)
+                {
+                    MainloopManager::GetInstance().BreakMainloop();
+                }
+            });
+        });
     }
 
-    while (counter.load() < 10)
-    {
-        int                   rval;
-        otbr::MainloopContext mainloop;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = {10, 0};
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        taskRunner.Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-        CHECK_EQUAL(1, rval);
-
-        taskRunner.Process(mainloop);
-    }
+    MainloopManager::GetInstance().RunMainloop();
 
     for (auto &th : threads)
     {
@@ -141,34 +115,25 @@ TEST(TaskRunner, TestPostAndWait)
 {
     std::atomic<int>         total{0};
     std::atomic<int>         counter{0};
-    otbr::TaskRunner         taskRunner;
+    TaskRunner               taskRunner;
     std::vector<std::thread> threads;
 
     // Increase the `counter` to 10 in separate threads and accumulate the total value.
     for (size_t i = 0; i < 10; ++i)
     {
-        threads.emplace_back([&]() { total += taskRunner.PostAndWait<int>([&]() { return ++counter; }); });
+        threads.emplace_back([&]() {
+            total += taskRunner.PostAndWait<int>([&]() {
+                ++counter;
+                if (counter.load() == 10)
+                {
+                    MainloopManager::GetInstance().BreakMainloop();
+                }
+                return counter.load();
+            });
+        });
     }
 
-    while (counter.load() < 10)
-    {
-        int                   rval;
-        otbr::MainloopContext mainloop;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = {10, 0};
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        taskRunner.Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-        CHECK_EQUAL(1, rval);
-
-        taskRunner.Process(mainloop);
-    }
+    MainloopManager::GetInstance().RunMainloop();
 
     for (auto &th : threads)
     {
@@ -182,34 +147,24 @@ TEST(TaskRunner, TestPostAndWait)
 TEST(TaskRunner, TestDelayedTasks)
 {
     std::atomic<int>         counter{0};
-    otbr::TaskRunner         taskRunner;
+    TaskRunner               taskRunner;
     std::vector<std::thread> threads;
 
     // Increase the `counter` to 10 in separate threads.
     for (size_t i = 0; i < 10; ++i)
     {
-        threads.emplace_back([&]() { taskRunner.Post(std::chrono::milliseconds(10), [&]() { ++counter; }); });
+        threads.emplace_back([&]() {
+            taskRunner.Post(std::chrono::milliseconds(10), [&]() {
+                ++counter;
+                if (counter.load() == 10)
+                {
+                    MainloopManager::GetInstance().BreakMainloop();
+                }
+            });
+        });
     }
 
-    while (counter.load() < 10)
-    {
-        int                   rval;
-        otbr::MainloopContext mainloop;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = {2, 0};
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        taskRunner.Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
-
-        taskRunner.Process(mainloop);
-    }
+    MainloopManager::GetInstance().RunMainloop();
 
     for (auto &th : threads)
     {
@@ -221,32 +176,17 @@ TEST(TaskRunner, TestDelayedTasks)
 
 TEST(TaskRunner, TestDelayedTasksOrder)
 {
-    std::string      str;
-    otbr::TaskRunner taskRunner;
+    std::string str;
+    TaskRunner  taskRunner;
 
     taskRunner.Post(std::chrono::milliseconds(10), [&]() { str.push_back('a'); });
     taskRunner.Post(std::chrono::milliseconds(9), [&]() { str.push_back('b'); });
-    taskRunner.Post(std::chrono::milliseconds(10), [&]() { str.push_back('c'); });
+    taskRunner.Post(std::chrono::milliseconds(10), [&]() {
+        str.push_back('c');
+        MainloopManager::GetInstance().BreakMainloop();
+    });
 
-    while (str.size() < 3)
-    {
-        int                   rval;
-        otbr::MainloopContext mainloop;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = {2, 0};
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        taskRunner.Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
-
-        taskRunner.Process(mainloop);
-    }
+    MainloopManager::GetInstance().RunMainloop();
 
     // Make sure that tasks with smaller delay are executed earlier.
     STRCMP_EQUAL("bac", str.c_str());
@@ -255,36 +195,43 @@ TEST(TaskRunner, TestDelayedTasksOrder)
 TEST(TaskRunner, TestAllAPIs)
 {
     std::atomic<int>         counter{0};
-    otbr::TaskRunner         taskRunner;
+    TaskRunner               taskRunner;
     std::vector<std::thread> threads;
 
     // Increase the `counter` to 30 in separate threads.
     for (size_t i = 0; i < 10; ++i)
     {
-        threads.emplace_back([&]() { taskRunner.Post([&]() { ++counter; }); });
-        threads.emplace_back([&]() { taskRunner.Post(std::chrono::milliseconds(10), [&]() { ++counter; }); });
-        threads.emplace_back([&]() { taskRunner.PostAndWait<int>([&]() { return ++counter; }); });
+        threads.emplace_back([&]() {
+            taskRunner.Post([&]() {
+                ++counter;
+                if (counter.load() == 30)
+                {
+                    MainloopManager::GetInstance().BreakMainloop();
+                }
+            });
+        });
+        threads.emplace_back([&]() {
+            taskRunner.Post(std::chrono::milliseconds(10), [&]() {
+                ++counter;
+                if (counter.load() == 30)
+                {
+                    MainloopManager::GetInstance().BreakMainloop();
+                }
+            });
+        });
+        threads.emplace_back([&]() {
+            taskRunner.PostAndWait<int>([&]() {
+                ++counter;
+                if (counter.load() == 30)
+                {
+                    MainloopManager::GetInstance().BreakMainloop();
+                }
+                return counter.load();
+            });
+        });
     }
 
-    while (counter.load() < 30)
-    {
-        int                   rval;
-        otbr::MainloopContext mainloop;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = {2, 0};
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        taskRunner.Update(mainloop);
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
-
-        taskRunner.Process(mainloop);
-    }
+    MainloopManager::GetInstance().RunMainloop();
 
     for (auto &th : threads)
     {

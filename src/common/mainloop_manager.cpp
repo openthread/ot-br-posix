@@ -27,9 +27,20 @@
  */
 #include <assert.h>
 
+#include <memory>
+#include <mutex>
+
 #include "common/mainloop_manager.hpp"
+#include "common/task_runner.hpp"
 
 namespace otbr {
+
+MainloopManager &MainloopManager::GetInstance(void)
+{
+    static MainloopManager sMainloopManager;
+
+    return sMainloopManager;
+}
 
 void MainloopManager::AddMainloopProcessor(MainloopProcessor *aMainloopProcessor)
 {
@@ -42,19 +53,80 @@ void MainloopManager::RemoveMainloopProcessor(MainloopProcessor *aMainloopProces
     mMainloopProcessorList.remove(aMainloopProcessor);
 }
 
-void MainloopManager::Update(MainloopContext &aMainloop)
+int MainloopManager::RunMainloop(Seconds aMaxPollTimeout)
 {
-    for (auto &mainloopProcessor : mMainloopProcessorList)
+    int rval = 0;
+
+    mShouldBreak.store(false);
+
     {
-        mainloopProcessor->Update(aMainloop);
+        std::lock_guard<std::mutex> _(mBreakMainloopTaskMutex);
+
+        mBreakMainloopTask = std::unique_ptr<TaskRunner>(new TaskRunner());
+    }
+
+    while (!mShouldBreak.load())
+    {
+        otbr::MainloopContext mainloop;
+
+        mainloop.mMaxFd   = -1;
+        mainloop.mTimeout = ToTimeval(aMaxPollTimeout);
+        FD_ZERO(&mainloop.mReadFdSet);
+        FD_ZERO(&mainloop.mWriteFdSet);
+        FD_ZERO(&mainloop.mErrorFdSet);
+
+        for (auto &mainloopProcessor : mMainloopProcessorList)
+        {
+            mainloopProcessor->Update(mainloop);
+        }
+
+        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                      &mainloop.mTimeout);
+        if (rval == -1 && errno != EINTR)
+        {
+            break;
+        }
+
+        if (mShouldBreak.load())
+        {
+            rval = 0;
+            break;
+        }
+
+        for (auto &mainloopProcessor : mMainloopProcessorList)
+        {
+            mainloopProcessor->Process(mainloop);
+        }
+    }
+
+    // TODO(wgtdkp): We don't really need to free `mBreakMainloopTask` here
+    // since it will be auto freed by the destructor of `MainloopManager`.
+    // But somehow the memory leakage detector of the unit test framework
+    // is complaining about unfreed `mBreakMainloopTask`. See example failure
+    // report: https://github.com/openthread/ot-br-posix/runs/4345737895.
+    {
+        std::lock_guard<std::mutex> _(mBreakMainloopTaskMutex);
+
+        mBreakMainloopTask = nullptr;
+    }
+
+    return rval;
+}
+
+void MainloopManager::BreakMainloop()
+{
+    mShouldBreak.store(true);
+
+    {
+        std::lock_guard<std::mutex> _(mBreakMainloopTaskMutex);
+
+        if (mBreakMainloopTask != nullptr)
+        {
+            // Post a noop task to wake up the select() system call,
+            // so that we can always break the mainloop.
+            mBreakMainloopTask->Post([]() {});
+        }
     }
 }
 
-void MainloopManager::Process(const MainloopContext &aMainloop)
-{
-    for (auto &mainloopProcessor : mMainloopProcessorList)
-    {
-        mainloopProcessor->Process(aMainloop);
-    }
-}
 } // namespace otbr
