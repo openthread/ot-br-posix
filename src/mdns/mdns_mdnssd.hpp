@@ -36,6 +36,7 @@
 
 #include <array>
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -58,28 +59,24 @@ namespace Mdns {
 class PublisherMDnsSd : public MainloopProcessor, public Publisher
 {
 public:
-    /**
-     * The constructor to initialize a Publisher.
-     *
-     * @param[in] aHandler  The function to be called when state changes.
-     * @param[in] aContext  A pointer to application-specific context.
-     *
-     */
-    PublisherMDnsSd(StateHandler aHandler, void *aContext);
+    explicit PublisherMDnsSd(StateCallback aCallback);
 
     ~PublisherMDnsSd(void) override;
 
     // Implementation of Mdns::Publisher.
 
-    otbrError PublishService(const std::string &aHostName,
-                             uint16_t           aPort,
+    void      PublishService(const std::string &aHostName,
                              const std::string &aName,
                              const std::string &aType,
                              const SubTypeList &aSubTypeList,
-                             const TxtList &    aTxtList) override;
-    otbrError UnpublishService(const std::string &aName, const std::string &aType) override;
-    otbrError PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress) override;
-    otbrError UnpublishHost(const std::string &aName) override;
+                             uint16_t           aPort,
+                             const TxtList &    aTxtList,
+                             ResultCallback &&  aCallback) override;
+    void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
+    void      PublishHost(const std::string &         aName,
+                          const std::vector<uint8_t> &aAddress,
+                          ResultCallback &&           aCallback) override;
+    void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      SubscribeHost(const std::string &aHostName) override;
@@ -96,20 +93,50 @@ public:
 private:
     static constexpr uint32_t kDefaultTtl = 10;
 
-    struct Service
+    class DnssdServiceRegistration : public ServiceRegistration
     {
-        std::string   mName;
-        std::string   mType;
-        std::string   mRegType; ///< Service type with optional subtypes separated by commas
-        DNSServiceRef mService;
-        uint16_t      mPort;
+    public:
+        DnssdServiceRegistration(const std::string &aHostName,
+                                 const std::string &aName,
+                                 const std::string &aType,
+                                 const SubTypeList &aSubTypeList,
+                                 uint16_t           aPort,
+                                 const TxtList &    aTxtList,
+                                 ResultCallback &&  aCallback,
+                                 DNSServiceRef      aServiceRef)
+            : ServiceRegistration(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback))
+            , mServiceRef(aServiceRef)
+        {
+        }
+
+        ~DnssdServiceRegistration(void) override;
+        const DNSServiceRef &GetServiceRef() const { return mServiceRef; }
+
+    private:
+        DNSServiceRef mServiceRef;
     };
 
-    struct Host
+    class DnssdHostRegistration : public HostRegistration
     {
-        std::string          mName;
-        std::vector<uint8_t> mAddress;
-        DNSRecordRef         mRecord;
+    public:
+        DnssdHostRegistration(const std::string &         aName,
+                              const std::vector<uint8_t> &aAddress,
+                              ResultCallback &&           aCallback,
+                              DNSServiceRef               aServiceRef,
+                              DNSRecordRef                aRecordRef)
+            : HostRegistration(aName, aAddress, std::move(aCallback))
+            , mServiceRef(aServiceRef)
+            , mRecordRef(aRecordRef)
+        {
+        }
+
+        ~DnssdHostRegistration(void) override;
+        const DNSServiceRef &GetServiceRef() const { return mServiceRef; }
+        const DNSRecordRef & GetRecordRef() const { return mRecordRef; }
+
+    private:
+        DNSServiceRef mServiceRef;
+        DNSRecordRef  mRecordRef;
     };
 
     struct ServiceRef : private ::NonCopyable
@@ -265,23 +292,8 @@ private:
         DiscoveredHostInfo mHostInfo;
     };
 
-    typedef std::vector<Service>                              Services;
-    typedef std::vector<Host>                                 Hosts;
-    typedef std::vector<Service>::iterator                    ServiceIterator;
-    typedef std::vector<Host>::iterator                       HostIterator;
-    typedef std::vector<std::unique_ptr<ServiceSubscription>> ServiceSubscriptionList;
-    typedef std::vector<std::unique_ptr<HostSubscription>>    HostSubscriptionList;
-
-    void        DiscardService(const std::string &aName, const std::string &aType, DNSServiceRef aServiceRef = nullptr);
-    void        RecordService(const std::string &aName,
-                              const std::string &aType,
-                              const std::string &aRegType,
-                              uint16_t           aPort,
-                              DNSServiceRef      aServiceRef);
-    static bool IsServiceOutdated(const Service &service, const std::string &aNewRegType, int aNewPort);
-
-    otbrError DiscardHost(const std::string &aName, bool aSendGoodbye = true);
-    void      RecordHost(const std::string &aName, const std::vector<uint8_t> &aAddress, DNSRecordRef aRecordRef);
+    using ServiceSubscriptionList = std::vector<std::unique_ptr<ServiceSubscription>>;
+    using HostSubscriptionList    = std::vector<std::unique_ptr<HostSubscription>>;
 
     static void HandleServiceRegisterResult(DNSServiceRef         aService,
                                             const DNSServiceFlags aFlags,
@@ -306,25 +318,19 @@ private:
                                          DNSServiceFlags     aFlags,
                                          DNSServiceErrorType aErrorCode);
 
-    static std::string MakeFullName(const std::string &aName);
-    static std::string MakeRegType(const std::string &aType, const SubTypeList &aSubTypeList);
+    static std::string MakeRegType(const std::string &aType, SubTypeList aSubTypeList);
 
-    ServiceIterator FindPublishedService(const std::string &aName, const std::string &aType);
-    ServiceIterator FindPublishedService(const DNSServiceRef &aServiceRef);
-    HostIterator    FindPublishedHost(const DNSRecordRef &aRecordRef);
-    HostIterator    FindPublishedHost(const std::string &aHostName);
+    ServiceRegistrationPtr FindServiceRegistration(const DNSServiceRef &aServiceRef);
+    HostRegistrationPtr    FindHostRegistration(const DNSServiceRef &aServiceRef, const DNSRecordRef &aRecordRef);
 
     static void OnServiceResolveFailed(const std::string & aType,
                                        const std::string & aInstanceName,
                                        DNSServiceErrorType aErrorCode);
     void        OnHostResolveFailed(const HostSubscription &aHost, DNSServiceErrorType aErrorCode);
 
-    Services      mServices;
-    Hosts         mHosts;
     DNSServiceRef mHostsRef;
     State         mState;
-    StateHandler  mStateHandler;
-    void *        mContext;
+    StateCallback mStateCallback;
 
     ServiceSubscriptionList mSubscribedServices;
     HostSubscriptionList    mSubscribedHosts;

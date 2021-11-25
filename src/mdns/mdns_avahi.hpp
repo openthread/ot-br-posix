@@ -58,119 +58,11 @@
  * @{
  */
 
-/**
- * This structure implements AvahiWatch.
- *
- */
-struct AvahiWatch
-{
-    int                mFd;       ///< The file descriptor to watch.
-    AvahiWatchEvent    mEvents;   ///< The interested events.
-    int                mHappened; ///< The events happened.
-    AvahiWatchCallback mCallback; ///< The function to be called when interested events happened on mFd.
-    void *             mContext;  ///< A pointer to application-specific context.
-    void *             mPoller;   ///< The poller created this watch.
-
-    /**
-     * The constructor to initialize an Avahi watch.
-     *
-     * @param[in] aFd        The file descriptor to watch.
-     * @param[in] aEvents    The events to watch.
-     * @param[in] aCallback  The function to be called when events happend on this file descriptor.
-     * @param[in] aContext   A pointer to application-specific context.
-     * @param[in] aPoller    The Poller this watcher belongs to.
-     *
-     */
-    AvahiWatch(int aFd, AvahiWatchEvent aEvents, AvahiWatchCallback aCallback, void *aContext, void *aPoller)
-        : mFd(aFd)
-        , mEvents(aEvents)
-        , mCallback(aCallback)
-        , mContext(aContext)
-        , mPoller(aPoller)
-    {
-    }
-};
-
-/**
- * This structure implements the AvahiTimeout.
- *
- */
-struct AvahiTimeout
-{
-    otbr::Timepoint      mTimeout;  ///< Absolute time when this timer timeout.
-    AvahiTimeoutCallback mCallback; ///< The function to be called when timeout.
-    void *               mContext;  ///< The pointer to application-specific context.
-    void *               mPoller;   ///< The poller created this timer.
-
-    /**
-     * The constructor to initialize an AvahiTimeout.
-     *
-     * @param[in] aTimeout   A pointer to the time after which the callback should be called.
-     * @param[in] aCallback  The function to be called after timeout.
-     * @param[in] aContext   A pointer to application-specific context.
-     * @param[in] aPoller    The Poller this timeout belongs to.
-     *
-     */
-    AvahiTimeout(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext, void *aPoller);
-};
-
 namespace otbr {
 
 namespace Mdns {
 
-/**
- * This class implements the AvahiPoll.
- *
- */
-class Poller : public MainloopProcessor
-{
-public:
-    /**
-     * The constructor to initialize a Poller.
-     *
-     */
-    Poller(void);
-
-    // Implementation of MainloopProcessor.
-
-    void Update(MainloopContext &aMainloop) override;
-    void Process(const MainloopContext &aMainloop) override;
-
-    /**
-     * This method returns the AvahiPoll.
-     *
-     * @returns A pointer to the AvahiPoll.
-     *
-     */
-    const AvahiPoll *GetAvahiPoll(void) const { return &mAvahiPoller; }
-
-private:
-    typedef std::vector<AvahiWatch *>   Watches;
-    typedef std::vector<AvahiTimeout *> Timers;
-
-    static AvahiWatch *    WatchNew(const struct AvahiPoll *aPoller,
-                                    int                     aFd,
-                                    AvahiWatchEvent         aEvent,
-                                    AvahiWatchCallback      aCallback,
-                                    void *                  aContext);
-    AvahiWatch *           WatchNew(int aFd, AvahiWatchEvent aEvent, AvahiWatchCallback aCallback, void *aContext);
-    static void            WatchUpdate(AvahiWatch *aWatch, AvahiWatchEvent aEvent);
-    static AvahiWatchEvent WatchGetEvents(AvahiWatch *aWatch);
-    static void            WatchFree(AvahiWatch *aWatch);
-    void                   WatchFree(AvahiWatch &aWatch);
-    static AvahiTimeout *  TimeoutNew(const AvahiPoll *     aPoller,
-                                      const struct timeval *aTimeout,
-                                      AvahiTimeoutCallback  aCallback,
-                                      void *                aContext);
-    AvahiTimeout *         TimeoutNew(const struct timeval *aTimeout, AvahiTimeoutCallback aCallback, void *aContext);
-    static void            TimeoutUpdate(AvahiTimeout *aTimer, const struct timeval *aTimeout);
-    static void            TimeoutFree(AvahiTimeout *aTimer);
-    void                   TimeoutFree(AvahiTimeout &aTimer);
-
-    Watches   mWatches;
-    Timers    mTimers;
-    AvahiPoll mAvahiPoller;
-};
+class AvahiPoller;
 
 /**
  * This class implements mDNS publisher with avahi.
@@ -179,26 +71,21 @@ private:
 class PublisherAvahi : public Publisher
 {
 public:
-    /**
-     * The constructor to initialize a Publisher.
-     *
-     * @param[in] aHandler  The function to be called when state changes.
-     * @param[in] aContext  A pointer to application-specific context.
-     *
-     */
-    PublisherAvahi(StateHandler aHandler, void *aContext);
-
+    PublisherAvahi(StateCallback aStateCallback);
     ~PublisherAvahi(void) override;
 
-    otbrError PublishService(const std::string &aHostName,
-                             uint16_t           aPort,
+    void      PublishService(const std::string &aHostName,
                              const std::string &aName,
                              const std::string &aType,
                              const SubTypeList &aSubTypeList,
-                             const TxtList &    aTxtList) override;
-    otbrError UnpublishService(const std::string &aName, const std::string &aType) override;
-    otbrError PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress) override;
-    otbrError UnpublishHost(const std::string &aName) override;
+                             uint16_t           aPort,
+                             const TxtList &    aTxtList,
+                             ResultCallback &&  aCallback) override;
+    void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
+    void      PublishHost(const std::string &         aName,
+                          const std::vector<uint8_t> &aAddress,
+                          ResultCallback &&           aCallback) override;
+    void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      SubscribeHost(const std::string &aHostName) override;
@@ -211,25 +98,46 @@ private:
     static constexpr size_t   kMaxSizeOfTxtRecord = 1024;
     static constexpr uint32_t kDefaultTtl         = 10; // In seconds.
 
-    struct Service
+    class AvahiServiceRegistration : public ServiceRegistration
     {
-        std::string      mName;
-        std::string      mCurrentName; // The current instance name. May be different from mName due to renaming.
-        std::string      mType;
-        SubTypeList      mSubTypeList;
-        std::string      mHostName;
-        uint16_t         mPort  = 0;
-        AvahiEntryGroup *mGroup = nullptr;
-        TxtList          mTxtList;
+    public:
+        AvahiServiceRegistration(const std::string &aHostName,
+                                 const std::string &aName,
+                                 const std::string &aType,
+                                 const SubTypeList &aSubTypeList,
+                                 uint16_t           aPort,
+                                 const TxtList &    aTxtList,
+                                 ResultCallback &&  aCallback,
+                                 AvahiEntryGroup *  aEntryGroup)
+            : ServiceRegistration(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback))
+            , mEntryGroup(aEntryGroup)
+        {
+        }
+
+        ~AvahiServiceRegistration(void) override;
+        const AvahiEntryGroup *GetEntryGroup(void) const { return mEntryGroup; }
+
+    private:
+        AvahiEntryGroup *mEntryGroup;
     };
 
-    typedef std::vector<Service> Services;
-
-    struct Host
+    class AvahiHostRegistration : public HostRegistration
     {
-        std::string      mHostName;
-        AvahiAddress     mAddress = {};
-        AvahiEntryGroup *mGroup   = nullptr;
+    public:
+        AvahiHostRegistration(const std::string &         aName,
+                              const std::vector<uint8_t> &aAddress,
+                              ResultCallback &&           aCallback,
+                              AvahiEntryGroup *           aEntryGroup)
+            : HostRegistration(aName, aAddress, std::move(aCallback))
+            , mEntryGroup(aEntryGroup)
+        {
+        }
+
+        ~AvahiHostRegistration(void) override;
+        const AvahiEntryGroup *GetEntryGroup(void) const { return mEntryGroup; }
+
+    private:
+        AvahiEntryGroup *mEntryGroup;
     };
 
     struct Subscription : private ::NonCopyable
@@ -352,52 +260,34 @@ private:
         AvahiRecordBrowser *mRecordBrowser;
     };
 
-    typedef std::vector<Host>                                 Hosts;
     typedef std::vector<std::unique_ptr<ServiceSubscription>> ServiceSubscriptionList;
     typedef std::vector<std::unique_ptr<HostSubscription>>    HostSubscriptionList;
 
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
 
-    Hosts::iterator FindHost(const std::string &aHostName);
-    otbrError       CreateHost(AvahiClient &aClient, const std::string &aHostName, Hosts::iterator &aOutHostIt);
+    AvahiEntryGroup *CreateGroup(AvahiClient *aClient);
+    static void      ReleaseGroup(AvahiEntryGroup *aGroup);
 
-    Services::iterator FindService(const std::string &aName, const std::string &aType);
-    Services::iterator FindService(AvahiEntryGroup *aGroup);
-    otbrError          CreateService(AvahiClient &       aClient,
-                                     const std::string & aName,
-                                     const std::string & aType,
-                                     Services::iterator &aOutServiceIt);
-    static bool        IsServiceOutdated(const Service &    aService,
-                                         const std::string &aNewHostName,
-                                         uint16_t           aNewPort,
-                                         const SubTypeList &aNewSubTypeList);
-
-    otbrError        CreateGroup(AvahiClient &aClient, AvahiEntryGroup *&aOutGroup);
-    static otbrError ResetGroup(AvahiEntryGroup *aGroup);
-    static otbrError FreeGroup(AvahiEntryGroup *aGroup);
-    void             FreeAllGroups(void);
-    static void      HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
-    void             HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
-    void             CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError) const;
+    static void HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState, void *aContext);
+    void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
+    void        CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError);
 
     static otbrError TxtListToAvahiStringList(const TxtList &   aTxtList,
                                               AvahiStringList * aBuffer,
                                               size_t            aBufferSize,
                                               AvahiStringList *&aHead);
 
-    static std::string MakeFullName(const std::string &aName);
+    ServiceRegistrationPtr FindServiceRegistration(const AvahiEntryGroup *aEntryGroup) const;
+    HostRegistrationPtr    FindHostRegistration(const AvahiEntryGroup *aEntryGroup) const;
 
     static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
     void        OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode);
 
-    AvahiClient *mClient;
-    Hosts        mHosts;
-    Services     mServices;
-    Poller       mPoller;
-    State        mState;
-    StateHandler mStateHandler;
-    void *       mContext;
+    AvahiClient *                mClient;
+    std::unique_ptr<AvahiPoller> mPoller;
+    State                        mState;
+    StateCallback                mStateCallback;
 
     ServiceSubscriptionList mSubscribedServices;
     HostSubscriptionList    mSubscribedHosts;

@@ -519,7 +519,7 @@ test_meshcop_service()
 
     # Test if the the meshcop service is unpublished when otbr-agent stops.
     sudo killall "${OTBR_AGENT}"
-    sleep 2
+    sleep 10
     service="$(scan_meshcop_service)"
     if grep -q "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"; then
         die "unexpect meshcop service when otbr-agent exits!"

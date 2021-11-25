@@ -35,27 +35,15 @@
 
 #include <assert.h>
 
+#include <algorithm>
+#include <functional>
+
 #include "common/code_utils.hpp"
 #include "utils/dns_utils.hpp"
 
 namespace otbr {
 
 namespace Mdns {
-
-bool Publisher::IsServiceTypeEqual(std::string aFirstType, std::string aSecondType)
-{
-    if (!aFirstType.empty() && aFirstType.back() == '.')
-    {
-        aFirstType.pop_back();
-    }
-
-    if (!aSecondType.empty() && aSecondType.back() == '.')
-    {
-        aSecondType.pop_back();
-    }
-
-    return aFirstType == aSecondType;
-}
 
 otbrError Publisher::EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t> &aTxtData)
 {
@@ -191,6 +179,164 @@ void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::Di
             subCallback.second.second(aHostName, aHostInfo);
         }
     }
+}
+
+Publisher::SubTypeList Publisher::SortSubTypeList(SubTypeList aSubTypeList)
+{
+    std::sort(aSubTypeList.begin(), aSubTypeList.end());
+    return aSubTypeList;
+}
+
+Publisher::TxtList Publisher::SortTxtList(TxtList aTxtList)
+{
+    std::sort(aTxtList.begin(), aTxtList.end(),
+              [](const TxtEntry &aLhs, const TxtEntry &aRhs) { return aLhs.mName < aRhs.mName; });
+    return aTxtList;
+}
+
+std::string Publisher::MakeFullServiceName(const std::string &aName, const std::string &aType)
+{
+    return aName + "." + aType + ".local";
+}
+
+std::string Publisher::MakeFullHostName(const std::string &aName)
+{
+    return aName + ".local";
+}
+
+void Publisher::AddServiceRegistration(ServiceRegistrationPtr aServiceReg)
+{
+    mServiceRegistrations[MakeFullServiceName(aServiceReg->mName, aServiceReg->mType)] = aServiceReg;
+}
+
+void Publisher::RemoveServiceRegistration(const std::string &aName, const std::string &aType)
+{
+    otbrLogInfo("Removing service %s.%s", aName.c_str(), aType.c_str());
+    mServiceRegistrations.erase(MakeFullServiceName(aName, aType));
+}
+
+Publisher::ServiceRegistrationPtr Publisher::FindServiceRegistration(const std::string &aName, const std::string &aType)
+{
+    auto it = mServiceRegistrations.find(MakeFullServiceName(aName, aType));
+
+    return it != mServiceRegistrations.end() ? it->second : nullptr;
+}
+
+Publisher::ResultCallback Publisher::HandleDuplicateServiceRegistration(const std::string &aHostName,
+                                                                        const std::string &aName,
+                                                                        const std::string &aType,
+                                                                        const SubTypeList &aSubTypeList,
+                                                                        uint16_t           aPort,
+                                                                        const TxtList &    aTxtList,
+                                                                        ResultCallback &&  aCallback)
+{
+    ServiceRegistrationPtr serviceReg = FindServiceRegistration(aName, aType);
+
+    VerifyOrExit(serviceReg != nullptr);
+
+    if (serviceReg->IsOutdated(aHostName, aName, aType, aSubTypeList, aPort, aTxtList))
+    {
+        RemoveServiceRegistration(aName, aType);
+    }
+    else if (serviceReg->IsCompleted())
+    {
+        // Returns success if the same service has already been
+        // registered with exactly the same parameters.
+        std::move(aCallback)(OTBR_ERROR_NONE);
+    }
+    else
+    {
+        // If the same service is being registered with the same parameters,
+        // let's join the waiting queue for the result.
+        serviceReg->mCallback = std::bind(
+            [](std::shared_ptr<ResultCallback> aExistingCallback, std::shared_ptr<ResultCallback> aNewCallback,
+               otbrError aError) {
+                std::move (*aExistingCallback)(aError);
+                std::move (*aNewCallback)(aError);
+            },
+            std::make_shared<ResultCallback>(std::move(serviceReg->mCallback)),
+            std::make_shared<ResultCallback>(std::move(aCallback)), std::placeholders::_1);
+    }
+
+exit:
+    return std::move(aCallback);
+}
+
+Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string &         aName,
+                                                                     const std::vector<uint8_t> &aAddress,
+                                                                     ResultCallback &&           aCallback)
+{
+    HostRegistrationPtr hostReg = FindHostRegistration(aName);
+
+    VerifyOrExit(hostReg != nullptr);
+
+    if (hostReg->IsOutdated(aName, aAddress))
+    {
+        RemoveHostRegistration(hostReg->mName);
+    }
+    else if (hostReg->IsCompleted())
+    {
+        // Returns success if the same service has already been
+        // registered with exactly the same parameters.
+        std::move(aCallback)(OTBR_ERROR_NONE);
+    }
+    else
+    {
+        // If the same service is being registered with the same parameters,
+        // let's join the waiting queue for the result.
+        hostReg->mCallback = std::bind(
+            [](std::shared_ptr<ResultCallback> aExistingCallback, std::shared_ptr<ResultCallback> aNewCallback,
+               otbrError aError) {
+                std::move (*aExistingCallback)(aError);
+                std::move (*aNewCallback)(aError);
+            },
+            std::make_shared<ResultCallback>(std::move(hostReg->mCallback)),
+            std::make_shared<ResultCallback>(std::move(aCallback)), std::placeholders::_1);
+    }
+
+exit:
+    return std::move(aCallback);
+}
+
+void Publisher::AddHostRegistration(HostRegistrationPtr aHostReg)
+{
+    mHostRegistrations[MakeFullHostName(aHostReg->mName)] = aHostReg;
+}
+
+void Publisher::RemoveHostRegistration(const std::string &aName)
+{
+    mHostRegistrations.erase(MakeFullHostName(aName));
+}
+
+Publisher::HostRegistrationPtr Publisher::FindHostRegistration(const std::string &aName)
+{
+    auto it = mHostRegistrations.find(MakeFullHostName(aName));
+
+    return it != mHostRegistrations.end() ? it->second : nullptr;
+}
+
+Publisher::Registration::~Registration(void)
+{
+    if (!IsCompleted())
+    {
+        Complete(OTBR_ERROR_ABORTED);
+    }
+}
+
+bool Publisher::ServiceRegistration::IsOutdated(const std::string &aHostName,
+                                                const std::string &aName,
+                                                const std::string &aType,
+                                                const SubTypeList &aSubTypeList,
+                                                uint16_t           aPort,
+                                                const TxtList &    aTxtList) const
+{
+    return !(mHostName == aHostName && mName == aName && mType == aType && mSubTypeList == aSubTypeList &&
+             mPort == aPort && mTxtList == aTxtList);
+}
+
+bool Publisher::HostRegistration::IsOutdated(const std::string &aName, const std::vector<uint8_t> &aAddress) const
+{
+    return !(mName == aName && mAddress == aAddress);
 }
 
 } // namespace Mdns

@@ -81,6 +81,8 @@ enum otbrError
     OTBR_ERROR_NOT_IMPLEMENTED = -9,  ///< Not implemented error.
     OTBR_ERROR_INVALID_ARGS    = -10, ///< Invalid arguments error.
     OTBR_ERROR_DUPLICATED      = -11, ///< Duplicated operation, resource or name.
+    OTBR_ERROR_ABORTED         = -12, ///< The operation is aborted.
+    OTBR_ERROR_INVALID_STATE   = -13, ///< The target isn't in a valid state.
 };
 
 namespace otbr {
