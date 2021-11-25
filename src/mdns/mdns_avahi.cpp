@@ -1005,20 +1005,23 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
 
     assert(mServiceBrowser == aServiceBrowser);
 
-    otbrLogInfo("browse service reply: %s.%s inf %u, flags=%u", aName, aType, aInterfaceIndex, aFlags);
-
-    if (aEvent == AVAHI_BROWSER_FAILURE)
+    otbrLogInfo("browse service reply: %s.%s inf %u aprotocol %d, flags=%u event=%d !!!!!!!!!!!!!!!!!!!", aName, aType,
+                aInterfaceIndex, aProtocol, aFlags, aEvent);
+    if (aEvent == AVAHI_BROWSER_ALL_FOR_NOW || aEvent == AVAHI_BROWSER_CACHE_EXHAUSTED)
+    {
+        if (mServiceBrowser != nullptr)
+        {
+            avahi_service_browser_free(mServiceBrowser);
+            mServiceBrowser = nullptr;
+        }
+    }
+    else if (aEvent == AVAHI_BROWSER_FAILURE)
     {
         mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
     }
     else
     {
         Resolve(aInterfaceIndex, aProtocol, aName, aType);
-    }
-    if (mServiceBrowser != nullptr)
-    {
-        avahi_service_browser_free(mServiceBrowser);
-        mServiceBrowser = nullptr;
     }
 }
 
@@ -1030,7 +1033,7 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
     otbrLogInfo("resolve service %s %s inf %d", aInstanceName.c_str(), aType.c_str(), aInterfaceIndex);
     mServiceResolver = avahi_service_resolver_new(
         mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName.c_str(), aType.c_str(),
-        /* domain */ nullptr, AVAHI_IF_UNSPEC, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+        /* domain */ nullptr, AVAHI_PROTO_UNSPEC, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
     if (!mServiceResolver)
     {
         otbrLogErr("failed to resolve serivce %s: %s", mType.c_str(),
@@ -1080,7 +1083,9 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     Ip6Address address;
     size_t     totalTxtSize = 0;
 
-    assert(mServiceResolver == aServiceResolver);
+    otbrLogInfo("resolve service reply: flags=%u, host=%s event=%d protocol=%d mresolver=%p aresolver=%p", aFlags,
+                aHostName, aEvent, aProtocol, mServiceResolver, aServiceResolver);
+    //    assert(mServiceResolver == aServiceResolver);
     VerifyOrExit(
         aEvent == AVAHI_RESOLVER_FOUND,
         otbrLogErr("failed to resolve service: %s", avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient))));
@@ -1095,7 +1100,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
         VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(buf, address),
                      otbrLogErr("failed to parse the IP address: %s", buf));
 
-        otbrLogDebug("resolve service reply: flags=%u, host=%s", aFlags, aHostName);
+        otbrLogInfo("resolve service reply: flags=%u, host=%s", aFlags, aHostName);
 
         VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() &&
                          !address.IsUnspecified(),
@@ -1115,7 +1120,8 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     mInstanceInfo.mTxtData.resize(totalTxtSize);
     avahi_string_list_serialize(aTxt, mInstanceInfo.mTxtData.data(), totalTxtSize);
 
-    otbrLogDebug("resolve service reply: address=%s, ttl=%u", address.ToString().c_str(), mInstanceInfo.mTtl);
+    otbrLogInfo("resolve service reply: protocol=%d address=%s, ttl=%u", aProtocol, address.ToString().c_str(),
+                mInstanceInfo.mTtl);
 
     mPublisherAvahi->OnServiceResolved(*this);
 
@@ -1124,10 +1130,10 @@ exit:
     {
         mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
     }
-    if (mServiceBrowser != nullptr)
+    if (aServiceResolver != nullptr)
     {
-        avahi_service_resolver_free(mServiceResolver);
-        mServiceResolver = nullptr;
+        avahi_service_resolver_free(aServiceResolver);
+        aServiceResolver = nullptr;
     }
 }
 

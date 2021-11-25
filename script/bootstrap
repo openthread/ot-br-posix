@@ -53,7 +53,7 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libdbus-1-dev
 
     # mDNS
-    sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon
+    sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon avahi-utils
     (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-878.30.4 \
         && cd /tmp \
         && wget -4 --no-check-certificate https://opensource.apple.com/tarballs/mDNSResponder/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
@@ -86,8 +86,7 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # reference device
-    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils python3-pip
-    without REFERENCE_DEVICE || pip3 install zeroconf
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y iptables libnetfilter-queue1 libnetfilter-queue-dev
