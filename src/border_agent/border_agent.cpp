@@ -228,9 +228,8 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
     txtList.emplace_back("tv", mNcp.GetThreadVersion());
 
-    // "dd" represents for device discriminator which
-    // should always be the IEEE 802.15.4 extended address.
-    txtList.emplace_back("dd", extAddr->m8, sizeof(extAddr->m8));
+    // "xa" stands for Extended MAC Address (64-bit) of the Thread Interface of the Border Agent.
+    txtList.emplace_back("xa", extAddr->m8, sizeof(extAddr->m8));
 
     state.mConnectionMode = kConnectionModePskc;
     state.mAvailability   = kAvailabilityHigh;
