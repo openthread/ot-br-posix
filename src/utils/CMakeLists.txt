@@ -33,7 +33,6 @@ add_library(otbr-utils
     pskc.cpp
     socket_utils.cpp
     steering_data.cpp
-    strcpy_utils.cpp
     system_utils.cpp
     thread_helper.cpp
     thread_helper.hpp

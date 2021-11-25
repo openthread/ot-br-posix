@@ -45,7 +45,6 @@
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "utils/strcpy_utils.hpp"
 
 // Temporary solution before posix platform header files are cleaned up.
 #ifndef OPENTHREAD_POSIX_DAEMON_SOCKET_NAME

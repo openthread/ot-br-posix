@@ -135,7 +135,6 @@ LOCAL_SRC_FILES := \
     src/utils/dns_utils.cpp \
     src/utils/hex.cpp \
     src/utils/thread_helper.cpp \
-    src/utils/strcpy_utils.cpp \
 
 LOCAL_STATIC_LIBRARIES += \
     ot-core \
