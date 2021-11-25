@@ -49,7 +49,7 @@
 #include <cutils/properties.h>
 #endif
 
-#include "agent/agent_instance.hpp"
+#include "border_agent/border_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
@@ -113,29 +113,31 @@ static void HandleSignal(int aSignal)
     signal(aSignal, SIG_DFL);
 }
 
-static int Mainloop(otbr::AgentInstance &aInstance)
+static int Mainloop(otbr::Ncp::ControllerOpenThread &aOpenThread)
 {
     int error = EXIT_SUCCESS;
 
-    OTBR_UNUSED_VARIABLE(aInstance);
+    otbr::BorderAgent borderAgent{aOpenThread};
+
+    borderAgent.Init();
 
 #if OTBR_ENABLE_OPENWRT
-    UBusAgent ubusAgent{aInstance.GetNcp()};
+    UBusAgent ubusAgent{aOpenThread};
     ubusAgent.Init();
 #endif
 
 #if OTBR_ENABLE_REST_SERVER
-    RestWebServer restWebServer{aInstance.GetNcp()};
+    RestWebServer restWebServer{aOpenThread};
     restWebServer.Init();
 #endif
 
 #if OTBR_ENABLE_DBUS_SERVER
-    DBusAgent dbusAgent{aInstance.GetNcp()};
+    DBusAgent dbusAgent{aOpenThread};
     dbusAgent.Init();
 #endif
 
 #if OTBR_ENABLE_VENDOR_SERVER
-    VendorServer vendorServer{aInstance.GetNcp()};
+    VendorServer vendorServer{aOpenThread};
     vendorServer.Init();
 #endif
 
@@ -284,12 +286,11 @@ static int realmain(int argc, char *argv[])
 
     {
         otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, radioUrls, backboneInterfaceName};
-        otbr::AgentInstance             instance(ncpOpenThread);
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
 
-        SuccessOrExit(ret = instance.Init());
+        SuccessOrExit(ret = ncpOpenThread.Init());
 
         if (printRadioVersion)
         {
@@ -297,7 +298,7 @@ static int realmain(int argc, char *argv[])
             ExitNow(ret = EXIT_SUCCESS);
         }
 
-        SuccessOrExit(ret = Mainloop(instance));
+        SuccessOrExit(ret = Mainloop(ncpOpenThread));
     }
 
     otbrLogDeinit();
