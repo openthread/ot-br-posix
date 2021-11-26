@@ -445,7 +445,7 @@ test_meshcop_service()
     sudo "${OT_CTL}" ifconfig up
     sudo "${OT_CTL}" extaddr ${extaddr}
     sudo "${OT_CTL}" thread start
-    sleep 5
+    sleep 20
 
     sudo "${OT_CTL}" state | grep "leader"
 
@@ -467,15 +467,13 @@ test_meshcop_service()
     grep "at=" <<<"${service}"
     grep "pt=" <<<"${service}"
 
-    # Test if the meshcop service is unpublished when pskc is zeroed.
+    # Test if the meshcop service is published when thread is not on
     sudo "${OT_CTL}" dataset init active
     sudo "${OT_CTL}" dataset pskc 00000000000000000000000000000000
     sudo "${OT_CTL}" dataset commit active
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"; then
-        die "unexpect meshcop service when PSKc is zeroed!"
-    fi
+    grep -q "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
 
     # Test if the meshcop service is published again when a non-zero
     # PSKc is set back.
@@ -508,13 +506,11 @@ test_meshcop_service()
     grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
     grep "xa=${new_extaddr_txt}" <<<"${service}"
 
-    # Test if the meshcop service is unpublished when Thread is stopped.
+    # Test if the meshcop service is published when Thread is stopped.
     sudo "${OT_CTL}" thread stop
     sleep 2
     service="$(scan_meshcop_service)"
-    if grep -q "${new_network_name}._meshcop\._udp" <<<"${service}"; then
-        die "unexpect meshcop service when Thread is stopped!"
-    fi
+    grep -q "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
 
     sudo "${OT_CTL}" thread start
     sleep 5
