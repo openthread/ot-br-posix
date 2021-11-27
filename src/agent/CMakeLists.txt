@@ -27,8 +27,6 @@
 #
 
 add_executable(otbr-agent
-    agent_instance.cpp
-    agent_instance.hpp
     main.cpp
     uris.hpp
     instance_params.cpp
