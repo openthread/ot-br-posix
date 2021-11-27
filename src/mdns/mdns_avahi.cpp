@@ -51,7 +51,6 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
-#include "utils/strcpy_utils.hpp"
 
 AvahiTimeout::AvahiTimeout(const struct timeval *aTimeout,
                            AvahiTimeoutCallback  aCallback,
