@@ -60,10 +60,12 @@ DiscoveryProxy::DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher 
 
 void DiscoveryProxy::Start(void)
 {
+    assert(mSubscriberId == 0);
+
     otDnssdQuerySetCallbacks(mNcp.GetInstance(), &DiscoveryProxy::OnDiscoveryProxySubscribe,
                              &DiscoveryProxy::OnDiscoveryProxyUnsubscribe, this);
 
-    mMdnsPublisher.SetSubscriptionCallbacks(
+    mSubscriberId = mMdnsPublisher.AddSubscriptionCallbacks(
         [this](const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo) {
             OnServiceDiscovered(aType, aInstanceInfo);
         },
@@ -78,7 +80,12 @@ void DiscoveryProxy::Start(void)
 void DiscoveryProxy::Stop(void)
 {
     otDnssdQuerySetCallbacks(mNcp.GetInstance(), nullptr, nullptr, nullptr);
-    mMdnsPublisher.SetSubscriptionCallbacks(nullptr, nullptr);
+
+    if (mSubscriberId > 0)
+    {
+        mMdnsPublisher.RemoveSubscriptionCallbacks(mSubscriberId);
+        mSubscriberId = 0;
+    }
 
     otbrLogInfo("stopped");
 }
