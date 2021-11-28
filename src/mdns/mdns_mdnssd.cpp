@@ -786,32 +786,9 @@ void PublisherMDnsSd::UnsubscribeService(const std::string &aType, const std::st
                 mSubscribedServices.size());
 }
 
-void PublisherMDnsSd::OnServiceResolved(PublisherMDnsSd::ServiceSubscription &aService)
-{
-    otbrLogInfo("Service %s is resolved successfully: %s host %s addresses %zu", aService.mType.c_str(),
-                aService.mInstanceInfo.mName.c_str(), aService.mInstanceInfo.mHostName.c_str(),
-                aService.mInstanceInfo.mAddresses.size());
-
-    if (mDiscoveredServiceInstanceCallback != nullptr)
-    {
-        mDiscoveredServiceInstanceCallback(aService.mType, aService.mInstanceInfo);
-    }
-}
-
 void PublisherMDnsSd::OnServiceResolveFailed(const ServiceSubscription &aService, DNSServiceErrorType aErrorCode)
 {
     otbrLogWarning("Service %s resolving failed: code=%d", aService.mType.c_str(), aErrorCode);
-}
-
-void PublisherMDnsSd::OnHostResolved(PublisherMDnsSd::HostSubscription &aHost)
-{
-    otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHost.mHostName.c_str(),
-                aHost.mHostInfo.mHostName.c_str(), aHost.mHostInfo.mAddresses.size(), aHost.mHostInfo.mTtl);
-
-    if (mDiscoveredHostCallback != nullptr)
-    {
-        mDiscoveredHostCallback(aHost.mHostName, aHost.mHostInfo);
-    }
 }
 
 void PublisherMDnsSd::OnHostResolveFailed(const PublisherMDnsSd::HostSubscription &aHost,
@@ -1044,7 +1021,7 @@ void PublisherMDnsSd::ServiceSubscription::HandleGetAddrInfoResult(DNSServiceRef
 
     otbrLogDebug("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
 
-    mMDnsSd->OnServiceResolved(*this);
+    mMDnsSd->OnServiceResolved(mType, mInstanceInfo);
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
@@ -1057,7 +1034,7 @@ exit:
     {
         otbrLogDebug("DNSServiceGetAddrInfo reply: no IPv6 address found");
         mInstanceInfo.mTtl = aTtl;
-        mMDnsSd->OnServiceResolved(*this);
+        mMDnsSd->OnServiceResolved(mType, mInstanceInfo);
     }
 }
 
@@ -1116,7 +1093,7 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
 
     otbrLogDebug("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
 
-    mMDnsSd->OnHostResolved(*this);
+    mMDnsSd->OnHostResolved(mHostName, mHostInfo);
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
@@ -1129,7 +1106,7 @@ exit:
     {
         otbrLogDebug("DNSServiceGetAddrInfo reply: no IPv6 address found");
         mHostInfo.mTtl = aTtl;
-        mMDnsSd->OnHostResolved(*this);
+        mMDnsSd->OnHostResolved(mHostName, mHostInfo);
     }
 }
 

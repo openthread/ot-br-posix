@@ -386,9 +386,7 @@ private:
 
     static std::string MakeFullName(const std::string &aName);
 
-    void        OnServiceResolved(ServiceSubscription &aService);
     static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
-    void        OnHostResolved(HostSubscription &aHost);
     void        OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode);
 
     AvahiClient *mClient;

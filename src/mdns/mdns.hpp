@@ -35,6 +35,7 @@
 #define OTBR_AGENT_MDNS_HPP_
 
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -350,13 +351,19 @@ public:
      * @param[in] aInstanceCallback  The callback function to receive discovered service instances.
      * @param[in] aHostCallback      The callback function to receive discovered hosts.
      *
+     * @returns  The Subscriber ID for the callbacks.
+     *
      */
-    void SetSubscriptionCallbacks(DiscoveredServiceInstanceCallback aInstanceCallback,
-                                  DiscoveredHostCallback            aHostCallback)
-    {
-        mDiscoveredServiceInstanceCallback = std::move(aInstanceCallback);
-        mDiscoveredHostCallback            = std::move(aHostCallback);
-    }
+    uint64_t AddSubscriptionCallbacks(DiscoveredServiceInstanceCallback aInstanceCallback,
+                                      DiscoveredHostCallback            aHostCallback);
+
+    /**
+     * This method cancels callbacks for subscriptions.
+     *
+     * @param[in] aSubscriberId  The Subscriber ID previously returned by `AddSubscriptionCallbacks`.
+     *
+     */
+    void RemoveSubscriptionCallbacks(uint64_t aSubscriberId);
 
     virtual ~Publisher(void) = default;
 
@@ -415,14 +422,18 @@ protected:
         kMaxTextEntrySize = 255,
     };
 
+    void OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
+    void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
+
     PublishServiceHandler mServiceHandler        = nullptr;
     void *                mServiceHandlerContext = nullptr;
 
     PublishHostHandler mHostHandler        = nullptr;
     void *             mHostHandlerContext = nullptr;
 
-    DiscoveredServiceInstanceCallback mDiscoveredServiceInstanceCallback = nullptr;
-    DiscoveredHostCallback            mDiscoveredHostCallback            = nullptr;
+    uint64_t mNextSubscriberId = 1;
+
+    std::map<uint64_t, std::pair<DiscoveredServiceInstanceCallback, DiscoveredHostCallback>> mDiscoveredCallbacks;
 };
 
 /**

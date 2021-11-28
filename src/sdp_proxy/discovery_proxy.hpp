@@ -100,6 +100,7 @@ private:
 
     Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher &          mMdnsPublisher;
+    uint64_t                   mSubscriberId = 0;
 };
 
 } // namespace Dnssd
