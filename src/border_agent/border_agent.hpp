@@ -138,7 +138,7 @@ private:
         uint32_t ToUint32(void) const;
     };
 
-    otbrError   Start(void);
+    void        Start(void);
     void        Stop(void);
     static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState);
     void        HandleMdnsState(Mdns::Publisher::State aState);
