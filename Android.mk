@@ -107,7 +107,6 @@ LOCAL_CPPFLAGS += -std=c++14
 LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER)
 
 LOCAL_SRC_FILES := \
-    src/agent/agent_instance.cpp \
     src/agent/instance_params.cpp \
     src/agent/main.cpp \
     src/backbone_router/backbone_agent.cpp \
@@ -135,7 +134,6 @@ LOCAL_SRC_FILES := \
     src/utils/dns_utils.cpp \
     src/utils/hex.cpp \
     src/utils/thread_helper.cpp \
-    src/utils/strcpy_utils.cpp \
 
 LOCAL_STATIC_LIBRARIES += \
     ot-core \

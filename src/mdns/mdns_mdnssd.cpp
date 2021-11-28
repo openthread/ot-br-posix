@@ -49,7 +49,6 @@
 #include "common/dns_utils.hpp"
 #include "common/logging.hpp"
 #include "common/time.hpp"
-#include "utils/strcpy_utils.hpp"
 
 namespace otbr {
 

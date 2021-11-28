@@ -59,7 +59,6 @@
 #include "common/tlv.hpp"
 #include "common/types.hpp"
 #include "utils/hex.hpp"
-#include "utils/strcpy_utils.hpp"
 
 namespace otbr {
 
