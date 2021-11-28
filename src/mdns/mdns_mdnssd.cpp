@@ -891,10 +891,6 @@ exit:
     {
         mMDnsSd->OnServiceResolveFailed(*this, aErrorCode);
     }
-    else if (!(aFlags & (kDNSServiceFlagsAdd | kDNSServiceFlagsMoreComing)))
-    {
-        mMDnsSd->OnServiceResolveFailed(*this, kDNSServiceErr_NoSuchName);
-    }
 }
 
 void PublisherMDnsSd::ServiceSubscription::Resolve(uint32_t           aInterfaceIndex,
@@ -905,7 +901,7 @@ void PublisherMDnsSd::ServiceSubscription::Resolve(uint32_t           aInterface
     assert(mServiceRef == nullptr);
 
     otbrLogInfo("DNSServiceResolve %s %s inf %d", aInstanceName.c_str(), aType.c_str(), aInterfaceIndex);
-    DNSServiceResolve(&mServiceRef, /* flags */ 0, aInterfaceIndex, aInstanceName.c_str(), aType.c_str(),
+    DNSServiceResolve(&mServiceRef, kDNSServiceFlagsTimeout, aInterfaceIndex, aInstanceName.c_str(), aType.c_str(),
                       aDomain.c_str(), HandleResolveResult, this);
 }
 
@@ -953,6 +949,7 @@ void PublisherMDnsSd::ServiceSubscription::HandleResolveResult(DNSServiceRef    
     // priority and weight are not given in the reply
     mInstanceInfo.mPriority = 0;
     mInstanceInfo.mWeight   = 0;
+    mInstanceInfo.mTtl      = kDefaultTtl;
 
     DeallocateServiceRef();
     GetAddrInfo(aInterfaceIndex);
@@ -975,7 +972,7 @@ void PublisherMDnsSd::ServiceSubscription::GetAddrInfo(uint32_t aInterfaceIndex)
 
     otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", mInstanceInfo.mHostName.c_str(), aInterfaceIndex);
 
-    DNSServiceGetAddrInfo(&mServiceRef, /* flags */ 0, aInterfaceIndex,
+    DNSServiceGetAddrInfo(&mServiceRef, /* flags */ kDNSServiceFlagsTimeout, aInterfaceIndex,
                           kDNSServiceProtocol_IPv6 | kDNSServiceProtocol_IPv4, mInstanceInfo.mHostName.c_str(),
                           HandleGetAddrInfoResult, this);
 }
@@ -1027,14 +1024,7 @@ exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
         otbrLogWarning("DNSServiceGetAddrInfo failed: %d", aErrorCode);
-
-        mMDnsSd->OnServiceResolveFailed(*this, aErrorCode);
-    }
-    else if (mInstanceInfo.mAddresses.empty() && (aFlags & kDNSServiceFlagsMoreComing) == 0)
-    {
-        otbrLogDebug("DNSServiceGetAddrInfo reply: no IPv6 address found");
-        mInstanceInfo.mTtl = aTtl;
-        mMDnsSd->OnServiceResolved(mType, mInstanceInfo);
+        mMDnsSd->OnServiceResolved(*this);
     }
 }
 
