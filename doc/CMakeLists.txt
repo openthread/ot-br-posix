@@ -51,7 +51,7 @@ if (DOXYGEN_FOUND)
             COMMAND cp ${DBUS_DOC_SRC} ${DBUS_DOC_TARGET}
             VERBATIM
         )
-        add_dependencies(otbr-dbus-server-doc-copy otbr-dbus-server-doc)
+        add_dependencies(otbr-dbus-server-doc-copy doxygen otbr-dbus-server-doc)
         add_dependencies(otbr-doc otbr-dbus-server-doc-copy)
     endif()
 else()
