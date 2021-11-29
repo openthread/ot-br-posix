@@ -943,15 +943,17 @@ void PublisherAvahi::ServiceSubscription::Browse(void)
 
 void PublisherAvahi::ServiceSubscription::Release(void)
 {
+    for (AvahiServiceResolver *resolver : mServiceResolvers)
+    {
+        avahi_service_resolver_free(resolver);
+    }
+
+    mServiceResolvers.clear();
+
     if (mServiceBrowser != nullptr)
     {
         avahi_service_browser_free(mServiceBrowser);
         mServiceBrowser = nullptr;
-    }
-    if (mServiceResolver != nullptr)
-    {
-        avahi_service_resolver_free(mServiceResolver);
-        mServiceResolver = nullptr;
     }
 }
 
@@ -984,8 +986,8 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
 
     assert(mServiceBrowser == aServiceBrowser);
 
-    otbrLogInfo("browse service reply: %s.%s inf %u, event=%d, flags=%u", aName, aType, aInterfaceIndex, aEvent,
-                aFlags);
+    otbrLogInfo("browse service reply: %s.%s proto %d inf %u event %d flags %u", aName, aType, aProtocol,
+                aInterfaceIndex, aEvent, aFlags);
 
     switch (aEvent)
     {
@@ -997,16 +999,11 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
         break;
     case AVAHI_BROWSER_CACHE_EXHAUSTED:
     case AVAHI_BROWSER_ALL_FOR_NOW:
+        // do nothing
         break;
     case AVAHI_BROWSER_FAILURE:
         mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
         break;
-    }
-
-    if (mServiceBrowser != nullptr)
-    {
-        avahi_service_browser_free(mServiceBrowser);
-        mServiceBrowser = nullptr;
     }
 }
 
@@ -1015,11 +1012,18 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
                                                   const std::string &aInstanceName,
                                                   const std::string &aType)
 {
+    AvahiServiceResolver *resolver;
+
     otbrLogInfo("resolve service %s %s inf %d", aInstanceName.c_str(), aType.c_str(), aInterfaceIndex);
-    mServiceResolver = avahi_service_resolver_new(
+
+    resolver = avahi_service_resolver_new(
         mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName.c_str(), aType.c_str(),
         /* domain */ nullptr, AVAHI_PROTO_INET6, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
-    if (!mServiceResolver)
+    if (resolver != nullptr)
+    {
+        AddServiceResolver(resolver);
+    }
+    else
     {
         otbrLogErr("failed to resolve serivce %s: %s", mType.c_str(),
                    avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient)));
@@ -1064,55 +1068,70 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     OT_UNUSED_VARIABLE(aType);
     OT_UNUSED_VARIABLE(aDomain);
 
-    char       buf[AVAHI_ADDRESS_STR_MAX];
-    Ip6Address address;
-    size_t     totalTxtSize = 0;
+    char                   addrBuf[AVAHI_ADDRESS_STR_MAX] = "";
+    Ip6Address             address;
+    size_t                 totalTxtSize = 0;
+    DiscoveredInstanceInfo instanceInfo;
 
-    assert(mServiceResolver == aServiceResolver);
+    avahi_address_snprint(addrBuf, sizeof(addrBuf), aAddress);
+    otbrLogInfo("resolve service reply: protocol %d event %d %s.%s.%s = host %s address %s port %d flags %d", aProtocol,
+                aEvent, aName, aType, aDomain, aHostName, addrBuf, aPort, aFlags);
+
+    VerifyOrExit(mServiceResolvers.find(aServiceResolver) != mServiceResolvers.end());
+
+    RemoveServiceResolver(aServiceResolver);
+
     VerifyOrExit(
         aEvent == AVAHI_RESOLVER_FOUND,
         otbrLogErr("failed to resolve service: %s", avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient))));
     VerifyOrExit(aHostName != nullptr, otbrLogErr("host name is null"));
 
-    mInstanceInfo.mName     = aName;
-    mInstanceInfo.mHostName = std::string(aHostName) + ".";
-    mInstanceInfo.mPort     = aPort;
-    avahi_address_snprint(buf, sizeof(buf), aAddress);
-    VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(buf, address),
-                 otbrLogErr("failed to parse the IP address: %s", buf));
+    instanceInfo.mName     = aName;
+    instanceInfo.mHostName = std::string(aHostName) + ".";
+    instanceInfo.mPort     = aPort;
+    VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(addrBuf, address),
+                 otbrLogErr("failed to parse the IP address: %s", addrBuf));
 
     otbrLogDebug("resolve service reply: flags=%u, host=%s", aFlags, aHostName);
 
     VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
                  otbrLogDebug("ignoring address %s", address.ToString().c_str()));
 
-    mInstanceInfo.mAddresses.push_back(address);
+    instanceInfo.mAddresses.push_back(address);
 
     // TODO priority
     // TODO weight
     // TODO use a more proper TTL
-    mInstanceInfo.mTtl = kDefaultTtl;
+    instanceInfo.mTtl = kDefaultTtl;
     for (auto p = aTxt; p; p = avahi_string_list_get_next(p))
     {
         totalTxtSize += avahi_string_list_get_size(p) + 1;
     }
-    mInstanceInfo.mTxtData.resize(totalTxtSize);
-    avahi_string_list_serialize(aTxt, mInstanceInfo.mTxtData.data(), totalTxtSize);
+    instanceInfo.mTxtData.resize(totalTxtSize);
+    avahi_string_list_serialize(aTxt, instanceInfo.mTxtData.data(), totalTxtSize);
 
-    otbrLogDebug("resolve service reply: address=%s, ttl=%u", address.ToString().c_str(), mInstanceInfo.mTtl);
+    otbrLogDebug("resolve service reply: address=%s, ttl=%u", address.ToString().c_str(), instanceInfo.mTtl);
 
-    mPublisherAvahi->OnServiceResolved(mType, mInstanceInfo);
+    mPublisherAvahi->OnServiceResolved(mType, instanceInfo);
 
 exit:
     if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
     {
         mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
     }
-    if (mServiceBrowser != nullptr)
-    {
-        avahi_service_resolver_free(mServiceResolver);
-        mServiceResolver = nullptr;
-    }
+}
+
+void PublisherAvahi::ServiceSubscription::AddServiceResolver(AvahiServiceResolver *aServiceResolver)
+{
+    assert(aServiceResolver != nullptr);
+    mServiceResolvers.insert(aServiceResolver);
+}
+
+void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(AvahiServiceResolver *aServiceResolver)
+{
+    assert(aServiceResolver != nullptr);
+    avahi_service_resolver_free(aServiceResolver);
+    mServiceResolvers.erase(aServiceResolver);
 }
 
 void PublisherAvahi::HostSubscription::Release(void)

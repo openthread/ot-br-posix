@@ -1024,7 +1024,7 @@ exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
         otbrLogWarning("DNSServiceGetAddrInfo failed: %d", aErrorCode);
-        mMDnsSd->OnServiceResolved(*this);
+        mMDnsSd->OnServiceResolved(mType, mInstanceInfo);
     }
 }
 
