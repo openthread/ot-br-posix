@@ -1005,16 +1005,25 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
 
     assert(mServiceBrowser == aServiceBrowser);
 
-    otbrLogInfo("browse service reply: %s.%s inf %u, flags=%u", aName, aType, aInterfaceIndex, aFlags);
+    otbrLogInfo("browse service reply: %s.%s inf %u, event=%d, flags=%u", aName, aType, aInterfaceIndex, aEvent,
+                aFlags);
 
-    if (aEvent == AVAHI_BROWSER_FAILURE)
+    switch (aEvent)
     {
-        mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
-    }
-    else
-    {
+    case AVAHI_BROWSER_NEW:
         Resolve(aInterfaceIndex, aProtocol, aName, aType);
+        break;
+    case AVAHI_BROWSER_REMOVE:
+        // TODO: handle service removing
+        break;
+    case AVAHI_BROWSER_CACHE_EXHAUSTED:
+    case AVAHI_BROWSER_ALL_FOR_NOW:
+        break;
+    case AVAHI_BROWSER_FAILURE:
+        mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
+        break;
     }
+
     if (mServiceBrowser != nullptr)
     {
         avahi_service_browser_free(mServiceBrowser);
