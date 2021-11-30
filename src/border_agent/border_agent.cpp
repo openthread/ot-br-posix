@@ -125,47 +125,29 @@ void BorderAgent::Init(void)
     mBackboneAgent.Init();
 #endif
 
-    if (IsThreadStarted())
-    {
-        Start();
-    }
-    else
-    {
-        Stop();
-    }
+    Start();
 }
 
-otbrError BorderAgent::Start(void)
+void BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    VerifyOrExit(IsThreadStarted(), errno = EAGAIN, error = OTBR_ERROR_ERRNO);
-
-    // In case we didn't receive Thread down event.
-    Stop();
-
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
+    SuccessOrExit(error = mPublisher->Start());
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Start();
 #endif
-    UpdateMeshCopService();
-
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mDiscoveryProxy.Start();
 #endif
 
-#endif // OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
-
 exit:
     otbrLogResult(error, "Start Thread Border Agent");
-    return error;
 }
 
 void BorderAgent::Stop(void)
 {
     otbrLogInfo("Stop Thread Border Agent");
 
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy.Stop();
 #endif
@@ -173,13 +155,9 @@ void BorderAgent::Stop(void)
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mDiscoveryProxy.Stop();
 #endif
-    UpdateMeshCopService();
-#endif
-}
 
-void BorderAgent::HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
-{
-    static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
+    UnpublishMeshCopService();
+    mPublisher->Stop();
 }
 
 BorderAgent::~BorderAgent(void)
@@ -191,6 +169,11 @@ BorderAgent::~BorderAgent(void)
         delete mPublisher;
         mPublisher = nullptr;
     }
+}
+
+void BorderAgent::HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
+{
+    static_cast<BorderAgent *>(aContext)->HandleMdnsState(aState);
 }
 
 void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
@@ -344,11 +327,8 @@ exit:
 #if OTBR_ENABLE_DBUS_SERVER
 void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate)
 {
-    this->mMeshCopTxtUpdate = std::move(aUpdate);
-    if (IsThreadStarted())
-    {
-        this->UpdateMeshCopService();
-    }
+    mMeshCopTxtUpdate = std::move(aUpdate);
+    UpdateMeshCopService();
 }
 #endif
 
@@ -362,18 +342,10 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         otbrLogInfo("Thread is %s", (IsThreadStarted() ? "up" : "down"));
-
-        if (IsThreadStarted())
-        {
-            Start();
-        }
-        else
-        {
-            Stop();
-        }
     }
-    else if (aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
-                       OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE))
+
+    if (aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
+                  OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE))
     {
         UpdateMeshCopService();
     }
