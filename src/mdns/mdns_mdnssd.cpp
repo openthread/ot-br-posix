@@ -849,7 +849,7 @@ void PublisherMDnsSd::ServiceSubscription::Browse(void)
     assert(mServiceRef == nullptr);
 
     otbrLogInfo("DNSServiceBrowse %s", mType.c_str());
-    DNSServiceBrowse(&mServiceRef, /* flags */ kDNSServiceFlagsTimeout, kDNSServiceInterfaceIndexAny, mType.c_str(),
+    DNSServiceBrowse(&mServiceRef, kDNSServiceFlagsTimeout, kDNSServiceInterfaceIndexAny, mType.c_str(),
                      /* domain */ nullptr, HandleBrowseResult, this);
 }
 
@@ -972,7 +972,7 @@ void PublisherMDnsSd::ServiceSubscription::GetAddrInfo(uint32_t aInterfaceIndex)
 
     otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", mInstanceInfo.mHostName.c_str(), aInterfaceIndex);
 
-    DNSServiceGetAddrInfo(&mServiceRef, /* flags */ kDNSServiceFlagsTimeout, aInterfaceIndex,
+    DNSServiceGetAddrInfo(&mServiceRef, kDNSServiceFlagsTimeout, aInterfaceIndex,
                           kDNSServiceProtocol_IPv6 | kDNSServiceProtocol_IPv4, mInstanceInfo.mHostName.c_str(),
                           HandleGetAddrInfoResult, this);
 }
