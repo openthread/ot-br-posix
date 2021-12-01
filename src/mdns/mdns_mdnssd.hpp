@@ -94,6 +94,8 @@ public:
     void Process(const MainloopContext &aMainloop) override;
 
 private:
+    static constexpr uint32_t kDefaultTtl = 10;
+
     struct Service
     {
         std::string   mName;

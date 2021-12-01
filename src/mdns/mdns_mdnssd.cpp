@@ -949,6 +949,7 @@ void PublisherMDnsSd::ServiceSubscription::HandleResolveResult(DNSServiceRef    
     // priority and weight are not given in the reply
     mInstanceInfo.mPriority = 0;
     mInstanceInfo.mWeight   = 0;
+    mInstanceInfo.mTtl      = kDefaultTtl;
 
     DeallocateServiceRef();
     GetAddrInfo(aInterfaceIndex);
