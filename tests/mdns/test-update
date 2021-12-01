@@ -39,9 +39,9 @@ main()
     start_publisher u
 
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
-        dns_sd_check UpdateService _meshcop._udp 'nn=coolcool xp=HGFEDCBA tv=1.1.1 dd=ABCDEFGH'
+        dns_sd_check UpdateService _meshcop._udp 'nn=coolcool xp=HGFEDCBA tv=1.1.1 xa=ABCDEFGH'
     else
-        avahi_check 'UpdateService;_meshcop._udp;.\+"dd=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=HGFEDCBA.\+"nn=coolcool"'
+        avahi_check 'UpdateService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=HGFEDCBA.\+"nn=coolcool"'
     fi
 }
 
