@@ -274,9 +274,7 @@ private:
     HostIterator    FindPublishedHost(const DNSRecordRef &aRecordRef);
     HostIterator    FindPublishedHost(const std::string &aHostName);
 
-    void        OnServiceResolved(ServiceSubscription &aService);
     static void OnServiceResolveFailed(const ServiceSubscription &aService, DNSServiceErrorType aErrorCode);
-    void        OnHostResolved(HostSubscription &aHost);
     void        OnHostResolveFailed(const HostSubscription &aHost, DNSServiceErrorType aErrorCode);
 
     Services      mServices;
