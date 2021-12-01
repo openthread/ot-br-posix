@@ -883,30 +883,9 @@ void PublisherAvahi::UnsubscribeService(const std::string &aType, const std::str
                 mSubscribedServices.size());
 }
 
-void PublisherAvahi::OnServiceResolved(ServiceSubscription &aService)
-{
-    otbrLogInfo("Service %s is resolved successfully: %s host %s addresses %zu", aService.mType.c_str(),
-                aService.mInstanceInfo.mName.c_str(), aService.mInstanceInfo.mHostName.c_str(),
-                aService.mInstanceInfo.mAddresses.size());
-    if (mDiscoveredServiceInstanceCallback != nullptr)
-    {
-        mDiscoveredServiceInstanceCallback(aService.mType, aService.mInstanceInfo);
-    }
-}
-
 void PublisherAvahi::OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode)
 {
     otbrLogWarning("Service %s resolving failed: code=%d", aService.mType.c_str(), aErrorCode);
-}
-
-void PublisherAvahi::OnHostResolved(HostSubscription &aHost)
-{
-    otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHost.mHostName.c_str(),
-                aHost.mHostInfo.mHostName.c_str(), aHost.mHostInfo.mAddresses.size(), aHost.mHostInfo.mTtl);
-    if (mDiscoveredHostCallback != nullptr)
-    {
-        mDiscoveredHostCallback(aHost.mHostName, aHost.mHostInfo);
-    }
 }
 
 void PublisherAvahi::OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode)
@@ -1122,7 +1101,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
 
     otbrLogDebug("resolve service reply: address=%s, ttl=%u", address.ToString().c_str(), mInstanceInfo.mTtl);
 
-    mPublisherAvahi->OnServiceResolved(*this);
+    mPublisherAvahi->OnServiceResolved(mType, mInstanceInfo);
 
 exit:
     if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
@@ -1205,7 +1184,7 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser * 
     mHostInfo.mAddresses.push_back(std::move(address));
     // TODO: Use a more proper TTL
     mHostInfo.mTtl = kDefaultTtl;
-    mPublisherAvahi->OnHostResolved(*this);
+    mPublisherAvahi->OnHostResolved(mHostName, mHostInfo);
 
 exit:
     if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
