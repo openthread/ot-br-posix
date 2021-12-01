@@ -62,7 +62,8 @@ static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 
 ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
                                            const std::vector<const char *> &aRadioUrls,
-                                           const char *                     aBackboneInterfaceName)
+                                           const char *                     aBackboneInterfaceName,
+                                           bool                             aDryRun)
     : mInstance(nullptr)
 {
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
@@ -71,6 +72,8 @@ ControllerOpenThread::ControllerOpenThread(const char *                     aInt
 
     mConfig.mInterfaceName         = aInterfaceName;
     mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
+    mConfig.mDryRun                = aDryRun;
+
     for (const char *url : aRadioUrls)
     {
         mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;

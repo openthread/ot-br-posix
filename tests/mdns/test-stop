@@ -39,28 +39,28 @@ main()
     start_publisher k
 
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
-        dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 dd=ABCDEFGH'
+        dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH'
     else
-        avahi_check 'SingleService;_meshcop._udp;.\+"dd=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
+        avahi_check 'SingleService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
     fi
 
     # stop service
     /bin/kill -USR1 $PID
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
         sleep 200
-        (! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 dd=ABCDEFGH') || exit 1
+        (! dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH') || exit 1
     else
         sleep 1
-        (! avahi_check 'SingleService;_meshcop._udp;.\+"dd=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"') || exit 1
+        (! avahi_check 'SingleService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"') || exit 1
     fi
 
     # start service
     /bin/kill -USR2 $PID
     sleep 1
     if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
-        dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 dd=ABCDEFGH'
+        dns_sd_check SingleService _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH'
     else
-        avahi_check 'SingleService;_meshcop._udp;.\+"dd=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
+        avahi_check 'SingleService;_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
     fi
 }
 

@@ -98,7 +98,7 @@ void PublishSingleServiceWithCustomHost(void *aContext, Mdns::Publisher::State a
     {
         otbrError                error;
         Mdns::Publisher::TxtList txtList{
-            {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"dd", extAddr, sizeof(extAddr)}};
+            {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
 
         error = sContext.mPublisher->PublishHost(hostName, hostAddr);
         SuccessOrDie(error, "cannot publish the host");
@@ -126,7 +126,7 @@ void PublishMultipleServicesWithCustomHost(void *aContext, Mdns::Publisher::Stat
     {
         otbrError                error;
         Mdns::Publisher::TxtList txtList{
-            {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"dd", extAddr, sizeof(extAddr)}};
+            {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
 
         error = sContext.mPublisher->PublishHost(hostName1, hostAddr);
         SuccessOrDie(error, "cannot publish the first host");
@@ -157,7 +157,7 @@ void PublishSingleService(void *aContext, Mdns::Publisher::State aState)
     uint8_t                  xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
     uint8_t                  extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
     Mdns::Publisher::TxtList txtList{
-        {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"dd", extAddr, sizeof(extAddr)}};
+        {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
 
     assert(aContext == &sContext);
     if (aState == Mdns::Publisher::State::kReady)
@@ -178,7 +178,7 @@ void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
     {
         otbrError                error;
         Mdns::Publisher::TxtList txtList{
-            {"nn", "cool1"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"dd", extAddr, sizeof(extAddr)}};
+            {"nn", "cool1"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
 
         error = sContext.mPublisher->PublishService("", 12345, "MultipleService1", "_meshcop._udp.",
                                                     Mdns::Publisher::SubTypeList{}, txtList);
@@ -189,7 +189,7 @@ void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
     {
         otbrError                error;
         Mdns::Publisher::TxtList txtList{
-            {"nn", "cool2"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"dd", extAddr, sizeof(extAddr)}};
+            {"nn", "cool2"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
 
         error = sContext.mPublisher->PublishService("", 12345, "MultipleService2", "_meshcop._udp.",
                                                     Mdns::Publisher::SubTypeList{}, txtList);
@@ -213,7 +213,7 @@ void PublishUpdateServices(void *aContext, Mdns::Publisher::State aState)
             Mdns::Publisher::TxtList txtList{{"nn", "cool"},
                                              {"xp", xpanidOld, sizeof(xpanidOld)},
                                              {"tv", "1.1.1"},
-                                             {"dd", extAddr, sizeof(extAddr)}};
+                                             {"xa", extAddr, sizeof(extAddr)}};
 
             error = sContext.mPublisher->PublishService("", 12345, "UpdateService", "_meshcop._udp.",
                                                         Mdns::Publisher::SubTypeList{}, txtList);
@@ -223,7 +223,7 @@ void PublishUpdateServices(void *aContext, Mdns::Publisher::State aState)
             Mdns::Publisher::TxtList txtList{{"nn", "coolcool"},
                                              {"xp", xpanidNew, sizeof(xpanidNew)},
                                              {"tv", "1.1.1"},
-                                             {"dd", extAddr, sizeof(extAddr)}};
+                                             {"xa", extAddr, sizeof(extAddr)}};
 
             error = sContext.mPublisher->PublishService("", 12345, "UpdateService", "_meshcop._udp.",
                                                         Mdns::Publisher::SubTypeList{}, txtList);

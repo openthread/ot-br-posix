@@ -455,7 +455,7 @@ test_meshcop_service()
     grep "tv=1\.2\.0" <<<"${service}"
     grep "nn=${network_name}" <<<"${service}"
     grep "xp=${xpanid_txt}" <<<"${service}"
-    grep "dd=${extaddr_txt}" <<<"${service}"
+    grep "xa=${extaddr_txt}" <<<"${service}"
 
     # TODO: enable the checks after enabling Thread 1.2 for tests.
     #grep "dn=${domain_name}" <<< "${service}"
@@ -504,7 +504,7 @@ test_meshcop_service()
     sleep 5
     service="$(scan_meshcop_service)"
     grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
-    grep "dd=${new_extaddr_txt}" <<<"${service}"
+    grep "xa=${new_extaddr_txt}" <<<"${service}"
 
     # Test if the meshcop service is published when Thread is stopped.
     sudo "${OT_CTL}" thread stop
