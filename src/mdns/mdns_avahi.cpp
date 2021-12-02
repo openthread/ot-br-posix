@@ -851,18 +851,20 @@ std::string PublisherAvahi::MakeFullName(const std::string &aName)
 
 void PublisherAvahi::SubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
-    mSubscribedServices.emplace_back(*this, aType, aInstanceName);
+    auto service = MakeUnique<ServiceSubscription>(*this, aType, aInstanceName);
+
+    mSubscribedServices.push_back(std::move(service));
 
     otbrLogInfo("subscribe service %s.%s (total %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
 
     if (aInstanceName.empty())
     {
-        mSubscribedServices.back().Browse();
+        mSubscribedServices.back()->Browse();
     }
     else
     {
-        mSubscribedServices.back().Resolve(AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, aInstanceName, aType);
+        mSubscribedServices.back()->Resolve(AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, aInstanceName, aType);
     }
 }
 
@@ -870,14 +872,18 @@ void PublisherAvahi::UnsubscribeService(const std::string &aType, const std::str
 {
     ServiceSubscriptionList::iterator it =
         std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
-                     [&aType, &aInstanceName](const ServiceSubscription &aService) {
-                         return aService.mType == aType && aService.mInstanceName == aInstanceName;
+                     [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
+                         return aService->mType == aType && aService->mInstanceName == aInstanceName;
                      });
 
     assert(it != mSubscribedServices.end());
 
-    it->Release();
-    mSubscribedServices.erase(it);
+    {
+        std::unique_ptr<ServiceSubscription> service = std::move(*it);
+
+        mSubscribedServices.erase(it);
+        service->Release();
+    }
 
     otbrLogInfo("unsubscribe service %s.%s (left %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
@@ -895,23 +901,29 @@ void PublisherAvahi::OnHostResolveFailed(const HostSubscription &aHost, int aErr
 
 void PublisherAvahi::SubscribeHost(const std::string &aHostName)
 {
-    mSubscribedHosts.emplace_back(*this, aHostName);
+    auto host = MakeUnique<HostSubscription>(*this, aHostName);
+
+    mSubscribedHosts.push_back(std::move(host));
 
     otbrLogInfo("subscribe host %s (total %zu)", aHostName.c_str(), mSubscribedHosts.size());
 
-    mSubscribedHosts.back().Resolve();
+    mSubscribedHosts.back()->Resolve();
 }
 
 void PublisherAvahi::UnsubscribeHost(const std::string &aHostName)
 {
-    HostSubscriptionList::iterator it =
-        std::find_if(mSubscribedHosts.begin(), mSubscribedHosts.end(),
-                     [&aHostName](const HostSubscription &aHost) { return aHost.mHostName == aHostName; });
+    HostSubscriptionList::iterator it = std::find_if(
+        mSubscribedHosts.begin(), mSubscribedHosts.end(),
+        [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
     assert(it != mSubscribedHosts.end());
 
-    it->Release();
-    mSubscribedHosts.erase(it);
+    {
+        std::unique_ptr<HostSubscription> host = std::move(*it);
+
+        mSubscribedHosts.erase(it);
+        host->Release();
+    }
 
     otbrLogInfo("unsubscribe host %s (remaining %d)", aHostName.c_str(), mSubscribedHosts.size());
 }
@@ -1072,6 +1084,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     Ip6Address             address;
     size_t                 totalTxtSize = 0;
     DiscoveredInstanceInfo instanceInfo;
+    bool                   resolved = false;
 
     avahi_address_snprint(addrBuf, sizeof(addrBuf), aAddress);
     otbrLogInfo("resolve service reply: protocol %d event %d %s.%s.%s = host %s address %s port %d flags %d", aProtocol,
@@ -1112,10 +1125,15 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
 
     otbrLogDebug("resolve service reply: address=%s, ttl=%u", address.ToString().c_str(), instanceInfo.mTtl);
 
-    mPublisherAvahi->OnServiceResolved(mType, instanceInfo);
+    resolved = true;
 
 exit:
-    if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
+    if (resolved)
+    {
+        // NOTE: This `ServiceSubscrption` object may be freed in `OnServiceResolved`.
+        mPublisherAvahi->OnServiceResolved(mType, instanceInfo);
+    }
+    else if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
     {
         mPublisherAvahi->OnServiceResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
     }
@@ -1193,8 +1211,13 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser * 
     OTBR_UNUSED_VARIABLE(aType);
     OTBR_UNUSED_VARIABLE(aFlags);
 
-    Ip6Address address = *static_cast<const uint8_t(*)[16]>(aRdata);
+    Ip6Address address  = *static_cast<const uint8_t(*)[16]>(aRdata);
+    bool       resolved = false;
+
     assert(mRecordBrowser == aRecordBrowser);
+    avahi_record_browser_free(mRecordBrowser);
+    mRecordBrowser = nullptr;
+
     VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified());
     VerifyOrExit(aSize == 16, otbrLogErr("unexpected address data length: %u", aSize));
     otbrLogInfo("resolved host address: %s", address.ToString().c_str());
@@ -1203,17 +1226,17 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser * 
     mHostInfo.mAddresses.push_back(std::move(address));
     // TODO: Use a more proper TTL
     mHostInfo.mTtl = kDefaultTtl;
-    mPublisherAvahi->OnHostResolved(mHostName, mHostInfo);
+    resolved       = true;
 
 exit:
-    if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
+    if (resolved)
+    {
+        // NOTE: This `HostSubscrption` object may be freed in `OnHostResolved`.
+        mPublisherAvahi->OnHostResolved(mHostName, mHostInfo);
+    }
+    else if (avahi_client_errno(mPublisherAvahi->mClient) != AVAHI_OK)
     {
         mPublisherAvahi->OnHostResolveFailed(*this, avahi_client_errno(mPublisherAvahi->mClient));
-    }
-    if (mRecordBrowser != nullptr)
-    {
-        avahi_record_browser_free(mRecordBrowser);
-        mRecordBrowser = nullptr;
     }
 }
 

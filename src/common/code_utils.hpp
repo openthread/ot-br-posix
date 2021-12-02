@@ -37,6 +37,7 @@
 #define OTBR_LOG_TAG "UTILS"
 #endif
 
+#include <memory>
 #include <stdlib.h>
 
 #include "common/logging.hpp"
@@ -154,5 +155,10 @@
 
 #define OTBR_NOOP
 #define OTBR_UNUSED_VARIABLE(variable) ((void)(variable))
+
+template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 #endif // OTBR_COMMON_CODE_UTILS_HPP_
