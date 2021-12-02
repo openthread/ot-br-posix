@@ -42,6 +42,11 @@ endif()
 
 option(OTBR_BORDER_ROUTING "Enable Border Routing Manager" OFF)
 
+option(OTBR_TAYGA_NAT64 "Enable NAT64 support via TAYGA" OFF)
+if(OTBR_TAYGA_NAT64)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TAYGA_NAT64=1)
+endif()
+
 option(OTBR_DBUS "Enable DBus support" OFF)
 if(OTBR_DBUS)
     pkg_check_modules(DBUS REQUIRED dbus-1)
@@ -69,7 +74,7 @@ if (OTBR_SRP_ADVERTISING_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_ADVERTISING_PROXY=1)
 endif()
 
-option(OTBR_DNSSD_DISCOVERY_PROXY   "Enable DNS-SD Discovery Proxy support" OFF)
+option(OTBR_DNSSD_DISCOVERY_PROXY  "Enable DNS-SD Discovery Proxy support" OFF)
 if (OTBR_DNSSD_DISCOVERY_PROXY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNSSD_DISCOVERY_PROXY=1)
 endif()

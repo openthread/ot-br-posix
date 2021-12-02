@@ -39,6 +39,8 @@ set(OTBR_PRODUCT_NAME "BorderRouter" CACHE STRING "The product name")
 set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
 set(OTBR_MESHCOP_SERVICE_INSTANCE_NAME "${OTBR_VENDOR_NAME} ${OTBR_PRODUCT_NAME}" CACHE STRING "The OTBR MeshCoP service instance name")
 set(OTBR_MDNS "avahi" CACHE STRING "mDNS publisher provider")
+set(OTBR_TAYGA_RESTART_CMD "systemctl restart tayga" CACHE STRING "The platform specific command to restart Tayga service")
+set(OTBR_TAYGA_STOP_CMD "systemctl stop tayga" CACHE STRING "The platform specific command to stop Tayga service")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
 
 set_property(CACHE OTBR_MDNS PROPERTY STRINGS "avahi" "mDNSResponder")
@@ -91,6 +93,8 @@ target_compile_definitions(otbr-config INTERFACE
     "OTBR_PACKAGE_NAME=\"${OTBR_NAME}\""
     "OTBR_PACKAGE_VERSION=\"${OTBR_VERSION}\""
     "OTBR_MESHCOP_SERVICE_INSTANCE_NAME=\"${OTBR_MESHCOP_SERVICE_INSTANCE_NAME}\""
+    "OTBR_TAYGA_RESTART_CMD=\"${OTBR_TAYGA_RESTART_CMD}\""
+    "OTBR_TAYGA_STOP_CMD=\"${OTBR_TAYGA_STOP_CMD}\""
     "OTBR_SYSLOG_FACILITY_ID=${OTBR_SYSLOG_FACILITY_ID}"
 )
 

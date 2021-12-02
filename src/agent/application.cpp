@@ -40,6 +40,7 @@
 #include "agent/application.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop_manager.hpp"
+#include "nat64/tayga_helper.hpp"
 
 namespace otbr {
 
@@ -133,6 +134,10 @@ otbrError Application::Run(void)
             otbrLogWarning("Failed to notify Upstart.");
         }
     }
+#endif
+
+#if OTBR_ENABLE_TAYGA_NAT64
+    Tayga::ConfigTaygaNat64Prefix(mNcp.GetInstance());
 #endif
 
     // allow quitting elegantly

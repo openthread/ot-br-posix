@@ -43,7 +43,7 @@ WLAN_IFNAMES="${INFRA_IF_NAME:-eth0}"
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
-#without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
+# without NAT64 || test $PLATFORM = ubuntu || test $PLATFORM = raspbian || die "nat64 is not tested under $PLATFORM."
 
 tayga_install()
 {

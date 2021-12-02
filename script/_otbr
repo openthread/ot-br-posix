@@ -83,6 +83,13 @@ otbr_install()
         )
     fi
 
+    if with DOCKER; then
+        otbr_options+=(
+            "-DOTBR_TAYGA_RESTART_CMD=service tayga restart"
+            "-DOTBR_TAYGA_STOP_CMD=service tayga stop"
+        )
+    fi
+
     if with REST_API; then
         otbr_options+=("-DOTBR_REST=ON")
     fi

@@ -49,6 +49,7 @@ target_link_libraries(otbr-agent PRIVATE
     otbr-ncp
     otbr-common
     otbr-utils
+    otbr-nat64
 )
 
 add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
