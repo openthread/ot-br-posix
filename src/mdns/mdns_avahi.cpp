@@ -1077,8 +1077,6 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     otbrLogInfo("resolve service reply: protocol %d event %d %s.%s.%s = host %s address %s port %d flags %d", aProtocol,
                 aEvent, aName, aType, aDomain, aHostName, addrBuf, aPort, aFlags);
 
-    VerifyOrExit(mServiceResolvers.find(aServiceResolver) != mServiceResolvers.end());
-
     RemoveServiceResolver(aServiceResolver);
 
     VerifyOrExit(
@@ -1130,6 +1128,8 @@ void PublisherAvahi::ServiceSubscription::AddServiceResolver(AvahiServiceResolve
 void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(AvahiServiceResolver *aServiceResolver)
 {
     assert(aServiceResolver != nullptr);
+    assert(mServiceResolvers.find(aServiceResolver) != mServiceResolvers.end());
+
     avahi_service_resolver_free(aServiceResolver);
     mServiceResolvers.erase(aServiceResolver);
 }
