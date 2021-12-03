@@ -1092,12 +1092,6 @@ exit:
 
         mMDnsSd->OnHostResolveFailed(*this, aErrorCode);
     }
-    else if (mHostInfo.mAddresses.empty() && (aFlags & kDNSServiceFlagsMoreComing) == 0)
-    {
-        otbrLogDebug("DNSServiceGetAddrInfo reply: no IPv6 address found");
-        mHostInfo.mTtl = aTtl;
-        mMDnsSd->OnHostResolved(mHostName, mHostInfo);
-    }
 }
 
 } // namespace Mdns
