@@ -67,7 +67,10 @@ void DiscoveryProxy::Start(void)
 
     mSubscriberId = mMdnsPublisher.AddSubscriptionCallbacks(
         [this](const std::string &aType, const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo) {
-            OnServiceDiscovered(aType, aInstanceInfo);
+            if (!aInstanceInfo.mRemoved)
+            {
+                OnServiceDiscovered(aType, aInstanceInfo);
+            }
         },
 
         [this](const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aHostInfo) {
