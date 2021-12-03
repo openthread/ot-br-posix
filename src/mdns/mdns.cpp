@@ -116,6 +116,24 @@ void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInst
     }
 }
 
+void Publisher::OnServiceRemoved(const std::string &aType, const std::string &aInstanceName)
+{
+    DiscoveredInstanceInfo instanceInfo;
+
+    otbrLogInfo("Service %s.%s is removed.", aInstanceName.c_str(), aType.c_str());
+
+    instanceInfo.mRemoved = true;
+    instanceInfo.mName    = aInstanceName;
+
+    for (const auto &subCallback : mDiscoveredCallbacks)
+    {
+        if (subCallback.second.first != nullptr)
+        {
+            subCallback.second.first(aType, instanceInfo);
+        }
+    }
+}
+
 void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::DiscoveredHostInfo &aHostInfo)
 {
     otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHostName.c_str(),

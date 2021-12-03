@@ -995,7 +995,7 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
         Resolve(aInterfaceIndex, aProtocol, aName, aType);
         break;
     case AVAHI_BROWSER_REMOVE:
-        // TODO: handle service removing
+        mPublisherAvahi->OnServiceRemoved(aType, aName);
         break;
     case AVAHI_BROWSER_CACHE_EXHAUSTED:
     case AVAHI_BROWSER_ALL_FOR_NOW:
