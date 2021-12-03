@@ -1113,17 +1113,28 @@ void DBusThreadObject::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     otError                                     error        = OT_ERROR_NONE;
     std::map<std::string, std::vector<uint8_t>> update;
     std::vector<TxtEntry>                       updatedTxtEntries;
-    auto                                        args = std::tie(updatedTxtEntries);
+    auto                                        args             = std::tie(updatedTxtEntries);
+    bool                                        hasVendorEntries = false;
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     for (const auto &entry : updatedTxtEntries)
     {
+        VerifyOrExit(!entry.mKey.empty(), error = OT_ERROR_INVALID_ARGS);
         update[entry.mKey] = entry.mValue;
     }
-    for (const auto reservedKey : {"rv", "tv", "sb", "nn", "xp", "at", "pt", "dn", "sq", "bb", "omr"})
+    for (const auto reservedKey : {"rv", "tv", "sb", "nn", "xp", "at", "pt", "dn", "sq", "bb", "omr", "xa"})
     {
         VerifyOrExit(!update.count(reservedKey), error = OT_ERROR_INVALID_ARGS);
     }
+    for (const auto &entry : update)
+    {
+        if (entry.first.front() == 'v')
+        {
+            hasVendorEntries = true;
+            break;
+        }
+    }
+    VerifyOrExit(!hasVendorEntries || update.count("vo"), error = OT_ERROR_INVALID_ARGS);
     threadHelper->OnUpdateMeshCopTxt(std::move(update));
 
 exit:
