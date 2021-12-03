@@ -284,11 +284,11 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
         aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
     }
 
-    for (Subscription &subscription : mSubscribedServices)
+    for (auto &subscription : mSubscribedServices)
     {
-        if (subscription.mServiceRef != nullptr)
+        if (subscription->mServiceRef != nullptr)
         {
-            int fd = DNSServiceRefSockFD(subscription.mServiceRef);
+            int fd = DNSServiceRefSockFD(subscription->mServiceRef);
             assert(fd != -1);
 
             FD_SET(fd, &aMainloop.mReadFdSet);
@@ -296,11 +296,11 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
         }
     }
 
-    for (Subscription &subscription : mSubscribedHosts)
+    for (auto &subscription : mSubscribedHosts)
     {
-        if (subscription.mServiceRef != nullptr)
+        if (subscription->mServiceRef != nullptr)
         {
-            int fd = DNSServiceRefSockFD(subscription.mServiceRef);
+            int fd = DNSServiceRefSockFD(subscription->mServiceRef);
             assert(fd != -1);
 
             FD_SET(fd, &aMainloop.mReadFdSet);
@@ -333,30 +333,30 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
         }
     }
 
-    for (Subscription &subscription : mSubscribedServices)
+    for (auto &subscription : mSubscribedServices)
     {
-        if (subscription.mServiceRef != nullptr)
+        if (subscription->mServiceRef != nullptr)
         {
-            int fd = DNSServiceRefSockFD(subscription.mServiceRef);
+            int fd = DNSServiceRefSockFD(subscription->mServiceRef);
             assert(fd != -1);
 
             if (FD_ISSET(fd, &aMainloop.mReadFdSet))
             {
-                readyServices.push_back(subscription.mServiceRef);
+                readyServices.push_back(subscription->mServiceRef);
             }
         }
     }
 
-    for (Subscription &service : mSubscribedHosts)
+    for (auto &service : mSubscribedHosts)
     {
-        if (service.mServiceRef != nullptr)
+        if (service->mServiceRef != nullptr)
         {
-            int fd = DNSServiceRefSockFD(service.mServiceRef);
+            int fd = DNSServiceRefSockFD(service->mServiceRef);
             assert(fd != -1);
 
             if (FD_ISSET(fd, &aMainloop.mReadFdSet))
             {
-                readyServices.push_back(service.mServiceRef);
+                readyServices.push_back(service->mServiceRef);
             }
         }
     }
@@ -754,18 +754,18 @@ PublisherMDnsSd::HostIterator PublisherMDnsSd::FindPublishedHost(const std::stri
 
 void PublisherMDnsSd::SubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
-    mSubscribedServices.emplace_back(*this, aType, aInstanceName);
+    mSubscribedServices.push_back(MakeUnique<ServiceSubscription>(*this, aType, aInstanceName));
 
     otbrLogInfo("subscribe service %s.%s (total %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
 
     if (aInstanceName.empty())
     {
-        mSubscribedServices.back().Browse();
+        mSubscribedServices.back()->Browse();
     }
     else
     {
-        mSubscribedServices.back().Resolve(kDNSServiceInterfaceIndexAny, aInstanceName, aType, kDomain);
+        mSubscribedServices.back()->Resolve(kDNSServiceInterfaceIndexAny, aInstanceName, aType, kDomain);
     }
 }
 
@@ -773,14 +773,18 @@ void PublisherMDnsSd::UnsubscribeService(const std::string &aType, const std::st
 {
     ServiceSubscriptionList::iterator it =
         std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
-                     [&aType, &aInstanceName](const ServiceSubscription &aService) {
-                         return aService.mType == aType && aService.mInstanceName == aInstanceName;
+                     [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
+                         return aService->mType == aType && aService->mInstanceName == aInstanceName;
                      });
 
     assert(it != mSubscribedServices.end());
 
-    it->Release();
-    mSubscribedServices.erase(it);
+    {
+        std::unique_ptr<ServiceSubscription> service = std::move(*it);
+
+        service->Release();
+        mSubscribedServices.erase(it);
+    }
 
     otbrLogInfo("unsubscribe service %s.%s (left %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
@@ -799,23 +803,27 @@ void PublisherMDnsSd::OnHostResolveFailed(const PublisherMDnsSd::HostSubscriptio
 
 void PublisherMDnsSd::SubscribeHost(const std::string &aHostName)
 {
-    mSubscribedHosts.emplace_back(*this, aHostName);
+    mSubscribedHosts.push_back(MakeUnique<HostSubscription>(*this, aHostName));
 
     otbrLogInfo("subscribe host %s (total %zu)", aHostName.c_str(), mSubscribedHosts.size());
 
-    mSubscribedHosts.back().Resolve();
+    mSubscribedHosts.back()->Resolve();
 }
 
 void PublisherMDnsSd::UnsubscribeHost(const std::string &aHostName)
 {
-    HostSubscriptionList ::iterator it =
-        std::find_if(mSubscribedHosts.begin(), mSubscribedHosts.end(),
-                     [&aHostName](const HostSubscription &aHost) { return aHost.mHostName == aHostName; });
+    HostSubscriptionList ::iterator it = std::find_if(
+        mSubscribedHosts.begin(), mSubscribedHosts.end(),
+        [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
     assert(it != mSubscribedHosts.end());
 
-    it->Release();
-    mSubscribedHosts.erase(it);
+    {
+        std::unique_ptr<HostSubscription> host = std::move(*it);
+
+        host->Release();
+        mSubscribedHosts.erase(it);
+    }
 
     otbrLogInfo("unsubscribe host %s (remaining %d)", aHostName.c_str(), mSubscribedHosts.size());
 }
@@ -1018,6 +1026,7 @@ void PublisherMDnsSd::ServiceSubscription::HandleGetAddrInfoResult(DNSServiceRef
 
     otbrLogDebug("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
 
+    // NOTE: This `ServiceSubscription` object may be freed in `OnServiceResolved`.
     mMDnsSd->OnServiceResolved(mType, mInstanceInfo);
 
 exit:
@@ -1083,6 +1092,7 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
 
     otbrLogDebug("DNSServiceGetAddrInfo reply: address=%s, ttl=%u", address.ToString().c_str(), aTtl);
 
+    // NOTE: This `HostSubscription` object may be freed in `OnHostResolved`.
     mMDnsSd->OnHostResolved(mHostName, mHostInfo);
 
 exit:
