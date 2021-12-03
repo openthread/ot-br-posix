@@ -34,6 +34,7 @@
 #ifndef OTBR_AGENT_MDNS_AVAHI_HPP_
 #define OTBR_AGENT_MDNS_AVAHI_HPP_
 
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -350,9 +351,9 @@ private:
         AvahiRecordBrowser *mRecordBrowser;
     };
 
-    typedef std::vector<Host>                Hosts;
-    typedef std::vector<ServiceSubscription> ServiceSubscriptionList;
-    typedef std::vector<HostSubscription>    HostSubscriptionList;
+    typedef std::vector<Host>                                 Hosts;
+    typedef std::vector<std::unique_ptr<ServiceSubscription>> ServiceSubscriptionList;
+    typedef std::vector<std::unique_ptr<HostSubscription>>    HostSubscriptionList;
 
     static void HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext);
     void        HandleClientState(AvahiClient *aClient, AvahiClientState aState);
