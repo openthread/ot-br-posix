@@ -227,12 +227,12 @@ private:
         DiscoveredHostInfo mHostInfo;
     };
 
-    typedef std::vector<Service>             Services;
-    typedef std::vector<Host>                Hosts;
-    typedef std::vector<Service>::iterator   ServiceIterator;
-    typedef std::vector<Host>::iterator      HostIterator;
-    typedef std::vector<ServiceSubscription> ServiceSubscriptionList;
-    typedef std::vector<HostSubscription>    HostSubscriptionList;
+    typedef std::vector<Service>                              Services;
+    typedef std::vector<Host>                                 Hosts;
+    typedef std::vector<Service>::iterator                    ServiceIterator;
+    typedef std::vector<Host>::iterator                       HostIterator;
+    typedef std::vector<std::unique_ptr<ServiceSubscription>> ServiceSubscriptionList;
+    typedef std::vector<std::unique_ptr<HostSubscription>>    HostSubscriptionList;
 
     void        DiscardService(const std::string &aName, const std::string &aType, DNSServiceRef aServiceRef = nullptr);
     void        RecordService(const std::string &aName,
