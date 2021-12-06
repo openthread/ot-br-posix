@@ -112,52 +112,43 @@ private:
         DNSRecordRef         mRecord;
     };
 
-    struct Subscription
+    struct ServiceRef
     {
-        PublisherMDnsSd *mMDnsSd;
-        DNSServiceRef    mServiceRef;
+        DNSServiceRef mServiceRef;
 
-        explicit Subscription(PublisherMDnsSd &aMDnsSd)
-            : mMDnsSd(&aMDnsSd)
-            , mServiceRef(nullptr)
+        explicit ServiceRef(void)
+            : mServiceRef(nullptr)
         {
         }
 
+        void Update(MainloopContext &aMainloop) const;
+        void Process(const MainloopContext &aMainloop) const;
         void Release(void);
         void DeallocateServiceRef(void);
     };
 
-    struct ServiceSubscription : public Subscription
+    struct ServiceSubscription;
+
+    struct ServiceInstanceResolution : public ServiceRef
     {
-        explicit ServiceSubscription(PublisherMDnsSd &aMDnsSd, std::string aType, std::string aInstanceName)
-            : Subscription(aMDnsSd)
-            , mType(std::move(aType))
+        explicit ServiceInstanceResolution(ServiceSubscription &aSubscription,
+                                           std::string          aInstanceName,
+                                           std::string          aType,
+                                           std::string          aDomain,
+                                           uint32_t             aNetifIndex)
+            : ServiceRef()
+            , mSubscription(&aSubscription)
             , mInstanceName(std::move(aInstanceName))
+            , mTypeEndWithDot(std::move(aType))
+            , mDomain(std::move(aDomain))
+            , mNetifIndex(aNetifIndex)
         {
         }
 
-        void Browse(void);
-        void Resolve(uint32_t           aInterfaceIndex,
-                     const std::string &aInstanceName,
-                     const std::string &aType,
-                     const std::string &aDomain);
-        void GetAddrInfo(uint32_t aInterfaceIndex);
+        void      Resolve(void);
+        otbrError GetAddrInfo(uint32_t aInterfaceIndex);
+        void      FinishResolution(void);
 
-        static void HandleBrowseResult(DNSServiceRef       aServiceRef,
-                                       DNSServiceFlags     aFlags,
-                                       uint32_t            aInterfaceIndex,
-                                       DNSServiceErrorType aErrorCode,
-                                       const char *        aInstanceName,
-                                       const char *        aType,
-                                       const char *        aDomain,
-                                       void *              aContext);
-        void        HandleBrowseResult(DNSServiceRef       aServiceRef,
-                                       DNSServiceFlags     aFlags,
-                                       uint32_t            aInterfaceIndex,
-                                       DNSServiceErrorType aErrorCode,
-                                       const char *        aInstanceName,
-                                       const char *        aType,
-                                       const char *        aDomain);
         static void HandleResolveResult(DNSServiceRef        aServiceRef,
                                         DNSServiceFlags      aFlags,
                                         uint32_t             aInterfaceIndex,
@@ -193,15 +184,61 @@ private:
                                             const struct sockaddr *aAddress,
                                             uint32_t               aTtl);
 
-        std::string            mType;
+        ServiceSubscription *  mSubscription;
         std::string            mInstanceName;
+        std::string            mTypeEndWithDot;
+        std::string            mDomain;
+        uint32_t               mNetifIndex;
         DiscoveredInstanceInfo mInstanceInfo;
     };
 
-    struct HostSubscription : public Subscription
+    struct ServiceSubscription : public ServiceRef
+    {
+        explicit ServiceSubscription(PublisherMDnsSd &aMDnsSd, std::string aType, std::string aInstanceName)
+            : ServiceRef()
+            , mMDnsSd(&aMDnsSd)
+            , mType(std::move(aType))
+            , mInstanceName(std::move(aInstanceName))
+        {
+        }
+
+        void Browse(void);
+        void Resolve(uint32_t           aNetifIndex,
+                     const std::string &aInstanceName,
+                     const std::string &aType,
+                     const std::string &aDomain);
+        void RemoveInstanceResolution(ServiceInstanceResolution &aInstanceResolution);
+        void UpdateAll(MainloopContext &aMainloop) const;
+        void ProcessAll(const MainloopContext &aMainloop) const;
+
+        static void HandleBrowseResult(DNSServiceRef       aServiceRef,
+                                       DNSServiceFlags     aFlags,
+                                       uint32_t            aInterfaceIndex,
+                                       DNSServiceErrorType aErrorCode,
+                                       const char *        aInstanceName,
+                                       const char *        aType,
+                                       const char *        aDomain,
+                                       void *              aContext);
+        void        HandleBrowseResult(DNSServiceRef       aServiceRef,
+                                       DNSServiceFlags     aFlags,
+                                       uint32_t            aInterfaceIndex,
+                                       DNSServiceErrorType aErrorCode,
+                                       const char *        aInstanceName,
+                                       const char *        aType,
+                                       const char *        aDomain);
+
+        PublisherMDnsSd *mMDnsSd;
+        std::string      mType;
+        std::string      mInstanceName;
+
+        std::vector<std::unique_ptr<ServiceInstanceResolution>> mResolvingInstances;
+    };
+
+    struct HostSubscription : public ServiceRef
     {
         explicit HostSubscription(PublisherMDnsSd &aMDnsSd, std::string aHostName)
-            : Subscription(aMDnsSd)
+            : ServiceRef()
+            , mMDnsSd(&aMDnsSd)
             , mHostName(std::move(aHostName))
         {
         }
@@ -223,6 +260,7 @@ private:
                                         const struct sockaddr *aAddress,
                                         uint32_t               aTtl);
 
+        PublisherMDnsSd *  mMDnsSd;
         std::string        mHostName;
         DiscoveredHostInfo mHostInfo;
     };
@@ -276,7 +314,9 @@ private:
     HostIterator    FindPublishedHost(const DNSRecordRef &aRecordRef);
     HostIterator    FindPublishedHost(const std::string &aHostName);
 
-    static void OnServiceResolveFailed(const ServiceSubscription &aService, DNSServiceErrorType aErrorCode);
+    static void OnServiceResolveFailed(const std::string & aType,
+                                       const std::string & aInstanceName,
+                                       DNSServiceErrorType aErrorCode);
     void        OnHostResolveFailed(const HostSubscription &aHost, DNSServiceErrorType aErrorCode);
 
     Services      mServices;
