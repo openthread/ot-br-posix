@@ -1007,7 +1007,7 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
         Resolve(aInterfaceIndex, aProtocol, aName, aType);
         break;
     case AVAHI_BROWSER_REMOVE:
-        mPublisherAvahi->OnServiceRemoved(aType, aName);
+        mPublisherAvahi->OnServiceRemoved(static_cast<uint32_t>(aInterfaceIndex), aType, aName);
         break;
     case AVAHI_BROWSER_CACHE_EXHAUSTED:
     case AVAHI_BROWSER_ALL_FOR_NOW:
@@ -1097,9 +1097,10 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
         otbrLogErr("failed to resolve service: %s", avahi_strerror(avahi_client_errno(mPublisherAvahi->mClient))));
     VerifyOrExit(aHostName != nullptr, otbrLogErr("host name is null"));
 
-    instanceInfo.mName     = aName;
-    instanceInfo.mHostName = std::string(aHostName) + ".";
-    instanceInfo.mPort     = aPort;
+    instanceInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
+    instanceInfo.mName       = aName;
+    instanceInfo.mHostName   = std::string(aHostName) + ".";
+    instanceInfo.mPort       = aPort;
     VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(addrBuf, address),
                  otbrLogErr("failed to parse the IP address: %s", addrBuf));
 

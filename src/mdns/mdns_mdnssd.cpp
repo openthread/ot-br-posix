@@ -902,7 +902,7 @@ void PublisherMDnsSd::ServiceSubscription::HandleBrowseResult(DNSServiceRef     
     }
     else
     {
-        mMDnsSd->OnServiceRemoved(mType, aInstanceName);
+        mMDnsSd->OnServiceRemoved(aInterfaceIndex, mType, aInstanceName);
     }
 
 exit:
@@ -1003,9 +1003,10 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleResolveResult(DNSServiceR
 
     SuccessOrExit(error = SplitFullServiceInstanceName(aFullName, instanceName, type, domain));
 
-    mInstanceInfo.mName     = instanceName;
-    mInstanceInfo.mHostName = aHostTarget;
-    mInstanceInfo.mPort     = ntohs(aPort);
+    mInstanceInfo.mNetifIndex = aInterfaceIndex;
+    mInstanceInfo.mName       = instanceName;
+    mInstanceInfo.mHostName   = aHostTarget;
+    mInstanceInfo.mPort       = ntohs(aPort);
     mInstanceInfo.mTxtData.assign(aTxtRecord, aTxtRecord + aTxtLen);
     // priority and weight are not given in the reply
     mInstanceInfo.mPriority = 0;

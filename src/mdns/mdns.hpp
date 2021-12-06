@@ -98,15 +98,16 @@ public:
      */
     struct DiscoveredInstanceInfo
     {
-        bool                    mRemoved = false; ///< The Service Instance is removed.
-        std::string             mName;            ///< Instance name.
-        std::string             mHostName;        ///< Full host name.
-        std::vector<Ip6Address> mAddresses;       ///< IPv6 addresses.
-        uint16_t                mPort     = 0;    ///< Port.
-        uint16_t                mPriority = 0;    ///< Service priority.
-        uint16_t                mWeight   = 0;    ///< Service weight.
-        std::vector<uint8_t>    mTxtData;         ///< TXT RDATA bytes.
-        uint32_t                mTtl = 0;         ///< Service TTL.
+        bool                    mRemoved    = false; ///< The Service Instance is removed.
+        uint32_t                mNetifIndex = 0;     ///< Network interface.
+        std::string             mName;               ///< Instance name.
+        std::string             mHostName;           ///< Full host name.
+        std::vector<Ip6Address> mAddresses;          ///< IPv6 addresses.
+        uint16_t                mPort     = 0;       ///< Port.
+        uint16_t                mPriority = 0;       ///< Service priority.
+        uint16_t                mWeight   = 0;       ///< Service weight.
+        std::vector<uint8_t>    mTxtData;            ///< TXT RDATA bytes.
+        uint32_t                mTtl = 0;            ///< Service TTL.
     };
 
     /**
@@ -424,7 +425,7 @@ protected:
     };
 
     void OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
-    void OnServiceRemoved(const std::string &aType, const std::string &aInstanceName);
+    void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
     void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
 
     PublishServiceHandler mServiceHandler        = nullptr;
