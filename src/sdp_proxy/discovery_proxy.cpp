@@ -155,9 +155,6 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
                 aType.c_str(), aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
                 aInstanceInfo.mAddresses.size(), aInstanceInfo.mPort, aInstanceInfo.mPriority, aInstanceInfo.mWeight);
 
-    CheckServiceNameSanity(aType);
-    CheckHostnameSanity(aInstanceInfo.mHostName);
-
     instanceInfo.mAddressNum = aInstanceInfo.mAddresses.size();
 
     if (!aInstanceInfo.mAddresses.empty())
@@ -234,8 +231,6 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
         resolvedHostName = aHostName + ".local.";
     }
 
-    CheckHostnameSanity(resolvedHostName);
-
     hostInfo.mAddressNum = aHostInfo.mAddresses.size();
     if (!aHostInfo.mAddresses.empty())
     {
@@ -305,28 +300,6 @@ int DiscoveryProxy::GetServiceSubscriptionCount(const DnsNameInfo &aNameInfo) co
     }
 
     return count;
-}
-
-void DiscoveryProxy::CheckServiceNameSanity(const std::string &aType)
-{
-    size_t dotpos;
-
-    OTBR_UNUSED_VARIABLE(aType);
-    OTBR_UNUSED_VARIABLE(dotpos);
-
-    assert(aType.length() > 0);
-    assert(aType[aType.length() - 1] != '.');
-    dotpos = aType.find_first_of('.');
-    assert(dotpos != std::string::npos);
-    assert(dotpos == aType.find_last_of('.'));
-}
-
-void DiscoveryProxy::CheckHostnameSanity(const std::string &aHostName)
-{
-    OTBR_UNUSED_VARIABLE(aHostName);
-
-    assert(aHostName.length() > 0);
-    assert(aHostName[aHostName.length() - 1] == '.');
 }
 
 uint32_t DiscoveryProxy::CapTtl(uint32_t aTtl)

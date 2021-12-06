@@ -890,13 +890,20 @@ void PublisherMDnsSd::ServiceSubscription::HandleBrowseResult(DNSServiceRef     
     OTBR_UNUSED_VARIABLE(aServiceRef);
     OTBR_UNUSED_VARIABLE(aDomain);
 
-    otbrLogInfo("DNSServiceBrowse reply: %s.%s inf %u, flags=%u, error=%d", aInstanceName, aType, aInterfaceIndex,
-                aFlags, aErrorCode);
+    otbrLogInfo("DNSServiceBrowse reply: %s %s.%s inf %u, flags=%u, error=%d",
+                aFlags & kDNSServiceFlagsAdd ? "add" : "remove", aInstanceName, aType, aInterfaceIndex, aFlags,
+                aErrorCode);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
-    VerifyOrExit(aFlags & kDNSServiceFlagsAdd);
 
-    Resolve(aInterfaceIndex, aInstanceName, aType, aDomain);
+    if (aFlags & kDNSServiceFlagsAdd)
+    {
+        Resolve(aInterfaceIndex, aInstanceName, aType, aDomain);
+    }
+    else
+    {
+        mMDnsSd->OnServiceRemoved(mType, aInstanceName);
+    }
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)

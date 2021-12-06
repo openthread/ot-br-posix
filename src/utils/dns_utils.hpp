@@ -55,6 +55,29 @@ namespace DnsUtils {
  */
 std::string UnescapeInstanceName(const std::string &aName);
 
+/**
+ * This function checks a given host name for sanity.
+ *
+ * Check criteria:
+ *      The host name must ends with dot.
+ *
+ * @param[in] aHostName  The host name to check.
+ *
+ */
+void CheckHostnameSanity(const std::string &aHostName);
+
+/**
+ * This function checks a given service name for sanity.
+ *
+ * Check criteria:
+ *      The service name must contain exactly one dot.
+ *      The service name must not end with dot.
+ *
+ * @param[in] aServiceName  The service name to check.
+ *
+ */
+void CheckServiceNameSanity(const std::string &aServiceName);
+
 } // namespace DnsUtils
 } // namespace otbr
 #endif // OTBR_UTILS_DNS_UTILS_HPP_

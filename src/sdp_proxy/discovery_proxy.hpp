@@ -91,8 +91,6 @@ private:
     void               OnDiscoveryProxyUnsubscribe(const char *aSubscription);
     int                GetServiceSubscriptionCount(const DnsNameInfo &aNameInfo) const;
     static std::string TranslateDomain(const std::string &aName, const std::string &aTargetDomain);
-    static void        CheckServiceNameSanity(const std::string &aType);
-    static void        CheckHostnameSanity(const std::string &aHostName);
     void               OnServiceDiscovered(const std::string &                            aSubscription,
                                            const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void OnHostDiscovered(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aHostInfo);
