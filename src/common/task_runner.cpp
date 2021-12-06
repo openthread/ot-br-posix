@@ -85,22 +85,26 @@ void TaskRunner::Update(MainloopContext &aMainloop)
     FD_SET(mEventFd[kRead], &aMainloop.mReadFdSet);
     aMainloop.mMaxFd = std::max(mEventFd[kRead], aMainloop.mMaxFd);
 
-    if (!mTaskQueue.empty())
     {
-        auto  now     = Clock::now();
-        auto &task    = mTaskQueue.top();
-        auto  delay   = std::chrono::duration_cast<Microseconds>(task.GetTimeExecute() - now);
-        auto  timeout = FromTimeval<Microseconds>(aMainloop.mTimeout);
+        std::lock_guard<std::mutex> _(mTaskQueueMutex);
 
-        if (task.GetTimeExecute() < now)
+        if (!mTaskQueue.empty())
         {
-            delay = Microseconds::zero();
-        }
+            auto  now     = Clock::now();
+            auto &task    = mTaskQueue.top();
+            auto  delay   = std::chrono::duration_cast<Microseconds>(task.GetTimeExecute() - now);
+            auto  timeout = FromTimeval<Microseconds>(aMainloop.mTimeout);
 
-        if (delay <= timeout)
-        {
-            aMainloop.mTimeout.tv_sec  = delay.count() / 1000000;
-            aMainloop.mTimeout.tv_usec = delay.count() % 1000000;
+            if (task.GetTimeExecute() < now)
+            {
+                delay = Microseconds::zero();
+            }
+
+            if (delay <= timeout)
+            {
+                aMainloop.mTimeout.tv_sec  = delay.count() / 1000000;
+                aMainloop.mTimeout.tv_usec = delay.count() % 1000000;
+            }
         }
     }
 }
