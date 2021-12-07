@@ -36,6 +36,7 @@
 #include <assert.h>
 
 #include "common/code_utils.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 
@@ -107,6 +108,12 @@ void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInst
     otbrLogInfo("Service %s is resolved successfully: %s host %s addresses %zu", aType.c_str(),
                 aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(), aInstanceInfo.mAddresses.size());
 
+    DnsUtils::CheckServiceNameSanity(aType);
+    if (!aInstanceInfo.mRemoved)
+    {
+        DnsUtils::CheckHostnameSanity(aInstanceInfo.mHostName);
+    }
+
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
         if (subCallback.second.first != nullptr)
@@ -121,6 +128,8 @@ void Publisher::OnServiceRemoved(const std::string &aType, const std::string &aI
     DiscoveredInstanceInfo instanceInfo;
 
     otbrLogInfo("Service %s.%s is removed.", aInstanceName.c_str(), aType.c_str());
+
+    DnsUtils::CheckServiceNameSanity(aType);
 
     instanceInfo.mRemoved = true;
     instanceInfo.mName    = aInstanceName;
@@ -138,6 +147,12 @@ void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::Di
 {
     otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHostName.c_str(),
                 aHostInfo.mHostName.c_str(), aHostInfo.mAddresses.size(), aHostInfo.mTtl);
+
+    if (!aHostInfo.mHostName.empty())
+    {
+        DnsUtils::CheckHostnameSanity(aHostInfo.mHostName);
+    }
+
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
         if (subCallback.second.second != nullptr)

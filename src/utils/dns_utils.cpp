@@ -28,6 +28,10 @@
 
 #include "utils/dns_utils.hpp"
 
+#include <assert.h>
+
+#include "common/code_utils.hpp"
+
 namespace otbr {
 
 namespace DnsUtils {
@@ -67,6 +71,28 @@ std::string UnescapeInstanceName(const std::string &aName)
     }
 
     return newName;
+}
+
+void CheckHostnameSanity(const std::string &aHostName)
+{
+    OTBR_UNUSED_VARIABLE(aHostName);
+
+    assert(aHostName.length() > 0);
+    assert(aHostName.back() == '.');
+}
+
+void CheckServiceNameSanity(const std::string &aServiceName)
+{
+    size_t dotpos;
+
+    OTBR_UNUSED_VARIABLE(aServiceName);
+    OTBR_UNUSED_VARIABLE(dotpos);
+
+    assert(aServiceName.length() > 0);
+    assert(aServiceName[aServiceName.length() - 1] != '.');
+    dotpos = aServiceName.find_first_of('.');
+    assert(dotpos != std::string::npos);
+    assert(dotpos == aServiceName.find_last_of('.'));
 }
 
 } // namespace DnsUtils
