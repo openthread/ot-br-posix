@@ -136,7 +136,7 @@ void ThreadHelper::EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler
     otError  error             = OT_ERROR_NONE;
     uint32_t preferredChannels = otPlatRadioGetPreferredChannelMask(mInstance);
 
-    VerifyOrExit(aHandler != nullptr, error = OT_ERROR_BUSY);
+    VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aScanDuration < UINT16_MAX, error = OT_ERROR_INVALID_ARGS);
     mEnergyScanHandler = aHandler;
     mEnergyScanResults.clear();
@@ -147,7 +147,7 @@ void ThreadHelper::EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler
 exit:
     if (error != OT_ERROR_NONE)
     {
-        if (aHandler)
+        if (mEnergyScanHandler)
         {
             mEnergyScanHandler(error, {});
         }
@@ -199,10 +199,10 @@ void ThreadHelper::EnergyScanCallback(otEnergyScanResult *aResult)
 {
     if (aResult == nullptr)
     {
-        if (mEnergyScanHandler != nullptr)
-        {
-            mEnergyScanHandler(OT_ERROR_NONE, mEnergyScanResults);
-        }
+        assert(mEnergyScanHandler != nullptr);
+
+        mEnergyScanHandler(OT_ERROR_NONE, mEnergyScanResults);
+        mEnergyScanHandler = nullptr;
     }
     else
     {
