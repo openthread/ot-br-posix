@@ -105,10 +105,14 @@ uint64_t Publisher::AddSubscriptionCallbacks(Publisher::DiscoveredServiceInstanc
 
 void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo)
 {
-    otbrLogInfo("Service %s is resolved successfully: %s host %s addresses %zu", aType.c_str(),
-                aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(), aInstanceInfo.mAddresses.size());
+    otbrLogInfo("Service %s is resolved successfully: %s %s host %s addresses %zu", aType.c_str(),
+                aInstanceInfo.mRemoved ? "remove" : "add", aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
+                aInstanceInfo.mAddresses.size());
 
     DnsUtils::CheckServiceNameSanity(aType);
+
+    assert(aInstanceInfo.mNetifIndex > 0);
+
     if (!aInstanceInfo.mRemoved)
     {
         DnsUtils::CheckHostnameSanity(aInstanceInfo.mHostName);
@@ -123,24 +127,17 @@ void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInst
     }
 }
 
-void Publisher::OnServiceRemoved(const std::string &aType, const std::string &aInstanceName)
+void Publisher::OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName)
 {
     DiscoveredInstanceInfo instanceInfo;
 
-    otbrLogInfo("Service %s.%s is removed.", aInstanceName.c_str(), aType.c_str());
+    otbrLogInfo("Service %s.%s is removed from netif %u.", aInstanceName.c_str(), aType.c_str(), aNetifIndex);
 
-    DnsUtils::CheckServiceNameSanity(aType);
+    instanceInfo.mRemoved    = true;
+    instanceInfo.mNetifIndex = aNetifIndex;
+    instanceInfo.mName       = aInstanceName;
 
-    instanceInfo.mRemoved = true;
-    instanceInfo.mName    = aInstanceName;
-
-    for (const auto &subCallback : mDiscoveredCallbacks)
-    {
-        if (subCallback.second.first != nullptr)
-        {
-            subCallback.second.first(aType, instanceInfo);
-        }
-    }
+    OnServiceResolved(aType, instanceInfo);
 }
 
 void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::DiscoveredHostInfo &aHostInfo)
