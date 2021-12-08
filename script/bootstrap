@@ -69,6 +69,11 @@ install_packages_apt()
 
     # dns64
     without DNS64 || {
+        if [ "$PLATFORM" = "beagleboneblack" ]; then
+            # dnsmasq needs to be stopped before bind9 is installed
+            sudo systemctl disable dnsmasq
+            sudo systemctl stop dnsmasq
+        fi
         sudo apt-get install --no-install-recommends -y bind9
         # Resolvconf cannot be installed inside docker environment
         if without DOCKER; then
