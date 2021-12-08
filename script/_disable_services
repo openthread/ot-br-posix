@@ -54,11 +54,11 @@ bbb_disable_services()
     done
 
     # stop avahi from advertising for cloud9 and nodered
-    sudo rm /etc/avahi/services/*
+    sudo rm -rf /etc/avahi/services
     # default dnsmasq configuration for connman tether conflicst with bind9
     # removing the directory stops the startup script from creating
     # /etc/dnsmasq.d/SoftAp0
-    sudo rm -r /etc/dnsmasq.d
+    sudo rm -rf /etc/dnsmasq.d
 }
 
 disable_services()
