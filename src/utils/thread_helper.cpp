@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define OTBR_LOG_TAG "AGENT"
+#define OTBR_LOG_TAG "UTILS"
 
 #include "utils/thread_helper.hpp"
 
