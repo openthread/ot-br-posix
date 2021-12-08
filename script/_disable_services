@@ -43,6 +43,7 @@ bbb_disable_services()
     SERVICE_LIST="${SERVICE_LIST} cloud9.socket"
     SERVICE_LIST="${SERVICE_LIST} cloud9.service"
     SERVICE_LIST="${SERVICE_LIST} nodered.service"
+    SERVICE_LIST="${SERVICE_LIST} dnsmasq.service" # Disable well before bind9
 
     for service in $SERVICE_LIST; do
         if [ "$(sudo systemctl is-active "$service")" != "inactive" ]; then
