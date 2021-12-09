@@ -36,6 +36,7 @@
 #include <assert.h>
 
 #include "common/code_utils.hpp"
+#include "utils/dns_utils.hpp"
 
 namespace otbr {
 
@@ -104,8 +105,18 @@ uint64_t Publisher::AddSubscriptionCallbacks(Publisher::DiscoveredServiceInstanc
 
 void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo)
 {
-    otbrLogInfo("Service %s is resolved successfully: %s host %s addresses %zu", aType.c_str(),
-                aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(), aInstanceInfo.mAddresses.size());
+    otbrLogInfo("Service %s is resolved successfully: %s %s host %s addresses %zu", aType.c_str(),
+                aInstanceInfo.mRemoved ? "remove" : "add", aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
+                aInstanceInfo.mAddresses.size());
+
+    DnsUtils::CheckServiceNameSanity(aType);
+
+    assert(aInstanceInfo.mNetifIndex > 0);
+
+    if (!aInstanceInfo.mRemoved)
+    {
+        DnsUtils::CheckHostnameSanity(aInstanceInfo.mHostName);
+    }
 
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
@@ -116,10 +127,29 @@ void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInst
     }
 }
 
+void Publisher::OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName)
+{
+    DiscoveredInstanceInfo instanceInfo;
+
+    otbrLogInfo("Service %s.%s is removed from netif %u.", aInstanceName.c_str(), aType.c_str(), aNetifIndex);
+
+    instanceInfo.mRemoved    = true;
+    instanceInfo.mNetifIndex = aNetifIndex;
+    instanceInfo.mName       = aInstanceName;
+
+    OnServiceResolved(aType, instanceInfo);
+}
+
 void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::DiscoveredHostInfo &aHostInfo)
 {
     otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHostName.c_str(),
                 aHostInfo.mHostName.c_str(), aHostInfo.mAddresses.size(), aHostInfo.mTtl);
+
+    if (!aHostInfo.mHostName.empty())
+    {
+        DnsUtils::CheckHostnameSanity(aHostInfo.mHostName);
+    }
+
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
         if (subCallback.second.second != nullptr)
