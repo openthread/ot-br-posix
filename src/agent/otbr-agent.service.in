@@ -4,7 +4,7 @@ ConditionPathExists=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent
 
 [Service]
 EnvironmentFile=-@CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-agent
-ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent $OTBR_AGENT_OPTS
+@EXEC_START_PRE@ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent $OTBR_AGENT_OPTS
 Restart=on-failure
 RestartSec=5
 RestartPreventExitStatus=SIGKILL
