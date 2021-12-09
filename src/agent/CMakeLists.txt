@@ -64,6 +64,14 @@ endif()
 set(OTBR_AGENT_USER "root" CACHE STRING "set the username running otbr-agent service")
 set(OTBR_AGENT_GROUP "root" CACHE STRING "set the group using otbr-agent client")
 
+if(OTBR_MDNS STREQUAL "mDNSResponder")
+    set(EXEC_START_PRE "ExecStartPre=service mdns start\n")
+elseif(OTBR_MDNS STREQUAL "avahi")
+    set(EXEC_START_PRE "ExecStartPre=service avahi-daemon start\n")
+else()
+    message(WARNING "OTBR_MDNS=\"${OTBR_MDNS}\" is not supported")
+endif()
+
 if(OTBR_DBUS)
     configure_file(otbr-agent.conf.in otbr-agent.conf)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.conf
