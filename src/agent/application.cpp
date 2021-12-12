@@ -43,7 +43,13 @@ bool                 Application::sShouldTerminate = false;
 const struct timeval Application::kPollTimeout     = {10, 0};
 
 Application::Application(Ncp::ControllerOpenThread &aOpenThread)
-    : mBorderAgent(aOpenThread)
+    : mPlaceHolder(aOpenThread)
+#if OTBR_ENABLE_BORDER_AGENT
+    , mBorderAgent(aOpenThread)
+#endif
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    , mBackboneAgent(aOpenThread)
+#endif
 #if OTBR_ENABLE_OPENWRT
     , mUbusAgent(aOpenThread)
 #endif
@@ -57,11 +63,17 @@ Application::Application(Ncp::ControllerOpenThread &aOpenThread)
     , mVendorServer(aOpenThread)
 #endif
 {
+    OTBR_UNUSED_VARIABLE(mPlaceHolder);
 }
 
 void Application::Init(void)
 {
+#if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent.Init();
+#endif
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent.Init();
+#endif
 #if OTBR_ENABLE_OPENWRT
     mUbusAgent.Init();
 #endif

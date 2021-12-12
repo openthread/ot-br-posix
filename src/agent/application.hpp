@@ -38,9 +38,13 @@
 #include <stdint.h>
 #include <vector>
 
+#if OTBR_ENABLE_BORDER_AGENT
 #include "border_agent/border_agent.hpp"
+#endif
 #include "ncp/ncp_openthread.hpp"
-
+#if OTBR_ENABLE_BACKBONE_ROUTER
+#include "backbone_router/backbone_agent.hpp"
+#endif
 #if OTBR_ENABLE_REST_SERVER
 #include "rest/rest_web_server.hpp"
 #endif
@@ -101,7 +105,13 @@ private:
 
     static void HandleSignal(int aSignal);
 
+    Ncp::ControllerOpenThread &mPlaceHolder;
+#if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;
+#endif
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    BackboneRouter::BackboneAgent mBackboneAgent;
+#endif
 #if OTBR_ENABLE_OPENWRT
     ubus::UBusAgent mUbusAgent;
 #endif

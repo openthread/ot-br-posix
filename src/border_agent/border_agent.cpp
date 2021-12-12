@@ -94,19 +94,12 @@ uint32_t BorderAgent::StateBitmap::ToUint32(void) const
 
 BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     : mNcp(aNcp)
-#if OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO
     , mPublisher(Mdns::Publisher::Create(HandleMdnsState, this))
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     , mAdvertisingProxy(aNcp, *mPublisher)
 #endif
-#else
-    , mPublisher(nullptr)
-#endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     , mDiscoveryProxy(aNcp, *mPublisher)
-#endif
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(aNcp)
 #endif
 {
 }
@@ -119,10 +112,6 @@ void BorderAgent::Init(void)
     mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
         HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
     });
-#endif
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent.Init();
 #endif
 
     Start();
