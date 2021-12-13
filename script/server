@@ -34,6 +34,7 @@
 . "$(dirname "$0")"/_initrc
 . script/_nat64
 . script/_dns64
+. script/_firewall
 
 main()
 {
@@ -41,6 +42,7 @@ main()
     sudo sysctl --system
     nat64_start || die 'Failed to start NAT64!'
     dns64_start || die 'Failed to start DNS64!'
+    firewall_start || die 'Failed to start firewall'
     if have systemctl; then
         systemctl is-active rsyslog || sudo systemctl start rsyslog || die 'Failed to start rsyslog!'
         systemctl is-active dbus || sudo systemctl start dbus || die 'Failed to start dbus!'
