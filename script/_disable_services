@@ -36,9 +36,13 @@ bbb_disable_services()
     SERVICE_LIST=""
     SERVICE_LIST="${SERVICE_LIST} apache2 " # Debian jessie
     SERVICE_LIST="${SERVICE_LIST} nginx "   # Debian stretch
+    SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
     SERVICE_LIST="${SERVICE_LIST} bonescript.socket"
     SERVICE_LIST="${SERVICE_LIST} bonescript.service"
-    SERVICE_LIST="${SERVICE_LIST} bonescript-autorun.service"
+    SERVICE_LIST="${SERVICE_LIST} cloud9.socket"
+    SERVICE_LIST="${SERVICE_LIST} cloud9.service"
+    SERVICE_LIST="${SERVICE_LIST} nodered.service"
+    SERVICE_LIST="${SERVICE_LIST} dnsmasq.service" # Disable well before bind9
 
     for service in $SERVICE_LIST; do
         if [ "$(sudo systemctl is-active "$service")" != "inactive" ]; then
@@ -47,6 +51,13 @@ bbb_disable_services()
             done
         fi
     done
+
+    # stop avahi from advertising for cloud9 and nodered
+    sudo rm -rf /etc/avahi/services
+    # default dnsmasq configuration for connman tether conflicts with bind9
+    # removing the directory stops the startup script from creating
+    # /etc/dnsmasq.d/SoftAp0
+    sudo rm -rf /etc/dnsmasq.d
 }
 
 disable_services()
