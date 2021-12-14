@@ -71,8 +71,13 @@ enum
 
 static jmp_buf sResetJump;
 
-void                       __gcov_flush();
-static const struct option kOptions[] = {
+void __gcov_flush();
+
+// Default poll timeout.
+static const struct timeval kPollTimeout             = {10, 0};
+static constexpr const char kArgNoAutoResumeThread[] = "no-auto-resume-thread";
+static const struct option  kOptions[]               = {
+    {kArgNoAutoResumeThread, no_argument, nullptr, 0},
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
@@ -93,7 +98,10 @@ static int Mainloop(otbr::Ncp::ControllerOpenThread &aOpenThread)
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL [RADIO_URL]\n",
+    fprintf(stderr,
+            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL [RADIO_URL]\n"
+            "More options:\n"
+            "    --no-auto-resume-thread        Do not automatically resume Thread stack.\n",
             aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
@@ -140,11 +148,13 @@ static int realmain(int argc, char *argv[])
     const char *              backboneInterfaceName = "";
     bool                      verbose               = false;
     bool                      printRadioVersion     = false;
+    bool                      autoResumeThread      = true;
     std::vector<const char *> radioUrls;
+    int                       longind;
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, &longind)) != -1)
     {
         switch (opt)
         {
@@ -179,6 +189,13 @@ static int realmain(int argc, char *argv[])
             printRadioVersion = true;
             break;
 
+        case 0:
+            if (!strcmp(kOptions[longind].name, kArgNoAutoResumeThread))
+            {
+                autoResumeThread = false;
+            }
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -191,6 +208,7 @@ static int realmain(int argc, char *argv[])
     otbrLogInfo("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     otbrLogInfo("Thread interface: %s", interfaceName);
     otbrLogInfo("Backbone interface: %s", backboneInterfaceName);
+    otbrLogInfo("Thread stack %s be automatically resumed.", autoResumeThread ? "will" : "won't");
 
     for (int i = optind; i < argc; i++)
     {
@@ -200,7 +218,8 @@ static int realmain(int argc, char *argv[])
 
     {
         otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, radioUrls, backboneInterfaceName,
-                                                      /* aDryRun */ printRadioVersion};
+                                                      /* aDryRun */ printRadioVersion,
+                                                      /* aAutoResume */ autoResumeThread};
 
         otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
         otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
@@ -234,15 +253,57 @@ void otPlatReset(otInstance *aInstance)
     assert(false);
 }
 
+static std::vector<char *> AppendNoAutoResumeThreadArg(char *aArguments[])
+{
+    std::vector<char *> newArguments;
+    bool                appended = false;
+    int                 i        = 0;
+
+    OTBR_UNUSED_VARIABLE(aArguments);
+
+    while (true)
+    {
+        char *arg = aArguments[i++];
+
+        newArguments.push_back(arg);
+
+        if (arg != nullptr && !strncmp(arg, "--", 2) && !strcmp(arg + 2, kArgNoAutoResumeThread))
+        {
+            appended = true;
+        }
+
+        if (arg == nullptr)
+        {
+            break;
+        }
+    }
+
+    if (!appended)
+    {
+        static char sNoAutoResumeThreadArg[sizeof(kArgNoAutoResumeThread) + 2];
+
+        sNoAutoResumeThreadArg[0] = '-';
+        sNoAutoResumeThreadArg[1] = '-';
+        strcpy(&sNoAutoResumeThreadArg[2], kArgNoAutoResumeThread);
+
+        newArguments.insert(newArguments.begin() + 1, sNoAutoResumeThreadArg);
+    }
+
+    return newArguments;
+}
+
 int main(int argc, char *argv[])
 {
     if (setjmp(sResetJump))
     {
+        std::vector<char *> newArgs;
+
         alarm(0);
 #if OPENTHREAD_ENABLE_COVERAGE
         __gcov_flush();
 #endif
-        execvp(argv[0], argv);
+        newArgs = AppendNoAutoResumeThreadArg(argv);
+        execvp(argv[0], newArgs.data());
     }
 
     return realmain(argc, argv);

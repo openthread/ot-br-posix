@@ -71,7 +71,8 @@ public:
     ControllerOpenThread(const char *                     aInterfaceName,
                          const std::vector<const char *> &aRadioUrls,
                          const char *                     aBackboneInterfaceName,
-                         bool                             aDryRun);
+                         bool                             aDryRun,
+                         bool                             aAutoResume);
 
     /**
      * This method initalize the NCP controller.
@@ -176,6 +177,7 @@ private:
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
+    bool                                       mAutoResume;
 };
 
 } // namespace Ncp

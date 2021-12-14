@@ -63,8 +63,10 @@ static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
                                            const std::vector<const char *> &aRadioUrls,
                                            const char *                     aBackboneInterfaceName,
-                                           bool                             aDryRun)
+                                           bool                             aDryRun,
+                                           bool                             aAutoResume)
     : mInstance(nullptr)
+    , mAutoResume(aAutoResume)
 {
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -188,9 +190,14 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 
     otSysMainloopProcess(mInstance, &aMainloop);
 
-    if (getenv("OTBR_NO_AUTO_ATTACH") == nullptr && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+    if (mAutoResume)
     {
-        setenv("OTBR_NO_AUTO_ATTACH", "1", 0);
+        otError error = mThreadHelper->TryResumeNetwork();
+
+        if (error != OT_ERROR_NONE)
+        {
+            otbrLogWarning("Auto resume Thread stack failed: %s", otThreadErrorToString(error));
+        }
     }
 }
 
@@ -221,7 +228,6 @@ void ControllerOpenThread::Reset(void)
     {
         handler();
     }
-    unsetenv("OTBR_NO_AUTO_ATTACH");
 }
 
 const char *ControllerOpenThread::GetThreadVersion(void)
