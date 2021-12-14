@@ -53,12 +53,12 @@ jobs:
       matrix:
         include:
           - name: "Border Router (mDNSResponder)"
-            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
+            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON -DOT_DUA=ON"
             border_routing: 1
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
           - name: "Border Router (Avahi)"
-            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=OFF"
+            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON -DOT_DUA=ON"
             border_routing: 1
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
