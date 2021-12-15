@@ -36,24 +36,28 @@ add_executable(otbr-agent
 )
 
 target_link_libraries(otbr-agent PRIVATE
+    $<$<BOOL:${OTBR_BORDER_AGENT}>:otbr-border-agent>
+    $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
     $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-server>
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
-    $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
     openthread-posix
     openthread-cli-ftd
     openthread-ftd
     openthread-spinel-rcp
     openthread-hdlc
-    otbr-border-agent
     otbr-sdp-proxy
     otbr-ncp
     otbr-common
     otbr-utils
 )
 
-add_dependencies(otbr-agent ot-ctl print-ot-config otbr-border-agent otbr-sdp-proxy otbr-utils otbr-ncp)
+add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
+if (OTBR_BORDER_AGENT)
+    add_dependencies(otbr-agent otbr-border-agent)
+endif()
+
 install(TARGETS otbr-agent DESTINATION sbin)
 
 if(CMAKE_VERSION VERSION_LESS 3.13)

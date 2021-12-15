@@ -34,6 +34,10 @@
 #ifndef OTBR_AGENT_BORDER_AGENT_HPP_
 #define OTBR_AGENT_BORDER_AGENT_HPP_
 
+#if !(OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO)
+#error "Border Agent feature requires at least one `OTBR_MDNS` implementation"
+#endif
+
 #include <vector>
 
 #include <stdint.h>
@@ -44,10 +48,6 @@
 #include "ncp/ncp_openthread.hpp"
 #include "sdp_proxy/advertising_proxy.hpp"
 #include "sdp_proxy/discovery_proxy.hpp"
-
-#if OTBR_ENABLE_BACKBONE_ROUTER
-#include "backbone_router/backbone_agent.hpp"
-#endif
 
 #ifndef OTBR_VENDOR_NAME
 #define OTBR_VENDOR_NAME "OpenThread"
@@ -167,9 +167,6 @@ private:
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     Dnssd::DiscoveryProxy mDiscoveryProxy;
-#endif
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    BackboneRouter::BackboneAgent mBackboneAgent;
 #endif
 };
 

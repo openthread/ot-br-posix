@@ -30,6 +30,11 @@ find_package(PkgConfig)
 
 option(OTBR_DOC "Build documentation" OFF)
 
+option(OTBR_BORDER_AGENT "Enable Border Agent" ON)
+if (OTBR_BORDER_AGENT)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_AGENT=1)
+endif()
+
 option(OTBR_BACKBONE_ROUTER "Enable Backbone Router" OFF)
 if (OTBR_BACKBONE_ROUTER)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BACKBONE_ROUTER=1)

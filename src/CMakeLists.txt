@@ -27,7 +27,9 @@
 #
 
 add_subdirectory(agent)
-add_subdirectory(border_agent)
+if(OTBR_BORDER_AGENT)
+    add_subdirectory(border_agent)
+endif()
 add_subdirectory(common)
 add_subdirectory(ncp)
 add_subdirectory(sdp_proxy)

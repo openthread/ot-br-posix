@@ -47,7 +47,7 @@
 #endif
 
 #include "agent/application.hpp"
-#include "border_agent/border_agent.hpp"
+#include "agent/instance_params.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
