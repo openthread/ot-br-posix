@@ -31,11 +31,8 @@
 #include <fstream>
 #include <mutex>
 #include <sstream>
-#include <thread>
 
-#include <errno.h>
 #include <getopt.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,29 +46,13 @@
 #include <cutils/properties.h>
 #endif
 
+#include "agent/application.hpp"
 #include "border_agent/border_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
-#include "common/mainloop_manager.hpp"
 #include "common/types.hpp"
 #include "ncp/ncp_openthread.hpp"
-#if OTBR_ENABLE_REST_SERVER
-#include "rest/rest_web_server.hpp"
-using otbr::rest::RestWebServer;
-#endif
-#if OTBR_ENABLE_DBUS_SERVER
-#include "dbus/server/dbus_agent.hpp"
-using otbr::DBus::DBusAgent;
-#endif
-#if OTBR_ENABLE_OPENWRT
-#include "openwrt/ubus/otubus.hpp"
-using otbr::ubus::UBusAgent;
-#endif
-#if OTBR_ENABLE_VENDOR_SERVER
-#include "agent/vendor.hpp"
-using otbr::vendor::VendorServer;
-#endif
 
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
@@ -88,16 +69,10 @@ enum
     OTBR_OPT_RADIO_VERSION,
 };
 
-using otbr::MainloopManager;
-
 static jmp_buf sResetJump;
-static bool    sShouldTerminate = false;
 
-void __gcov_flush();
-
-// Default poll timeout.
-static const struct timeval kPollTimeout = {10, 0};
-static const struct option  kOptions[]   = {
+void                       __gcov_flush();
+static const struct option kOptions[] = {
     {"backbone-ifname", required_argument, nullptr, OTBR_OPT_BACKBONE_INTERFACE_NAME},
     {"debug-level", required_argument, nullptr, OTBR_OPT_DEBUG_LEVEL},
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
@@ -107,74 +82,13 @@ static const struct option  kOptions[]   = {
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
     {0, 0, 0, 0}};
 
-static void HandleSignal(int aSignal)
-{
-    sShouldTerminate = true;
-    signal(aSignal, SIG_DFL);
-}
-
 static int Mainloop(otbr::Ncp::ControllerOpenThread &aOpenThread)
 {
-    int error = EXIT_SUCCESS;
+    otbr::Application app(aOpenThread);
 
-    otbr::BorderAgent borderAgent{aOpenThread};
+    app.Init();
 
-    borderAgent.Init();
-
-#if OTBR_ENABLE_OPENWRT
-    UBusAgent ubusAgent{aOpenThread};
-    ubusAgent.Init();
-#endif
-
-#if OTBR_ENABLE_REST_SERVER
-    RestWebServer restWebServer{aOpenThread};
-    restWebServer.Init();
-#endif
-
-#if OTBR_ENABLE_DBUS_SERVER
-    DBusAgent dbusAgent{aOpenThread};
-    dbusAgent.Init();
-#endif
-
-#if OTBR_ENABLE_VENDOR_SERVER
-    VendorServer vendorServer{aOpenThread};
-    vendorServer.Init();
-#endif
-
-    otbrLogInfo("Border router agent started.");
-    // allow quitting elegantly
-    signal(SIGTERM, HandleSignal);
-
-    while (!sShouldTerminate)
-    {
-        otbr::MainloopContext mainloop;
-        int                   rval;
-
-        mainloop.mMaxFd   = -1;
-        mainloop.mTimeout = kPollTimeout;
-
-        FD_ZERO(&mainloop.mReadFdSet);
-        FD_ZERO(&mainloop.mWriteFdSet);
-        FD_ZERO(&mainloop.mErrorFdSet);
-
-        MainloopManager::GetInstance().Update(mainloop);
-
-        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
-                      &mainloop.mTimeout);
-
-        if (rval >= 0)
-        {
-            MainloopManager::GetInstance().Process(mainloop);
-        }
-        else if (errno != EINTR)
-        {
-            error = OTBR_ERROR_ERRNO;
-            otbrLogErr("select() failed: %s", strerror(errno));
-            break;
-        }
-    }
-
-    return error;
+    return app.Run();
 }
 
 static void PrintHelp(const char *aProgramName)

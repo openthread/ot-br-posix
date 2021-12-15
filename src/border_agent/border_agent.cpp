@@ -31,7 +31,7 @@
  *   The file implements the Thread border agent.
  */
 
-#define OTBR_LOG_TAG "AGENT"
+#define OTBR_LOG_TAG "BA"
 
 #include "border_agent/border_agent.hpp"
 
