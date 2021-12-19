@@ -39,6 +39,7 @@
 #include <string>
 #include <sys/select.h>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "dbus/common/dbus_message_helper.hpp"
 #include "dbus/common/dbus_resources.hpp"
@@ -53,6 +54,8 @@ namespace DBus {
 class DBusAgent : public MainloopProcessor
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(DBusAgent);
+
     /**
      * The constructor of dbus agent.
      *

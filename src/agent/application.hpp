@@ -41,6 +41,7 @@
 #if OTBR_ENABLE_BORDER_AGENT
 #include "border_agent/border_agent.hpp"
 #endif
+#include "common/code_utils.hpp"
 #include "ncp/ncp_openthread.hpp"
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
@@ -76,6 +77,8 @@ namespace otbr {
 class Application
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(Application);
+
     /**
      * This constructor initializes the Application instance.
      *

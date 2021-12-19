@@ -43,6 +43,7 @@
 #include <stdint.h>
 
 #include "agent/instance_params.hpp"
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
@@ -79,6 +80,8 @@ namespace otbr {
 class BorderAgent
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(BorderAgent);
+
     /**
      * The constructor to initialize the Thread border agent.
      *

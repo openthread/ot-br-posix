@@ -45,6 +45,7 @@
 #include <avahi-common/watch.h>
 
 #include "mdns.hpp"
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/time.hpp"
 
@@ -178,6 +179,8 @@ private:
 class PublisherAvahi : public Publisher
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(PublisherAvahi);
+
     /**
      * The constructor to initialize a Publisher.
      *
@@ -233,6 +236,8 @@ private:
 
     struct Subscription
     {
+        OTBR_DISALLOW_COPY_AND_ASSIGN(Subscription);
+
         PublisherAvahi *mPublisherAvahi;
 
         explicit Subscription(PublisherAvahi &aPublisherAvahi)

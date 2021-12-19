@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_INSATNCE_PARAMS_HPP_
 #define OTBR_AGENT_INSATNCE_PARAMS_HPP_
 
+#include "common/code_utils.hpp"
+
 namespace otbr {
 
 /**
@@ -43,6 +45,8 @@ namespace otbr {
 class InstanceParams
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(InstanceParams);
+
     /**
      * This method gets the single `InstanceParams` instance.
      *

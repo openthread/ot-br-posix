@@ -58,6 +58,8 @@ namespace Dnssd {
 class DiscoveryProxy
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(DiscoveryProxy);
+
     /**
      * This constructor initializes the Discovery Proxy instance.
      *

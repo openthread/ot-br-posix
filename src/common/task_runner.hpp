@@ -42,6 +42,7 @@
 #include <mutex>
 #include <queue>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/time.hpp"
 
@@ -55,6 +56,8 @@ namespace otbr {
 class TaskRunner : public MainloopProcessor
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(TaskRunner);
+
     /**
      * This type represents the generic executable task.
      *

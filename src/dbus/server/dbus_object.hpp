@@ -63,6 +63,8 @@ namespace DBus {
 class DBusObject
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(DBusObject);
+
     using MethodHandlerType = std::function<void(DBusRequest &)>;
 
     using PropertyHandlerType = std::function<otError(DBusMessageIter &)>;

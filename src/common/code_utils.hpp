@@ -161,4 +161,8 @@ template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&...
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+#define OTBR_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+    TypeName(const TypeName &) = delete;        \
+    void operator=(const TypeName &) = delete
+
 #endif // OTBR_COMMON_CODE_UTILS_HPP_

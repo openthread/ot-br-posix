@@ -41,6 +41,7 @@
 #include <openthread/instance.h>
 #include <openthread/srp_server.h>
 
+#include "common/code_utils.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
 
@@ -53,6 +54,8 @@ namespace otbr {
 class AdvertisingProxy
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(AdvertisingProxy);
+
     /**
      * This constructor initializes the Advertising Proxy object.
      *

@@ -41,6 +41,7 @@
 #include "agent/instance_params.hpp"
 #include "backbone_router/dua_routing_manager.hpp"
 #include "backbone_router/nd_proxy.hpp"
+#include "common/code_utils.hpp"
 #include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
@@ -62,6 +63,8 @@ namespace BackboneRouter {
 class BackboneAgent
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(BackboneAgent);
+
     static constexpr uint16_t kBackboneUdpPort = 61631; ///< The BBR port.
 
     /**

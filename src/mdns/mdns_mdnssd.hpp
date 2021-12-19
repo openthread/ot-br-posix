@@ -58,6 +58,8 @@ namespace Mdns {
 class PublisherMDnsSd : public MainloopProcessor, public Publisher
 {
 public:
+    OTBR_DISALLOW_COPY_AND_ASSIGN(PublisherMDnsSd);
+
     /**
      * The constructor to initialize a Publisher.
      *
@@ -114,6 +116,8 @@ private:
 
     struct ServiceRef
     {
+        OTBR_DISALLOW_COPY_AND_ASSIGN(ServiceRef);
+
         DNSServiceRef mServiceRef;
 
         explicit ServiceRef(void)
