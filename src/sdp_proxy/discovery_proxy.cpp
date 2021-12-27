@@ -48,9 +48,15 @@
 #include "common/dns_utils.hpp"
 #include "common/logging.hpp"
 #include "utils/dns_utils.hpp"
+#include "utils/string_utils.hpp"
 
 namespace otbr {
 namespace Dnssd {
+
+static inline bool DnsLabelsEqual(const std::string &aLabel1, const std::string &aLabel2)
+{
+    return StringUtils::EqualCaseInsensitive(aLabel1, aLabel2);
+}
 
 DiscoveryProxy::DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
     : mNcp(aNcp)
@@ -202,7 +208,8 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
             continue;
         }
 
-        if (serviceName == aType && (instanceName.empty() || instanceName == unescapedInstanceName))
+        if (DnsLabelsEqual(serviceName, aType) &&
+            (instanceName.empty() || DnsLabelsEqual(instanceName, unescapedInstanceName)))
         {
             std::string serviceFullName    = aType + "." + domain;
             std::string translatedHostName = TranslateDomain(aInstanceInfo.mHostName, domain);
@@ -257,7 +264,7 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
         splitError = SplitFullHostName(queryName, hostName, domain);
         assert(splitError == OTBR_ERROR_NONE);
 
-        if (hostName == aHostName)
+        if (DnsLabelsEqual(hostName, aHostName))
         {
             std::string hostFullName = TranslateDomain(resolvedHostName, domain);
 
@@ -273,7 +280,7 @@ std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std:
     std::string domain;
 
     VerifyOrExit(OTBR_ERROR_NONE == SplitFullHostName(aName, hostName, domain), targetName = aName);
-    VerifyOrExit(domain == "local.", targetName = aName);
+    VerifyOrExit(DnsLabelsEqual(domain, "local."), targetName = aName);
 
     targetName = hostName + "." + aTargetDomain;
 
@@ -295,8 +302,9 @@ int DiscoveryProxy::GetServiceSubscriptionCount(const DnsNameInfo &aNameInfo) co
         otDnssdGetQueryTypeAndName(query, &queryName);
         queryInfo = SplitFullDnsName(queryName);
 
-        count += (aNameInfo.mInstanceName == queryInfo.mInstanceName &&
-                  aNameInfo.mServiceName == queryInfo.mServiceName && aNameInfo.mHostName == queryInfo.mHostName);
+        count += (DnsLabelsEqual(aNameInfo.mInstanceName, queryInfo.mInstanceName) &&
+                  DnsLabelsEqual(aNameInfo.mServiceName, queryInfo.mServiceName) &&
+                  DnsLabelsEqual(aNameInfo.mHostName, queryInfo.mHostName));
     }
 
     return count;
