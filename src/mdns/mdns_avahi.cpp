@@ -393,7 +393,6 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
 
     case AVAHI_ENTRY_GROUP_UNCOMMITED:
     case AVAHI_ENTRY_GROUP_REGISTERING:
-        otbrLogErr("Group ready.");
         break;
 
     default:
