@@ -44,7 +44,7 @@ DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
 {
 }
 
-otbrError DBusAgent::Init(void)
+void DBusAgent::Init(void)
 {
     DBusError   dbusError;
     otbrError   error = OTBR_ERROR_NONE;
@@ -53,9 +53,10 @@ otbrError DBusAgent::Init(void)
 
     dbus_error_init(&dbusError);
     DBusConnection *conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
-    mConnection          = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
+    VerifyOrExit(conn != nullptr, error = OTBR_ERROR_DBUS);
+
+    mConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
         conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
-    VerifyOrExit(mConnection != nullptr, error = OTBR_ERROR_DBUS);
     dbus_bus_register(mConnection.get(), &dbusError);
     requestReply =
         dbus_bus_request_name(mConnection.get(), serverName.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusError);
@@ -72,7 +73,7 @@ exit:
         otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
     }
     dbus_error_free(&dbusError);
-    return error;
+    SuccessOrDie(error, "failed to initialize DBus connection");
 }
 
 dbus_bool_t DBusAgent::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)
