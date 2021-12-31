@@ -30,6 +30,8 @@
 
 #include "dbus/server/dbus_agent.hpp"
 
+#include <chrono>
+
 #include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
 
@@ -52,8 +54,13 @@ otbrError DBusAgent::Init(void)
     std::string serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;
 
     dbus_error_init(&dbusError);
-    DBusConnection *conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
-    mConnection          = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
+    DBusConnection *conn                = nullptr;
+    auto            connection_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (conn == nullptr && std::chrono::steady_clock::now() < connection_deadline)
+    {
+        conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+    }
+    mConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
         conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
     VerifyOrExit(mConnection != nullptr, error = OTBR_ERROR_DBUS);
     dbus_bus_register(mConnection.get(), &dbusError);
@@ -91,6 +98,8 @@ void DBusAgent::Update(MainloopContext &aMainloop)
     unsigned int flags;
     int          fd;
 
+    VerifyOrExit(mConnection != nullptr);
+
     if (dbus_connection_get_dispatch_status(mConnection.get()) == DBUS_DISPATCH_DATA_REMAINS)
     {
         aMainloop.mTimeout = {0, 0};
@@ -125,12 +134,17 @@ void DBusAgent::Update(MainloopContext &aMainloop)
 
         aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
     }
+
+exit:
+    return;
 }
 
 void DBusAgent::Process(const MainloopContext &aMainloop)
 {
     unsigned int flags;
     int          fd;
+
+    VerifyOrExit(mConnection != nullptr);
 
     for (const auto &watch : mWatches)
     {
@@ -167,6 +181,9 @@ void DBusAgent::Process(const MainloopContext &aMainloop)
 
     while (DBUS_DISPATCH_DATA_REMAINS == dbus_connection_dispatch(mConnection.get()))
         ;
+
+exit:
+    return;
 }
 
 } // namespace DBus
