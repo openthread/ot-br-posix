@@ -105,10 +105,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
 }
 
 Resource::Resource(ControllerOpenThread *aNcp)
-    : mNcp(aNcp)
+    : mInstance(nullptr)
+    , mNcp(aNcp)
 {
-    mInstance = mNcp->GetThreadHelper()->GetInstance();
-
     // Resource Handler
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::Diagnostic);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE, &Resource::NodeInfo);
@@ -127,6 +126,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
 
 void Resource::Init(void)
 {
+    mInstance = mNcp->GetThreadHelper()->GetInstance();
 }
 
 void Resource::Handle(Request &aRequest, Response &aResponse) const

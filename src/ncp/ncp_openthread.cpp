@@ -86,7 +86,7 @@ ControllerOpenThread::~ControllerOpenThread(void)
     otSysDeinit();
 }
 
-otbrError ControllerOpenThread::Init(void)
+void ControllerOpenThread::Init(void)
 {
     otbrError  error = OTBR_ERROR_NONE;
     otLogLevel level = OT_LOG_LEVEL_NONE;
@@ -138,7 +138,7 @@ otbrError ControllerOpenThread::Init(void)
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
 
 exit:
-    return error;
+    SuccessOrDie(error, "Failed to initialize NCP!");
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)

@@ -82,7 +82,9 @@ public:
      * @param[in] aOpenThread  A reference to the OpenThread instance.
      *
      */
-    explicit Application(Ncp::ControllerOpenThread &aOpenThread);
+    explicit Application(const std::string &              aInterfaceName,
+                         const std::string &              aBackboneInterfaceName,
+                         const std::vector<const char *> &aRadioUrls);
 
     /**
      * This method initializes the Application instance.
@@ -105,7 +107,9 @@ private:
 
     static void HandleSignal(int aSignal);
 
-    Ncp::ControllerOpenThread &mPlaceHolder;
+    std::string               mInterfaceName;
+    std::string               mBackboneInterfaceName;
+    Ncp::ControllerOpenThread mNcp;
 #if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;
 #endif
