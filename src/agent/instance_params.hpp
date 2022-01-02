@@ -34,13 +34,15 @@
 #ifndef OTBR_AGENT_INSATNCE_PARAMS_HPP_
 #define OTBR_AGENT_INSATNCE_PARAMS_HPP_
 
+#include "common/code_utils.hpp"
+
 namespace otbr {
 
 /**
  * This class represents the agent instance parameters.
  *
  */
-class InstanceParams
+class InstanceParams : private NonCopyable
 {
 public:
     /**

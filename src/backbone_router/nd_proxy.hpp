@@ -49,6 +49,7 @@
 
 #include <openthread/backbone_router_ftd.h>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "ncp/ncp_openthread.hpp"
@@ -69,7 +70,7 @@ namespace BackboneRouter {
  * This class implements ND Proxy manager.
  *
  */
-class NdProxyManager : public MainloopProcessor
+class NdProxyManager : public MainloopProcessor, private NonCopyable
 {
 public:
     /**

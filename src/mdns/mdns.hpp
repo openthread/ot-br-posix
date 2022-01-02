@@ -41,6 +41,7 @@
 
 #include <sys/select.h>
 
+#include "common/code_utils.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -60,7 +61,7 @@ namespace Mdns {
  * This interface defines the functionality of mDNS publisher.
  *
  */
-class Publisher
+class Publisher : private NonCopyable
 {
 public:
     /**
