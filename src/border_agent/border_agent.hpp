@@ -43,6 +43,7 @@
 #include <stdint.h>
 
 #include "agent/instance_params.hpp"
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
@@ -76,7 +77,7 @@ namespace otbr {
  * This class implements Thread border agent functionality.
  *
  */
-class BorderAgent
+class BorderAgent : private NonCopyable
 {
 public:
     /**

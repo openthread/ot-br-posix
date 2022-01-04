@@ -42,6 +42,7 @@
 #include <mutex>
 #include <queue>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/time.hpp"
 
@@ -52,7 +53,7 @@ namespace otbr {
  * tasks on the mainloop.
  *
  */
-class TaskRunner : public MainloopProcessor
+class TaskRunner : public MainloopProcessor, private NonCopyable
 {
 public:
     /**

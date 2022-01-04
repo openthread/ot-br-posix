@@ -112,7 +112,7 @@ private:
         DNSRecordRef         mRecord;
     };
 
-    struct ServiceRef
+    struct ServiceRef : private ::NonCopyable
     {
         DNSServiceRef mServiceRef;
 

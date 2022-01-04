@@ -40,6 +40,7 @@
 
 #include <list>
 
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "ncp/ncp_openthread.hpp"
 
@@ -49,7 +50,7 @@ namespace otbr {
  * This class implements the mainloop manager.
  *
  */
-class MainloopManager
+class MainloopManager : private NonCopyable
 {
 public:
     /**

@@ -60,7 +60,7 @@ namespace DBus {
  * This class is a base class for implementing a d-bus object.
  *
  */
-class DBusObject
+class DBusObject : private NonCopyable
 {
 public:
     using MethodHandlerType = std::function<void(DBusRequest &)>;

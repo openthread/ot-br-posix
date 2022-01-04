@@ -73,7 +73,7 @@ namespace otbr {
  * This class implements OTBR application management.
  *
  */
-class Application
+class Application : private NonCopyable
 {
 public:
     /**

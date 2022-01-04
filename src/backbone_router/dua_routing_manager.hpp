@@ -40,6 +40,7 @@
 #include <openthread/backbone_router_ftd.h>
 
 #include "agent/instance_params.hpp"
+#include "common/code_utils.hpp"
 #include "ncp/ncp_openthread.hpp"
 #include "utils/system_utils.hpp"
 
@@ -59,7 +60,7 @@ namespace BackboneRouter {
  * This class implements the DUA routing manager.
  *
  */
-class DuaRoutingManager
+class DuaRoutingManager : private NonCopyable
 {
 public:
     /**

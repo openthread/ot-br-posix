@@ -45,6 +45,7 @@
 #include <avahi-common/watch.h>
 
 #include "mdns.hpp"
+#include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/time.hpp"
 
@@ -231,7 +232,7 @@ private:
         AvahiEntryGroup *mGroup   = nullptr;
     };
 
-    struct Subscription
+    struct Subscription : private ::NonCopyable
     {
         PublisherAvahi *mPublisherAvahi;
 

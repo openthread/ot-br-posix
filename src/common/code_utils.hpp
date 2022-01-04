@@ -161,4 +161,18 @@ template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&...
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+/**
+ * This class makes any class that derives from it non-copyable. It is intended to be used as a private base class.
+ *
+ */
+class NonCopyable
+{
+public:
+    NonCopyable(const NonCopyable &) = delete;
+    NonCopyable &operator=(const NonCopyable &) = delete;
+
+protected:
+    NonCopyable(void) = default;
+};
+
 #endif // OTBR_COMMON_CODE_UTILS_HPP_
