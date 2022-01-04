@@ -122,7 +122,7 @@ private:
         }
 
         void Update(MainloopContext &aMainloop) const;
-        void Process(const MainloopContext &aMainloop) const;
+        void Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
         void Release(void);
         void DeallocateServiceRef(void);
     };
@@ -209,7 +209,7 @@ private:
                      const std::string &aDomain);
         void RemoveInstanceResolution(ServiceInstanceResolution &aInstanceResolution);
         void UpdateAll(MainloopContext &aMainloop) const;
-        void ProcessAll(const MainloopContext &aMainloop) const;
+        void ProcessAll(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
 
         static void HandleBrowseResult(DNSServiceRef       aServiceRef,
                                        DNSServiceFlags     aFlags,
