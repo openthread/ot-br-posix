@@ -33,6 +33,10 @@
 
 #define OTBR_LOG_TAG "APP"
 
+#ifdef HAVE_LIBSYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 #include "agent/application.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop_manager.hpp"
@@ -107,6 +111,27 @@ otbrError Application::Run(void)
     otbrError error = OTBR_ERROR_NONE;
 
     otbrLogInfo("Border router agent started.");
+
+#ifdef HAVE_LIBSYSTEMD
+    if (getenv("SYSTEMD_EXEC_PID") != nullptr)
+    {
+        otbrLogInfo("Notify systemd the service is ready.");
+
+        // Ignored return value as systemd recommends.
+        // See https://www.freedesktop.org/software/systemd/man/sd_notify.html
+        sd_notify(0, "READY=1");
+    }
+    else
+#endif
+        if (getenv("UPSTART_JOB") != nullptr)
+    {
+        otbrLogInfo("Notify Upstart the service is ready.");
+        if (raise(SIGSTOP))
+        {
+            otbrLogWarning("Failed to notify Upstart.");
+        }
+    }
+
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
 
