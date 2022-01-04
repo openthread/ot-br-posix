@@ -319,6 +319,16 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
         }
     }
 
+    for (const auto &service : mSubscribedServices)
+    {
+        service->ProcessAll(aMainloop, readyServices);
+    }
+
+    for (const auto &host : mSubscribedHosts)
+    {
+        host->Process(aMainloop, readyServices);
+    }
+
     for (DNSServiceRef serviceRef : readyServices)
     {
         DNSServiceErrorType error = DNSServiceProcessResult(serviceRef);
@@ -327,16 +337,6 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
         {
             otbrLogWarning("DNSServiceProcessResult failed: %s", DNSErrorToString(error));
         }
-    }
-
-    for (const auto &service : mSubscribedServices)
-    {
-        service->ProcessAll(aMainloop);
-    }
-
-    for (const auto &host : mSubscribedHosts)
-    {
-        host->Process(aMainloop);
     }
 }
 
@@ -836,7 +836,8 @@ exit:
     return;
 }
 
-void PublisherMDnsSd::ServiceRef::Process(const MainloopContext &aMainloop) const
+void PublisherMDnsSd::ServiceRef::Process(const MainloopContext &     aMainloop,
+                                          std::vector<DNSServiceRef> &aReadyServices) const
 {
     int fd;
 
@@ -846,12 +847,7 @@ void PublisherMDnsSd::ServiceRef::Process(const MainloopContext &aMainloop) cons
     assert(fd != -1);
     if (FD_ISSET(fd, &aMainloop.mReadFdSet))
     {
-        DNSServiceErrorType error = DNSServiceProcessResult(mServiceRef);
-
-        if (error != kDNSServiceErr_NoError)
-        {
-            otbrLogWarning("DNSServiceProcessResult failed: %s", DNSErrorToString(error));
-        }
+        aReadyServices.push_back(mServiceRef);
     }
 exit:
     return;
@@ -947,13 +943,14 @@ void PublisherMDnsSd::ServiceSubscription::UpdateAll(MainloopContext &aMainloop)
     }
 }
 
-void PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext &aMainloop) const
+void PublisherMDnsSd::ServiceSubscription::ProcessAll(const MainloopContext &     aMainloop,
+                                                      std::vector<DNSServiceRef> &aReadyServices) const
 {
-    Process(aMainloop);
+    Process(aMainloop, aReadyServices);
 
     for (const auto &instance : mResolvingInstances)
     {
-        instance->Process(aMainloop);
+        instance->Process(aMainloop, aReadyServices);
     }
 }
 
