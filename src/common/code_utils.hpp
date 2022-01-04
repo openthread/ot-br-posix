@@ -86,14 +86,14 @@
  * @param[in] aMessage  A message (text string) to print on failure.
  *
  */
-#define SuccessOrDie(aStatus, aMessage)                                          \
-    do                                                                           \
-    {                                                                            \
-        if ((aStatus) != 0)                                                      \
-        {                                                                        \
-            otbrLogEmerg("FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
-            exit(-1);                                                            \
-        }                                                                        \
+#define SuccessOrDie(aStatus, aMessage)                                      \
+    do                                                                       \
+    {                                                                        \
+        if ((aStatus) != 0)                                                  \
+        {                                                                    \
+            otbrLogEmerg("FAILED %s:%d - %s", __FILE__, __LINE__, aMessage); \
+            exit(-1);                                                        \
+        }                                                                    \
     } while (false)
 
 /**
@@ -124,14 +124,14 @@
  * @param[in] aMessage    A message (text string) to print on failure.
  *
  */
-#define VerifyOrDie(aCondition, aMessage)                                        \
-    do                                                                           \
-    {                                                                            \
-        if (!(aCondition))                                                       \
-        {                                                                        \
-            otbrLogEmerg("FAILED %s:%d - %s", __FUNCTION__, __LINE__, aMessage); \
-            exit(-1);                                                            \
-        }                                                                        \
+#define VerifyOrDie(aCondition, aMessage)                                    \
+    do                                                                       \
+    {                                                                        \
+        if (!(aCondition))                                                   \
+        {                                                                    \
+            otbrLogEmerg("FAILED %s:%d - %s", __FILE__, __LINE__, aMessage); \
+            exit(-1);                                                        \
+        }                                                                    \
     } while (false)
 
 /**
