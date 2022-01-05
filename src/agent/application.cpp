@@ -81,7 +81,7 @@ void Application::Init(void)
     mRestWebServer.Init();
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent.Init();
+    SuccessOrDie(mDBusAgent.Init(), "Failed to initialize DBus Agent");
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer.Init();

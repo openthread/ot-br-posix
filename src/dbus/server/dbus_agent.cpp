@@ -65,7 +65,7 @@ otbrError DBusAgent::Init(void)
             break;
         }
         otbrLogWarning("Failed to get DBus connection: %s: %s", dbusError.name, dbusError.message);
-        dbus_error_init(&dbusError);
+        dbus_error_free(&dbusError);
         sleep(3);
     }
     mConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
