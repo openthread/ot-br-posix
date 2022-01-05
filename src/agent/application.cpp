@@ -42,32 +42,37 @@ namespace otbr {
 bool                 Application::sShouldTerminate = false;
 const struct timeval Application::kPollTimeout     = {10, 0};
 
-Application::Application(Ncp::ControllerOpenThread &aOpenThread)
-    : mPlaceHolder(aOpenThread)
+Application::Application(const std::string &              aInterfaceName,
+                         const std::string &              aBackboneInterfaceName,
+                         const std::vector<const char *> &aRadioUrls)
+    : mInterfaceName(aInterfaceName)
+    , mBackboneInterfaceName(aBackboneInterfaceName)
+    , mNcp(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName.c_str(), /* aDryRun */ false)
 #if OTBR_ENABLE_BORDER_AGENT
-    , mBorderAgent(aOpenThread)
+    , mBorderAgent(mNcp)
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(aOpenThread)
+    , mBackboneAgent(mNcp)
 #endif
 #if OTBR_ENABLE_OPENWRT
-    , mUbusAgent(aOpenThread)
+    , mUbusAgent(mNcp)
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    , mRestWebServer(aOpenThread)
+    , mRestWebServer(mNcp)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    , mDBusAgent(aOpenThread)
+    , mDBusAgent(mNcp)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
-    , mVendorServer(aOpenThread)
+    , mVendorServer(mNcp)
 #endif
 {
-    OTBR_UNUSED_VARIABLE(mPlaceHolder);
 }
 
 void Application::Init(void)
 {
+    mNcp.Init();
+
 #if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent.Init();
 #endif

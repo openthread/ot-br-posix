@@ -82,15 +82,6 @@ static const struct option kOptions[] = {
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
     {0, 0, 0, 0}};
 
-static int Mainloop(otbr::Ncp::ControllerOpenThread &aOpenThread)
-{
-    otbr::Application app(aOpenThread);
-
-    app.Init();
-
-    return app.Run();
-}
-
 static void PrintHelp(const char *aProgramName)
 {
     fprintf(stderr, "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL [RADIO_URL]\n",
@@ -101,11 +92,6 @@ static void PrintHelp(const char *aProgramName)
 static void PrintVersion(void)
 {
     printf("%s\n", OTBR_PACKAGE_VERSION);
-}
-
-static void PrintRadioVersion(otInstance *aInstance)
-{
-    printf("%s\n", otPlatRadioGetVersionString(aInstance));
 }
 
 static void OnAllocateFailed(void)
@@ -129,6 +115,22 @@ static otbrLogLevel GetDefaultLogLevel(void)
 #endif
 
     return level;
+}
+
+static void PrintRadioVersion(otInstance *aInstance)
+{
+    printf("%s\n", otPlatRadioGetVersionString(aInstance));
+}
+
+static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
+{
+    otbr::Ncp::ControllerOpenThread ncpOpenThread{/* aInterfaceName */ "", aRadioUrls, /* aBackboneInterfaceName */ "",
+                                                  /* aDryRun */ true};
+
+    ncpOpenThread.Init();
+
+    PrintRadioVersion(ncpOpenThread.GetInstance());
+    exit(EXIT_SUCCESS);
 }
 
 static int realmain(int argc, char *argv[])
@@ -192,28 +194,27 @@ static int realmain(int argc, char *argv[])
     otbrLogInfo("Thread interface: %s", interfaceName);
     otbrLogInfo("Backbone interface: %s", backboneInterfaceName);
 
+    otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
+    otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
+
     for (int i = optind; i < argc; i++)
     {
         otbrLogInfo("Radio URL: %s", argv[i]);
         radioUrls.push_back(argv[i]);
     }
 
+    if (printRadioVersion)
     {
-        otbr::Ncp::ControllerOpenThread ncpOpenThread{interfaceName, radioUrls, backboneInterfaceName,
-                                                      /* aDryRun */ printRadioVersion};
+        PrintRadioVersionAndExit(radioUrls);
+        assert(false);
+    }
 
-        otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
-        otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
+    {
+        otbr::Application app(interfaceName, backboneInterfaceName, radioUrls);
 
-        SuccessOrExit(ret = ncpOpenThread.Init());
+        app.Init();
 
-        if (printRadioVersion)
-        {
-            PrintRadioVersion(ncpOpenThread.GetInstance());
-            ExitNow(ret = EXIT_SUCCESS);
-        }
-
-        SuccessOrExit(ret = Mainloop(ncpOpenThread));
+        SuccessOrExit(ret = app.Run());
     }
 
     otbrLogDeinit();
