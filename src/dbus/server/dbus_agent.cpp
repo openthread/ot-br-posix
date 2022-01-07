@@ -57,6 +57,7 @@ otbrError DBusAgent::Init(void)
     dbus_error_init(&dbusError);
     DBusConnection *conn                = nullptr;
     auto            connection_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+
     while (true)
     {
         conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
