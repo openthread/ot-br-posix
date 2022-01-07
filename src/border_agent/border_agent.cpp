@@ -117,6 +117,11 @@ void BorderAgent::Init(void)
     Start();
 }
 
+void BorderAgent::Deinit(void)
+{
+    Stop();
+}
+
 void BorderAgent::Start(void)
 {
     otbrError error = OTBR_ERROR_NONE;
@@ -151,8 +156,6 @@ void BorderAgent::Stop(void)
 
 BorderAgent::~BorderAgent(void)
 {
-    Stop();
-
     if (mPublisher != nullptr)
     {
         delete mPublisher;

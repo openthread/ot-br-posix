@@ -82,6 +82,12 @@ public:
     void Init(void);
 
     /**
+     * This method deinitialize the NCP controller.
+     *
+     */
+    void Deinit(void);
+
+    /**
      * This method get mInstance pointer.
      *
      * @retval The pointer of mInstance.

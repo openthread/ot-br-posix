@@ -93,6 +93,12 @@ public:
     void Init(void);
 
     /**
+     * This method de-initializes the Application instance.
+     *
+     */
+    void Deinit(void);
+
+    /**
      * This method runs the application until exit.
      *
      * @retval OTBR_ERROR_NONE  The application exited without any error.

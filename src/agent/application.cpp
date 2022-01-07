@@ -93,6 +93,15 @@ void Application::Init(void)
 #endif
 }
 
+void Application::Deinit(void)
+{
+#if OTBR_ENABLE_BORDER_AGENT
+    mBorderAgent.Deinit();
+#endif
+
+    mNcp.Deinit();
+}
+
 otbrError Application::Run(void)
 {
     otbrError error = OTBR_ERROR_NONE;

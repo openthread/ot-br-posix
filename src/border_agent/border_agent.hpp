@@ -97,6 +97,12 @@ public:
      */
     void Init(void);
 
+    /**
+     * This method de-initializes border agent service.
+     *
+     */
+    void Deinit(void);
+
 private:
     enum : uint8_t
     {
