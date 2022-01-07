@@ -65,7 +65,7 @@ otbrError DBusAgent::Init(void)
         {
             break;
         }
-        otbrLogWarning("Failed to get DBus connection: %s: %s", dbusError.name, dbusError.message);
+        otbrLogWarning("Failed to get DBus connection: %s: %s, will retry after 3 seconds", dbusError.name, dbusError.message);
         dbus_error_free(&dbusError);
         sleep(3);
     }
