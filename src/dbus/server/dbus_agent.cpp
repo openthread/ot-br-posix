@@ -47,7 +47,7 @@ DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
 {
 }
 
-otbrError DBusAgent::Init(void)
+void DBusAgent::Init(void)
 {
     DBusError   dbusError;
     otbrError   error = OTBR_ERROR_NONE;
@@ -65,7 +65,8 @@ otbrError DBusAgent::Init(void)
         {
             break;
         }
-        otbrLogWarning("Failed to get DBus connection: %s: %s, will retry after 3 seconds", dbusError.name, dbusError.message);
+        otbrLogWarning("Failed to get DBus connection: %s: %s, will retry after 3 seconds", dbusError.name,
+                       dbusError.message);
         dbus_error_free(&dbusError);
         sleep(3);
     }
@@ -83,12 +84,12 @@ otbrError DBusAgent::Init(void)
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp));
     error         = mThreadObject->Init();
 exit:
-    if (error != OTBR_ERROR_NONE)
+    if (error == OTBR_ERROR_DBUS)
     {
         otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
     }
+    VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
     dbus_error_free(&dbusError);
-    return error;
 }
 
 dbus_bool_t DBusAgent::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)
