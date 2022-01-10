@@ -53,7 +53,7 @@ def if_nametoindex(name):
 
 
 def get_ipaddr():
-    for line in os.popen(f'ip addr list dev {IFNAME} | grep inet | grep global'):
+    for line in os.popen(f'ip addr list dev {IFNAME} | grep inet6 | grep \'scope link\' '):
         addr = line.strip().split()[1]
         return addr.split('/')[0]
 
