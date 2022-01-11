@@ -64,8 +64,6 @@ public:
     /**
      * This method initializes the dbus agent.
      *
-     * @returns The intialization error.
-     *
      */
     void Init(void);
 

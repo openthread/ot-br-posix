@@ -86,7 +86,7 @@ void DBusAgent::Init(void)
 exit:
     if (error == OTBR_ERROR_DBUS)
     {
-        otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
+        otbrLogErr("DBus error %s: %s", dbusError.name, dbusError.message);
     }
     VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
     dbus_error_free(&dbusError);
