@@ -65,10 +65,8 @@ public:
     /**
      * This method initializes the dbus agent.
      *
-     * @returns The intialization error.
-     *
      */
-    otbrError Init(void);
+    void Init(void);
 
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;

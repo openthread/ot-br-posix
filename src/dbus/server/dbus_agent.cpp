@@ -30,6 +30,9 @@
 
 #include "dbus/server/dbus_agent.hpp"
 
+#include <chrono>
+#include <unistd.h>
+
 #include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
 
@@ -44,7 +47,7 @@ DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
 {
 }
 
-otbrError DBusAgent::Init(void)
+void DBusAgent::Init(void)
 {
     DBusError   dbusError;
     otbrError   error = OTBR_ERROR_NONE;
@@ -52,10 +55,24 @@ otbrError DBusAgent::Init(void)
     std::string serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;
 
     dbus_error_init(&dbusError);
-    DBusConnection *conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
-    mConnection          = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
+    DBusConnection *conn                = nullptr;
+    auto            connection_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+
+    while (true)
+    {
+        conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+        if (conn != nullptr || std::chrono::steady_clock::now() > connection_deadline)
+        {
+            break;
+        }
+        otbrLogWarning("Failed to get DBus connection: %s: %s, will retry after 3 seconds", dbusError.name,
+                       dbusError.message);
+        dbus_error_free(&dbusError);
+        sleep(3);
+    }
+    mConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
         conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
-    VerifyOrExit(mConnection != nullptr, error = OTBR_ERROR_DBUS);
+    VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
     dbus_bus_register(mConnection.get(), &dbusError);
     requestReply =
         dbus_bus_request_name(mConnection.get(), serverName.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusError);
@@ -67,12 +84,12 @@ otbrError DBusAgent::Init(void)
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp));
     error         = mThreadObject->Init();
 exit:
-    if (error != OTBR_ERROR_NONE)
+    if (error == OTBR_ERROR_DBUS)
     {
-        otbrLogErr("Dbus error %s: %s", dbusError.name, dbusError.message);
+        otbrLogErr("DBus error %s: %s", dbusError.name, dbusError.message);
     }
+    VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
     dbus_error_free(&dbusError);
-    return error;
 }
 
 dbus_bool_t DBusAgent::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)
