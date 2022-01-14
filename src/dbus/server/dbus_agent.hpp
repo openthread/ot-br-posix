@@ -74,6 +74,7 @@ public:
 private:
     static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
     static void        RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
+    std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>> PrepareDBusConnection(void);
 
     static const struct timeval kPollTimeout;
 

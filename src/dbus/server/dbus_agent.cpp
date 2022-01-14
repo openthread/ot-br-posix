@@ -49,47 +49,58 @@ DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
 
 void DBusAgent::Init(void)
 {
-    DBusError   dbusError;
-    otbrError   error = OTBR_ERROR_NONE;
-    int         requestReply;
-    std::string serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;
+    otbrError error = OTBR_ERROR_NONE;
 
-    dbus_error_init(&dbusError);
-    DBusConnection *conn                = nullptr;
-    auto            connection_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+    auto connection_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
 
-    while (true)
+    mConnection = PrepareDBusConnection();
+
+    while (mConnection == nullptr && std::chrono::steady_clock::now() < connection_deadline)
     {
-        conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
-        if (conn != nullptr || std::chrono::steady_clock::now() > connection_deadline)
-        {
-            break;
-        }
-        otbrLogWarning("Failed to get DBus connection: %s: %s, will retry after 3 seconds", dbusError.name,
-                       dbusError.message);
-        dbus_error_free(&dbusError);
-        sleep(3);
+        otbrLogWarning("Failed to setup DBus connection, will retry after 1 second");
+        sleep(1);
+        mConnection = PrepareDBusConnection();
     }
-    mConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
-        conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
+
     VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
-    dbus_bus_register(mConnection.get(), &dbusError);
-    requestReply =
-        dbus_bus_request_name(mConnection.get(), serverName.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusError);
-    VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
-                     requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
-                 error = OTBR_ERROR_DBUS);
-    VerifyOrExit(
-        dbus_connection_set_watch_functions(mConnection.get(), AddDBusWatch, RemoveDBusWatch, nullptr, this, nullptr));
+
     mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp));
     error         = mThreadObject->Init();
-exit:
-    if (error == OTBR_ERROR_DBUS)
-    {
-        otbrLogErr("DBus error %s: %s", dbusError.name, dbusError.message);
-    }
     VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
+}
+
+DBusAgent::UniqueDBusConnection DBusAgent::PrepareDBusConnection(void)
+{
+    DBusError            dbusError;
+    DBusConnection *     conn = nullptr;
+    UniqueDBusConnection uniqueConn;
+    int                  requestReply;
+    std::string          serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;
+
+    dbus_error_init(&dbusError);
+
+    conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
+
+    uniqueConn = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
+        conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
+
+    VerifyOrExit(uniqueConn != nullptr,
+                 otbrLogWarning("Failed to get DBus connection: %s: %s", dbusError.name, dbusError.message));
+    dbus_bus_register(uniqueConn.get(), &dbusError);
+
+    requestReply =
+        dbus_bus_request_name(uniqueConn.get(), serverName.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusError);
+    VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
+                     requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
+                 uniqueConn = nullptr);
+    VerifyOrExit(
+        dbus_connection_set_watch_functions(uniqueConn.get(), AddDBusWatch, RemoveDBusWatch, nullptr, this, nullptr),
+        uniqueConn = nullptr);
+
+exit:
     dbus_error_free(&dbusError);
+
+    return uniqueConn;
 }
 
 dbus_bool_t DBusAgent::AddDBusWatch(struct DBusWatch *aWatch, void *aContext)
