@@ -31,6 +31,7 @@
 #include "dbus/server/dbus_agent.hpp"
 
 #include <chrono>
+#include <thread>
 #include <unistd.h>
 
 #include "common/logging.hpp"
@@ -39,7 +40,8 @@
 namespace otbr {
 namespace DBus {
 
-const struct timeval DBusAgent::kPollTimeout = {0, 0};
+const struct timeval           DBusAgent::kPollTimeout = {0, 0};
+constexpr std::chrono::seconds DBusAgent::kDBusWaitAllowance;
 
 DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     : mInterfaceName(aNcp.GetInterfaceName())
@@ -51,15 +53,12 @@ void DBusAgent::Init(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    auto connection_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+    auto connection_deadline = Clock::now() + kDBusWaitAllowance;
 
-    mConnection = PrepareDBusConnection();
-
-    while (mConnection == nullptr && std::chrono::steady_clock::now() < connection_deadline)
+    while ((mConnection = PrepareDBusConnection()) == nullptr && Clock::now() < connection_deadline)
     {
         otbrLogWarning("Failed to setup DBus connection, will retry after 1 second");
-        sleep(1);
-        mConnection = PrepareDBusConnection();
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
@@ -81,8 +80,7 @@ DBusAgent::UniqueDBusConnection DBusAgent::PrepareDBusConnection(void)
 
     conn = dbus_bus_get(DBUS_BUS_SYSTEM, &dbusError);
 
-    uniqueConn = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>(
-        conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
+    uniqueConn = UniqueDBusConnection(conn, [](DBusConnection *aConnection) { dbus_connection_unref(aConnection); });
 
     VerifyOrExit(uniqueConn != nullptr,
                  otbrLogWarning("Failed to get DBus connection: %s: %s", dbusError.name, dbusError.message));
@@ -92,7 +90,10 @@ DBusAgent::UniqueDBusConnection DBusAgent::PrepareDBusConnection(void)
         dbus_bus_request_name(uniqueConn.get(), serverName.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &dbusError);
     VerifyOrExit(requestReply == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER ||
                      requestReply == DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER,
-                 uniqueConn = nullptr);
+                 {
+                     otbrLogWarning("Failed to request DBus name: %s: %s", dbusError.name, dbusError.message);
+                     uniqueConn = nullptr;
+                 });
     VerifyOrExit(
         dbus_connection_set_watch_functions(uniqueConn.get(), AddDBusWatch, RemoveDBusWatch, nullptr, this, nullptr),
         uniqueConn = nullptr);
