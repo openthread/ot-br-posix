@@ -83,7 +83,8 @@ ControllerOpenThread::ControllerOpenThread(const char *                     aInt
 
 ControllerOpenThread::~ControllerOpenThread(void)
 {
-    otSysDeinit();
+    // Make sure OpenThread Instance was gracefully de-initialized.
+    assert(mInstance == nullptr);
 }
 
 void ControllerOpenThread::Init(void)
@@ -139,6 +140,14 @@ void ControllerOpenThread::Init(void)
 
 exit:
     SuccessOrDie(error, "Failed to initialize NCP!");
+}
+
+void ControllerOpenThread::Deinit(void)
+{
+    assert(mInstance != nullptr);
+
+    otSysDeinit();
+    mInstance = nullptr;
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)

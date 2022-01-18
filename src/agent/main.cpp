@@ -130,6 +130,9 @@ static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls
     ncpOpenThread.Init();
 
     PrintRadioVersion(ncpOpenThread.GetInstance());
+
+    ncpOpenThread.Deinit();
+
     exit(EXIT_SUCCESS);
 }
 
@@ -214,7 +217,9 @@ static int realmain(int argc, char *argv[])
 
         app.Init();
 
-        SuccessOrExit(ret = app.Run());
+        ret = app.Run();
+
+        app.Deinit();
     }
 
     otbrLogDeinit();
