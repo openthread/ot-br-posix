@@ -72,16 +72,21 @@ public:
     void Process(const MainloopContext &aMainloop) override;
 
 private:
-    static dbus_bool_t AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
-    static void        RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
+    using Clock                                              = std::chrono::steady_clock;
+    constexpr static std::chrono::seconds kDBusWaitAllowance = std::chrono::seconds(30);
+
+    using UniqueDBusConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>;
+
+    static dbus_bool_t   AddDBusWatch(struct DBusWatch *aWatch, void *aContext);
+    static void          RemoveDBusWatch(struct DBusWatch *aWatch, void *aContext);
+    UniqueDBusConnection PrepareDBusConnection(void);
 
     static const struct timeval kPollTimeout;
 
     std::string                       mInterfaceName;
     std::unique_ptr<DBusThreadObject> mThreadObject;
-    using UniqueDBusConnection = std::unique_ptr<DBusConnection, std::function<void(DBusConnection *)>>;
-    UniqueDBusConnection             mConnection;
-    otbr::Ncp::ControllerOpenThread &mNcp;
+    UniqueDBusConnection              mConnection;
+    otbr::Ncp::ControllerOpenThread & mNcp;
 
     /**
      * This map is used to track DBusWatch-es.
