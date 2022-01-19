@@ -50,6 +50,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: "Border Router (mDNSResponder)"
@@ -70,6 +71,7 @@ jobs:
           - name: "Backbone Router"
             otbr_options: "-DOT_TREL=OFF -DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON"
             border_routing: 0
+            otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
 
 
@@ -85,11 +87,24 @@ jobs:
       INTER_OP: 0
       INTER_OP_BBR: 0
       BORDER_ROUTING: ${{ matrix.border_routing }}
+      MAX_JOBS: 3
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Get Border Router Test ID
+      id: unique_action_id
+      run: |
+        echo ::set-output name=id::"${GITHUB_WORKFLOW}-${GITHUB_JOB}-${GITHUB_RUN_ID}-${{matrix.name}}"
+    - name: Check cached result
+      id: check_cache_result
+      uses: actions/cache@v2
+      with:
+        path: |
+          _test_complete_
+        key: "_test_complete_${{ steps.unique_action_id.outputs.id }}"
     - name: Build OTBR Docker Image
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
         # We need the `-DOT_SRP_SERVER=ON` option because the `bbr_5_11_01.py` script is referring SRP server.
         # This should be fixed by enhancing the test script to handle SRP server situations properly.
@@ -105,23 +120,27 @@ jobs:
           --build-arg MDNS="${{ matrix.otbr_mdns }}" \
           --build-arg OTBR_OPTIONS="${otbr_options} -DCMAKE_CXX_FLAGS='-DOPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF=1'"
     - name: Bootstrap OpenThread Test
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
         sudo rm /etc/apt/sources.list.d/* && sudo apt-get update
         sudo apt-get --no-install-recommends install -y python3-setuptools python3-wheel ninja-build socat nodejs npm
         python3 -m pip install -r third_party/openthread/repo/tests/scripts/thread-cert/requirements.txt
     - name: Build OpenThread
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
         (cd third_party/openthread/repo && ./script/test build)
     - name: Get Thread-Wireshark
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
         (cd third_party/openthread/repo && ./script/test get_thread_wireshark)
     - name: Run Test
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
         export CI_ENV="$(bash <(curl -s https://codecov.io/env)) -e GITHUB_ACTIONS -e OTBR_COVERAGE"
         echo "CI_ENV=${CI_ENV}"
         (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r *.log *.json *.pcap && false))
     - uses: actions/upload-artifact@v2
-      if: ${{ failure() }}
+      if: ${{ failure() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       with:
         name: thread-1-2-backbone-results
         path: |
@@ -129,4 +148,9 @@ jobs:
           third_party/openthread/repo/*.json
           third_party/openthread/repo/*.log
     - name: Codecov
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       uses: codecov/codecov-action@v1
+    - name: Cache test result
+      if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
+      run: |
+        mkdir _test_complete_
