@@ -249,6 +249,7 @@ void PublisherMDnsSd::Stop(void)
     if (mHostsRef != nullptr)
     {
         DNSServiceRefDeallocate(mHostsRef);
+        otbrLogDebug("Deallocated DNSServiceRef for hosts: %p", mHostsRef);
         mHostsRef = nullptr;
     }
 
@@ -335,7 +336,7 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
         if (error != kDNSServiceErr_NoError)
         {
-            otbrLogWarning("DNSServiceProcessResult failed: %s", DNSErrorToString(error));
+            otbrLogWarning("DNSServiceProcessResult failed: %s (serviceRef = %p)", DNSErrorToString(error), serviceRef);
         }
     }
 }
@@ -554,7 +555,7 @@ void PublisherMDnsSd::RecordHost(const std::string &         aName,
 
     if (host == mHosts.end())
     {
-        otbrLogInfo("Add new host %s", aName.c_str());
+        otbrLogInfo("Add new host: %s (record ref: %p)", aName.c_str(), aRecordRef);
         mHosts.push_back({aName, aAddress, aRecordRef});
     }
     else
@@ -583,6 +584,7 @@ otbrError PublisherMDnsSd::PublishHost(const std::string &aName, const std::vect
     if (mHostsRef == nullptr)
     {
         SuccessOrExit(error = DNSServiceCreateConnection(&mHostsRef));
+        otbrLogDebug("Created new DNSServiceRef for hosts: %p", mHostsRef);
     }
 
     if (host != mHosts.end())
@@ -615,6 +617,7 @@ exit:
         if (mHostsRef != nullptr)
         {
             DNSServiceRefDeallocate(mHostsRef);
+            otbrLogDebug("Deallocated DNSServiceRef for hosts: %p", mHostsRef);
             mHostsRef = nullptr;
         }
 
