@@ -47,6 +47,7 @@
 
 main()
 {
+    # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
     extend_sudo_timeout
     setup_swapfile
@@ -70,6 +71,7 @@ main()
     dhcpv6_pd_install
     border_routing_install
     otbr_install
+    # shellcheck source=/dev/null
     . "$AFTER_HOOK"
 }
 

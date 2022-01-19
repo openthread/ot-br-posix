@@ -44,6 +44,8 @@ OTBR_FORWARD_INGRESS_CHAIN="OTBR_FORWARD_INGRESS"
 . /lib/lsb/init-functions
 . /lib/init/vars.sh
 
+set -euxo pipefail
+
 ipset_destroy_if_exist()
 {
     if ipset list "$1"; then

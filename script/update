@@ -44,6 +44,7 @@ main()
 {
     ./script/bootstrap
 
+    # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
     otbr_uninstall
     dhcpv6_pd_uninstall
@@ -58,6 +59,7 @@ main()
     dns64_install
     dhcpv6_pd_install
     otbr_update
+    # shellcheck source=/dev/null
     . "$AFTER_HOOK"
 }
 

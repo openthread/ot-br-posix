@@ -160,6 +160,8 @@ create_ncp_state_notifier_script()
 #       This script notifies about NCP state changes.
 #
 
+set -euxo pipefail
+
 PID=\$\$
 NAME="ncp_state_notifier"
 
