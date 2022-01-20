@@ -156,13 +156,15 @@ jobs:
         echo "CI_ENV=${CI_ENV}"
         (cd third_party/openthread/repo && sudo -E ./script/test cert_suite ${{ matrix.cert_scripts }} || (sudo chmod a+r *.log *.json *.pcap && false))
     - uses: actions/upload-artifact@v2
-      if: ${{ failure() && steps.check_cache_result.outputs.cache-hit != 'true' }}
+      if: ${{ steps.check_cache_result.outputs.cache-hit != 'true' }}
       with:
-        name: thread-1-2-backbone-results
+        name: ${{ matrix.name }}
         path: |
           third_party/openthread/repo/*.pcap
           third_party/openthread/repo/*.json
           third_party/openthread/repo/*.log
+          third_party/openthread/repo/coredump_*
+          third_party/openthread/repo/otbr-agent_*
     - name: Codecov
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       uses: codecov/codecov-action@v1
