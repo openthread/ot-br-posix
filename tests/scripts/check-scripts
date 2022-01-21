@@ -62,8 +62,8 @@ main()
     echo "HOST_PTY: ${HOST_PTY}"
 
     if ! command -v ot-rcp; then
-        make -f third_party/openthread/repo/examples/Makefile-simulation DISABLE_DOC=1 TargetTuple=otbr
-        PATH=$PATH:output/otbr/bin
+        third_party/openthread/repo/script/cmake-build simulation -DOT_COVERAGE=OFF
+        PATH=$PATH:build/simulation/examples/apps/ncp
     fi
 
     # shellcheck disable=SC2094
