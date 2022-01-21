@@ -35,6 +35,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <getopt.h>
@@ -44,6 +45,7 @@
 #include <unistd.h>
 
 #include <assert.h>
+#include <net/if.h>
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
 
@@ -55,11 +57,15 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
+#include "common/time.hpp"
 #include "common/types.hpp"
 #include "ncp/ncp_openthread.hpp"
 
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
+
+using Clock   = otbr::Clock;
+using Seconds = otbr::Seconds;
 
 enum
 {
@@ -72,6 +78,7 @@ enum
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
     OTBR_OPT_AUTO_ATTACH,
+    OTBR_OPT_WAIT_BACKBONE_NETIF,
 };
 
 static jmp_buf            sResetJump;
@@ -87,6 +94,7 @@ static const struct option kOptions[] = {
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
     {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
+    {"wait-backbone-netif", required_argument, nullptr, OTBR_OPT_WAIT_BACKBONE_NETIF},
     {0, 0, 0, 0}};
 
 static bool ParseInteger(const char *aStr, long &aOutResult)
@@ -165,8 +173,10 @@ static otbrLogLevel GetDefaultLogLevel(void)
 
 static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
-    otbr::Ncp::ControllerOpenThread ncpOpenThread{/* aInterfaceName */ "", aRadioUrls, /* aBackboneInterfaceName */ "",
-                                                  /* aDryRun */ true, /* aEnableAutoAttach */ false};
+    otbr::Ncp::ControllerOpenThread ncpOpenThread{/* aInterfaceName */ "", aRadioUrls,
+                                                  /* aBackboneInterfaceName */ "",
+                                                  /* aDryRun */ true,
+                                                  /* aEnableAutoAttach */ false};
     const char *                    radioVersion;
 
     ncpOpenThread.Init();
@@ -180,6 +190,31 @@ static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls
     exit(EXIT_SUCCESS);
 }
 
+static void WaitBackboneNetifReady(const char *aBackboneNetifName, uint32_t aTimeout)
+{
+    uint32_t               interfaceIndex;
+    auto                   timeout              = Seconds(aTimeout);
+    constexpr unsigned int kRecheckIntervalSecs = 3;
+
+    VerifyOrExit(aBackboneNetifName != nullptr && *aBackboneNetifName != '\0');
+
+    {
+        auto deadline = Clock::now() + timeout;
+
+        while ((interfaceIndex = if_nametoindex(aBackboneNetifName)) == 0 && Clock::now() < deadline)
+        {
+            otbrLogWarning("Backbone interface '%s' is not ready, will re-check after %d seconds.", aBackboneNetifName,
+                           kRecheckIntervalSecs);
+            std::this_thread::sleep_for(std::chrono::seconds(kRecheckIntervalSecs));
+        }
+
+        VerifyOrDie(interfaceIndex > 0, "Backbone interface is invalid");
+    }
+
+exit:
+    return;
+}
+
 static int realmain(int argc, char *argv[])
 {
     otbrLogLevel              logLevel = GetDefaultLogLevel();
@@ -191,6 +226,7 @@ static int realmain(int argc, char *argv[])
     bool                      printRadioVersion     = false;
     bool                      enableAutoAttach      = true;
     std::vector<const char *> radioUrls;
+    long                      waitBackboneNetifTimeout = 0;
     long                      parseResult;
 
     std::set_new_handler(OnAllocateFailed);
@@ -243,6 +279,10 @@ static int realmain(int argc, char *argv[])
             }
             break;
 
+        case OTBR_OPT_WAIT_BACKBONE_NETIF:
+            VerifyOrExit(ParseInteger(optarg, waitBackboneNetifTimeout), ret = EXIT_FAILURE);
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -267,6 +307,8 @@ static int realmain(int argc, char *argv[])
         PrintRadioVersionAndExit(radioUrls);
         assert(false);
     }
+
+    WaitBackboneNetifReady(backboneInterfaceName, waitBackboneNetifTimeout);
 
     {
         otbr::Application app(interfaceName, backboneInterfaceName, radioUrls, enableAutoAttach);
