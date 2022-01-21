@@ -57,7 +57,7 @@ check_upstart()
     sleep 2
 
     if [[ "$(ps --no-headers -o s "${UPSTART_JOB_PID}")" == T ]]; then
-        echo 'otbr-agent is not continued'
+        echo 'otbr-agent did not continue'
         false
     fi
     sudo pkill -P "${UPSTART_JOB_PID}"
