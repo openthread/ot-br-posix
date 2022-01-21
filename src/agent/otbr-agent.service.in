@@ -1,10 +1,13 @@
 [Unit]
-Description=Border Router Agent
+Description=OpenThread Border Router Agent
 ConditionPathExists=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent
+Requires=dbus.socket
+After=dbus.socket
 
 [Service]
 EnvironmentFile=-@CMAKE_INSTALL_FULL_SYSCONFDIR@/default/otbr-agent
 @EXEC_START_PRE@ExecStart=@CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent $OTBR_AGENT_OPTS
+KillMode=mixed
 Restart=on-failure
 RestartSec=5
 RestartPreventExitStatus=SIGKILL
