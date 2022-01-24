@@ -74,8 +74,8 @@ main()
     SOCAT_OUTPUT=/tmp/ot-socat
 
     if ! command -v ot-rcp; then
-        make -f third_party/openthread/repo/examples/Makefile-simulation DISABLE_DOC=1 TargetTuple=otbr
-        export PATH=$PATH:output/otbr/bin
+        third_party/openthread/repo/script/cmake-build simulation -DOT_COVERAGE=OFF
+        PATH=$PATH:build/simulation/examples/apps/ncp
     fi
 
     check_upstart
