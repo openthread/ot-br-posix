@@ -183,6 +183,10 @@ private:
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 
+    static bool IsAutoAttachEnabled(void);
+
+    static void DisableAutoAttach(void);
+
     otInstance *mInstance;
 
     otPlatformConfig                           mConfig;

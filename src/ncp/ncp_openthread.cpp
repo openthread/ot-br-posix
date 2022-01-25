@@ -197,10 +197,23 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 
     otSysMainloopProcess(mInstance, &aMainloop);
 
-    if (getenv("OTBR_NO_AUTO_ATTACH") == nullptr && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
+    if (IsAutoAttachEnabled() && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
-        setenv("OTBR_NO_AUTO_ATTACH", "1", 0);
+        DisableAutoAttach();
     }
+}
+
+bool ControllerOpenThread::IsAutoAttachEnabled(void)
+{
+    const char *val = getenv("OTBR_NO_AUTO_ATTACH");
+
+    // Auto Thread attaching is enabled if OTBR_NO_AUTO_ATTACH is unset, empty or "0"
+    return (val == nullptr || !strcmp(val, "") || !strcmp(val, "0"));
+}
+
+void ControllerOpenThread::DisableAutoAttach(void)
+{
+    setenv("OTBR_NO_AUTO_ATTACH", "1", 1);
 }
 
 void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
