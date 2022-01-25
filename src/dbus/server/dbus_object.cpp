@@ -145,13 +145,13 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
         auto propertyIter = mGetPropertyHandlers.find(interfaceName);
 
         otbrLogInfo("GetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
-        VerifyOrExit(propertyIter != mGetPropertyHandlers.end(), error = OT_ERROR_INVALID_ARGS);
+        VerifyOrExit(propertyIter != mGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
         {
             DBusMessageIter replyIter;
             auto &          interfaceHandlers = propertyIter->second;
             auto            interfaceIter     = interfaceHandlers.find(propertyName);
 
-            VerifyOrExit(interfaceIter != interfaceHandlers.end(), error = OT_ERROR_INVALID_ARGS);
+            VerifyOrExit(interfaceIter != interfaceHandlers.end(), error = OT_ERROR_NOT_FOUND);
             dbus_message_iter_init_append(reply.get(), &replyIter);
             SuccessOrExit(replyError = interfaceIter->second(replyIter));
         }
