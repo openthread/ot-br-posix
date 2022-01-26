@@ -84,6 +84,8 @@ create_ap_helper_script()
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -euxo pipefail
+
 NAME="ap-helper"
 
 IFNAME=\$1
@@ -215,6 +217,8 @@ create_dhcpv6_helper_script()
 #   Description:
 #       This script manipulates DHCPv6-PD configuration.
 #
+
+set -euxo pipefail
 
 NAME="dhcpv6-helper"
 

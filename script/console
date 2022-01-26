@@ -49,11 +49,13 @@ killall_services()
 on_exit()
 {
     killall_services
+    # shellcheck source=/dev/null
     . "$AFTER_HOOK"
 }
 
 main()
 {
+    # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
     if have systemctl; then
         sudo systemctl stop otbr-web otbr-agent || true
