@@ -95,6 +95,8 @@ elseif(NOT OTBR_OPENWRT)
         RENAME otbr-agent)
 endif()
 
+set(OTBR_NO_AUTO_ATTACH "0" CACHE STRING "Set to 1 to disable auto Thread attach")
+
 configure_file(otbr-agent.default.in otbr-agent.default)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.default
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/default
