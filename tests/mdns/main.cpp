@@ -228,10 +228,7 @@ void PublishServiceSubTypes(void *aContext)
 
     Mdns::Publisher::SubTypeList subTypeList{"_subtype1", "_SUBTYPE2"};
 
-    // if (sContext.mUpdate)
-    // {
     subTypeList.back() = "_SUBTYPE3";
-    //}
 
     sContext.mPublisher->PublishService(
         "", "ServiceWithSubTypes", "_meshcop._udp.", subTypeList, 12345, Mdns::Publisher::TxtList{},

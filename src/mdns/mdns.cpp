@@ -204,9 +204,9 @@ std::string Publisher::MakeFullHostName(const std::string &aName)
     return aName + ".local";
 }
 
-void Publisher::AddServiceRegistration(ServiceRegistrationPtr aServiceReg)
+void Publisher::AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg)
 {
-    mServiceRegistrations[MakeFullServiceName(aServiceReg->mName, aServiceReg->mType)] = aServiceReg;
+    mServiceRegistrations.emplace(MakeFullServiceName(aServiceReg->mName, aServiceReg->mType), std::move(aServiceReg));
 }
 
 void Publisher::RemoveServiceRegistration(const std::string &aName, const std::string &aType)
@@ -215,11 +215,11 @@ void Publisher::RemoveServiceRegistration(const std::string &aName, const std::s
     mServiceRegistrations.erase(MakeFullServiceName(aName, aType));
 }
 
-Publisher::ServiceRegistrationPtr Publisher::FindServiceRegistration(const std::string &aName, const std::string &aType)
+Publisher::ServiceRegistration *Publisher::FindServiceRegistration(const std::string &aName, const std::string &aType)
 {
     auto it = mServiceRegistrations.find(MakeFullServiceName(aName, aType));
 
-    return it != mServiceRegistrations.end() ? it->second : nullptr;
+    return it != mServiceRegistrations.end() ? it->second.get() : nullptr;
 }
 
 Publisher::ResultCallback Publisher::HandleDuplicateServiceRegistration(const std::string &aHostName,
@@ -230,7 +230,7 @@ Publisher::ResultCallback Publisher::HandleDuplicateServiceRegistration(const st
                                                                         const TxtList &    aTxtList,
                                                                         ResultCallback &&  aCallback)
 {
-    ServiceRegistrationPtr serviceReg = FindServiceRegistration(aName, aType);
+    ServiceRegistration *serviceReg = FindServiceRegistration(aName, aType);
 
     VerifyOrExit(serviceReg != nullptr);
 
@@ -266,7 +266,7 @@ Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::
                                                                      const std::vector<uint8_t> &aAddress,
                                                                      ResultCallback &&           aCallback)
 {
-    HostRegistrationPtr hostReg = FindHostRegistration(aName);
+    HostRegistration *hostReg = FindHostRegistration(aName);
 
     VerifyOrExit(hostReg != nullptr);
 
@@ -298,9 +298,9 @@ exit:
     return std::move(aCallback);
 }
 
-void Publisher::AddHostRegistration(HostRegistrationPtr aHostReg)
+void Publisher::AddHostRegistration(HostRegistrationPtr &&aHostReg)
 {
-    mHostRegistrations[MakeFullHostName(aHostReg->mName)] = aHostReg;
+    mHostRegistrations.emplace(MakeFullHostName(aHostReg->mName), std::move(aHostReg));
 }
 
 void Publisher::RemoveHostRegistration(const std::string &aName)
@@ -308,11 +308,11 @@ void Publisher::RemoveHostRegistration(const std::string &aName)
     mHostRegistrations.erase(MakeFullHostName(aName));
 }
 
-Publisher::HostRegistrationPtr Publisher::FindHostRegistration(const std::string &aName)
+Publisher::HostRegistration *Publisher::FindHostRegistration(const std::string &aName)
 {
     auto it = mHostRegistrations.find(MakeFullHostName(aName));
 
-    return it != mHostRegistrations.end() ? it->second : nullptr;
+    return it != mHostRegistrations.end() ? it->second.get() : nullptr;
 }
 
 Publisher::Registration::~Registration(void)

@@ -480,8 +480,8 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
 
 void PublisherAvahi::CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError)
 {
-    ServiceRegistrationPtr serviceReg;
-    HostRegistrationPtr    hostReg;
+    ServiceRegistration *serviceReg;
+    HostRegistration *   hostReg;
 
     if ((serviceReg = FindServiceRegistration(aGroup)) != nullptr)
     {
@@ -609,7 +609,7 @@ void PublisherAvahi::PublishService(const std::string &aHostName,
 
     if (!aHostName.empty())
     {
-        HostRegistrationPtr hostReg = Publisher::FindHostRegistration(aHostName);
+        HostRegistration *hostReg = Publisher::FindHostRegistration(aHostName);
 
         // Make sure that the host has been published.
         VerifyOrExit(hostReg != nullptr, error = OTBR_ERROR_INVALID_ARGS);
@@ -641,8 +641,8 @@ void PublisherAvahi::PublishService(const std::string &aHostName,
     avahiError = avahi_entry_group_commit(group);
     SuccessOrExit(avahiError);
 
-    AddServiceRegistration(std::make_shared<AvahiServiceRegistration>(aHostName, aName, aType, sortedSubTypeList, aPort,
-                                                                      sortedTxtList, std::move(aCallback), group));
+    AddServiceRegistration(std::unique_ptr<AvahiServiceRegistration>(new AvahiServiceRegistration(
+        aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), group)));
 
 exit:
     if (avahiError != 0 || error != OTBR_ERROR_NONE)
@@ -697,7 +697,8 @@ void PublisherAvahi::PublishHost(const std::string &         aName,
     avahiError = avahi_entry_group_commit(group);
     SuccessOrExit(avahiError);
 
-    AddHostRegistration(std::make_shared<AvahiHostRegistration>(aName, aAddress, std::move(aCallback), group));
+    AddHostRegistration(std::unique_ptr<AvahiHostRegistration>(
+        new AvahiHostRegistration(aName, aAddress, std::move(aCallback), group)));
 
 exit:
     if (avahiError != 0 || error != OTBR_ERROR_NONE)
@@ -761,16 +762,16 @@ exit:
     return error;
 }
 
-Publisher::ServiceRegistrationPtr PublisherAvahi::FindServiceRegistration(const AvahiEntryGroup *aEntryGroup) const
+Publisher::ServiceRegistration *PublisherAvahi::FindServiceRegistration(const AvahiEntryGroup *aEntryGroup)
 {
-    ServiceRegistrationPtr result = nullptr;
+    ServiceRegistration *result = nullptr;
 
     for (const auto &kv : mServiceRegistrations)
     {
         const auto &serviceReg = static_cast<const AvahiServiceRegistration &>(*kv.second);
         if (serviceReg.GetEntryGroup() == aEntryGroup)
         {
-            result = kv.second;
+            result = kv.second.get();
             break;
         }
     }
@@ -778,16 +779,16 @@ Publisher::ServiceRegistrationPtr PublisherAvahi::FindServiceRegistration(const 
     return result;
 }
 
-Publisher::HostRegistrationPtr PublisherAvahi::FindHostRegistration(const AvahiEntryGroup *aEntryGroup) const
+Publisher::HostRegistration *PublisherAvahi::FindHostRegistration(const AvahiEntryGroup *aEntryGroup)
 {
-    HostRegistrationPtr result = nullptr;
+    HostRegistration *result = nullptr;
 
     for (const auto &kv : mHostRegistrations)
     {
         const auto &hostReg = static_cast<const AvahiHostRegistration &>(*kv.second);
         if (hostReg.GetEntryGroup() == aEntryGroup)
         {
-            result = kv.second;
+            result = kv.second.get();
             break;
         }
     }

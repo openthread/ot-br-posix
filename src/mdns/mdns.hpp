@@ -452,9 +452,9 @@ protected:
         bool IsOutdated(const std::string &aName, const std::vector<uint8_t> &aAddress) const;
     };
 
-    using ServiceRegistrationPtr = std::shared_ptr<ServiceRegistration>;
+    using ServiceRegistrationPtr = std::unique_ptr<ServiceRegistration>;
     using ServiceRegistrationMap = std::map<std::string, ServiceRegistrationPtr>;
-    using HostRegistrationPtr    = std::shared_ptr<HostRegistration>;
+    using HostRegistrationPtr    = std::unique_ptr<HostRegistration>;
     using HostRegistrationMap    = std::map<std::string, HostRegistrationPtr>;
 
     static SubTypeList SortSubTypeList(SubTypeList aSubTypeList);
@@ -462,10 +462,10 @@ protected:
     static std::string MakeFullServiceName(const std::string &aName, const std::string &aType);
     static std::string MakeFullHostName(const std::string &aName);
 
-    void                   AddServiceRegistration(ServiceRegistrationPtr aServiceReg);
-    void                   RemoveServiceRegistration(const std::string &aName, const std::string &aType);
-    ServiceRegistrationPtr FindServiceRegistration(const std::string &aName, const std::string &aType);
-    void                   OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
+    void                 AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
+    void                 RemoveServiceRegistration(const std::string &aName, const std::string &aType);
+    ServiceRegistration *FindServiceRegistration(const std::string &aName, const std::string &aType);
+    void                 OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
     void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
     void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
 
@@ -484,9 +484,9 @@ protected:
                                                    const std::vector<uint8_t> &aAddress,
                                                    ResultCallback &&           aCallback);
 
-    void                AddHostRegistration(HostRegistrationPtr aHostReg);
-    void                RemoveHostRegistration(const std::string &aName);
-    HostRegistrationPtr FindHostRegistration(const std::string &aName);
+    void              AddHostRegistration(HostRegistrationPtr &&aHostReg);
+    void              RemoveHostRegistration(const std::string &aName);
+    HostRegistration *FindHostRegistration(const std::string &aName);
 
     ServiceRegistrationMap mServiceRegistrations;
     HostRegistrationMap    mHostRegistrations;

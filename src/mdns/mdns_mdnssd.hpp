@@ -320,8 +320,8 @@ private:
 
     static std::string MakeRegType(const std::string &aType, SubTypeList aSubTypeList);
 
-    ServiceRegistrationPtr FindServiceRegistration(const DNSServiceRef &aServiceRef);
-    HostRegistrationPtr    FindHostRegistration(const DNSServiceRef &aServiceRef, const DNSRecordRef &aRecordRef);
+    ServiceRegistration *FindServiceRegistration(const DNSServiceRef &aServiceRef);
+    HostRegistration *   FindHostRegistration(const DNSServiceRef &aServiceRef, const DNSRecordRef &aRecordRef);
 
     static void OnServiceResolveFailed(const std::string & aType,
                                        const std::string & aInstanceName,

@@ -278,8 +278,8 @@ private:
                                               size_t            aBufferSize,
                                               AvahiStringList *&aHead);
 
-    ServiceRegistrationPtr FindServiceRegistration(const AvahiEntryGroup *aEntryGroup) const;
-    HostRegistrationPtr    FindHostRegistration(const AvahiEntryGroup *aEntryGroup) const;
+    ServiceRegistration *FindServiceRegistration(const AvahiEntryGroup *aEntryGroup);
+    HostRegistration *   FindHostRegistration(const AvahiEntryGroup *aEntryGroup);
 
     static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
     void        OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode);

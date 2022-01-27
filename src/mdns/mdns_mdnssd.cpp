@@ -369,9 +369,9 @@ exit:
     return;
 }
 
-Publisher::ServiceRegistrationPtr PublisherMDnsSd::FindServiceRegistration(const DNSServiceRef &aServiceRef)
+Publisher::ServiceRegistration *PublisherMDnsSd::FindServiceRegistration(const DNSServiceRef &aServiceRef)
 {
-    ServiceRegistrationPtr result = nullptr;
+    ServiceRegistration *result = nullptr;
 
     for (auto &kv : mServiceRegistrations)
     {
@@ -380,7 +380,7 @@ Publisher::ServiceRegistrationPtr PublisherMDnsSd::FindServiceRegistration(const
 
         if (serviceReg.GetServiceRef() == aServiceRef)
         {
-            result = kv.second;
+            result = kv.second.get();
             break;
         }
     }
@@ -388,10 +388,10 @@ Publisher::ServiceRegistrationPtr PublisherMDnsSd::FindServiceRegistration(const
     return result;
 }
 
-Publisher::HostRegistrationPtr PublisherMDnsSd::FindHostRegistration(const DNSServiceRef &aServiceRef,
-                                                                     const DNSRecordRef & aRecordRef)
+Publisher::HostRegistration *PublisherMDnsSd::FindHostRegistration(const DNSServiceRef &aServiceRef,
+                                                                   const DNSRecordRef & aRecordRef)
 {
-    HostRegistrationPtr result = nullptr;
+    HostRegistration *result = nullptr;
 
     for (auto &kv : mHostRegistrations)
     {
@@ -400,7 +400,7 @@ Publisher::HostRegistrationPtr PublisherMDnsSd::FindHostRegistration(const DNSSe
 
         if (hostReg.GetServiceRef() == aServiceRef && hostReg.GetRecordRef() == aRecordRef)
         {
-            result = kv.second;
+            result = kv.second.get();
             break;
         }
     }
@@ -429,8 +429,8 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
 {
     OTBR_UNUSED_VARIABLE(aDomain);
 
-    std::string            originalInstanceName;
-    ServiceRegistrationPtr serviceReg = FindServiceRegistration(aServiceRef);
+    std::string          originalInstanceName;
+    ServiceRegistration *serviceReg = FindServiceRegistration(aServiceRef);
 
     VerifyOrExit(serviceReg != nullptr);
 
@@ -471,7 +471,7 @@ void PublisherMDnsSd::PublishService(const std::string &aHostName,
 
     if (!aHostName.empty())
     {
-        HostRegistrationPtr hostReg = Publisher::FindHostRegistration(aHostName);
+        HostRegistration *hostReg = Publisher::FindHostRegistration(aHostName);
 
         // Make sure that the host has been published.
         VerifyOrExit(hostReg != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
@@ -487,8 +487,8 @@ void PublisherMDnsSd::PublishService(const std::string &aHostName,
                                              aName.c_str(), regType.c_str(), /* domain */ nullptr,
                                              !aHostName.empty() ? fullHostName.c_str() : nullptr, htons(aPort),
                                              txt.size(), txt.data(), HandleServiceRegisterResult, this));
-    AddServiceRegistration(std::make_shared<DnssdServiceRegistration>(aHostName, aName, aType, sortedSubTypeList, aPort,
-                                                                      sortedTxtList, std::move(aCallback), serviceRef));
+    AddServiceRegistration(std::unique_ptr<DnssdServiceRegistration>(new DnssdServiceRegistration(
+        aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), serviceRef)));
 
 exit:
     if (error != kDNSServiceErr_NoError || ret != OTBR_ERROR_NONE)
@@ -542,8 +542,8 @@ void PublisherMDnsSd::PublishHost(const std::string &         aName,
                                                    kDNSServiceInterfaceIndexAny, fullName.c_str(), kDNSServiceType_AAAA,
                                                    kDNSServiceClass_IN, aAddress.size(), aAddress.data(), /* ttl */ 0,
                                                    HandleRegisterHostResult, this));
-    AddHostRegistration(
-        std::make_shared<DnssdHostRegistration>(aName, aAddress, std::move(aCallback), mHostsRef, recordRef));
+    AddHostRegistration(std::unique_ptr<DnssdHostRegistration>(
+        new DnssdHostRegistration(aName, aAddress, std::move(aCallback), mHostsRef, recordRef)));
 
 exit:
     if (error != kDNSServiceErr_NoError || ret != OTBR_ERROR_NONE)
@@ -587,8 +587,8 @@ void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aServiceRef,
 {
     OTBR_UNUSED_VARIABLE(aFlags);
 
-    otbrError           error   = DNSErrorToOtbrError(aError);
-    HostRegistrationPtr hostReg = FindHostRegistration(aServiceRef, aRecordRef);
+    otbrError         error   = DNSErrorToOtbrError(aError);
+    HostRegistration *hostReg = FindHostRegistration(aServiceRef, aRecordRef);
 
     std::string hostName;
 
