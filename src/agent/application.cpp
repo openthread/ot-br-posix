@@ -134,6 +134,7 @@ otbrError Application::Run(void)
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
+    signal(SIGINT, HandleSignal);
 
     while (!sShouldTerminate)
     {
