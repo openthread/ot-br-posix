@@ -79,6 +79,40 @@ exit:
     return error;
 }
 
+otbrError Publisher::DecodeTxtData(Publisher::TxtList &aTxtList, const uint8_t *aTxtData, uint16_t aTxtLength)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    for (uint16_t r = 0; r < aTxtLength;)
+    {
+        uint16_t entrySize = aTxtData[r];
+        uint16_t keyStart  = r + 1;
+        uint16_t entryEnd  = keyStart + entrySize;
+        uint16_t keyEnd    = keyStart;
+        uint16_t valStart;
+
+        while (keyEnd < entryEnd && aTxtData[keyEnd] != '=')
+        {
+            keyEnd++;
+        }
+
+        valStart = keyEnd;
+        if (valStart < entryEnd && aTxtData[valStart] == '=')
+        {
+            valStart++;
+        }
+
+        aTxtList.emplace_back(reinterpret_cast<const char *>(&aTxtData[keyStart]), keyEnd - keyStart,
+                              &aTxtData[valStart], entryEnd - valStart);
+
+        r += entrySize + 1;
+        VerifyOrExit(r <= aTxtLength, error = OTBR_ERROR_PARSE);
+    }
+
+exit:
+    return error;
+}
+
 void Publisher::RemoveSubscriptionCallbacks(uint64_t aSubscriberId)
 {
     size_t erased;

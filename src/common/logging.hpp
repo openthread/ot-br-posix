@@ -117,12 +117,13 @@ void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList
  * This function dump memory as hex string at level @p aLevel.
  *
  * @param[in] aLevel   Log level of the logger.
+ * @param[in] aLogTag  Log tag.
  * @param[in] aPrefix  String before dumping memory.
  * @param[in] aMemory  The pointer to the memory to be dumped.
  * @param[in] aSize    The size of memory in bytes to be dumped.
  *
  */
-void otbrDump(otbrLogLevel aLevel, const char *aPrefix, const void *aMemory, size_t aSize);
+void otbrDump(otbrLogLevel aLevel, const char *aLogTag, const char *aPrefix, const void *aMemory, size_t aSize);
 
 /**
  * This function converts error code to string.

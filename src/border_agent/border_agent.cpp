@@ -101,6 +101,9 @@ BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     , mDiscoveryProxy(aNcp, *mPublisher)
 #endif
+#if OTBR_ENABLE_TREL
+    , mTrelDnssd(aNcp, *mPublisher)
+#endif
 {
 }
 
@@ -176,6 +179,9 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
         UpdateMeshCopService();
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
         mAdvertisingProxy.PublishAllHostsAndServices();
+#endif
+#if OTBR_ENABLE_TREL
+        mTrelDnssd.OnMdnsPublisherReady();
 #endif
         break;
     default:

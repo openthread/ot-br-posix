@@ -416,8 +416,28 @@ public:
      * @retval OTBR_ERROR_NONE          Successfully write the TXT entry list.
      * @retval OTBR_ERROR_INVALID_ARGS  The @p aTxtList includes invalid TXT entry.
      *
+     * @sa DecodeTxtData
+     *
      */
     static otbrError EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t> &aTxtData);
+
+    /**
+     * This function decodes a TXT entry list from a TXT data buffer.
+     *
+     * The input data should be in standard DNS-SD TXT data format.
+     * See RFC 6763 for details: https://tools.ietf.org/html/rfc6763#section-6.
+     *
+     * @param[out]  aTxtList    A TXT entry list.
+     * @param[in]   aTxtData    A pointer to TXT data.
+     * @param[in]   aTxtLength  The TXT data length.
+     *
+     * @retval OTBR_ERROR_NONE          Successfully decoded the TXT data.
+     * @retval OTBR_ERROR_INVALID_ARGS  The @p aTxtdata has invalid TXT format.
+     *
+     * @sa EncodeTxtData
+     *
+     */
+    static otbrError DecodeTxtData(TxtList &aTxtList, const uint8_t *aTxtData, uint16_t aTxtLength);
 
 protected:
     enum : uint8_t
