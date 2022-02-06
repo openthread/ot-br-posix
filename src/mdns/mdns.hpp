@@ -140,20 +140,19 @@ public:
      * mDNS state values.
      *
      */
-    enum class State
+    enum class State : uint8_t
     {
         kIdle,  ///< Unable to publish service.
         kReady, ///< Ready to publish service.
     };
 
     /**
-     * This function pointer is called when mDNS publisher state changed.
+     * This function is called when mDNS publisher state changed.
      *
-     * @param[in] aContext  A pointer to application-specific context.
-     * @param[in] aState    The new state.
+     * @param[in] aState  The new state.
      *
      */
-    typedef void (*StateHandler)(void *aContext, State aState);
+    using StateHandler = std::function<void(State aState)>;
 
     /**
      * This method reports the result of a service publication.
@@ -178,6 +177,9 @@ public:
      *
      */
     typedef void (*PublishHostHandler)(const std::string &aName, otbrError aError, void *aContext);
+
+    /** This method adds a State Handler which will be invoked when the mDNS publisher state is updated. */
+    void AddStateHandler(StateHandler aStateHandler);
 
     /**
      * This method sets the handler for service publication.
@@ -373,13 +375,10 @@ public:
     /**
      * This function creates a mDNS publisher.
      *
-     * @param[in] aHandler  The function to be called when this service state changed.
-     * @param[in] aContext  A pointer to application-specific context.
-     *
      * @returns A pointer to the newly created mDNS publisher.
      *
      */
-    static Publisher *Create(StateHandler aHandler, void *aContext);
+    static Publisher *Create(void);
 
     /**
      * This function destroys the mDNS publisher.
@@ -445,6 +444,7 @@ protected:
         kMaxTextEntrySize = 255,
     };
 
+    void UpdateState(State aNewState);
     void OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
     void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
     void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
@@ -458,6 +458,10 @@ protected:
     uint64_t mNextSubscriberId = 1;
 
     std::map<uint64_t, std::pair<DiscoveredServiceInstanceCallback, DiscoveredHostCallback>> mDiscoveredCallbacks;
+
+private:
+    State                     mState = State::kIdle;
+    std::vector<StateHandler> mStateHandlers;
 };
 
 /**

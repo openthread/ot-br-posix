@@ -92,78 +92,35 @@ uint32_t BorderAgent::StateBitmap::ToUint32(void) const
     return bitmap;
 }
 
-BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
-    : mNcp(aNcp)
-    , mPublisher(Mdns::Publisher::Create(HandleMdnsState, this))
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    , mAdvertisingProxy(aNcp, *mPublisher)
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    , mDiscoveryProxy(aNcp, *mPublisher)
-#endif
-#if OTBR_ENABLE_TREL
-    , mTrelDnssd(aNcp, *mPublisher)
-#endif
+BorderAgent::BorderAgent(Ncp::ControllerOpenThread &aOpenThread, Mdns::Publisher &aPublisher)
+    : mOpenThread(aOpenThread)
+    , mPublisher(aPublisher)
 {
+    Init();
 }
 
 void BorderAgent::Init(void)
 {
-    mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+    mOpenThread.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 
 #if OTBR_ENABLE_DBUS_SERVER
-    mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
-        HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
-    });
+    mOpenThread.GetThreadHelper()->SetUpdateMeshCopTxtHandler(
+        [this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
+            HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
+        });
 #endif
 
-    Start();
+    mPublisher.AddStateHandler([this](Mdns::Publisher::State aNewState) { HandleMdnsState(aNewState); });
 }
 
 void BorderAgent::Deinit(void)
 {
-    Stop();
-}
-
-void BorderAgent::Start(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    SuccessOrExit(error = mPublisher->Start());
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Start();
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.Start();
-#endif
-
-exit:
-    otbrLogResult(error, "Start Thread Border Agent");
-}
-
-void BorderAgent::Stop(void)
-{
-    otbrLogInfo("Stop Thread Border Agent");
-
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Stop();
-#endif
-
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.Stop();
-#endif
-
     UnpublishMeshCopService();
-    mPublisher->Stop();
 }
 
 BorderAgent::~BorderAgent(void)
 {
-    if (mPublisher != nullptr)
-    {
-        delete mPublisher;
-        mPublisher = nullptr;
-    }
+    Deinit();
 }
 
 void BorderAgent::HandleMdnsState(void *aContext, Mdns::Publisher::State aState)
@@ -194,7 +151,7 @@ void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
     uint32_t                 stateUint32;
-    otInstance *             instance    = mNcp.GetInstance();
+    otInstance *             instance    = mOpenThread.GetInstance();
     const otExtendedPanId *  extPanId    = otThreadGetExtendedPanId(instance);
     const otExtAddress *     extAddr     = otLinkGetExtendedAddress(instance);
     const char *             networkName = otThreadGetNetworkName(instance);
@@ -207,7 +164,7 @@ void BorderAgent::PublishMeshCopService(void)
     txtList.emplace_back("mn", kProductName);
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
-    txtList.emplace_back("tv", mNcp.GetThreadVersion());
+    txtList.emplace_back("tv", mOpenThread.GetThreadVersion());
 
     // "xa" stands for Extended MAC Address (64-bit) of the Thread Interface of the Border Agent.
     txtList.emplace_back("xa", extAddr->m8, sizeof(extAddr->m8));
@@ -303,20 +260,20 @@ void BorderAgent::PublishMeshCopService(void)
     }
 #endif
 
-    mPublisher->PublishService(/* aHostName */ "", port, kBorderAgentServiceInstanceName, kBorderAgentServiceType,
-                               Mdns::Publisher::SubTypeList{}, txtList);
+    mPublisher.PublishService(/* aHostName */ "", port, kBorderAgentServiceInstanceName, kBorderAgentServiceType,
+                              Mdns::Publisher::SubTypeList{}, txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)
 {
     otbrLogInfo("Unpublish meshcop service %s.%s.local.", kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 
-    mPublisher->UnpublishService(kBorderAgentServiceInstanceName, kBorderAgentServiceType);
+    mPublisher.UnpublishService(kBorderAgentServiceInstanceName, kBorderAgentServiceType);
 }
 
 void BorderAgent::UpdateMeshCopService(void)
 {
-    VerifyOrExit(mPublisher->IsStarted(), mPublisher->Start());
+    VerifyOrExit(mPublisher.IsStarted(), mPublisher.Start());
     PublishMeshCopService();
 exit:
     return;
@@ -332,7 +289,6 @@ void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std:
 
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
-    VerifyOrExit(mPublisher != nullptr);
     VerifyOrExit(aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
                            OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_THREAD_PARTITION_ID |
                            OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_PSKC));
@@ -353,7 +309,7 @@ exit:
 
 bool BorderAgent::IsThreadStarted(void) const
 {
-    otDeviceRole role = otThreadGetDeviceRole(mNcp.GetInstance());
+    otDeviceRole role = otThreadGetDeviceRole(mOpenThread.GetInstance());
 
     return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
 }
@@ -363,7 +319,7 @@ bool BorderAgent::IsPskcInitialized(void) const
     bool   initialized = false;
     otPskc pskc;
 
-    otThreadGetPskc(mNcp.GetInstance(), &pskc);
+    otThreadGetPskc(mOpenThread.GetInstance(), &pskc);
 
     for (uint8_t byte : pskc.m8)
     {

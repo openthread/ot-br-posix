@@ -54,6 +54,7 @@ BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp)
     , mNdProxyManager(aNcp)
 #endif
 {
+    Init();
 }
 
 void BackboneAgent::Init(void)

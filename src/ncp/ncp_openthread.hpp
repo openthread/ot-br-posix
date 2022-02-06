@@ -47,6 +47,7 @@
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
+#include "trel_dnssd/trel_dnssd.hpp"
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
@@ -64,28 +65,20 @@ public:
     /**
      * This constructor initializes this object.
      *
-     * @param[in]   aInterfaceName          A string of the NCP interface name.
-     * @param[in]   aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
-     * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
-     * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in] aInterfaceName          A string of the NCP interface name.
+     * @param[in] aBackboneInterfaceName  The Backbone network interface name.
+     * @param[in] aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
+     * @param[in] aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in] aPublisher              The mDNS publisher.
      *
      */
-    ControllerOpenThread(const char *                     aInterfaceName,
-                         const std::vector<const char *> &aRadioUrls,
-                         const char *                     aBackboneInterfaceName,
-                         bool                             aDryRun);
+    ControllerOpenThread(const std::string &             aInterfaceName,
+                         const std::string &             aBackboneInterfaceName,
+                         const std::vector<std::string> &aRadioUrls,
+                         bool                            aDryRun,
+                         Mdns::Publisher &               aPublisher);
 
-    /**
-     * This method initialize the NCP controller.
-     *
-     */
-    void Init(void);
-
-    /**
-     * This method deinitialize the NCP controller.
-     *
-     */
-    void Deinit(void);
+    ~ControllerOpenThread(void) override;
 
     /**
      * This method get mInstance pointer.
@@ -161,9 +154,12 @@ public:
      */
     const char *GetInterfaceName(void) const { return mConfig.mInterfaceName; }
 
-    ~ControllerOpenThread(void) override;
-
 private:
+    void        Init(const std::string &             aInterfaceName,
+                     const std::string &             aBackboneInterfaceName,
+                     const std::vector<std::string> &aRadioUrls,
+                     bool                            aDryRun);
+    void        Deinit(void);
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
     {
         static_cast<ControllerOpenThread *>(aContext)->HandleStateChanged(aFlags);
@@ -188,8 +184,10 @@ private:
     static void DisableAutoAttach(void);
 
     otInstance *mInstance;
+#if OTBR_ENABLE_TREL
+    TrelDnssd::TrelDnssd mTrelDnssd;
+#endif
 
-    otPlatformConfig                           mConfig;
     std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;

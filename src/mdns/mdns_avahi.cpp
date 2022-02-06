@@ -298,8 +298,6 @@ void Poller::Process(const MainloopContext &aMainloop)
 PublisherAvahi::PublisherAvahi(StateHandler aHandler, void *aContext)
     : mClient(nullptr)
     , mState(State::kIdle)
-    , mStateHandler(aHandler)
-    , mContext(aContext)
 {
 }
 
@@ -336,8 +334,7 @@ void PublisherAvahi::Stop(void)
     {
         avahi_client_free(mClient);
         mClient = nullptr;
-        mState  = State::kIdle;
-        mStateHandler(mContext, mState);
+        UpdateState(State::kIdle);
     }
 }
 
@@ -564,15 +561,13 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         /* The server has startup successfully and registered its host
          * name on the network, so it's time to create our services */
         otbrLogInfo("Avahi client ready.");
-        mState  = State::kReady;
         mClient = aClient;
-        mStateHandler(mContext, mState);
+        UpdateState(State::kReady);
         break;
 
     case AVAHI_CLIENT_FAILURE:
         otbrLogErr("Client failure: %s", avahi_strerror(avahi_client_errno(aClient)));
-        mState = State::kIdle;
-        mStateHandler(mContext, mState);
+        UpdateState(State::kIdle);
         break;
 
     case AVAHI_CLIENT_S_COLLISION:

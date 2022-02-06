@@ -170,8 +170,8 @@ private:
     void     RemoveAllPeers(void);
     uint16_t CountDuplicatePeers(const Peer &aPeer);
 
+    Ncp::ControllerOpenThread &mOpenThread;
     Mdns::Publisher &          mPublisher;
-    Ncp::ControllerOpenThread &mNcp;
     TaskRunner                 mTaskRunner;
     std::string                mTrelNetif;
     uint32_t                   mTrelNetifIndex = 0;

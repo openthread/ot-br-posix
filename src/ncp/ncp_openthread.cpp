@@ -60,37 +60,45 @@ namespace Ncp {
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 
-ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
-                                           const std::vector<const char *> &aRadioUrls,
-                                           const char *                     aBackboneInterfaceName,
-                                           bool                             aDryRun)
+ControllerOpenThread::ControllerOpenThread(const std::string &             aInterfaceName,
+                                           const std::string &             aBackboneInterfaceName,
+                                           const std::vector<std::string> &aRadioUrls,
+                                           bool                            aDryRun,
+                                           Mdns::Publisher &               aPublisher)
     : mInstance(nullptr)
+#if OTBR_ENABLE_TREL
+    , mTrelDnssd(*this, aPublisher)
+#endif
 {
-    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
-
-    memset(&mConfig, 0, sizeof(mConfig));
-
-    mConfig.mInterfaceName         = aInterfaceName;
-    mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
-    mConfig.mDryRun                = aDryRun;
-
-    for (const char *url : aRadioUrls)
-    {
-        mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;
-    }
-    mConfig.mSpeedUpFactor = 1;
+    Init(aInterfaceName, aRadioUrls, aBackboneInterfaceName, aDryRun);
 }
 
 ControllerOpenThread::~ControllerOpenThread(void)
 {
-    // Make sure OpenThread Instance was gracefully de-initialized.
-    assert(mInstance == nullptr);
+    Deinit();
 }
 
-void ControllerOpenThread::Init(void)
+void ControllerOpenThread::Init(const std::string &             aInterfaceName,
+                                const std::string &             aBackboneInterfaceName,
+                                const std::vector<std::string> &aRadioUrls,
+                                bool                            aDryRun)
 {
-    otbrError  error = OTBR_ERROR_NONE;
-    otLogLevel level = OT_LOG_LEVEL_NONE;
+    otbrError        error = OTBR_ERROR_NONE;
+    otLogLevel       level = OT_LOG_LEVEL_NONE;
+    otPlatformConfig config;
+
+    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
+
+    memset(&config, 0, sizeof(config));
+    config.mInterfaceName         = aInterfaceName.c_str();
+    config.mBackboneInterfaceName = aBackboneInterfaceName.c_str();
+    config.mDryRun                = aDryRun;
+
+    for (const std::string &url : aRadioUrls)
+    {
+        config.mRadioUrls[config.mRadioUrlNum++] = url.c_str();
+    }
+    config.mSpeedUpFactor = 1;
 
     switch (otbrLogGetLevel())
     {
@@ -118,7 +126,7 @@ void ControllerOpenThread::Init(void)
     }
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
-    mInstance = otSysInit(&mConfig);
+    mInstance = otSysInit(&config);
     assert(mInstance != nullptr);
 
 #if OTBR_ENABLE_LEGACY
@@ -131,10 +139,6 @@ void ControllerOpenThread::Init(void)
         agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
-
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
-#endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
 

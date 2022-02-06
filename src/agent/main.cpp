@@ -213,13 +213,19 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Application app(interfaceName, backboneInterfaceName, radioUrls);
+        otbr::Mdns::Publisher *publisher = otbr::Mdns::Publisher::Create();
+        publisher->Start();
 
-        app.Init();
+        {
+            otbr::Ncp::ControllerOpenThread openThread(interfaceName, backboneInterfaceName, radioUrls,
+                                                       /* aDryRun */ false, *publisher);
+            otbr::Application               app(openThread, *publisher);
 
-        ret = app.Run();
+            ret = app.Run();
+        }
 
-        app.Deinit();
+        publisher->Stop();
+        otbr::Mdns::Publisher::Destroy(publisher);
     }
 
     otbrLogDeinit();

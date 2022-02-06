@@ -43,14 +43,10 @@
 #include <stdint.h>
 
 #include "agent/instance_params.hpp"
-#include "backbone_router/backbone_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
-#include "sdp_proxy/advertising_proxy.hpp"
-#include "sdp_proxy/discovery_proxy.hpp"
-#include "trel_dnssd/trel_dnssd.hpp"
 
 #ifndef OTBR_VENDOR_NAME
 #define OTBR_VENDOR_NAME "OpenThread"
@@ -85,24 +81,13 @@ public:
     /**
      * The constructor to initialize the Thread border agent.
      *
-     * @param[in] aNcp  A reference to the NCP controller.
+     * @param[in] aOpenThread  The OpenThread controller.
+     * @param[in] aPublisher   The mDNS publisher.
      *
      */
-    BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp);
+    BorderAgent(Ncp::ControllerOpenThread &aOpenThread, Mdns::Publisher &aPublisher);
 
     ~BorderAgent(void);
-
-    /**
-     * This method initialize border agent service.
-     *
-     */
-    void Init(void);
-
-    /**
-     * This method de-initializes border agent service.
-     *
-     */
-    void Deinit(void);
 
 private:
     enum : uint8_t
@@ -147,8 +132,8 @@ private:
         uint32_t ToUint32(void) const;
     };
 
-    void        Start(void);
-    void        Stop(void);
+    void        Init(void);
+    void        Deinit(void);
     static void HandleMdnsState(void *aContext, Mdns::Publisher::State aState);
     void        HandleMdnsState(Mdns::Publisher::State aState);
     void        PublishMeshCopService(void);
@@ -163,22 +148,12 @@ private:
     bool IsThreadStarted(void) const;
     bool IsPskcInitialized(void) const;
 
-    otbr::Ncp::ControllerOpenThread &mNcp;
-    Mdns::Publisher *                mPublisher;
-    std::string                      mNetworkName;
+    Ncp::ControllerOpenThread &mOpenThread;
+    Mdns::Publisher &          mPublisher;
+    std::string                mNetworkName;
 
 #if OTBR_ENABLE_DBUS_SERVER
     std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
-#endif
-
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    AdvertisingProxy mAdvertisingProxy;
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    Dnssd::DiscoveryProxy mDiscoveryProxy;
-#endif
-#if OTBR_ENABLE_TREL
-    TrelDnssd::TrelDnssd mTrelDnssd;
 #endif
 };
 

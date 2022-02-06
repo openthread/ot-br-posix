@@ -89,25 +89,33 @@ static otError OtbrErrorToOtError(otbrError aError)
     return error;
 }
 
-AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
-    : mNcp(aNcp)
+AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aOpenThread, Mdns::Publisher &aPublisher)
+    : mOpenThread(aOpenThread)
     , mPublisher(aPublisher)
 {
+    Init();
 }
 
-otbrError AdvertisingProxy::Start(void)
+AdvertisingProxy::~AdvertisingProxy(void)
 {
+    Deinit();
+}
+
+void AdvertisingProxy::Init(void)
+{
+    otSrpServerSetEnabled(GetInstance(), /* aEnabled */ true);
+
     otSrpServerSetServiceUpdateHandler(GetInstance(), AdvertisingHandler, this);
 
     mPublisher.SetPublishServiceHandler(PublishServiceHandler, this);
     mPublisher.SetPublishHostHandler(PublishHostHandler, this);
 
-    otbrLogInfo("Started");
+    otbrLogInfo("Initialized");
 
     return OTBR_ERROR_NONE;
 }
 
-void AdvertisingProxy::Stop()
+void AdvertisingProxy::Deinit()
 {
     mPublisher.SetPublishServiceHandler(nullptr, nullptr);
     mPublisher.SetPublishHostHandler(nullptr, nullptr);
@@ -121,7 +129,7 @@ void AdvertisingProxy::Stop()
         otSrpServerSetServiceUpdateHandler(GetInstance(), nullptr, nullptr);
     }
 
-    otbrLogInfo("Stopped");
+    otbrLogInfo("Deinitialized");
 }
 
 void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,

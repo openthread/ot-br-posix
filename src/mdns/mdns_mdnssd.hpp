@@ -58,15 +58,7 @@ namespace Mdns {
 class PublisherMDnsSd : public MainloopProcessor, public Publisher
 {
 public:
-    /**
-     * The constructor to initialize a Publisher.
-     *
-     * @param[in] aHandler  The function to be called when state changes.
-     * @param[in] aContext  A pointer to application-specific context.
-     *
-     */
-    PublisherMDnsSd(StateHandler aHandler, void *aContext);
-
+    PublisherMDnsSd(void);
     ~PublisherMDnsSd(void) override;
 
     // Implementation of Mdns::Publisher.
@@ -323,8 +315,6 @@ private:
     Hosts         mHosts;
     DNSServiceRef mHostsRef;
     State         mState;
-    StateHandler  mStateHandler;
-    void *        mContext;
 
     ServiceSubscriptionList mSubscribedServices;
     HostSubscriptionList    mSubscribedHosts;

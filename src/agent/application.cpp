@@ -46,40 +46,37 @@ namespace otbr {
 bool                 Application::sShouldTerminate = false;
 const struct timeval Application::kPollTimeout     = {10, 0};
 
-Application::Application(const std::string &              aInterfaceName,
-                         const std::string &              aBackboneInterfaceName,
-                         const std::vector<const char *> &aRadioUrls)
-    : mInterfaceName(aInterfaceName)
-    , mBackboneInterfaceName(aBackboneInterfaceName)
-    , mNcp(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName.c_str(), /* aDryRun */ false)
+Application::Application(Ncp::ControllerOpenThread &aOpenThread, Mdns::Publisher &aPublisher)
+    : mUnusedPlaceHolder(0)
 #if OTBR_ENABLE_BORDER_AGENT
-    , mBorderAgent(mNcp)
+    , mBorderAgent(aOpenThread, aPublisher)
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    , mAdvertisingProxy(aOpenThread, aPublisher)
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    , mDiscoveryProxy(aOpenThread, aPublisher)
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(mNcp)
+    , mBackboneAgent(aOpenThread)
 #endif
 #if OTBR_ENABLE_OPENWRT
-    , mUbusAgent(mNcp)
+    , mUbusAgent(aOpenThread)
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    , mRestWebServer(mNcp)
+    , mRestWebServer(aOpenThread)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    , mDBusAgent(mNcp)
+    , mDBusAgent(aOpenThread)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
-    , mVendorServer(mNcp)
+    , mVendorServer(aOpenThread)
 #endif
 {
 }
 
 void Application::Init(void)
 {
-    mNcp.Init();
-
-#if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent.Init();
-#endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent.Init();
 #endif
@@ -95,15 +92,6 @@ void Application::Init(void)
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer.Init();
 #endif
-}
-
-void Application::Deinit(void)
-{
-#if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent.Deinit();
-#endif
-
-    mNcp.Deinit();
 }
 
 otbrError Application::Run(void)

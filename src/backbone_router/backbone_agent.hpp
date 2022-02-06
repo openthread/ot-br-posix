@@ -73,13 +73,8 @@ public:
      */
     BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp);
 
-    /**
-     * This method initializes the Backbone agent.
-     *
-     */
-    void Init(void);
-
 private:
+    void        Init(void);
     void        OnBecomePrimary(void);
     void        OnResignPrimary(void);
     bool        IsPrimary(void) const { return mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY; }

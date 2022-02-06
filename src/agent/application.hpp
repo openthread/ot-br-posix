@@ -57,6 +57,8 @@
 #if OTBR_ENABLE_VENDOR_SERVER
 #include "agent/vendor.hpp"
 #endif
+#include "sdp_proxy/advertising_proxy.hpp"
+#include "sdp_proxy/discovery_proxy.hpp"
 
 namespace otbr {
 
@@ -79,12 +81,11 @@ public:
     /**
      * This constructor initializes the Application instance.
      *
-     * @param[in] aOpenThread  A reference to the OpenThread instance.
+     * @param[in] aOpenThread  The OpenThread controller.
+     * @param[in] aPublisher   The mDNS publisher.
      *
      */
-    explicit Application(const std::string &              aInterfaceName,
-                         const std::string &              aBackboneInterfaceName,
-                         const std::vector<const char *> &aRadioUrls);
+    Application(Ncp::ControllerOpenThread &aOpenThread, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the Application instance.
@@ -113,11 +114,16 @@ private:
 
     static void HandleSignal(int aSignal);
 
-    std::string               mInterfaceName;
-    std::string               mBackboneInterfaceName;
-    Ncp::ControllerOpenThread mNcp;
+    uint8_t mUnusedPlaceHolder;
+
 #if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    AdvertisingProxy mAdvertisingProxy;
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    Dnssd::DiscoveryProxy mDiscoveryProxy;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     BackboneRouter::BackboneAgent mBackboneAgent;

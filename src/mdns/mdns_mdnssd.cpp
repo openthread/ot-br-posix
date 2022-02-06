@@ -212,8 +212,6 @@ static const char *DNSErrorToString(DNSServiceErrorType aError)
 PublisherMDnsSd::PublisherMDnsSd(StateHandler aHandler, void *aContext)
     : mHostsRef(nullptr)
     , mState(State::kIdle)
-    , mStateHandler(aHandler)
-    , mContext(aContext)
 {
 }
 
@@ -224,8 +222,7 @@ PublisherMDnsSd::~PublisherMDnsSd(void)
 
 otbrError PublisherMDnsSd::Start(void)
 {
-    mState = State::kReady;
-    mStateHandler(mContext, State::kReady);
+    UpdateState(State::kReady);
     return OTBR_ERROR_NONE;
 }
 

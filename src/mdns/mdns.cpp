@@ -42,6 +42,21 @@ namespace otbr {
 
 namespace Mdns {
 
+void Publisher::AddStateHandler(StateHandler aStateHandler)
+{
+    aStateHandler(mState);
+    mStateHandlers.push_back(aStateHandler);
+}
+
+void Publisher::UpdateState(State aNewState)
+{
+    mState = aNewState;
+    for (auto &stateHandler : mStateHandlers)
+    {
+        stateHandler(State::kReady);
+    }
+}
+
 bool Publisher::IsServiceTypeEqual(std::string aFirstType, std::string aSecondType)
 {
     if (!aFirstType.empty() && aFirstType.back() == '.')
