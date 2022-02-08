@@ -4,7 +4,7 @@
 
 # OpenThread Border Router
 
-Per the [Thread 1.1.1 Specification](http://threadgroup.org/ThreadSpec), a Thread Border Router connects a Thread network to other IP-based networks, such as Wi-Fi or Ethernet. A Thread network requires a Border Router to connect to other networks.
+Per the [Thread Specification](http://threadgroup.org/ThreadSpec), a Thread Border Router connects a Thread network to other IP-based networks, such as Wi-Fi or Ethernet. A Thread network requires a Border Router to connect to other networks.
 
 A Thread Border Router minimally supports the following functions:
 
