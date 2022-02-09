@@ -478,20 +478,21 @@ void TrelDnssd::Peer::ReadExtAddrFromTxtData(void)
     {
         if (StringUtils::EqualCaseInsensitive(txtEntry.mName, kTxtRecordExtAddressKey))
         {
-            char extAddrHexBuf[sizeof(mExtAddr) * 2 + 1];
+            VerifyOrExit(txtEntry.mValue.size() == sizeof(mExtAddr));
 
-            VerifyOrExit(txtEntry.mValue.size() == sizeof(mExtAddr) * 2);
-
-            memcpy(extAddrHexBuf, txtEntry.mValue.data(), sizeof(mExtAddr) * 2);
-            extAddrHexBuf[sizeof(mExtAddr) * 2] = '\0';
-
-            VerifyOrExit(Utils::Hex2Bytes(extAddrHexBuf, mExtAddr.m8, sizeof(mExtAddr)) == sizeof(mExtAddr));
+            memcpy(mExtAddr.m8, txtEntry.mValue.data(), sizeof(mExtAddr));
             mValid = true;
             break;
         }
     }
 
 exit:
+
+    if (!mValid)
+    {
+        otbrLogInfo("Failed to dissect ExtAddr from peer TXT data");
+    }
+
     return;
 }
 
