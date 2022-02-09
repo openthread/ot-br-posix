@@ -153,6 +153,62 @@ public:
     }
 
     /**
+     * This method sends a event changed signal.
+     *
+     * @param[in]   aInterfaceName    The interface name.
+     * @param[in]   aPropertyName     The property name.
+     * @param[in]   aValue            New value of the property.
+     *
+     * @retval OTBR_ERROR_NONE  Signal successfully sent.
+     * @retval OTBR_ERROR_DBUS  Failed to send the signal.
+     *
+     */
+    template <typename ValueType>
+    otbrError SignalEventChanged(const std::string &aInterfaceName,
+                                    const std::string &aPropertyName,
+                                    const ValueType &  aValue)
+    {
+        UniqueDBusMessage signalMsg{
+            dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aPropertyName.c_str())};
+        DBusMessageIter iter, subIter, dictEntryIter;
+        otbrError       error = OTBR_ERROR_NONE;
+
+        VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
+        dbus_message_iter_init_append(signalMsg.get(), &iter);
+
+        // interface_name
+        VerifyOrExit(DBusMessageEncode(&iter, aInterfaceName) == OTBR_ERROR_NONE, error = OTBR_ERROR_DBUS);
+
+        // changed_properties
+        VerifyOrExit(dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY,
+                                                      "{" DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING "}",
+                                                      &subIter),
+                     error = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, nullptr, &dictEntryIter),
+                     error = OTBR_ERROR_DBUS);
+
+        SuccessOrExit(error = DBusMessageEncode(&dictEntryIter, aPropertyName));
+        SuccessOrExit(error = DBusMessageEncodeToVariant(&dictEntryIter, aValue));
+
+        VerifyOrExit(dbus_message_iter_close_container(&subIter, &dictEntryIter), error = OTBR_ERROR_DBUS);
+        VerifyOrExit(dbus_message_iter_close_container(&iter, &subIter), error = OTBR_ERROR_DBUS);
+
+        // invalidated_properties
+        SuccessOrExit(error = DBusMessageEncode(&iter, std::vector<std::string>()));
+
+        if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
+        {
+            otbrLogDebug("Signal %s.%s", aInterfaceName.c_str(), aPropertyName.c_str());
+            DumpDBusMessage(*signalMsg);
+        }
+
+        VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
+
+    exit:
+        return error;
+    }
+
+    /**
      * This method sends a property changed signal.
      *
      * @param[in] aInterfaceName  The interface name.

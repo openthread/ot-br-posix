@@ -465,5 +465,32 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RnlRnbEvent &rnbEvent)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+    auto            args  = std::tie(rnbEvent.mRnbEvent);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub));
+    SuccessOrExit(error = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RnlRnbEvent &rnbEvent)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+    auto            args  = std::tie(rnbEvent.mRnbEvent);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(error = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

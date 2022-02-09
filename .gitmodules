@@ -1,6 +1,6 @@
 [submodule "third_party/openthread/repo"]
 	path = third_party/openthread/repo
-	url = https://github.com/openthread/openthread.git
+	url = https://github.com/rednodelabs/openthread.git
 	branch = main
 [submodule "third_party/cJSON/repo"]
 	path = third_party/cJSON/repo
