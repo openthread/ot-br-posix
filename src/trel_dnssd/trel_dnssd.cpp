@@ -229,12 +229,12 @@ std::string TrelDnssd::GetTrelInstanceName(void)
 {
     const otExtAddress *extaddr = otLinkGetExtendedAddress(mNcp.GetInstance());
     std::string         name;
-    char                nameBuf[sizeof(extaddr) * 2 + 1];
+    char                nameBuf[sizeof(otExtAddress) * 2 + 1];
 
-    Utils::Bytes2Hex(extaddr->m8, sizeof(extaddr), nameBuf);
+    Utils::Bytes2Hex(extaddr->m8, sizeof(otExtAddress), nameBuf);
     name = StringUtils::ToLowercase(nameBuf);
 
-    assert(name.length() == sizeof(extaddr) * 2);
+    assert(name.length() == sizeof(otExtAddress) * 2);
 
     otbrLogDebug("Using instance name %s", name.c_str());
     return name;
