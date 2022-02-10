@@ -87,13 +87,9 @@ public:
 private:
     struct OutstandingUpdate
     {
-        typedef std::vector<std::pair<std::string, std::string>> ServiceNameList;
-
-        otSrpServerServiceUpdateId mId;                    // The ID of the SRP service update transaction.
-        std::string                mHostName;              // The host name.
-        ServiceNameList            mServiceNames;          // The list of service instance and name pairs to be updated.
-        uint32_t                   mCallbackCount     = 0; // The number of callbacks which we are waiting for.
-        bool                       mHostNamePublished = false; // Is the host name already published?
+        otSrpServerServiceUpdateId mId;                // The ID of the SRP service update transaction.
+        std::string                mHostName;          // The host name.
+        uint32_t                   mCallbackCount = 0; // The number of callbacks which we are waiting for.
     };
 
     static void AdvertisingHandler(otSrpServerServiceUpdateId aId,
@@ -104,14 +100,7 @@ private:
 
     static Mdns::Publisher::TxtList     MakeTxtList(const otSrpServerService *aSrpService);
     static Mdns::Publisher::SubTypeList MakeSubTypeList(const otSrpServerService *aSrpService);
-
-    static void PublishServiceHandler(const std::string &aName,
-                                      const std::string &aType,
-                                      otbrError          aError,
-                                      void *             aContext);
-    void        PublishServiceHandler(const std::string &aName, const std::string &aType, otbrError aError);
-    static void PublishHostHandler(const std::string &aName, otbrError aError, void *aContext);
-    void        PublishHostHandler(const std::string &aName, otbrError aError);
+    void                                OnMdnsPublishResult(otSrpServerServiceUpdateId aUpdateId, otbrError aError);
 
     /**
      * This method publishes a specified host and its services.

@@ -68,8 +68,8 @@ public:
 
     OnceCallback(const OnceCallback &) = delete;
     OnceCallback &operator=(const OnceCallback &) = delete;
-    OnceCallback(OnceCallback &&) noexcept        = default;
-    OnceCallback &operator=(OnceCallback &&) noexcept = default;
+    OnceCallback(OnceCallback &&)                 = default;
+    OnceCallback &operator=(OnceCallback &&) = default;
 
     R operator()(Args...) const &
     {
