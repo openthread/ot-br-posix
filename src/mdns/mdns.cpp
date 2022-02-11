@@ -209,10 +209,16 @@ void Publisher::AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg)
     mServiceRegistrations.emplace(MakeFullServiceName(aServiceReg->mName, aServiceReg->mType), std::move(aServiceReg));
 }
 
-void Publisher::RemoveServiceRegistration(const std::string &aName, const std::string &aType)
+Publisher::ServiceRegistrationPtr Publisher::RemoveServiceRegistration(const std::string &aName,
+                                                                       const std::string &aType)
 {
+    std::string                       key        = MakeFullServiceName(aName, aType);
+    Publisher::ServiceRegistrationPtr serviceReg = std::move(mServiceRegistrations[key]);
+
     otbrLogInfo("Removing service %s.%s", aName.c_str(), aType.c_str());
-    mServiceRegistrations.erase(MakeFullServiceName(aName, aType));
+
+    mServiceRegistrations.erase(key);
+    return serviceReg;
 }
 
 Publisher::ServiceRegistration *Publisher::FindServiceRegistration(const std::string &aName, const std::string &aType)

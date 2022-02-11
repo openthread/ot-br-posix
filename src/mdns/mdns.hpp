@@ -462,10 +462,10 @@ protected:
     static std::string MakeFullServiceName(const std::string &aName, const std::string &aType);
     static std::string MakeFullHostName(const std::string &aName);
 
-    void                 AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
-    void                 RemoveServiceRegistration(const std::string &aName, const std::string &aType);
-    ServiceRegistration *FindServiceRegistration(const std::string &aName, const std::string &aType);
-    void                 OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
+    void                   AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
+    ServiceRegistrationPtr RemoveServiceRegistration(const std::string &aName, const std::string &aType);
+    ServiceRegistration *  FindServiceRegistration(const std::string &aName, const std::string &aType);
+    void                   OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
     void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
     void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
 
