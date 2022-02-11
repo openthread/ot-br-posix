@@ -8,3 +8,6 @@
 [submodule "third_party/http-parser/repo"]
 	path = third_party/http-parser/repo
 	url = https://github.com/nodejs/http-parser.git
+[submodule "third_party/grpc/repo"]
+	path = third_party/grpc/repo
+	url = https://github.com/grpc/grpc.git

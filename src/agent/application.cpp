@@ -70,6 +70,9 @@ Application::Application(const std::string &              aInterfaceName,
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(mNcp)
 #endif
+#if OTBR_ENABLE_GRPC_SERVER
+    , mGrpcServer(mNcp)
+#endif
 {
 }
 
@@ -94,6 +97,9 @@ void Application::Init(void)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer.Init();
+#endif
+#if OTBR_ENABLE_GRPC_SERVER
+    mGrpcServer.Init();
 #endif
 }
 

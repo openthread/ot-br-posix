@@ -58,6 +58,9 @@
 #if OTBR_ENABLE_VENDOR_SERVER
 #include "agent/vendor.hpp"
 #endif
+#if OTBR_ENABLE_GRPC_SERVER
+#include "grpc/grpc_server.hpp"
+#endif
 
 namespace otbr {
 
@@ -134,6 +137,9 @@ private:
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     vendor::VendorServer mVendorServer;
+#endif
+#if OTBR_ENABLE_GRPC_SERVER
+    GrpcServer mGrpcServer;
 #endif
 
     static std::atomic_bool sShouldTerminate;

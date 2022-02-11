@@ -91,3 +91,8 @@ option(OTBR_NOTIFY_UPSTART "Notify upstart when ready." ON)
 if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
 endif()
+
+option(OTBR_GRPC "Enable gRPC server" OFF)
+if (OTBR_GRPC)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_GRPC_SERVER=1)
+endif()
