@@ -104,6 +104,20 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
     }
 }
 
+#if OTBR_ENABLE_DBUS_SERVER
+void ThreadHelper::OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>> aUpdate)
+{
+    if (mUpdateMeshCopTxtHandler)
+    {
+        mUpdateMeshCopTxtHandler(std::move(aUpdate));
+    }
+    else
+    {
+        otbrLogErr("No UpdateMeshCopTxtHandler");
+    }
+}
+#endif
+
 void ThreadHelper::AddDeviceRoleHandler(DeviceRoleHandler aHandler)
 {
     mDeviceRoleHandlers.emplace_back(aHandler);
