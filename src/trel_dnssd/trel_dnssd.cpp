@@ -247,8 +247,17 @@ void TrelDnssd::PublishTrelService(void)
     assert(mTrelNetifIndex > 0);
 
     mRegisterInfo.mInstanceName = GetTrelInstanceName();
-    mPublisher.PublishService(/* aHostName */ "", mRegisterInfo.mPort, mRegisterInfo.mInstanceName, kTrelServiceName,
-                              Mdns::Publisher::SubTypeList{}, mRegisterInfo.mTxtEntries);
+    mPublisher.PublishService(/* aHostName */ "", mRegisterInfo.mInstanceName, kTrelServiceName,
+                              Mdns::Publisher::SubTypeList{}, mRegisterInfo.mPort, mRegisterInfo.mTxtEntries,
+                              [](otbrError aError) { HandlePublishTrelServiceError(aError); });
+}
+
+void TrelDnssd::HandlePublishTrelServiceError(otbrError aError)
+{
+    if (aError != OTBR_ERROR_NONE)
+    {
+        otbrLogErr("Failed to publish TREL service: %s. TREL won't be working.", otbrErrorString(aError));
+    }
 }
 
 void TrelDnssd::UnpublishTrelService(void)
@@ -256,8 +265,17 @@ void TrelDnssd::UnpublishTrelService(void)
     assert(mRegisterInfo.IsValid());
     assert(mRegisterInfo.IsPublished());
 
-    mPublisher.UnpublishService(mRegisterInfo.mInstanceName, kTrelServiceName);
+    mPublisher.UnpublishService(mRegisterInfo.mInstanceName, kTrelServiceName,
+                                [](otbrError aError) { HandleUnpublishTrelServiceError(aError); });
     mRegisterInfo.mInstanceName = "";
+}
+
+void TrelDnssd::HandleUnpublishTrelServiceError(otbrError aError)
+{
+    if (aError != OTBR_ERROR_NONE)
+    {
+        otbrLogInfo("Failed to unpublish TREL service: %s", otbrErrorString(aError));
+    }
 }
 
 void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)

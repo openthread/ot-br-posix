@@ -160,6 +160,8 @@ private:
     std::string GetTrelInstanceName(void);
     void        PublishTrelService(void);
     void        UnpublishTrelService(void);
+    static void HandlePublishTrelServiceError(otbrError aError);
+    static void HandleUnpublishTrelServiceError(otbrError aError);
     void        OnTrelServiceInstanceResolved(const std::string &                            aType,
                                               const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void        OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
