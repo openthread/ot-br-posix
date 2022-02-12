@@ -215,7 +215,8 @@ Publisher::ServiceRegistrationPtr Publisher::RemoveServiceRegistration(const std
     std::string                       key        = MakeFullServiceName(aName, aType);
     Publisher::ServiceRegistrationPtr serviceReg = std::move(mServiceRegistrations[key]);
 
-    otbrLogInfo("Removing service %s.%s", aName.c_str(), aType.c_str());
+    otbrLogInfo("Removing service %s.%s, found %d %p", aName.c_str(), aType.c_str(),
+                mServiceRegistrations.find(key) != mServiceRegistrations.end(), serviceReg.get());
 
     mServiceRegistrations.erase(key);
     return serviceReg;
