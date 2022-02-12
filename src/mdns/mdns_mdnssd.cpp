@@ -439,14 +439,14 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     if (aError == kDNSServiceErr_NoError && (aFlags & kDNSServiceFlagsAdd))
     {
         otbrLogInfo("Successfully registered service %s.%s", aName, aType);
-        serviceReg->Complete(OTBR_ERROR_NONE);
+        mTaskRunner.Post([aError, &serviceReg]() { serviceReg->Complete(OTBR_ERROR_NONE); });
     }
     else
     {
         otbrLogErr("Failed to register service %s.%s: %s", aName, aType, DNSErrorToString(aError));
         auto reg = RemoveServiceRegistration(serviceReg->mName, serviceReg->mType);
         assert(reg != nullptr);
-        reg->Complete(DNSErrorToOtbrError(aError));
+        mTaskRunner.Post([aError, &reg]() { reg->Complete(DNSErrorToOtbrError(aError)); });
     }
 
 exit:

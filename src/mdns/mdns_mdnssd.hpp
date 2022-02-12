@@ -41,10 +41,12 @@
 #include <vector>
 
 #include <assert.h>
+
 #include <dns_sd.h>
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
+#include "common/task_runner.hpp"
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
 
@@ -331,6 +333,7 @@ private:
     DNSServiceRef mHostsRef;
     State         mState;
     StateCallback mStateCallback;
+    TaskRunner    mTaskRunner;
 
     ServiceSubscriptionList mSubscribedServices;
     HostSubscriptionList    mSubscribedHosts;
