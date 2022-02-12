@@ -82,6 +82,8 @@ enum
     kInvalidLocator = 0xffff, ///< invalid locator.
 };
 
+static bool borderAgentDestructed = false;
+
 uint32_t BorderAgent::StateBitmap::ToUint32(void) const
 {
     uint32_t bitmap = 0;
@@ -164,6 +166,7 @@ void BorderAgent::Stop(void)
 BorderAgent::~BorderAgent(void)
 {
     otbrLogWarning("BorderAgent destructing...");
+    borderAgentDestructed = true;
 
     if (mPublisher != nullptr)
     {
@@ -306,23 +309,20 @@ void BorderAgent::PublishMeshCopService(void)
 
     mPublisher->PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentServiceType,
                                Mdns::Publisher::SubTypeList{}, port, txtList, [this](otbrError aError) {
-                                   OTBR_UNUSED_VARIABLE(aError);
-                                   //                                   otbrLogResult(aError, "Result of publish meshcop
-                                   //                                   service %s.%s.local",
-                                   //                                                 mServiceInstanceName.c_str(),
-                                   //                                                 kBorderAgentServiceType);
-                                   //                                   if (aError == OTBR_ERROR_DUPLICATED)
-                                   //                                   {
-                                   //                                       // Try to unpublish current service in case
-                                   //                                       we are trying to register
-                                   //                                       // multiple new services simultaneously when
-                                   //                                       the original service name
-                                   //                                       // is conflicted.
-                                   //                                       UnpublishMeshCopService();
-                                   //                                       mServiceInstanceName =
-                                   //                                       GetAlternativeServiceInstanceName();
-                                   //                                       PublishMeshCopService();
-                                   //                                   }
+                                   if (!borderAgentDestructed)
+                                   {
+                                       otbrLogResult(aError, "Result of publish meshcop service %s.%s.local ",
+                                                     mServiceInstanceName.c_str(), kBorderAgentServiceType);
+                                       if (aError == OTBR_ERROR_DUPLICATED)
+                                       {
+                                           // Try to unpublish current service in case we are trying to register
+                                           // multiple new services simultaneously when the original service name
+                                           // is conflicted.
+                                           UnpublishMeshCopService();
+                                           mServiceInstanceName = GetAlternativeServiceInstanceName();
+                                           PublishMeshCopService();
+                                       }
+                                   }
                                });
 }
 
