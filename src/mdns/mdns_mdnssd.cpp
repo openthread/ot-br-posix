@@ -444,7 +444,9 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     else
     {
         otbrLogErr("Failed to register service %s.%s: %s", aName, aType, DNSErrorToString(aError));
-        RemoveServiceRegistration(serviceReg->mName, serviceReg->mType)->Complete(DNSErrorToOtbrError(aError));
+        auto reg = RemoveServiceRegistration(serviceReg->mName, serviceReg->mType);
+        assert(reg != nullptr);
+        reg->Complete(DNSErrorToOtbrError(aError));
     }
 
 exit:

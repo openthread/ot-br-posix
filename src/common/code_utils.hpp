@@ -37,6 +37,7 @@
 #define OTBR_LOG_TAG "UTILS"
 #endif
 
+#include <assert.h>
 #include <memory>
 #include <stdlib.h>
 
@@ -130,6 +131,7 @@
         if (!(aCondition))                                                   \
         {                                                                    \
             otbrLogEmerg("FAILED %s:%d - %s", __FILE__, __LINE__, aMessage); \
+            assert(false);                                                   \
             exit(-1);                                                        \
         }                                                                    \
     } while (false)
