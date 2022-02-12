@@ -163,6 +163,8 @@ void BorderAgent::Stop(void)
 
 BorderAgent::~BorderAgent(void)
 {
+    otbrLogWarning("BorderAgent destructing...");
+
     if (mPublisher != nullptr)
     {
         delete mPublisher;
