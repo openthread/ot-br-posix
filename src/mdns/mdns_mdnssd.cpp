@@ -432,9 +432,9 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     std::string          originalInstanceName;
     ServiceRegistration *serviceReg = FindServiceRegistration(aServiceRef);
 
-    VerifyOrExit(serviceReg != nullptr);
+    otbrLogInfo("Received reply for service %s.%s, serviceRef = %p", aName, aType, aServiceRef);
 
-    otbrLogInfo("Received reply for service %s.%s", aName, aType);
+    VerifyOrExit(serviceReg != nullptr);
 
     if (aError == kDNSServiceErr_NoError && (aFlags & kDNSServiceFlagsAdd))
     {
@@ -444,8 +444,7 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     else
     {
         otbrLogErr("Failed to register service %s.%s: %s", aName, aType, DNSErrorToString(aError));
-        serviceReg->Complete(DNSErrorToOtbrError(aError));
-        RemoveServiceRegistration(serviceReg->mName, serviceReg->mType);
+        RemoveServiceRegistration(serviceReg->mName, serviceReg->mType, DNSErrorToOtbrError(aError));
     }
 
 exit:
@@ -483,6 +482,7 @@ void PublisherMDnsSd::PublishService(const std::string &aHostName,
     VerifyOrExit(!aCallback.IsNull());
 
     SuccessOrExit(ret = EncodeTxtData(aTxtList, txt));
+    otbrLogInfo("Registering new service %s.%s.local, serviceRef = %p", aName.c_str(), regType.c_str(), serviceRef);
     SuccessOrExit(error = DNSServiceRegister(&serviceRef, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny,
                                              aName.c_str(), regType.c_str(), /* domain */ nullptr,
                                              !aHostName.empty() ? fullHostName.c_str() : nullptr, htons(aPort),
@@ -510,7 +510,7 @@ exit:
 
 void PublisherMDnsSd::UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback)
 {
-    RemoveServiceRegistration(aName, aType);
+    RemoveServiceRegistration(aName, aType, OTBR_ERROR_ABORTED);
     std::move(aCallback)(OTBR_ERROR_NONE);
 }
 
@@ -537,7 +537,7 @@ void PublisherMDnsSd::PublishHost(const std::string &         aName,
     aCallback = HandleDuplicateHostRegistration(aName, aAddress, std::move(aCallback));
     VerifyOrExit(!aCallback.IsNull());
 
-    otbrLogInfo("Publish new host %s", aName.c_str());
+    otbrLogInfo("Registering new host %s", aName.c_str());
     SuccessOrExit(error = DNSServiceRegisterRecord(mHostsRef, &recordRef, kDNSServiceFlagsUnique,
                                                    kDNSServiceInterfaceIndexAny, fullName.c_str(), kDNSServiceType_AAAA,
                                                    kDNSServiceClass_IN, aAddress.size(), aAddress.data(), /* ttl */ 0,
@@ -563,7 +563,7 @@ void PublisherMDnsSd::UnpublishHost(const std::string &aName, ResultCallback &&a
 {
     otbrLogInfo("Removing host %s", MakeFullHostName(aName).c_str());
 
-    RemoveHostRegistration(aName);
+    RemoveHostRegistration(aName, OTBR_ERROR_ABORTED);
 
     // We may failed to unregister the host from underlying mDNS publishers, but
     // it usually means that the mDNS publisher is already not functioning. So it's
@@ -606,8 +606,7 @@ void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aServiceRef,
     else
     {
         otbrLogWarning("failed to register host %s for mdnssd error: %s", hostName.c_str(), DNSErrorToString(aError));
-        hostReg->Complete(error);
-        RemoveHostRegistration(hostReg->mName);
+        RemoveHostRegistration(hostReg->mName, error);
     }
 
 exit:

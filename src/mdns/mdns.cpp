@@ -31,6 +31,8 @@
  *   This file includes implementation of mDNS publisher.
  */
 
+#define OTBR_LOG_TAG "MDNS"
+
 #include "mdns/mdns.hpp"
 
 #include <assert.h>
@@ -209,10 +211,23 @@ void Publisher::AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg)
     mServiceRegistrations.emplace(MakeFullServiceName(aServiceReg->mName, aServiceReg->mType), std::move(aServiceReg));
 }
 
-void Publisher::RemoveServiceRegistration(const std::string &aName, const std::string &aType)
+void Publisher::RemoveServiceRegistration(const std::string &aName, const std::string &aType, otbrError aError)
 {
+    auto                   it = mServiceRegistrations.find(MakeFullServiceName(aName, aType));
+    ServiceRegistrationPtr serviceReg;
+
     otbrLogInfo("Removing service %s.%s", aName.c_str(), aType.c_str());
-    mServiceRegistrations.erase(MakeFullServiceName(aName, aType));
+    VerifyOrExit(it != mServiceRegistrations.end());
+
+    // Keep the ServiceRegistration around before calling `Complete`
+    // to invoke the callback. This is for avoiding invalid access
+    // to the ServiceRegistration when it's freed from the callback.
+    serviceReg = std::move(it->second);
+    mServiceRegistrations.erase(it);
+    serviceReg->Complete(aError);
+
+exit:
+    return;
 }
 
 Publisher::ServiceRegistration *Publisher::FindServiceRegistration(const std::string &aName, const std::string &aType)
@@ -236,7 +251,8 @@ Publisher::ResultCallback Publisher::HandleDuplicateServiceRegistration(const st
 
     if (serviceReg->IsOutdated(aHostName, aName, aType, aSubTypeList, aPort, aTxtList))
     {
-        RemoveServiceRegistration(aName, aType);
+        otbrLogInfo("Removing existing service %s.%s: outdated", aName.c_str(), aType.c_str());
+        RemoveServiceRegistration(aName, aType, OTBR_ERROR_ABORTED);
     }
     else if (serviceReg->IsCompleted())
     {
@@ -272,7 +288,7 @@ Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::
 
     if (hostReg->IsOutdated(aName, aAddress))
     {
-        RemoveHostRegistration(hostReg->mName);
+        RemoveHostRegistration(hostReg->mName, OTBR_ERROR_ABORTED);
     }
     else if (hostReg->IsCompleted())
     {
@@ -303,9 +319,23 @@ void Publisher::AddHostRegistration(HostRegistrationPtr &&aHostReg)
     mHostRegistrations.emplace(MakeFullHostName(aHostReg->mName), std::move(aHostReg));
 }
 
-void Publisher::RemoveHostRegistration(const std::string &aName)
+void Publisher::RemoveHostRegistration(const std::string &aName, otbrError aError)
 {
-    mHostRegistrations.erase(MakeFullHostName(aName));
+    auto                it = mHostRegistrations.find(MakeFullHostName(aName));
+    HostRegistrationPtr hostReg;
+
+    otbrLogInfo("Removing host %s", aName.c_str());
+    VerifyOrExit(it != mHostRegistrations.end());
+
+    // Keep the HostRegistration around before calling `Complete`
+    // to invoke the callback. This is for avoiding invalid access
+    // to the HostRegistration when it's freed from the callback.
+    hostReg = std::move(it->second);
+    mHostRegistrations.erase(it);
+    hostReg->Complete(aError);
+
+exit:
+    return;
 }
 
 Publisher::HostRegistration *Publisher::FindHostRegistration(const std::string &aName)
@@ -317,10 +347,7 @@ Publisher::HostRegistration *Publisher::FindHostRegistration(const std::string &
 
 Publisher::Registration::~Registration(void)
 {
-    if (!IsCompleted())
-    {
-        Complete(OTBR_ERROR_ABORTED);
-    }
+    Complete(OTBR_ERROR_ABORTED);
 }
 
 bool Publisher::ServiceRegistration::IsOutdated(const std::string &aHostName,
