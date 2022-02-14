@@ -388,7 +388,13 @@ protected:
         virtual ~Registration(void);
 
         // Completes the service registration with given result/error.
-        void Complete(otbrError aError) { std::move(mCallback)(aError); }
+        void Complete(otbrError aError)
+        {
+            if (!IsCompleted())
+            {
+                std::move(mCallback)(aError);
+            }
+        }
 
         // Tells whether the service registration has been completed (typically by calling
         // `ServiceRegistration::Complete`).
@@ -421,7 +427,6 @@ protected:
             , mTxtList(SortTxtList(std::move(aTxtList)))
         {
         }
-
         ~ServiceRegistration(void) override = default;
 
         // Tells whether this `ServiceRegistration` object is outdated comparing to the given parameters.
@@ -462,8 +467,8 @@ protected:
     static std::string MakeFullServiceName(const std::string &aName, const std::string &aType);
     static std::string MakeFullHostName(const std::string &aName);
 
-    void                 AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
-    void                 RemoveServiceRegistration(const std::string &aName, const std::string &aType);
+    void AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
+    void RemoveServiceRegistration(const std::string &aName, const std::string &aType, otbrError aError);
     ServiceRegistration *FindServiceRegistration(const std::string &aName, const std::string &aType);
     void                 OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
     void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
@@ -485,7 +490,7 @@ protected:
                                                    ResultCallback &&           aCallback);
 
     void              AddHostRegistration(HostRegistrationPtr &&aHostReg);
-    void              RemoveHostRegistration(const std::string &aName);
+    void              RemoveHostRegistration(const std::string &aName, otbrError aError);
     HostRegistration *FindHostRegistration(const std::string &aName);
 
     ServiceRegistrationMap mServiceRegistrations;

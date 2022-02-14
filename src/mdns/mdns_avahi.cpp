@@ -485,18 +485,24 @@ void PublisherAvahi::CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrErro
 
     if ((serviceReg = FindServiceRegistration(aGroup)) != nullptr)
     {
-        serviceReg->Complete(aError);
-        if (aError != OTBR_ERROR_NONE)
+        if (aError == OTBR_ERROR_NONE)
         {
-            RemoveServiceRegistration(serviceReg->mName, serviceReg->mType);
+            serviceReg->Complete(aError);
+        }
+        else
+        {
+            RemoveServiceRegistration(serviceReg->mName, serviceReg->mType, aError);
         }
     }
     else if ((hostReg = FindHostRegistration(aGroup)) != nullptr)
     {
-        hostReg->Complete(aError);
-        if (aError != OTBR_ERROR_NONE)
+        if (aError == OTBR_ERROR_NONE)
         {
-            RemoveHostRegistration(hostReg->mName);
+            hostReg->Complete(aError);
+        }
+        else
+        {
+            RemoveHostRegistration(hostReg->mName, aError);
         }
     }
     else
@@ -663,7 +669,7 @@ exit:
 
 void PublisherAvahi::UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback)
 {
-    RemoveServiceRegistration(aName, aType);
+    RemoveServiceRegistration(aName, aType, OTBR_ERROR_ABORTED);
     std::move(aCallback)(OTBR_ERROR_NONE);
 }
 
@@ -719,7 +725,7 @@ exit:
 
 void PublisherAvahi::UnpublishHost(const std::string &aName, ResultCallback &&aCallback)
 {
-    RemoveHostRegistration(aName);
+    RemoveHostRegistration(aName, OTBR_ERROR_ABORTED);
     std::move(aCallback)(OTBR_ERROR_NONE);
 }
 
