@@ -148,6 +148,8 @@ private:
         {
         }
 
+        ~ServiceRef() { Release(); }
+
         void Update(MainloopContext &aMainloop) const;
         void Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
         void Release(void);

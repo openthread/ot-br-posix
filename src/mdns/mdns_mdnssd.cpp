@@ -234,17 +234,24 @@ bool PublisherMDnsSd::IsStarted(void) const
 
 void PublisherMDnsSd::Stop(void)
 {
+    ServiceRegistrationMap serviceRegistrations;
+    HostRegistrationMap    hostRegistrations;
+
     VerifyOrExit(mState == State::kReady);
 
-    mServiceRegistrations.clear();
+    std::swap(mServiceRegistrations, serviceRegistrations);
+    std::swap(mHostRegistrations, hostRegistrations);
 
-    mHostRegistrations.clear();
     if (mHostsRef != nullptr)
     {
         DNSServiceRefDeallocate(mHostsRef);
         otbrLogDebug("Deallocated DNSServiceRef for hosts: %p", mHostsRef);
         mHostsRef = nullptr;
     }
+
+    mSubscribedServices.clear();
+
+    mSubscribedHosts.clear();
 
 exit:
     return;
@@ -332,7 +339,16 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
         {
             otbrLogWarning("DNSServiceProcessResult failed: %s (serviceRef = %p)", DNSErrorToString(error), serviceRef);
         }
+        if (error == kDNSServiceErr_ServiceNotRunning)
+        {
+            otbrLogWarning("Need to reconnect to mdnsd");
+            Stop();
+            Start();
+            ExitNow();
+        }
     }
+exit:
+    return;
 }
 
 PublisherMDnsSd::DnssdServiceRegistration::~DnssdServiceRegistration(void)
@@ -655,12 +671,7 @@ void PublisherMDnsSd::UnsubscribeService(const std::string &aType, const std::st
 
     assert(it != mSubscribedServices.end());
 
-    {
-        std::unique_ptr<ServiceSubscription> service = std::move(*it);
-
-        service->Release();
-        mSubscribedServices.erase(it);
-    }
+    mSubscribedServices.erase(it);
 
     otbrLogInfo("unsubscribe service %s.%s (left %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
@@ -696,12 +707,7 @@ void PublisherMDnsSd::UnsubscribeHost(const std::string &aHostName)
 
     assert(it != mSubscribedHosts.end());
 
-    {
-        std::unique_ptr<HostSubscription> host = std::move(*it);
-
-        host->Release();
-        mSubscribedHosts.erase(it);
-    }
+    mSubscribedHosts.erase(it);
 
     otbrLogInfo("unsubscribe host %s (remaining %d)", aHostName.c_str(), mSubscribedHosts.size());
 }
@@ -837,7 +843,6 @@ void PublisherMDnsSd::ServiceSubscription::RemoveInstanceResolution(
 
     assert(it != mResolvingInstances.end());
 
-    aInstanceResolution.Release();
     mResolvingInstances.erase(it);
 }
 

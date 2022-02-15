@@ -431,6 +431,9 @@ void PublisherAvahi::Stop(void)
     mServiceRegistrations.clear();
     mHostRegistrations.clear();
 
+    mSubscribedServices.clear();
+    mSubscribedHosts.clear();
+
     if (mClient)
     {
         avahi_client_free(mClient);
@@ -562,6 +565,8 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
         otbrLogErr("Avahi client failed to start: %s", avahi_strerror(avahi_client_errno(aClient)));
         mState = State::kIdle;
         mStateCallback(mState);
+        Stop();
+        Start();
         break;
 
     case AVAHI_CLIENT_S_COLLISION:

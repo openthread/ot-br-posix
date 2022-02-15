@@ -160,6 +160,8 @@ private:
         {
         }
 
+        ~ServiceSubscription() { Release(); }
+
         void Release(void);
         void Browse(void);
         void Resolve(uint32_t           aInterfaceIndex,
@@ -229,6 +231,8 @@ private:
             , mRecordBrowser(nullptr)
         {
         }
+
+        ~HostSubscription() { Release(); }
 
         void        Release(void);
         void        Resolve(void);
