@@ -48,6 +48,7 @@
 #include <sstream>
 
 #include <openthread/border_agent.h>
+#include <openthread/border_router.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
@@ -199,6 +200,12 @@ void BorderAgent::PublishMeshCopService(void)
     const char *             networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
     int                      port;
+#if OTBR_ENABLE_BORDER_ROUTING
+    bool                  hasOmr = false;
+    otIp6Prefix           smallestOmrPrefix;
+    otNetworkDataIterator iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+    otBorderRouterConfig  config;
+#endif
 
     otbrLogInfo("Publish meshcop service %s.%s.local.", mServiceInstanceName.c_str(), kBorderAgentServiceType);
 
@@ -210,6 +217,30 @@ void BorderAgent::PublishMeshCopService(void)
 
     // "xa" stands for Extended MAC Address (64-bit) of the Thread Interface of the Border Agent.
     txtList.emplace_back("xa", extAddr->m8, sizeof(extAddr->m8));
+
+#if OTBR_ENABLE_BORDER_ROUTING
+    while (otNetDataGetNextOnMeshPrefix(instance, &iterator, &config) == OT_ERROR_NONE)
+    {
+        if (otBorderRouterIsValidOmrPrefix(instance, &config))
+        {
+            if (!hasOmr || memcmp(config.mPrefix.mPrefix.mFields.m8, smallestOmrPrefix.mPrefix.mFields.m8,
+                                  OTBR_IP6_PREFIX_SIZE) < 0)
+            {
+                hasOmr            = true;
+                smallestOmrPrefix = config.mPrefix;
+            }
+        }
+    }
+
+    if (hasOmr)
+    {
+        std::vector<uint8_t> value(sizeof(uint8_t) + OT_IP6_PREFIX_SIZE);
+        value[0] = smallestOmrPrefix.mLength;
+        std::copy(smallestOmrPrefix.mPrefix.mFields.m8, smallestOmrPrefix.mPrefix.mFields.m8 + OT_IP6_PREFIX_SIZE,
+                  value.begin() + 1);
+        txtList.emplace_back("omr", value.data(), value.size());
+    }
+#endif
 
     state.mConnectionMode = kConnectionModePskc;
     state.mAvailability   = kAvailabilityHigh;
@@ -347,9 +378,6 @@ void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std:
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
     VerifyOrExit(mPublisher != nullptr);
-    VerifyOrExit(aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
-                           OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_THREAD_PARTITION_ID |
-                           OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_PSKC));
 
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
@@ -357,7 +385,7 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
     }
 
     if (aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
-                  OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE))
+                  OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_THREAD_NETDATA))
     {
         UpdateMeshCopService();
     }
