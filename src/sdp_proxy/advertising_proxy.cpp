@@ -203,7 +203,7 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     uint8_t                    hostAddressNum;
     bool                       hostDeleted;
     const otSrpServerService * service;
-    otSrpServerServiceUpdateId updateId;
+    otSrpServerServiceUpdateId updateId     = 0;
     bool                       hasUpdate    = false;
     std::string                fullHostName = otSrpServerHostGetFullName(aHost);
 
