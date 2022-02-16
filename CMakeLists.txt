@@ -57,11 +57,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (OTBR_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     message(STATUS "Coverage: ON")
+    add_compile_options(-O2)
     target_compile_options(otbr-config INTERFACE -g -O0 --coverage)
     target_link_libraries(otbr-config INTERFACE --coverage)
 endif()
 
-add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
+add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wuninitialized -Wno-missing-braces)
 
 message(STATUS "OTBR package name: ${OTBR_NAME}")
 
