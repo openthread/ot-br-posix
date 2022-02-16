@@ -71,9 +71,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
+        build_type: ["Debug", "Release"]
         mdns: ["mDNSResponder", "avahi"]
     env:
       BUILD_TARGET: check
+      OTBR_BUILD_TYPE: ${{ matrix.build_type }}
       OTBR_MDNS: ${{ matrix.mdns }}
       OTBR_COVERAGE: 1
     steps:

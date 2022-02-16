@@ -38,6 +38,7 @@ readonly OTBR_COLOR_FAIL='\033[0;31m'
 readonly OTBR_COLOR_NONE='\033[0m'
 readonly QUIET=${QUIET:-1}
 
+readonly OTBR_BUILD_TYPE="${OTBR_BUILD_TYPE:-Debug}"
 readonly OTBR_COVERAGE="${OTBR_COVERAGE:-0}"
 readonly OTBR_MDNS="${OTBR_MDNS:-}"
 readonly OTBR_REST="${OTBR_REST:-}"
@@ -105,7 +106,7 @@ EOF
 do_build()
 {
     otbr_options=(
-        "-DCMAKE_BUILD_TYPE=Debug"
+        "-DCMAKE_BUILD_TYPE=${OTBR_BUILD_TYPE}"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"

@@ -29,6 +29,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(openthread-br VERSION 0.3.0)
 
+add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wuninitialized -Wno-missing-braces)
 
 add_library(otbr-config INTERFACE)
 
@@ -60,8 +61,6 @@ if (OTBR_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(otbr-config INTERFACE -g -O0 --coverage)
     target_link_libraries(otbr-config INTERFACE --coverage)
 endif()
-
-add_compile_options(-Wall -Wextra -Werror -Wfatal-errors -Wno-missing-braces)
 
 message(STATUS "OTBR package name: ${OTBR_NAME}")
 
