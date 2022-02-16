@@ -215,6 +215,10 @@
       <arg name="properties" type="as" direction="in"/>
     </method>
 
+    <!-- LeaveNetwork: Detach from the network and forget the credentials. -->
+    <method name="LeaveNetwork">
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

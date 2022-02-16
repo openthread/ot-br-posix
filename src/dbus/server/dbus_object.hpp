@@ -212,6 +212,12 @@ public:
      */
     virtual ~DBusObject(void);
 
+    /**
+     * Sends all outgoing messages, blocks until the message queue is empty.
+     *
+     */
+    void Flush(void);
+
 private:
     void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
     void GetPropertyMethodHandler(DBusRequest &aRequest);
