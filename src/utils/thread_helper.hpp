@@ -236,13 +236,7 @@ public:
      * @param[in] aUpdate  The key-value pairs to be updated in the TXT record.
      *
      */
-    void OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>> aUpdate)
-    {
-        if (mUpdateMeshCopTxtHandler)
-        {
-            mUpdateMeshCopTxtHandler(std::move(aUpdate));
-        }
-    }
+    void OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>> aUpdate);
 #endif
 
     /**
