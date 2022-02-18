@@ -119,7 +119,6 @@ install_packages_rpm()
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
-    sudo $PM install -y doxygen
     sudo $PM install -y boost-devel boost-filesystem boost-system
     sudo $PM install -y tayga iptables
     sudo $PM install -y jsoncpp-devel
