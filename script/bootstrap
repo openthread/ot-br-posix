@@ -97,7 +97,7 @@ install_packages_apt()
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
 
     # web dependencies
-    without WEB_GUI || command -v npm || sudo apt-get install -y nodejs npm
+    without WEB_GUI || command -v npm || sudo apt-get install --no-install-recommends -y nodejs npm
 
     # firewall
     sudo apt-get install -y iptables ipset
