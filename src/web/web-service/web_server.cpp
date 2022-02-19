@@ -245,10 +245,10 @@ void WebServer::DefaultHttpResponse(void)
             {
                 header = OT_RESPONSE_HEADER_CSS_TYPE;
             }
-	    else if (extension == ".html")
-	    {
+            else if (extension == ".html")
+            {
                 header = OT_RESPONSE_HEADER_TEXT_HTML_TYPE;
-	    }
+            }
 
             if (*ifs)
             {
