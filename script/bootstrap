@@ -97,7 +97,7 @@ install_packages_apt()
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
 
     # web dependencies
-    without WEB_GUI || command -v npm || sudo apt-get install -y nodejs npm
+    without WEB_GUI || command -v npm || sudo apt-get install --no-install-recommends -y nodejs npm
 
     # firewall
     sudo apt-get install -y iptables ipset
@@ -119,7 +119,6 @@ install_packages_rpm()
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
-    sudo $PM install -y doxygen
     sudo $PM install -y boost-devel boost-filesystem boost-system
     sudo $PM install -y tayga iptables
     sudo $PM install -y jsoncpp-devel
