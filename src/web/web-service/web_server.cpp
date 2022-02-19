@@ -58,6 +58,7 @@
 #define OT_RESPONSE_SUCCESS_STATUS "HTTP/1.1 200 OK\r\n"
 #define OT_RESPONSE_HEADER_LENGTH "Content-Length: "
 #define OT_RESPONSE_HEADER_CSS_TYPE "\r\nContent-Type: text/css"
+#define OT_RESPONSE_HEADER_TEXT_HTML_TYPE "\r\nContent-Type: text/html; charset=utf-8"
 #define OT_RESPONSE_HEADER_TYPE "Content-Type: application/json\r\n charset=utf-8"
 #define OT_RESPONSE_PLACEHOLD "\r\n\r\n"
 #define OT_RESPONSE_FAILURE_STATUS "HTTP/1.1 400 Bad Request\r\n"
@@ -218,6 +219,7 @@ void WebServer::DefaultHttpResponse(void)
         {
             auto webRootPath = boost::filesystem::canonical(WEB_FILE_PATH);
             auto path        = boost::filesystem::canonical(webRootPath / request->path);
+
             // Check if path is within webRootPath
             if (std::distance(webRootPath.begin(), webRootPath.end()) > std::distance(path.begin(), path.end()) ||
                 !std::equal(webRootPath.begin(), webRootPath.end(), path.begin()))
@@ -238,10 +240,14 @@ void WebServer::DefaultHttpResponse(void)
             auto ifs = std::make_shared<std::ifstream>();
             ifs->open(path.string(), std::ifstream::in | std::ios::binary | std::ios::ate);
             std::string extension = boost::filesystem::extension(path.string());
-            std::string style     = "";
+            std::string header    = "";
             if (extension == ".css")
             {
-                style = OT_RESPONSE_HEADER_CSS_TYPE;
+                header = OT_RESPONSE_HEADER_CSS_TYPE;
+            }
+            else if (extension == ".html")
+            {
+                header = OT_RESPONSE_HEADER_TEXT_HTML_TYPE;
             }
 
             if (*ifs)
@@ -250,7 +256,7 @@ void WebServer::DefaultHttpResponse(void)
                 ifs->seekg(0, std::ios::beg);
 
                 *response << OT_RESPONSE_SUCCESS_STATUS << cacheControl << etag << OT_RESPONSE_HEADER_LENGTH << length
-                          << style << OT_RESPONSE_PLACEHOLD;
+                          << header << OT_RESPONSE_PLACEHOLD;
 
                 DefaultResourceSend(*mServer, response, ifs);
             }
