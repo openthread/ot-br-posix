@@ -79,9 +79,7 @@ ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \
-  cmake \
-  cpputest \
-  doxygen
+  cpputest-dev
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
