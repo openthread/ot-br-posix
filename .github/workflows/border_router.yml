@@ -127,6 +127,7 @@ jobs:
         otbr_options="${{ matrix.otbr_options }}"
         otbr_image_name="otbr-ot12-backbone-ci"
         docker build -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
+          --build-arg BASE_IMAGE=arm32v7/ubuntu:bionic \
           --build-arg BORDER_ROUTING=${{ matrix.border_routing }} \
           --build-arg INFRA_IF_NAME=eth0 \
           --build-arg BACKBONE_ROUTER=1 \
