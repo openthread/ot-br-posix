@@ -486,10 +486,6 @@ void PublisherMDnsSd::PublishService(const std::string &aHostName,
 
     if (!aHostName.empty())
     {
-        HostRegistration *hostReg = Publisher::FindHostRegistration(aHostName);
-
-        // Make sure that the host has been published.
-        VerifyOrExit(hostReg != nullptr, ret = OTBR_ERROR_INVALID_ARGS);
         fullHostName = MakeFullHostName(aHostName);
     }
 

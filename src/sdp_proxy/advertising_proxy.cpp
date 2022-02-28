@@ -227,35 +227,6 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
         }
     }
 
-    if (!hostDeleted)
-    {
-        std::vector<uint8_t> firstHostAddress{std::begin(hostAddress[0].mFields.m8),
-                                              std::end(hostAddress[0].mFields.m8)};
-
-        // TODO: select a preferred address or advertise all addresses from SRP client.
-        otbrLogDebug("Publish SRP host '%s'", fullHostName.c_str());
-        mPublisher.PublishHost(
-            hostName, firstHostAddress,
-            Mdns::Publisher::ResultCallback([this, hasUpdate, updateId, fullHostName](otbrError aError) {
-                otbrLogResult(aError, "Handle publish SRP host '%s'", fullHostName.c_str());
-                if (hasUpdate)
-                {
-                    OnMdnsPublishResult(updateId, aError);
-                }
-            }));
-    }
-    else
-    {
-        otbrLogDebug("Unpublish SRP host '%s'", fullHostName.c_str());
-        mPublisher.UnpublishHost(hostName, [this, hasUpdate, updateId, fullHostName](otbrError aError) {
-            otbrLogResult(aError, "Handle unpublish SRP host '%s'", fullHostName.c_str());
-            if (hasUpdate)
-            {
-                OnMdnsPublishResult(updateId, aError);
-            }
-        });
-    }
-
     service = nullptr;
     while ((service = otSrpServerHostFindNextService(aHost, service, OT_SRP_SERVER_FLAGS_BASE_TYPE_SERVICE_ONLY,
                                                      /* aServiceName */ nullptr, /* aInstanceName */ nullptr)))
@@ -295,6 +266,35 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
                     }
                 });
         }
+    }
+
+    if (!hostDeleted)
+    {
+        std::vector<uint8_t> firstHostAddress{std::begin(hostAddress[0].mFields.m8),
+                                              std::end(hostAddress[0].mFields.m8)};
+
+        // TODO: select a preferred address or advertise all addresses from SRP client.
+        otbrLogDebug("Publish SRP host '%s'", fullHostName.c_str());
+        mPublisher.PublishHost(
+            hostName, firstHostAddress,
+            Mdns::Publisher::ResultCallback([this, hasUpdate, updateId, fullHostName](otbrError aError) {
+                otbrLogResult(aError, "Handle publish SRP host '%s'", fullHostName.c_str());
+                if (hasUpdate)
+                {
+                    OnMdnsPublishResult(updateId, aError);
+                }
+            }));
+    }
+    else
+    {
+        otbrLogDebug("Unpublish SRP host '%s'", fullHostName.c_str());
+        mPublisher.UnpublishHost(hostName, [this, hasUpdate, updateId, fullHostName](otbrError aError) {
+            otbrLogResult(aError, "Handle unpublish SRP host '%s'", fullHostName.c_str());
+            if (hasUpdate)
+            {
+                OnMdnsPublishResult(updateId, aError);
+            }
+        });
     }
 
 exit:
