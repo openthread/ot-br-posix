@@ -152,6 +152,8 @@ void PublishMultipleServicesWithCustomHost(void *aContext, Mdns::Publisher::Stat
 
 void PublishSingleService(void *aContext, Mdns::Publisher::State aState)
 {
+    OT_UNUSED_VARIABLE(aContext);
+
     uint8_t                  xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
     uint8_t                  extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
     Mdns::Publisher::TxtList txtList{
@@ -168,6 +170,8 @@ void PublishSingleService(void *aContext, Mdns::Publisher::State aState)
 
 void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
 {
+    OT_UNUSED_VARIABLE(aContext);
+
     uint8_t xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
     uint8_t extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
 
@@ -195,6 +199,8 @@ void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
 
 void PublishUpdateServices(void *aContext)
 {
+    OT_UNUSED_VARIABLE(aContext);
+
     uint8_t xpanidOld[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
     uint8_t xpanidNew[kSizeExtPanId] = {0x48, 0x47, 0x46, 0x45, 0x44, 0x43, 0x42, 0x41};
     uint8_t extAddr[kSizeExtAddr]    = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
@@ -224,6 +230,8 @@ void PublishUpdateServices(void *aContext)
 
 void PublishServiceSubTypes(void *aContext)
 {
+    OT_UNUSED_VARIABLE(aContext);
+
     assert(aContext == &sContext);
 
     Mdns::Publisher::SubTypeList subTypeList{"_subtype1", "_SUBTYPE2"};
