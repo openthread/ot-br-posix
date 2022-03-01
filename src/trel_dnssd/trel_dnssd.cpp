@@ -37,6 +37,7 @@
 
 #include "trel_dnssd/trel_dnssd.hpp"
 
+#include <inttypes.h>
 #include <net/if.h>
 
 #include <openthread/instance.h>
@@ -397,7 +398,7 @@ void TrelDnssd::CheckTrelNetifReady(void)
 
         if (mTrelNetifIndex != 0)
         {
-            otbrLogDebug("Netif %s is ready: index = %d", mTrelNetif.c_str(), mTrelNetifIndex);
+            otbrLogDebug("Netif %s is ready: index = %" PRIu32, mTrelNetif.c_str(), mTrelNetifIndex);
             OnBecomeReady();
         }
         else
@@ -422,8 +423,8 @@ void TrelDnssd::OnBecomeReady(void)
 {
     if (IsReady())
     {
-        otbrLogInfo("TREL DNS-SD Is Now Ready: Netif=%s(%u), SubscriberId=%u, Register=%s!", mTrelNetif.c_str(),
-                    mTrelNetifIndex, mSubscriberId, mRegisterInfo.mInstanceName.c_str());
+        otbrLogInfo("TREL DNS-SD Is Now Ready: Netif=%s(%" PRIu32 "), SubscriberId=%" PRIu64 ", Register=%s!",
+                    mTrelNetif.c_str(), mTrelNetifIndex, mSubscriberId, mRegisterInfo.mInstanceName.c_str());
 
         if (mSubscriberId > 0)
         {
