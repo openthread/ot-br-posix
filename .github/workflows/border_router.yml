@@ -83,7 +83,8 @@ jobs:
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
-            docker_build_args: "--platform=linux/386 --build-arg BASE_IMAGE=i386/ubuntu:bionic"
+            docker_build_flags: "--platform=linux/386"
+            docker_build_extra_args: "--build-arg BASE_IMAGE=i386/ubuntu:bionic"
           - name: "Border Router MATN (mDNSResponder)"
             otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_BORDER_ROUTING_NAT64=ON"
             border_routing: 1
@@ -133,8 +134,8 @@ jobs:
         # This should be fixed by enhancing the test script to handle SRP server situations properly.
         otbr_options="${{ matrix.otbr_options }}"
         otbr_image_name="otbr-ot12-backbone-ci"
-        docker build -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
-          ${{ matrix.docker_build_args }} \
+        docker build ${{ matrix.docker_build_flags }} -t "${otbr_image_name}" -f etc/docker/Dockerfile . \
+          ${{ matrix.docker_build_extra_args }} \
           --build-arg BORDER_ROUTING=${{ matrix.border_routing }} \
           --build-arg INFRA_IF_NAME=eth0 \
           --build-arg BACKBONE_ROUTER=1 \
