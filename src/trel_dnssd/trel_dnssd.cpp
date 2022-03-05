@@ -232,6 +232,7 @@ std::string TrelDnssd::GetTrelInstanceName(void)
     char                nameBuf[sizeof(otExtAddress) * 2 + 1];
 
     assert(sizeof(extaddr) == 8);
+    VerifyOrDie(sizeof(extaddr) == 8, "not 64bit");
 
     Utils::Bytes2Hex(extaddr->m8, sizeof(otExtAddress), nameBuf);
     name = StringUtils::ToLowercase(nameBuf);
