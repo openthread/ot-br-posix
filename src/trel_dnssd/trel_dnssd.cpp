@@ -231,6 +231,8 @@ std::string TrelDnssd::GetTrelInstanceName(void)
     std::string         name;
     char                nameBuf[sizeof(otExtAddress) * 2 + 1];
 
+    assert(sizeof(extaddr) == 8);
+
     Utils::Bytes2Hex(extaddr->m8, sizeof(otExtAddress), nameBuf);
     name = StringUtils::ToLowercase(nameBuf);
 
