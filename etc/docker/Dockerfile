@@ -52,7 +52,7 @@ ENV PLATFORM ubuntu
 ENV REFERENCE_DEVICE=${REFERENCE_DEVICE:-0}
 ENV RELEASE=${RELEASE:-1}
 ENV NAT64=${NAT64:-1}
-ENV DNS64=${DNS64:-1}
+ENV DNS64=${DNS64:-0}
 ENV WEB_GUI=${WEB_GUI:-1}
 ENV REST_API=${REST_API:-1}
 ENV DOCKER 1
@@ -63,7 +63,7 @@ COPY . /app
 WORKDIR /app
 
 # Required during build or run
-ENV OTBR_DOCKER_REQS sudo
+ENV OTBR_DOCKER_REQS sudo python3
 
 # Required during build, could be removed
 ENV OTBR_DOCKER_DEPS git ca-certificates
@@ -87,7 +87,7 @@ RUN apt-get update \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
   && ./script/bootstrap \
   && ./script/setup \
-  && chmod 644 /etc/bind/named.conf.options \
+  && ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
   && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
     && mv ./etc /tmp \
