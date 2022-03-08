@@ -33,6 +33,7 @@ sudo modprobe ip6table_filter || true
 
 firewall_uninstall()
 {
+    firewall_stop
     if have systemctl; then
         sudo systemctl disable otbr-firewall || true
     fi
