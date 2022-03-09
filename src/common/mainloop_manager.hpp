@@ -88,7 +88,7 @@ public:
     /**
      * This method updates the mainloop context of all mainloop processors.
      *
-     * @param[inout] aMainloop  A reference to the mainloop to be updated.
+     * @param[in,out] aMainloop  A reference to the mainloop to be updated.
      *
      */
     void Update(MainloopContext &aMainloop);

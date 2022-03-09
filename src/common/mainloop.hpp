@@ -61,7 +61,7 @@ public:
     /**
      * This method updates the mainloop context.
      *
-     * @param[inout] aMainloop  A reference to the mainloop to be updated.
+     * @param[in,out] aMainloop  A reference to the mainloop to be updated.
      *
      */
     virtual void Update(MainloopContext &aMainloop) = 0;

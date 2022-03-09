@@ -76,8 +76,8 @@ public:
      * This method is the main entry of resource handler, which find corresponding handler according to request url
      * find the resource and set the content of response.
      *
-     * @param[in]    aRequest  A request instance referred by the Resource handler.
-     * @param[inout] aResponse  A response instance will be set by the Resource handler.
+     * @param[in]     aRequest  A request instance referred by the Resource handler.
+     * @param[in,out] aResponse  A response instance will be set by the Resource handler.
      *
      */
     void Handle(Request &aRequest, Response &aResponse) const;
@@ -85,8 +85,8 @@ public:
     /**
      * This method distributes a callback handler for each connection needs a callback.
      *
-     * @param[in]    aRequest   A request instance referred by the Resource handler.
-     * @param[inout] aResponse  A response instance will be set by the Resource handler.
+     * @param[in]     aRequest   A request instance referred by the Resource handler.
+     * @param[in,out] aResponse  A response instance will be set by the Resource handler.
      *
      */
     void HandleCallback(Request &aRequest, Response &aResponse);
@@ -95,8 +95,8 @@ public:
      * This method provides a quick handler, which could directly set response code of a response and set error code and
      * error message to the request body.
      *
-     * @param[in]    aRequest    A request instance referred by the Resource handler.
-     * @param[inout] aErrorCode  An enum class represents the status code.
+     * @param[in]     aRequest    A request instance referred by the Resource handler.
+     * @param[in,out] aErrorCode  An enum class represents the status code.
      *
      */
     void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
