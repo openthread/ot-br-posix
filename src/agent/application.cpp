@@ -121,9 +121,10 @@ otbrError Application::Run(void)
         // See https://www.freedesktop.org/software/systemd/man/sd_notify.html
         sd_notify(0, "READY=1");
     }
-    else
 #endif
-        if (getenv("UPSTART_JOB") != nullptr)
+
+#if OTBR_ENABLE_NOTIFY_UPSTART
+    if (getenv("UPSTART_JOB") != nullptr)
     {
         otbrLogInfo("Notify Upstart the service is ready.");
         if (raise(SIGSTOP))
@@ -131,6 +132,7 @@ otbrError Application::Run(void)
             otbrLogWarning("Failed to notify Upstart.");
         }
     }
+#endif
 
     // allow quitting elegantly
     signal(SIGTERM, HandleSignal);
