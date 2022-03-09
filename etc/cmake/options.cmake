@@ -86,3 +86,8 @@ endif()
 
 
 option(OTBR_WEB "Enable Web GUI" OFF)
+
+option(OTBR_NOTIFY_UPSTART "Notify upstart when ready." ON)
+if(OTBR_NOTIFY_UPSTART)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
+endif()
