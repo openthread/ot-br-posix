@@ -53,8 +53,9 @@ ipset_destroy_if_exist()
     fi
 }
 
-install()
+firewall_start()
 {
+    firewall_stop
     ipset create -exist otbr-ingress-deny-src hash:net family inet6
     ipset create -exist otbr-ingress-deny-src-swap hash:net family inet6
     ipset create -exist otbr-ingress-allow-dst hash:net family inet6
@@ -70,7 +71,7 @@ install()
     ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -p ip -j ACCEPT
 }
 
-uninstall()
+firewall_stop()
 {
     while ip6tables -C FORWARD -o $THREAD_IF -j $OTBR_FORWARD_INGRESS_CHAIN; do
         ip6tables -D FORWARD -o $THREAD_IF -j $OTBR_FORWARD_INGRESS_CHAIN
@@ -89,14 +90,14 @@ uninstall()
 
 case "$1" in
     start)
-        install
+        firewall_start
         ;;
     restart | reload | force-reload)
         echo "Error: argument '$1' not supported" >&2
         exit 3
         ;;
     stop)
-        uninstall
+        firewall_stop
         ;;
     status)
         # No-op
