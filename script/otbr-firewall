@@ -64,11 +64,11 @@ firewall_start()
     ip6tables -N $OTBR_FORWARD_INGRESS_CHAIN
     ip6tables -I FORWARD 1 -o $THREAD_IF -j $OTBR_FORWARD_INGRESS_CHAIN
 
-    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m pkttype --pkt-type unicast -i $THREAD_IF -p ip -j DROP
-    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m set --match-set otbr-ingress-deny-src src -p ip -j DROP
-    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m set --match-set otbr-ingress-allow-dst dst -p ip -j ACCEPT
-    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m pkttype --pkt-type unicast -p ip -j DROP
-    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -p ip -j ACCEPT
+    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m pkttype --pkt-type unicast -i $THREAD_IF -j DROP
+    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m set --match-set otbr-ingress-deny-src src -j DROP
+    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m set --match-set otbr-ingress-allow-dst dst -j ACCEPT
+    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -m pkttype --pkt-type unicast -j DROP
+    ip6tables -A $OTBR_FORWARD_INGRESS_CHAIN -j ACCEPT
 }
 
 firewall_stop()
