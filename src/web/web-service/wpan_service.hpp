@@ -160,8 +160,8 @@ public:
     /**
      * This method gets status of wpan service.
      *
-     * @param[inout] aNetworkName  The pointer to the network name.
-     * @param[inout] aIfName       The pointer to the extended PAN ID.
+     * @param[in,out] aNetworkName  The pointer to the network name.
+     * @param[in,out] aIfName       The pointer to the extended PAN ID.
      *
      * @retval kWpanStatus_OK       Successfully started the Thread service.
      * @retval kWpanStatus_Offline  Not started the Thread service.
