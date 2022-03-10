@@ -225,8 +225,8 @@ private:
 
     struct HostSubscription : public Subscription
     {
-        explicit HostSubscription(PublisherAvahi &aMDnsSd, std::string aHostName)
-            : Subscription(aMDnsSd)
+        explicit HostSubscription(PublisherAvahi &aAvahiPublisher, std::string aHostName)
+            : Subscription(aAvahiPublisher)
             , mHostName(std::move(aHostName))
             , mRecordBrowser(nullptr)
         {
