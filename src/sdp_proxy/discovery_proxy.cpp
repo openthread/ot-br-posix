@@ -62,6 +62,10 @@ DiscoveryProxy::DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher 
     : mNcp(aNcp)
     , mMdnsPublisher(aPublisher)
 {
+    mNcp.RegisterResetHandler([this]() {
+        otDnssdQuerySetCallbacks(mNcp.GetInstance(), &DiscoveryProxy::OnDiscoveryProxySubscribe,
+                                 &DiscoveryProxy::OnDiscoveryProxyUnsubscribe, this);
+    });
 }
 
 void DiscoveryProxy::Start(void)
