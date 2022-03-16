@@ -288,6 +288,7 @@ Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::
 
     if (hostReg->IsOutdated(aName, aAddress))
     {
+        otbrLogInfo("Removing existing host %s: outdated", aName.c_str());
         RemoveHostRegistration(hostReg->mName, OTBR_ERROR_ABORTED);
     }
     else if (hostReg->IsCompleted())
