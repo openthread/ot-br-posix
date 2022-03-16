@@ -41,6 +41,7 @@
 #include <net/if.h>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/dns_client.h>
 
 #include "common/code_utils.hpp"
 

@@ -48,6 +48,7 @@
 #include <sstream>
 
 #include <openthread/border_agent.h>
+#include <openthread/dns_client.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
@@ -138,6 +139,7 @@ void BorderAgent::Start(void)
     mAdvertisingProxy.Start();
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    mDiscoveryProxy.Init();
     mDiscoveryProxy.Start();
 #endif
 

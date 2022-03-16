@@ -42,6 +42,9 @@
 
 #include <assert.h>
 
+#include <arpa/inet.h>
+
+#include <openthread/dns_client.h>
 #include <openthread/dnssd_server.h>
 
 #include "common/code_utils.hpp"
@@ -49,6 +52,10 @@
 #include "common/logging.hpp"
 #include "utils/dns_utils.hpp"
 #include "utils/string_utils.hpp"
+
+#ifndef OTBR_CONFIG_UPSTREAM_DNS
+#define OTBR_CONFIG_UPSTREAM_DNS "8.8.8.8"
+#endif
 
 namespace otbr {
 namespace Dnssd {
@@ -63,6 +70,25 @@ DiscoveryProxy::DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher 
     , mMdnsPublisher(aPublisher)
 {
 }
+
+void DiscoveryProxy::Init(void)
+{
+    otDnsQueryConfig config = {
+        .mServerSockAddr  = {.mAddress = {}, .mPort = 0},
+        .mResponseTimeout = 0,
+        .mMaxTxAttempts   = 0,
+        .mRecursionFlag   = OT_DNS_FLAG_RECURSION_DESIRED,
+        .mNat64Mode       = OT_DNS_NAT64_DISALLOW,
+        .mNetif           = OT_NETIF_BACKBONE,
+    };
+    in_addr upstreamDnsAddr;
+
+    inet_aton(OTBR_CONFIG_UPSTREAM_DNS, &upstreamDnsAddr);
+
+    config.mServerSockAddr.mAddress.mFields.m16[5] = 0xffff;
+    config.mServerSockAddr.mAddress.mFields.m32[3] = upstreamDnsAddr.s_addr;
+    otDnsClientSetDefaultConfig(mNcp.GetInstance(), &config);
+} // namespace Dnssd
 
 void DiscoveryProxy::Start(void)
 {

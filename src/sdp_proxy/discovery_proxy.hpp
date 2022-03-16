@@ -68,6 +68,15 @@ public:
     explicit DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
 
     /**
+     * This method initializes the Discovery Proxy.
+     *
+     * @retval OTBR_ERROR_NONE      The initialization succeeds.
+     * @retval OTBR_ERROR_ABORTED   Fails to fetch the system DNS server.
+     *
+     */
+    void Init(void);
+
+    /**
      * This method starts the Discovery Proxy.
      *
      */
