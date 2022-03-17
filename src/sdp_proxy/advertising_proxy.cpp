@@ -97,6 +97,8 @@ AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publis
     : mNcp(aNcp)
     , mPublisher(aPublisher)
 {
+    mNcp.RegisterResetHandler(
+        [this]() { otSrpServerSetServiceUpdateHandler(GetInstance(), AdvertisingHandler, this); });
 }
 
 otbrError AdvertisingProxy::Start(void)

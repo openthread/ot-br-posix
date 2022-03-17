@@ -119,6 +119,11 @@ void BorderAgent::Init(void)
     mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
         HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
     });
+    mNcp.RegisterResetHandler([this]() {
+        mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
+            HandleUpdateVendorMeshCoPTxtEntries(std::move(aUpdate));
+        });
+    });
 #endif
 
     Start();
