@@ -87,7 +87,7 @@ void DiscoveryProxy::Start(void)
             OnHostDiscovered(aHostName, aHostInfo);
         });
 
-    otbrLogInfo("started");
+    otbrLogInfo("Started");
 }
 
 void DiscoveryProxy::Stop(void)
@@ -100,7 +100,7 @@ void DiscoveryProxy::Stop(void)
         mSubscriberId = 0;
     }
 
-    otbrLogInfo("stopped");
+    otbrLogInfo("Stopped");
 }
 
 void DiscoveryProxy::OnDiscoveryProxySubscribe(void *aContext, const char *aFullName)
@@ -113,7 +113,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     std::string fullName(aFullName);
     DnsNameInfo nameInfo = SplitFullDnsName(fullName);
 
-    otbrLogInfo("subscribe: %s", fullName.c_str());
+    otbrLogInfo("Subscribe: %s", fullName.c_str());
 
     if (GetServiceSubscriptionCount(nameInfo) == 1)
     {
@@ -138,7 +138,7 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
     std::string fullName(aFullName);
     DnsNameInfo nameInfo = SplitFullDnsName(fullName);
 
-    otbrLogInfo("unsubscribe: %s", fullName.c_str());
+    otbrLogInfo("Unsubscribe: %s", fullName.c_str());
 
     if (GetServiceSubscriptionCount(nameInfo) == 1)
     {
@@ -160,7 +160,7 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
     const otDnssdQuery *       query                 = nullptr;
     std::string                unescapedInstanceName = DnsUtils::UnescapeInstanceName(aInstanceInfo.mName);
 
-    otbrLogInfo("service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
+    otbrLogInfo("Service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
                 "weight %d",
                 aType.c_str(), aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
                 aInstanceInfo.mAddresses.size(), aInstanceInfo.mPort, aInstanceInfo.mPriority, aInstanceInfo.mWeight);
@@ -234,7 +234,7 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
     const otDnssdQuery *query            = nullptr;
     std::string         resolvedHostName = aHostInfo.mHostName;
 
-    otbrLogInfo("host discovered: %s hostname %s addresses %zu", aHostName.c_str(), aHostInfo.mHostName.c_str(),
+    otbrLogInfo("Host discovered: %s hostname %s addresses %zu", aHostName.c_str(), aHostInfo.mHostName.c_str(),
                 aHostInfo.mAddresses.size());
 
     if (resolvedHostName.empty())
@@ -289,7 +289,7 @@ std::string DiscoveryProxy::TranslateDomain(const std::string &aName, const std:
     targetName = hostName + "." + aTargetDomain;
 
 exit:
-    otbrLogDebug("translate domain: %s => %s", aName.c_str(), targetName.c_str());
+    otbrLogDebug("Translate domain: %s => %s", aName.c_str(), targetName.c_str());
     return targetName;
 }
 
