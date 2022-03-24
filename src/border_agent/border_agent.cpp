@@ -309,8 +309,19 @@ void BorderAgent::PublishMeshCopService(void)
 
     mPublisher->PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentServiceType,
                                Mdns::Publisher::SubTypeList{}, port, txtList, [this](otbrError aError) {
-                                   otbrLogResult(aError, "Result of publish meshcop service %s.%s.local",
-                                                 mServiceInstanceName.c_str(), kBorderAgentServiceType);
+                                   if (aError == OTBR_ERROR_ABORTED)
+                                   {
+                                       // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
+                                       // cancelled. This can happen when the meshcop service is being updated
+                                       // frequently. To avoid false alarms, it should not be logged like a real error.
+                                       otbrLogInfo("Cancelled previous publishing meshcop service %s.%s.local",
+                                                   mServiceInstanceName.c_str(), kBorderAgentServiceType);
+                                   }
+                                   else
+                                   {
+                                       otbrLogResult(aError, "Result of publish meshcop service %s.%s.local",
+                                                     mServiceInstanceName.c_str(), kBorderAgentServiceType);
+                                   }
                                    if (aError == OTBR_ERROR_DUPLICATED)
                                    {
                                        // Try to unpublish current service in case we are trying to register
