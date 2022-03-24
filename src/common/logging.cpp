@@ -28,6 +28,10 @@
 
 #define OTBR_LOG_TAG "LOG"
 
+#ifndef OTBR_SYSLOG_FACILITY_ID
+#define OTBR_SYSLOG_FACILITY_ID LOG_USER
+#endif
+
 #include "common/logging.hpp"
 
 #include <assert.h>
@@ -62,7 +66,7 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
     assert(aIdent);
     assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
 
-    openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), LOG_USER);
+    openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), OTBR_SYSLOG_FACILITY_ID);
     sLevel = aLevel;
 }
 
