@@ -66,7 +66,7 @@ struct ActiveScanResult
     uint8_t              mLqi;           ///< LQI
     uint8_t              mVersion;       ///< Version
     bool                 mIsNative;      ///< Native Commissioner flag
-    bool                 mIsJoinable;    ///< Joining Permitted flag
+    bool                 mDiscover;      ///< Result from MLE Discovery
 };
 
 struct EnergyScanResult

@@ -105,7 +105,7 @@ bool operator==(const otbr::DBus::ActiveScanResult &aLhs, const otbr::DBus::Acti
            aLhs.mExtendedPanId == aRhs.mExtendedPanId && aLhs.mSteeringData == aRhs.mSteeringData &&
            aLhs.mPanId == aRhs.mPanId && aLhs.mJoinerUdpPort == aRhs.mJoinerUdpPort && aLhs.mChannel == aRhs.mChannel &&
            aLhs.mRssi == aRhs.mRssi && aLhs.mLqi == aRhs.mLqi && aLhs.mVersion == aRhs.mVersion &&
-           aLhs.mIsNative == aRhs.mIsNative && aLhs.mIsJoinable == aRhs.mIsJoinable;
+           aLhs.mIsNative == aRhs.mIsNative;
 }
 
 bool operator==(const otbr::DBus::Ip6Prefix &aLhs, const otbr::DBus::Ip6Prefix &aRhs)
@@ -298,7 +298,7 @@ TEST(DBusMessage, TestOtbrLeaderData)
 TEST(DBusMessage, TestOtbrActiveScanResults)
 {
     DBusMessage *                                    msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, true}});
+    tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, false}});
     tuple<std::vector<otbr::DBus::ActiveScanResult>> getVals;
 
     CHECK(msg != nullptr);

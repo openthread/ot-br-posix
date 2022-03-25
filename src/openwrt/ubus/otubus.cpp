@@ -273,8 +273,6 @@ void UbusServer::HandleActiveScanResultDetail(otActiveScanResult *aResult)
 
     jsonList = blobmsg_open_table(&mBuf, nullptr);
 
-    blobmsg_add_u32(&mBuf, "IsJoinable", aResult->mIsJoinable);
-
     blobmsg_add_string(&mBuf, "NetworkName", aResult->mNetworkName.m8);
 
     OutputBytes(aResult->mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE, xpanidstring);
