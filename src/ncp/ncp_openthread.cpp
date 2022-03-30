@@ -87,12 +87,41 @@ ControllerOpenThread::~ControllerOpenThread(void)
     assert(mInstance == nullptr);
 }
 
-void ControllerOpenThread::Init(void)
+otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
 {
-    otbrError  error = OTBR_ERROR_NONE;
-    otLogLevel level = OT_LOG_LEVEL_NONE;
+    otbrLogLevel otbrLogLevel;
 
-    switch (otbrLogGetLevel())
+    switch (aLogLevel)
+    {
+    case OT_LOG_LEVEL_NONE:
+        otbrLogLevel = OTBR_LOG_EMERG;
+        break;
+    case OT_LOG_LEVEL_CRIT:
+        otbrLogLevel = OTBR_LOG_CRIT;
+        break;
+    case OT_LOG_LEVEL_WARN:
+        otbrLogLevel = OTBR_LOG_WARNING;
+        break;
+    case OT_LOG_LEVEL_NOTE:
+        otbrLogLevel = OTBR_LOG_NOTICE;
+        break;
+    case OT_LOG_LEVEL_INFO:
+        otbrLogLevel = OTBR_LOG_INFO;
+        break;
+    case OT_LOG_LEVEL_DEBG:
+    default:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    }
+
+    return otbrLogLevel;
+}
+
+otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
+{
+    otLogLevel level;
+
+    switch (aLevel)
     {
     case OTBR_LOG_EMERG:
     case OTBR_LOG_ALERT:
@@ -110,12 +139,19 @@ void ControllerOpenThread::Init(void)
         level = OT_LOG_LEVEL_INFO;
         break;
     case OTBR_LOG_DEBUG:
+    default:
         level = OT_LOG_LEVEL_DEBG;
         break;
-    default:
-        ExitNow(error = OTBR_ERROR_OPENTHREAD);
-        break;
     }
+
+    return level;
+}
+
+void ControllerOpenThread::Init(void)
+{
+    otbrError  error = OTBR_ERROR_NONE;
+    otLogLevel level = ConvertToOtLogLevel(otbrLogGetLevel());
+
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
@@ -272,37 +308,18 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 {
     OT_UNUSED_VARIABLE(aLogRegion);
 
-    otbrLogLevel otbrLogLevel;
-
-    switch (aLogLevel)
-    {
-    case OT_LOG_LEVEL_NONE:
-        otbrLogLevel = OTBR_LOG_EMERG;
-        break;
-    case OT_LOG_LEVEL_CRIT:
-        otbrLogLevel = OTBR_LOG_CRIT;
-        break;
-    case OT_LOG_LEVEL_WARN:
-        otbrLogLevel = OTBR_LOG_WARNING;
-        break;
-    case OT_LOG_LEVEL_NOTE:
-        otbrLogLevel = OTBR_LOG_NOTICE;
-        break;
-    case OT_LOG_LEVEL_INFO:
-        otbrLogLevel = OTBR_LOG_INFO;
-        break;
-    case OT_LOG_LEVEL_DEBG:
-        otbrLogLevel = OTBR_LOG_DEBUG;
-        break;
-    default:
-        otbrLogLevel = OTBR_LOG_DEBUG;
-        break;
-    }
+    otbrLogLevel otbrLogLevel = ControllerOpenThread::ConvertToOtbrLogLevel(aLogLevel);
 
     va_list ap;
     va_start(ap, aFormat);
     otbrLogvNoFilter(otbrLogLevel, aFormat, ap);
     va_end(ap);
+}
+
+extern "C" void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
+{
+    otbrLogSetLevel(ControllerOpenThread::ConvertToOtbrLogLevel(aLogLevel));
+    otbrLogInfo("OpenThread log level changed to %d", aLogLevel);
 }
 
 } // namespace Ncp

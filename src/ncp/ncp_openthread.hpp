@@ -161,6 +161,8 @@ public:
      */
     const char *GetInterfaceName(void) const { return mConfig.mInterfaceName; }
 
+    static otbrLogLevel ConvertToOtbrLogLevel(otLogLevel aLogLevel);
+
     ~ControllerOpenThread(void) override;
 
 private:
@@ -186,6 +188,8 @@ private:
     static bool IsAutoAttachEnabled(void);
 
     static void DisableAutoAttach(void);
+
+    static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 
     otInstance *mInstance;
 
