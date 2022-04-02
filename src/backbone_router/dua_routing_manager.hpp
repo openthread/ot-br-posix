@@ -37,9 +37,9 @@
 #if OTBR_ENABLE_DUA_ROUTING
 
 #include <set>
+#include <utility>
 #include <openthread/backbone_router_ftd.h>
 
-#include "agent/instance_params.hpp"
 #include "common/code_utils.hpp"
 #include "ncp/ncp_openthread.hpp"
 #include "utils/system_utils.hpp"
@@ -67,8 +67,10 @@ public:
      * This constructor initializes a DUA routing manager instance.
      *
      */
-    explicit DuaRoutingManager()
+    explicit DuaRoutingManager(std::string aInterfaceName, std::string aBackboneInterfaceName)
         : mEnabled(false)
+        , mInterfaceName(std::move(aInterfaceName))
+        , mBackboneInterfaceName(std::move(aBackboneInterfaceName))
     {
     }
 
@@ -90,8 +92,10 @@ private:
     void AddPolicyRouteToBackbone(void);
     void DelPolicyRouteToBackbone(void);
 
-    Ip6Prefix mDomainPrefix;
-    bool      mEnabled : 1;
+    Ip6Prefix   mDomainPrefix;
+    bool        mEnabled : 1;
+    std::string mInterfaceName;
+    std::string mBackboneInterfaceName;
 };
 
 /**

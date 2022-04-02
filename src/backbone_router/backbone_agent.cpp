@@ -47,13 +47,18 @@
 namespace otbr {
 namespace BackboneRouter {
 
-BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp)
+BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp,
+                             std::string                      aInterfaceName,
+                             std::string                      aBackboneInterfaceName)
     : mNcp(aNcp)
     , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
 #if OTBR_ENABLE_DUA_ROUTING
-    , mNdProxyManager(aNcp)
+    , mNdProxyManager(aNcp, aBackboneInterfaceName)
+    , mDuaRoutingManager(aInterfaceName, aBackboneInterfaceName)
 #endif
 {
+    OTBR_UNUSED_VARIABLE(aInterfaceName);
+    OTBR_UNUSED_VARIABLE(aBackboneInterfaceName);
 }
 
 void BackboneAgent::Init(void)
