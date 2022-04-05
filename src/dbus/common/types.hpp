@@ -97,6 +97,11 @@ struct OnMeshPrefix
     Ip6Prefix mPrefix;
 
     /**
+     * The Rloc associated with the Border Router prefix.
+     */
+    uint16_t mRloc16;
+
+    /**
      * A 2-bit signed integer indicating router preference as defined in RFC 4191.
      */
     int8_t mPreference;
@@ -127,14 +132,24 @@ struct OnMeshPrefix
     bool mDefaultRoute;
 
     /**
-     * TRUE, if this prefix is considered on-mesh.  FALSE, otherwise.
+     * TRUE if this prefix is considered on-mesh. FALSE otherwise.
      */
     bool mOnMesh;
 
     /**
-     * TRUE, if this configuration is considered Stable Network Data.  FALSE, otherwise.
+     * TRUE if this configuration is considered Stable Network Data. FALSE otherwise.
      */
     bool mStable;
+
+    /**
+     * TRUE if this border router can supply DNS information via ND. FALSE otherwise.
+     */
+    bool mNdDns;
+
+    /**
+     * TRUE if this prefix is a Thread Domain Prefix. FALSE otherwise.
+     */
+    bool mDp;
 };
 
 struct ExternalRoute

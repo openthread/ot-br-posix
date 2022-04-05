@@ -129,6 +129,7 @@ private:
     otError GetInstantRssiHandler(DBusMessageIter &aIter);
     otError GetRadioTxPowerHandler(DBusMessageIter &aIter);
     otError GetExternalRoutesHandler(DBusMessageIter &aIter);
+    otError GetOnMeshPrefixesHandler(DBusMessageIter &aIter);
     otError GetActiveDatasetTlvsHandler(DBusMessageIter &aIter);
     otError GetRadioRegionHandler(DBusMessageIter &aIter);
 

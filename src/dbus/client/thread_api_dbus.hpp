@@ -660,6 +660,18 @@ public:
     ClientError GetExternalRoutes(std::vector<ExternalRoute> &aExternalRoutes);
 
     /**
+     * This method gets the on-mesh prefixes
+     *
+     * @param[out] aOnMeshPrefixes  The on-mesh prefixes
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetOnMeshPrefixes(std::vector<OnMeshPrefix> &aOnMeshPrefixes);
+
+    /**
      * This method gets the active operational dataset
      *
      * @param[out] aDataset  The active operational dataset
