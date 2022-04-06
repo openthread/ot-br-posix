@@ -70,28 +70,28 @@ exit:
 void DuaRoutingManager::AddDefaultRouteToThread(void)
 {
     SystemUtils::ExecuteCommand("ip -6 route add %s dev %s proto static metric 1", mDomainPrefix.ToString().c_str(),
-                                InstanceParams::Get().GetThreadIfName());
+                                mInterfaceName.c_str());
 }
 
 void DuaRoutingManager::DelDefaultRouteToThread(void)
 {
     SystemUtils::ExecuteCommand("ip -6 route del %s dev %s proto static metric 1", mDomainPrefix.ToString().c_str(),
-                                InstanceParams::Get().GetThreadIfName());
+                                mInterfaceName.c_str());
 }
 
 void DuaRoutingManager::AddPolicyRouteToBackbone(void)
 {
     // Packets from Thread interface use route table "openthread"
-    SystemUtils::ExecuteCommand("ip -6 rule add iif %s table openthread", InstanceParams::Get().GetThreadIfName());
+    SystemUtils::ExecuteCommand("ip -6 rule add iif %s table openthread", mInterfaceName.c_str());
     SystemUtils::ExecuteCommand("ip -6 route add %s dev %s proto static table openthread",
-                                mDomainPrefix.ToString().c_str(), InstanceParams::Get().GetBackboneIfName());
+                                mDomainPrefix.ToString().c_str(), mBackboneInterfaceName.c_str());
 }
 
 void DuaRoutingManager::DelPolicyRouteToBackbone(void)
 {
-    SystemUtils::ExecuteCommand("ip -6 rule del iif %s table openthread", InstanceParams::Get().GetThreadIfName());
+    SystemUtils::ExecuteCommand("ip -6 rule del iif %s table openthread", mInterfaceName.c_str());
     SystemUtils::ExecuteCommand("ip -6 route del %s dev %s proto static table openthread",
-                                mDomainPrefix.ToString().c_str(), InstanceParams::Get().GetBackboneIfName());
+                                mDomainPrefix.ToString().c_str(), mBackboneInterfaceName.c_str());
 }
 
 } // namespace BackboneRouter
