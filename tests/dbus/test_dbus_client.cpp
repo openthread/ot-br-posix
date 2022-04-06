@@ -147,7 +147,7 @@ int main()
 
         for (auto &&result : aResult)
         {
-            printf("%s channel %d rssi %d\n", result.mNetworkName.c_str(), result.mChannel, result.mRssi);
+            printf("channel %d rssi %d\n", result.mChannel, result.mRssi);
         }
 
         api->SetLinkMode(cfg);

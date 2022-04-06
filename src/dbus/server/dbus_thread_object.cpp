@@ -249,19 +249,11 @@ void DBusThreadObject::ReplyScanResult(DBusRequest &                          aR
         {
             ActiveScanResult result;
 
-            result.mExtAddress    = ConvertOpenThreadUint64(r.mExtAddress.m8);
-            result.mExtendedPanId = ConvertOpenThreadUint64(r.mExtendedPanId.m8);
-            result.mNetworkName   = r.mNetworkName.m8;
-            result.mSteeringData =
-                std::vector<uint8_t>(r.mSteeringData.m8, r.mSteeringData.m8 + r.mSteeringData.mLength);
-            result.mPanId         = r.mPanId;
-            result.mJoinerUdpPort = r.mJoinerUdpPort;
-            result.mChannel       = r.mChannel;
-            result.mRssi          = r.mRssi;
-            result.mLqi           = r.mLqi;
-            result.mVersion       = r.mVersion;
-            result.mIsNative      = r.mIsNative;
-            result.mIsJoinable    = r.mIsJoinable;
+            result.mExtAddress = ConvertOpenThreadUint64(r.mExtAddress.m8);
+            result.mPanId      = r.mPanId;
+            result.mChannel    = r.mChannel;
+            result.mRssi       = r.mRssi;
+            result.mLqi        = r.mLqi;
 
             results.emplace_back(result);
         }

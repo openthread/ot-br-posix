@@ -9,22 +9,15 @@
       <literallayout>
         struct {
           uint64 ext_address
-          string network_name
-          uint64 ext_panid
-          uint8[] steering_data
           uint16 panid
-          uint16 joiner_udp_port
           uint16 channel
           uint16 rssi
           uint8 lqi
-          uint8 version
-          bool is_native
-          bool is_joinable
         }
       </literallayout>
     -->
     <method name="Scan">
-      <arg name="scan_result" type="a(tstayqqqqyybb)" direction="out"/> 
+      <arg name="scan_result" type="a(tqqqy)" direction="out"/>
     </method>
 
     <!-- Energy Scan: Perform a Thread energy scan.
@@ -42,7 +35,7 @@
     -->
     <method name="EnergyScan">
       <arg name="scanduration" type="u"/>
-      <arg name="result" type="a(yy)" direction="out"/> 
+      <arg name="result" type="a(yy)" direction="out"/>
     </method>
 
     <!-- Attach: Attach the current device to the Thread network.
@@ -164,12 +157,12 @@
           byte preference
           struct {
             boolean preferred
-            boolean slaac 
-            boolean dhcp 
-            boolean configure 
-            boolean default_route   
+            boolean slaac
+            boolean dhcp
+            boolean configure
+            boolean default_route
             boolean on_mesh
-            boolean stable 
+            boolean stable
           }
         }
       </literallayout>
@@ -177,7 +170,7 @@
     <method name="AddOnMeshPrefix">
       <arg name="prefix" type="((ayy)y(bbbbbbb))"/>
     </method>
-    
+
     <!-- RemoveOnMeshPrefix: Remove an on-mesh prefix from the network.
       @prefix: The on-mesh prefix.
 
