@@ -47,7 +47,6 @@
 #endif
 
 #include "agent/application.hpp"
-#include "agent/instance_params.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
@@ -196,9 +195,6 @@ static int realmain(int argc, char *argv[])
     otbrLogInfo("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     otbrLogInfo("Thread interface: %s", interfaceName);
     otbrLogInfo("Backbone interface: %s", backboneInterfaceName);
-
-    otbr::InstanceParams::Get().SetThreadIfName(interfaceName);
-    otbr::InstanceParams::Get().SetBackboneIfName(backboneInterfaceName);
 
     for (int i = optind; i < argc; i++)
     {

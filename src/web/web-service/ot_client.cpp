@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -254,7 +255,6 @@ int OpenThreadClient::Scan(WpanNetworkInfo *aNetworks, int aLength)
         static const char kCliPrompt[] = "> ";
         char *            cliPrompt;
         int               matched;
-        int               joinable;
         int               lqi;
 
         // remove prompt
@@ -270,23 +270,19 @@ int OpenThreadClient::Scan(WpanNetworkInfo *aNetworks, int aLength)
             }
         }
 
-        matched = sscanf(result,
-                         "| %d | %s | %" PRIx64
-                         " | %hx | %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx | %hu | %hhd | %d |",
-                         &joinable, aNetworks[rval].mNetworkName, &aNetworks[rval].mExtPanId, &aNetworks[rval].mPanId,
-                         &aNetworks[rval].mHardwareAddress[0], &aNetworks[rval].mHardwareAddress[1],
-                         &aNetworks[rval].mHardwareAddress[2], &aNetworks[rval].mHardwareAddress[3],
-                         &aNetworks[rval].mHardwareAddress[4], &aNetworks[rval].mHardwareAddress[5],
-                         &aNetworks[rval].mHardwareAddress[6], &aNetworks[rval].mHardwareAddress[7],
-                         &aNetworks[rval].mChannel, &aNetworks[rval].mRssi, &lqi);
+        matched = sscanf(result, "| %hx | %02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx | %hu | %hhd | %d |",
+                         &aNetworks[rval].mPanId, &aNetworks[rval].mHardwareAddress[0],
+                         &aNetworks[rval].mHardwareAddress[1], &aNetworks[rval].mHardwareAddress[2],
+                         &aNetworks[rval].mHardwareAddress[3], &aNetworks[rval].mHardwareAddress[4],
+                         &aNetworks[rval].mHardwareAddress[5], &aNetworks[rval].mHardwareAddress[6],
+                         &aNetworks[rval].mHardwareAddress[7], &aNetworks[rval].mChannel, &aNetworks[rval].mRssi, &lqi);
 
         // 15 is the number of output arguments of the last sscanf()
-        if (matched != 15)
+        if (matched != 12)
         {
             continue;
         }
 
-        aNetworks[rval].mAllowingJoin = joinable != 0;
         ++rval;
     }
 

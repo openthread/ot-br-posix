@@ -68,7 +68,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, ActiveScanResult &aScanResu
     SuccessOrExit(error = DBusMessageExtract(&sub, aScanResult.mLqi));
     SuccessOrExit(error = DBusMessageExtract(&sub, aScanResult.mVersion));
     SuccessOrExit(error = DBusMessageExtract(&sub, aScanResult.mIsNative));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aScanResult.mIsJoinable));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aScanResult.mDiscover));
 
     dbus_message_iter_next(aIter);
     error = OTBR_ERROR_NONE;
@@ -93,7 +93,7 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const ActiveScanResult &aSca
     SuccessOrExit(error = DBusMessageEncode(&sub, aScanResult.mLqi));
     SuccessOrExit(error = DBusMessageEncode(&sub, aScanResult.mVersion));
     SuccessOrExit(error = DBusMessageEncode(&sub, aScanResult.mIsNative));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aScanResult.mIsJoinable));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aScanResult.mDiscover));
     VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
 
     error = OTBR_ERROR_NONE;

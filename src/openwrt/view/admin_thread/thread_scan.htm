@@ -74,12 +74,9 @@
 		<div class="table">
 			<div class="tr table-titles">
 				<div class="th col-1 center"><%:RSSI%></div>
-				<div class="th col-3 center"><%:Network Name%></div>
 				<div class="th col-1 center"><%:Channel%></div>
-				<div class="th col-4 center"><%:Extended PAN Id%></div>
 				<div class="th col-2 center"><%:PAN Id%></div>
 				<div class="th col-1 left"><%:Lqi%></div>
-				<div class="th col-1 center"><%:IsJoinable%></div>
 				<div class="th cbi-section-actions">&#160;</div>
 			</div>
 
@@ -92,14 +89,8 @@
 						<small><%=percent_thread_signal(net)%>%</small>
 					</abbr>
 				</div>
-				<div class="td col-3 center" data-title="<%:NetworkName%>">
-					<strong><%=net.NetworkName%></strong>
-				</div>
 				<div class="td col-1 center" data-title="<%:Channel%>">
 					<%=net.Channel%>
-				</div>
-				<div class="td col-4 center" data-title="<%:ExtendedPanId%>">
-					<%=net.ExtendedPanId%>
 				</div>
 				<div class="td col-2 center" data-title="<%:PanId%>">
 					<%=net.PanId%>
@@ -107,14 +98,10 @@
 				<div class="td col-1 left" data-title="<%:Lqi%>">
 					<%=net.Lqi%>
 				</div>
-				<div class="td col-1 center" data-title="<%:IsJoinable%>">
-					<%=net.IsJoinable%>
-				</div>
 				<div class="td cbi-section-actions">
 					<!--div><%:test%></div-->
 					<form action="<%=url('admin/network/thread_join')%>" method="post">
 						<input type="hidden" name="token" value="<%=token%>" />
-						<input type="hidden" name="NetworkName" value="<%=net.NetworkName%>" .>
 						<input type="hidden" name="PanId" value="<%=net.PanId%>" .>
 						<input type="hidden" name="Channel" value="<%=net.Channel%>" .>
 						<input class="cbi-button cbi-button-action important" type="submit" value="<%:Join Network%>" />

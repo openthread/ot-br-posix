@@ -46,6 +46,7 @@
 #include <netinet/in.h>
 #include <set>
 #include <string>
+#include <utility>
 
 #include <openthread/backbone_router_ftd.h>
 
@@ -77,8 +78,9 @@ public:
      * This constructor initializes a NdProxyManager instance.
      *
      */
-    explicit NdProxyManager(otbr::Ncp::ControllerOpenThread &aNcp)
+    explicit NdProxyManager(otbr::Ncp::ControllerOpenThread &aNcp, std::string aBackboneInterfaceName)
         : mNcp(aNcp)
+        , mBackboneInterfaceName(std::move(aBackboneInterfaceName))
         , mIcmp6RawSock(-1)
         , mUnicastNsQueueSock(-1)
         , mNfqHandler(nullptr)
@@ -150,6 +152,7 @@ private:
     int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler, struct nfgenmsg *aNfMsg, struct nfq_data *aNfData);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
+    std::string                      mBackboneInterfaceName;
     std::set<Ip6Address>             mNdProxySet;
     uint32_t                         mBackboneIfIndex;
     int                              mIcmp6RawSock;

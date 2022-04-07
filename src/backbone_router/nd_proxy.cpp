@@ -52,7 +52,6 @@
 #error "Platform not supported"
 #endif
 
-#include "agent/instance_params.hpp"
 #include "backbone_router/constants.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -79,7 +78,7 @@ void NdProxyManager::Enable(const Ip6Prefix &aDomainPrefix)
     VerifyOrExit(SystemUtils::ExecuteCommand(
                      "ip6tables -t raw -A PREROUTING -6 -d %s -p icmpv6 --icmpv6-type neighbor-solicitation -i %s -j "
                      "NFQUEUE --queue-num 88",
-                     mDomainPrefix.ToString().c_str(), InstanceParams::Get().GetBackboneIfName()) == 0,
+                     mDomainPrefix.ToString().c_str(), mBackboneInterfaceName.c_str()) == 0,
                  error = OTBR_ERROR_ERRNO);
 
 exit:
@@ -105,7 +104,7 @@ void NdProxyManager::Disable(void)
     VerifyOrExit(SystemUtils::ExecuteCommand(
                      "ip6tables -t raw -D PREROUTING -6 -d %s -p icmpv6 --icmpv6-type neighbor-solicitation -i %s -j "
                      "NFQUEUE --queue-num 88",
-                     mDomainPrefix.ToString().c_str(), InstanceParams::Get().GetBackboneIfName()) == 0,
+                     mDomainPrefix.ToString().c_str(), mBackboneInterfaceName.c_str()) == 0,
                  error = OTBR_ERROR_ERRNO);
 
 exit:
@@ -114,7 +113,7 @@ exit:
 
 void NdProxyManager::Init(void)
 {
-    mBackboneIfIndex = if_nametoindex(InstanceParams::Get().GetBackboneIfName());
+    mBackboneIfIndex = if_nametoindex(mBackboneInterfaceName.c_str());
     VerifyOrDie(mBackboneIfIndex > 0, "if_nametoindex failed");
 }
 
@@ -354,7 +353,7 @@ otbrError NdProxyManager::UpdateMacAddress(void)
     struct ifreq ifr;
 
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, InstanceParams::Get().GetBackboneIfName(), sizeof(ifr.ifr_name) - 1);
+    strncpy(ifr.ifr_name, mBackboneInterfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
     VerifyOrExit(ioctl(mIcmp6RawSock, SIOCGIFHWADDR, &ifr) != -1, error = OTBR_ERROR_ERRNO);
     memcpy(mMacAddress.m8, ifr.ifr_hwaddr.sa_data, sizeof(mMacAddress));
@@ -377,8 +376,8 @@ otbrError NdProxyManager::InitIcmp6RawSocket(void)
     VerifyOrExit(mIcmp6RawSock >= 0, error = OTBR_ERROR_ERRNO);
 
 #if __linux__
-    VerifyOrExit(setsockopt(mIcmp6RawSock, SOL_SOCKET, SO_BINDTODEVICE, InstanceParams::Get().GetBackboneIfName(),
-                            strlen(InstanceParams::Get().GetBackboneIfName())) == 0,
+    VerifyOrExit(setsockopt(mIcmp6RawSock, SOL_SOCKET, SO_BINDTODEVICE, mBackboneInterfaceName.c_str(),
+                            mBackboneInterfaceName.length()) == 0,
                  error = OTBR_ERROR_ERRNO);
 #else  // __NetBSD__ || __FreeBSD__ || __APPLE__
     VerifyOrExit(setsockopt(mIcmp6RawSock, IPPROTO_IP, IP_BOUND_IF, mBackboneIfName.c_str(), mBackboneIfName.size()),

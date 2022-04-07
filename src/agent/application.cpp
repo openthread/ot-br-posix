@@ -56,7 +56,7 @@ Application::Application(const std::string &              aInterfaceName,
     , mBorderAgent(mNcp)
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(mNcp)
+    , mBackboneAgent(mNcp, aInterfaceName, aBackboneInterfaceName)
 #endif
 #if OTBR_ENABLE_OPENWRT
     , mUbusAgent(mNcp)
