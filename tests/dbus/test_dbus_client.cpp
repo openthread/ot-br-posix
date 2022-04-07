@@ -78,7 +78,7 @@ static bool operator==(const otbr::DBus::Ip6Prefix &aLhs, const otbr::DBus::Ip6P
 
 static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
 {
-    ExternalRoute              route;
+    ExternalRoute              route = {};
     std::vector<ExternalRoute> externalRouteTable;
 
     route.mPrefix     = aPrefix;
@@ -92,7 +92,33 @@ static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
     TEST_ASSERT(externalRouteTable[0].mPreference == 0);
     TEST_ASSERT(externalRouteTable[0].mStable);
     TEST_ASSERT(externalRouteTable[0].mNextHopIsThisDevice);
+
     TEST_ASSERT(aApi->RemoveExternalRoute(aPrefix) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
+    TEST_ASSERT(externalRouteTable.empty());
+}
+
+static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
+{
+    OnMeshPrefix              prefix = {};
+    std::vector<OnMeshPrefix> onMeshPrefixes;
+
+    prefix.mPrefix.mPrefix = {0xfd, 0xee, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+    prefix.mPrefix.mLength = 64;
+
+    prefix.mPreference = 0;
+    prefix.mStable     = true;
+
+    TEST_ASSERT(aApi->AddOnMeshPrefix(prefix) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
+    TEST_ASSERT(onMeshPrefixes.size() == 1);
+    TEST_ASSERT(onMeshPrefixes[0].mPrefix == prefix.mPrefix);
+    TEST_ASSERT(onMeshPrefixes[0].mPreference == 0);
+    TEST_ASSERT(onMeshPrefixes[0].mStable);
+
+    TEST_ASSERT(aApi->RemoveOnMeshPrefix(prefix.mPrefix) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
+    TEST_ASSERT(onMeshPrefixes.empty());
 }
 
 int main()
@@ -216,15 +242,10 @@ int main()
                             uint16_t               channelResult;
                             uint64_t               extpanidCheck;
                             Ip6Prefix              prefix;
-                            OnMeshPrefix           onMeshPrefix = {};
                             std::vector<TxtEntry>  updatedTxtEntries{TxtEntry{"B", {97, 98, 99}}};
 
                             prefix.mPrefix = {0xfd, 0xcd, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
                             prefix.mLength = 64;
-
-                            onMeshPrefix.mPrefix     = prefix;
-                            onMeshPrefix.mPreference = 0;
-                            onMeshPrefix.mStable     = true;
 
                             TEST_ASSERT(aErr == ClientError::ERROR_NONE);
                             TEST_ASSERT(api->GetChannel(channelResult) == OTBR_ERROR_NONE);
@@ -240,8 +261,7 @@ int main()
                             TEST_ASSERT(api->UpdateVendorMeshCopTxtEntries(updatedTxtEntries) == OTBR_ERROR_NONE);
 
                             CheckExternalRoute(api.get(), prefix);
-                            TEST_ASSERT(api->AddOnMeshPrefix(onMeshPrefix) == OTBR_ERROR_NONE);
-                            TEST_ASSERT(api->RemoveOnMeshPrefix(onMeshPrefix.mPrefix) == OTBR_ERROR_NONE);
+                            CheckOnMeshPrefix(api.get());
 
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->JoinerStart("ABCDEF", "", "", "", "", "", nullptr) ==

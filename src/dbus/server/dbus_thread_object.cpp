@@ -207,6 +207,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
                                std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ON_MESH_PREFIXES,
+                               std::bind(&DBusThreadObject::GetOnMeshPrefixesHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
                                std::bind(&DBusThreadObject::GetActiveDatasetTlvsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
@@ -1044,6 +1046,40 @@ otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, externalRouteTable) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetOnMeshPrefixesHandler(DBusMessageIter &aIter)
+{
+    auto                      threadHelper = mNcp->GetThreadHelper();
+    otError                   error        = OT_ERROR_NONE;
+    otNetworkDataIterator     iter         = OT_NETWORK_DATA_ITERATOR_INIT;
+    otBorderRouterConfig      config;
+    std::vector<OnMeshPrefix> onMeshPrefixes;
+
+    while (otNetDataGetNextOnMeshPrefix(threadHelper->GetInstance(), &iter, &config) == OT_ERROR_NONE)
+    {
+        OnMeshPrefix prefix;
+
+        prefix.mPrefix.mPrefix = std::vector<uint8_t>(&config.mPrefix.mPrefix.mFields.m8[0],
+                                                      &config.mPrefix.mPrefix.mFields.m8[OTBR_IP6_PREFIX_SIZE]);
+        prefix.mPrefix.mLength = config.mPrefix.mLength;
+        prefix.mRloc16         = config.mRloc16;
+        prefix.mPreference     = config.mPreference;
+        prefix.mPreferred      = config.mPreferred;
+        prefix.mSlaac          = config.mSlaac;
+        prefix.mDhcp           = config.mDhcp;
+        prefix.mConfigure      = config.mConfigure;
+        prefix.mDefaultRoute   = config.mDefaultRoute;
+        prefix.mOnMesh         = config.mOnMesh;
+        prefix.mStable         = config.mStable;
+        prefix.mNdDns          = config.mNdDns;
+        prefix.mDp             = config.mDp;
+        onMeshPrefixes.push_back(prefix);
+    }
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, onMeshPrefixes) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

@@ -128,6 +128,18 @@ template <> struct DBusTypeTrait<std::vector<ExternalRoute>>
     static constexpr const char *TYPE_AS_STRING = "a((ayy)qybb)";
 };
 
+template <> struct DBusTypeTrait<OnMeshPrefix>
+{
+    // struct of {{array of bytes, byte}, uint16, byte, bool, bool, bool, bool, bool, bool, bool, bool, bool}
+    static constexpr const char *TYPE_AS_STRING = "((ayy)qybbbbbbbbb)";
+};
+
+template <> struct DBusTypeTrait<std::vector<OnMeshPrefix>>
+{
+    // array of {{array of bytes, byte}, uint16, byte, bool, bool, bool, bool, bool, bool, bool, bool, bool}
+    static constexpr const char *TYPE_AS_STRING = "a((ayy)qybbbbbbbbb)";
+};
+
 template <> struct DBusTypeTrait<LeaderData>
 {
     // struct of { uint32, byte, byte, byte, byte }

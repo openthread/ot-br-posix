@@ -577,6 +577,11 @@ ClientError ThreadApiDBus::GetExternalRoutes(std::vector<ExternalRoute> &aExtern
     return GetProperty(OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES, aExternalRoutes);
 }
 
+ClientError ThreadApiDBus::GetOnMeshPrefixes(std::vector<OnMeshPrefix> &aOnMeshPrefixes)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_ON_MESH_PREFIXES, aOnMeshPrefixes);
+}
+
 ClientError ThreadApiDBus::GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);

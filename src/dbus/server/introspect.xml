@@ -476,6 +476,32 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- OnMeshPrefixes: The list of current on-mesh prefixes.
+      on-mesh prefix structure definition:
+      <literallayout>
+        struct {
+          struct {
+            uint8[] prefix_bytes
+            uint8 prefix_length
+          }
+          uint16 rloc
+          uint8 preference
+          bool is_preferred
+          bool is_slaac
+          bool is_dhcp
+          bool is_configure
+          bool is_default_route
+          bool is_on_mesh
+          bool is_stable
+          bool is_nd_dns
+          bool is_dp
+        }
+      </literallayout>
+    -->
+    <property name="OnMeshPrefixes" type="a((ayy)qybbbbbbbbb)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- ActiveDatasetTlvs: The Thread active dataset tlv in binary form. -->
     <property name="ActiveDatasetTlvs" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
