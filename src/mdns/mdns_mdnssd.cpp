@@ -254,6 +254,8 @@ void PublisherMDnsSd::Stop(void)
 
     mSubscribedHosts.clear();
 
+    mState = State::kIdle;
+
 exit:
     return;
 }
@@ -485,6 +487,8 @@ void PublisherMDnsSd::PublishService(const std::string &aHostName,
     DNSServiceRef        serviceRef        = nullptr;
     std::string          fullHostName;
 
+    VerifyOrExit(mState == State::kReady, ret = OTBR_ERROR_INVALID_STATE);
+
     if (!aHostName.empty())
     {
         fullHostName = MakeFullHostName(aHostName);
@@ -523,8 +527,13 @@ exit:
 
 void PublisherMDnsSd::UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback)
 {
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mState == Publisher::State::kReady, error = OTBR_ERROR_INVALID_STATE);
     RemoveServiceRegistration(aName, aType, OTBR_ERROR_ABORTED);
-    std::move(aCallback)(OTBR_ERROR_NONE);
+
+exit:
+    std::move(aCallback)(error);
 }
 
 void PublisherMDnsSd::PublishHost(const std::string &         aName,
@@ -535,6 +544,8 @@ void PublisherMDnsSd::PublishHost(const std::string &         aName,
     int          error = 0;
     std::string  fullName;
     DNSRecordRef recordRef = nullptr;
+
+    VerifyOrExit(mState == Publisher::State::kReady, ret = OTBR_ERROR_INVALID_STATE);
 
     // Supports only IPv6 for now, may support IPv4 in the future.
     VerifyOrExit(aAddress.size() == OTBR_IP6_ADDRESS_SIZE, error = OTBR_ERROR_INVALID_ARGS);
@@ -574,14 +585,16 @@ exit:
 
 void PublisherMDnsSd::UnpublishHost(const std::string &aName, ResultCallback &&aCallback)
 {
-    otbrLogInfo("Removing host %s", MakeFullHostName(aName).c_str());
+    otbrError error = OTBR_ERROR_NONE;
 
+    VerifyOrExit(mState == Publisher::State::kReady, error = OTBR_ERROR_INVALID_STATE);
     RemoveHostRegistration(aName, OTBR_ERROR_ABORTED);
 
+exit:
     // We may failed to unregister the host from underlying mDNS publishers, but
     // it usually means that the mDNS publisher is already not functioning. So it's
     // okay to return success directly since the service is not advertised anyway.
-    std::move(aCallback)(OTBR_ERROR_NONE);
+    std::move(aCallback)(error);
 }
 
 void PublisherMDnsSd::HandleRegisterHostResult(DNSServiceRef       aServiceRef,
@@ -643,6 +656,7 @@ std::string PublisherMDnsSd::MakeRegType(const std::string &aType, SubTypeList a
 
 void PublisherMDnsSd::SubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
+    VerifyOrExit(mState == Publisher::State::kReady);
     mSubscribedServices.push_back(MakeUnique<ServiceSubscription>(*this, aType, aInstanceName));
 
     otbrLogInfo("Subscribe service %s.%s (total %zu)", aInstanceName.c_str(), aType.c_str(),
@@ -656,22 +670,29 @@ void PublisherMDnsSd::SubscribeService(const std::string &aType, const std::stri
     {
         mSubscribedServices.back()->Resolve(kDNSServiceInterfaceIndexAny, aInstanceName, aType, kDomain);
     }
+
+exit:
+    return;
 }
 
 void PublisherMDnsSd::UnsubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
-    ServiceSubscriptionList::iterator it =
-        std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
-                     [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
-                         return aService->mType == aType && aService->mInstanceName == aInstanceName;
-                     });
+    ServiceSubscriptionList::iterator it;
 
+    VerifyOrExit(mState == Publisher::State::kReady);
+    it = std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
+                      [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
+                          return aService->mType == aType && aService->mInstanceName == aInstanceName;
+                      });
     assert(it != mSubscribedServices.end());
 
     mSubscribedServices.erase(it);
 
     otbrLogInfo("Unsubscribe service %s.%s (left %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
+
+exit:
+    return;
 }
 
 void PublisherMDnsSd::OnServiceResolveFailed(const std::string & aType,
@@ -689,16 +710,23 @@ void PublisherMDnsSd::OnHostResolveFailed(const PublisherMDnsSd::HostSubscriptio
 
 void PublisherMDnsSd::SubscribeHost(const std::string &aHostName)
 {
+    VerifyOrExit(mState == State::kReady);
     mSubscribedHosts.push_back(MakeUnique<HostSubscription>(*this, aHostName));
 
     otbrLogInfo("Subscribe host %s (total %zu)", aHostName.c_str(), mSubscribedHosts.size());
 
     mSubscribedHosts.back()->Resolve();
+
+exit:
+    return;
 }
 
 void PublisherMDnsSd::UnsubscribeHost(const std::string &aHostName)
 {
-    HostSubscriptionList ::iterator it = std::find_if(
+    HostSubscriptionList ::iterator it;
+
+    VerifyOrExit(mState == Publisher::State::kReady);
+    it = std::find_if(
         mSubscribedHosts.begin(), mSubscribedHosts.end(),
         [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
@@ -707,6 +735,9 @@ void PublisherMDnsSd::UnsubscribeHost(const std::string &aHostName)
     mSubscribedHosts.erase(it);
 
     otbrLogInfo("Unsubscribe host %s (remaining %d)", aHostName.c_str(), mSubscribedHosts.size());
+
+exit:
+    return;
 }
 
 Publisher *Publisher::Create(StateCallback aCallback)

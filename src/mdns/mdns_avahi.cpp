@@ -440,6 +440,8 @@ void PublisherAvahi::Stop(void)
         avahi_client_free(mClient);
         mClient = nullptr;
     }
+
+    mState = Mdns::Publisher::State::kIdle;
 }
 
 void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext)
@@ -671,8 +673,13 @@ exit:
 
 void PublisherAvahi::UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback)
 {
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mState == Publisher::State::kReady, error = OTBR_ERROR_INVALID_STATE);
     RemoveServiceRegistration(aName, aType, OTBR_ERROR_ABORTED);
-    std::move(aCallback)(OTBR_ERROR_NONE);
+
+exit:
+    std::move(aCallback)(error);
 }
 
 void PublisherAvahi::PublishHost(const std::string &         aName,
@@ -727,8 +734,13 @@ exit:
 
 void PublisherAvahi::UnpublishHost(const std::string &aName, ResultCallback &&aCallback)
 {
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mState == Publisher::State::kReady, error = OTBR_ERROR_INVALID_STATE);
     RemoveHostRegistration(aName, OTBR_ERROR_ABORTED);
-    std::move(aCallback)(OTBR_ERROR_NONE);
+
+exit:
+    std::move(aCallback)(error);
 }
 
 otbrError PublisherAvahi::TxtListToAvahiStringList(const TxtList &   aTxtList,
@@ -808,6 +820,7 @@ void PublisherAvahi::SubscribeService(const std::string &aType, const std::strin
 {
     auto service = MakeUnique<ServiceSubscription>(*this, aType, aInstanceName);
 
+    VerifyOrExit(mState == Publisher::State::kReady);
     mSubscribedServices.push_back(std::move(service));
 
     otbrLogInfo("Subscribe service %s.%s (total %zu)", aInstanceName.c_str(), aType.c_str(),
@@ -821,15 +834,20 @@ void PublisherAvahi::SubscribeService(const std::string &aType, const std::strin
     {
         mSubscribedServices.back()->Resolve(AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, aInstanceName, aType);
     }
+
+exit:
+    return;
 }
 
 void PublisherAvahi::UnsubscribeService(const std::string &aType, const std::string &aInstanceName)
 {
-    ServiceSubscriptionList::iterator it =
-        std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
-                     [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
-                         return aService->mType == aType && aService->mInstanceName == aInstanceName;
-                     });
+    ServiceSubscriptionList::iterator it;
+
+    VerifyOrExit(mState == Publisher::State::kReady);
+    it = std::find_if(mSubscribedServices.begin(), mSubscribedServices.end(),
+                      [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
+                          return aService->mType == aType && aService->mInstanceName == aInstanceName;
+                      });
 
     assert(it != mSubscribedServices.end());
 
@@ -842,6 +860,9 @@ void PublisherAvahi::UnsubscribeService(const std::string &aType, const std::str
 
     otbrLogInfo("Unsubscribe service %s.%s (left %zu)", aInstanceName.c_str(), aType.c_str(),
                 mSubscribedServices.size());
+
+exit:
+    return;
 }
 
 void PublisherAvahi::OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode)
@@ -858,16 +879,24 @@ void PublisherAvahi::SubscribeHost(const std::string &aHostName)
 {
     auto host = MakeUnique<HostSubscription>(*this, aHostName);
 
+    VerifyOrExit(mState == Publisher::State::kReady);
+
     mSubscribedHosts.push_back(std::move(host));
 
     otbrLogInfo("Subscribe host %s (total %zu)", aHostName.c_str(), mSubscribedHosts.size());
 
     mSubscribedHosts.back()->Resolve();
+
+exit:
+    return;
 }
 
 void PublisherAvahi::UnsubscribeHost(const std::string &aHostName)
 {
-    HostSubscriptionList::iterator it = std::find_if(
+    HostSubscriptionList::iterator it;
+
+    VerifyOrExit(mState == Publisher::State::kReady);
+    it = std::find_if(
         mSubscribedHosts.begin(), mSubscribedHosts.end(),
         [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
@@ -881,6 +910,9 @@ void PublisherAvahi::UnsubscribeHost(const std::string &aHostName)
     }
 
     otbrLogInfo("Unsubscribe host %s (remaining %zu)", aHostName.c_str(), mSubscribedHosts.size());
+
+exit:
+    return;
 }
 
 Publisher *Publisher::Create(StateCallback aStateCallback)
