@@ -66,6 +66,11 @@ typedef enum
 otbrLogLevel otbrLogGetLevel(void);
 
 /**
+ * Set current log level.
+ */
+void otbrLogSetLevel(otbrLogLevel aLevel);
+
+/**
  * Control log to syslog.
  *
  * @param[in] enable  True to log to/via syslog.

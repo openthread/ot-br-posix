@@ -60,6 +60,15 @@ otbrLogLevel otbrLogGetLevel(void)
     return sLevel;
 }
 
+/**
+ * Set current log level.
+ */
+void otbrLogSetLevel(otbrLogLevel aLevel)
+{
+    assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
+    sLevel = aLevel;
+}
+
 /** Initialize logging */
 void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
 {
