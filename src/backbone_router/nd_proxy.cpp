@@ -380,8 +380,9 @@ otbrError NdProxyManager::InitIcmp6RawSocket(void)
                             mBackboneInterfaceName.length()) == 0,
                  error = OTBR_ERROR_ERRNO);
 #else  // __NetBSD__ || __FreeBSD__ || __APPLE__
-    VerifyOrExit(setsockopt(mIcmp6RawSock, IPPROTO_IP, IP_BOUND_IF, mBackboneIfName.c_str(), mBackboneIfName.size()),
-                 error = OTBR_ERROR_ERRNO);
+    VerifyOrExit(
+        setsockopt(mIcmp6RawSock, IPPROTO_IPV6, IPV6_BOUND_IF, mBackboneIfName.c_str(), mBackboneIfName.size()),
+        error = OTBR_ERROR_ERRNO);
 #endif // __linux__
 
     VerifyOrExit(setsockopt(mIcmp6RawSock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &on, sizeof(on)) == 0,
