@@ -123,6 +123,7 @@ DBusHandlerResult ThreadApiDBus::sDBusMessageFilter(DBusConnection *aConnection,
 
 DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, DBusMessage *aMessage)
 {
+    DBusHandlerResult handled = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
     OTBR_UNUSED_VARIABLE(aConnection);
 
     DBusMessageIter iter, subIter, dictEntryIter, valIter;
@@ -150,9 +151,10 @@ DBusHandlerResult ThreadApiDBus::DBusMessageFilter(DBusConnection *aConnection, 
     {
         f(role);
     }
+    handled = DBUS_HANDLER_RESULT_HANDLED;
 
 exit:
-    return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+    return handled;
 }
 
 void ThreadApiDBus::AddDeviceRoleHandler(const DeviceRoleHandler &aHandler)
@@ -297,6 +299,45 @@ void ThreadApiDBus::AttachPendingCallHandler(DBusPendingCall *aPending)
     }
 
     mAttachHandler = nullptr;
+    handler(ret);
+}
+
+ClientError ThreadApiDBus::Detach(const OtResultHandler &aHandler)
+{
+    ClientError error = ClientError::ERROR_NONE;
+
+    VerifyOrExit(mDetachHandler == nullptr && mJoinerHandler == nullptr, error = ClientError::OT_ERROR_INVALID_STATE);
+    mDetachHandler = aHandler;
+
+    if (aHandler)
+    {
+        error = CallDBusMethodAsync(OTBR_DBUS_DETACH_METHOD,
+                                    &ThreadApiDBus::sHandleDBusPendingCall<&ThreadApiDBus::DetachPendingCallHandler>);
+    }
+    else
+    {
+        error = CallDBusMethodSync(OTBR_DBUS_DETACH_METHOD);
+    }
+    if (error != ClientError::ERROR_NONE)
+    {
+        mDetachHandler = nullptr;
+    }
+exit:
+    return error;
+}
+
+void ThreadApiDBus::DetachPendingCallHandler(DBusPendingCall *aPending)
+{
+    ClientError       ret = ClientError::OT_ERROR_FAILED;
+    UniqueDBusMessage message(dbus_pending_call_steal_reply(aPending));
+    auto              handler = mDetachHandler;
+
+    if (message != nullptr)
+    {
+        ret = CheckErrorMessage(message.get());
+    }
+
+    mDetachHandler = nullptr;
     handler(ret);
 }
 
