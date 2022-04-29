@@ -30,6 +30,7 @@ add_library(otbr-utils
     crc16.cpp
     dns_utils.cpp
     hex.cpp
+    infra_link_selector.cpp
     pskc.cpp
     socket_utils.cpp
     steering_data.cpp
