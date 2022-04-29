@@ -28,6 +28,11 @@
 
 #include "utils/socket_utils.hpp"
 
+#if __linux__
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#endif
+
 #include "common/code_utils.hpp"
 
 int SocketWithCloseExec(int aDomain, int aType, int aProtocol, SocketBlockOption aBlockOption)
@@ -55,3 +60,30 @@ exit:
 
     return fd;
 }
+
+#if __linux__
+int CreateNetLinkRouteSocket(uint32_t aNlGroups)
+{
+    int                sock;
+    int                rval = 0;
+    struct sockaddr_nl addr;
+
+    sock = SocketWithCloseExec(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE, kSocketBlock);
+    VerifyOrExit(sock != -1);
+
+    memset(&addr, 0, sizeof(addr));
+    addr.nl_family = AF_NETLINK;
+    addr.nl_groups = aNlGroups; // e.g. RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
+
+    rval = bind(sock, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
+
+exit:
+    if (rval != 0)
+    {
+        close(sock);
+        sock = -1;
+    }
+
+    return sock;
+}
+#endif

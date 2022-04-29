@@ -58,4 +58,15 @@ enum SocketBlockOption
  */
 int SocketWithCloseExec(int aDomain, int aType, int aProtocol, SocketBlockOption aBlockOption);
 
+/**
+ * This function creates a Linux netlink NETLINK_ROUTE socket for receiving routing and link updates.
+ *
+ * @param[in]  aNlGroups  The netlink multicast groups to listen to.
+ *
+ * @retval  -1  Failed to create the netlink socket.
+ * @retval ...  The file descriptor of the created netlink socket.
+ *
+ */
+int CreateNetLinkRouteSocket(uint32_t aNlGroups);
+
 #endif // OTBR_UTILS_SOCKET_UTILS_HPP_
