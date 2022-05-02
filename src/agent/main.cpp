@@ -68,7 +68,8 @@ enum
     OTBR_OPT_RADIO_VERSION,
 };
 
-static jmp_buf sResetJump;
+static jmp_buf            sResetJump;
+static otbr::Application *gApp = nullptr;
 
 void                       __gcov_flush();
 static const struct option kOptions[] = {
@@ -211,6 +212,7 @@ static int realmain(int argc, char *argv[])
     {
         otbr::Application app(interfaceName, backboneInterfaceName, radioUrls);
 
+        gApp = &app;
         app.Init();
 
         ret = app.Run();
@@ -230,7 +232,9 @@ void otPlatReset(otInstance *aInstance)
 
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
-    otSysDeinit();
+    VerifyOrDie(gApp != nullptr, "gApp is null");
+    gApp->Deinit();
+    gApp = nullptr;
 
     longjmp(sResetJump, 1);
     assert(false);
