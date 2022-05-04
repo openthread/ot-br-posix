@@ -261,6 +261,8 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
             otbrLogDebug("Unpublish SRP service '%s'", fullServiceName.c_str());
             mPublisher.UnpublishService(
                 serviceName, serviceType, [this, hasUpdate, updateId, fullServiceName](otbrError aError) {
+                    // Treat `NOT_FOUND` as success when unpublishing service
+                    aError = (aError == OTBR_ERROR_NOT_FOUND) ? OTBR_ERROR_NONE : aError;
                     otbrLogResult(aError, "Handle unpublish SRP service '%s'", fullServiceName.c_str());
                     if (hasUpdate)
                     {
@@ -291,6 +293,8 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     {
         otbrLogDebug("Unpublish SRP host '%s'", fullHostName.c_str());
         mPublisher.UnpublishHost(hostName, [this, hasUpdate, updateId, fullHostName](otbrError aError) {
+            // Treat `NOT_FOUND` as success when unpublishing host.
+            aError = (aError == OTBR_ERROR_NOT_FOUND) ? OTBR_ERROR_NONE : aError;
             otbrLogResult(aError, "Handle unpublish SRP host '%s'", fullHostName.c_str());
             if (hasUpdate)
             {
