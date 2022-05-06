@@ -280,6 +280,8 @@ private:
     ResultHandler mAttachHandler;
     ResultHandler mJoinerHandler;
 
+    otOperationalDatasetTlvs mAttachPendingDatasetTlvs = {};
+
     std::random_device mRandomDevice;
 
 #if OTBR_ENABLE_DBUS_SERVER

@@ -92,8 +92,24 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
         {
             if (mAttachHandler != nullptr)
             {
-                mAttachHandler(OT_ERROR_NONE);
-                mAttachHandler = nullptr;
+                if (mAttachPendingDatasetTlvs.mLength == 0)
+                {
+                    mAttachHandler(OT_ERROR_NONE);
+                    mAttachHandler = nullptr;
+                }
+                else
+                {
+                    otOperationalDataset emptyDataset = {};
+                    otError              error =
+                        otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, mAttachPendingDatasetTlvs.mTlvs,
+                                                    mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler, this);
+                    if (error != OT_ERROR_NONE)
+                    {
+                        mAttachHandler(error);
+                        mAttachHandler            = nullptr;
+                        mAttachPendingDatasetTlvs = {};
+                    }
+                }
             }
             else if (mJoinerHandler != nullptr)
             {
@@ -511,27 +527,6 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
     VerifyOrExit(dataset.mComponents.mIsSecurityPolicyPresent, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(dataset.mComponents.mIsChannelMaskPresent, error = OT_ERROR_INVALID_ARGS);
 
-    if (role == OT_DEVICE_ROLE_DISABLED || role == OT_DEVICE_ROLE_DETACHED)
-    {
-        otOperationalDataset existingDataset;
-
-        error = otDatasetGetActive(mInstance, &existingDataset);
-        VerifyOrExit(error == OT_ERROR_NONE || error == OT_ERROR_NOT_FOUND);
-
-        VerifyOrExit(error == OT_ERROR_NOT_FOUND, error = OT_ERROR_INVALID_STATE);
-
-        SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
-
-        if (!otIp6IsEnabled(mInstance))
-        {
-            SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
-        }
-        SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
-
-        aHandler(OT_ERROR_NONE);
-        ExitNow();
-    }
-
     VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr &&
                      FindTlv(OT_MESHCOP_TLV_DELAYTIMER, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr,
                  error = OT_ERROR_INVALID_ARGS);
@@ -556,6 +551,39 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
     tlv->SetValue(kDelayTimerMilliseconds);
 
     datasetTlvs.mLength = reinterpret_cast<uint8_t *>(tlv->GetNext()) - datasetTlvs.mTlvs;
+
+    assert(datasetTlvs.mLength > 0);
+
+    if (role == OT_DEVICE_ROLE_DISABLED || role == OT_DEVICE_ROLE_DETACHED)
+    {
+        otOperationalDataset existingDataset;
+
+        error = otDatasetGetActive(mInstance, &existingDataset);
+        VerifyOrExit(error == OT_ERROR_NONE || error == OT_ERROR_NOT_FOUND);
+
+        if (error == OT_ERROR_NONE)
+        {
+            if (!otIp6IsEnabled(mInstance))
+            {
+                SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+            }
+            SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+            mAttachHandler            = aHandler;
+            mAttachPendingDatasetTlvs = datasetTlvs;
+            ExitNow();
+        }
+
+        SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
+
+        if (!otIp6IsEnabled(mInstance))
+        {
+            SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+        }
+        SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+
+        aHandler(OT_ERROR_NONE);
+        ExitNow();
+    }
 
     SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
                                                       MgmtSetResponseHandler, this));
@@ -590,7 +618,8 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
     }
 
     mAttachHandler(aResult);
-    mAttachHandler = nullptr;
+    mAttachHandler            = nullptr;
+    mAttachPendingDatasetTlvs = {};
 }
 
 #if OTBR_ENABLE_UNSECURE_JOIN
