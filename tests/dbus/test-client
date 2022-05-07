@@ -79,6 +79,18 @@ update_meshcop_txt_and_check()
     service="$(scan_meshcop_service)"
     grep --binary-files=text "A=abc" <<<"${service}"
     grep --binary-files=text "B=12" <<<"${service}"
+
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.Reset --object-path /io/openthread/BorderRouter/wpan0
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "A=abc" <<<"${service}"
+    grep --binary-files=text "B=12" <<<"${service}"
+
+    sudo gdbus call --system --dest io.openthread.BorderRouter.wpan0 --method=io.openthread.BorderRouter.UpdateVendorMeshCopTxtEntries --object-path /io/openthread/BorderRouter/wpan0 "[('A',[97,99]),('B',[49,50])]"
+    sleep 5
+    service="$(scan_meshcop_service)"
+    grep --binary-files=text "A=ac" <<<"${service}"
+    grep --binary-files=text "B=12" <<<"${service}"
 }
 
 main()
