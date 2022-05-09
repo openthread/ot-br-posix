@@ -162,6 +162,16 @@ public:
     ClientError Attach(const OtResultHandler &aHandler);
 
     /**
+     * This method detaches the device from the Thread network.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError Detach(const OtResultHandler &aHandler);
+
+    /**
      * This method attaches the device to the specified Thread network.
      *
      * If the device has already attached to a network, send a request to migrate the existing network.
@@ -745,6 +755,7 @@ private:
     static void sHandleDBusPendingCall(DBusPendingCall *aPending, void *aThreadApiDBus);
 
     void        AttachPendingCallHandler(DBusPendingCall *aPending);
+    void        DetachPendingCallHandler(DBusPendingCall *aPending);
     void        FactoryResetPendingCallHandler(DBusPendingCall *aPending);
     void        JoinerStartPendingCallHandler(DBusPendingCall *aPending);
     static void sScanPendingCallHandler(DBusPendingCall *aPending, void *aThreadApiDBus);
@@ -760,6 +771,7 @@ private:
     ScanHandler       mScanHandler;
     EnergyScanHandler mEnergyScanHandler;
     OtResultHandler   mAttachHandler;
+    OtResultHandler   mDetachHandler;
     OtResultHandler   mFactoryResetHandler;
     OtResultHandler   mJoinerHandler;
 
