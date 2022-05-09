@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "AGENT"
+
 #include <openthread-br/config.h>
 
 #include <fstream>
@@ -117,19 +119,17 @@ static otbrLogLevel GetDefaultLogLevel(void)
     return level;
 }
 
-static void PrintRadioVersion(otInstance *aInstance)
-{
-    printf("%s\n", otPlatRadioGetVersionString(aInstance));
-}
-
 static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
     otbr::Ncp::ControllerOpenThread ncpOpenThread{/* aInterfaceName */ "", aRadioUrls, /* aBackboneInterfaceName */ "",
                                                   /* aDryRun */ true};
+    const char *                    radioVersion;
 
     ncpOpenThread.Init();
 
-    PrintRadioVersion(ncpOpenThread.GetInstance());
+    radioVersion = otPlatRadioGetVersionString(ncpOpenThread.GetInstance());
+    otbrLogNotice("Radio version: %s", radioVersion);
+    printf("%s\n", radioVersion);
 
     ncpOpenThread.Deinit();
 
@@ -192,14 +192,14 @@ static int realmain(int argc, char *argv[])
     }
 
     otbrLogInit(kSyslogIdent, logLevel, verbose);
-    otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
-    otbrLogInfo("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
-    otbrLogInfo("Thread interface: %s", interfaceName);
-    otbrLogInfo("Backbone interface: %s", backboneInterfaceName);
+    otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
+    otbrLogNotice("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
+    otbrLogNotice("Thread interface: %s", interfaceName);
+    otbrLogNotice("Backbone interface: %s", backboneInterfaceName);
 
     for (int i = optind; i < argc; i++)
     {
-        otbrLogInfo("Radio URL: %s", argv[i]);
+        otbrLogNotice("Radio URL: %s", argv[i]);
         radioUrls.push_back(argv[i]);
     }
 
