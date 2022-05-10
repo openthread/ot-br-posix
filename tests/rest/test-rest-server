@@ -54,6 +54,8 @@ send "ifconfig up\r\n"
 expect "Done"
 send "thread start\r\n"
 expect "Done"
+send "srp server disable\r\n"
+expect "Done"
 wait
 EOF
     trap on_exit EXIT

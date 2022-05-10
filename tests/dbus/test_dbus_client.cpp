@@ -48,6 +48,7 @@ using otbr::DBus::ExternalRoute;
 using otbr::DBus::Ip6Prefix;
 using otbr::DBus::LinkModeConfig;
 using otbr::DBus::OnMeshPrefix;
+using otbr::DBus::SrpServerInfo;
 using otbr::DBus::ThreadApiDBus;
 using otbr::DBus::TxtEntry;
 
@@ -119,6 +120,34 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
     TEST_ASSERT(aApi->RemoveOnMeshPrefix(prefix.mPrefix) == OTBR_ERROR_NONE);
     TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
     TEST_ASSERT(onMeshPrefixes.empty());
+}
+
+void CheckSrpServerInfo(ThreadApiDBus *aApi)
+{
+    SrpServerInfo srpServerInfo;
+
+    TEST_ASSERT(aApi->GetSrpServerInfo(srpServerInfo) == OTBR_ERROR_NONE);
+    otbrLogInfo("vcd vcd vcd xd vcd %d %d %d ", srpServerInfo.mState, srpServerInfo.mPort, srpServerInfo.mAddressMode);
+    TEST_ASSERT(srpServerInfo.mState == otbr::DBus::OTBR_SRP_SERVER_STATE_RUNNING);
+    TEST_ASSERT(srpServerInfo.mPort != 0);
+    TEST_ASSERT(srpServerInfo.mHosts.mFreshCount == 0);
+    TEST_ASSERT(srpServerInfo.mHosts.mDeletedCount == 0);
+    TEST_ASSERT(srpServerInfo.mHosts.mLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mHosts.mKeyLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mHosts.mRemainingLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mHosts.mRemainingKeyLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mServices.mFreshCount == 0);
+    TEST_ASSERT(srpServerInfo.mServices.mDeletedCount == 0);
+    TEST_ASSERT(srpServerInfo.mServices.mLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mServices.mKeyLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mServices.mRemainingLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mServices.mRemainingKeyLeaseTimeTotal == 0);
+    TEST_ASSERT(srpServerInfo.mResponseCounters.mSuccess == 0);
+    TEST_ASSERT(srpServerInfo.mResponseCounters.mServerFailure == 0);
+    TEST_ASSERT(srpServerInfo.mResponseCounters.mFormatError == 0);
+    TEST_ASSERT(srpServerInfo.mResponseCounters.mNameExists == 0);
+    TEST_ASSERT(srpServerInfo.mResponseCounters.mRefused == 0);
+    TEST_ASSERT(srpServerInfo.mResponseCounters.mOther == 0);
 }
 
 int main()
@@ -222,6 +251,7 @@ int main()
                             TEST_ASSERT(api->GetInstantRssi(rssi) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
+                            CheckSrpServerInfo(api.get());
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);

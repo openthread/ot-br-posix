@@ -41,6 +41,8 @@
 #include <string>
 #include <vector>
 
+#include <openthread/srp_server.h>
+
 namespace otbr {
 namespace DBus {
 
@@ -515,6 +517,61 @@ struct TxtEntry
 {
     std::string          mKey;
     std::vector<uint8_t> mValue;
+};
+
+enum SrpServerState : uint8_t
+{
+    OTBR_SRP_SERVER_STATE_DISABLED = 0, ///< The SRP server is disabled.
+    OTBR_SRP_SERVER_STATE_RUNNING  = 1, ///< The SRP server is running.
+    OTBR_SRP_SERVER_STATE_STOPPED  = 2, ///< The SRP server is stopped.
+};
+
+static_assert(OTBR_SRP_SERVER_STATE_DISABLED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_DISABLED),
+              "OTBR_SRP_SERVER_STATE_DISABLED value is incorrect");
+static_assert(OTBR_SRP_SERVER_STATE_RUNNING == static_cast<uint8_t>(OT_SRP_SERVER_STATE_RUNNING),
+              "OTBR_SRP_SERVER_STATE_RUNNING value is incorrect");
+static_assert(OTBR_SRP_SERVER_STATE_STOPPED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_STOPPED),
+              "OTBR_SRP_SERVER_STATE_STOPPED value is incorrect");
+
+enum SrpServerAddressMode : uint8_t
+{
+    OTBR_SRP_SERVER_ADDRESS_MODE_UNICAST = 0, ///< Unicast address mode.
+    OTBR_SRP_SERVER_ADDRESS_MODE_ANYCAST = 1, ///< Anycast address mode.
+};
+
+static_assert(OTBR_SRP_SERVER_ADDRESS_MODE_UNICAST == static_cast<uint8_t>(OT_SRP_SERVER_ADDRESS_MODE_UNICAST),
+              "OTBR_SRP_SERVER_ADDRESS_MODE_UNICAST value is incorrect");
+static_assert(OTBR_SRP_SERVER_ADDRESS_MODE_ANYCAST == static_cast<uint8_t>(OT_SRP_SERVER_ADDRESS_MODE_ANYCAST),
+              "OTBR_SRP_SERVER_ADDRESS_MODE_ANYCAST value is incorrect");
+
+struct SrpServerInfo
+{
+    struct Registration
+    {
+        uint32_t mFreshCount;
+        uint32_t mDeletedCount;
+        uint64_t mLeaseTimeTotal;
+        uint64_t mKeyLeaseTimeTotal;
+        uint64_t mRemainingLeaseTimeTotal;
+        uint64_t mRemainingKeyLeaseTimeTotal;
+    };
+
+    struct ResponseCounters
+    {
+        uint32_t mSuccess;
+        uint32_t mServerFailure;
+        uint32_t mFormatError;
+        uint32_t mNameExists;
+        uint32_t mRefused;
+        uint32_t mOther;
+    };
+
+    SrpServerState       mState;
+    uint16_t             mPort;
+    SrpServerAddressMode mAddressMode;
+    Registration         mHosts;
+    Registration         mServices;
+    ResponseCounters     mResponseCounters;
 };
 
 } // namespace DBus

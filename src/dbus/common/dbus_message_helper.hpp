@@ -77,6 +77,12 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const ChannelQuality &aQuali
 otbrError DBusMessageExtract(DBusMessageIter *aIter, ChannelQuality &aQuality);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const TxtEntry &aTxtEntry);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TxtEntry &aTxtEntry);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const SrpServerInfo::Registration &aRegistration);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, SrpServerInfo::Registration &aRegistration);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const SrpServerInfo::ResponseCounters &aResponseCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, SrpServerInfo::ResponseCounters &aResponseCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const SrpServerInfo &aSrpServerInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, SrpServerInfo &aSrpServerInfo);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -209,6 +215,27 @@ template <> struct DBusTypeTrait<std::vector<TxtEntry>>
 {
     // array of struct of { string, array<uint8> }
     static constexpr const char *TYPE_AS_STRING = "a(say)";
+};
+
+template <> struct DBusTypeTrait<SrpServerState>
+{
+    static constexpr int         TYPE           = DBUS_TYPE_BYTE;
+    static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BYTE_AS_STRING;
+};
+
+template <> struct DBusTypeTrait<SrpServerAddressMode>
+{
+    static constexpr int         TYPE           = DBUS_TYPE_BYTE;
+    static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BYTE_AS_STRING;
+};
+
+template <> struct DBusTypeTrait<SrpServerInfo>
+{
+    // struct of { uint8, uint16, uint8,
+    //              struct of { uint32, uint32, uint64, uint64, uint64, uint64 },
+    //              struct of { uint32, uint32, uint64, uint64, uint64, uint64 },
+    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32} }
+    static constexpr const char *TYPE_AS_STRING = "(yqy(uutttt)(uutttt)(uuuuuu))";
 };
 
 template <> struct DBusTypeTrait<int8_t>

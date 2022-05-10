@@ -77,6 +77,7 @@ jobs:
       BUILD_TARGET: check
       OTBR_BUILD_TYPE: ${{ matrix.build_type }}
       OTBR_MDNS: ${{ matrix.mdns }}
+      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON"
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v2
@@ -97,6 +98,8 @@ jobs:
     env:
       BUILD_TARGET: check
       OTBR_REST: ${{ matrix.rest }}
+      OTBR_MDNS: mDNSResponder
+      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON"
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v2
