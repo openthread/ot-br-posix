@@ -133,10 +133,13 @@ case "$(uname)" in
         fi
 
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
-            SOURCE_NAME=mDNSResponder-878.30.4
+            SOURCE_NAME=mDNSResponder-1310.80.1
             wget https://opensource.apple.com/tarballs/mDNSResponder/$SOURCE_NAME.tar.gz \
                 && tar xvf $SOURCE_NAME.tar.gz \
-                && cd $SOURCE_NAME/mDNSPosix \
+                && cd $SOURCE_NAME/Clients \
+                && sed -i '/#include <ctype.h>/a #include <stdarg.h>' dns-sd.c \
+                && sed -i '/#include <ctype.h>/a #include <sys/param.h>' dns-sd.c \
+                && cd ../mDNSPosix \
                 && make os=linux && sudo make install os=linux
         fi
 
