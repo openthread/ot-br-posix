@@ -44,6 +44,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <iomanip>
 #include <random>
 #include <sstream>
 
@@ -107,7 +108,6 @@ BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
 #if OTBR_ENABLE_TREL
     , mTrelDnssd(aNcp, *mPublisher)
 #endif
-    , mServiceInstanceName(kBorderAgentServiceInstanceName)
 {
 }
 
@@ -125,6 +125,8 @@ void BorderAgent::Init(void)
         });
     });
 #endif
+
+    mServiceInstanceName = BaseServiceInstanceName();
 
     Start();
 }
@@ -388,6 +390,18 @@ bool BorderAgent::IsThreadStarted(void) const
     return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
 }
 
+std::string BorderAgent::BaseServiceInstanceName() const
+{
+    const otExtAddress *extAddress = otLinkGetExtendedAddress(mNcp.GetInstance());
+    std::stringstream   ss;
+
+    ss << kBorderAgentServiceInstanceName << " #";
+    ss << std::uppercase << std::hex << std::setfill('0');
+    ss << std::setw(2) << static_cast<int>(extAddress->m8[6]);
+    ss << std::setw(2) << static_cast<int>(extAddress->m8[7]);
+    return ss.str();
+}
+
 std::string BorderAgent::GetAlternativeServiceInstanceName() const
 {
     std::random_device                      r;
@@ -396,7 +410,7 @@ std::string BorderAgent::GetAlternativeServiceInstanceName() const
     uint16_t                                rand = uniform_dist(engine);
     std::stringstream                       ss;
 
-    ss << kBorderAgentServiceInstanceName << " (" << rand << ")";
+    ss << BaseServiceInstanceName() << " (" << rand << ")";
     return ss.str();
 }
 

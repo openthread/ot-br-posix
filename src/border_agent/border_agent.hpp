@@ -159,6 +159,7 @@ private:
     void HandleThreadStateChanged(otChangedFlags aFlags);
 
     bool        IsThreadStarted(void) const;
+    std::string BaseServiceInstanceName() const;
     std::string GetAlternativeServiceInstanceName() const;
 
     otbr::Ncp::ControllerOpenThread &mNcp;
