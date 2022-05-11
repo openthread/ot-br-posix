@@ -557,23 +557,17 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
     if (role == OT_DEVICE_ROLE_DISABLED || role == OT_DEVICE_ROLE_DETACHED)
     {
         otOperationalDataset existingDataset;
+        bool                 hasActiveDataset;
 
         error = otDatasetGetActive(mInstance, &existingDataset);
         VerifyOrExit(error == OT_ERROR_NONE || error == OT_ERROR_NOT_FOUND);
 
-        if (error == OT_ERROR_NONE)
-        {
-            if (!otIp6IsEnabled(mInstance))
-            {
-                SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
-            }
-            SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
-            mAttachHandler            = aHandler;
-            mAttachPendingDatasetTlvs = datasetTlvs;
-            ExitNow();
-        }
+        hasActiveDataset = (error == OT_ERROR_NONE);
 
-        SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
+        if (!hasActiveDataset)
+        {
+            SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
+        }
 
         if (!otIp6IsEnabled(mInstance))
         {
@@ -581,8 +575,17 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
         }
         SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
 
-        aHandler(OT_ERROR_NONE);
-        ExitNow();
+        if (hasActiveDataset)
+        {
+            mAttachHandler            = aHandler;
+            mAttachPendingDatasetTlvs = datasetTlvs;
+            ExitNow();
+        }
+        else
+        {
+            aHandler(OT_ERROR_NONE);
+            ExitNow();
+        }
     }
 
     SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
