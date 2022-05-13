@@ -94,8 +94,10 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
             {
                 if (mAttachPendingDatasetTlvs.mLength == 0)
                 {
-                    mAttachHandler(OT_ERROR_NONE);
+                    ResultHandler handler = mAttachHandler;
+
                     mAttachHandler = nullptr;
+                    handler(OT_ERROR_NONE);
                 }
                 else
                 {
@@ -105,9 +107,11 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
                                                     mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler, this);
                     if (error != OT_ERROR_NONE)
                     {
-                        mAttachHandler(error);
+                        ResultHandler handler = mAttachHandler;
+
                         mAttachHandler            = nullptr;
                         mAttachPendingDatasetTlvs = {};
+                        handler(error);
                     }
                 }
             }
@@ -606,6 +610,8 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult, void *aContext)
 
 void ThreadHelper::MgmtSetResponseHandler(otError aResult)
 {
+    ResultHandler handler;
+
     LogOpenThreadResult("MgmtSetResponseHandler()", aResult);
 
     assert(mAttachHandler != nullptr);
@@ -620,9 +626,10 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
         break;
     }
 
-    mAttachHandler(aResult);
+    handler                   = mAttachHandler;
     mAttachHandler            = nullptr;
     mAttachPendingDatasetTlvs = {};
+    handler(aResult);
 }
 
 #if OTBR_ENABLE_UNSECURE_JOIN
