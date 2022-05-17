@@ -108,6 +108,7 @@ do_build()
     otbr_options=(
         "-DCMAKE_BUILD_TYPE=${OTBR_BUILD_TYPE}"
         "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DOT_THREAD_VERSION=1.2"
         "-DOTBR_DBUS=ON"
         "-DOTBR_WEB=ON"
         "-DOTBR_UNSECURE_JOIN=ON"
