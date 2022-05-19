@@ -91,6 +91,7 @@
 #define OTBR_DBUS_PROPERTY_ON_MESH_PREFIXES "OnMeshPrefixes"
 #define OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS "ActiveDatasetTlvs"
 #define OTBR_DBUS_PROPERTY_RADIO_REGION "RadioRegion"
+#define OTBR_DBUS_PROPERTY_SRP_SERVER_INFO "SrpServerInfo"
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
 #define OTBR_ROLE_NAME_DETACHED "detached"

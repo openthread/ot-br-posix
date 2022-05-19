@@ -706,6 +706,18 @@ public:
     ClientError GetRadioRegion(std::string &aRadioRegion);
 
     /**
+     * This method gets the SRP server information.
+     *
+     * @param[out] aSrpServerInfo  The SRP server information.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetSrpServerInfo(SrpServerInfo &aSrpServerInfo);
+
+    /**
      * This method returns the network interface name the client is bound to.
      *
      * @returns The network interface name.

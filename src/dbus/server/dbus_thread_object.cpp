@@ -36,6 +36,7 @@
 #include <openthread/link_raw.h>
 #include <openthread/ncp.h>
 #include <openthread/netdata.h>
+#include <openthread/srp_server.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
@@ -213,6 +214,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetActiveDatasetTlvsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SRP_SERVER_INFO,
+                               std::bind(&DBusThreadObject::GetSrpServerInfoHandler, this, _1));
 
     return error;
 }
@@ -1174,6 +1177,75 @@ otError DBusThreadObject::GetRadioRegionHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
+}
+
+otError DBusThreadObject::GetSrpServerInfoHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    auto                               threadHelper = mNcp->GetThreadHelper();
+    auto                               instance     = threadHelper->GetInstance();
+    otError                            error        = OT_ERROR_NONE;
+    SrpServerInfo                      srpServerInfo{};
+    otSrpServerLeaseInfo               leaseInfo;
+    const otSrpServerHost *            host             = nullptr;
+    const otSrpServerResponseCounters *responseCounters = otSrpServerGetResponseCounters(instance);
+
+    srpServerInfo.mState       = SrpServerState(static_cast<uint8_t>(otSrpServerGetState(instance)));
+    srpServerInfo.mPort        = otSrpServerGetPort(instance);
+    srpServerInfo.mAddressMode = SrpServerAddressMode(static_cast<uint8_t>(otSrpServerGetAddressMode(instance)));
+
+    while ((host = otSrpServerGetNextHost(instance, host)))
+    {
+        const otSrpServerService *service = nullptr;
+
+        if (otSrpServerHostIsDeleted(host))
+        {
+            ++srpServerInfo.mHosts.mDeletedCount;
+        }
+        else
+        {
+            ++srpServerInfo.mHosts.mFreshCount;
+            otSrpServerHostGetLeaseInfo(host, &leaseInfo);
+            srpServerInfo.mHosts.mLeaseTimeTotal += leaseInfo.mLease;
+            srpServerInfo.mHosts.mKeyLeaseTimeTotal += leaseInfo.mKeyLease;
+            srpServerInfo.mHosts.mRemainingLeaseTimeTotal += leaseInfo.mRemainingLease;
+            srpServerInfo.mHosts.mRemainingKeyLeaseTimeTotal += leaseInfo.mRemainingKeyLease;
+        }
+
+        while ((service = otSrpServerHostGetNextService(host, service)))
+        {
+            if (otSrpServerServiceIsDeleted(service))
+            {
+                ++srpServerInfo.mServices.mDeletedCount;
+            }
+            else
+            {
+                ++srpServerInfo.mServices.mFreshCount;
+                otSrpServerServiceGetLeaseInfo(service, &leaseInfo);
+                srpServerInfo.mServices.mLeaseTimeTotal += leaseInfo.mLease;
+                srpServerInfo.mServices.mKeyLeaseTimeTotal += leaseInfo.mKeyLease;
+                srpServerInfo.mServices.mRemainingLeaseTimeTotal += leaseInfo.mRemainingLease;
+                srpServerInfo.mServices.mRemainingKeyLeaseTimeTotal += leaseInfo.mRemainingKeyLease;
+            }
+        }
+    }
+
+    srpServerInfo.mResponseCounters.mSuccess       = responseCounters->mSuccess;
+    srpServerInfo.mResponseCounters.mServerFailure = responseCounters->mServerFailure;
+    srpServerInfo.mResponseCounters.mFormatError   = responseCounters->mFormatError;
+    srpServerInfo.mResponseCounters.mNameExists    = responseCounters->mNameExists;
+    srpServerInfo.mResponseCounters.mRefused       = responseCounters->mRefused;
+    srpServerInfo.mResponseCounters.mOther         = responseCounters->mOther;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, srpServerInfo) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else  // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 }
 
 } // namespace DBus

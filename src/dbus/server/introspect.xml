@@ -511,6 +511,43 @@
     <property name="RadioRegion" type="s" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
+
+    <!-- SrpServerInfo: The SRP server information.
+      <literallayout>
+        struct {
+          uint8 state
+          uint16 port
+          uint8 address_mode
+          struct {  // hosts
+            uint32 fresh_count
+            uint32 deleted_count
+            uint64 lease_time_total
+            uint64 key_lease_time_total
+            uint64 remaining_lease_time_total
+            uint64 remaining_key_lease_time_total
+          }
+          struct {  // services
+            uint32 fresh_count
+            uint32 deleted_count
+            uint64 lease_time_total
+            uint64 key_lease_time_total
+            uint64 remaining_lease_time_total
+            uint64 remaining_key_lease_time_total
+          }
+          struct {  // response counters
+            uint32 success
+            uint32 server_failure
+            uint32 format_error
+            uint32 name_exists
+            uint32 refused
+            uint32 other
+          }
+        }
+      </literallayout>
+    -->
+    <property name="SrpServerInfo" type="(yqy(uutttt)(uutttt)(uuuuuu))" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

@@ -633,6 +633,11 @@ ClientError ThreadApiDBus::GetRadioRegion(std::string &aRadioRegion)
     return GetProperty(OTBR_DBUS_PROPERTY_RADIO_REGION, aRadioRegion);
 }
 
+ClientError ThreadApiDBus::GetSrpServerInfo(SrpServerInfo &aSrpServerInfo)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_SRP_SERVER_INFO, aSrpServerInfo);
+}
+
 std::string ThreadApiDBus::GetInterfaceName(void)
 {
     return mInterfaceName;
