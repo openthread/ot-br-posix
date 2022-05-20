@@ -70,6 +70,7 @@ jobs:
   check:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         build_type: ["Debug", "Release"]
         mdns: ["mDNSResponder", "avahi"]
@@ -93,6 +94,7 @@ jobs:
   rest-check:
     runs-on: ubuntu-18.04
     strategy:
+      fail-fast: false
       matrix:
         rest: ["rest-off", ""]
     env:
