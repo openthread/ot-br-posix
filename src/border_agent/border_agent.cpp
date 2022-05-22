@@ -243,7 +243,6 @@ void BorderAgent::PublishMeshCopService(void)
     {
         otError              error;
         otOperationalDataset activeDataset;
-        uint64_t             activeTimestamp;
         uint32_t             partitionId;
 
         if ((error = otDatasetGetActive(instance, &activeDataset)) != OT_ERROR_NONE)
@@ -252,8 +251,14 @@ void BorderAgent::PublishMeshCopService(void)
         }
         else
         {
-            activeTimestamp = htobe64(activeDataset.mActiveTimestamp);
-            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestamp), sizeof(activeTimestamp));
+            uint64_t activeTimestampValue;
+
+            activeTimestampValue = (activeDataset.mActiveTimestamp.mSeconds << 16) |
+                                   (activeDataset.mActiveTimestamp.mTicks << 1) |
+                                   activeDataset.mActiveTimestamp.mAuthoritative;
+            activeTimestampValue = htobe64(activeTimestampValue);
+            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestampValue),
+                                 sizeof(activeTimestampValue));
         }
 
         partitionId = otThreadGetPartitionId(instance);

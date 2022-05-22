@@ -908,7 +908,7 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
                      error = OT_ERROR_PARSE);
         length = 0;
     }
-    dataset.mActiveTimestamp++;
+    dataset.mActiveTimestamp.mSeconds++;
     if (otCommissionerGetState(mController->GetInstance()) == OT_COMMISSIONER_STATE_DISABLED)
     {
         otCommissionerStop(mController->GetInstance());
