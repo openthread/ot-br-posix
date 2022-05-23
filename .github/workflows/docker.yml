@@ -49,6 +49,7 @@ jobs:
   docker-check:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         rcp_bus: ["UART", "SPI"]
     env:
@@ -69,6 +70,7 @@ jobs:
   buildx:
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         include:
           - image_tag: "latest"
