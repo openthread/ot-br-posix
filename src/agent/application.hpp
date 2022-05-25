@@ -34,6 +34,7 @@
 #ifndef OTBR_AGENT_APPLICATION_HPP_
 #define OTBR_AGENT_APPLICATION_HPP_
 
+#include <atomic>
 #include <signal.h>
 #include <stdint.h>
 #include <vector>
@@ -135,7 +136,7 @@ private:
     vendor::VendorServer mVendorServer;
 #endif
 
-    static bool sShouldTerminate;
+    static std::atomic_bool sShouldTerminate;
 };
 
 /**

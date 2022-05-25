@@ -43,8 +43,8 @@
 
 namespace otbr {
 
-bool                 Application::sShouldTerminate = false;
-const struct timeval Application::kPollTimeout     = {10, 0};
+std::atomic_bool     Application::sShouldTerminate(false);
+const struct timeval Application::kPollTimeout = {10, 0};
 
 Application::Application(const std::string &              aInterfaceName,
                          const std::string &              aBackboneInterfaceName,
