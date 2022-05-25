@@ -41,6 +41,7 @@
 #include <string>
 #include <vector>
 
+#include <openthread/dnssd_server.h>
 #include <openthread/srp_server.h>
 
 namespace otbr {
@@ -573,6 +574,10 @@ struct SrpServerInfo
     Registration         mServices;
     ResponseCounters     mResponseCounters;
 };
+
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+typedef otDnssdCounters DnssdCounters;
+#endif
 
 } // namespace DBus
 } // namespace otbr

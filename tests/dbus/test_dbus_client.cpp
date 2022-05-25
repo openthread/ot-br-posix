@@ -52,6 +52,10 @@ using otbr::DBus::SrpServerInfo;
 using otbr::DBus::ThreadApiDBus;
 using otbr::DBus::TxtEntry;
 
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+using otbr::DBus::DnssdCounters;
+#endif
+
 #define TEST_ASSERT(x)                                              \
     do                                                              \
     {                                                               \
@@ -127,7 +131,6 @@ void CheckSrpServerInfo(ThreadApiDBus *aApi)
     SrpServerInfo srpServerInfo;
 
     TEST_ASSERT(aApi->GetSrpServerInfo(srpServerInfo) == OTBR_ERROR_NONE);
-    otbrLogInfo("vcd vcd vcd xd vcd %d %d %d ", srpServerInfo.mState, srpServerInfo.mPort, srpServerInfo.mAddressMode);
     TEST_ASSERT(srpServerInfo.mState == otbr::DBus::OTBR_SRP_SERVER_STATE_RUNNING);
     TEST_ASSERT(srpServerInfo.mPort != 0);
     TEST_ASSERT(srpServerInfo.mHosts.mFreshCount == 0);
@@ -148,6 +151,23 @@ void CheckSrpServerInfo(ThreadApiDBus *aApi)
     TEST_ASSERT(srpServerInfo.mResponseCounters.mNameExists == 0);
     TEST_ASSERT(srpServerInfo.mResponseCounters.mRefused == 0);
     TEST_ASSERT(srpServerInfo.mResponseCounters.mOther == 0);
+}
+
+void CheckDnssdCounters(ThreadApiDBus *aApi)
+{
+    OT_UNUSED_VARIABLE(aApi);
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    otbr::DBus::DnssdCounters dnssdCounters;
+
+    TEST_ASSERT(aApi->GetDnssdCounters(dnssdCounters) == OTBR_ERROR_NONE);
+    TEST_ASSERT(dnssdCounters.mSuccessResponse == 0);
+    TEST_ASSERT(dnssdCounters.mServerFailureResponse == 0);
+    TEST_ASSERT(dnssdCounters.mFormatErrorResponse == 0);
+    TEST_ASSERT(dnssdCounters.mNameErrorResponse == 0);
+    TEST_ASSERT(dnssdCounters.mNotImplementedResponse == 0);
+    TEST_ASSERT(dnssdCounters.mOtherResponse == 0);
+    TEST_ASSERT(dnssdCounters.mResolvedBySrp == 0);
+#endif
 }
 
 int main()
@@ -252,6 +272,7 @@ int main()
                             TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
                             CheckSrpServerInfo(api.get());
+                            CheckDnssdCounters(api.get());
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);
