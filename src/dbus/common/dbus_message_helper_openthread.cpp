@@ -609,5 +609,49 @@ exit:
     return error;
 }
 
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const DnssdCounters &aDnssdCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mSuccessResponse));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mServerFailureResponse));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mFormatErrorResponse));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mNameErrorResponse));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mNotImplementedResponse));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mOtherResponse));
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aDnssdCounters.mResolvedBySrp));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, DnssdCounters &aDnssdCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mSuccessResponse));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mServerFailureResponse));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mFormatErrorResponse));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mNameErrorResponse));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mNotImplementedResponse));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mOtherResponse));
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aDnssdCounters.mResolvedBySrp));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+#endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+
 } // namespace DBus
 } // namespace otbr

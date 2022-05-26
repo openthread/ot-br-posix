@@ -31,6 +31,7 @@
 
 #include <openthread/border_router.h>
 #include <openthread/channel_monitor.h>
+#include <openthread/dnssd_server.h>
 #include <openthread/instance.h>
 #include <openthread/joiner.h>
 #include <openthread/link_raw.h>
@@ -216,6 +217,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SRP_SERVER_INFO,
                                std::bind(&DBusThreadObject::GetSrpServerInfoHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNSSD_COUNTERS,
+                               std::bind(&DBusThreadObject::GetDnssdCountersHandler, this, _1));
 
     return error;
 }
@@ -1246,6 +1249,25 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+}
+
+otError DBusThreadObject::GetDnssdCountersHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    auto          threadHelper  = mNcp->GetThreadHelper();
+    auto          instance      = threadHelper->GetInstance();
+    otError       error         = OT_ERROR_NONE;
+    DnssdCounters dnssdCounters = *otDnssdGetCounters(instance);
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, dnssdCounters) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else  // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 }
 
 } // namespace DBus

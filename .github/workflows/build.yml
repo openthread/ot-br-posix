@@ -101,7 +101,7 @@ jobs:
       BUILD_TARGET: check
       OTBR_REST: ${{ matrix.rest }}
       OTBR_MDNS: mDNSResponder
-      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON"
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v2

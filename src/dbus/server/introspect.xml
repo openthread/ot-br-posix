@@ -548,6 +548,22 @@
     <property name="SrpServerInfo" type="(yqy(uutttt)(uutttt)(uuuuuu))" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
+    <!-- DnssdCounters: The DNS-SD counters
+    <literallayout>
+        struct {
+          uint32 success
+          uint32 server_failure
+          uint32 format_error
+          uint32 name_error
+          uint32 not_implemented
+          uint32 other
+          uint32 resolved_by_srp
+        }
+      </literallayout>
+    -->
+    <property name="DnssdCounters" type="(uuuuuuu)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">
