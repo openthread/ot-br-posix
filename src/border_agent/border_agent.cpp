@@ -254,8 +254,8 @@ void BorderAgent::PublishMeshCopService(void)
             uint64_t activeTimestampValue;
 
             activeTimestampValue = (activeDataset.mActiveTimestamp.mSeconds << 16) |
-                                   (activeDataset.mActiveTimestamp.mTicks << 1) |
-                                   activeDataset.mActiveTimestamp.mAuthoritative;
+                                   static_cast<uint64_t>(activeDataset.mActiveTimestamp.mTicks << 1) |
+                                   static_cast<uint64_t>(activeDataset.mActiveTimestamp.mAuthoritative);
             activeTimestampValue = htobe64(activeTimestampValue);
             txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestampValue),
                                  sizeof(activeTimestampValue));
