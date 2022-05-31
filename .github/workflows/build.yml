@@ -160,3 +160,21 @@ jobs:
         cmake --version | grep 3.10.3
     - name: Build
       run: script/test package
+
+  simulation:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TARGET: check
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Build
+      run: |
+        script/bootstrap
+        script/test build
+    - name: Run
+      run: |
+        script/test simulation

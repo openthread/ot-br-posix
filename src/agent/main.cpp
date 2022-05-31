@@ -66,6 +66,7 @@ enum
     OTBR_OPT_INTERFACE_NAME          = 'I',
     OTBR_OPT_VERBOSE                 = 'v',
     OTBR_OPT_VERSION                 = 'V',
+    OTBR_OPT_AUTO_ATTACH             = 'a',
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
 };
@@ -82,11 +83,14 @@ static const struct option kOptions[] = {
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
+    {"auto-attach", required_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
     {0, 0, 0, 0}};
 
 static void PrintHelp(const char *aProgramName)
 {
-    fprintf(stderr, "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] RADIO_URL [RADIO_URL]\n",
+    fprintf(stderr,
+            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-a enableAutoAttach] RADIO_URL "
+            "[RADIO_URL]\n",
             aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
@@ -122,7 +126,7 @@ static otbrLogLevel GetDefaultLogLevel(void)
 static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
     otbr::Ncp::ControllerOpenThread ncpOpenThread{/* aInterfaceName */ "", aRadioUrls, /* aBackboneInterfaceName */ "",
-                                                  /* aDryRun */ true};
+                                                  /* aDryRun */ true, /* aEnableAutoAttach */ false};
     const char *                    radioVersion;
 
     ncpOpenThread.Init();
@@ -145,11 +149,12 @@ static int realmain(int argc, char *argv[])
     const char *              backboneInterfaceName = "";
     bool                      verbose               = false;
     bool                      printRadioVersion     = false;
+    bool                      enableAutoAttach      = true;
     std::vector<const char *> radioUrls;
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:Vva:", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
@@ -184,6 +189,10 @@ static int realmain(int argc, char *argv[])
             printRadioVersion = true;
             break;
 
+        case OTBR_OPT_AUTO_ATTACH:
+            enableAutoAttach = atoi(optarg);
+            break;
+
         default:
             PrintHelp(argv[0]);
             ExitNow(ret = EXIT_FAILURE);
@@ -210,7 +219,7 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Application app(interfaceName, backboneInterfaceName, radioUrls);
+        otbr::Application app(interfaceName, backboneInterfaceName, radioUrls, enableAutoAttach);
 
         gApp = &app;
         app.Init();
