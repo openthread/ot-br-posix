@@ -90,7 +90,8 @@ static void PrintHelp(const char *aProgramName)
 {
     fprintf(stderr,
             "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-a enableAutoAttach] RADIO_URL "
-            "[RADIO_URL]\n",
+            "[RADIO_URL]\n"
+            "    enableAutoAttach defaults to 1\n",
             aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }

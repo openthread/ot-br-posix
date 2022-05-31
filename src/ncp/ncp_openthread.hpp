@@ -200,7 +200,7 @@ private:
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
-    bool                                       mEnableAutoAttach;
+    bool                                       mEnableAutoAttach = false;
 };
 
 } // namespace Ncp
