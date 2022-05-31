@@ -340,7 +340,9 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
         if (error != kDNSServiceErr_NoError)
         {
-            otbrLogWarning("DNSServiceProcessResult failed: %s (serviceRef = %p)", DNSErrorToString(error), serviceRef);
+            otbrLogLevel logLevel = (error == kDNSServiceErr_BadReference) ? OTBR_LOG_INFO : OTBR_LOG_WARNING;
+            otbrLog(logLevel, OTBR_LOG_TAG, "DNSServiceProcessResult failed: %s (serviceRef = %p)",
+                    DNSErrorToString(error), serviceRef);
         }
         if (error == kDNSServiceErr_ServiceNotRunning)
         {
