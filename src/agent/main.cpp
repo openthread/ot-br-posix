@@ -30,9 +30,12 @@
 
 #include <openthread-br/config.h>
 
+#include <algorithm>
 #include <fstream>
 #include <mutex>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include <getopt.h>
 #include <stdio.h>
@@ -66,9 +69,9 @@ enum
     OTBR_OPT_INTERFACE_NAME          = 'I',
     OTBR_OPT_VERBOSE                 = 'v',
     OTBR_OPT_VERSION                 = 'V',
-    OTBR_OPT_AUTO_ATTACH             = 'a',
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
+    OTBR_OPT_AUTO_ATTACH,
 };
 
 static jmp_buf            sResetJump;
@@ -83,15 +86,15 @@ static const struct option kOptions[] = {
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
-    {"auto-attach", required_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
+    {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
     {0, 0, 0, 0}};
 
 static void PrintHelp(const char *aProgramName)
 {
     fprintf(stderr,
-            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-a enableAutoAttach] RADIO_URL "
+            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [--auto-attach[=0/1]] RADIO_URL "
             "[RADIO_URL]\n"
-            "    enableAutoAttach defaults to 1\n",
+            "    --auto-attach defaults to 1\n",
             aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
@@ -155,7 +158,7 @@ static int realmain(int argc, char *argv[])
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "B:d:hI:Vva:", kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
@@ -191,7 +194,7 @@ static int realmain(int argc, char *argv[])
             break;
 
         case OTBR_OPT_AUTO_ATTACH:
-            enableAutoAttach = atoi(optarg);
+            enableAutoAttach = (optarg == nullptr) || atoi(optarg);
             break;
 
         default:
@@ -258,7 +261,16 @@ int main(int argc, char *argv[])
 #if OPENTHREAD_ENABLE_COVERAGE
         __gcov_flush();
 #endif
-        execvp(argv[0], argv);
+        std::vector<std::string> args(argv, argv + argc);
+        args.erase(std::remove_if(args.begin(), args.end(),
+                                  [](const std::string &arg) { return arg.rfind("--auto-attach", 0) == 0; }),
+                   args.end());
+        args.push_back("--auto-attach=0");
+        std::vector<char *> args_cstr(args.size() + 1);
+        std::transform(args.begin(), args.end(), args_cstr.begin(),
+                       [](const std::string &arg) { return const_cast<char *>(arg.c_str()); });
+        *args_cstr.rbegin() = nullptr;
+        execvp(args_cstr[0], args_cstr.data());
     }
 
     return realmain(argc, argv);

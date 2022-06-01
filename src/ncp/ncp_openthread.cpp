@@ -244,15 +244,12 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 
 bool ControllerOpenThread::IsAutoAttachEnabled(void)
 {
-    const char *val = getenv("OTBR_NO_AUTO_ATTACH");
-
-    // Auto Thread attaching is enabled if OTBR_NO_AUTO_ATTACH is unset, empty or "0"
-    return (val == nullptr || !strcmp(val, "") || !strcmp(val, "0")) && mEnableAutoAttach;
+    return mEnableAutoAttach;
 }
 
 void ControllerOpenThread::DisableAutoAttach(void)
 {
-    setenv("OTBR_NO_AUTO_ATTACH", "1", 1);
+    mEnableAutoAttach = false;
 }
 
 void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
@@ -282,7 +279,7 @@ void ControllerOpenThread::Reset(void)
     {
         handler();
     }
-    unsetenv("OTBR_NO_AUTO_ATTACH");
+    mEnableAutoAttach = true;
 }
 
 const char *ControllerOpenThread::GetThreadVersion(void)

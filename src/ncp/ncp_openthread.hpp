@@ -188,8 +188,7 @@ private:
 #endif
 
     bool IsAutoAttachEnabled(void);
-
-    static void DisableAutoAttach(void);
+    void DisableAutoAttach(void);
 
     static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 

@@ -57,20 +57,23 @@ sudo "${OT_CTL}" dataset init new
 sudo "${OT_CTL}" dataset commit active
 sudo "${OT_CTL}" ifconfig up
 sudo "${OT_CTL}" thread start
-sleep 20
-
+sleep 10
 sudo "${OT_CTL}" state | grep "leader"
 
 sudo killall otbr-agent
 sleep 10
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach 0 &
+sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=0 &
 sleep 10
-
 sudo "${OT_CTL}" state | grep "disabled"
 
 sudo killall otbr-agent
 sleep 10
-sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach 1 &
+sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=1 &
 sleep 10
+sudo "${OT_CTL}" state | grep "leader"
 
+sudo killall otbr-agent
+sleep 10
+sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach &
+sleep 10
 sudo "${OT_CTL}" state | grep "leader"
