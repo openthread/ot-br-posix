@@ -253,6 +253,9 @@ void BorderAgent::PublishMeshCopService(void)
         {
             uint64_t activeTimestampValue;
 
+            // 64 bits Timestamp fields layout
+            //-----48 bits------//-----15 bits-----//-------1 bit-------//
+            //     Seconds      //      Ticks      //  Authoritative    //
             activeTimestampValue = (activeDataset.mActiveTimestamp.mSeconds << 16) |
                                    static_cast<uint64_t>(activeDataset.mActiveTimestamp.mTicks << 1) |
                                    static_cast<uint64_t>(activeDataset.mActiveTimestamp.mAuthoritative);
