@@ -196,6 +196,15 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     }
 }
 
+static uint64_t ConvertTimestampToUint64(const otTimestamp &aTimestamp)
+{
+    // 64 bits Timestamp fields layout
+    //-----48 bits------//-----15 bits-----//-------1 bit-------//
+    //     Seconds      //      Ticks      //  Authoritative    //
+    return (aTimestamp.mSeconds << 16) | static_cast<uint64_t>(aTimestamp.mTicks << 1) |
+           static_cast<uint64_t>(aTimestamp.mAuthoritative);
+}
+
 void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
@@ -243,7 +252,6 @@ void BorderAgent::PublishMeshCopService(void)
     {
         otError              error;
         otOperationalDataset activeDataset;
-        uint64_t             activeTimestamp;
         uint32_t             partitionId;
 
         if ((error = otDatasetGetActive(instance, &activeDataset)) != OT_ERROR_NONE)
@@ -252,8 +260,11 @@ void BorderAgent::PublishMeshCopService(void)
         }
         else
         {
-            activeTimestamp = htobe64(activeDataset.mActiveTimestamp);
-            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestamp), sizeof(activeTimestamp));
+            uint64_t activeTimestampValue = ConvertTimestampToUint64(activeDataset.mActiveTimestamp);
+
+            activeTimestampValue = htobe64(activeTimestampValue);
+            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestampValue),
+                                 sizeof(activeTimestampValue));
         }
 
         partitionId = otThreadGetPartitionId(instance);
