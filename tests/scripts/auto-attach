@@ -45,9 +45,9 @@ at_exit()
 
 trap at_exit INT TERM EXIT
 
-! sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=invalid
-! sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=
-! sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=99999999999999999999999999999999999
+sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=invalid && exit 1
+sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach= && exit 1
+sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=99999999999999999999999999999999999 && exit 1
 
 sudo cp "${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf" /etc/dbus-1/system.d/
 sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
