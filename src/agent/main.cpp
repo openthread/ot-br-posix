@@ -89,6 +89,36 @@ static const struct option kOptions[] = {
     {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
     {0, 0, 0, 0}};
 
+static bool ParseInteger(const char *aStr, long &aOutResult)
+{
+    bool  successful = true;
+    char *strEnd;
+    long  result;
+
+    VerifyOrExit(aStr != nullptr, successful = false);
+    errno  = 0;
+    result = strtol(aStr, &strEnd, 0);
+    VerifyOrExit(errno != ERANGE, successful = false);
+    VerifyOrExit(aStr != strEnd, successful = false);
+
+    aOutResult = result;
+
+exit:
+    return successful;
+}
+
+static std::vector<const char *> AppendAutoAttachDisablingArg(int argc, char *argv[])
+{
+    std::vector<const char *> args(argc + 1);
+    std::copy(argv, argv + argc, args.begin());
+    args.erase(std::remove_if(
+                   args.begin(), args.end(),
+                   [](const char *arg) { return arg != nullptr && std::string(arg).rfind("--auto-attach", 0) == 0; }),
+               args.end());
+    args.push_back("--auto-attach=0");
+    return args;
+}
+
 static void PrintHelp(const char *aProgramName)
 {
     fprintf(stderr,
@@ -155,6 +185,7 @@ static int realmain(int argc, char *argv[])
     bool                      printRadioVersion     = false;
     bool                      enableAutoAttach      = true;
     std::vector<const char *> radioUrls;
+    long                      parseResult;
 
     std::set_new_handler(OnAllocateFailed);
 
@@ -167,8 +198,9 @@ static int realmain(int argc, char *argv[])
             break;
 
         case OTBR_OPT_DEBUG_LEVEL:
-            logLevel = static_cast<otbrLogLevel>(atoi(optarg));
-            VerifyOrExit(logLevel >= OTBR_LOG_EMERG && logLevel <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
+            VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
+            VerifyOrExit(OTBR_LOG_EMERG <= parseResult && parseResult <= OTBR_LOG_DEBUG, ret = EXIT_FAILURE);
+            logLevel = static_cast<otbrLogLevel>(parseResult);
             break;
 
         case OTBR_OPT_INTERFACE_NAME:
@@ -194,7 +226,15 @@ static int realmain(int argc, char *argv[])
             break;
 
         case OTBR_OPT_AUTO_ATTACH:
-            enableAutoAttach = (optarg == nullptr) || atoi(optarg);
+            if (optarg == nullptr)
+            {
+                enableAutoAttach = true;
+            }
+            else
+            {
+                VerifyOrExit(ParseInteger(optarg, parseResult), ret = EXIT_FAILURE);
+                enableAutoAttach = parseResult;
+            }
             break;
 
         default:
@@ -257,20 +297,18 @@ int main(int argc, char *argv[])
 {
     if (setjmp(sResetJump))
     {
+        std::vector<const char *> args = AppendAutoAttachDisablingArg(argc, argv);
+        std::vector<char *>       args_without_const(args.size());
+
+        std::transform(args.begin(), args.end(), args_without_const.begin(),
+                       [](const char *arg) { return const_cast<char *>(arg); });
+
         alarm(0);
 #if OPENTHREAD_ENABLE_COVERAGE
         __gcov_flush();
 #endif
-        std::vector<std::string> args(argv, argv + argc);
-        args.erase(std::remove_if(args.begin(), args.end(),
-                                  [](const std::string &arg) { return arg.rfind("--auto-attach", 0) == 0; }),
-                   args.end());
-        args.push_back("--auto-attach=0");
-        std::vector<char *> args_cstr(args.size() + 1);
-        std::transform(args.begin(), args.end(), args_cstr.begin(),
-                       [](const std::string &arg) { return const_cast<char *>(arg.c_str()); });
-        *args_cstr.rbegin() = nullptr;
-        execvp(args_cstr[0], args_cstr.data());
+
+        execvp(args_without_const[0], args_without_const.data());
     }
 
     return realmain(argc, argv);
