@@ -110,6 +110,7 @@ exit:
 static std::vector<const char *> AppendAutoAttachDisablingArg(int argc, char *argv[])
 {
     std::vector<const char *> args(argc + 1);
+
     std::copy(argv, argv + argc, args.begin());
     args.erase(std::remove_if(
                    args.begin(), args.end(),
