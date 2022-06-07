@@ -107,16 +107,21 @@ exit:
     return successful;
 }
 
-static std::vector<const char *> AppendAutoAttachDisablingArg(int argc, char *argv[])
+static constexpr char kAutoAttachDisablingArg[] = "--auto-attach=0";
+static char           sAutoAttachDisablingArgStorage[sizeof(kAutoAttachDisablingArg)];
+
+static std::vector<char *> AppendAutoAttachDisablingArg(int argc, char *argv[])
 {
-    std::vector<const char *> args(argc + 1);
+    std::vector<char *> args(argc + 1);
 
     std::copy(argv, argv + argc, args.begin());
     args.erase(std::remove_if(
                    args.begin(), args.end(),
                    [](const char *arg) { return arg != nullptr && std::string(arg).rfind("--auto-attach", 0) == 0; }),
                args.end());
-    args.push_back("--auto-attach=0");
+    strcpy(sAutoAttachDisablingArgStorage, kAutoAttachDisablingArg);
+    args.push_back(sAutoAttachDisablingArgStorage);
+
     return args;
 }
 
@@ -298,18 +303,14 @@ int main(int argc, char *argv[])
 {
     if (setjmp(sResetJump))
     {
-        std::vector<const char *> args = AppendAutoAttachDisablingArg(argc, argv);
-        std::vector<char *>       args_without_const(args.size());
-
-        std::transform(args.begin(), args.end(), args_without_const.begin(),
-                       [](const char *arg) { return const_cast<char *>(arg); });
+        std::vector<char *> args = AppendAutoAttachDisablingArg(argc, argv);
 
         alarm(0);
 #if OPENTHREAD_ENABLE_COVERAGE
         __gcov_flush();
 #endif
 
-        execvp(args_without_const[0], args_without_const.data());
+        execvp(args[0], args.data());
     }
 
     return realmain(argc, argv);
