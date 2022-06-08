@@ -609,7 +609,6 @@ exit:
     return error;
 }
 
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const DnssdCounters &aDnssdCounters)
 {
     DBusMessageIter sub;
@@ -651,7 +650,6 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, DnssdCounters &aDnssdCounte
 exit:
     return error;
 }
-#endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 
 } // namespace DBus
 } // namespace otbr

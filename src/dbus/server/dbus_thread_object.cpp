@@ -1254,10 +1254,20 @@ exit:
 otError DBusThreadObject::GetDnssdCountersHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    auto          threadHelper  = mNcp->GetThreadHelper();
-    auto          instance      = threadHelper->GetInstance();
-    otError       error         = OT_ERROR_NONE;
-    DnssdCounters dnssdCounters = *otDnssdGetCounters(instance);
+    auto            threadHelper = mNcp->GetThreadHelper();
+    auto            instance     = threadHelper->GetInstance();
+    otError         error        = OT_ERROR_NONE;
+    DnssdCounters   dnssdCounters;
+    otDnssdCounters otDnssdCounters = *otDnssdGetCounters(instance);
+
+    dnssdCounters.mSuccessResponse        = otDnssdCounters.mSuccessResponse;
+    dnssdCounters.mServerFailureResponse  = otDnssdCounters.mServerFailureResponse;
+    dnssdCounters.mFormatErrorResponse    = otDnssdCounters.mFormatErrorResponse;
+    dnssdCounters.mNameErrorResponse      = otDnssdCounters.mNameErrorResponse;
+    dnssdCounters.mNotImplementedResponse = otDnssdCounters.mNotImplementedResponse;
+    dnssdCounters.mOtherResponse          = otDnssdCounters.mOtherResponse;
+
+    dnssdCounters.mResolvedBySrp = otDnssdCounters.mResolvedBySrp;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, dnssdCounters) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -1269,6 +1279,18 @@ exit:
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 }
+
+static_assert(OTBR_SRP_SERVER_STATE_DISABLED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_DISABLED),
+              "OTBR_SRP_SERVER_STATE_DISABLED value is incorrect");
+static_assert(OTBR_SRP_SERVER_STATE_RUNNING == static_cast<uint8_t>(OT_SRP_SERVER_STATE_RUNNING),
+              "OTBR_SRP_SERVER_STATE_RUNNING value is incorrect");
+static_assert(OTBR_SRP_SERVER_STATE_STOPPED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_STOPPED),
+              "OTBR_SRP_SERVER_STATE_STOPPED value is incorrect");
+
+static_assert(OTBR_SRP_SERVER_ADDRESS_MODE_UNICAST == static_cast<uint8_t>(OT_SRP_SERVER_ADDRESS_MODE_UNICAST),
+              "OTBR_SRP_SERVER_ADDRESS_MODE_UNICAST value is incorrect");
+static_assert(OTBR_SRP_SERVER_ADDRESS_MODE_ANYCAST == static_cast<uint8_t>(OT_SRP_SERVER_ADDRESS_MODE_ANYCAST),
+              "OTBR_SRP_SERVER_ADDRESS_MODE_ANYCAST value is incorrect");
 
 } // namespace DBus
 } // namespace otbr
