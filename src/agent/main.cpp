@@ -112,15 +112,15 @@ static char           sAutoAttachDisablingArgStorage[sizeof(kAutoAttachDisabling
 
 static std::vector<char *> AppendAutoAttachDisablingArg(int argc, char *argv[])
 {
-    std::vector<char *> args(argc + 1);
+    std::vector<char *> args(argv, argv + argc);
 
-    std::copy(argv, argv + argc, args.begin());
     args.erase(std::remove_if(
                    args.begin(), args.end(),
                    [](const char *arg) { return arg != nullptr && std::string(arg).rfind("--auto-attach", 0) == 0; }),
                args.end());
     strcpy(sAutoAttachDisablingArgStorage, kAutoAttachDisablingArg);
     args.push_back(sAutoAttachDisablingArgStorage);
+    args.push_back(nullptr);
 
     return args;
 }
