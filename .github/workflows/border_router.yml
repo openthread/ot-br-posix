@@ -94,7 +94,7 @@ jobs:
     name: ${{ matrix.name }}
     env:
       PACKET_VERIFICATION: ${{ matrix.packet_verification }}
-      THREAD_VERSION: 1.2
+      THREAD_VERSION: 1.3
       VIRTUAL_TIME: 0
       PYTHONUNBUFFERED: 1
       REFERENCE_DEVICE: 1
@@ -158,7 +158,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       if: ${{ failure() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       with:
-        name: thread-1-2-backbone-results
+        name: thread-1-3-backbone-results
         path: |
           third_party/openthread/repo/*.pcap
           third_party/openthread/repo/*.json
