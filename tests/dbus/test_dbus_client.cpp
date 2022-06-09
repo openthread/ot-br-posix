@@ -155,7 +155,7 @@ void CheckSrpServerInfo(ThreadApiDBus *aApi)
 
 void CheckDnssdCounters(ThreadApiDBus *aApi)
 {
-    OT_UNUSED_VARIABLE(aApi);
+    OTBR_UNUSED_VARIABLE(aApi);
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     otbr::DBus::DnssdCounters dnssdCounters;
 

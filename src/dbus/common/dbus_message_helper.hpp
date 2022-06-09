@@ -83,10 +83,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const SrpServerInfo::Respons
 otbrError DBusMessageExtract(DBusMessageIter *aIter, SrpServerInfo::ResponseCounters &aResponseCounters);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const SrpServerInfo &aSrpServerInfo);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, SrpServerInfo &aSrpServerInfo);
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const DnssdCounters &aDnssdCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, DnssdCounters &aDnssdCounters);
-#endif
 
 template <typename T> struct DBusTypeTrait;
 
@@ -242,13 +240,11 @@ template <> struct DBusTypeTrait<SrpServerInfo>
     static constexpr const char *TYPE_AS_STRING = "(yqy(uutttt)(uutttt)(uuuuuu))";
 };
 
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 template <> struct DBusTypeTrait<DnssdCounters>
 {
     // struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32 }
     static constexpr const char *TYPE_AS_STRING = "(uuuuuuu)";
 };
-#endif
 
 template <> struct DBusTypeTrait<int8_t>
 {
