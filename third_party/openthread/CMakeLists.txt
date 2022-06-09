@@ -67,12 +67,14 @@ if (OTBR_SRP_ADVERTISING_PROXY)
 endif()
 
 if (OTBR_BACKBONE_ROUTER)
-    set(OT_THREAD_VERSION 1.2 CACHE STRING "Backbone Router requires Thread 1.2 or higher" FORCE)
     set(OT_BACKBONE_ROUTER ON CACHE BOOL "Enable Backbone Router feature in OpenThread" FORCE)
     set(OT_SERVICE ON CACHE BOOL "Backbone Router requires Thread network service" FORCE)
 endif()
 
-if (OT_THREAD_VERSION STREQUAL "1.2")
+if (NOT OT_THREAD_VERSION STREQUAL "1.1")
+    if (OT_REFERENCE_DEVICE)
+        set(OT_DUA ON CACHE BOOL "Enable Thread 1.2 DUA for reference devices")
+    endif()
     set(OT_MLR ON CACHE BOOL "Enable Thread 1.2 MLR by default")
 endif()
 

@@ -91,6 +91,11 @@ otbr_install()
         otbr_options+=(
             "-DOTBR_BACKBONE_ROUTER=ON"
         )
+        if [[ ${REFERENCE_DEVICE} == "1" ]]; then
+            otbr_options+=(
+                "-DOTBR_DUA_ROUTING=ON"
+            )
+        fi
     fi
 
     if [[ ${REFERENCE_DEVICE} == "1" ]]; then
