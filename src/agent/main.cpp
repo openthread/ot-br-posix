@@ -108,7 +108,7 @@ exit:
 }
 
 static constexpr char kAutoAttachDisableArg[] = "--auto-attach=0";
-static char           sAutoAttachDisablingArgStorage[sizeof(kAutoAttachDisableArg)];
+static char           sAutoAttachDisableArgStorage[sizeof(kAutoAttachDisableArg)];
 
 static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
 {
@@ -118,8 +118,8 @@ static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
                    args.begin(), args.end(),
                    [](const char *arg) { return arg != nullptr && std::string(arg).rfind("--auto-attach", 0) == 0; }),
                args.end());
-    strcpy(sAutoAttachDisablingArgStorage, kAutoAttachDisablingArg);
-    args.push_back(sAutoAttachDisablingArgStorage);
+    strcpy(sAutoAttachDisableArgStorage, kAutoAttachDisableArg);
+    args.push_back(sAutoAttachDisableArgStorage);
     args.push_back(nullptr);
 
     return args;
@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 {
     if (setjmp(sResetJump))
     {
-        std::vector<char *> args = AppendAutoAttachDisablingArg(argc, argv);
+        std::vector<char *> args = AppendAutoAttachDisableArg(argc, argv);
 
         alarm(0);
 #if OPENTHREAD_ENABLE_COVERAGE
