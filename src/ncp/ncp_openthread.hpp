@@ -68,7 +68,7 @@ public:
      * @param[in]   aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
-     * @param[in]   aEnableAutoAttach       Whether or not automatically attaches to the saved network.
+     * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
      *
      */
     ControllerOpenThread(const char *                     aInterfaceName,
