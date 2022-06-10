@@ -202,6 +202,13 @@
       <arg name="update" type="a(say)" direction="in"/>
     </method>
 
+    <!-- GetProperties: Get one or more OpenThread properties.
+      @properties: Names of properties.
+    -->
+    <method name="GetProperties">
+      <arg name="properties" type="as" direction="in"/>
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
@@ -562,6 +569,21 @@
       </literallayout>
     -->
     <property name="DnssdCounters" type="(uuuuuuu)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <!-- OtHostVersion: The version string of the host build. -->
+    <property name="OtHostVersion" type="s" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <!-- OtRcpVersion: The version string of the RCP firmware. -->
+    <property name="OtRcpVersion" type="s" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <!-- ThreadVersion: The Thread protocol version. -->
+    <property name="ThreadVersion" type="q" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
   </interface>

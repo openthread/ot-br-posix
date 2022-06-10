@@ -74,6 +74,10 @@ public:
 
     otbrError Init(void) override;
 
+    void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
+                                    const std::string &        aPropertyName,
+                                    const PropertyHandlerType &aHandler) override;
+
 private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
     void NcpResetHandler(void);
@@ -94,6 +98,7 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
+    void GetPropertiesHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 
@@ -134,11 +139,15 @@ private:
     otError GetRadioRegionHandler(DBusMessageIter &aIter);
     otError GetSrpServerInfoHandler(DBusMessageIter &aIter);
     otError GetDnssdCountersHandler(DBusMessageIter &aIter);
+    otError GetOtHostVersionHandler(DBusMessageIter &aIter);
+    otError GetOtRcpVersionHandler(DBusMessageIter &aIter);
+    otError GetThreadVersionHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
-    otbr::Ncp::ControllerOpenThread *mNcp;
+    otbr::Ncp::ControllerOpenThread *                    mNcp;
+    std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
 };
 
 } // namespace DBus

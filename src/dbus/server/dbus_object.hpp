@@ -103,25 +103,25 @@ public:
      * This method registers the get handler for a property.
      *
      * @param[in] aInterfaceName  The interface name.
-     * @param[in] aMethodName     The method name.
+     * @param[in] aPropertyName   The property name.
      * @param[in] aHandler        The method handler.
      *
      */
-    void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
-                                    const std::string &        aMethodName,
-                                    const PropertyHandlerType &aHandler);
+    virtual void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
+                                            const std::string &        aPropertyName,
+                                            const PropertyHandlerType &aHandler);
 
     /**
      * This method registers the set handler for a property.
      *
      * @param[in] aInterfaceName  The interface name.
-     * @param[in] aMethodName     The method name.
+     * @param[in] aPropertyName   The property name.
      * @param[in] aHandler        The method handler.
      *
      */
-    void RegisterSetPropertyHandler(const std::string &        aInterfaceName,
-                                    const std::string &        aPropertyName,
-                                    const PropertyHandlerType &aHandler);
+    virtual void RegisterSetPropertyHandler(const std::string &        aInterfaceName,
+                                            const std::string &        aPropertyName,
+                                            const PropertyHandlerType &aHandler);
 
     /**
      * This method sends a signal.
