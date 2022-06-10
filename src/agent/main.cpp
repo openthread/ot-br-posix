@@ -107,10 +107,10 @@ exit:
     return successful;
 }
 
-static constexpr char kAutoAttachDisablingArg[] = "--auto-attach=0";
-static char           sAutoAttachDisablingArgStorage[sizeof(kAutoAttachDisablingArg)];
+static constexpr char kAutoAttachDisableArg[] = "--auto-attach=0";
+static char           sAutoAttachDisablingArgStorage[sizeof(kAutoAttachDisableArg)];
 
-static std::vector<char *> AppendAutoAttachDisablingArg(int argc, char *argv[])
+static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
 {
     std::vector<char *> args(argv, argv + argc);
 

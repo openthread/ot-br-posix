@@ -83,7 +83,7 @@ public:
      * @param[in] aInterfaceName         Name of the Thread network interface.
      * @param[in] aBackboneInterfaceName Name of the backbone network interface.
      * @param[in] aRadioUrls             The radio URLs (can be IEEE802.15.4 or TREL radio).
-     * @param[in] aEnableAutoAttach      Whether or not automatically attaches to the saved network.
+     * @param[in] aEnableAutoAttach      Whether or not to automatically attach to the saved network.
      *
      */
     explicit Application(const std::string &              aInterfaceName,
