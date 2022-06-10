@@ -64,8 +64,10 @@ static const uint16_t kThreadVersion13 = 4; ///< Thread Version 1.3
 ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
                                            const std::vector<const char *> &aRadioUrls,
                                            const char *                     aBackboneInterfaceName,
-                                           bool                             aDryRun)
+                                           bool                             aDryRun,
+                                           bool                             aEnableAutoAttach)
     : mInstance(nullptr)
+    , mEnableAutoAttach(aEnableAutoAttach)
 {
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -242,15 +244,12 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
 
 bool ControllerOpenThread::IsAutoAttachEnabled(void)
 {
-    const char *val = getenv("OTBR_NO_AUTO_ATTACH");
-
-    // Auto Thread attaching is enabled if OTBR_NO_AUTO_ATTACH is unset, empty or "0"
-    return (val == nullptr || !strcmp(val, "") || !strcmp(val, "0"));
+    return mEnableAutoAttach;
 }
 
 void ControllerOpenThread::DisableAutoAttach(void)
 {
-    setenv("OTBR_NO_AUTO_ATTACH", "1", 1);
+    mEnableAutoAttach = false;
 }
 
 void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
@@ -280,7 +279,7 @@ void ControllerOpenThread::Reset(void)
     {
         handler();
     }
-    unsetenv("OTBR_NO_AUTO_ATTACH");
+    mEnableAutoAttach = true;
 }
 
 const char *ControllerOpenThread::GetThreadVersion(void)

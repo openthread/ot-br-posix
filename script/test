@@ -177,6 +177,13 @@ do_package()
     OTBR_TARGET="package" ./script/cmake-build "${otbr_options[@]}"
 }
 
+do_simulation()
+{
+    export top_builddir="${OTBR_TOP_BUILDDIR}"
+
+    print_result tests/scripts/auto-attach
+}
+
 main()
 {
     if [[ $# == 0 ]]; then
@@ -205,11 +212,12 @@ main()
             meshcop)
                 top_builddir="${OTBR_TOP_BUILDDIR}" print_result ./tests/scripts/meshcop
                 ;;
-
             openwrt)
                 print_result ./tests/scripts/openwrt
                 ;;
-
+            simulation)
+                do_simulation
+                ;;
             package)
                 do_package
                 ;;

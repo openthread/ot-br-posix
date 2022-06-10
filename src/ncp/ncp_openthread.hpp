@@ -68,12 +68,14 @@ public:
      * @param[in]   aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
      *
      */
     ControllerOpenThread(const char *                     aInterfaceName,
                          const std::vector<const char *> &aRadioUrls,
                          const char *                     aBackboneInterfaceName,
-                         bool                             aDryRun);
+                         bool                             aDryRun,
+                         bool                             aEnableAutoAttach);
 
     /**
      * This method initialize the NCP controller.
@@ -185,9 +187,8 @@ private:
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 
-    static bool IsAutoAttachEnabled(void);
-
-    static void DisableAutoAttach(void);
+    bool IsAutoAttachEnabled(void);
+    void DisableAutoAttach(void);
 
     static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 
@@ -198,6 +199,7 @@ private:
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
+    bool                                       mEnableAutoAttach = false;
 };
 
 } // namespace Ncp

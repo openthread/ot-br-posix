@@ -48,10 +48,11 @@ const struct timeval Application::kPollTimeout = {10, 0};
 
 Application::Application(const std::string &              aInterfaceName,
                          const std::string &              aBackboneInterfaceName,
-                         const std::vector<const char *> &aRadioUrls)
+                         const std::vector<const char *> &aRadioUrls,
+                         bool                             aEnableAutoAttach)
     : mInterfaceName(aInterfaceName)
     , mBackboneInterfaceName(aBackboneInterfaceName)
-    , mNcp(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName.c_str(), /* aDryRun */ false)
+    , mNcp(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName.c_str(), /* aDryRun */ false, aEnableAutoAttach)
 #if OTBR_ENABLE_BORDER_AGENT
     , mBorderAgent(mNcp)
 #endif
