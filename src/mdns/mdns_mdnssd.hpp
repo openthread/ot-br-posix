@@ -65,17 +65,8 @@ public:
 
     // Implementation of Mdns::Publisher.
 
-    void      PublishService(const std::string &aHostName,
-                             const std::string &aName,
-                             const std::string &aType,
-                             const SubTypeList &aSubTypeList,
-                             uint16_t           aPort,
-                             const TxtList &    aTxtList,
-                             ResultCallback &&  aCallback) override;
-    void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
-    void      PublishHost(const std::string &         aName,
-                          const std::vector<uint8_t> &aAddress,
-                          ResultCallback &&           aCallback) override;
+    void UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
+
     void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
@@ -90,6 +81,23 @@ public:
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
 
+protected:
+    void      PublishServiceImpl(const std::string &aHostName,
+                                 const std::string &aName,
+                                 const std::string &aType,
+                                 const SubTypeList &aSubTypeList,
+                                 uint16_t           aPort,
+                                 const TxtList &    aTxtList,
+                                 ResultCallback &&  aCallback) override;
+    void      PublishHostImpl(const std::string &         aName,
+                              const std::vector<uint8_t> &aAddress,
+                              ResultCallback &&           aCallback) override;
+    void      OnServiceResolveFailedImpl(const std::string &aType,
+                                         const std::string &aInstanceName,
+                                         int32_t            aErrorCode) override;
+    void      OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) override;
+    otbrError DnsErrorToOtbrError(int32_t aErrorCode) override;
+
 private:
     static constexpr uint32_t kDefaultTtl = 10;
 
@@ -103,8 +111,16 @@ private:
                                  uint16_t           aPort,
                                  const TxtList &    aTxtList,
                                  ResultCallback &&  aCallback,
-                                 DNSServiceRef      aServiceRef)
-            : ServiceRegistration(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback))
+                                 DNSServiceRef      aServiceRef,
+                                 PublisherMDnsSd *  aPublisher)
+            : ServiceRegistration(aHostName,
+                                  aName,
+                                  aType,
+                                  aSubTypeList,
+                                  aPort,
+                                  aTxtList,
+                                  std::move(aCallback),
+                                  aPublisher)
             , mServiceRef(aServiceRef)
         {
         }
@@ -123,8 +139,9 @@ private:
                               const std::vector<uint8_t> &aAddress,
                               ResultCallback &&           aCallback,
                               DNSServiceRef               aServiceRef,
-                              DNSRecordRef                aRecordRef)
-            : HostRegistration(aName, aAddress, std::move(aCallback))
+                              DNSRecordRef                aRecordRef,
+                              Publisher *                 aPublisher)
+            : HostRegistration(aName, aAddress, std::move(aCallback), aPublisher)
             , mServiceRef(aServiceRef)
             , mRecordRef(aRecordRef)
         {
@@ -324,11 +341,6 @@ private:
 
     ServiceRegistration *FindServiceRegistration(const DNSServiceRef &aServiceRef);
     HostRegistration *   FindHostRegistration(const DNSServiceRef &aServiceRef, const DNSRecordRef &aRecordRef);
-
-    static void OnServiceResolveFailed(const std::string & aType,
-                                       const std::string & aInstanceName,
-                                       DNSServiceErrorType aErrorCode);
-    void        OnHostResolveFailed(const HostSubscription &aHost, DNSServiceErrorType aErrorCode);
 
     DNSServiceRef mHostsRef;
     State         mState;

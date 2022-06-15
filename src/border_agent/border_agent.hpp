@@ -103,6 +103,14 @@ public:
      */
     void Deinit(void);
 
+    /**
+     * This method returns the Publisher the border agent is using.
+     *
+     * @returns  A reference to the mPublisher.
+     *
+     */
+    Mdns::Publisher &GetPublisher() { return *mPublisher; }
+
 private:
     enum : uint8_t
     {

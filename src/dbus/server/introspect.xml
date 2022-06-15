@@ -578,6 +578,52 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- MdnsTelemetryInfo: The MDNS information
+    <literallayout>
+        struct {
+          struct {  // host registration responses
+            uint32 success
+            uint32 not_found
+            uint32 invalid_args
+            uint32 duplicated
+            uint32 not_implemented
+            uint32 unknown_error
+          }
+          struct {  // service registration responses
+            uint32 success
+            uint32 not_found
+            uint32 invalid_args
+            uint32 duplicated
+            uint32 not_implemented
+            uint32 unknown_error
+          }
+          struct {  // host resolution responses
+            uint32 success
+            uint32 not_found
+            uint32 invalid_args
+            uint32 duplicated
+            uint32 not_implemented
+            uint32 unknown_error
+          }
+          struct {  // service resolution responses
+            uint32 success
+            uint32 not_found
+            uint32 invalid_args
+            uint32 duplicated
+            uint32 not_implemented
+            uint32 unknown_error
+          }
+          uint32 host_registration_ema_latency
+          uint32 service_registration_ema_latency
+          uint32 host_resolution_ema_latency
+          uint32 service_resolution_ema_latency
+        }
+      </literallayout>
+    -->
+    <property name="MdnsTelemetryInfo" type="(uuuuuu)(uuuuuu)(uuuuuu)(uuuuuu)uuuu" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- OtHostVersion: The version string of the host build. -->
     <property name="OtHostVersion" type="s" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

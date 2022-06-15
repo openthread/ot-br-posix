@@ -651,5 +651,87 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MdnsResponseCounters &aMdnsResponseCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mSuccess));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mNotFound));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mInvalidArgs));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mDuplicated));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mNotImplemented));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mUnknownError));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MdnsResponseCounters &aMdnsResponseCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mSuccess));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mNotFound));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mInvalidArgs));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mDuplicated));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mNotImplemented));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mUnknownError));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const MdnsTelemetryInfo &aMdnsTelemetryInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mHostRegistrations));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mServiceRegistrations));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mHostResolutions));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mServiceResolutions));
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mHostRegistrationEmaLatency));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mServiceRegistrationEmaLatency));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mHostResolutionEmaLatency));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsTelemetryInfo.mServiceResolutionEmaLatency));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, MdnsTelemetryInfo &aMdnsTelemetryInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mHostRegistrations));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mServiceRegistrations));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mHostResolutions));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mServiceResolutions));
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mHostRegistrationEmaLatency));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mServiceRegistrationEmaLatency));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mHostResolutionEmaLatency));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsTelemetryInfo.mServiceResolutionEmaLatency));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

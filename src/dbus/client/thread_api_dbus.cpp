@@ -638,6 +638,11 @@ ClientError ThreadApiDBus::GetSrpServerInfo(SrpServerInfo &aSrpServerInfo)
     return GetProperty(OTBR_DBUS_PROPERTY_SRP_SERVER_INFO, aSrpServerInfo);
 }
 
+ClientError ThreadApiDBus::GetMdnsTelemetryInfo(MdnsTelemetryInfo &aMdnsTelemetryInfo)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_MDNS_TELEMETRY_INFO, aMdnsTelemetryInfo);
+}
+
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 ClientError ThreadApiDBus::GetDnssdCounters(DnssdCounters &aDnssdCounters)
 {

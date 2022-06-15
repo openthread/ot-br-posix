@@ -379,6 +379,36 @@ public:
     };
 };
 
+struct MdnsResponseCounters
+{
+    uint32_t mSuccess;        ///< The number of successful responses
+    uint32_t mNotFound;       ///< The number of 'not found' responses
+    uint32_t mInvalidArgs;    ///< The number of 'invalid arg' responses
+    uint32_t mDuplicated;     ///< The number of 'duplicated' responses
+    uint32_t mNotImplemented; ///< The number of 'not implemented' responses
+    uint32_t mUnknownError;   ///< The number of unknown error responses
+};
+
+struct MdnsTelemetryInfo
+{
+    static constexpr uint32_t kEmaFactorNumerator   = 1;
+    static constexpr uint32_t kEmaFactorDenominator = 2;
+
+    static_assert(kEmaFactorNumerator > 0, "kEmaFactorNumerator must be greater than 0");
+    static_assert(kEmaFactorDenominator > kEmaFactorNumerator,
+                  "kEmaFactorDenominator must be greater than kEmaFactorNumerator");
+
+    MdnsResponseCounters mHostRegistrations;
+    MdnsResponseCounters mServiceRegistrations;
+    MdnsResponseCounters mHostResolutions;
+    MdnsResponseCounters mServiceResolutions;
+
+    uint32_t mHostRegistrationEmaLatency;    ///< The EMA latency of host registrations in milliseconds
+    uint32_t mServiceRegistrationEmaLatency; ///< The EMA latency of service registrations in milliseconds
+    uint32_t mHostResolutionEmaLatency;      ///< The EMA latency of host resolutions in milliseconds
+    uint32_t mServiceResolutionEmaLatency;   ///< The EMA latency of service resolutions in milliseconds
+};
+
 } // namespace otbr
 
 #endif // OTBR_COMMON_TYPES_HPP_

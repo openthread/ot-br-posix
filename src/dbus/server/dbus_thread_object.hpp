@@ -39,6 +39,7 @@
 #include <openthread/link.h>
 
 #include "dbus/server/dbus_object.hpp"
+#include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
 
 namespace otbr {
@@ -66,11 +67,13 @@ public:
      * @param[in] aConnection     The dbus connection.
      * @param[in] aInterfaceName  The dbus interface name.
      * @param[in] aNcp            The ncp controller
+     * @param[in] aPublisher      The Mdns::Publisher
      *
      */
     DBusThreadObject(DBusConnection *                 aConnection,
                      const std::string &              aInterfaceName,
-                     otbr::Ncp::ControllerOpenThread *aNcp);
+                     otbr::Ncp::ControllerOpenThread *aNcp,
+                     Mdns::Publisher *                aPublisher);
 
     otbrError Init(void) override;
 
@@ -140,6 +143,7 @@ private:
     otError GetActiveDatasetTlvsHandler(DBusMessageIter &aIter);
     otError GetRadioRegionHandler(DBusMessageIter &aIter);
     otError GetSrpServerInfoHandler(DBusMessageIter &aIter);
+    otError GetMdnsTelemetryInfoHandler(DBusMessageIter &aIter);
     otError GetDnssdCountersHandler(DBusMessageIter &aIter);
     otError GetOtHostVersionHandler(DBusMessageIter &aIter);
     otError GetOtRcpVersionHandler(DBusMessageIter &aIter);
@@ -150,6 +154,7 @@ private:
 
     otbr::Ncp::ControllerOpenThread *                    mNcp;
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
+    otbr::Mdns::Publisher *                              mPublisher;
 };
 
 } // namespace DBus
