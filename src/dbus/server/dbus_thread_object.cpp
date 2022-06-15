@@ -139,6 +139,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_VENDOR_MESHCOP_TXT_METHOD,
                    std::bind(&DBusThreadObject::UpdateMeshCopTxtHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_PROPERTIES_METHOD,
+                   std::bind(&DBusThreadObject::GetPropertiesHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
@@ -219,6 +221,12 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetSrpServerInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNSSD_COUNTERS,
                                std::bind(&DBusThreadObject::GetDnssdCountersHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_HOST_VERSION,
+                               std::bind(&DBusThreadObject::GetOtHostVersionHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_RCP_VERSION,
+                               std::bind(&DBusThreadObject::GetOtRcpVersionHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_THREAD_VERSION,
+                               std::bind(&DBusThreadObject::GetThreadVersionHandler, this, _1));
 
     return error;
 }
@@ -1278,6 +1286,88 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+}
+
+void DBusThreadObject::GetPropertiesHandler(DBusRequest &aRequest)
+{
+    UniqueDBusMessage        reply(dbus_message_new_method_return(aRequest.GetMessage()));
+    DBusMessageIter          iter;
+    DBusMessageIter          replyIter;
+    DBusMessageIter          replySubIter;
+    std::vector<std::string> propertyNames;
+    otError                  error = OT_ERROR_NONE;
+
+    VerifyOrExit(reply != nullptr, error = OT_ERROR_NO_BUFS);
+    VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage(), &iter), error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageExtract(&iter, propertyNames) == OTBR_ERROR_NONE, error = OT_ERROR_PARSE);
+
+    dbus_message_iter_init_append(reply.get(), &replyIter);
+    VerifyOrExit(
+        dbus_message_iter_open_container(&replyIter, DBUS_TYPE_ARRAY, DBUS_TYPE_VARIANT_AS_STRING, &replySubIter),
+        error = OT_ERROR_NO_BUFS);
+
+    for (const std::string &propertyName : propertyNames)
+    {
+        auto handlerIter = mGetPropertyHandlers.find(propertyName);
+
+        otbrLogInfo("GetPropertiesHandler getting property: %s", propertyName.c_str());
+        VerifyOrExit(handlerIter != mGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
+
+        SuccessOrExit(error = handlerIter->second(replySubIter));
+    }
+
+    VerifyOrExit(dbus_message_iter_close_container(&replyIter, &replySubIter), error = OT_ERROR_NO_BUFS);
+
+exit:
+    if (error == OT_ERROR_NONE)
+    {
+        dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
+    }
+    else
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObject::RegisterGetPropertyHandler(const std::string &        aInterfaceName,
+                                                  const std::string &        aPropertyName,
+                                                  const PropertyHandlerType &aHandler)
+{
+    DBusObject::RegisterGetPropertyHandler(aInterfaceName, aPropertyName, aHandler);
+    mGetPropertyHandlers[aPropertyName] = aHandler;
+}
+
+otError DBusThreadObject::GetOtHostVersionHandler(DBusMessageIter &aIter)
+{
+    otError     error   = OT_ERROR_NONE;
+    std::string version = otGetVersionString();
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, version) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetOtRcpVersionHandler(DBusMessageIter &aIter)
+{
+    auto        threadHelper = mNcp->GetThreadHelper();
+    otError     error        = OT_ERROR_NONE;
+    std::string version      = otGetRadioVersionString(threadHelper->GetInstance());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, version) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetThreadVersionHandler(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otThreadGetVersion()) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+
+exit:
+    return error;
 }
 
 static_assert(OTBR_SRP_SERVER_STATE_DISABLED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_DISABLED),

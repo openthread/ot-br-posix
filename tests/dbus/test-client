@@ -103,6 +103,19 @@ main()
     trap on_exit EXIT
     sleep 5
 
+    local ot_version
+    local rcp_version
+    local thread_version
+    ot_version=$(sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl version | grep -oE '^OPENTHREAD.*$' | tr -d '\r\n')
+    rcp_version=$(sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl rcp version | grep -oE '^OPENTHREAD.*$' | tr -d '\r\n')
+    thread_version=$(sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread version | grep -oE '^[0-9]+' | tr -d '\r\n')
+
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply \
+        /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.GetProperties \
+        array:string:OtHostVersion,OtRcpVersion,ThreadVersion \
+        | grep -oPz "\s+variant\s+string\s+\"${ot_version}\"\s+variant\s+string\s+\"${rcp_version}\"\s+variant\s+uint16\s+${thread_version}"
+
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl ifconfig up
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread start
 
