@@ -35,6 +35,7 @@
 #define OTBR_LOG_TAG "DBUS"
 #endif
 
+#include "common/code_utils.hpp"
 #include "common/logging.hpp"
 
 #include "dbus/common/dbus_message_dump.hpp"
@@ -136,9 +137,11 @@ public:
      * This method replies an otError to the d-bus method call.
      *
      * @param[in] aError  The error to be sent.
+     * @param[in] aResult The return value of the method call, if any.
      *
      */
-    void ReplyOtResult(otError aError)
+    template <typename ResultType = int>
+    void ReplyOtResult(otError aError, Optional<ResultType> aResult = Optional<ResultType>())
     {
         UniqueDBusMessage reply{nullptr};
 
@@ -160,6 +163,19 @@ public:
         else
         {
             reply = UniqueDBusMessage(dbus_message_new_error(mMessage, ConvertToDBusErrorName(aError), nullptr));
+        }
+
+        if (aResult.HasValue())
+        {
+            DBusMessageIter replyIter;
+            otbrError       error;
+
+            dbus_message_iter_init_append(reply.get(), &replyIter);
+            error = DBusMessageEncode(&replyIter, *aResult);
+            if (error != OTBR_ERROR_NONE)
+            {
+                otbrLogErr("Failed to encode result: %s", otbrErrorString(error));
+            }
         }
 
         VerifyOrExit(reply != nullptr);

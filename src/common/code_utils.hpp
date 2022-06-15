@@ -175,4 +175,62 @@ protected:
     NonCopyable(void) = default;
 };
 
+template <typename T> class Optional
+{
+public:
+    constexpr Optional(void) = default;
+
+    Optional(T aValue)
+    {
+        new (&mStorage) T(aValue);
+        mHasValue = true;
+    }
+
+    ~Optional(void)
+    {
+        if (mHasValue)
+        {
+            GetValue().~T();
+        }
+    }
+
+    Optional(const Optional &aOther)
+    {
+        if (aOther.mHasValue)
+        {
+            new (&mStorage) T(aOther.GetValue());
+        }
+        mHasValue = aOther.mHasValue;
+    }
+
+    Optional &operator=(const Optional &aOther)
+    {
+        if (mHasValue)
+        {
+            GetValue().~T();
+        }
+        if (aOther.mHasValue)
+        {
+            new (&mStorage) T(aOther.GetValue());
+        }
+        mHasValue = aOther.mHasValue;
+    }
+
+    constexpr const T *operator->(void)const { return &GetValue(); }
+
+    constexpr const T &operator*(void)const { return GetValue(); }
+
+    constexpr bool HasValue(void) const { return mHasValue; }
+
+private:
+    T &GetValue(void) const
+    {
+        VerifyOrDie(mHasValue, "Optional doesn't contain a value");
+        return *const_cast<T *>(reinterpret_cast<const T *>(&mStorage));
+    }
+
+    alignas(T) unsigned char mStorage[sizeof(T)];
+    bool mHasValue = false;
+};
+
 #endif // OTBR_COMMON_CODE_UTILS_HPP_
