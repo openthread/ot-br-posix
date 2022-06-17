@@ -583,15 +583,15 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
         if (hasActiveDataset)
         {
             mAttachDelayMs            = kDelayTimerMilliseconds;
-            mAttachHandler            = aHandler;
             mAttachPendingDatasetTlvs = datasetTlvs;
-            ExitNow();
         }
         else
         {
-            aHandler(OT_ERROR_NONE, 0);
-            ExitNow();
+            mAttachDelayMs            = 0;
+            mAttachPendingDatasetTlvs = {};
         }
+        mAttachHandler = aHandler;
+        ExitNow();
     }
 
     SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,

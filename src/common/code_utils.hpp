@@ -180,41 +180,13 @@ template <typename T> class Optional
 public:
     constexpr Optional(void) = default;
 
-    Optional(T aValue)
-    {
-        new (&mStorage) T(aValue);
-        mHasValue = true;
-    }
+    Optional(T aValue) { SetValue(aValue); }
 
-    ~Optional(void)
-    {
-        if (mHasValue)
-        {
-            GetValue().~T();
-        }
-    }
+    ~Optional(void) { ClearValue(); }
 
-    Optional(const Optional &aOther)
-    {
-        if (aOther.mHasValue)
-        {
-            new (&mStorage) T(aOther.GetValue());
-        }
-        mHasValue = aOther.mHasValue;
-    }
+    Optional(const Optional &aOther) { AssignFrom(aOther); }
 
-    Optional &operator=(const Optional &aOther)
-    {
-        if (mHasValue)
-        {
-            GetValue().~T();
-        }
-        if (aOther.mHasValue)
-        {
-            new (&mStorage) T(aOther.GetValue());
-        }
-        mHasValue = aOther.mHasValue;
-    }
+    Optional &operator=(const Optional &aOther) { AssignFrom(aOther); }
 
     constexpr const T *operator->(void)const { return &GetValue(); }
 
@@ -227,6 +199,31 @@ private:
     {
         VerifyOrDie(mHasValue, "Optional doesn't contain a value");
         return *const_cast<T *>(reinterpret_cast<const T *>(&mStorage));
+    }
+
+    void ClearValue(void)
+    {
+        if (mHasValue)
+        {
+            GetValue().~T();
+            mHasValue = false;
+        }
+    }
+
+    void SetValue(const T &aValue)
+    {
+        ClearValue();
+        new (&mStorage) T(aValue);
+        mHasValue = true;
+    }
+
+    void AssignFrom(const Optional &aOther)
+    {
+        ClearValue();
+        if (aOther.mHasValue)
+        {
+            SetValue(aOther.GetValue());
+        }
     }
 
     alignas(T) unsigned char mStorage[sizeof(T)];

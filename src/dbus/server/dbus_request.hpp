@@ -164,6 +164,7 @@ public:
         {
             reply = UniqueDBusMessage(dbus_message_new_error(mMessage, ConvertToDBusErrorName(aError), nullptr));
         }
+        VerifyOrDie(reply != nullptr, "Failed to allocate message");
 
         if (aResult.HasValue())
         {
@@ -172,17 +173,10 @@ public:
 
             dbus_message_iter_init_append(reply.get(), &replyIter);
             error = DBusMessageEncode(&replyIter, *aResult);
-            if (error != OTBR_ERROR_NONE)
-            {
-                otbrLogErr("Failed to encode result: %s", otbrErrorString(error));
-            }
+            VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to encode result");
         }
 
-        VerifyOrExit(reply != nullptr);
         dbus_connection_send(mConnection, reply.get(), nullptr);
-
-    exit:
-        return;
     }
 
     /**
