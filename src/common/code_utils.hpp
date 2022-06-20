@@ -37,6 +37,7 @@
 #define OTBR_LOG_TAG "UTILS"
 #endif
 
+#include <assert.h>
 #include <memory>
 #include <stdlib.h>
 
@@ -197,7 +198,7 @@ public:
 private:
     T &GetValue(void) const
     {
-        VerifyOrDie(mHasValue, "Optional doesn't contain a value");
+        assert(mHasValue);
         return *const_cast<T *>(reinterpret_cast<const T *>(&mStorage));
     }
 
