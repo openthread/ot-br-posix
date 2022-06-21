@@ -102,7 +102,7 @@ case "\$1" in
     start)
 EOF
     for IFNAME in $WLAN_IFNAMES; do
-        echo "      iptables -t nat -A POSTROUTING -o $IFNAME -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
+        echo "      iptables-legacy -t nat -A POSTROUTING -o $IFNAME -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
     done
     sudo tee -a $NAT44_SERVICE <<EOF
         ;;
