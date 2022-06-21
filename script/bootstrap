@@ -33,6 +33,8 @@
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
+NAT64_SERVICE="${NAT64_SERVICE:-tayga}"
+
 install_packages_apt()
 {
     sudo apt-get update
@@ -68,7 +70,10 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libboost-dev libboost-filesystem-dev libboost-system-dev
 
     # nat64
-    without NAT64 || sudo apt-get install --no-install-recommends -y tayga iptables
+    without NAT64 || {
+        "$NAT64_SERVICE" != "tayga" || sudo apt-get install --no-install-recommends -y tayga
+        sudo apt-get install --no-install-recommends -y iptables
+    }
 
     # dns64
     without DNS64 || {
@@ -123,7 +128,8 @@ install_packages_rpm()
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
     sudo $PM install -y boost-devel boost-filesystem boost-system
-    sudo $PM install -y tayga iptables
+    "$NAT64_SERVICE" != "tayga" || sudo $PM install -y tayga
+    sudo $PM install -y iptables
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget
 }
