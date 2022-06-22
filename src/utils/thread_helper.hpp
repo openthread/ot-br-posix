@@ -67,6 +67,7 @@ public:
     using ScanHandler             = std::function<void(otError, const std::vector<otActiveScanResult> &)>;
     using EnergyScanHandler       = std::function<void(otError, const std::vector<otEnergyScanResult> &)>;
     using ResultHandler           = std::function<void(otError)>;
+    using AttachHandler           = std::function<void(otError, int64_t)>;
     using UpdateMeshCopTxtHandler = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
 
     /**
@@ -134,7 +135,7 @@ public:
                 const std::vector<uint8_t> &aNetworkKey,
                 const std::vector<uint8_t> &aPSKc,
                 uint32_t                    aChannelMask,
-                ResultHandler               aHandler);
+                AttachHandler               aHandler);
 
     /**
      * This method detaches the device from the Thread network.
@@ -153,7 +154,7 @@ public:
      * @param[in] aHandler  The attach result handler.
      *
      */
-    void Attach(ResultHandler aHandler);
+    void Attach(AttachHandler aHandler);
 
     /**
      * This method makes all nodes in the current network attach to the network specified by the dataset TLVs.
@@ -162,7 +163,7 @@ public:
      * @param[in] aHandler      The result handler.
      *
      */
-    void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHandler aHandler);
+    void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, AttachHandler aHandler);
 
     /**
      * This method resets the OpenThread stack.
@@ -277,7 +278,8 @@ private:
 
     std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 
-    ResultHandler mAttachHandler;
+    int64_t       mAttachDelayMs = 0;
+    AttachHandler mAttachHandler;
     ResultHandler mJoinerHandler;
 
     otOperationalDatasetTlvs mAttachPendingDatasetTlvs = {};

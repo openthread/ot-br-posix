@@ -37,6 +37,7 @@
 #define OTBR_LOG_TAG "UTILS"
 #endif
 
+#include <assert.h>
 #include <memory>
 #include <stdlib.h>
 
@@ -173,6 +174,61 @@ public:
 
 protected:
     NonCopyable(void) = default;
+};
+
+template <typename T> class Optional
+{
+public:
+    constexpr Optional(void) = default;
+
+    Optional(T aValue) { SetValue(aValue); }
+
+    ~Optional(void) { ClearValue(); }
+
+    Optional(const Optional &aOther) { AssignFrom(aOther); }
+
+    Optional &operator=(const Optional &aOther) { AssignFrom(aOther); }
+
+    constexpr const T *operator->(void)const { return &GetValue(); }
+
+    constexpr const T &operator*(void)const { return GetValue(); }
+
+    constexpr bool HasValue(void) const { return mHasValue; }
+
+private:
+    T &GetValue(void) const
+    {
+        assert(mHasValue);
+        return *const_cast<T *>(reinterpret_cast<const T *>(&mStorage));
+    }
+
+    void ClearValue(void)
+    {
+        if (mHasValue)
+        {
+            GetValue().~T();
+            mHasValue = false;
+        }
+    }
+
+    void SetValue(const T &aValue)
+    {
+        ClearValue();
+        new (&mStorage) T(aValue);
+        mHasValue = true;
+    }
+
+    void AssignFrom(const Optional &aOther)
+    {
+        ClearValue();
+        if (aOther.mHasValue)
+        {
+            SetValue(aOther.GetValue());
+        }
+    }
+
+    alignas(T) unsigned char mStorage[sizeof(T)];
+    bool mHasValue = false;
 };
 
 #endif // OTBR_COMMON_CODE_UTILS_HPP_

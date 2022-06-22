@@ -94,10 +94,10 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
             {
                 if (mAttachPendingDatasetTlvs.mLength == 0)
                 {
-                    ResultHandler handler = mAttachHandler;
+                    AttachHandler handler = mAttachHandler;
 
                     mAttachHandler = nullptr;
-                    handler(OT_ERROR_NONE);
+                    handler(OT_ERROR_NONE, mAttachDelayMs);
                 }
                 else
                 {
@@ -107,11 +107,11 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
                                                     mAttachPendingDatasetTlvs.mLength, MgmtSetResponseHandler, this);
                     if (error != OT_ERROR_NONE)
                     {
-                        ResultHandler handler = mAttachHandler;
+                        AttachHandler handler = mAttachHandler;
 
                         mAttachHandler            = nullptr;
                         mAttachPendingDatasetTlvs = {};
-                        handler(error);
+                        handler(error, 0);
                     }
                 }
             }
@@ -281,7 +281,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
                           const std::vector<uint8_t> &aNetworkKey,
                           const std::vector<uint8_t> &aPSKc,
                           uint32_t                    aChannelMask,
-                          ResultHandler               aHandler)
+                          AttachHandler               aHandler)
 
 {
     otError         error = OT_ERROR_NONE;
@@ -358,6 +358,7 @@ void ThreadHelper::Attach(const std::string &         aNetworkName,
     SuccessOrExit(error = otThreadSetPskc(mInstance, &pskc));
 
     SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+    mAttachDelayMs = 0;
     mAttachHandler = aHandler;
 
 exit:
@@ -365,12 +366,12 @@ exit:
     {
         if (aHandler)
         {
-            aHandler(error);
+            aHandler(error, 0);
         }
     }
 }
 
-void ThreadHelper::Attach(ResultHandler aHandler)
+void ThreadHelper::Attach(AttachHandler aHandler)
 {
     otError error = OT_ERROR_NONE;
 
@@ -388,7 +389,7 @@ exit:
     {
         if (aHandler)
         {
-            aHandler(error);
+            aHandler(error, 0);
         }
     }
 }
@@ -499,7 +500,7 @@ void ThreadHelper::LogOpenThreadResult(const char *aAction, otError aError)
     }
 }
 
-void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, ResultHandler aHandler)
+void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, AttachHandler aHandler)
 {
     constexpr uint32_t kDelayTimerMilliseconds = 300 * 1000;
 
@@ -581,25 +582,27 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, Re
 
         if (hasActiveDataset)
         {
-            mAttachHandler            = aHandler;
+            mAttachDelayMs            = kDelayTimerMilliseconds;
             mAttachPendingDatasetTlvs = datasetTlvs;
-            ExitNow();
         }
         else
         {
-            aHandler(OT_ERROR_NONE);
-            ExitNow();
+            mAttachDelayMs            = 0;
+            mAttachPendingDatasetTlvs = {};
         }
+        mAttachHandler = aHandler;
+        ExitNow();
     }
 
     SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
                                                       MgmtSetResponseHandler, this));
+    mAttachDelayMs = kDelayTimerMilliseconds;
     mAttachHandler = aHandler;
 
 exit:
     if (error != OT_ERROR_NONE)
     {
-        aHandler(error);
+        aHandler(error, 0);
     }
 }
 
@@ -610,7 +613,8 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult, void *aContext)
 
 void ThreadHelper::MgmtSetResponseHandler(otError aResult)
 {
-    ResultHandler handler;
+    AttachHandler handler;
+    int64_t       attachDelayMs;
 
     LogOpenThreadResult("MgmtSetResponseHandler()", aResult);
 
@@ -626,10 +630,19 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
         break;
     }
 
+    attachDelayMs             = mAttachDelayMs;
     handler                   = mAttachHandler;
+    mAttachDelayMs            = 0;
     mAttachHandler            = nullptr;
     mAttachPendingDatasetTlvs = {};
-    handler(aResult);
+    if (aResult == OT_ERROR_NONE)
+    {
+        handler(aResult, attachDelayMs);
+    }
+    else
+    {
+        handler(aResult, 0);
+    }
 }
 
 #if OTBR_ENABLE_UNSECURE_JOIN

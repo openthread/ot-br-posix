@@ -338,7 +338,11 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
 
     if (IsDBusMessageEmpty(*aRequest.GetMessage()))
     {
-        threadHelper->Attach([aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
+        threadHelper->Attach([aRequest](otError aError, int64_t aAttachDelayMs) mutable {
+            OT_UNUSED_VARIABLE(aAttachDelayMs);
+
+            aRequest.ReplyOtResult(aError);
+        });
     }
     else if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
     {
@@ -347,7 +351,11 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     else
     {
         threadHelper->Attach(name, panid, extPanId, networkKey, pskc, channelMask,
-                             [aRequest](otError aError) mutable { aRequest.ReplyOtResult(aError); });
+                             [aRequest](otError aError, int64_t aAttachDelayMs) mutable {
+                                 OT_UNUSED_VARIABLE(aAttachDelayMs);
+
+                                 aRequest.ReplyOtResult(aError);
+                             });
     }
 }
 
@@ -360,8 +368,9 @@ void DBusThreadObject::AttachAllNodesToHandler(DBusRequest &aRequest)
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    mNcp->GetThreadHelper()->AttachAllNodesTo(dataset,
-                                              [aRequest](otError error) mutable { aRequest.ReplyOtResult(error); });
+    mNcp->GetThreadHelper()->AttachAllNodesTo(dataset, [aRequest](otError error, int64_t aAttachDelayMs) mutable {
+        aRequest.ReplyOtResult<int64_t>(error, aAttachDelayMs);
+    });
 
 exit:
     if (error != OT_ERROR_NONE)

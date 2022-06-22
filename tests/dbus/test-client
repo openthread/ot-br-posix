@@ -224,7 +224,8 @@ EOF
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.AttachAllNodesTo \
-        "array:byte:${dataset}"
+        "array:byte:${dataset}" \
+        | grep "int64 300000"
 
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep "Active Timestamp: 2"
 
@@ -232,6 +233,16 @@ EOF
 
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep "Active Timestamp: 2"
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl networkkey | grep be3bd244ae6d997020a882a24a8040e2
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
+    sleep 1
+
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.AttachAllNodesTo \
+        "array:byte:${dataset}" \
+        | grep "int64 0"
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep "leader"
 
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
     sleep 1
@@ -254,7 +265,8 @@ EOF
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.AttachAllNodesTo \
-        "array:byte:${dataset}"
+        "array:byte:${dataset}" \
+        | grep "int64 300000"
 
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep "leader"
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep "Active Timestamp: 2"

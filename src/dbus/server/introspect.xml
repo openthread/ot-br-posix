@@ -60,9 +60,15 @@
     <!-- AttachAllNodesTo: Request to attach all nodes to the specified Thread network.
       @dataset: The Operational Dataset that contains parameter values of the Thread network
                 to attach to. It must be a full dataset.
+      @delay_ms: The delay between the method returns and the dataset takes effect, in
+                 milliseconds. If this value is 0, then the node is attached to the given network
+                 when this method returns. If this value is not 0, then the node is attached to
+                 its existing network when this method returns, and will attach to the given
+                 network after the delay.
     -->
     <method name="AttachAllNodesTo">
       <arg name="dataset" type="ay"/>
+      <arg name="delay_ms" type="x" direction="out"/>
     </method>
 
     <!-- Detach: Detach the current device from the Thread network. -->
