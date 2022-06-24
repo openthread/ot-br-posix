@@ -91,6 +91,7 @@ static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
     route.mPreference = 0;
 
     TEST_ASSERT(aApi->AddExternalRoute(route) == OTBR_ERROR_NONE);
+    sleep(10);
     TEST_ASSERT(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
     TEST_ASSERT(externalRouteTable.size() == 1);
     TEST_ASSERT(externalRouteTable[0].mPrefix == aPrefix);
@@ -99,6 +100,7 @@ static void CheckExternalRoute(ThreadApiDBus *aApi, const Ip6Prefix &aPrefix)
     TEST_ASSERT(externalRouteTable[0].mNextHopIsThisDevice);
 
     TEST_ASSERT(aApi->RemoveExternalRoute(aPrefix) == OTBR_ERROR_NONE);
+    sleep(10);
     TEST_ASSERT(aApi->GetExternalRoutes(externalRouteTable) == OTBR_ERROR_NONE);
     TEST_ASSERT(externalRouteTable.empty());
 }
@@ -115,6 +117,7 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
     prefix.mStable     = true;
 
     TEST_ASSERT(aApi->AddOnMeshPrefix(prefix) == OTBR_ERROR_NONE);
+    sleep(10);
     TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
     TEST_ASSERT(onMeshPrefixes.size() == 1);
     TEST_ASSERT(onMeshPrefixes[0].mPrefix == prefix.mPrefix);
@@ -122,6 +125,7 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
     TEST_ASSERT(onMeshPrefixes[0].mStable);
 
     TEST_ASSERT(aApi->RemoveOnMeshPrefix(prefix.mPrefix) == OTBR_ERROR_NONE);
+    sleep(10);
     TEST_ASSERT(aApi->GetOnMeshPrefixes(onMeshPrefixes) == OTBR_ERROR_NONE);
     TEST_ASSERT(onMeshPrefixes.empty());
 }
