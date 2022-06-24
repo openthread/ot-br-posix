@@ -69,6 +69,7 @@ public:
     using ResultHandler           = std::function<void(otError)>;
     using AttachHandler           = std::function<void(otError, int64_t)>;
     using UpdateMeshCopTxtHandler = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
+    using DatasetChangeHandler    = std::function<void(const otOperationalDatasetTlvs &)>;
 
     /**
      * The constructor of a Thread helper.
@@ -86,6 +87,13 @@ public:
      *
      */
     void AddDeviceRoleHandler(DeviceRoleHandler aHandler);
+
+    /**
+     * This method adds a callback for active dataset change.
+     *
+     * @param[in]  aHandler   The active dataset change handler.
+     */
+    void AddActiveDatasetChangeHandler(DatasetChangeHandler aHandler);
 
     /**
      * This method permits unsecure join on port.
@@ -265,6 +273,8 @@ private:
     void    RandomFill(void *aBuf, size_t size);
     uint8_t RandomChannelFromChannelMask(uint32_t aChannelMask);
 
+    void ActiveDatasetChangedCallback();
+
     otInstance *mInstance;
 
     otbr::Ncp::ControllerOpenThread *mNcp;
@@ -274,7 +284,8 @@ private:
     EnergyScanHandler               mEnergyScanHandler;
     std::vector<otEnergyScanResult> mEnergyScanResults;
 
-    std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
+    std::vector<DeviceRoleHandler>    mDeviceRoleHandlers;
+    std::vector<DatasetChangeHandler> mActiveDatasetChangeHandlers;
 
     std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 
