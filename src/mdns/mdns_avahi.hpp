@@ -74,17 +74,7 @@ public:
     PublisherAvahi(StateCallback aStateCallback);
     ~PublisherAvahi(void) override;
 
-    void      PublishService(const std::string &aHostName,
-                             const std::string &aName,
-                             const std::string &aType,
-                             const SubTypeList &aSubTypeList,
-                             uint16_t           aPort,
-                             const TxtList &    aTxtList,
-                             ResultCallback &&  aCallback) override;
     void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
-    void      PublishHost(const std::string &         aName,
-                          const std::vector<uint8_t> &aAddress,
-                          ResultCallback &&           aCallback) override;
     void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
@@ -93,6 +83,23 @@ public:
     otbrError Start(void) override;
     bool      IsStarted(void) const override;
     void      Stop(void) override;
+
+protected:
+    void      PublishServiceImpl(const std::string &aHostName,
+                                 const std::string &aName,
+                                 const std::string &aType,
+                                 const SubTypeList &aSubTypeList,
+                                 uint16_t           aPort,
+                                 const TxtList &    aTxtList,
+                                 ResultCallback &&  aCallback) override;
+    void      PublishHostImpl(const std::string &         aName,
+                              const std::vector<uint8_t> &aAddress,
+                              ResultCallback &&           aCallback) override;
+    void      OnServiceResolveFailedImpl(const std::string &aType,
+                                         const std::string &aInstanceName,
+                                         int32_t            aErrorCode) override;
+    void      OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) override;
+    otbrError DnsErrorToOtbrError(int32_t aErrorCode) override;
 
 private:
     static constexpr size_t   kMaxSizeOfTxtRecord = 1024;
@@ -108,8 +115,16 @@ private:
                                  uint16_t           aPort,
                                  const TxtList &    aTxtList,
                                  ResultCallback &&  aCallback,
-                                 AvahiEntryGroup *  aEntryGroup)
-            : ServiceRegistration(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback))
+                                 AvahiEntryGroup *  aEntryGroup,
+                                 PublisherAvahi *   aPublisher)
+            : ServiceRegistration(aHostName,
+                                  aName,
+                                  aType,
+                                  aSubTypeList,
+                                  aPort,
+                                  aTxtList,
+                                  std::move(aCallback),
+                                  aPublisher)
             , mEntryGroup(aEntryGroup)
         {
         }
@@ -127,8 +142,9 @@ private:
         AvahiHostRegistration(const std::string &         aName,
                               const std::vector<uint8_t> &aAddress,
                               ResultCallback &&           aCallback,
-                              AvahiEntryGroup *           aEntryGroup)
-            : HostRegistration(aName, aAddress, std::move(aCallback))
+                              AvahiEntryGroup *           aEntryGroup,
+                              PublisherAvahi *            aPublisher)
+            : HostRegistration(aName, aAddress, std::move(aCallback), aPublisher)
             , mEntryGroup(aEntryGroup)
         {
         }
@@ -284,9 +300,6 @@ private:
 
     ServiceRegistration *FindServiceRegistration(const AvahiEntryGroup *aEntryGroup);
     HostRegistration *   FindHostRegistration(const AvahiEntryGroup *aEntryGroup);
-
-    static void OnServiceResolveFailed(const ServiceSubscription &aService, int aErrorCode);
-    void        OnHostResolveFailed(const HostSubscription &aHost, int aErrorCode);
 
     AvahiClient *                mClient;
     std::unique_ptr<AvahiPoller> mPoller;

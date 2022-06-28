@@ -95,9 +95,11 @@ namespace DBus {
 
 DBusThreadObject::DBusThreadObject(DBusConnection *                 aConnection,
                                    const std::string &              aInterfaceName,
-                                   otbr::Ncp::ControllerOpenThread *aNcp)
+                                   otbr::Ncp::ControllerOpenThread *aNcp,
+                                   Mdns::Publisher *                aPublisher)
     : DBusObject(aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mNcp(aNcp)
+    , mPublisher(aPublisher)
 {
 }
 
@@ -222,6 +224,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SRP_SERVER_INFO,
                                std::bind(&DBusThreadObject::GetSrpServerInfoHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MDNS_TELEMETRY_INFO,
+                               std::bind(&DBusThreadObject::GetMdnsTelemetryInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNSSD_COUNTERS,
                                std::bind(&DBusThreadObject::GetDnssdCountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_HOST_VERSION,
@@ -1271,6 +1275,16 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+}
+
+otError DBusThreadObject::GetMdnsTelemetryInfoHandler(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, mPublisher->GetMdnsTelemetryInfo()) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+exit:
+    return error;
 }
 
 otError DBusThreadObject::GetDnssdCountersHandler(DBusMessageIter &aIter)

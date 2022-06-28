@@ -47,6 +47,40 @@ namespace otbr {
 
 namespace Mdns {
 
+void Publisher::PublishService(const std::string &aHostName,
+                               const std::string &aName,
+                               const std::string &aType,
+                               const SubTypeList &aSubTypeList,
+                               uint16_t           aPort,
+                               const TxtList &    aTxtList,
+                               ResultCallback &&  aCallback)
+{
+    mServiceRegistrationBeginTime[std::make_pair(aName, aType)] = Clock::now();
+
+    PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback));
+}
+
+void Publisher::PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress, ResultCallback &&aCallback)
+{
+    mHostRegistrationBeginTime[aName] = Clock::now();
+
+    PublishHostImpl(aName, aAddress, std::move(aCallback));
+}
+
+void Publisher::OnServiceResolveFailed(const std::string &aType, const std::string &aInstanceName, int32_t aErrorCode)
+{
+    UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, DnsErrorToOtbrError(aErrorCode));
+    UpdateServiceInstanceResolutionEmaLatency(aInstanceName, aType, DnsErrorToOtbrError(aErrorCode));
+    OnServiceResolveFailedImpl(aType, aInstanceName, aErrorCode);
+}
+
+void Publisher::OnHostResolveFailed(const std::string &aHostName, int32_t aErrorCode)
+{
+    UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, DnsErrorToOtbrError(aErrorCode));
+    UpdateHostResolutionEmaLatency(aHostName, DnsErrorToOtbrError(aErrorCode));
+    OnHostResolveFailedImpl(aHostName, aErrorCode);
+}
+
 otbrError Publisher::EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t> &aTxtData)
 {
     otbrError error = OTBR_ERROR_NONE;
@@ -142,6 +176,9 @@ void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInst
         DnsUtils::CheckHostnameSanity(aInstanceInfo.mHostName);
     }
 
+    UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, OTBR_ERROR_NONE);
+    UpdateServiceInstanceResolutionEmaLatency(aInstanceInfo.mName, aType, OTBR_ERROR_NONE);
+
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
         if (subCallback.second.first != nullptr)
@@ -173,6 +210,9 @@ void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::Di
     {
         DnsUtils::CheckHostnameSanity(aHostInfo.mHostName);
     }
+
+    UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, OTBR_ERROR_NONE);
+    UpdateHostResolutionEmaLatency(aHostName, OTBR_ERROR_NONE);
 
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
@@ -348,7 +388,7 @@ Publisher::HostRegistration *Publisher::FindHostRegistration(const std::string &
 
 Publisher::Registration::~Registration(void)
 {
-    Complete(OTBR_ERROR_ABORTED);
+    TriggerCompleteCallback(OTBR_ERROR_ABORTED);
 }
 
 bool Publisher::ServiceRegistration::IsOutdated(const std::string &aHostName,
@@ -362,9 +402,137 @@ bool Publisher::ServiceRegistration::IsOutdated(const std::string &aHostName,
              mPort == aPort && mTxtList == aTxtList);
 }
 
+void Publisher::ServiceRegistration::Complete(otbrError aError)
+{
+    OnComplete(aError);
+    Registration::TriggerCompleteCallback(aError);
+}
+
+void Publisher::ServiceRegistration::OnComplete(otbrError aError)
+{
+    if (!IsCompleted())
+    {
+        mPublisher->UpdateMdnsResponseCounters(mPublisher->mTelemetryInfo.mServiceRegistrations, aError);
+        mPublisher->UpdateServiceRegistrationEmaLatency(mName, mType, aError);
+    }
+}
+
 bool Publisher::HostRegistration::IsOutdated(const std::string &aName, const std::vector<uint8_t> &aAddress) const
 {
     return !(mName == aName && mAddress == aAddress);
+}
+
+void Publisher::HostRegistration::Complete(otbrError aError)
+{
+    OnComplete(aError);
+    Registration::TriggerCompleteCallback(aError);
+}
+
+void Publisher::HostRegistration::OnComplete(otbrError aError)
+{
+    if (!IsCompleted())
+    {
+        mPublisher->UpdateMdnsResponseCounters(mPublisher->mTelemetryInfo.mHostRegistrations, aError);
+        mPublisher->UpdateHostRegistrationEmaLatency(mName, aError);
+    }
+}
+
+void Publisher::UpdateMdnsResponseCounters(otbr::MdnsResponseCounters &aCounters, otbrError aError)
+{
+    switch (aError)
+    {
+    case OTBR_ERROR_NONE:
+        ++aCounters.mSuccess;
+        break;
+    case OTBR_ERROR_NOT_FOUND:
+        ++aCounters.mNotFound;
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
+        ++aCounters.mInvalidArgs;
+        break;
+    case OTBR_ERROR_DUPLICATED:
+        ++aCounters.mDuplicated;
+        break;
+    case OTBR_ERROR_NOT_IMPLEMENTED:
+        ++aCounters.mNotImplemented;
+        break;
+    case OTBR_ERROR_MDNS:
+    default:
+        ++aCounters.mUnknownError;
+        break;
+    }
+}
+
+void Publisher::UpdateEmaLatency(uint32_t &aEmaLatency, uint32_t aLatency, otbrError aError)
+{
+    VerifyOrExit(aError != OTBR_ERROR_ABORTED);
+
+    if (!aEmaLatency)
+    {
+        aEmaLatency = aLatency;
+    }
+    else
+    {
+        aEmaLatency =
+            (aLatency * MdnsTelemetryInfo::kEmaFactorNumerator +
+             aEmaLatency * (MdnsTelemetryInfo::kEmaFactorDenominator - MdnsTelemetryInfo::kEmaFactorNumerator)) /
+            MdnsTelemetryInfo::kEmaFactorDenominator;
+    }
+
+exit:
+    return;
+}
+
+void Publisher::UpdateServiceRegistrationEmaLatency(const std::string &aInstanceName,
+                                                    const std::string &aType,
+                                                    otbrError          aError)
+{
+    auto it = mServiceRegistrationBeginTime.find(std::make_pair(aInstanceName, aType));
+
+    if (it != mServiceRegistrationBeginTime.end())
+    {
+        uint32_t latency = std::chrono::duration_cast<Milliseconds>(Clock::now() - it->second).count();
+        UpdateEmaLatency(mTelemetryInfo.mServiceRegistrationEmaLatency, latency, aError);
+        mServiceRegistrationBeginTime.erase(it);
+    }
+}
+
+void Publisher::UpdateHostRegistrationEmaLatency(const std::string &aHostName, otbrError aError)
+{
+    auto it = mHostRegistrationBeginTime.find(aHostName);
+
+    if (it != mHostRegistrationBeginTime.end())
+    {
+        uint32_t latency = std::chrono::duration_cast<Milliseconds>(Clock::now() - it->second).count();
+        UpdateEmaLatency(mTelemetryInfo.mHostRegistrationEmaLatency, latency, aError);
+        mHostRegistrationBeginTime.erase(it);
+    }
+}
+
+void Publisher::UpdateServiceInstanceResolutionEmaLatency(const std::string &aInstanceName,
+                                                          const std::string &aType,
+                                                          otbrError          aError)
+{
+    auto it = mServiceInstanceResolutionBeginTime.find(std::make_pair(aInstanceName, aType));
+
+    if (it != mServiceInstanceResolutionBeginTime.end())
+    {
+        uint32_t latency = std::chrono::duration_cast<Milliseconds>(Clock::now() - it->second).count();
+        UpdateEmaLatency(mTelemetryInfo.mServiceResolutionEmaLatency, latency, aError);
+        mServiceInstanceResolutionBeginTime.erase(it);
+    }
+}
+
+void Publisher::UpdateHostResolutionEmaLatency(const std::string &aHostName, otbrError aError)
+{
+    auto it = mHostResolutionBeginTime.find(aHostName);
+
+    if (it != mHostResolutionBeginTime.end())
+    {
+        uint32_t latency = std::chrono::duration_cast<Milliseconds>(Clock::now() - it->second).count();
+        UpdateEmaLatency(mTelemetryInfo.mHostResolutionEmaLatency, latency, aError);
+        mHostResolutionBeginTime.erase(it);
+    }
 }
 
 } // namespace Mdns

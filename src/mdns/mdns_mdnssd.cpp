@@ -450,6 +450,7 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
 {
     OTBR_UNUSED_VARIABLE(aDomain);
 
+    otbrError            error = DNSErrorToOtbrError(aError);
     std::string          originalInstanceName;
     ServiceRegistration *serviceReg = FindServiceRegistration(aServiceRef);
 
@@ -465,20 +466,20 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
     else
     {
         otbrLogErr("Failed to register service %s.%s: %s", aName, aType, DNSErrorToString(aError));
-        RemoveServiceRegistration(serviceReg->mName, serviceReg->mType, DNSErrorToOtbrError(aError));
+        RemoveServiceRegistration(serviceReg->mName, serviceReg->mType, error);
     }
 
 exit:
     return;
 }
 
-void PublisherMDnsSd::PublishService(const std::string &aHostName,
-                                     const std::string &aName,
-                                     const std::string &aType,
-                                     const SubTypeList &aSubTypeList,
-                                     uint16_t           aPort,
-                                     const TxtList &    aTxtList,
-                                     ResultCallback &&  aCallback)
+void PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
+                                         const std::string &aName,
+                                         const std::string &aType,
+                                         const SubTypeList &aSubTypeList,
+                                         uint16_t           aPort,
+                                         const TxtList &    aTxtList,
+                                         ResultCallback &&  aCallback)
 {
     otbrError            ret   = OTBR_ERROR_NONE;
     int                  error = 0;
@@ -507,7 +508,7 @@ void PublisherMDnsSd::PublishService(const std::string &aHostName,
                                              !aHostName.empty() ? fullHostName.c_str() : nullptr, htons(aPort),
                                              txt.size(), txt.data(), HandleServiceRegisterResult, this));
     AddServiceRegistration(std::unique_ptr<DnssdServiceRegistration>(new DnssdServiceRegistration(
-        aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), serviceRef)));
+        aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), serviceRef, this)));
 
 exit:
     if (error != kDNSServiceErr_NoError || ret != OTBR_ERROR_NONE)
@@ -538,9 +539,9 @@ exit:
     std::move(aCallback)(error);
 }
 
-void PublisherMDnsSd::PublishHost(const std::string &         aName,
-                                  const std::vector<uint8_t> &aAddress,
-                                  ResultCallback &&           aCallback)
+void PublisherMDnsSd::PublishHostImpl(const std::string &         aName,
+                                      const std::vector<uint8_t> &aAddress,
+                                      ResultCallback &&           aCallback)
 {
     otbrError    ret   = OTBR_ERROR_NONE;
     int          error = 0;
@@ -569,7 +570,7 @@ void PublisherMDnsSd::PublishHost(const std::string &         aName,
                                                    kDNSServiceClass_IN, aAddress.size(), aAddress.data(), /* ttl */ 0,
                                                    HandleRegisterHostResult, this));
     AddHostRegistration(std::unique_ptr<DnssdHostRegistration>(
-        new DnssdHostRegistration(aName, aAddress, std::move(aCallback), mHostsRef, recordRef)));
+        new DnssdHostRegistration(aName, aAddress, std::move(aCallback), mHostsRef, recordRef, this)));
 
 exit:
     if (error != kDNSServiceErr_NoError || ret != OTBR_ERROR_NONE)
@@ -697,17 +698,21 @@ exit:
     return;
 }
 
-void PublisherMDnsSd::OnServiceResolveFailed(const std::string & aType,
-                                             const std::string & aInstanceName,
-                                             DNSServiceErrorType aErrorCode)
+void PublisherMDnsSd::OnServiceResolveFailedImpl(const std::string &aType,
+                                                 const std::string &aInstanceName,
+                                                 int32_t            aErrorCode)
 {
     otbrLogWarning("Resolve service %s.%s failed: code=%" PRId32, aInstanceName.c_str(), aType.c_str(), aErrorCode);
 }
 
-void PublisherMDnsSd::OnHostResolveFailed(const PublisherMDnsSd::HostSubscription &aHost,
-                                          DNSServiceErrorType                      aErrorCode)
+void PublisherMDnsSd::OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode)
 {
-    otbrLogWarning("Resolve host %s failed: code=%" PRId32, aHost.mHostName.c_str(), aErrorCode);
+    otbrLogWarning("Resolve host %s failed: code=%" PRId32, aHostName.c_str(), aErrorCode);
+}
+
+otbrError PublisherMDnsSd::DnsErrorToOtbrError(int32_t aErrorCode)
+{
+    return otbr::Mdns::DNSErrorToOtbrError(aErrorCode);
 }
 
 void PublisherMDnsSd::SubscribeHost(const std::string &aHostName)
@@ -901,6 +906,9 @@ void PublisherMDnsSd::ServiceInstanceResolution::Resolve(void)
 {
     assert(mServiceRef == nullptr);
 
+    mSubscription->mMDnsSd->mServiceInstanceResolutionBeginTime[std::make_pair(mInstanceName, mTypeEndWithDot)] =
+        Clock::now();
+
     otbrLogInfo("DNSServiceResolve %s %s inf %u", mInstanceName.c_str(), mTypeEndWithDot.c_str(), mNetifIndex);
     DNSServiceResolve(&mServiceRef, /* flags */ kDNSServiceFlagsTimeout, mNetifIndex, mInstanceName.c_str(),
                       mTypeEndWithDot.c_str(), mDomain.c_str(), HandleResolveResult, this);
@@ -1057,6 +1065,8 @@ void PublisherMDnsSd::HostSubscription::Resolve(void)
 
     assert(mServiceRef == nullptr);
 
+    mMDnsSd->mHostResolutionBeginTime[mHostName] = Clock::now();
+
     otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", fullHostName.c_str(), kDNSServiceInterfaceIndexAny);
 
     DNSServiceGetAddrInfo(&mServiceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny,
@@ -1113,7 +1123,7 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
-        mMDnsSd->OnHostResolveFailed(*this, aErrorCode);
+        mMDnsSd->OnHostResolveFailed(aHostName, aErrorCode);
     }
 }
 

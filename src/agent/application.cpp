@@ -65,8 +65,8 @@ Application::Application(const std::string &              aInterfaceName,
 #if OTBR_ENABLE_REST_SERVER
     , mRestWebServer(mNcp)
 #endif
-#if OTBR_ENABLE_DBUS_SERVER
-    , mDBusAgent(mNcp)
+#if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
+    , mDBusAgent(mNcp, mBorderAgent.GetPublisher())
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(mNcp)

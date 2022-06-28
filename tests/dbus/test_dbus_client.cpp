@@ -174,6 +174,16 @@ void CheckDnssdCounters(ThreadApiDBus *aApi)
 #endif
 }
 
+void CheckMdnsInfo(ThreadApiDBus *aApi)
+{
+    otbr::MdnsTelemetryInfo mdnsInfo;
+
+    TEST_ASSERT(aApi->GetMdnsTelemetryInfo(mdnsInfo) == OTBR_ERROR_NONE);
+
+    TEST_ASSERT(mdnsInfo.mServiceRegistrations.mSuccess > 0);
+    TEST_ASSERT(mdnsInfo.mServiceRegistrationEmaLatency > 0);
+}
+
 int main()
 {
     DBusError                      error;
@@ -276,6 +286,7 @@ int main()
                             TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
                             CheckSrpServerInfo(api.get());
+                            CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);

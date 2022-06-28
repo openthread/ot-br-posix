@@ -717,6 +717,18 @@ public:
      */
     ClientError GetSrpServerInfo(SrpServerInfo &aSrpServerInfo);
 
+    /**
+     * This method gets the MDNS telemetry information.
+     *
+     * @param[out] aMdnsTelemetryInfo  The MDNS telemetry information.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetMdnsTelemetryInfo(MdnsTelemetryInfo &aMdnsTelemetryInfo);
+
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     /**
      * This method gets the DNS-SD counters.

@@ -60,7 +60,7 @@ public:
      * @param[in] aNcp  A reference to the NCP controller.
      *
      */
-    DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp);
+    DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the dbus agent.
@@ -87,6 +87,7 @@ private:
     std::unique_ptr<DBusThreadObject> mThreadObject;
     UniqueDBusConnection              mConnection;
     otbr::Ncp::ControllerOpenThread & mNcp;
+    Mdns::Publisher &                 mPublisher;
 
     /**
      * This map is used to track DBusWatch-es.

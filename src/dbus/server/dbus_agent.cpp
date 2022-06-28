@@ -36,6 +36,7 @@
 
 #include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
+#include "mdns/mdns.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -43,9 +44,10 @@ namespace DBus {
 const struct timeval           DBusAgent::kPollTimeout = {0, 0};
 constexpr std::chrono::seconds DBusAgent::kDBusWaitAllowance;
 
-DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp)
+DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
     : mInterfaceName(aNcp.GetInterfaceName())
     , mNcp(aNcp)
+    , mPublisher(aPublisher)
 {
 }
 
@@ -63,8 +65,9 @@ void DBusAgent::Init(void)
 
     VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
 
-    mThreadObject = std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp));
-    error         = mThreadObject->Init();
+    mThreadObject =
+        std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp, &mPublisher));
+    error = mThreadObject->Init();
     VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
 }
 
