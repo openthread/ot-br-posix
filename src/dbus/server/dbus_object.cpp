@@ -256,5 +256,10 @@ DBusObject::~DBusObject(void)
 {
 }
 
+UniqueDBusMessage DBusObject::NewSignalMessage(const std::string &aInterfaceName, const std::string &aSignalName)
+{
+    return UniqueDBusMessage(dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str()));
+}
+
 } // namespace DBus
 } // namespace otbr

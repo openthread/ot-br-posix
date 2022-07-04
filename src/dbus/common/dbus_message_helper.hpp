@@ -532,6 +532,24 @@ public:
     }
 };
 
+template <> class DBusMessageIterFor<0, 0>
+{
+public:
+    static otbrError ConvertToTuple(DBusMessageIter *aIter, std::tuple<> &aValues)
+    {
+        OTBR_UNUSED_VARIABLE(aIter);
+        OTBR_UNUSED_VARIABLE(aValues);
+        return OTBR_ERROR_NONE;
+    }
+
+    static otbrError ConvertToDBusMessage(DBusMessageIter *aIter, const std::tuple<> &aValues)
+    {
+        OTBR_UNUSED_VARIABLE(aIter);
+        OTBR_UNUSED_VARIABLE(aValues);
+        return OTBR_ERROR_NONE;
+    }
+};
+
 template <size_t N, typename... FieldTypes> class DBusMessageIterFor<1, N, FieldTypes...>
 {
 public:

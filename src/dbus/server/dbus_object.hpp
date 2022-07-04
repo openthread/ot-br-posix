@@ -139,12 +139,11 @@ public:
                      const std::string &              aSignalName,
                      const std::tuple<FieldTypes...> &aArgs)
     {
-        UniqueDBusMessage signalMsg{
-            dbus_message_new_signal(mObjectPath.c_str(), aInterfaceName.c_str(), aSignalName.c_str())};
-        otbrError error = OTBR_ERROR_NONE;
+        UniqueDBusMessage signalMsg = NewSignalMessage(aInterfaceName, aSignalName);
+        otbrError         error     = OTBR_ERROR_NONE;
 
         VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
-        VerifyOrExit(error = otbr::DBus::TupleToDBusMessage(*signalMsg, aArgs));
+        SuccessOrExit(error = otbr::DBus::TupleToDBusMessage(*signalMsg, aArgs));
 
         VerifyOrExit(dbus_connection_send(mConnection, signalMsg.get(), nullptr), error = OTBR_ERROR_DBUS);
 
@@ -168,10 +167,9 @@ public:
                                     const std::string &aPropertyName,
                                     const ValueType &  aValue)
     {
-        UniqueDBusMessage signalMsg{
-            dbus_message_new_signal(mObjectPath.c_str(), DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL)};
-        DBusMessageIter iter, subIter, dictEntryIter;
-        otbrError       error = OTBR_ERROR_NONE;
+        UniqueDBusMessage signalMsg = NewSignalMessage(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTIES_CHANGED_SIGNAL);
+        DBusMessageIter   iter, subIter, dictEntryIter;
+        otbrError         error = OTBR_ERROR_NONE;
 
         VerifyOrExit(signalMsg != nullptr, error = OTBR_ERROR_DBUS);
         dbus_message_iter_init_append(signalMsg.get(), &iter);
@@ -216,13 +214,13 @@ public:
 
 private:
     void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
-
     void GetPropertyMethodHandler(DBusRequest &aRequest);
-
     void SetPropertyMethodHandler(DBusRequest &aRequest);
 
     static DBusHandlerResult sMessageHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aData);
     DBusHandlerResult        MessageHandler(DBusConnection *aConnection, DBusMessage *aMessage);
+
+    UniqueDBusMessage NewSignalMessage(const std::string &aInterfaceName, const std::string &aSignalName);
 
     std::unordered_map<std::string, MethodHandlerType>                                    mMethodHandlers;
     std::unordered_map<std::string, std::unordered_map<std::string, PropertyHandlerType>> mGetPropertyHandlers;
