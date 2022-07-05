@@ -237,7 +237,7 @@ otbrError DBusThreadObject::Init(void)
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_THREAD_VERSION,
                                std::bind(&DBusThreadObject::GetThreadVersionHandler, this, _1));
 
-    SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_INITIALIZED, std::make_tuple()));
+    SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
 exit:
     return error;
