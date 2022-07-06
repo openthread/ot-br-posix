@@ -101,8 +101,10 @@ main()
     sudo service dbus reload
     trap on_exit EXIT
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
-    local temp_dir=$(mktemp -d)
+    local temp_dir
+    temp_dir=$(mktemp -d)
     sudo dbus-monitor --system path=/io/openthread/BorderRouter/wpan0,member=Ready >"${temp_dir}/dbus.out" &
+    sleep 1
     sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     if ! (tail -f "${temp_dir}/dbus.out" &) | timeout 10s grep -q Ready; then
         cat "${temp_dir}/dbus.out"
