@@ -62,6 +62,7 @@
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
 #include "common/types.hpp"
+#include "utils/hex.hpp"
 
 namespace otbr {
 
@@ -146,6 +147,7 @@ void BorderAgent::Start(void)
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mDiscoveryProxy.Start();
 #endif
+
 exit:
     otbrLogResult(error, "Start Thread Border Agent");
 }

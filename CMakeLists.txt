@@ -39,6 +39,7 @@ set(OTBR_PRODUCT_NAME "BorderRouter" CACHE STRING "The product name")
 set(OTBR_NAME "${OTBR_VENDOR_NAME}_${OTBR_PRODUCT_NAME}" CACHE STRING "The package name")
 set(OTBR_MESHCOP_SERVICE_INSTANCE_NAME "${OTBR_VENDOR_NAME} ${OTBR_PRODUCT_NAME}" CACHE STRING "The OTBR MeshCoP service instance name")
 set(OTBR_MDNS "avahi" CACHE STRING "mDNS publisher provider")
+set(OTBR_NAT64_SERVICE "tayga" CACHE STRING "NAT64 service")
 set(OTBR_TAYGA_RESTART_CMD "systemctl restart tayga" CACHE STRING "The platform specific command to restart Tayga service")
 set(OTBR_TAYGA_STOP_CMD "systemctl stop tayga" CACHE STRING "The platform specific command to stop Tayga service")
 set(OTBR_SYSLOG_FACILITY_ID LOG_USER CACHE STRING "Syslog logging facility")
@@ -100,6 +101,10 @@ target_compile_definitions(otbr-config INTERFACE
 
 if(BUILD_SHARED_LIBS)
     target_link_libraries(otbr-config INTERFACE -Wl,--unresolved-symbols=ignore-in-shared-libs)
+endif()
+
+if(OTBR_BORDER_ROUTING_NAT64 AND OTBR_NAT64_SERVICE STREQUAL "tayga")
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TAYGA_NAT64=1)
 endif()
 
 include(GNUInstallDirs)

@@ -70,6 +70,7 @@ otbr_install()
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
+        "-DOTBR_NAT64_SERVICE=${NAT64_SERVICE:=tayga}"
         "${otbr_options[@]}"
     )
 
@@ -81,6 +82,11 @@ otbr_install()
         otbr_options+=(
             "-DOTBR_BORDER_ROUTING=ON"
         )
+        if with NAT64; then
+            otbr_options+=(
+                "-DOTBR_BORDER_ROUTING_NAT64=ON"
+            )
+        fi
     fi
 
     if with DOCKER; then
