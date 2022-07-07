@@ -80,9 +80,10 @@ echo "BACKBONE_INTERFACE: $BACKBONE_INTERFACE"
 echo "NAT64_PREFIX:" $NAT64_PREFIX
 
 NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
+TAYGA_CONF=/etc/tayga.conf
 BIND_CONF_OPTIONS=/etc/bind/named.conf.options
 
-sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
+! test -f $TAYGA_CONF || sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" $TAYGA_CONF
 ! test -f $BIND_CONF_OPTIONS || sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" $BIND_CONF_OPTIONS
 sed -i "s/$INFRA_IF_NAME/$BACKBONE_INTERFACE/" /etc/sysctl.d/60-otbr-accept-ra.conf
 
