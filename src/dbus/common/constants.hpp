@@ -106,4 +106,6 @@
 #define OTBR_ROLE_NAME_ROUTER "router"
 #define OTBR_ROLE_NAME_LEADER "leader"
 
+#define OTBR_DBUS_SIGNAL_READY "Ready"
+
 #endif // OTBR_DBUS_CONSTANTS_HPP_

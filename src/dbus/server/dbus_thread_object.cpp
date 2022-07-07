@@ -105,8 +105,10 @@ DBusThreadObject::DBusThreadObject(DBusConnection *                 aConnection,
 
 otbrError DBusThreadObject::Init(void)
 {
-    otbrError error        = DBusObject::Init();
+    otbrError error        = OTBR_ERROR_NONE;
     auto      threadHelper = mNcp->GetThreadHelper();
+
+    SuccessOrExit(error = DBusObject::Init());
 
     threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
     threadHelper->AddActiveDatasetChangeHandler(std::bind(&DBusThreadObject::ActiveDatasetChangeHandler, this, _1));
@@ -235,6 +237,9 @@ otbrError DBusThreadObject::Init(void)
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_THREAD_VERSION,
                                std::bind(&DBusThreadObject::GetThreadVersionHandler, this, _1));
 
+    SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
+
+exit:
     return error;
 }
 

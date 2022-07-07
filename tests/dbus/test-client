@@ -41,6 +41,7 @@ on_exit()
     sudo killall expect || true
     sudo killall ot-cli-ftd || true
     sudo killall ot-cli-mtd || true
+    sudo killall dbus-monitor || true
     sudo rm "/etc/dbus-1/system.d/${OTBR_DBUS_SERVER_CONF}" || true
 
     grep -iE 'ot-cli|otbr' </var/log/syslog
@@ -98,9 +99,23 @@ main()
     sudo rm -rf tmp
     sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
     sudo service dbus reload
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
     trap on_exit EXIT
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
+
+    local temp_dir
+    temp_dir=$(mktemp -d)
+
+    # Because we do want to run the command as root but redirect as the normal user.
+    # shellcheck disable=SC2024
+    sudo dbus-monitor --system path=/io/openthread/BorderRouter/wpan0,member=Ready >"${temp_dir}/dbus.out" &
+
+    sleep 1
+
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
+    if ! (tail -f "${temp_dir}/dbus.out" &) | timeout 10s grep -q Ready; then
+        cat "${temp_dir}/dbus.out"
+        exit 1
+    fi
     sleep 5
 
     local ot_version
