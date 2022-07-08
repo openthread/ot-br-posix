@@ -134,7 +134,7 @@ main()
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl ifconfig up
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread start
 
-    sleep 10
+    sleep 12
 
     update_meshcop_txt_and_check
 
@@ -166,7 +166,7 @@ send "ifconfig up\r\n"
 expect "Done"
 send "thread start\r\n"
 expect "Done"
-sleep 5
+sleep 12
 send "state\r\n"
 expect "leader"
 expect "Done"
@@ -197,7 +197,7 @@ expect "Done"
 set timeout -1
 expect eof
 EOF
-    sleep 5
+    sleep 12
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.JoinerStart \

@@ -249,7 +249,7 @@ int main()
         api->Attach("Test", 0x3456, extpanid, networkKey, {}, 1 << channel,
                     [&api, channel, extpanid, &stepDone](ClientError aError) {
                         printf("Attach result %d\n", static_cast<int>(aError));
-                        sleep(10);
+                        sleep(20);
                         uint64_t             extpanidCheck;
                         std::vector<uint8_t> activeDataset;
 
