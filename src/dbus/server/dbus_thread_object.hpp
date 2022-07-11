@@ -148,6 +148,18 @@ private:
     otError GetOtHostVersionHandler(DBusMessageIter &aIter);
     otError GetOtRcpVersionHandler(DBusMessageIter &aIter);
     otError GetThreadVersionHandler(DBusMessageIter &aIter);
+    otError GetRcpTimeoutCountHandler(DBusMessageIter &aIter);
+    otError GetRcpResetCountHandler(DBusMessageIter &aIter);
+    otError GetRcpRestorationCountHandler(DBusMessageIter &aIter);
+    otError GetRcpSpinelParseErrorCountHandler(DBusMessageIter &aIter);
+    otError GetRcpInterfaceTypeHandler(DBusMessageIter &aIter);
+    otError GetRcpTransferredFrameCountHandler(DBusMessageIter &aIter);
+    otError GetRcpTransferredValidFrameCountHandler(DBusMessageIter &aIter);
+    otError GetRcpTransferredGarbageFrameCountHandler(DBusMessageIter &aIter);
+    otError GetRcpRxFrameCountHandler(DBusMessageIter &aIter);
+    otError GetRcpRxFrameByteCountHandler(DBusMessageIter &aIter);
+    otError GetRcpTxFrameCountHandler(DBusMessageIter &aIter);
+    otError GetRcpTxFrameByteCountHandler(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
