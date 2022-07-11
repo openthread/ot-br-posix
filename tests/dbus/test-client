@@ -148,7 +148,7 @@ main()
     result_pattern+="\s+variant\s+uint32\s+\d+" # RcpResetCount
     result_pattern+="\s+variant\s+uint32\s+\d+" # RcpRestorationCount
     result_pattern+="\s+variant\s+uint32\s+\d+" # RcpSpinelParseErrorCount
-    result_pattern+="\s+variant\s+byte\s+\d+" # RcpInterfaceType
+    result_pattern+="\s+variant\s+byte\s+\d+"   # RcpInterfaceType
     result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTransferredFrameCount
     result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTransferredValidFrameCount
     result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTransferredGarbageFrameCount
