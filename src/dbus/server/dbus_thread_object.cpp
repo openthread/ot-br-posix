@@ -1448,7 +1448,8 @@ otError DBusThreadObject::GetRcpTimeoutCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpTimeoutCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpTimeoutCount) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1458,7 +1459,9 @@ otError DBusThreadObject::GetRcpResetCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpUnexpectedResetCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpUnexpectedResetCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1468,7 +1471,9 @@ otError DBusThreadObject::GetRcpRestorationCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpRestorationCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpRestorationCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1478,7 +1483,9 @@ otError DBusThreadObject::GetRcpSpinelParseErrorCountHandler(DBusMessageIter &aI
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mSpinelParseErrorCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mSpinelParseErrorCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1488,7 +1495,9 @@ otError DBusThreadObject::GetRcpInterfaceTypeHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRcpInterfaceType) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRcpInterfaceType) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1498,7 +1507,9 @@ otError DBusThreadObject::GetRcpTransferredFrameCountHandler(DBusMessageIter &aI
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredFrameCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredFrameCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1508,7 +1519,9 @@ otError DBusThreadObject::GetRcpTransferredValidFrameCountHandler(DBusMessageIte
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredValidFrameCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredValidFrameCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1518,7 +1531,9 @@ otError DBusThreadObject::GetRcpTransferredGarbageFrameCountHandler(DBusMessageI
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredGarbageFrameCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredGarbageFrameCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1528,7 +1543,8 @@ otError DBusThreadObject::GetRcpRxFrameCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRxFrameCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRxFrameCount) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1538,7 +1554,9 @@ otError DBusThreadObject::GetRcpRxFrameByteCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRxFrameByteCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRxFrameByteCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1548,7 +1566,8 @@ otError DBusThreadObject::GetRcpTxFrameCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTxFrameCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTxFrameCount) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
@@ -1558,7 +1577,9 @@ otError DBusThreadObject::GetRcpTxFrameByteCountHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTxFrameByteCount) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTxFrameByteCount) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_FAILED);
 
 exit:
     return error;
