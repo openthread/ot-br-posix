@@ -129,33 +129,13 @@ main()
     property_names+="OtHostVersion,"
     property_names+="OtRcpVersion,"
     property_names+="ThreadVersion,"
-    property_names+="RcpTimeoutCount,"
-    property_names+="RcpResetCount,"
-    property_names+="RcpRestorationCount,"
-    property_names+="RcpSpinelParseErrorCount,"
-    property_names+="RcpInterfaceType,"
-    property_names+="RcpTransferredFrameCount,"
-    property_names+="RcpTransferredValidFrameCount,"
-    property_names+="RcpTransferredGarbageFrameCount,"
-    property_names+="RcpRxFrameCount,"
-    property_names+="RcpRxFrameByteCount,"
-    property_names+="RcpTxFrameCount,"
-    property_names+="RcpTxFrameByteCount"
+    property_names+="RadioSpinelMetrics,"
+    property_names+="RcpInterfaceMetrics"
     local result_pattern="\s+variant\s+string\s+\"${ot_version}\""
     result_pattern+="\s+variant\s+string\s+\"${rcp_version}\""
     result_pattern+="\s+variant\s+uint16\s+${thread_version}"
-    result_pattern+="\s+variant\s+uint32\s+\d+" # RcpTimeoutCount
-    result_pattern+="\s+variant\s+uint32\s+\d+" # RcpResetCount
-    result_pattern+="\s+variant\s+uint32\s+\d+" # RcpRestorationCount
-    result_pattern+="\s+variant\s+uint32\s+\d+" # RcpSpinelParseErrorCount
-    result_pattern+="\s+variant\s+byte\s+\d+"   # RcpInterfaceType
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTransferredFrameCount
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTransferredValidFrameCount
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTransferredGarbageFrameCount
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpRxFrameCount
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpRxFrameByteCount
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTxFrameCount
-    result_pattern+="\s+variant\s+uint64\s+\d+" # RcpTxFrameByteCount
+    result_pattern+="\s+variant\s+struct\s+{(\s+uint32\s+\d+){4}\s+}" # RadioSpinelMetrics
+    result_pattern+="\s+variant\s+struct\s+{\s+byte\s+\d+(\s+uint64\s+\d+){7}\s+}" # RcpInterfaceMetrics
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply \
         /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.GetProperties \

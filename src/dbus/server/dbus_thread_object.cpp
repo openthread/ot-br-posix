@@ -236,30 +236,10 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetOtRcpVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_THREAD_VERSION,
                                std::bind(&DBusThreadObject::GetThreadVersionHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_TIMEOUT_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpTimeoutCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_RESET_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpResetCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_RESTORATION_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpRestorationCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_SPINEL_PARSE_ERROR_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpSpinelParseErrorCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_INTERFACE_TYPE,
-                               std::bind(&DBusThreadObject::GetRcpInterfaceTypeHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_TRANSFERRED_FRAME_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpTransferredFrameCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_TRANSFERRED_VALID_FRAME_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpTransferredValidFrameCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_TRANSFERRED_GARBAGE_FRAME_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpTransferredGarbageFrameCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_RX_FRAME_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpRxFrameCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_RX_FRAME_BYTE_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpRxFrameByteCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_TX_FRAME_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpTxFrameCountHandler, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_TX_FRAME_BYTE_COUNT,
-                               std::bind(&DBusThreadObject::GetRcpTxFrameByteCountHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_SPINEL_METRICS,
+                               std::bind(&DBusThreadObject::GetRadioSpinelMetricsHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_INTERFACE_METRICS,
+                               std::bind(&DBusThreadObject::GetRcpInterfaceMetricsHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1444,142 +1424,41 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRcpTimeoutCountHandler(DBusMessageIter &aIter)
+otError DBusThreadObject::GetRadioSpinelMetricsHandler(DBusMessageIter &aIter)
 {
-    otError error = OT_ERROR_NONE;
+    otError              error = OT_ERROR_NONE;
+    RadioSpinelMetrics   radioSpinelMetrics;
+    otRadioSpinelMetrics otRadioSpinelMetrics = *otSysGetRadioSpinelMetrics();
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpTimeoutCount) == OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
+    radioSpinelMetrics.mRcpTimeoutCount         = otRadioSpinelMetrics.mRcpTimeoutCount;
+    radioSpinelMetrics.mRcpUnexpectedResetCount = otRadioSpinelMetrics.mRcpUnexpectedResetCount;
+    radioSpinelMetrics.mRcpRestorationCount     = otRadioSpinelMetrics.mRcpRestorationCount;
+    radioSpinelMetrics.mSpinelParseErrorCount   = otRadioSpinelMetrics.mSpinelParseErrorCount;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, radioSpinelMetrics) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;
 }
 
-otError DBusThreadObject::GetRcpResetCountHandler(DBusMessageIter &aIter)
+otError DBusThreadObject::GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter)
 {
-    otError error = OT_ERROR_NONE;
+    otError               error = OT_ERROR_NONE;
+    RcpInterfaceMetrics   rcpInterfaceMetrics;
+    otRcpInterfaceMetrics otRcpInterfaceMetrics = *otSysGetRcpInterfaceMetrics();
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpUnexpectedResetCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
+    rcpInterfaceMetrics.mRcpInterfaceType             = otRcpInterfaceMetrics.mRcpInterfaceType;
+    rcpInterfaceMetrics.mTransferredFrameCount        = otRcpInterfaceMetrics.mTransferredFrameCount;
+    rcpInterfaceMetrics.mTransferredValidFrameCount   = otRcpInterfaceMetrics.mTransferredValidFrameCount;
+    rcpInterfaceMetrics.mTransferredGarbageFrameCount = otRcpInterfaceMetrics.mTransferredGarbageFrameCount;
+    rcpInterfaceMetrics.mRxFrameCount                 = otRcpInterfaceMetrics.mRxFrameCount;
+    rcpInterfaceMetrics.mRxFrameByteCount             = otRcpInterfaceMetrics.mRxFrameByteCount;
+    rcpInterfaceMetrics.mTxFrameCount                 = otRcpInterfaceMetrics.mTxFrameCount;
+    rcpInterfaceMetrics.mTxFrameByteCount             = otRcpInterfaceMetrics.mTxFrameByteCount;
 
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpRestorationCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mRcpRestorationCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpSpinelParseErrorCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRadioSpinelMetrics()->mSpinelParseErrorCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpInterfaceTypeHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRcpInterfaceType) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpTransferredFrameCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredFrameCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpTransferredValidFrameCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredValidFrameCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpTransferredGarbageFrameCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTransferredGarbageFrameCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpRxFrameCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRxFrameCount) == OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpRxFrameByteCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mRxFrameByteCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpTxFrameCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTxFrameCount) == OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
-
-exit:
-    return error;
-}
-
-otError DBusThreadObject::GetRcpTxFrameByteCountHandler(DBusMessageIter &aIter)
-{
-    otError error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otSysGetRcpInterfaceMetrics()->mTxFrameByteCount) ==
-                     OTBR_ERROR_NONE,
-                 error = OT_ERROR_FAILED);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, rcpInterfaceMetrics) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

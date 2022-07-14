@@ -644,63 +644,35 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <!-- RcpTimeoutCount: Count of RCP timeouts. -->
-    <property name="RcpTimeoutCount" type="u" access="read">
+    <!-- RadioSpinelMetrics: The radio spinel metrics
+    <literallayout>
+        struct {
+          uint32_t mRcpTimeoutCount;         ///< The number of RCP timeouts.
+          uint32_t mRcpUnexpectedResetCount; ///< The number of RCP unexcepted resets.
+          uint32_t mRcpRestorationCount;     ///< The number of RCP restorations.
+          uint32_t mSpinelParseErrorCount;   ///< The number of spinel frame parse errors.
+        }
+      </literallayout>
+    -->
+    <property name="RadioSpinelMetrics" type="(uuuu)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <!-- RcpResetCount: Count of RCP unexpectedly reset. -->
-    <property name="RcpResetCount" type="u" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpRestorationCount: Count of RCP restoration. -->
-    <property name="RcpRestorationCount" type="u" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpSpinelParseErrorCount: Count of Spinel frame parse errors. -->
-    <property name="RcpSpinelParseErrorCount" type="u" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpInterfaceType: The RCP interface type. -->
-    <property name="RcpInterfaceType" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpTransferredFrameCount: Count of transferred frames. -->
-    <property name="RcpTransferredFrameCount" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpTransferredValidFrameCount: Count of transferred valid frames. -->
-    <property name="RcpTransferredValidFrameCount" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpTransferredGarbageFrameCount: Count of transferred garbage frames. -->
-    <property name="RcpTransferredGarbageFrameCount" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpRxFrameCount: Count of received frames. -->
-    <property name="RcpRxFrameCount" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpRxFrameByteCount: Count of received bytes. -->
-    <property name="RcpRxFrameByteCount" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpTxFrameCount: Count of transmitted frames. -->
-    <property name="RcpTxFrameCount" type="t" access="read">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
-    <!-- RcpTxFrameByteCount: Count of transmitted bytes. -->
-    <property name="RcpTxFrameByteCount" type="t" access="read">
+    <!-- RcpInterfaceMetrics: The RCP interface metrics
+    <literallayout>
+        struct {
+          uint8_t  mRcpInterfaceType;             ///< The RCP interface type.
+          uint64_t mTransferredFrameCount;        ///< The number of transferred frames.
+          uint64_t mTransferredValidFrameCount;   ///< The number of transferred valid frames.
+          uint64_t mTransferredGarbageFrameCount; ///< The number of transferred garbage frames.
+          uint64_t mRxFrameCount;                 ///< The number of received frames.
+          uint64_t mRxFrameByteCount;             ///< The number of received bytes.
+          uint64_t mTxFrameCount;                 ///< The number of transmitted frames.
+          uint64_t mTxFrameByteCount;             ///< The number of transmitted bytes.
+        }
+      </literallayout>
+    -->
+    <property name="RcpInterfaceMetrics" type="(yttttttt)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 

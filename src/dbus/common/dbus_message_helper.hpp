@@ -89,6 +89,10 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const MdnsTelemetryInfo &aMd
 otbrError DBusMessageExtract(DBusMessageIter *aIter, MdnsTelemetryInfo &aMdnsTelemetryInfo);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const DnssdCounters &aDnssdCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, DnssdCounters &aDnssdCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RadioSpinelMetrics &aRadioSpinelMetrics);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RadioSpinelMetrics &RadioSpinelMetrics);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RcpInterfaceMetrics &RcpInterfaceMetrics);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RcpInterfaceMetrics &RcpInterfaceMetrics);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -258,6 +262,18 @@ template <> struct DBusTypeTrait<DnssdCounters>
 {
     // struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32 }
     static constexpr const char *TYPE_AS_STRING = "(uuuuuuu)";
+};
+
+template <> struct DBusTypeTrait<RadioSpinelMetrics>
+{
+    // struct of { uint32, uint32, uint32, uint32 }
+    static constexpr const char *TYPE_AS_STRING = "(uuuu)";
+};
+
+template <> struct DBusTypeTrait<RcpInterfaceMetrics>
+{
+    // struct of { uint8, uint64, uint64, uint64, uint64, uint64, uint64, uint64 }
+    static constexpr const char *TYPE_AS_STRING = "(yttttttt)";
 };
 
 template <> struct DBusTypeTrait<int8_t>
@@ -518,7 +534,7 @@ public:
 
     exit:
         return error;
-    }
+    } // namespace DBus
 
     static otbrError ConvertToDBusMessage(DBusMessageIter *aIter, const std::tuple<FieldTypes...> &aValues)
     {
@@ -530,7 +546,7 @@ public:
     exit:
         return error;
     }
-};
+}; // namespace otbr
 
 template <> class DBusMessageIterFor<0, 0>
 {
