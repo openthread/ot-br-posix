@@ -534,7 +534,7 @@ public:
 
     exit:
         return error;
-    } // namespace DBus
+    }
 
     static otbrError ConvertToDBusMessage(DBusMessageIter *aIter, const std::tuple<FieldTypes...> &aValues)
     {
@@ -546,7 +546,7 @@ public:
     exit:
         return error;
     }
-}; // namespace otbr
+};
 
 template <> class DBusMessageIterFor<0, 0>
 {
