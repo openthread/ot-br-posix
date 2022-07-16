@@ -1,4 +1,4 @@
-#  Copyright (c) 2021, The OpenThread Authors.
+#  Copyright (c) 2022, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -24,22 +24,23 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+
 set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR aarch64)
-set(CMAKE_C_COMPILER aarch64-poky-linux-gcc)
-set(CMAKE_CXX_COMPILER aarch64-poky-linux-g++)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+set(CMAKE_C_COMPILER arm-poky-linux-gnueabi-gcc)
+set(CMAKE_CXX_COMPILER arm-poky-linux-gnueabi-g++)
 set(CMAKE_C_COMPILER_LAUNCHER)
 set(CMAKE_CXX_COMPILER_LAUNCHER)
-set(CMAKE_ASM_COMPILER aarch64-poky-linux-gcc)
-find_program(CMAKE_AR aarch64-poky-linux-gcc-ar DOC "Archiver" REQUIRED)
-set(CMAKE_C_FLAGS " -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  --sysroot=$ENV{SDKTARGETSYSROOT}  -O2 -pipe -g -feliminate-unused-debug-types -Wno-error   -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security " CACHE STRING "CFLAGS")
-set(CMAKE_CXX_FLAGS " -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  --sysroot=$ENV{SDKTARGETSYSROOT}  -O2 -pipe -g -feliminate-unused-debug-types  -Wno-error  -fvisibility-inlines-hidden  -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  " CACHE STRING "CXXFLAGS")
-set(CMAKE_ASM_FLAGS " -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  --sysroot=$ENV{SDKTARGETSYSROOT}  -O2 -pipe -g -feliminate-unused-debug-types  -Wno-error   -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  " CACHE STRING "ASM FLAGS")
+set(CMAKE_ASM_COMPILER arm-poky-linux-gnueabi-gcc)
+find_program(CMAKE_AR arm-poky-linux-gnueabi-gcc-ar DOC "Archiver" REQUIRED)
+set(CMAKE_C_FLAGS " -mthumb -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a7 -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=$ENV{SDKTARGETSYSROOT} -O2 -pipe -g -feliminate-unused-debug-types " CACHE STRING "CFLAGS")
+set(CMAKE_CXX_FLAGS " -mthumb -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a7 -fstack-protector-strong --sysroot=$ENV{SDKTARGETSYSROOT} -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security -fvisibility-inlines-hidden" CACHE STRING "CXXFLAGS")
+set(CMAKE_ASM_FLAGS " -mthumb -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a7 -fstack-protector-strong --sysroot=$ENV{SDKTARGETSYSROOT} -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security " CACHE STRING "ASM FLAGS")
 set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG" CACHE STRING "Additional CFLAGS for release")
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG" CACHE STRING "Additional CXXFLAGS for release")
 set(CMAKE_ASM_FLAGS_RELEASE "-DNDEBUG" CACHE STRING "Additional ASM FLAGS for release")
-set(CMAKE_C_LINK_FLAGS " -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  --sysroot=$ENV{SDKTARGETSYSROOT}  -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,-z,relro,-z,now" CACHE STRING "LDFLAGS")
-set(CMAKE_CXX_LINK_FLAGS " -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security  --sysroot=$ENV{SDKTARGETSYSROOT}  -O2 -pipe -g -feliminate-unused-debug-types -Wno-error  -fvisibility-inlines-hidden  -mcpu=cortex-a53 -march=armv8-a+crc+crypto -fstack-protector-strong  -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,-z,relro,-z,now -L$ENV{SDKTARGETSYSROOT}/usr/lib" CACHE STRING "LDFLAGS")
+set(CMAKE_C_LINK_FLAGS " -mthumb -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a7 -fstack-protector-strong --sysroot=$ENV{SDKTARGETSYSROOT} -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security -Wl,-z,relro,-z,now" CACHE STRING "LDFLAGS")
+set(CMAKE_CXX_LINK_FLAGS " -mthumb -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a7 -fstack-protector-strong --sysroot=$ENV{SDKTARGETSYSROOT} -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security -fvisibility-inlines-hidden -Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,-z,relro,-z,now -L$ENV{SDKTARGETSYSROOT}/usr/lib " CACHE STRING "LDFLAGS")
 set(CMAKE_FIND_ROOT_PATH $ENV{OECORE_NATIVE_SYSROOT} $ENV{SDKTARGETSYSROOT})
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
