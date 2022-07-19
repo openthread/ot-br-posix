@@ -676,6 +676,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- Uptime: The number of milliseconds since OpenThread instance was initialized. -->
+    <property name="Uptime" type="t" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

@@ -129,11 +129,13 @@ main()
     property_names+="OtHostVersion,"
     property_names+="OtRcpVersion,"
     property_names+="ThreadVersion,"
+    property_names+="Uptime,"
     property_names+="RadioSpinelMetrics,"
     property_names+="RcpInterfaceMetrics"
     local result_pattern="\s+variant\s+string\s+\"${ot_version}\""
     result_pattern+="\s+variant\s+string\s+\"${rcp_version}\""
     result_pattern+="\s+variant\s+uint16\s+${thread_version}"
+    result_pattern+="\s+variant\s+uint64\s+\d+"                                    # Uptime
     result_pattern+="\s+variant\s+struct\s+{(\s+uint32\s+\d+){4}\s+}"              # RadioSpinelMetrics
     result_pattern+="\s+variant\s+struct\s+{\s+byte\s+\d+(\s+uint64\s+\d+){7}\s+}" # RcpInterfaceMetrics
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply \

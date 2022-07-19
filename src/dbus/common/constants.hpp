@@ -101,6 +101,7 @@
 #define OTBR_DBUS_PROPERTY_MDNS_TELEMETRY_INFO "MdnsTelemetryInfo"
 #define OTBR_DBUS_PROPERTY_RADIO_SPINEL_METRICS "RadioSpinelMetrics"
 #define OTBR_DBUS_PROPERTY_RCP_INTERFACE_METRICS "RcpInterfaceMetrics"
+#define OTBR_DBUS_PROPERTY_UPTIME "Uptime"
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
 #define OTBR_ROLE_NAME_DETACHED "detached"
