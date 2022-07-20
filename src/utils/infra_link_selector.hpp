@@ -37,7 +37,7 @@
 #if __linux__
 
 #include <assert.h>
-#include <chrono>
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -46,6 +46,7 @@
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
+#include "common/time.hpp"
 
 namespace otbr {
 namespace Utils {
@@ -57,18 +58,6 @@ namespace Utils {
 class InfraLinkSelector : public MainloopProcessor, private NonCopyable
 {
 public:
-    /**
-     * This enumeration infrastructure link states.
-     *
-     */
-    enum LinkState : uint8_t
-    {
-        kInvalid,      ///< The infrastructure link is invalid.
-        kDown,         ///< The infrastructure link is down.
-        kUp,           ///< The infrastructure link is up, but not running.
-        kUpAndRunning, ///< The infrastructure link is up and running.
-    };
-
     /**
      * This constructor initializes the InfraLinkSelector instance.
      *
@@ -101,24 +90,44 @@ public:
     const char *Select(void);
 
 private:
-    using Clock = std::chrono::steady_clock;
+    /**
+     * This enumeration infrastructure link states.
+     *
+     */
+    enum LinkState : uint8_t
+    {
+        kInvalid,      ///< The infrastructure link is invalid.
+        kDown,         ///< The infrastructure link is down.
+        kUp,           ///< The infrastructure link is up, but not running.
+        kUpAndRunning, ///< The infrastructure link is up and running.
+
+    };
+
+    struct LinkInfo
+    {
+        LinkState         mState = kInvalid;
+        Clock::time_point mLastRunningTime;
+        bool              mWasUpAndRunning = false;
+
+        bool Update(LinkState aState);
+    };
 
     static constexpr const char *kDefaultInfraLinkName    = "";
-    static constexpr auto        kInfraLinkSelectionDelay = std::chrono::milliseconds(10000);
+    static constexpr auto        kInfraLinkSelectionDelay = Milliseconds(10000);
 
-    void             EvaluateInfraLinks(const char *&aBestInfraLink, LinkState &aBestInfraLinkState);
-    static LinkState GetInfraLinkState(const char *aInfraLinkName);
+    static const char *LinkStateToString(LinkState aState);
+    static LinkState   QueryInfraLinkState(const char *aInfraLinkName);
+    void               Update(MainloopContext &aMainloop) override;
+    void               Process(const MainloopContext &aMainloop) override;
+    void               ReceiveNetLinkMessage(void);
+    void               HandleInfraLinkStateChange(uint32_t aInfraLinkIndex);
 
-    void Update(MainloopContext &aMainloop) override;
-    void Process(const MainloopContext &aMainloop) override;
-    void ReceiveNetLinkMessage(void);
-
-    std::vector<const char *> mInfraLinkNames;
-    int                       mNetlinkSocket    = -1;
-    const char *              mCurrentInfraLink = nullptr;
-    Clock::time_point         mCurrentInfraLinkDownTime;
-    TaskRunner                mTaskRunner;
-    bool                      mRequireReselect = true;
+    std::vector<const char *>        mInfraLinkNames;
+    std::map<const char *, LinkInfo> mInfraLinkInfos;
+    int                              mNetlinkSocket    = -1;
+    const char *                     mCurrentInfraLink = nullptr;
+    TaskRunner                       mTaskRunner;
+    bool                             mRequireReselect = true;
 };
 
 } // namespace Utils

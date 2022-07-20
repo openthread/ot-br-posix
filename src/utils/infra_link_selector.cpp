@@ -50,7 +50,25 @@
 namespace otbr {
 namespace Utils {
 
-constexpr std::chrono::milliseconds InfraLinkSelector::kInfraLinkSelectionDelay;
+constexpr Milliseconds InfraLinkSelector::kInfraLinkSelectionDelay;
+
+bool InfraLinkSelector::LinkInfo::Update(LinkState aState)
+{
+    bool changed = mState != aState;
+
+    VerifyOrExit(changed);
+
+    if (mState == kUpAndRunning && aState != kUpAndRunning)
+    {
+        mWasUpAndRunning = true;
+        mLastRunningTime = Clock::now();
+    }
+
+    mState = aState;
+exit:
+
+    return changed;
+}
 
 InfraLinkSelector::InfraLinkSelector(std::vector<const char *> aInfraLinkNames)
     : mInfraLinkNames(std::move(aInfraLinkNames))
@@ -59,6 +77,11 @@ InfraLinkSelector::InfraLinkSelector(std::vector<const char *> aInfraLinkNames)
     {
         mNetlinkSocket = CreateNetLinkRouteSocket(RTMGRP_LINK);
         VerifyOrDie(mNetlinkSocket != -1, "Failed to create netlink socket");
+    }
+
+    for (const char *name : mInfraLinkNames)
+    {
+        mInfraLinkInfos[name].Update(QueryInfraLinkState(name));
     }
 }
 
@@ -73,98 +96,100 @@ InfraLinkSelector::~InfraLinkSelector(void)
 
 const char *InfraLinkSelector::Select(void)
 {
-    const char *   oldInfraLink = mCurrentInfraLink;
-    auto           now          = Clock::now();
-    constexpr auto kMinTime     = Clock::time_point::min();
+    const char *                 prevInfraLink         = mCurrentInfraLink;
+    InfraLinkSelector::LinkState currentInfraLinkState = kInvalid;
+    auto                         now                   = Clock::now();
+    LinkInfo *                   currentInfraLinkInfo  = nullptr;
 
     VerifyOrExit(!mInfraLinkNames.empty(), mCurrentInfraLink = kDefaultInfraLinkName);
     VerifyOrExit(mInfraLinkNames.size() > 1, mCurrentInfraLink = mInfraLinkNames.front());
     VerifyOrExit(mRequireReselect, assert(mCurrentInfraLink != nullptr));
 
+    otbrLogInfo("Evaluating infra link among %zu netifs:", mInfraLinkNames.size());
+
+    // Prefer `mCurrentInfraLink` if it's up and running.
     if (mCurrentInfraLink != nullptr)
     {
-        // Prefer `mCurrentInfraLink` if it's up and running.
-        if (GetInfraLinkState(mCurrentInfraLink) == kUpAndRunning)
-        {
-            mCurrentInfraLinkDownTime = kMinTime;
-            ExitNow();
-        }
+        currentInfraLinkInfo = &mInfraLinkInfos[mCurrentInfraLink];
 
-        if (mCurrentInfraLinkDownTime == kMinTime)
-        {
-            mCurrentInfraLinkDownTime = now;
-        }
+        otbrLogInfo("\tInfra link %s is in state %s", mCurrentInfraLink,
+                    LinkStateToString(currentInfraLinkInfo->mState));
 
-        // Prefer `mCurrentInfraLink` if it's down for less than `kInfraLinkSelectionDelay`
-        if (now - mCurrentInfraLinkDownTime < kInfraLinkSelectionDelay)
-        {
-            std::chrono::milliseconds delay =
-                kInfraLinkSelectionDelay -
-                std::chrono::duration_cast<std::chrono::milliseconds>(now - mCurrentInfraLinkDownTime);
-
-            mTaskRunner.Post(delay, [this]() { mRequireReselect = true; });
-            ExitNow();
-        }
+        VerifyOrExit(currentInfraLinkInfo->mState != kUpAndRunning);
     }
 
+    // Select an infra link with best state.
     {
-        const char *bestInfraLink;
-        LinkState   bestState;
+        const char *                 bestInfraLink = mCurrentInfraLink;
+        InfraLinkSelector::LinkState bestState     = currentInfraLinkState;
 
-        EvaluateInfraLinks(bestInfraLink, bestState);
+        for (const char *name : mInfraLinkNames)
+        {
+            if (name != mCurrentInfraLink)
+            {
+                LinkInfo &linkInfo = mInfraLinkInfos[name];
+
+                otbrLogInfo("\tInfra link %s is in state %s", name, LinkStateToString(linkInfo.mState));
+                if (bestInfraLink == nullptr || linkInfo.mState > bestState)
+                {
+                    bestInfraLink = name;
+                    bestState     = linkInfo.mState;
+                }
+            }
+        }
+
+        VerifyOrExit(bestInfraLink != mCurrentInfraLink);
 
         // Prefer `mCurrentInfraLink` if no other infra link is up and running
         VerifyOrExit(mCurrentInfraLink == nullptr || bestState == kUpAndRunning);
 
-        // Prefer the infra link in the best state
-        assert(mCurrentInfraLink != bestInfraLink);
+        // Prefer `mCurrentInfraLink` if it's down for less than `kInfraLinkSelectionDelay`
+        if (mCurrentInfraLink != nullptr && currentInfraLinkInfo->mWasUpAndRunning)
+        {
+            Milliseconds timeSinceLastRunning =
+                std::chrono::duration_cast<Milliseconds>(now - currentInfraLinkInfo->mLastRunningTime);
 
-        mCurrentInfraLink         = bestInfraLink;
-        mCurrentInfraLinkDownTime = bestState == kUpAndRunning ? kMinTime : now;
+            if (timeSinceLastRunning < kInfraLinkSelectionDelay)
+            {
+                Milliseconds delay = kInfraLinkSelectionDelay - timeSinceLastRunning;
+
+                otbrLogInfo("Infra link %s was running %lldms ago, wait for %lldms to recheck.", mCurrentInfraLink,
+                            timeSinceLastRunning.count(), delay.count());
+                mTaskRunner.Post(delay, [this]() { mRequireReselect = true; });
+                ExitNow();
+            }
+        }
+
+        // Current infra link changed.
+        mCurrentInfraLink = bestInfraLink;
     }
 
 exit:
-    mRequireReselect = false;
-
-    if (oldInfraLink != mCurrentInfraLink)
+    if (mRequireReselect)
     {
-        if (oldInfraLink == nullptr)
+        mRequireReselect = false;
+
+        if (prevInfraLink != mCurrentInfraLink)
         {
-            otbrLogNotice("Infra link selected: %s", mCurrentInfraLink);
+            if (prevInfraLink == nullptr)
+            {
+                otbrLogNotice("Infra link selected: %s", mCurrentInfraLink);
+            }
+            else
+            {
+                otbrLogWarning("Infra link switched from %s to %s", prevInfraLink, mCurrentInfraLink);
+            }
         }
         else
         {
-            otbrLogWarning("Infra link switched from %s to %s", oldInfraLink, mCurrentInfraLink);
+            otbrLogInfo("Infra link unchanged: %s", mCurrentInfraLink);
         }
     }
 
     return mCurrentInfraLink;
 }
 
-void InfraLinkSelector::EvaluateInfraLinks(const char *&aBestInfraLink, LinkState &aBestInfraLinkState)
-{
-    const char *                 bestStateInfraLink = nullptr;
-    InfraLinkSelector::LinkState bestState          = kInvalid;
-
-    otbrLogInfo("Evaluating infra link among %zu netifs:", mInfraLinkNames.size());
-
-    for (const char *name : mInfraLinkNames)
-    {
-        InfraLinkSelector::LinkState state = GetInfraLinkState(name);
-
-        otbrLogInfo("\tInfra link %s is in state %d", name, state);
-        if (bestStateInfraLink == nullptr || state > bestState)
-        {
-            bestStateInfraLink = name;
-            bestState          = state;
-        }
-    }
-
-    aBestInfraLink      = bestStateInfraLink;
-    aBestInfraLinkState = bestState;
-}
-
-InfraLinkSelector::LinkState InfraLinkSelector::GetInfraLinkState(const char *aInfraLinkName)
+InfraLinkSelector::LinkState InfraLinkSelector::QueryInfraLinkState(const char *aInfraLinkName)
 {
     int                          sock = 0;
     struct ifreq                 ifReq;
@@ -207,6 +232,7 @@ void InfraLinkSelector::Process(const MainloopContext &aMainloop)
         ReceiveNetLinkMessage();
     }
 }
+
 void InfraLinkSelector::ReceiveNetLinkMessage(void)
 {
     const size_t kMaxNetLinkBufSize = 8192;
@@ -234,10 +260,7 @@ void InfraLinkSelector::ReceiveNetLinkMessage(void)
         case RTM_NEWLINK:
         case RTM_DELLINK:
             ifinfo = reinterpret_cast<struct ifinfomsg *>(NLMSG_DATA(header));
-            VerifyOrExit(ifinfo->ifi_change & (IFF_UP | IFF_RUNNING));
-            otbrLogInfo("RTM_NEWLINK index %d change %x flags %x ", ifinfo->ifi_index, ifinfo->ifi_change,
-                        ifinfo->ifi_flags);
-            mRequireReselect = true;
+            HandleInfraLinkStateChange(ifinfo->ifi_index);
             break;
         case NLMSG_ERROR:
         {
@@ -253,6 +276,58 @@ void InfraLinkSelector::ReceiveNetLinkMessage(void)
 
 exit:
     return;
+}
+
+void InfraLinkSelector::HandleInfraLinkStateChange(uint32_t aInfraLinkIndex)
+{
+    const char *infraLinkName = nullptr;
+
+    for (const char *name : mInfraLinkNames)
+    {
+        if (aInfraLinkIndex == if_nametoindex(name))
+        {
+            infraLinkName = name;
+            break;
+        }
+    }
+
+    VerifyOrExit(infraLinkName != nullptr);
+
+    {
+        LinkInfo &linkInfo  = mInfraLinkInfos[infraLinkName];
+        LinkState prevState = linkInfo.mState;
+
+        if (linkInfo.Update(QueryInfraLinkState(infraLinkName)))
+        {
+            otbrLogInfo("Infra link name %s index %lu state changed: %s -> %s", infraLinkName, aInfraLinkIndex,
+                        LinkStateToString(prevState), LinkStateToString(linkInfo.mState));
+            mRequireReselect = true;
+        }
+    }
+exit:
+    return;
+}
+
+const char *InfraLinkSelector::LinkStateToString(LinkState aState)
+{
+    const char *str = "";
+
+    switch (aState)
+    {
+    case kInvalid:
+        str = "INVALID";
+        break;
+    case kDown:
+        str = "DOWN";
+        break;
+    case kUp:
+        str = "UP";
+        break;
+    case kUpAndRunning:
+        str = "UP+RUNNING";
+        break;
+    }
+    return str;
 }
 
 } // namespace Utils
