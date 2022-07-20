@@ -236,6 +236,12 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetOtRcpVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_THREAD_VERSION,
                                std::bind(&DBusThreadObject::GetThreadVersionHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_SPINEL_METRICS,
+                               std::bind(&DBusThreadObject::GetRadioSpinelMetricsHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_INTERFACE_METRICS,
+                               std::bind(&DBusThreadObject::GetRcpInterfaceMetricsHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_UPTIME,
+                               std::bind(&DBusThreadObject::GetUptimeHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1415,6 +1421,58 @@ otError DBusThreadObject::GetThreadVersionHandler(DBusMessageIter &aIter)
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otThreadGetVersion()) == OTBR_ERROR_NONE, error = OT_ERROR_FAILED);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetRadioSpinelMetricsHandler(DBusMessageIter &aIter)
+{
+    otError              error = OT_ERROR_NONE;
+    RadioSpinelMetrics   radioSpinelMetrics;
+    otRadioSpinelMetrics otRadioSpinelMetrics = *otSysGetRadioSpinelMetrics();
+
+    radioSpinelMetrics.mRcpTimeoutCount         = otRadioSpinelMetrics.mRcpTimeoutCount;
+    radioSpinelMetrics.mRcpUnexpectedResetCount = otRadioSpinelMetrics.mRcpUnexpectedResetCount;
+    radioSpinelMetrics.mRcpRestorationCount     = otRadioSpinelMetrics.mRcpRestorationCount;
+    radioSpinelMetrics.mSpinelParseErrorCount   = otRadioSpinelMetrics.mSpinelParseErrorCount;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, radioSpinelMetrics) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter)
+{
+    otError               error = OT_ERROR_NONE;
+    RcpInterfaceMetrics   rcpInterfaceMetrics;
+    otRcpInterfaceMetrics otRcpInterfaceMetrics = *otSysGetRcpInterfaceMetrics();
+
+    rcpInterfaceMetrics.mRcpInterfaceType             = otRcpInterfaceMetrics.mRcpInterfaceType;
+    rcpInterfaceMetrics.mTransferredFrameCount        = otRcpInterfaceMetrics.mTransferredFrameCount;
+    rcpInterfaceMetrics.mTransferredValidFrameCount   = otRcpInterfaceMetrics.mTransferredValidFrameCount;
+    rcpInterfaceMetrics.mTransferredGarbageFrameCount = otRcpInterfaceMetrics.mTransferredGarbageFrameCount;
+    rcpInterfaceMetrics.mRxFrameCount                 = otRcpInterfaceMetrics.mRxFrameCount;
+    rcpInterfaceMetrics.mRxFrameByteCount             = otRcpInterfaceMetrics.mRxFrameByteCount;
+    rcpInterfaceMetrics.mTxFrameCount                 = otRcpInterfaceMetrics.mTxFrameCount;
+    rcpInterfaceMetrics.mTxFrameByteCount             = otRcpInterfaceMetrics.mTxFrameByteCount;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, rcpInterfaceMetrics) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetUptimeHandler(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otInstanceGetUptime(mNcp->GetThreadHelper()->GetInstance())) ==
+                     OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

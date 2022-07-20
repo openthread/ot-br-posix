@@ -643,6 +643,44 @@
     <property name="Eui64" type="t" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
+
+    <!-- RadioSpinelMetrics: The radio spinel metrics
+    <literallayout>
+        struct {
+          uint32_t mRcpTimeoutCount;         ///< The number of RCP timeouts.
+          uint32_t mRcpUnexpectedResetCount; ///< The number of RCP unexcepted resets.
+          uint32_t mRcpRestorationCount;     ///< The number of RCP restorations.
+          uint32_t mSpinelParseErrorCount;   ///< The number of spinel frame parse errors.
+        }
+      </literallayout>
+    -->
+    <property name="RadioSpinelMetrics" type="(uuuu)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <!-- RcpInterfaceMetrics: The RCP interface metrics
+    <literallayout>
+        struct {
+          uint8_t  mRcpInterfaceType;             ///< The RCP interface type.
+          uint64_t mTransferredFrameCount;        ///< The number of transferred frames.
+          uint64_t mTransferredValidFrameCount;   ///< The number of transferred valid frames.
+          uint64_t mTransferredGarbageFrameCount; ///< The number of transferred garbage frames.
+          uint64_t mRxFrameCount;                 ///< The number of received frames.
+          uint64_t mRxFrameByteCount;             ///< The number of received bytes.
+          uint64_t mTxFrameCount;                 ///< The number of transmitted frames.
+          uint64_t mTxFrameByteCount;             ///< The number of transmitted bytes.
+        }
+      </literallayout>
+    -->
+    <property name="RcpInterfaceMetrics" type="(yttttttt)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <!-- Uptime: The number of milliseconds since OpenThread instance was initialized. -->
+    <property name="Uptime" type="t" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

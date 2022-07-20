@@ -733,5 +733,81 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RadioSpinelMetrics &aRadioSpinelMetrics)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioSpinelMetrics.mRcpTimeoutCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioSpinelMetrics.mRcpUnexpectedResetCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioSpinelMetrics.mRcpRestorationCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioSpinelMetrics.mSpinelParseErrorCount));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RadioSpinelMetrics &aRadioSpinelMetrics)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioSpinelMetrics.mRcpTimeoutCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioSpinelMetrics.mRcpUnexpectedResetCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioSpinelMetrics.mRcpRestorationCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioSpinelMetrics.mSpinelParseErrorCount));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RcpInterfaceMetrics &aRcpInterfaceMetrics)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mRcpInterfaceType));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mTransferredFrameCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mTransferredValidFrameCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mTransferredGarbageFrameCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mRxFrameCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mRxFrameByteCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mTxFrameCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRcpInterfaceMetrics.mTxFrameByteCount));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RcpInterfaceMetrics &aRcpInterfaceMetrics)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mRcpInterfaceType));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mTransferredFrameCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mTransferredValidFrameCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mTransferredGarbageFrameCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mRxFrameCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mRxFrameByteCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mTxFrameCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRcpInterfaceMetrics.mTxFrameByteCount));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

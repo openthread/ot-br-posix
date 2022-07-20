@@ -576,6 +576,26 @@ struct DnssdCounters
     uint32_t mResolvedBySrp; ///< The number of queries completely resolved by the local SRP server
 };
 
+struct RadioSpinelMetrics
+{
+    uint32_t mRcpTimeoutCount;         ///< The number of RCP timeouts.
+    uint32_t mRcpUnexpectedResetCount; ///< The number of RCP unexcepted resets.
+    uint32_t mRcpRestorationCount;     ///< The number of RCP restorations.
+    uint32_t mSpinelParseErrorCount;   ///< The number of spinel frame parse errors.
+};
+
+typedef struct RcpInterfaceMetrics
+{
+    uint8_t  mRcpInterfaceType;             ///< The RCP interface type.
+    uint64_t mTransferredFrameCount;        ///< The number of transferred frames.
+    uint64_t mTransferredValidFrameCount;   ///< The number of transferred valid frames.
+    uint64_t mTransferredGarbageFrameCount; ///< The number of transferred garbage frames.
+    uint64_t mRxFrameCount;                 ///< The number of received frames.
+    uint64_t mRxFrameByteCount;             ///< The number of received bytes.
+    uint64_t mTxFrameCount;                 ///< The number of transmitted frames.
+    uint64_t mTxFrameByteCount;             ///< The number of transmitted bytes.
+} RcpInterfaceMetrics;
+
 } // namespace DBus
 } // namespace otbr
 
