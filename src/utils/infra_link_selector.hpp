@@ -107,7 +107,7 @@ private:
     static constexpr auto        kInfraLinkSelectionDelay = std::chrono::milliseconds(10000);
 
     void             EvaluateInfraLinks(const char *&aBestInfraLink, LinkState &aBestInfraLinkState);
-    static LinkState IsInfraLinkRunning(const char *aInfraLinkName);
+    static LinkState GetInfraLinkState(const char *aInfraLinkName);
 
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;

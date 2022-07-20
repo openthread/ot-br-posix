@@ -84,7 +84,7 @@ const char *InfraLinkSelector::Select(void)
     if (mCurrentInfraLink != nullptr)
     {
         // Prefer `mCurrentInfraLink` if it's up and running.
-        if (IsInfraLinkRunning(mCurrentInfraLink) == kUpAndRunning)
+        if (GetInfraLinkState(mCurrentInfraLink) == kUpAndRunning)
         {
             mCurrentInfraLinkDownTime = kMinTime;
             ExitNow();
@@ -114,10 +114,7 @@ const char *InfraLinkSelector::Select(void)
         EvaluateInfraLinks(bestInfraLink, bestState);
 
         // Prefer `mCurrentInfraLink` if no other infra link is up and running
-        if (mCurrentInfraLink != nullptr && bestState != kUpAndRunning)
-        {
-            ExitNow();
-        }
+        VerifyOrExit(mCurrentInfraLink == nullptr || bestState == kUpAndRunning);
 
         // Prefer the infra link in the best state
         assert(mCurrentInfraLink != bestInfraLink);
@@ -153,7 +150,7 @@ void InfraLinkSelector::EvaluateInfraLinks(const char *&aBestInfraLink, LinkStat
 
     for (const char *name : mInfraLinkNames)
     {
-        InfraLinkSelector::LinkState state = IsInfraLinkRunning(name);
+        InfraLinkSelector::LinkState state = GetInfraLinkState(name);
 
         otbrLogInfo("\tInfra link %s is in state %d", name, state);
         if (bestStateInfraLink == nullptr || state > bestState)
@@ -167,7 +164,7 @@ void InfraLinkSelector::EvaluateInfraLinks(const char *&aBestInfraLink, LinkStat
     aBestInfraLinkState = bestState;
 }
 
-InfraLinkSelector::LinkState InfraLinkSelector::IsInfraLinkRunning(const char *aInfraLinkName)
+InfraLinkSelector::LinkState InfraLinkSelector::GetInfraLinkState(const char *aInfraLinkName)
 {
     int                          sock = 0;
     struct ifreq                 ifReq;
@@ -177,7 +174,7 @@ InfraLinkSelector::LinkState InfraLinkSelector::IsInfraLinkRunning(const char *a
     VerifyOrDie(sock != -1, "Failed to create AF_INET6 socket.");
 
     memset(&ifReq, 0, sizeof(ifReq));
-    strncpy(ifReq.ifr_name, aInfraLinkName, sizeof(ifReq.ifr_name));
+    strncpy(ifReq.ifr_name, aInfraLinkName, sizeof(ifReq.ifr_name) - 1);
 
     VerifyOrExit(ioctl(sock, SIOCGIFFLAGS, &ifReq) != -1);
 

@@ -201,6 +201,7 @@ static int realmain(int argc, char *argv[])
         {
         case OTBR_OPT_BACKBONE_INTERFACE_NAME:
             backboneInterfaceNames.push_back(optarg);
+            otbrLogNotice("Backbone interface: %s", optarg);
             break;
 
         case OTBR_OPT_DEBUG_LEVEL:
@@ -255,14 +256,7 @@ static int realmain(int argc, char *argv[])
     otbrLogNotice("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     otbrLogNotice("Thread interface: %s", interfaceName);
 
-    if (!backboneInterfaceNames.empty())
-    {
-        for (const char *name : backboneInterfaceNames)
-        {
-            otbrLogNotice("Backbone interface: %s", name);
-        }
-    }
-    else
+    if (backboneInterfaceNames.empty())
     {
         otbrLogNotice("Backbone interface is not specified");
     }
