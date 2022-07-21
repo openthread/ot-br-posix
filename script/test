@@ -181,7 +181,8 @@ do_simulation()
 {
     export top_builddir="${OTBR_TOP_BUILDDIR}"
 
-    print_result tests/scripts/auto-attach
+    print_result tests/scripts/infra-link-selector
+//    print_result tests/scripts/auto-attach
 }
 
 main()
