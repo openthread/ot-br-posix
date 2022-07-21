@@ -59,3 +59,5 @@ sudo "${OT_CTL}" ifconfig up
 sudo "${OT_CTL}" thread start
 sleep 10
 sudo "${OT_CTL}" state | grep "leader"
+
+exit 1
