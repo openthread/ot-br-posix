@@ -75,7 +75,15 @@ sleep 10
 ifconfig
 ip link list
 
-sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
-sleep 5
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" | tee output &
 
-exit 1
+sleep 3
+# Verify ILS selects ilstest0
+cat output | grep "Infra link selected" | tail -1 | grep "ilstest0"
+
+sudo ifconfig ilstest1 down
+sudo ifconfig ilstest2 down
+
+sleep 3
+# Verify ILS keeps using ilstest0
+cat output | grep "Infra link selected" | tail -1 | grep "ilstest0"
