@@ -127,13 +127,6 @@ private:
 
     struct DelayedTask
     {
-        friend class Comparator;
-
-        struct Comparator
-        {
-            bool operator()(const DelayedTask &aLhs, const DelayedTask &aRhs) const { return aRhs < aLhs; }
-        };
-
         DelayedTask(Milliseconds aDelay, Task<void> aTask)
             : mTimeCreated(Clock::now())
             , mDelay(aDelay)
@@ -143,8 +136,8 @@ private:
 
         bool operator<(const DelayedTask &aOther) const
         {
-            return GetTimeExecute() <= aOther.GetTimeExecute() ||
-                   (GetTimeExecute() == aOther.GetTimeExecute() && mTimeCreated < aOther.mTimeCreated);
+            return GetTimeExecute() > aOther.GetTimeExecute() ||
+                   (GetTimeExecute() == aOther.GetTimeExecute() && mTimeCreated > aOther.mTimeCreated);
         }
 
         Timepoint GetTimeExecute(void) const { return mTimeCreated + mDelay; }
@@ -161,7 +154,7 @@ private:
     // when there are pending tasks in the task queue.
     int mEventFd[2];
 
-    std::priority_queue<DelayedTask, std::vector<DelayedTask>, DelayedTask::Comparator> mTaskQueue;
+    std::priority_queue<DelayedTask> mTaskQueue;
 
     // The mutex which protects the `mTaskQueue` from being
     // simultaneously accessed by multiple threads.

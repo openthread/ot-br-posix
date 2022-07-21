@@ -43,7 +43,6 @@
 namespace otbr {
 
 TaskRunner::TaskRunner(void)
-    : mTaskQueue(DelayedTask::Comparator{})
 {
     int flags;
 
