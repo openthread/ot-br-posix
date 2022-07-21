@@ -49,28 +49,27 @@ sudo cp "${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf" /etc/dbus-1/system.d/
 sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
 sudo systemctl reload dbus
 
-docker network rm ilstest0 ilstest1 ilstest2 || true
-docker network create --driver bridge --ipv6 --subnet 9100::/64 -o com.docker.network.bridge.name=ilstest0 ilstest0
-docker network create --driver bridge --ipv6 --subnet 9101::/64 -o com.docker.network.bridge.name=ilstest1 ilstest1
-docker network create --driver bridge --ipv6 --subnet 9102::/64 -o com.docker.network.bridge.name=ilstest2 ilstest2
+sudo modprobe dummy
 
-ping -I ilstest0 9100::1 -c 3 || true
-ping -I ilstest1 9101::1 -c 3 || true
-ping -I ilstest2 9102::1 -c 3 || true
+prepare_infra_link() {
+  local netif=$1
+  let mac=$2
 
-sleep 10
-ifconfig
+  sudo ip link del ${netif}
+  sudo ip link add ${netif} type dummy
+  sudo ifconfig ${netif} hw ether ${mac}
+  sudo ifconfig ${netif} up
+}
 
-sudo modprobe dummy || true
-sudo ip link add ilstest3 type dummy || true
-sudo ifconfig ilstest3 hw ether C8:D7:4A:4E:47:50
-sudo ifconfig ilstest3 up
+prepare_infra_link ilstest0 C8:D7:4A:4E:47:00
+prepare_infra_link ilstest1 C8:D7:4A:4E:47:01
+prepare_infra_link ilstest2 C8:D7:4A:4E:47:02
 
 sleep 10
 ifconfig
 ip link list
 
-sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 -Bilstest3 -B eth0 -B lo "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
-sleep 1
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
+sleep 5
 
 exit 1
