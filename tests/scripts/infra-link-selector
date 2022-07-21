@@ -53,7 +53,7 @@ sudo modprobe dummy
 
 prepare_infra_link() {
   local netif="$1"
-  let mac="$2"
+  local mac="$2"
 
   sudo ip link del "${netif}"
   sudo ip link add "${netif}" type dummy
