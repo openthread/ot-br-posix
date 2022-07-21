@@ -49,6 +49,8 @@ sudo cp "${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf" /etc/dbus-1/system.d/
 sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
 sudo systemctl reload dbus
 
+ifconfig
+
 sudo "${OTBR_AGENT}" -I wpan0 -v -d7 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
 sleep 1
 
