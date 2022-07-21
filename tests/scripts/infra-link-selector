@@ -54,9 +54,9 @@ docker network create --driver bridge --ipv6 --subnet 9100::/64 -o com.docker.ne
 docker network create --driver bridge --ipv6 --subnet 9101::/64 -o com.docker.network.bridge.name=ilstest1 ilstest1
 docker network create --driver bridge --ipv6 --subnet 9102::/64 -o com.docker.network.bridge.name=ilstest2 ilstest2
 
-ping -I backbone0 9100::1
-ping -I backbone1 9101::1
-ping -I backbone2 9102::1
+ping -I ilstest0 9100::1
+ping -I ilstest1 9101::1
+ping -I ilstest2 9102::1
 
 sleep 10
 ifconfig
