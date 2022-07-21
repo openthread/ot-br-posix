@@ -41,6 +41,7 @@
 #include <future>
 #include <mutex>
 #include <queue>
+#include <set>
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
@@ -61,6 +62,14 @@ public:
      *
      */
     template <class T> using Task = std::function<T(void)>;
+
+    /**
+     * This type represents a unique task ID to an delayed task.
+     *
+     * Note: A valid task ID is never zero.
+     *
+     */
+    typedef uint64_t TaskId;
 
     /**
      * This constructor initializes the Task Runner instance.
@@ -89,12 +98,24 @@ public:
      * This method posts a task to the task runner and returns immediately.
      *
      * The task will be executed on the mainloop after `aDelay` milliseconds from now.
+     * It is safe to call this method in different threads concurrently.
      *
      * @param[in] aDelay  The delay before executing the task (in milliseconds).
      * @param[in] aTask   The task to be executed.
      *
+     * @returns  The unique task ID of the delayed task.
+     *
      */
-    void Post(Milliseconds aDelay, Task<void> aTask);
+    TaskId Post(Milliseconds aDelay, Task<void> aTask);
+
+    /**
+     * This method cancels a delayed task from the task runner.
+     * It is safe to call this method in different threads concurrently.
+     *
+     * @param[in] aTaskId  The unique task ID of the delayed task to cancel.
+     *
+     */
+    void Cancel(TaskId aTaskId);
 
     /**
      * This method posts a task and waits for the completion of the task.
@@ -134,34 +155,36 @@ private:
             bool operator()(const DelayedTask &aLhs, const DelayedTask &aRhs) const { return aRhs < aLhs; }
         };
 
-        DelayedTask(Milliseconds aDelay, Task<void> aTask)
-            : mTimeCreated(Clock::now())
-            , mDelay(aDelay)
+        DelayedTask(TaskId aTaskId, Milliseconds aDelay, Task<void> aTask)
+            : mTaskId(aTaskId)
+            , mDeadline(Clock::now() + aDelay)
             , mTask(std::move(aTask))
         {
         }
 
         bool operator<(const DelayedTask &aOther) const
         {
-            return GetTimeExecute() <= aOther.GetTimeExecute() ||
-                   (GetTimeExecute() == aOther.GetTimeExecute() && mTimeCreated < aOther.mTimeCreated);
+            return mDeadline <= aOther.mDeadline || (mDeadline == aOther.mDeadline && mTaskId < aOther.mTaskId);
         }
 
-        Timepoint GetTimeExecute(void) const { return mTimeCreated + mDelay; }
+        Timepoint GetTimeExecute(void) const { return mDeadline; }
 
-        Timepoint    mTimeCreated;
-        Milliseconds mDelay;
-        Task<void>   mTask;
+        TaskId     mTaskId;
+        Timepoint  mDeadline;
+        Task<void> mTask;
     };
 
-    void PushTask(Milliseconds aDelay, Task<void> aTask);
-    void PopTasks(void);
+    TaskId PushTask(Milliseconds aDelay, Task<void> aTask);
+    void   PopTasks(void);
 
     // The event fds which are used to wakeup the mainloop
     // when there are pending tasks in the task queue.
     int mEventFd[2];
 
     std::priority_queue<DelayedTask, std::vector<DelayedTask>, DelayedTask::Comparator> mTaskQueue;
+
+    std::set<TaskId> mActiveTaskIds;
+    TaskId           mNextTaskId = 1;
 
     // The mutex which protects the `mTaskQueue` from being
     // simultaneously accessed by multiple threads.
