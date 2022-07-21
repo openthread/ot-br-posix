@@ -57,7 +57,9 @@ docker network create --driver bridge --ipv6 --subnet 9102::/64 -o "\"com.docker
 ifconfig
 sleep 10
 
-sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B backbone0 -B backbone1 -B backbone2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B backbone0 -B backbone1 -B backbone2 -B eth0 -B lo "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
 sleep 1
+
+
 
 exit 1
