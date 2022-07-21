@@ -49,14 +49,13 @@ sudo cp "${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf" /etc/dbus-1/system.d/
 sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
 sudo systemctl reload dbus
 
-ifconfig
-
 docker network rm backbone0 backbone1 backbone2 || true
-docker network create --driver bridge --ipv6 --subnet 9100::/64 -o "com.docker.network.bridge.name"="backbone0" backbone0
-docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "com.docker.network.bridge.name"="backbone1" backbone1
-docker network create --driver bridge --ipv6 --subnet 9102::/64 -o "com.docker.network.bridge.name"="backbone2" backbone2
+docker network create --driver bridge --ipv6 --subnet 9100::/64 -o '"com.docker.network.bridge.name"="backbone0"' backbone0
+docker network create --driver bridge --ipv6 --subnet 9101::/64 -o '"com.docker.network.bridge.name"="backbone1"' backbone1
+docker network create --driver bridge --ipv6 --subnet 9102::/64 -o '"com.docker.network.bridge.name"="backbone2"' backbone2
 
 ifconfig
+sleep 10
 
 sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B backbone0 -B backbone1 -B backbone2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
 sleep 1
