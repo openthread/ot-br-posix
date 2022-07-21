@@ -83,6 +83,12 @@ jobs:
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
             packet_verification: 1
+          - name: "Border Router NAT64 (mDNSResponder)"
+            otbr_options: "-DOT_TREL=OFF -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOTBR_BORDER_ROUTING_NAT64=ON"
+            border_routing: 1
+            otbr_mdns: "mDNSResponder"
+            cert_scripts: ./tests/scripts/thread-cert/border_router/nat64/*.py
+            packet_verification: 1
           - name: "Backbone Router"
             otbr_options: "-DOT_TREL=OFF -DOT_DUA=ON -DOT_MLR=ON -DOTBR_COVERAGE=ON -DOT_SRP_SERVER=ON -DOT_ECDSA=ON -DOT_SERVICE=ON -DOTBR_DUA_ROUTING=ON"
             border_routing: 0
