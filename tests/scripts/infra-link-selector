@@ -81,6 +81,12 @@ function check_infra_link() {
   cat output | grep "\-ILS\-\-\-\-\-: Infra link \(selected\|unchanged\|switched\)" | tail -1
 }
 
+function verify_otbr_agent_exited() {
+  if ps aux | grep otbr-agent | grep -v grep; then
+    return 1
+  fi
+}
+
 sleep 3
 # Verify ILS selects ilstest0
 check_infra_link | grep "selected: ilstest0"
@@ -95,7 +101,7 @@ check_infra_link | grep "unchanged: ilstest0"
 sudo ifconfig ilstest2 up
 
 sleep 3
-# Verify ILS keeps using ilstest0
+# Verify ILS keeps using ilstest0 because ilstest0 is still RUNNING
 check_infra_link | grep "unchanged: ilstest0"
 
 sudo ifconfig ilstest0 down
@@ -103,6 +109,34 @@ sleep 3
 # Verify ILS keeps using ilstest0 because ilstest0 was RUNNING recently
 check_infra_link | grep "unchanged: ilstest0"
 
-sleep 8
-# Verify ILS keeps using ilstest0 because ilstest0 was RUNNING recently
+sudo ifconfig ilstest0 up
+sleep 11
+
+# Verify ILS keeps using ilstest0 because ilstest0 is RUNNING again
+check_infra_link | grep "unchanged: ilstest0"
+
+sudo ifconfig ilstest0 down
+sleep 11
+# Verify ILS switches to ilstest2 after ilstest0 is DOWN for more than 10s
 check_infra_link | grep "switched from ilstest0 to ilstest2"
+verify_otbr_agent_exited
+
+# Now, only ilstest2 is RUNNING
+
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" 2>&1 | tee output &
+
+sleep 3
+# Verify ILS selects ilstest2 after reboot
+check_infra_link | grep "selected: ilstest2"
+
+sudo ifconfig ilstest2 down
+sleep 3
+# Verify ILS keeps using ilstest2 because ilstest2 was RUNNING recently
+check_infra_link | grep "unchanged: ilstest2"
+
+sleep 8
+sudo ifconfig ilstest1 up
+sleep 3
+# Verify ILS switches to ilstest1 because ilstest2 was not RUNNING for more than 10s
+check_infra_link | grep "switched from ilstest2 to ilstest1"
+verify_otbr_agent_exited
