@@ -50,9 +50,9 @@ sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
 sudo systemctl reload dbus
 
 docker network rm backbone0 backbone1 backbone2 || true
-docker network create --driver bridge --ipv6 --subnet 9100::/64 -o '"com.docker.network.bridge.name"="backbone0"' backbone0
-docker network create --driver bridge --ipv6 --subnet 9101::/64 -o '"com.docker.network.bridge.name"="backbone1"' backbone1
-docker network create --driver bridge --ipv6 --subnet 9102::/64 -o '"com.docker.network.bridge.name"="backbone2"' backbone2
+docker network create --driver bridge --ipv6 --subnet 9100::/64 -o "\"com.docker.network.bridge.name\"=\"backbone0\"" backbone0
+docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "\"com.docker.network.bridge.name\"=\"backbone1\"" backbone1
+docker network create --driver bridge --ipv6 --subnet 9102::/64 -o "\"com.docker.network.bridge.name\"=\"backbone2\"" backbone2
 
 ifconfig
 sleep 10
