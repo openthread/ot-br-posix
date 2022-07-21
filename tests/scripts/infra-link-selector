@@ -38,7 +38,10 @@ at_exit() {
   EXIT_CODE=$?
 
   sudo killall otbr-agent || true
-  docker network rm ilstest0 ilstest1 ilstest2 || true
+
+  sudo ip link del ilstest0 || true
+  sudo ip link del ilstest1 || true
+  sudo ip link del ilstest2 || true
 
   exit $EXIT_CODE
 }
@@ -55,11 +58,14 @@ prepare_infra_link() {
   local netif="$1"
   local mac="$2"
 
-  sudo ip link del "${netif}"
   sudo ip link add "${netif}" type dummy
   sudo ifconfig "${netif}" hw ether "${mac}"
   sudo ifconfig "${netif}" up
 }
+
+sudo ip link del ilstest0 || true
+sudo ip link del ilstest1 || true
+sudo ip link del ilstest2 || true
 
 prepare_infra_link "ilstest0" "C8:D7:4A:4E:47:00"
 prepare_infra_link "ilstest1" "C8:D7:4A:4E:47:01"
