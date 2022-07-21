@@ -61,6 +61,11 @@ ping -I ilstest2 9102::1 -c 3 || true
 sleep 10
 ifconfig
 
+sudo ip link add ilstest3 type dummy
+
+sleep 3
+ifconfig
+
 sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 -B eth0 -B lo "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
 sleep 1
 
