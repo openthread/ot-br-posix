@@ -91,8 +91,10 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const DnssdCounters &aDnssdC
 otbrError DBusMessageExtract(DBusMessageIter *aIter, DnssdCounters &aDnssdCounters);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const RadioSpinelMetrics &aRadioSpinelMetrics);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, RadioSpinelMetrics &RadioSpinelMetrics);
-otbrError DBusMessageEncode(DBusMessageIter *aIter, const RcpInterfaceMetrics &RcpInterfaceMetrics);
-otbrError DBusMessageExtract(DBusMessageIter *aIter, RcpInterfaceMetrics &RcpInterfaceMetrics);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RcpInterfaceMetrics &aRcpInterfaceMetrics);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RcpInterfaceMetrics &aRcpInterfaceMetrics);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RadioCoexMetrics &aRadioCoexMetrics);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RadioCoexMetrics &aRadioCoexMetrics);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -274,6 +276,14 @@ template <> struct DBusTypeTrait<RcpInterfaceMetrics>
 {
     // struct of { uint8, uint64, uint64, uint64, uint64, uint64, uint64, uint64 }
     static constexpr const char *TYPE_AS_STRING = "(yttttttt)";
+};
+
+template <> struct DBusTypeTrait<RadioCoexMetrics>
+{
+    // struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32,
+    //             uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32,
+    //             uint32, uint32, bool }
+    static constexpr const char *TYPE_AS_STRING = "(uuuuuuuuuuuuuuuuuub)";
 };
 
 template <> struct DBusTypeTrait<int8_t>

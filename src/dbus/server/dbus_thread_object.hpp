@@ -151,6 +151,7 @@ private:
     otError GetRadioSpinelMetricsHandler(DBusMessageIter &aIter);
     otError GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter);
     otError GetUptimeHandler(DBusMessageIter &aIter);
+    otError GetRadioCoexMetrics(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);

@@ -809,5 +809,69 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RadioCoexMetrics &aRadioCoexMetrics)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumGrantGlitch));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxRequest));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxGrantImmediate));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxGrantWait));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxGrantWaitActivated));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxGrantWaitTimeout));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumTxDelayedGrant));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mAvgTxRequestToGrantTime));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxRequest));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxGrantImmediate));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxGrantWait));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxGrantWaitActivated));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxGrantWaitTimeout));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxDelayedGrant));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mAvgRxRequestToGrantTime));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mNumRxGrantNone));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aRadioCoexMetrics.mStopped));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RadioCoexMetrics &aRadioCoexMetrics)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumGrantGlitch));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxRequest));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxGrantImmediate));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxGrantWait));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxGrantWaitActivated));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxGrantWaitTimeout));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumTxDelayedGrant));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mAvgTxRequestToGrantTime));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxRequest));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxGrantImmediate));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxGrantWait));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxGrantWaitActivated));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxGrantWaitTimeout));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxDelayedGrant));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mAvgRxRequestToGrantTime));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mNumRxGrantNone));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aRadioCoexMetrics.mStopped));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr
