@@ -64,12 +64,13 @@ ifconfig
 sudo modprobe dummy || true
 sudo ip link add ilstest3 type dummy || true
 sudo ifconfig ilstest3 hw ether C8:D7:4A:4E:47:50
+sudo ifconfig ilstest3 up
 
-sleep 3
+sleep 10
 ifconfig
 ip link list
 
-sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 -B eth0 -B lo "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 -Bilstest3 -B eth0 -B lo "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" &
 sleep 1
 
 exit 1
