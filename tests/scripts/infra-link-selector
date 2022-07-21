@@ -52,18 +52,18 @@ sudo systemctl reload dbus
 sudo modprobe dummy
 
 prepare_infra_link() {
-  local netif=$1
-  let mac=$2
+  local netif="$1"
+  let mac="$2"
 
-  sudo ip link del ${netif}
-  sudo ip link add ${netif} type dummy
-  sudo ifconfig ${netif} hw ether ${mac}
-  sudo ifconfig ${netif} up
+  sudo ip link del "${netif}"
+  sudo ip link add "${netif}" type dummy
+  sudo ifconfig "${netif}" hw ether "${mac}"
+  sudo ifconfig "${netif}" up
 }
 
-prepare_infra_link ilstest0 C8:D7:4A:4E:47:00
-prepare_infra_link ilstest1 C8:D7:4A:4E:47:01
-prepare_infra_link ilstest2 C8:D7:4A:4E:47:02
+prepare_infra_link "ilstest0" "C8:D7:4A:4E:47:00"
+prepare_infra_link "ilstest1" "C8:D7:4A:4E:47:01"
+prepare_infra_link "ilstest2" "C8:D7:4A:4E:47:02"
 
 sleep 10
 ifconfig
