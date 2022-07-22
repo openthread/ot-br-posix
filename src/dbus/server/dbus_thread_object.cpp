@@ -242,6 +242,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRcpInterfaceMetricsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_UPTIME,
                                std::bind(&DBusThreadObject::GetUptimeHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_COEX_METRICS,
+                               std::bind(&DBusThreadObject::GetRadioCoexMetrics, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1472,6 +1474,41 @@ otError DBusThreadObject::GetUptimeHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otInstanceGetUptime(mNcp->GetThreadHelper()->GetInstance())) ==
                      OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetRadioCoexMetrics(DBusMessageIter &aIter)
+{
+    otError            error = OT_ERROR_NONE;
+    otRadioCoexMetrics otRadioCoexMetrics;
+    RadioCoexMetrics   radioCoexMetrics;
+
+    SuccessOrExit(error = otPlatRadioGetCoexMetrics(mNcp->GetInstance(), &otRadioCoexMetrics));
+
+    radioCoexMetrics.mNumGrantGlitch                     = otRadioCoexMetrics.mNumGrantGlitch;
+    radioCoexMetrics.mNumTxRequest                       = otRadioCoexMetrics.mNumTxRequest;
+    radioCoexMetrics.mNumTxGrantImmediate                = otRadioCoexMetrics.mNumTxGrantImmediate;
+    radioCoexMetrics.mNumTxGrantWait                     = otRadioCoexMetrics.mNumTxGrantWait;
+    radioCoexMetrics.mNumTxGrantWaitActivated            = otRadioCoexMetrics.mNumTxGrantWaitActivated;
+    radioCoexMetrics.mNumTxGrantWaitTimeout              = otRadioCoexMetrics.mNumTxGrantWaitTimeout;
+    radioCoexMetrics.mNumTxGrantDeactivatedDuringRequest = otRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest;
+    radioCoexMetrics.mNumTxDelayedGrant                  = otRadioCoexMetrics.mNumTxDelayedGrant;
+    radioCoexMetrics.mAvgTxRequestToGrantTime            = otRadioCoexMetrics.mAvgTxRequestToGrantTime;
+    radioCoexMetrics.mNumRxRequest                       = otRadioCoexMetrics.mNumRxRequest;
+    radioCoexMetrics.mNumRxGrantImmediate                = otRadioCoexMetrics.mNumRxGrantImmediate;
+    radioCoexMetrics.mNumRxGrantWait                     = otRadioCoexMetrics.mNumRxGrantWait;
+    radioCoexMetrics.mNumRxGrantWaitActivated            = otRadioCoexMetrics.mNumRxGrantWaitActivated;
+    radioCoexMetrics.mNumRxGrantWaitTimeout              = otRadioCoexMetrics.mNumRxGrantWaitTimeout;
+    radioCoexMetrics.mNumRxGrantDeactivatedDuringRequest = otRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest;
+    radioCoexMetrics.mNumRxDelayedGrant                  = otRadioCoexMetrics.mNumRxDelayedGrant;
+    radioCoexMetrics.mAvgRxRequestToGrantTime            = otRadioCoexMetrics.mAvgRxRequestToGrantTime;
+    radioCoexMetrics.mNumRxGrantNone                     = otRadioCoexMetrics.mNumRxGrantNone;
+    radioCoexMetrics.mStopped                            = otRadioCoexMetrics.mStopped;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, radioCoexMetrics) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
 exit:

@@ -681,6 +681,35 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- RadioCoexMetrics: The radio coexistence metrics
+    <literallayout>
+        struct {
+          uint32_t mNumGrantGlitch;                     // Number of grant glitches.
+          uint32_t mNumTxRequest;                       // Number of tx requests.
+          uint32_t mNumTxGrantImmediate;                // Number of tx requests while grant was active.
+          uint32_t mNumTxGrantWait;                     // Number of tx requests while grant was inactive.
+          uint32_t mNumTxGrantWaitActivated;            // Number of tx requests while grant was inactive that were ultimately granted.
+          uint32_t mNumTxGrantWaitTimeout;              // Number of tx requests while grant was inactive that timed out.
+          uint32_t mNumTxGrantDeactivatedDuringRequest; // Number of tx that were in progress when grant was deactivated.
+          uint32_t mNumTxDelayedGrant;                  // Number of tx requests that were not granted within 50us.
+          uint32_t mAvgTxRequestToGrantTime;            // Average time in usec from tx request to grant.
+          uint32_t mNumRxRequest;                       // Number of rx requests.
+          uint32_t mNumRxGrantImmediate;                // Number of rx requests while grant was active.
+          uint32_t mNumRxGrantWait;                     // Number of rx requests while grant was inactive.
+          uint32_t mNumRxGrantWaitActivated;            // Number of rx requests while grant was inactive that were ultimately granted.
+          uint32_t mNumRxGrantWaitTimeout;              // Number of rx requests while grant was inactive that timed out.
+          uint32_t mNumRxGrantDeactivatedDuringRequest; // Number of rx that were in progress when grant was deactivated.
+          uint32_t mNumRxDelayedGrant;                  // Number of rx requests that were not granted within 50us.
+          uint32_t mAvgRxRequestToGrantTime;            // Average time in usec from rx request to grant.
+          uint32_t mNumRxGrantNone;                     // Number of rx requests that completed without receiving grant.
+          bool     mStopped;                            // Stats collection stopped due to saturation.
+        }
+      </literallayout>
+    -->
+    <property name="RadioCoexMetrics" type="(uuuuuuuuuuuuuuuuuub)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">
