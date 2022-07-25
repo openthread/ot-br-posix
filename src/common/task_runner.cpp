@@ -70,12 +70,12 @@ TaskRunner::~TaskRunner(void)
     }
 }
 
-void TaskRunner::Post(const Task<void> aTask)
+void TaskRunner::Post(Task<void> aTask)
 {
     Post(Milliseconds::zero(), std::move(aTask));
 }
 
-void TaskRunner::Post(Milliseconds aDelay, const Task<void> aTask)
+void TaskRunner::Post(Milliseconds aDelay, Task<void> aTask)
 {
     PushTask(aDelay, std::move(aTask));
 }
@@ -129,7 +129,7 @@ void TaskRunner::Process(const MainloopContext &aMainloop)
     PopTasks();
 }
 
-void TaskRunner::PushTask(Milliseconds aDelay, const Task<void> aTask)
+void TaskRunner::PushTask(Milliseconds aDelay, Task<void> aTask)
 {
     ssize_t                     rval;
     const uint8_t               kOne = 1;
