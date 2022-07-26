@@ -75,9 +75,9 @@ void TaskRunner::Post(Task<void> aTask)
     Post(Milliseconds::zero(), std::move(aTask));
 }
 
-void TaskRunner::Post(Milliseconds aDelay, Task<void> aTask)
+TaskRunner::TaskId TaskRunner::Post(Milliseconds aDelay, Task<void> aTask)
 {
-    PushTask(aDelay, std::move(aTask));
+    return PushTask(aDelay, std::move(aTask));
 }
 
 void TaskRunner::Update(MainloopContext &aMainloop)
@@ -129,13 +129,21 @@ void TaskRunner::Process(const MainloopContext &aMainloop)
     PopTasks();
 }
 
-void TaskRunner::PushTask(Milliseconds aDelay, Task<void> aTask)
+TaskRunner::TaskId TaskRunner::PushTask(Milliseconds aDelay, Task<void> aTask)
 {
-    ssize_t                     rval;
-    const uint8_t               kOne = 1;
-    std::lock_guard<std::mutex> _(mTaskQueueMutex);
+    ssize_t       rval;
+    const uint8_t kOne = 1;
+    TaskId        taskId;
 
-    mTaskQueue.emplace(aDelay, std::move(aTask));
+    {
+        std::lock_guard<std::mutex> _(mTaskQueueMutex);
+
+        taskId = mNextTaskId++;
+
+        mActiveTaskIds.insert(taskId);
+        mTaskQueue.emplace(taskId, aDelay, std::move(aTask));
+    }
+
     do
     {
         rval = write(mEventFd[kWrite], &kOne, sizeof(kOne));
@@ -151,7 +159,14 @@ void TaskRunner::PushTask(Milliseconds aDelay, Task<void> aTask)
     otbrLogWarning("Failed to write fd %d: %s", mEventFd[kWrite], strerror(errno));
 
 exit:
-    return;
+    return taskId;
+}
+
+void TaskRunner::Cancel(TaskRunner::TaskId aTaskId)
+{
+    std::lock_guard<std::mutex> _(mTaskQueueMutex);
+
+    mActiveTaskIds.erase(aTaskId);
 }
 
 void TaskRunner::PopTasks(void)
@@ -159,6 +174,7 @@ void TaskRunner::PopTasks(void)
     while (true)
     {
         Task<void> task;
+        bool       canceled;
 
         // The braces here are necessary for auto-releasing of the mutex.
         {
@@ -166,8 +182,12 @@ void TaskRunner::PopTasks(void)
 
             if (!mTaskQueue.empty() && mTaskQueue.top().GetTimeExecute() <= Clock::now())
             {
-                task = std::move(mTaskQueue.top().mTask);
+                const DelayedTask &top    = mTaskQueue.top();
+                TaskId             taskId = top.mTaskId;
+
+                task = std::move(top.mTask);
                 mTaskQueue.pop();
+                canceled = (mActiveTaskIds.erase(taskId) == 0);
             }
             else
             {
@@ -175,7 +195,10 @@ void TaskRunner::PopTasks(void)
             }
         }
 
-        task();
+        if (!canceled)
+        {
+            task();
+        }
     }
 }
 

@@ -31,6 +31,7 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
+#include <unistd.h>
 
 #include <CppUTest/TestHarness.h>
 
@@ -250,6 +251,61 @@ TEST(TaskRunner, TestDelayedTasksOrder)
 
     // Make sure that tasks with smaller delay are executed earlier.
     STRCMP_EQUAL("bac", str.c_str());
+}
+
+TEST(TaskRunner, TestCancelDelayedTasks)
+{
+    std::string              str;
+    otbr::TaskRunner         taskRunner;
+    otbr::TaskRunner::TaskId tid1, tid2, tid3, tid4, tid5;
+
+    tid1 = taskRunner.Post(std::chrono::milliseconds(10), [&]() { str.push_back('a'); });
+    tid2 = taskRunner.Post(std::chrono::milliseconds(20), [&]() { str.push_back('b'); });
+    tid3 = taskRunner.Post(std::chrono::milliseconds(30), [&]() { str.push_back('c'); });
+    tid4 = taskRunner.Post(std::chrono::milliseconds(40), [&]() { str.push_back('d'); });
+    tid5 = taskRunner.Post(std::chrono::milliseconds(50), [&]() { str.push_back('e'); });
+
+    CHECK(0 < tid1);
+    CHECK(tid1 < tid2);
+    CHECK(tid2 < tid3);
+    CHECK(tid3 < tid4);
+    CHECK(tid4 < tid5);
+
+    taskRunner.Cancel(tid2);
+
+    taskRunner.Post(std::chrono::milliseconds(10), [&]() { taskRunner.Cancel(tid3); });
+    std::thread t([&]() {
+        usleep(20);
+        taskRunner.Cancel(tid4);
+    });
+
+    while (str.size() < 2)
+    {
+        int                   rval;
+        otbr::MainloopContext mainloop;
+
+        mainloop.mMaxFd   = -1;
+        mainloop.mTimeout = {2, 0};
+
+        FD_ZERO(&mainloop.mReadFdSet);
+        FD_ZERO(&mainloop.mWriteFdSet);
+        FD_ZERO(&mainloop.mErrorFdSet);
+
+        taskRunner.Update(mainloop);
+        rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
+                      &mainloop.mTimeout);
+        CHECK_TRUE(rval >= 0 || errno == EINTR);
+
+        taskRunner.Process(mainloop);
+    }
+
+    // Make sure the delayed task was not executed.
+    STRCMP_EQUAL("ae", str.c_str());
+
+    // Make sure it's fine to cancel expired task IDs.
+    taskRunner.Cancel(tid1);
+    taskRunner.Cancel(tid2);
+    t.join();
 }
 
 TEST(TaskRunner, TestAllAPIs)
