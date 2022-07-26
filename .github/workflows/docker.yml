@@ -83,8 +83,8 @@ jobs:
             build_args: ""
             platforms: "linux/amd64,linux/arm64"
             push: yes
-          - image_tag: "hirsute"
-            base_image: "ubuntu:hirsute"
+          - image_tag: "jammy"
+            base_image: "ubuntu:jammy"
             build_args: ""
             platforms: "linux/amd64,linux/arm64"
             push: yes
