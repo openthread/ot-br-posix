@@ -95,6 +95,24 @@ InfraLinkSelector::~InfraLinkSelector(void)
 
 const char *InfraLinkSelector::Select(void)
 {
+    const char *sel;
+
+#if OTBR_ENABLE_VENDOR_INFRA_LINK_SELECT
+    sel = otbrVendorInfraLinkSelect();
+
+    if (sel == nullptr)
+    {
+        sel = SelectGeneric();
+    }
+#else
+    sel = SelectGeneric();
+#endif
+
+    return sel;
+}
+
+const char *InfraLinkSelector::SelectGeneric(void)
+{
     const char *                 prevInfraLink         = mCurrentInfraLink;
     InfraLinkSelector::LinkState currentInfraLinkState = kInvalid;
     auto                         now                   = Clock::now();

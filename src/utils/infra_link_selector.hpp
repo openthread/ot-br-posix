@@ -48,6 +48,17 @@
 #include "common/task_runner.hpp"
 #include "common/time.hpp"
 
+#if OTBR_ENABLE_VENDOR_INFRA_LINK_SELECT
+/**
+ * This function implements platform specific rules for selecting infrastructure link.
+ *
+ * This function should return the infrastructure link that is selected by platform specific rules.
+ * If the function returns nullptr, the generic infrastructure link selections rules will be applied.
+ *
+ */
+extern "C" const char *otbrVendorInfraLinkSelect(void);
+#endif
+
 namespace otbr {
 namespace Utils {
 
@@ -114,6 +125,8 @@ private:
 
     static constexpr const char *kDefaultInfraLinkName    = "";
     static constexpr auto        kInfraLinkSelectionDelay = Milliseconds(10000);
+
+    const char *SelectGeneric(void);
 
     static const char *LinkStateToString(LinkState aState);
     static LinkState   QueryInfraLinkState(const char *aInfraLinkName);

@@ -117,7 +117,7 @@ otbrError Application::Run(void)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    otbrLogInfo("Border router agent started.");
+    otbrLogInfo("Thread Border Router started on AIL %s.", mBackboneInterfaceName);
 
 #ifdef HAVE_LIBSYSTEMD
     if (getenv("SYSTEMD_EXEC_PID") != nullptr)
