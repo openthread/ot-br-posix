@@ -83,7 +83,7 @@ public:
      * @param[in] aTask  The task to be executed.
      *
      */
-    void Post(const Task<void> aTask);
+    void Post(Task<void> aTask);
 
     /**
      * This method posts a task to the task runner and returns immediately.
@@ -94,7 +94,7 @@ public:
      * @param[in] aTask   The task to be executed.
      *
      */
-    void Post(Milliseconds aDelay, const Task<void> aTask);
+    void Post(Milliseconds aDelay, Task<void> aTask);
 
     /**
      * This method posts a task and waits for the completion of the task.
@@ -154,7 +154,7 @@ private:
         Task<void>   mTask;
     };
 
-    void PushTask(Milliseconds aDelay, const Task<void> aTask);
+    void PushTask(Milliseconds aDelay, Task<void> aTask);
     void PopTasks(void);
 
     // The event fds which are used to wakeup the mainloop
