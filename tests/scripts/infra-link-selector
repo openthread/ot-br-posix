@@ -1,0 +1,145 @@
+#!/bin/bash
+#
+#  Copyright (c) 2022, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+
+set -euxo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+readonly ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly OTBR_AGENT="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent"
+readonly OT_RCP=$(command -v ot-rcp)
+
+at_exit()
+{
+    EXIT_CODE=$?
+
+    sudo killall otbr-agent || true
+
+    sudo ip link del ilstest0 || true
+    sudo ip link del ilstest1 || true
+    sudo ip link del ilstest2 || true
+
+    exit $EXIT_CODE
+}
+
+trap at_exit INT TERM EXIT
+
+sudo cp "${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf" /etc/dbus-1/system.d/
+sudo chmod +r /etc/dbus-1/system.d/otbr-agent.conf
+sudo systemctl reload dbus
+
+sudo modprobe dummy
+
+prepare_infra_link()
+{
+    local netif="$1"
+    local mac="$2"
+
+    sudo ip link add "${netif}" type dummy
+    sudo ifconfig "${netif}" hw ether "${mac}"
+    sudo ifconfig "${netif}" up
+}
+
+sudo ip link del ilstest0 || true
+sudo ip link del ilstest1 || true
+sudo ip link del ilstest2 || true
+
+prepare_infra_link "ilstest0" "C8:D7:4A:4E:47:00"
+prepare_infra_link "ilstest1" "C8:D7:4A:4E:47:01"
+prepare_infra_link "ilstest2" "C8:D7:4A:4E:47:02"
+
+sleep 10
+ifconfig
+ip link list
+
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" 2>&1 | tee output &
+
+function check_infra_link()
+{
+    grep "\-ILS\-\-\-\-\-: Infra link \(selected\|unchanged\|switched\)" output | tail -1
+}
+
+function verify_otbr_agent_exited()
+{
+    if pgrep otbr-agent; then
+        return 1
+    fi
+}
+
+sleep 3
+# Verify ILS selects ilstest0
+check_infra_link | grep "selected: ilstest0"
+
+sudo ifconfig ilstest1 down
+sudo ifconfig ilstest2 down
+
+sleep 3
+# Verify ILS keeps using ilstest0
+check_infra_link | grep "unchanged: ilstest0"
+
+sudo ifconfig ilstest2 up
+
+sleep 3
+# Verify ILS keeps using ilstest0 because ilstest0 is still RUNNING
+check_infra_link | grep "unchanged: ilstest0"
+
+sudo ifconfig ilstest0 down
+sleep 3
+# Verify ILS keeps using ilstest0 because ilstest0 was RUNNING recently
+check_infra_link | grep "unchanged: ilstest0"
+
+sudo ifconfig ilstest0 up
+sleep 11
+
+# Verify ILS keeps using ilstest0 because ilstest0 is RUNNING again
+check_infra_link | grep "unchanged: ilstest0"
+
+sudo ifconfig ilstest0 down
+sleep 11
+# Verify ILS switches to ilstest2 after ilstest0 is DOWN for more than 10s
+check_infra_link | grep "switched from ilstest0 to ilstest2"
+verify_otbr_agent_exited
+
+# Now, only ilstest2 is RUNNING
+
+sudo "${OTBR_AGENT}" -I wpan0 -v -d7 -B ilstest0 -B ilstest1 -B ilstest2 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" 2>&1 | tee output &
+
+sleep 3
+# Verify ILS selects ilstest2 after reboot
+check_infra_link | grep "selected: ilstest2"
+
+sudo ifconfig ilstest2 down
+sleep 3
+# Verify ILS keeps using ilstest2 because ilstest2 was RUNNING recently
+check_infra_link | grep "unchanged: ilstest2"
+
+sleep 8
+sudo ifconfig ilstest1 up
+sleep 3
+# Verify ILS switches to ilstest1 because ilstest2 was not RUNNING for more than 10s
+check_infra_link | grep "switched from ilstest2 to ilstest1"
+verify_otbr_agent_exited

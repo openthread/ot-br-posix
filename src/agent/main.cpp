@@ -37,13 +37,13 @@
 #include <string>
 #include <vector>
 
+#include <assert.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <assert.h>
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
 
@@ -184,13 +184,13 @@ static int realmain(int argc, char *argv[])
 {
     otbrLogLevel              logLevel = GetDefaultLogLevel();
     int                       opt;
-    int                       ret                   = EXIT_SUCCESS;
-    const char *              interfaceName         = kDefaultInterfaceName;
-    const char *              backboneInterfaceName = "";
-    bool                      verbose               = false;
-    bool                      printRadioVersion     = false;
-    bool                      enableAutoAttach      = true;
+    int                       ret               = EXIT_SUCCESS;
+    const char *              interfaceName     = kDefaultInterfaceName;
+    bool                      verbose           = false;
+    bool                      printRadioVersion = false;
+    bool                      enableAutoAttach  = true;
     std::vector<const char *> radioUrls;
+    std::vector<const char *> backboneInterfaceNames;
     long                      parseResult;
 
     std::set_new_handler(OnAllocateFailed);
@@ -200,7 +200,8 @@ static int realmain(int argc, char *argv[])
         switch (opt)
         {
         case OTBR_OPT_BACKBONE_INTERFACE_NAME:
-            backboneInterfaceName = optarg;
+            backboneInterfaceNames.push_back(optarg);
+            otbrLogNotice("Backbone interface: %s", optarg);
             break;
 
         case OTBR_OPT_DEBUG_LEVEL:
@@ -254,7 +255,11 @@ static int realmain(int argc, char *argv[])
     otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
     otbrLogNotice("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     otbrLogNotice("Thread interface: %s", interfaceName);
-    otbrLogNotice("Backbone interface: %s", backboneInterfaceName);
+
+    if (backboneInterfaceNames.empty())
+    {
+        otbrLogNotice("Backbone interface is not specified");
+    }
 
     for (int i = optind; i < argc; i++)
     {
@@ -269,7 +274,7 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Application app(interfaceName, backboneInterfaceName, radioUrls, enableAutoAttach);
+        otbr::Application app(interfaceName, backboneInterfaceNames, radioUrls, enableAutoAttach);
 
         gApp = &app;
         app.Init();
