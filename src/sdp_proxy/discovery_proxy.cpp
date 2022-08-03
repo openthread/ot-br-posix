@@ -261,6 +261,8 @@ void DiscoveryProxy::OnHostDiscovered(const std::string &                       
         otDnssdQueryType type = otDnssdGetQueryTypeAndName(query, &queryName);
         otbrError        splitError;
 
+        OTBR_UNUSED_VARIABLE(splitError);
+
         if (type != OT_DNSSD_QUERY_TYPE_RESOLVE_HOST)
         {
             continue;
