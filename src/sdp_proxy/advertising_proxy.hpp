@@ -102,6 +102,8 @@ private:
     static Mdns::Publisher::SubTypeList MakeSubTypeList(const otSrpServerService *aSrpService);
     void                                OnMdnsPublishResult(otSrpServerServiceUpdateId aUpdateId, otbrError aError);
 
+    std::vector<Ip6Address> GetEligibleAddresses(const otIp6Address *aHostAddresses, uint8_t aHostAddressNum);
+
     /**
      * This method publishes a specified host and its services.
      *
