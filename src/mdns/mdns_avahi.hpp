@@ -92,9 +92,9 @@ protected:
                                  uint16_t           aPort,
                                  const TxtList &    aTxtList,
                                  ResultCallback &&  aCallback) override;
-    void      PublishHostImpl(const std::string &         aName,
-                              const std::vector<uint8_t> &aAddress,
-                              ResultCallback &&           aCallback) override;
+    void      PublishHostImpl(const std::string &            aName,
+                              const std::vector<Ip6Address> &aAddresses,
+                              ResultCallback &&              aCallback) override;
     void      OnServiceResolveFailedImpl(const std::string &aType,
                                          const std::string &aInstanceName,
                                          int32_t            aErrorCode) override;
@@ -139,12 +139,12 @@ private:
     class AvahiHostRegistration : public HostRegistration
     {
     public:
-        AvahiHostRegistration(const std::string &         aName,
-                              const std::vector<uint8_t> &aAddress,
-                              ResultCallback &&           aCallback,
-                              AvahiEntryGroup *           aEntryGroup,
-                              PublisherAvahi *            aPublisher)
-            : HostRegistration(aName, aAddress, std::move(aCallback), aPublisher)
+        AvahiHostRegistration(const std::string &            aName,
+                              const std::vector<Ip6Address> &aAddresses,
+                              ResultCallback &&              aCallback,
+                              AvahiEntryGroup *              aEntryGroup,
+                              PublisherAvahi *               aPublisher)
+            : HostRegistration(aName, aAddresses, std::move(aCallback), aPublisher)
             , mEntryGroup(aEntryGroup)
         {
         }

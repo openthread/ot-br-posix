@@ -718,38 +718,42 @@ exit:
     std::move(aCallback)(error);
 }
 
-void PublisherAvahi::PublishHostImpl(const std::string &         aName,
-                                     const std::vector<uint8_t> &aAddress,
-                                     ResultCallback &&           aCallback)
+void PublisherAvahi::PublishHostImpl(const std::string &            aName,
+                                     const std::vector<Ip6Address> &aAddresses,
+                                     ResultCallback &&              aCallback)
 {
     otbrError        error      = OTBR_ERROR_NONE;
     int              avahiError = AVAHI_OK;
     std::string      fullHostName;
-    AvahiAddress     address;
     AvahiEntryGroup *group = nullptr;
 
     VerifyOrExit(mState == State::kReady, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(mClient != nullptr, error = OTBR_ERROR_INVALID_STATE);
-    VerifyOrExit(aAddress.size() == sizeof(address.data.ipv6.address), error = OTBR_ERROR_INVALID_ARGS);
 
-    aCallback = HandleDuplicateHostRegistration(aName, aAddress, std::move(aCallback));
+    aCallback = HandleDuplicateHostRegistration(aName, aAddresses, std::move(aCallback));
     VerifyOrExit(!aCallback.IsNull());
-
-    address.proto = AVAHI_PROTO_INET6;
-    memcpy(address.data.ipv6.address, aAddress.data(), aAddress.size());
-    fullHostName = MakeFullHostName(aName);
+    VerifyOrExit(!aAddresses.empty(), std::move(aCallback)(OTBR_ERROR_NONE));
 
     VerifyOrExit((group = CreateGroup(mClient)) != nullptr, error = OTBR_ERROR_MDNS);
-    avahiError = avahi_entry_group_add_address(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, AVAHI_PUBLISH_NO_REVERSE,
-                                               fullHostName.c_str(), &address);
-    VerifyOrExit(avahiError == AVAHI_OK);
+
+    fullHostName = MakeFullHostName(aName);
+    for (const auto &address : aAddresses)
+    {
+        AvahiAddress avahiAddress;
+
+        avahiAddress.proto = AVAHI_PROTO_INET6;
+        memcpy(avahiAddress.data.ipv6.address, address.m8, sizeof(address.m8));
+        avahiError = avahi_entry_group_add_address(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, AVAHI_PUBLISH_NO_REVERSE,
+                                                   fullHostName.c_str(), &avahiAddress);
+        VerifyOrExit(avahiError == AVAHI_OK);
+    }
 
     otbrLogInfo("Commit avahi host %s", aName.c_str());
     avahiError = avahi_entry_group_commit(group);
     VerifyOrExit(avahiError == AVAHI_OK);
 
     AddHostRegistration(std::unique_ptr<AvahiHostRegistration>(
-        new AvahiHostRegistration(aName, aAddress, std::move(aCallback), group, this)));
+        new AvahiHostRegistration(aName, aAddresses, std::move(aCallback), group, this)));
 
 exit:
     if (avahiError != AVAHI_OK || error != OTBR_ERROR_NONE)

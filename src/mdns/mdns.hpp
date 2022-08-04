@@ -97,6 +97,7 @@ public:
 
     typedef std::vector<TxtEntry>    TxtList;
     typedef std::vector<std::string> SubTypeList;
+    typedef std::vector<Ip6Address>  AddressList;
 
     /**
      * This structure represents information of a discovered service instance.
@@ -224,16 +225,16 @@ public:
      * Publishing a host is advertising an AAAA RR for the host name. This method should be called
      * before a service with non-empty host name is published.
      *
-     * @param[in] aName      The name of the host.
-     * @param[in] aAddress   The address of the host.
-     * @param[in] aCallback  The callback for receiving the publishing result.`OTBR_ERROR_NONE` will be
-     *                       returned if the operation is successful and all other values indicate a
-     *                       failure. Specifically, `OTBR_ERROR_DUPLICATED` indicates that the name has
-     *                       already been published and the caller can re-publish with a new name if an
-     *                       alternative name is available/acceptable.
+     * @param[in] aName       The name of the host.
+     * @param[in] aAddresses  The addresses of the host.
+     * @param[in] aCallback   The callback for receiving the publishing result.`OTBR_ERROR_NONE` will be
+     *                        returned if the operation is successful and all other values indicate a
+     *                        failure. Specifically, `OTBR_ERROR_DUPLICATED` indicates that the name has
+     *                        already been published and the caller can re-publish with a new name if an
+     *                        alternative name is available/acceptable.
      *
      */
-    void PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress, ResultCallback &&aCallback);
+    void PublishHost(const std::string &aName, const std::vector<Ip6Address> &aAddresses, ResultCallback &&aCallback);
 
     /**
      * This method un-publishes a host.
@@ -456,16 +457,13 @@ protected:
     class HostRegistration : public Registration
     {
     public:
-        std::string          mName;
-        std::vector<uint8_t> mAddress;
+        std::string             mName;
+        std::vector<Ip6Address> mAddresses;
 
-        HostRegistration(std::string          aName,
-                         std::vector<uint8_t> aAddress,
-                         ResultCallback &&    aCallback,
-                         Publisher *          aPublisher)
+        HostRegistration(std::string aName, AddressList aAddresses, ResultCallback &&aCallback, Publisher *aPublisher)
             : Registration(std::move(aCallback), aPublisher)
             , mName(std::move(aName))
-            , mAddress(std::move(aAddress))
+            , mAddresses(SortAddressList(std::move(aAddresses)))
         {
         }
 
@@ -476,7 +474,7 @@ protected:
         void OnComplete(otbrError);
 
         // Tells whether this `HostRegistration` object is outdated comparing to the given parameters.
-        bool IsOutdated(const std::string &aName, const std::vector<uint8_t> &aAddress) const;
+        bool IsOutdated(const std::string &aName, const std::vector<Ip6Address> &aAddresses) const;
     };
 
     using ServiceRegistrationPtr = std::unique_ptr<ServiceRegistration>;
@@ -486,6 +484,7 @@ protected:
 
     static SubTypeList SortSubTypeList(SubTypeList aSubTypeList);
     static TxtList     SortTxtList(TxtList aTxtList);
+    static AddressList SortAddressList(AddressList aAddressList);
     static std::string MakeFullServiceName(const std::string &aName, const std::string &aType);
     static std::string MakeFullHostName(const std::string &aName);
 
@@ -496,9 +495,9 @@ protected:
                                     uint16_t           aPort,
                                     const TxtList &    aTxtList,
                                     ResultCallback &&  aCallback)                            = 0;
-    virtual void PublishHostImpl(const std::string &         aName,
-                                 const std::vector<uint8_t> &aAddress,
-                                 ResultCallback &&           aCallback)                               = 0;
+    virtual void PublishHostImpl(const std::string &            aName,
+                                 const std::vector<Ip6Address> &aAddresses,
+                                 ResultCallback &&              aCallback)                               = 0;
     virtual void OnServiceResolveFailedImpl(const std::string &aType,
                                             const std::string &aInstanceName,
                                             int32_t            aErrorCode)                            = 0;
@@ -526,9 +525,9 @@ protected:
                                                       const TxtList &    aTxtList,
                                                       ResultCallback &&  aCallback);
 
-    ResultCallback HandleDuplicateHostRegistration(const std::string &         aName,
-                                                   const std::vector<uint8_t> &aAddress,
-                                                   ResultCallback &&           aCallback);
+    ResultCallback HandleDuplicateHostRegistration(const std::string &            aName,
+                                                   const std::vector<Ip6Address> &aAddresses,
+                                                   ResultCallback &&              aCallback);
 
     void              AddHostRegistration(HostRegistrationPtr &&aHostReg);
     void              RemoveHostRegistration(const std::string &aName, otbrError aError);

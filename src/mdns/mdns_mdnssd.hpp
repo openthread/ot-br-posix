@@ -89,9 +89,9 @@ protected:
                                  uint16_t           aPort,
                                  const TxtList &    aTxtList,
                                  ResultCallback &&  aCallback) override;
-    void      PublishHostImpl(const std::string &         aName,
-                              const std::vector<uint8_t> &aAddress,
-                              ResultCallback &&           aCallback) override;
+    void      PublishHostImpl(const std::string &            aName,
+                              const std::vector<Ip6Address> &aAddress,
+                              ResultCallback &&              aCallback) override;
     void      OnServiceResolveFailedImpl(const std::string &aType,
                                          const std::string &aInstanceName,
                                          int32_t            aErrorCode) override;
@@ -135,25 +135,29 @@ private:
     class DnssdHostRegistration : public HostRegistration
     {
     public:
-        DnssdHostRegistration(const std::string &         aName,
-                              const std::vector<uint8_t> &aAddress,
-                              ResultCallback &&           aCallback,
-                              DNSServiceRef               aServiceRef,
-                              DNSRecordRef                aRecordRef,
-                              Publisher *                 aPublisher)
-            : HostRegistration(aName, aAddress, std::move(aCallback), aPublisher)
+        DnssdHostRegistration(const std::string &            aName,
+                              const std::vector<Ip6Address> &aAddresses,
+                              ResultCallback &&              aCallback,
+                              DNSServiceRef                  aServiceRef,
+                              Publisher *                    aPublisher)
+            : HostRegistration(aName, aAddresses, std::move(aCallback), aPublisher)
             , mServiceRef(aServiceRef)
-            , mRecordRef(aRecordRef)
+            , mRecordRefMap()
+            , mCallbackCount(aAddresses.size())
         {
         }
 
         ~DnssdHostRegistration(void) override;
-        const DNSServiceRef &GetServiceRef() const { return mServiceRef; }
-        const DNSRecordRef & GetRecordRef() const { return mRecordRef; }
+        const DNSServiceRef &                     GetServiceRef() const { return mServiceRef; }
+        const std::map<DNSRecordRef, Ip6Address> &GetRecordRefMap() const { return mRecordRefMap; }
+        std::map<DNSRecordRef, Ip6Address> &      GetRecordRefMap() { return mRecordRefMap; }
 
     private:
         DNSServiceRef mServiceRef;
-        DNSRecordRef  mRecordRef;
+
+    public:
+        std::map<DNSRecordRef, Ip6Address> mRecordRefMap;
+        uint32_t                           mCallbackCount;
     };
 
     struct ServiceRef : private ::NonCopyable
