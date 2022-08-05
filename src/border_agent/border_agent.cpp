@@ -229,10 +229,7 @@ void BorderAgent::PublishMeshCopService(void)
 
     state.mConnectionMode = kConnectionModePskc;
     state.mAvailability   = kAvailabilityHigh;
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    state.mBbrIsActive  = otBackboneRouterGetState(instance) != OT_BACKBONE_ROUTER_STATE_DISABLED;
-    state.mBbrIsPrimary = otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_PRIMARY;
-#endif
+
     switch (otThreadGetDeviceRole(instance))
     {
     case OT_DEVICE_ROLE_DISABLED:
@@ -244,6 +241,12 @@ void BorderAgent::PublishMeshCopService(void)
     default:
         state.mThreadIfStatus = kThreadIfStatusActive;
     }
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    state.mBbrIsActive = state.mThreadIfStatus == kThreadIfStatusActive &&
+                         otBackboneRouterGetState(instance) != OT_BACKBONE_ROUTER_STATE_DISABLED;
+    state.mBbrIsPrimary = state.mThreadIfStatus == kThreadIfStatusActive &&
+                          otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_PRIMARY;
+#endif
 
     stateUint32 = htobe32(state.ToUint32());
     txtList.emplace_back("sb", reinterpret_cast<uint8_t *>(&stateUint32), sizeof(stateUint32));
