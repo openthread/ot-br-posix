@@ -247,6 +247,26 @@ otbrError DBusThreadObject::Init(void)
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
+#ifdef OTBR_REGION_FILE
+    {
+        FILE *regionFile = fopen(OTBR_REGION_FILE, "r");
+
+        VerifyOrExit(regionFile != nullptr);
+
+        char region[sizeof(uint16_t)];
+
+        if (fscanf(regionFile, "%c%c", &region[0], &region[1]) == 2)
+        {
+            uint16_t regionCode = (region[0] << 8 | region[1]);
+
+            otError err = otPlatRadioSetRegion(threadHelper->GetInstance(), regionCode);
+
+            otbrLogInfo("Apply saved region code %c%c: %s", region[0], region[1], otThreadErrorToString(err));
+        }
+
+        fclose(regionFile);
+    }
+#endif
 exit:
     return error;
 }
@@ -1175,6 +1195,14 @@ otError DBusThreadObject::SetRadioRegionHandler(DBusMessageIter &aIter)
     regionCode = radioRegion[0] << 8 | radioRegion[1];
 
     error = otPlatRadioSetRegion(threadHelper->GetInstance(), regionCode);
+
+#ifdef OTBR_REGION_FILE
+    {
+        FILE *regionFile = fopen(OTBR_REGION_FILE, "w");
+        fprintf(regionFile, "%c%c", radioRegion[0], radioRegion[1]);
+        fclose(regionFile);
+    }
+#endif
 
 exit:
     return error;

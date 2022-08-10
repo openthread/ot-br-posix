@@ -110,9 +110,10 @@ do_build()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOT_THREAD_VERSION=1.3"
         "-DOTBR_DBUS=ON"
-        "-DOTBR_WEB=ON"
-        "-DOTBR_UNSECURE_JOIN=ON"
+        "-DOTBR_REGION_FILE=/tmp/otbr-region-file"
         "-DOTBR_TREL=ON"
+        "-DOTBR_UNSECURE_JOIN=ON"
+        "-DOTBR_WEB=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 

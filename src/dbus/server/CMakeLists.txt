@@ -35,6 +35,10 @@ add_custom_target(otbr-dbus-introspect-header ALL
 )
 
 option(OTBR_ENABLE_LEGACY "enable legacy support")
+set(OTBR_REGION_FILE "" CACHE STRING "file to save region code")
+if (OTBR_REGION_FILE)
+    target_compile_definitions(otbr-config INTERFACE "OTBR_REGION_FILE=\"${OTBR_REGION_FILE}\"")
+endif()
 
 add_library(otbr-dbus-server STATIC
     dbus_agent.cpp

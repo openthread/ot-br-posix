@@ -208,7 +208,20 @@ int main()
 
     TEST_ASSERT(api->SetRadioRegion("US") == ClientError::ERROR_NONE);
     TEST_ASSERT(api->GetRadioRegion(region) == ClientError::ERROR_NONE);
+    printf("region is: %s\n", region.c_str());
     TEST_ASSERT(region == "US");
+#ifdef OTBR_REGION_FILE
+    {
+        char savedRegion[sizeof("US")];
+
+        printf("reading saved region code: ");
+        FILE *regionFile = fopen(OTBR_REGION_FILE, "r");
+        fscanf(regionFile, "%s", savedRegion);
+        fclose(regionFile);
+        printf("%s\n", savedRegion);
+        TEST_ASSERT(strcmp(savedRegion, "US") == 0);
+    }
+#endif
 
     api->EnergyScan(scanDuration, [&stepDone](const std::vector<EnergyScanResult> &aResult) {
         TEST_ASSERT(!aResult.empty());
