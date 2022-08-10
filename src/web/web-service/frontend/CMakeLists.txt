@@ -41,8 +41,12 @@ set(NPM_JS_DEPENDENCIES
 )
 
 add_custom_target(otbr-web-frontend
+    DEPENDS ${NPM_CSS_DEPENDENCIES} ${NPM_JS_DEPENDENCIES})
+
+add_custom_command(OUTPUT ${NPM_CSS_DEPENDENCIES} ${NPM_JS_DEPENDENCIES}
     COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/package.json .
-    COMMAND npm install)
+    COMMAND npm install
+    DEPENDS package.json)
 
 install(FILES index.html join.dialog.html
     DESTINATION ${OTBR_WEB_DATADIR}/frontend)
