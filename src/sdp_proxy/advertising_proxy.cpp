@@ -300,16 +300,13 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     if (!hostDeleted)
     {
         std::vector<Ip6Address> addresses;
-        std::vector<uint8_t>    firstHostAddress;
 
         // TODO: select a preferred address or advertise all addresses from SRP client.
         otbrLogDebug("Publish SRP host '%s'", fullHostName.c_str());
 
         addresses = GetEligibleAddresses(hostAddresses, hostAddressNum);
-        VerifyOrExit(!addresses.empty(), OnMdnsPublishResult(updateId, error = OTBR_ERROR_NONE));
-        firstHostAddress.assign(std::begin(addresses.front().m8), std::end(addresses.front().m8));
         mPublisher.PublishHost(
-            hostName, firstHostAddress,
+            hostName, addresses,
             Mdns::Publisher::ResultCallback([this, hasUpdate, updateId, fullHostName](otbrError aError) {
                 otbrLogResult(aError, "Handle publish SRP host '%s'", fullHostName.c_str());
                 if (hasUpdate)

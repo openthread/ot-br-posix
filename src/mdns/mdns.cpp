@@ -60,11 +60,13 @@ void Publisher::PublishService(const std::string &aHostName,
     PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback));
 }
 
-void Publisher::PublishHost(const std::string &aName, const std::vector<uint8_t> &aAddress, ResultCallback &&aCallback)
+void Publisher::PublishHost(const std::string &            aName,
+                            const std::vector<Ip6Address> &aAddresses,
+                            ResultCallback &&              aCallback)
 {
     mHostRegistrationBeginTime[aName] = Clock::now();
 
-    PublishHostImpl(aName, aAddress, std::move(aCallback));
+    PublishHostImpl(aName, aAddresses, std::move(aCallback));
 }
 
 void Publisher::OnServiceResolveFailed(const std::string &aType, const std::string &aInstanceName, int32_t aErrorCode)
@@ -236,6 +238,12 @@ Publisher::TxtList Publisher::SortTxtList(TxtList aTxtList)
     return aTxtList;
 }
 
+Publisher::AddressList Publisher::SortAddressList(AddressList aAddressList)
+{
+    std::sort(aAddressList.begin(), aAddressList.end());
+    return aAddressList;
+}
+
 std::string Publisher::MakeFullServiceName(const std::string &aName, const std::string &aType)
 {
     return aName + "." + aType + ".local";
@@ -318,15 +326,15 @@ exit:
     return std::move(aCallback);
 }
 
-Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string &         aName,
-                                                                     const std::vector<uint8_t> &aAddress,
-                                                                     ResultCallback &&           aCallback)
+Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string &            aName,
+                                                                     const std::vector<Ip6Address> &aAddresses,
+                                                                     ResultCallback &&              aCallback)
 {
     HostRegistration *hostReg = FindHostRegistration(aName);
 
     VerifyOrExit(hostReg != nullptr);
 
-    if (hostReg->IsOutdated(aName, aAddress))
+    if (hostReg->IsOutdated(aName, aAddresses))
     {
         otbrLogInfo("Removing existing host %s: outdated", aName.c_str());
         RemoveHostRegistration(hostReg->mName, OTBR_ERROR_ABORTED);
@@ -374,6 +382,7 @@ void Publisher::RemoveHostRegistration(const std::string &aName, otbrError aErro
     hostReg = std::move(it->second);
     mHostRegistrations.erase(it);
     hostReg->Complete(aError);
+    otbrLogInfo("Removed host %s", aName.c_str());
 
 exit:
     return;
@@ -417,9 +426,9 @@ void Publisher::ServiceRegistration::OnComplete(otbrError aError)
     }
 }
 
-bool Publisher::HostRegistration::IsOutdated(const std::string &aName, const std::vector<uint8_t> &aAddress) const
+bool Publisher::HostRegistration::IsOutdated(const std::string &aName, const std::vector<Ip6Address> &aAddresses) const
 {
-    return !(mName == aName && mAddress == aAddress);
+    return !(mName == aName && mAddresses == aAddresses);
 }
 
 void Publisher::HostRegistration::Complete(otbrError aError)
