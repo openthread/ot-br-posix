@@ -116,6 +116,7 @@ jobs:
       INTER_OP: 0
       INTER_OP_BBR: 0
       BORDER_ROUTING: ${{ matrix.border_routing }}
+      NAT64: ${{ matrix.nat64 }}
       MAX_JOBS: 3
     steps:
     - uses: actions/checkout@v2
