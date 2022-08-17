@@ -53,18 +53,19 @@ target_link_libraries(otbr-agent PRIVATE
     otbr-utils
 )
 
-add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
+# add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
+add_dependencies(otbr-agent print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
 if (OTBR_BORDER_AGENT)
     add_dependencies(otbr-agent otbr-border-agent)
 endif()
 
 install(TARGETS otbr-agent DESTINATION sbin)
 
-if(CMAKE_VERSION VERSION_LESS 3.13)
-    install(PROGRAMS $<TARGET_FILE:ot-ctl> DESTINATION sbin)
-else()
-    install(TARGETS ot-ctl DESTINATION sbin)
-endif()
+# if(CMAKE_VERSION VERSION_LESS 3.13)
+#     install(PROGRAMS $<TARGET_FILE:ot-ctl> DESTINATION sbin)
+# else()
+#     install(TARGETS ot-ctl DESTINATION sbin)
+# endif()
 
 set(OTBR_AGENT_USER "root" CACHE STRING "set the username running otbr-agent service")
 set(OTBR_AGENT_GROUP "root" CACHE STRING "set the group using otbr-agent client")
@@ -103,8 +104,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.default
     RENAME otbr-agent
 )
 
-pkg_check_modules(LIBSYSTEMD libsystemd)
-if(LIBSYSTEMD_FOUND)
-    target_compile_definitions(otbr-config INTERFACE "HAVE_LIBSYSTEMD=1")
-    target_link_libraries(otbr-agent PUBLIC ${LIBSYSTEMD_LIBRARIES})
-endif()
+# pkg_check_modules(LIBSYSTEMD libsystemd)
+# if(LIBSYSTEMD_FOUND)
+#     target_compile_definitions(otbr-config INTERFACE "HAVE_LIBSYSTEMD=1")
+#     target_link_libraries(otbr-agent PUBLIC ${LIBSYSTEMD_LIBRARIES})
+# endif()
