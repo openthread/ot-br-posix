@@ -41,6 +41,7 @@
 #include <assert.h>
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
+#include <openthread/platform/radio-mac.h>
 
 #if __ANDROID__ && OTBR_CONFIG_ANDROID_PROPERTY_ENABLE
 #include <cutils/properties.h>

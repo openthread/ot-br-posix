@@ -38,6 +38,7 @@ set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
 set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
 
 set(OT_LINK_METRICS_SUBJECT OFF CACHE STRING "disable link metrics" FORCE)
+set(OT_MAC_FILTER OFF CACHE STRING "disable mac filter" FORCE)
 #set(OT_THREAD_VERSION "1.2" CACHE STRING "use Thread 1.2" FORCE)
 
 if (NOT OT_THREAD_VERSION EQUAL "1.1")
@@ -55,7 +56,7 @@ if (NOT OT_LOG_LEVEL)
 endif()
 
 set(OT_LOG_LEVEL_DYNAMIC ON CACHE BOOL "enable dynamic log level control" FORCE)
-set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
+#set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 #set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
 #set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
 set(OT_PLATFORM_NETIF ON CACHE BOOL "enable platform netif" FORCE)
@@ -91,19 +92,21 @@ if (NOT OT_POSIX_SETTINGS_PATH)
     set(OT_POSIX_SETTINGS_PATH "\"/var/lib/thread\"" CACHE STRING "set the directory to store Thread data" FORCE)
 endif()
 
-# target_compile_definitions(ot-config INTERFACE
-#     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
-#     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
-#     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
-#     "-DOPENTHREAD_CONFIG_TMF_PROXY_DUA_ENABLE=1"
-#     "-DOPENTHREAD_CONFIG_TMF_PROXY_MLR_ENABLE=1"
-# )
-
 include(FetchContent)
 FetchContent_Declare(
     cascoda-sdk
     GIT_REPOSITORY https://github.com/Cascoda/cascoda-sdk-priv
-    GIT_TAG 0bf7aae894c6f0fd15c75def846b2f19aaf7293a # elie-openthread on the 3rd of August
+    #GIT_TAG 0bf7aae894c6f0fd15c75def846b2f19aaf7293a # elie-openthread on the 3rd of August
+    GIT_TAG elie-openthread
 )
 
 FetchContent_MakeAvailable(cascoda-sdk)
+
+target_compile_definitions(ot-config INTERFACE
+    "-DOPENTHREAD_CONFIG_LOG_CLI=1"
+    "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
+    "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
+    "-DOPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE=0"
+    #"-DOPENTHREAD_CONFIG_TMF_PROXY_DUA_ENABLE=1"
+    #"-DOPENTHREAD_CONFIG_TMF_PROXY_MLR_ENABLE=1"
+)

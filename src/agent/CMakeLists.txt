@@ -45,12 +45,13 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-posix
     openthread-cli-ftd
     openthread-ftd
-    openthread-spinel-rcp
-    openthread-hdlc
+    # openthread-spinel-rcp
+    # openthread-hdlc
     otbr-sdp-proxy
     otbr-ncp
     otbr-common
     otbr-utils
+    ca821x-openthread-posix-ftd
 )
 
 # add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)

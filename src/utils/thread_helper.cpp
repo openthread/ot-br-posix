@@ -43,6 +43,7 @@
 #include <openthread/joiner.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
+#include <openthread/platform/radio-phy.h>
 
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
