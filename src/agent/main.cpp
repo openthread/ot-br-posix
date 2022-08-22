@@ -229,18 +229,6 @@ exit:
     return ret;
 }
 
-void otPlatReset(otInstance *aInstance)
-{
-    OT_UNUSED_VARIABLE(aInstance);
-
-    gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
-
-    otSysDeinit();
-
-    longjmp(sResetJump, 1);
-    assert(false);
-}
-
 int main(int argc, char *argv[])
 {
     if (setjmp(sResetJump))
@@ -253,4 +241,14 @@ int main(int argc, char *argv[])
     }
 
     return realmain(argc, argv);
+}
+
+extern "C" void otPlatUartSendDone(void)
+{
+    return;
+}
+extern "C" void otPlatUartReceived(const uint8_t *aBuf, uint16_t aBufLength)
+{
+    OT_UNUSED_VARIABLE(aBuf);
+    OT_UNUSED_VARIABLE(aBufLength);
 }
