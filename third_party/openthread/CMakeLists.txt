@@ -35,10 +35,13 @@ set(OT_COMMISSIONER ON CACHE BOOL "enable commissioner")
 set(OT_DAEMON ON CACHE BOOL "enable daemon mode" FORCE)
 set(OT_FIREWALL ON CACHE BOOL "enable firewall feature")
 set(OT_JOINER ON CACHE BOOL "enable joiner" FORCE)
-set(OT_LEGACY ON CACHE STRING "enable legacy network support" FORCE)
+set(OT_LEGACY ON CACHE BOOL "enable legacy network support" FORCE)
 
-set(OT_LINK_METRICS_SUBJECT OFF CACHE STRING "disable link metrics" FORCE)
-set(OT_MAC_FILTER OFF CACHE STRING "disable mac filter" FORCE)
+set(OT_LINK_METRICS_INITIATOR OFF CACHE BOOL "Disable initiator link metrics")
+set(OT_LINK_METRICS_SUBJECT OFF CACHE BOOL "disable link metrics" FORCE)
+set(OT_MAC_FILTER OFF CACHE BOOL "disable mac filter" FORCE)
+set(OT_PLATFORM "posix" CACHE STRING "OpenThread platform to build" FORCE)
+
 #set(OT_THREAD_VERSION "1.2" CACHE STRING "use Thread 1.2" FORCE)
 
 if (NOT OT_THREAD_VERSION EQUAL "1.1")
