@@ -42,7 +42,7 @@ endif()
 
 option(OTBR_BORDER_ROUTING "Enable Border Routing Manager" OFF)
 
-option(OTBR_BORDER_ROUTING_NAT64 "Enable NAT64 border routing support" OFF)
+option(OTBR_BORDER_ROUTING_NAT64 "Enable NAT64 border routing support [deprecating]" OFF)
 
 option(OTBR_NAT64_BORDER_ROUTING "Enable NAT64 border routing support" OFF)
 
