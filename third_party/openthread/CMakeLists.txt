@@ -51,6 +51,11 @@ if (NOT OT_LOG_LEVEL)
     endif()
 endif()
 
+set(OT_NAT64_TRANSLATOR ${OTBR_NAT64_TRANSLATOR} CACHE BOOL "enable NAT64 translator" FORCE)
+if (OTBR_NAT64_CIDR)
+    set(OT_POSIX_NAT64_CIDR ${OTBR_NAT64_CIDR} CACHE STRING "set IPv4 CIDR used for NAT64" FORCE)
+endif()
+
 set(OT_LOG_LEVEL_DYNAMIC ON CACHE BOOL "enable dynamic log level control" FORCE)
 set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_MBEDTLS_CONFIG_FILE "\"${PROJECT_SOURCE_DIR}/third_party/openthread/mbedtls-config.h\"" CACHE STRING "use mbedtls-config.h of this project" FORCE)
