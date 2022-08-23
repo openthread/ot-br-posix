@@ -359,8 +359,9 @@ std::string WpanService::HandleStatusRequest()
     VerifyOrExit((rval = client.Execute("version api")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
     networkInfo["OpenThread:Version API"] = rval;
 
-    VerifyOrExit((rval = client.Execute("rcp version")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
-    networkInfo["RCP:Version"] = rval;
+    //VerifyOrExit((rval = client.Execute("rcp version")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    //networkInfo["RCP:Version"] = rval;
+    networkInfo["RCP:Version"] = "Cascoda mac-dongle pseudo-RCP";
 
     VerifyOrExit((rval = client.Execute("eui64")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
     networkInfo["RCP:EUI64"] = rval;
