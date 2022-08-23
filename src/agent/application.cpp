@@ -41,6 +41,10 @@
 #include "common/code_utils.hpp"
 #include "common/mainloop_manager.hpp"
 
+#include "ca821x-posix-thread/posix-platform.h"
+
+extern otInstance *gInstance;
+
 namespace otbr {
 
 bool                 Application::sShouldTerminate = false;
@@ -75,6 +79,9 @@ Application::Application(const std::string &              aInterfaceName,
 
 void Application::Init(void)
 {
+    NODE_ID = 1;
+    posixPlatformInit();
+
     mNcp.Init();
 
 #if OTBR_ENABLE_BORDER_AGENT
@@ -148,6 +155,8 @@ otbrError Application::Run(void)
         FD_ZERO(&mainloop.mReadFdSet);
         FD_ZERO(&mainloop.mWriteFdSet);
         FD_ZERO(&mainloop.mErrorFdSet);
+
+        posixPlatformProcessDriversQuick(gInstance);
 
         MainloopManager::GetInstance().Update(mainloop);
 
