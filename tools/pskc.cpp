@@ -108,3 +108,13 @@ int main(int argc, char *argv[])
 exit:
     return ret;
 }
+
+extern "C" void *otPlatCAlloc(size_t aNum, size_t aSize)
+{
+    return calloc(aNum, aSize);
+}
+
+extern "C" void otPlatFree(void *aPtr)
+{
+    free(aPtr);
+}
