@@ -242,8 +242,10 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRcpInterfaceMetricsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_UPTIME,
                                std::bind(&DBusThreadObject::GetUptimeHandler, this, _1));
+#if OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_COEX_METRICS,
                                std::bind(&DBusThreadObject::GetRadioCoexMetrics, this, _1));
+#endif
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1480,6 +1482,7 @@ exit:
     return error;
 }
 
+#if OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
 otError DBusThreadObject::GetRadioCoexMetrics(DBusMessageIter &aIter)
 {
     otError            error = OT_ERROR_NONE;
@@ -1514,6 +1517,7 @@ otError DBusThreadObject::GetRadioCoexMetrics(DBusMessageIter &aIter)
 exit:
     return error;
 }
+#endif
 
 void DBusThreadObject::ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs)
 {
