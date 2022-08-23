@@ -85,7 +85,7 @@ if(OTBR_TREL)
 endif()
 
 
-option(OTBR_WEB "Enable Web GUI" ON)
+option(OTBR_WEB "Enable Web GUI" OFF)
 
 option(OTBR_NOTIFY_UPSTART "Notify upstart when ready." ON)
 if(OTBR_NOTIFY_UPSTART)
