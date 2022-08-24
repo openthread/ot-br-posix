@@ -55,6 +55,8 @@
 #include "common/types.hpp"
 #include "ncp/ncp_openthread.hpp"
 
+#include "ca821x-posix-thread/posix-platform.h"
+
 static const char kSyslogIdent[]          = "otbr-agent";
 static const char kDefaultInterfaceName[] = "wpan0";
 
@@ -216,6 +218,7 @@ static int realmain(int argc, char *argv[])
     {
         otbr::Application app(interfaceName, backboneInterfaceName, radioUrls);
 
+        posixPlatformSetOrigArgs(argc, argv);
         app.Init();
 
         ret = app.Run();
