@@ -33,4 +33,5 @@ add_library(otbr-ncp
 
 target_link_libraries(otbr-ncp PRIVATE
     otbr-common
+    ca821x-openthread-posix-ftd
 )

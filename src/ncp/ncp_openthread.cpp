@@ -50,6 +50,10 @@
 #include "common/logging.hpp"
 #include "common/types.hpp"
 
+#include "ca821x-posix-thread/posix-platform.h"
+extern otInstance *gInstance;
+
+
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
 #endif
@@ -196,6 +200,8 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
     otTaskletsProcess(mInstance);
 
     otSysMainloopProcess(mInstance, &aMainloop);
+
+    posixPlatformProcessDriversQuick(gInstance);
 
     if (IsAutoAttachEnabled() && mThreadHelper->TryResumeNetwork() == OT_ERROR_NONE)
     {
