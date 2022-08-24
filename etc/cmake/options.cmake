@@ -44,7 +44,7 @@ option(OTBR_BORDER_ROUTING "Enable Border Routing Manager" OFF)
 
 option(OTBR_BORDER_ROUTING_NAT64 "Enable NAT64 support in Border Routing Manager" OFF)
 
-option(OTBR_NAT64_TRANSLATOR "Enable NAT64 support in Border Routing Manager" OFF)
+option(OTBR_NAT64_TRANSLATOR "Enable NAT64 translator" OFF)
 
 option(OTBR_DBUS "Enable DBus support" OFF)
 if(OTBR_DBUS)
