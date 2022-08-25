@@ -48,7 +48,7 @@ extern otInstance *gInstance;
 namespace otbr {
 
 bool                 Application::sShouldTerminate = false;
-const struct timeval Application::kPollTimeout     = {10, 0};
+const struct timeval Application::kPollTimeout     = {0, 1000};
 
 Application::Application(const std::string &              aInterfaceName,
                          const std::string &              aBackboneInterfaceName,
