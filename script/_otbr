@@ -89,11 +89,11 @@ otbr_install()
         otbr_options+=("-DOTBR_REST=ON")
     fi
 
-    if with BACKBONE_ROUTER; then
-        otbr_options+=(
-            "-DOTBR_BACKBONE_ROUTER=ON"
-        )
-    fi
+    # if with BACKBONE_ROUTER; then
+    #     otbr_options+=(
+    #         "-DOTBR_BACKBONE_ROUTER=ON"
+    #     )
+    # fi
 
     if [[ ${REFERENCE_DEVICE} == "1" ]]; then
         otbr_options+=(
