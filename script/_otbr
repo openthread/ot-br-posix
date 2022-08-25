@@ -70,7 +70,7 @@ otbr_install()
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
         "-DOTBR_BORDER_ROUTING=ON"
         "-DOTBR_WEB=ON"
-        "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
+        "-DOTBR_INFRA_IF_NAME=eth0"
         "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
         "${otbr_options[@]}"
     )
