@@ -109,8 +109,10 @@ FetchContent_GetProperties(cascoda-sdk)
 if(NOT cascoda-sdk_POPULATED)
     FetchContent_Populate(cascoda-sdk)
     add_subdirectory(${cascoda-sdk_SOURCE_DIR} ${cascoda-sdk_BINARY_DIR})
+
     set_target_properties(ot-ctl PROPERTIES EXCLUDE_FROM_ALL FALSE)
     install(TARGETS ot-ctl DESTINATION sbin)
+    add_dependencies(otbr-agent ot-ctl)
 endif()
 
 target_compile_definitions(ot-config INTERFACE
