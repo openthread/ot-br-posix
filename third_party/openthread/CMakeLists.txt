@@ -122,3 +122,5 @@ target_compile_definitions(ot-config INTERFACE
     #"-DOPENTHREAD_CONFIG_TMF_PROXY_DUA_ENABLE=1"
     #"-DOPENTHREAD_CONFIG_TMF_PROXY_MLR_ENABLE=1"
 )
+
+set_target_properties(ot-ctl PROPERTIES EXCLUDE_FROM_ALL FALSE)
