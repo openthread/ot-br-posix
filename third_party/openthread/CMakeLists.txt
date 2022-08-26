@@ -103,7 +103,12 @@ FetchContent_Declare(
     GIT_TAG elie-openthread
 )
 
-FetchContent_MakeAvailable(cascoda-sdk)
+FetchContent_GetProperties(cascoda-sdk)
+
+if(NOT cascoda-sdk_POPULATED)
+    FetchContent_Populate(cascoda-sdk)
+    add_subdirectory(${cascoda-sdk_SOURCE_DIR} ${cascoda-sdk_BINARY_DIR})
+endif()
 
 target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_LOG_CLI=1"
