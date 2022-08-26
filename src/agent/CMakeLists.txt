@@ -56,7 +56,7 @@ target_link_libraries(otbr-agent PRIVATE
 )
 
 # add_dependencies(otbr-agent ot-ctl print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
-add_dependencies(otbr-agent print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp)
+add_dependencies(otbr-agent print-ot-config otbr-sdp-proxy otbr-utils otbr-ncp ot-ctl)
 if (OTBR_BORDER_AGENT)
     add_dependencies(otbr-agent otbr-border-agent)
 endif()

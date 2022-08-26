@@ -112,7 +112,6 @@ if(NOT cascoda-sdk_POPULATED)
 
     set_target_properties(ot-ctl PROPERTIES EXCLUDE_FROM_ALL FALSE)
     install(TARGETS ot-ctl DESTINATION sbin)
-    add_dependencies(otbr-agent ot-ctl)
 endif()
 
 target_compile_definitions(ot-config INTERFACE
