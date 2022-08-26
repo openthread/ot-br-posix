@@ -1242,6 +1242,7 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
 
         blobmsg_add_u32(&mBuf, "joinernum", joinerNum);
     }
+    /*
     else if (!strcmp(aAction, "macfilterstate"))
     {
         otMacFilterAddressMode mode = otLinkFilterGetAddressMode(mController->GetInstance());
@@ -1283,6 +1284,7 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
 
         blobmsg_close_array(&mBuf, sJsonUri);
     }
+    */
     else
     {
         perror("invalid argument in get information ubus\n");
@@ -1536,6 +1538,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             SuccessOrExit(error = otThreadSetLinkMode(mController->GetInstance(), linkMode));
         }
     }
+    /*
     else if (!strcmp(aAction, "macfilteradd"))
     {
         struct blob_attr *tb[SET_NETWORK_MAX];
@@ -1594,6 +1597,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
     {
         otLinkFilterClearAddresses(mController->GetInstance());
     }
+    */
     else
     {
         perror("invalid argument in get information ubus\n");
