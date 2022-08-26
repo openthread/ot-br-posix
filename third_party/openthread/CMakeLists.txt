@@ -44,9 +44,10 @@ set(OT_PLATFORM "posix" CACHE STRING "OpenThread platform to build" FORCE)
 
 #set(OT_THREAD_VERSION "1.2" CACHE STRING "use Thread 1.2" FORCE)
 
-if (NOT OT_THREAD_VERSION EQUAL "1.1")
-    set(OT_LINK_METRICS_SUBJECT ON CACHE BOOL "enable link metrics subject" FORCE)
-endif()
+# if (NOT OT_THREAD_VERSION EQUAL "1.1")
+#     set(OT_LINK_METRICS_SUBJECT ON CACHE BOOL "enable link metrics subject" FORCE)
+# endif()
+
 set(OT_SLAAC ON CACHE BOOL "enable SLAAC" FORCE)
 set(OT_TREL ${OTBR_TREL} CACHE BOOL "enable TREL" FORCE)
 
