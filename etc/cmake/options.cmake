@@ -42,8 +42,6 @@ endif()
 
 option(OTBR_BORDER_ROUTING "Enable Border Routing Manager" OFF)
 
-option(OTBR_BORDER_ROUTING_NAT64 "Enable NAT64 support in Border Routing Manager" OFF)
-
 option(OTBR_DBUS "Enable DBus support" OFF)
 if(OTBR_DBUS)
     pkg_check_modules(DBUS REQUIRED dbus-1)
