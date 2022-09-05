@@ -1593,11 +1593,11 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             }
         }
     }
+    */
     else if (!strcmp(aAction, "macfilterclear"))
     {
-        otLinkFilterClearAddresses(mController->GetInstance());
+        // otLinkFilterClearAddresses(mController->GetInstance());
     }
-    */
     else
     {
         perror("invalid argument in get information ubus\n");
