@@ -32,3 +32,15 @@ configure_file(otbr-agent.init.in otbr-agent.init)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.init
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
     RENAME otbr-agent)
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/smcroute
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
+)
+
+install(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/br-config.sh 
+    ${CMAKE_CURRENT_BINARY_DIR}/br-omr-enable.sh 
+    ${CMAKE_CURRENT_BINARY_DIR}/br-smcroute-prefix.sh
+    DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
+)
