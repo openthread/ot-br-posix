@@ -24,22 +24,6 @@
 
 	local state = threadget("state").State
 
-
-
-	function addrlist()
-		local k, v
-		local l = { }
-
-		local addrlist = connect_ubus("macfilteraddr").addrlist
-
-		for k, v in pairs(addrlist) do
-			l[#l+1] = v
-		end
-
-		return l
-	end
-
-
 -%>
 <%+header%>
 
@@ -183,7 +167,10 @@
 	<br />
 	<ul class="cbi-tabmenu">
 		<li class="cbi-tab" id="securitytab"><a href="javascript:securitySetting();"><%:Thread Security%></a></li>
+		<!-- 
 		<li class="cbi-tab-disabled" id="macfiltertab"><a href="javascript:macfilterSetting();"><%:MAC-Filter%></a></li>
+		-->
+		
 	</ul>
 	<br/>
 
@@ -203,64 +190,6 @@
 		</div>
 	</div>
 
-	<!-- MAC Filter -->
-	<div style="width:60%;margin-left:10%;display:none;" id="macfilterdiv">
-		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:1%;">Protocol</label>
-			<div class="cbi-value-field">
-				<select style="width:30%;" id="macfilterselect" name="macfilterselect" onchange='macselectchange()' autocomplete="off">
-					<option value="disable">Disable</option>
-					<option value="allowlist">Allowlist</option>
-					<option value="denylist">Denylist</option>
-				</select>
-			</div>
-		</div>
-		<div class="cbi-value" id="macfilterlistdiv" style="display:none;">
-			<div class="table">
-				<label class="cbi-value-title" style="margin-right:1%;">Existed Address</label>
-				<div class="cbi-value-field">
-					<!-- addr list -->
-					<% for i, addr in ipairs(addrlist()) do %>
-					<input type="hidden" id="macfilterremove" name="macfilterremove" value="<%=addr%>" />
-					<% if i == 1 then %>
-					<div class="tr">
-						<div class="center" style="margin-top:15px;"><%=addr%></div>
-						<div class="th cbi-section-actions">
-							<input class="cbi-button cbi-button-reset" type="submit" id="removeAddr<%=i%>" name="removeAddr<%=i%>" value="<%:Remove%>" />
-						</div>
-					</div>
-					<% else %>
-					<div class="tr cbi-rowstyle-<%=1 + ((i-1) % 2)%>">
-						<div class="td col-2 center"><%=addr%></div>
-						<div class="td cbi-section-actions">
-							<input class="cbi-button cbi-button-reset" type="submit" id="removeAddr<%=i%>" name="removeAddr<%=i%>" value="<%:Remove%>" />
-						</div>
-					</div>
-					<% end %>
-					<% end %>
-					<!-- /addr list -->
-				</div>
-			</div>
-
-			<div class="cbi-value">
-				<div class="cbi-value-field">
-					<input class="cbi-button cbi-button-reset" type="submit" id="clearAddr" name="clearAddr" value="<%:Clear%>" />
-					<span style="margin-left:3%"><img src="<%=resource .. "/cbi/help.gif"%>" style="margin-right:2%"/><%:This will clear all existed macfilter address!%></span>
-				</div>
-			</div>
-
-			<label class="cbi-value-title" style="margin-right:1%;">Add Address</label>
-			<div class="cbi-value-field">
-				<div class="table">
-					<div class="tr table-titles">
-						<label><input type="text" id="macfilteradd" name="macfilteradd"/></label>
-						<input class="cbi-button cbi-button-add" type="submit" id="addAddr" name="addAddr" value="<%:Add%>" />
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<div class="cbi-page-actions right">
 		<input class="cbi-button cbi-button-neutral" style="float:left;" type="button" onclick="window.location.href='thread'" value="<%:Back to Overview%>" />
 		<input class="cbi-button cbi-button-apply" type="submit" id="save" value="<%:Save & Apply%>" />
@@ -274,40 +203,6 @@
 <script type="text/javascript" src="/luci-static/resources/handle_error.js"></script>
 <script type="text/javascript">//<![CDATA[
 	handle_error(GetURLParameter('error'));
-
-	var macfilterstate = "<%=threadget("macfilterstate").state%>";
-	var macselect = document.querySelector('#macfilterselect');
-
-	if(macselect) {
-		macselect.value = macfilterstate;
-		var opt = macselect.options[macselect.selectedIndex];
-
-		if(opt.value == "disable")
-		{
-			document.getElementById('macfilterlistdiv').style.display = "none";
-		}
-		else
-		{
-			document.getElementById('macfilterlistdiv').style.display = "block";
-		}
-	}
-
-	function macselectchange()
-	{
-		var macselect = document.querySelector('#macfilterselect');
-
-		if(macselect) {
-			var opt = macselect.options[macselect.selectedIndex];
-			if(opt.value == "disable")
-			{
-				document.getElementById('macfilterlistdiv').style.display = "none";
-			}
-			else
-			{
-				document.getElementById('macfilterlistdiv').style.display = "block";
-			}
-		}
-	}
 
 	function generalSetting() {
 		document.getElementById('generaldiv').style.display = "block";

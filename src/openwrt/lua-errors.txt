@@ -1,0 +1,13 @@
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]: /usr/lib/lua/luci/dispatcher.lua:460: Failed to execute template dispatcher target for entry '/admin/network/thread_create'.
+
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]: The called action terminated with an exception:
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]: /usr/lib/lua/luci/template.lua:97: Failed to execute template 'admin_thread/thread_setting'.
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]: A runtime error occured: [string "/usr/lib/lua/luci/view/admin_thread/thread_..."]:35: bad argument #1 to 'pairs' (table exp
+ected, got nil)
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]: stack traceback:
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]:        [C]: in function 'assert'
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]:        /usr/lib/lua/luci/dispatcher.lua:460: in function 'dispatch'
+Thu Jun 20 11:00:38 2019 daemon.err uhttpd[389]:        /usr/lib/lua/luci/dispatcher.lua:141: in function </usr/lib/lua/luci/dispatcher.lua:140>
+
+
+
