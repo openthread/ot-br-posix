@@ -61,9 +61,11 @@ function thread_handler_setting()
 	local mode = luci.http.formvalue("mode")
 	local networkkey = luci.http.formvalue("networkkey")
 	local pskc = luci.http.formvalue("pskc")
+	--[[
 	local macfilter = luci.http.formvalue("macfilterselect")
 	local macfilteradd = luci.http.formvalue("macfilteradd")
 	local macfilterremove = luci.http.formvalue("macfilterremove")
+	--]]
 	local submitcontent = luci.http.formvalue("submitcontent")
 	local jumpflag = 0
 
@@ -85,6 +87,7 @@ function thread_handler_setting()
 	elseif submitcontent == "leave" then
 		result = conn:call("otbr", "leave", {})
 		vError = result.Error
+	--[[
 	elseif submitcontent == "clearAddr" then
 		result = conn:call("otbr", "macfilterclear", {})
 		vError = result.Error
@@ -104,6 +107,7 @@ function thread_handler_setting()
 		conn:call("otbr", "macfiltersetstate", { state = macfilter })
 		vError = result.Error
 		jumpflag = 1
+	--]]
 	else
 		if(threadget("state").State == "disabled")then
 			conn:call("otbr", "setnetworkname", { networkname = networkname })
@@ -113,11 +117,11 @@ function thread_handler_setting()
 			conn:call("otbr", "setmode", { mode = mode })
 			conn:call("otbr", "setnetworkkey", { networkkey = networkkey })
 			conn:call("otbr", "setpskc", { pskc = pskc })
-			conn:call("otbr", "macfiltersetstate", { state = macfilter })
+			-- conn:call("otbr", "macfiltersetstate", { state = macfilter })
 			result = conn:call("otbr", "threadstart", {})
 		else
 			result = conn:call("otbr", "mgmtset", { networkkey = networkkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = pskc })
-			conn:call("otbr", "macfiltersetstate", { state = macfilter })
+			-- conn:call("otbr", "macfiltersetstate", { state = macfilter })
 		end
 		vError = result.Error
 	end
