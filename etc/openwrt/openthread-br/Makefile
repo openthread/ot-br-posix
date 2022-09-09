@@ -80,11 +80,12 @@ define Package/openthread-br/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/etc/init.d/otbr-agent $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/etc/init.d/smcroute $(1)/etc/init.d
+	$(INSTALL_CONF) $(PKG_INSTALL_DIR)/etc/smcroute.conf $(1)/etc
 
 	$(INSTALL_DIR) $(1)/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/br-config.sh $(1)/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/br-omr-enable.sh $(1)/lib
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/br-smcroute-prefix.sh $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-config.sh $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-omr-enable.sh $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-smcroute-prefix.sh $(1)/lib
 
 
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
