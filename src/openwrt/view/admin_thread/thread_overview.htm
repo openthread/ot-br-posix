@@ -91,34 +91,30 @@
 			{
 					if(st.state != "disabled")
 					{
-						sheet.innerHTML = String.format(
-							'<strong><%:Network Name: %></strong> %s<%: | %>' +
-							'<strong><%:State: %></strong>%s<br />' +
-							'<strong><%:PAN ID: %></strong>%s<%:   |   %>' +
-							'<strong><%:Channel: %></strong>%d<br />',
-								st.networkname, st.state, st.panid, st.channel
-						);
-						action.innerHTML = String.format(
-							'<form class="inline" action="<%=url('admin/network/thread_stop')%>" method="post">' +
+						sheet.innerHTML =
+							'<strong><%:Network Name: %></strong>' + st.networkname + '<%: | %>' +
+							'<strong><%:State: %></strong>' + st.state + '<br />' +
+							'<strong><%:PAN ID: %></strong>' + st.panid + '<%:   |   %>' +
+							'<strong><%:Channel: %></strong>' + st.channel + '<br />' ;
+						action.innerHTML =
+							'<form class="inline" action="<%=url(\'admin/network/thread_stop\')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
 								'<input type="submit" class="cbi-button cbi-button-neutral" title="<%:Disable this network%>" value="<%:Disable%>" />' +
 							'</form>' +
-							'<form class="inline" action="<%=url('admin/network/thread_setting')%>" method="post">' +
+							'<form class="inline" action="<%=url(\'admin/network/thread_setting\')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
 								'<input type="submit" class="cbi-button cbi-button-action important" title="<%:Edit this network%>" value="<%:Edit%>"/>' +
 							'</form>' +
-							'<form class="inline" action="<%=url('admin/network/thread_view')%>" method="post">' +
+							'<form class="inline" action="<%=url(\'admin/network/thread_view\')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
 								'<input type="submit" class="cbi-button cbi-button-add" title="<%:View this network%>" value="<%:View%>"/>' +
-							'</form>'
-						);
+							'</form>' ;
 					}
 					else
 					{
-						sheet.innerHTML = String.format(
+						sheet.innerHTML =
 							'<strong><%:Not connect to any Thread network%></strong><br />' +
-							'<%: Please Join or Create a Thread network.%>'
-						);
+							'<%: Please Join or Create a Thread network.%>' ;
 					}
 			}
 		});
@@ -151,7 +147,7 @@
 		return icon;
 	}
 
-	XHR.poll(2, '<%=url('admin/network/thread_neighbors')%>', null,
+	XHR.poll(2, '<%=url(\'admin/network/thread_neighbors\')%>', null,
 		function(x, st)
 		{
 			if(st && st.state == 'child')
