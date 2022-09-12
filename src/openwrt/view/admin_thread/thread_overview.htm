@@ -97,15 +97,15 @@
 							'<strong><%:PAN ID: %></strong>' + st.panid + '<%:   |   %>' +
 							'<strong><%:Channel: %></strong>' + st.channel + '<br />' ;
 						action.innerHTML =
-							'<form class="inline" action="<%=url(\'admin/network/thread_stop\')%>" method="post">' +
+							'<form class="inline" action="<%=url('admin/network/thread_stop')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
 								'<input type="submit" class="cbi-button cbi-button-neutral" title="<%:Disable this network%>" value="<%:Disable%>" />' +
 							'</form>' +
-							'<form class="inline" action="<%=url(\'admin/network/thread_setting\')%>" method="post">' +
+							'<form class="inline" action="<%=url('admin/network/thread_setting')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
 								'<input type="submit" class="cbi-button cbi-button-action important" title="<%:Edit this network%>" value="<%:Edit%>"/>' +
 							'</form>' +
-							'<form class="inline" action="<%=url(\'admin/network/thread_view\')%>" method="post">' +
+							'<form class="inline" action="<%=url('admin/network/thread_view')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
 								'<input type="submit" class="cbi-button cbi-button-add" title="<%:View this network%>" value="<%:View%>"/>' +
 							'</form>' ;
@@ -147,7 +147,7 @@
 		return icon;
 	}
 
-	XHR.poll(2, '<%=url(\'admin/network/thread_neighbors\')%>', null,
+	XHR.poll(2, '<%=url('admin/network/thread_neighbors')%>', null,
 		function(x, st)
 		{
 			if(st && st.state == 'child')

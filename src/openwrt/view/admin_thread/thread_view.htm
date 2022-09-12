@@ -223,7 +223,7 @@
 		else return 'ftd';
 	}
 
-	XHR.poll(5, '<%=url(\'admin/network/thread_graph\')%>', null,
+	XHR.poll(5, '<%=url('admin/network/thread_graph')%>', null,
 		function(x, st)
 		{
 			if(st)
@@ -295,7 +295,7 @@
 		return Number(-1);
 	}
 
-	XHR.poll(2, '<%=url(\'admin/network/thread_neighbors\')%>', null,
+	XHR.poll(2, '<%=url('admin/network/thread_neighbors')%>', null,
 		function(x, st)
 		{
 			if (st && st.state == 'child')
@@ -324,7 +324,7 @@
 						'<div class="col-2 center"> Pending </div>',
 						'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
 						'<div class="th cbi-section-actions">' +
-						'<form action="<%=url(\'admin/network/joiner_remove\')%>" method="post">' +
+						'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
 							'<input type="hidden" name="token" value="<%=token%>" />' +
 							'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
 							'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
@@ -367,7 +367,7 @@
 						'<div class="col-2 center"> Pending </div>',
 						'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
 						'<div class="th cbi-section-actions">' +
-						'<form action="<%=url(\'admin/network/joiner_remove\')%>" method="post">' +
+						'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
 							'<input type="hidden" name="token" value="<%=token%>" />' +
 							'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
 							'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
