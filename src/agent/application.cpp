@@ -43,6 +43,8 @@
 
 #include "ca821x-posix-thread/posix-platform.h"
 
+#include <openthread/thread_ftd.h>
+
 extern otInstance *gInstance;
 
 namespace otbr {
