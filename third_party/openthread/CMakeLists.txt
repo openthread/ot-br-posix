@@ -101,7 +101,7 @@ FetchContent_Declare(
     cascoda-sdk
     GIT_REPOSITORY https://github.com/Cascoda/cascoda-sdk-priv
     #GIT_TAG 0bf7aae894c6f0fd15c75def846b2f19aaf7293a # elie-openthread on the 3rd of August
-    GIT_TAG elie-openthread
+    GIT_TAG tini-updated-openthread
 )
 
 FetchContent_GetProperties(cascoda-sdk)
