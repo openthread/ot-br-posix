@@ -110,7 +110,7 @@ otbr_install()
         )
     fi
 
-    if [[ ${NAT64:-} == "1" && ${NAT64_SERVICE:-} == "openthread" ]]; then
+    if with NAT64 && [[ ${NAT64_SERVICE:-} == "openthread" ]]; then
         otbr_options+=(
             "-DOT_NAT64_TRANSLATOR=ON"
             "-DOT_NAT64_BORDER_ROUTING=ON"

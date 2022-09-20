@@ -71,7 +71,7 @@ install_packages_apt()
 
     # nat64
     without NAT64 || {
-        "$NAT64_SERVICE" != "tayga" || sudo apt-get install --no-install-recommends -y tayga
+        [ "$NAT64_SERVICE" != "tayga" ] || sudo apt-get install --no-install-recommends -y tayga
         sudo apt-get install --no-install-recommends -y iptables
     }
 
@@ -128,7 +128,7 @@ install_packages_rpm()
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
     sudo $PM install -y boost-devel boost-filesystem boost-system
-    "$NAT64_SERVICE" != "tayga" || sudo $PM install -y tayga
+    [ "$NAT64_SERVICE" != "tayga" ] || sudo $PM install -y tayga
     sudo $PM install -y iptables
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget
