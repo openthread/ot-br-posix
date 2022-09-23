@@ -39,7 +39,7 @@ main()
 {
     . "$BEFORE_HOOK"
     sudo sysctl --system
-    nat64_start
+    nat64_start || true
     dns64_start || die 'Failed to start DNS64!'
     if have systemctl; then
         systemctl is-active rsyslog || sudo systemctl start rsyslog || die 'Failed to start rsyslog!'

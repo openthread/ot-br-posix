@@ -154,7 +154,7 @@ nat64_start()
     with NAT64 || return 0
 
     if with DOCKER; then
-        service tayga start
+        service tayga start || true
     elif have systemctl; then
         sudo systemctl start tayga || die 'Failed to start tayga!'
         sudo systemctl enable tayga || die 'Failed to enable tayga!'
