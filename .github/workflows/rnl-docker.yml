@@ -43,7 +43,7 @@ jobs:
       - name: Define Docker tag
         id: define-docker-tag
         run: |
-          tag="${{ github.sha }}"
+          tag="dev"
 
           if [ "${{ github.event_name }}" == "release" ]; then
             tag=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///g')
