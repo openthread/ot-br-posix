@@ -3,10 +3,10 @@ name: RNL docker
 on:
   push:
     branches:
-      - 'openthread/**'
+      - main
   pull_request:
     branches:
-      - 'openthread/**'
+      - main
   release:
     types: published
 
