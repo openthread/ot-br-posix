@@ -140,7 +140,7 @@ void BorderAgent::Start(void)
 
     SuccessOrExit(error = mPublisher->Start());
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Start();
+    SuccessOrExit(error = mAdvertisingProxy.Start());
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     mDiscoveryProxy.Start();
