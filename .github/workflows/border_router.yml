@@ -143,6 +143,7 @@ jobs:
           --build-arg REFERENCE_DEVICE=1 \
           --build-arg OT_BACKBONE_CI=1 \
           --build-arg NAT64="${{ matrix.nat64 }}" \
+          --build-arg NAT64_SERVICE=openthread \
           --build-arg DNS64="${{ matrix.nat64 }}" \
           --build-arg MDNS="${{ matrix.otbr_mdns }}" \
           --build-arg OTBR_OPTIONS="${otbr_options} -DCMAKE_CXX_FLAGS='-DOPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF=1'"
