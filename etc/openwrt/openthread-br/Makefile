@@ -61,7 +61,7 @@ CMAKE_OPTIONS+= \
 	-DOT_LOG_LEVEL_DYNAMIC=ON \
 	-DOT_SRP_SERVER=ON \
 	-DOT_SERVICE=ON \
-	-COMPILE_FLAGS=-Wno-error=format-security
+	-DCOMPILE_FLAGS=-Wno-error=format-security
 	
 
 define Package/openthread-br
