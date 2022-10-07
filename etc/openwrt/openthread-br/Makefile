@@ -60,7 +60,8 @@ CMAKE_OPTIONS+= \
 	-DOT_LOG_LEVEL=DEBG \
 	-DOT_LOG_LEVEL_DYNAMIC=ON \
 	-DOT_SRP_SERVER=ON \
-	-DOT_SERVICE=ON
+	-DOT_SERVICE=ON \
+	-DCOMPILE_FLAGS=-Wno-format-security
 	
 
 define Package/openthread-br
