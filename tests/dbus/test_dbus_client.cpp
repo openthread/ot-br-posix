@@ -130,12 +130,13 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
     TEST_ASSERT(onMeshPrefixes.empty());
 }
 
-static void CheckFeatureFlagUpdate(ThreadApiDBus *aApi) {
+static void CheckFeatureFlagUpdate(ThreadApiDBus *aApi)
+{
     otbrLogInfo("test CheckFeatureFlagUpdate start");
     // Serialized bytes of feature_flag proto, with enable_nat64=true && enable_trel=true.
-    uint8_t                 raw_bytes[] =  { 0x10, 0x01, 0x08, 0x01 };
-    unsigned                byte_array_size = sizeof(raw_bytes) / sizeof(uint8_t);
-    std::vector<uint8_t>    feature_flag_bytes(&raw_bytes[0], &raw_bytes[byte_array_size]);
+    uint8_t              raw_bytes[]     = {0x10, 0x01, 0x08, 0x01};
+    unsigned             byte_array_size = sizeof(raw_bytes) / sizeof(uint8_t);
+    std::vector<uint8_t> feature_flag_bytes(&raw_bytes[0], &raw_bytes[byte_array_size]);
     TEST_ASSERT(aApi->UpdateFeatureFlags(feature_flag_bytes) == OTBR_ERROR_NONE);
     otbrLogInfo("test CheckFeatureFlagUpdate end");
 }

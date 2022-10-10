@@ -1207,17 +1207,17 @@ exit:
 }
 
 
-void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest) {
-    auto                    threadHelper = mNcp->GetThreadHelper();
-    otError                 error = OT_ERROR_NONE;
-    std::vector<uint8_t>    feature_flag_bytes;
-    FeatureFlagList         feature_flag_list;
-    auto                    args = std::tie(feature_flag_bytes);
+void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest)
+{
+    auto                 threadHelper = mNcp->GetThreadHelper();
+    otError              error        = OT_ERROR_NONE;
+    std::vector<uint8_t> feature_flag_bytes;
+    FeatureFlagList      feature_flag_list;
+    auto                 args = std::tie(feature_flag_bytes);
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(feature_flag_list.ParseFromString(std::string(feature_flag_bytes.begin(), feature_flag_bytes.end())),
-        error = OT_ERROR_INVALID_ARGS);
-    threadHelper->GetInstance();
+                 error = OT_ERROR_INVALID_ARGS);
     otbrLogInfo("enable_nat64: %s", feature_flag_list.enable_nat64());
     otbrLogInfo("enable_trel: %s", feature_flag_list.enable_trel());
 exit:
