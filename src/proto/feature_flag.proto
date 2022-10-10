@@ -1,0 +1,56 @@
+// Copyright (c) 2022, The OpenThread Authors.
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+// 3. Neither the name of the copyright holder nor the
+//    names of its contributors may be used to endorse or promote products
+//    derived from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+syntax = "proto2";
+
+package otbr;
+
+// Feature List message defines the list of feature flags to be updated towards
+// OpenThread.
+//
+// Definition policy:
+// - every field is optional with a default value. The default value should
+// allow the feature to rollback or behave safely when the upper layer didn’t
+// properly set up the flag value (e.g., due to some network config download
+// error, API version mismatch, etc.).
+
+// Feature flag & API evolve policy:
+// - Add a new feature flag: add a new field in the proto.
+// - Remove feature flag: mark the field as deprecated. Do NOT delete the flag.
+// - Rename feature flag: if the feature’s semantics are not changed, it is
+// allowed to rename the field (the tag should not be changed). If the feature’s
+// semantics are changed, deprecate the feature and add a new one.
+// - Divide the flag into 2 flags: deprecate the old feature field, and add 2
+// new feature fields.
+// - API Compatibility: If the OTBR API is older than the upper layer
+// API, there are unrecognized fields in the proto and will be ignored. If the
+// OTBR API is newer than the upper layer API, the field’s default value will be
+// used as the feature flag value.
+message FeatureFlagList {
+  // Enable the NAT64 feature.
+  optional bool enable_nat64 = 1 [default = false];
+  // Enable the TREL feature.
+  optional bool enable_trel = 2 [default = false];
+}

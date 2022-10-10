@@ -215,6 +215,13 @@
       <arg name="properties" type="as" direction="in"/>
     </method>
 
+    <!-- UpdateFeatureFlags: Pass in feature flag list to update features.
+      @feature_flag_bytes: The feature flag list proto buffer's serialized bytes.
+    -->
+    <method name="UpdateFeatureFlags">
+      <arg name="feature_flag_bytes" type="ay" direction="in"/>
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

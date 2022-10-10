@@ -45,6 +45,7 @@
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
+#include "proto/feature_flag.pb.h"
 
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
@@ -144,6 +145,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_VENDOR_MESHCOP_TXT_METHOD,
                    std::bind(&DBusThreadObject::UpdateMeshCopTxtHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_FEATURE_FLAGS_METHOD,
+                   std::bind(&DBusThreadObject::UpdateFeatureFlagsHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_PROPERTIES_METHOD,
                    std::bind(&DBusThreadObject::GetPropertiesHandler, this, _1));
 
@@ -1199,6 +1202,24 @@ void DBusThreadObject::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
     }
     threadHelper->OnUpdateMeshCopTxt(std::move(update));
 
+exit:
+    aRequest.ReplyOtResult(error);
+}
+
+
+void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest) {
+    auto                    threadHelper = mNcp->GetThreadHelper();
+    otError                 error = OT_ERROR_NONE;
+    std::vector<uint8_t>    feature_flag_bytes;
+    FeatureFlagList         feature_flag_list;
+    auto                    args = std::tie(feature_flag_bytes);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(feature_flag_list.ParseFromString(std::string(feature_flag_bytes.begin(), feature_flag_bytes.end())),
+        error = OT_ERROR_INVALID_ARGS);
+    threadHelper->GetInstance();
+    otbrLogInfo("enable_nat64: %s", feature_flag_list.enable_nat64());
+    otbrLogInfo("enable_trel: %s", feature_flag_list.enable_trel());
 exit:
     aRequest.ReplyOtResult(error);
 }

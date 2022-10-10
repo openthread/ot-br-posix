@@ -36,18 +36,32 @@ add_custom_target(otbr-dbus-introspect-header ALL
 
 option(OTBR_ENABLE_LEGACY "enable legacy support")
 
+SET(PROTO_GEN_DIR ${PROJECT_BINARY_DIR}/src/proto)
+# Set the protoc output files as GENERATED to avoid the compile time check.
+set_source_files_properties(${PROTO_GEN_DIR}/feature_flag.pb.cc
+    PROPERTIES GENERATED TRUE)
+
+string(REPLACE "-Wunused-parameter" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+
 add_library(otbr-dbus-server STATIC
     dbus_agent.cpp
     dbus_object.cpp
     dbus_thread_object.cpp
     error_helper.cpp
+    ${PROTO_GEN_DIR}/feature_flag.pb.cc
+)
+
+target_compile_options(otbr-dbus-server
+    PRIVATE
+        "-Wno-sign-compare"
+        "-Wno-unused-parameter"
 )
 
 target_include_directories(otbr-dbus-server PRIVATE
     ${PROJECT_BINARY_DIR}/src
 )
 
-add_dependencies(otbr-dbus-server otbr-dbus-introspect-header)
+add_dependencies(otbr-dbus-server otbr-dbus-introspect-header generate_message)
 
 if(OTBR_ENABLE_LEGACY)
     target_compile_definitions(otbr-dbus-server PRIVATE
@@ -58,8 +72,10 @@ if(OTBR_ENABLE_LEGACY)
     )
 endif()
 
+find_package(Protobuf REQUIRED)
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
+    protobuf::libprotobuf
 )
 
 if(OTBR_DOC)

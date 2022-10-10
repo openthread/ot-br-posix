@@ -36,6 +36,7 @@ add_subdirectory(sdp_proxy)
 add_subdirectory(trel_dnssd)
 
 if(OTBR_DBUS)
+    add_subdirectory(proto)
     add_subdirectory(dbus)
 endif()
 
