@@ -1209,7 +1209,6 @@ exit:
 
 void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest)
 {
-    auto                 threadHelper = mNcp->GetThreadHelper();
     otError              error        = OT_ERROR_NONE;
     std::vector<uint8_t> feature_flag_bytes;
     FeatureFlagList      feature_flag_list;
