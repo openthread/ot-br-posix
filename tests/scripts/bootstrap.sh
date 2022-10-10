@@ -63,7 +63,9 @@ install_common_dependencies()
         libreadline-dev \
         libncurses-dev \
         libjsoncpp-dev \
-        coreutils
+        coreutils \
+        libprotobuf-dev \
+        protobuf-compiler
 }
 
 install_openthread_binraries()
