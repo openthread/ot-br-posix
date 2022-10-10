@@ -67,7 +67,7 @@ define Package/openthread-br
 	SECTION:=base
 	CATEGORY:=Network
 	TITLE:=OpenThread Border Router
-	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client
+	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +hidapi +kmod-ip6-tunnel +kmod-tun
 endef
 
 define Package/openthread-br/description
