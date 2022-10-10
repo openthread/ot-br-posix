@@ -99,8 +99,6 @@ tayga_stop()
     fi
 }
 
-# Although Tayga also configures a NAT44 iptables route, this NAT44 service is used with Tayga
-# due to some history reason. It might be removed when native NAT64 service is ready.
 nat44_install()
 {
     sudo tee $NAT44_SERVICE <<EOF
@@ -134,7 +132,7 @@ nat44_install()
 #
 ### BEGIN INIT INFO
 # Provides:          otbr-nat44
-# Required-Start:    tayga
+# Required-Start:
 # Required-Stop:
 # Should-Start:
 # Should-Stop:
@@ -151,9 +149,19 @@ nat44_install()
 case "\$1" in
     start)
 EOF
-    for IFNAME in $WLAN_IFNAMES; do
-        echo "      iptables -t nat -A POSTROUTING -o $IFNAME -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
-    done
+    if [ "$NAT64_SERVICE" = tayga ]; then
+        # Although Tayga itself also configures a NAT44 iptables route, this iptables route is used with Tayga
+        # due to some history reason. It might be removed when native NAT64 service is ready.
+        for IFNAME in $WLAN_IFNAMES; do
+            echo "        iptables -t nat -A POSTROUTING -o $IFNAME -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
+        done
+    else
+        echo "        iptables -t nat -A POSTROUTING -s \"$DYNAMIC_POOL\" -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
+        for IFNAME in $WLAN_IFNAMES; do
+            echo "        iptables -t filter -A FORWARD -o $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
+            echo "        iptables -t filter -A FORWARD -i $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
+        done
+    fi
     sudo tee -a $NAT44_SERVICE <<EOF
         ;;
     restart|reload|force-reload)
@@ -172,6 +180,7 @@ EOF
     sudo chmod a+x $NAT44_SERVICE
     if have systemctl; then
         sudo systemctl enable otbr-nat44 || die 'Unable to enable nat44 service!'
+        sudo systemctl start otbr-nat44 || die 'Failed to start nat44 service!'
     fi
 }
 
@@ -190,19 +199,19 @@ nat44_uninstall()
 
 nat44_start()
 {
-    if [ "$NAT64_SERVICE" = tayga ] && have systemctl; then
+    if with DOCKER; then
+        service otbr-nat44 start || die 'Failed to start NAT44!'
+    elif have systemctl; then
         sudo systemctl start otbr-nat44 || die 'Failed to start NAT44!'
-    else
-        sudo iptables -t nat -A POSTROUTING -s "$DYNAMIC_POOL" -j MASQUERADE || die 'Failed to start NAT44!'
     fi
 }
 
 nat44_stop()
 {
-    if [ "$NAT64_SERVICE" = tayga ] && have systemctl; then
+    if with DOCKER; then
+        service otbr-nat44 stop || true
+    elif have systemctl; then
         sudo systemctl stop otbr-nat44 || true
-    else
-        sudo iptables -t nat -D POSTROUTING -s "$DYNAMIC_POOL" -j MASQUERADE || true
     fi
 }
 
@@ -212,8 +221,9 @@ nat64_install()
 
     if [ "$NAT64_SERVICE" = tayga ]; then
         tayga_install
-        nat44_install
     fi
+
+    nat44_install
 }
 
 nat64_uninstall()
@@ -224,8 +234,9 @@ nat64_uninstall()
 
     if [ "$NAT64_SERVICE" = tayga ]; then
         tayga_uninstall
-        nat44_uninstall
     fi
+
+    nat44_uninstall
 }
 
 nat64_start()
