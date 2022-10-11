@@ -1208,6 +1208,7 @@ exit:
 
 void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest)
 {
+    otbrLogInfo("entering UpdateFeatureFlagsHandler");
     otError              error = OT_ERROR_NONE;
     std::vector<uint8_t> feature_flag_bytes;
     FeatureFlagList      feature_flag_list;
