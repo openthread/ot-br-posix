@@ -1206,10 +1206,9 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
-
 void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest)
 {
-    otError              error        = OT_ERROR_NONE;
+    otError              error = OT_ERROR_NONE;
     std::vector<uint8_t> feature_flag_bytes;
     FeatureFlagList      feature_flag_list;
     auto                 args = std::tie(feature_flag_bytes);
