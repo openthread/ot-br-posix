@@ -55,10 +55,6 @@ Contributors are required to abide by our [Code of Conduct](https://github.com/o
 
 We follow the philosophy of [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all).
 
-# Versioning
-
-OpenThread Border Router follows the [Semantic Versioning guidelines](http://semver.org/) for release cycle transparency and to maintain backwards compatibility. OpenThread Border Router's versioning is independent of the Thread protocol specification version but will clearly indicate which version of the specification it currently supports.
-
 # License
 
 OpenThread Border Router is released under the [BSD 3-Clause license](https://github.com/openthread/ot-br-posix/blob/main/LICENSE). See the [`LICENSE`](https://github.com/openthread/ot-br-posix/blob/main/LICENSE) file for more information.
