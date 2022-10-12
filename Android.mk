@@ -78,7 +78,13 @@ $(OTBR_GEN_DBUS_INTROSPECT_HEADER): $(LOCAL_PATH)/src/dbus/server/introspect.xml
 	cat $+ >> $@
 	echo ')INTROSPECT"' >> $@
 
-$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp
+OTBR_GEN_PROTO_FILE := \
+    $(OTBR_GEN_HEADER_DIR)/proto/feature_flag.pb.cc
+
+$(OTBR_GEN_PROTO_FILE):
+    protoc --cpp_out $(OTBR_GEN_HEADER_DIR)/proto/ -I $(LOCAL_PATH)/src/proto $(LOCAL_PATH)/src/proto/feature_flag.proto
+
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp $(OTBR_GEN_HEADER_DIR)/proto/feature_flag.pb.cc
 
 ifneq ($(ANDROID_NDK),1)
 LOCAL_SHARED_LIBRARIES += libcutils

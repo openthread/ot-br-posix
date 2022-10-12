@@ -1168,9 +1168,9 @@ exit:
 
 otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
-    std::vector<uint8_t>     data;
-    FeatureFlagList          feature_flag_list;
-    otError                  error = OT_ERROR_NONE;
+    std::vector<uint8_t> data;
+    FeatureFlagList      feature_flag_list;
+    otError              error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(feature_flag_list.ParseFromString(std::string(data.begin(), data.end())),
