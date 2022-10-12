@@ -527,7 +527,8 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-     <!-- FeatureFlagListData: The Thread feature flags in binary form. -->
+     <!-- FeatureFlagListData: The Thread feature flags (defined as proto/feature_flag.proto)
+      in binary form. -->
     <property name="FeatureFlagListData" type="ay" access="write">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>

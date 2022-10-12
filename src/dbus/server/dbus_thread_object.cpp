@@ -145,8 +145,6 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_VENDOR_MESHCOP_TXT_METHOD,
                    std::bind(&DBusThreadObject::UpdateMeshCopTxtHandler, this, _1));
-    // RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_FEATURE_FLAGS_METHOD,
-    //                std::bind(&DBusThreadObject::UpdateFeatureFlagsHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_PROPERTIES_METHOD,
                    std::bind(&DBusThreadObject::GetPropertiesHandler, this, _1));
 
@@ -1170,16 +1168,15 @@ exit:
 
 otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
-    // auto                     threadHelper = mNcp->GetThreadHelper();
     std::vector<uint8_t>     data;
     FeatureFlagList          feature_flag_list;
     otError                  error = OT_ERROR_NONE;
 
-    otbrLogInfo("Enter SetFeatureFlagListDataHandler");
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(feature_flag_list.ParseFromString(std::string(data.begin(), data.end())),
                  error = OT_ERROR_INVALID_ARGS);
-
+    otbrLogInfo("SetFeatureFlagListDataHandler: apply the feature flag list");
+    // TODO: apply the feature flag list to Thread instance.
 exit:
     return error;
 }
@@ -1223,26 +1220,6 @@ void DBusThreadObject::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
 exit:
     aRequest.ReplyOtResult(error);
 }
-
-// void DBusThreadObject::UpdateFeatureFlagsHandler(DBusRequest &aRequest)
-// {
-//     otError              error = OT_ERROR_NONE;
-//     std::vector<uint8_t> feature_flag_bytes;
-//     auto                 args = std::tie(feature_flag_bytes);
-//     FeatureFlagList      feature_flag_list;
-
-//     otbrLogInfo("Call DBusMessageToTuple");
-//     // VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-//     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-//     otbrLogInfo("DBusMessageToTuple done and feature_flag_list.ParseFromString start. feature_flag_bytes size: %s", feature_flag_bytes.size());
-//     VerifyOrExit(feature_flag_list.ParseFromString(std::string(feature_flag_bytes.begin(), feature_flag_bytes.end())),
-//                  error = OT_ERROR_INVALID_ARGS);
-
-//     otbrLogInfo("enable_nat64: %s", feature_flag_list.enable_nat64());
-//     otbrLogInfo("enable_trel: %s", feature_flag_list.enable_trel());
-// exit:
-//     aRequest.ReplyOtResult(error);
-// }
 
 otError DBusThreadObject::GetRadioRegionHandler(DBusMessageIter &aIter)
 {

@@ -457,12 +457,6 @@ ClientError ThreadApiDBus::RemoveExternalRoute(const Ip6Prefix &aPrefix)
     return CallDBusMethodSync(OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD, std::tie(aPrefix));
 }
 
-// ClientError ThreadApiDBus::UpdateFeatureFlags(const std::vector<uint8_t> &aFeatureFlagBytes)
-// {
-//     auto args = std::tie(aFeatureFlagBytes);
-//     return CallDBusMethodSync(OTBR_DBUS_UPDATE_FEATURE_FLAGS_METHOD, args);
-// }
-
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX, aPrefix);

@@ -102,7 +102,6 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
-    // void UpdateFeatureFlagsHandler(DBusRequest &aRequest);
     void GetPropertiesHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);

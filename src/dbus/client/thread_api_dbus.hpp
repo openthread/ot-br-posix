@@ -296,19 +296,6 @@ public:
      */
     ClientError RemoveExternalRoute(const Ip6Prefix &aPrefix);
 
-    // /**
-    //  * This method updates features in OpenThread based on input feature flags' values.
-    //  *
-    //  * @param[in] aFeatureFlagBytes  The feature flags defined as proto/feature_flag.proto
-    //  * proto buffer's bytes serialized format.
-    //  *
-    //  * @retval ERROR_NONE  Successfully performed the dbus function call
-    //  * @retval ERROR_DBUS  dbus encode/decode error
-    //  * @retval ...         OpenThread defined error value otherwise
-    //  *
-    //  */
-    // ClientError UpdateFeatureFlags(const std::vector<uint8_t> &aFeatureFlagBytes);
-
     /**
      * This method sets the mesh-local prefix.
      *
