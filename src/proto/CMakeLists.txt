@@ -27,8 +27,8 @@ foreach(msg ${MSG_PROTOS})
         OUTPUT "${PROTO_GEN_DIR}/${FIL_WE}.pb.cc"
                 "${PROTO_GEN_DIR}/${FIL_WE}.pb.h"
         COMMAND ${Protobuf_PROTOC_EXECUTABLE}
-        ARGS --cpp_out  ${PROTO_GEN_DIR}
-            -I ${CMAKE_CURRENT_SOURCE_DIR}
+        ARGS --proto_path ${CMAKE_CURRENT_SOURCE_DIR}
+            --cpp_out  ${PROTO_GEN_DIR}
             ${msg}
         DEPENDS ${msg}
         COMMENT "Running C++ protocol buffer compiler on ${msg}"
