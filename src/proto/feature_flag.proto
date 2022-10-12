@@ -49,8 +49,8 @@ package otbr;
 // OTBR API is newer than the upper layer API, the field’s default value will be
 // used as the feature flag value.
 message FeatureFlagList {
-  // Enable the NAT64 feature.
+  // Whether to enable the NAT64 feature.
   optional bool enable_nat64 = 1 [default = false];
-  // Enable the TREL feature.
+  // Whether to enable the TREL feature.
   optional bool enable_trel = 2 [default = false];
 }
