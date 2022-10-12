@@ -43,7 +43,7 @@ CMAKE_SOURCE_DIR=$(LOCAL_SOURCE_DIR)
 CMAKE_OPTIONS+= \
 	-DBUILD_TESTING=OFF \
 	-DCMAKE_INSTALL_PREFIX=/usr \
-	-DCMAKE_BUILD_TYPE=Debug \
+	-DCMAKE_BUILD_TYPE=Release \
 	-DOTBR_OPENWRT=ON \
 	-DOTBR_BORDER_AGENT=ON \
 	-DOTBR_BORDER_ROUTING=ON \
@@ -67,7 +67,7 @@ define Package/openthread-br
 	SECTION:=base
 	CATEGORY:=Network
 	TITLE:=OpenThread Border Router
-	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +hidapi +kmod-ip6-tunnel +kmod-tun
+	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +hidapi +kmod-tun +smcroute
 endef
 
 define Package/openthread-br/description
