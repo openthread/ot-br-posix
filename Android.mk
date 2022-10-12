@@ -78,13 +78,18 @@ $(OTBR_GEN_DBUS_INTROSPECT_HEADER): $(LOCAL_PATH)/src/dbus/server/introspect.xml
 	cat $+ >> $@
 	echo ')INTROSPECT"' >> $@
 
-OTBR_GEN_PROTO_FILE := \
-    $(OTBR_GEN_HEADER_DIR)/proto/feature_flag.pb.cc
+PROTO_FILE := $(LOCAL_PATH)/src/proto/feature_flag.proto
+PROTO_GEN_DIR := $(OTBR_GEN_HEADER_DIR)/proto/
+PROTO_GEN_SOURCES := $(PROTO_GEN_DIR)/feature_flag.pb.cc
 
-$(OTBR_GEN_PROTO_FILE): $(LOCAL_PATH)/src/proto/feature_flag.proto
-    protoc --cpp_out $(OTBR_GEN_HEADER_DIR)/proto/ -I $(LOCAL_PATH)/src/proto $(LOCAL_PATH)/src/proto/feature_flag.proto
+$(PROTO_GEN_SOURCES): $(PROTOC) $(PROTO_FILE) $(PROTO_GEN_DIR)
+    mkdir -p $(PROTO_GEN_DIR)
+    $(PROTOC) \
+    --proto_path= $(LOCAL_PATH)/src/proto/ \
+    --cpp_out  ${PROTO_GEN_DIR} \
+    $(PROTO_FILE)
 
-$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp $(OTBR_GEN_HEADER_DIR)/proto/feature_flag.pb.cc
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp $(PROTO_GEN_SOURCES)
 
 ifneq ($(ANDROID_NDK),1)
 LOCAL_SHARED_LIBRARIES += libcutils
@@ -111,7 +116,7 @@ LOCAL_CFLAGS += \
 
 LOCAL_CPPFLAGS += -std=c++14
 
-LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER)
+LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER) $(PROTO_GEN_SOURCES)
 
 LOCAL_SRC_FILES := \
     src/agent/application.cpp \
