@@ -38,7 +38,7 @@ DNS64_CONF="dns64 $(echo $NAT64_PREFIX | tr \"/\" \"/\") { clients { thread; }; 
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
-without NAT64 || test "$PLATFORM" = ubuntu || test "$PLATFORM" = beagleboneblack || test "$PLATFORM" = raspbian || die "dns64 is not tested under $PLATFORM."
+without NAT64 || without DNS64 || test "$PLATFORM" = ubuntu || test "$PLATFORM" = beagleboneblack || test "$PLATFORM" = raspbian || die "dns64 is not tested under $PLATFORM."
 
 if [ "$PLATFORM" = raspbian ]; then
     RESOLV_CONF_HEAD=/etc/resolv.conf.head
