@@ -296,18 +296,18 @@ public:
      */
     ClientError RemoveExternalRoute(const Ip6Prefix &aPrefix);
 
-    /**
-     * This method updates features in OpenThread based on input feature flags' values.
-     *
-     * @param[in] feature_flag_bytes  The feature flags defined as proto/feature_flag.proto
-     * proto buffer's bytes serialized format.
-     *
-     * @retval ERROR_NONE  Successfully performed the dbus function call
-     * @retval ERROR_DBUS  dbus encode/decode error
-     * @retval ...         OpenThread defined error value otherwise
-     *
-     */
-    ClientError UpdateFeatureFlags(const std::vector<uint8_t> &feature_flag_bytes);
+    // /**
+    //  * This method updates features in OpenThread based on input feature flags' values.
+    //  *
+    //  * @param[in] aFeatureFlagBytes  The feature flags defined as proto/feature_flag.proto
+    //  * proto buffer's bytes serialized format.
+    //  *
+    //  * @retval ERROR_NONE  Successfully performed the dbus function call
+    //  * @retval ERROR_DBUS  dbus encode/decode error
+    //  * @retval ...         OpenThread defined error value otherwise
+    //  *
+    //  */
+    // ClientError UpdateFeatureFlags(const std::vector<uint8_t> &aFeatureFlagBytes);
 
     /**
      * This method sets the mesh-local prefix.
@@ -344,6 +344,19 @@ public:
      *
      */
     ClientError SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset);
+
+    /**
+     * This method sets the feature flag list data.
+     *
+     * @param[out] aFeatureFlagListData  The feature flag list proto serialized
+     * byte data (see proto/feature_flag.proto)
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetFeatureFlagListData(const std::vector<uint8_t> &aFeatureFlagListData);
 
     /**
      * This method sets the link operating mode.

@@ -218,9 +218,9 @@
     <!-- UpdateFeatureFlags: Pass in feature flag list to update features.
       @feature_flag_bytes: The feature flag list proto buffer's serialized bytes.
     -->
-    <method name="UpdateFeatureFlags">
-      <arg name="feature_flag_bytes" type="ay" direction="in"/>
-    </method>
+    <!--<method name="UpdateFeatureFlags">
+      <arg name="feature_flag_bytes" type="ay"/>
+    </method> -->
 
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
@@ -524,6 +524,11 @@
 
     <!-- ActiveDatasetTlvs: The Thread active dataset tlv in binary form. -->
     <property name="ActiveDatasetTlvs" type="ay" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+     <!-- FeatureFlagListData: The Thread feature flags in binary form. -->
+    <property name="FeatureFlagListData" type="ay" access="write">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 

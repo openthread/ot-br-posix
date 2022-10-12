@@ -457,10 +457,11 @@ ClientError ThreadApiDBus::RemoveExternalRoute(const Ip6Prefix &aPrefix)
     return CallDBusMethodSync(OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD, std::tie(aPrefix));
 }
 
-ClientError ThreadApiDBus::UpdateFeatureFlags(const std::vector<uint8_t> &feature_flag_bytes)
-{
-    return CallDBusMethodSync(OTBR_DBUS_UPDATE_FEATURE_FLAGS_METHOD, std::tie(feature_flag_bytes));
-}
+// ClientError ThreadApiDBus::UpdateFeatureFlags(const std::vector<uint8_t> &aFeatureFlagBytes)
+// {
+//     auto args = std::tie(aFeatureFlagBytes);
+//     return CallDBusMethodSync(OTBR_DBUS_UPDATE_FEATURE_FLAGS_METHOD, args);
+// }
 
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)
 {
@@ -475,6 +476,11 @@ ClientError ThreadApiDBus::SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6
 ClientError ThreadApiDBus::SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
+}
+
+ClientError ThreadApiDBus::SetFeatureFlagListData(const std::vector<uint8_t> &aFeatureFlagListData)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA, aFeatureFlagListData);
 }
 
 ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)

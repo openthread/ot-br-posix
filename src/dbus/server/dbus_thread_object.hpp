@@ -102,7 +102,7 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
-    void UpdateFeatureFlagsHandler(DBusRequest &aRequest);
+    // void UpdateFeatureFlagsHandler(DBusRequest &aRequest);
     void GetPropertiesHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
@@ -111,6 +111,7 @@ private:
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
     otError SetLinkModeHandler(DBusMessageIter &aIter);
     otError SetActiveDatasetTlvsHandler(DBusMessageIter &aIter);
+    otError SetFeatureFlagListDataHandler(DBusMessageIter &aIter);
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
