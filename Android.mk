@@ -79,12 +79,12 @@ $(OTBR_GEN_DBUS_INTROSPECT_HEADER): $(LOCAL_PATH)/src/dbus/server/introspect.xml
 	echo ')INTROSPECT"' >> $@
 
 PROTO_FILE := $(LOCAL_PATH)/src/proto/feature_flag.proto
-PROTO_GEN_DIR := $(OTBR_GEN_HEADER_DIR)/proto/
+PROTO_GEN_DIR := $(OTBR_GEN_HEADER_DIR)/proto
 PROTO_GEN_SOURCES := $(PROTO_GEN_DIR)/feature_flag.pb.cc
 
-$(PROTO_GEN_SOURCES): $(PROTOC) $(PROTO_FILE) $(PROTO_GEN_DIR)
+$(PROTO_GEN_SOURCES): $(PROTO_FILE) $(PROTO_GEN_DIR)
 	mkdir -p $(PROTO_GEN_DIR)
-	$(PROTOC) --proto_path= $(LOCAL_PATH)/src/proto/ --cpp_out ${PROTO_GEN_DIR} $(PROTO_FILE)
+	protoc --proto_path= $(LOCAL_PATH)/src/proto/ --cpp_out ${PROTO_GEN_DIR} $(PROTO_FILE)
 
 $(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp $(PROTO_GEN_SOURCES)
 
