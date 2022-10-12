@@ -49,7 +49,7 @@ jobs:
       matrix:
         mdns: ["mDNSResponder", "avahi"]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
