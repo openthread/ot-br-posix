@@ -78,18 +78,13 @@ $(OTBR_GEN_DBUS_INTROSPECT_HEADER): $(LOCAL_PATH)/src/dbus/server/introspect.xml
 	cat $+ >> $@
 	echo ')INTROSPECT"' >> $@
 
-PROTO_FILE := $(LOCAL_PATH)/src/proto/feature_flag.proto
-PROTO_GEN_SOURCES := $(OTBR_GEN_HEADER_DIR)/proto/feature_flag.pb.cc
-
-$(PROTO_GEN_SOURCES): $(PROTO_FILE)
-	mkdir -p $(OTBR_GEN_HEADER_DIR)/proto
-	protoc --proto_path $(LOCAL_PATH)/src/proto/ --cpp_out $(OTBR_GEN_HEADER_DIR)/proto $(PROTO_FILE)
-
-$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp $(PROTO_GEN_SOURCES)
+$(LOCAL_PATH)/src/dbus/server/dbus_thread_object.cpp: $(OTBR_GEN_HEADER_DIR)/dbus/server/introspect.hpp
 
 ifneq ($(ANDROID_NDK),1)
 LOCAL_SHARED_LIBRARIES += libcutils
 endif
+
+OTBR_PROTO_INCLUDES := $(local-intermediates-dir)/proto/$(LOCAL_PATH)/src
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
@@ -100,7 +95,8 @@ LOCAL_C_INCLUDES := \
     external/openthread/src \
     external/openthread/src/posix/platform/include \
     $(OTBR_GEN_HEADER_DIR) \
-    $(OTBR_PROJECT_INCLUDES)
+    $(OTBR_PROJECT_INCLUDES) \
+    $(OTBR_PROTO_INCLUDES)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
@@ -112,9 +108,10 @@ LOCAL_CFLAGS += \
 
 LOCAL_CPPFLAGS += -std=c++14
 
-LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER) $(PROTO_GEN_SOURCES)
+LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER)
 
 LOCAL_SRC_FILES := \
+    src/proto/feature_flag.proto \
     src/agent/application.cpp \
     src/agent/main.cpp \
     src/backbone_router/backbone_agent.cpp \
