@@ -28,8 +28,8 @@ option optimize_for = LITE_RUNTIME;
 
 package otbr;
 
-// Feature List message defines the list of feature flags to be updated towards
-// OpenThread.
+// Feature flag list message defines the list of feature flags to be used
+// on OpenThread.
 //
 /////////////         Definition Policy Guide            /////////////
 // * Every field is optional with a default value. The default value should
