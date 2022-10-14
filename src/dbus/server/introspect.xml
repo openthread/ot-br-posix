@@ -529,7 +529,7 @@
 
      <!-- FeatureFlagListData: The Thread feature flags (defined as proto/feature_flag.proto)
       in binary form. -->
-    <property name="FeatureFlagListData" type="ay" access="write">
+    <property name="FeatureFlagListData" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 

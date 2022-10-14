@@ -707,6 +707,19 @@ public:
     ClientError GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset);
 
     /**
+     * This method gets the active operational dataset
+     *
+     * @param[out] aFeatureFlagListData  The feature flag list proto serialized
+     * byte data (see proto/feature_flag.proto)
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetFeatureFlagListData(std::vector<uint8_t> &aFeatureFlagListData);
+
+    /**
      * This method gets the radio region.
      *
      * @param[out] aRadioRegion  The radio region.

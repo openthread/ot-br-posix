@@ -225,6 +225,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetOnMeshPrefixesHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
                                std::bind(&DBusThreadObject::GetActiveDatasetTlvsHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA,
+                               std::bind(&DBusThreadObject::GetFeatureFlagListDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SRP_SERVER_INFO,
@@ -1169,14 +1171,25 @@ exit:
 otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
     std::vector<uint8_t> data;
-    FeatureFlagList      feature_flag_list;
+    FeatureFlagList      featureFlagList;
     otError              error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(feature_flag_list.ParseFromString(std::string(data.begin(), data.end())),
+    VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())),
                  error = OT_ERROR_INVALID_ARGS);
-    otbrLogInfo("SetFeatureFlagListDataHandler: apply the feature flag list");
+    mLastParsedFeatureFlagListBytes = std::vector<uint8_t>{data.begin(), data.end()};
     // TODO: apply the feature flag list to Thread instance.
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter) {
+    otError                  error        = OT_ERROR_NONE;
+    std::vector<uint8_t>     data;
+
+    data = std::vector<uint8_t>{mLastParsedFeatureFlagListBytes.begin(), mLastParsedFeatureFlagListBytes.end()};
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
 exit:
     return error;
 }
