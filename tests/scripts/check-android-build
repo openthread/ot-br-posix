@@ -177,14 +177,16 @@ prepare_zlib()
 #######################################
 prepare_protobuf()
 {
-		PROTOBUF_TAG=android-4.2.2_r1
+    PROTOBUF_TAG=android-4.2.2_r1
 
     wget --tries 4 --no-check-certificate --quiet "https://github.com/aosp-mirror/platform_external_protobuf/archive/refs/tags/${PROTOBUF_TAG}.tar.gz"
     tar xvf "${PROTOBUF_TAG}.tar.gz"
-		# Fix: /usr/include/zlib.h:34:19: fatal error: zconf.h: No such file or directory
-		apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
-		cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
-		cat >"platform_external_protobuf-${PROTOBUF_TAG}/Android.mk" <<EOF
+    mkdir external
+    mv "platform_external_protobuf-${PROTOBUF_TAG}/" external/protobuf
+	# Fix: /usr/include/zlib.h:34:19: fatal error: zconf.h: No such file or directory
+    apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
+    cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
+    cat >"external/protobuf/Android.mk" <<EOF
 LOCAL_PATH := \$(call my-dir)
 
 CC_LITE_SRC_FILES := \
