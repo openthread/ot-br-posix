@@ -38,14 +38,14 @@ package otbr;
 //   error, API version mismatch, etc.). This makes sure that the system can
 //   always rollback to safe status, even in the edge case.
 // * When a feature finishes the rollup and becomes stable, the clear up process
-//   should update the feature flag with the rolluped value.
+//   should update the feature flag default value with the rolluped value.
 
 /////////////  Feature Flag & API Evolving Policy Guide  /////////////
 // * Add a new feature flag: add a new field in the proto.
 // * Remove feature flag: mark the field as deprecated. Do NOT delete the flag.
 // * Rename feature flag: if the feature’s semantics are not changed, it is
 //   allowed to rename the field (the tag should not be changed). If the feature’s
-//   semantics are changed, deprecate the feature and add a new one.
+//   semantics are changed, deprecate the field and add a new one.
 // * Divide the flag into 2 flags: deprecate the old feature field, and add 2
 //   new feature fields.
 // * API Compatibility: If the OTBR API is older than the upper layer
