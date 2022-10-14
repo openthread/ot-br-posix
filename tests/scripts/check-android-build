@@ -159,6 +159,8 @@ EOF
 prepare_zlib()
 {
 	mkdir -p external/zlib
+	echo "pwd:"
+	pwd
 	# zlib / refs/tags/android-4.2.2_r1
 	(cd external/zlib \
 	 && git init \
