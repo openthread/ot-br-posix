@@ -182,8 +182,8 @@ prepare_protobuf()
 	 && git init \
 	 && git pull --depth 1 https://android.googlesource.com/platform/external/protobuf db9ab02c090cdc5d2b31399867a4052351b8793d)
 	# Fix: /usr/include/zlib.h:34:19: fatal error: zconf.h: No such file or directory
-    apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
-    cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
+    #apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
+    #cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
     cat >"external/protobuf/Android.mk" <<EOF
 LOCAL_PATH := \$(call my-dir)
 
@@ -294,16 +294,16 @@ LOCAL_C_INCLUDES := \
     \$(LOCAL_PATH)/src
 
 # Define the header files to be copied
-#LOCAL_COPY_HEADERS := \
-#    src/google/protobuf/stubs/once.h \
-#    src/google/protobuf/stubs/common.h \
-#    src/google/protobuf/io/coded_stream.h \
-#    src/google/protobuf/generated_message_util.h \
-#    src/google/protobuf/repeated_field.h \
-#    src/google/protobuf/extension_set.h \
-#    src/google/protobuf/wire_format_lite_inl.h
-#
-#LOCAL_COPY_HEADERS_TO := \$(LOCAL_MODULE)
+LOCAL_COPY_HEADERS := \
+   src/google/protobuf/stubs/once.h \
+   src/google/protobuf/stubs/common.h \
+   src/google/protobuf/io/coded_stream.h \
+   src/google/protobuf/generated_message_util.h \
+   src/google/protobuf/repeated_field.h \
+   src/google/protobuf/extension_set.h \
+   src/google/protobuf/wire_format_lite_inl.h
+
+LOCAL_COPY_HEADERS_TO := \$(LOCAL_MODULE)
 
 LOCAL_CFLAGS := -DGOOGLE_PROTOBUF_NO_RTTI
 
@@ -359,16 +359,16 @@ LOCAL_C_INCLUDES := \
     \$(LOCAL_PATH)/src
 
 # Define the header files to be copied
-#LOCAL_COPY_HEADERS := \
-#    src/google/protobuf/stubs/once.h \
-#    src/google/protobuf/stubs/common.h \
-#    src/google/protobuf/io/coded_stream.h \
-#    src/google/protobuf/generated_message_util.h \
-#    src/google/protobuf/repeated_field.h \
-#    src/google/protobuf/extension_set.h \
-#    src/google/protobuf/wire_format_lite_inl.h
-#
-#LOCAL_COPY_HEADERS_TO := \$(LOCAL_MODULE)
+LOCAL_COPY_HEADERS := \
+   src/google/protobuf/stubs/once.h \
+   src/google/protobuf/stubs/common.h \
+   src/google/protobuf/io/coded_stream.h \
+   src/google/protobuf/generated_message_util.h \
+   src/google/protobuf/repeated_field.h \
+   src/google/protobuf/extension_set.h \
+   src/google/protobuf/wire_format_lite_inl.h
+
+LOCAL_COPY_HEADERS_TO := \$(LOCAL_MODULE)
 
 LOCAL_CFLAGS := -DGOOGLE_PROTOBUF_NO_RTTI
 
