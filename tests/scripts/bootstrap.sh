@@ -65,7 +65,8 @@ install_common_dependencies()
         libjsoncpp-dev \
         coreutils \
         libprotobuf-dev \
-        protobuf-compiler
+        protobuf-compiler \
+        libz-dev
 }
 
 install_openthread_binraries()
