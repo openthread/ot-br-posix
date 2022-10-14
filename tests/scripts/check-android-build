@@ -164,7 +164,7 @@ prepare_protobuf()
     PROTOBUF_SOURCE=platform_external_protobuf-${android-11.0.0_r37}
 
     wget --tries 4 --no-check-certificate --quiet "https://github.com/aosp-mirror/platform_external_protobuf/archive/refs/tags/${PROTOBUF_TAG}.tar.gz"
-    tar xvf "protobuf-cpp-${PROTOBUF_VERSION}.tar.gz"
+    tar xvf "${PROTOBUF_TAG}.tar.gz"
     #(cd "protobuf-${PROTOBUF_SOURCE}" && ./configure --prefix= --exec-prefix=/usr)
     cat >"${PROTOBUF_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
