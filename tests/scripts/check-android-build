@@ -158,8 +158,8 @@ EOF
 #######################################
 prepare_zlib()
 {
-	# zlib refs/tags/android-4.2.2_r1
-	(mkdir -p external/zlib \
+    # zlib refs/tags/android-4.2.2_r1
+    (mkdir -p external/zlib \
         && cd external/zlib \
         && git init \
         && git pull --depth 1 https://android.googlesource.com/platform/external/zlib 2d5094f0ebcb01fb9f11952d776945b090d89cf0)
