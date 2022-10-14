@@ -1175,17 +1175,17 @@ otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
     otError              error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())),
-                 error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())), error = OT_ERROR_INVALID_ARGS);
     mLastParsedFeatureFlagListBytes = std::vector<uint8_t>{data.begin(), data.end()};
     // TODO: apply the feature flag list to Thread instance.
 exit:
     return error;
 }
 
-otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter) {
-    otError                  error        = OT_ERROR_NONE;
-    std::vector<uint8_t>     data;
+otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
+{
+    otError              error = OT_ERROR_NONE;
+    std::vector<uint8_t> data;
 
     data = std::vector<uint8_t>{mLastParsedFeatureFlagListBytes.begin(), mLastParsedFeatureFlagListBytes.end()};
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
