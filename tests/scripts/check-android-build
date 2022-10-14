@@ -162,7 +162,6 @@ prepare_protobuf()
 
     wget --tries 4 --no-check-certificate --quiet "https://github.com/aosp-mirror/platform_external_protobuf/archive/refs/tags/${PROTOBUF_TAG}.tar.gz"
     tar xvf "${PROTOBUF_TAG}.tar.gz"
-		rm "platform_external_protobuf-${PROTOBUF_TAG}/Android.mk"
 		cat >"platform_external_protobuf-${PROTOBUF_TAG}/Android.mk" <<EOF
 LOCAL_PATH := $(call my-dir)
 
