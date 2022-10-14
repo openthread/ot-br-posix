@@ -162,7 +162,7 @@ private:
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
     otbr::Mdns::Publisher *                              mPublisher;
     // The last parsed FeatureFlagList's byte data from SetFeatureFlagListDataHandler.
-    std::vector<uint8_t>                                 mLastParsedFeatureFlagListBytes;
+    std::vector<uint8_t> mLastParsedFeatureFlagListBytes;
 };
 
 } // namespace DBus
