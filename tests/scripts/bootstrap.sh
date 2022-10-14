@@ -66,7 +66,7 @@ install_common_dependencies()
         coreutils \
         libprotobuf-dev \
         protobuf-compiler \
-        libz-dev
+        git
 }
 
 install_openthread_binraries()

@@ -158,10 +158,9 @@ EOF
 #######################################
 prepare_zlib()
 {
-	apt-get update && sudo apt-get install --no-install-recommends -y git
-	mkdir -p external/zlib
-	# zlib / refs/tags/android-4.2.2_r1
-	(cd external/zlib \
+	# zlib refs/tags/android-4.2.2_r1
+	(mkdir -p external/zlib \
+     && cd external/zlib \
 	 && git init \
 	 && git pull --depth 1 https://android.googlesource.com/platform/external/zlib 2d5094f0ebcb01fb9f11952d776945b090d89cf0)
 }
@@ -177,12 +176,11 @@ prepare_zlib()
 #######################################
 prepare_protobuf()
 {
-    PROTOBUF_TAG=android-4.2.2_r1
-
-    wget --tries 4 --no-check-certificate --quiet "https://github.com/aosp-mirror/platform_external_protobuf/archive/refs/tags/${PROTOBUF_TAG}.tar.gz"
-    tar xvf "${PROTOBUF_TAG}.tar.gz"
-    mkdir external
-    mv "platform_external_protobuf-${PROTOBUF_TAG}/" external/protobuf
+    # protobuf refs/tags/android-4.2.2_r1
+    (mkdir -p external/protobuf \
+     && cd external/protobuf \
+	 && git init \
+	 && git pull --depth 1 https://android.googlesource.com/platform/external/protobuf db9ab02c090cdc5d2b31399867a4052351b8793d)
 	# Fix: /usr/include/zlib.h:34:19: fatal error: zconf.h: No such file or directory
     apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
     cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
