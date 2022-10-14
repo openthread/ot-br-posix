@@ -163,7 +163,7 @@ prepare_protobuf()
     wget --tries 4 --no-check-certificate --quiet "https://github.com/aosp-mirror/platform_external_protobuf/archive/refs/tags/${PROTOBUF_TAG}.tar.gz"
     tar xvf "${PROTOBUF_TAG}.tar.gz"
 		cat >"platform_external_protobuf-${PROTOBUF_TAG}/Android.mk" <<EOF
-LOCAL_PATH := $(call my-dir)
+LOCAL_PATH := \$(call my-dir)
 
 CC_LITE_SRC_FILES := \
     src/google/protobuf/stubs/common.cc                              \
@@ -258,18 +258,18 @@ COMPILER_SRC_FILES :=  \
 
 # C++ lite library
 # =======================================================
-include $(CLEAR_VARS)
+include \$(CLEAR_VARS)
 
 LOCAL_MODULE := libprotobuf-cpp-2.3.0-lite
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_CPP_EXTENSION := .cc
 
-LOCAL_SRC_FILES := $(CC_LITE_SRC_FILES)
+LOCAL_SRC_FILES := \$(CC_LITE_SRC_FILES)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/android \
-    $(LOCAL_PATH)/src
+    \$(LOCAL_PATH)/android \
+    \$(LOCAL_PATH)/src
 
 # Define the header files to be copied
 #LOCAL_COPY_HEADERS := \
@@ -281,12 +281,12 @@ LOCAL_C_INCLUDES := \
 #    src/google/protobuf/extension_set.h \
 #    src/google/protobuf/wire_format_lite_inl.h
 #
-#LOCAL_COPY_HEADERS_TO := $(LOCAL_MODULE)
+#LOCAL_COPY_HEADERS_TO := \$(LOCAL_MODULE)
 
 LOCAL_CFLAGS := -DGOOGLE_PROTOBUF_NO_RTTI
 
 # These are the minimum versions and don't need to be update.
-ifeq ($(TARGET_ARCH),arm)
+ifeq (\$(TARGET_ARCH),arm)
 LOCAL_SDK_VERSION := 8
 else
 # x86/mips support only available from API 9.
@@ -294,11 +294,11 @@ LOCAL_SDK_VERSION := 9
 endif
 LOCAL_NDK_STL_VARIANT := stlport_static
 
-include $(BUILD_STATIC_LIBRARY)
+include \$(BUILD_STATIC_LIBRARY)
 
 # C++ full library
 # =======================================================
-include $(CLEAR_VARS)
+include \$(CLEAR_VARS)
 
 LOCAL_MODULE := libprotobuf-cpp-2.3.0-full
 LOCAL_MODULE_TAGS := optional
@@ -306,7 +306,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_SRC_FILES := \
-    $(CC_LITE_SRC_FILES)                                             \
+    \$(CC_LITE_SRC_FILES)                                             \
     src/google/protobuf/stubs/strutil.cc                             \
     src/google/protobuf/stubs/strutil.h                              \
     src/google/protobuf/stubs/substitute.cc                          \
@@ -332,9 +332,9 @@ LOCAL_SRC_FILES := \
     src/google/protobuf/compiler/parser.cc
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/android \
+    \$(LOCAL_PATH)/android \
     external/zlib \
-    $(LOCAL_PATH)/src
+    \$(LOCAL_PATH)/src
 
 # Define the header files to be copied
 #LOCAL_COPY_HEADERS := \
@@ -346,12 +346,12 @@ LOCAL_C_INCLUDES := \
 #    src/google/protobuf/extension_set.h \
 #    src/google/protobuf/wire_format_lite_inl.h
 #
-#LOCAL_COPY_HEADERS_TO := $(LOCAL_MODULE)
+#LOCAL_COPY_HEADERS_TO := \$(LOCAL_MODULE)
 
 LOCAL_CFLAGS := -DGOOGLE_PROTOBUF_NO_RTTI
 
 # These are the minimum versions and don't need to be update.
-ifeq ($(TARGET_ARCH),arm)
+ifeq (\$(TARGET_ARCH),arm)
 LOCAL_SDK_VERSION := 8
 else
 # x86/mips support only available from API 9.
@@ -359,29 +359,29 @@ LOCAL_SDK_VERSION := 9
 endif
 LOCAL_NDK_STL_VARIANT := stlport_static
 
-include $(BUILD_STATIC_LIBRARY)
+include \$(BUILD_STATIC_LIBRARY)
 
 # Android Protocol buffer compiler, aprotoc (host executable)
-# used by the build systems as $(PROTOC) defined in
+# used by the build systems as \$(PROTOC) defined in
 # build/core/config.mk
 # =======================================================
-include $(CLEAR_VARS)
+include \$(CLEAR_VARS)
 
 LOCAL_MODULE := aprotoc
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_SRC_FILES := $(COMPILER_SRC_FILES)
+LOCAL_SRC_FILES := \$(COMPILER_SRC_FILES)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/android \
-    $(LOCAL_PATH)/src
+    \$(LOCAL_PATH)/android \
+    \$(LOCAL_PATH)/src
 
 LOCAL_STATIC_LIBRARIES += libz
 LOCAL_LDLIBS := -lpthread
 
-include $(BUILD_HOST_EXECUTABLE)
+include \$(BUILD_HOST_EXECUTABLE)
 EOF
 }
 
