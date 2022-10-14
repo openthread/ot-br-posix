@@ -148,7 +148,25 @@ EOF
 }
 
 #######################################
-# Prepare dbus source code
+# Prepare zlib source code
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+prepare_zlib()
+{
+	mkdir -p external/zlib
+	# zlib / refs/tags/android-4.2.2_r1
+	(cd external/zlib \
+	 && git init \
+	 && git pull --depth 1 https://android.googlesource.com/platform/external/zlib 2d5094f0ebcb01fb9f11952d776945b090d89cf0)
+}
+
+#######################################
+# Prepare protobuf source code
 # Globals:
 #   None
 # Arguments:
@@ -163,8 +181,8 @@ prepare_protobuf()
     wget --tries 4 --no-check-certificate --quiet "https://github.com/aosp-mirror/platform_external_protobuf/archive/refs/tags/${PROTOBUF_TAG}.tar.gz"
     tar xvf "${PROTOBUF_TAG}.tar.gz"
 		# Fix: /usr/include/zlib.h:34:19: fatal error: zconf.h: No such file or directory
-		apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
-		cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
+		#apt-get update && sudo apt-get install --no-install-recommends -y zlib1g-dev
+		#cp /usr/include/x86_64-linux-gnu/zconf.h /usr/include/
 		cat >"platform_external_protobuf-${PROTOBUF_TAG}/Android.mk" <<EOF
 LOCAL_PATH := \$(call my-dir)
 
@@ -456,6 +474,7 @@ EOF
 main()
 {
     prepare_dbus
+		prepare_zlib
 		prepare_protobuf
     prepare_libmdnssd
     prepare_openthread
