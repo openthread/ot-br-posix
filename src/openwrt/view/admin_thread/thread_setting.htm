@@ -117,18 +117,18 @@
 			<% if state == 'disabled' then %>
 			<label class="cbi-value-title" style="margin-right:5%;">Mode</label>
 			<div class="cbi-value-title">
-			<input type="text" name="mode" value="<%=threadget("mode").Mode%>"/>
-			</div>
-			<div class="cbi-value-description">
-				<span>::before Set the thread device mode value, must be consist of 'r', 's', 'd', 'n'. </span>
+				<input type="text" name="mode" value="<%=threadget("mode").Mode%>"/>
+				<div class="cbi-value-description">
+					Set the thread device mode value, must be consist of 'r', 's', 'd', 'n'. 
+				</div>
 			</div>
 			<% else %>
 			<label class="cbi-value-title" style="margin-right:5%;">Mode</label>
 			<div class="cbi-value-title">
 			<input type="text" name="mode" value="<%=threadget("mode").Mode%>" readonly="readonly" />
-			</div>
-			<div class="cbi-value-description">
-				<span>::before Can not change mode when thread network is started.</span>
+				<div class="cbi-value-description">
+					Can not change mode when thread network is started.
+				</div>
 			</div>
 			<% end %>
 		</div>
@@ -147,18 +147,18 @@
 			<label class="cbi-value-title" style="margin-right:5%;">PartitionId</label>
 			<div class="cbi-value-title">
 			<%=threadget("partitionid").Partitionid%>
-			</div>
-			<div class="cbi-value-description">
-				<span>::before can not change partitionid when thread network is started.</span>
+				<div class="cbi-value-description">
+					can not change partitionid when thread network is started.
+				</div>
 			</div>
 		</div>
 		<div class="cbi-value">
 			<label class="cbi-value-title" style="margin-right:5%;">Leave</label>
 			<div class="cbi-value-field">
 				<input class="cbi-button cbi-button-reset" type="submit" id="leave" name="leave" value="LEAVE" />
-			</div>
-			<div class="cbi-value-description">
-				<span>::before This will delete all the existed Configuration of your thread network!</span>
+				<div class="cbi-value-description">
+					This will delete all the existed Configuration of your thread network!
+				</div>
 			</div>
 		</div>
 	</div>
