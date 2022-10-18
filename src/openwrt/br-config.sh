@@ -29,3 +29,6 @@ uci set firewall.@forwarding[-1].dest='thread'
 uci commit
 reload_config
 
+# given that this is the first-time config, make u-boot boot silent & faster
+fw_setenv silent 1
+fw_setenv bootdelay 0
