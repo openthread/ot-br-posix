@@ -45,7 +45,7 @@ jobs:
   pretty:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Bootstrap
       run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
@@ -54,7 +54,7 @@ jobs:
   android-check:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Check (Border Agent with mDNSResponder)
@@ -77,7 +77,7 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
@@ -100,7 +100,7 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
@@ -116,7 +116,7 @@ jobs:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
@@ -133,7 +133,7 @@ jobs:
       CC: clang
       CXX: clang++
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
@@ -146,7 +146,7 @@ jobs:
     env:
       BUILD_TARGET: package
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
@@ -163,7 +163,7 @@ jobs:
     env:
       BUILD_TARGET: check
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Bootstrap
