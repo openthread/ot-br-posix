@@ -98,12 +98,10 @@ main()
 
     INFRA_IF_NAME=eth0 RADIO_URL="spinel+hdlc+uart://${HOST_PTY}" ./script/console &
     SERVICES_PID=$!
-    sudo service tayga start
     echo 'Waiting for services to be ready...'
     sleep 30
     check_otbr_agent
     netstat -an | grep 80
-    pidof tayga
     kill "${SERVICES_PID}"
     sudo killall otbr-web || true
     sudo killall otbr-agent || true

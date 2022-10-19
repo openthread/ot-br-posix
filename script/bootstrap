@@ -33,7 +33,7 @@
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
-NAT64_SERVICE="${NAT64_SERVICE:-tayga}"
+NAT64_SERVICE="${NAT64_SERVICE:-openthread}"
 
 install_packages_apt()
 {
