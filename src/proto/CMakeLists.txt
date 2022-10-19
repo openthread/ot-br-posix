@@ -49,5 +49,5 @@ add_library(otbr-proto STATIC
 )
 
 target_link_libraries(otbr-proto
-    protobuf::libprotobuf-lite
+    protobuf::libprotobuf
 )
