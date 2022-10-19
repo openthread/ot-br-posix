@@ -18,7 +18,7 @@ foreach(msg ${MSG_PROTOS})
     list(APPEND MESSAGE_SRC "${MESSAGE_DIR}/${FIL_WE}.pb.cc")
     list(APPEND MESSAGE_HDRS "${MESSAGE_DIR}/${FIL_WE}.pb.h")
 
-		# Define protoc command.
+    # Define protoc command.
     add_custom_command(
         OUTPUT "${MESSAGE_DIR}/${FIL_WE}.pb.cc"
                 "${MESSAGE_DIR}/${FIL_WE}.pb.h"
