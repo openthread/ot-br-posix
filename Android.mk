@@ -111,7 +111,6 @@ LOCAL_CPPFLAGS += -std=c++14
 LOCAL_GENERATED_SOURCES = $(OTBR_GEN_DBUS_INTROSPECT_HEADER)
 
 LOCAL_SRC_FILES := \
-    src/proto/feature_flag.proto \
     src/agent/application.cpp \
     src/agent/main.cpp \
     src/backbone_router/backbone_agent.cpp \
@@ -134,6 +133,7 @@ LOCAL_SRC_FILES := \
     src/dbus/server/error_helper.cpp \
     src/mdns/mdns.cpp \
     src/ncp/ncp_openthread.cpp \
+    src/proto/feature_flag.proto \
     src/sdp_proxy/advertising_proxy.cpp \
     src/sdp_proxy/discovery_proxy.cpp \
     src/utils/dns_utils.cpp \

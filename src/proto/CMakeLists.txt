@@ -3,13 +3,10 @@ find_package(Protobuf REQUIRED)
 # Set up the output path.
 set(PROTO_GEN_DIR ${PROJECT_SOURCE_DIR}/build/src)
 set(MESSAGE_DIR ${PROTO_GEN_DIR}/proto)
-if(EXISTS "${MESSAGE_DIR}" AND IS_DIRECTORY "${MESSAGE_DIR}")
-else()
+if(NOT (EXISTS "${MESSAGE_DIR}" AND IS_DIRECTORY "${MESSAGE_DIR}"))
     file(MAKE_DIRECTORY ${MESSAGE_DIR})
 endif()
 
-# Set up protoc flags.
-LIST(APPEND PROTO_FLAGS -I${CMAKE_CURRENT_SOURCE_DIR})
 # Retrieve all proto files.
 file(GLOB_RECURSE MSG_PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/*.proto)
 set(MESSAGE_SRC "")
@@ -39,7 +36,7 @@ endforeach()
 set_source_files_properties(${MESSAGE_SRC} ${MESSAGE_HDRS}
     PROPERTIES GENERATED TRUE)
 
-# Add custom targets so that proto files will be generated only changed.
+# Add custom targets so that proto files will be generated only when changed.
 add_custom_target(generate_message ALL
     DEPENDS ${MESSAGE_SRC} ${MESSAGE_HDRS}
     COMMENT "generate message target"
