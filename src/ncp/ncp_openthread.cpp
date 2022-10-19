@@ -175,12 +175,11 @@ void ControllerOpenThread::Init(void)
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif
+#if OTBR_ENABLE_NAT64
+    otNat64SetEnabled(mInstance, /* aEnabled */ true);
+#endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
-
-#if OTBR_ENABLE_NAT64
-    otNat64SetEnabled(mInstance, true);
-#endif
 
 exit:
     SuccessOrDie(error, "Failed to initialize NCP!");
