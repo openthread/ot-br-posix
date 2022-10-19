@@ -61,7 +61,6 @@ if(OTBR_ENABLE_LEGACY)
     )
 endif()
 
-find_package(Protobuf REQUIRED)
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
     otbr-proto
