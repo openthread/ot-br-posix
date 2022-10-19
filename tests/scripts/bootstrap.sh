@@ -64,7 +64,9 @@ install_common_dependencies()
         libncurses-dev \
         libjsoncpp-dev \
         coreutils \
-        git
+        git \
+        libprotobuf-dev \
+        protobuf-compiler
 }
 
 install_openthread_binraries()
