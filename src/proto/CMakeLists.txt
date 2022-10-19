@@ -50,5 +50,5 @@ add_library(otbr-proto STATIC
 
 find_package(Protobuf REQUIRED)
 target_link_libraries(otbr-proto
-    protobuf::libprotobuf
+    protobuf::libprotobuf-lite
 )
