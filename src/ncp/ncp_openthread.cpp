@@ -49,6 +49,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#include "proto/feature_flag.pb.h"
 
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
@@ -179,6 +180,18 @@ void ControllerOpenThread::Init(void)
 
 exit:
     SuccessOrDie(error, "Failed to initialize NCP!");
+}
+
+otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList& featureFlagList)
+{
+    otError error = OT_ERROR_NONE;
+    mAppliedFeatureFlagListBytes = featureFlagList.SerializeAsString();
+ 
+    #if OPENTHREAD_CONFIG_NAT64_TRANSLATOR_ENABLE || OPENTHREAD_CONFIG_NAT64_BORDER_ROUTING_ENABLE
+    otNat64SetEnabled(mInstance, featureFlagList.enable_nat64());
+    #endif
+
+    return error;
 }
 
 void ControllerOpenThread::Deinit(void)

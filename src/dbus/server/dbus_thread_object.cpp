@@ -1176,8 +1176,7 @@ otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())), error = OT_ERROR_INVALID_ARGS);
-    mLastParsedFeatureFlagListBytes = std::move(data);
-    // TODO: apply the feature flag list to Thread instance.
+    VerifyOrExit((error = mNcp->ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
 exit:
     return error;
 }
@@ -1185,7 +1184,8 @@ exit:
 otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
     otError              error = OT_ERROR_NONE;
-    std::vector<uint8_t> data;
+    const std::string    appliedFeatureFlagListBytes = mNcp->GetAppliedFeatureFlagListBytes();
+    std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, mLastParsedFeatureFlagListBytes) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);

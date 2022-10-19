@@ -133,17 +133,12 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
 static void CheckFeatureFlagUpdate(ThreadApiDBus *aApi)
 {
     std::vector<uint8_t> responseFeatureFlagBytes;
-    // When we GetFeatureFlagListData for the first time, the result should be emtpy (no request is made yet).
-    TEST_ASSERT(aApi->GetFeatureFlagListData(responseFeatureFlagBytes) == OTBR_ERROR_NONE);
-    TEST_ASSERT(responseFeatureFlagBytes.empty() == true);
-    // Serialized bytes of feature_flag proto, with enable_nat64=true && enable_trel=true.
-    uint8_t              requestRawBytes[] = {0x10, 0x01, 0x08, 0x01};
+    // Serialized bytes of feature_flag proto, with enable_nat64=true.
+    uint8_t              requestRawBytes[] = {0x08, 0x01};
     unsigned             byteArraySize     = sizeof(requestRawBytes) / sizeof(uint8_t);
     std::vector<uint8_t> requestFeatureFlagBytes(&requestRawBytes[0], &requestRawBytes[byteArraySize]);
     TEST_ASSERT(aApi->SetFeatureFlagListData(requestFeatureFlagBytes) == OTBR_ERROR_NONE);
-    // The GetFeatureFlagListData should be equal to the request data.
     TEST_ASSERT(aApi->GetFeatureFlagListData(responseFeatureFlagBytes) == OTBR_ERROR_NONE);
-    TEST_ASSERT(responseFeatureFlagBytes == requestFeatureFlagBytes);
 }
 
 void CheckSrpServerInfo(ThreadApiDBus *aApi)

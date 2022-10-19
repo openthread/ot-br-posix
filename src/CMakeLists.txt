@@ -31,12 +31,12 @@ if(OTBR_BORDER_AGENT)
     add_subdirectory(border_agent)
 endif()
 add_subdirectory(common)
+add_subdirectory(proto)
 add_subdirectory(ncp)
 add_subdirectory(sdp_proxy)
 add_subdirectory(trel_dnssd)
 
 if(OTBR_DBUS)
-    add_subdirectory(proto)
     add_subdirectory(dbus)
 endif()
 

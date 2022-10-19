@@ -1,12 +1,11 @@
 find_package(Protobuf REQUIRED)
 
 # Set up the output path.
-SET(MESSAGE_DIR ${PROJECT_BINARY_DIR}/src/proto)
+set(PROTO_GEN_DIR ${PROJECT_SOURCE_DIR}/build/src)
+set(MESSAGE_DIR ${PROTO_GEN_DIR}/proto)
 if(EXISTS "${MESSAGE_DIR}" AND IS_DIRECTORY "${MESSAGE_DIR}")
-    SET(PROTO_GEN_DIR ${MESSAGE_DIR})
 else()
     file(MAKE_DIRECTORY ${MESSAGE_DIR})
-    SET(PROTO_GEN_DIR ${MESSAGE_DIR})
 endif()
 
 # Set up protoc flags.
@@ -19,16 +18,16 @@ set(MESSAGE_HDRS "")
 foreach(msg ${MSG_PROTOS})
     get_filename_component(FIL_WE ${msg} NAME_WE)
 
-    list(APPEND MESSAGE_SRC "${PROTO_GEN_DIR}/${FIL_WE}.pb.cc")
-    list(APPEND MESSAGE_HDRS "${PROTO_GEN_DIR}/${FIL_WE}.pb.h")
+    list(APPEND MESSAGE_SRC "${MESSAGE_DIR}/${FIL_WE}.pb.cc")
+    list(APPEND MESSAGE_HDRS "${MESSAGE_DIR}/${FIL_WE}.pb.h")
 
 		# Define protoc command.
     add_custom_command(
-        OUTPUT "${PROTO_GEN_DIR}/${FIL_WE}.pb.cc"
-                "${PROTO_GEN_DIR}/${FIL_WE}.pb.h"
+        OUTPUT "${MESSAGE_DIR}/${FIL_WE}.pb.cc"
+                "${MESSAGE_DIR}/${FIL_WE}.pb.h"
         COMMAND ${Protobuf_PROTOC_EXECUTABLE}
         ARGS --proto_path ${CMAKE_CURRENT_SOURCE_DIR}
-            --cpp_out  ${PROTO_GEN_DIR}
+            --cpp_out  ${MESSAGE_DIR}
             ${msg}
         DEPENDS ${msg}
         COMMENT "Running C++ protocol buffer compiler on ${msg}"
@@ -45,4 +44,13 @@ add_custom_target(generate_message ALL
     DEPENDS ${MESSAGE_SRC} ${MESSAGE_HDRS}
     COMMENT "generate message target"
     VERBATIM
+)
+
+add_library(otbr-proto STATIC
+    ${MESSAGE_SRC}
+    ${MESSAGE_HDRS}
+)
+
+target_link_libraries(otbr-proto
+    protobuf::libprotobuf-lite
 )

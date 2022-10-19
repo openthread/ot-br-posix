@@ -55,6 +55,4 @@ package otbr;
 message FeatureFlagList {
   // Whether to enable the NAT64 feature.
   optional bool enable_nat64 = 1 [default = false];
-  // Whether to enable the TREL feature.
-  optional bool enable_trel = 2 [default = false];
 }

@@ -33,4 +33,11 @@ add_library(otbr-ncp
 
 target_link_libraries(otbr-ncp PRIVATE
     otbr-common
+    otbr-proto
+)
+
+set(PROTO_GEN_DIR ${PROJECT_SOURCE_DIR}/build/src)
+
+target_include_directories(otbr-ncp PRIVATE
+    ${PROTO_GEN_DIR}
 )
