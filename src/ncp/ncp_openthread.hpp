@@ -170,7 +170,7 @@ public:
 
     /**
      * Apply the feature flag values to OpenThread through OpenThread APIs.
-     * 
+     *
      * @returns The error value of underlying OpenThread API calls.
      */
     otError ApplyFeatureFlagList(const FeatureFlagList &featureFlagList);
