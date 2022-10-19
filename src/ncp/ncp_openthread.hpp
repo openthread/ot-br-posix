@@ -173,7 +173,7 @@ public:
      * 
      * @returns The error value of underlying OpenThread API calls.
      */
-    otError ApplyFeatureFlagList(const FeatureFlagList& featureFlagList);
+    otError ApplyFeatureFlagList(const FeatureFlagList &featureFlagList);
 
     /**
      * This method returns the applied FeatureFlagList in ApplyFeatureFlagList call.
@@ -181,7 +181,7 @@ public:
      * @returns the applied FeatureFlagList's serialized bytes.
      *
      */
-    const std::string& GetAppliedFeatureFlagListBytes() { return mAppliedFeatureFlagListBytes; }
+    const std::string &GetAppliedFeatureFlagListBytes() { return mAppliedFeatureFlagListBytes; }
 
     ~ControllerOpenThread(void) override;
 
@@ -219,7 +219,7 @@ private:
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
-    std::string                                mAppliedFeatureFlagListBytes;
+    std::string mAppliedFeatureFlagListBytes;
 };
 
 } // namespace Ncp
