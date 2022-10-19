@@ -111,7 +111,7 @@ case "$(uname)" in
 
         if [ "$BUILD_TARGET" == check ] || [ "$BUILD_TARGET" == meshcop ]; then
             install_openthread_binraries
-            sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils cpputest libprotobuf-dev protobuf-compiler
+            sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils cpputest
             configure_network
         fi
 
@@ -128,7 +128,7 @@ case "$(uname)" in
 
         if [ "$BUILD_TARGET" == scan-build ]; then
             pip3 install -U cmake
-            sudo apt-get install --no-install-recommends -y clang clang-tools libprotobuf-dev protobuf-compiler
+            sudo apt-get install --no-install-recommends -y clang clang-tools
         fi
 
         if [ "$BUILD_TARGET" == pretty-check ]; then
@@ -159,7 +159,7 @@ case "$(uname)" in
 
         # Prepare Raspbian image
         if [ "$BUILD_TARGET" == raspbian-gcc ]; then
-            sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted libprotobuf-dev protobuf-compiler
+            sudo apt-get install --no-install-recommends --allow-unauthenticated -y qemu qemu-user-static binfmt-support parted
 
             (mkdir -p docker-rpi-emu \
                 && cd docker-rpi-emu \
