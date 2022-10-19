@@ -1183,7 +1183,7 @@ exit:
 
 otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
-    otError              error = OT_ERROR_NONE;
+    otError              error                       = OT_ERROR_NONE;
     const std::string    appliedFeatureFlagListBytes = mNcp->GetAppliedFeatureFlagListBytes();
     std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());
 

@@ -186,7 +186,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featur
 {
     otError error                = OT_ERROR_NONE;
     mAppliedFeatureFlagListBytes = featureFlagList.SerializeAsString();
- 
+
 #if OPENTHREAD_CONFIG_NAT64_TRANSLATOR_ENABLE || OPENTHREAD_CONFIG_NAT64_BORDER_ROUTING_ENABLE
     otNat64SetEnabled(mInstance, featureFlagList.enable_nat64());
 #endif
