@@ -37,7 +37,9 @@ on_exit()
 {
     local status=$?
 
-    sudo killall otbr-agent || true
+    if [[ -v OTBR_PID ]]; then
+        sudo kill "-${OTBR_PID}"
+    fi
     sudo killall expect || true
     sudo killall ot-cli-ftd || true
     sudo killall ot-cli-mtd || true
@@ -111,7 +113,8 @@ main()
 
     sleep 1
 
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
+    setsid sudo "${CMAKE_CURRENT_SOURCE_DIR}"/keep_running.sh "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
+    OTBR_PID=$!
     if ! (tail -f "${temp_dir}/dbus.out" &) | timeout 10s grep -q Ready; then
         cat "${temp_dir}/dbus.out"
         exit 1
@@ -305,6 +308,18 @@ EOF
 
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep "Active Timestamp: 2"
     sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl networkkey | grep be3bd244ae6d997020a882a24a8040e2
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset init new
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset commit pending
+
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
+        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.LeaveNetwork
+    sleep 10
+
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep disabled
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep NotFound
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep NotFound
 }
 
 main "$@"
