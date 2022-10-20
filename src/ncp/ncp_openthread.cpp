@@ -194,7 +194,7 @@ exit:
 #if OTBR_ENABLE_PROTO
 otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featureFlagList)
 {
-    otError error                = OT_ERROR_NONE;
+    otError error = OT_ERROR_NONE;
     // Save a cached copy of feature flags for debugging purpose.
     mAppliedFeatureFlagListBytes = featureFlagList.SerializeAsString();
 
