@@ -222,8 +222,10 @@ private:
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
+#if OTBR_ENABLE_PROTO
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
     std::string mAppliedFeatureFlagListBytes;
+#endif
 };
 
 } // namespace Ncp

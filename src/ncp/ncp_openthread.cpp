@@ -174,6 +174,11 @@ void ControllerOpenThread::Init(void)
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
 
+#if OTBR_ENABLE_PROTO
+    FeatureFlagList featureFlagList;
+    VerifyOrExit(ApplyFeatureFlagList(featureFlagList) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+#endif
+
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif

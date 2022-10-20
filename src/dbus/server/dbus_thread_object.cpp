@@ -1195,8 +1195,7 @@ otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
     const std::string    appliedFeatureFlagListBytes = mNcp->GetAppliedFeatureFlagListBytes();
     std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE,
-                 error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;
