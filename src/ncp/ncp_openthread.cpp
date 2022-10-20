@@ -175,11 +175,9 @@ void ControllerOpenThread::Init(void)
     }
 
 #if OTBR_ENABLE_PROTO
-    FeatureFlagList featureFlagList;
-
     {
-        otError applyFeatureFlagListResult = ApplyFeatureFlagList(featureFlagList);
-        VerifyOrExit(applyFeatureFlagListResult == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+        FeatureFlagList featureFlagList;
+        VerifyOrExit(ApplyFeatureFlagList(featureFlagList) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
 #endif
 
