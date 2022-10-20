@@ -201,7 +201,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featur
 
     return error;
 }
-#endif  // OTBR_ENABLE_PROTO
+#endif
 
 void ControllerOpenThread::Deinit(void)
 {
