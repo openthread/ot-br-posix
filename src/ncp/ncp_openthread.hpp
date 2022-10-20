@@ -50,8 +50,10 @@
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
+#if OTBR_ENABLE_PROTO
 // Forward declaration of FeatureFlagList proto.
 class FeatureFlagList;
+#endif
 
 namespace Ncp {
 
@@ -168,6 +170,7 @@ public:
 
     static otbrLogLevel ConvertToOtbrLogLevel(otLogLevel aLogLevel);
 
+#if OTBR_ENABLE_PROTO
     /**
      * Apply the feature flag values to OpenThread through OpenThread APIs.
      *
@@ -182,6 +185,7 @@ public:
      *
      */
     const std::string &GetAppliedFeatureFlagListBytes() { return mAppliedFeatureFlagListBytes; }
+#endif
 
     ~ControllerOpenThread(void) override;
 

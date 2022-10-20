@@ -49,7 +49,9 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#if OTBR_ENABLE_PROTO
 #include "proto/feature_flag.pb.h"
+#endif
 
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
@@ -182,6 +184,7 @@ exit:
     SuccessOrDie(error, "Failed to initialize NCP!");
 }
 
+#if OTBR_ENABLE_PROTO
 otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featureFlagList)
 {
     otError error                = OT_ERROR_NONE;
@@ -193,6 +196,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featur
 
     return error;
 }
+#endif  // OTBR_ENABLE_PROTO
 
 void ControllerOpenThread::Deinit(void)
 {

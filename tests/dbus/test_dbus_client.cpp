@@ -132,6 +132,8 @@ static void CheckOnMeshPrefix(ThreadApiDBus *aApi)
 
 static void CheckFeatureFlagUpdate(ThreadApiDBus *aApi)
 {
+    OTBR_UNUSED_VARIABLE(aApi);
+#if OTBR_ENABLE_PROTO
     std::vector<uint8_t> responseFeatureFlagBytes;
     // Serialized bytes of feature_flag proto, with enable_nat64=true.
     uint8_t              requestRawBytes[] = {0x08, 0x01};
@@ -139,6 +141,7 @@ static void CheckFeatureFlagUpdate(ThreadApiDBus *aApi)
     std::vector<uint8_t> requestFeatureFlagBytes(&requestRawBytes[0], &requestRawBytes[byteArraySize]);
     TEST_ASSERT(aApi->SetFeatureFlagListData(requestFeatureFlagBytes) == OTBR_ERROR_NONE);
     TEST_ASSERT(aApi->GetFeatureFlagListData(responseFeatureFlagBytes) == OTBR_ERROR_NONE);
+#endif
 }
 
 void CheckSrpServerInfo(ThreadApiDBus *aApi)

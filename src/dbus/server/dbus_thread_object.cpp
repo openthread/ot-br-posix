@@ -45,7 +45,9 @@
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
+#if OTBR_ENABLE_PROTO
 #include "proto/feature_flag.pb.h"
+#endif
 
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
@@ -1170,28 +1172,38 @@ exit:
 
 otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
+#if OTBR_ENABLE_PROTO
+    otError              error = OT_ERROR_NONE;
     std::vector<uint8_t> data;
     FeatureFlagList      featureFlagList;
-    otError              error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit((error = mNcp->ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
 exit:
     return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
+#if OTBR_ENABLE_PROTO
     otError              error                       = OT_ERROR_NONE;
     const std::string    appliedFeatureFlagListBytes = mNcp->GetAppliedFeatureFlagListBytes();
     std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, mLastParsedFeatureFlagListBytes) == OTBR_ERROR_NONE,
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 otError DBusThreadObject::SetRadioRegionHandler(DBusMessageIter &aIter)

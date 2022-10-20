@@ -110,6 +110,7 @@ do_build()
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOT_THREAD_VERSION=1.3"
         "-DOTBR_DBUS=ON"
+        "-DOTBR_PROTO=ON"
         "-DOTBR_WEB=ON"
         "-DOTBR_UNSECURE_JOIN=ON"
         "-DOTBR_TREL=ON"

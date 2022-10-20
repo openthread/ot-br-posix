@@ -49,6 +49,11 @@ if(OTBR_DBUS)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DBUS_SERVER=1)
 endif()
 
+option(OTBR_PRTO "Enable PROTO support" OFF)
+if (OTBR_PRTO)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PROTO=1)
+endif()
+
 option(OTBR_DUA_ROUTING "Enable Backbone Router DUA Routing" OFF)
 if (OTBR_DUA_ROUTING)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DUA_ROUTING=1)
