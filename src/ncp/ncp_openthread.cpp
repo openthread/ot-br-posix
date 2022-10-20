@@ -195,9 +195,13 @@ exit:
 otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featureFlagList)
 {
     otError error                = OT_ERROR_NONE;
+    // Save a cached copy of feature flags for debugging purpose.
     mAppliedFeatureFlagListBytes = featureFlagList.SerializeAsString();
 
     // TODO: apply the feature flags through API.
+#if OPENTHREAD_CONFIG_NAT64_TRANSLATOR_ENABLE || OPENTHREAD_CONFIG_NAT64_BORDER_ROUTING_ENABLE
+    otNat64SetEnabled(mInstance, featureFlagList.enable_nat64());
+#endif
 
     return error;
 }
