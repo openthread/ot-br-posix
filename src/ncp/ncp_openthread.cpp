@@ -176,7 +176,9 @@ void ControllerOpenThread::Init(void)
 
 #if OTBR_ENABLE_PROTO
     FeatureFlagList featureFlagList;
-    VerifyOrExit(ApplyFeatureFlagList(featureFlagList) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+
+    otError applyFeatureFlagListResult = ApplyFeatureFlagList(featureFlagList);
+    VerifyOrExit(applyFeatureFlagListResult == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
@@ -195,9 +197,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featur
     otError error                = OT_ERROR_NONE;
     mAppliedFeatureFlagListBytes = featureFlagList.SerializeAsString();
 
-#if OPENTHREAD_CONFIG_NAT64_TRANSLATOR_ENABLE || OPENTHREAD_CONFIG_NAT64_BORDER_ROUTING_ENABLE
-    otNat64SetEnabled(mInstance, featureFlagList.enable_nat64());
-#endif
+    // TODO: apply the feature flags through API.
 
     return error;
 }
