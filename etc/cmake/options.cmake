@@ -92,6 +92,11 @@ if(OTBR_NOTIFY_UPSTART)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NOTIFY_UPSTART=1)
 endif()
 
+option(OTBR_NAT64 "Enable NAT64 support" OFF)
+if(OTBR_NAT64)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NAT64=1)
+endif()
+
 option(OTBR_VENDOR_INFRA_LINK_SELECT "Enable Vendor-specific infrastructure link selection rules" OFF)
 if(OTBR_VENDOR_INFRA_LINK_SELECT)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_VENDOR_INFRA_LINK_SELECT=1)
