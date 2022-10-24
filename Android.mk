@@ -84,7 +84,7 @@ ifneq ($(ANDROID_NDK),1)
 LOCAL_SHARED_LIBRARIES += libcutils
 endif
 
-OTBR_PROTO_INCLUDES := $(local-intermediates-dir)/proto/$(LOCAL_PATH)/src
+OTBR_FEATURE_FLAGS_INCLUDES := $(local-intermediates-dir)/proto/$(LOCAL_PATH)/src
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
@@ -96,13 +96,13 @@ LOCAL_C_INCLUDES := \
     external/openthread/src/posix/platform/include \
     $(OTBR_GEN_HEADER_DIR) \
     $(OTBR_PROJECT_INCLUDES) \
-    $(OTBR_PROTO_INCLUDES)
+    $(OTBR_FEATURE_FLAGS_INCLUDES)
 
 LOCAL_CFLAGS += -Wall -Wextra -Wno-unused-parameter
 LOCAL_CFLAGS += \
     -DOTBR_PACKAGE_VERSION=\"0.2.0\" \
     -DOTBR_ENABLE_DBUS_SERVER=1 \
-    -DOTBR_ENABLE_PROTO=1 \
+    -DOTBR_ENABLE_FEATURE_FLAGS=1 \
     -DOTBR_ENABLE_BORDER_AGENT=1 \
     -DOTBR_DBUS_INTROSPECT_FILE=\"\" \
     $(OTBR_PROJECT_CFLAGS) \

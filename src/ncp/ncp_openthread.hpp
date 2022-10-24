@@ -50,7 +50,7 @@
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
 // Forward declaration of FeatureFlagList proto.
 class FeatureFlagList;
 #endif
@@ -170,7 +170,7 @@ public:
 
     static otbrLogLevel ConvertToOtbrLogLevel(otLogLevel aLogLevel);
 
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
     /**
      * Apply the feature flag values to OpenThread through OpenThread APIs.
      *
@@ -222,7 +222,7 @@ private:
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
     std::string mAppliedFeatureFlagListBytes;
 #endif

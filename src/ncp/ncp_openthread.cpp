@@ -50,7 +50,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
 #endif
 
@@ -188,7 +188,7 @@ exit:
     SuccessOrDie(error, "Failed to initialize NCP!");
 }
 
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
 otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featureFlagList)
 {
     otError error = OT_ERROR_NONE;

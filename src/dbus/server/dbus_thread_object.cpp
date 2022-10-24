@@ -45,7 +45,7 @@
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
 #endif
 
@@ -1174,7 +1174,7 @@ exit:
 
 otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
     otError              error = OT_ERROR_NONE;
     std::vector<uint8_t> data;
     FeatureFlagList      featureFlagList;
@@ -1192,7 +1192,7 @@ exit:
 
 otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
-#if OTBR_ENABLE_PROTO
+#if OTBR_ENABLE_FEATURE_FLAGS
     otError              error                       = OT_ERROR_NONE;
     const std::string    appliedFeatureFlagListBytes = mNcp->GetAppliedFeatureFlagListBytes();
     std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());

@@ -33,10 +33,10 @@ add_library(otbr-ncp
 
 target_link_libraries(otbr-ncp PRIVATE
     otbr-common
-    $<$<BOOL:${OTBR_PROTO}>:otbr-proto>
+    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
 )
 
-if(OTBR_PROTO)
+if(OTBR_FEATURE_FLAGS)
     target_include_directories(otbr-ncp PRIVATE
         ${PROJECT_SOURCE_DIR}/build/src
     )
