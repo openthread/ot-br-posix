@@ -49,8 +49,8 @@ if(OTBR_DBUS)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DBUS_SERVER=1)
 endif()
 
-option(OTBR_PRTO "Enable PROTO support" OFF)
-if (OTBR_PRTO)
+option(OTBR_PROTO "Enable PROTO support" OFF)
+if (OTBR_PROTO)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PROTO=1)
 endif()
 
