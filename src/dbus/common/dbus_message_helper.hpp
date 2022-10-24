@@ -95,6 +95,18 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const RcpInterfaceMetrics &a
 otbrError DBusMessageExtract(DBusMessageIter *aIter, RcpInterfaceMetrics &aRcpInterfaceMetrics);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const RadioCoexMetrics &aRadioCoexMetrics);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, RadioCoexMetrics &aRadioCoexMetrics);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ComponentState &aNat64State);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ComponentState &aNat64State);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64TrafficCounters &aCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64TrafficCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64PacketCounters &aCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64PacketCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ProtocolCounters &aCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ProtocolCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64AddressMapping &aMapping);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64AddressMapping &aMapping);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ErrorCounters &aCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ErrorCounters &aCounters);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -284,6 +296,66 @@ template <> struct DBusTypeTrait<RadioCoexMetrics>
     //             uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32,
     //             uint32, uint32, bool }
     static constexpr const char *TYPE_AS_STRING = "(uuuuuuuuuuuuuuuuuub)";
+};
+
+template <> struct DBusTypeTrait<Nat64ComponentState>
+{
+    // struct of { uint8, uint8 }
+    static constexpr const char *TYPE_AS_STRING = "(ss)";
+};
+
+template <> struct DBusTypeTrait<Nat64TrafficCounters>
+{
+    // struct of { uint64, uint64, uint64, uint64 }
+    static constexpr const char *TYPE_AS_STRING = "(tttt)";
+};
+
+template <> struct DBusTypeTrait<Nat64PacketCounters>
+{
+    // struct of { uint64, uint64 }
+    static constexpr const char *TYPE_AS_STRING = "(tt)";
+};
+
+template <> struct DBusTypeTrait<Nat64ProtocolCounters>
+{
+    // struct of { struct of { uint64, uint64, uint64, uint64 }
+    //             struct of { uint64, uint64, uint64, uint64 }
+    //             struct of { uint64, uint64, uint64, uint64 }
+    //             struct of { uint64, uint64, uint64, uint64 } }
+    static constexpr const char *TYPE_AS_STRING = "((tttt)(tttt)(tttt)(tttt))";
+};
+
+template <> struct DBusTypeTrait<Nat64AddressMapping>
+{
+    // array of struct of { uint64,
+    //             array of uint8, array of uint8, uint32,
+    //             struct of {
+    //               struct of { uint64, uint64, uint64, uint64 }
+    //               struct of { uint64, uint64, uint64, uint64 }
+    //               struct of { uint64, uint64, uint64, uint64 }
+    //               struct of { uint64, uint64, uint64, uint64 } } }
+    static constexpr const char *TYPE_AS_STRING = "(tayayu((tttt)(tttt)(tttt)(tttt)))";
+};
+
+template <> struct DBusTypeTrait<std::vector<Nat64AddressMapping>>
+{
+    // array of struct of { uint64,
+    //             array of uint8, array of uint8, uint32,
+    //             struct of {
+    //               struct of { uint64, uint64, uint64, uint64 }
+    //               struct of { uint64, uint64, uint64, uint64 }
+    //               struct of { uint64, uint64, uint64, uint64 }
+    //               struct of { uint64, uint64, uint64, uint64 } } }
+    static constexpr const char *TYPE_AS_STRING = "a(tayayu((tttt)(tttt)(tttt)(tttt)))";
+};
+
+template <> struct DBusTypeTrait<Nat64ErrorCounters>
+{
+    // struct of { struct of { uint64, uint64 }
+    //             struct of { uint64, uint64 }
+    //             struct of { uint64, uint64 }
+    //             struct of { uint64, uint64 } }
+    static constexpr const char *TYPE_AS_STRING = "((tt)(tt)(tt)(tt))";
 };
 
 template <> struct DBusTypeTrait<int8_t>
