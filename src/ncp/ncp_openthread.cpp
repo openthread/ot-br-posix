@@ -37,6 +37,7 @@
 #include <openthread/backbone_router_ftd.h>
 #include <openthread/dataset.h>
 #include <openthread/logging.h>
+#include <openthread/nat64.h>
 #include <openthread/srp_server.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
@@ -176,6 +177,9 @@ void ControllerOpenThread::Init(void)
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
+#endif
+#if OTBR_ENABLE_NAT64
+    otNat64SetEnabled(mInstance, /* aEnabled */ true);
 #endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));

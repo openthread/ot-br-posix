@@ -86,6 +86,9 @@ if (OTBR_DNSSD_DISCOVERY_PROXY)
     set(OT_DNSSD_SERVER ON CACHE BOOL "enable DNS-SD server support" FORCE)
 endif()
 
+set(OT_NAT64_TRANSLATOR ${OTBR_NAT64} CACHE BOOL "enable NAT64 translator" FORCE)
+set(OT_NAT64_BORDER_ROUTING ${OTBR_NAT64} CACHE BOOL "enable NAT64 in border routing manager" FORCE)
+
 if (NOT OT_POSIX_SETTINGS_PATH)
     set(OT_POSIX_SETTINGS_PATH "\"/var/lib/thread\"" CACHE STRING "set the directory to store Thread data" FORCE)
 endif()

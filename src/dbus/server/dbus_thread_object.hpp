@@ -103,6 +103,7 @@ private:
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
     void GetPropertiesHandler(DBusRequest &aRequest);
+    void LeaveNetworkHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 

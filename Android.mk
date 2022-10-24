@@ -148,6 +148,7 @@ LOCAL_STATIC_LIBRARIES += \
     ot-core \
     libopenthread-cli \
     ot-core \
+    libopenthread-mbedtls \
 
 LOCAL_LDLIBS := \
     -lutil

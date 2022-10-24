@@ -721,5 +721,34 @@ void ThreadHelper::AddActiveDatasetChangeHandler(DatasetChangeHandler aHandler)
     mActiveDatasetChangeHandlers.push_back(std::move(aHandler));
 }
 
+void ThreadHelper::DetachGracefully(ResultHandler aHandler)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(mDetachGracefullyHandler == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = otThreadDetachGracefully(mInstance, &ThreadHelper::DetachGracefullyCallback, this));
+    mDetachGracefullyHandler = aHandler;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aHandler(error);
+    }
+}
+
+void ThreadHelper::DetachGracefullyCallback(void *aContext)
+{
+    static_cast<ThreadHelper *>(aContext)->DetachGracefullyCallback();
+}
+
+void ThreadHelper::DetachGracefullyCallback(void)
+{
+    if (mDetachGracefullyHandler != nullptr)
+    {
+        mDetachGracefullyHandler(OT_ERROR_NONE);
+    }
+}
+
 } // namespace agent
 } // namespace otbr
