@@ -42,6 +42,11 @@ endif()
 
 option(OTBR_BORDER_ROUTING "Enable Border Routing Manager" OFF)
 
+option(OTBR_BORDER_ROUTING_COUNTERS "Enable Border Routing COUNTERS" ON)
+if (OTBR_BORDER_ROUTING AND OTBR_BORDER_ROUTING_COUNTERS)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_BORDER_ROUTING_COUNTERS=1)
+endif()
+
 option(OTBR_DBUS "Enable DBus support" OFF)
 if(OTBR_DBUS)
     pkg_check_modules(DBUS REQUIRED dbus-1)
