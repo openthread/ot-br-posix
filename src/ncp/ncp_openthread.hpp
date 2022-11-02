@@ -174,9 +174,12 @@ public:
     /**
      * Apply the feature flag values to OpenThread through OpenThread APIs.
      *
+     * @param[in] aFeatureFlagList  The feature flag list to be applied to OpenThread.
+     * 
      * @returns The error value of underlying OpenThread API calls.
+     * 
      */
-    otError ApplyFeatureFlagList(const FeatureFlagList &featureFlagList);
+    otError ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList);
 
     /**
      * This method returns the applied FeatureFlagList in ApplyFeatureFlagList call.
@@ -184,7 +187,7 @@ public:
      * @returns the applied FeatureFlagList's serialized bytes.
      *
      */
-    const std::string &GetAppliedFeatureFlagListBytes() { return mAppliedFeatureFlagListBytes; }
+    const std::string &GetAppliedFeatureFlagListBytes(void) { return mAppliedFeatureFlagListBytes; }
 #endif
 
     ~ControllerOpenThread(void) override;

@@ -17,16 +17,22 @@ package otbr;
 
 /////////////  Feature Flag & API Evolving Policy Guide  /////////////
 // * Add a new feature flag: add a new field in the proto.
-// * Remove feature flag: mark the field as deprecated. Do NOT delete the flag.
+// * Remove feature flag: mark the field as deprecated. Do NOT delete the field.
+//   The deprecated field should not impact OpenThread, no matter what value it has.
 // * Rename feature flag: if the feature’s semantics are not changed, it is
 //   allowed to rename the field (the tag should not be changed). If the feature’s
 //   semantics are changed, deprecate the field and add a new one.
 // * Divide the flag into 2 flags: deprecate the old feature field, and add 2
 //   new feature fields.
-// * API Compatibility: If the OTBR API is older than the upper layer
-//   API, there are unrecognized fields in the proto and will be ignored. If the
-//   OTBR API is newer than the upper layer API, the field’s default value will be
-//   used as the feature flag value.
+// * API Compatibility:
+//   - If the OTBR API is older than the upper layer API, there are unrecognized
+//     flags during proto parsing and they will be ignored.
+//   - If the OTBR API is newer than the upper layer API, some new flags are
+//     missing during the proto parsing, and these flags' default value will
+//     be used as the feature flag value.
+//   - If OTBR API is newer and deprecates a previously defined flag and upper
+//     layer API is older (not aware of the deprecation) and uses the flag,
+//     the flag takes no effect on OTBR as OTBR API deprecates it.
 message FeatureFlagList {
   // Whether to enable the NAT64 feature.
   optional bool enable_nat64 = 1 [default = false];

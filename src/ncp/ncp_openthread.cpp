@@ -189,11 +189,11 @@ exit:
 }
 
 #if OTBR_ENABLE_FEATURE_FLAGS
-otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &featureFlagList)
+otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
 {
     otError error = OT_ERROR_NONE;
     // Save a cached copy of feature flags for debugging purpose.
-    mAppliedFeatureFlagListBytes = featureFlagList.SerializeAsString();
+    mAppliedFeatureFlagListBytes = aFeatureFlagList.SerializeAsString();
 
     // TODO: apply the feature flags through API.
 
