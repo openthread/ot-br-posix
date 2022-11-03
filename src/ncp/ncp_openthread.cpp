@@ -50,6 +50,9 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#if OTBR_ENABLE_FEATURE_FLAGS
+#include "proto/feature_flag.pb.h"
+#endif
 
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
@@ -184,6 +187,19 @@ void ControllerOpenThread::Init(void)
 exit:
     SuccessOrDie(error, "Failed to initialize NCP!");
 }
+
+#if OTBR_ENABLE_FEATURE_FLAGS
+otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
+{
+    otError error = OT_ERROR_NONE;
+    // Save a cached copy of feature flags for debugging purpose.
+    mAppliedFeatureFlagListBytes = aFeatureFlagList.SerializeAsString();
+
+    // TODO: apply the feature flags through API.
+
+    return error;
+}
+#endif
 
 void ControllerOpenThread::Deinit(void)
 {

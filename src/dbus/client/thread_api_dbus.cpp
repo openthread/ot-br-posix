@@ -472,6 +472,11 @@ ClientError ThreadApiDBus::SetActiveDatasetTlvs(const std::vector<uint8_t> &aDat
     return SetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
 }
 
+ClientError ThreadApiDBus::SetFeatureFlagListData(const std::vector<uint8_t> &aFeatureFlagListData)
+{
+    return SetProperty(OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA, aFeatureFlagListData);
+}
+
 ClientError ThreadApiDBus::SetLinkMode(const LinkModeConfig &aConfig)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_LINK_MODE, aConfig);
@@ -626,6 +631,11 @@ ClientError ThreadApiDBus::GetOnMeshPrefixes(std::vector<OnMeshPrefix> &aOnMeshP
 ClientError ThreadApiDBus::GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
+}
+
+ClientError ThreadApiDBus::GetFeatureFlagListData(std::vector<uint8_t> &aFeatureFlagListData)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA, aFeatureFlagListData);
 }
 
 ClientError ThreadApiDBus::GetRadioRegion(std::string &aRadioRegion)

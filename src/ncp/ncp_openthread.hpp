@@ -50,6 +50,11 @@
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
+#if OTBR_ENABLE_FEATURE_FLAGS
+// Forward declaration of FeatureFlagList proto.
+class FeatureFlagList;
+#endif
+
 namespace Ncp {
 
 /**
@@ -165,6 +170,26 @@ public:
 
     static otbrLogLevel ConvertToOtbrLogLevel(otLogLevel aLogLevel);
 
+#if OTBR_ENABLE_FEATURE_FLAGS
+    /**
+     * Apply the feature flag values to OpenThread through OpenThread APIs.
+     *
+     * @param[in] aFeatureFlagList  The feature flag list to be applied to OpenThread.
+     *
+     * @returns The error value of underlying OpenThread API calls.
+     *
+     */
+    otError ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList);
+
+    /**
+     * This method returns the applied FeatureFlagList in ApplyFeatureFlagList call.
+     *
+     * @returns the applied FeatureFlagList's serialized bytes.
+     *
+     */
+    const std::string &GetAppliedFeatureFlagListBytes(void) { return mAppliedFeatureFlagListBytes; }
+#endif
+
     ~ControllerOpenThread(void) override;
 
 private:
@@ -200,6 +225,10 @@ private:
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
+#if OTBR_ENABLE_FEATURE_FLAGS
+    // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
+    std::string mAppliedFeatureFlagListBytes;
+#endif
 };
 
 } // namespace Ncp

@@ -109,6 +109,9 @@ install_packages_apt()
 
     # firewall
     sudo apt-get install -y iptables ipset
+
+    # protobuf compiler
+    sudo apt-get install -y libprotobuf-dev protobuf-compiler
 }
 
 install_packages_opkg()
@@ -132,6 +135,7 @@ install_packages_rpm()
     sudo $PM install -y iptables
     sudo $PM install -y jsoncpp-devel
     sudo $PM install -y wget
+    sudo $PM install -y protobuf protobuf-devel
 }
 
 install_packages_brew()

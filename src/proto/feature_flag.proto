@@ -1,0 +1,44 @@
+syntax = "proto2";
+option optimize_for = LITE_RUNTIME;
+
+package otbr;
+
+// Feature flag list message defines the list of feature flags to be used
+// on OpenThread.
+//
+/////////////         Definition Policy Guide            /////////////
+// * Every field is optional with a default value. The default value should
+//   allow the feature to behave safe when the upper layer wants to rollback
+//   or doesn't have the flag value (e.g., due to some network config download
+//   error, API version mismatch, etc.). This makes sure that the system can
+//   always rollback to safe status, even in the edge case.
+// * When a feature finishes the rollup and becomes stable, the clear up process
+//   should update the feature flag default value with the rolluped value.
+
+/////////////  Feature Flag & API Evolving Policy Guide  /////////////
+// * Add a new feature flag: add a new field in the proto.
+// * Remove feature flag: mark the field as deprecated. Do NOT delete the field.
+//   By default, the deprecated field should not impact OpenThread. If feature
+//   owner wants to keep the deprecated flag backward compatible, he need to
+//   clearly specify: what is the behavior if no/portion/all
+//   deprecated_flag & its_new_flags exist.
+// * Rename feature flag: if the feature’s semantics are not changed, it is
+//   allowed to rename the field (the tag should not be changed). If the feature’s
+//   semantics are changed, deprecate the field and add a new one.
+// * Divide the flag into 2 flags: deprecate the old feature field, and add 2
+//   new feature fields. If feature owner wants to keep the deprecated flag backward
+//   compatible, he need to clearly specify: what is the behavior if no/portion/all
+//   deprecated_flag & its_new_flags exist.
+// * API Compatibility:
+//   - If the OTBR API is older than the upper layer API, there are unrecognized
+//     flags during proto parsing and they will be ignored.
+//   - If the OTBR API is newer than the upper layer API, some new flags are
+//     missing during the proto parsing, and these flags' default value will
+//     be used as the feature flag value.
+//   - If OTBR API is newer and deprecates a previously defined flag and upper
+//     layer API is older (not aware of the deprecation) and uses the flag,
+//     the flag takes no effect on OTBR as OTBR API deprecates it.
+message FeatureFlagList {
+  // Whether to enable the NAT64 feature.
+  optional bool enable_nat64 = 1 [default = false];
+}

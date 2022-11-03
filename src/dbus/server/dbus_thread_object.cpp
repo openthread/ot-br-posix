@@ -45,6 +45,9 @@
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
+#if OTBR_ENABLE_FEATURE_FLAGS
+#include "proto/feature_flag.pb.h"
+#endif
 
 #if OTBR_ENABLE_LEGACY
 #include <ot-legacy-pairing-ext.h>
@@ -160,6 +163,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::SetLinkModeHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
                                std::bind(&DBusThreadObject::SetActiveDatasetTlvsHandler, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA,
+                               std::bind(&DBusThreadObject::SetFeatureFlagListDataHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::SetRadioRegionHandler, this, _1));
 
@@ -224,6 +229,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetOnMeshPrefixesHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
                                std::bind(&DBusThreadObject::GetActiveDatasetTlvsHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA,
+                               std::bind(&DBusThreadObject::GetFeatureFlagListDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SRP_SERVER_INFO,
@@ -1163,6 +1170,41 @@ otError DBusThreadObject::GetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
+}
+
+otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_FEATURE_FLAGS
+    otError              error = OT_ERROR_NONE;
+    std::vector<uint8_t> data;
+    FeatureFlagList      featureFlagList;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit((error = mNcp->ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
+}
+
+otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_FEATURE_FLAGS
+    otError              error                       = OT_ERROR_NONE;
+    const std::string    appliedFeatureFlagListBytes = mNcp->GetAppliedFeatureFlagListBytes();
+    std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 otError DBusThreadObject::SetRadioRegionHandler(DBusMessageIter &aIter)

@@ -524,6 +524,12 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+     <!-- FeatureFlagListData: The Thread feature flags (defined as proto/feature_flag.proto)
+      in binary form. -->
+    <property name="FeatureFlagListData" type="ay" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- RadioRegion: The radio region code in ISO 3166-1. -->
     <property name="RadioRegion" type="s" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

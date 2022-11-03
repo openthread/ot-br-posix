@@ -333,6 +333,19 @@ public:
     ClientError SetActiveDatasetTlvs(const std::vector<uint8_t> &aDataset);
 
     /**
+     * This method sets the feature flag list data.
+     *
+     * @param[out] aFeatureFlagListData  The feature flag list proto serialized
+     *                                   byte data (see proto/feature_flag.proto)
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetFeatureFlagListData(const std::vector<uint8_t> &aFeatureFlagListData);
+
+    /**
      * This method sets the link operating mode.
      *
      * @param[in] aConfig  The operating mode config.
@@ -692,6 +705,19 @@ public:
      *
      */
     ClientError GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset);
+
+    /**
+     * This method gets the feature flag list proto serialized byte data.
+     *
+     * @param[out] aFeatureFlagListData  The feature flag list proto serialized
+     *                                   byte data (see proto/feature_flag.proto)
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetFeatureFlagListData(std::vector<uint8_t> &aFeatureFlagListData);
 
     /**
      * This method gets the radio region.

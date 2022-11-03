@@ -46,6 +46,7 @@ do_prepare()
 
     docker start "${CONTAINER_NAME}"
     docker exec "${CONTAINER_NAME}" scripts/feeds update base
+    docker exec "${CONTAINER_NAME}" scripts/feeds update packages
     docker exec "${CONTAINER_NAME}" scripts/feeds install libjson-c libubox libubus
 
     docker cp feeds.conf "${CONTAINER_NAME}":/home/build/openwrt/feeds.conf
