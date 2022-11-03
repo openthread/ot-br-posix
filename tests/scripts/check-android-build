@@ -420,8 +420,9 @@ prepare_libmdnssd()
 
     [[ ${OTBR_MDNS} == mDNSResponder ]] || return 0
 
-    wget --tries 4 --no-check-certificate --quiet "https://opensource.apple.com/tarballs/mDNSResponder/${MDNSRESPONDER_SOURCE}.tar.gz"
-    tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz"
+    wget --tries 4 --no-check-certificate --quiet "https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/${MDNSRESPONDER_SOURCE}.tar.gz"
+    mkdir -p ${MDNSRESPONDER_SOURCE}
+    tar xvf "${MDNSRESPONDER_SOURCE}.tar.gz" -C ${MDNSRESPONDER_SOURCE} --strip-components=1
     cat >"${MDNSRESPONDER_SOURCE}/Android.mk" <<EOF
 LOCAL_PATH:= \$(call my-dir)
 
