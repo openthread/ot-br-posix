@@ -18,12 +18,17 @@ package otbr;
 /////////////  Feature Flag & API Evolving Policy Guide  /////////////
 // * Add a new feature flag: add a new field in the proto.
 // * Remove feature flag: mark the field as deprecated. Do NOT delete the field.
-//   The deprecated field should not impact OpenThread, no matter what value it has.
+//   By default, the deprecated field should not impact OpenThread. If feature
+//   owner wants to keep the deprecated flag backward compatible, he need to
+//   clearly specify: what is the behavior if no/portion/all
+//   deprecated_flag & its_new_flags exist.
 // * Rename feature flag: if the feature’s semantics are not changed, it is
 //   allowed to rename the field (the tag should not be changed). If the feature’s
 //   semantics are changed, deprecate the field and add a new one.
 // * Divide the flag into 2 flags: deprecate the old feature field, and add 2
-//   new feature fields.
+//   new feature fields. If feature owner wants to keep the deprecated flag backward
+//   compatible, he need to clearly specify: what is the behavior if no/portion/all
+//   deprecated_flag & its_new_flags exist.
 // * API Compatibility:
 //   - If the OTBR API is older than the upper layer API, there are unrecognized
 //     flags during proto parsing and they will be ignored.

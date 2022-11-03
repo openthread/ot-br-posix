@@ -336,7 +336,7 @@ public:
      * This method sets the feature flag list data.
      *
      * @param[out] aFeatureFlagListData  The feature flag list proto serialized
-     * byte data (see proto/feature_flag.proto)
+     *                                   byte data (see proto/feature_flag.proto)
      *
      * @retval ERROR_NONE  Successfully performed the dbus function call
      * @retval ERROR_DBUS  dbus encode/decode error
