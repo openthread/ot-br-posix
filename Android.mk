@@ -151,6 +151,7 @@ LOCAL_STATIC_LIBRARIES += \
     libopenthread-mbedtls \
 
 LOCAL_LDLIBS := \
+    -lanl \
     -lutil
 
 ifeq ($(OTBR_MDNS),mDNSResponder)
