@@ -104,15 +104,6 @@ void Application::Init(void)
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer.Init();
 #endif
-#if OTBR_ENABLE_UNSECURE_JOIN
-    otExtAddress steeringData;
-
-    // 0xff to allow all devices to join
-    memset(&steeringData.m8, 0xff, sizeof(steeringData.m8));
-    otThreadSetSteeringData(mNcp.GetInstance(), &steeringData);
-#else
-#error Unsecure join turned off!!
-#endif
 }
 
 void Application::Deinit(void)
