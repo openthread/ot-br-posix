@@ -244,19 +244,21 @@
 						} );
 						localIndex = getNodesIndex(bss.rloc);
 					}
-					bss.childdata.forEach(function(child) {
-						if(getNodesIndex(child.rloc) == -1)
-						{
-							nodes.push( {
-								rloc: child.rloc,
-								role: (((child.mode & 0x2) >> 1 == 1) ? 'ftd' : 'mtd')
+					if(bss.hasOwnProperty('childdata')) {
+						bss.childdata.forEach(function(child) {
+							if(getNodesIndex(child.rloc) == -1)
+							{
+								nodes.push( {
+									rloc: child.rloc,
+									role: (((child.mode & 0x2) >> 1 == 1) ? 'ftd' : 'mtd')
+								} );
+							}
+							links.push( {
+								source: localIndex,
+								target: getNodesIndex(child.rloc)
 							} );
-						}
-						links.push( {
-							source: localIndex,
-							target: getNodesIndex(child.rloc)
-						} );
-					});
+						});
+					}
 					bss.routedata.forEach(function(router) {
 						if(getNodesIndex(router.rloc) == -1)
 						{
