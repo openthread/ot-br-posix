@@ -720,6 +720,32 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- BorderRoutingCounters: The counters for inbound/outbound packets
+    <literallayout>
+        struct {
+          struct {  // inbound unicast
+            uint64 packets
+            uint64 bytes
+          }
+          struct {  // inbound multicast
+            uint64 packets
+            uint64 bytes
+          }
+          struct {  // outbound unicast
+            uint64 packets
+            uint64 bytes
+          }
+          struct {  // outbound multicast
+            uint64 packets
+            uint64 bytes
+          }
+        }
+    </literallayout>
+    -->
+    <property name="BorderRoutingCounters" type="((tt)(tt)(tt)(tt))" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">

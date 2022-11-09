@@ -873,5 +873,73 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderRoutingCounters::PacketsAndBytes &aPacketsAndBytes)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aPacketsAndBytes.mPackets));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aPacketsAndBytes.mBytes));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderRoutingCounters::PacketsAndBytes &aPacketsAndBytes)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aPacketsAndBytes.mPackets));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aPacketsAndBytes.mBytes));
+
+    dbus_message_iter_next(aIter);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderRoutingCounters &aBorderRoutingCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mInboundUnicast));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mInboundMulticast));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mOutboundUnicast));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mOutboundMulticast));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderRoutingCounters &aBorderRoutingCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mInboundUnicast));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mInboundMulticast));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mOutboundUnicast));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mOutboundMulticast));
+
+    dbus_message_iter_next(aIter);
+
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr
