@@ -74,7 +74,7 @@ jobs:
       BUILD_TARGET: check
       OTBR_BUILD_TYPE: ${{ matrix.build_type }}
       OTBR_MDNS: ${{ matrix.mdns }}
-      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+      OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_BORDER_ROUTING=ON -DOTBR_NAT64=1"
       OTBR_COVERAGE: 1
     steps:
     - uses: actions/checkout@v3
