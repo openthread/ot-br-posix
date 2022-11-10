@@ -83,6 +83,7 @@ static std::string GetDeviceRoleName(otDeviceRole aRole)
     return roleName;
 }
 
+#if OTBR_ENABLE_NAT64
 static std::string GetNat64StateName(otNat64State aState)
 {
     std::string stateName;
@@ -105,6 +106,7 @@ static std::string GetNat64StateName(otNat64State aState)
 
     return stateName;
 }
+#endif // OTBR_ENABLE_NAT64
 
 static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 {
