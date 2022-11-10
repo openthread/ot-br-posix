@@ -56,6 +56,13 @@ using otbr::DBus::TxtEntry;
 using otbr::DBus::DnssdCounters;
 #endif
 
+#if OTBR_ENABLE_NAT64
+using otbr::DBus::Nat64ComponentState;
+using otbr::DBus::Nat64AddressMapping;
+using otbr::DBus::Nat64TrafficCounters;
+using otbr::DBus::Nat64ErrorCounters;
+#endif
+
 #define TEST_ASSERT(x)                                              \
     do                                                              \
     {                                                               \
@@ -203,7 +210,7 @@ void CheckNat64(ThreadApiDBus *aApi)
     OTBR_UNUSED_VARIABLE(aApi);
 #if OTBR_ENABLE_NAT64
     {
-        otbr::Nat64ComponentState aState;
+        Nat64ComponentState aState;
         TEST_ASSERT(aApi->SetNat64Enabled(false) == OTBR_ERROR_NONE);
         TEST_ASSERT(aApi->GetNat64State(aState) == OTBR_ERROR_NONE);
         TEST_ASSERT(aState.mPrefixManagerState == OTBR_NAT64_STATE_NAME_DISABLED);
@@ -217,17 +224,17 @@ void CheckNat64(ThreadApiDBus *aApi)
     }
 
     {
-        std::vector<otbr::Nat64AddressMapping> aMappings;
+        std::vector<Nat64AddressMapping> aMappings;
         TEST_ASSERT(aApi->GetNat64Mappings(aMappings) == OTBR_ERROR_NONE);
     }
 
     {
-        otbr::Nat64TrafficCounters aCounters;
+        Nat64TrafficCounters aCounters;
         TEST_ASSERT(aApi->GetNat64TrafficCounters(aCounters) == OTBR_ERROR_NONE);
     }
 
     {
-        otbr::Nat64ErrorCounters aCounters;
+        Nat64ErrorCounters aCounters;
         TEST_ASSERT(aApi->GetNat64ErrorCounters(aCounters) == OTBR_ERROR_NONE);
     }
 #endif
