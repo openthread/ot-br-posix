@@ -340,8 +340,11 @@ template <> struct DBusTypeTrait<Nat64ProtocolCounters>
 
 template <> struct DBusTypeTrait<Nat64AddressMapping>
 {
-    // array of struct of { uint64,
-    //             array of uint8, array of uint8, uint32,
+    // array of struct of {
+    //             uint64,
+    //             array of uint8,
+    //             array of uint8,
+    //             uint32,
     //             struct of {
     //               struct of { uint64, uint64, uint64, uint64 }
     //               struct of { uint64, uint64, uint64, uint64 }
@@ -352,8 +355,11 @@ template <> struct DBusTypeTrait<Nat64AddressMapping>
 
 template <> struct DBusTypeTrait<std::vector<Nat64AddressMapping>>
 {
-    // array of struct of { uint64,
-    //             array of uint8, array of uint8, uint32,
+    // array of struct of {
+    //             uint64,
+    //             array of uint8,
+    //             array of uint8,
+    //             uint32,
     //             struct of {
     //               struct of { uint64, uint64, uint64, uint64 }
     //               struct of { uint64, uint64, uint64, uint64 }
