@@ -156,6 +156,7 @@ private:
     otError GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter);
     otError GetUptimeHandler(DBusMessageIter &aIter);
     otError GetRadioCoexMetrics(DBusMessageIter &aIter);
+    otError GetBorderRoutingCountersHandler(DBusMessageIter &aIter);
     otError GetNat64State(DBusMessageIter &aIter);
     otError GetNat64Mappings(DBusMessageIter &aIter);
     otError GetNat64TrafficCounters(DBusMessageIter &aIter);

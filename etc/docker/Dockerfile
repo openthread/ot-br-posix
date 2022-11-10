@@ -79,7 +79,7 @@ ENV OTBR_BUILD_DEPS apt-utils build-essential psmisc ninja-build cmake wget ca-c
   libnetfilter-queue-dev
 
 # Required for OpenThread Backbone CI
-ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential
+ENV OTBR_OT_BACKBONE_CI_DEPS curl lcov wget build-essential python3-dbus
 
 # Required and installed during build (script/bootstrap) when RELEASE=1, could be removed
 ENV OTBR_NORELEASE_DEPS \

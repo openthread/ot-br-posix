@@ -279,6 +279,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetUptimeHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_COEX_METRICS,
                                std::bind(&DBusThreadObject::GetRadioCoexMetrics, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_BORDER_ROUTING_COUNTERS,
+                               std::bind(&DBusThreadObject::GetBorderRoutingCountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_STATE,
                                std::bind(&DBusThreadObject::GetNat64State, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_MAPPINGS,
@@ -1591,6 +1593,36 @@ otError DBusThreadObject::GetRadioCoexMetrics(DBusMessageIter &aIter)
 
 exit:
     return error;
+}
+
+otError DBusThreadObject::GetBorderRoutingCountersHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_BORDER_ROUTING_COUNTERS
+    auto                           threadHelper = mNcp->GetThreadHelper();
+    auto                           instance     = threadHelper->GetInstance();
+    otError                        error        = OT_ERROR_NONE;
+    BorderRoutingCounters          borderRoutingCounters;
+    const otBorderRoutingCounters *otBorderRoutingCounters = otIp6GetBorderRoutingCounters(instance);
+
+    borderRoutingCounters.mInboundUnicast.mPackets    = otBorderRoutingCounters->mInboundUnicast.mPackets;
+    borderRoutingCounters.mInboundUnicast.mBytes      = otBorderRoutingCounters->mInboundUnicast.mBytes;
+    borderRoutingCounters.mInboundMulticast.mPackets  = otBorderRoutingCounters->mInboundMulticast.mPackets;
+    borderRoutingCounters.mInboundMulticast.mBytes    = otBorderRoutingCounters->mInboundMulticast.mBytes;
+    borderRoutingCounters.mOutboundUnicast.mPackets   = otBorderRoutingCounters->mOutboundUnicast.mPackets;
+    borderRoutingCounters.mOutboundUnicast.mBytes     = otBorderRoutingCounters->mOutboundUnicast.mBytes;
+    borderRoutingCounters.mOutboundMulticast.mPackets = otBorderRoutingCounters->mOutboundMulticast.mPackets;
+    borderRoutingCounters.mOutboundMulticast.mBytes   = otBorderRoutingCounters->mOutboundMulticast.mBytes;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, borderRoutingCounters) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 void DBusThreadObject::ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs)

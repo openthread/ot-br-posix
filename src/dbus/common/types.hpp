@@ -623,6 +623,20 @@ struct RadioCoexMetrics
     bool     mStopped;                            ///< Stats collection stopped due to saturation.
 };
 
+struct BorderRoutingCounters
+{
+    struct PacketsAndBytes
+    {
+        uint64_t mPackets; ///< The number of packets.
+        uint64_t mBytes;   ///< The number of bytes.
+    };
+
+    PacketsAndBytes mInboundUnicast;    ///< The counters for inbound unicast.
+    PacketsAndBytes mInboundMulticast;  ///< The counters for inbound multicast.
+    PacketsAndBytes mOutboundUnicast;   ///< The counters for outbound unicast.
+    PacketsAndBytes mOutboundMulticast; ///< The counters for outbound multicast.
+};
+
 struct Nat64ComponentState
 {
     std::string mPrefixManagerState;
