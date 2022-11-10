@@ -1139,6 +1139,5 @@ exit:
     return error;
 }
 
-
 } // namespace DBus
 } // namespace otbr

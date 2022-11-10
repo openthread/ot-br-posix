@@ -38,9 +38,9 @@
 
 #include <stdint.h>
 
+#include <array>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace otbr {
 namespace DBus {
@@ -667,7 +667,7 @@ struct Nat64ProtocolCounters
 
 struct Nat64AddressMapping
 {
-    uint64_t mId; ///< The unique id for a mapping session.
+    uint64_t   mId;              ///< The unique id for a mapping session.
     Ip4Address mIp4;             ///< The IPv4 address of the mapping.
     Ip6Address mIp6;             ///< The IPv6 address of the mapping.
     uint32_t   mRemainingTimeMs; ///< Remaining time before expiry in milliseconds.
