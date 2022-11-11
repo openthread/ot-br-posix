@@ -57,10 +57,10 @@ using otbr::DBus::DnssdCounters;
 #endif
 
 #if OTBR_ENABLE_NAT64
-using otbr::DBus::Nat64ComponentState;
 using otbr::DBus::Nat64AddressMapping;
-using otbr::DBus::Nat64TrafficCounters;
+using otbr::DBus::Nat64ComponentState;
 using otbr::DBus::Nat64ErrorCounters;
+using otbr::DBus::Nat64TrafficCounters;
 #endif
 
 #define TEST_ASSERT(x)                                              \
@@ -217,10 +217,9 @@ void CheckNat64(ThreadApiDBus *aApi)
         TEST_ASSERT(aState.mTranslatorState == OTBR_NAT64_STATE_NAME_DISABLED);
 
         TEST_ASSERT(aApi->SetNat64Enabled(true) == OTBR_ERROR_NONE);
-        sleep(10);
         TEST_ASSERT(aApi->GetNat64State(aState) == OTBR_ERROR_NONE);
-        TEST_ASSERT(aState.mPrefixManagerState == OTBR_NAT64_STATE_NAME_ACTIVE);
-        TEST_ASSERT(aState.mTranslatorState == OTBR_NAT64_STATE_NAME_ACTIVE);
+        TEST_ASSERT(aState.mPrefixManagerState != OTBR_NAT64_STATE_NAME_DISABLED);
+        TEST_ASSERT(aState.mTranslatorState != OTBR_NAT64_STATE_NAME_DISABLED);
     }
 
     {
