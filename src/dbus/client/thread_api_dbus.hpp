@@ -842,7 +842,7 @@ public:
      * @retval ...         OpenThread defined error value otherwise
      *
      */
-    ClientError GetNat64TrafficCounters(Nat64TrafficCounters &aCounters);
+    ClientError GetNat64ProtocolCounters(Nat64ProtocolCounters &aCounters);
 
     /**
      * This method gets the NAT64 error counters.

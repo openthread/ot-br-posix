@@ -159,7 +159,7 @@ private:
     otError GetBorderRoutingCountersHandler(DBusMessageIter &aIter);
     otError GetNat64State(DBusMessageIter &aIter);
     otError GetNat64Mappings(DBusMessageIter &aIter);
-    otError GetNat64TrafficCounters(DBusMessageIter &aIter);
+    otError GetNat64ProtocolCounters(DBusMessageIter &aIter);
     otError GetNat64ErrorCounters(DBusMessageIter &aIter);
 
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);

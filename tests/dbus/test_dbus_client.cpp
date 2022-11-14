@@ -60,7 +60,7 @@ using otbr::DBus::DnssdCounters;
 using otbr::DBus::Nat64AddressMapping;
 using otbr::DBus::Nat64ComponentState;
 using otbr::DBus::Nat64ErrorCounters;
-using otbr::DBus::Nat64TrafficCounters;
+using otbr::DBus::Nat64ProtocolCounters;
 #endif
 
 #define TEST_ASSERT(x)                                              \
@@ -228,8 +228,8 @@ void CheckNat64(ThreadApiDBus *aApi)
     }
 
     {
-        Nat64TrafficCounters aCounters;
-        TEST_ASSERT(aApi->GetNat64TrafficCounters(aCounters) == OTBR_ERROR_NONE);
+        Nat64ProtocolCounters aCounters;
+        TEST_ASSERT(aApi->GetNat64ProtocolCounters(aCounters) == OTBR_ERROR_NONE);
     }
 
     {

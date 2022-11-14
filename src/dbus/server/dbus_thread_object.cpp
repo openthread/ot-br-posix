@@ -288,7 +288,7 @@ otbrError DBusThreadObject::Init(void)
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_MAPPINGS,
                                std::bind(&DBusThreadObject::GetNat64Mappings, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_TRAFFIC_COUNTERS,
-                               std::bind(&DBusThreadObject::GetNat64TrafficCounters, this, _1));
+                               std::bind(&DBusThreadObject::GetNat64ProtocolCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS,
                                std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));
 
@@ -1725,7 +1725,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNat64TrafficCounters(DBusMessageIter &aIter)
+otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
@@ -1798,7 +1798,7 @@ otError DBusThreadObject::GetNat64Mappings(DBusMessageIter &aIter)
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 
-otError DBusThreadObject::GetNat64TrafficCounters(DBusMessageIter &aIter)
+otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;

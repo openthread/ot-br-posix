@@ -786,7 +786,7 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <!-- Nat64TrafficCounters: The state of NAT64
+    <!-- Nat64ProtocolCounters: The state of NAT64
     <literallayout>
     struct
     {
@@ -824,7 +824,7 @@
     } mCounters;
     </literallayout>
     -->
-    <property name="Nat64TrafficCounters" type="((tttt)(tttt)(tttt)(tttt))" access="read">
+    <property name="Nat64ProtocolCounters" type="((tttt)(tttt)(tttt)(tttt))" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
