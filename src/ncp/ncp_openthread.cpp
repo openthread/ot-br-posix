@@ -195,7 +195,9 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
     // Save a cached copy of feature flags for debugging purpose.
     mAppliedFeatureFlagListBytes = aFeatureFlagList.SerializeAsString();
 
-    // TODO: apply the feature flags through API.
+#if OTBR_ENABLE_NAT64
+    otNat64SetEnabled(mInstance, aFeatureFlagList.enable_nat64());
+#endif
 
     return error;
 }
