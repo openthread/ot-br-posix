@@ -287,7 +287,7 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetNat64State, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_MAPPINGS,
                                std::bind(&DBusThreadObject::GetNat64Mappings, this, _1));
-    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_TRAFFIC_COUNTERS,
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_PROTOCOL_COUNTERS,
                                std::bind(&DBusThreadObject::GetNat64ProtocolCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS,
                                std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));

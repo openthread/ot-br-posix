@@ -670,7 +670,7 @@ ClientError ThreadApiDBus::GetNat64Mappings(std::vector<Nat64AddressMapping> &aM
 
 ClientError ThreadApiDBus::GetNat64ProtocolCounters(Nat64ProtocolCounters &aCounters)
 {
-    return GetProperty(OTBR_DBUS_PROPERTY_NAT64_TRAFFIC_COUNTERS, aCounters);
+    return GetProperty(OTBR_DBUS_PROPERTY_NAT64_PROTOCOL_COUNTERS, aCounters);
 }
 
 ClientError ThreadApiDBus::GetNat64ErrorCounters(Nat64ErrorCounters &aCounters)
