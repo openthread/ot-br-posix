@@ -340,7 +340,7 @@ template <> struct DBusTypeTrait<Nat64ProtocolCounters>
 
 template <> struct DBusTypeTrait<Nat64AddressMapping>
 {
-    // array of struct of {
+    // struct of {
     //             uint64,
     //             array of uint8,
     //             array of uint8,

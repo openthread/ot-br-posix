@@ -726,10 +726,10 @@
 
     <!-- Nat64State: The state of NAT64
     <literallayout>
-    struct {
-        string mPrefixManagerState;
-        string mTranslatorState;
-    }
+        struct {
+            string mPrefixManagerState;
+            string mTranslatorState;
+        }
     </literallayout>
     -->
     <property name="Nat64State" type="(ss)" access="read">
@@ -738,48 +738,48 @@
 
     <!-- Nat64Mappings: The state of NAT64
     <literallayout>
-    struct
-    {
-      uint64_t mId;                // The unique id for a mapping session.
-      uint8_t[] mIp4;             // The IPv4 address of the mapping.
-      uint8_t[] mIp6;             // The IPv6 address of the mapping.
-      uint32_t   mRemainingTimeMs; // Remaining time before expiry in milliseconds.
-
-      struct
-      {
         struct
         {
-          uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-          uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-          uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-          uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-        } mTotal; ///< Counters for sum of all protocols.
+          uint64_t  mId;                // The unique id for a mapping session.
+          uint8_t[] mIp4;             // The IPv4 address of the mapping.
+          uint8_t[] mIp6;             // The IPv6 address of the mapping.
+          uint32_t  mRemainingTimeMs;   // Remaining time before expiry in milliseconds.
 
-        struct
-        {
-          uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-          uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-          uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-          uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-        } mIcmp;  ///< Counters for ICMP and ICMPv6.
+          struct
+          {
+            struct
+            {
+              uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+              uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+              uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+              uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+            } mTotal; ///< Counters for sum of all protocols.
 
-        struct
-        {
-          uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-          uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-          uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-          uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-        } mUdp;   ///< Counters for UDP.
+            struct
+            {
+              uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+              uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+              uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+              uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+            } mIcmp;  ///< Counters for ICMP and ICMPv6.
 
-        struct
-        {
-          uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-          uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-          uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-          uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-        } mTcp;   ///< Counters for TCP.
-      } mCounters;
-    }
+            struct
+            {
+              uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+              uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+              uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+              uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+            } mUdp;   ///< Counters for UDP.
+
+            struct
+            {
+              uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+              uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+              uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+              uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+            } mTcp;   ///< Counters for TCP.
+          } mCounters;
+        }[]
     </literallayout>
     -->
     <property name="Nat64Mappings" type="a(tayayu((tttt)(tttt)(tttt)(tttt)))" access="read">
@@ -788,40 +788,40 @@
 
     <!-- Nat64ProtocolCounters: The state of NAT64
     <literallayout>
-    struct
-    {
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-        uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-      } mTotal; ///< Counters for sum of all protocols.
+        struct
+        {
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+            uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+          } mTotal; ///< Counters for sum of all protocols.
 
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-        uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-      } mIcmp;  ///< Counters for ICMP and ICMPv6.
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+            uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+          } mIcmp;  ///< Counters for ICMP and ICMPv6.
 
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-        uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-      } mUdp;   ///< Counters for UDP.
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+            uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+          } mUdp;   ///< Counters for UDP.
 
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-        uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
-      } mTcp;   ///< Counters for TCP.
-    } mCounters;
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+            uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+          } mTcp;   ///< Counters for TCP.
+        }
     </literallayout>
     -->
     <property name="Nat64ProtocolCounters" type="((tttt)(tttt)(tttt)(tttt))" access="read">
@@ -830,32 +830,32 @@
 
     <!-- Nat64ErrorCounters: The state of NAT64
     <literallayout>
-    struct
-    {
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-      } mUnknown;          ///< Packet drop for unknown reasons.
+        struct
+        {
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+          } mUnknown;          ///< Packet drop for unknown reasons.
 
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-      } mIllegalPacket;    ///< Packet drop due to failed to parse the datagram.
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+          } mIllegalPacket;    ///< Packet drop due to failed to parse the datagram.
 
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-      } mUnsupportedProto; ///< Packet drop due to unsupported IP protocol.
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+          } mUnsupportedProto; ///< Packet drop due to unsupported IP protocol.
 
-      struct
-      {
-        uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-        uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-      } mNoMapping;        ///< Packet drop due to no mappings found or mapping pool exhausted.
-    }
+          struct
+          {
+            uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+            uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+          } mNoMapping;        ///< Packet drop due to no mappings found or mapping pool exhausted.
+        }
     </literallayout>
     -->
     <property name="Nat64ErrorCounters" type="((tt)(tt)(tt)(tt))" access="read">
