@@ -56,6 +56,13 @@ using otbr::DBus::TxtEntry;
 using otbr::DBus::DnssdCounters;
 #endif
 
+#if OTBR_ENABLE_NAT64
+using otbr::DBus::Nat64AddressMapping;
+using otbr::DBus::Nat64ComponentState;
+using otbr::DBus::Nat64ErrorCounters;
+using otbr::DBus::Nat64ProtocolCounters;
+#endif
+
 #define TEST_ASSERT(x)                                              \
     do                                                              \
     {                                                               \
@@ -198,6 +205,40 @@ void CheckMdnsInfo(ThreadApiDBus *aApi)
     TEST_ASSERT(mdnsInfo.mServiceRegistrationEmaLatency > 0);
 }
 
+void CheckNat64(ThreadApiDBus *aApi)
+{
+    OTBR_UNUSED_VARIABLE(aApi);
+#if OTBR_ENABLE_NAT64
+    {
+        Nat64ComponentState aState;
+        TEST_ASSERT(aApi->SetNat64Enabled(false) == OTBR_ERROR_NONE);
+        TEST_ASSERT(aApi->GetNat64State(aState) == OTBR_ERROR_NONE);
+        TEST_ASSERT(aState.mPrefixManagerState == OTBR_NAT64_STATE_NAME_DISABLED);
+        TEST_ASSERT(aState.mTranslatorState == OTBR_NAT64_STATE_NAME_DISABLED);
+
+        TEST_ASSERT(aApi->SetNat64Enabled(true) == OTBR_ERROR_NONE);
+        TEST_ASSERT(aApi->GetNat64State(aState) == OTBR_ERROR_NONE);
+        TEST_ASSERT(aState.mPrefixManagerState != OTBR_NAT64_STATE_NAME_DISABLED);
+        TEST_ASSERT(aState.mTranslatorState != OTBR_NAT64_STATE_NAME_DISABLED);
+    }
+
+    {
+        std::vector<Nat64AddressMapping> aMappings;
+        TEST_ASSERT(aApi->GetNat64Mappings(aMappings) == OTBR_ERROR_NONE);
+    }
+
+    {
+        Nat64ProtocolCounters aCounters;
+        TEST_ASSERT(aApi->GetNat64ProtocolCounters(aCounters) == OTBR_ERROR_NONE);
+    }
+
+    {
+        Nat64ErrorCounters aCounters;
+        TEST_ASSERT(aApi->GetNat64ErrorCounters(aCounters) == OTBR_ERROR_NONE);
+    }
+#endif
+}
+
 int main()
 {
     DBusError                      error;
@@ -304,6 +345,7 @@ int main()
                             CheckSrpServerInfo(api.get());
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
+                            CheckNat64(api.get());
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);

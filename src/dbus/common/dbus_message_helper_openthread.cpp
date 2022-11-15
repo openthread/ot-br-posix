@@ -941,5 +941,203 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ComponentState &aNat64State)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aNat64State.mPrefixManagerState));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aNat64State.mTranslatorState));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ComponentState &aNat64State)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aNat64State.mPrefixManagerState));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aNat64State.mTranslatorState));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64TrafficCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.m4To6Packets));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.m4To6Bytes));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.m6To4Packets));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.m6To4Bytes));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64TrafficCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.m4To6Packets));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.m4To6Bytes));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.m6To4Packets));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.m6To4Bytes));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64PacketCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.m4To6Packets));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.m6To4Packets));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64PacketCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.m4To6Packets));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.m6To4Packets));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ProtocolCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mTotal));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mIcmp));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mUdp));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mTcp));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ProtocolCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mTotal));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mIcmp));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mUdp));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mTcp));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64AddressMapping &aMapping)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMapping.mId));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMapping.mIp4));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMapping.mIp6));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMapping.mRemainingTimeMs));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMapping.mCounters));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64AddressMapping &aMapping)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMapping.mId));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMapping.mIp4));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMapping.mIp6));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMapping.mRemainingTimeMs));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMapping.mCounters));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ErrorCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mUnknown));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mIllegalPacket));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mUnsupportedProto));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aCounters.mNoMapping));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ErrorCounters &aCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mUnknown));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mIllegalPacket));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mUnsupportedProto));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aCounters.mNoMapping));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

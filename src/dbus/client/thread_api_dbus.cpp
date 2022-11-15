@@ -457,6 +457,11 @@ ClientError ThreadApiDBus::RemoveExternalRoute(const Ip6Prefix &aPrefix)
     return CallDBusMethodSync(OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD, std::tie(aPrefix));
 }
 
+ClientError ThreadApiDBus::SetNat64Enabled(bool aEnabled)
+{
+    return CallDBusMethodSync(OTBR_DBUS_SET_NAT64_ENABLED_METHOD, std::tie(aEnabled));
+}
+
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX, aPrefix);
@@ -651,6 +656,26 @@ ClientError ThreadApiDBus::GetSrpServerInfo(SrpServerInfo &aSrpServerInfo)
 ClientError ThreadApiDBus::GetMdnsTelemetryInfo(MdnsTelemetryInfo &aMdnsTelemetryInfo)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_MDNS_TELEMETRY_INFO, aMdnsTelemetryInfo);
+}
+
+ClientError ThreadApiDBus::GetNat64State(Nat64ComponentState &aState)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_NAT64_STATE, aState);
+}
+
+ClientError ThreadApiDBus::GetNat64Mappings(std::vector<Nat64AddressMapping> &aMappings)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_NAT64_MAPPINGS, aMappings);
+}
+
+ClientError ThreadApiDBus::GetNat64ProtocolCounters(Nat64ProtocolCounters &aCounters)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_NAT64_PROTOCOL_COUNTERS, aCounters);
+}
+
+ClientError ThreadApiDBus::GetNat64ErrorCounters(Nat64ErrorCounters &aCounters)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS, aCounters);
 }
 
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY

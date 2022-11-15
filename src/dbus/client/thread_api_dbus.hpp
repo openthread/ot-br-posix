@@ -370,6 +370,18 @@ public:
     ClientError SetRadioRegion(const std::string &aRadioRegion);
 
     /**
+     * This method sets the NAT64 switch.
+     *
+     * @param[in] aEnable  A boolean to enable/disable the NAT64.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetNat64Enabled(bool aEnabled);
+
+    /**
      * This method gets the link operating mode.
      *
      * @param[out] aConfig  The operating mode config.
@@ -795,6 +807,54 @@ public:
      *
      */
     ClientError UpdateVendorMeshCopTxtEntries(std::vector<TxtEntry> &aUpdate);
+
+    /**
+     * This method gets the state of NAT64.
+     *
+     * @param[out] aState  The NAT64 state of each components.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetNat64State(Nat64ComponentState &aState);
+
+    /**
+     * This method gets the active NAT64 mappings.
+     *
+     * @param[out] aMappings  The active NAT64 mappings.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetNat64Mappings(std::vector<Nat64AddressMapping> &aMappings);
+
+    /**
+     * This method gets the NAT64 traffic counters.
+     *
+     * @param[out] aCounters  The NAT64 traffic counters.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetNat64ProtocolCounters(Nat64ProtocolCounters &aCounters);
+
+    /**
+     * This method gets the NAT64 error counters.
+     *
+     * @param[out] aCounters  The NAT64 error counters.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetNat64ErrorCounters(Nat64ErrorCounters &aCounters);
 
 private:
     ClientError CallDBusMethodSync(const std::string &aMethodName);

@@ -35,6 +35,7 @@
 #include <openthread/instance.h>
 #include <openthread/joiner.h>
 #include <openthread/link_raw.h>
+#include <openthread/nat64.h>
 #include <openthread/ncp.h>
 #include <openthread/netdata.h>
 #include <openthread/srp_server.h>
@@ -81,6 +82,31 @@ static std::string GetDeviceRoleName(otDeviceRole aRole)
 
     return roleName;
 }
+
+#if OTBR_ENABLE_NAT64
+static std::string GetNat64StateName(otNat64State aState)
+{
+    std::string stateName;
+
+    switch (aState)
+    {
+    case OT_NAT64_STATE_DISABLED:
+        stateName = OTBR_NAT64_STATE_NAME_DISABLED;
+        break;
+    case OT_NAT64_STATE_NOT_RUNNING:
+        stateName = OTBR_NAT64_STATE_NAME_NOT_RUNNING;
+        break;
+    case OT_NAT64_STATE_IDLE:
+        stateName = OTBR_NAT64_STATE_NAME_IDLE;
+        break;
+    case OT_NAT64_STATE_ACTIVE:
+        stateName = OTBR_NAT64_STATE_NAME_ACTIVE;
+        break;
+    }
+
+    return stateName;
+}
+#endif // OTBR_ENABLE_NAT64
 
 static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 {
@@ -151,6 +177,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::GetPropertiesHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LEAVE_NETWORK_METHOD,
                    std::bind(&DBusThreadObject::LeaveNetworkHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
+                   std::bind(&DBusThreadObject::SetNat64Enabled, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
@@ -255,6 +283,14 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetRadioCoexMetrics, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_BORDER_ROUTING_COUNTERS,
                                std::bind(&DBusThreadObject::GetBorderRoutingCountersHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_STATE,
+                               std::bind(&DBusThreadObject::GetNat64State, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_MAPPINGS,
+                               std::bind(&DBusThreadObject::GetNat64Mappings, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_PROTOCOL_COUNTERS,
+                               std::bind(&DBusThreadObject::GetNat64ProtocolCounters, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS,
+                               std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1613,6 +1649,167 @@ void DBusThreadObject::LeaveNetworkHandler(DBusRequest &aRequest)
         }
     });
 }
+
+#if OTBR_ENABLE_NAT64
+void DBusThreadObject::SetNat64Enabled(DBusRequest &aRequest)
+{
+    otError error = OT_ERROR_NONE;
+    bool    enable;
+    auto    args = std::tie(enable);
+
+    VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    otNat64SetEnabled(mNcp->GetThreadHelper()->GetInstance(), enable);
+
+exit:
+    aRequest.ReplyOtResult(error);
+}
+
+otError DBusThreadObject::GetNat64State(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    Nat64ComponentState state;
+
+    state.mPrefixManagerState = GetNat64StateName(otNat64GetPrefixManagerState(mNcp->GetThreadHelper()->GetInstance()));
+    state.mTranslatorState    = GetNat64StateName(otNat64GetTranslatorState(mNcp->GetThreadHelper()->GetInstance()));
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, state) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetNat64Mappings(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    std::vector<Nat64AddressMapping> mappings;
+    otNat64AddressMappingIterator    iterator;
+    otNat64AddressMapping            otMapping;
+    Nat64AddressMapping              mapping;
+
+    otNat64InitAddressMappingIterator(mNcp->GetThreadHelper()->GetInstance(), &iterator);
+    while (otNat64GetNextAddressMapping(mNcp->GetThreadHelper()->GetInstance(), &iterator, &otMapping) == OT_ERROR_NONE)
+    {
+        mapping.mId = otMapping.mId;
+        std::copy(std::begin(otMapping.mIp4.mFields.m8), std::end(otMapping.mIp4.mFields.m8), mapping.mIp4.data());
+        std::copy(std::begin(otMapping.mIp6.mFields.m8), std::end(otMapping.mIp6.mFields.m8), mapping.mIp6.data());
+        mapping.mRemainingTimeMs = otMapping.mRemainingTimeMs;
+
+        mapping.mCounters.mTotal.m4To6Packets = otMapping.mCounters.mTotal.m4To6Packets;
+        mapping.mCounters.mTotal.m4To6Bytes   = otMapping.mCounters.mTotal.m4To6Bytes;
+        mapping.mCounters.mTotal.m6To4Packets = otMapping.mCounters.mTotal.m6To4Packets;
+        mapping.mCounters.mTotal.m6To4Bytes   = otMapping.mCounters.mTotal.m6To4Bytes;
+
+        mapping.mCounters.mIcmp.m4To6Packets = otMapping.mCounters.mIcmp.m4To6Packets;
+        mapping.mCounters.mIcmp.m4To6Bytes   = otMapping.mCounters.mIcmp.m4To6Bytes;
+        mapping.mCounters.mIcmp.m6To4Packets = otMapping.mCounters.mIcmp.m6To4Packets;
+        mapping.mCounters.mIcmp.m6To4Bytes   = otMapping.mCounters.mIcmp.m6To4Bytes;
+
+        mapping.mCounters.mUdp.m4To6Packets = otMapping.mCounters.mUdp.m4To6Packets;
+        mapping.mCounters.mUdp.m4To6Bytes   = otMapping.mCounters.mUdp.m4To6Bytes;
+        mapping.mCounters.mUdp.m6To4Packets = otMapping.mCounters.mUdp.m6To4Packets;
+        mapping.mCounters.mUdp.m6To4Bytes   = otMapping.mCounters.mUdp.m6To4Bytes;
+
+        mapping.mCounters.mTcp.m4To6Packets = otMapping.mCounters.mTcp.m4To6Packets;
+        mapping.mCounters.mTcp.m4To6Bytes   = otMapping.mCounters.mTcp.m4To6Bytes;
+        mapping.mCounters.mTcp.m6To4Packets = otMapping.mCounters.mTcp.m6To4Packets;
+        mapping.mCounters.mTcp.m6To4Bytes   = otMapping.mCounters.mTcp.m6To4Bytes;
+
+        mappings.push_back(mapping);
+    }
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, mappings) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    otNat64ProtocolCounters otCounters;
+    Nat64ProtocolCounters   counters;
+    otNat64GetCounters(mNcp->GetThreadHelper()->GetInstance(), &otCounters);
+
+    counters.mTotal.m4To6Packets = otCounters.mTotal.m4To6Packets;
+    counters.mTotal.m4To6Bytes   = otCounters.mTotal.m4To6Bytes;
+    counters.mTotal.m6To4Packets = otCounters.mTotal.m6To4Packets;
+    counters.mTotal.m6To4Bytes   = otCounters.mTotal.m6To4Bytes;
+    counters.mIcmp.m4To6Packets  = otCounters.mIcmp.m4To6Packets;
+    counters.mIcmp.m4To6Bytes    = otCounters.mIcmp.m4To6Bytes;
+    counters.mIcmp.m6To4Packets  = otCounters.mIcmp.m6To4Packets;
+    counters.mIcmp.m6To4Bytes    = otCounters.mIcmp.m6To4Bytes;
+    counters.mUdp.m4To6Packets   = otCounters.mUdp.m4To6Packets;
+    counters.mUdp.m4To6Bytes     = otCounters.mUdp.m4To6Bytes;
+    counters.mUdp.m6To4Packets   = otCounters.mUdp.m6To4Packets;
+    counters.mUdp.m6To4Bytes     = otCounters.mUdp.m6To4Bytes;
+    counters.mTcp.m4To6Packets   = otCounters.mTcp.m4To6Packets;
+    counters.mTcp.m4To6Bytes     = otCounters.mTcp.m4To6Bytes;
+    counters.mTcp.m6To4Packets   = otCounters.mTcp.m6To4Packets;
+    counters.mTcp.m6To4Bytes     = otCounters.mTcp.m6To4Bytes;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, counters) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetNat64ErrorCounters(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    otNat64ErrorCounters otCounters;
+    Nat64ErrorCounters   counters;
+    otNat64GetErrorCounters(mNcp->GetThreadHelper()->GetInstance(), &otCounters);
+
+    counters.mUnknown.m4To6Packets          = otCounters.mCount4To6[OT_NAT64_DROP_REASON_UNKNOWN];
+    counters.mUnknown.m6To4Packets          = otCounters.mCount6To4[OT_NAT64_DROP_REASON_UNKNOWN];
+    counters.mIllegalPacket.m4To6Packets    = otCounters.mCount4To6[OT_NAT64_DROP_REASON_ILLEGAL_PACKET];
+    counters.mIllegalPacket.m6To4Packets    = otCounters.mCount6To4[OT_NAT64_DROP_REASON_ILLEGAL_PACKET];
+    counters.mUnsupportedProto.m4To6Packets = otCounters.mCount4To6[OT_NAT64_DROP_REASON_UNSUPPORTED_PROTO];
+    counters.mUnsupportedProto.m6To4Packets = otCounters.mCount6To4[OT_NAT64_DROP_REASON_UNSUPPORTED_PROTO];
+    counters.mNoMapping.m4To6Packets        = otCounters.mCount4To6[OT_NAT64_DROP_REASON_NO_MAPPING];
+    counters.mNoMapping.m6To4Packets        = otCounters.mCount6To4[OT_NAT64_DROP_REASON_NO_MAPPING];
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, counters) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+#else  // OTBR_ENABLE_NAT64
+void DBusThreadObject::SetNat64Enabled(DBusRequest &aRequest)
+{
+    OTBR_UNUSED_VARIABLE(aRequest);
+    aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
+}
+
+otError DBusThreadObject::GetNat64State(DBusMessageIter &aIter)
+{
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+otError DBusThreadObject::GetNat64Mappings(DBusMessageIter &aIter)
+{
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
+{
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+otError DBusThreadObject::GetNat64ErrorCounters(DBusMessageIter &aIter)
+{
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+#endif // OTBR_ENABLE_NAT64
 
 static_assert(OTBR_SRP_SERVER_STATE_DISABLED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_DISABLED),
               "OTBR_SRP_SERVER_STATE_DISABLED value is incorrect");
