@@ -382,7 +382,7 @@ void DBusThreadObject::ReplyScanResult(DBusRequest                           &aR
     {
         for (const auto &r : aResult)
         {
-            ActiveScanResult result;
+            ActiveScanResult result = {};
 
             result.mExtAddress = ConvertOpenThreadUint64(r.mExtAddress.m8);
             result.mPanId      = r.mPanId;
