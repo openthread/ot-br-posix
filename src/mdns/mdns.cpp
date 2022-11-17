@@ -465,6 +465,9 @@ void Publisher::UpdateMdnsResponseCounters(otbr::MdnsResponseCounters &aCounters
     case OTBR_ERROR_NOT_IMPLEMENTED:
         ++aCounters.mNotImplemented;
         break;
+    case OTBR_ERROR_ABORTED:
+        ++aCounters.mAborted;
+        break;
     case OTBR_ERROR_MDNS:
     default:
         ++aCounters.mUnknownError;

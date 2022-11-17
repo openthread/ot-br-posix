@@ -602,6 +602,7 @@
             uint32 duplicated
             uint32 not_implemented
             uint32 unknown_error
+            uint32 aborted
           }
           struct {  // service registration responses
             uint32 success
@@ -610,6 +611,7 @@
             uint32 duplicated
             uint32 not_implemented
             uint32 unknown_error
+            uint32 aborted
           }
           struct {  // host resolution responses
             uint32 success
@@ -618,6 +620,7 @@
             uint32 duplicated
             uint32 not_implemented
             uint32 unknown_error
+            uint32 aborted
           }
           struct {  // service resolution responses
             uint32 success
@@ -626,6 +629,7 @@
             uint32 duplicated
             uint32 not_implemented
             uint32 unknown_error
+            uint32 aborted
           }
           uint32 host_registration_ema_latency
           uint32 service_registration_ema_latency
@@ -634,7 +638,7 @@
         }
       </literallayout>
     -->
-    <property name="MdnsTelemetryInfo" type="(uuuuuu)(uuuuuu)(uuuuuu)(uuuuuu)uuuu" access="read">
+    <property name="MdnsTelemetryInfo" type="(uuuuuuu)(uuuuuuu)(uuuuuuu)(uuuuuuu)uuuu" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
