@@ -268,12 +268,12 @@ template <> struct DBusTypeTrait<SrpServerInfo>
 
 template <> struct DBusTypeTrait<MdnsTelemetryInfo>
 {
-    // struct of { struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
-    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
-    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
-    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
+    // struct of { struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
+    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
+    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
+    //              struct of { uint32, uint32, uint32, uint32, uint32, uint32, uint32, uint32 },
     //              uint32, uint32, uint32, uint32 }
-    static constexpr const char *TYPE_AS_STRING = "((uuuuuuu)(uuuuuuu)(uuuuuuu)(uuuuuuu)uuuu)";
+    static constexpr const char *TYPE_AS_STRING = "((uuuuuuuu)(uuuuuuuu)(uuuuuuuu)(uuuuuuuu)uuuu)";
 };
 
 template <> struct DBusTypeTrait<DnssdCounters>

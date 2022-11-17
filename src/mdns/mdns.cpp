@@ -55,18 +55,30 @@ void Publisher::PublishService(const std::string &aHostName,
                                const TxtList &    aTxtList,
                                ResultCallback &&  aCallback)
 {
+    otbrError error;
+
     mServiceRegistrationBeginTime[std::make_pair(aName, aType)] = Clock::now();
 
-    PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback));
+    error = PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback));
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mServiceRegistrations, error);
+    }
 }
 
 void Publisher::PublishHost(const std::string &            aName,
                             const std::vector<Ip6Address> &aAddresses,
                             ResultCallback &&              aCallback)
 {
+    otbrError error;
+
     mHostRegistrationBeginTime[aName] = Clock::now();
 
-    PublishHostImpl(aName, aAddresses, std::move(aCallback));
+    error = PublishHostImpl(aName, aAddresses, std::move(aCallback));
+    if (error != OTBR_ERROR_NONE)
+    {
+        UpdateMdnsResponseCounters(mTelemetryInfo.mHostRegistrations, error);
+    }
 }
 
 void Publisher::OnServiceResolveFailed(const std::string &aType, const std::string &aInstanceName, int32_t aErrorCode)
@@ -467,6 +479,9 @@ void Publisher::UpdateMdnsResponseCounters(otbr::MdnsResponseCounters &aCounters
         break;
     case OTBR_ERROR_ABORTED:
         ++aCounters.mAborted;
+        break;
+    case OTBR_ERROR_INVALID_STATE:
+        ++aCounters.mInvalidState;
         break;
     case OTBR_ERROR_MDNS:
     default:

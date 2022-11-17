@@ -634,13 +634,13 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
     }
 }
 
-void PublisherAvahi::PublishServiceImpl(const std::string &aHostName,
-                                        const std::string &aName,
-                                        const std::string &aType,
-                                        const SubTypeList &aSubTypeList,
-                                        uint16_t           aPort,
-                                        const TxtList &    aTxtList,
-                                        ResultCallback &&  aCallback)
+otbrError PublisherAvahi::PublishServiceImpl(const std::string &aHostName,
+                                             const std::string &aName,
+                                             const std::string &aType,
+                                             const SubTypeList &aSubTypeList,
+                                             uint16_t           aPort,
+                                             const TxtList &    aTxtList,
+                                             ResultCallback &&  aCallback)
 {
     otbrError         error             = OTBR_ERROR_NONE;
     int               avahiError        = AVAHI_OK;
@@ -705,6 +705,7 @@ exit:
         }
         std::move(aCallback)(error);
     }
+    return error;
 }
 
 void PublisherAvahi::UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback)
@@ -718,9 +719,9 @@ exit:
     std::move(aCallback)(error);
 }
 
-void PublisherAvahi::PublishHostImpl(const std::string &            aName,
-                                     const std::vector<Ip6Address> &aAddresses,
-                                     ResultCallback &&              aCallback)
+otbrError PublisherAvahi::PublishHostImpl(const std::string &            aName,
+                                          const std::vector<Ip6Address> &aAddresses,
+                                          ResultCallback &&              aCallback)
 {
     otbrError        error      = OTBR_ERROR_NONE;
     int              avahiError = AVAHI_OK;
@@ -770,6 +771,7 @@ exit:
         }
         std::move(aCallback)(error);
     }
+    return error;
 }
 
 void PublisherAvahi::UnpublishHost(const std::string &aName, ResultCallback &&aCallback)

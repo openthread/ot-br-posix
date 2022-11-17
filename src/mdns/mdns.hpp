@@ -488,20 +488,20 @@ protected:
     static std::string MakeFullServiceName(const std::string &aName, const std::string &aType);
     static std::string MakeFullHostName(const std::string &aName);
 
-    virtual void PublishServiceImpl(const std::string &aHostName,
-                                    const std::string &aName,
-                                    const std::string &aType,
-                                    const SubTypeList &aSubTypeList,
-                                    uint16_t           aPort,
-                                    const TxtList &    aTxtList,
-                                    ResultCallback &&  aCallback)                            = 0;
-    virtual void PublishHostImpl(const std::string &            aName,
-                                 const std::vector<Ip6Address> &aAddresses,
-                                 ResultCallback &&              aCallback)                               = 0;
-    virtual void OnServiceResolveFailedImpl(const std::string &aType,
-                                            const std::string &aInstanceName,
-                                            int32_t            aErrorCode)                            = 0;
-    virtual void OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) = 0;
+    virtual otbrError PublishServiceImpl(const std::string &aHostName,
+                                         const std::string &aName,
+                                         const std::string &aType,
+                                         const SubTypeList &aSubTypeList,
+                                         uint16_t           aPort,
+                                         const TxtList &    aTxtList,
+                                         ResultCallback &&  aCallback)                            = 0;
+    virtual otbrError PublishHostImpl(const std::string &            aName,
+                                      const std::vector<Ip6Address> &aAddresses,
+                                      ResultCallback &&              aCallback)                               = 0;
+    virtual void      OnServiceResolveFailedImpl(const std::string &aType,
+                                                 const std::string &aInstanceName,
+                                                 int32_t            aErrorCode)                            = 0;
+    virtual void      OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) = 0;
 
     virtual otbrError DnsErrorToOtbrError(int32_t aError) = 0;
 

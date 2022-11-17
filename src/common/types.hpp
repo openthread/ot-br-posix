@@ -389,6 +389,7 @@ struct MdnsResponseCounters
     uint32_t mNotImplemented; ///< The number of 'not implemented' responses
     uint32_t mUnknownError;   ///< The number of unknown error responses
     uint32_t mAborted;        ///< The number of aborted responses
+    uint32_t mInvalidState;   ///< The number of 'invalid state' responses
 };
 
 struct MdnsTelemetryInfo

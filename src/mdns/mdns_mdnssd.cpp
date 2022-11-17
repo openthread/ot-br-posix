@@ -88,6 +88,10 @@ static otbrError DNSErrorToOtbrError(DNSServiceErrorType aError)
         error = OTBR_ERROR_NOT_IMPLEMENTED;
         break;
 
+    case kDNSServiceErr_ServiceNotRunning:
+        error = OTBR_ERROR_INVALID_STATE;
+        break;
+
     default:
         error = OTBR_ERROR_MDNS;
         break;
@@ -481,13 +485,13 @@ exit:
     return;
 }
 
-void PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
-                                         const std::string &aName,
-                                         const std::string &aType,
-                                         const SubTypeList &aSubTypeList,
-                                         uint16_t           aPort,
-                                         const TxtList &    aTxtList,
-                                         ResultCallback &&  aCallback)
+otbrError PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
+                                              const std::string &aName,
+                                              const std::string &aType,
+                                              const SubTypeList &aSubTypeList,
+                                              uint16_t           aPort,
+                                              const TxtList &    aTxtList,
+                                              ResultCallback &&  aCallback)
 {
     otbrError            ret   = OTBR_ERROR_NONE;
     int                  error = 0;
@@ -534,6 +538,7 @@ exit:
         }
         std::move(aCallback)(ret);
     }
+    return ret;
 }
 
 void PublisherMDnsSd::UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback)
@@ -547,9 +552,9 @@ exit:
     std::move(aCallback)(error);
 }
 
-void PublisherMDnsSd::PublishHostImpl(const std::string &            aName,
-                                      const std::vector<Ip6Address> &aAddresses,
-                                      ResultCallback &&              aCallback)
+otbrError PublisherMDnsSd::PublishHostImpl(const std::string &            aName,
+                                           const std::vector<Ip6Address> &aAddresses,
+                                           ResultCallback &&              aCallback)
 {
     otbrError              ret   = OTBR_ERROR_NONE;
     int                    error = 0;
@@ -598,6 +603,7 @@ exit:
 
         std::move(aCallback)(ret);
     }
+    return ret;
 }
 
 void PublisherMDnsSd::UnpublishHost(const std::string &aName, ResultCallback &&aCallback)

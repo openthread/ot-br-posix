@@ -82,14 +82,14 @@ public:
     void Process(const MainloopContext &aMainloop) override;
 
 protected:
-    void      PublishServiceImpl(const std::string &aHostName,
+    otbrError PublishServiceImpl(const std::string &aHostName,
                                  const std::string &aName,
                                  const std::string &aType,
                                  const SubTypeList &aSubTypeList,
                                  uint16_t           aPort,
                                  const TxtList &    aTxtList,
                                  ResultCallback &&  aCallback) override;
-    void      PublishHostImpl(const std::string &            aName,
+    otbrError PublishHostImpl(const std::string &            aName,
                               const std::vector<Ip6Address> &aAddress,
                               ResultCallback &&              aCallback) override;
     void      OnServiceResolveFailedImpl(const std::string &aType,

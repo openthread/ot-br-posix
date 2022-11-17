@@ -665,6 +665,7 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const MdnsResponseCounters &
     SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mNotImplemented));
     SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mUnknownError));
     SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mAborted));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aMdnsResponseCounters.mInvalidState));
 
     VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
 exit:
@@ -685,6 +686,7 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, MdnsResponseCounters &aMdns
     SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mNotImplemented));
     SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mUnknownError));
     SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mAborted));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aMdnsResponseCounters.mInvalidState));
 
     dbus_message_iter_next(aIter);
 exit:
