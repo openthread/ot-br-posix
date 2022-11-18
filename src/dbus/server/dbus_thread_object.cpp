@@ -1638,6 +1638,7 @@ void DBusThreadObject::LeaveNetworkHandler(DBusRequest &aRequest)
 {
     mNcp->GetThreadHelper()->DetachGracefully([aRequest, this](otError error) mutable {
         SuccessOrExit(error);
+        mPublisher->Stop();
         SuccessOrExit(error = otInstanceErasePersistentInfo(mNcp->GetThreadHelper()->GetInstance()));
 
     exit:
