@@ -33,6 +33,8 @@
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
+readonly OTBR_VERBOSE=${OTBR_VERBOSE:-0}
+
 OTBR_COLOR_PASS='\033[0;32m'
 readonly OTBR_COLOR_PASS
 
@@ -81,7 +83,7 @@ print_result()
 
     echo -e "$(date) Running $*"
 
-    if [[ ${QUIET} == 1 ]]; then
+    if [[ ${OTBR_VERBOSE} == 0 ]]; then
         "$@" &>test.log || exit_code=$?
     else
         "$@" || exit_code=$?
@@ -96,7 +98,7 @@ print_result()
     echo -e "${prefix} $*"
 
     # only output log on failure
-    if [[ ${QUIET} == 1 && ${exit_code} != 0 ]]; then
+    if [[ ${OTBR_VERBOSE} == 0 && ${exit_code} != 0 ]]; then
         cat test.log
     fi
 
