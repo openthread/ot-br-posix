@@ -85,7 +85,7 @@ jobs:
     - name: Run
       run: script/test build check
     - name: Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
 
   rest-check:
     runs-on: ubuntu-20.04
@@ -108,7 +108,7 @@ jobs:
     - name: Run
       run: script/test build check
     - name: Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
 
   script-check:
     runs-on: ubuntu-20.04
@@ -124,7 +124,7 @@ jobs:
     - name: Run
       run: tests/scripts/check-scripts
     - name: Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
 
   scan-build:
     runs-on: ubuntu-20.04
