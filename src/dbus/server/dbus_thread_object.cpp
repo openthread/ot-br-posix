@@ -801,10 +801,10 @@ otError DBusThreadObject::GetLinkCountersHandler(DBusMessageIter &aIter)
     counters.mTxErrAbort           = otCounters->mTxErrAbort;
     counters.mTxErrBusyChannel     = otCounters->mTxErrBusyChannel;
     counters.mRxTotal              = otCounters->mRxTotal;
-    counters.mRxUnicast            = otCounters->mTxUnicast;
+    counters.mRxUnicast            = otCounters->mRxUnicast;
     counters.mRxBroadcast          = otCounters->mRxBroadcast;
     counters.mRxData               = otCounters->mRxData;
-    counters.mRxDataPoll           = otCounters->mTxDataPoll;
+    counters.mRxDataPoll           = otCounters->mRxDataPoll;
     counters.mRxBeacon             = otCounters->mRxBeacon;
     counters.mRxBeaconRequest      = otCounters->mRxBeaconRequest;
     counters.mRxOther              = otCounters->mRxOther;
