@@ -31,4 +31,9 @@ set -euxo pipefail
 
 readonly EXIT_CODE_SHOULD_RESTART=7
 
-while "$@"; (( $? == EXIT_CODE_SHOULD_RESTART )); do :; done
+while
+    "$@"
+    (($? == EXIT_CODE_SHOULD_RESTART))
+do
+    :
+done
