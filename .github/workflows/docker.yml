@@ -130,7 +130,7 @@ jobs:
           ${TAGS} --file etc/docker/Dockerfile ."
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v2
       with:
         platforms: all
 
