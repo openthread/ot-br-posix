@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mdns: ["mDNSResponder", "avahi"]
+        mdns: ["avahi"]
     steps:
     - uses: actions/checkout@v3
       with:
