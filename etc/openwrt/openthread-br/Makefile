@@ -89,6 +89,9 @@ define Package/openthread-br/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-config.sh $(1)/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-omr-enable.sh $(1)/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-smcroute-prefix.sh $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/add-route.py $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/remove-routes.py $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/view-routes.py $(1)/lib
 
 
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
