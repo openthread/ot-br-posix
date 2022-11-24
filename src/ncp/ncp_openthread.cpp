@@ -176,8 +176,15 @@ void ControllerOpenThread::Init(void)
     }
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
+    // Let SRP server use auto-enable mode. The auto-enable mode delegates the control of SRP server to the Border
+    // Routing Manager. SRP server automatically starts when bi-directional connectivity is ready.
+    otSrpServerSetAutoEnableMode(mInstance, /* aEnabled */ true);
+#else
     otSrpServerSetEnabled(mInstance, /* aEnabled */ true);
 #endif
+#endif
+
 #if OTBR_ENABLE_NAT64
     otNat64SetEnabled(mInstance, /* aEnabled */ true);
 #endif
