@@ -401,8 +401,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const NeighborInfo &aNeighbo
     auto            args  = std::tie(aNeighborInfo.mExtAddress, aNeighborInfo.mAge, aNeighborInfo.mRloc16,
                          aNeighborInfo.mLinkFrameCounter, aNeighborInfo.mMleFrameCounter, aNeighborInfo.mLinkQualityIn,
                          aNeighborInfo.mAverageRssi, aNeighborInfo.mLastRssi, aNeighborInfo.mFrameErrorRate,
-                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mFullThreadDevice,
-                         aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
+                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mVersion, aNeighborInfo.mRxOnWhenIdle,
+                         aNeighborInfo.mFullThreadDevice, aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
     SuccessOrExit(error = ConvertToDBusMessage(&sub, args));
@@ -418,8 +418,8 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, NeighborInfo &aNeighborInfo
     auto            args  = std::tie(aNeighborInfo.mExtAddress, aNeighborInfo.mAge, aNeighborInfo.mRloc16,
                          aNeighborInfo.mLinkFrameCounter, aNeighborInfo.mMleFrameCounter, aNeighborInfo.mLinkQualityIn,
                          aNeighborInfo.mAverageRssi, aNeighborInfo.mLastRssi, aNeighborInfo.mFrameErrorRate,
-                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mRxOnWhenIdle, aNeighborInfo.mFullThreadDevice,
-                         aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
+                         aNeighborInfo.mMessageErrorRate, aNeighborInfo.mVersion, aNeighborInfo.mRxOnWhenIdle,
+                         aNeighborInfo.mFullThreadDevice, aNeighborInfo.mFullNetworkData, aNeighborInfo.mIsChild);
 
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);

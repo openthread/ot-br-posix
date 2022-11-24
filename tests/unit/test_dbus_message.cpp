@@ -266,7 +266,8 @@ TEST(DBusMessage, TestOtbrChildInfo)
 TEST(DBusMessage, TestOtbrNeighborInfo)
 {
     DBusMessage *                                msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
-    tuple<std::vector<otbr::DBus::NeighborInfo>> setVals({{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, true, false, true, false}});
+    tuple<std::vector<otbr::DBus::NeighborInfo>> setVals(
+        {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false}});
     tuple<std::vector<otbr::DBus::NeighborInfo>> getVals;
 
     CHECK(msg != nullptr);

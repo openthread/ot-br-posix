@@ -216,12 +216,37 @@ set timeout -1
 expect eof
 EOF
     sleep 12
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl routerselectionjitter 1
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.JoinerStart \
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep -e child -e router
+    sleep 10
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep router
+
+    result_pattern="array\s+\[\s+variant\s+array\s+\[\s+struct\s+{\s+"
+    result_pattern+="uint64\s+\d+\s+"
+    result_pattern+="uint32\s+\d+\s+"
+    result_pattern+="uint16\s+\d+\s+"
+    result_pattern+="uint32\s+\d+\s+"
+    result_pattern+="uint32\s+\d+\s+"
+    result_pattern+="byte\s+\d+\s+"
+    result_pattern+="byte\s+\d+\s+"
+    result_pattern+="byte\s+\d+\s+"
+    result_pattern+="uint16\s+\d+\s+"
+    result_pattern+="uint16\s+\d+\s+"
+    result_pattern+="uint16\s+\d+\s+"
+    result_pattern+="boolean\s+(true|false)\s+"
+    result_pattern+="boolean\s+(true|false)\s+"
+    result_pattern+="boolean\s+(true|false)\s+"
+    result_pattern+="boolean\s+(true|false)\s+"
+    result_pattern+="}\s+\]\s+\]"
+    sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply \
+        /io/openthread/BorderRouter/wpan0 \
+        io.openthread.BorderRouter.GetProperties \
+        "array:string:NeighborTable" \
+        | grep -oPz "${result_pattern}"
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \

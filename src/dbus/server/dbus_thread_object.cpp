@@ -1063,6 +1063,7 @@ otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
         info.mLastRssi         = neighborInfo.mLastRssi;
         info.mFrameErrorRate   = neighborInfo.mFrameErrorRate;
         info.mMessageErrorRate = neighborInfo.mMessageErrorRate;
+        info.mVersion          = neighborInfo.mVersion;
         info.mRxOnWhenIdle     = neighborInfo.mRxOnWhenIdle;
         info.mFullThreadDevice = neighborInfo.mFullThreadDevice;
         info.mFullNetworkData  = neighborInfo.mFullNetworkData;

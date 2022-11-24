@@ -500,6 +500,7 @@ struct NeighborInfo
     int8_t   mLastRssi;         ///< Last observed RSSI
     uint16_t mFrameErrorRate;   ///< Frame error rate (0xffff->100%). Requires error tracking feature.
     uint16_t mMessageErrorRate; ///< (IPv6) msg error rate (0xffff->100%). Requires error tracking feature.
+    uint16_t mVersion;          ///< Thread version of the neighbor
     bool     mRxOnWhenIdle;     ///< rx-on-when-idle
     bool     mFullThreadDevice; ///< Full Thread Device
     bool     mFullNetworkData;  ///< Full Network Data
