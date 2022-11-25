@@ -46,6 +46,7 @@ install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/br-config.sh
     ${CMAKE_CURRENT_SOURCE_DIR}/br-omr-enable.sh
     ${CMAKE_CURRENT_SOURCE_DIR}/br-smcroute-prefix.sh
+    ${CMAKE_CURRENT_SOURCE_DIR}/install-multicast-commands.sh
     ${CMAKE_CURRENT_SOURCE_DIR}/add-route.py
     ${CMAKE_CURRENT_SOURCE_DIR}/remove-routes.py
     ${CMAKE_CURRENT_SOURCE_DIR}/view-routes.py
