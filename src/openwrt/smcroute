@@ -11,6 +11,7 @@ start_service() {
 	/lib/br-config.sh
 	/lib/br-omr-enable.sh
 	/lib/br-smcroute-prefix.sh
+	/lib/install-multicast-commands.sh
 	procd_open_instance
 	procd_set_param command $PROG -n
 	procd_set_param stderr 1
