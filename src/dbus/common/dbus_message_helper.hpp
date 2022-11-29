@@ -189,15 +189,15 @@ template <> struct DBusTypeTrait<std::vector<ChannelQuality>>
 template <> struct DBusTypeTrait<NeighborInfo>
 {
     // struct of { uint64, uint32, uint16, uint32, uint32, uint8,
-    //             uint8, uint8, uint16, uint16, bool, bool, bool, bool }
-    static constexpr const char *TYPE_AS_STRING = "(tuquuyyyqqbbbb)";
+    //             uint8, uint8, uint16, uint16, uint16, bool, bool, bool, bool }
+    static constexpr const char *TYPE_AS_STRING = "(tuquuyyyqqqbbbb)";
 };
 
 template <> struct DBusTypeTrait<std::vector<NeighborInfo>>
 {
     // array of struct of { uint64, uint32, uint16, uint32, uint32, uint8,
-    //                      uint8, uint8, uint16, uint16, bool, bool, bool }
-    static constexpr const char *TYPE_AS_STRING = "a(tuquuyyyqqbbbb)";
+    //                      uint8, uint8, uint16, uint16, uint16, bool, bool, bool }
+    static constexpr const char *TYPE_AS_STRING = "a(tuquuyyyqqqbbbb)";
 };
 
 template <> struct DBusTypeTrait<ChildInfo>
