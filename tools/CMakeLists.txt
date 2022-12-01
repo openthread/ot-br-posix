@@ -36,6 +36,8 @@ target_link_libraries(pskc PRIVATE
     mbedtls
 )
 
+install(TARGETS pskc DESTINATION sbin)
+
 add_executable(steering-data
     steering_data.cpp
 )

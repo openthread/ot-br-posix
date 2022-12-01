@@ -77,6 +77,7 @@ endef
 define Package/openthread-br/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/otbr-agent $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pskc $(1)/usr/sbin
 	
 	$(CP) $(PKG_BUILD_DIR)/_deps/cascoda-sdk-build/bin/ot-ctl $(1)/usr/sbin
 

@@ -16,4 +16,9 @@ uci set luci.restart_smcroute=command
 uci set luci.restart_smcroute.name='Restart smcroute & apply changes'
 uci set luci.restart_smcroute.command='smcroutectl restart'
 
+uci set luci.gen_pskc=command
+uci set luci.gen_pskc.name='Generate the PSKc'
+uci set luci.gen_pskc.command='/usr/sbin/pskc'
+uci set luci.gen_pskc.param='1'
+
 uci commit
