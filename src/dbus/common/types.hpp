@@ -646,16 +646,16 @@ struct Nat64ComponentState
 
 struct Nat64TrafficCounters
 {
-    uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-    uint64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
-    uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
-    uint64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
+    int64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+    int64_t m4To6Bytes;   ///< Sum of size of packets translated from IPv4 to IPv6.
+    int64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+    int64_t m6To4Bytes;   ///< Sum of size of packets translated from IPv6 to IPv4.
 };
 
 struct Nat64PacketCounters
 {
-    uint64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
-    uint64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
+    int64_t m4To6Packets; ///< Number of packets translated from IPv4 to IPv6.
+    int64_t m6To4Packets; ///< Number of packets translated from IPv6 to IPv4.
 };
 
 struct Nat64ProtocolCounters
@@ -671,7 +671,7 @@ struct Nat64AddressMapping
     uint64_t   mId;              ///< The unique id for a mapping session.
     Ip4Address mIp4;             ///< The IPv4 address of the mapping.
     Ip6Address mIp6;             ///< The IPv6 address of the mapping.
-    uint32_t   mRemainingTimeMs; ///< Remaining time before expiry in milliseconds.
+    int64_t    mRemainingTimeMs; ///< Remaining time before expiry in milliseconds.
 
     Nat64ProtocolCounters mCounters;
 };

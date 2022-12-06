@@ -313,29 +313,29 @@ template <> struct DBusTypeTrait<BorderRoutingCounters>
 
 template <> struct DBusTypeTrait<Nat64ComponentState>
 {
-    // struct of { uint8, uint8 }
+    // struct of { string, string }
     static constexpr const char *TYPE_AS_STRING = "(ss)";
 };
 
 template <> struct DBusTypeTrait<Nat64TrafficCounters>
 {
-    // struct of { uint64, uint64, uint64, uint64 }
-    static constexpr const char *TYPE_AS_STRING = "(tttt)";
+    // struct of { int64, int64, int64, int64 }
+    static constexpr const char *TYPE_AS_STRING = "(xxxx)";
 };
 
 template <> struct DBusTypeTrait<Nat64PacketCounters>
 {
-    // struct of { uint64, uint64 }
-    static constexpr const char *TYPE_AS_STRING = "(tt)";
+    // struct of { int64, int64 }
+    static constexpr const char *TYPE_AS_STRING = "(xx)";
 };
 
 template <> struct DBusTypeTrait<Nat64ProtocolCounters>
 {
-    // struct of { struct of { uint64, uint64, uint64, uint64 }
-    //             struct of { uint64, uint64, uint64, uint64 }
-    //             struct of { uint64, uint64, uint64, uint64 }
-    //             struct of { uint64, uint64, uint64, uint64 } }
-    static constexpr const char *TYPE_AS_STRING = "((tttt)(tttt)(tttt)(tttt))";
+    // struct of { struct of { int64, int64, int64, int64 }
+    //             struct of { int64, int64, int64, int64 }
+    //             struct of { int64, int64, int64, int64 }
+    //             struct of { int64, int64, int64, int64 } }
+    static constexpr const char *TYPE_AS_STRING = "((xxxx)(xxxx)(xxxx)(xxxx))";
 };
 
 template <> struct DBusTypeTrait<Nat64AddressMapping>
@@ -344,13 +344,13 @@ template <> struct DBusTypeTrait<Nat64AddressMapping>
     //             uint64,
     //             array of uint8,
     //             array of uint8,
-    //             uint32,
+    //             int64,
     //             struct of {
-    //               struct of { uint64, uint64, uint64, uint64 }
-    //               struct of { uint64, uint64, uint64, uint64 }
-    //               struct of { uint64, uint64, uint64, uint64 }
-    //               struct of { uint64, uint64, uint64, uint64 } } }
-    static constexpr const char *TYPE_AS_STRING = "(tayayu((tttt)(tttt)(tttt)(tttt)))";
+    //               struct of { int64, int64, int64, int64 }
+    //               struct of { int64, int64, int64, int64 }
+    //               struct of { int64, int64, int64, int64 }
+    //               struct of { int64, int64, int64, int64 } } }
+    static constexpr const char *TYPE_AS_STRING = "(tayayx((xxxx)(xxxx)(xxxx)(xxxx)))";
 };
 
 template <> struct DBusTypeTrait<std::vector<Nat64AddressMapping>>
@@ -359,22 +359,22 @@ template <> struct DBusTypeTrait<std::vector<Nat64AddressMapping>>
     //             uint64,
     //             array of uint8,
     //             array of uint8,
-    //             uint32,
+    //             int64,
     //             struct of {
-    //               struct of { uint64, uint64, uint64, uint64 }
-    //               struct of { uint64, uint64, uint64, uint64 }
-    //               struct of { uint64, uint64, uint64, uint64 }
-    //               struct of { uint64, uint64, uint64, uint64 } } }
-    static constexpr const char *TYPE_AS_STRING = "a(tayayu((tttt)(tttt)(tttt)(tttt)))";
+    //               struct of { int64, int64, int64, int64 }
+    //               struct of { int64, int64, int64, int64 }
+    //               struct of { int64, int64, int64, int64 }
+    //               struct of { int64, int64, int64, int64 } } }
+    static constexpr const char *TYPE_AS_STRING = "a(tayayx((xxxx)(xxxx)(xxxx)(xxxx)))";
 };
 
 template <> struct DBusTypeTrait<Nat64ErrorCounters>
 {
-    // struct of { struct of { uint64, uint64 }
-    //             struct of { uint64, uint64 }
-    //             struct of { uint64, uint64 }
-    //             struct of { uint64, uint64 } }
-    static constexpr const char *TYPE_AS_STRING = "((tt)(tt)(tt)(tt))";
+    // struct of { struct of { int64, int64 }
+    //             struct of { int64, int64 }
+    //             struct of { int64, int64 }
+    //             struct of { int64, int64 } }
+    static constexpr const char *TYPE_AS_STRING = "((xx)(xx)(xx)(xx))";
 };
 
 template <> struct DBusTypeTrait<int8_t>
