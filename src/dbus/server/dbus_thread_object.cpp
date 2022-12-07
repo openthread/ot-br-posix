@@ -1615,6 +1615,12 @@ otError DBusThreadObject::GetBorderRoutingCountersHandler(DBusMessageIter &aIter
     borderRoutingCounters.mOutboundUnicast.mBytes     = otBorderRoutingCounters->mOutboundUnicast.mBytes;
     borderRoutingCounters.mOutboundMulticast.mPackets = otBorderRoutingCounters->mOutboundMulticast.mPackets;
     borderRoutingCounters.mOutboundMulticast.mBytes   = otBorderRoutingCounters->mOutboundMulticast.mBytes;
+    borderRoutingCounters.mRaRx                       = otBorderRoutingCounters->mRaRx;
+    borderRoutingCounters.mRaTxSuccess                = otBorderRoutingCounters->mRaTxSuccess;
+    borderRoutingCounters.mRaTxFailure                = otBorderRoutingCounters->mRaTxFailure;
+    borderRoutingCounters.mRsRx                       = otBorderRoutingCounters->mRsRx;
+    borderRoutingCounters.mRsTxSuccess                = otBorderRoutingCounters->mRsTxSuccess;
+    borderRoutingCounters.mRsTxFailure                = otBorderRoutingCounters->mRsTxFailure;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, borderRoutingCounters) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);

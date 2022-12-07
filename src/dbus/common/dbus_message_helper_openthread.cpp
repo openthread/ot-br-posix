@@ -920,6 +920,12 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderRoutingCounters 
     SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mInboundMulticast));
     SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mOutboundUnicast));
     SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mOutboundMulticast));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mRaRx));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mRaTxSuccess));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mRaTxFailure));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mRsRx));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mRsTxSuccess));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderRoutingCounters.mRsTxFailure));
 
     VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
 
@@ -938,6 +944,12 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderRoutingCounters &aBor
     SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mInboundMulticast));
     SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mOutboundUnicast));
     SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mOutboundMulticast));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mRaRx));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mRaTxSuccess));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mRaTxFailure));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mRsRx));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mRsTxSuccess));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderRoutingCounters.mRsTxFailure));
 
     dbus_message_iter_next(aIter);
 

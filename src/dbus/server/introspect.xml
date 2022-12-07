@@ -880,10 +880,16 @@
             uint64 packets
             uint64 bytes
           }
+          uint32  ra_rx;              // The number of received RA packets.
+          uint32  ra_tx_success;      // The number of RA packets successfully transmitted.
+          uint32  ra_tx_failure;      // The number of RA packets failed to transmit.
+          uint32  rs_rx;              // The number of received RS packets.
+          uint32  rs_tx_success;      // The number of RS packets successfully transmitted.
+          uint32  rs_tx_failure;      // The number of RS packets failed to transmit.
         }
     </literallayout>
     -->
-    <property name="BorderRoutingCounters" type="((tt)(tt)(tt)(tt))" access="read">
+    <property name="BorderRoutingCounters" type="((tt)(tt)(tt)(tt)uuuuuu)" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
