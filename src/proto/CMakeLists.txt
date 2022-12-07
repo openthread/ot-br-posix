@@ -33,7 +33,8 @@ endforeach()
 
 # Set the protoc output files as GENERATED.
 set_source_files_properties(${PROTO_SRC} ${PROTO_HDRS}
-    PROPERTIES GENERATED TRUE)
+    PROPERTIES GENERATED TRUE
+    COMPILE_FLAGS -Wno-array-bounds)
 
 # Add custom targets so that proto files will be generated only when changed.
 add_custom_target(generate_message ALL

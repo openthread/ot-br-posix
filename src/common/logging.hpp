@@ -66,6 +66,11 @@ typedef enum
 otbrLogLevel otbrLogGetLevel(void);
 
 /**
+ * Get default log level.
+ */
+otbrLogLevel otbrLogGetDefaultLevel(void);
+
+/**
  * Set current log level.
  */
 void otbrLogSetLevel(otbrLogLevel aLevel);

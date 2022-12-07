@@ -154,6 +154,14 @@ otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
     return level;
 }
 
+otError ControllerOpenThread::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
+{
+    otError error = OT_ERROR_NONE;
+    otbrLogSetLevel(aLevel);
+    error = otLoggingSetLevel(ConvertToOtLogLevel(aLevel));
+    return error;
+}
+
 void ControllerOpenThread::Init(void)
 {
     otbrError  error = OTBR_ERROR_NONE;
@@ -209,6 +217,18 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
     otNat64SetEnabled(mInstance, aFeatureFlagList.enable_nat64());
 #endif
 
+    if (aFeatureFlagList.enable_detailed_logging())
+    {
+        error = SetOtbrAndOtLogLevel(OTBR_LOG_INFO);
+    }
+    else
+    {
+        otbrLogLevel defaultLogLevel = otbrLogGetDefaultLevel();
+        error                        = SetOtbrAndOtLogLevel(defaultLogLevel);
+    }
+    VerifyOrExit(error == OT_ERROR_NONE);
+
+exit:
     return error;
 }
 #endif

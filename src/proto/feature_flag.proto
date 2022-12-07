@@ -41,4 +41,6 @@ package otbr;
 message FeatureFlagList {
   // Whether to enable the NAT64 feature.
   optional bool enable_nat64 = 1 [default = false];
+  // Whether to enable detailed logging.
+  optional bool enable_detailed_logging = 2 [default = false];
 }
