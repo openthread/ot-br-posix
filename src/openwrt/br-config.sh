@@ -31,4 +31,8 @@ reload_config
 
 # given that this is the first-time config, make u-boot boot silent & faster
 fw_setenv silent 1
-fw_setenv bootdelay 0
+fw_setenv bootdelay 5
+
+# fix for software update while UART is disabled
+fw_setenv stdout serial
+fw_setenv stderr serial
