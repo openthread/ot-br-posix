@@ -58,6 +58,11 @@ endif()
 option(OTBR_FEATURE_FLAGS "Enable feature flags support" OFF)
 if (OTBR_FEATURE_FLAGS)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_FEATURE_FLAGS=1)
+
+    option(OTBR_OVERRIDE_RUNTIME_FEATURE_FLAGS_ON_START_UP "Override the default values in the feature flag definition file." ON)
+    if (OTBR_OVERRIDE_RUNTIME_FEATURE_FLAGS_ON_START_UP)
+        target_compile_definitions(otbr-config INTERFACE OTBR_OVERRIDE_RUNTIME_FEATURE_FLAGS_ON_START_UP=1)
+    endif()
 endif()
 
 option(OTBR_DUA_ROUTING "Enable Backbone Router DUA Routing" OFF)

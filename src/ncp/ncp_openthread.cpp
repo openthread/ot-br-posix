@@ -159,6 +159,10 @@ void ControllerOpenThread::Init(void)
     otbrError  error = OTBR_ERROR_NONE;
     otLogLevel level = ConvertToOtLogLevel(otbrLogGetLevel());
 
+#if OTBR_ENABLE_FEATURE_FLAGS
+    FeatureFlagList featureFlags;
+#endif
+
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
@@ -185,8 +189,24 @@ void ControllerOpenThread::Init(void)
 #endif
 #endif
 
+#if OTBR_ENABLE_FEATURE_FLAGS
+#if OTBR_OVERRIDE_RUNTIME_FEATURE_FLAGS_ON_START_UP
+    // We don't have to check the build flags for each features here, since ApplyFeatureFlagList will check it.
+    featureFlags.set_enable_nat64(true);
+#endif
+#else // OTBR_ENABLE_FEATURE_FLAGS
+    // Bring up all features when feature flags is not supported.
 #if OTBR_ENABLE_NAT64
     otNat64SetEnabled(mInstance, /* aEnabled */ true);
+#endif
+#endif // OTBR_ENABLE_FEATURE_FLAGS
+
+#if OTBR_ENABLE_FEATURE_FLAGS
+    {
+        otError result = ApplyFeatureFlagList(featureFlags);
+
+        VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+    }
 #endif
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
