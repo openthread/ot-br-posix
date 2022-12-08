@@ -146,9 +146,9 @@ private:
     void       JoinSolicitedNodeMulticastGroup(const Ip6Address &aTarget) const;
     void       LeaveSolicitedNodeMulticastGroup(const Ip6Address &aTarget) const;
     static int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
-                                    struct nfgenmsg *    aNfMsg,
-                                    struct nfq_data *    aNfData,
-                                    void *               aContext);
+                                    struct nfgenmsg     *aNfMsg,
+                                    struct nfq_data     *aNfData,
+                                    void                *aContext);
     int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler, struct nfgenmsg *aNfMsg, struct nfq_data *aNfData);
 
     otbr::Ncp::ControllerOpenThread &mNcp;
@@ -157,8 +157,8 @@ private:
     uint32_t                         mBackboneIfIndex;
     int                              mIcmp6RawSock;
     int                              mUnicastNsQueueSock;
-    struct nfq_handle *              mNfqHandler;      ///< A pointer to an NFQUEUE handler.
-    struct nfq_q_handle *            mNfqQueueHandler; ///< A pointer to a newly created queue.
+    struct nfq_handle               *mNfqHandler;      ///< A pointer to an NFQUEUE handler.
+    struct nfq_q_handle             *mNfqQueueHandler; ///< A pointer to a newly created queue.
     MacAddress                       mMacAddress;
     Ip6Prefix                        mDomainPrefix;
 };

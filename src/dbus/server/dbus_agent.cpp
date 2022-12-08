@@ -74,7 +74,7 @@ void DBusAgent::Init(void)
 DBusAgent::UniqueDBusConnection DBusAgent::PrepareDBusConnection(void)
 {
     DBusError            dbusError;
-    DBusConnection *     conn = nullptr;
+    DBusConnection      *conn = nullptr;
     UniqueDBusConnection uniqueConn;
     int                  requestReply;
     std::string          serverName = OTBR_DBUS_SERVER_PREFIX + mInterfaceName;

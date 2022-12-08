@@ -492,7 +492,7 @@ template <typename T> otbrError DBusMessageExtractPrimitive(DBusMessageIter *aIt
 {
     DBusMessageIter subIter;
     otbrError       error = OTBR_ERROR_NONE;
-    T *             val;
+    T              *val;
     int             n;
     int             subtype;
 
@@ -520,7 +520,7 @@ template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter 
 {
     DBusMessageIter subIter;
     otbrError       error = OTBR_ERROR_NONE;
-    T *             val;
+    T              *val;
     int             n;
     int             subtype;
 

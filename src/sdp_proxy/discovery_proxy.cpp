@@ -153,11 +153,11 @@ void DiscoveryProxy::OnDiscoveryProxyUnsubscribe(const char *aFullName)
     }
 }
 
-void DiscoveryProxy::OnServiceDiscovered(const std::string &                            aType,
+void DiscoveryProxy::OnServiceDiscovered(const std::string                             &aType,
                                          const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     otDnssdServiceInstanceInfo instanceInfo;
-    const otDnssdQuery *       query                 = nullptr;
+    const otDnssdQuery        *query                 = nullptr;
     std::string                unescapedInstanceName = DnsUtils::UnescapeInstanceName(aInstanceInfo.mName);
 
     otbrLogInfo("Service discovered: %s, instance %s hostname %s addresses %zu port %d priority %d "
@@ -227,7 +227,7 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
     }
 }
 
-void DiscoveryProxy::OnHostDiscovered(const std::string &                        aHostName,
+void DiscoveryProxy::OnHostDiscovered(const std::string                         &aHostName,
                                       const Mdns::Publisher::DiscoveredHostInfo &aHostInfo)
 {
     otDnssdHostInfo     hostInfo;

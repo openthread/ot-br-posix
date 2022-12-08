@@ -52,8 +52,8 @@ void Publisher::PublishService(const std::string &aHostName,
                                const std::string &aType,
                                const SubTypeList &aSubTypeList,
                                uint16_t           aPort,
-                               const TxtList &    aTxtList,
-                               ResultCallback &&  aCallback)
+                               const TxtList     &aTxtList,
+                               ResultCallback   &&aCallback)
 {
     otbrError error;
 
@@ -66,9 +66,9 @@ void Publisher::PublishService(const std::string &aHostName,
     }
 }
 
-void Publisher::PublishHost(const std::string &            aName,
+void Publisher::PublishHost(const std::string             &aName,
                             const std::vector<Ip6Address> &aAddresses,
-                            ResultCallback &&              aCallback)
+                            ResultCallback               &&aCallback)
 {
     otbrError error;
 
@@ -101,8 +101,8 @@ otbrError Publisher::EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t>
 
     for (const auto &txtEntry : aTxtList)
     {
-        const auto & name        = txtEntry.mName;
-        const auto & value       = txtEntry.mValue;
+        const auto  &name        = txtEntry.mName;
+        const auto  &value       = txtEntry.mValue;
         const size_t entryLength = name.length() + 1 + value.size();
 
         VerifyOrExit(entryLength <= kMaxTextEntrySize, error = OTBR_ERROR_INVALID_ARGS);
@@ -302,8 +302,8 @@ Publisher::ResultCallback Publisher::HandleDuplicateServiceRegistration(const st
                                                                         const std::string &aType,
                                                                         const SubTypeList &aSubTypeList,
                                                                         uint16_t           aPort,
-                                                                        const TxtList &    aTxtList,
-                                                                        ResultCallback &&  aCallback)
+                                                                        const TxtList     &aTxtList,
+                                                                        ResultCallback   &&aCallback)
 {
     ServiceRegistration *serviceReg = FindServiceRegistration(aName, aType);
 
@@ -338,9 +338,9 @@ exit:
     return std::move(aCallback);
 }
 
-Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string &            aName,
+Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string             &aName,
                                                                      const std::vector<Ip6Address> &aAddresses,
-                                                                     ResultCallback &&              aCallback)
+                                                                     ResultCallback               &&aCallback)
 {
     HostRegistration *hostReg = FindHostRegistration(aName);
 
@@ -417,7 +417,7 @@ bool Publisher::ServiceRegistration::IsOutdated(const std::string &aHostName,
                                                 const std::string &aType,
                                                 const SubTypeList &aSubTypeList,
                                                 uint16_t           aPort,
-                                                const TxtList &    aTxtList) const
+                                                const TxtList     &aTxtList) const
 {
     return !(mHostName == aHostName && mName == aName && mType == aType && mSubTypeList == aSubTypeList &&
              mPort == aPort && mTxtList == aTxtList);

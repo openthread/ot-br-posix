@@ -87,7 +87,7 @@ public:
      * @param[in] aEnableAutoAttach      Whether or not to automatically attach to the saved network.
      *
      */
-    explicit Application(const std::string &              aInterfaceName,
+    explicit Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
                          const std::vector<const char *> &aRadioUrls,
                          bool                             aEnableAutoAttach);
@@ -123,7 +123,7 @@ private:
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char *              mBackboneInterfaceName;
+    const char               *mBackboneInterfaceName;
     Ncp::ControllerOpenThread mNcp;
 #if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;

@@ -130,12 +130,12 @@ private:
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
 
     static void DiagnosticResponseHandler(otError              aError,
-                                          otMessage *          aMessage,
+                                          otMessage           *aMessage,
                                           const otMessageInfo *aMessageInfo,
-                                          void *               aContext);
+                                          void                *aContext);
     void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
-    otInstance *          mInstance;
+    otInstance           *mInstance;
     ControllerOpenThread *mNcp;
 
     std::unordered_map<std::string, ResourceHandler>         mResourceMap;

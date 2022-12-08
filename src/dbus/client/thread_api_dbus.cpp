@@ -113,8 +113,8 @@ exit:
 }
 
 DBusHandlerResult ThreadApiDBus::sDBusMessageFilter(DBusConnection *aConnection,
-                                                    DBusMessage *   aMessage,
-                                                    void *          aThreadApiDBus)
+                                                    DBusMessage    *aMessage,
+                                                    void           *aThreadApiDBus)
 {
     ThreadApiDBus *api = static_cast<ThreadApiDBus *>(aThreadApiDBus);
 
@@ -232,13 +232,13 @@ ClientError ThreadApiDBus::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
     return CallDBusMethodSync(OTBR_DBUS_PERMIT_UNSECURE_JOIN_METHOD, std::tie(aPort, aSeconds));
 }
 
-ClientError ThreadApiDBus::Attach(const std::string &         aNetworkName,
+ClientError ThreadApiDBus::Attach(const std::string          &aNetworkName,
                                   uint16_t                    aPanId,
                                   uint64_t                    aExtPanId,
                                   const std::vector<uint8_t> &aNetworkKey,
                                   const std::vector<uint8_t> &aPSKc,
                                   uint32_t                    aChannelMask,
-                                  const OtResultHandler &     aHandler)
+                                  const OtResultHandler      &aHandler)
 {
     ClientError error = ClientError::ERROR_NONE;
     const auto  args  = std::tie(aNetworkKey, aPanId, aNetworkName, aExtPanId, aPSKc, aChannelMask);
@@ -385,12 +385,12 @@ ClientError ThreadApiDBus::Reset(void)
     return CallDBusMethodSync(OTBR_DBUS_RESET_METHOD);
 }
 
-ClientError ThreadApiDBus::JoinerStart(const std::string &    aPskd,
-                                       const std::string &    aProvisioningUrl,
-                                       const std::string &    aVendorName,
-                                       const std::string &    aVendorModel,
-                                       const std::string &    aVendorSwVersion,
-                                       const std::string &    aVendorData,
+ClientError ThreadApiDBus::JoinerStart(const std::string     &aPskd,
+                                       const std::string     &aProvisioningUrl,
+                                       const std::string     &aVendorName,
+                                       const std::string     &aVendorModel,
+                                       const std::string     &aVendorSwVersion,
+                                       const std::string     &aVendorData,
                                        const OtResultHandler &aHandler)
 {
     ClientError error = ClientError::ERROR_NONE;
@@ -717,7 +717,7 @@ ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string &aMethodName, D
     UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
                                                            (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                            OTBR_DBUS_THREAD_INTERFACE, aMethodName.c_str()));
-    DBusPendingCall * pending = nullptr;
+    DBusPendingCall  *pending = nullptr;
 
     VerifyOrExit(message != nullptr, ret = ClientError::OT_ERROR_FAILED);
     VerifyOrExit(dbus_connection_send_with_reply(mConnection, message.get(), &pending, DBUS_TIMEOUT_USE_DEFAULT) ==
@@ -754,8 +754,8 @@ exit:
 }
 
 template <typename ArgType>
-ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string &           aMethodName,
-                                               const ArgType &               aArgs,
+ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string            &aMethodName,
+                                               const ArgType                &aArgs,
                                                DBusPendingCallNotifyFunction aFunction)
 {
     ClientError ret = ClientError::ERROR_NONE;
@@ -763,7 +763,7 @@ ClientError ThreadApiDBus::CallDBusMethodAsync(const std::string &           aMe
     DBus::UniqueDBusMessage message(dbus_message_new_method_call((OTBR_DBUS_SERVER_PREFIX + mInterfaceName).c_str(),
                                                                  (OTBR_DBUS_OBJECT_PREFIX + mInterfaceName).c_str(),
                                                                  OTBR_DBUS_THREAD_INTERFACE, aMethodName.c_str()));
-    DBusPendingCall *       pending = nullptr;
+    DBusPendingCall        *pending = nullptr;
 
     VerifyOrExit(message != nullptr, ret = ClientError::ERROR_DBUS);
     VerifyOrExit(DBus::TupleToDBusMessage(*message, aArgs) == OTBR_ERROR_NONE, ret = ClientError::ERROR_DBUS);

@@ -113,10 +113,10 @@ const char *InfraLinkSelector::Select(void)
 
 const char *InfraLinkSelector::SelectGeneric(void)
 {
-    const char *                 prevInfraLink         = mCurrentInfraLink;
+    const char                  *prevInfraLink         = mCurrentInfraLink;
     InfraLinkSelector::LinkState currentInfraLinkState = kInvalid;
     auto                         now                   = Clock::now();
-    LinkInfo *                   currentInfraLinkInfo  = nullptr;
+    LinkInfo                    *currentInfraLinkInfo  = nullptr;
 
     VerifyOrExit(!mInfraLinkNames.empty(), mCurrentInfraLink = kDefaultInfraLinkName);
     VerifyOrExit(mInfraLinkNames.size() > 1, mCurrentInfraLink = mInfraLinkNames.front());
@@ -137,7 +137,7 @@ const char *InfraLinkSelector::SelectGeneric(void)
 
     // Select an infra link with best state.
     {
-        const char *                 bestInfraLink = mCurrentInfraLink;
+        const char                  *bestInfraLink = mCurrentInfraLink;
         InfraLinkSelector::LinkState bestState     = currentInfraLinkState;
 
         for (const char *name : mInfraLinkNames)
