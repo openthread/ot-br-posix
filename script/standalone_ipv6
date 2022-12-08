@@ -45,7 +45,7 @@ ETH0_IPV6_BASE_PREFIX=fd11:33
 
 debug_echo()
 {
-    if [ x"${_DEBUG_IPV6}" == x"true" ]; then
+    if [ "${_DEBUG_IPV6}" == "true" ]; then
         echo "${@}"
     fi
 }
