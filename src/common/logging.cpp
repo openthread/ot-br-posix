@@ -51,7 +51,7 @@
 
 static otbrLogLevel sLevel            = OTBR_LOG_INFO;
 static const char   sLevelString[][8] = {
-    "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
+      "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
 };
 
 /** Get the current debug log level */

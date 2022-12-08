@@ -149,15 +149,15 @@ const char *BackboneAgent::StateToString(otBackboneRouterState aState)
     return ret;
 }
 
-void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(void                             *aContext,
                                                           otBackboneRouterDomainPrefixEvent aEvent,
-                                                          const otIp6Prefix *               aDomainPrefix)
+                                                          const otIp6Prefix                *aDomainPrefix)
 {
     static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterDomainPrefixEvent(aEvent, aDomainPrefix);
 }
 
 void BackboneAgent::HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
-                                                          const otIp6Prefix *               aDomainPrefix)
+                                                          const otIp6Prefix                *aDomainPrefix)
 {
     if (aEvent == OT_BACKBONE_ROUTER_DOMAIN_PREFIX_REMOVED)
     {
@@ -185,9 +185,9 @@ exit:
 }
 
 #if OTBR_ENABLE_DUA_ROUTING
-void BackboneAgent::HandleBackboneRouterNdProxyEvent(void *                       aContext,
+void BackboneAgent::HandleBackboneRouterNdProxyEvent(void                        *aContext,
                                                      otBackboneRouterNdProxyEvent aEvent,
-                                                     const otIp6Address *         aAddress)
+                                                     const otIp6Address          *aAddress)
 {
     static_cast<BackboneAgent *>(aContext)->HandleBackboneRouterNdProxyEvent(aEvent, aAddress);
 }

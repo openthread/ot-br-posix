@@ -180,7 +180,7 @@ TEST(DBusMessage, TestVectorMessage)
 
 TEST(DBusMessage, TestArrayMessage)
 {
-    DBusMessage *            msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage             *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<array<uint8_t, 4>> setVals({1, 2, 3, 4});
     tuple<array<uint8_t, 4>> getVals({0, 0, 0, 0});
 
@@ -233,7 +233,7 @@ TEST(DBusMessage, TestStructMessage)
 
 TEST(DBusMessage, TestOtbrChannelQuality)
 {
-    DBusMessage *                                  msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage                                   *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::ChannelQuality>> setVals({{1, 2}});
     tuple<std::vector<otbr::DBus::ChannelQuality>> getVals;
 
@@ -249,7 +249,7 @@ TEST(DBusMessage, TestOtbrChannelQuality)
 
 TEST(DBusMessage, TestOtbrChildInfo)
 {
-    DBusMessage *                             msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage                              *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::ChildInfo>> setVals({{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false}});
     tuple<std::vector<otbr::DBus::ChildInfo>> getVals;
 
@@ -265,7 +265,7 @@ TEST(DBusMessage, TestOtbrChildInfo)
 
 TEST(DBusMessage, TestOtbrNeighborInfo)
 {
-    DBusMessage *                                msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage                                 *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::NeighborInfo>> setVals(
         {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, true, false, true, false}});
     tuple<std::vector<otbr::DBus::NeighborInfo>> getVals;
@@ -282,7 +282,7 @@ TEST(DBusMessage, TestOtbrNeighborInfo)
 
 TEST(DBusMessage, TestOtbrLeaderData)
 {
-    DBusMessage *                              msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage                               *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::LeaderData>> setVals({{1, 2, 3, 4, 5}});
     tuple<std::vector<otbr::DBus::LeaderData>> getVals;
 
@@ -298,7 +298,7 @@ TEST(DBusMessage, TestOtbrLeaderData)
 
 TEST(DBusMessage, TestOtbrActiveScanResults)
 {
-    DBusMessage *                                    msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage                                     *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::ActiveScanResult>> setVals({{1, "a", 2, {3}, 4, 5, 6, 7, 8, 9, true, false}});
     tuple<std::vector<otbr::DBus::ActiveScanResult>> getVals;
 
@@ -314,7 +314,7 @@ TEST(DBusMessage, TestOtbrActiveScanResults)
 
 TEST(DBusMessage, TestOtbrExternalRoute)
 {
-    DBusMessage *                                 msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
+    DBusMessage                                  *msg = dbus_message_new(DBUS_MESSAGE_TYPE_METHOD_RETURN);
     tuple<std::vector<otbr::DBus::ExternalRoute>> setVals(
         {{otbr::DBus::Ip6Prefix({{0xfa, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}, 64}), uint16_t(0xfc00), 1, true,
           true}});

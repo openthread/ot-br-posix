@@ -216,7 +216,7 @@ exit:
 void ThreadHelper::RandomFill(void *aBuf, size_t size)
 {
     std::uniform_int_distribution<> dist(0, UINT8_MAX);
-    uint8_t *                       buf = static_cast<uint8_t *>(aBuf);
+    uint8_t                        *buf = static_cast<uint8_t *>(aBuf);
 
     for (size_t i = 0; i < size; i++)
     {
@@ -299,7 +299,7 @@ static otExtendedPanId ToOtExtendedPanId(uint64_t aExtPanId)
     return extPanId;
 }
 
-void ThreadHelper::Attach(const std::string &         aNetworkName,
+void ThreadHelper::Attach(const std::string          &aNetworkName,
                           uint16_t                    aPanId,
                           uint64_t                    aExtPanId,
                           const std::vector<uint8_t> &aNetworkKey,
@@ -533,7 +533,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     otOperationalDataset     dataset;
     otOperationalDataset     emptyDataset{};
     otDeviceRole             role = otThreadGetDeviceRole(mInstance);
-    Tlv *                    tlv;
+    Tlv                     *tlv;
     uint64_t                 pendingTimestamp = 0;
     timespec                 currentTime;
 

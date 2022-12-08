@@ -140,7 +140,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
 {
     va_list args;
     int     ret;
-    char *  rval = nullptr;
+    char   *rval = nullptr;
     ssize_t count;
     size_t  rxLength = 0;
 
@@ -178,7 +178,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     {
         fd_set  readFdSet;
         timeval timeout = {0, 1000};
-        char *  done;
+        char   *done;
 
         FD_ZERO(&readFdSet);
         FD_SET(mSocket, &readFdSet);
@@ -218,8 +218,8 @@ char *OpenThreadClient::Read(const char *aResponse, int aTimeout)
 {
     ssize_t count    = 0;
     size_t  rxLength = 0;
-    char *  found;
-    char *  rval = nullptr;
+    char   *found;
+    char   *rval = nullptr;
 
     for (int i = 0; i < aTimeout; ++i)
     {
@@ -253,7 +253,7 @@ int OpenThreadClient::Scan(WpanNetworkInfo *aNetworks, int aLength)
     for (result = strtok(result, "\r\n"); result != nullptr && rval < aLength; result = strtok(nullptr, "\r\n"))
     {
         static const char kCliPrompt[] = "> ";
-        char *            cliPrompt;
+        char             *cliPrompt;
         int               matched;
         int               lqi;
 

@@ -108,11 +108,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusScanHandler(struct ubus_context *     aContext,
-                               struct ubus_object *      aObj,
+    static int UbusScanHandler(struct ubus_context      *aContext,
+                               struct ubus_object       *aObj,
                                struct ubus_request_data *aRequest,
-                               const char *              aMethod,
-                               struct blob_attr *        aMsg);
+                               const char               *aMethod,
+                               struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get channel function request.
@@ -126,11 +126,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusChannelHandler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+    static int UbusChannelHandler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg);
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set channel function request.
@@ -144,11 +144,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetChannelHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
+    static int UbusSetChannelHandler(struct ubus_context      *aContext,
+                                     struct ubus_object       *aObj,
                                      struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg);
+                                     const char               *aMethod,
+                                     struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get networkname function request.
@@ -162,11 +162,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusNetworknameHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+    static int UbusNetworknameHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg);
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set networkname function request.
@@ -180,11 +180,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetNetworknameHandler(struct ubus_context *     aContext,
-                                         struct ubus_object *      aObj,
+    static int UbusSetNetworknameHandler(struct ubus_context      *aContext,
+                                         struct ubus_object       *aObj,
                                          struct ubus_request_data *aRequest,
-                                         const char *              aMethod,
-                                         struct blob_attr *        aMsg);
+                                         const char               *aMethod,
+                                         struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get state function request.
@@ -198,11 +198,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusStateHandler(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+    static int UbusStateHandler(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg);
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set state function request.
@@ -216,11 +216,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMacfilterSetStateHandler(struct ubus_context *     aContext,
-                                            struct ubus_object *      aObj,
+    static int UbusMacfilterSetStateHandler(struct ubus_context      *aContext,
+                                            struct ubus_object       *aObj,
                                             struct ubus_request_data *aRequest,
-                                            const char *              aMethod,
-                                            struct blob_attr *        aMsg);
+                                            const char               *aMethod,
+                                            struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get panid function request.
@@ -234,11 +234,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusPanIdHandler(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+    static int UbusPanIdHandler(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg);
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set panid function request.
@@ -252,11 +252,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetPanIdHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+    static int UbusSetPanIdHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg);
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get pskc function request.
@@ -270,11 +270,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusPskcHandler(struct ubus_context *     aContext,
-                               struct ubus_object *      aObj,
+    static int UbusPskcHandler(struct ubus_context      *aContext,
+                               struct ubus_object       *aObj,
                                struct ubus_request_data *aRequest,
-                               const char *              aMethod,
-                               struct blob_attr *        aMsg);
+                               const char               *aMethod,
+                               struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set pskc function request.
@@ -288,11 +288,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetPskcHandler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+    static int UbusSetPskcHandler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg);
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get networkkey function request.
@@ -306,11 +306,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusNetworkkeyHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
+    static int UbusNetworkkeyHandler(struct ubus_context      *aContext,
+                                     struct ubus_object       *aObj,
                                      struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg);
+                                     const char               *aMethod,
+                                     struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set networkkey function request.
@@ -324,11 +324,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetNetworkkeyHandler(struct ubus_context *     aContext,
-                                        struct ubus_object *      aObj,
+    static int UbusSetNetworkkeyHandler(struct ubus_context      *aContext,
+                                        struct ubus_object       *aObj,
                                         struct ubus_request_data *aRequest,
-                                        const char *              aMethod,
-                                        struct blob_attr *        aMsg);
+                                        const char               *aMethod,
+                                        struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get rloc16 function request.
@@ -342,11 +342,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusRloc16Handler(struct ubus_context *     aContext,
-                                 struct ubus_object *      aObj,
+    static int UbusRloc16Handler(struct ubus_context      *aContext,
+                                 struct ubus_object       *aObj,
                                  struct ubus_request_data *aRequest,
-                                 const char *              aMethod,
-                                 struct blob_attr *        aMsg);
+                                 const char               *aMethod,
+                                 struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get extpanid function request.
@@ -360,11 +360,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusExtPanIdHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+    static int UbusExtPanIdHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg);
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set extpanid function request.
@@ -378,11 +378,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetExtPanIdHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+    static int UbusSetExtPanIdHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg);
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get mode function request.
@@ -396,11 +396,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusModeHandler(struct ubus_context *     aContext,
-                               struct ubus_object *      aObj,
+    static int UbusModeHandler(struct ubus_context      *aContext,
+                               struct ubus_object       *aObj,
                                struct ubus_request_data *aRequest,
-                               const char *              aMethod,
-                               struct blob_attr *        aMsg);
+                               const char               *aMethod,
+                               struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus set mode function request.
@@ -414,11 +414,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusSetModeHandler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+    static int UbusSetModeHandler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg);
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get partitionid function request.
@@ -432,11 +432,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusPartitionIdHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+    static int UbusPartitionIdHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg);
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get leaderdata function request.
@@ -450,11 +450,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusLeaderdataHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
+    static int UbusLeaderdataHandler(struct ubus_context      *aContext,
+                                     struct ubus_object       *aObj,
                                      struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg);
+                                     const char               *aMethod,
+                                     struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get networkdata function request.
@@ -468,11 +468,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusNetworkdataHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+    static int UbusNetworkdataHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg);
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get parent function request.
@@ -486,11 +486,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusParentHandler(struct ubus_context *     aContext,
-                                 struct ubus_object *      aObj,
+    static int UbusParentHandler(struct ubus_context      *aContext,
+                                 struct ubus_object       *aObj,
                                  struct ubus_request_data *aRequest,
-                                 const char *              aMethod,
-                                 struct blob_attr *        aMsg);
+                                 const char               *aMethod,
+                                 struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get neighbor function request.
@@ -504,11 +504,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusNeighborHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+    static int UbusNeighborHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg);
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus start thread function request.
@@ -522,11 +522,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusThreadStartHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+    static int UbusThreadStartHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg);
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus stop thread function request.
@@ -540,11 +540,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusThreadStopHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
+    static int UbusThreadStopHandler(struct ubus_context      *aContext,
+                                     struct ubus_object       *aObj,
                                      struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg);
+                                     const char               *aMethod,
+                                     struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus leave function request.
@@ -558,11 +558,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusLeaveHandler(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+    static int UbusLeaveHandler(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg);
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get macfilter address function request.
@@ -576,11 +576,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMacfilterAddrHandler(struct ubus_context *     aContext,
-                                        struct ubus_object *      aObj,
+    static int UbusMacfilterAddrHandler(struct ubus_context      *aContext,
+                                        struct ubus_object       *aObj,
                                         struct ubus_request_data *aRequest,
-                                        const char *              aMethod,
-                                        struct blob_attr *        aMsg);
+                                        const char               *aMethod,
+                                        struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get macfilter state function request.
@@ -594,11 +594,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMacfilterStateHandler(struct ubus_context *     aContext,
-                                         struct ubus_object *      aObj,
+    static int UbusMacfilterStateHandler(struct ubus_context      *aContext,
+                                         struct ubus_object       *aObj,
                                          struct ubus_request_data *aRequest,
-                                         const char *              aMethod,
-                                         struct blob_attr *        aMsg);
+                                         const char               *aMethod,
+                                         struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus macfilter address add function request.
@@ -612,11 +612,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMacfilterAddHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+    static int UbusMacfilterAddHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg);
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus macfilter address clear function request.
@@ -630,11 +630,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMacfilterClearHandler(struct ubus_context *     aContext,
-                                         struct ubus_object *      aObj,
+    static int UbusMacfilterClearHandler(struct ubus_context      *aContext,
+                                         struct ubus_object       *aObj,
                                          struct ubus_request_data *aRequest,
-                                         const char *              aMethod,
-                                         struct blob_attr *        aMsg);
+                                         const char               *aMethod,
+                                         struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus macfilter address remove function request.
@@ -648,11 +648,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMacfilterRemoveHandler(struct ubus_context *     aContext,
-                                          struct ubus_object *      aObj,
+    static int UbusMacfilterRemoveHandler(struct ubus_context      *aContext,
+                                          struct ubus_object       *aObj,
                                           struct ubus_request_data *aRequest,
-                                          const char *              aMethod,
-                                          struct blob_attr *        aMsg);
+                                          const char               *aMethod,
+                                          struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus start commissioner function request.
@@ -666,11 +666,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusCommissionerStartHandler(struct ubus_context *     aContext,
-                                            struct ubus_object *      aObj,
+    static int UbusCommissionerStartHandler(struct ubus_context      *aContext,
+                                            struct ubus_object       *aObj,
                                             struct ubus_request_data *aRequest,
-                                            const char *              aMethod,
-                                            struct blob_attr *        aMsg);
+                                            const char               *aMethod,
+                                            struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus add joiner function request.
@@ -684,11 +684,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusJoinerAddHandler(struct ubus_context *     aContext,
-                                    struct ubus_object *      aObj,
+    static int UbusJoinerAddHandler(struct ubus_context      *aContext,
+                                    struct ubus_object       *aObj,
                                     struct ubus_request_data *aRequest,
-                                    const char *              aMethod,
-                                    struct blob_attr *        aMsg);
+                                    const char               *aMethod,
+                                    struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus remove joiner function request.
@@ -702,11 +702,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusJoinerRemoveHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+    static int UbusJoinerRemoveHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg);
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus get joiner information function request.
@@ -720,11 +720,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusJoinerNumHandler(struct ubus_context *     aContext,
-                                    struct ubus_object *      aObj,
+    static int UbusJoinerNumHandler(struct ubus_context      *aContext,
+                                    struct ubus_object       *aObj,
                                     struct ubus_request_data *aRequest,
-                                    const char *              aMethod,
-                                    struct blob_attr *        aMsg);
+                                    const char               *aMethod,
+                                    struct blob_attr         *aMsg);
 
     /**
      * This method handle ubus mgmtset function request.
@@ -738,11 +738,11 @@ public:
      * @retval 0  Successfully handler the request.
      *
      */
-    static int UbusMgmtsetHandler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+    static int UbusMgmtsetHandler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg);
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg);
 
     /**
      * This method handle initial diagnostic get response.
@@ -754,9 +754,9 @@ public:
      *
      */
     static void HandleDiagnosticGetResponse(otError              aError,
-                                            otMessage *          aMessage,
+                                            otMessage           *aMessage,
                                             const otMessageInfo *aMessageInfo,
-                                            void *               aContext);
+                                            void                *aContext);
 
     /**
      * This method handle diagnosticget response.
@@ -770,12 +770,12 @@ public:
 
 private:
     bool                       mIfFinishScan;
-    struct ubus_context *      mContext;
-    const char *               mSockPath;
+    struct ubus_context       *mContext;
+    const char                *mSockPath;
     struct blob_buf            mBuf;
     struct blob_buf            mNetworkdataBuf;
     Ncp::ControllerOpenThread *mController;
-    std::mutex *               mNcpThreadMutex;
+    std::mutex                *mNcpThreadMutex;
     time_t                     mSecond;
     enum
     {
@@ -808,11 +808,11 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusScanHandlerDetail(struct ubus_context *     aContext,
-                              struct ubus_object *      aObj,
+    int UbusScanHandlerDetail(struct ubus_context      *aContext,
+                              struct ubus_object       *aObj,
                               struct ubus_request_data *aRequest,
-                              const char *              aMethod,
-                              struct blob_attr *        aMsg);
+                              const char               *aMethod,
+                              struct blob_attr         *aMsg);
 
     /**
      * This method handle scan result (callback function).
@@ -843,11 +843,11 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusNeighborHandlerDetail(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+    int UbusNeighborHandlerDetail(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg);
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg);
 
     /**
      * This method detailly handler get parent information.
@@ -861,11 +861,11 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusParentHandlerDetail(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+    int UbusParentHandlerDetail(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg);
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg);
 
     /**
      * This method handle mgmtset request.
@@ -879,11 +879,11 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusMgmtset(struct ubus_context *     aContext,
-                    struct ubus_object *      aObj,
+    int UbusMgmtset(struct ubus_context      *aContext,
+                    struct ubus_object       *aObj,
                     struct ubus_request_data *aRequest,
-                    const char *              aMethod,
-                    struct blob_attr *        aMsg);
+                    const char               *aMethod,
+                    struct blob_attr         *aMsg);
 
     /**
      * This method handle leave request.
@@ -897,11 +897,11 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusLeaveHandlerDetail(struct ubus_context *     aContext,
-                               struct ubus_object *      aObj,
+    int UbusLeaveHandlerDetail(struct ubus_context      *aContext,
+                               struct ubus_object       *aObj,
                                struct ubus_request_data *aRequest,
-                               const char *              aMethod,
-                               struct blob_attr *        aMsg);
+                               const char               *aMethod,
+                               struct blob_attr         *aMsg);
 
     /**
      * This method handle thread related request.
@@ -916,12 +916,12 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusThreadHandler(struct ubus_context *     aContext,
-                          struct ubus_object *      aObj,
+    int UbusThreadHandler(struct ubus_context      *aContext,
+                          struct ubus_object       *aObj,
                           struct ubus_request_data *aRequest,
-                          const char *              aMethod,
-                          struct blob_attr *        aMsg,
-                          const char *              aAction);
+                          const char               *aMethod,
+                          struct blob_attr         *aMsg,
+                          const char               *aAction);
 
     /**
      * This method handle get information request.
@@ -936,12 +936,12 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusGetInformation(struct ubus_context *     aContext,
-                           struct ubus_object *      aObj,
+    int UbusGetInformation(struct ubus_context      *aContext,
+                           struct ubus_object       *aObj,
                            struct ubus_request_data *aRequest,
-                           const char *              aMethod,
-                           struct blob_attr *        aMsg,
-                           const char *              action);
+                           const char               *aMethod,
+                           struct blob_attr         *aMsg,
+                           const char               *action);
 
     /**
      * This method handle set information request.
@@ -956,12 +956,12 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusSetInformation(struct ubus_context *     aContext,
-                           struct ubus_object *      aObj,
+    int UbusSetInformation(struct ubus_context      *aContext,
+                           struct ubus_object       *aObj,
                            struct ubus_request_data *aRequest,
-                           const char *              aMethod,
-                           struct blob_attr *        aMsg,
-                           const char *              aAction);
+                           const char               *aMethod,
+                           struct blob_attr         *aMsg,
+                           const char               *aAction);
 
     /**
      * This method handle commissioner related request.
@@ -976,12 +976,12 @@ private:
      * @retval 0  Successfully handler the request.
      *
      */
-    int UbusCommissioner(struct ubus_context *     aContext,
-                         struct ubus_object *      aObj,
+    int UbusCommissioner(struct ubus_context      *aContext,
+                         struct ubus_object       *aObj,
                          struct ubus_request_data *aRequest,
-                         const char *              aMethod,
-                         struct blob_attr *        aMsg,
-                         const char *              aAction);
+                         const char               *aMethod,
+                         struct blob_attr         *aMsg,
+                         const char               *aAction);
 
     /**
      * This method handle conmmissione state change (callback function).
@@ -1010,9 +1010,9 @@ private:
      *
      */
     static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
-                                  const otJoinerInfo *      aJoinerInfo,
-                                  const otExtAddress *      aJoinerId,
-                                  void *                    aContext);
+                                  const otJoinerInfo       *aJoinerInfo,
+                                  const otExtAddress       *aJoinerId,
+                                  void                     *aContext);
 
     /**
      * This method handle joiner event.
@@ -1023,8 +1023,8 @@ private:
      *
      */
     void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
-                           const otJoinerInfo *      aJoinerInfo,
-                           const otExtAddress *      aJoinerId);
+                           const otJoinerInfo       *aJoinerInfo,
+                           const otExtAddress       *aJoinerId);
 
     /**
      * This method convert thread network state to string.

@@ -183,14 +183,14 @@ public:
 
 private:
     int                formActiveDataset(otbr::Web::OpenThreadClient &aClient,
-                                         const std::string &          aNetworkKey,
-                                         const std::string &          aNetworkName,
-                                         const std::string &          aPskc,
+                                         const std::string           &aNetworkKey,
+                                         const std::string           &aNetworkName,
+                                         const std::string           &aPskc,
                                          uint16_t                     aChannel,
                                          uint64_t                     aExtPanId,
                                          uint16_t                     aPanId);
     int                joinActiveDataset(otbr::Web::OpenThreadClient &aClient,
-                                         const std::string &          aNetworkKey,
+                                         const std::string           &aNetworkKey,
                                          uint16_t                     aChannel,
                                          uint16_t                     aPanId);
     static std::string escapeOtCliEscapable(const std::string &aArg);

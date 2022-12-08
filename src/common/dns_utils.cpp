@@ -95,9 +95,9 @@ DnsNameInfo SplitFullDnsName(const std::string &aName)
 }
 
 otbrError SplitFullServiceInstanceName(const std::string &aFullName,
-                                       std::string &      aInstanceName,
-                                       std::string &      aType,
-                                       std::string &      aDomain)
+                                       std::string       &aInstanceName,
+                                       std::string       &aType,
+                                       std::string       &aDomain)
 {
     otbrError   error    = OTBR_ERROR_NONE;
     DnsNameInfo nameInfo = SplitFullDnsName(aFullName);

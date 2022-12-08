@@ -138,13 +138,13 @@ public:
      * @retval ...         OpenThread defined error value otherwise
      *
      */
-    ClientError Attach(const std::string &         aNetworkName,
+    ClientError Attach(const std::string          &aNetworkName,
                        uint16_t                    aPanId,
                        uint64_t                    aExtPanId,
                        const std::vector<uint8_t> &aNetworkKey,
                        const std::vector<uint8_t> &aPSKc,
                        uint32_t                    aChannelMask,
-                       const OtResultHandler &     aHandler);
+                       const OtResultHandler      &aHandler);
 
     /**
      * This method attaches the device to the Thread network.
@@ -230,12 +230,12 @@ public:
      * @retval ...         OpenThread defined error value otherwise
      *
      */
-    ClientError JoinerStart(const std::string &    aPskd,
-                            const std::string &    aProvisioningUrl,
-                            const std::string &    aVendorName,
-                            const std::string &    aVendorModel,
-                            const std::string &    aVendorSwVersion,
-                            const std::string &    aVendorData,
+    ClientError JoinerStart(const std::string     &aPskd,
+                            const std::string     &aProvisioningUrl,
+                            const std::string     &aVendorName,
+                            const std::string     &aVendorModel,
+                            const std::string     &aVendorSwVersion,
+                            const std::string     &aVendorData,
                             const OtResultHandler &aHandler);
 
     /**
@@ -863,8 +863,8 @@ private:
     template <typename ArgType> ClientError CallDBusMethodSync(const std::string &aMethodName, const ArgType &aArgs);
 
     template <typename ArgType>
-    ClientError CallDBusMethodAsync(const std::string &           aMethodName,
-                                    const ArgType &               aArgs,
+    ClientError CallDBusMethodAsync(const std::string            &aMethodName,
+                                    const ArgType                &aArgs,
                                     DBusPendingCallNotifyFunction aFunction);
 
     template <typename ValType> ClientError SetProperty(const std::string &aPropertyName, const ValType &aValue);
@@ -886,7 +886,9 @@ private:
     void        ScanPendingCallHandler(DBusPendingCall *aPending);
     void        EnergyScanPendingCallHandler(DBusPendingCall *aPending);
 
-    static void EmptyFree(void *) {}
+    static void EmptyFree(void *)
+    {
+    }
 
     std::string mInterfaceName;
 

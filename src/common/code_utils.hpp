@@ -157,7 +157,7 @@
 #define OTBR_NOOP
 #define OTBR_UNUSED_VARIABLE(variable) ((void)(variable))
 
-template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&... args)
+template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&...args)
 {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
@@ -169,7 +169,7 @@ template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&...
 class NonCopyable
 {
 public:
-    NonCopyable(const NonCopyable &) = delete;
+    NonCopyable(const NonCopyable &)            = delete;
     NonCopyable &operator=(const NonCopyable &) = delete;
 
 protected:
@@ -189,9 +189,9 @@ public:
 
     Optional &operator=(const Optional &aOther) { AssignFrom(aOther); }
 
-    constexpr const T *operator->(void)const { return &GetValue(); }
+    constexpr const T *operator->(void) const { return &GetValue(); }
 
-    constexpr const T &operator*(void)const { return GetValue(); }
+    constexpr const T &operator*(void) const { return GetValue(); }
 
     constexpr bool HasValue(void) const { return mHasValue; }
 

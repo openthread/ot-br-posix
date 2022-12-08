@@ -138,7 +138,7 @@ private:
     std::vector<const char *>        mInfraLinkNames;
     std::map<const char *, LinkInfo> mInfraLinkInfos;
     int                              mNetlinkSocket    = -1;
-    const char *                     mCurrentInfraLink = nullptr;
+    const char                      *mCurrentInfraLink = nullptr;
     TaskRunner                       mTaskRunner;
     bool                             mRequireReselect = true;
 };

@@ -65,9 +65,9 @@ static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 static const uint16_t kThreadVersion13 = 4; ///< Thread Version 1.3
 
-ControllerOpenThread::ControllerOpenThread(const char *                     aInterfaceName,
+ControllerOpenThread::ControllerOpenThread(const char                      *aInterfaceName,
                                            const std::vector<const char *> &aRadioUrls,
-                                           const char *                     aBackboneInterfaceName,
+                                           const char                      *aBackboneInterfaceName,
                                            bool                             aDryRun,
                                            bool                             aEnableAutoAttach)
     : mInstance(nullptr)

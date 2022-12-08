@@ -64,7 +64,7 @@ int printPSKc(const char *aPassphrase, const char *aExtPanId, const char *aNetwo
     int     ret = -1;
 
     otbr::Psk::Pskc pskcComputer;
-    const uint8_t * pskc;
+    const uint8_t  *pskc;
 
     length = strlen(aPassphrase);
     VerifyOrExit(length > 0, printf("PASSPHRASE must not be empty.\n"));

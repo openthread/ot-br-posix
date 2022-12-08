@@ -167,7 +167,7 @@ static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls
 {
     otbr::Ncp::ControllerOpenThread ncpOpenThread{/* aInterfaceName */ "", aRadioUrls, /* aBackboneInterfaceName */ "",
                                                   /* aDryRun */ true, /* aEnableAutoAttach */ false};
-    const char *                    radioVersion;
+    const char                     *radioVersion;
 
     ncpOpenThread.Init();
 
@@ -185,7 +185,7 @@ static int realmain(int argc, char *argv[])
     otbrLogLevel              logLevel = GetDefaultLogLevel();
     int                       opt;
     int                       ret               = EXIT_SUCCESS;
-    const char *              interfaceName     = kDefaultInterfaceName;
+    const char               *interfaceName     = kDefaultInterfaceName;
     bool                      verbose           = false;
     bool                      printRadioVersion = false;
     bool                      enableAutoAttach  = true;

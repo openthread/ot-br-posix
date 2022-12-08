@@ -142,7 +142,7 @@ static void DumpDBusMessage(std::ostringstream &sout, DBusMessageIter *aIter)
         case DBUS_TYPE_DICT_ENTRY:
         {
             DBusMessageIter subIter;
-            char *          key;
+            char           *key;
 
             dbus_message_iter_recurse(aIter, &subIter);
             dbus_message_iter_get_basic(&subIter, &key);

@@ -76,9 +76,9 @@ public:
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
      *
      */
-    ControllerOpenThread(const char *                     aInterfaceName,
+    ControllerOpenThread(const char                      *aInterfaceName,
                          const std::vector<const char *> &aRadioUrls,
-                         const char *                     aBackboneInterfaceName,
+                         const char                      *aBackboneInterfaceName,
                          bool                             aDryRun,
                          bool                             aEnableAutoAttach);
 
@@ -187,7 +187,10 @@ public:
      * @returns the applied FeatureFlagList's serialized bytes.
      *
      */
-    const std::string &GetAppliedFeatureFlagListBytes(void) { return mAppliedFeatureFlagListBytes; }
+    const std::string &GetAppliedFeatureFlagListBytes(void)
+    {
+        return mAppliedFeatureFlagListBytes;
+    }
 #endif
 
     ~ControllerOpenThread(void) override;
@@ -199,16 +202,16 @@ private:
     }
     void HandleStateChanged(otChangedFlags aFlags);
 
-    static void HandleBackboneRouterDomainPrefixEvent(void *                            aContext,
+    static void HandleBackboneRouterDomainPrefixEvent(void                             *aContext,
                                                       otBackboneRouterDomainPrefixEvent aEvent,
-                                                      const otIp6Prefix *               aDomainPrefix);
+                                                      const otIp6Prefix                *aDomainPrefix);
     void        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,
-                                                      const otIp6Prefix *               aDomainPrefix);
+                                                      const otIp6Prefix                *aDomainPrefix);
 
 #if OTBR_ENABLE_DUA_ROUTING
-    static void HandleBackboneRouterNdProxyEvent(void *                       aContext,
+    static void HandleBackboneRouterNdProxyEvent(void                        *aContext,
                                                  otBackboneRouterNdProxyEvent aEvent,
-                                                 const otIp6Address *         aAddress);
+                                                 const otIp6Address          *aAddress);
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 

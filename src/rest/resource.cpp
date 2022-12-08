@@ -549,9 +549,9 @@ exit:
 }
 
 void Resource::DiagnosticResponseHandler(otError              aError,
-                                         otMessage *          aMessage,
+                                         otMessage           *aMessage,
                                          const otMessageInfo *aMessageInfo,
-                                         void *               aContext)
+                                         void                *aContext)
 {
     static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
 }
