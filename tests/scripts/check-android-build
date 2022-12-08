@@ -416,7 +416,8 @@ EOF
 #######################################
 prepare_libmdnssd()
 {
-    readonly MDNSRESPONDER_SOURCE=mDNSResponder-1310.80.1
+    MDNSRESPONDER_SOURCE=mDNSResponder-1310.80.1
+    readonly MDNSRESPONDER_SOURCE
 
     [[ ${OTBR_MDNS} == mDNSResponder ]] || return 0
 

@@ -29,7 +29,8 @@
 
 set -euxo pipefail
 
-readonly EXIT_CODE_SHOULD_RESTART=7
+EXIT_CODE_SHOULD_RESTART=7
+readonly EXIT_CODE_SHOULD_RESTART
 
 while
     "$@"

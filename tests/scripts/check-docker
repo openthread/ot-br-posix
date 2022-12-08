@@ -29,7 +29,8 @@
 
 set -euxo pipefail
 
-readonly OT_POSIX_CONFIG_RCP_BUS=${OT_POSIX_CONFIG_RCP_BUS:-UART}
+OT_POSIX_CONFIG_RCP_BUS=${OT_POSIX_CONFIG_RCP_BUS:-UART}
+readonly OT_POSIX_CONFIG_RCP_BUS
 
 on_exit()
 {
@@ -74,9 +75,10 @@ main()
     # shellcheck disable=SC2094
     ot-rcp 1 >"$DEVICE_PTY" <"$DEVICE_PTY" &
 
-    readonly OTBR_DOCKER_PID=$(docker run --rm -d \
+    OTBR_DOCKER_PID=$(docker run --rm -d \
         --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
         --privileged -p 8080:80 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr --backbone-interface eth0)
+    readonly OTBR_DOCKER_PID
     sleep 10
     sudo lsof -i :8080
 

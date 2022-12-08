@@ -31,7 +31,8 @@
 
 set -euxo pipefail
 
-readonly OTBR_DBUS_SERVER_CONF=otbr-test-agent.conf
+OTBR_DBUS_SERVER_CONF=otbr-test-agent.conf
+readonly OTBR_DBUS_SERVER_CONF
 
 on_exit()
 {

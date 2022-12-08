@@ -35,8 +35,11 @@
 
 set -euxo pipefail
 
-readonly PACKAGE_NAME=openthread-br
-readonly CONTAINER_NAME=openwrt-sdk
+PACKAGE_NAME=openthread-br
+readonly PACKAGE_NAME
+
+CONTAINER_NAME=openwrt-sdk
+readonly CONTAINER_NAME
 
 do_prepare()
 {

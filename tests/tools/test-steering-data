@@ -30,7 +30,8 @@
 #
 set -euxo pipefail
 
-readonly OTBR_EX_USAGE=64
+OTBR_EX_USAGE=64
+readonly OTBR_EX_USAGE
 
 main()
 {
