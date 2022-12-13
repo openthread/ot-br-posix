@@ -220,7 +220,9 @@ private:
 
     static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 
+#if OTBR_ENABLE_DETAILED_LOGGING_FLAG
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
+#endif
 
     otInstance *mInstance;
 

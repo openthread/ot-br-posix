@@ -65,10 +65,12 @@ typedef enum
  */
 otbrLogLevel otbrLogGetLevel(void);
 
+#if OTBR_ENABLE_DETAILED_LOGGING_FLAG
 /**
  * Get default log level.
  */
 otbrLogLevel otbrLogGetDefaultLevel(void);
+#endif
 
 /**
  * Set current log level.

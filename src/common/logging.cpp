@@ -49,10 +49,14 @@
 #include "common/code_utils.hpp"
 #include "common/time.hpp"
 
-static otbrLogLevel sLevel            = OTBR_LOG_INFO;
-static otbrLogLevel sDefaultLevel     = OTBR_LOG_INFO;
-static const char   sLevelString[][8] = {
-      "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
+static otbrLogLevel sLevel = OTBR_LOG_INFO;
+
+#if OTBR_ENABLE_DETAILED_LOGGING_FLAG
+static otbrLogLevel sDefaultLevel = OTBR_LOG_INFO;
+#endif
+
+static const char sLevelString[][8] = {
+    "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
 };
 
 /** Get the current debug log level */
@@ -61,11 +65,13 @@ otbrLogLevel otbrLogGetLevel(void)
     return sLevel;
 }
 
+#if OTBR_ENABLE_DETAILED_LOGGING_FLAG
 /** Get the initial log level */
 otbrLogLevel otbrLogGetDefaultLevel(void)
 {
     return sDefaultLevel;
 }
+#endif
 
 /**
  * Set current log level.
@@ -83,8 +89,10 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
     assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
 
     openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), OTBR_SYSLOG_FACILITY_ID);
-    sLevel        = aLevel;
+    sLevel = aLevel;
+#if OTBR_ENABLE_DETAILED_LOGGING_FLAG
     sDefaultLevel = sLevel;
+#endif
 }
 
 static const char *GetPrefix(const char *aLogTag)

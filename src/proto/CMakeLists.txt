@@ -34,6 +34,7 @@ endforeach()
 # Set the protoc output files as GENERATED.
 set_source_files_properties(${PROTO_SRC} ${PROTO_HDRS}
     PROPERTIES GENERATED TRUE
+    # Add flag to fix the issue https://github.com/protocolbuffers/protobuf/issues/7140
     COMPILE_FLAGS -Wno-array-bounds)
 
 # Add custom targets so that proto files will be generated only when changed.
