@@ -49,6 +49,7 @@
 #include <sstream>
 
 #include <openthread/border_agent.h>
+#include <openthread/border_routing.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/toolchain.h>
 
@@ -205,6 +206,25 @@ static uint64_t ConvertTimestampToUint64(const otTimestamp &aTimestamp)
            static_cast<uint64_t>(aTimestamp.mAuthoritative);
 }
 
+#if OTBR_ENABLE_BORDER_ROUTING
+void AppendOmrTxtEntry(otInstance &aInstance, Mdns::Publisher::TxtList &aTxtList)
+{
+    otIp6Prefix       omrPrefix;
+    otRoutePreference preference;
+
+    if (OT_ERROR_NONE == otBorderRoutingGetFavoredOmrPrefix(&aInstance, &omrPrefix, &preference))
+    {
+        std::vector<uint8_t> omrData;
+
+        omrData.reserve(1 + OT_IP6_PREFIX_SIZE);
+        omrData.push_back(omrPrefix.mLength);
+        std::copy(omrPrefix.mPrefix.mFields.m8, omrPrefix.mPrefix.mFields.m8 + (omrPrefix.mLength + 7) / 8,
+                  std::back_inserter(omrData));
+        aTxtList.emplace_back("omr", omrData.data(), omrData.size());
+    }
+}
+#endif
+
 void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
@@ -287,6 +307,10 @@ void BorderAgent::PublishMeshCopService(void)
 
     txtList.emplace_back("dn", otThreadGetDomainName(instance));
 #endif
+#if OTBR_ENABLE_BORDER_ROUTING
+    AppendOmrTxtEntry(*instance, txtList);
+#endif
+
     if (otBorderAgentGetState(instance) != OT_BORDER_AGENT_STATE_STOPPED)
     {
         port = otBorderAgentGetUdpPort(instance);
@@ -379,9 +403,6 @@ void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std:
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
     VerifyOrExit(mPublisher != nullptr);
-    VerifyOrExit(aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
-                           OT_CHANGED_ACTIVE_DATASET | OT_CHANGED_THREAD_PARTITION_ID |
-                           OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_PSKC));
 
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
@@ -389,7 +410,7 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
     }
 
     if (aFlags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_EXT_PANID | OT_CHANGED_THREAD_NETWORK_NAME |
-                  OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE))
+                  OT_CHANGED_THREAD_BACKBONE_ROUTER_STATE | OT_CHANGED_THREAD_NETDATA))
     {
         UpdateMeshCopService();
     }
