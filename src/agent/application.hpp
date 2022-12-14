@@ -90,7 +90,8 @@ public:
     explicit Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
                          const std::vector<const char *> &aRadioUrls,
-                         bool                             aEnableAutoAttach);
+                         bool                             aEnableAutoAttach,
+                         const std::string               &aRestListenAddress);
 
     /**
      * This method initializes the Application instance.

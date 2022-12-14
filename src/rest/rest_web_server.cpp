@@ -30,6 +30,7 @@
 
 #include "rest/rest_web_server.hpp"
 
+#include <arpa/inet.h>
 #include <cerrno>
 
 #include <fcntl.h>
@@ -48,10 +49,19 @@ static const uint32_t kMaxServeNum = 500;
 // Port number used by Rest server.
 static const uint32_t kPortNumber = 8081;
 
-RestWebServer::RestWebServer(ControllerOpenThread &aNcp)
+RestWebServer::RestWebServer(ControllerOpenThread &aNcp, const std::string &aRestListenAddress)
     : mResource(Resource(&aNcp))
     , mListenFd(-1)
 {
+    mAddress.sin6_family = AF_INET6;
+    mAddress.sin6_addr   = in6addr_any;
+    mAddress.sin6_port   = htons(kPortNumber);
+
+    if (!aRestListenAddress.empty())
+    {
+        if (!ParseListenAddress(aRestListenAddress, &mAddress.sin6_addr))
+            otbrLogWarning("Parsing REST listen address failed, listening on any address.");
+    }
 }
 
 RestWebServer::~RestWebServer(void)
@@ -113,6 +123,24 @@ void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)
     }
 }
 
+bool RestWebServer::ParseListenAddress(const std::string listenAddress, struct in6_addr *sin6_addr)
+{
+    const std::string ipv4_prefix       = "::FFFF:";
+    const std::string ipv4ListenAddress = ipv4_prefix + listenAddress;
+
+    if (inet_pton(AF_INET6, listenAddress.c_str(), sin6_addr) == 1)
+    {
+        return true;
+    }
+
+    if (inet_pton(AF_INET6, ipv4ListenAddress.c_str(), sin6_addr) == 1)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 void RestWebServer::InitializeListenFd(void)
 {
     otbrError   error = OTBR_ERROR_NONE;
@@ -121,10 +149,6 @@ void RestWebServer::InitializeListenFd(void)
     int32_t     err = errno;
     int32_t     yes = 1;
     int32_t     no  = 0;
-
-    mAddress.sin6_family = AF_INET6;
-    mAddress.sin6_addr   = in6addr_any;
-    mAddress.sin6_port   = htons(kPortNumber);
 
     mListenFd = SocketWithCloseExec(AF_INET6, SOCK_STREAM, 0, kSocketNonBlock);
     VerifyOrExit(mListenFd != -1, err = errno, error = OTBR_ERROR_REST, errorMessage = "socket");
