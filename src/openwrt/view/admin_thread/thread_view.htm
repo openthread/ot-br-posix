@@ -30,8 +30,8 @@
 <br />
 
 <ul class="cbi-tabmenu">
-	<li class="cbi-tab" id="listtab" style="width:15%;text-align:center;"><a href="javascript:showlist();"><%:List%></a></li>
-	<li class="cbi-tab-disabled" id="graphtab" style="width:15%;text-align:center;"><a href="javascript:showgraph();"><%:Topology Graph%></a></li>
+	<a href="javascript:showlist();"></a><li class="cbi-tab" id="listtab" style="width:15%;text-align:center;"><%:List%></li></a>
+	<a href="javascript:showgraph();"><li class="cbi-tab-disabled" id="graphtab" style="width:15%;text-align:center;"></li><%:Topology Graph%></li></a>
 </ul>
 
 <!-- list div -->
@@ -65,7 +65,6 @@
 	<br />
 	<!-- neighbor list -->
 	<!--
-	<h3><%: Neighbor Situation of Network%></h3><br />
 	<div class="table" id="neighbors" style="width:90%;margin-left:5%;">
 		<div class="tr table-titles" style="background-color:#eee;">
 			<div class="th col-2 center"><%:RLOC16%></div>
