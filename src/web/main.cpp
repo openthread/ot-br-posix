@@ -48,7 +48,7 @@
 
 static const char kSyslogIdent[]          = "otbr-web";
 static const char kDefaultInterfaceName[] = "wpan0";
-static const char kDefaultListenAddr[]    = "0.0.0.0";
+static const char kDefaultListenAddr[]    = "::";
 
 std::unique_ptr<otbr::Web::WebServer> sServer(nullptr);
 

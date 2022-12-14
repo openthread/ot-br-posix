@@ -118,20 +118,24 @@ void RestWebServer::InitializeListenFd(void)
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorMessage;
     int32_t     ret;
-    int32_t     err    = errno;
-    int32_t     optval = 1;
+    int32_t     err = errno;
+    int32_t     yes = 1;
+    int32_t     no  = 0;
 
-    mAddress.sin_family      = AF_INET;
-    mAddress.sin_addr.s_addr = INADDR_ANY;
-    mAddress.sin_port        = htons(kPortNumber);
+    mAddress.sin6_family = AF_INET6;
+    mAddress.sin6_addr   = in6addr_any;
+    mAddress.sin6_port   = htons(kPortNumber);
 
-    mListenFd = SocketWithCloseExec(AF_INET, SOCK_STREAM, 0, kSocketNonBlock);
+    mListenFd = SocketWithCloseExec(AF_INET6, SOCK_STREAM, 0, kSocketNonBlock);
     VerifyOrExit(mListenFd != -1, err = errno, error = OTBR_ERROR_REST, errorMessage = "socket");
 
-    ret = setsockopt(mListenFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&optval), sizeof(optval));
-    VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "sock opt");
+    ret = setsockopt(mListenFd, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<char *>(&no), sizeof(no));
+    VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "sock opt v6only");
 
-    ret = bind(mListenFd, reinterpret_cast<struct sockaddr *>(&mAddress), sizeof(sockaddr));
+    ret = setsockopt(mListenFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&yes), sizeof(yes));
+    VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "sock opt reuseaddr");
+
+    ret = bind(mListenFd, reinterpret_cast<struct sockaddr *>(&mAddress), sizeof(mAddress));
     VerifyOrExit(ret == 0, err = errno, error = OTBR_ERROR_REST, errorMessage = "bind");
 
     ret = listen(mListenFd, 5);
