@@ -30,7 +30,6 @@
 
 #include <stdio.h>
 
-#define OT_REST_RESPONSE_CONTENT_TYPE_JSON "application/json"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
@@ -42,15 +41,13 @@ namespace rest {
 
 Response::Response(void)
     : mCallback(false)
+    , mContentType(OT_REST_RESPONSE_CONTENT_TYPE_TEXT)
     , mComplete(false)
 {
     // HTTP protocol
     mProtocol = "HTTP/1.1 ";
 
     // Pre-defined headers
-    mHeaderField.push_back("Content-Type");
-    mHeaderValue.push_back(OT_REST_RESPONSE_CONTENT_TYPE_JSON);
-
     mHeaderField.push_back("Access-Control-Allow-Origin");
     mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN);
 
@@ -91,6 +88,16 @@ void Response::SetCallback(void)
     mCallback = true;
 }
 
+void Response::SetContentType(const std::string &aContentType)
+{
+    mContentType = aContentType;
+}
+
+std::string Response::GetContentType() const
+{
+    return mContentType;
+}
+
 void Response::SetBody(std::string &aBody)
 {
     mBody = aBody;
@@ -112,6 +119,7 @@ std::string Response::Serialize(void) const
     std::string spacer = "\r\n";
     std::string ret(mProtocol + " " + mCode);
 
+    ret += (spacer + "Content-Type: " + mContentType);
     for (index = 0; index < mHeaderField.size(); index++)
     {
         ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);

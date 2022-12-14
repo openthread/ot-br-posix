@@ -187,6 +187,7 @@ void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) cons
     std::string errorMessage = GetHttpStatus(aErrorCode);
     std::string body         = Json::Error2JsonString(aErrorCode, errorMessage);
 
+    aResponse.SetContentType(OT_REST_RESPONSE_CONTENT_TYPE_JSON);
     aResponse.SetResponsCode(errorMessage);
     aResponse.SetBody(body);
     aResponse.SetComplete();
@@ -222,6 +223,7 @@ void Resource::GetNodeInfo(Response &aResponse) const
     node.mRlocAddress = *otThreadGetRloc(mInstance);
 
     body = Json::Node2JsonString(node);
+    aResponse.SetContentType(OT_REST_RESPONSE_CONTENT_TYPE_JSON);
     aResponse.SetBody(body);
 
 exit:
@@ -539,6 +541,7 @@ exit:
 
     if (error == OTBR_ERROR_NONE)
     {
+        aResponse.SetContentType(OT_REST_RESPONSE_CONTENT_TYPE_JSON);
         aResponse.SetStartTime(steady_clock::now());
         aResponse.SetCallback();
     }

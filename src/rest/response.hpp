@@ -40,6 +40,9 @@
 
 #include "rest/types.hpp"
 
+#define OT_REST_RESPONSE_CONTENT_TYPE_JSON "application/json"
+#define OT_REST_RESPONSE_CONTENT_TYPE_TEXT "plain/text"
+
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::seconds;
@@ -62,6 +65,21 @@ public:
      *
      */
     Response(void);
+
+    /**
+     * This method sets the response Content-Type header.
+     *
+     * @param[in] aContentType  A string to be set as response Content-Type header.
+     *
+     */
+    void SetContentType(const std::string &aContentType);
+
+    /**
+     * This method returns a string of the response Content-Type.
+     *
+     * @returns A string containing the Content-Type.
+     */
+    std::string GetContentType(void) const;
 
     /**
      * This method set the response body.
@@ -141,6 +159,7 @@ private:
     std::vector<std::string> mHeaderValue;
     std::string              mCode;
     std::string              mProtocol;
+    std::string              mContentType;
     std::string              mBody;
     bool                     mComplete;
     steady_clock::time_point mStartTime;
