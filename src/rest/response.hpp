@@ -35,8 +35,8 @@
 #define OTBR_REST_RESPONSE_HPP_
 
 #include <chrono>
+#include <map>
 #include <string>
-#include <vector>
 
 #include "rest/types.hpp"
 
@@ -136,14 +136,13 @@ public:
     std::string Serialize(void) const;
 
 private:
-    bool                     mCallback;
-    std::vector<std::string> mHeaderField;
-    std::vector<std::string> mHeaderValue;
-    std::string              mCode;
-    std::string              mProtocol;
-    std::string              mBody;
-    bool                     mComplete;
-    steady_clock::time_point mStartTime;
+    bool                               mCallback;
+    std::map<std::string, std::string> mHeaders;
+    std::string                        mCode;
+    std::string                        mProtocol;
+    std::string                        mBody;
+    bool                               mComplete;
+    steady_clock::time_point           mStartTime;
 };
 
 } // namespace rest
