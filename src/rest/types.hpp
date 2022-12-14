@@ -59,6 +59,8 @@ enum class HttpMethod : std::uint8_t
 enum class HttpStatusCode : std::uint16_t
 {
     kStatusOk                  = 200,
+    kStatusAccepted            = 202,
+    kStatusBadRequest          = 400,
     kStatusResourceNotFound    = 404,
     kStatusMethodNotAllowed    = 405,
     kStatusRequestTimeout      = 408,

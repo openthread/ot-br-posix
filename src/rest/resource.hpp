@@ -127,6 +127,7 @@ private:
     void GetDataExtendedPanId(Response &aResponse) const;
     void GetDataRloc(Response &aResponse) const;
     void GetActiveDatasetTlvs(Response &aResponse) const;
+    void SetActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);
