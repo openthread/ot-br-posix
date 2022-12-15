@@ -307,8 +307,9 @@ template <> struct DBusTypeTrait<BorderRoutingCounters>
     // struct of { struct of { uint64, uint64 },
     //             struct of { uint64, uint64 },
     //             struct of { uint64, uint64 },
-    //             struct of { uint64, uint64 } }
-    static constexpr const char *TYPE_AS_STRING = "((tt)(tt)(tt)(tt))";
+    //             struct of { uint64, uint64 },
+    //             uint32, uint32, uint32, uint32, uint32, uint32 }
+    static constexpr const char *TYPE_AS_STRING = "((tt)(tt)(tt)(tt)uuuuuu)";
 };
 
 template <> struct DBusTypeTrait<Nat64ComponentState>
@@ -491,7 +492,7 @@ template <typename T> otbrError DBusMessageExtractPrimitive(DBusMessageIter *aIt
 {
     DBusMessageIter subIter;
     otbrError       error = OTBR_ERROR_NONE;
-    T *             val;
+    T              *val;
     int             n;
     int             subtype;
 
@@ -519,7 +520,7 @@ template <typename T, size_t SIZE> otbrError DBusMessageExtract(DBusMessageIter 
 {
     DBusMessageIter subIter;
     otbrError       error = OTBR_ERROR_NONE;
-    T *             val;
+    T              *val;
     int             n;
     int             subtype;
 

@@ -93,9 +93,9 @@ private:
     };
 
     static void AdvertisingHandler(otSrpServerServiceUpdateId aId,
-                                   const otSrpServerHost *    aHost,
+                                   const otSrpServerHost     *aHost,
                                    uint32_t                   aTimeout,
-                                   void *                     aContext);
+                                   void                      *aContext);
     void        AdvertisingHandler(otSrpServerServiceUpdateId aId, const otSrpServerHost *aHost, uint32_t aTimeout);
 
     static Mdns::Publisher::TxtList     MakeTxtList(const otSrpServerService *aSrpService);

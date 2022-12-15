@@ -207,7 +207,7 @@ exit:
     return;
 }
 
-void TrelDnssd::OnTrelServiceInstanceResolved(const std::string &                            aType,
+void TrelDnssd::OnTrelServiceInstanceResolved(const std::string                             &aType,
                                               const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     VerifyOrExit(StringUtils::EqualCaseInsensitive(aType, kTrelServiceName));

@@ -209,10 +209,10 @@ void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
     uint32_t                 stateUint32;
-    otInstance *             instance    = mNcp.GetInstance();
-    const otExtendedPanId *  extPanId    = otThreadGetExtendedPanId(instance);
-    const otExtAddress *     extAddr     = otLinkGetExtendedAddress(instance);
-    const char *             networkName = otThreadGetNetworkName(instance);
+    otInstance              *instance    = mNcp.GetInstance();
+    const otExtendedPanId   *extPanId    = otThreadGetExtendedPanId(instance);
+    const otExtAddress      *extAddr     = otLinkGetExtendedAddress(instance);
+    const char              *networkName = otThreadGetNetworkName(instance);
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
     int                      port;
 
@@ -303,7 +303,7 @@ void BorderAgent::PublishMeshCopService(void)
 #if OTBR_ENABLE_DBUS_SERVER
     for (const auto &entry : mMeshCopTxtUpdate)
     {
-        const std::string &         key   = entry.first;
+        const std::string          &key   = entry.first;
         const std::vector<uint8_t> &value = entry.second;
         bool                        found = false;
 

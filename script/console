@@ -37,8 +37,11 @@
 # shellcheck source=script/_border_routing
 . script/_border_routing
 
-readonly TUN="${TUN:-wpan0}"
-readonly RADIO_URL="${RADIO_URL:-spinel+hdlc+uart:///dev/ttyUSB0}"
+TUN="${TUN:-wpan0}"
+readonly TUN
+
+RADIO_URL="${RADIO_URL:-spinel+hdlc+uart:///dev/ttyUSB0}"
+readonly RADIO_URL
 
 killall_services()
 {

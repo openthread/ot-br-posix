@@ -213,7 +213,7 @@ private:
     }
 
     DBusConnection *mConnection;
-    DBusMessage *   mMessage;
+    DBusMessage    *mMessage;
 };
 
 } // namespace DBus

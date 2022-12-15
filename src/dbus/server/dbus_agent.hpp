@@ -86,8 +86,8 @@ private:
     std::string                       mInterfaceName;
     std::unique_ptr<DBusThreadObject> mThreadObject;
     UniqueDBusConnection              mConnection;
-    otbr::Ncp::ControllerOpenThread & mNcp;
-    Mdns::Publisher &                 mPublisher;
+    otbr::Ncp::ControllerOpenThread  &mNcp;
+    Mdns::Publisher                  &mPublisher;
 
     /**
      * This map is used to track DBusWatch-es.

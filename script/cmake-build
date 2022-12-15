@@ -58,8 +58,11 @@
 # shellcheck source=script/_initrc
 . "$(dirname "$0")"/_initrc
 
-readonly OTBR_TOP_SRCDIR="$PWD"
-readonly OTBR_TOP_BUILD_DIR="${BUILD_DIR}/otbr"
+OTBR_TOP_SRCDIR="$PWD"
+readonly OTBR_TOP_SRCDIR
+
+OTBR_TOP_BUILD_DIR="${BUILD_DIR}/otbr"
+readonly OTBR_TOP_BUILD_DIR
 
 OTBR_TARGET=${OTBR_TARGET:-}
 

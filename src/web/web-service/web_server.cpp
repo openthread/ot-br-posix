@@ -184,9 +184,9 @@ void WebServer::HandleHttpRequest(const char *aUrl, const char *aMethod, HttpReq
     };
 }
 
-void DefaultResourceSend(const HttpServer &                           aServer,
+void DefaultResourceSend(const HttpServer                            &aServer,
                          const std::shared_ptr<HttpServer::Response> &aResponse,
-                         const std::shared_ptr<std::ifstream> &       aIfStream)
+                         const std::shared_ptr<std::ifstream>        &aIfStream)
 {
     static std::vector<char> buffer(OT_BUFFER_SIZE); // Safe when server is running on one thread
 
@@ -318,7 +318,7 @@ std::string WebServer::HandleGetStatusRequest(const std::string &aGetStatusReque
 }
 
 std::string WebServer::HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest,
-                                                         void *             aUserData)
+                                                         void              *aUserData)
 {
     WebServer *webServer = static_cast<WebServer *>(aUserData);
 

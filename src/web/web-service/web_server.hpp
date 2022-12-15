@@ -103,7 +103,7 @@ private:
     static std::string HandleDeletePrefixRequest(const std::string &aDeletePrefixRequest, void *aUserData);
     static std::string HandleGetStatusRequest(const std::string &aGetStatusRequest, void *aUserData);
     static std::string HandleGetAvailableNetworkResponse(const std::string &aGetAvailableNetworkRequest,
-                                                         void *             aUserData);
+                                                         void              *aUserData);
     static std::string HandleCommission(const std::string &aCommissionRequest, void *aUserData);
 
     std::string HandleJoinNetworkRequest(const std::string &aJoinRequest);
@@ -128,7 +128,7 @@ private:
 
     void Init(void);
 
-    HttpServer *           mServer;
+    HttpServer            *mServer;
     otbr::Web::WpanService mWpanService;
 };
 

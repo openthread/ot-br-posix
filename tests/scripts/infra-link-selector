@@ -28,10 +28,17 @@
 
 set -euxo pipefail
 
-readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-readonly ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
-readonly OTBR_AGENT="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent"
-readonly OT_RCP=$(command -v ot-rcp)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+readonly SCRIPT_DIR
+
+ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly ABS_TOP_BUILDDIR
+
+OTBR_AGENT="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent"
+readonly OTBR_AGENT
+
+OT_RCP=$(command -v ot-rcp)
+readonly OT_RCP
 
 at_exit()
 {

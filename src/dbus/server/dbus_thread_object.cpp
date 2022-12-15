@@ -122,10 +122,10 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 namespace otbr {
 namespace DBus {
 
-DBusThreadObject::DBusThreadObject(DBusConnection *                 aConnection,
-                                   const std::string &              aInterfaceName,
+DBusThreadObject::DBusThreadObject(DBusConnection                  *aConnection,
+                                   const std::string               &aInterfaceName,
                                    otbr::Ncp::ControllerOpenThread *aNcp,
-                                   Mdns::Publisher *                aPublisher)
+                                   Mdns::Publisher                 *aPublisher)
     : DBusObject(aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mNcp(aNcp)
     , mPublisher(aPublisher)
@@ -318,7 +318,7 @@ void DBusThreadObject::ScanHandler(DBusRequest &aRequest)
     threadHelper->Scan(std::bind(&DBusThreadObject::ReplyScanResult, this, aRequest, _1, _2));
 }
 
-void DBusThreadObject::ReplyScanResult(DBusRequest &                          aRequest,
+void DBusThreadObject::ReplyScanResult(DBusRequest                           &aRequest,
                                        otError                                aError,
                                        const std::vector<otActiveScanResult> &aResult)
 {
@@ -365,7 +365,7 @@ exit:
     }
 }
 
-void DBusThreadObject::ReplyEnergyScanResult(DBusRequest &                          aRequest,
+void DBusThreadObject::ReplyEnergyScanResult(DBusRequest                           &aRequest,
                                              otError                                aError,
                                              const std::vector<otEnergyScanResult> &aResult)
 {
@@ -571,7 +571,7 @@ void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
     auto                  args  = std::tie(route);
     otError               error = OT_ERROR_NONE;
     otExternalRouteConfig otRoute;
-    otIp6Prefix &         prefix = otRoute.mPrefix;
+    otIp6Prefix          &prefix = otRoute.mPrefix;
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -1312,7 +1312,7 @@ otError DBusThreadObject::GetSrpServerInfoHandler(DBusMessageIter &aIter)
     otError                            error        = OT_ERROR_NONE;
     SrpServerInfo                      srpServerInfo{};
     otSrpServerLeaseInfo               leaseInfo;
-    const otSrpServerHost *            host             = nullptr;
+    const otSrpServerHost             *host             = nullptr;
     const otSrpServerResponseCounters *responseCounters = otSrpServerGetResponseCounters(instance);
 
     srpServerInfo.mState       = SrpServerState(static_cast<uint8_t>(otSrpServerGetState(instance)));
@@ -1453,8 +1453,8 @@ exit:
     }
 }
 
-void DBusThreadObject::RegisterGetPropertyHandler(const std::string &        aInterfaceName,
-                                                  const std::string &        aPropertyName,
+void DBusThreadObject::RegisterGetPropertyHandler(const std::string         &aInterfaceName,
+                                                  const std::string         &aPropertyName,
                                                   const PropertyHandlerType &aHandler)
 {
     DBusObject::RegisterGetPropertyHandler(aInterfaceName, aPropertyName, aHandler);
@@ -1615,6 +1615,12 @@ otError DBusThreadObject::GetBorderRoutingCountersHandler(DBusMessageIter &aIter
     borderRoutingCounters.mOutboundUnicast.mBytes     = otBorderRoutingCounters->mOutboundUnicast.mBytes;
     borderRoutingCounters.mOutboundMulticast.mPackets = otBorderRoutingCounters->mOutboundMulticast.mPackets;
     borderRoutingCounters.mOutboundMulticast.mBytes   = otBorderRoutingCounters->mOutboundMulticast.mBytes;
+    borderRoutingCounters.mRaRx                       = otBorderRoutingCounters->mRaRx;
+    borderRoutingCounters.mRaTxSuccess                = otBorderRoutingCounters->mRaTxSuccess;
+    borderRoutingCounters.mRaTxFailure                = otBorderRoutingCounters->mRaTxFailure;
+    borderRoutingCounters.mRsRx                       = otBorderRoutingCounters->mRsRx;
+    borderRoutingCounters.mRsTxSuccess                = otBorderRoutingCounters->mRsTxSuccess;
+    borderRoutingCounters.mRsTxFailure                = otBorderRoutingCounters->mRsTxFailure;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, borderRoutingCounters) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);

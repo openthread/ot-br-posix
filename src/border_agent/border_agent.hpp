@@ -171,7 +171,7 @@ private:
     std::string GetAlternativeServiceInstanceName() const;
 
     otbr::Ncp::ControllerOpenThread &mNcp;
-    Mdns::Publisher *                mPublisher;
+    Mdns::Publisher                 *mPublisher;
 
 #if OTBR_ENABLE_DBUS_SERVER
     std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;

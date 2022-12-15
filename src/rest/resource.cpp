@@ -35,7 +35,7 @@
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
 
-#define OT_REST_RESOURCE_PATH_DIAGNOETIC "/diagnostics"
+#define OT_REST_RESOURCE_PATH_DIAGNOSTICS "/diagnostics"
 #define OT_REST_RESOURCE_PATH_NODE "/node"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC "/node/rloc"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC16 "/node/rloc16"
@@ -109,7 +109,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
     , mNcp(aNcp)
 {
     // Resource Handler
-    mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::Diagnostic);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::Diagnostic);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE, &Resource::NodeInfo);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_STATE, &Resource::State);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, &Resource::ExtendedAddr);
@@ -121,7 +121,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
 
     // Resource callback handler
-    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOETIC, &Resource::HandleDiagnosticCallback);
+    mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
 }
 
 void Resource::Init(void)
@@ -549,9 +549,9 @@ exit:
 }
 
 void Resource::DiagnosticResponseHandler(otError              aError,
-                                         otMessage *          aMessage,
+                                         otMessage           *aMessage,
                                          const otMessageInfo *aMessageInfo,
-                                         void *               aContext)
+                                         void                *aContext)
 {
     static_cast<Resource *>(aContext)->DiagnosticResponseHandler(aError, aMessage, aMessageInfo);
 }

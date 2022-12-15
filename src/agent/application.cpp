@@ -47,7 +47,7 @@ namespace otbr {
 std::atomic_bool     Application::sShouldTerminate(false);
 const struct timeval Application::kPollTimeout = {10, 0};
 
-Application::Application(const std::string &              aInterfaceName,
+Application::Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
                          const std::vector<const char *> &aRadioUrls,
                          bool                             aEnableAutoAttach)

@@ -33,7 +33,8 @@
 
 set -euxo pipefail
 
-readonly DNS_SD_RESULT=result
+DNS_SD_RESULT=result
+readonly DNS_SD_RESULT
 
 case "${OTBR_MDNS}" in
     mDNSResponder)
@@ -57,7 +58,8 @@ esac
 
 on_exit()
 {
-    readonly EXIT_CODE=$?
+    EXIT_CODE=$?
+    readonly EXIT_CODE
 
     kill "$PID"
     [[ ! -e ${DNS_SD_RESULT} ]] || rm "${DNS_SD_RESULT}" || true

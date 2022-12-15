@@ -206,8 +206,8 @@ public:
                         const std::string &aType,
                         const SubTypeList &aSubTypeList,
                         uint16_t           aPort,
-                        const TxtList &    aTxtList,
-                        ResultCallback &&  aCallback);
+                        const TxtList     &aTxtList,
+                        ResultCallback   &&aCallback);
 
     /**
      * This method un-publishes a service.
@@ -388,7 +388,7 @@ protected:
     {
     public:
         ResultCallback mCallback;
-        Publisher *    mPublisher;
+        Publisher     *mPublisher;
 
         Registration(ResultCallback &&aCallback, Publisher *aPublisher)
             : mCallback(std::move(aCallback))
@@ -429,7 +429,7 @@ protected:
                             uint16_t         aPort,
                             TxtList          aTxtList,
                             ResultCallback &&aCallback,
-                            Publisher *      aPublisher)
+                            Publisher       *aPublisher)
             : Registration(std::move(aCallback), aPublisher)
             , mHostName(std::move(aHostName))
             , mName(std::move(aName))
@@ -451,7 +451,7 @@ protected:
                         const std::string &aType,
                         const SubTypeList &aSubTypeList,
                         uint16_t           aPort,
-                        const TxtList &    aTxtList) const;
+                        const TxtList     &aTxtList) const;
     };
 
     class HostRegistration : public Registration
@@ -493,11 +493,11 @@ protected:
                                          const std::string &aType,
                                          const SubTypeList &aSubTypeList,
                                          uint16_t           aPort,
-                                         const TxtList &    aTxtList,
-                                         ResultCallback &&  aCallback)                            = 0;
-    virtual otbrError PublishHostImpl(const std::string &            aName,
+                                         const TxtList     &aTxtList,
+                                         ResultCallback   &&aCallback)                            = 0;
+    virtual otbrError PublishHostImpl(const std::string             &aName,
                                       const std::vector<Ip6Address> &aAddresses,
-                                      ResultCallback &&              aCallback)                               = 0;
+                                      ResultCallback               &&aCallback)                               = 0;
     virtual void      OnServiceResolveFailedImpl(const std::string &aType,
                                                  const std::string &aInstanceName,
                                                  int32_t            aErrorCode)                            = 0;
@@ -522,12 +522,12 @@ protected:
                                                       const std::string &aType,
                                                       const SubTypeList &aSubTypeList,
                                                       uint16_t           aPort,
-                                                      const TxtList &    aTxtList,
-                                                      ResultCallback &&  aCallback);
+                                                      const TxtList     &aTxtList,
+                                                      ResultCallback   &&aCallback);
 
-    ResultCallback HandleDuplicateHostRegistration(const std::string &            aName,
+    ResultCallback HandleDuplicateHostRegistration(const std::string             &aName,
                                                    const std::vector<Ip6Address> &aAddresses,
-                                                   ResultCallback &&              aCallback);
+                                                   ResultCallback               &&aCallback);
 
     void              AddHostRegistration(HostRegistrationPtr &&aHostReg);
     void              RemoveHostRegistration(const std::string &aName, otbrError aError);

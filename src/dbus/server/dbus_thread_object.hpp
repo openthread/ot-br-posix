@@ -70,15 +70,15 @@ public:
      * @param[in] aPublisher      The Mdns::Publisher
      *
      */
-    DBusThreadObject(DBusConnection *                 aConnection,
-                     const std::string &              aInterfaceName,
+    DBusThreadObject(DBusConnection                  *aConnection,
+                     const std::string               &aInterfaceName,
                      otbr::Ncp::ControllerOpenThread *aNcp,
-                     Mdns::Publisher *                aPublisher);
+                     Mdns::Publisher                 *aPublisher);
 
     otbrError Init(void) override;
 
-    void RegisterGetPropertyHandler(const std::string &        aInterfaceName,
-                                    const std::string &        aPropertyName,
+    void RegisterGetPropertyHandler(const std::string         &aInterfaceName,
+                                    const std::string         &aPropertyName,
                                     const PropertyHandlerType &aHandler) override;
 
 private:
@@ -165,9 +165,9 @@ private:
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
-    otbr::Ncp::ControllerOpenThread *                    mNcp;
+    otbr::Ncp::ControllerOpenThread                     *mNcp;
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
-    otbr::Mdns::Publisher *                              mPublisher;
+    otbr::Mdns::Publisher                               *mPublisher;
 };
 
 } // namespace DBus

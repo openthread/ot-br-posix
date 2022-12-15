@@ -37,74 +37,127 @@ set -euxo pipefail
 # The test case to run. available cases are:
 # - commissioning
 # - mdns_service
-readonly TEST_CASE="${TEST_CASE:-commissioning}"
+TEST_CASE="${TEST_CASE:-commissioning}"
+readonly TEST_CASE
 
 # Get our starting directory and remember it
-readonly ORIGIN_PWD="$(pwd)"
-readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ORIGIN_PWD="$(pwd)"
+readonly ORIGIN_PWD
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+readonly SCRIPT_DIR
 
 #---------------------------------------
 # Configurations
 #---------------------------------------
-readonly OT_RCP="ot-rcp"
-readonly OT_CLI="${OT_CLI:-ot-cli-ftd}"
-readonly ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
-readonly ABS_TOP_SRCDIR="$(cd "${top_srcdir:-"${SCRIPT_DIR}"/../../}" && pwd)"
-readonly NO_CLEAN="${NO_CLEAN:-1}"
-readonly IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
-readonly OTBR_USE_WEB_COMMISSIONER="${USE_WEB_COMMISSIONER:-0}"
+OT_RCP="ot-rcp"
+readonly OT_RCP
+
+OT_CLI="${OT_CLI:-ot-cli-ftd}"
+readonly OT_CLI
+
+ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly ABS_TOP_BUILDDIR
+
+ABS_TOP_SRCDIR="$(cd "${top_srcdir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly ABS_TOP_SRCDIR
+
+NO_CLEAN="${NO_CLEAN:-1}"
+readonly NO_CLEAN
+
+IGNORE_INSTALLED="${IGNORE_INSTALLED:-0}"
+readonly IGNORE_INSTALLED
+
+OTBR_USE_WEB_COMMISSIONER="${USE_WEB_COMMISSIONER:-0}"
+readonly OTBR_USE_WEB_COMMISSIONER
 
 #----------------------------------------
 # Test constants
 #----------------------------------------
-readonly TEST_BASE=/tmp/test-otbr
+TEST_BASE=/tmp/test-otbr
+readonly TEST_BASE
 
-readonly OTBR_AGENT=otbr-agent
-readonly OTBR_WEB=otbr-web
-readonly OT_COMMISSIONER_CLI=commissioner-cli
+OTBR_AGENT=otbr-agent
+readonly OTBR_AGENT
 
-readonly STAGE_DIR="${TEST_BASE}/stage"
-readonly BUILD_DIR="${TEST_BASE}/build"
-readonly OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
-readonly OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
-readonly OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
-readonly OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
-readonly OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+OTBR_WEB=otbr-web
+readonly OTBR_WEB
+
+OT_COMMISSIONER_CLI=commissioner-cli
+readonly OT_COMMISSIONER_CLI
+
+STAGE_DIR="${TEST_BASE}/stage"
+readonly STAGE_DIR
+
+BUILD_DIR="${TEST_BASE}/build"
+readonly BUILD_DIR
+
+OTBR_PSKC_PATH="${ABS_TOP_BUILDDIR}/tools/pskc"
+readonly OTBR_PSKC_PATH
+
+OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
+readonly OTBR_AGENT_PATH
+
+OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
+readonly OTBR_DBUS_CONF
+
+OTBR_WEB_PATH="${ABS_TOP_BUILDDIR}/src/web/${OTBR_WEB}"
+readonly OTBR_WEB_PATH
+
+OT_CTL="${ABS_TOP_BUILDDIR}/third_party/openthread/repo/src/posix/ot-ctl"
+readonly OT_CTL
 
 # The node ids
-readonly LEADER_NODE_ID=1
-readonly JOINER_NODE_ID=2
+LEADER_NODE_ID=1
+readonly LEADER_NODE_ID
+
+JOINER_NODE_ID=2
+readonly JOINER_NODE_ID
 
 # Web GUI
-readonly OTBR_WEB_HOST=127.0.0.1
-readonly OTBR_WEB_PORT=8773
-readonly OTBR_WEB_URL="http://${OTBR_WEB_HOST}:${OTBR_WEB_PORT}"
+OTBR_WEB_HOST=127.0.0.1
+readonly OTBR_WEB_HOST
+
+OTBR_WEB_PORT=8773
+readonly OTBR_WEB_PORT
+
+OTBR_WEB_URL="http://${OTBR_WEB_HOST}:${OTBR_WEB_PORT}"
+readonly OTBR_WEB_URL
 
 # External commissioner
-readonly OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
-readonly OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
+OT_COMMISSIONER_PATH=${BUILD_DIR}/ot-commissioner/build/src/app/cli/commissioner-cli
+readonly OT_COMMISSIONER_PATH
+
+OT_COMMISSIONER_CONFIG=${BUILD_DIR}/ot-commissioner/src/app/etc/commissioner/non-ccm-config.json
+readonly OT_COMMISSIONER_CONFIG
 
 #
 # NOTE Joiner pass phrase:
 #   Must be at least 6 bytes long
 #   And this example has: J ZERO ONE N E R
 #   We cannot use letter O and I because Q O I Z are not allowed per spec
-readonly OT_JOINER_PASSPHRASE=J01NER
+OT_JOINER_PASSPHRASE=J01NER
+readonly OT_JOINER_PASSPHRASE
 
 # 18b430 is the nest EUI prefix.
-readonly OT_JOINER_EUI64="18b430000000000${JOINER_NODE_ID}"
+OT_JOINER_EUI64="18b430000000000${JOINER_NODE_ID}"
+readonly OT_JOINER_EUI64
 
 # The border agent, and ncp needs a pass phrase.
-readonly OT_AGENT_PASSPHRASE=MYPASSPHRASE
+OT_AGENT_PASSPHRASE=MYPASSPHRASE
+readonly OT_AGENT_PASSPHRASE
 
 # The network needs a name.
-readonly OT_NETWORK_NAME=MyTestNetwork
+OT_NETWORK_NAME=MyTestNetwork
+readonly OT_NETWORK_NAME
 
 # The TUN device for OpenThread border router.
-readonly TUN_NAME=wpan0
+TUN_NAME=wpan0
+readonly TUN_NAME
 
 # The default meshcop service instance name
-readonly OT_SERVICE_INSTANCE='OpenThread\(\\032\| \)BorderRouter\(\\032\| \)#[0-9A-F][0-9A-F][0-9A-F][0-9A-F]'
+OT_SERVICE_INSTANCE='OpenThread\(\\032\| \)BorderRouter\(\\032\| \)#[0-9A-F][0-9A-F][0-9A-F][0-9A-F]'
+readonly OT_SERVICE_INSTANCE
 
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"
 echo "TEST_BASE: ${TEST_BASE}"
@@ -247,7 +300,8 @@ test_setup()
 test_teardown()
 {
     # Capture the exit code so we can return it below
-    readonly EXIT_CODE=$?
+    EXIT_CODE=$?
+    readonly EXIT_CODE
     write_syslog "EXIT ${EXIT_CODE} - output logs"
 
     sudo pkill -f "${OTBR_AGENT}" || true
@@ -322,10 +376,17 @@ web_start()
 
 network_form()
 {
-    readonly OT_PANID="$(random_panid)"
-    readonly OT_XPANID="$(random_xpanid)"
-    readonly OT_NETWORK_KEY="$(random_networkkey)"
-    readonly OT_CHANNEL="$(random_channel)"
+    OT_PANID="$(random_panid)"
+    readonly OT_PANID
+
+    OT_XPANID="$(random_xpanid)"
+    readonly OT_XPANID
+
+    OT_NETWORK_KEY="$(random_networkkey)"
+    readonly OT_NETWORK_KEY
+
+    OT_CHANNEL="$(random_channel)"
+    readonly OT_CHANNEL
 
     curl --header "Content-Type: application/json" --request POST --data "{\"networkKey\":\"${OT_NETWORK_KEY}\",\"prefix\":\"fd11:22::\",\"defaultRoute\":true,\"extPanId\":\"${OT_XPANID}\",\"panId\":\"${OT_PANID}\",\"passphrase\":\"${OT_AGENT_PASSPHRASE}\",\"channel\":${OT_CHANNEL},\"networkName\":\"${OT_NETWORK_NAME}\"}" "${OTBR_WEB_URL}"/form_network | grep "success" || die "WEB: form failed"
     sleep 15
@@ -358,9 +419,13 @@ ot_commissioner_start()
     write_syslog "COMMISSIONER: kill old"
     sudo killall "${OT_COMMISSIONER_CLI}" || true
 
-    readonly OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
-    readonly OT_COMMISSIONER_LOG="${TEST_BASE}"/commissioner.log
+    OT_PSKC="$("${OTBR_PSKC_PATH}" "${OT_AGENT_PASSPHRASE}" "${OT_XPANID}" "${OT_NETWORK_NAME}")"
+    readonly OT_PSKC
 
+    OT_COMMISSIONER_LOG="${TEST_BASE}"/commissioner.log
+    readonly OT_COMMISSIONER_LOG
+
+    local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
     local commissioner_config_file="${TEST_BASE}"/ot-commissioner.json
 
     sed "s/3aa55f91ca47d1e4e71a08cb35e91591/${OT_PSKC}/g" "${OT_COMMISSIONER_CONFIG}" >"${commissioner_config_file}"

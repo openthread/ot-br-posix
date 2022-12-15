@@ -156,7 +156,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
     struct iovec      iovec;
     ssize_t           len;
     struct icmp6_hdr *icmp6header;
-    struct cmsghdr *  cmsghdr;
+    struct cmsghdr   *cmsghdr;
     unsigned char     cbuf[2 * CMSG_SPACE(sizeof(struct in6_pktinfo))];
     uint8_t           packet[kMaxICMP6PacketSize];
     otbrError         error = OTBR_ERROR_NONE;
@@ -199,7 +199,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
                 if (cmsghdr->cmsg_len == CMSG_LEN(sizeof(struct in6_pktinfo)))
                 {
                     struct in6_pktinfo *pktinfo = (struct in6_pktinfo *)CMSG_DATA(cmsghdr);
-                    Ip6Address &        dst     = *reinterpret_cast<Ip6Address *>(&pktinfo->ipi6_addr);
+                    Ip6Address         &dst     = *reinterpret_cast<Ip6Address *>(&pktinfo->ipi6_addr);
                     uint32_t            ifindex = pktinfo->ipi6_ifindex;
 
                     for (const Ip6Address &ipaddr : mNdProxySet)
@@ -233,7 +233,7 @@ void NdProxyManager::ProcessMulticastNeighborSolicition()
 
         {
             struct nd_neighbor_solicit *ns     = reinterpret_cast<struct nd_neighbor_solicit *>(packet);
-            Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns->nd_ns_target);
+            Ip6Address                 &target = *reinterpret_cast<Ip6Address *>(&ns->nd_ns_target);
 
             otbrLogInfo("NdProxyManager: send solicited NA for multicast NS: src=%s, target=%s", src.ToString().c_str(),
                         target.ToString().c_str());
@@ -305,7 +305,7 @@ void NdProxyManager::SendNeighborAdvertisement(const Ip6Address &aTarget, const 
     uint8_t                    packet[kMaxICMP6PacketSize];
     uint16_t                   len = 0;
     struct nd_neighbor_advert &na  = *reinterpret_cast<struct nd_neighbor_advert *>(packet);
-    struct nd_opt_hdr &        opt = *reinterpret_cast<struct nd_opt_hdr *>(packet + sizeof(struct nd_neighbor_advert));
+    struct nd_opt_hdr         &opt = *reinterpret_cast<struct nd_opt_hdr *>(packet + sizeof(struct nd_neighbor_advert));
     bool                       isSolicited = !aDst.IsMulticast();
     sockaddr_in6               dst;
     otbrError                  error = OTBR_ERROR_NONE;
@@ -464,21 +464,21 @@ void NdProxyManager::FiniNetfilterQueue(void)
 }
 
 int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
-                                         struct nfgenmsg *    aNfMsg,
-                                         struct nfq_data *    aNfData,
-                                         void *               aContext)
+                                         struct nfgenmsg     *aNfMsg,
+                                         struct nfq_data     *aNfData,
+                                         void                *aContext)
 {
     return static_cast<NdProxyManager *>(aContext)->HandleNetfilterQueue(aNfQueueHandler, aNfMsg, aNfData);
 }
 
 int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
-                                         struct nfgenmsg *    aNfMsg,
-                                         struct nfq_data *    aNfData)
+                                         struct nfgenmsg     *aNfMsg,
+                                         struct nfq_data     *aNfData)
 {
     OTBR_UNUSED_VARIABLE(aNfMsg);
 
     struct nfqnl_msg_packet_hdr *ph;
-    unsigned char *              data;
+    unsigned char               *data;
     uint32_t                     id      = 0;
     int                          ret     = 0;
     int                          len     = 0;
@@ -487,7 +487,7 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
     Ip6Address        dst;
     Ip6Address        src;
     struct icmp6_hdr *icmp6header = nullptr;
-    struct ip6_hdr *  ip6header   = nullptr;
+    struct ip6_hdr   *ip6header   = nullptr;
     otbrError         error       = OTBR_ERROR_NONE;
 
     if ((ph = nfq_get_msg_packet_hdr(aNfData)) != nullptr)
@@ -514,7 +514,7 @@ int NdProxyManager::HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler,
 
     {
         struct nd_neighbor_solicit &ns = *reinterpret_cast<struct nd_neighbor_solicit *>(data + sizeof(struct ip6_hdr));
-        Ip6Address &                target = *reinterpret_cast<Ip6Address *>(&ns.nd_ns_target);
+        Ip6Address                 &target = *reinterpret_cast<Ip6Address *>(&ns.nd_ns_target);
 
         otbrLogDebug("NdProxyManager: %s: target: %s, hoplimit %d", __FUNCTION__, target.ToString().c_str(),
                      ip6header->ip6_hlim);

@@ -125,15 +125,15 @@ void AdvertisingProxy::Stop()
 }
 
 void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
-                                          const otSrpServerHost *    aHost,
+                                          const otSrpServerHost     *aHost,
                                           uint32_t                   aTimeout,
-                                          void *                     aContext)
+                                          void                      *aContext)
 {
     static_cast<AdvertisingProxy *>(aContext)->AdvertisingHandler(aId, aHost, aTimeout);
 }
 
 void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
-                                          const otSrpServerHost *    aHost,
+                                          const otSrpServerHost     *aHost,
                                           uint32_t                   aTimeout)
 {
     OTBR_UNUSED_VARIABLE(aTimeout);
@@ -184,7 +184,7 @@ std::vector<Ip6Address> AdvertisingProxy::GetEligibleAddresses(const otIp6Addres
                                                                uint8_t             aHostAddressNum)
 {
     std::vector<Ip6Address> addresses;
-    const otIp6Address *    meshLocalEid = otThreadGetMeshLocalEid(GetInstance());
+    const otIp6Address     *meshLocalEid = otThreadGetMeshLocalEid(GetInstance());
 
     addresses.reserve(aHostAddressNum);
     for (size_t i = 0; i < aHostAddressNum; ++i)
@@ -226,10 +226,10 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
     otbrError                  error = OTBR_ERROR_NONE;
     std::string                hostName;
     std::string                hostDomain;
-    const otIp6Address *       hostAddresses;
+    const otIp6Address        *hostAddresses;
     uint8_t                    hostAddressNum;
     bool                       hostDeleted;
-    const otSrpServerService * service;
+    const otSrpServerService  *service;
     otSrpServerServiceUpdateId updateId     = 0;
     bool                       hasUpdate    = false;
     std::string                fullHostName = otSrpServerHostGetFullName(aHost);
@@ -342,7 +342,7 @@ exit:
 
 Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService *aSrpService)
 {
-    const uint8_t *          txtData;
+    const uint8_t           *txtData;
     uint16_t                 txtDataLength = 0;
     otDnsTxtEntryIterator    iterator;
     otDnsTxtEntry            txtEntry;
@@ -362,9 +362,9 @@ Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService 
 
 Mdns::Publisher::SubTypeList AdvertisingProxy::MakeSubTypeList(const otSrpServerService *aSrpService)
 {
-    const otSrpServerHost *      host         = otSrpServerServiceGetHost(aSrpService);
-    const char *                 instanceName = otSrpServerServiceGetInstanceName(aSrpService);
-    const otSrpServerService *   subService   = nullptr;
+    const otSrpServerHost       *host         = otSrpServerServiceGetHost(aSrpService);
+    const char                  *instanceName = otSrpServerServiceGetInstanceName(aSrpService);
+    const otSrpServerService    *subService   = nullptr;
     Mdns::Publisher::SubTypeList subTypeList;
 
     while ((subService = otSrpServerHostFindNextService(

@@ -162,7 +162,7 @@ private:
     void        UnpublishTrelService(void);
     static void HandlePublishTrelServiceError(otbrError aError);
     static void HandleUnpublishTrelServiceError(otbrError aError);
-    void        OnTrelServiceInstanceResolved(const std::string &                            aType,
+    void        OnTrelServiceInstanceResolved(const std::string                             &aType,
                                               const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void        OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void        OnTrelServiceInstanceRemoved(const std::string &aInstanceName);
@@ -172,7 +172,7 @@ private:
     void     RemoveAllPeers(void);
     uint16_t CountDuplicatePeers(const Peer &aPeer);
 
-    Mdns::Publisher &          mPublisher;
+    Mdns::Publisher           &mPublisher;
     Ncp::ControllerOpenThread &mNcp;
     TaskRunner                 mTaskRunner;
     std::string                mTrelNetif;

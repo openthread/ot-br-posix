@@ -30,10 +30,17 @@
 #       This script sets up border routing configurations.
 #
 
-readonly INFRA_IF_NAME="${INFRA_IF_NAME:-wlan0}"
-readonly SYSCTL_ACCEPT_RA_FILE="/etc/sysctl.d/60-otbr-accept-ra.conf"
-readonly DHCPCD_CONF_FILE="/etc/dhcpcd.conf"
-readonly DHCPCD_CONF_BACKUP_FILE="$DHCPCD_CONF_FILE.orig"
+INFRA_IF_NAME="${INFRA_IF_NAME:-wlan0}"
+readonly INFRA_IF_NAME
+
+SYSCTL_ACCEPT_RA_FILE="/etc/sysctl.d/60-otbr-accept-ra.conf"
+readonly SYSCTL_ACCEPT_RA_FILE
+
+DHCPCD_CONF_FILE="/etc/dhcpcd.conf"
+readonly DHCPCD_CONF_FILE
+
+DHCPCD_CONF_BACKUP_FILE="$DHCPCD_CONF_FILE.orig"
+readonly DHCPCD_CONF_BACKUP_FILE
 
 accept_ra_install()
 {

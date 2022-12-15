@@ -51,7 +51,7 @@ namespace ubus {
 
 static UbusServer *sUbusServerInstance = nullptr;
 static int         sUbusEfd            = -1;
-static void *      sJsonUri            = nullptr;
+static void       *sJsonUri            = nullptr;
 static int         sBufNum;
 
 const static int PANID_LENGTH      = 10;
@@ -293,20 +293,20 @@ exit:
     return;
 }
 
-int UbusServer::UbusScanHandler(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+int UbusServer::UbusScanHandler(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg)
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg)
 {
     return GetInstance().UbusScanHandlerDetail(aContext, aObj, aRequest, aMethod, aMsg);
 }
 
-int UbusServer::UbusScanHandlerDetail(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+int UbusServer::UbusScanHandlerDetail(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg)
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -340,326 +340,326 @@ exit:
     return 0;
 }
 
-int UbusServer::UbusChannelHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+int UbusServer::UbusChannelHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg)
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "channel");
 }
 
-int UbusServer::UbusSetChannelHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+int UbusServer::UbusSetChannelHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg)
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "channel");
 }
 
-int UbusServer::UbusJoinerNumHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
+int UbusServer::UbusJoinerNumHandler(struct ubus_context      *aContext,
+                                     struct ubus_object       *aObj,
                                      struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg)
+                                     const char               *aMethod,
+                                     struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "joinernum");
 }
 
-int UbusServer::UbusNetworknameHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+int UbusServer::UbusNetworknameHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg)
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkname");
 }
 
-int UbusServer::UbusSetNetworknameHandler(struct ubus_context *     aContext,
-                                          struct ubus_object *      aObj,
+int UbusServer::UbusSetNetworknameHandler(struct ubus_context      *aContext,
+                                          struct ubus_object       *aObj,
                                           struct ubus_request_data *aRequest,
-                                          const char *              aMethod,
-                                          struct blob_attr *        aMsg)
+                                          const char               *aMethod,
+                                          struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkname");
 }
 
-int UbusServer::UbusStateHandler(struct ubus_context *     aContext,
-                                 struct ubus_object *      aObj,
+int UbusServer::UbusStateHandler(struct ubus_context      *aContext,
+                                 struct ubus_object       *aObj,
                                  struct ubus_request_data *aRequest,
-                                 const char *              aMethod,
-                                 struct blob_attr *        aMsg)
+                                 const char               *aMethod,
+                                 struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "state");
 }
 
-int UbusServer::UbusRloc16Handler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+int UbusServer::UbusRloc16Handler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg)
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "rloc16");
 }
 
-int UbusServer::UbusPanIdHandler(struct ubus_context *     aContext,
-                                 struct ubus_object *      aObj,
+int UbusServer::UbusPanIdHandler(struct ubus_context      *aContext,
+                                 struct ubus_object       *aObj,
                                  struct ubus_request_data *aRequest,
-                                 const char *              aMethod,
-                                 struct blob_attr *        aMsg)
+                                 const char               *aMethod,
+                                 struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "panid");
 }
 
-int UbusServer::UbusSetPanIdHandler(struct ubus_context *     aContext,
-                                    struct ubus_object *      aObj,
+int UbusServer::UbusSetPanIdHandler(struct ubus_context      *aContext,
+                                    struct ubus_object       *aObj,
                                     struct ubus_request_data *aRequest,
-                                    const char *              aMethod,
-                                    struct blob_attr *        aMsg)
+                                    const char               *aMethod,
+                                    struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "panid");
 }
 
-int UbusServer::UbusExtPanIdHandler(struct ubus_context *     aContext,
-                                    struct ubus_object *      aObj,
+int UbusServer::UbusExtPanIdHandler(struct ubus_context      *aContext,
+                                    struct ubus_object       *aObj,
                                     struct ubus_request_data *aRequest,
-                                    const char *              aMethod,
-                                    struct blob_attr *        aMsg)
+                                    const char               *aMethod,
+                                    struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "extpanid");
 }
 
-int UbusServer::UbusSetExtPanIdHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+int UbusServer::UbusSetExtPanIdHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg)
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "extpanid");
 }
 
-int UbusServer::UbusPskcHandler(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+int UbusServer::UbusPskcHandler(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg)
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "pskc");
 }
 
-int UbusServer::UbusSetPskcHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+int UbusServer::UbusSetPskcHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg)
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "pskc");
 }
 
-int UbusServer::UbusNetworkkeyHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+int UbusServer::UbusNetworkkeyHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg)
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkkey");
 }
 
-int UbusServer::UbusSetNetworkkeyHandler(struct ubus_context *     aContext,
-                                         struct ubus_object *      aObj,
+int UbusServer::UbusSetNetworkkeyHandler(struct ubus_context      *aContext,
+                                         struct ubus_object       *aObj,
                                          struct ubus_request_data *aRequest,
-                                         const char *              aMethod,
-                                         struct blob_attr *        aMsg)
+                                         const char               *aMethod,
+                                         struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkkey");
 }
 
-int UbusServer::UbusThreadStartHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+int UbusServer::UbusThreadStartHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg)
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg)
 {
     return GetInstance().UbusThreadHandler(aContext, aObj, aRequest, aMethod, aMsg, "start");
 }
 
-int UbusServer::UbusThreadStopHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+int UbusServer::UbusThreadStopHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg)
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg)
 {
     return GetInstance().UbusThreadHandler(aContext, aObj, aRequest, aMethod, aMsg, "stop");
 }
 
-int UbusServer::UbusParentHandler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+int UbusServer::UbusParentHandler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg)
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg)
 {
     return GetInstance().UbusParentHandlerDetail(aContext, aObj, aRequest, aMethod, aMsg);
 }
 
-int UbusServer::UbusNeighborHandler(struct ubus_context *     aContext,
-                                    struct ubus_object *      aObj,
+int UbusServer::UbusNeighborHandler(struct ubus_context      *aContext,
+                                    struct ubus_object       *aObj,
                                     struct ubus_request_data *aRequest,
-                                    const char *              aMethod,
-                                    struct blob_attr *        aMsg)
+                                    const char               *aMethod,
+                                    struct blob_attr         *aMsg)
 {
     return GetInstance().UbusNeighborHandlerDetail(aContext, aObj, aRequest, aMethod, aMsg);
 }
 
-int UbusServer::UbusModeHandler(struct ubus_context *     aContext,
-                                struct ubus_object *      aObj,
+int UbusServer::UbusModeHandler(struct ubus_context      *aContext,
+                                struct ubus_object       *aObj,
                                 struct ubus_request_data *aRequest,
-                                const char *              aMethod,
-                                struct blob_attr *        aMsg)
+                                const char               *aMethod,
+                                struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "mode");
 }
 
-int UbusServer::UbusSetModeHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+int UbusServer::UbusSetModeHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg)
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "mode");
 }
 
-int UbusServer::UbusPartitionIdHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+int UbusServer::UbusPartitionIdHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg)
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "partitionid");
 }
 
-int UbusServer::UbusLeaveHandler(struct ubus_context *     aContext,
-                                 struct ubus_object *      aObj,
+int UbusServer::UbusLeaveHandler(struct ubus_context      *aContext,
+                                 struct ubus_object       *aObj,
                                  struct ubus_request_data *aRequest,
-                                 const char *              aMethod,
-                                 struct blob_attr *        aMsg)
+                                 const char               *aMethod,
+                                 struct blob_attr         *aMsg)
 {
     return GetInstance().UbusLeaveHandlerDetail(aContext, aObj, aRequest, aMethod, aMsg);
 }
 
-int UbusServer::UbusLeaderdataHandler(struct ubus_context *     aContext,
-                                      struct ubus_object *      aObj,
+int UbusServer::UbusLeaderdataHandler(struct ubus_context      *aContext,
+                                      struct ubus_object       *aObj,
                                       struct ubus_request_data *aRequest,
-                                      const char *              aMethod,
-                                      struct blob_attr *        aMsg)
+                                      const char               *aMethod,
+                                      struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "leaderdata");
 }
 
-int UbusServer::UbusNetworkdataHandler(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+int UbusServer::UbusNetworkdataHandler(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg)
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkdata");
 }
 
-int UbusServer::UbusCommissionerStartHandler(struct ubus_context *     aContext,
-                                             struct ubus_object *      aObj,
+int UbusServer::UbusCommissionerStartHandler(struct ubus_context      *aContext,
+                                             struct ubus_object       *aObj,
                                              struct ubus_request_data *aRequest,
-                                             const char *              aMethod,
-                                             struct blob_attr *        aMsg)
+                                             const char               *aMethod,
+                                             struct blob_attr         *aMsg)
 {
     return GetInstance().UbusCommissioner(aContext, aObj, aRequest, aMethod, aMsg, "start");
 }
 
-int UbusServer::UbusJoinerRemoveHandler(struct ubus_context *     aContext,
-                                        struct ubus_object *      aObj,
+int UbusServer::UbusJoinerRemoveHandler(struct ubus_context      *aContext,
+                                        struct ubus_object       *aObj,
                                         struct ubus_request_data *aRequest,
-                                        const char *              aMethod,
-                                        struct blob_attr *        aMsg)
+                                        const char               *aMethod,
+                                        struct blob_attr         *aMsg)
 {
     return GetInstance().UbusCommissioner(aContext, aObj, aRequest, aMethod, aMsg, "joinerremove");
 }
 
-int UbusServer::UbusMgmtsetHandler(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+int UbusServer::UbusMgmtsetHandler(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg)
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg)
 {
     return GetInstance().UbusMgmtset(aContext, aObj, aRequest, aMethod, aMsg);
 }
 
-int UbusServer::UbusJoinerAddHandler(struct ubus_context *     aContext,
-                                     struct ubus_object *      aObj,
+int UbusServer::UbusJoinerAddHandler(struct ubus_context      *aContext,
+                                     struct ubus_object       *aObj,
                                      struct ubus_request_data *aRequest,
-                                     const char *              aMethod,
-                                     struct blob_attr *        aMsg)
+                                     const char               *aMethod,
+                                     struct blob_attr         *aMsg)
 {
     return GetInstance().UbusCommissioner(aContext, aObj, aRequest, aMethod, aMsg, "joineradd");
 }
 
-int UbusServer::UbusMacfilterAddrHandler(struct ubus_context *     aContext,
-                                         struct ubus_object *      aObj,
+int UbusServer::UbusMacfilterAddrHandler(struct ubus_context      *aContext,
+                                         struct ubus_object       *aObj,
                                          struct ubus_request_data *aRequest,
-                                         const char *              aMethod,
-                                         struct blob_attr *        aMsg)
+                                         const char               *aMethod,
+                                         struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "macfilteraddr");
 }
 
-int UbusServer::UbusMacfilterStateHandler(struct ubus_context *     aContext,
-                                          struct ubus_object *      aObj,
+int UbusServer::UbusMacfilterStateHandler(struct ubus_context      *aContext,
+                                          struct ubus_object       *aObj,
                                           struct ubus_request_data *aRequest,
-                                          const char *              aMethod,
-                                          struct blob_attr *        aMsg)
+                                          const char               *aMethod,
+                                          struct blob_attr         *aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "macfilterstate");
 }
 
-int UbusServer::UbusMacfilterAddHandler(struct ubus_context *     aContext,
-                                        struct ubus_object *      aObj,
+int UbusServer::UbusMacfilterAddHandler(struct ubus_context      *aContext,
+                                        struct ubus_object       *aObj,
                                         struct ubus_request_data *aRequest,
-                                        const char *              aMethod,
-                                        struct blob_attr *        aMsg)
+                                        const char               *aMethod,
+                                        struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "macfilteradd");
 }
 
-int UbusServer::UbusMacfilterRemoveHandler(struct ubus_context *     aContext,
-                                           struct ubus_object *      aObj,
+int UbusServer::UbusMacfilterRemoveHandler(struct ubus_context      *aContext,
+                                           struct ubus_object       *aObj,
                                            struct ubus_request_data *aRequest,
-                                           const char *              aMethod,
-                                           struct blob_attr *        aMsg)
+                                           const char               *aMethod,
+                                           struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "macfilterremove");
 }
 
-int UbusServer::UbusMacfilterSetStateHandler(struct ubus_context *     aContext,
-                                             struct ubus_object *      aObj,
+int UbusServer::UbusMacfilterSetStateHandler(struct ubus_context      *aContext,
+                                             struct ubus_object       *aObj,
                                              struct ubus_request_data *aRequest,
-                                             const char *              aMethod,
-                                             struct blob_attr *        aMsg)
+                                             const char               *aMethod,
+                                             struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "macfiltersetstate");
 }
 
-int UbusServer::UbusMacfilterClearHandler(struct ubus_context *     aContext,
-                                          struct ubus_object *      aObj,
+int UbusServer::UbusMacfilterClearHandler(struct ubus_context      *aContext,
+                                          struct ubus_object       *aObj,
                                           struct ubus_request_data *aRequest,
-                                          const char *              aMethod,
-                                          struct blob_attr *        aMsg)
+                                          const char               *aMethod,
+                                          struct blob_attr         *aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "macfilterclear");
 }
 
-int UbusServer::UbusLeaveHandlerDetail(struct ubus_context *     aContext,
-                                       struct ubus_object *      aObj,
+int UbusServer::UbusLeaveHandlerDetail(struct ubus_context      *aContext,
+                                       struct ubus_object       *aObj,
                                        struct ubus_request_data *aRequest,
-                                       const char *              aMethod,
-                                       struct blob_attr *        aMsg)
+                                       const char               *aMethod,
+                                       struct blob_attr         *aMsg)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -687,12 +687,12 @@ exit:
     AppendResult(error, aContext, aRequest);
     return 0;
 }
-int UbusServer::UbusThreadHandler(struct ubus_context *     aContext,
-                                  struct ubus_object *      aObj,
+int UbusServer::UbusThreadHandler(struct ubus_context      *aContext,
+                                  struct ubus_object       *aObj,
                                   struct ubus_request_data *aRequest,
-                                  const char *              aMethod,
-                                  struct blob_attr *        aMsg,
-                                  const char *              aAction)
+                                  const char               *aMethod,
+                                  struct blob_attr         *aMsg,
+                                  const char               *aAction)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -721,11 +721,11 @@ exit:
     return 0;
 }
 
-int UbusServer::UbusParentHandlerDetail(struct ubus_context *     aContext,
-                                        struct ubus_object *      aObj,
+int UbusServer::UbusParentHandlerDetail(struct ubus_context      *aContext,
+                                        struct ubus_object       *aObj,
                                         struct ubus_request_data *aRequest,
-                                        const char *              aMethod,
-                                        struct blob_attr *        aMsg)
+                                        const char               *aMethod,
+                                        struct blob_attr         *aMsg)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -735,8 +735,8 @@ int UbusServer::UbusParentHandlerDetail(struct ubus_context *     aContext,
     otRouterInfo parentInfo;
     char         extAddress[XPANID_LENGTH] = "";
     char         transfer[XPANID_LENGTH]   = "";
-    void *       jsonList                  = nullptr;
-    void *       jsonArray                 = nullptr;
+    void        *jsonList                  = nullptr;
+    void        *jsonArray                 = nullptr;
 
     blob_buf_init(&mBuf, 0);
 
@@ -767,11 +767,11 @@ exit:
     return error;
 }
 
-int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
-                                          struct ubus_object *      aObj,
+int UbusServer::UbusNeighborHandlerDetail(struct ubus_context      *aContext,
+                                          struct ubus_object       *aObj,
                                           struct ubus_request_data *aRequest,
-                                          const char *              aMethod,
-                                          struct blob_attr *        aMsg)
+                                          const char               *aMethod,
+                                          struct blob_attr         *aMsg)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -781,7 +781,7 @@ int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
     otNeighborInfo         neighborInfo;
     otNeighborInfoIterator iterator                  = OT_NEIGHBOR_INFO_ITERATOR_INIT;
     char                   transfer[XPANID_LENGTH]   = "";
-    void *                 jsonList                  = nullptr;
+    void                  *jsonList                  = nullptr;
     char                   mode[5]                   = "";
     char                   extAddress[XPANID_LENGTH] = "";
 
@@ -843,18 +843,18 @@ int UbusServer::UbusNeighborHandlerDetail(struct ubus_context *     aContext,
     return 0;
 }
 
-int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
-                            struct ubus_object *      aObj,
+int UbusServer::UbusMgmtset(struct ubus_context      *aContext,
+                            struct ubus_object       *aObj,
                             struct ubus_request_data *aRequest,
-                            const char *              aMethod,
-                            struct blob_attr *        aMsg)
+                            const char               *aMethod,
+                            struct blob_attr         *aMsg)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
     OT_UNUSED_VARIABLE(aMsg);
 
     otError              error = OT_ERROR_NONE;
-    struct blob_attr *   tb[MGMTSET_MAX];
+    struct blob_attr    *tb[MGMTSET_MAX];
     otOperationalDataset dataset;
     uint8_t              tlvs[128];
     long                 value;
@@ -921,12 +921,12 @@ exit:
     return 0;
 }
 
-int UbusServer::UbusCommissioner(struct ubus_context *     aContext,
-                                 struct ubus_object *      aObj,
+int UbusServer::UbusCommissioner(struct ubus_context      *aContext,
+                                 struct ubus_object       *aObj,
                                  struct ubus_request_data *aRequest,
-                                 const char *              aMethod,
-                                 struct blob_attr *        aMsg,
-                                 const char *              aAction)
+                                 const char               *aMethod,
+                                 struct blob_attr         *aMsg,
+                                 const char               *aAction)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -946,10 +946,10 @@ int UbusServer::UbusCommissioner(struct ubus_context *     aContext,
     }
     else if (!strcmp(aAction, "joineradd"))
     {
-        struct blob_attr *  tb[ADD_JOINER_MAX];
+        struct blob_attr   *tb[ADD_JOINER_MAX];
         otExtAddress        addr;
         const otExtAddress *addrPtr = nullptr;
-        char *              pskd    = nullptr;
+        char               *pskd    = nullptr;
 
         blobmsg_parse(addJoinerPolicy, ADD_JOINER_MAX, tb, blob_data(aMsg), blob_len(aMsg));
         if (tb[PSKD] != nullptr)
@@ -977,7 +977,7 @@ int UbusServer::UbusCommissioner(struct ubus_context *     aContext,
     }
     else if (!strcmp(aAction, "joinerremove"))
     {
-        struct blob_attr *  tb[SET_NETWORK_MAX];
+        struct blob_attr   *tb[SET_NETWORK_MAX];
         otExtAddress        addr;
         const otExtAddress *addrPtr = nullptr;
 
@@ -1028,16 +1028,16 @@ void UbusServer::HandleStateChanged(otCommissionerState aState)
 }
 
 void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
-                                   const otJoinerInfo *      aJoinerInfo,
-                                   const otExtAddress *      aJoinerId,
-                                   void *                    aContext)
+                                   const otJoinerInfo       *aJoinerInfo,
+                                   const otExtAddress       *aJoinerId,
+                                   void                     *aContext)
 {
     static_cast<UbusServer *>(aContext)->HandleJoinerEvent(aEvent, aJoinerInfo, aJoinerId);
 }
 
 void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
-                                   const otJoinerInfo *      aJoinerInfo,
-                                   const otExtAddress *      aJoinerId)
+                                   const otJoinerInfo       *aJoinerInfo,
+                                   const otExtAddress       *aJoinerId)
 {
     OT_UNUSED_VARIABLE(aJoinerInfo);
     OT_UNUSED_VARIABLE(aJoinerId);
@@ -1062,12 +1062,12 @@ void UbusServer::HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
     }
 }
 
-int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+int UbusServer::UbusGetInformation(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg,
-                                   const char *              aAction)
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg,
+                                   const char               *aAction)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -1197,8 +1197,8 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
     }
     else if (!strcmp(aAction, "joinernum"))
     {
-        void *       jsonTable = nullptr;
-        void *       jsonArray = nullptr;
+        void        *jsonTable = nullptr;
+        void        *jsonArray = nullptr;
         otJoinerInfo joinerInfo;
         uint16_t     iterator        = 0;
         int          joinerNum       = 0;
@@ -1293,9 +1293,9 @@ exit:
 }
 
 void UbusServer::HandleDiagnosticGetResponse(otError              aError,
-                                             otMessage *          aMessage,
+                                             otMessage           *aMessage,
                                              const otMessageInfo *aMessageInfo,
-                                             void *               aContext)
+                                             void                *aContext)
 {
     static_cast<UbusServer *>(aContext)->HandleDiagnosticGetResponse(aError, aMessage, aMessageInfo);
 }
@@ -1316,8 +1316,8 @@ void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage
 {
     uint16_t              rloc16;
     uint16_t              sockRloc16 = 0;
-    void *                jsonArray  = nullptr;
-    void *                jsonItem   = nullptr;
+    void                 *jsonArray  = nullptr;
+    void                 *jsonItem   = nullptr;
     char                  xrloc[10];
     otNetworkDiagTlv      diagTlv;
     otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
@@ -1409,12 +1409,12 @@ exit:
     }
 }
 
-int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
-                                   struct ubus_object *      aObj,
+int UbusServer::UbusSetInformation(struct ubus_context      *aContext,
+                                   struct ubus_object       *aObj,
                                    struct ubus_request_data *aRequest,
-                                   const char *              aMethod,
-                                   struct blob_attr *        aMsg,
-                                   const char *              aAction)
+                                   const char               *aMethod,
+                                   struct blob_attr         *aMsg,
+                                   const char               *aAction)
 {
     OT_UNUSED_VARIABLE(aObj);
     OT_UNUSED_VARIABLE(aMethod);
@@ -1468,7 +1468,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         if (tb[SETNETWORK] != nullptr)
         {
             otNetworkKey key;
-            char *       networkkey = blobmsg_get_string(tb[SETNETWORK]);
+            char        *networkkey = blobmsg_get_string(tb[SETNETWORK]);
 
             VerifyOrExit(Hex2Bin(networkkey, key.m8, sizeof(key.m8)) == OT_NETWORK_KEY_SIZE, error = OT_ERROR_PARSE);
             SuccessOrExit(error = otThreadSetNetworkKey(mController->GetInstance(), &key));
@@ -1496,7 +1496,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         if (tb[SETNETWORK] != nullptr)
         {
             otExtendedPanId extPanId;
-            char *          input = blobmsg_get_string(tb[SETNETWORK]);
+            char           *input = blobmsg_get_string(tb[SETNETWORK]);
             VerifyOrExit(Hex2Bin(input, extPanId.m8, sizeof(extPanId)) >= 0, error = OT_ERROR_PARSE);
             error = otThreadSetExtendedPanId(mController->GetInstance(), &extPanId);
         }
@@ -1743,7 +1743,7 @@ int UbusServer::Hex2Bin(const char *aHex, uint8_t *aBin, uint16_t aBinLength)
 {
     size_t      hexLength = strlen(aHex);
     const char *hexEnd    = aHex + hexLength;
-    uint8_t *   cur       = aBin;
+    uint8_t    *cur       = aBin;
     uint8_t     numChars  = hexLength & 1;
     uint8_t     byte      = 0;
     int         rval;

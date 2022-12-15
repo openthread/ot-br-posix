@@ -33,7 +33,8 @@
 
 set -euxo pipefail
 
-readonly OTBR_DBUS_SERVER_CONF=otbr-test-dbus-server.conf
+OTBR_DBUS_SERVER_CONF=otbr-test-dbus-server.conf
+readonly OTBR_DBUS_SERVER_CONF
 
 on_exit()
 {

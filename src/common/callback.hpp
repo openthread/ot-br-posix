@@ -66,10 +66,10 @@ public:
     {
     }
 
-    OnceCallback(const OnceCallback &) = delete;
+    OnceCallback(const OnceCallback &)            = delete;
     OnceCallback &operator=(const OnceCallback &) = delete;
     OnceCallback(OnceCallback &&)                 = default;
-    OnceCallback &operator=(OnceCallback &&) = default;
+    OnceCallback &operator=(OnceCallback &&)      = default;
 
     R operator()(Args...) const &
     {
