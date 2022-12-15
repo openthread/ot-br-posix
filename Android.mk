@@ -137,6 +137,7 @@ LOCAL_SRC_FILES := \
     src/proto/feature_flag.proto \
     src/sdp_proxy/advertising_proxy.cpp \
     src/sdp_proxy/discovery_proxy.cpp \
+    src/trel_dnssd/trel_dnssd.cpp \
     src/utils/dns_utils.cpp \
     src/utils/hex.cpp \
     src/utils/infra_link_selector.cpp \
