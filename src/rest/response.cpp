@@ -30,6 +30,8 @@
 
 #include <stdio.h>
 
+#define OT_REST_RESPONSE_CONTENT_TYPE_HEADER "Content-Type"
+
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
@@ -41,21 +43,16 @@ namespace rest {
 
 Response::Response(void)
     : mCallback(false)
-    , mContentType(OT_REST_RESPONSE_CONTENT_TYPE_TEXT)
     , mComplete(false)
 {
     // HTTP protocol
     mProtocol = "HTTP/1.1 ";
 
     // Pre-defined headers
-    mHeaderField.push_back("Access-Control-Allow-Origin");
-    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN);
-
-    mHeaderField.push_back("Access-Control-Allow-Methods");
-    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD);
-
-    mHeaderField.push_back("Access-Control-Allow-Headers");
-    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS);
+    mHeader[OT_REST_RESPONSE_CONTENT_TYPE_HEADER] = OT_REST_RESPONSE_CONTENT_TYPE_TEXT;
+    mHeader["Access-Control-Allow-Origin"]        = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN;
+    mHeader["Access-Control-Allow-Methods"]       = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD;
+    mHeader["Access-Control-Allow-Headers"]       = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS;
 }
 
 void Response::SetComplete()
@@ -90,12 +87,12 @@ void Response::SetCallback(void)
 
 void Response::SetContentType(const std::string &aContentType)
 {
-    mContentType = aContentType;
+    mHeader[OT_REST_RESPONSE_CONTENT_TYPE_HEADER] = aContentType;
 }
 
 std::string Response::GetContentType() const
 {
-    return mContentType;
+    return mHeader.find(OT_REST_RESPONSE_CONTENT_TYPE_HEADER)->second;
 }
 
 void Response::SetBody(std::string &aBody)
@@ -115,14 +112,12 @@ bool Response::NeedCallback(void)
 
 std::string Response::Serialize(void) const
 {
-    size_t      index;
     std::string spacer = "\r\n";
     std::string ret(mProtocol + " " + mCode);
 
-    ret += (spacer + "Content-Type: " + mContentType);
-    for (index = 0; index < mHeaderField.size(); index++)
+    for (const auto &header : mHeader)
     {
-        ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
+        ret += (spacer + header.first + ": " + header.second);
     }
     ret += spacer + "Content-Length: " + std::to_string(mBody.size());
     ret += (spacer + spacer + mBody);
