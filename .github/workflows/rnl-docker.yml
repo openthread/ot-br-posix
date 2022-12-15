@@ -1,0 +1,80 @@
+name: RNL docker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types: published
+
+env:
+  RNL_DOCKER_REPO: rednodelabs/otbr
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
+      - name: Set up Docker cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-buildx-
+
+      - name: Define Docker tag
+        id: define-docker-tag
+        run: |
+          tag="dev"
+
+          if [ "${{ github.event_name }}" == "release" ]; then
+            tag=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///g')
+          fi
+
+          echo "Docker image to push: ${{ env.RNL_DOCKER_REPO }}:$tag"
+          echo "::set-output name=DOCKER_TAG::$tag"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: rednodelabs
+          password: ${{ secrets.RNL_CICD_DOCKERHUB_TOKEN }}
+
+      - name: Docker build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/arm64
+          tags: ${{ env.RNL_DOCKER_REPO }}:${{ steps.define-docker-tag.outputs.DOCKER_TAG }}
+          file: etc/docker/Dockerfile
+          build-args: |
+            WEB_GUI=0
+            REST_API=0
+            BACKBONE_ROUTER=0
+            OTBR_OPTIONS=-DOTBR_BACKBONE_ROUTER=OFF -DOT_THREAD_VERSION=1.1
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          push: true
+
+      - name: Move Docker cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

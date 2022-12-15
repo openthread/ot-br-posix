@@ -176,7 +176,7 @@ void DumpDBusMessage(DBusMessage &aMessage)
     sout << "{ ";
     DumpDBusMessage(sout, &iter);
     sout << "}";
-    otbrLogDebug(sout.str().c_str());
+    //otbrLogDebug(sout.str().c_str());
 exit:
     return;
 }

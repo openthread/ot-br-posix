@@ -68,6 +68,7 @@ public:
     using EnergyScanHandler       = std::function<void(otError, const std::vector<otEnergyScanResult> &)>;
     using ResultHandler           = std::function<void(otError)>;
     using UpdateMeshCopTxtHandler = std::function<void(std::map<std::string, std::vector<uint8_t>>)>;
+    using RnlRnbEventHandler      = std::function<void(const std::vector<std::vector<uint8_t>> &)>;
 
     /**
      * The constructor of a Thread helper.
@@ -248,6 +249,14 @@ public:
      */
     static void LogOpenThreadResult(const char *aAction, otError aError);
 
+    /**
+     * This method adds a callback for a new RNL RedNodeBus Event.
+     *
+     * @param[in]   aHandler  The RNL RedNodeBus Event handler.
+     *
+     */
+    void AddRnlRnbEventHandler(RnlRnbEventHandler aHandler);
+
 private:
     static void ActiveScanHandler(otActiveScanResult *aResult, void *aThreadHelper);
     void        ActiveScanHandler(otActiveScanResult *aResult);
@@ -274,6 +283,8 @@ private:
     std::vector<otEnergyScanResult> mEnergyScanResults;
 
     std::vector<DeviceRoleHandler> mDeviceRoleHandlers;
+
+    std::vector<RnlRnbEventHandler> mRnlRnbEventHandlers;
 
     std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 

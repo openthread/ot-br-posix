@@ -137,6 +137,10 @@ private:
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
     otbr::Ncp::ControllerOpenThread *mNcp;
+
+    // RNL RedNodeBus Methods, signals and properties
+    void RnlRnbEventHandler(const std::vector<std::vector<uint8_t>> &aRnbEvents);
+    void RnlRnbSendRequestHandler(DBusRequest &aRequest);
 };
 
 } // namespace DBus

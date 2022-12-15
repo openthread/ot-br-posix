@@ -98,4 +98,9 @@
 #define OTBR_ROLE_NAME_ROUTER "router"
 #define OTBR_ROLE_NAME_LEADER "leader"
 
+// RNL RedNodeBus methods, signals and properties
+#define OTBR_DBUS_SIGNAL_RNL_RNB_EVENT "RnbEvent"
+#define OTBR_DBUS_METHOD_RNL_RNB_SEND_REQUEST "RnbSendRequest"
+
+
 #endif // OTBR_DBUS_CONSTANTS_HPP_

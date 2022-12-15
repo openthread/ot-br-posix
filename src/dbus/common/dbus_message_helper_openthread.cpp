@@ -240,51 +240,36 @@ exit:
 
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const OnMeshPrefix &aPrefix)
 {
-    DBusMessageIter sub;
-    otbrError       error = OTBR_ERROR_NONE;
+    DBusMessageIter sub, flagsSub;
+    auto args = std::tie(aPrefix.mPreferred, aPrefix.mSlaac, aPrefix.mDhcp, aPrefix.mConfigure, aPrefix.mDefaultRoute,
+                         aPrefix.mOnMesh, aPrefix.mStable);
+    otbrError error = OTBR_ERROR_NONE;
 
     VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
-
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mPrefix));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mRloc16));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mPreference));
-
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mPreferred));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mSlaac));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mDhcp));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mConfigure));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mDefaultRoute));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mOnMesh));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mStable));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mNdDns));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aPrefix.mDp));
-    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
-
+    SuccessOrExit(error = ConvertToDBusMessage(&sub, std::tie(aPrefix.mPrefix, aPrefix.mPreference)));
+    VerifyOrExit(dbus_message_iter_open_container(&sub, DBUS_TYPE_STRUCT, nullptr, &flagsSub), error = OTBR_ERROR_DBUS);
+    SuccessOrExit(error = ConvertToDBusMessage(&flagsSub, args));
+    VerifyOrExit(dbus_message_iter_close_container(&sub, &flagsSub) == true, error = OTBR_ERROR_DBUS);
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, error = OTBR_ERROR_DBUS);
 exit:
     return error;
 }
 
 otbrError DBusMessageExtract(DBusMessageIter *aIter, OnMeshPrefix &aPrefix)
 {
-    DBusMessageIter sub;
-    otbrError       error = OTBR_ERROR_NONE;
+    DBusMessageIter sub, flagsSub;
+    auto            args     = std::tie(aPrefix.mPrefix, aPrefix.mPreference);
+    auto            flagArgs = std::tie(aPrefix.mPreferred, aPrefix.mSlaac, aPrefix.mDhcp, aPrefix.mConfigure,
+                             aPrefix.mDefaultRoute, aPrefix.mOnMesh, aPrefix.mStable);
+    otbrError       error    = OTBR_ERROR_NONE;
 
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mPrefix));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mRloc16));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mPreference));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mPreferred));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mSlaac));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mDhcp));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mConfigure));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mDefaultRoute));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mOnMesh));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mStable));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mNdDns));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aPrefix.mDp));
-
+    SuccessOrExit(error = ConvertToTuple(&sub, args));
+    VerifyOrExit(dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(&sub, &flagsSub);
+    SuccessOrExit(error = ConvertToTuple(&flagsSub, flagArgs));
     dbus_message_iter_next(aIter);
-
 exit:
     return error;
 }
@@ -503,6 +488,33 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, TxtEntry &aTxtEntry)
     DBusMessageIter sub;
     otbrError       error = OTBR_ERROR_NONE;
     auto            args  = std::tie(aTxtEntry.mKey, aTxtEntry.mValue);
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, &sub);
+    SuccessOrExit(error = ConvertToTuple(&sub, args));
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const RnlRnbEvent &rnbEvent)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+    auto            args  = std::tie(rnbEvent.mRnbEvent);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub));
+    SuccessOrExit(error = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, RnlRnbEvent &rnbEvent)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+    auto            args  = std::tie(rnbEvent.mRnbEvent);
 
     VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == DBUS_TYPE_STRUCT, error = OTBR_ERROR_DBUS);
     dbus_message_iter_recurse(aIter, &sub);

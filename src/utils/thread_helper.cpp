@@ -79,6 +79,30 @@ ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThrea
 
 void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
 {
+    if (aFlags & OT_CHANGED_PENDING_RNL_RNB_EVENT)
+    {
+        otError error;
+        otRadioRnlRnbEvent radioRnbEvent;
+        std::vector<std::vector<uint8_t>> rnbEvents;
+
+        do
+        {
+            error = otPlatRadioRnlRnbGetEvent(mInstance, &radioRnbEvent);
+
+            if ((error == OT_ERROR_NONE) && (radioRnbEvent.mRnbEventLength > 0))
+            {
+                std::vector<uint8_t> rnbEvent(radioRnbEvent.mRnbEvent, radioRnbEvent.mRnbEvent + radioRnbEvent.mRnbEventLength);
+
+                rnbEvents.push_back(rnbEvent);
+            }
+        } while (error == OT_ERROR_NONE);
+
+        for (const auto &handler : mRnlRnbEventHandlers)
+        {
+            handler(rnbEvents);
+        }
+    }
+
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         otDeviceRole role = otThreadGetDeviceRole(mInstance);
@@ -121,6 +145,11 @@ void ThreadHelper::OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>
 void ThreadHelper::AddDeviceRoleHandler(DeviceRoleHandler aHandler)
 {
     mDeviceRoleHandlers.emplace_back(aHandler);
+}
+
+void ThreadHelper::AddRnlRnbEventHandler(RnlRnbEventHandler aHandler)
+{
+    mRnlRnbEventHandlers.emplace_back(aHandler);
 }
 
 void ThreadHelper::Scan(ScanHandler aHandler)
@@ -387,6 +416,7 @@ exit:
 otError ThreadHelper::Reset(void)
 {
     mDeviceRoleHandlers.clear();
+    mRnlRnbEventHandlers.clear();
     otInstanceReset(mInstance);
 
     return OT_ERROR_NONE;

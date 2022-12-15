@@ -105,6 +105,7 @@ otbrError DBusThreadObject::Init(void)
     auto      threadHelper = mNcp->GetThreadHelper();
 
     threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    threadHelper->AddRnlRnbEventHandler(std::bind(&DBusThreadObject::RnlRnbEventHandler, this, _1));
     mNcp->RegisterResetHandler(std::bind(&DBusThreadObject::NcpResetHandler, this));
 
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCAN_METHOD,
@@ -140,6 +141,9 @@ otbrError DBusThreadObject::Init(void)
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
+
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_METHOD_RNL_RNB_SEND_REQUEST,
+                   std::bind(&DBusThreadObject::RnlRnbSendRequestHandler, this, _1));
 
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX,
                                std::bind(&DBusThreadObject::SetMeshLocalPrefixHandler, this, _1));
@@ -222,9 +226,15 @@ void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, GetDeviceRoleName(aDeviceRole));
 }
 
+void DBusThreadObject::RnlRnbEventHandler(const std::vector<std::vector<uint8_t>> &aRnbEvents)
+{
+    SignalEventChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_RNL_RNB_EVENT, (const std::vector<RnlRnbEvent> &) aRnbEvents);
+}
+
 void DBusThreadObject::NcpResetHandler(void)
 {
     mNcp->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    mNcp->GetThreadHelper()->AddRnlRnbEventHandler(std::bind(&DBusThreadObject::RnlRnbEventHandler, this, _1));
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
                           GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
@@ -432,7 +442,7 @@ void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
     otBorderRouterConfig config;
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-
+    
     // size is guaranteed by parsing
     std::copy(onMeshPrefix.mPrefix.mPrefix.begin(), onMeshPrefix.mPrefix.mPrefix.end(),
               &config.mPrefix.mPrefix.mFields.m8[0]);
@@ -594,6 +604,32 @@ otError DBusThreadObject::GetLinkModeHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
+}
+
+void DBusThreadObject::RnlRnbSendRequestHandler(DBusRequest &aRequest)
+{
+    auto                 threadHelper = mNcp->GetThreadHelper();
+    std::vector<uint8_t> rnbRequest;
+    auto                 args = std::tie(rnbRequest);
+    otError              error = OT_ERROR_NONE;
+    uint16_t             rnbRequestLength;
+
+    if (DBusMessageToTuple(*aRequest.GetMessage(), args) != OTBR_ERROR_NONE)
+    {
+        error = OT_ERROR_INVALID_ARGS;
+    }
+    else
+    {
+        rnbRequestLength = rnbRequest.size();
+
+        VerifyOrExit(rnbRequestLength > 0, error = OT_ERROR_INVALID_ARGS);
+        VerifyOrExit(rnbRequestLength <= OT_RADIO_RNL_RNB_REQUEST_MAX_SIZE, error = OT_ERROR_INVALID_ARGS);
+
+        error = otPlatRadioRnlRnbSendRequest(threadHelper->GetInstance(), (const otRadioRnlRnbRequest*) &rnbRequest[0], rnbRequestLength);
+    }
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 otError DBusThreadObject::GetDeviceRoleHandler(DBusMessageIter &aIter)

@@ -128,3 +128,55 @@ otbr_update()
 {
     otbr_install
 }
+
+otbr_build()
+{
+    local otbr_options=()
+
+    if [[ ${OTBR_OPTIONS} ]]; then
+        read -r -a otbr_options <<<"${OTBR_OPTIONS}"
+    fi
+
+    otbr_options=(
+        "-DBUILD_TESTING=OFF"
+        "-DCMAKE_INSTALL_PREFIX=/usr"
+        "-DOTBR_DBUS=ON"
+        "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
+        "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+        "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
+        "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
+        "${otbr_options[@]}"
+    )
+
+    if with WEB_GUI; then
+        otbr_options+=("-DOTBR_WEB=ON")
+    fi
+
+    if with BORDER_ROUTING; then
+        otbr_options+=(
+            "-DOTBR_BORDER_ROUTING=ON"
+        )
+    fi
+
+    if with REST_API; then
+        otbr_options+=("-DOTBR_REST=ON")
+    fi
+
+    if with BACKBONE_ROUTER; then
+        otbr_options+=(
+            "-DOTBR_BACKBONE_ROUTER=ON"
+        )
+    fi
+
+    if [[ ${REFERENCE_DEVICE} == "1" ]]; then
+        otbr_options+=(
+            "-DOT_REFERENCE_DEVICE=ON"
+            "-DOT_DHCP6_CLIENT=ON"
+            "-DOT_DHCP6_SERVER=ON"
+        )
+    fi
+
+    (./script/cmake-build "${otbr_options[@]}" \
+        && cd "${OTBR_TOP_BUILDDIR}" \
+        && ninja)
+}

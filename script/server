@@ -41,7 +41,7 @@ main()
     # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
     sudo sysctl --system
-    nat64_start || die 'Failed to start NAT64!'
+    nat64_start || true
     dns64_start || die 'Failed to start DNS64!'
     firewall_start || die 'Failed to start firewall'
     if have systemctl; then

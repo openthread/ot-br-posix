@@ -25,7 +25,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-ARG BASE_IMAGE=ubuntu:bionic
+ARG BASE_IMAGE=ubuntu:jammy
 FROM ${BASE_IMAGE}
 
 ARG INFRA_IF_NAME
@@ -100,7 +100,3 @@ RUN apt-get update \
     && ([ "${RELEASE}" = 1 ] ||  apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false "$OTBR_NORELEASE_DEPS";) \
     && rm -rf /var/lib/apt/lists/* \
   ))
-
-ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
-
-EXPOSE 80

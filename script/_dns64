@@ -139,7 +139,7 @@ dns64_start()
     if have systemctl; then
         sudo systemctl start "${service_name}" || die 'Failed to start bind9!'
     elif command -v service; then
-        sudo service "${service_name}" start || die 'Failed to start bind9!'
+        sudo service "${service_name}" start || true
     fi
 }
 

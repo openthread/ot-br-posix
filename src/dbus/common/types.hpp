@@ -517,6 +517,11 @@ struct TxtEntry
     std::vector<uint8_t> mValue;
 };
 
+struct RnlRnbEvent
+{
+    std::vector<uint8_t> mRnbEvent; // Array of bytes representing the RNL RedNodeBus event
+};
+
 } // namespace DBus
 } // namespace otbr
 

@@ -196,6 +196,15 @@ void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
     }
 }
 
+static uint64_t ConvertTimestampToUint64(const otTimestamp &aTimestamp)
+{
+    // 64 bits Timestamp fields layout
+    //-----48 bits------//-----15 bits-----//-------1 bit-------//
+    //     Seconds      //      Ticks      //  Authoritative    //
+    return (aTimestamp.mSeconds << 16) | static_cast<uint64_t>(aTimestamp.mTicks << 1) |
+           static_cast<uint64_t>(aTimestamp.mAuthoritative);
+}
+
 void BorderAgent::PublishMeshCopService(void)
 {
     StateBitmap              state;
@@ -220,10 +229,7 @@ void BorderAgent::PublishMeshCopService(void)
 
     state.mConnectionMode = kConnectionModePskc;
     state.mAvailability   = kAvailabilityHigh;
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    state.mBbrIsActive  = otBackboneRouterGetState(instance) != OT_BACKBONE_ROUTER_STATE_DISABLED;
-    state.mBbrIsPrimary = otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_PRIMARY;
-#endif
+
     switch (otThreadGetDeviceRole(instance))
     {
     case OT_DEVICE_ROLE_DISABLED:
@@ -235,6 +241,12 @@ void BorderAgent::PublishMeshCopService(void)
     default:
         state.mThreadIfStatus = kThreadIfStatusActive;
     }
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    state.mBbrIsActive = state.mThreadIfStatus == kThreadIfStatusActive &&
+                         otBackboneRouterGetState(instance) != OT_BACKBONE_ROUTER_STATE_DISABLED;
+    state.mBbrIsPrimary = state.mThreadIfStatus == kThreadIfStatusActive &&
+                          otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_PRIMARY;
+#endif
 
     stateUint32 = htobe32(state.ToUint32());
     txtList.emplace_back("sb", reinterpret_cast<uint8_t *>(&stateUint32), sizeof(stateUint32));
@@ -243,7 +255,6 @@ void BorderAgent::PublishMeshCopService(void)
     {
         otError              error;
         otOperationalDataset activeDataset;
-        uint64_t             activeTimestamp;
         uint32_t             partitionId;
 
         if ((error = otDatasetGetActive(instance, &activeDataset)) != OT_ERROR_NONE)
@@ -252,8 +263,11 @@ void BorderAgent::PublishMeshCopService(void)
         }
         else
         {
-            activeTimestamp = htobe64(activeDataset.mActiveTimestamp);
-            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestamp), sizeof(activeTimestamp));
+            uint64_t activeTimestampValue = ConvertTimestampToUint64(activeDataset.mActiveTimestamp);
+
+            activeTimestampValue = htobe64(activeTimestampValue);
+            txtList.emplace_back("at", reinterpret_cast<uint8_t *>(&activeTimestampValue),
+                                 sizeof(activeTimestampValue));
         }
 
         partitionId = otThreadGetPartitionId(instance);
