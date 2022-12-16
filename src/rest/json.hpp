@@ -71,6 +71,18 @@ std::string Number2JsonString(const uint32_t &aNumber);
 std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength);
 
 /**
+ * This method parses a hex string as byte array.
+ *
+ * @param[in] aHexString String of bytes in hex.
+ * @param[in] aBytes     Byte array to write to. Must be at least  @p aMaxLength.
+ * @param[in] aMaxLength Maximum length to parse (in bytes).
+ *
+ * @returns Number of bytes effectively parsed.
+ *
+ */
+int Hex2BytesJsonString(const std::string &aHexString, uint8_t *aBytes, uint8_t aMaxLength);
+
+/**
  * This method formats a C string to a Json string and serialize it to a string.
  *
  * @param[in] aCString  A char pointer pointing to a C string.

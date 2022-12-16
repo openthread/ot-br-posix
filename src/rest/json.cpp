@@ -372,6 +372,11 @@ std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength)
     return ret;
 }
 
+int Hex2BytesJsonString(const std::string &aHexString, uint8_t *aBytes, uint8_t aMaxLength)
+{
+    return otbr::Utils::Hex2Bytes(aHexString.c_str(), aBytes, aMaxLength);
+}
+
 std::string Number2JsonString(const uint32_t &aNumber)
 {
     cJSON      *number = cJSON_CreateNumber(aNumber);

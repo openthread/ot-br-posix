@@ -45,12 +45,15 @@
 #define OT_REST_RESOURCE_PATH_NODE_LEADERDATA "/node/leader-data"
 #define OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER "/node/num-of-router"
 #define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
+#define OT_REST_RESOURCE_PATH_NODE_ACTIVE_DATASET_TLVS "/node/active-dataset-tlvs"
 #define OT_REST_RESOURCE_PATH_NETWORK "/networks"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
+#define OT_REST_HTTP_STATUS_202 "202 Accepted"
+#define OT_REST_HTTP_STATUS_400 "400 Bad Request"
 #define OT_REST_HTTP_STATUS_404 "404 Not Found"
 #define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
@@ -87,6 +90,12 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusOk:
         httpStatus = OT_REST_HTTP_STATUS_200;
         break;
+    case HttpStatusCode::kStatusAccepted:
+        httpStatus = OT_REST_HTTP_STATUS_202;
+        break;
+    case HttpStatusCode::kStatusBadRequest:
+        httpStatus = OT_REST_HTTP_STATUS_400;
+        break;
     case HttpStatusCode::kStatusResourceNotFound:
         httpStatus = OT_REST_HTTP_STATUS_404;
         break;
@@ -118,6 +127,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_LEADERDATA, &Resource::LeaderData);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER, &Resource::NumOfRoute);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTPANID, &Resource::ExtendedPanId);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_ACTIVE_DATASET_TLVS, &Resource::ActiveDatasetTlvs);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
 
     // Resource callback handler
@@ -486,6 +496,75 @@ void Resource::Rloc(const Request &aRequest, Response &aResponse) const
     else
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
+}
+
+void Resource::GetActiveDatasetTlvs(Response &aResponse) const
+{
+    otOperationalDatasetTlvs datasetTlvs;
+    otError                  error = OT_ERROR_NONE;
+    std::string              body;
+    std::string              errorCode;
+
+    SuccessOrExit(error = otDatasetGetActiveTlvs(mInstance, &datasetTlvs));
+
+    body = Json::Bytes2HexJsonString(datasetTlvs.mTlvs, datasetTlvs.mLength);
+
+    aResponse.SetBody(body);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to get active dataset: %s", otThreadErrorToString(error));
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
+void Resource::SetActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const
+{
+    int                      ret;
+    otOperationalDatasetTlvs datasetTlvs;
+    otError                  error = OT_ERROR_NONE;
+    std::string              errorCode;
+
+    ret = Json::Hex2BytesJsonString(aRequest.GetBody(), datasetTlvs.mTlvs, OT_OPERATIONAL_DATASET_MAX_LENGTH);
+    if (ret < 0)
+    {
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusBadRequest);
+        aResponse.SetResponsCode(errorCode);
+        ExitNow();
+    }
+    datasetTlvs.mLength = ret;
+
+    SuccessOrExit(error = otDatasetSetActiveTlvs(mInstance, &datasetTlvs));
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusAccepted);
+    aResponse.SetResponsCode(errorCode);
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to set active dataset: %s", otThreadErrorToString(error));
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
+void Resource::ActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        GetActiveDatasetTlvs(aResponse);
+        break;
+    case HttpMethod::kPut:
+        SetActiveDatasetTlvs(aRequest, aResponse);
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
     }
 }
 
