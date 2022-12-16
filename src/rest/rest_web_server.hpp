@@ -87,7 +87,7 @@ private:
     // Resource handler
     Resource mResource;
     // Struct for server configuration
-    sockaddr_in mAddress;
+    sockaddr_in6 mAddress;
     // File descriptor for listening
     int32_t mListenFd;
     // Connection List
