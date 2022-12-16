@@ -185,9 +185,12 @@ void ControllerOpenThread::Init(void)
 #endif
 #endif
 
+#if !OTBR_ENABLE_FEATURE_FLAGS
+    // Bring up all features when feature flags is not supported.
 #if OTBR_ENABLE_NAT64
     otNat64SetEnabled(mInstance, /* aEnabled */ true);
 #endif
+#endif // OTBR_ENABLE_FEATURE_FLAGS
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
 
