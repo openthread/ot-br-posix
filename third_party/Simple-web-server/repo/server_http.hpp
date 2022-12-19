@@ -101,6 +101,9 @@ namespace SimpleWeb {
         class Request {
             friend class ServerBase<socket_type>;
             friend class Server<socket_type>;
+
+            boost::asio::streambuf streambuf;
+
         public:
             std::string method, path, http_version;
 
@@ -121,8 +124,6 @@ namespace SimpleWeb {
                 }
                 catch(...) {}
             }
-            
-            boost::asio::streambuf streambuf;
         };
         
         class Config {
