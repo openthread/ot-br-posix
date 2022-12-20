@@ -48,17 +48,10 @@ Response::Response(void)
     mProtocol = "HTTP/1.1 ";
 
     // Pre-defined headers
-    mHeaderField.push_back("Content-Type");
-    mHeaderValue.push_back(OT_REST_RESPONSE_CONTENT_TYPE_JSON);
-
-    mHeaderField.push_back("Access-Control-Allow-Origin");
-    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN);
-
-    mHeaderField.push_back("Access-Control-Allow-Methods");
-    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD);
-
-    mHeaderField.push_back("Access-Control-Allow-Headers");
-    mHeaderValue.push_back(OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS);
+    mHeaders["Content-Type"]                 = OT_REST_RESPONSE_CONTENT_TYPE_JSON;
+    mHeaders["Access-Control-Allow-Origin"]  = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN;
+    mHeaders["Access-Control-Allow-Methods"] = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD;
+    mHeaders["Access-Control-Allow-Headers"] = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS;
 }
 
 void Response::SetComplete()
@@ -108,13 +101,12 @@ bool Response::NeedCallback(void)
 
 std::string Response::Serialize(void) const
 {
-    size_t      index;
     std::string spacer = "\r\n";
     std::string ret(mProtocol + " " + mCode);
 
-    for (index = 0; index < mHeaderField.size(); index++)
+    for (const auto &header : mHeaders)
     {
-        ret += (spacer + mHeaderField[index] + ": " + mHeaderValue[index]);
+        ret += (spacer + header.first + ": " + header.second);
     }
     ret += spacer + "Content-Length: " + std::to_string(mBody.size());
     ret += (spacer + spacer + mBody);
