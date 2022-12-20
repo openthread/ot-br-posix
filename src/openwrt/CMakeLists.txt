@@ -32,3 +32,16 @@ configure_file(otbr-agent.init.in otbr-agent.init)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.init
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
     RENAME otbr-agent)
+
+configure_file(otbr-agent.uci-config.in otbr-agent.uci-config)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.uci-config
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/config
+    RENAME otbr-agent)
+
+
+if(OT_FIREWALL)
+    configure_file(otbr-firewall.init.in otbr-firewall.init)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-firewall.init
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
+        RENAME otbr-firewall)
+endif(OT_FIREWALL)

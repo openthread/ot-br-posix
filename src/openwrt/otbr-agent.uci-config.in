@@ -1,0 +1,3 @@
+config otbr-agent 'service'
+	option infra_if_name  @OTBR_INFRA_IF_NAME@
+	option thread_if_name "wpan0"
