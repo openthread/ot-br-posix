@@ -60,7 +60,8 @@ RestWebServer::RestWebServer(ControllerOpenThread &aNcp, const std::string &aRes
     if (!aRestListenAddress.empty())
     {
         if (!ParseListenAddress(aRestListenAddress, &mAddress.sin6_addr))
-            otbrLogWarning("Failed to parse REST listen address %s, listening on any address.", aRestListenAddress.c_str());
+            otbrLogWarning("Failed to parse REST listen address %s, listening on any address.",
+                           aRestListenAddress.c_str());
     }
 }
 
