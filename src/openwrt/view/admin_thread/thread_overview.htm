@@ -1,3 +1,27 @@
+<%-
+	local ubus = require "ubus"
+	local sys = require "luci.sys"
+	local utl = require "luci.util"
+	
+	function connect_ubus(methods)
+		local result
+		local conn = ubus.connect()
+
+		if not conn then
+			error("Failed to connect to ubusd")
+		end
+
+		result = conn:call("otbr", methods, {})
+
+		return result
+	end
+
+	function threadget(action)
+		local result = connect_ubus(action)
+		
+		return result
+	end
+-%>
 <%+header%>
 
 <h2><%:Thread Overview%></h2>
@@ -8,7 +32,7 @@
 		<!-- physical device -->
 		<div class="tr cbi-rowstyle-2">
 			<div class="td col-1 center middle">
-				<span class="ifacebadge"><img src="<%=resource .. "/icons/wifi.png"%>" id="wpan0" /> <%:wpan0%></span>
+				<span class="ifacebadge"><img src="<%=resource .. "/icons/wifi.png"%>" id="wpan0" /> <%=threadget("interfacename").InterfaceName%></span>
 			</div>
 			<div class="td col-7 left middle">
 				<big><strong><%:Generic MAC 802.15.4 Thread%></strong></big><br />

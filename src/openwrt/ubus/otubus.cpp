@@ -206,6 +206,7 @@ static const struct ubus_method otbrMethods[] = {
     {"macfilteraddr", &UbusServer::UbusMacfilterAddrHandler, 0, 0, nullptr, 0},
     {"joineradd", &UbusServer::UbusJoinerAddHandler, 0, 0, addJoinerPolicy, ARRAY_SIZE(addJoinerPolicy)},
     {"mgmtset", &UbusServer::UbusMgmtsetHandler, 0, 0, mgmtsetPolicy, ARRAY_SIZE(mgmtsetPolicy)},
+    {"interfacename", &UbusServer::UbusInterfaceNameHandler, 0, 0, nullptr, 0},
 };
 
 static struct ubus_object_type otbrObjType = {"otbr_prog", 0, otbrMethods, ARRAY_SIZE(otbrMethods)};
@@ -590,6 +591,15 @@ int UbusServer::UbusMgmtsetHandler(struct ubus_context      *aContext,
                                    struct blob_attr         *aMsg)
 {
     return GetInstance().UbusMgmtset(aContext, aObj, aRequest, aMethod, aMsg);
+}
+
+int UbusServer::UbusInterfaceNameHandler(struct ubus_context      *aContext,
+                                         struct ubus_object       *aObj,
+                                         struct ubus_request_data *aRequest,
+                                         const char               *aMethod,
+                                         struct blob_attr         *aMsg)
+{
+    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "interfacename");
 }
 
 int UbusServer::UbusJoinerAddHandler(struct ubus_context      *aContext,
@@ -1080,6 +1090,10 @@ int UbusServer::UbusGetInformation(struct ubus_context      *aContext,
     mNcpThreadMutex->lock();
     if (!strcmp(aAction, "networkname"))
         blobmsg_add_string(&mBuf, "NetworkName", otThreadGetNetworkName(mController->GetInstance()));
+    else if (!strcmp(aAction, "interfacename"))
+    {
+        blobmsg_add_string(&mBuf, "InterfaceName", mController->GetInterfaceName());
+    }
     else if (!strcmp(aAction, "state"))
     {
         char state[10];

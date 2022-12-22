@@ -745,6 +745,24 @@ public:
                                   struct blob_attr         *aMsg);
 
     /**
+     * This method handle ubus interfaceName function request.
+     *
+     * @param[in] aContext  A pointer to the ubus context.
+     * @param[in] aObj      A pointer to the ubus object.
+     * @param[in] aRequest  A pointer to the ubus request.
+     * @param[in] aMethod   A pointer to the ubus method.
+     * @param[in] aMsg      A pointer to the ubus message.
+     *
+     * @retval 0  Successfully handler the request.
+     *
+     */
+    static int UbusInterfaceNameHandler(struct ubus_context      *aContext,
+                                        struct ubus_object       *aObj,
+                                        struct ubus_request_data *aRequest,
+                                        const char               *aMethod,
+                                        struct blob_attr         *aMsg);
+
+    /**
      * This method handle initial diagnostic get response.
      *
      * @param[in] aError        A error of receiving the diagnostic response.
