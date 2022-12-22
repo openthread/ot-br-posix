@@ -43,15 +43,15 @@ CMAKE_SOURCE_DIR=$(LOCAL_SOURCE_DIR)
 CMAKE_OPTIONS+= \
 	-DBUILD_TESTING=OFF \
 	-DCMAKE_INSTALL_PREFIX=/usr \
-	-DOTBR_OPENWRT=ON \
 	-DOTBR_BORDER_AGENT=ON \
 	-DOTBR_BORDER_ROUTING=ON \
-	-DOTBR_SRP_ADVERTISING_PROXY=ON \
-	-DOTBR_MDNS="avahi" \
 	-DOTBR_INFRA_IF_NAME=\"br-lan\" \
+	-DOTBR_MDNS="avahi" \
+	-DOTBR_OPENWRT=ON \
+	-DOTBR_SRP_ADVERTISING_PROXY=ON \
+	-DOT_FIREWALL=ON \
 	-DOT_POSIX_SETTINGS_PATH=\"/etc/openthread\" \
-	-DOT_READLINE=OFF \
-	-DOT_FIREWALL=ON
+	-DOT_READLINE=OFF
 
 TARGET_CFLAGS += -DOPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME=\\\"/var/run/openthread-%s\\\"
 
@@ -59,7 +59,7 @@ define Package/openthread-br
 	SECTION:=base
 	CATEGORY:=Network
 	TITLE:=OpenThread Border Router
-	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +iptables-mod-extra +ipset
+	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +avahi-daemon +iptables-mod-extra +ipset
 endef
 
 define Package/openthread-br/description
