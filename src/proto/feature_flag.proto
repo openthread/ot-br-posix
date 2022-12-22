@@ -43,4 +43,6 @@ message FeatureFlagList {
   optional bool enable_nat64 = 1 [default = false];
   // Whether to enable detailed logging.
   optional bool enable_detailed_logging = 2 [default = false];
+  // Set specific detailed logging level, default = OTBR_LOG_INFO
+  optional int32 detailed_logging_level = 3 [default = 6];
 }
