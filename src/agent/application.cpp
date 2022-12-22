@@ -79,6 +79,7 @@ Application::Application(const std::string               &aInterfaceName,
     , mVendorServer(mNcp)
 #endif
 {
+    OTBR_UNUSED_VARIABLE(aRestListenAddress);
 }
 
 void Application::Init(void)
