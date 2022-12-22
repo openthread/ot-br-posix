@@ -52,7 +52,7 @@ opkg install openthread-br-1.0*.ipk
 NOTES:
 
 - `openthread-br` requires `ipset` and `iptables-mod-extra` packages if the firewall feature is enabled.
-- `openthread-br` requires `libavahi-client` package if the MDNS feature is enabled.
+- `openthread-br` requires `libavahi-client` and `avahi-daemon` package if the MDNS feature is enabled.
 
 ## Usage
 
@@ -62,7 +62,7 @@ Start otbr-agent manually:
 
 ```bash
 # Assuming that ttyACM0 is a RCP with baudrate 115200.
-/usr/sbin/otbr-agent -I wpan0 -B br-lan spinel+hdlc+uart:///dev/ttyACM0 trel://br-lan -v
+/usr/sbin/otbr-agent -I wpan0 'spinel+hdlc+uart:///dev/ttyACM0?uart-baudrate=115200'
 ```
 
 Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyACM0` and then start with:
