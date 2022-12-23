@@ -604,7 +604,8 @@ exit:
     }
     else if (error == OTBR_ERROR_NOT_FOUND)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kNoContent);
+        errorCode = GetHttpStatus(HttpStatusCode::kNoContent);
+        aResponse.SetResponsCode(errorCode);
     }
     else
     {
@@ -612,7 +613,7 @@ exit:
     }
 }
 
-void Resource::CreateDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
+void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse, bool create) const
 {
     otbrError            error = OTBR_ERROR_NONE;
     struct NodeInfo      node;
@@ -620,7 +621,22 @@ void Resource::CreateDataset(DatasetType aDatasetType, const Request &aRequest, 
     std::string          errorCode;
     otOperationalDataset dataset;
 
-    VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    if (create)
+    {
+        VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    }
+    else
+    {
+        if (aDatasetType == DatasetType::kActive)
+        {
+            // TODO: Reject if Thread is running
+            VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        }
+        else if (aDatasetType == DatasetType::kPending)
+        {
+            VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        }
+    }
 
     if (!Json::JsonString2Dataset(aRequest.GetBody(), dataset))
     {
@@ -643,7 +659,7 @@ void Resource::CreateDataset(DatasetType aDatasetType, const Request &aRequest, 
 exit:
     if (error == OTBR_ERROR_NOT_FOUND)
     {
-        ErrorHandler(aResponse, HttpStatusCode::kNoContent);
+        ErrorHandler(aResponse, HttpStatusCode::kStatusResourceNotFound);
     }
     else if (error != OTBR_ERROR_NONE)
     {
@@ -661,10 +677,10 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
         GetDataset(aDatasetType, aResponse);
         break;
     case HttpMethod::kPost:
-        CreateDataset(aDatasetType, aRequest, aResponse);
+        SetDataset(aDatasetType, aRequest, aResponse, true);
         break;
     case HttpMethod::kPut:
-        // SetDataset(aRequest, aResponse);
+        SetDataset(aDatasetType, aRequest, aResponse, false);
         break;
     default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
