@@ -72,6 +72,7 @@ enum
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
     OTBR_OPT_AUTO_ATTACH,
+    OTBR_OPT_REST_LISTEN_ADDR,
 };
 
 static jmp_buf            sResetJump;
@@ -87,6 +88,7 @@ static const struct option kOptions[] = {
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
     {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
+    {"rest-listen-address", required_argument, nullptr, OTBR_OPT_REST_LISTEN_ADDR},
     {0, 0, 0, 0}};
 
 static bool ParseInteger(const char *aStr, long &aOutResult)
@@ -189,6 +191,7 @@ static int realmain(int argc, char *argv[])
     bool                      verbose           = false;
     bool                      printRadioVersion = false;
     bool                      enableAutoAttach  = true;
+    const char               *restListenAddress = "";
     std::vector<const char *> radioUrls;
     std::vector<const char *> backboneInterfaceNames;
     long                      parseResult;
@@ -243,6 +246,9 @@ static int realmain(int argc, char *argv[])
                 enableAutoAttach = parseResult;
             }
             break;
+        case OTBR_OPT_REST_LISTEN_ADDR:
+            restListenAddress = optarg;
+            break;
 
         default:
             PrintHelp(argv[0]);
@@ -274,7 +280,7 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Application app(interfaceName, backboneInterfaceNames, radioUrls, enableAutoAttach);
+        otbr::Application app(interfaceName, backboneInterfaceNames, radioUrls, enableAutoAttach, restListenAddress);
 
         gApp = &app;
         app.Init();
