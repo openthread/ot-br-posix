@@ -1,465 +1,848 @@
-#ifndef SERVER_HTTP_HPP
-#define	SERVER_HTTP_HPP
+#ifndef SIMPLE_WEB_SERVER_HTTP_HPP
+#define SIMPLE_WEB_SERVER_HTTP_HPP
 
-#include <boost/asio.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/functional/hash.hpp>
-
-#include <map>
-#include <unordered_map>
-#include <thread>
+#include "asio_compatibility.hpp"
+#include "mutex.hpp"
+#include "utility.hpp"
 #include <functional>
 #include <iostream>
+#include <limits>
+#include <list>
+#include <map>
 #include <sstream>
-
-#ifndef CASE_INSENSITIVE_EQUALS_AND_HASH
-#define CASE_INSENSITIVE_EQUALS_AND_HASH
-//Based on http://www.boost.org/doc/libs/1_60_0/doc/html/unordered/hash_equality.html
-class case_insensitive_equals {
-public:
-  bool operator()(const std::string &key1, const std::string &key2) const {
-    return boost::algorithm::iequals(key1, key2);
-  }
-};
-class case_insensitive_hash {
-public:
-  size_t operator()(const std::string &key) const {
-    std::size_t seed=0;
-    for(auto &c: key)
-      boost::hash_combine(seed, std::tolower(c));
-    return seed;
-  }
-};
-#endif
+#include <thread>
+#include <unordered_set>
 
 // Late 2017 TODO: remove the following checks and always use std::regex
 #ifdef USE_BOOST_REGEX
 #include <boost/regex.hpp>
-#define REGEX_NS boost
+namespace SimpleWeb {
+  namespace regex = boost;
+}
 #else
 #include <regex>
-#define REGEX_NS std
-#endif
-
-// TODO when switching to c++14, use [[deprecated]] instead
-#ifndef DEPRECATED
-#ifdef __GNUC__
-#define DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-#define DEPRECATED __declspec(deprecated)
-#else
-#define DEPRECATED
-#endif
+namespace SimpleWeb {
+  namespace regex = std;
+}
 #endif
 
 namespace SimpleWeb {
-    template <class socket_type>
-    class Server;
-    
-    template <class socket_type>
-    class ServerBase {
-    public:
-        virtual ~ServerBase() {}
+  template <class socket_type>
+  class Server;
 
-        class Response : public std::ostream {
-            friend class ServerBase<socket_type>;
+  template <class socket_type>
+  class ServerBase {
+  protected:
+    class Connection;
+    class Session;
 
-            boost::asio::streambuf streambuf;
+  public:
+    /// Response class where the content of the response is sent to client when the object is about to be destroyed.
+    class Response : public std::enable_shared_from_this<Response>, public std::ostream {
+      friend class ServerBase<socket_type>;
+      friend class Server<socket_type>;
 
-            std::shared_ptr<socket_type> socket;
+      std::unique_ptr<asio::streambuf> streambuf = std::unique_ptr<asio::streambuf>(new asio::streambuf());
 
-            Response(const std::shared_ptr<socket_type> &socket): std::ostream(&streambuf), socket(socket) {}
+      std::shared_ptr<Session> session;
+      long timeout_content;
 
-        public:
-            size_t size() {
-                return streambuf.size();
-            }
+      Mutex send_queue_mutex;
+      std::list<std::pair<std::shared_ptr<asio::streambuf>, std::function<void(const error_code &)>>> send_queue GUARDED_BY(send_queue_mutex);
 
-            /// If true, force server to close the connection after the response have been sent.
-            ///
-            /// This is useful when implementing a HTTP/1.0-server sending content
-            /// without specifying the content length.
-            bool close_connection_after_response = false;
-        };
-        
-        class Content : public std::istream {
-            friend class ServerBase<socket_type>;
-        public:
-            size_t size() {
-                return streambuf.size();
-            }
-            std::string string() {
-                std::stringstream ss;
-                ss << rdbuf();
-                return ss.str();
-            }
-        private:
-            boost::asio::streambuf &streambuf;
-            Content(boost::asio::streambuf &streambuf): std::istream(&streambuf), streambuf(streambuf) {}
-        };
-        
-        class Request {
-            friend class ServerBase<socket_type>;
-            friend class Server<socket_type>;
-        public:
-            std::string method, path, http_version;
+      Response(std::shared_ptr<Session> session_, long timeout_content) noexcept : std::ostream(nullptr), session(std::move(session_)), timeout_content(timeout_content) {
+        rdbuf(streambuf.get());
+      }
 
-            Content content;
+      template <typename size_type>
+      void write_header(const CaseInsensitiveMultimap &header, size_type size) {
+        bool content_length_written = false;
+        bool chunked_transfer_encoding = false;
+        bool event_stream = false;
+        for(auto &field : header) {
+          if(!content_length_written && case_insensitive_equal(field.first, "content-length"))
+            content_length_written = true;
+          else if(!chunked_transfer_encoding && case_insensitive_equal(field.first, "transfer-encoding") && case_insensitive_equal(field.second, "chunked"))
+            chunked_transfer_encoding = true;
+          else if(!event_stream && case_insensitive_equal(field.first, "content-type") && case_insensitive_equal(field.second, "text/event-stream"))
+            event_stream = true;
 
-            std::unordered_multimap<std::string, std::string, case_insensitive_hash, case_insensitive_equals> header;
-
-            REGEX_NS::smatch path_match;
-            
-            std::string remote_endpoint_address;
-            unsigned short remote_endpoint_port;
-            
-        private:
-            Request(const socket_type &socket): content(streambuf) {
-                try {
-                    remote_endpoint_address=socket.lowest_layer().remote_endpoint().address().to_string();
-                    remote_endpoint_port=socket.lowest_layer().remote_endpoint().port();
-                }
-                catch(...) {}
-            }
-            
-            boost::asio::streambuf streambuf;
-        };
-        
-        class Config {
-            friend class ServerBase<socket_type>;
-
-            Config(unsigned short port): port(port) {}
-        public:
-            /// Port number to use. Defaults to 80 for HTTP and 443 for HTTPS.
-            unsigned short port;
-            /// Number of threads that the server will use when start() is called. Defaults to 1 thread.
-            size_t thread_pool_size=1;
-            /// Timeout on request handling. Defaults to 5 seconds.
-            size_t timeout_request=5;
-            /// Timeout on content handling. Defaults to 300 seconds.
-            size_t timeout_content=300;
-            /// IPv4 address in dotted decimal form or IPv6 address in hexadecimal notation.
-            /// If empty, the address will be any address.
-            std::string address;
-            /// Set to false to avoid binding the socket to an address that is already in use. Defaults to true.
-            bool reuse_address=true;
-        };
-        ///Set before calling start().
-        Config config;
-        
-    private:
-        class regex_orderable : public REGEX_NS::regex {
-            std::string str;
-        public:
-            regex_orderable(const char *regex_cstr) : REGEX_NS::regex(regex_cstr), str(regex_cstr) {}
-            regex_orderable(const std::string &regex_str) : REGEX_NS::regex(regex_str), str(regex_str) {}
-            bool operator<(const regex_orderable &rhs) const {
-                return str<rhs.str;
-            }
-        };
-    public:
-        /// Warning: do not add or remove resources after start() is called
-        std::map<regex_orderable, std::map<std::string,
-            std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>, std::shared_ptr<typename ServerBase<socket_type>::Request>)> > > resource;
-        
-        std::map<std::string,
-            std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>, std::shared_ptr<typename ServerBase<socket_type>::Request>)> > default_resource;
-        
-        std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Request>, const boost::system::error_code&)> on_error;
-        
-        std::function<void(std::shared_ptr<socket_type> socket, std::shared_ptr<typename ServerBase<socket_type>::Request>)> on_upgrade;
-        
-        virtual void start() {
-            if(!io_service)
-                io_service=std::make_shared<boost::asio::io_service>();
-
-            if(io_service->stopped())
-                io_service->reset();
-
-            boost::asio::ip::tcp::endpoint endpoint;
-            if(config.address.size()>0)
-                endpoint=boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(config.address), config.port);
-            else
-                endpoint=boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), config.port);
-            
-            if(!acceptor)
-                acceptor=std::unique_ptr<boost::asio::ip::tcp::acceptor>(new boost::asio::ip::tcp::acceptor(*io_service));
-            acceptor->open(endpoint.protocol());
-            acceptor->set_option(boost::asio::socket_base::reuse_address(config.reuse_address));
-            acceptor->bind(endpoint);
-            acceptor->listen();
-     
-            accept(); 
-            
-            //If thread_pool_size>1, start m_io_service.run() in (thread_pool_size-1) threads for thread-pooling
-            threads.clear();
-            for(size_t c=1;c<config.thread_pool_size;c++) {
-                threads.emplace_back([this]() {
-                    io_service->run();
-                });
-            }
-
-            //Main thread
-            if(config.thread_pool_size>0)
-                io_service->run();
-
-            //Wait for the rest of the threads, if any, to finish as well
-            for(auto& t: threads) {
-                t.join();
-            }
+          *this << field.first << ": " << field.second << "\r\n";
         }
-        
-        void stop() {
-            acceptor->close();
-            if(config.thread_pool_size>0)
-                io_service->stop();
-        }
-        
-        ///Use this function if you need to recursively send parts of a longer message
-        void send(const std::shared_ptr<Response> &response, const std::function<void(const boost::system::error_code&)>& callback=nullptr) const {
-            boost::asio::async_write(*response->socket, response->streambuf, [this, response, callback](const boost::system::error_code& ec, size_t /*bytes_transferred*/) {
+        if(!content_length_written && !chunked_transfer_encoding && !event_stream && !close_connection_after_response)
+          *this << "Content-Length: " << size << "\r\n\r\n";
+        else
+          *this << "\r\n";
+      }
+
+      void send_from_queue() REQUIRES(send_queue_mutex) {
+        auto buffer = send_queue.begin()->first->data();
+        auto self = this->shared_from_this();
+        post(session->connection->write_strand, [self, buffer] {
+          auto lock = self->session->connection->handler_runner->continue_lock();
+          if(!lock)
+            return;
+          asio::async_write(*self->session->connection->socket, buffer, [self](const error_code &ec, std::size_t /*bytes_transferred*/) {
+            auto lock = self->session->connection->handler_runner->continue_lock();
+            if(!lock)
+              return;
+            {
+              LockGuard lock(self->send_queue_mutex);
+              if(!ec) {
+                auto it = self->send_queue.begin();
+                auto callback = std::move(it->second);
+                self->send_queue.erase(it);
+                if(self->send_queue.size() > 0)
+                  self->send_from_queue();
+
+                lock.unlock();
                 if(callback)
-                    callback(ec);
-            });
+                  callback(ec);
+              }
+              else {
+                // All handlers in the queue is called with ec:
+                std::list<std::function<void(const error_code &)>> callbacks;
+                for(auto &pair : self->send_queue) {
+                  if(pair.second)
+                    callbacks.emplace_back(std::move(pair.second));
+                }
+                self->send_queue.clear();
+
+                lock.unlock();
+                for(auto &callback : callbacks)
+                  callback(ec);
+              }
+            }
+          });
+        });
+      }
+
+      void send_on_delete(const std::function<void(const error_code &)> &callback = nullptr) noexcept {
+        auto buffer = streambuf->data();
+        auto self = this->shared_from_this(); // Keep Response instance alive through the following async_write
+        post(session->connection->write_strand, [self, buffer, callback] {
+          auto lock = self->session->connection->handler_runner->continue_lock();
+          if(!lock)
+            return;
+          asio::async_write(*self->session->connection->socket, buffer, [self, callback](const error_code &ec, std::size_t /*bytes_transferred*/) {
+            auto lock = self->session->connection->handler_runner->continue_lock();
+            if(!lock)
+              return;
+            if(callback)
+              callback(ec);
+          });
+        });
+      }
+
+    public:
+      std::size_t size() noexcept {
+        return streambuf->size();
+      }
+
+      /// Send the content of the response stream to client. The callback is called when the send has completed.
+      ///
+      /// Use this function if you need to recursively send parts of a longer message, or when using server-sent events.
+      void send(std::function<void(const error_code &)> callback = nullptr) noexcept {
+        std::shared_ptr<asio::streambuf> streambuf = std::move(this->streambuf);
+        this->streambuf = std::unique_ptr<asio::streambuf>(new asio::streambuf());
+        rdbuf(this->streambuf.get());
+
+        LockGuard lock(send_queue_mutex);
+        send_queue.emplace_back(std::move(streambuf), std::move(callback));
+        if(send_queue.size() == 1)
+          send_from_queue();
+      }
+
+      /// Write directly to stream buffer using std::ostream::write.
+      void write(const char_type *ptr, std::streamsize n) {
+        std::ostream::write(ptr, n);
+      }
+
+      /// Convenience function for writing status line, potential header fields, and empty content.
+      void write(StatusCode status_code = StatusCode::success_ok, const CaseInsensitiveMultimap &header = CaseInsensitiveMultimap()) {
+        *this << "HTTP/1.1 " << SimpleWeb::status_code(status_code) << "\r\n";
+        write_header(header, 0);
+      }
+
+      /// Convenience function for writing status line, header fields, and content.
+      void write(StatusCode status_code, string_view content, const CaseInsensitiveMultimap &header = CaseInsensitiveMultimap()) {
+        *this << "HTTP/1.1 " << SimpleWeb::status_code(status_code) << "\r\n";
+        write_header(header, content.size());
+        if(!content.empty())
+          *this << content;
+      }
+
+      /// Convenience function for writing status line, header fields, and content.
+      void write(StatusCode status_code, std::istream &content, const CaseInsensitiveMultimap &header = CaseInsensitiveMultimap()) {
+        *this << "HTTP/1.1 " << SimpleWeb::status_code(status_code) << "\r\n";
+        content.seekg(0, std::ios::end);
+        auto size = content.tellg();
+        content.seekg(0, std::ios::beg);
+        write_header(header, size);
+        if(size)
+          *this << content.rdbuf();
+      }
+
+      /// Convenience function for writing success status line, header fields, and content.
+      void write(string_view content, const CaseInsensitiveMultimap &header = CaseInsensitiveMultimap()) {
+        write(StatusCode::success_ok, content, header);
+      }
+
+      /// Convenience function for writing success status line, header fields, and content.
+      void write(std::istream &content, const CaseInsensitiveMultimap &header = CaseInsensitiveMultimap()) {
+        write(StatusCode::success_ok, content, header);
+      }
+
+      /// Convenience function for writing success status line, and header fields.
+      void write(const CaseInsensitiveMultimap &header) {
+        write(StatusCode::success_ok, std::string(), header);
+      }
+
+      /// If set to true, force server to close the connection after the response have been sent.
+      ///
+      /// This is useful when implementing a HTTP/1.0-server sending content
+      /// without specifying the content length.
+      bool close_connection_after_response = false;
+    };
+
+    class Content : public std::istream {
+      friend class ServerBase<socket_type>;
+
+    public:
+      std::size_t size() noexcept {
+        return streambuf.size();
+      }
+      /// Convenience function to return content as std::string.
+      std::string string() noexcept {
+        return std::string(asio::buffers_begin(streambuf.data()), asio::buffers_end(streambuf.data()));
+      }
+
+    private:
+      asio::streambuf &streambuf;
+      Content(asio::streambuf &streambuf) noexcept : std::istream(&streambuf), streambuf(streambuf) {}
+    };
+
+    class Request {
+      friend class ServerBase<socket_type>;
+      friend class Server<socket_type>;
+      friend class Session;
+
+      asio::streambuf streambuf;
+      std::weak_ptr<Connection> connection;
+      std::string optimization = std::to_string(0); // TODO: figure out what goes wrong in gcc optimization without this line
+
+      Request(std::size_t max_request_streambuf_size, const std::shared_ptr<Connection> &connection_) noexcept : streambuf(max_request_streambuf_size), connection(connection_), content(streambuf) {}
+
+    public:
+      std::string method, path, query_string, http_version;
+
+      Content content;
+
+      CaseInsensitiveMultimap header;
+
+      /// The result of the resource regular expression match of the request path.
+      regex::smatch path_match;
+
+      /// The time point when the request header was fully read.
+      std::chrono::system_clock::time_point header_read_time;
+
+      asio::ip::tcp::endpoint remote_endpoint() const noexcept {
+        try {
+          if(auto connection = this->connection.lock())
+            return connection->socket->lowest_layer().remote_endpoint();
+        }
+        catch(...) {
+        }
+        return asio::ip::tcp::endpoint();
+      }
+
+      asio::ip::tcp::endpoint local_endpoint() const noexcept {
+        try {
+          if(auto connection = this->connection.lock())
+            return connection->socket->lowest_layer().local_endpoint();
+        }
+        catch(...) {
+        }
+        return asio::ip::tcp::endpoint();
+      }
+
+      /// Deprecated, please use remote_endpoint().address().to_string() instead.
+      SW_DEPRECATED std::string remote_endpoint_address() const noexcept {
+        try {
+          if(auto connection = this->connection.lock())
+            return connection->socket->lowest_layer().remote_endpoint().address().to_string();
+        }
+        catch(...) {
+        }
+        return std::string();
+      }
+
+      /// Deprecated, please use remote_endpoint().port() instead.
+      SW_DEPRECATED unsigned short remote_endpoint_port() const noexcept {
+        try {
+          if(auto connection = this->connection.lock())
+            return connection->socket->lowest_layer().remote_endpoint().port();
+        }
+        catch(...) {
+        }
+        return 0;
+      }
+
+      /// Returns query keys with percent-decoded values.
+      CaseInsensitiveMultimap parse_query_string() const noexcept {
+        return SimpleWeb::QueryString::parse(query_string);
+      }
+    };
+
+  protected:
+    class Connection : public std::enable_shared_from_this<Connection> {
+    public:
+      template <typename... Args>
+      Connection(std::shared_ptr<ScopeRunner> handler_runner_, Args &&...args) noexcept : handler_runner(std::move(handler_runner_)), socket(new socket_type(std::forward<Args>(args)...)), write_strand(get_executor(socket->lowest_layer())) {}
+
+      std::shared_ptr<ScopeRunner> handler_runner;
+
+      std::unique_ptr<socket_type> socket; // Socket must be unique_ptr since asio::ssl::stream<asio::ip::tcp::socket> is not movable
+
+      /**
+       * Needed for TLS communication where async_write could be called outside of the io_context runners.
+       * For more information see https://stackoverflow.com/a/12801042.
+       */
+      strand write_strand;
+
+      std::unique_ptr<asio::steady_timer> timer;
+
+      void close() noexcept {
+        error_code ec;
+        socket->lowest_layer().shutdown(asio::ip::tcp::socket::shutdown_both, ec);
+        socket->lowest_layer().cancel(ec);
+      }
+
+      void set_timeout(long seconds) noexcept {
+        if(seconds == 0) {
+          timer = nullptr;
+          return;
         }
 
-        /// If you have your own boost::asio::io_service, store its pointer here before running start().
-        /// You might also want to set config.thread_pool_size to 0.
-        std::shared_ptr<boost::asio::io_service> io_service;
-    protected:
-        std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor;
-        std::vector<std::thread> threads;
-        
-        ServerBase(unsigned short port) : config(port) {}
-        
-        virtual void accept()=0;
-        
-        std::shared_ptr<boost::asio::deadline_timer> get_timeout_timer(const std::shared_ptr<socket_type> &socket, long seconds) {
-            if(seconds==0)
-                return nullptr;
-            
-            auto timer=std::make_shared<boost::asio::deadline_timer>(*io_service);
-            timer->expires_from_now(boost::posix_time::seconds(seconds));
-            timer->async_wait([socket](const boost::system::error_code& ec){
-                if(!ec) {
-                    boost::system::error_code ec;
-                    socket->lowest_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-                    socket->lowest_layer().close();
-                }
-            });
-            return timer;
+        timer = make_steady_timer(*socket, std::chrono::seconds(seconds));
+        std::weak_ptr<Connection> self_weak(this->shared_from_this()); // To avoid keeping Connection instance alive longer than needed
+        timer->async_wait([self_weak](const error_code &ec) {
+          if(!ec) {
+            if(auto self = self_weak.lock())
+              self->close();
+          }
+        });
+      }
+
+      void cancel_timeout() noexcept {
+        if(timer) {
+          try {
+            timer->cancel();
+          }
+          catch(...) {
+          }
         }
-        
-        void read_request_and_content(const std::shared_ptr<socket_type> &socket) {
-            //Create new streambuf (Request::streambuf) for async_read_until()
-            //shared_ptr is used to pass temporary objects to the asynchronous functions
-            std::shared_ptr<Request> request(new Request(*socket));
+      }
+    };
 
-            //Set timeout on the following boost::asio::async-read or write function
-            auto timer=this->get_timeout_timer(socket, config.timeout_request);
-                        
-            boost::asio::async_read_until(*socket, request->streambuf, "\r\n\r\n",
-                    [this, socket, request, timer](const boost::system::error_code& ec, size_t bytes_transferred) {
-                if(timer)
-                    timer->cancel();
-                if(!ec) {
-                    //request->streambuf.size() is not necessarily the same as bytes_transferred, from Boost-docs:
-                    //"After a successful async_read_until operation, the streambuf may contain additional data beyond the delimiter"
-                    //The chosen solution is to extract lines from the stream directly when parsing the header. What is left of the
-                    //streambuf (maybe some bytes of the content) is appended to in the async_read-function below (for retrieving content).
-                    size_t num_additional_bytes=request->streambuf.size()-bytes_transferred;
-                    
-                    if(!this->parse_request(request))
-                        return;
-                    
-                    //If content, read that as well
-                    auto it=request->header.find("Content-Length");
-                    if(it!=request->header.end()) {
-                        unsigned long long content_length;
-                        try {
-                            content_length=stoull(it->second);
-                        }
-                        catch(const std::exception &e) {
-                            if(on_error)
-                                on_error(request, boost::system::error_code(boost::system::errc::protocol_error, boost::system::generic_category()));
-                            return;
-                        }
-                        if(content_length>num_additional_bytes) {
-                            //Set timeout on the following boost::asio::async-read or write function
-                            auto timer=this->get_timeout_timer(socket, config.timeout_content);
-                            boost::asio::async_read(*socket, request->streambuf,
-                                    boost::asio::transfer_exactly(content_length-num_additional_bytes),
-                                    [this, socket, request, timer]
-                                    (const boost::system::error_code& ec, size_t /*bytes_transferred*/) {
-                                if(timer)
-                                    timer->cancel();
-                                if(!ec)
-                                    this->find_resource(socket, request);
-                                else if(on_error)
-                                    on_error(request, ec);
-                            });
-                        }
-                        else
-                            this->find_resource(socket, request);
-                    }
-                    else
-                        this->find_resource(socket, request);
-                }
-                else if(on_error)
-                    on_error(request, ec);
-            });
+    class Session {
+    public:
+      Session(std::size_t max_request_streambuf_size, std::shared_ptr<Connection> connection_) noexcept : connection(std::move(connection_)), request(new Request(max_request_streambuf_size, connection)) {}
+
+      std::shared_ptr<Connection> connection;
+      std::shared_ptr<Request> request;
+    };
+
+  public:
+    class Config {
+      friend class ServerBase<socket_type>;
+
+      Config(unsigned short port) noexcept : port(port) {}
+
+    public:
+      /// Port number to use. Defaults to 80 for HTTP and 443 for HTTPS. Set to 0 get an assigned port.
+      unsigned short port;
+      /// If io_service is not set, number of threads that the server will use when start() is called.
+      /// Defaults to 1 thread.
+      std::size_t thread_pool_size = 1;
+      /// Timeout on request completion. Defaults to 5 seconds.
+      long timeout_request = 5;
+      /// Timeout on request/response content completion. Defaults to 300 seconds.
+      long timeout_content = 300;
+      /// Maximum size of request stream buffer. Defaults to architecture maximum.
+      /// Reaching this limit will result in a message_size error code.
+      std::size_t max_request_streambuf_size = (std::numeric_limits<std::size_t>::max)();
+      /// IPv4 address in dotted decimal form or IPv6 address in hexadecimal notation.
+      /// If empty, the address will be any address.
+      std::string address;
+      /// Set to false to avoid binding the socket to an address that is already in use. Defaults to true.
+      bool reuse_address = true;
+      /// Make use of RFC 7413 or TCP Fast Open (TFO)
+      bool fast_open = false;
+    };
+    /// Set before calling start().
+    Config config;
+
+  private:
+    class regex_orderable : public regex::regex {
+    public:
+      std::string str;
+
+      regex_orderable(const char *regex_cstr) : regex::regex(regex_cstr), str(regex_cstr) {}
+      regex_orderable(std::string regex_str_) : regex::regex(regex_str_), str(std::move(regex_str_)) {}
+      bool operator<(const regex_orderable &rhs) const noexcept {
+        return str < rhs.str;
+      }
+    };
+
+  public:
+    /// Use this container to add resources for specific request paths depending on the given regex and method.
+    /// Warning: do not add or remove resources after start() is called
+    std::map<regex_orderable, std::map<std::string, std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>, std::shared_ptr<typename ServerBase<socket_type>::Request>)>>> resource;
+
+    /// If the request path does not match a resource regex, this function is called.
+    std::map<std::string, std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>, std::shared_ptr<typename ServerBase<socket_type>::Request>)>> default_resource;
+
+    /// Called when an error occurs.
+    std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Request>, const error_code &)> on_error;
+
+    /// Called on upgrade requests.
+    std::function<void(std::unique_ptr<socket_type> &, std::shared_ptr<typename ServerBase<socket_type>::Request>)> on_upgrade;
+
+    /// If you want to reuse an already created asio::io_service, store its pointer here before calling start().
+    std::shared_ptr<io_context> io_service;
+
+    /// Start the server.
+    /// If io_service is not set, an internal io_service is created instead.
+    /// The callback argument is called after the server is accepting connections,
+    /// where its parameter contains the assigned port.
+    void start(const std::function<void(unsigned short /*port*/)> &callback = nullptr) {
+      std::unique_lock<std::mutex> lock(start_stop_mutex);
+
+      asio::ip::tcp::endpoint endpoint;
+      if(!config.address.empty())
+        endpoint = asio::ip::tcp::endpoint(make_address(config.address), config.port);
+      else
+        endpoint = asio::ip::tcp::endpoint(asio::ip::tcp::v6(), config.port);
+
+      if(!io_service) {
+        io_service = std::make_shared<io_context>();
+        internal_io_service = true;
+      }
+
+      if(!acceptor)
+        acceptor = std::unique_ptr<asio::ip::tcp::acceptor>(new asio::ip::tcp::acceptor(*io_service));
+      try {
+        acceptor->open(endpoint.protocol());
+      }
+      catch(const system_error &error) {
+        if(error.code() == asio::error::address_family_not_supported && config.address.empty()) {
+          endpoint = asio::ip::tcp::endpoint(asio::ip::tcp::v4(), config.port);
+          acceptor->open(endpoint.protocol());
+        }
+        else
+          throw;
+      }
+      acceptor->set_option(asio::socket_base::reuse_address(config.reuse_address));
+      if(config.fast_open) {
+#if defined(__linux__) && defined(TCP_FASTOPEN)
+        const int qlen = 5; // This seems to be the value that is used in other examples.
+        error_code ec;
+        acceptor->set_option(asio::detail::socket_option::integer<IPPROTO_TCP, TCP_FASTOPEN>(qlen), ec);
+#endif // End Linux
+      }
+      acceptor->bind(endpoint);
+
+      after_bind();
+
+      auto port = acceptor->local_endpoint().port();
+
+      acceptor->listen();
+      accept();
+
+      if(internal_io_service && io_service->stopped())
+        restart(*io_service);
+
+      if(callback)
+        post(*io_service, [callback, port] {
+          callback(port);
+        });
+
+      if(internal_io_service) {
+        // If thread_pool_size>1, start m_io_service.run() in (thread_pool_size-1) threads for thread-pooling
+        threads.clear();
+        for(std::size_t c = 1; c < config.thread_pool_size; c++) {
+          threads.emplace_back([this]() {
+            this->io_service->run();
+          });
         }
 
-        bool parse_request(const std::shared_ptr<Request> &request) const {
-            std::string line;
-            getline(request->content, line);
-            size_t method_end;
-            if((method_end=line.find(' '))!=std::string::npos) {
-                size_t path_end;
-                if((path_end=line.find(' ', method_end+1))!=std::string::npos) {
-                    request->method=line.substr(0, method_end);
-                    request->path=line.substr(method_end+1, path_end-method_end-1);
+        lock.unlock();
 
-                    size_t protocol_end;
-                    if((protocol_end=line.find('/', path_end+1))!=std::string::npos) {
-                        if(line.compare(path_end+1, protocol_end-path_end-1, "HTTP")!=0)
-                            return false;
-                        request->http_version=line.substr(protocol_end+1, line.size()-protocol_end-2);
-                    }
-                    else
-                        return false;
+        // Main thread
+        if(config.thread_pool_size > 0)
+          io_service->run();
 
-                    getline(request->content, line);
-                    size_t param_end;
-                    while((param_end=line.find(':'))!=std::string::npos) {
-                        size_t value_start=param_end+1;
-                        if((value_start)<line.size()) {
-                            if(line[value_start]==' ')
-                                value_start++;
-                            if(value_start<line.size())
-                                request->header.emplace(line.substr(0, param_end), line.substr(value_start, line.size()-value_start-1));
-                        }
-    
-                        getline(request->content, line);
-                    }
-                }
-                else
-                    return false;
+        lock.lock();
+
+        // Wait for the rest of the threads, if any, to finish as well
+        for(auto &t : threads)
+          t.join();
+      }
+    }
+
+    /// Stop accepting new requests, and close current connections.
+    void stop() noexcept {
+      std::lock_guard<std::mutex> lock(start_stop_mutex);
+
+      if(acceptor) {
+        error_code ec;
+        acceptor->close(ec);
+
+        {
+          LockGuard lock(connections->mutex);
+          for(auto &connection : connections->set)
+            connection->close();
+          connections->set.clear();
+        }
+
+        if(internal_io_service)
+          io_service->stop();
+      }
+    }
+
+    virtual ~ServerBase() noexcept {
+      handler_runner->stop();
+      stop();
+    }
+
+  protected:
+    std::mutex start_stop_mutex;
+
+    bool internal_io_service = false;
+
+    std::unique_ptr<asio::ip::tcp::acceptor> acceptor;
+    std::vector<std::thread> threads;
+
+    struct Connections {
+      Mutex mutex;
+      std::unordered_set<Connection *> set GUARDED_BY(mutex);
+    };
+    std::shared_ptr<Connections> connections;
+
+    std::shared_ptr<ScopeRunner> handler_runner;
+
+    ServerBase(unsigned short port) noexcept : config(port), connections(new Connections()), handler_runner(new ScopeRunner()) {}
+
+    virtual void after_bind() {}
+    virtual void accept() = 0;
+
+    template <typename... Args>
+    std::shared_ptr<Connection> create_connection(Args &&...args) noexcept {
+      auto connections = this->connections;
+      auto connection = std::shared_ptr<Connection>(new Connection(handler_runner, std::forward<Args>(args)...), [connections](Connection *connection) {
+        {
+          LockGuard lock(connections->mutex);
+          auto it = connections->set.find(connection);
+          if(it != connections->set.end())
+            connections->set.erase(it);
+        }
+        delete connection;
+      });
+      {
+        LockGuard lock(connections->mutex);
+        connections->set.emplace(connection.get());
+      }
+      return connection;
+    }
+
+    void read(const std::shared_ptr<Session> &session) {
+      session->connection->set_timeout(config.timeout_request);
+      asio::async_read_until(*session->connection->socket, session->request->streambuf, "\r\n\r\n", [this, session](const error_code &ec, std::size_t bytes_transferred) {
+        auto lock = session->connection->handler_runner->continue_lock();
+        if(!lock)
+          return;
+        session->request->header_read_time = std::chrono::system_clock::now();
+
+        if(!ec) {
+          session->connection->set_timeout(this->config.timeout_content);
+          // request->streambuf.size() is not necessarily the same as bytes_transferred, from Boost-docs:
+          // "After a successful async_read_until operation, the streambuf may contain additional data beyond the delimiter"
+          // The chosen solution is to extract lines from the stream directly when parsing the header. What is left of the
+          // streambuf (maybe some bytes of the content) is appended to in the async_read-function below (for retrieving content).
+          std::size_t num_additional_bytes = session->request->streambuf.size() - bytes_transferred;
+
+          if(!RequestMessage::parse(session->request->content, session->request->method, session->request->path,
+                                    session->request->query_string, session->request->http_version, session->request->header)) {
+            if(this->on_error)
+              this->on_error(session->request, make_error_code::make_error_code(errc::protocol_error));
+            return;
+          }
+
+          // If content, read that as well
+          auto header_it = session->request->header.find("Content-Length");
+          if(header_it != session->request->header.end()) {
+            unsigned long long content_length = 0;
+            try {
+              content_length = std::stoull(header_it->second);
+            }
+            catch(const std::exception &) {
+              if(this->on_error)
+                this->on_error(session->request, make_error_code::make_error_code(errc::protocol_error));
+              return;
+            }
+            if(content_length > session->request->streambuf.max_size()) {
+              auto response = std::shared_ptr<Response>(new Response(session, this->config.timeout_content));
+              response->write(StatusCode::client_error_payload_too_large);
+              if(this->on_error)
+                this->on_error(session->request, make_error_code::make_error_code(errc::message_size));
+              return;
+            }
+            if(content_length > num_additional_bytes) {
+              asio::async_read(*session->connection->socket, session->request->streambuf, asio::transfer_exactly(content_length - num_additional_bytes), [this, session](const error_code &ec, std::size_t /*bytes_transferred*/) {
+                auto lock = session->connection->handler_runner->continue_lock();
+                if(!lock)
+                  return;
+
+                if(!ec)
+                  this->find_resource(session);
+                else if(this->on_error)
+                  this->on_error(session->request, ec);
+              });
             }
             else
-                return false;
-            return true;
+              this->find_resource(session);
+          }
+          else if((header_it = session->request->header.find("Transfer-Encoding")) != session->request->header.end() && header_it->second == "chunked") {
+            // Expect hex number to not exceed 16 bytes (64-bit number), but take into account previous additional read bytes
+            auto chunk_size_streambuf = std::make_shared<asio::streambuf>(std::max<std::size_t>(16 + 2, session->request->streambuf.size()));
+
+            // Move leftover bytes
+            auto &source = session->request->streambuf;
+            auto &target = *chunk_size_streambuf;
+            target.commit(asio::buffer_copy(target.prepare(source.size()), source.data()));
+            source.consume(source.size());
+
+            this->read_chunked_transfer_encoded(session, chunk_size_streambuf);
+          }
+          else
+            this->find_resource(session);
         }
+        else if(this->on_error)
+          this->on_error(session->request, ec);
+      });
+    }
 
-        void find_resource(const std::shared_ptr<socket_type> &socket, const std::shared_ptr<Request> &request) {
-            //Upgrade connection
-            if(on_upgrade) {
-                auto it=request->header.find("Upgrade");
-                if(it!=request->header.end()) {
-                    on_upgrade(socket, request);
-                    return;
-                }
-            }
-            //Find path- and method-match, and call write_response
-            for(auto &regex_method: resource) {
-                auto it=regex_method.second.find(request->method);
-                if(it!=regex_method.second.end()) {
-                    REGEX_NS::smatch sm_res;
-                    if(REGEX_NS::regex_match(request->path, sm_res, regex_method.first)) {
-                        request->path_match=std::move(sm_res);
-                        write_response(socket, request, it->second);
-                        return;
-                    }
-                }
-            }
-            auto it=default_resource.find(request->method);
-            if(it!=default_resource.end()) {
-                write_response(socket, request, it->second);
-            }
-        }
-        
-        void write_response(const std::shared_ptr<socket_type> &socket, const std::shared_ptr<Request> &request, 
-                std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>,
-                                   std::shared_ptr<typename ServerBase<socket_type>::Request>)>& resource_function) {
-            //Set timeout on the following boost::asio::async-read or write function
-            auto timer=this->get_timeout_timer(socket, config.timeout_content);
+    void read_chunked_transfer_encoded(const std::shared_ptr<Session> &session, const std::shared_ptr<asio::streambuf> &chunk_size_streambuf) {
+      asio::async_read_until(*session->connection->socket, *chunk_size_streambuf, "\r\n", [this, session, chunk_size_streambuf](const error_code &ec, size_t bytes_transferred) {
+        auto lock = session->connection->handler_runner->continue_lock();
+        if(!lock)
+          return;
 
-            auto response=std::shared_ptr<Response>(new Response(socket), [this, request, timer](Response *response_ptr) {
-                auto response=std::shared_ptr<Response>(response_ptr);
-                this->send(response, [this, response, request, timer](const boost::system::error_code& ec) {
-                    if(timer)
-                        timer->cancel();
-                    if(!ec) {
-                        if (response->close_connection_after_response)
-                            return;
+        if(!ec) {
+          std::istream istream(chunk_size_streambuf.get());
+          std::string line;
+          std::getline(istream, line);
+          bytes_transferred -= line.size() + 1;
+          unsigned long chunk_size = 0;
+          try {
+            chunk_size = std::stoul(line, 0, 16);
+          }
+          catch(...) {
+            if(this->on_error)
+              this->on_error(session->request, make_error_code::make_error_code(errc::protocol_error));
+            return;
+          }
 
-                        auto range=request->header.equal_range("Connection");
-                        for(auto it=range.first;it!=range.second;it++) {
-                            if(boost::iequals(it->second, "close")) {
-                                return;
-                            } else if (boost::iequals(it->second, "keep-alive")) {
-                                this->read_request_and_content(response->socket);
-                                return;
-                            }
-                        }
-                        if(request->http_version >= "1.1")
-                            this->read_request_and_content(response->socket);
-                    }
-                    else if(on_error)
-                        on_error(request, ec);
-                });
-            });
+          if(chunk_size == 0) {
+            this->find_resource(session);
+            return;
+          }
 
-            try {
-                resource_function(response, request);
-            }
-            catch(const std::exception &e) {
-                if(on_error)
-                    on_error(request, boost::system::error_code(boost::system::errc::operation_canceled, boost::system::generic_category()));
+          if(chunk_size + session->request->streambuf.size() > session->request->streambuf.max_size()) {
+            auto response = std::shared_ptr<Response>(new Response(session, this->config.timeout_content));
+            response->write(StatusCode::client_error_payload_too_large);
+            if(this->on_error)
+              this->on_error(session->request, make_error_code::make_error_code(errc::message_size));
+            return;
+          }
+
+          auto num_additional_bytes = chunk_size_streambuf->size() - bytes_transferred;
+
+          auto bytes_to_move = std::min<std::size_t>(chunk_size, num_additional_bytes);
+          if(bytes_to_move > 0) {
+            // Move leftover bytes
+            auto &source = *chunk_size_streambuf;
+            auto &target = session->request->streambuf;
+            target.commit(asio::buffer_copy(target.prepare(bytes_to_move), source.data(), bytes_to_move));
+            source.consume(bytes_to_move);
+          }
+
+          if(chunk_size > num_additional_bytes) {
+            asio::async_read(*session->connection->socket, session->request->streambuf, asio::transfer_exactly(chunk_size - num_additional_bytes), [this, session, chunk_size_streambuf](const error_code &ec, size_t /*bytes_transferred*/) {
+              auto lock = session->connection->handler_runner->continue_lock();
+              if(!lock)
                 return;
-            }
-        }
-    };
-    
-    template<class socket_type>
-    class Server : public ServerBase<socket_type> {};
-    
-    typedef boost::asio::ip::tcp::socket HTTP;
-    
-    template<>
-    class Server<HTTP> : public ServerBase<HTTP> {
-    public:
-        DEPRECATED Server(unsigned short port, size_t thread_pool_size=1, long timeout_request=5, long timeout_content=300) :
-                Server() {
-            config.port=port;
-            config.thread_pool_size=thread_pool_size;
-            config.timeout_request=timeout_request;
-            config.timeout_content=timeout_content;
-        }
-        
-        Server() : ServerBase<HTTP>::ServerBase(80) {}
-        
-    protected:
-        void accept() {
-            //Create new socket for this connection
-            //Shared_ptr is used to pass temporary objects to the asynchronous functions
-            auto socket=std::make_shared<HTTP>(*io_service);
-                        
-            acceptor->async_accept(*socket, [this, socket](const boost::system::error_code& ec){
-                //Immediately start accepting a new connection (if io_service hasn't been stopped)
-                if (ec != boost::asio::error::operation_aborted)
-                    accept();
-                                
-                if(!ec) {
-                    boost::asio::ip::tcp::no_delay option(true);
-                    socket->set_option(option);
-                    
-                    this->read_request_and_content(socket);
-                }
-                else if(on_error)
-                    on_error(std::shared_ptr<Request>(new Request(*socket)), ec);
+
+              if(!ec) {
+                // Remove "\r\n"
+                auto null_buffer = std::make_shared<asio::streambuf>(2);
+                asio::async_read(*session->connection->socket, *null_buffer, asio::transfer_exactly(2), [this, session, chunk_size_streambuf, null_buffer](const error_code &ec, size_t /*bytes_transferred*/) {
+                  auto lock = session->connection->handler_runner->continue_lock();
+                  if(!lock)
+                    return;
+                  if(!ec)
+                    read_chunked_transfer_encoded(session, chunk_size_streambuf);
+                  else
+                    this->on_error(session->request, ec);
+                });
+              }
+              else if(this->on_error)
+                this->on_error(session->request, ec);
             });
+          }
+          else if(2 + chunk_size > num_additional_bytes) { // If only end of chunk remains unread (\n or \r\n)
+            // Remove "\r\n"
+            if(2 + chunk_size - num_additional_bytes == 1)
+              istream.get();
+            auto null_buffer = std::make_shared<asio::streambuf>(2);
+            asio::async_read(*session->connection->socket, *null_buffer, asio::transfer_exactly(2 + chunk_size - num_additional_bytes), [this, session, chunk_size_streambuf, null_buffer](const error_code &ec, size_t /*bytes_transferred*/) {
+              auto lock = session->connection->handler_runner->continue_lock();
+              if(!lock)
+                return;
+              if(!ec)
+                read_chunked_transfer_encoded(session, chunk_size_streambuf);
+              else
+                this->on_error(session->request, ec);
+            });
+          }
+          else {
+            // Remove "\r\n"
+            istream.get();
+            istream.get();
+
+            read_chunked_transfer_encoded(session, chunk_size_streambuf);
+          }
         }
-    };
-}
-#endif	/* SERVER_HTTP_HPP */
+        else if(this->on_error)
+          this->on_error(session->request, ec);
+      });
+    }
+
+    void find_resource(const std::shared_ptr<Session> &session) {
+      // Upgrade connection
+      if(on_upgrade) {
+        auto it = session->request->header.find("Upgrade");
+        if(it != session->request->header.end()) {
+          // remove connection from connections
+          {
+            LockGuard lock(connections->mutex);
+            auto it = connections->set.find(session->connection.get());
+            if(it != connections->set.end())
+              connections->set.erase(it);
+          }
+
+          on_upgrade(session->connection->socket, session->request);
+          return;
+        }
+      }
+      // Find path- and method-match, and call write
+      for(auto &regex_method : resource) {
+        auto it = regex_method.second.find(session->request->method);
+        if(it != regex_method.second.end()) {
+          regex::smatch sm_res;
+          if(regex::regex_match(session->request->path, sm_res, regex_method.first)) {
+            session->request->path_match = std::move(sm_res);
+            write(session, it->second);
+            return;
+          }
+        }
+      }
+      auto it = default_resource.find(session->request->method);
+      if(it != default_resource.end())
+        write(session, it->second);
+    }
+
+    void write(const std::shared_ptr<Session> &session,
+               std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>, std::shared_ptr<typename ServerBase<socket_type>::Request>)> &resource_function) {
+      auto response = std::shared_ptr<Response>(new Response(session, config.timeout_content), [this](Response *response_ptr) {
+        auto response = std::shared_ptr<Response>(response_ptr);
+        response->send_on_delete([this, response](const error_code &ec) {
+          response->session->connection->cancel_timeout();
+          if(!ec) {
+            if(response->close_connection_after_response)
+              return;
+
+            auto range = response->session->request->header.equal_range("Connection");
+            for(auto it = range.first; it != range.second; it++) {
+              if(case_insensitive_equal(it->second, "close"))
+                return;
+              else if(case_insensitive_equal(it->second, "keep-alive")) {
+                auto new_session = std::make_shared<Session>(this->config.max_request_streambuf_size, response->session->connection);
+                this->read(new_session);
+                return;
+              }
+            }
+            if(response->session->request->http_version >= "1.1") {
+              auto new_session = std::make_shared<Session>(this->config.max_request_streambuf_size, response->session->connection);
+              this->read(new_session);
+              return;
+            }
+          }
+          else if(this->on_error)
+            this->on_error(response->session->request, ec);
+        });
+      });
+
+      try {
+        resource_function(response, session->request);
+      }
+      catch(const std::exception &) {
+        if(on_error)
+          on_error(session->request, make_error_code::make_error_code(errc::operation_canceled));
+        return;
+      }
+    }
+  };
+
+  template <class socket_type>
+  class Server : public ServerBase<socket_type> {};
+
+  using HTTP = asio::ip::tcp::socket;
+
+  template <>
+  class Server<HTTP> : public ServerBase<HTTP> {
+  public:
+    /// Constructs a server object.
+    Server() noexcept : ServerBase<HTTP>::ServerBase(80) {}
+
+  protected:
+    void accept() override {
+      auto connection = create_connection(*io_service);
+
+      acceptor->async_accept(*connection->socket, [this, connection](const error_code &ec) {
+        auto lock = connection->handler_runner->continue_lock();
+        if(!lock)
+          return;
+
+        // Immediately start accepting a new connection (unless io_service has been stopped)
+        if(ec != error::operation_aborted)
+          this->accept();
+
+        auto session = std::make_shared<Session>(config.max_request_streambuf_size, connection);
+
+        if(!ec) {
+          asio::ip::tcp::no_delay option(true);
+          error_code ec;
+          session->connection->socket->set_option(option, ec);
+
+          this->read(session);
+        }
+        else if(this->on_error)
+          this->on_error(session->request, ec);
+      });
+    }
+  };
+} // namespace SimpleWeb
+
+#endif /* SIMPLE_WEB_SERVER_HTTP_HPP */

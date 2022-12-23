@@ -197,7 +197,7 @@ void DefaultResourceSend(const HttpServer                            &aServer,
         aResponse->write(&buffer[0], readLength);
         if (readLength == static_cast<std::streamsize>(buffer.size()))
         {
-            aServer.send(aResponse, [&aServer, aResponse, aIfStream](const boost::system::error_code &ec) {
+            aResponse->send([&aServer, aResponse, aIfStream](const boost::system::error_code &ec) {
                 if (!ec)
                 {
                     DefaultResourceSend(aServer, aResponse, aIfStream);

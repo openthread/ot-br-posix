@@ -2,7 +2,7 @@
 
 ## URL
 
-https://github.com/eidheim/Simple-Web-Server
+https://gitlab.com/eidheim/Simple-Web-Server
 
 ## Version
 
@@ -10,7 +10,7 @@ none
 
 ## Commit
 
-cfafbcbc7d74d91ffd24fd2fbf1a382d52133264
+2f29926dbbcd8a0425064d98c24f37ac50bd0b5b
 
 ## License
 
