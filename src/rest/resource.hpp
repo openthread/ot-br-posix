@@ -102,6 +102,16 @@ public:
     void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
 
 private:
+    /**
+     * This enumeration represents the Dataset type (active or pending).
+     *
+     */
+    enum DatasetType : uint8_t
+    {
+        kActive,  ///< Active Dataset
+        kPending, ///< Pending Dataset
+    };
+
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
     typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse) const;
@@ -114,6 +124,9 @@ private:
     void ExtendedPanId(const Request &aRequest, Response &aResponse) const;
     void Rloc(const Request &aRequest, Response &aResponse) const;
     void ActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const;
+    void Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
+    void DatasetActive(const Request &aRequest, Response &aResponse) const;
+    void DatasetPending(const Request &aRequest, Response &aResponse) const;
     void Diagnostic(const Request &aRequest, Response &aResponse) const;
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
 
@@ -128,6 +141,7 @@ private:
     void GetDataRloc(Response &aResponse) const;
     void GetActiveDatasetTlvs(Response &aResponse) const;
     void SetActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const;
+    void GetDataset(DatasetType aDatasetType, Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);

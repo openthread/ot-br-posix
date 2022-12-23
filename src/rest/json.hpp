@@ -213,6 +213,16 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
  */
 std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
 
+/**
+ * This method formats a Json object from a dataset.
+ *
+ * @param[in] aDataset  A dataset struct.
+ *
+ * @returns A string of serialized Json object.
+ *
+ */
+std::string Dataset2JsonString(const otOperationalDataset &aDataset);
+
 }; // namespace Json
 
 } // namespace rest

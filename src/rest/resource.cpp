@@ -46,6 +46,8 @@
 #define OT_REST_RESOURCE_PATH_NODE_NUMOFROUTER "/node/num-of-router"
 #define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
 #define OT_REST_RESOURCE_PATH_NODE_ACTIVE_DATASET_TLVS "/node/active-dataset-tlvs"
+#define OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE "/node/dataset/active"
+#define OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING "/node/dataset/pending"
 #define OT_REST_RESOURCE_PATH_NETWORK "/networks"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
@@ -53,6 +55,7 @@
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
 #define OT_REST_HTTP_STATUS_202 "202 Accepted"
+#define OT_REST_HTTP_STATUS_204 "204 No Content"
 #define OT_REST_HTTP_STATUS_400 "400 Bad Request"
 #define OT_REST_HTTP_STATUS_404 "404 Not Found"
 #define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
@@ -93,6 +96,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusAccepted:
         httpStatus = OT_REST_HTTP_STATUS_202;
         break;
+    case HttpStatusCode::kNoContent:
+        httpStatus = OT_REST_HTTP_STATUS_204;
+        break;
     case HttpStatusCode::kStatusBadRequest:
         httpStatus = OT_REST_HTTP_STATUS_400;
         break;
@@ -129,6 +135,8 @@ Resource::Resource(ControllerOpenThread *aNcp)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTPANID, &Resource::ExtendedPanId);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_ACTIVE_DATASET_TLVS, &Resource::ActiveDatasetTlvs);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
 
     // Resource callback handler
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
@@ -566,6 +574,70 @@ void Resource::ActiveDatasetTlvs(const Request &aRequest, Response &aResponse) c
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
         break;
     }
+}
+
+void Resource::GetDataset(DatasetType aDatasetType, Response &aResponse) const
+{
+    otbrError            error = OTBR_ERROR_NONE;
+    struct NodeInfo      node;
+    std::string          body;
+    std::string          errorCode;
+    otOperationalDataset dataset;
+
+    if (aDatasetType == DatasetType::kActive)
+    {
+        VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+    }
+    else if (aDatasetType == DatasetType::kPending)
+    {
+        VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+    }
+
+    body = Json::Dataset2JsonString(dataset);
+    aResponse.SetBody(body);
+
+exit:
+    if (error == OTBR_ERROR_NONE)
+    {
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+    }
+    else if (error == OTBR_ERROR_NOT_FOUND)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kNoContent);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
+void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        GetDataset(aDatasetType, aResponse);
+        break;
+    case HttpMethod::kPut:
+        // SetDataset(aRequest, aResponse);
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
+}
+
+void Resource::DatasetActive(const Request &aRequest, Response &aResponse) const
+{
+    Dataset(DatasetType::kActive, aRequest, aResponse);
+}
+
+void Resource::DatasetPending(const Request &aRequest, Response &aResponse) const
+{
+    Dataset(DatasetType::kPending, aRequest, aResponse);
 }
 
 void Resource::DeleteOutDatedDiagnostic(void)

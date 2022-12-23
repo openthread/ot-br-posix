@@ -60,6 +60,7 @@ enum class HttpStatusCode : std::uint16_t
 {
     kStatusOk                  = 200,
     kStatusAccepted            = 202,
+    kNoContent                 = 204,
     kStatusBadRequest          = 400,
     kStatusResourceNotFound    = 404,
     kStatusMethodNotAllowed    = 405,

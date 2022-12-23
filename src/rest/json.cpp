@@ -27,6 +27,7 @@
  */
 
 #include "rest/json.hpp"
+#include <sstream>
 
 #include "common/code_utils.hpp"
 #include "common/types.hpp"
@@ -112,6 +113,43 @@ static cJSON *IpAddr2Json(const otIp6Address &aAddress)
     Ip6Address addr(aAddress.mFields.m8);
 
     return cJSON_CreateString(addr.ToString().c_str());
+}
+
+static cJSON *IpPrefix2Json(const otIp6NetworkPrefix &aAddress)
+{
+    std::stringstream ss;
+    otIp6Address      address = {};
+
+    address.mFields.mComponents.mNetworkPrefix = aAddress;
+    Ip6Address addr(address.mFields.m8);
+
+    ss << addr.ToString() << "/" << OT_IP6_PREFIX_BITSIZE;
+
+    return cJSON_CreateString(ss.str().c_str());
+}
+
+static cJSON *SecurityPolicy2Json(const otSecurityPolicy &aSecurityPolicy)
+{
+    cJSON *securityPolicy = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(securityPolicy, "RotationTime", cJSON_CreateNumber(aSecurityPolicy.mRotationTime));
+    cJSON_AddItemToObject(securityPolicy, "ObtainNetworkKey",
+                          cJSON_CreateBool(aSecurityPolicy.mObtainNetworkKeyEnabled));
+    cJSON_AddItemToObject(securityPolicy, "NativeCommissioning",
+                          cJSON_CreateBool(aSecurityPolicy.mNativeCommissioningEnabled));
+    cJSON_AddItemToObject(securityPolicy, "Routers", cJSON_CreateBool(aSecurityPolicy.mRoutersEnabled));
+    cJSON_AddItemToObject(securityPolicy, "ExternalCommissioning",
+                          cJSON_CreateBool(aSecurityPolicy.mExternalCommissioningEnabled));
+    cJSON_AddItemToObject(securityPolicy, "CommercialCommissioning",
+                          cJSON_CreateBool(aSecurityPolicy.mCommercialCommissioningEnabled));
+    cJSON_AddItemToObject(securityPolicy, "AutonomousEnrollment",
+                          cJSON_CreateBool(aSecurityPolicy.mAutonomousEnrollmentEnabled));
+    cJSON_AddItemToObject(securityPolicy, "NetworkKeyProvisioning",
+                          cJSON_CreateBool(aSecurityPolicy.mNetworkKeyProvisioningEnabled));
+    cJSON_AddItemToObject(securityPolicy, "TobleLink", cJSON_CreateBool(aSecurityPolicy.mTobleLinkEnabled));
+    cJSON_AddItemToObject(securityPolicy, "NonCcmRouters", cJSON_CreateBool(aSecurityPolicy.mNonCcmRoutersEnabled));
+
+    return securityPolicy;
 }
 
 static cJSON *ChildTableEntry2Json(const otNetworkDiagChildEntry &aChildEntry)
@@ -478,6 +516,66 @@ std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessag
     ret = Json2String(error);
 
     cJSON_Delete(error);
+
+    return ret;
+}
+
+std::string Dataset2JsonString(const otOperationalDataset &aDataset)
+{
+    cJSON      *node = cJSON_CreateObject();
+    std::string ret;
+
+    if (aDataset.mComponents.mIsActiveTimestampPresent)
+    {
+        cJSON_AddItemToObject(node, "ActiveTimestamp", cJSON_CreateNumber(aDataset.mActiveTimestamp.mSeconds));
+    }
+    if (aDataset.mComponents.mIsPendingTimestampPresent)
+    {
+        cJSON_AddItemToObject(node, "PendingTimestamp", cJSON_CreateNumber(aDataset.mPendingTimestamp.mSeconds));
+    }
+    if (aDataset.mComponents.mIsNetworkKeyPresent)
+    {
+        cJSON_AddItemToObject(node, "NetworkKey", Bytes2HexJson(aDataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE));
+    }
+    if (aDataset.mComponents.mIsNetworkNamePresent)
+    {
+        cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aDataset.mNetworkName.m8));
+    }
+    if (aDataset.mComponents.mIsExtendedPanIdPresent)
+    {
+        cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aDataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE));
+    }
+    if (aDataset.mComponents.mIsMeshLocalPrefixPresent)
+    {
+        cJSON_AddItemToObject(node, "MeshLocalPrefix", IpPrefix2Json(aDataset.mMeshLocalPrefix));
+    }
+    if (aDataset.mComponents.mIsDelayPresent)
+    {
+        cJSON_AddItemToObject(node, "Delay", cJSON_CreateNumber(aDataset.mDelay));
+    }
+    if (aDataset.mComponents.mIsPanIdPresent)
+    {
+        cJSON_AddItemToObject(node, "PanId", cJSON_CreateNumber(aDataset.mPanId));
+    }
+    if (aDataset.mComponents.mIsChannelPresent)
+    {
+        cJSON_AddItemToObject(node, "Channel", cJSON_CreateNumber(aDataset.mChannel));
+    }
+    if (aDataset.mComponents.mIsPskcPresent)
+    {
+        cJSON_AddItemToObject(node, "PSKc", Bytes2HexJson(aDataset.mPskc.m8, OT_PSKC_MAX_SIZE));
+    }
+    if (aDataset.mComponents.mIsSecurityPolicyPresent)
+    {
+        cJSON_AddItemToObject(node, "SecurityPolicy", SecurityPolicy2Json(aDataset.mSecurityPolicy));
+    }
+    if (aDataset.mComponents.mIsChannelMaskPresent)
+    {
+        cJSON_AddItemToObject(node, "ChannelMask", cJSON_CreateNumber(aDataset.mChannelMask));
+    }
+
+    ret = Json2String(node);
+    cJSON_Delete(node);
 
     return ret;
 }
