@@ -39,6 +39,8 @@
 #include <openthread/border_router.h>
 
 #include "ncp/ncp_openthread.hpp"
+#include "openthread/dataset.h"
+#include "openthread/dataset_ftd.h"
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
@@ -142,6 +144,7 @@ private:
     void GetActiveDatasetTlvs(Response &aResponse) const;
     void SetActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const;
     void GetDataset(DatasetType aDatasetType, Response &aResponse) const;
+    void CreateDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);

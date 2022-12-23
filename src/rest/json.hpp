@@ -34,6 +34,7 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
+#include "openthread/dataset.h"
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"
 
@@ -222,6 +223,19 @@ std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessag
  *
  */
 std::string Dataset2JsonString(const otOperationalDataset &aDataset);
+
+/**
+ * This method parses a Json string and fills the provided dataset. Fields
+ * set to null are cleared (set to not present). Non-present fields are left
+ * as is.
+ *
+ * @param[in] aJsonDataset  The Json string to be parsed.
+ * @param[in] aDataset      The dataset struct to be filled.
+ *
+ * @returns If the Json string has been successfully parsed.
+ *
+ */
+bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &aDataset);
 
 }; // namespace Json
 

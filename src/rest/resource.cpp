@@ -612,6 +612,45 @@ exit:
     }
 }
 
+void Resource::CreateDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
+{
+    otbrError            error = OTBR_ERROR_NONE;
+    struct NodeInfo      node;
+    std::string          body;
+    std::string          errorCode;
+    otOperationalDataset dataset;
+
+    VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+
+    if (!Json::JsonString2Dataset(aRequest.GetBody(), dataset))
+    {
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusBadRequest);
+        aResponse.SetResponsCode(errorCode);
+        ExitNow();
+    }
+
+    if (aDatasetType == DatasetType::kActive)
+    {
+        VerifyOrExit(otDatasetSetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    }
+    else if (aDatasetType == DatasetType::kPending)
+    {
+        VerifyOrExit(otDatasetSetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    }
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusAccepted);
+    aResponse.SetResponsCode(errorCode);
+exit:
+    if (error == OTBR_ERROR_NOT_FOUND)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kNoContent);
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
 void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
@@ -620,6 +659,9 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
     {
     case HttpMethod::kGet:
         GetDataset(aDatasetType, aResponse);
+        break;
+    case HttpMethod::kPost:
+        CreateDataset(aDatasetType, aRequest, aResponse);
         break;
     case HttpMethod::kPut:
         // SetDataset(aRequest, aResponse);
