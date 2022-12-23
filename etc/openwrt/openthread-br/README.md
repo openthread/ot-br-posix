@@ -71,6 +71,21 @@ Edit the service file `/etc/init.d/otbr-agent` if RCP device is not `/dev/ttyACM
 service otbr-agent start
 ```
 
+Note: The service `otbr-agent` require the service `otbr-firewall` to work properly.
+
+On startup the services `otbr-firewall` and `otbr-agent` will be automatically started.
+
+If you need to change the thread network interface (`wpan0` by default), you need to configure it through uci:
+
+```bash
+service otbr-firewall stop
+service otbr-agent stop
+uci set otbr-agent.service.thread_if_name=wpan1
+uci commit otbr-agent
+service otbr-firewall start
+service otbr-agent start
+```
+
 ### Test
 
 Enter the OpenWRT web GUI. There will be a new item _Thread_ under _Network_. Scan or create network here.
