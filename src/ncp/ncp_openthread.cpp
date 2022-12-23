@@ -124,6 +124,44 @@ otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
     return otbrLogLevel;
 }
 
+#if OTBR_ENABLE_FEATURE_FLAGS
+otbrLogLevel ControllerOpenThread::ConvertProtoToOtbrLogLevel(int aProtoLogLevel)
+{
+    otbrLogLevel otbrLogLevel;
+
+    switch (aProtoLogLevel)
+    {
+    case 0:
+        otbrLogLevel = OTBR_LOG_EMERG;
+        break;
+    case 1:
+        otbrLogLevel = OTBR_LOG_ALERT;
+        break;
+    case 2:
+        otbrLogLevel = OTBR_LOG_CRIT;
+        break;
+    case 3:
+        otbrLogLevel = OTBR_LOG_ERR;
+        break;
+    case 4:
+        otbrLogLevel = OTBR_LOG_WARNING;
+        break;
+    case 5:
+        otbrLogLevel = OTBR_LOG_NOTICE;
+        break;
+    case 6:
+        otbrLogLevel = OTBR_LOG_INFO;
+        break;
+    case 7:
+    default:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    }
+
+    return otbrLogLevel;
+}
+#endif
+
 otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
 {
     otLogLevel level;
@@ -219,7 +257,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 
     if (aFeatureFlagList.enable_detailed_logging())
     {
-        error = SetOtbrAndOtLogLevel(aFeatureFlagList.detailed_logging_level());
+        error = SetOtbrAndOtLogLevel(ConvertProtoToOtbrLogLevel(aFeatureFlagList.detailed_logging_level()));
     }
     else
     {
