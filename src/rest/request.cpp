@@ -56,6 +56,16 @@ void Request::SetMethod(int32_t aMethod)
     mMethod = aMethod;
 }
 
+void Request::SetNextHeaderField(const char *aString, size_t aLength)
+{
+    mNextHeaderField = std::string(aString, aLength);
+}
+
+void Request::SetHeaderValue(const char *aString, size_t aLength)
+{
+    mHeaders[mNextHeaderField] = std::string(aString, aLength);
+}
+
 HttpMethod Request::GetMethod() const
 {
     return static_cast<HttpMethod>(mMethod);
@@ -85,6 +95,11 @@ std::string Request::GetUrl(void) const
 
 exit:
     return url;
+}
+
+std::string Request::GetHeaderValue(const std::string aHeaderField) const
+{
+    return mHeaders.at(aHeaderField);
 }
 
 void Request::SetReadComplete(void)

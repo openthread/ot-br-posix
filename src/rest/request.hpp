@@ -34,8 +34,8 @@
 #ifndef OTBR_REST_REQUEST_HPP_
 #define OTBR_REST_REQUEST_HPP_
 
+#include <map>
 #include <string>
-#include <vector>
 
 #include "common/code_utils.hpp"
 #include "rest/types.hpp"
@@ -91,6 +91,24 @@ public:
     void SetMethod(int32_t aMethod);
 
     /**
+     * This method sets the next header field of a request.
+     *
+     * @param[in] aString  A pointer points to body string.
+     * @param[in] aLength  Length of the body string
+     *
+     */
+    void SetNextHeaderField(const char *aString, size_t aLength);
+
+    /**
+     * This method sets the header value of the previously set header of a request.
+     *
+     * @param[in] aString  A pointer points to body string.
+     * @param[in] aLength  Length of the body string
+     *
+     */
+    void SetHeaderValue(const char *aString, size_t aLength);
+
+    /**
      * This method labels the request as complete which means it no longer need to be parsed one more time .
      *
      */
@@ -124,6 +142,14 @@ public:
     std::string GetUrl(void) const;
 
     /**
+     * This method returns the specified header field for this request.
+     *
+     * @param[in] aHeaderField  A header field.
+     * @returns A string contains the header value of this request.
+     */
+    std::string GetHeaderValue(const std::string aHeaderField) const;
+
+    /**
      * This method indicates whether this request is parsed completely.
      *
      *
@@ -131,11 +157,13 @@ public:
     bool IsComplete(void) const;
 
 private:
-    int32_t     mMethod;
-    size_t      mContentLength;
-    std::string mUrl;
-    std::string mBody;
-    bool        mComplete;
+    int32_t                            mMethod;
+    size_t                             mContentLength;
+    std::string                        mUrl;
+    std::string                        mBody;
+    std::string                        mNextHeaderField;
+    std::map<std::string, std::string> mHeaders;
+    bool                               mComplete;
 };
 
 } // namespace rest
