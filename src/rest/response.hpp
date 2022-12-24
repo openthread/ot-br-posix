@@ -40,6 +40,9 @@
 
 #include "rest/types.hpp"
 
+#define OT_REST_RESPONSE_CONTENT_TYPE_JSON "application/json"
+#define OT_REST_RESPONSE_CONTENT_TYPE_PLAIN "text/plain"
+
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::seconds;
@@ -85,6 +88,14 @@ public:
      *
      */
     void SetResponsCode(std::string &aCode);
+
+    /**
+     * This method sets the content type.
+     *
+     * @param[in] aCode  A string representing response content type such as text/plain.
+     *
+     */
+    void SetContentType(const std::string &aContentType);
 
     /**
      * This method labels the response as need callback.
