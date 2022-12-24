@@ -657,6 +657,11 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
     case HttpMethod::kPut:
         SetDataset(aDatasetType, aRequest, aResponse, false);
         break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
     default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
         break;
