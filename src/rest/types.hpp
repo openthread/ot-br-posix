@@ -40,6 +40,7 @@
 
 #include "openthread/netdiag.h"
 
+#define OT_REST_ACCEPT_HEADER "Accept"
 #define OT_REST_CONTENT_TYPE_HEADER "Content-Type"
 
 #define OT_REST_CONTENT_TYPE_JSON "application/json"

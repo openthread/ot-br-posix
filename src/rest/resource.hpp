@@ -143,7 +143,7 @@ private:
     void GetDataRloc(Response &aResponse) const;
     void GetActiveDatasetTlvs(Response &aResponse) const;
     void SetActiveDatasetTlvs(const Request &aRequest, Response &aResponse) const;
-    void GetDataset(DatasetType aDatasetType, Response &aResponse) const;
+    void GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
     void SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse, bool create) const;
 
     void DeleteOutDatedDiagnostic(void);

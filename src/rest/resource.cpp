@@ -576,24 +576,44 @@ void Resource::ActiveDatasetTlvs(const Request &aRequest, Response &aResponse) c
     }
 }
 
-void Resource::GetDataset(DatasetType aDatasetType, Response &aResponse) const
+void Resource::GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
-    otbrError            error = OTBR_ERROR_NONE;
-    struct NodeInfo      node;
-    std::string          body;
-    std::string          errorCode;
-    otOperationalDataset dataset;
+    otbrError                error = OTBR_ERROR_NONE;
+    struct NodeInfo          node;
+    std::string              body;
+    std::string              errorCode;
+    otOperationalDataset     dataset;
+    otOperationalDatasetTlvs datasetTlvs;
 
-    if (aDatasetType == DatasetType::kActive)
+    if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER) == OT_REST_CONTENT_TYPE_PLAIN)
     {
-        VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        if (aDatasetType == DatasetType::kActive)
+        {
+            VerifyOrExit(otDatasetGetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE,
+                         error = OTBR_ERROR_NOT_FOUND);
+        }
+        else if (aDatasetType == DatasetType::kPending)
+        {
+            VerifyOrExit(otDatasetGetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE,
+                         error = OTBR_ERROR_NOT_FOUND);
+        }
+
+        aResponse.SetContentType(OT_REST_CONTENT_TYPE_PLAIN);
+        body = Json::Bytes2HexString(datasetTlvs.mTlvs, datasetTlvs.mLength);
     }
-    else if (aDatasetType == DatasetType::kPending)
+    else
     {
-        VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        if (aDatasetType == DatasetType::kActive)
+        {
+            VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        }
+        else if (aDatasetType == DatasetType::kPending)
+        {
+            VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        }
+        body = Json::Dataset2JsonString(dataset);
     }
 
-    body = Json::Dataset2JsonString(dataset);
     aResponse.SetBody(body);
 
 exit:
@@ -674,7 +694,7 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
     switch (aRequest.GetMethod())
     {
     case HttpMethod::kGet:
-        GetDataset(aDatasetType, aResponse);
+        GetDataset(aDatasetType, aRequest, aResponse);
         break;
     case HttpMethod::kPost:
         SetDataset(aDatasetType, aRequest, aResponse, true);
