@@ -1,0 +1,455 @@
+openapi: 3.0.3
+info:
+  title: Swagger OpenThread REST API
+  description: |-
+    This describes the OpenThread Border Router RETS API. The API is provided by the otbr-agent, if the cmake flag `OTBR_REST=ON` is set. By default
+    the REST API listens on any address on port 8081.
+
+    Some useful links:
+    - [OpenThread Border Router repository](github.com/openthread/ot-br-posix/)
+  license:
+    name: BSD 3-Clause
+    url: https://github.com/openthread/ot-br-posix/blob/main/LICENSE
+  version: 0.3.0
+servers:
+  - url: http://localhost:8081
+tags:
+  - name: node
+    description: Thread parameters of this node.
+  - name: diagnostics
+    description: Thread network diagnostic.
+paths:
+  /diagnostics:
+    get:
+      tags:
+        - diagnostics
+      summary: Get Thread network diagnostics
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+  /node:
+    get:
+      tags:
+        - node
+      summary: Get current active node parameters
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+  /node/rloc:
+    get:
+      tags:
+        - node
+      summary: Routing Locator IPv6 address of this Thread node.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: RLOC IPv6 address
+                example: "fda4:728e:4b39:bc4a:0:ff:fe00:1000"
+  /node/rloc16:
+    get:
+      tags:
+        - node
+      summary: Routing Locator Router and Child ID (RLOC16).
+      description: Last 16-bit of the Routing Locator IPv6 consisting of the Router ID and a Child ID.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                description: RLOC16 address
+                example: 4096
+  /node/ext-address:
+    get:
+      tags:
+        - node
+      summary: IEEE 802.15.4 Extended Address (EUI-64).
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: 8-byte IEEE 802.15.4 Extended Address of this node as hex string.
+                example: "C21F906BE0352A4C"
+  /node/state:
+    get:
+      tags:
+        - node
+      summary: Get current Thread state.
+      description: |-
+        State describing the current Thread role of this Thread node.
+        - 0: disabled
+        - 1: detached
+        - 2: child
+        - 3: router
+        - 4: leader
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                description: Current state
+                example: 4
+  /node/network-name:
+    get:
+      tags:
+        - node
+      summary: Thread network name this node is part of.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Thread network name.
+                example: "OpenThread-e445"
+  /node/leader-data:
+    get:
+      tags:
+        - node
+      summary: Gets the network's leader data.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderData"
+  /node/ext-panid:
+    get:
+      tags:
+        - node
+      summary: Extended PAN ID.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: 8-byte extended PAN ID as hex string.
+                example: "3CAB144450CF407E"
+  /node/num-of-router:
+    get:
+      tags:
+        - node
+      summary: Get number of router devices
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                description: Number of routers
+                example: 1
+  /node/dataset/active:
+    get:
+      tags:
+        - node
+      summary: Get current active operational dataset
+      responses:
+        "200":
+          description: Returns currently active opertional dataset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/TlvDataset"
+        "204":
+          description: No active operational dataset
+    post:
+      tags:
+        - node
+      summary: Create new active opertional dataset
+      description: |-
+        Creates new active operational dataset on the current node. Only allowed if the Thread node is inactive. Create a
+        pending dataset if you would like to change the current active opertional dataset if the Thread node is active.
+
+        Default parameters are choosen for parameters not set in the request body.
+      requestBody:
+        description: |-
+          Operational dataset object that will be stored as active operational dataset. JSON keys which are not set will be initialized with
+          default or random values.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dataset"
+      responses:
+        "202":
+          description: Successfully created the active operational dataset.
+        "400":
+          description: Invalid request body.
+    put:
+      tags:
+        - node
+      summary: Update current active opertional dataset
+      description: |-
+        Updates the current active operational dataset on the current node. Only allowed if the Thread node is inactive. Create a
+        pending dataset if you would like to change the current active opertional dataset if the Thread node is active.
+      requestBody:
+        description: |-
+          Operational dataset object that will be stored as active operational dataset. Supports request body Content-Type `text/plain`
+          (dataset in TLV format as hex string) or `application/json` (dataset in JSOn format, JSON keys which are not set will be
+          initialized with default or random values).
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dataset"
+          plain/text:
+            schema:
+              $ref: "#/components/schemas/TlvDataset"
+      responses:
+        "202":
+          description: Successfully updated the active operational dataset.
+        "400":
+          description: Invalid request body.
+        "404":
+          description: No active opertional dataset to update.
+  /node/dataset/pending:
+    get:
+      tags:
+        - node
+      summary: Get current pending operational dataset
+      responses:
+        "200":
+          description: Returns currently pending opertional dataset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dataset"
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/TlvDataset"
+        "204":
+          description: No pending operational dataset
+    post:
+      tags:
+        - node
+      summary: Create new pending opertional dataset
+      description: |-
+        Creates new pending operational dataset on the current node. If the delay timer is specified, the new pending operational dataset
+        will become active after the time elapsed. The pending dataset will become empty.
+
+        Default parameters are choosen for parameters not set in the request body. By default, the delay timer is *not* set.
+
+        Note: To be considered as a valid active opertional dataset the ActiveTimestamp needs to be newer than the current active operational
+        dataset.
+      requestBody:
+        description: |-
+          Operational dataset object that will be stored as pending operational dataset. JSON keys which are not set will be initialized with
+          default or random values.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dataset"
+      responses:
+        "202":
+          description: Successfully created the active operational dataset.
+        "400":
+          description: Invalid request body.
+    put:
+      tags:
+        - node
+      summary: Update current pending opertional dataset
+      description: |-
+        Updates the current pending operational dataset on the current node.
+      requestBody:
+        description: |-
+          Operational dataset object that will be stored as pending operational dataset. Supports request body Content-Type `text/plain`
+          (dataset in TLV format as hex string) or `application/json` (dataset in JSOn format, JSON keys which are not set will be
+          initialized with default or random values).
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Dataset"
+          plain/text:
+            schema:
+              $ref: "#/components/schemas/TlvDataset"
+      responses:
+        "202":
+          description: Successfully updated the pending operational dataset.
+        "400":
+          description: Invalid request body.
+        "404":
+          description: No pending opertional dataset to update.
+components:
+  schemas:
+    LeaderData:
+      type: object
+      properties:
+        PartitionId:
+          type: number
+          format: uint32
+          description: Partition ID
+          example: 1230046604
+        Weighting:
+          type: number
+          format: uint8
+          description: Leader Weight
+          example: 64
+        DataVersion:
+          type: number
+          description: Full network data version
+          example: 244
+        StableDataVersion:
+          type: number
+          format: uint8
+          description: Stable Network Data Version
+          example: 186
+        LeaderRouterId:
+          type: number
+          format: uint8
+          description: Leader Router ID
+          example: 4
+    Dataset:
+      type: object
+      properties:
+        ActiveTimestamp:
+          type: integer
+          description: Active timestamp
+          format: uint64
+          example: 10
+          default: 1
+        PendingTimestamp:
+          type: integer
+          description: Pending timestamp
+          format: int32
+          example: 10
+          default: not set
+        NetworkKey:
+          type: string
+          description: Network key, 16 bytes long, formatted as a hexadecimal string
+          example: 08277229F21FB7342D705D3CEFDC042A
+          default: random
+        NetworkName:
+          type: string
+          description: Network name, 16 bytes long
+          example: OpenThread-e445
+          default: OpenThread-<PanId>
+        ExtPanId:
+          type: string
+          description: Extended PAN ID, 8 bytes long
+          example: 996D3BEE320097A3
+          default: random
+        MeshLocalPrefix:
+          type: string
+          description: Mesh local IPv6 prefix
+          example: fd33:d3b9:89e3:72e4::/64
+          default: random
+        Delay:
+          type: integer
+          description: Delay timer in miliseconds
+          format: uint32
+          example: 30000
+          default: not set
+        PanId:
+          type: integer
+          description: IEEE 802.15.4 PAN ID of the Thread network
+          format: uint16
+          example: 58437
+          default: random
+        Channel:
+          type: integer
+          description: IEEE 802.15.4 channel of the Thread network
+          format: uint16
+          example: 21
+          default: random
+        PSKc:
+          type: string
+          description: The pre-shared commissioner key
+          example: FD943ECA225A28979B991EFAC1218A72
+          default: random
+        SecurityPolicy:
+          $ref: "#/components/schemas/SecurityPolicy"
+        ChannelMask:
+          type: integer
+          description: Channel mask
+          format: uint32
+          example: 134215680
+          default: 134215680
+    SecurityPolicy:
+      type: object
+      properties:
+        RotationTime:
+          type: integer
+          description: Thread key rotation time in hours
+          format: uint16
+          example: 672
+          default: 672
+        ObtainNetworkKey:
+          type: boolean
+          description: Obtaining the Network Key for out-of-band commissioning is enabled
+          example: true
+          default: true
+        NativeCommissioning:
+          type: boolean
+          description: Native Commissioning using PSKc is allowed
+          example: true
+          default: true
+        Routers:
+          type: boolean
+          description: Thread 1.0/1.1.x Routers are enabled
+          example: true
+          default: true
+        ExternalCommissioning:
+          type: boolean
+          description: External Commissioner authentication is allowed
+          example: true
+          default: true
+        CommercialCommissioning:
+          type: boolean
+          description: Commercial Commissioning is enabled
+          example: false
+          default: false
+        AutonomousEnrollment:
+          type: boolean
+          description: Autonomous Enrollment is enabled
+          example: false
+          default: false
+        NetworkKeyProvisioning:
+          type: boolean
+          description: Network Key Provisioning is enabled
+          example: false
+          default: false
+        TobleLink:
+          type: boolean
+          description: ToBLE link is enabled
+          example: false
+          default: false
+        NonCcmRouters:
+          type: boolean
+          description: Non-CCM Routers enabled
+          example: false
+          default: false
+    TlvDataset:
+      type: string
+      description: Operational dataset as hex-encoded TLVs.
+      example: 0E080000000000010000000300000F35060004001FFFE0020811111111222222220708FDAD70BFE5AA15DD051000112233445566778899AABBCCDDEEFF030E4F70656E54687265616444656D6F010212340410445F2B5CA6F2A93A55CE570A70EFEECB0C0402A0F7F8
+  requestBodies:
+    Dataset:
+      description: Operational dataset object that will be stored
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Dataset"
