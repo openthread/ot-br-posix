@@ -27,6 +27,7 @@
  */
 
 #include "rest/request.hpp"
+#include "utils/string_utils.hpp"
 
 namespace otbr {
 namespace rest {
@@ -58,7 +59,7 @@ void Request::SetMethod(int32_t aMethod)
 
 void Request::SetNextHeaderField(const char *aString, size_t aLength)
 {
-    mNextHeaderField = std::string(aString, aLength);
+    mNextHeaderField = StringUtils::ToLowercase(std::string(aString, aLength));
 }
 
 void Request::SetHeaderValue(const char *aString, size_t aLength)
@@ -99,7 +100,12 @@ exit:
 
 std::string Request::GetHeaderValue(const std::string aHeaderField) const
 {
-    return mHeaders.at(aHeaderField);
+    auto it = mHeaders.find(StringUtils::ToLowercase(aHeaderField));
+
+    if (it == mHeaders.end())
+        return "";
+    else
+        return it->second;
 }
 
 void Request::SetReadComplete(void)
