@@ -40,9 +40,6 @@
 
 #include "rest/types.hpp"
 
-#define OT_REST_RESPONSE_CONTENT_TYPE_JSON "application/json"
-#define OT_REST_RESPONSE_CONTENT_TYPE_PLAIN "text/plain"
-
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 using std::chrono::seconds;

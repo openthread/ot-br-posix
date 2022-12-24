@@ -40,6 +40,11 @@
 
 #include "openthread/netdiag.h"
 
+#define OT_REST_CONTENT_TYPE_HEADER "Content-Type"
+
+#define OT_REST_CONTENT_TYPE_JSON "application/json"
+#define OT_REST_CONTENT_TYPE_PLAIN "text/plain"
+
 using std::chrono::steady_clock;
 
 namespace otbr {

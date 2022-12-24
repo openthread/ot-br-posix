@@ -30,7 +30,6 @@
 
 #include <stdio.h>
 
-#define OT_REST_RESPONSE_CONTENT_TYPE_HEADER "Content-Type"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN "*"
 #define OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS                                                              \
     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, " \
@@ -49,11 +48,11 @@ Response::Response(void)
     mProtocol = "HTTP/1.1";
 
     // Pre-defined headers
-    mHeaders[OT_REST_RESPONSE_CONTENT_TYPE_HEADER] = OT_REST_RESPONSE_CONTENT_TYPE_JSON;
-    mHeaders["Access-Control-Allow-Origin"]        = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN;
-    mHeaders["Access-Control-Allow-Methods"]       = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD;
-    mHeaders["Access-Control-Allow-Headers"]       = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS;
-    mHeaders["Connection"]                         = OT_REST_RESPONSE_CONNECTION;
+    mHeaders[OT_REST_CONTENT_TYPE_HEADER]    = OT_REST_CONTENT_TYPE_JSON;
+    mHeaders["Access-Control-Allow-Origin"]  = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN;
+    mHeaders["Access-Control-Allow-Methods"] = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_METHOD;
+    mHeaders["Access-Control-Allow-Headers"] = OT_REST_RESPONSE_ACCESS_CONTROL_ALLOW_HEADERS;
+    mHeaders["Connection"]                   = OT_REST_RESPONSE_CONNECTION;
 }
 
 void Response::SetComplete()
@@ -83,7 +82,7 @@ void Response::SetResponsCode(std::string &aCode)
 
 void Response::SetContentType(const std::string &aContentType)
 {
-    mHeaders[OT_REST_RESPONSE_CONTENT_TYPE_HEADER] = aContentType;
+    mHeaders[OT_REST_CONTENT_TYPE_JSON] = aContentType;
 }
 
 void Response::SetCallback(void)
