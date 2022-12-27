@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Swagger OpenThread REST API
   description: |-
-    This describes the OpenThread Border Router RETS API. The API is provided by the otbr-agent, if the cmake flag `OTBR_REST=ON` is set. By default
+    This describes the OpenThread Border Router REST API. The API is provided by the otbr-agent, if the cmake flag `OTBR_REST=ON` is set. By default
     the REST API listens on any address on port 8081.
 
     Some useful links:
@@ -210,7 +210,7 @@ paths:
       requestBody:
         description: |-
           Operational dataset object that will be stored as active operational dataset. Supports request body Content-Type `text/plain`
-          (dataset in TLV format as hex string) or `application/json` (dataset in JSOn format, JSON keys which are not set will be
+          (dataset in TLV format as hex string) or `application/json` (dataset in JSON format, JSON keys which are not set will be
           initialized with default or random values).
         content:
           application/json:
@@ -277,7 +277,7 @@ paths:
       requestBody:
         description: |-
           Operational dataset object that will be stored as pending operational dataset. Supports request body Content-Type `text/plain`
-          (dataset in TLV format as hex string) or `application/json` (dataset in JSOn format, JSON keys which are not set will be
+          (dataset in TLV format as hex string) or `application/json` (dataset in JSON format, JSON keys which are not set will be
           initialized with default or random values).
         content:
           application/json:
@@ -334,7 +334,7 @@ components:
         PendingTimestamp:
           type: integer
           description: Pending timestamp
-          format: int32
+          format: uint64
           example: 10
           default: not set
         NetworkKey:
@@ -349,7 +349,7 @@ components:
           default: OpenThread-<PanId>
         ExtPanId:
           type: string
-          description: Extended PAN ID, 8 bytes long
+          description: Extended PAN ID, 8 bytes long, formatted as a hexadecimal string
           example: 996D3BEE320097A3
           default: random
         MeshLocalPrefix:
