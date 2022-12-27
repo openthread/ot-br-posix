@@ -102,10 +102,7 @@ std::string Request::GetHeaderValue(const std::string aHeaderField) const
 {
     auto it = mHeaders.find(StringUtils::ToLowercase(aHeaderField));
 
-    if (it == mHeaders.end())
-        return "";
-    else
-        return it->second;
+    return (it == mHeaders.end()) ? "" : it->second;
 }
 
 void Request::SetReadComplete(void)
