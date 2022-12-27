@@ -82,7 +82,7 @@ void Response::SetResponsCode(std::string &aCode)
 
 void Response::SetContentType(const std::string &aContentType)
 {
-    mHeaders[OT_REST_CONTENT_TYPE_JSON] = aContentType;
+    mHeaders[OT_REST_CONTENT_TYPE_HEADER] = aContentType;
 }
 
 void Response::SetCallback(void)
