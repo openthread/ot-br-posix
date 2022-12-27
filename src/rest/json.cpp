@@ -143,6 +143,47 @@ exit:
     return error;
 }
 
+static cJSON *Timestamp2Json(const otTimestamp &aTimestamp)
+{
+    cJSON *timestamp = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(timestamp, "Seconds", cJSON_CreateNumber(aTimestamp.mSeconds));
+    cJSON_AddItemToObject(timestamp, "Ticks", cJSON_CreateNumber(aTimestamp.mTicks));
+    cJSON_AddItemToObject(timestamp, "Authoritative", cJSON_CreateBool(aTimestamp.mAuthoritative));
+
+    return timestamp;
+}
+
+bool Json2Timestamp(const cJSON *jsonTimestamp, otTimestamp &aTimestamp)
+{
+    cJSON *value;
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "Seconds");
+    if (cJSON_IsNumber(value))
+    {
+        aTimestamp.mSeconds = static_cast<uint64_t>(value->valuedouble);
+    }
+    else if (value != nullptr)
+    {
+        return false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "Ticks");
+    if (cJSON_IsNumber(value))
+    {
+        aTimestamp.mTicks = static_cast<uint16_t>(value->valueint);
+    }
+    else if (value != nullptr)
+    {
+        return false;
+    }
+
+    value                     = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "Authoritative");
+    aTimestamp.mAuthoritative = cJSON_IsTrue(value);
+
+    return true;
+}
+
 static cJSON *SecurityPolicy2Json(const otSecurityPolicy &aSecurityPolicy)
 {
     cJSON *securityPolicy = cJSON_CreateObject();
@@ -574,11 +615,11 @@ std::string Dataset2JsonString(const otOperationalDataset &aDataset)
 
     if (aDataset.mComponents.mIsActiveTimestampPresent)
     {
-        cJSON_AddItemToObject(node, "ActiveTimestamp", cJSON_CreateNumber(aDataset.mActiveTimestamp.mSeconds));
+        cJSON_AddItemToObject(node, "ActiveTimestamp", Timestamp2Json(aDataset.mActiveTimestamp));
     }
     if (aDataset.mComponents.mIsPendingTimestampPresent)
     {
-        cJSON_AddItemToObject(node, "PendingTimestamp", cJSON_CreateNumber(aDataset.mPendingTimestamp.mSeconds));
+        cJSON_AddItemToObject(node, "PendingTimestamp", Timestamp2Json(aDataset.mPendingTimestamp));
     }
     if (aDataset.mComponents.mIsNetworkKeyPresent)
     {
@@ -629,32 +670,43 @@ std::string Dataset2JsonString(const otOperationalDataset &aDataset)
 
 bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &aDataset)
 {
-    cJSON *value;
-    cJSON *jsonDataset;
-    bool   ret = true;
+    cJSON      *value;
+    cJSON      *jsonDataset;
+    otTimestamp timestamp;
+    bool        ret = true;
 
     VerifyOrExit((jsonDataset = cJSON_Parse(aJsonDataset.c_str())) != nullptr, ret = false);
 
     value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ActiveTimestamp");
-    if (cJSON_IsNumber(value))
+    if (cJSON_IsObject(value))
     {
-        aDataset.mActiveTimestamp.mSeconds             = value->valueint;
+        VerifyOrExit(Json2Timestamp(value, timestamp), ret = false);
+        aDataset.mActiveTimestamp                      = timestamp;
         aDataset.mComponents.mIsActiveTimestampPresent = true;
     }
     else if (cJSON_IsNull(value))
     {
         aDataset.mComponents.mIsActiveTimestampPresent = false;
     }
+    else if (value != nullptr)
+    {
+        ExitNow(ret = false);
+    }
 
     value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "PendingTimestamp");
-    if (cJSON_IsNumber(value))
+    if (cJSON_IsObject(value))
     {
-        aDataset.mPendingTimestamp.mSeconds             = value->valueint;
+        VerifyOrExit(Json2Timestamp(value, timestamp), ret = false);
+        aDataset.mPendingTimestamp                      = timestamp;
         aDataset.mComponents.mIsPendingTimestampPresent = true;
     }
     else if (cJSON_IsNull(value))
     {
         aDataset.mComponents.mIsPendingTimestampPresent = false;
+    }
+    else if (value != nullptr)
+    {
+        ExitNow(ret = false);
     }
 
     value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "NetworkKey");

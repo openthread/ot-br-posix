@@ -330,17 +330,9 @@ components:
       type: object
       properties:
         ActiveTimestamp:
-          type: integer
-          description: Active timestamp
-          format: uint64
-          example: 10
-          default: 1
+          $ref: "#/components/schemas/Timestamp"
         PendingTimestamp:
-          type: integer
-          description: Pending timestamp
-          format: uint64
-          example: 10
-          default: not set
+          $ref: "#/components/schemas/Timestamp"
         NetworkKey:
           type: string
           description: Network key, 16 bytes long, formatted as a hexadecimal string
@@ -444,6 +436,25 @@ components:
         NonCcmRouters:
           type: boolean
           description: Non-CCM Routers enabled
+          example: false
+          default: false
+    Timestamp:
+      type: object
+      properties:
+        Seconds:
+          type: integer
+          description: Timestamp seconds
+          format: uint64
+          example: 10
+          default: 1
+        Ticks:
+          type: integer
+          description: Timestamp ticks
+          format: uint16
+          example: 0
+          default: 0
+        Authoritative:
+          type: boolean
           example: false
           default: false
     DatasetTlv:
