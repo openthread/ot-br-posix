@@ -43,10 +43,38 @@ namespace otbr {
 
 namespace Utils {
 
+/**
+ * @brief Converts a hexadecimal string to a byte array.
+ *
+ * @param hexString A pointer to the hexadecimal string to be converted.
+ * @param bytes A pointer to an array to store the resulting byte values.
+ * @param maxBytesLength The maximum number of bytes that can be stored in the `bytes` array.
+ *
+ * @return The number of bytes stored in the `bytes` array, or -1 if an error occurred.
+ */
 int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength);
 
+/**
+ * @brief Converts a byte array to a hexadecimal string.
+ *
+ * @param[in]  aBytes A pointer to the byte array to be converted.
+ * @param[in]  aBytesLength The length of the byte array.
+ * @param[out] aHex A character array to store the resulting hexadecimal string.
+ *                  Must be at least 2 * @param aBytesLength + 1 long.
+ *
+ * @return The length of the resulting hexadecimal string.
+ */
 size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex);
 
+/**
+ * @brief Converts a 64-bit integer to a hexadecimal string.
+ *
+ * @param[in]  aLong The 64-bit integer to be converted.
+ * @param[out] aHex A character array to store the resulting hexadecimal string.
+ *                  Must be at least 17 bytes long.
+ *
+ * @return The length of the resulting hexadecimal string.
+ */
 size_t Long2Hex(const uint64_t aLong, char *aHex);
 
 } // namespace Utils
