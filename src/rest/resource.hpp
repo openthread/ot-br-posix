@@ -108,7 +108,7 @@ private:
      * This enumeration represents the Dataset type (active or pending).
      *
      */
-    enum DatasetType : uint8_t
+    enum class DatasetType : uint8_t
     {
         kActive,  ///< Active Dataset
         kPending, ///< Pending Dataset
