@@ -71,6 +71,7 @@ enum class HttpStatusCode : std::uint16_t
     kStatusResourceNotFound    = 404,
     kStatusMethodNotAllowed    = 405,
     kStatusRequestTimeout      = 408,
+    kStatusConflict            = 409,
     kStatusInternalServerError = 500,
 };
 

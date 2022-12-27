@@ -59,6 +59,7 @@
 #define OT_REST_HTTP_STATUS_404 "404 Not Found"
 #define OT_REST_HTTP_STATUS_405 "405 Method Not Allowed"
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
+#define OT_REST_HTTP_STATUS_409 "409 Conflict"
 #define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
 
 using std::chrono::duration_cast;
@@ -109,6 +110,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
         break;
     case HttpStatusCode::kStatusRequestTimeout:
         httpStatus = OT_REST_HTTP_STATUS_408;
+        break;
+    case HttpStatusCode::kStatusConflict:
+        httpStatus = OT_REST_HTTP_STATUS_409;
         break;
     case HttpStatusCode::kStatusInternalServerError:
         httpStatus = OT_REST_HTTP_STATUS_500;
@@ -575,6 +579,12 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
 
     isText = aRequest.GetHeaderValue(OT_REST_CONTENT_TYPE_HEADER) == OT_REST_CONTENT_TYPE_PLAIN;
 
+    if (aDatasetType == DatasetType::kActive)
+    {
+        otbrLogWarning("STate is %d", otThreadGetDeviceRole(mInstance));
+        VerifyOrExit(otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED, error = OTBR_ERROR_INVALID_STATE);
+    }
+
     if (isText)
     {
         // Only PUT allowed for text/plain
@@ -585,7 +595,6 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
 
         if (aDatasetType == DatasetType::kActive)
         {
-            // TODO: Reject if Thread is running
             VerifyOrExit(otDatasetSetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
         }
         else if (aDatasetType == DatasetType::kPending)
@@ -603,7 +612,6 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
         {
             if (aDatasetType == DatasetType::kActive)
             {
-                // TODO: Reject if Thread is running
                 VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
             }
             else if (aDatasetType == DatasetType::kPending)
@@ -635,6 +643,10 @@ exit:
     else if (error == OTBR_ERROR_NOT_FOUND)
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusResourceNotFound);
+    }
+    else if (error == OTBR_ERROR_INVALID_STATE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
     }
     else if (error != OTBR_ERROR_NONE)
     {

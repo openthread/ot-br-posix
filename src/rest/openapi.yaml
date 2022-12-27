@@ -200,6 +200,8 @@ paths:
           description: Successfully created the active operational dataset.
         "400":
           description: Invalid request body.
+        "409":
+          description: Writing active operational dataset rejected because Thread network is active.
     put:
       tags:
         - node
@@ -226,6 +228,8 @@ paths:
           description: Invalid request body.
         "404":
           description: No active opertional dataset to update.
+        "409":
+          description: Writing active operational dataset rejected because Thread network is active.
   /node/dataset/pending:
     get:
       tags:
