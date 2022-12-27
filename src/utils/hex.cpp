@@ -109,6 +109,18 @@ size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
     return strlen(aHex);
 }
 
+std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength)
+{
+    char        hex[2 * aBytesLength + 1];
+    std::string s;
+    size_t      len;
+
+    len = Bytes2Hex(aBytes, aBytesLength, hex);
+    s   = std::string(hex, len);
+
+    return s;
+}
+
 size_t Long2Hex(const uint64_t aLong, char *aHex)
 {
     char     byteHex[3];

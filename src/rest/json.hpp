@@ -72,16 +72,6 @@ std::string Number2JsonString(const uint32_t &aNumber);
 std::string Bytes2HexJsonString(const uint8_t *aBytes, uint8_t aLength);
 
 /**
- * This method formats a Bytes array to a plain string.
- *
- * @param[in] aBytes  A Bytes array representing a hex number.
- *
- * @returns A plain string.
- *
- */
-std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength);
-
-/**
  * This method parses a hex string as byte array.
  *
  * @param[in] aHexString String of bytes in hex.

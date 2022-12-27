@@ -36,6 +36,8 @@
 
 #include "openthread-br/config.h"
 
+#include <string>
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -65,6 +67,16 @@ int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength);
  * @return The length of the resulting hexadecimal string.
  */
 size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex);
+
+/**
+ * @brief Converts a byte array to a hexadecimal string.
+ *
+ * @param[in]  aBytes A pointer to the byte array to be converted.
+ * @param[in]  aBytesLength The length of the byte array.
+ *
+ * @return The hexadecimal string.
+ */
+std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength);
 
 /**
  * @brief Converts a 64-bit integer to a hexadecimal string.

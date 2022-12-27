@@ -528,7 +528,7 @@ void Resource::GetDataset(DatasetType aDatasetType, const Request &aRequest, Res
         }
 
         aResponse.SetContentType(OT_REST_CONTENT_TYPE_PLAIN);
-        body = Json::Bytes2HexString(datasetTlvs.mTlvs, datasetTlvs.mLength);
+        body = Utils::Bytes2Hex(datasetTlvs.mTlvs, datasetTlvs.mLength);
     }
     else
     {

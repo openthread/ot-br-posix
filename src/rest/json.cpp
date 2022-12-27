@@ -40,16 +40,6 @@ namespace otbr {
 namespace rest {
 namespace Json {
 
-std::string Bytes2HexString(const uint8_t *aBytes, uint8_t aLength)
-{
-    char hex[2 * aLength + 1];
-
-    otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
-    hex[2 * aLength] = '\0';
-
-    return std::string(hex);
-}
-
 static cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
 {
     char hex[2 * aLength + 1];
