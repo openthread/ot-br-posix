@@ -95,7 +95,7 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusAccepted:
         httpStatus = OT_REST_HTTP_STATUS_202;
         break;
-    case HttpStatusCode::kNoContent:
+    case HttpStatusCode::kStatusNoContent:
         httpStatus = OT_REST_HTTP_STATUS_204;
         break;
     case HttpStatusCode::kStatusBadRequest:
@@ -553,7 +553,7 @@ exit:
     }
     else if (error == OTBR_ERROR_NOT_FOUND)
     {
-        errorCode = GetHttpStatus(HttpStatusCode::kNoContent);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusNoContent);
         aResponse.SetResponsCode(errorCode);
     }
     else
