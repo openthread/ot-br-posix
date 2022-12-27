@@ -175,7 +175,7 @@ paths:
                 $ref: "#/components/schemas/Dataset"
             text/plain:
               schema:
-                $ref: "#/components/schemas/TlvDataset"
+                $ref: "#/components/schemas/DatasetTlv"
         "204":
           description: No active operational dataset
     post:
@@ -218,7 +218,7 @@ paths:
               $ref: "#/components/schemas/Dataset"
           plain/text:
             schema:
-              $ref: "#/components/schemas/TlvDataset"
+              $ref: "#/components/schemas/DatasetTlv"
       responses:
         "202":
           description: Successfully updated the active operational dataset.
@@ -240,7 +240,7 @@ paths:
                 $ref: "#/components/schemas/Dataset"
             text/plain:
               schema:
-                $ref: "#/components/schemas/TlvDataset"
+                $ref: "#/components/schemas/DatasetTlv"
         "204":
           description: No pending operational dataset
     post:
@@ -285,7 +285,7 @@ paths:
               $ref: "#/components/schemas/Dataset"
           plain/text:
             schema:
-              $ref: "#/components/schemas/TlvDataset"
+              $ref: "#/components/schemas/DatasetTlv"
       responses:
         "202":
           description: Successfully updated the pending operational dataset.
@@ -442,7 +442,7 @@ components:
           description: Non-CCM Routers enabled
           example: false
           default: false
-    TlvDataset:
+    DatasetTlv:
       type: string
       description: Operational dataset as hex-encoded TLVs.
       example: 0E080000000000010000000300000F35060004001FFFE0020811111111222222220708FDAD70BFE5AA15DD051000112233445566778899AABBCCDDEEFF030E4F70656E54687265616444656D6F010212340410445F2B5CA6F2A93A55CE570A70EFEECB0C0402A0F7F8
