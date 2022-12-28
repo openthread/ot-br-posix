@@ -168,7 +168,7 @@ paths:
       summary: Get current active operational dataset
       responses:
         "200":
-          description: Returns currently active opertional dataset
+          description: Returns currently active operational dataset
           content:
             application/json:
               schema:
@@ -181,12 +181,12 @@ paths:
     post:
       tags:
         - node
-      summary: Create new active opertional dataset
+      summary: Create new active operational dataset
       description: |-
         Creates new active operational dataset on the current node. Only allowed if the Thread node is inactive. Create a
-        pending dataset if you would like to change the current active opertional dataset if the Thread node is active.
+        pending dataset if you would like to change the current active operational dataset if the Thread node is active.
 
-        Default parameters are choosen for parameters not set in the request body.
+        Default parameters are chosen for parameters not set in the request body.
       requestBody:
         description: |-
           Operational dataset object that will be stored as active operational dataset. JSON keys which are not set will be initialized with
@@ -205,10 +205,10 @@ paths:
     put:
       tags:
         - node
-      summary: Update current active opertional dataset
+      summary: Update current active operational dataset
       description: |-
         Updates the current active operational dataset on the current node. Only allowed if the Thread node is inactive. Create a
-        pending dataset if you would like to change the current active opertional dataset if the Thread node is active.
+        pending dataset if you would like to change the current active operational dataset if the Thread node is active.
       requestBody:
         description: |-
           Operational dataset object that will be stored as active operational dataset. Supports request body Content-Type `text/plain`
@@ -227,7 +227,7 @@ paths:
         "400":
           description: Invalid request body.
         "404":
-          description: No active opertional dataset to update.
+          description: No active operational dataset to update.
         "409":
           description: Writing active operational dataset rejected because Thread network is active.
   /node/dataset/pending:
@@ -237,7 +237,7 @@ paths:
       summary: Get current pending operational dataset
       responses:
         "200":
-          description: Returns currently pending opertional dataset
+          description: Returns currently pending operational dataset
           content:
             application/json:
               schema:
@@ -250,14 +250,14 @@ paths:
     post:
       tags:
         - node
-      summary: Create new pending opertional dataset
+      summary: Create new pending operational dataset
       description: |-
         Creates new pending operational dataset on the current node. If the delay timer is specified, the new pending operational dataset
         will become active after the time elapsed. The pending dataset will become empty.
 
-        Default parameters are choosen for parameters not set in the request body. By default, the delay timer is *not* set.
+        Default parameters are chosen for parameters not set in the request body. By default, the delay timer is *not* set.
 
-        Note: To be considered as a valid active opertional dataset the ActiveTimestamp needs to be newer than the current active operational
+        Note: To be considered as a valid active operational dataset the ActiveTimestamp needs to be newer than the current active operational
         dataset.
       requestBody:
         description: |-
@@ -275,7 +275,7 @@ paths:
     put:
       tags:
         - node
-      summary: Update current pending opertional dataset
+      summary: Update current pending operational dataset
       description: |-
         Updates the current pending operational dataset on the current node.
       requestBody:
@@ -296,7 +296,7 @@ paths:
         "400":
           description: Invalid request body.
         "404":
-          description: No pending opertional dataset to update.
+          description: No pending operational dataset to update.
 components:
   schemas:
     LeaderData:
@@ -355,7 +355,7 @@ components:
           default: random
         Delay:
           type: integer
-          description: Delay timer in miliseconds
+          description: Delay timer in milliseconds
           format: uint32
           example: 30000
           default: not set
