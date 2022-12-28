@@ -3,6 +3,18 @@ option optimize_for = LITE_RUNTIME;
 
 package otbr;
 
+enum otbrProtoLogLevel
+{
+    PROTO_LOG_EMERG   = 0;  ///< System is unusable
+    PROTO_LOG_ALERT   = 1;  ///< Action must be taken immediately
+    PROTO_LOG_CRIT    = 2;  ///< Critical conditions
+    PROTO_LOG_ERR     = 3;  ///< Error conditions
+    PROTO_LOG_WARNING = 4;  ///< Warning conditions
+    PROTO_LOG_NOTICE  = 5;  ///< Normal but significant condition
+    PROTO_LOG_INFO    = 6;  ///< Informational
+    PROTO_LOG_DEBUG   = 7;  ///< Debug level messages
+}
+
 // Feature flag list message defines the list of feature flags to be used
 // on OpenThread.
 //
@@ -43,15 +55,6 @@ message FeatureFlagList {
   optional bool enable_nat64 = 1 [default = false];
   // Whether to enable detailed logging.
   optional bool enable_detailed_logging = 2 [default = false];
-  // Set specific detailed logging level, default = OTBR_LOG_INFO
-  // Mapping from detailed_logging_level number to otbrLogLevel:
-  //   0 - OTBR_LOG_EMERG
-  //   1 - OTBR_LOG_ALERT
-  //   2 - OTBR_LOG_CRIT
-  //   3 - OTBR_LOG_ERR
-  //   4 - OTBR_LOG_WARNING
-  //   5 - OTBR_LOG_NOTICE
-  //   6 - OTBR_LOG_INFO
-  //   7 - OTBR_LOG_DEBUG
-  optional int32 detailed_logging_level = 3 [default = 6];
+  // Set specific detailed logging level, default = PROTO_LOG_INFO
+  optional otbrProtoLogLevel detailed_logging_level = 3 [default = PROTO_LOG_INFO];
 }

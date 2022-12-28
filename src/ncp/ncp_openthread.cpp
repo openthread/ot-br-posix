@@ -125,34 +125,35 @@ otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
 }
 
 #if OTBR_ENABLE_FEATURE_FLAGS
-otbrLogLevel ControllerOpenThread::ConvertProtoToOtbrLogLevel(int aProtoLogLevel)
+/* Converts otbrProtoLogLevel to otbrLogLevel */
+otbrLogLevel ConvertProtoToOtbrLogLevel(otbrProtoLogLevel aProtoLogLevel)
 {
     otbrLogLevel otbrLogLevel;
 
     switch (aProtoLogLevel)
     {
-    case 0:
+    case PROTO_LOG_EMERG:
         otbrLogLevel = OTBR_LOG_EMERG;
         break;
-    case 1:
+    case PROTO_LOG_ALERT:
         otbrLogLevel = OTBR_LOG_ALERT;
         break;
-    case 2:
+    case PROTO_LOG_CRIT:
         otbrLogLevel = OTBR_LOG_CRIT;
         break;
-    case 3:
+    case PROTO_LOG_ERR:
         otbrLogLevel = OTBR_LOG_ERR;
         break;
-    case 4:
+    case PROTO_LOG_WARNING:
         otbrLogLevel = OTBR_LOG_WARNING;
         break;
-    case 5:
+    case PROTO_LOG_NOTICE:
         otbrLogLevel = OTBR_LOG_NOTICE;
         break;
-    case 6:
+    case PROTO_LOG_INFO:
         otbrLogLevel = OTBR_LOG_INFO;
         break;
-    case 7:
+    case PROTO_LOG_DEBUG:
     default:
         otbrLogLevel = OTBR_LOG_DEBUG;
         break;

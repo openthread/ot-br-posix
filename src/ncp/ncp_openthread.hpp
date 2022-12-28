@@ -171,10 +171,6 @@ public:
     static otbrLogLevel ConvertToOtbrLogLevel(otLogLevel aLogLevel);
 
 #if OTBR_ENABLE_FEATURE_FLAGS
-    static otbrLogLevel ConvertProtoToOtbrLogLevel(int aProtoLogLevel);
-#endif
-
-#if OTBR_ENABLE_FEATURE_FLAGS
     /**
      * Apply the feature flag values to OpenThread through OpenThread APIs.
      *
