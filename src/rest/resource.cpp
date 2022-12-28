@@ -355,17 +355,66 @@ void Resource::GetDataState(Response &aResponse) const
     aResponse.SetResponsCode(errorCode);
 }
 
+void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string errorCode;
+    std::string body;
+
+    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
+    if (body == "enable")
+    {
+        if (!otIp6IsEnabled(mInstance))
+            SuccessOrExit(otIp6SetEnabled(mInstance, true));
+        VerifyOrExit(otThreadSetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else if (body == "disable")
+    {
+        VerifyOrExit(otThreadSetEnabled(mInstance, false) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else
+    {
+        ExitNow(error = OTBR_ERROR_INVALID_ARGS);
+    }
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+
+exit:
+    if (error == OTBR_ERROR_INVALID_STATE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+    }
+    if (error == OTBR_ERROR_INVALID_ARGS)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
 void Resource::State(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    switch (aRequest.GetMethod())
     {
+    case HttpMethod::kGet:
         GetDataState(aResponse);
-    }
-    else
-    {
+        break;
+    case HttpMethod::kPut:
+        SetDataState(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
     }
 }
 

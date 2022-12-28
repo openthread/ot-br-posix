@@ -73,6 +73,22 @@ exit:
     return ret;
 }
 
+bool JsonString2String(const std::string &aJsonString, std::string &aString)
+{
+    cJSON *jsonString;
+    bool   ret = true;
+
+    VerifyOrExit((jsonString = cJSON_Parse(aJsonString.c_str())) != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsString(jsonString), ret = false);
+
+    aString = std::string(jsonString->valuestring);
+
+exit:
+    cJSON_Delete(jsonString);
+
+    return ret;
+}
+
 std::string Json2String(const cJSON *aJson)
 {
     std::string ret;
