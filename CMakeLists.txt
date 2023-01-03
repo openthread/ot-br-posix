@@ -108,6 +108,14 @@ endif()
 
 
 add_subdirectory(third_party EXCLUDE_FROM_ALL)
+target_compile_definitions(ot-config INTERFACE
+    OPENTHREAD_POSIX_CONFIG_FILE="openthread-otbr-posix-config.h"
+)
+
+target_include_directories(ot-config INTERFACE
+    ${PROJECT_SOURCE_DIR}/src/agent
+)
+
 add_subdirectory(src)
 add_subdirectory(tools)
 
