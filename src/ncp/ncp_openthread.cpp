@@ -125,7 +125,7 @@ otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
 }
 
 #if OTBR_ENABLE_FEATURE_FLAGS
-/* Converts otbrProtoLogLevel to otbrLogLevel */
+/* Converts ProtoLogLevel to otbrLogLevel */
 otbrLogLevel ConvertProtoToOtbrLogLevel(ProtoLogLevel aProtoLogLevel)
 {
     otbrLogLevel otbrLogLevel;
