@@ -36,3 +36,6 @@ fw_setenv bootdelay 5
 # fix for software update while UART is disabled
 fw_setenv stdout serial
 fw_setenv stderr serial
+
+# preserve OpenThread details across software upgrades
+grep -qF cascoda /etc/sysupgrade.conf || echo "/.local/share/cascoda/" >> /etc/sysupgrade.conf
