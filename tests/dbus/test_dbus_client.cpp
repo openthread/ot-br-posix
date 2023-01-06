@@ -246,8 +246,9 @@ int main()
     std::unique_ptr<ThreadApiDBus> api;
     uint64_t                       extpanid = 0xdead00beaf00cafe;
     std::string                    region;
-    uint32_t                       scanDuration = 1000; // 1s for each channel
-    bool                           stepDone     = false;
+    uint32_t                       scanDuration         = 1000; // 1s for each channel
+    bool                           stepDone             = false;
+    uint32_t                       preferredChannelMask = 0;
 
     dbus_error_init(&error);
     connection = UniqueDBusConnection(dbus_bus_get(DBUS_BUS_SYSTEM, &error));
@@ -264,6 +265,9 @@ int main()
     TEST_ASSERT(api->SetRadioRegion("US") == ClientError::ERROR_NONE);
     TEST_ASSERT(api->GetRadioRegion(region) == ClientError::ERROR_NONE);
     TEST_ASSERT(region == "US");
+
+    TEST_ASSERT(api->GetPreferredChannelMask(preferredChannelMask) == ClientError::ERROR_NONE);
+    TEST_ASSERT(preferredChannelMask == 0x7fff800);
 
     api->EnergyScan(scanDuration, [&stepDone](const std::vector<EnergyScanResult> &aResult) {
         TEST_ASSERT(!aResult.empty());

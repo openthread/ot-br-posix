@@ -127,6 +127,7 @@ private:
     otError GetLinkCountersHandler(DBusMessageIter &aIter);
     otError GetIp6CountersHandler(DBusMessageIter &aIter);
     otError GetSupportedChannelMaskHandler(DBusMessageIter &aIter);
+    otError GetPreferredChannelMaskHandler(DBusMessageIter &aIter);
     otError GetRloc16Handler(DBusMessageIter &aIter);
     otError GetExtendedAddressHandler(DBusMessageIter &aIter);
     otError GetRouterIdHandler(DBusMessageIter &aIter);

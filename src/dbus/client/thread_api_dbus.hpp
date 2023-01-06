@@ -514,6 +514,18 @@ public:
     ClientError GetSupportedChannelMask(uint32_t &aChannelMask);
 
     /**
+     * This method gets the preferred channel mask.
+     *
+     * @param[out] aChannelMask  The channel mask.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetPreferredChannelMask(uint32_t &aChannelMask);
+
+    /**
      * This method gets the Thread routing locator
      *
      * @param[out] aRloc16  The routing locator
