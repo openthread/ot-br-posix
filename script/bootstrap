@@ -58,7 +58,7 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon
     (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1310.80.1 \
         && cd /tmp \
-        && wget -4 --no-check-certificate https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
+        && wget --no-check-certificate https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$MDNS_RESPONDER_SOURCE_NAME.tar.gz \
         && mkdir -p $MDNS_RESPONDER_SOURCE_NAME \
         && tar xvf $MDNS_RESPONDER_SOURCE_NAME.tar.gz -C $MDNS_RESPONDER_SOURCE_NAME --strip-components=1 \
         && cd /tmp/$MDNS_RESPONDER_SOURCE_NAME/Clients \
