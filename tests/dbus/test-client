@@ -99,6 +99,9 @@ update_meshcop_txt_and_check()
 
 main()
 {
+    CONFIG_FILE_PATH="third_party/openthread/repo/src/posix/platform"
+    mkdir -p "${PWD}/${CONFIG_FILE_PATH}" && cp "${PROJECT_SOURCE_DIR}/${CONFIG_FILE_PATH}/openthread.conf.example" "${PWD}/${CONFIG_FILE_PATH}"
+
     sudo rm -rf tmp
     sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
     sudo service dbus reload
