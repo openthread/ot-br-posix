@@ -220,6 +220,8 @@ private:
 
     static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 
+    otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
+
     otInstance *mInstance;
 
     otPlatformConfig                           mConfig;

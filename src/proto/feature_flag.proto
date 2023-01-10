@@ -3,6 +3,19 @@ option optimize_for = LITE_RUNTIME;
 
 package otbr;
 
+enum ProtoLogLevel
+{
+    PROTO_LOG_UNSPECIFIED = 0;  ///< Zero value enum is UNSPECIFIED
+    PROTO_LOG_EMERG       = 1;  ///< System is unusable
+    PROTO_LOG_ALERT       = 2;  ///< Action must be taken immediately
+    PROTO_LOG_CRIT        = 3;  ///< Critical conditions
+    PROTO_LOG_ERR         = 4;  ///< Error conditions
+    PROTO_LOG_WARNING     = 5;  ///< Warning conditions
+    PROTO_LOG_NOTICE      = 6;  ///< Normal but significant condition
+    PROTO_LOG_INFO        = 7;  ///< Informational
+    PROTO_LOG_DEBUG       = 8;  ///< Debug level messages
+}
+
 // Feature flag list message defines the list of feature flags to be used
 // on OpenThread.
 //
@@ -41,4 +54,8 @@ package otbr;
 message FeatureFlagList {
   // Whether to enable the NAT64 feature.
   optional bool enable_nat64 = 1 [default = false];
+  // Whether to enable detailed logging.
+  optional bool enable_detailed_logging = 2 [default = false];
+  // Set specific detailed logging level, default = PROTO_LOG_INFO
+  optional ProtoLogLevel detailed_logging_level = 3 [default = PROTO_LOG_INFO];
 }

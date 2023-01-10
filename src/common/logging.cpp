@@ -54,10 +54,18 @@ static const char   sLevelString[][8] = {
       "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
 };
 
+static otbrLogLevel sDefaultLevel = OTBR_LOG_INFO;
+
 /** Get the current debug log level */
 otbrLogLevel otbrLogGetLevel(void)
 {
     return sLevel;
+}
+
+/** Get the default log level */
+otbrLogLevel otbrLogGetDefaultLevel(void)
+{
+    return sDefaultLevel;
 }
 
 /**
@@ -76,7 +84,8 @@ void otbrLogInit(const char *aIdent, otbrLogLevel aLevel, bool aPrintStderr)
     assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
 
     openlog(aIdent, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), OTBR_SYSLOG_FACILITY_ID);
-    sLevel = aLevel;
+    sLevel        = aLevel;
+    sDefaultLevel = sLevel;
 }
 
 static const char *GetPrefix(const char *aLogTag)

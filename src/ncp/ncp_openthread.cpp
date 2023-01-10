@@ -124,6 +124,45 @@ otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
     return otbrLogLevel;
 }
 
+#if OTBR_ENABLE_FEATURE_FLAGS
+/* Converts ProtoLogLevel to otbrLogLevel */
+otbrLogLevel ConvertProtoToOtbrLogLevel(ProtoLogLevel aProtoLogLevel)
+{
+    otbrLogLevel otbrLogLevel;
+
+    switch (aProtoLogLevel)
+    {
+    case PROTO_LOG_EMERG:
+        otbrLogLevel = OTBR_LOG_EMERG;
+        break;
+    case PROTO_LOG_ALERT:
+        otbrLogLevel = OTBR_LOG_ALERT;
+        break;
+    case PROTO_LOG_CRIT:
+        otbrLogLevel = OTBR_LOG_CRIT;
+        break;
+    case PROTO_LOG_ERR:
+        otbrLogLevel = OTBR_LOG_ERR;
+        break;
+    case PROTO_LOG_WARNING:
+        otbrLogLevel = OTBR_LOG_WARNING;
+        break;
+    case PROTO_LOG_NOTICE:
+        otbrLogLevel = OTBR_LOG_NOTICE;
+        break;
+    case PROTO_LOG_INFO:
+        otbrLogLevel = OTBR_LOG_INFO;
+        break;
+    case PROTO_LOG_DEBUG:
+    default:
+        otbrLogLevel = OTBR_LOG_DEBUG;
+        break;
+    }
+
+    return otbrLogLevel;
+}
+#endif
+
 otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
 {
     otLogLevel level;
@@ -152,6 +191,14 @@ otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
     }
 
     return level;
+}
+
+otError ControllerOpenThread::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
+{
+    otError error = OT_ERROR_NONE;
+    otbrLogSetLevel(aLevel);
+    error = otLoggingSetLevel(ConvertToOtLogLevel(aLevel));
+    return error;
 }
 
 void ControllerOpenThread::Init(void)
@@ -208,6 +255,15 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 #if OTBR_ENABLE_NAT64
     otNat64SetEnabled(mInstance, aFeatureFlagList.enable_nat64());
 #endif
+
+    if (aFeatureFlagList.enable_detailed_logging())
+    {
+        error = SetOtbrAndOtLogLevel(ConvertProtoToOtbrLogLevel(aFeatureFlagList.detailed_logging_level()));
+    }
+    else
+    {
+        error = SetOtbrAndOtLogLevel(otbrLogGetDefaultLevel());
+    }
 
     return error;
 }
