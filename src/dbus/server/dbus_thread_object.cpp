@@ -27,6 +27,7 @@
  */
 
 #include <assert.h>
+#include <net/if.h>
 #include <string.h>
 
 #include <openthread/border_router.h>
@@ -38,6 +39,7 @@
 #include <openthread/nat64.h>
 #include <openthread/ncp.h>
 #include <openthread/netdata.h>
+#include <openthread/openthread-system.h>
 #include <openthread/srp_server.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
@@ -291,6 +293,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetNat64ProtocolCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS,
                                std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
+                               std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1820,6 +1824,36 @@ otError DBusThreadObject::GetNat64ErrorCounters(DBusMessageIter &aIter)
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 #endif // OTBR_ENABLE_NAT64
+
+otError DBusThreadObject::GetInfraLinkInfo(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_BORDER_ROUTING
+    otError                        error = OT_ERROR_NONE;
+    otSysInfraNetIfAddressCounters addressCounters;
+    uint32_t                       ifrFlags;
+    InfraLinkInfo                  infraLinkInfo;
+
+    ifrFlags = otSysGetInfraNetifFlags();
+    otSysCountInfraNetifAddresses(&addressCounters);
+
+    infraLinkInfo.mName                   = otSysGetInfraNetifName();
+    infraLinkInfo.mIsUp                   = (ifrFlags & IFF_UP) != 0;
+    infraLinkInfo.mIsRunning              = (ifrFlags & IFF_RUNNING) != 0;
+    infraLinkInfo.mIsMulticast            = (ifrFlags & IFF_MULTICAST) != 0;
+    infraLinkInfo.mLinkLocalAddresses     = addressCounters.mLinkLocalAddresses;
+    infraLinkInfo.mUniqueLocalAddresses   = addressCounters.mUniqueLocalAddresses;
+    infraLinkInfo.mGlobalUnicastAddresses = addressCounters.mGlobalUnicastAddresses;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, infraLinkInfo) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
+}
 
 static_assert(OTBR_SRP_SERVER_STATE_DISABLED == static_cast<uint8_t>(OT_SRP_SERVER_STATE_DISABLED),
               "OTBR_SRP_SERVER_STATE_DISABLED value is incorrect");

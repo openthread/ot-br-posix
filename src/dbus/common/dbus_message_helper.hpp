@@ -111,6 +111,8 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64AddressMapping &a
 otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64AddressMapping &aMapping);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const Nat64ErrorCounters &aCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, Nat64ErrorCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const InfraLinkInfo &aInfraLinkInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, InfraLinkInfo &aInfraLinkInfo);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -376,6 +378,12 @@ template <> struct DBusTypeTrait<Nat64ErrorCounters>
     //             struct of { uint64, uint64 }
     //             struct of { uint64, uint64 } }
     static constexpr const char *TYPE_AS_STRING = "((tt)(tt)(tt)(tt))";
+};
+
+template <> struct DBusTypeTrait<InfraLinkInfo>
+{
+    // struct of { string, bool, bool, bool, uint32, uint32, uint32 }
+    static constexpr const char *TYPE_AS_STRING = "(sbbbuuu)";
 };
 
 template <> struct DBusTypeTrait<int8_t>
