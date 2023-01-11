@@ -58,4 +58,6 @@ message FeatureFlagList {
   optional bool enable_detailed_logging = 2 [default = false];
   // Set specific detailed logging level, default = PROTO_LOG_INFO
   optional ProtoLogLevel detailed_logging_level = 3 [default = PROTO_LOG_INFO];
+  // Whether to enable the TREL feature.
+  optional bool enable_trel = 4 [default = false];
 }
