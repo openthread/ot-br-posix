@@ -896,7 +896,7 @@
     <!-- InfraLinkInfo: Information of infrastructure network interface.
     <literallayout>
         struct {
-          string name;                     // The name of the infrastructure network interface
+          string name;                     // The name of the infrastructure network interface.
           bool   is_up;                    // Whether the infrastructure network interface is up.
           bool   is_running;               // Whether the infrastructure network interface is running.
           bool   is_multicast;             // Whether the infrastructure network interface is multicast.

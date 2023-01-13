@@ -692,7 +692,7 @@ struct Nat64ErrorCounters
 
 struct InfraLinkInfo
 {
-    std::string mName;                   ///< The name of the infrastructure network interface
+    std::string mName;                   ///< The name of the infrastructure network interface.
     bool        mIsUp;                   ///< Whether the infrastructure network interface is up.
     bool        mIsRunning;              ///< Whether the infrastructure network interface is running.
     bool        mIsMulticast;            ///< Whether the infrastructure network interface is multicast.
