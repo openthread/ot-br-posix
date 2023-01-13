@@ -893,6 +893,23 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- InfraLinkInfo: Information of infrastructure network interface.
+    <literallayout>
+        struct {
+          string name;                     // The name of the infrastructure network interface.
+          bool   is_up;                    // Whether the infrastructure network interface is up.
+          bool   is_running;               // Whether the infrastructure network interface is running.
+          bool   is_multicast;             // Whether the infrastructure network interface is multicast.
+          uint32 link_local_addresses      // The number of link-local addresses on the infra network interface.
+          uint32 unique_local_addresses    // The number of unique local addresses on the infra network interface.
+          uint32 global_unicast_addresses  // The number of global unicast addresses on the infra network interface.
+        }
+    </literallayout>
+    -->
+    <property name="InfraLinkInfo" type="(sbbbuuu)" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">
