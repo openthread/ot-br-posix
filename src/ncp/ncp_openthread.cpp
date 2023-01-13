@@ -42,6 +42,7 @@
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
+#include <openthread/trel.h>
 #include <openthread/platform/logging.h>
 #include <openthread/platform/misc.h>
 #include <openthread/platform/radio.h>
@@ -264,6 +265,17 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
     {
         error = SetOtbrAndOtLogLevel(otbrLogGetDefaultLevel());
     }
+
+#if OTBR_ENABLE_TREL
+    if (aFeatureFlagList.enable_trel())
+    {
+        otTrelEnable(mInstance);
+    }
+    else
+    {
+        otTrelDisable(mInstance);
+    }
+#endif
 
     return error;
 }
