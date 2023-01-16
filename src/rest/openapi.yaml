@@ -253,10 +253,10 @@ paths:
         - node
       summary: Create new pending operational dataset
       description: |-
-        Creates new pending operational dataset on the current node. If the delay timer is specified, the new pending operational dataset
-        will become active after the time elapsed. The pending dataset will become empty.
+        Creates new pending operational dataset on the current node. The delay timer is mandatory and defines when the new pending operational
+        dataset will become active. Once active, the pending dataset will become empty.
 
-        Default parameters are chosen for parameters not set in the request body. By default, the delay timer is *not* set.
+        Default parameters are chosen for parameters not set in the request body.
 
         Note: To be considered as a valid active operational dataset the ActiveTimestamp needs to be newer than the current active operational
         dataset.

@@ -630,6 +630,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
         }
         else if (aDatasetType == DatasetType::kPending)
         {
+            VerifyOrExit(dataset.mComponents.mIsDelayPresent, error = OTBR_ERROR_INVALID_ARGS);
             VerifyOrExit(otDatasetSetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
         }
     }
