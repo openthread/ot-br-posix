@@ -196,7 +196,7 @@ paths:
             schema:
               $ref: "#/components/schemas/Dataset"
       responses:
-        "202":
+        "201":
           description: Successfully created the active operational dataset.
         "400":
           description: Invalid request body.
@@ -213,7 +213,8 @@ paths:
         description: |-
           Operational dataset object that will be stored as active operational dataset. Supports request body Content-Type `text/plain`
           (dataset in TLV format as hex string) or `application/json` (dataset in JSON format, JSON keys which are not set will be
-          initialized with default or random values).
+          initialized with default or random values). This method allows to create a new dataset as well if Content-Type is `text/plain`
+          (dataset in TLV format as hex string).
         content:
           application/json:
             schema:
@@ -222,7 +223,7 @@ paths:
             schema:
               $ref: "#/components/schemas/DatasetTlv"
       responses:
-        "202":
+        "200":
           description: Successfully updated the active operational dataset.
         "400":
           description: Invalid request body.
@@ -268,8 +269,8 @@ paths:
             schema:
               $ref: "#/components/schemas/Dataset"
       responses:
-        "202":
-          description: Successfully created the active operational dataset.
+        "201":
+          description: Successfully created the pending operational dataset.
         "400":
           description: Invalid request body.
     put:
@@ -282,7 +283,8 @@ paths:
         description: |-
           Operational dataset object that will be stored as pending operational dataset. Supports request body Content-Type `text/plain`
           (dataset in TLV format as hex string) or `application/json` (dataset in JSON format, JSON keys which are not set will be
-          initialized with default or random values).
+          initialized with default or random values). This method allows to create a new dataset as well if Content-Type is `text/plain`
+          (dataset in TLV format as hex string).
         content:
           application/json:
             schema:
@@ -291,7 +293,7 @@ paths:
             schema:
               $ref: "#/components/schemas/DatasetTlv"
       responses:
-        "202":
+        "200":
           description: Successfully updated the pending operational dataset.
         "400":
           description: Invalid request body.

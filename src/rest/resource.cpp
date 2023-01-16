@@ -53,7 +53,7 @@
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_PREFIX "/networks/current/prefix"
 
 #define OT_REST_HTTP_STATUS_200 "200 OK"
-#define OT_REST_HTTP_STATUS_202 "202 Accepted"
+#define OT_REST_HTTP_STATUS_201 "201 Created"
 #define OT_REST_HTTP_STATUS_204 "204 No Content"
 #define OT_REST_HTTP_STATUS_400 "400 Bad Request"
 #define OT_REST_HTTP_STATUS_404 "404 Not Found"
@@ -93,8 +93,8 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusOk:
         httpStatus = OT_REST_HTTP_STATUS_200;
         break;
-    case HttpStatusCode::kStatusAccepted:
-        httpStatus = OT_REST_HTTP_STATUS_202;
+    case HttpStatusCode::kStatusCreated:
+        httpStatus = OT_REST_HTTP_STATUS_201;
         break;
     case HttpStatusCode::kStatusNoContent:
         httpStatus = OT_REST_HTTP_STATUS_204;
@@ -568,10 +568,11 @@ exit:
 
 void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse, bool create) const
 {
-    otbrError                error = OTBR_ERROR_NONE;
-    struct NodeInfo          node;
-    std::string              body;
-    std::string              errorCode;
+    otbrError       error = OTBR_ERROR_NONE;
+    struct NodeInfo node;
+    std::string     body;
+    std::string     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    ;
     otOperationalDataset     dataset;
     otOperationalDatasetTlvs datasetTlvs;
     int                      ret;
@@ -607,6 +608,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
         if (create)
         {
             VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+            errorCode = GetHttpStatus(HttpStatusCode::kStatusCreated);
         }
         else
         {
@@ -632,7 +634,6 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
         }
     }
 
-    errorCode = GetHttpStatus(HttpStatusCode::kStatusAccepted);
     aResponse.SetResponsCode(errorCode);
 
 exit:
