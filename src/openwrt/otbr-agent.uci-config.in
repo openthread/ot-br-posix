@@ -1,0 +1,2 @@
+config otbr-agent 'service'
+	option thread_if_name "wpan0"

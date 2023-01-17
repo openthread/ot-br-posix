@@ -43,16 +43,23 @@ CMAKE_SOURCE_DIR=$(LOCAL_SOURCE_DIR)
 CMAKE_OPTIONS+= \
 	-DBUILD_TESTING=OFF \
 	-DCMAKE_INSTALL_PREFIX=/usr \
-	-DOTBR_BORDER_AGENT=OFF \
-	-DOTBR_MDNS=OFF \
-	-DOT_READLINE=OFF \
-	-DOTBR_OPENWRT=ON
+	-DOTBR_BORDER_AGENT=ON \
+	-DOTBR_BORDER_ROUTING=ON \
+	-DOTBR_INFRA_IF_NAME=\"br-lan\" \
+	-DOTBR_MDNS="avahi" \
+	-DOTBR_OPENWRT=ON \
+	-DOTBR_SRP_ADVERTISING_PROXY=ON \
+	-DOT_FIREWALL=ON \
+	-DOT_POSIX_SETTINGS_PATH=\"/etc/openthread\" \
+	-DOT_READLINE=OFF
+
+TARGET_CFLAGS += -DOPENTHREAD_POSIX_CONFIG_DAEMON_SOCKET_BASENAME=\\\"/var/run/openthread-%s\\\"
 
 define Package/openthread-br
 	SECTION:=base
 	CATEGORY:=Network
 	TITLE:=OpenThread Border Router
-	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json
+	DEPENDS:=+libstdcpp +libjson-c +libubus +libblobmsg-json +libavahi-client +avahi-daemon +iptables-mod-extra +ipset
 endef
 
 define Package/openthread-br/description
@@ -65,7 +72,10 @@ define Package/openthread-br/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ot-ctl $(1)/usr/sbin
 
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/etc/init.d/otbr-agent $(1)/etc/init.d
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/etc/init.d/* $(1)/etc/init.d
+
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) $(PKG_INSTALL_DIR)/etc/config/* $(1)/etc/config
 
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller/admin
 	$(INSTALL_BIN) $(LOCAL_SOURCE_DIR)/src/openwrt/controller/thread.lua $(1)/usr/lib/lua/luci/controller/admin
