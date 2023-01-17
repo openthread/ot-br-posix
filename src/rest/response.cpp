@@ -45,7 +45,7 @@ Response::Response(void)
     , mComplete(false)
 {
     // HTTP protocol
-    mProtocol = "HTTP/1.1 ";
+    mProtocol = "HTTP/1.1";
 
     // Pre-defined headers
     mHeaders["Content-Type"]                 = OT_REST_RESPONSE_CONTENT_TYPE_JSON;
