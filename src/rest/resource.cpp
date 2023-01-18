@@ -566,73 +566,60 @@ exit:
     }
 }
 
-void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse, bool create) const
+void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
-    otbrError       error = OTBR_ERROR_NONE;
-    struct NodeInfo node;
-    std::string     body;
-    std::string     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    ;
+    otError                  errorOt = OT_ERROR_NONE;
+    otbrError                error   = OTBR_ERROR_NONE;
+    struct NodeInfo          node;
+    std::string              body;
+    std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     otOperationalDataset     dataset;
+    otOperationalDataset     datasetUpdate;
     otOperationalDatasetTlvs datasetTlvs;
     int                      ret;
-    bool                     isText;
-
-    isText = aRequest.GetHeaderValue(OT_REST_CONTENT_TYPE_HEADER) == OT_REST_CONTENT_TYPE_PLAIN;
+    bool                     isTlv;
 
     if (aDatasetType == DatasetType::kActive)
     {
-        otbrLogWarning("STate is %d", otThreadGetDeviceRole(mInstance));
         VerifyOrExit(otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED, error = OTBR_ERROR_INVALID_STATE);
+        errorOt = otDatasetGetActive(mInstance, &dataset);
+    }
+    else if (aDatasetType == DatasetType::kPending)
+    {
+        errorOt = otDatasetGetPending(mInstance, &dataset);
     }
 
-    if (isText)
+    // Create a new operational dataset if it doesn't exist.
+    if (errorOt == OT_ERROR_NOT_FOUND)
     {
-        // Only PUT allowed for text/plain
-        VerifyOrExit(!create, error = OTBR_ERROR_INVALID_ARGS);
+        VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusCreated);
+    }
+
+    isTlv = aRequest.GetHeaderValue(OT_REST_CONTENT_TYPE_HEADER) == OT_REST_CONTENT_TYPE_PLAIN;
+
+    if (isTlv)
+    {
         ret = Json::Hex2BytesJsonString(aRequest.GetBody(), datasetTlvs.mTlvs, OT_OPERATIONAL_DATASET_MAX_LENGTH);
         VerifyOrExit(ret >= 0, error = OTBR_ERROR_INVALID_ARGS);
         datasetTlvs.mLength = ret;
 
-        if (aDatasetType == DatasetType::kActive)
-        {
-            VerifyOrExit(otDatasetSetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        }
-        else if (aDatasetType == DatasetType::kPending)
-        {
-            VerifyOrExit(otDatasetSetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        }
+        VerifyOrExit(otDatasetParseTlvs(&datasetTlvs, &datasetUpdate) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+        otDatasetUpdate(&datasetUpdate, &dataset);
     }
     else
     {
-        if (create)
-        {
-            VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-            errorCode = GetHttpStatus(HttpStatusCode::kStatusCreated);
-        }
-        else
-        {
-            if (aDatasetType == DatasetType::kActive)
-            {
-                VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
-            }
-            else if (aDatasetType == DatasetType::kPending)
-            {
-                VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
-            }
-        }
-
         VerifyOrExit(Json::JsonString2Dataset(aRequest.GetBody(), dataset), error = OTBR_ERROR_INVALID_ARGS);
+    }
 
-        if (aDatasetType == DatasetType::kActive)
-        {
-            VerifyOrExit(otDatasetSetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        }
-        else if (aDatasetType == DatasetType::kPending)
-        {
-            VerifyOrExit(dataset.mComponents.mIsDelayPresent, error = OTBR_ERROR_INVALID_ARGS);
-            VerifyOrExit(otDatasetSetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        }
+    if (aDatasetType == DatasetType::kActive)
+    {
+        VerifyOrExit(otDatasetSetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    }
+    else if (aDatasetType == DatasetType::kPending)
+    {
+        VerifyOrExit(dataset.mComponents.mIsDelayPresent, error = OTBR_ERROR_INVALID_ARGS);
+        VerifyOrExit(otDatasetSetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
     }
 
     aResponse.SetResponsCode(errorCode);
@@ -641,10 +628,6 @@ exit:
     if (error == OTBR_ERROR_INVALID_ARGS)
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
-    }
-    else if (error == OTBR_ERROR_NOT_FOUND)
-    {
-        ErrorHandler(aResponse, HttpStatusCode::kStatusResourceNotFound);
     }
     else if (error == OTBR_ERROR_INVALID_STATE)
     {
@@ -665,11 +648,8 @@ void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Respon
     case HttpMethod::kGet:
         GetDataset(aDatasetType, aRequest, aResponse);
         break;
-    case HttpMethod::kPost:
-        SetDataset(aDatasetType, aRequest, aResponse, true);
-        break;
     case HttpMethod::kPut:
-        SetDataset(aDatasetType, aRequest, aResponse, false);
+        SetDataset(aDatasetType, aRequest, aResponse);
         break;
     case HttpMethod::kOptions:
         errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);

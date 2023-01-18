@@ -178,43 +178,19 @@ paths:
                 $ref: "#/components/schemas/DatasetTlv"
         "204":
           description: No active operational dataset
-    post:
-      tags:
-        - node
-      summary: Create new active operational dataset
-      description: |-
-        Creates new active operational dataset on the current node. Only allowed if the Thread node is inactive. Create a
-        pending dataset if you would like to change the current active operational dataset if the Thread node is active.
-
-        Default parameters are chosen for parameters not set in the request body.
-      requestBody:
-        description: |-
-          Operational dataset object that will be stored as active operational dataset. JSON keys which are not set will be initialized with
-          default or random values.
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Dataset"
-      responses:
-        "201":
-          description: Successfully created the active operational dataset.
-        "400":
-          description: Invalid request body.
-        "409":
-          description: Writing active operational dataset rejected because Thread network is active.
     put:
       tags:
         - node
-      summary: Update current active operational dataset
+      summary: Creates or updates the active operational dataset
       description: |-
-        Updates the current active operational dataset on the current node. Only allowed if the Thread node is inactive. Create a
-        pending dataset if you would like to change the current active operational dataset if the Thread node is active.
+        Creates or updates the the active operational dataset on the current node. Only allowed if the Thread node
+        is inactive. If the Thread node is active, a pending dataset should be used to update the current active
+        operational dataset.
       requestBody:
         description: |-
-          Operational dataset object that will be stored as active operational dataset. Supports request body Content-Type `text/plain`
-          (dataset in TLV format as hex string) or `application/json` (dataset in JSON format, JSON keys which are not set will be
-          initialized with default or random values). This method allows to create a new dataset as well if Content-Type is `text/plain`
-          (dataset in TLV format as hex string).
+          Operational dataset that will be stored as active operational dataset. Supports request body Content-Type
+          `text/plain` (dataset in TLV format as hex string) or `application/json` (dataset in JSON format). In both
+          cases keys which are not set will be initialized with defaults.
         content:
           application/json:
             schema:
@@ -225,10 +201,10 @@ paths:
       responses:
         "200":
           description: Successfully updated the active operational dataset.
+        "201":
+          description: Successfully created the active operational dataset.
         "400":
           description: Invalid request body.
-        "404":
-          description: No active operational dataset to update.
         "409":
           description: Writing active operational dataset rejected because Thread network is active.
   /node/dataset/pending:
@@ -248,43 +224,18 @@ paths:
                 $ref: "#/components/schemas/DatasetTlv"
         "204":
           description: No pending operational dataset
-    post:
-      tags:
-        - node
-      summary: Create new pending operational dataset
-      description: |-
-        Creates new pending operational dataset on the current node. The delay timer is mandatory and defines when the new pending operational
-        dataset will become active. Once active, the pending dataset will become empty.
-
-        Default parameters are chosen for parameters not set in the request body.
-
-        Note: To be considered as a valid active operational dataset the ActiveTimestamp needs to be newer than the current active operational
-        dataset.
-      requestBody:
-        description: |-
-          Operational dataset object that will be stored as pending operational dataset. JSON keys which are not set will be initialized with
-          default or random values.
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Dataset"
-      responses:
-        "201":
-          description: Successfully created the pending operational dataset.
-        "400":
-          description: Invalid request body.
     put:
       tags:
         - node
-      summary: Update current pending operational dataset
+      summary: Creates or updates the pending operational dataset
       description: |-
-        Updates the current pending operational dataset on the current node.
+        Creates or updates the the pending operational dataset on the current node. Delay needs to be set to let
+        the pending dataset apply as active dataset in the near future.
       requestBody:
         description: |-
-          Operational dataset object that will be stored as pending operational dataset. Supports request body Content-Type `text/plain`
-          (dataset in TLV format as hex string) or `application/json` (dataset in JSON format, JSON keys which are not set will be
-          initialized with default or random values). This method allows to create a new dataset as well if Content-Type is `text/plain`
-          (dataset in TLV format as hex string).
+          Operational dataset that will be stored as pending operational dataset. Supports request body Content-Type
+          `text/plain` (dataset in TLV format as hex string) or `application/json` (dataset in JSON format). In both
+          cases keys which are not set will be initialized with defaults.
         content:
           application/json:
             schema:
@@ -295,10 +246,10 @@ paths:
       responses:
         "200":
           description: Successfully updated the pending operational dataset.
+        "201":
+          description: Successfully created the pending operational dataset.
         "400":
           description: Invalid request body.
-        "404":
-          description: No pending operational dataset to update.
 components:
   schemas:
     LeaderData:
