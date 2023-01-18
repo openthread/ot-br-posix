@@ -676,6 +676,7 @@ bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &a
     bool        ret = true;
 
     VerifyOrExit((jsonDataset = cJSON_Parse(aJsonDataset.c_str())) != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsObject(jsonDataset), ret = false);
 
     value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ActiveTimestamp");
     if (cJSON_IsObject(value))
