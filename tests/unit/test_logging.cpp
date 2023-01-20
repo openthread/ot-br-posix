@@ -42,14 +42,14 @@ TEST(Logging, TestLoggingHigherLevel)
 {
     char ident[20];
 
-    sprintf(ident, "otbr-test-%ld", clock());
+    snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO, true);
     otbrLog(OTBR_LOG_DEBUG, OTBR_LOG_TAG, "cool-higher");
     otbrLogDeinit();
     sleep(0);
 
     char cmd[128];
-    sprintf(cmd, "grep '%s.*cool-higher' /var/log/syslog", ident);
+    snprintf(cmd, sizeof(cmd), "grep '%s.*cool-higher' /var/log/syslog", ident);
     CHECK(0 != system(cmd));
 }
 
@@ -57,14 +57,14 @@ TEST(Logging, TestLoggingEqualLevel)
 {
     char ident[20];
 
-    sprintf(ident, "otbr-test-%ld", clock());
+    snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO, true);
     otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, "cool-equal");
     otbrLogDeinit();
     sleep(0);
 
     char cmd[128];
-    sprintf(cmd, "grep '%s.*cool-equal' /var/log/syslog", ident);
+    snprintf(cmd, sizeof(cmd), "grep '%s.*cool-equal' /var/log/syslog", ident);
     printf("CMD = %s\n", cmd);
     CHECK(0 == system(cmd));
 }
@@ -74,13 +74,13 @@ TEST(Logging, TestLoggingLowerLevel)
     char ident[20];
     char cmd[128];
 
-    sprintf(ident, "otbr-test-%ld", clock());
+    snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_INFO, true);
     otbrLog(OTBR_LOG_WARNING, OTBR_LOG_TAG, "cool-lower");
     otbrLogDeinit();
     sleep(0);
 
-    sprintf(cmd, "grep '%s.*cool-lower' /var/log/syslog", ident);
+    snprintf(cmd, sizeof(cmd), "grep '%s.*cool-lower' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 }
 
@@ -89,7 +89,7 @@ TEST(Logging, TestLoggingDump)
     char ident[32];
     char cmd[128];
 
-    sprintf(ident, "otbr-test-%ld", clock());
+    snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
     otbrLogInit(ident, OTBR_LOG_DEBUG, true);
     const char s[] = "one super long string with lots of text";
     otbrDump(OTBR_LOG_INFO, "Test", "foobar", s, sizeof(s));
@@ -103,12 +103,14 @@ TEST(Logging, TestLoggingDump)
      * otbr-test-5976[47088]: foobar: 0020: 6f 66 20 74 65 78 74 00
      */
 
-    sprintf(cmd, "grep '%s.*: foobar: 0000: 6f 6e 65 20 73 75 70 65 72 20 6c 6f 6e 67 20 73' /var/log/syslog", ident);
+    snprintf(cmd, sizeof(cmd),
+             "grep '%s.*: foobar: 0000: 6f 6e 65 20 73 75 70 65 72 20 6c 6f 6e 67 20 73' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 
-    sprintf(cmd, "grep '%s.*: foobar: 0010: 74 72 69 6e 67 20 77 69 74 68 20 6c 6f 74 73 20' /var/log/syslog", ident);
+    snprintf(cmd, sizeof(cmd),
+             "grep '%s.*: foobar: 0010: 74 72 69 6e 67 20 77 69 74 68 20 6c 6f 74 73 20' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 
-    sprintf(cmd, "grep '%s.*: foobar: 0020: 6f 66 20 74 65 78 74 00' /var/log/syslog", ident);
+    snprintf(cmd, sizeof(cmd), "grep '%s.*: foobar: 0020: 6f 66 20 74 65 78 74 00' /var/log/syslog", ident);
     CHECK(0 == system(cmd));
 }

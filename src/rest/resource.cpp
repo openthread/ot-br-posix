@@ -652,7 +652,7 @@ void Resource::DiagnosticResponseHandler(otError aError, const otMessage *aMessa
     {
         if (diagTlv.mType == OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS)
         {
-            sprintf(rloc, "0x%04x", diagTlv.mData.mAddr16);
+            snprintf(rloc, sizeof(rloc), "0x%04x", diagTlv.mData.mAddr16);
             keyRloc = Json::CString2JsonString(rloc);
         }
         diagSet.push_back(diagTlv);
