@@ -608,58 +608,81 @@ std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessag
     return ret;
 }
 
-std::string Dataset2JsonString(const otOperationalDataset &aDataset)
+cJSON *ActiveDataset2Json(const otOperationalDataset &aActiveDataset)
 {
+    cJSON *node = cJSON_CreateObject();
+
+    if (aActiveDataset.mComponents.mIsActiveTimestampPresent)
+    {
+        cJSON_AddItemToObject(node, "ActiveTimestamp", Timestamp2Json(aActiveDataset.mActiveTimestamp));
+    }
+    if (aActiveDataset.mComponents.mIsNetworkKeyPresent)
+    {
+        cJSON_AddItemToObject(node, "NetworkKey", Bytes2HexJson(aActiveDataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE));
+    }
+    if (aActiveDataset.mComponents.mIsNetworkNamePresent)
+    {
+        cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aActiveDataset.mNetworkName.m8));
+    }
+    if (aActiveDataset.mComponents.mIsExtendedPanIdPresent)
+    {
+        cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aActiveDataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE));
+    }
+    if (aActiveDataset.mComponents.mIsMeshLocalPrefixPresent)
+    {
+        cJSON_AddItemToObject(node, "MeshLocalPrefix", IpPrefix2Json(aActiveDataset.mMeshLocalPrefix));
+    }
+    if (aActiveDataset.mComponents.mIsPanIdPresent)
+    {
+        cJSON_AddItemToObject(node, "PanId", cJSON_CreateNumber(aActiveDataset.mPanId));
+    }
+    if (aActiveDataset.mComponents.mIsChannelPresent)
+    {
+        cJSON_AddItemToObject(node, "Channel", cJSON_CreateNumber(aActiveDataset.mChannel));
+    }
+    if (aActiveDataset.mComponents.mIsPskcPresent)
+    {
+        cJSON_AddItemToObject(node, "PSKc", Bytes2HexJson(aActiveDataset.mPskc.m8, OT_PSKC_MAX_SIZE));
+    }
+    if (aActiveDataset.mComponents.mIsSecurityPolicyPresent)
+    {
+        cJSON_AddItemToObject(node, "SecurityPolicy", SecurityPolicy2Json(aActiveDataset.mSecurityPolicy));
+    }
+    if (aActiveDataset.mComponents.mIsChannelMaskPresent)
+    {
+        cJSON_AddItemToObject(node, "ChannelMask", cJSON_CreateNumber(aActiveDataset.mChannelMask));
+    }
+
+    return node;
+}
+
+std::string ActiveDataset2JsonString(const otOperationalDataset &aActiveDataset)
+{
+    cJSON      *node;
+    std::string ret;
+
+    node = ActiveDataset2Json(aActiveDataset);
+    ret = Json2String(node);
+    cJSON_Delete(node);
+
+    return ret;
+}
+
+std::string PendingDataset2JsonString(const otOperationalDataset &aPendingDataset)
+{
+    cJSON      *nodeActiveDataset;
     cJSON      *node = cJSON_CreateObject();
     std::string ret;
 
-    if (aDataset.mComponents.mIsActiveTimestampPresent)
+    nodeActiveDataset = ActiveDataset2Json(aPendingDataset);
+    cJSON_AddItemToObject(node, "ActiveDataset", nodeActiveDataset);
+    if (aPendingDataset.mComponents.mIsPendingTimestampPresent)
     {
-        cJSON_AddItemToObject(node, "ActiveTimestamp", Timestamp2Json(aDataset.mActiveTimestamp));
+        cJSON_AddItemToObject(node, "PendingTimestamp", Timestamp2Json(aPendingDataset.mPendingTimestamp));
     }
-    if (aDataset.mComponents.mIsPendingTimestampPresent)
+    if (aPendingDataset.mComponents.mIsDelayPresent)
     {
-        cJSON_AddItemToObject(node, "PendingTimestamp", Timestamp2Json(aDataset.mPendingTimestamp));
-    }
-    if (aDataset.mComponents.mIsNetworkKeyPresent)
-    {
-        cJSON_AddItemToObject(node, "NetworkKey", Bytes2HexJson(aDataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE));
-    }
-    if (aDataset.mComponents.mIsNetworkNamePresent)
-    {
-        cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aDataset.mNetworkName.m8));
-    }
-    if (aDataset.mComponents.mIsExtendedPanIdPresent)
-    {
-        cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aDataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE));
-    }
-    if (aDataset.mComponents.mIsMeshLocalPrefixPresent)
-    {
-        cJSON_AddItemToObject(node, "MeshLocalPrefix", IpPrefix2Json(aDataset.mMeshLocalPrefix));
-    }
-    if (aDataset.mComponents.mIsDelayPresent)
-    {
-        cJSON_AddItemToObject(node, "Delay", cJSON_CreateNumber(aDataset.mDelay));
-    }
-    if (aDataset.mComponents.mIsPanIdPresent)
-    {
-        cJSON_AddItemToObject(node, "PanId", cJSON_CreateNumber(aDataset.mPanId));
-    }
-    if (aDataset.mComponents.mIsChannelPresent)
-    {
-        cJSON_AddItemToObject(node, "Channel", cJSON_CreateNumber(aDataset.mChannel));
-    }
-    if (aDataset.mComponents.mIsPskcPresent)
-    {
-        cJSON_AddItemToObject(node, "PSKc", Bytes2HexJson(aDataset.mPskc.m8, OT_PSKC_MAX_SIZE));
-    }
-    if (aDataset.mComponents.mIsSecurityPolicyPresent)
-    {
-        cJSON_AddItemToObject(node, "SecurityPolicy", SecurityPolicy2Json(aDataset.mSecurityPolicy));
-    }
-    if (aDataset.mComponents.mIsChannelMaskPresent)
-    {
-        cJSON_AddItemToObject(node, "ChannelMask", cJSON_CreateNumber(aDataset.mChannelMask));
+        cJSON_AddItemToObject(node, "Delay", cJSON_CreateNumber(aPendingDataset.mDelay));
     }
 
     ret = Json2String(node);
@@ -668,17 +691,13 @@ std::string Dataset2JsonString(const otOperationalDataset &aDataset)
     return ret;
 }
 
-bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &aDataset)
+bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalDataset &aDataset)
 {
     cJSON      *value;
-    cJSON      *jsonDataset;
     otTimestamp timestamp;
     bool        ret = true;
 
-    VerifyOrExit((jsonDataset = cJSON_Parse(aJsonDataset.c_str())) != nullptr, ret = false);
-    VerifyOrExit(cJSON_IsObject(jsonDataset), ret = false);
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ActiveTimestamp");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "ActiveTimestamp");
     if (cJSON_IsObject(value))
     {
         VerifyOrExit(Json2Timestamp(value, timestamp), ret = false);
@@ -690,6 +709,162 @@ bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &a
         aDataset.mComponents.mIsActiveTimestampPresent = false;
     }
     else if (value != nullptr)
+    {
+        ExitNow(ret = false);
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "NetworkKey");
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aDataset.mNetworkKey.m8,
+                                         OT_NETWORK_KEY_SIZE) == OT_NETWORK_KEY_SIZE,
+                     ret = false);
+        aDataset.mComponents.mIsNetworkKeyPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsNetworkKeyPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "NetworkName");
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(strlen(value->valuestring) <= OT_NETWORK_NAME_MAX_SIZE, ret = false);
+        strncpy(aDataset.mNetworkName.m8, value->valuestring, OT_NETWORK_NAME_MAX_SIZE);
+        aDataset.mComponents.mIsNetworkNamePresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsNetworkNamePresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "ExtPanId");
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aDataset.mExtendedPanId.m8,
+                                         OT_EXT_PAN_ID_SIZE) == OT_EXT_PAN_ID_SIZE,
+                     ret = false);
+        aDataset.mComponents.mIsExtendedPanIdPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsExtendedPanIdPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "MeshLocalPrefix");
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(Json2IpPrefix(value, aDataset.mMeshLocalPrefix) == OTBR_ERROR_NONE, ret = false);
+        aDataset.mComponents.mIsMeshLocalPrefixPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsMeshLocalPrefixPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "PanId");
+    if (cJSON_IsNumber(value))
+    {
+        aDataset.mPanId                      = static_cast<otPanId>(value->valueint);
+        aDataset.mComponents.mIsPanIdPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsPanIdPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "Channel");
+    if (cJSON_IsNumber(value))
+    {
+        aDataset.mChannel                      = static_cast<uint16_t>(value->valueint);
+        aDataset.mComponents.mIsChannelPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsChannelPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "PSKc");
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aDataset.mPskc.m8, OT_PSKC_MAX_SIZE) ==
+                         OT_PSKC_MAX_SIZE,
+                     ret = false);
+        aDataset.mComponents.mIsPskcPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsPskcPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "SecurityPolicy");
+    if (cJSON_IsObject(value))
+    {
+        VerifyOrExit(Json2SecurityPolicy(value, aDataset.mSecurityPolicy), ret = false);
+        aDataset.mComponents.mIsSecurityPolicyPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsSecurityPolicyPresent = false;
+    }
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "ChannelMask");
+    if (cJSON_IsNumber(value))
+    {
+        aDataset.mChannelMask                      = value->valueint;
+        aDataset.mComponents.mIsChannelMaskPresent = true;
+    }
+    else if (cJSON_IsNull(value))
+    {
+        aDataset.mComponents.mIsChannelMaskPresent = false;
+    }
+
+exit:
+    return ret;
+}
+
+bool JsonActiveDatasetString2Dataset(const std::string &aJsonActiveDataset, otOperationalDataset &aDataset)
+{
+    cJSON *jsonActiveDataset;
+    bool   ret = true;
+
+    VerifyOrExit((jsonActiveDataset = cJSON_Parse(aJsonActiveDataset.c_str())) != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsObject(jsonActiveDataset), ret = false);
+
+    ret = JsonActiveDataset2Dataset(jsonActiveDataset, aDataset);
+
+exit:
+    cJSON_Delete(jsonActiveDataset);
+
+    return ret;
+}
+
+bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, otOperationalDataset &aDataset)
+{
+    cJSON      *value;
+    cJSON      *jsonDataset;
+    otTimestamp timestamp;
+    bool        ret = true;
+
+    VerifyOrExit((jsonDataset = cJSON_Parse(aJsonPendingDataset.c_str())) != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsObject(jsonDataset), ret = false);
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ActiveDataset");
+    if (cJSON_IsObject(value))
+    {
+        VerifyOrExit(JsonActiveDataset2Dataset(value, aDataset), ret = false);
+    }
+    else if (cJSON_IsString(value))
+    {
+        // TODO: Parse Dataset TLV
+        ExitNow(ret = false);
+    }
+    else
     {
         ExitNow(ret = false);
     }
@@ -710,59 +885,6 @@ bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &a
         ExitNow(ret = false);
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "NetworkKey");
-    if (cJSON_IsString(value))
-    {
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
-        VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aDataset.mNetworkKey.m8,
-                                         OT_NETWORK_KEY_SIZE) == OT_NETWORK_KEY_SIZE,
-                     ret = false);
-        aDataset.mComponents.mIsNetworkKeyPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsNetworkKeyPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "NetworkName");
-    if (cJSON_IsString(value))
-    {
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
-        VerifyOrExit(strlen(value->valuestring) <= OT_NETWORK_NAME_MAX_SIZE, ret = false);
-        strncpy(aDataset.mNetworkName.m8, value->valuestring, OT_NETWORK_NAME_MAX_SIZE);
-        aDataset.mComponents.mIsNetworkNamePresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsNetworkNamePresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ExtPanId");
-    if (cJSON_IsString(value))
-    {
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
-        VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aDataset.mExtendedPanId.m8,
-                                         OT_EXT_PAN_ID_SIZE) == OT_EXT_PAN_ID_SIZE,
-                     ret = false);
-        aDataset.mComponents.mIsExtendedPanIdPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsExtendedPanIdPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "MeshLocalPrefix");
-    if (cJSON_IsString(value))
-    {
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
-        VerifyOrExit(Json2IpPrefix(value, aDataset.mMeshLocalPrefix) == OTBR_ERROR_NONE, ret = false);
-        aDataset.mComponents.mIsMeshLocalPrefixPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsMeshLocalPrefixPresent = false;
-    }
-
     value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "Delay");
     if (cJSON_IsNumber(value))
     {
@@ -772,64 +894,6 @@ bool JsonString2Dataset(const std::string &aJsonDataset, otOperationalDataset &a
     else if (cJSON_IsNull(value))
     {
         aDataset.mComponents.mIsDelayPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "PanId");
-    if (cJSON_IsNumber(value))
-    {
-        aDataset.mPanId                      = static_cast<otPanId>(value->valueint);
-        aDataset.mComponents.mIsPanIdPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsPanIdPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "Channel");
-    if (cJSON_IsNumber(value))
-    {
-        aDataset.mChannel                      = static_cast<uint16_t>(value->valueint);
-        aDataset.mComponents.mIsChannelPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsChannelPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "PSKc");
-    if (cJSON_IsString(value))
-    {
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
-        VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aDataset.mPskc.m8, OT_PSKC_MAX_SIZE) ==
-                         OT_PSKC_MAX_SIZE,
-                     ret = false);
-        aDataset.mComponents.mIsPskcPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsPskcPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "SecurityPolicy");
-    if (cJSON_IsObject(value))
-    {
-        VerifyOrExit(Json2SecurityPolicy(value, aDataset.mSecurityPolicy), ret = false);
-        aDataset.mComponents.mIsSecurityPolicyPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsSecurityPolicyPresent = false;
-    }
-
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ChannelMask");
-    if (cJSON_IsNumber(value))
-    {
-        aDataset.mChannelMask                      = value->valueint;
-        aDataset.mComponents.mIsChannelMaskPresent = true;
-    }
-    else if (cJSON_IsNull(value))
-    {
-        aDataset.mComponents.mIsChannelMaskPresent = false;
     }
 
 exit:

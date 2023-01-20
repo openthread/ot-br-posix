@@ -539,12 +539,13 @@ void Resource::GetDataset(DatasetType aDatasetType, const Request &aRequest, Res
         if (aDatasetType == DatasetType::kActive)
         {
             VerifyOrExit(otDatasetGetActive(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+            body = Json::ActiveDataset2JsonString(dataset);
         }
         else if (aDatasetType == DatasetType::kPending)
         {
             VerifyOrExit(otDatasetGetPending(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+            body = Json::PendingDataset2JsonString(dataset);
         }
-        body = Json::Dataset2JsonString(dataset);
     }
 
     aResponse.SetBody(body);
@@ -609,7 +610,16 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     }
     else
     {
-        VerifyOrExit(Json::JsonString2Dataset(aRequest.GetBody(), dataset), error = OTBR_ERROR_INVALID_ARGS);
+        if (aDatasetType == DatasetType::kActive)
+        {
+            VerifyOrExit(Json::JsonActiveDatasetString2Dataset(aRequest.GetBody(), dataset),
+                         error = OTBR_ERROR_INVALID_ARGS);
+        }
+        else if (aDatasetType == DatasetType::kPending)
+        {
+            VerifyOrExit(Json::JsonPendingDatasetString2Dataset(aRequest.GetBody(), dataset),
+                         error = OTBR_ERROR_INVALID_ARGS);
+        }
     }
 
     if (aDatasetType == DatasetType::kActive)
