@@ -103,7 +103,7 @@ size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 
     for (int i = 0; i < aBytesLength; i++)
     {
-        sprintf(byteHex, "%02X", cur[i]);
+        snprintf(byteHex, sizeof(byteHex), "%02X", cur[i]);
         hexString += byteHex;
     }
     strcpy(aHex, hexString.c_str());
@@ -119,7 +119,7 @@ size_t Long2Hex(const uint64_t aLong, char *aHex)
     for (uint8_t i = 0; i < sizeof(uint64_t); i++)
     {
         uint8_t byte = longValue & 0xff;
-        sprintf(byteHex, "%02X", byte);
+        snprintf(byteHex, sizeof(byteHex), "%02X", byte);
         hexString += byteHex;
         longValue = longValue >> 8;
     }

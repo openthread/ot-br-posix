@@ -120,7 +120,7 @@ std::string Ip6Prefix::ToString() const
     strBuilder.sputn(strbuf, strlen(strbuf));
     strBuilder.sputc('/');
 
-    sprintf(strbuf, "%d", mLength);
+    snprintf(strbuf, sizeof(strbuf), "%d", mLength);
     strBuilder.sputn(strbuf, strlen(strbuf));
 
     return strBuilder.str();

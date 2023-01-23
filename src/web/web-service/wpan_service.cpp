@@ -482,7 +482,7 @@ std::string WpanService::HandleAvailableNetworkRequest()
     {
         char panId[OT_PANID_LENGTH * 2 + 3], hardwareAddress[OT_HARDWARE_ADDRESS_LENGTH * 2 + 1];
         otbr::Utils::Bytes2Hex(mNetworks[i].mHardwareAddress, OT_HARDWARE_ADDRESS_LENGTH, hardwareAddress);
-        sprintf(panId, "0x%X", mNetworks[i].mPanId);
+        snprintf(panId, sizeof(panId), "0x%X", mNetworks[i].mPanId);
         networkInfo[i]["pi"] = panId;
         networkInfo[i]["ch"] = mNetworks[i].mChannel;
         networkInfo[i]["ha"] = hardwareAddress;
