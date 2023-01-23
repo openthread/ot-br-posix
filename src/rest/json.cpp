@@ -861,8 +861,14 @@ bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, ot
     }
     else if (cJSON_IsString(value))
     {
-        // TODO: Parse Dataset TLV
-        ExitNow(ret = false);
+        otOperationalDatasetTlvs datasetTlvs;
+        int                      len;
+
+        len = Hex2BytesJsonString(std::string(value->valuestring), datasetTlvs.mTlvs, OT_OPERATIONAL_DATASET_MAX_LENGTH);
+        VerifyOrExit(len > 0, ret = false);
+        datasetTlvs.mLength = len;
+
+        VerifyOrExit(otDatasetParseTlvs(&datasetTlvs, &aDataset) == OT_ERROR_NONE, ret = false);
     }
     else
     {
