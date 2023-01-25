@@ -37,5 +37,9 @@ fw_setenv bootdelay 5
 fw_setenv stdout serial
 fw_setenv stderr serial
 
+# fix bootloader - holding down reset button should now work
+fw_setenv ip 192.168.1.1
+fw_setenv recovery httpd
+
 # preserve OpenThread details across software upgrades
 grep -qF cascoda /etc/sysupgrade.conf || echo "/.local/share/cascoda/" >> /etc/sysupgrade.conf
