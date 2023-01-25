@@ -38,7 +38,7 @@ fw_setenv stdout serial
 fw_setenv stderr serial
 
 # fix bootloader - holding down reset button should now work
-fw_setenv ip 192.168.1.1
+fw_setenv ipaddr 192.168.1.1
 fw_setenv recovery httpd
 
 # preserve OpenThread details across software upgrades
