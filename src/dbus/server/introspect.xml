@@ -348,6 +348,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- LinkPreferredChannelMask: The bitwise link preferred channel mask -->
+    <property name="LinkPreferredChannelMask" type="u" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- Rloc16: The 16-bit routing locator -->
     <property name="Rloc16" type="q" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

@@ -223,6 +223,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetIp6CountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SUPPORTED_CHANNEL_MASK,
                                std::bind(&DBusThreadObject::GetSupportedChannelMaskHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_PREFERRED_CHANNEL_MASK,
+                               std::bind(&DBusThreadObject::GetPreferredChannelMaskHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RLOC16,
                                std::bind(&DBusThreadObject::GetRloc16Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTENDED_ADDRESS,
@@ -850,6 +852,18 @@ otError DBusThreadObject::GetSupportedChannelMaskHandler(DBusMessageIter &aIter)
 {
     auto     threadHelper = mNcp->GetThreadHelper();
     uint32_t channelMask  = otLinkGetSupportedChannelMask(threadHelper->GetInstance());
+    otError  error        = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, channelMask) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetPreferredChannelMaskHandler(DBusMessageIter &aIter)
+{
+    auto     threadHelper = mNcp->GetThreadHelper();
+    uint32_t channelMask  = otPlatRadioGetPreferredChannelMask(threadHelper->GetInstance());
     otError  error        = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, channelMask) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);

@@ -553,6 +553,11 @@ ClientError ThreadApiDBus::GetSupportedChannelMask(uint32_t &aChannelMask)
     return GetProperty(OTBR_DBUS_PROPERTY_SUPPORTED_CHANNEL_MASK, aChannelMask);
 }
 
+ClientError ThreadApiDBus::GetPreferredChannelMask(uint32_t &aChannelMask)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_PREFERRED_CHANNEL_MASK, aChannelMask);
+}
+
 ClientError ThreadApiDBus::GetRloc16(uint16_t &aRloc16)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_RLOC16, aRloc16);
