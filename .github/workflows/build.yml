@@ -51,18 +51,6 @@ jobs:
     - name: Check
       run: script/make-pretty check
 
-  android-check:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Check (Border Agent with mDNSResponder)
-      run: >
-        docker run --rm --env OTBR_MDNS=mDNSResponder -v $PWD:/build/ot-br-posix -v $PWD/third_party/openthread/repo:/build/external/openthread openthread/android-trusty bash -c
-        "BUILD_TARGET=android-check ot-br-posix/tests/scripts/bootstrap.sh && \
-         ot-br-posix/tests/scripts/check-android-build"
-
   check:
     runs-on: ubuntu-20.04
     strategy:

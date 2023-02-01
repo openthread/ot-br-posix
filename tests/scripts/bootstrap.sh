@@ -115,17 +115,6 @@ case "$(uname)" in
             configure_network
         fi
 
-        if [ "$BUILD_TARGET" == android-check ]; then
-            sudo apt-get install --no-install-recommends -y wget unzip libexpat1-dev gcc-multilib g++-multilib
-            (
-                cd "$HOME"
-                wget -nv https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
-                unzip android-ndk-r17c-linux-x86_64.zip >/dev/null
-                mv android-ndk-r17c ndk-bundle
-            )
-            exit 0
-        fi
-
         if [ "$BUILD_TARGET" == scan-build ]; then
             pip3 install -U cmake
             sudo apt-get install --no-install-recommends -y clang clang-tools
