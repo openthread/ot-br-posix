@@ -1,0 +1,1 @@
+* */8 * * * service otbr-agent restart && service smcroute restart

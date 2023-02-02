@@ -87,6 +87,9 @@ define Package/openthread-br/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/etc/init.d/smcroute $(1)/etc/init.d
 	$(INSTALL_CONF) $(PKG_INSTALL_DIR)/etc/smcroute.conf $(1)/etc
 
+	$(INSTALL_DIR) $(1)/etc/crontabs
+	$(INSTALL_CONF) $(PKG_INSTALL_DIR)/etc/crontabs/root $(1)/etc/crontabs
+
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-config.sh $(1)/lib
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/br-omr-enable.sh $(1)/lib

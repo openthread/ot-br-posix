@@ -42,6 +42,12 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/init.d
 )
 
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/root
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/crontabs
+)
+
+
 install(FILES 
     ${CMAKE_CURRENT_SOURCE_DIR}/br-config.sh
     ${CMAKE_CURRENT_SOURCE_DIR}/br-omr-enable.sh
