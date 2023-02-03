@@ -15,3 +15,7 @@ ot-ctl prefix add $thread_prefix paos high
 
 logger -t br-omr-enable Prefix $thread_prefix added!
 
+# Do not route link-local packets to the Thread network - they cannot
+# be responded to by Thread devices
+ip -6 route del fe80::/64 dev wpan0
+
