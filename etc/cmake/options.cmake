@@ -121,6 +121,11 @@ if(OTBR_DNS_DSO)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNS_DSO=1)
 endif()
 
+option(OTBR_DNS_DSO_TLS "Enable DSO over TLS" OFF)
+if(OTBR_DNS_DSO_TLS)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNS_DSO_TLS=1)
+endif()
+
 option(OTBR_SRP_REPLICATION "Enable SRP Replication" OFF)
 if(OTBR_SRP_REPLICATION)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_SRP_REPLICATION=1)

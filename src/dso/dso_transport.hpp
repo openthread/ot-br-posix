@@ -234,38 +234,34 @@ private:
         {
             kDisabled,
             kConnecting,
-            kConnected
+            kConnected,
+#if OTBR_ENABLE_DNS_DSO_TLS
+            kTlsHandshaking,
+#endif
         };
 
-        explicit DsoConnection(DsoAgent *aAgent, otPlatDsoConnection *aConnection)
-            : mAgent(aAgent)
-            , mConnection(aConnection)
-            , mCtx()
-            , mState(State::kDisabled)
-        {
-        }
+        DsoConnection(DsoAgent *aAgent, otPlatDsoConnection *aConnection);
 
-        DsoConnection(DsoAgent *aAgent, otPlatDsoConnection *aConnection, mbedtls_net_context aCtx)
-            : mAgent(aAgent)
-            , mConnection(aConnection)
-            , mCtx(aCtx)
-            , mState(State::kConnected)
-        {
-        }
+        DsoConnection(DsoAgent *aAgent, otPlatDsoConnection *aConnection, mbedtls_net_context aCtx);
 
-        ~DsoConnection(void)
-        {
-            Disconnect(OT_PLAT_DSO_DISCONNECT_MODE_FORCIBLY_ABORT);
-            mbedtls_net_free(&mCtx);
-        }
+        ~DsoConnection(void);
 
         static const char *StateToString(State aState);
 
-        State GetState(void) const { return mState; }
+        State GetState(void) const
+        {
+            return mState;
+        }
 
-        int GetFd(void) const { return mCtx.fd; }
+        int GetFd(void) const
+        {
+            return mCtx.fd;
+        }
 
-        otPlatDsoConnection *GetOtPlatDsoConnection(void) const { return mConnection; }
+        otPlatDsoConnection *GetOtPlatDsoConnection(void) const
+        {
+            return mConnection;
+        }
 
         void Connect(const otSockAddr *aPeerSockAddr);
 
@@ -283,6 +279,12 @@ private:
 
         void MarkStateAs(State aState);
 
+        void SetContext(mbedtls_net_context aCtx);
+
+#if OTBR_ENABLE_DNS_DSO_TLS
+        void TlsHandshake(void);
+#endif
+
     private:
         static constexpr size_t kRxBufferSize = 512;
 
@@ -298,9 +300,77 @@ private:
         std::vector<uint8_t> mReceiveLengthBuffer;
         std::vector<uint8_t> mReceiveMessageBuffer;
         std::vector<uint8_t> mSendMessageBuffer;
-        mbedtls_net_context  mCtx;
-        State                mState;
+        mbedtls_net_context  mCtx{};
+        State                mState{State::kDisabled};
+
+#if OTBR_ENABLE_DNS_DSO_TLS
+        mbedtls_ssl_context mTlsCtx{};
+#endif
     };
+
+#if OTBR_ENABLE_DNS_DSO_TLS
+    class TlsConfig
+    {
+    public:
+        ~TlsConfig(void);
+
+        void Init(bool aIsClient);
+
+        mbedtls_ssl_config &GetConfig(void) { return mConfig; }
+
+    private:
+        friend class DsoAgent;
+
+        // TODO: The below certificates are used as MbedTLS examples. We should use real certificates later.
+
+        static constexpr const char  *kCasPem       = "-----BEGIN CERTIFICATE-----\r\n"
+                                                      "MIIBtDCCATqgAwIBAgIBTTAKBggqhkjOPQQDAjBLMQswCQYDVQQGEwJOTDERMA8G\r\n"
+                                                      "A1UEChMIUG9sYXJTU0wxKTAnBgNVBAMTIFBvbGFyU1NMIFRlc3QgSW50ZXJtZWRp\r\n"
+                                                      "YXRlIEVDIENBMB4XDTE1MDkwMTE0MDg0M1oXDTI1MDgyOTE0MDg0M1owSjELMAkG\r\n"
+                                                      "A1UEBhMCVUsxETAPBgNVBAoTCG1iZWQgVExTMSgwJgYDVQQDEx9tYmVkIFRMUyBU\r\n"
+                                                      "ZXN0IGludGVybWVkaWF0ZSBDQSAzMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\r\n"
+                                                      "732fWHLNPMPsP1U1ibXvb55erlEVMlpXBGsj+KYwVqU1XCmW9Z9hhP7X/5js/DX9\r\n"
+                                                      "2J/utoHyjUtVpQOzdTrbsaMQMA4wDAYDVR0TBAUwAwEB/zAKBggqhkjOPQQDAgNo\r\n"
+                                                      "ADBlAjAJRxbGRas3NBmk9MnGWXg7PT1xnRELHRWWIvfLdVQt06l1/xFg3ZuPdQdt\r\n"
+                                                      "Qh7CK80CMQD7wa1o1a8qyDKBfLN636uKmKGga0E+vYXBeFCy9oARBangGCB0B2vt\r\n"
+                                                      "pz590JvGWfM=\r\n"
+                                                      "-----END CERTIFICATE-----\r\n";
+        static constexpr const size_t kCasPemLength = 665; // includes NUL byte
+
+        static constexpr const char  *kSrvPem       = "-----BEGIN CERTIFICATE-----\r\n"
+                                                      "MIICHzCCAaWgAwIBAgIBCTAKBggqhkjOPQQDAjA+MQswCQYDVQQGEwJOTDERMA8G\r\n"
+                                                      "A1UEChMIUG9sYXJTU0wxHDAaBgNVBAMTE1BvbGFyc3NsIFRlc3QgRUMgQ0EwHhcN\r\n"
+                                                      "MTMwOTI0MTU1MjA0WhcNMjMwOTIyMTU1MjA0WjA0MQswCQYDVQQGEwJOTDERMA8G\r\n"
+                                                      "A1UEChMIUG9sYXJTU0wxEjAQBgNVBAMTCWxvY2FsaG9zdDBZMBMGByqGSM49AgEG\r\n"
+                                                      "CCqGSM49AwEHA0IABDfMVtl2CR5acj7HWS3/IG7ufPkGkXTQrRS192giWWKSTuUA\r\n"
+                                                      "2CMR/+ov0jRdXRa9iojCa3cNVc2KKg76Aci07f+jgZ0wgZowCQYDVR0TBAIwADAd\r\n"
+                                                      "BgNVHQ4EFgQUUGGlj9QH2deCAQzlZX+MY0anE74wbgYDVR0jBGcwZYAUnW0gJEkB\r\n"
+                                                      "PyvLeLUZvH4kydv7NnyhQqRAMD4xCzAJBgNVBAYTAk5MMREwDwYDVQQKEwhQb2xh\r\n"
+                                                      "clNTTDEcMBoGA1UEAxMTUG9sYXJzc2wgVGVzdCBFQyBDQYIJAMFD4n5iQ8zoMAoG\r\n"
+                                                      "CCqGSM49BAMCA2gAMGUCMQCaLFzXptui5WQN8LlO3ddh1hMxx6tzgLvT03MTVK2S\r\n"
+                                                      "C12r0Lz3ri/moSEpNZWqPjkCMCE2f53GXcYLqyfyJR078c/xNSUU5+Xxl7VZ414V\r\n"
+                                                      "fGa5kHvHARBPc8YAIVIqDvHH1Q==\r\n"
+                                                      "-----END CERTIFICATE-----\r\n";
+        static constexpr const size_t kSrvPemLength = 813; // includes NUL byte
+
+        static constexpr const char  *kSrvKey       = "-----BEGIN EC PRIVATE KEY-----\r\n"
+                                                      "MHcCAQEEIPEqEyB2AnCoPL/9U/YDHvdqXYbIogTywwyp6/UfDw6noAoGCCqGSM49\r\n"
+                                                      "AwEHoUQDQgAEN8xW2XYJHlpyPsdZLf8gbu58+QaRdNCtFLX3aCJZYpJO5QDYIxH/\r\n"
+                                                      "6i/SNF1dFr2KiMJrdw1VzYoqDvoByLTt/w==\r\n"
+                                                      "-----END EC PRIVATE KEY-----\r\n";
+        static constexpr const size_t kSrvKeyLength = 233; // includes NUL byte
+
+        static const int kCipherSuites[3];
+
+        void LoadCert(void);
+
+        mbedtls_entropy_context  mEntropy;
+        mbedtls_ctr_drbg_context mCtrDrbg;
+        mbedtls_ssl_config       mConfig;
+        mbedtls_x509_crt         mSrvCert;
+        mbedtls_pk_context       mPKey;
+    };
+#endif
 
     static constexpr uint16_t kListeningPort        = 853;
     static constexpr int      kMaxQueuedConnections = 10;
@@ -330,6 +400,11 @@ private:
     ReceiveHandler      mReceiveHandler{&DsoAgent::DefaultReceiveHandler};
 
     std::map<otPlatDsoConnection *, std::unique_ptr<DsoConnection>> mMap;
+
+#if OTBR_ENABLE_DNS_DSO_TLS
+    TlsConfig mTlsClientConfig;
+    TlsConfig mTlsServerConfig;
+#endif
 };
 
 /**
