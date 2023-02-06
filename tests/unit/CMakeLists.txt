@@ -31,6 +31,7 @@ add_executable(otbr-test-unit
     $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:test_mdns_mdnssd.cpp>
     main.cpp
     test_dns_utils.cpp
+    test_dso_transport.cpp
     test_logging.cpp
     test_once_callback.cpp
     test_pskc.cpp
@@ -45,6 +46,8 @@ target_link_libraries(otbr-test-unit
     $<$<BOOL:${CPPUTEST_LIBRARY_DIRS}>:-L$<JOIN:${CPPUTEST_LIBRARY_DIRS}," -L">>
     ${CPPUTEST_LIBRARIES}
     mbedtls
+    openthread-ftd
+    otbr-dso
     otbr-common
     otbr-utils
     pthread

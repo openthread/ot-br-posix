@@ -576,6 +576,18 @@ void Publisher::UpdateHostResolutionEmaLatency(const std::string &aHostName, otb
     }
 }
 
+const Publisher::ServiceRegistration *Publisher::FindServiceRegistrationByType(const std::string &aType) const
+{
+    for (const auto &serviceReg : mServiceRegistrations)
+    {
+        if (serviceReg.second->mType == aType)
+        {
+            return serviceReg.second.get();
+        }
+    }
+    return nullptr;
+}
+
 } // namespace Mdns
 
 } // namespace otbr

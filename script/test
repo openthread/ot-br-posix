@@ -132,6 +132,7 @@ do_build()
         "-DOTBR_WEB=ON"
         "-DOTBR_UNSECURE_JOIN=ON"
         "-DOTBR_TREL=ON"
+        "-DOTBR_DNS_DSO=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 
@@ -148,7 +149,7 @@ do_check()
 {
     (cd "${OTBR_TOP_BUILDDIR}" \
         && ninja && sudo ninja install \
-        && CTEST_OUTPUT_ON_FAILURE=1 ninja test)
+        && CTEST_OUTPUT_ON_FAILURE=1 sudo ninja test)
 }
 
 do_doxygen()

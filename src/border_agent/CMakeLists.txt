@@ -34,6 +34,7 @@ add_library(otbr-border-agent
 target_link_libraries(otbr-border-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
+    otbr-srpl-dnssd
     otbr-trel-dnssd
     otbr-common
 )

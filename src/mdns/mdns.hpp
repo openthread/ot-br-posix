@@ -563,6 +563,17 @@ protected:
     std::map<std::string, Timepoint> mHostResolutionBeginTime;
 
     otbr::MdnsTelemetryInfo mTelemetryInfo{};
+
+public:
+    /**
+     * Find the service registration of the given type.
+     *
+     * @param aType  The service type.
+     * @returns      A pointer to the service registration of the given type. If no service registration is found,
+     * returns a nullptr.
+     *
+     */
+    const ServiceRegistration *FindServiceRegistrationByType(const std::string &aType) const;
 };
 
 /**

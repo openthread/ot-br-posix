@@ -78,6 +78,9 @@ Application::Application(const std::string               &aInterfaceName,
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(mNcp)
 #endif
+#if OTBR_ENABLE_DNS_DSO
+    , mDsoAgent()
+#endif
 {
     OTBR_UNUSED_VARIABLE(aRestListenAddress);
 }
@@ -103,6 +106,9 @@ void Application::Init(void)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer.Init();
+#endif
+#if OTBR_ENABLE_DNS_DSO
+    mDsoAgent.Init(mNcp.GetInstance(), mBackboneInterfaceName);
 #endif
 }
 

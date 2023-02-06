@@ -45,6 +45,7 @@ target_link_libraries(otbr-agent PRIVATE
     openthread-ftd
     openthread-spinel-rcp
     openthread-hdlc
+    otbr-dso
     otbr-sdp-proxy
     otbr-ncp
     otbr-common

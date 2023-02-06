@@ -49,6 +49,7 @@
 #include "ncp/ncp_openthread.hpp"
 #include "sdp_proxy/advertising_proxy.hpp"
 #include "sdp_proxy/discovery_proxy.hpp"
+#include "srpl_dnssd/srpl_dnssd.hpp"
 #include "trel_dnssd/trel_dnssd.hpp"
 
 #ifndef OTBR_VENDOR_NAME
@@ -143,6 +144,9 @@ private:
 #endif
 #if OTBR_ENABLE_TREL
     TrelDnssd::TrelDnssd mTrelDnssd;
+#endif
+#if OTBR_ENABLE_SRP_REPLICATION
+    SrplDnssd::SrplDnssd mSrplDnssd;
 #endif
 
     std::string mServiceInstanceName;

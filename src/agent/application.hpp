@@ -58,6 +58,7 @@
 #if OTBR_ENABLE_VENDOR_SERVER
 #include "agent/vendor.hpp"
 #endif
+#include "dso/dso_transport.hpp"
 #include "utils/infra_link_selector.hpp"
 
 namespace otbr {
@@ -143,6 +144,9 @@ private:
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     vendor::VendorServer mVendorServer;
+#endif
+#if OTBR_ENABLE_DNS_DSO
+    Dso::DsoAgent mDsoAgent;
 #endif
 
     static std::atomic_bool sShouldTerminate;
