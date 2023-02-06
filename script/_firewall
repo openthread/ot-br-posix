@@ -49,17 +49,17 @@ firewall_install()
     sudo cp script/otbr-firewall $FIREWALL_SERVICE
     sudo chmod a+x $FIREWALL_SERVICE
     if have systemctl; then
-        sudo systemctl enable otbr-firewall || die 'Failed to enable firewall service!'
-        sudo systemctl start otbr-firewall || die 'Failed to start firewall service!'
+        sudo systemctl enable otbr-firewall || true
+        sudo systemctl start otbr-firewall || true
     fi
 }
 
 firewall_start()
 {
     if with DOCKER; then
-        service otbr-firewall start || die 'Failed to start firewall service'
+        service otbr-firewall start || true
     elif have systemctl; then
-        sudo systemctl start otbr-firewall || die 'Failed to start firewall service'
+        sudo systemctl start otbr-firewall || true
     fi
 }
 
