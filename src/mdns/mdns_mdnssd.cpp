@@ -462,9 +462,9 @@ void PublisherMDnsSd::HandleServiceRegisterResult(DNSServiceRef         aService
 {
     OTBR_UNUSED_VARIABLE(aDomain);
 
-    otbrError            error = DNSErrorToOtbrError(aError);
-    std::string          originalInstanceName;
+    otbrError            error      = DNSErrorToOtbrError(aError);
     ServiceRegistration *serviceReg = FindServiceRegistration(aServiceRef);
+    serviceReg->mName               = aName;
 
     otbrLogInfo("Received reply for service %s.%s, serviceRef = %p", aName, aType, aServiceRef);
 
@@ -501,12 +501,19 @@ otbrError PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
     std::string          regType           = MakeRegType(aType, sortedSubTypeList);
     DNSServiceRef        serviceRef        = nullptr;
     std::string          fullHostName;
+    const char          *hostNameCString    = nullptr;
+    const char          *serviceNameCString = nullptr;
 
     VerifyOrExit(mState == State::kReady, ret = OTBR_ERROR_INVALID_STATE);
 
     if (!aHostName.empty())
     {
-        fullHostName = MakeFullHostName(aHostName);
+        fullHostName    = MakeFullHostName(aHostName);
+        hostNameCString = fullHostName.c_str();
+    }
+    if (!aName.empty())
+    {
+        serviceNameCString = aName.c_str();
     }
 
     aCallback = HandleDuplicateServiceRegistration(aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList,
@@ -516,9 +523,9 @@ otbrError PublisherMDnsSd::PublishServiceImpl(const std::string &aHostName,
     SuccessOrExit(ret = EncodeTxtData(aTxtList, txt));
     otbrLogInfo("Registering new service %s.%s.local, serviceRef = %p", aName.c_str(), regType.c_str(), serviceRef);
     SuccessOrExit(error = DNSServiceRegister(&serviceRef, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny,
-                                             aName.c_str(), regType.c_str(), /* domain */ nullptr,
-                                             !aHostName.empty() ? fullHostName.c_str() : nullptr, htons(aPort),
-                                             txt.size(), txt.data(), HandleServiceRegisterResult, this));
+                                             serviceNameCString, regType.c_str(),
+                                             /* domain */ nullptr, hostNameCString, htons(aPort), txt.size(),
+                                             txt.data(), HandleServiceRegisterResult, this));
     AddServiceRegistration(std::unique_ptr<DnssdServiceRegistration>(new DnssdServiceRegistration(
         aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), serviceRef, this)));
 

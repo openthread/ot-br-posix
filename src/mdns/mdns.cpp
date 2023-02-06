@@ -177,6 +177,8 @@ uint64_t Publisher::AddSubscriptionCallbacks(Publisher::DiscoveredServiceInstanc
 
 void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo)
 {
+    std::vector<uint64_t> subscriberIds;
+
     otbrLogInfo("Service %s is resolved successfully: %s %s host %s addresses %zu", aType.c_str(),
                 aInstanceInfo.mRemoved ? "remove" : "add", aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
                 aInstanceInfo.mAddresses.size());
@@ -193,11 +195,23 @@ void Publisher::OnServiceResolved(const std::string &aType, const DiscoveredInst
     UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, OTBR_ERROR_NONE);
     UpdateServiceInstanceResolutionEmaLatency(aInstanceInfo.mName, aType, OTBR_ERROR_NONE);
 
+    // In a callback, the mDiscoveredCallbacks may get changed which invalidates the running iterator. We need to refer
+    // to the callbacks by subscriberId to avoid invalid memory access.
+    subscriberIds.reserve(mDiscoveredCallbacks.size());
     for (const auto &subCallback : mDiscoveredCallbacks)
     {
-        if (subCallback.second.first != nullptr)
+        subscriberIds.push_back(subCallback.first);
+    }
+    for (const auto &subscriberId : subscriberIds)
+    {
+        auto it = mDiscoveredCallbacks.find(subscriberId);
+        if (it != mDiscoveredCallbacks.end())
         {
-            subCallback.second.first(aType, aInstanceInfo);
+            const auto &subCallback = *it;
+            if (subCallback.second.first != nullptr)
+            {
+                subCallback.second.first(aType, aInstanceInfo);
+            }
         }
     }
 }
