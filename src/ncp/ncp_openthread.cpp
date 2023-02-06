@@ -55,10 +55,6 @@
 #include "proto/feature_flag.pb.h"
 #endif
 
-#if OTBR_ENABLE_LEGACY
-#include <ot-legacy-pairing-ext.h>
-#endif
-
 namespace otbr {
 namespace Ncp {
 
@@ -212,10 +208,6 @@ void ControllerOpenThread::Init(void)
     mInstance = otSysInit(&mConfig);
     assert(mInstance != nullptr);
 
-#if OTBR_ENABLE_LEGACY
-    otLegacyInit();
-#endif
-
     {
         otError result = otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
 
@@ -291,27 +283,6 @@ void ControllerOpenThread::Deinit(void)
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
 {
-    if (aFlags & OT_CHANGED_THREAD_ROLE)
-    {
-        switch (otThreadGetDeviceRole(mInstance))
-        {
-        case OT_DEVICE_ROLE_DISABLED:
-#if OTBR_ENABLE_LEGACY
-            otLegacyStop();
-#endif
-            break;
-        case OT_DEVICE_ROLE_CHILD:
-        case OT_DEVICE_ROLE_ROUTER:
-        case OT_DEVICE_ROLE_LEADER:
-#if OTBR_ENABLE_LEGACY
-            otLegacyStart();
-#endif
-            break;
-        default:
-            break;
-        }
-    }
-
     for (auto &stateCallback : mThreadStateChangedCallbacks)
     {
         stateCallback(aFlags);

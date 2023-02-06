@@ -228,11 +228,6 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <!-- LegacyULAPrefix: The /64 legacy prefix.  -->
-    <property name="LegacyULAPrefix" type="ay" access="readwrite">
-      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
-    </property>
-
     <!-- LinkMode: The current link mode.
       <literallayout>
       struct {

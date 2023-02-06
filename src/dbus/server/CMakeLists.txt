@@ -34,8 +34,6 @@ add_custom_target(otbr-dbus-introspect-header ALL
     VERBATIM
 )
 
-option(OTBR_ENABLE_LEGACY "enable legacy support")
-
 add_library(otbr-dbus-server STATIC
     dbus_agent.cpp
     dbus_object.cpp
@@ -49,15 +47,6 @@ target_include_directories(otbr-dbus-server PRIVATE
 )
 
 add_dependencies(otbr-dbus-server otbr-dbus-introspect-header)
-
-if(OTBR_ENABLE_LEGACY)
-    target_compile_definitions(otbr-dbus-server PRIVATE
-        "OTBR_ENABLE_LEGACY=1"
-    )
-    target_include_directories(otbr-dbus-server PRIVATE
-        ${PROJECT_SOURCE_DIR}/${OTBR_LEGACY_INCLUDE}
-    )
-endif()
 
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common

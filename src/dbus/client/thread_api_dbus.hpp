@@ -309,18 +309,6 @@ public:
     ClientError SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
 
     /**
-     * This method sets the legacy prefix of ConnectIP.
-     *
-     * @param[in] aPrefix  The address prefix.
-     *
-     * @retval ERROR_NONE  Successfully performed the dbus function call
-     * @retval ERROR_DBUS  dbus encode/decode error
-     * @retval ...         OpenThread defined error value otherwise
-     *
-     */
-    ClientError SetLegacyUlaPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix);
-
-    /**
      * This method sets the active operational dataset.
      *
      * @param[out] aDataset  The active operational dataset
