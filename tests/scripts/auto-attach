@@ -82,13 +82,13 @@ sudo "${OT_CTL}" state | grep "disabled"
 sudo killall otbr-agent
 sleep 10
 sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach=1 &
-sleep 10
+sleep 40
 sudo "${OT_CTL}" state | grep "leader"
 
 sudo killall otbr-agent
 sleep 10
 sudo "${OTBR_AGENT}" -I wpan0 -v -d 6 "spinel+hdlc+forkpty://${OT_RCP}?forkpty-arg=1" --auto-attach &
-sleep 10
+sleep 40
 sudo "${OT_CTL}" state | grep "leader"
 sudo "${OT_CTL}" reset
 sleep 1
