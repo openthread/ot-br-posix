@@ -169,6 +169,23 @@ void PublishSingleService(void *aContext, Mdns::Publisher::State aState)
     }
 }
 
+void PublishSingleServiceWithEmptyName(void *aContext, Mdns::Publisher::State aState)
+{
+    OT_UNUSED_VARIABLE(aContext);
+
+    uint8_t                  xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t                  extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    Mdns::Publisher::TxtList txtList{
+        {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
+
+    assert(aContext == &sContext);
+    if (aState == Mdns::Publisher::State::kReady)
+    {
+        sContext.mPublisher->PublishService("", "", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtList,
+                                            [](otbrError aError) { SuccessOrDie(aError, "(empty)._meshcop._udp."); });
+    }
+}
+
 void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
 {
     OT_UNUSED_VARIABLE(aContext);
@@ -289,6 +306,21 @@ exit:
     return ret;
 }
 
+otbrError TestSingleServiceWithEmptyName(void)
+{
+    otbrError ret = OTBR_ERROR_NONE;
+
+    Mdns::Publisher *pub = Mdns::Publisher::Create(
+        [](Mdns::Publisher::State aState) { PublishSingleServiceWithEmptyName(&sContext, aState); });
+    sContext.mPublisher = pub;
+    SuccessOrExit(ret = pub->Start());
+    RunMainloop();
+
+exit:
+    Mdns::Publisher::Destroy(pub);
+    return ret;
+}
+
 otbrError TestMultipleServices(void)
 {
     otbrError ret = OTBR_ERROR_NONE;
@@ -393,7 +425,18 @@ int main(int argc, char *argv[])
     switch (argv[1][0])
     {
     case 's':
-        ret = argv[1][1] == 'c' ? TestSingleServiceWithCustomHost() : TestSingleService();
+        switch (argv[1][1])
+        {
+        case 'c':
+            ret = TestSingleServiceWithCustomHost();
+            break;
+        case 'e':
+            ret = TestSingleServiceWithEmptyName();
+            break;
+        default:
+            ret = TestSingleService();
+            break;
+        }
         break;
 
     case 'm':

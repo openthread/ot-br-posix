@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2023, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,64 +27,24 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-mdns
-    main.cpp
-)
+#
+# This script tests publishing single service.
+#
 
-target_link_libraries(otbr-test-mdns PRIVATE
-    otbr-config
-    otbr-mdns
-)
+# shellcheck source=tests/mdns/test_init
+. "$(dirname "$0")/test_init"
 
-add_test(
-    NAME mdns-single
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single
-)
+main()
+{
+    start_publisher se
 
-add_test(
-    NAME mdns-multiple
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple
-)
+    HOST_NAME="$(hostname -s)"
 
-add_test(
-    NAME mdns-update
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-update
-)
+    if [[ ${OTBR_MDNS} == 'mDNSResponder' ]]; then
+        dns_sd_check "${HOST_NAME}" _meshcop._udp 'nn=cool xp=ABCDEFGH tv=1.1.1 xa=ABCDEFGH'
+    else
+        avahi_check "${HOST_NAME}"';_meshcop._udp;.\+"xa=ABCDEFGH.\+"tv=1\.1\.1.\+"xp=ABCDEFGH.\+"nn=cool"'
+    fi
+}
 
-add_test(
-    NAME mdns-stop
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-stop
-)
-
-add_test(
-    NAME mdns-single-custom-host
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single-custom-host
-)
-
-add_test(
-    NAME mdns-multiple-custom-hosts
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-multiple-custom-hosts
-)
-
-add_test(
-    NAME mdns-service-subtypes
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-service-subtypes
-)
-
-add_test(
-    NAME mdns-single-empty-service-name
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test-single-empty-service-name
-)
-
-set_tests_properties(
-    mdns-single
-    mdns-multiple
-    mdns-update
-    mdns-stop
-    mdns-single-custom-host
-    mdns-multiple-custom-hosts
-    mdns-service-subtypes
-    mdns-single-empty-service-name
-    PROPERTIES
-        ENVIRONMENT "OTBR_MDNS=${OTBR_MDNS};OTBR_TEST_MDNS=$<TARGET_FILE:otbr-test-mdns>"
-)
+main "$@"

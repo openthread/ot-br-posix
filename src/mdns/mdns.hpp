@@ -189,7 +189,8 @@ public:
      *                          provided, this service resides on local host and it is the implementation
      *                          to provide specific host name. Otherwise, the caller MUST publish the host
      *                          with method PublishHost.
-     * @param[in] aName         The name of this service.
+     * @param[in] aName         The name of this service. If an empty string is provided, the service's name will be the
+     *                          same as the platform's hostname.
      * @param[in] aType         The type of this service.
      * @param[in] aSubTypeList  A list of service subtypes.
      * @param[in] aPort         The port number of this service.
@@ -412,6 +413,7 @@ protected:
         }
     };
 
+    // TODO: We may need a registration ID to fetch the information of a registration.
     class ServiceRegistration : public Registration
     {
     public:

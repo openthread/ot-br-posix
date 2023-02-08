@@ -648,7 +648,8 @@ otbrError PublisherAvahi::PublishServiceImpl(const std::string &aHostName,
     TxtList           sortedTxtList     = SortTxtList(aTxtList);
     const std::string logHostName       = !aHostName.empty() ? aHostName : "localhost";
     std::string       fullHostName;
-    AvahiEntryGroup  *group = nullptr;
+    std::string       serviceName = aName;
+    AvahiEntryGroup  *group       = nullptr;
 
     // Aligned with AvahiStringList
     AvahiStringList  txtBuffer[(kMaxSizeOfTxtRecord - 1) / sizeof(AvahiStringList) + 1];
@@ -661,34 +662,38 @@ otbrError PublisherAvahi::PublishServiceImpl(const std::string &aHostName,
     {
         fullHostName = MakeFullHostName(aHostName);
     }
+    if (serviceName.empty())
+    {
+        serviceName = avahi_client_get_host_name(mClient);
+    }
 
-    aCallback = HandleDuplicateServiceRegistration(aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList,
-                                                   std::move(aCallback));
+    aCallback = HandleDuplicateServiceRegistration(aHostName, serviceName, aType, sortedSubTypeList, aPort,
+                                                   sortedTxtList, std::move(aCallback));
     VerifyOrExit(!aCallback.IsNull());
 
     SuccessOrExit(error = TxtListToAvahiStringList(aTxtList, txtBuffer, sizeof(txtBuffer), txtHead));
     VerifyOrExit((group = CreateGroup(mClient)) != nullptr, error = OTBR_ERROR_MDNS);
     avahiError = avahi_entry_group_add_service_strlst(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, AvahiPublishFlags{},
-                                                      aName.c_str(), aType.c_str(),
+                                                      serviceName.c_str(), aType.c_str(),
                                                       /* domain */ nullptr, fullHostName.c_str(), aPort, txtHead);
     VerifyOrExit(avahiError == AVAHI_OK);
 
     for (const std::string &subType : aSubTypeList)
     {
-        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), aName.c_str(), aType.c_str());
+        otbrLogInfo("Add subtype %s for service %s.%s", subType.c_str(), serviceName.c_str(), aType.c_str());
         std::string fullSubType = subType + "._sub." + aType;
         avahiError              = avahi_entry_group_add_service_subtype(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,
-                                                                        AvahiPublishFlags{}, aName.c_str(), aType.c_str(),
+                                                                        AvahiPublishFlags{}, serviceName.c_str(), aType.c_str(),
                                                                         /* domain */ nullptr, fullSubType.c_str());
         VerifyOrExit(avahiError == AVAHI_OK);
     }
 
-    otbrLogInfo("Commit avahi service %s.%s", aName.c_str(), aType.c_str());
+    otbrLogInfo("Commit avahi service %s.%s", serviceName.c_str(), aType.c_str());
     avahiError = avahi_entry_group_commit(group);
     VerifyOrExit(avahiError == AVAHI_OK);
 
     AddServiceRegistration(std::unique_ptr<AvahiServiceRegistration>(new AvahiServiceRegistration(
-        aHostName, aName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), group, this)));
+        aHostName, serviceName, aType, sortedSubTypeList, aPort, sortedTxtList, std::move(aCallback), group, this)));
 
 exit:
     if (avahiError != AVAHI_OK || error != OTBR_ERROR_NONE)
@@ -1131,6 +1136,7 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
             aName, aType, aDomain, aHostName, aPort, static_cast<int>(aFlags), static_cast<int>(aEvent));
 
     VerifyOrExit(aEvent == AVAHI_RESOLVER_FOUND, avahiError = avahi_client_errno(mPublisherAvahi->mClient));
+
     avahi_address_snprint(addrBuf, sizeof(addrBuf), aAddress);
     otbrLogInfo("Resolve service reply: address %s", addrBuf);
 
