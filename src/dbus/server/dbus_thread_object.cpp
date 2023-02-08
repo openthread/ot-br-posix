@@ -52,10 +52,6 @@
 #include "proto/feature_flag.pb.h"
 #endif
 
-#if OTBR_ENABLE_LEGACY
-#include <ot-legacy-pairing-ext.h>
-#endif
-
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -187,8 +183,6 @@ otbrError DBusThreadObject::Init(void)
 
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX,
                                std::bind(&DBusThreadObject::SetMeshLocalPrefixHandler, this, _1));
-    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LEGACY_ULA_PREFIX,
-                               std::bind(&DBusThreadObject::SetLegacyUlaPrefixHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::SetLinkModeHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
@@ -640,24 +634,6 @@ otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
 
 exit:
     return error;
-}
-
-otError DBusThreadObject::SetLegacyUlaPrefixHandler(DBusMessageIter &aIter)
-{
-#if OTBR_ENABLE_LEGACY
-    std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> data;
-    otError                                   error = OT_ERROR_NONE;
-
-    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otSetLegacyUlaPrefix(&data[0]);
-
-exit:
-    return error;
-#else
-    OTBR_UNUSED_VARIABLE(aIter);
-
-    return OT_ERROR_NOT_IMPLEMENTED;
-#endif // OTBR_ENABLE_LEGACY
 }
 
 otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
