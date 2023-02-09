@@ -36,7 +36,7 @@
 . script/_dns64
 . script/_firewall
 
-main()
+startup()
 {
     # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
@@ -88,9 +88,14 @@ shutdown()
     fi
 }
 
-if [ "${1-}" == "shutdown" ]
-then
-    shutdown
-else
-    main
-fi
+main()
+{
+    if [[ "${1-}" == "shutdown" ]]; then
+        shift
+        shutdown "$@"
+    else
+        startup "$@"
+    fi
+}
+
+main "$@"
