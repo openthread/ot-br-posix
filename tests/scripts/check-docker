@@ -42,7 +42,7 @@ on_exit()
     local -r CONTAINER_RET=$(docker inspect "${OTBR_DOCKER_PID}" --format='{{.State.ExitCode}}')
     docker rm "${OTBR_DOCKER_PID}"
 
-    if [[ "${CONTAINER_RET}" != "0" ]]; then
+    if [[ ${CONTAINER_RET} != "0" ]]; then
         echo 'Container did not shutdown properly'
     fi
 

@@ -90,7 +90,7 @@ shutdown()
 
 main()
 {
-    if [[ "${1-}" == "shutdown" ]]; then
+    if [[ ${1-} == "shutdown" ]]; then
         shift
         shutdown "$@"
     else
