@@ -92,4 +92,8 @@ echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" >/etc/default/otbr-web
 
 /app/script/server
 
+while [[ ! -f /var/log/syslog ]]; do
+    sleep 1
+done
+
 tail -f /var/log/syslog
