@@ -36,7 +36,7 @@
 . script/_dns64
 . script/_firewall
 
-main()
+startup()
 {
     # shellcheck source=/dev/null
     . "$BEFORE_HOOK"
@@ -65,4 +65,37 @@ main()
     . "$AFTER_HOOK"
 }
 
-main
+shutdown()
+{
+    nat64_stop || echo 'Failed to stop NAT64!'
+    dns64_stop || echo 'Failed to stop DNS64!'
+    firewall_stop || echo 'Failed to stop firewall'
+    if have systemctl; then
+        systemctl is-active rsyslog && sudo systemctl stop rsyslog || echo 'Failed to stop rsyslog!'
+        systemctl is-active dbus && sudo systemctl stop dbus || echo 'Failed to stop dbus!'
+        systemctl is-active avahi-daemon && sudo systemctl stop avahi-daemon || echo 'Failed to stop avahi!'
+        without WEB_GUI || systemctl is-active otbr-web && sudo systemctl stop otbr-web || echo 'Failed to stop otbr-web!'
+        systemctl is-active otbr-agent && sudo systemctl stop otbr-agent || echo 'Failed to stop otbr-agent!'
+    elif have service; then
+        sudo service rsyslog status && sudo service rsyslog stop || echo 'Failed to stop rsyslog!'
+        sudo service dbus status && sudo service dbus stop || echo 'Failed to stop dbus!'
+        sudo service mdns status && sudo service mdns stop || echo "service mdns is not available!"
+        sudo service avahi-daemon status && sudo service avahi-daemon stop || echo 'Failed to stop avahi!'
+        sudo service otbr-agent status && sudo service otbr-agent stop || echo 'Failed to stop otbr-agent!'
+        without WEB_GUI || sudo service otbr-web status && sudo service otbr-web stop || echo 'Failed to stop otbr-web!'
+    else
+        echo 'Unable to find service manager. Try script/console to stop in console mode!'
+    fi
+}
+
+main()
+{
+    if [[ ${1-} == "shutdown" ]]; then
+        shift
+        shutdown "$@"
+    else
+        startup "$@"
+    fi
+}
+
+main "$@"
