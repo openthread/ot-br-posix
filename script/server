@@ -67,9 +67,9 @@ startup()
 
 shutdown()
 {
-    nat64_stop || echo 'Failed to start NAT64!'
-    dns64_stop || echo 'Failed to start DNS64!'
-    firewall_stop || echo 'Failed to start firewall'
+    nat64_stop || echo 'Failed to stop NAT64!'
+    dns64_stop || echo 'Failed to stop DNS64!'
+    firewall_stop || echo 'Failed to stop firewall'
     if have systemctl; then
         systemctl is-active rsyslog && sudo systemctl stop rsyslog || echo 'Failed to stop rsyslog!'
         systemctl is-active dbus && sudo systemctl stop dbus || echo 'Failed to stop dbus!'
