@@ -259,14 +259,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
     }
 
 #if OTBR_ENABLE_TREL
-    if (aFeatureFlagList.enable_trel())
-    {
-        otTrelEnable(mInstance);
-    }
-    else
-    {
-        otTrelDisable(mInstance);
-    }
+    otTrelSetEnabled(mInstance, aFeatureFlagList.enable_trel());
 #endif
 
     return error;
