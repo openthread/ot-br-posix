@@ -215,6 +215,11 @@ void ControllerOpenThread::Init(void)
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
     }
 
+#if OTBR_ENABLE_FEATURE_FLAGS && OTBR_ENABLE_TREL
+    // Disable trel when feature flag is enabled, let feature flag handle enable/disable trel
+    otTrelSetEnabled(mInstance, false);
+#endif
+
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
     // Let SRP server use auto-enable mode. The auto-enable mode delegates the control of SRP server to the Border
