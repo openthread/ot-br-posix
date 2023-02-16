@@ -63,9 +63,6 @@ ENV DOCKER 1
 
 RUN env
 
-COPY . /app
-WORKDIR /app
-
 # Required during build or run
 ENV OTBR_DOCKER_REQS sudo python3
 
@@ -88,10 +85,16 @@ ENV OTBR_NORELEASE_DEPS \
 RUN apt-get update \
   && apt-get install --no-install-recommends -y $OTBR_DOCKER_REQS $OTBR_DOCKER_DEPS \
   && ([ "${OT_BACKBONE_CI}" != "1" ] || apt-get install --no-install-recommends -y $OTBR_OT_BACKBONE_CI_DEPS) \
-  && ln -fs /usr/share/zoneinfo/UTC /etc/localtime \
-  && ./script/bootstrap \
-  && ./script/setup \
-  && ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
+  && ln -fs /usr/share/zoneinfo/UTC /etc/localtime
+
+COPY ./script /app/script
+WORKDIR /app
+
+RUN ./script/bootstrap
+COPY . .
+RUN ./script/setup
+
+RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
   && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
     mv ./script /tmp \
     && mv ./etc /tmp \
