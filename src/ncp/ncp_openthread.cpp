@@ -203,6 +203,10 @@ void ControllerOpenThread::Init(void)
     otbrError  error = OTBR_ERROR_NONE;
     otLogLevel level = ConvertToOtLogLevel(otbrLogGetLevel());
 
+#if OTBR_ENABLE_FEATURE_FLAGS && OTBR_ENABLE_TREL
+    FeatureFlagList featureFlagList;
+#endif
+
     VerifyOrExit(otLoggingSetLevel(level) == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
     mInstance = otSysInit(&mConfig);
@@ -216,8 +220,8 @@ void ControllerOpenThread::Init(void)
     }
 
 #if OTBR_ENABLE_FEATURE_FLAGS && OTBR_ENABLE_TREL
-    // Disable trel when feature flag is enabled, let feature flag handle enable/disable trel
-    otTrelSetEnabled(mInstance, false);
+    // Enable/Disable trel according to feature flag default value.
+    otTrelSetEnabled(mInstance, featureFlagList.enable_trel());
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
