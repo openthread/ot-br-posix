@@ -172,10 +172,10 @@ exit:
 
 void TrelDnssd::UnregisterService(void)
 {
-    VerifyOrExit(IsInitialized());
+    // Return if service has not been registered
+    VerifyOrExit(IsInitialized() && mRegisterInfo.IsValid());
 
     otbrLogDebug("Remove %s service", kTrelServiceName);
-    assert(mRegisterInfo.IsValid());
 
     if (IsReady())
     {
