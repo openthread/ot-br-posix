@@ -63,10 +63,6 @@ otbr_install()
 {
     local otbr_options=()
 
-    if [[ ${OTBR_OPTIONS} ]]; then
-        read -r -a otbr_options <<<"${OTBR_OPTIONS}"
-    fi
-
     otbr_options=(
         "-DBUILD_TESTING=OFF"
         "-DCMAKE_INSTALL_PREFIX=/usr"
@@ -78,7 +74,7 @@ otbr_install()
         # Force re-evaluation of version strings
         "-DOTBR_VERSION="
         "-DOT_PACKAGE_VERSION="
-        "${otbr_options[@]}"
+        ${OTBR_OPTIONS}
     )
 
     if with WEB_GUI; then
