@@ -65,10 +65,10 @@ for arg; do
     esac
 done
 
-file=$arg
-
 [ $REPLACE != yes ] || {
-    [ -n "$(tail -c1 "$file")" ] && echo >>"$file"
+    for file in "$arg"; do
+        [ -n "$(tail -c1 "$file")" ] && echo >>"$file"
+    done
 }
 
 exit 0
