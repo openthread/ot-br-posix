@@ -440,6 +440,12 @@ template <> struct DBusTypeTrait<std::string>
     static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_STRING_AS_STRING;
 };
 
+template <> struct DBusTypeTrait<bool>
+{
+    static constexpr int         TYPE           = DBUS_TYPE_BOOLEAN;
+    static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BOOLEAN_AS_STRING;
+};
+
 otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::string &aValue);
