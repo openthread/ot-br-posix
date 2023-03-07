@@ -537,7 +537,11 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     uint64_t                 pendingTimestamp = 0;
     timespec                 currentTime;
 
-    assert(aHandler != nullptr);
+    if (aHandler == nullptr)
+    {
+        otbrLogWarning("Attach Handler is nullptr");
+        ExitNow(error = OT_ERROR_INVALID_ARGS);
+    }
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_BUSY);
 
     VerifyOrExit(aDatasetTlvs.size() <= sizeof(datasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
@@ -642,7 +646,13 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
 
     LogOpenThreadResult("MgmtSetResponseHandler()", aResult);
 
-    assert(mAttachHandler != nullptr);
+    if (mAttachHandler == nullptr)
+    {
+        otbrLogWarning("mAttachHandler is nullptr");
+        mAttachDelayMs            = 0;
+        mAttachPendingDatasetTlvs = {};
+        ExitNow();
+    }
 
     switch (aResult)
     {
@@ -667,6 +677,9 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
     {
         handler(aResult, 0);
     }
+
+exit:
+    return;
 }
 
 #if OTBR_ENABLE_UNSECURE_JOIN
