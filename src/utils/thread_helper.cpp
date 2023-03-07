@@ -92,6 +92,11 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
         {
             if (mAttachHandler != nullptr)
             {
+                if (mWaitingMgmtSetResponse)
+                {
+                    otbrLogInfo("StateChangedCallback is called during waiting for Mgmt Set Response");
+                    ExitNow();
+                }
                 if (mAttachPendingDatasetTlvs.mLength == 0)
                 {
                     AttachHandler handler = mAttachHandler;
@@ -111,7 +116,12 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
 
                         mAttachHandler            = nullptr;
                         mAttachPendingDatasetTlvs = {};
+                        mWaitingMgmtSetResponse   = false;
                         handler(error, 0);
+                    }
+                    else
+                    {
+                        mWaitingMgmtSetResponse = true;
                     }
                 }
             }
@@ -127,6 +137,9 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
     {
         ActiveDatasetChangedCallback();
     }
+
+exit:
+    return;
 }
 
 void ThreadHelper::ActiveDatasetChangedCallback()
@@ -618,14 +631,16 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
             mAttachDelayMs            = 0;
             mAttachPendingDatasetTlvs = {};
         }
-        mAttachHandler = aHandler;
+        mWaitingMgmtSetResponse = false;
+        mAttachHandler          = aHandler;
         ExitNow();
     }
 
     SuccessOrExit(error = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, datasetTlvs.mTlvs, datasetTlvs.mLength,
                                                       MgmtSetResponseHandler, this));
-    mAttachDelayMs = kDelayTimerMilliseconds;
-    mAttachHandler = aHandler;
+    mAttachDelayMs          = kDelayTimerMilliseconds;
+    mAttachHandler          = aHandler;
+    mWaitingMgmtSetResponse = true;
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -645,6 +660,7 @@ void ThreadHelper::MgmtSetResponseHandler(otError aResult)
     int64_t       attachDelayMs;
 
     LogOpenThreadResult("MgmtSetResponseHandler()", aResult);
+    mWaitingMgmtSetResponse = false;
 
     if (mAttachHandler == nullptr)
     {

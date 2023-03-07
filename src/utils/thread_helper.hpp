@@ -294,6 +294,8 @@ private:
 
     std::map<uint16_t, size_t> mUnsecurePortRefCounter;
 
+    bool mWaitingMgmtSetResponse =
+        false; // During waiting for mgmt set response, calls to AttachHandler by StateChangedCallback will be ignored
     int64_t       mAttachDelayMs = 0;
     AttachHandler mAttachHandler;
     ResultHandler mJoinerHandler;
