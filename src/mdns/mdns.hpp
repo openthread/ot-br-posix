@@ -258,9 +258,15 @@ public:
      *
      * @param[in] aType          The service type.
      * @param[in] aInstanceName  The service instance to subscribe, or empty to subscribe the service.
+     * @param[in] aKeepAlive     Whether the subscription should be kept alive to receive updates to the service
+     *                           instance. Note this only applies to avahi, as for avahi browse operation,
+     *                           instance updates will not trigger add/rm events.
+     *                           For dnssd browse operation, updates of instances will trigger add/rmv events.
      *
      */
-    virtual void SubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
+    virtual void SubscribeService(const std::string &aType,
+                                  const std::string &aInstanceName,
+                                  const bool         aKeepAlive) = 0;
 
     /**
      * This method unsubscribes a given service or service instance.

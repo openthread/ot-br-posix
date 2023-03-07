@@ -74,12 +74,12 @@ public:
     PublisherAvahi(StateCallback aStateCallback);
     ~PublisherAvahi(void) override;
 
-    void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
-    void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
-    void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
-    void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
-    void      SubscribeHost(const std::string &aHostName) override;
-    void      UnsubscribeHost(const std::string &aHostName) override;
+    void UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
+    void UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
+    void SubscribeService(const std::string &aType, const std::string &aInstanceName, const bool aKeepAlive) override;
+    void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
+    void SubscribeHost(const std::string &aHostName) override;
+    void UnsubscribeHost(const std::string &aHostName) override;
     otbrError Start(void) override;
     bool      IsStarted(void) const override;
     void      Stop(void) override;
@@ -168,11 +168,15 @@ private:
 
     struct ServiceSubscription : public Subscription
     {
-        explicit ServiceSubscription(PublisherAvahi &aPublisherAvahi, std::string aType, std::string aInstanceName)
+        explicit ServiceSubscription(PublisherAvahi &aPublisherAvahi,
+                                     std::string     aType,
+                                     std::string     aInstanceName,
+                                     bool            aKeepAlive)
             : Subscription(aPublisherAvahi)
             , mType(std::move(aType))
             , mInstanceName(std::move(aInstanceName))
             , mServiceBrowser(nullptr)
+            , mKeepAlive(aKeepAlive)
         {
         }
 
@@ -237,6 +241,7 @@ private:
         std::string                      mInstanceName;
         AvahiServiceBrowser             *mServiceBrowser;
         std::set<AvahiServiceResolver *> mServiceResolvers;
+        bool                             mKeepAlive;
     };
 
     struct HostSubscription : public Subscription

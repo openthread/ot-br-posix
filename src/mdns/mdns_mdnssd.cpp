@@ -688,8 +688,12 @@ std::string PublisherMDnsSd::MakeRegType(const std::string &aType, SubTypeList a
     return regType;
 }
 
-void PublisherMDnsSd::SubscribeService(const std::string &aType, const std::string &aInstanceName)
+void PublisherMDnsSd::SubscribeService(const std::string &aType,
+                                       const std::string &aInstanceName,
+                                       const bool         aKeepAlive)
 {
+    OTBR_UNUSED_VARIABLE(aKeepAlive);
+
     VerifyOrExit(mState == Publisher::State::kReady);
     mSubscribedServices.push_back(MakeUnique<ServiceSubscription>(*this, aType, aInstanceName));
 

@@ -118,7 +118,7 @@ void TrelDnssd::StartBrowse(void)
 
     if (IsReady())
     {
-        mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "");
+        mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "", true);
     }
 
 exit:
@@ -428,7 +428,7 @@ void TrelDnssd::OnBecomeReady(void)
 
         if (mSubscriberId > 0)
         {
-            mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "");
+            mPublisher.SubscribeService(kTrelServiceName, /* aInstanceName */ "", true);
         }
 
         if (mRegisterInfo.IsValid())

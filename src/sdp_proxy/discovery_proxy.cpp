@@ -119,7 +119,7 @@ void DiscoveryProxy::OnDiscoveryProxySubscribe(const char *aFullName)
     {
         if (nameInfo.mHostName.empty())
         {
-            mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName);
+            mMdnsPublisher.SubscribeService(nameInfo.mServiceName, nameInfo.mInstanceName, false);
         }
         else
         {
