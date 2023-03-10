@@ -1140,7 +1140,6 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     avahi_address_snprint(addrBuf, sizeof(addrBuf), aAddress);
     otbrLogInfo("Resolve service reply: address %s", addrBuf);
 
-    RemoveServiceResolver(aServiceResolver);
     VerifyOrExit(aHostName != nullptr, avahiError = AVAHI_ERR_INVALID_HOST_NAME);
 
     instanceInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
@@ -1176,6 +1175,10 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
 exit:
     if (resolved)
     {
+        if (instanceInfo.mRemoved)
+        {
+            RemoveServiceResolver(aServiceResolver);
+        }
         // NOTE: This `ServiceSubscrption` object may be freed in `OnServiceResolved`.
         mPublisherAvahi->OnServiceResolved(mType, instanceInfo);
     }
