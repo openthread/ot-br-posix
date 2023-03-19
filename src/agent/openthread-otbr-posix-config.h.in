@@ -37,7 +37,7 @@
  */
 #ifndef OPENTHREAD_POSIX_CONFIG_FACTORY_CONFIG_FILE
 #define OPENTHREAD_POSIX_CONFIG_FACTORY_CONFIG_FILE \
-    "third_party/openthread/repo/src/posix/platform/openthread.conf.example"
+    "@PROJECT_SOURCE_DIR@/third_party/openthread/repo/src/posix/platform/openthread.conf.example"
 #endif
 
 /**
@@ -48,7 +48,7 @@
  */
 #ifndef OPENTHREAD_POSIX_CONFIG_PRODUCT_CONFIG_FILE
 #define OPENTHREAD_POSIX_CONFIG_PRODUCT_CONFIG_FILE \
-    "third_party/openthread/repo/src/posix/platform/openthread.conf.example"
+    "@PROJECT_SOURCE_DIR@/third_party/openthread/repo/src/posix/platform/openthread.conf.example"
 #endif
 
 #endif // OPENTHREAD_OTBR_POSIX_CONFIG_H_

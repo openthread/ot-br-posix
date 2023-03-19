@@ -75,6 +75,8 @@ else()
     message(WARNING "OTBR_MDNS=\"${OTBR_MDNS}\" is not supported")
 endif()
 
+configure_file(openthread-otbr-posix-config.h.in openthread-otbr-posix-config.h)
+
 if(OTBR_DBUS)
     configure_file(otbr-agent.conf.in otbr-agent.conf)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/otbr-agent.conf
