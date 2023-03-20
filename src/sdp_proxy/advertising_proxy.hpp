@@ -90,6 +90,9 @@ private:
         otSrpServerServiceUpdateId mId;                // The ID of the SRP service update transaction.
         std::string                mHostName;          // The host name.
         uint32_t                   mCallbackCount = 0; // The number of callbacks which we are waiting for.
+        std::set<otbrError>        mResults;           // The results of advertisements on mDNS.
+
+        otError GetResult(void) const;
     };
 
     static void AdvertisingHandler(otSrpServerServiceUpdateId aId,

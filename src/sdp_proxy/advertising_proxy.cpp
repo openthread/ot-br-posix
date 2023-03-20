@@ -147,10 +147,17 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
 
     error = PublishHostAndItsServices(aHost, update);
 
-    if (error != OTBR_ERROR_NONE || update->mCallbackCount == 0)
+    if (mOutstandingUpdates.size() && mOutstandingUpdates.back().mId == aId)
     {
-        mOutstandingUpdates.pop_back();
-        otSrpServerHandleServiceUpdateResult(GetInstance(), aId, OtbrErrorToOtError(error));
+        mOutstandingUpdates.back().mResults.insert(error);
+
+        if (!mOutstandingUpdates.back().mCallbackCount)
+        {
+            otError result = mOutstandingUpdates.back().GetResult();
+
+            mOutstandingUpdates.pop_back();
+            otSrpServerHandleServiceUpdateResult(GetInstance(), aId, result);
+        }
     }
 }
 
@@ -163,18 +170,24 @@ void AdvertisingProxy::OnMdnsPublishResult(otSrpServerServiceUpdateId aUpdateId,
             continue;
         }
 
-        if (aError != OTBR_ERROR_NONE || update->mCallbackCount == 1)
+        update->mResults.insert(aError);
+
+        --update->mCallbackCount;
+
+        if (update->mCallbackCount)
         {
+            otbrLogInfo("Waiting for more publishing callbacks %d", update->mCallbackCount);
+        }
+        else
+        {
+            otError result = update->GetResult();
+
             // Erase before notifying OpenThread, because there are chances that new
             // elements may be added to `otSrpServerHandleServiceUpdateResult` and
             // the iterator will be invalidated.
             mOutstandingUpdates.erase(update);
-            otSrpServerHandleServiceUpdateResult(GetInstance(), aUpdateId, OtbrErrorToOtError(aError));
-        }
-        else
-        {
-            --update->mCallbackCount;
-            otbrLogInfo("Waiting for more publishing callbacks %d", update->mCallbackCount);
+
+            otSrpServerHandleServiceUpdateResult(GetInstance(), aUpdateId, result);
         }
         break;
     }
@@ -219,6 +232,29 @@ void AdvertisingProxy::PublishAllHostsAndServices(void)
 
 exit:
     return;
+}
+
+otError AdvertisingProxy::OutstandingUpdate::GetResult(void) const
+{
+    otError             error   = OT_ERROR_FAILED;
+    std::set<otbrError> results = mResults;
+
+    if (results.empty())
+    {
+        ExitNow(error = OtbrErrorToOtError(OTBR_ERROR_NONE));
+    }
+    if (results.size() == 1)
+    {
+        ExitNow(error = OtbrErrorToOtError(*mResults.begin()));
+    }
+    results.erase(OTBR_ERROR_NONE);
+    if (results.size() > 1)
+    {
+        ExitNow(error = OT_ERROR_FAILED);
+    }
+
+exit:
+    return error;
 }
 
 otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate)
