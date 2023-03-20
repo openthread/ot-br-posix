@@ -156,7 +156,7 @@ TUN_NAME=wpan0
 readonly TUN_NAME
 
 # The default meshcop service instance name
-OT_SERVICE_INSTANCE='OpenThread\(\\032\| \)BorderRouter\(\\032\| \)#[0-9A-F][0-9A-F][0-9A-F][0-9A-F]'
+OT_SERVICE_INSTANCE='OpenThread\(\\032\| \)BorderRouter\(\\032\| \)\(\\035\|#\)[0-9A-F][0-9A-F][0-9A-F][0-9A-F]'
 readonly OT_SERVICE_INSTANCE
 
 echo "ORIGIN_PWD: ${ORIGIN_PWD}"

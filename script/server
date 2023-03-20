@@ -47,20 +47,22 @@ startup()
     if have systemctl; then
         systemctl is-active rsyslog || sudo systemctl start rsyslog || die 'Failed to start rsyslog!'
         systemctl is-active dbus || sudo systemctl start dbus || die 'Failed to start dbus!'
-        systemctl is-active avahi-daemon || sudo systemctl start avahi-daemon || die 'Failed to start avahi!'
+        systemctl is-active avahi-daemon || sudo systemctl start avahi-daemon || echo 'Failed to start avahi!'
         without WEB_GUI || systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
         systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
     elif have service; then
         sudo service rsyslog status || sudo service rsyslog start || die 'Failed to start rsyslog!'
         sudo service dbus status || sudo service dbus start || die 'Failed to start dbus!'
-        # Tolerate the mdns failure as it is installed for only CI docker.
         sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
-        sudo service avahi-daemon status || sudo service avahi-daemon start || die 'Failed to start avahi!'
+        sudo service avahi-daemon status || sudo service avahi-daemon start || echo 'Failed to start avahi!'
         sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
         without WEB_GUI || sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
     else
         die 'Unable to find service manager. Try script/console to start in console mode!'
     fi
+
+    grep -i :14E9 /proc/net/udp || die 'Failed to start mDNS publisher'
+
     # shellcheck source=/dev/null
     . "$AFTER_HOOK"
 }
@@ -74,6 +76,7 @@ shutdown()
         systemctl is-active rsyslog && sudo systemctl stop rsyslog || echo 'Failed to stop rsyslog!'
         systemctl is-active dbus && sudo systemctl stop dbus || echo 'Failed to stop dbus!'
         systemctl is-active avahi-daemon && sudo systemctl stop avahi-daemon || echo 'Failed to stop avahi!'
+        systemctl is-active mdns && sudo systemctl stop mdns || echo 'Failed to stop mdns!'
         without WEB_GUI || systemctl is-active otbr-web && sudo systemctl stop otbr-web || echo 'Failed to stop otbr-web!'
         systemctl is-active otbr-agent && sudo systemctl stop otbr-agent || echo 'Failed to stop otbr-agent!'
     elif have service; then
@@ -86,6 +89,8 @@ shutdown()
     else
         echo 'Unable to find service manager. Try script/console to stop in console mode!'
     fi
+
+    ! grep -i :14E9 /proc/net/udp || echo 'Failed to stop mDNS publisher'
 }
 
 main()
