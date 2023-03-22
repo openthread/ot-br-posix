@@ -66,18 +66,18 @@ jobs:
     - name: mDNS service
       env:
         TEST_CASE: "mdns_service"
-      run: script/test meshcop
+      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: MTD
       env:
         OT_CLI: "ot-cli-mtd"
-      run: script/test meshcop
+      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: FTD
       env:
         OT_CLI: "ot-cli-ftd"
-      run: script/test meshcop
+      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: Web Commissioner
       env:
         OTBR_USE_WEB_COMMISSIONER: 1
-      run: script/test meshcop
+      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: Codecov
       uses: codecov/codecov-action@v3
