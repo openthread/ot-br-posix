@@ -184,8 +184,8 @@ private:
                      AvahiProtocol      aProtocol,
                      const std::string &aInstanceName,
                      const std::string &aType);
-        void AddServiceResolver(std::string, AvahiServiceResolver *aServiceResolver);
-        void RemoveServiceResolver(std::string aInstanceName);
+        void AddServiceResolver(const std::string &aInstanceName, AvahiServiceResolver *aServiceResolver);
+        void RemoveServiceResolver(const std::string &aInstanceName);
 
         static void HandleBrowseResult(AvahiServiceBrowser   *aServiceBrowser,
                                        AvahiIfIndex           aInterfaceIndex,

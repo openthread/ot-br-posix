@@ -1189,7 +1189,7 @@ exit:
     }
 }
 
-void PublisherAvahi::ServiceSubscription::AddServiceResolver(std::string           aInstanceName,
+void PublisherAvahi::ServiceSubscription::AddServiceResolver(const std::string    &aInstanceName,
                                                              AvahiServiceResolver *aServiceResolver)
 {
     assert(aServiceResolver != nullptr);
@@ -1198,9 +1198,10 @@ void PublisherAvahi::ServiceSubscription::AddServiceResolver(std::string        
     otbrLogDebug("Added service resolver for instance %s", aInstanceName.c_str());
 }
 
-void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(std::string aInstanceName)
+void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(const std::string &aInstanceName)
 {
     int numResolvers = 0;
+
     VerifyOrExit(mServiceResolvers.find(aInstanceName) != mServiceResolvers.end());
 
     numResolvers = mServiceResolvers[aInstanceName].size();
