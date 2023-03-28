@@ -127,4 +127,3 @@ option(OTBR_DNS_UPSTREAM_QUERY "Allow sending DNS queries to upstream" OFF)
 if (OTBR_DNS_UPSTREAM_QUERY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNS_UPSTREAM_QUERY=1)
 endif()
-
