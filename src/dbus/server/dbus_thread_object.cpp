@@ -191,6 +191,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::SetFeatureFlagListDataHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
                                std::bind(&DBusThreadObject::SetRadioRegionHandler, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
+                               std::bind(&DBusThreadObject::SetDnsUpstreamQueryState, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::GetLinkModeHandler, this, _1));
@@ -291,6 +293,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
                                std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
+                               std::bind(&DBusThreadObject::GetDnsUpstreamQueryState, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1835,6 +1839,42 @@ otError DBusThreadObject::GetInfraLinkInfo(DBusMessageIter &aIter)
     infraLinkInfo.mGlobalUnicastAddresses = addressCounters.mGlobalUnicastAddresses;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, infraLinkInfo) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
+}
+
+otError DBusThreadObject::SetDnsUpstreamQueryState(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+    otError error = OT_ERROR_NONE;
+    bool    enable;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, enable) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    otDnssdUpstreamQuerySetEnabled(mNcp->GetThreadHelper()->GetInstance(), enable);
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
+}
+
+otError DBusThreadObject::GetDnsUpstreamQueryState(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(
+                     &aIter, otDnssdUpstreamQueryIsEnabled(mNcp->GetThreadHelper()->GetInstance())) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;

@@ -60,4 +60,6 @@ message FeatureFlagList {
   optional ProtoLogLevel detailed_logging_level = 3 [default = PROTO_LOG_INFO];
   // Whether to enable the TREL feature.
   optional bool enable_trel = 4 [default = false];
+  // Whether to enable upstream DNS forwarding.
+  optional bool enable_dns_upstream_query = 5 [default = false];
 }

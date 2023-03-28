@@ -36,6 +36,7 @@
 
 #include <openthread/backbone_router_ftd.h>
 #include <openthread/dataset.h>
+#include <openthread/dnssd_server.h>
 #include <openthread/logging.h>
 #include <openthread/nat64.h>
 #include <openthread/srp_server.h>
@@ -239,6 +240,9 @@ void ControllerOpenThread::Init(void)
 #if OTBR_ENABLE_NAT64
     otNat64SetEnabled(mInstance, /* aEnabled */ true);
 #endif
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+    otDnssdUpstreamQuerySetEnabled(mInstance, /* aEnabled */ true);
+#endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
@@ -269,6 +273,9 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 
 #if OTBR_ENABLE_TREL
     otTrelSetEnabled(mInstance, aFeatureFlagList.enable_trel());
+#endif
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+    otDnssdUpstreamQuerySetEnabled(mInstance, aFeatureFlagList.enable_dns_upstream_query());
 #endif
 
     return error;
