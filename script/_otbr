@@ -122,6 +122,12 @@ otbr_install()
         )
     fi
 
+    if with NAT64; then
+        otbr_options+=(
+            "-DOTBR_DNS_UPSTREAM_QUERY=ON"
+        )
+    fi
+
     (./script/cmake-build "${otbr_options[@]}" \
         && cd "${OTBR_TOP_BUILDDIR}" \
         && ninja \
