@@ -39,9 +39,11 @@ More information about Thread can be found at [threadgroup.org](http://threadgro
 
 ## Getting started
 
-The quickest way to get started with OTBR is to try the Docker version. Run OTBR in a Docker container on any Linux-based system or a Raspberry Pi 3B, using either a physical or emulated NCP. See the [Docker Support guide on openthread.io](https://openthread.io/guides/border-router/docker) for more info.
+The quickest way to set up a Thread 1.3 compliant Border Router is to follow this codelab: [Thread Border Router - Bidirectional IPv6 Connectivity and DNS-Based Service Discovery](https://openthread.io/codelabs/openthread-border-router).
 
-OTBR also runs directly on supported platforms like the Raspberry Pi 3B. If you're interested in building and configuring OTBR directly, or to learn more about the OTBR architecture, then see the rest of our end-user documentation at [openthread.io](https://openthread.io/guides/border_router).
+To run OTBR in a Docker container on any Linux-based system or a Raspberry Pi with either a physical or emulated NCP, please see the [Docker Support guide on openthread.io](https://openthread.io/guides/border-router/docker) for more info.
+
+OTBR also runs directly on supported platforms like the Raspberry Pi. If you're interested in building and configuring OTBR directly, or to learn more about the OTBR architecture, then see the rest of our end-user documentation at [openthread.io](https://openthread.io/guides/border-router).
 
 > Note: For users in China, end-user documentation is available at [openthread.google.cn](https://openthread.google.cn/guides/border-router).
 
