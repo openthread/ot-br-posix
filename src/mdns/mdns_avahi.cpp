@@ -997,12 +997,16 @@ void PublisherAvahi::ServiceSubscription::Browse(void)
 
 void PublisherAvahi::ServiceSubscription::Release(void)
 {
-    for (AvahiServiceResolver *resolver : mServiceResolvers)
-    {
-        avahi_service_resolver_free(resolver);
-    }
+    std::vector<std::string> instanceNames;
 
-    mServiceResolvers.clear();
+    for (const auto &resolvers : mServiceResolvers)
+    {
+        instanceNames.push_back(resolvers.first);
+    }
+    for (const auto &name : instanceNames)
+    {
+        RemoveServiceResolver(name);
+    }
 
     if (mServiceBrowser != nullptr)
     {
@@ -1050,6 +1054,7 @@ void PublisherAvahi::ServiceSubscription::HandleBrowseResult(AvahiServiceBrowser
         break;
     case AVAHI_BROWSER_REMOVE:
         mPublisherAvahi->OnServiceRemoved(static_cast<uint32_t>(aInterfaceIndex), aType, aName);
+        RemoveServiceResolver(aName);
         break;
     case AVAHI_BROWSER_CACHE_EXHAUSTED:
     case AVAHI_BROWSER_ALL_FOR_NOW:
@@ -1074,10 +1079,10 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
 
     resolver = avahi_service_resolver_new(
         mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName.c_str(), aType.c_str(),
-        /* domain */ nullptr, AVAHI_PROTO_INET6, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+        /* domain */ nullptr, AVAHI_PROTO_UNSPEC, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
     if (resolver != nullptr)
     {
-        AddServiceResolver(resolver);
+        AddServiceResolver(aInstanceName, resolver);
     }
     else
     {
@@ -1140,7 +1145,6 @@ void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolv
     avahi_address_snprint(addrBuf, sizeof(addrBuf), aAddress);
     otbrLogInfo("Resolve service reply: address %s", addrBuf);
 
-    RemoveServiceResolver(aServiceResolver);
     VerifyOrExit(aHostName != nullptr, avahiError = AVAHI_ERR_INVALID_HOST_NAME);
 
     instanceInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
@@ -1185,19 +1189,33 @@ exit:
     }
 }
 
-void PublisherAvahi::ServiceSubscription::AddServiceResolver(AvahiServiceResolver *aServiceResolver)
+void PublisherAvahi::ServiceSubscription::AddServiceResolver(const std::string    &aInstanceName,
+                                                             AvahiServiceResolver *aServiceResolver)
 {
     assert(aServiceResolver != nullptr);
-    mServiceResolvers.insert(aServiceResolver);
+    mServiceResolvers[aInstanceName].insert(aServiceResolver);
+
+    otbrLogDebug("Added service resolver for instance %s", aInstanceName.c_str());
 }
 
-void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(AvahiServiceResolver *aServiceResolver)
+void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(const std::string &aInstanceName)
 {
-    assert(aServiceResolver != nullptr);
-    assert(mServiceResolvers.find(aServiceResolver) != mServiceResolvers.end());
+    int numResolvers = 0;
 
-    avahi_service_resolver_free(aServiceResolver);
-    mServiceResolvers.erase(aServiceResolver);
+    VerifyOrExit(mServiceResolvers.find(aInstanceName) != mServiceResolvers.end());
+
+    numResolvers = mServiceResolvers[aInstanceName].size();
+
+    for (auto resolver : mServiceResolvers[aInstanceName])
+    {
+        avahi_service_resolver_free(resolver);
+    }
+
+    mServiceResolvers.erase(aInstanceName);
+
+exit:
+    otbrLogDebug("Removed %d service resolver for instance %s", numResolvers, aInstanceName.c_str());
+    return;
 }
 
 void PublisherAvahi::HostSubscription::Release(void)

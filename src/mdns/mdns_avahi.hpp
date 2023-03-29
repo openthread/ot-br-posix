@@ -184,8 +184,8 @@ private:
                      AvahiProtocol      aProtocol,
                      const std::string &aInstanceName,
                      const std::string &aType);
-        void AddServiceResolver(AvahiServiceResolver *aServiceResolver);
-        void RemoveServiceResolver(AvahiServiceResolver *aServiceResolver);
+        void AddServiceResolver(const std::string &aInstanceName, AvahiServiceResolver *aServiceResolver);
+        void RemoveServiceResolver(const std::string &aInstanceName);
 
         static void HandleBrowseResult(AvahiServiceBrowser   *aServiceBrowser,
                                        AvahiIfIndex           aInterfaceIndex,
@@ -233,10 +233,12 @@ private:
                                  AvahiStringList       *aTxt,
                                  AvahiLookupResultFlags aFlags);
 
-        std::string                      mType;
-        std::string                      mInstanceName;
-        AvahiServiceBrowser             *mServiceBrowser;
-        std::set<AvahiServiceResolver *> mServiceResolvers;
+        std::string          mType;
+        std::string          mInstanceName;
+        AvahiServiceBrowser *mServiceBrowser;
+
+        using ServiceResolversMap = std::map<std::string, std::set<AvahiServiceResolver *>>;
+        ServiceResolversMap mServiceResolvers;
     };
 
     struct HostSubscription : public Subscription
