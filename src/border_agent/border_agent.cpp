@@ -378,6 +378,19 @@ void BorderAgent::PublishMeshCopService(void)
     // "xa" stands for Extended MAC Address (64-bit) of the Thread Interface of the Border Agent.
     txtList.emplace_back("xa", extAddr->m8, sizeof(extAddr->m8));
 
+    // An unique ID is required for adding the Thread network credentials of this BR to Android
+    // or iOS system. Products can use the dbus "UpdateVendorMeshCopTxtEntries" method to set a
+    // vendor-specific ID, or otherwise, enable the feature here to set ID to Extended MAC Address
+    // by padding zeros at the tail.
+#if OTBR_ENABLE_PUBLISH_MESHCOP_ID_AS_EXT_ADDRESS
+    {
+        uint8_t id[16] = {0};
+
+        memcpy(id, extAddr->m8, sizeof(extAddr->m8));
+        txtList.emplace_back("id", id, sizeof(id));
+    }
+#endif
+
     state       = GetStateBitmap(*instance);
     stateUint32 = htobe32(state.ToUint32());
     txtList.emplace_back("sb", reinterpret_cast<uint8_t *>(&stateUint32), sizeof(stateUint32));
