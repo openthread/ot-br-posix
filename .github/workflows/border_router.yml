@@ -50,56 +50,56 @@ jobs:
       matrix:
         include:
           - name: "Border Router (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router (Avahi)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 0
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 1
           - name: "Border Router TREL (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router TREL (Avahi)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 0
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
           - name: "Border Router MATN (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/MATN/*.py
             packet_verification: 1
           - name: "Border Router NAT64 (mDNSResponder)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 1
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/border_router/nat64/*.py
             packet_verification: 1
           - name: "Backbone Router"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 0
             nat64: 0
             otbr_mdns: "mDNSResponder"
             cert_scripts: ./tests/scripts/thread-cert/backbone/*.py
             packet_verification: 1
           - name: "Border Router TREL with FEATURE_FLAG (avahi)"
-            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TREL=ON"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
             border_routing: 1
             nat64: 0
             otbr_mdns: "avahi"
