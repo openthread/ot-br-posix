@@ -391,6 +391,7 @@ void ThreadHelper::Attach(const std::string          &aNetworkName,
 
     channel = RandomChannelFromChannelMask(channelMask);
     SuccessOrExit(otLinkSetChannel(mInstance, channel));
+    SuccessOrExit(otLinkSetSupportedChannelMask(mInstance,channelMask));
 
     SuccessOrExit(error = otThreadSetPskc(mInstance, &pskc));
 
