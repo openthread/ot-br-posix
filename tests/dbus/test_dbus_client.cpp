@@ -359,6 +359,7 @@ int main()
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
+                            CheckTelemetryData(api.get());
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);
