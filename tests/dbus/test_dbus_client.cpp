@@ -239,6 +239,15 @@ void CheckNat64(ThreadApiDBus *aApi)
 #endif
 }
 
+void CheckTelemetryData(ThreadApiDBus *aApi)
+{
+    OTBR_UNUSED_VARIABLE(aApi);
+#if OTBR_ENABLE_FEATURE_FLAGS
+    std::vector<uint8_t> responseTelemetryDataBytes;
+    TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
+#endif
+}
+
 int main()
 {
     DBusError                      error;

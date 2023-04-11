@@ -856,6 +856,19 @@ public:
      */
     ClientError GetNat64ErrorCounters(Nat64ErrorCounters &aCounters);
 
+    /**
+     * This method gets the telemetry data proto serialized byte data.
+     *
+     * @param[out] aTelemetryData  The telemetry data proto serialized
+     *                             byte data (see proto/thread_telemetry.proto)
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetTelemetryData(std::vector<uint8_t> &aTelemetryData);
+
 private:
     ClientError CallDBusMethodSync(const std::string &aMethodName);
     ClientError CallDBusMethodAsync(const std::string &aMethodName, DBusPendingCallNotifyFunction aFunction);

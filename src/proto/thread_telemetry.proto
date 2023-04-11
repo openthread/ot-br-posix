@@ -1,0 +1,8 @@
+syntax = "proto2";
+option optimize_for = LITE_RUNTIME;
+
+package otbr;
+
+// Thread Telemetry data definition.
+message TelemetryData {
+}

@@ -50,6 +50,7 @@
 #include "dbus/server/dbus_thread_object.hpp"
 #if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
+#include "proto/thread_telemetry.pb.h"
 #endif
 
 using std::placeholders::_1;
@@ -295,6 +296,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
                                std::bind(&DBusThreadObject::GetDnsUpstreamQueryState, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TELEMETRY_DATA,
+                               std::bind(&DBusThreadObject::GetTelemetryDataHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1408,6 +1411,24 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+}
+
+otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_FEATURE_FLAGS
+    otError              error                       = OT_ERROR_NONE;
+    TelemetryData telemetryData;
+    const std::string    telemetryDataBytes = telemetryData.SerializeAsString();
+    std::vector<uint8_t> data(telemetryDataBytes.begin(), telemetryDataBytes.end());
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 void DBusThreadObject::GetPropertiesHandler(DBusRequest &aRequest)

@@ -916,6 +916,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- TelemetryData: The Thread telemetry data (defined as proto/thread_telemetry.proto)
+      in binary form. -->
+    <property name="FeatureFlagListData" type="ay" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">
