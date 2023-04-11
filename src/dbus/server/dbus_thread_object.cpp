@@ -1416,8 +1416,8 @@ exit:
 otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_FEATURE_FLAGS
-    otError              error                       = OT_ERROR_NONE;
-    TelemetryData telemetryData;
+    otError              error = OT_ERROR_NONE;
+    TelemetryData        telemetryData;
     const std::string    telemetryDataBytes = telemetryData.SerializeAsString();
     std::vector<uint8_t> data(telemetryDataBytes.begin(), telemetryDataBytes.end());
 
