@@ -212,8 +212,8 @@ template <> struct DBusTypeTrait<ChildInfo>
 template <> struct DBusTypeTrait<ActiveScanResult>
 {
     // struct of { uint64, string, uint64, array<uint8>, uint16, uint16, uint8,
-    //             uint8, uint8, uint8, bool, bool }
-    static constexpr const char *TYPE_AS_STRING = "(tstayqqyyyybb)";
+    //             int16, uint8, uint8, bool, bool }
+    static constexpr const char *TYPE_AS_STRING = "(tstayqqynyybb)";
 };
 
 template <> struct DBusTypeTrait<EnergyScanResult>
