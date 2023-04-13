@@ -115,6 +115,7 @@ private:
     otError SetFeatureFlagListDataHandler(DBusMessageIter &aIter);
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
     otError SetDnsUpstreamQueryState(DBusMessageIter &aIter);
+    otError SetNat64Cidr(DBusMessageIter &aIter);
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
@@ -160,6 +161,7 @@ private:
     otError GetRadioCoexMetrics(DBusMessageIter &aIter);
     otError GetBorderRoutingCountersHandler(DBusMessageIter &aIter);
     otError GetNat64State(DBusMessageIter &aIter);
+    otError GetNat64Cidr(DBusMessageIter &aIter);
     otError GetNat64Mappings(DBusMessageIter &aIter);
     otError GetNat64ProtocolCounters(DBusMessageIter &aIter);
     otError GetNat64ErrorCounters(DBusMessageIter &aIter);
