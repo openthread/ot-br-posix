@@ -1,8 +1,19 @@
 syntax = "proto2";
 option optimize_for = LITE_RUNTIME;
 
-package otbr;
+package threadnetwork;
 
 // Thread Telemetry data definition.
+// The field range for your data definition is determined as:
+// ---------------------------------------------------------------------------
+// | Field Range  | Logging From
+// | [1 - 500)    | Primary fields logged from OTBR-agent/OpenThread.
+// | [500-600)    | OTBR vendor fields logged from OTBR-agent/OpenThread.
+// | Other        | Reserved for now.
+// ---------------------------------------------------------------------------
+// Usage:
+// Delete metrics: do not directly delete metrics. Deprecate it instead.
 message TelemetryData {
+    // TODO: add telemetry for wpan, topo, border_router, rcp, and coex.
+    reserved 1, 2, 3, 4, 5, 6;
 }
