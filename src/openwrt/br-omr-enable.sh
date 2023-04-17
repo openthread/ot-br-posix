@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Delete all existing prefixes
+existing_prefixes=$(ot-ctl prefix | grep /64 | sed 's/ .*//')
+
+for prefix in $existing_prefixes; do
+        ot-ctl prefix remove $prefix
+done
+
 # Get the randomly-generated ULA prefix from uci
 ula_prefix=$(uci get network.globals.ula_prefix)
 
