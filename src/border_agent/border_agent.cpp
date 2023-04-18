@@ -50,7 +50,9 @@
 
 #include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
+#include <openthread/random_noncrypto.h>
 #include <openthread/thread_ftd.h>
+#include <openthread/platform/settings.h>
 #include <openthread/platform/toolchain.h>
 
 #include "agent/uris.hpp"
@@ -368,6 +370,31 @@ void BorderAgent::PublishMeshCopService(void)
     int                      port;
 
     otbrLogInfo("Publish meshcop service %s.%s.local.", mServiceInstanceName.c_str(), kBorderAgentServiceType);
+
+#if OTBR_ENABLE_PUBLISH_MESHCOP_BA_ID
+    {
+        otError  error;
+        uint8_t  id[OT_BORDER_AGENT_ID_LENGTH];
+        uint16_t idLength = OT_BORDER_AGENT_ID_LENGTH;
+
+        error = otBorderAgentGetId(instance, id, &idLength);
+        if (error == OT_ERROR_NONE)
+        {
+            if (idLength == OT_BORDER_AGENT_ID_LENGTH)
+            {
+                txtList.emplace_back("id", id, idLength);
+            }
+            else
+            {
+                otbrLogWarning("Border Agent ID length is %d, but expect %d", idLength, OT_BORDER_AGENT_ID_LENGTH);
+            }
+        }
+        else
+        {
+            otbrLogWarning("Failed to retrieve Border Agent ID: %s", otThreadErrorToString(error));
+        }
+    }
+#endif
 
     txtList.emplace_back("vn", kVendorName);
     txtList.emplace_back("mn", kProductName);
