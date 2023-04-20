@@ -662,7 +662,7 @@ std::string ActiveDataset2JsonString(const otOperationalDataset &aActiveDataset)
     std::string ret;
 
     node = ActiveDataset2Json(aActiveDataset);
-    ret = Json2String(node);
+    ret  = Json2String(node);
     cJSON_Delete(node);
 
     return ret;
