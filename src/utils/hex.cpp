@@ -138,7 +138,7 @@ size_t Long2Hex(const uint64_t aLong, char *aHex)
         longValue = longValue >> 8;
     }
 
-        return strlen(aHex);
+    return strlen(aHex);
 }
 
 } // namespace Utils
