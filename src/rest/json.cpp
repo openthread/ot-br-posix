@@ -864,7 +864,8 @@ bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, ot
         otOperationalDatasetTlvs datasetTlvs;
         int                      len;
 
-        len = Hex2BytesJsonString(std::string(value->valuestring), datasetTlvs.mTlvs, OT_OPERATIONAL_DATASET_MAX_LENGTH);
+        len =
+            Hex2BytesJsonString(std::string(value->valuestring), datasetTlvs.mTlvs, OT_OPERATIONAL_DATASET_MAX_LENGTH);
         VerifyOrExit(len > 0, ret = false);
         datasetTlvs.mLength = len;
 
