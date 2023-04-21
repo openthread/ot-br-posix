@@ -12,7 +12,7 @@ package threadnetwork;
 // | Other        | Reserved for now.
 // ---------------------------------------------------------------------------
 // Usage:
-// Delete metrics: do not directly delete metrics. Deprecate it instead.
+// Delete field: do not directly delete field. Deprecate it instead.
 message TelemetryData {
     // TODO: add telemetry for wpan, topo, border_router, rcp, and coex.
     reserved 1, 2, 3, 4, 5, 6;
