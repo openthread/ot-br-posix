@@ -50,6 +50,8 @@
 #include "dbus/server/dbus_thread_object.hpp"
 #if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
+#endif
+#if OTBR_ENABLE_TELEMETRY_DATA_API
 #include "proto/thread_telemetry.pb.h"
 #endif
 
@@ -1415,7 +1417,7 @@ exit:
 
 otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
 {
-#if OTBR_ENABLE_FEATURE_FLAGS
+#if OTBR_ENABLE_TELEMETRY_DATA_API
     otError                      error = OT_ERROR_NONE;
     threadnetwork::TelemetryData telemetryData;
     // TODO: populate telemetry data.

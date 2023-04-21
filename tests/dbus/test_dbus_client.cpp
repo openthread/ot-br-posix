@@ -242,7 +242,7 @@ void CheckNat64(ThreadApiDBus *aApi)
 void CheckTelemetryData(ThreadApiDBus *aApi)
 {
     OTBR_UNUSED_VARIABLE(aApi);
-#if OTBR_ENABLE_FEATURE_FLAGS
+#if OTBR_ENABLE_TELEMETRY_DATA_API
     std::vector<uint8_t> responseTelemetryDataBytes;
 
     TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
