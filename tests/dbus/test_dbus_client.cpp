@@ -250,7 +250,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
 
     TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
     // Print TelemetryData proto in hex format.
-    printf("TelemetryDataBytes: ");
+    printf("TelemetryData bytes in hex: ");
     for (uint8_t byte : responseTelemetryDataBytes)
     {
         printf("%02x ", byte);
