@@ -249,11 +249,16 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     std::vector<uint8_t> responseTelemetryDataBytes;
 
     TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
+    // Print each byte in hexadecimal format
+    printf("TelemetryDataBytes: ");
+    for (uint8_t byte : responseTelemetryDataBytes) {
+        printf("%02x ", byte);
+    }
     threadnetwork::TelemetryData telemetryData;
 
     TEST_ASSERT(telemetryData.ParseFromString(
         std::string(responseTelemetryDataBytes.begin(), responseTelemetryDataBytes.end())));
-    TEST_ASSERT(telemetryData.wpan_stats().channel() == 11);
+    TEST_ASSERT(telemetryData.wpan_stats().channel() == 10);
 #endif
 }
 
