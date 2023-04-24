@@ -253,7 +253,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
 
     TEST_ASSERT(telemetryData.ParseFromString(
         std::string(responseTelemetryDataBytes.begin(), responseTelemetryDataBytes.end())));
-    TEST_ASSERT(telemetryData.wpan_stats().channel() == 0);
+    TEST_ASSERT(telemetryData.wpan_stats().channel() == 11);
 #endif
 }
 
