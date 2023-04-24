@@ -39,6 +39,9 @@
 #include "common/code_utils.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+#include "proto/thread_telemetry.pb.h"
+#endif
 
 using otbr::DBus::ActiveScanResult;
 using otbr::DBus::ClientError;
@@ -246,6 +249,11 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     std::vector<uint8_t> responseTelemetryDataBytes;
 
     TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
+    threadnetwork::TelemetryData telemetryData;
+
+    TEST_ASSERT(telemetryData.ParseFromString(
+        std::string(responseTelemetryDataBytes.begin(), responseTelemetryDataBytes.end())));
+    TEST_ASSERT(telemetryData.wpan_stats().channel() == 0);
 #endif
 }
 
