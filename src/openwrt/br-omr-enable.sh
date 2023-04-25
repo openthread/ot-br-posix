@@ -26,3 +26,7 @@ logger -t br-omr-enable Prefix $thread_prefix added!
 # be responded to by Thread devices
 ip -6 route del fe80::/64 dev wpan0
 
+# add route for NAT64
+ot-ctl netdata publish route 64:ff9b::/96 s n med
+# enable route
+jool instance add --pool6 64:ff9b::/96
