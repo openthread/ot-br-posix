@@ -246,7 +246,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
 {
     OTBR_UNUSED_VARIABLE(aApi);
 #if OTBR_ENABLE_TELEMETRY_DATA_API
-    std::vector<uint8_t> responseTelemetryDataBytes;
+    std::vector<uint8_t>         responseTelemetryDataBytes;
     threadnetwork::TelemetryData telemetryData;
 
     TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
