@@ -247,6 +247,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     OTBR_UNUSED_VARIABLE(aApi);
 #if OTBR_ENABLE_TELEMETRY_DATA_API
     std::vector<uint8_t> responseTelemetryDataBytes;
+    threadnetwork::TelemetryData telemetryData;
 
     TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
     // Print TelemetryData proto in hex format.
@@ -256,7 +257,6 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
         printf("%02x ", byte);
     }
     printf("\n");
-    threadnetwork::TelemetryData telemetryData;
 
     TEST_ASSERT(telemetryData.ParseFromString(
         std::string(responseTelemetryDataBytes.begin(), responseTelemetryDataBytes.end())));

@@ -123,40 +123,33 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, const otLinkModeConfig &aLinkModeCfg)
 {
-    if (aRole == OT_DEVICE_ROLE_DISABLED)
+    switch (aRole)
     {
-        return threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
-    }
-    else if (aRole == OT_DEVICE_ROLE_DETACHED)
-    {
-        return threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
-    }
-    else if (aRole == OT_DEVICE_ROLE_ROUTER)
-    {
-        return threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
-    }
-    else if (aRole == OT_DEVICE_ROLE_LEADER)
-    {
-        return threadnetwork::TelemetryData::NODE_TYPE_LEADER;
-    }
-    else if (aRole == OT_DEVICE_ROLE_CHILD)
-    {
-        if (!aLinkModeCfg.mRxOnWhenIdle)
+        case OT_DEVICE_ROLE_DISABLED:
+            return threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
+        case OT_DEVICE_ROLE_DETACHED:
+            return threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
+        case OT_DEVICE_ROLE_ROUTER:
+           return threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
+        case OT_DEVICE_ROLE_LEADER:
+            return threadnetwork::TelemetryData::NODE_TYPE_LEADER;
+        case OT_DEVICE_ROLE_CHILD:
         {
-            return threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
+            if (!aLinkModeCfg.mRxOnWhenIdle)
+            {
+                return threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
+            }
+            else if (!aLinkModeCfg.mDeviceType)
+            { // If it's not an FTD, return as minimal end device.
+                return threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
+            }
+            else
+            {
+                return threadnetwork::TelemetryData::NODE_TYPE_END;
+            }
         }
-        else if (!aLinkModeCfg.mDeviceType)
-        { // If it's not a FTD, return as minimal end.
-            return threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
-        }
-        else
-        {
-            return threadnetwork::TelemetryData::NODE_TYPE_END;
-        }
-    }
-    else
-    {
-        return threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
+        default:
+            return threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
     }
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
@@ -1469,6 +1462,7 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
     {
         otDeviceRole     role  = otThreadGetDeviceRole(threadHelper->GetInstance());
         otLinkModeConfig otCfg = otThreadGetLinkMode(threadHelper->GetInstance());
+
         wpanStats->set_node_type(TelemetryNodeTypeFromRoleAndLinkMode(role, otCfg));
     }
 
@@ -1476,17 +1470,20 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
 
     {
         uint16_t ccaFailureRate = otLinkGetCcaFailureRate(threadHelper->GetInstance());
+
         wpanStats->set_mac_cca_fail_rate(static_cast<float>(ccaFailureRate) / 0xffff);
     }
 
     {
         int8_t radioTxPower;
+
         SuccessOrExit(error = otPlatRadioGetTransmitPower(threadHelper->GetInstance(), &radioTxPower));
         wpanStats->set_radio_tx_power(radioTxPower);
     }
 
     {
         const otMacCounters *linkCounters = otLinkGetCounters(threadHelper->GetInstance());
+
         wpanStats->set_phy_rx(linkCounters->mRxTotal);
         wpanStats->set_phy_tx(linkCounters->mTxTotal);
         wpanStats->set_mac_unicast_rx(linkCounters->mRxUnicast);
@@ -1520,6 +1517,7 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
 
     {
         const otIpCounters *ipCounters = otThreadGetIp6Counters(threadHelper->GetInstance());
+
         wpanStats->set_ip_tx_success(ipCounters->mTxSuccess);
         wpanStats->set_ip_rx_success(ipCounters->mRxSuccess);
         wpanStats->set_ip_tx_failure(ipCounters->mTxFailure);
