@@ -125,31 +125,29 @@ static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, 
 {
     switch (aRole)
     {
-        case OT_DEVICE_ROLE_DISABLED:
-            return threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
-        case OT_DEVICE_ROLE_DETACHED:
-            return threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
-        case OT_DEVICE_ROLE_ROUTER:
-           return threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
-        case OT_DEVICE_ROLE_LEADER:
-            return threadnetwork::TelemetryData::NODE_TYPE_LEADER;
-        case OT_DEVICE_ROLE_CHILD:
+    case OT_DEVICE_ROLE_DISABLED:
+        return threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
+    case OT_DEVICE_ROLE_DETACHED:
+        return threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
+    case OT_DEVICE_ROLE_ROUTER:
+        return threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
+    case OT_DEVICE_ROLE_LEADER:
+        return threadnetwork::TelemetryData::NODE_TYPE_LEADER;
+    case OT_DEVICE_ROLE_CHILD:
+        if (!aLinkModeCfg.mRxOnWhenIdle)
         {
-            if (!aLinkModeCfg.mRxOnWhenIdle)
-            {
-                return threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
-            }
-            else if (!aLinkModeCfg.mDeviceType)
-            { // If it's not an FTD, return as minimal end device.
-                return threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
-            }
-            else
-            {
-                return threadnetwork::TelemetryData::NODE_TYPE_END;
-            }
+            return threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
         }
-        default:
-            return threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
+        else if (!aLinkModeCfg.mDeviceType)
+        { // If it's not an FTD, return as minimal end device.
+            return threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
+        }
+        else
+        {
+            return threadnetwork::TelemetryData::NODE_TYPE_END;
+        }
+    default:
+        return threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
     }
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
