@@ -1457,6 +1457,7 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
 
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
+
     {
         otDeviceRole     role  = otThreadGetDeviceRole(threadHelper->GetInstance());
         otLinkModeConfig otCfg = otThreadGetLinkMode(threadHelper->GetInstance());
