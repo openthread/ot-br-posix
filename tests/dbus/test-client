@@ -38,18 +38,30 @@ on_exit()
 {
     local status=$?
 
-    if [[ -v OTBR_PID ]]; then
-        sudo kill "-${OTBR_PID}"
+    sudo systemctl stop test-otbr-agent || true
+    if [[ -v LEADER_PID ]]; then
+        kill "$LEADER_PID" || true
     fi
-    sudo killall expect || true
-    sudo killall ot-cli-ftd || true
-    sudo killall ot-cli-mtd || true
+    if [[ -v CHILD_PID ]]; then
+        kill "$CHILD_PID" || true
+    fi
     sudo killall dbus-monitor || true
     sudo rm "/etc/dbus-1/system.d/${OTBR_DBUS_SERVER_CONF}" || true
 
-    grep -iE 'ot-cli|otbr' </var/log/syslog
+    sed -n "/$TEST_HELLO/,\$p" /var/log/syslog | grep 'ot-cli\|otbr'
 
     return "${status}"
+}
+
+ot_ctl()
+{
+    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl "$@"
+}
+
+otbr_factoryreset()
+{
+    ot_ctl factoryreset
+    timeout 2 bash -c "while ! ot_ctl state; do sleep 1; done"
 }
 
 scan_meshcop_service()
@@ -97,40 +109,15 @@ update_meshcop_txt_and_check()
     grep --binary-files=text "B=12" <<<"${service}"
 }
 
-main()
+test_get_properties()
 {
-    CONFIG_FILE_PATH="third_party/openthread/repo/src/posix/platform"
-    mkdir -p "${PWD}/${CONFIG_FILE_PATH}" && cp "${PROJECT_SOURCE_DIR}/${CONFIG_FILE_PATH}/openthread.conf.example" "${PWD}/${CONFIG_FILE_PATH}"
-
-    sudo rm -rf tmp
-    sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
-    sudo service dbus reload
-    trap on_exit EXIT
-    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
-
-    local temp_dir
-    temp_dir=$(mktemp -d)
-
-    # Because we do want to run the command as root but redirect as the normal user.
-    # shellcheck disable=SC2024
-    sudo dbus-monitor --system path=/io/openthread/BorderRouter/wpan0,member=Ready >"${temp_dir}/dbus.out" &
-
-    sleep 1
-
-    setsid sudo "${CMAKE_CURRENT_SOURCE_DIR}"/keep_running.sh "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" &
-    OTBR_PID=$!
-    if ! (tail -f "${temp_dir}/dbus.out" &) | timeout 10s grep -q Ready; then
-        cat "${temp_dir}/dbus.out"
-        exit 1
-    fi
-    sleep 5
-
     local ot_version
     local rcp_version
     local thread_version
-    ot_version=$(sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl version | grep -oE '^OPENTHREAD.*$' | tr -d '\r\n')
-    rcp_version=$(sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl rcp version | grep -oE '^OPENTHREAD.*$' | tr -d '\r\n')
-    thread_version=$(sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread version | grep -oE '^[0-9]+' | tr -d '\r\n')
+
+    ot_version=$(ot_ctl version | grep -oE '^OPENTHREAD.*$' | tr -d '\r\n')
+    rcp_version=$(ot_ctl rcp version | grep -oE '^OPENTHREAD.*$' | tr -d '\r\n')
+    thread_version=$(ot_ctl thread version | grep -oE '^[0-9]+' | tr -d '\r\n')
 
     local property_names="array:string:"
     property_names+="OtHostVersion,"
@@ -152,16 +139,72 @@ main()
         io.openthread.BorderRouter.GetProperties \
         "${property_names}" \
         | grep -oPz "${result_pattern}"
+}
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl ifconfig up
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread start
+otbr_agent_service_start()
+{
+    local -r EXIT_CODE_SHOULD_RESTART=7
 
-    sleep 12
+    sudo systemd-run --collect --no-ask-password -u test-otbr-agent -p "RestartForceExitStatus=$EXIT_CODE_SHOULD_RESTART" "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+    timeout 2 bash -c "while ! ot_ctl state; do sleep 1; done"
+}
+
+suite_setup()
+{
+    TEST_HELLO="$(basename "$0") started at $(date +%s)"
+    logger "$TEST_HELLO"
+    [[ -f /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}" ]] || {
+        local CONFIG_FILE_PATH="third_party/openthread/repo/src/posix/platform"
+        mkdir -p "${PWD}/${CONFIG_FILE_PATH}" && cp "${PROJECT_SOURCE_DIR}/${CONFIG_FILE_PATH}/openthread.conf.example" "${PWD}/${CONFIG_FILE_PATH}"
+
+        sudo rm -rf tmp
+        sudo install -m 644 "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent.conf /etc/dbus-1/system.d/"${OTBR_DBUS_SERVER_CONF}"
+        sudo service dbus reload
+    }
+    trap on_exit EXIT
+
+    sudo systemctl start avahi-daemon
+
+    export -f ot_ctl
+}
+
+test_ready_signal()
+{
+    # Because we do want to run the command as root but redirect as the normal user.
+    # shellcheck disable=SC2024
+    sudo expect <<EOF
+spawn dbus-monitor --system path=/io/openthread/BorderRouter/wpan0,member=Ready
+set dbus_monitor \$spawn_id
+spawn ${CMAKE_BINARY_DIR}/src/agent/otbr-agent -d7 -I wpan0 spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1
+set spawn_id \$dbus_monitor
+expect {
+    "member=Ready" { exit }
+    timeout { error "Failed to find Ready signal\n" }
+}
+EOF
+}
+
+main()
+{
+    suite_setup
+
+    sudo "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 --radio-version "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1" | grep "OPENTHREAD"
+
+    test_ready_signal
+
+    otbr_agent_service_start
+
+    otbr_factoryreset
+
+    test_get_properties
+
+    ot_ctl ifconfig up
+    ot_ctl thread start
 
     update_meshcop_txt_and_check
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
-    sleep 1
+    otbr_factoryreset
+
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         org.freedesktop.DBus.Introspectable.Introspect | grep JoinerStart
@@ -201,6 +244,8 @@ send "commissioner stop\r\n"
 set timeout -1
 expect eof
 EOF
+    LEADER_PID=$!
+
     # The ot-cli-mtd node is used to test the child and neighbor table.
     expect <<EOF &
 spawn ot-cli-mtd 2
@@ -219,15 +264,17 @@ expect "Done"
 set timeout -1
 expect eof
 EOF
+    CHILD_PID=$!
+
     sleep 12
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl routerselectionjitter 1
+    ot_ctl routerselectionjitter 1
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.JoinerStart \
         string:ABCDEF string:mock string:mock \
         string:mock string:mock string:mock
     sleep 10
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep router
+    ot_ctl state | grep router
 
     result_pattern="array\s+\[\s+variant\s+array\s+\[\s+struct\s+{\s+"
     result_pattern+="uint64\s+\d+\s+"
@@ -255,15 +302,13 @@ EOF
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.Detach
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep disabled
+    ot_ctl state | grep disabled
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
-    sleep 1
+    otbr_factoryreset
 
     sudo "${CMAKE_BINARY_DIR}"/tests/dbus/otbr-test-dbus-client
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
-    sleep 1
+    otbr_factoryreset
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
@@ -289,24 +334,23 @@ EOF
         "array:byte:${dataset}" \
         | grep "int64 300000"
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep "Active Timestamp: 2"
+    ot_ctl dataset pending | grep "Active Timestamp: 2"
 
     sleep 310
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep "Active Timestamp: 2"
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl networkkey | grep be3bd244ae6d997020a882a24a8040e2
+    ot_ctl dataset active | grep "Active Timestamp: 2"
+    ot_ctl networkkey | grep be3bd244ae6d997020a882a24a8040e2
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
-    sleep 1
+    otbr_factoryreset
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.AttachAllNodesTo \
         "array:byte:${dataset}" \
         | grep "int64 0"
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep "leader"
+    ot_ctl state | grep "leader"
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl factoryreset
+    ot_ctl factoryreset
     sleep 1
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
@@ -319,10 +363,10 @@ EOF
         array:byte: \
         uint32:0xffffffff
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep "leader"
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl thread stop
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep "disabled"
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep "Done"
+    ot_ctl state | grep "leader"
+    ot_ctl thread stop
+    ot_ctl state | grep "disabled"
+    ot_ctl dataset active | grep "Done"
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
@@ -330,25 +374,25 @@ EOF
         "array:byte:${dataset}" \
         | grep "int64 300000"
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep "leader"
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep "Active Timestamp: 2"
+    ot_ctl state | grep "leader"
+    ot_ctl dataset pending | grep "Active Timestamp: 2"
 
     sleep 310
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep "Active Timestamp: 2"
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl networkkey | grep be3bd244ae6d997020a882a24a8040e2
+    ot_ctl dataset active | grep "Active Timestamp: 2"
+    ot_ctl networkkey | grep be3bd244ae6d997020a882a24a8040e2
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset init new
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset commit pending
+    ot_ctl dataset init new
+    ot_ctl dataset commit pending
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
         --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.LeaveNetwork
     sleep 10
 
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl state | grep disabled
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset active | grep NotFound
-    sudo "${CMAKE_BINARY_DIR}"/third_party/openthread/repo/src/posix/ot-ctl dataset pending | grep NotFound
+    ot_ctl state | grep disabled
+    ot_ctl dataset active | grep NotFound
+    ot_ctl dataset pending | grep NotFound
 }
 
 main "$@"
