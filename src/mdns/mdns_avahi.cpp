@@ -1079,7 +1079,7 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
 
     resolver = avahi_service_resolver_new(
         mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName.c_str(), aType.c_str(),
-        /* domain */ nullptr, AVAHI_PROTO_UNSPEC, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
+        /* domain */ nullptr, aProtocol, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
     if (resolver != nullptr)
     {
         AddServiceResolver(aInstanceName, resolver);
