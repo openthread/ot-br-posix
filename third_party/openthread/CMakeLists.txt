@@ -54,6 +54,7 @@ set(OT_MAC_FILTER ON CACHE STRING "enable MAC filter" FORCE)
 set(OT_NAT64_BORDER_ROUTING ${OTBR_NAT64} CACHE STRING "enable NAT64 in border routing manager" FORCE)
 set(OT_NAT64_TRANSLATOR ${OTBR_NAT64} CACHE STRING "enable NAT64 translator" FORCE)
 set(OT_NETDATA_PUBLISHER ON CACHE STRING "enable netdata publisher" FORCE)
+set(OT_NETDIAG_CLIENT ON CACHE STRING "enable Network Diagnostic client" FORCE)
 set(OT_PLATFORM "posix" CACHE STRING "use posix platform" FORCE)
 set(OT_PLATFORM_NETIF ON CACHE STRING "enable platform netif" FORCE)
 set(OT_PLATFORM_UDP ON CACHE STRING "enable platform UDP" FORCE)
@@ -100,7 +101,7 @@ target_compile_definitions(ot-config INTERFACE
     "-DOPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS=3"
     "-DOPENTHREAD_CONFIG_MLE_STEERING_DATA_SET_OOB_ENABLE=1"
     "-DOPENTHREAD_CONFIG_TCP_ENABLE=0"
-    "-DOPENTHREAD_POSIX_CONFIG_FILE=\"${PROJECT_SOURCE_DIR}/src/agent/openthread-otbr-posix-config.h\""
+    "-DOPENTHREAD_POSIX_CONFIG_FILE=\"${PROJECT_BINARY_DIR}/src/agent/openthread-otbr-posix-config.h\""
 )
 
 if (NOT OT_THREAD_VERSION STREQUAL "1.1")

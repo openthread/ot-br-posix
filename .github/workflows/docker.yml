@@ -119,15 +119,15 @@ jobs:
 
         TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
 
-        echo ::set-output name=docker_image::${DOCKER_IMAGE}
-        echo ::set-output name=version::${VERSION}
-        echo ::set-output name=buildx_args::"--platform ${DOCKER_PLATFORMS} \
+        echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "buildx_args=--platform ${DOCKER_PLATFORMS} \
           --build-arg BASE_IMAGE=${{ matrix.base_image }} \
           --build-arg VERSION=${VERSION} \
           --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
           --build-arg VCS_REF=${GITHUB_SHA::8} \
           ${{ matrix.build_args }} \
-          ${TAGS} --file etc/docker/Dockerfile ."
+          ${TAGS} --file etc/docker/Dockerfile ." >> $GITHUB_OUTPUT
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2

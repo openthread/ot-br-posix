@@ -128,7 +128,7 @@ jobs:
     - name: Get Border Router Test ID
       id: unique_action_id
       run: |
-        echo ::set-output name=id::"${GITHUB_WORKFLOW}-${GITHUB_JOB}-${GITHUB_RUN_ID}-${{matrix.name}}"
+        echo "id=${GITHUB_WORKFLOW}-${GITHUB_JOB}-${GITHUB_RUN_ID}-${{matrix.name}}" >> $GITHUB_OUTPUT
     - name: Check cached result
       id: check_cache_result
       uses: actions/cache@v3
