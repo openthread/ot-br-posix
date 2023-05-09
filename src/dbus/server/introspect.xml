@@ -925,6 +925,7 @@
     <!-- The Ready signal is sent on start -->
     <signal name="Ready">
     </signal>
+
   </interface>
 
   <interface name="org.freedesktop.DBus.Properties">
