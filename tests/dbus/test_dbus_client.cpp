@@ -242,10 +242,9 @@ void CheckNat64(ThreadApiDBus *aApi)
 #endif
 }
 
+#if OTBR_ENABLE_TELEMETRY_DATA_API
 void CheckTelemetryData(ThreadApiDBus *aApi)
 {
-    OTBR_UNUSED_VARIABLE(aApi);
-#if OTBR_ENABLE_TELEMETRY_DATA_API
     std::vector<uint8_t>         responseTelemetryDataBytes;
     threadnetwork::TelemetryData telemetryData;
 
@@ -267,8 +266,8 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_stats().phy_tx() > 0);
     TEST_ASSERT(telemetryData.wpan_stats().phy_rx() > 0);
     TEST_ASSERT(telemetryData.wpan_stats().ip_tx_success() > 0);
-#endif
 }
+#endif
 
 int main()
 {
@@ -381,7 +380,9 @@ int main()
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
+#if OTBR_ENABLE_TELEMETRY_DATA_API
                             CheckTelemetryData(api.get());
+#endif
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);
