@@ -87,6 +87,30 @@ static int OnHandlerData(http_parser *, const char *, size_t)
     return 0;
 }
 
+static int OnHeaderField(http_parser *parser, const char *at, size_t len)
+{
+    Request *request = reinterpret_cast<Request *>(parser->data);
+
+    if (len > 0)
+    {
+        request->SetNextHeaderField(at, len);
+    }
+
+    return 0;
+}
+
+static int OnHeaderData(http_parser *parser, const char *at, size_t len)
+{
+    Request *request = reinterpret_cast<Request *>(parser->data);
+
+    if (len > 0)
+    {
+        request->SetHeaderValue(at, len);
+    }
+
+    return 0;
+}
+
 Parser::Parser(Request *aRequest)
 {
     mParser.data = aRequest;
@@ -97,8 +121,8 @@ void Parser::Init(void)
     mSettings.on_message_begin    = OnMessageBegin;
     mSettings.on_url              = OnUrl;
     mSettings.on_status           = OnHandlerData;
-    mSettings.on_header_field     = OnHandlerData;
-    mSettings.on_header_value     = OnHandlerData;
+    mSettings.on_header_field     = OnHeaderField;
+    mSettings.on_header_value     = OnHeaderData;
     mSettings.on_body             = OnBody;
     mSettings.on_headers_complete = OnHeaderComplete;
     mSettings.on_message_complete = OnMessageComplete;

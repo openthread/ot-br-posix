@@ -96,34 +96,48 @@ size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 {
     char byteHex[3];
 
-    std::string hexString;
-    uint8_t     cur[aBytesLength];
-
-    memcpy(cur, aBytes, aBytesLength);
+    // Make sure strcat appends at the beginning of the output buffer even
+    // if uninitialized.
+    aHex[0] = '\0';
 
     for (int i = 0; i < aBytesLength; i++)
     {
-        snprintf(byteHex, sizeof(byteHex), "%02X", cur[i]);
-        hexString += byteHex;
+        snprintf(byteHex, sizeof(byteHex), "%02X", aBytes[i]);
+        strcat(aHex, byteHex);
     }
-    strcpy(aHex, hexString.c_str());
+
     return strlen(aHex);
+}
+
+std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength)
+{
+    char        hex[2 * aBytesLength + 1];
+    std::string s;
+    size_t      len;
+
+    len = Bytes2Hex(aBytes, aBytesLength, hex);
+    s   = std::string(hex, len);
+
+    return s;
 }
 
 size_t Long2Hex(const uint64_t aLong, char *aHex)
 {
-    std::string hexString;
-    char        byteHex[3];
-    uint64_t    longValue = aLong;
+    char     byteHex[3];
+    uint64_t longValue = aLong;
+
+    // Make sure strcat appends at the beginning of the output buffer even
+    // if uninitialized.
+    aHex[0] = '\0';
 
     for (uint8_t i = 0; i < sizeof(uint64_t); i++)
     {
         uint8_t byte = longValue & 0xff;
         snprintf(byteHex, sizeof(byteHex), "%02X", byte);
-        hexString += byteHex;
+        strcat(aHex, byteHex);
         longValue = longValue >> 8;
     }
-    strcpy(aHex, hexString.c_str());
+
     return strlen(aHex);
 }
 

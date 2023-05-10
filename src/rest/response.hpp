@@ -87,6 +87,14 @@ public:
     void SetResponsCode(std::string &aCode);
 
     /**
+     * This method sets the content type.
+     *
+     * @param[in] aCode  A string representing response content type such as text/plain.
+     *
+     */
+    void SetContentType(const std::string &aContentType);
+
+    /**
      * This method labels the response as need callback.
      *
      *

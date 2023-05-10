@@ -34,6 +34,7 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
+#include "openthread/dataset.h"
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"
 
@@ -212,6 +213,52 @@ std::string ChildTableEntry2JsonString(const otNetworkDiagChildEntry &aChildEntr
  *
  */
 std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessage);
+
+/**
+ * This method formats a Json object from an active dataset.
+ *
+ * @param[in] aDataset  A dataset struct.
+ *
+ * @returns A string of serialized Json object.
+ *
+ */
+std::string ActiveDataset2JsonString(const otOperationalDataset &aDataset);
+
+/**
+ * This method formats a Json object from a pending dataset.
+ *
+ * @param[in] aDataset  A dataset struct.
+ *
+ * @returns A string of serialized Json object.
+ *
+ */
+std::string PendingDataset2JsonString(const otOperationalDataset &aPendingDataset);
+
+/**
+ * This method parses a Json string and fills the provided dataset. Fields
+ * set to null are cleared (set to not present). Non-present fields are left
+ * as is.
+ *
+ * @param[in] aJsonActiveDataset  The Json string to be parsed.
+ * @param[in] aDataset            The dataset struct to be filled.
+ *
+ * @returns If the Json string has been successfully parsed.
+ *
+ */
+bool JsonActiveDatasetString2Dataset(const std::string &aJsonActiveDataset, otOperationalDataset &aDataset);
+
+/**
+ * This method parses a Json string and fills the provided dataset. Fields
+ * set to null are cleared (set to not present). Non-present fields are left
+ * as is.
+ *
+ * @param[in] aJsonActiveDataset  The Json string to be parsed.
+ * @param[in] aDataset            The dataset struct to be filled.
+ *
+ * @returns If the Json string has been successfully parsed.
+ *
+ */
+bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, otOperationalDataset &aDataset);
 
 }; // namespace Json
 

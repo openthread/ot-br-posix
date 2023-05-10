@@ -27,6 +27,7 @@
  */
 
 #include "rest/request.hpp"
+#include "utils/string_utils.hpp"
 
 namespace otbr {
 namespace rest {
@@ -54,6 +55,16 @@ void Request::SetContentLength(size_t aContentLength)
 void Request::SetMethod(int32_t aMethod)
 {
     mMethod = aMethod;
+}
+
+void Request::SetNextHeaderField(const char *aString, size_t aLength)
+{
+    mNextHeaderField = StringUtils::ToLowercase(std::string(aString, aLength));
+}
+
+void Request::SetHeaderValue(const char *aString, size_t aLength)
+{
+    mHeaders[mNextHeaderField] = std::string(aString, aLength);
 }
 
 HttpMethod Request::GetMethod() const
@@ -85,6 +96,13 @@ std::string Request::GetUrl(void) const
 
 exit:
     return url;
+}
+
+std::string Request::GetHeaderValue(const std::string aHeaderField) const
+{
+    auto it = mHeaders.find(StringUtils::ToLowercase(aHeaderField));
+
+    return (it == mHeaders.end()) ? "" : it->second;
 }
 
 void Request::SetReadComplete(void)
