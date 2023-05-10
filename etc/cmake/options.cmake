@@ -127,3 +127,8 @@ option(OTBR_DNS_UPSTREAM_QUERY "Allow sending DNS queries to upstream" OFF)
 if (OTBR_DNS_UPSTREAM_QUERY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DNS_UPSTREAM_QUERY=1)
 endif()
+
+option(OTBR_PUBLISH_MESHCOP_BA_ID "Publish the MeshCoP mDNS 'id' TXT entry, enable this feature only when 'id' is not set via dbus API" ON)
+if (OTBR_PUBLISH_MESHCOP_BA_ID)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PUBLISH_MESHCOP_BA_ID=1)
+endif()
