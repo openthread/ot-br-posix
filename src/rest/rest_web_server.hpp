@@ -60,7 +60,7 @@ public:
      * @param[in] aNcp  A reference to the NCP controller.
      *
      */
-    RestWebServer(ControllerOpenThread &aNcp, const std::string &aRestListenAddress);
+    RestWebServer(ControllerOpenThread &aNcp, const std::string &aRestListenAddress, int aRestListenPort);
 
     /**
      * The destructor destroys the server instance.

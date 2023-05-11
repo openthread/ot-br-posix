@@ -51,7 +51,8 @@ Application::Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
                          const std::vector<const char *> &aRadioUrls,
                          bool                             aEnableAutoAttach,
-                         const std::string               &aRestListenAddress)
+                         const std::string               &aRestListenAddress,
+                         int                              aRestListenPort)
     : mInterfaceName(aInterfaceName)
 #if __linux__
     , mInfraLinkSelector(aBackboneInterfaceNames)
@@ -70,7 +71,7 @@ Application::Application(const std::string               &aInterfaceName,
     , mUbusAgent(mNcp)
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    , mRestWebServer(mNcp, aRestListenAddress)
+    , mRestWebServer(mNcp, aRestListenAddress, aRestListenPort)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
     , mDBusAgent(mNcp, mBorderAgent.GetPublisher())
@@ -80,6 +81,7 @@ Application::Application(const std::string               &aInterfaceName,
 #endif
 {
     OTBR_UNUSED_VARIABLE(aRestListenAddress);
+    OTBR_UNUSED_VARIABLE(aRestListenPort);
 }
 
 void Application::Init(void)
