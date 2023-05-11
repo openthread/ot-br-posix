@@ -30,7 +30,7 @@
 OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
 readonly OTBR_TOP_BUILDDIR
 
-OTBR_OPTIONS="${OTBR_OPTIONS:-}"
+OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
 REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
@@ -115,7 +115,7 @@ otbr_install()
         )
     fi
 
-    if with NAT64 && [[ ${NAT64_SERVICE:-} == "openthread" ]]; then
+    if with NAT64 && [[ ${NAT64_SERVICE-} == "openthread" ]]; then
         otbr_options+=(
             "-DOTBR_NAT64=ON"
             "-DOT_POSIX_NAT64_CIDR=${NAT64_DYNAMIC_POOL:-192.168.255.0/24}"
