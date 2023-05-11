@@ -36,6 +36,7 @@
 
 #include <unordered_map>
 
+#include <openthread/border_agent.h>
 #include <openthread/border_router.h>
 
 #include "ncp/ncp_openthread.hpp"
@@ -117,6 +118,7 @@ private:
     typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
     typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
     void NodeInfo(const Request &aRequest, Response &aResponse) const;
+    void BaId(const Request &aRequest, Response &aResponse) const;
     void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
     void State(const Request &aRequest, Response &aResponse) const;
     void NetworkName(const Request &aRequest, Response &aResponse) const;
@@ -132,6 +134,7 @@ private:
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
 
     void GetNodeInfo(Response &aResponse) const;
+    void GetDataBaId(Response &aResponse) const;
     void GetDataExtendedAddr(Response &aResponse) const;
     void GetDataState(Response &aResponse) const;
     void GetDataNetworkName(Response &aResponse) const;

@@ -38,6 +38,8 @@
 #include <string>
 #include <vector>
 
+#include <openthread/border_agent.h>
+
 #include "openthread/netdiag.h"
 
 #define OT_REST_ACCEPT_HEADER "Accept"
@@ -96,6 +98,7 @@ enum class ConnectionState : std::uint8_t
 };
 struct NodeInfo
 {
+    uint8_t        mBaId[OT_BORDER_AGENT_ID_LENGTH];
     uint32_t       mRole;
     uint32_t       mNumOfRouter;
     uint16_t       mRloc16;
