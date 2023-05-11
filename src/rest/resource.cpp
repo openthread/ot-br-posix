@@ -215,13 +215,13 @@ void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) cons
 void Resource::GetNodeInfo(Response &aResponse) const
 {
     otbrError       error = OTBR_ERROR_NONE;
-    struct NodeInfo node;
+    struct NodeInfo node  = {};
     otRouterInfo    routerInfo;
     uint8_t         maxRouterId;
     std::string     body;
     std::string     errorCode;
 
-    VerifyOrExit(otThreadGetLeaderData(mInstance, &node.mLeaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    (void)otThreadGetLeaderData(mInstance, &node.mLeaderData);
 
     node.mNumOfRouter = 0;
     maxRouterId       = otThreadGetMaxRouterId(mInstance);
