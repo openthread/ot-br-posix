@@ -43,6 +43,20 @@ paths:
             application/json:
               schema:
                 type: object
+  /node/ba-id:
+    get:
+      tags:
+        - node
+      summary: Get the border agent ID
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: 16 byte border agent ID as hex string.
+                example: "AA897CA8A67F6E6DD6166133AD1562A5"
   /node/rloc:
     get:
       tags:

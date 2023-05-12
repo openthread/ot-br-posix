@@ -37,6 +37,7 @@
 
 #define OT_REST_RESOURCE_PATH_DIAGNOSTICS "/diagnostics"
 #define OT_REST_RESOURCE_PATH_NODE "/node"
+#define OT_REST_RESOURCE_PATH_NODE_BAID "/node/ba-id"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC "/node/rloc"
 #define OT_REST_RESOURCE_PATH_NODE_RLOC16 "/node/rloc16"
 #define OT_REST_RESOURCE_PATH_NODE_EXTADDRESS "/node/ext-address"
@@ -129,6 +130,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
     // Resource Handler
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::Diagnostic);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE, &Resource::NodeInfo);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_BAID, &Resource::BaId);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_STATE, &Resource::State);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_EXTADDRESS, &Resource::ExtendedAddr);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_NETWORKNAME, &Resource::NetworkName);
@@ -215,13 +217,15 @@ void Resource::ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) cons
 void Resource::GetNodeInfo(Response &aResponse) const
 {
     otbrError       error = OTBR_ERROR_NONE;
-    struct NodeInfo node;
+    struct NodeInfo node  = {};
     otRouterInfo    routerInfo;
     uint8_t         maxRouterId;
     std::string     body;
     std::string     errorCode;
+    uint16_t        idLength = OT_BORDER_AGENT_ID_LENGTH;
 
-    VerifyOrExit(otThreadGetLeaderData(mInstance, &node.mLeaderData) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    VerifyOrExit(otBorderAgentGetId(mInstance, node.mBaId, &idLength) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    (void)otThreadGetLeaderData(mInstance, &node.mLeaderData);
 
     node.mNumOfRouter = 0;
     maxRouterId       = otThreadGetMaxRouterId(mInstance);
@@ -262,6 +266,45 @@ void Resource::NodeInfo(const Request &aRequest, Response &aResponse) const
     if (aRequest.GetMethod() == HttpMethod::kGet)
     {
         GetNodeInfo(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
+}
+
+void Resource::GetDataBaId(Response &aResponse) const
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    uint8_t     id[OT_BORDER_AGENT_ID_LENGTH];
+    uint16_t    idLength = OT_BORDER_AGENT_ID_LENGTH;
+    std::string body;
+    std::string errorCode;
+
+    VerifyOrExit(otBorderAgentGetId(mInstance, id, &idLength) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+
+    body = Json::Bytes2HexJsonString(id, idLength);
+    aResponse.SetBody(body);
+
+exit:
+    if (error == OTBR_ERROR_NONE)
+    {
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
+void Resource::BaId(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == HttpMethod::kGet)
+    {
+        GetDataBaId(aResponse);
     }
     else
     {
