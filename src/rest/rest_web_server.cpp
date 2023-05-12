@@ -46,16 +46,14 @@ namespace rest {
 
 // Maximum number of connection a server support at the same time.
 static const uint32_t kMaxServeNum = 500;
-// Port number used by Rest server.
-static const uint32_t kPortNumber = 8081;
 
-RestWebServer::RestWebServer(ControllerOpenThread &aNcp, const std::string &aRestListenAddress)
+RestWebServer::RestWebServer(ControllerOpenThread &aNcp, const std::string &aRestListenAddress, int aRestListenPort)
     : mResource(Resource(&aNcp))
     , mListenFd(-1)
 {
     mAddress.sin6_family = AF_INET6;
     mAddress.sin6_addr   = in6addr_any;
-    mAddress.sin6_port   = htons(kPortNumber);
+    mAddress.sin6_port   = htons(aRestListenPort);
 
     if (!aRestListenAddress.empty())
     {
