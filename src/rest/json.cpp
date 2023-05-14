@@ -362,7 +362,7 @@ std::string Node2JsonString(const NodeInfo &aNode)
     cJSON      *node = cJSON_CreateObject();
     std::string ret;
 
-    cJSON_AddItemToObject(node, "BaId", Bytes2HexJson(aNode.mBaId, OT_BORDER_AGENT_ID_LENGTH));
+    cJSON_AddItemToObject(node, "BaId", Bytes2HexJson(aNode.mBaId.mId, sizeof(aNode.mBaId)));
     cJSON_AddItemToObject(node, "State", cJSON_CreateString(aNode.mRole.c_str()));
     cJSON_AddItemToObject(node, "NumOfRouter", cJSON_CreateNumber(aNode.mNumOfRouter));
     cJSON_AddItemToObject(node, "RlocAddress", IpAddr2Json(aNode.mRlocAddress));
