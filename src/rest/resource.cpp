@@ -30,8 +30,6 @@
 
 #include "rest/resource.hpp"
 
-#include "string.h"
-
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
 
@@ -238,7 +236,7 @@ void Resource::GetNodeInfo(Response &aResponse) const
         ++node.mNumOfRouter;
     }
 
-    node.mRole        = otThreadGetDeviceRole(mInstance);
+    node.mRole        = GetDeviceRoleName(otThreadGetDeviceRole(mInstance));
     node.mExtAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
     node.mNetworkName = otThreadGetNetworkName(mInstance);
     node.mRloc16      = otThreadGetRloc16(mInstance);
@@ -339,17 +337,12 @@ void Resource::ExtendedAddr(const Request &aRequest, Response &aResponse) const
 
 void Resource::GetDataState(Response &aResponse) const
 {
-    std::string state;
-    std::string errorCode;
-    uint8_t     role;
-    // 0 : disabled
-    // 1 : detached
-    // 2 : child
-    // 3 : router
-    // 4 : leader
+    std::string  state;
+    std::string  errorCode;
+    otDeviceRole role;
 
     role  = otThreadGetDeviceRole(mInstance);
-    state = Json::Number2JsonString(role);
+    state = Json::String2JsonString(GetDeviceRoleName(role));
     aResponse.SetBody(state);
     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);

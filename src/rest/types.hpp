@@ -99,7 +99,7 @@ enum class ConnectionState : std::uint8_t
 struct NodeInfo
 {
     uint8_t        mBaId[OT_BORDER_AGENT_ID_LENGTH];
-    uint32_t       mRole;
+    std::string    mRole;
     uint32_t       mNumOfRouter;
     uint16_t       mRloc16;
     const uint8_t *mExtPanId;

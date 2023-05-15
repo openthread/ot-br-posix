@@ -107,20 +107,20 @@ paths:
       summary: Get current Thread state.
       description: |-
         State describing the current Thread role of this Thread node.
-        - 0: disabled
-        - 1: detached
-        - 2: child
-        - 3: router
-        - 4: leader
+        - disabled: The Thread stack is disabled.
+        - detached: Not currently participating in a Thread network/partition.
+        - child: The Thread Child role.
+        - router: The Thread Router role.
+        - leader: The Thread Leader role.
       responses:
         "200":
           description: Successful operation
           content:
             application/json:
               schema:
-                type: number
+                type: string
                 description: Current state
-                example: 4
+                example: "leader"
     put:
       tags:
         - node

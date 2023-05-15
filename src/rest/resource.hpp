@@ -39,6 +39,7 @@
 #include <openthread/border_agent.h>
 #include <openthread/border_router.h>
 
+#include "common/api_strings.hpp"
 #include "ncp/ncp_openthread.hpp"
 #include "openthread/dataset.h"
 #include "openthread/dataset_ftd.h"
