@@ -27,6 +27,7 @@
 #
 
 add_library(otbr-common
+    api_strings.cpp
     byteswap.hpp
     code_utils.hpp
     dns_utils.cpp

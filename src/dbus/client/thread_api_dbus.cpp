@@ -29,6 +29,7 @@
 #include <map>
 #include <string.h>
 
+#include "common/api_strings.hpp"
 #include "common/code_utils.hpp"
 #include "dbus/client/client_error.hpp"
 #include "dbus/client/thread_api_dbus.hpp"

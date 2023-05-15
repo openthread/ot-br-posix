@@ -114,12 +114,6 @@
 #define OTBR_DBUS_PROPERTY_INFRA_LINK_INFO "InfraLinkInfo"
 #define OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE "DnsUpstreamQueryState"
 
-#define OTBR_ROLE_NAME_DISABLED "disabled"
-#define OTBR_ROLE_NAME_DETACHED "detached"
-#define OTBR_ROLE_NAME_CHILD "child"
-#define OTBR_ROLE_NAME_ROUTER "router"
-#define OTBR_ROLE_NAME_LEADER "leader"
-
 #define OTBR_NAT64_STATE_NAME_DISABLED "disabled"
 #define OTBR_NAT64_STATE_NAME_NOT_RUNNING "not_running"
 #define OTBR_NAT64_STATE_NAME_IDLE "idle"
