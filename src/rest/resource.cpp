@@ -358,7 +358,9 @@ void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
     if (body == "enable")
     {
         if (!otIp6IsEnabled(mInstance))
+        {
             SuccessOrExit(otIp6SetEnabled(mInstance, true));
+        }
         VerifyOrExit(otThreadSetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     }
     else if (body == "disable")
