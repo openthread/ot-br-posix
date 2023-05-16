@@ -129,12 +129,16 @@ static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, 
     {
     case OT_DEVICE_ROLE_DISABLED:
         nodeType = threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
+        break;
     case OT_DEVICE_ROLE_DETACHED:
         nodeType = threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
+        break;
     case OT_DEVICE_ROLE_ROUTER:
         nodeType = threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
+        break;
     case OT_DEVICE_ROLE_LEADER:
         nodeType = threadnetwork::TelemetryData::NODE_TYPE_LEADER;
+        break;
     case OT_DEVICE_ROLE_CHILD:
         if (!aLinkModeCfg.mRxOnWhenIdle)
         {
@@ -148,6 +152,7 @@ static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, 
         {
             nodeType = threadnetwork::TelemetryData::NODE_TYPE_END;
         }
+        break;
     default:
         nodeType = threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
     }
