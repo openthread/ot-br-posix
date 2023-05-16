@@ -123,32 +123,36 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, const otLinkModeConfig &aLinkModeCfg)
 {
+    uint32_t nodeType;
+
     switch (aRole)
     {
     case OT_DEVICE_ROLE_DISABLED:
-        return threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
     case OT_DEVICE_ROLE_DETACHED:
-        return threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
     case OT_DEVICE_ROLE_ROUTER:
-        return threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
     case OT_DEVICE_ROLE_LEADER:
-        return threadnetwork::TelemetryData::NODE_TYPE_LEADER;
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_LEADER;
     case OT_DEVICE_ROLE_CHILD:
         if (!aLinkModeCfg.mRxOnWhenIdle)
         {
-            return threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
+            nodeType = threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
         }
         else if (!aLinkModeCfg.mDeviceType)
         { // If it's not an FTD, return as minimal end device.
-            return threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
+            nodeType = threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
         }
         else
         {
-            return threadnetwork::TelemetryData::NODE_TYPE_END;
+            nodeType = threadnetwork::TelemetryData::NODE_TYPE_END;
         }
     default:
-        return threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
     }
+
+    return nodeType;
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
