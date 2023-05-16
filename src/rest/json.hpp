@@ -109,7 +109,7 @@ std::string String2JsonString(const std::string &aString);
  * @param[in]  aJsonString  A Json string.
  * @param[out] aString      The string.
  *
- * @returns A boolean if the Json string indeed was a string.
+ * @returns A boolean indicating whether the Json string was indeed a string.
  */
 bool JsonString2String(const std::string &aJsonString, std::string &aString);
 
