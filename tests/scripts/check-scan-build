@@ -40,6 +40,7 @@ main()
             -DCMAKE_C_COMPILER=clang \
             -DOTBR_DBUS=ON \
             -DOTBR_FEATURE_FLAGS=ON \
+            -DOTBR_TELEMETRY_DATA_API=ON \
             -DOTBR_WEB=ON \
             -DOTBR_REST=ON \
             .. \

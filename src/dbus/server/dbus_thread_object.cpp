@@ -51,6 +51,9 @@
 #if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
 #endif
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+#include "proto/thread_telemetry.pb.h"
+#endif
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -116,6 +119,47 @@ static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
     }
     return val;
 }
+
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, const otLinkModeConfig &aLinkModeCfg)
+{
+    uint32_t nodeType;
+
+    switch (aRole)
+    {
+    case OT_DEVICE_ROLE_DISABLED:
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_DISABLED;
+        break;
+    case OT_DEVICE_ROLE_DETACHED:
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_DETACHED;
+        break;
+    case OT_DEVICE_ROLE_ROUTER:
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_ROUTER;
+        break;
+    case OT_DEVICE_ROLE_LEADER:
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_LEADER;
+        break;
+    case OT_DEVICE_ROLE_CHILD:
+        if (!aLinkModeCfg.mRxOnWhenIdle)
+        {
+            nodeType = threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
+        }
+        else if (!aLinkModeCfg.mDeviceType)
+        { // If it's not an FTD, return as minimal end device.
+            nodeType = threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
+        }
+        else
+        {
+            nodeType = threadnetwork::TelemetryData::NODE_TYPE_END;
+        }
+        break;
+    default:
+        nodeType = threadnetwork::TelemetryData::NODE_TYPE_UNSPECIFIED;
+    }
+
+    return nodeType;
+}
+#endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
 namespace otbr {
 namespace DBus {
@@ -295,6 +339,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
                                std::bind(&DBusThreadObject::GetDnsUpstreamQueryState, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TELEMETRY_DATA,
+                               std::bind(&DBusThreadObject::GetTelemetryDataHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1408,6 +1454,98 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+}
+
+otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+    otError                      error = OT_ERROR_NONE;
+    threadnetwork::TelemetryData telemetryData;
+
+    auto threadHelper = mNcp->GetThreadHelper();
+
+    // Begin of WpanStats section.
+    auto wpanStats = telemetryData.mutable_wpan_stats();
+
+    {
+        otDeviceRole     role  = otThreadGetDeviceRole(threadHelper->GetInstance());
+        otLinkModeConfig otCfg = otThreadGetLinkMode(threadHelper->GetInstance());
+
+        wpanStats->set_node_type(TelemetryNodeTypeFromRoleAndLinkMode(role, otCfg));
+    }
+
+    wpanStats->set_channel(otLinkGetChannel(threadHelper->GetInstance()));
+
+    {
+        uint16_t ccaFailureRate = otLinkGetCcaFailureRate(threadHelper->GetInstance());
+
+        wpanStats->set_mac_cca_fail_rate(static_cast<float>(ccaFailureRate) / 0xffff);
+    }
+
+    {
+        int8_t radioTxPower;
+
+        SuccessOrExit(error = otPlatRadioGetTransmitPower(threadHelper->GetInstance(), &radioTxPower));
+        wpanStats->set_radio_tx_power(radioTxPower);
+    }
+
+    {
+        const otMacCounters *linkCounters = otLinkGetCounters(threadHelper->GetInstance());
+
+        wpanStats->set_phy_rx(linkCounters->mRxTotal);
+        wpanStats->set_phy_tx(linkCounters->mTxTotal);
+        wpanStats->set_mac_unicast_rx(linkCounters->mRxUnicast);
+        wpanStats->set_mac_unicast_tx(linkCounters->mTxUnicast);
+        wpanStats->set_mac_broadcast_rx(linkCounters->mRxBroadcast);
+        wpanStats->set_mac_broadcast_tx(linkCounters->mTxBroadcast);
+        wpanStats->set_mac_tx_ack_req(linkCounters->mTxAckRequested);
+        wpanStats->set_mac_tx_no_ack_req(linkCounters->mTxNoAckRequested);
+        wpanStats->set_mac_tx_acked(linkCounters->mTxAcked);
+        wpanStats->set_mac_tx_data(linkCounters->mTxData);
+        wpanStats->set_mac_tx_data_poll(linkCounters->mTxDataPoll);
+        wpanStats->set_mac_tx_beacon(linkCounters->mTxBeacon);
+        wpanStats->set_mac_tx_beacon_req(linkCounters->mTxBeaconRequest);
+        wpanStats->set_mac_tx_other_pkt(linkCounters->mTxOther);
+        wpanStats->set_mac_tx_retry(linkCounters->mTxRetry);
+        wpanStats->set_mac_rx_data(linkCounters->mRxData);
+        wpanStats->set_mac_rx_data_poll(linkCounters->mRxDataPoll);
+        wpanStats->set_mac_rx_beacon(linkCounters->mRxBeacon);
+        wpanStats->set_mac_rx_beacon_req(linkCounters->mRxBeaconRequest);
+        wpanStats->set_mac_rx_other_pkt(linkCounters->mRxOther);
+        wpanStats->set_mac_rx_filter_whitelist(linkCounters->mRxAddressFiltered);
+        wpanStats->set_mac_rx_filter_dest_addr(linkCounters->mRxDestAddrFiltered);
+        wpanStats->set_mac_tx_fail_cca(linkCounters->mTxErrCca);
+        wpanStats->set_mac_rx_fail_decrypt(linkCounters->mRxErrSec);
+        wpanStats->set_mac_rx_fail_no_frame(linkCounters->mRxErrNoFrame);
+        wpanStats->set_mac_rx_fail_unknown_neighbor(linkCounters->mRxErrUnknownNeighbor);
+        wpanStats->set_mac_rx_fail_invalid_src_addr(linkCounters->mRxErrInvalidSrcAddr);
+        wpanStats->set_mac_rx_fail_fcs(linkCounters->mRxErrFcs);
+        wpanStats->set_mac_rx_fail_other(linkCounters->mRxErrOther);
+    }
+
+    {
+        const otIpCounters *ipCounters = otThreadGetIp6Counters(threadHelper->GetInstance());
+
+        wpanStats->set_ip_tx_success(ipCounters->mTxSuccess);
+        wpanStats->set_ip_rx_success(ipCounters->mRxSuccess);
+        wpanStats->set_ip_tx_failure(ipCounters->mTxFailure);
+        wpanStats->set_ip_rx_failure(ipCounters->mRxFailure);
+    }
+    // End of WpanStats section.
+
+    {
+        const std::string    telemetryDataBytes = telemetryData.SerializeAsString();
+        std::vector<uint8_t> data(telemetryDataBytes.begin(), telemetryDataBytes.end());
+
+        VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    }
+
+exit:
+    return error;
+#else
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 void DBusThreadObject::GetPropertiesHandler(DBusRequest &aRequest)

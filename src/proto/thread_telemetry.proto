@@ -1,0 +1,76 @@
+syntax = "proto2";
+option optimize_for = LITE_RUNTIME;
+
+package threadnetwork;
+
+// Thread Telemetry data definition.
+// The field range for your data definition is determined as:
+// ---------------------------------------------------------------------------
+// | Field Range  | Logging From
+// | [1 - 500)    | Primary fields logged from OTBR-agent/OpenThread.
+// | [500-600)    | OTBR vendor fields logged from OTBR-agent/OpenThread.
+// | Other        | Reserved for now.
+// ---------------------------------------------------------------------------
+// Usage:
+// Delete field: do not directly delete field. Deprecate it instead.
+message TelemetryData {
+  enum NodeType {
+    NODE_TYPE_UNSPECIFIED = 0;
+    NODE_TYPE_ROUTER = 1;
+    NODE_TYPE_END = 2;
+    NODE_TYPE_SLEEPY_END = 3;
+    NODE_TYPE_MINIMAL_END = 4;
+
+    NODE_TYPE_OFFLINE = 5;
+    NODE_TYPE_DISABLED = 6;
+    NODE_TYPE_DETACHED = 7;
+
+    NODE_TYPE_NL_LURKER = 0x10;
+    NODE_TYPE_COMMISSIONER = 0x20;
+    NODE_TYPE_LEADER = 0x40;
+  }
+
+  message WpanStats {
+    optional int32 phy_rx = 1;
+    optional int32 phy_tx = 2;
+    optional int32 mac_unicast_rx = 3;
+    optional int32 mac_unicast_tx = 4;
+    optional int32 mac_broadcast_rx = 5;
+    optional int32 mac_broadcast_tx = 6;
+    optional int32 mac_tx_ack_req = 7;
+    optional int32 mac_tx_no_ack_req = 8;
+    optional int32 mac_tx_acked = 9;
+    optional int32 mac_tx_data = 10;
+    optional int32 mac_tx_data_poll = 11;
+    optional int32 mac_tx_beacon = 12;
+    optional int32 mac_tx_beacon_req = 13;
+    optional int32 mac_tx_other_pkt = 14;
+    optional int32 mac_tx_retry = 15;
+    optional int32 mac_rx_data = 16;
+    optional int32 mac_rx_data_poll = 17;
+    optional int32 mac_rx_beacon = 18;
+    optional int32 mac_rx_beacon_req = 19;
+    optional int32 mac_rx_other_pkt = 20;
+    optional int32 mac_rx_filter_whitelist = 21;
+    optional int32 mac_rx_filter_dest_addr = 22;
+    optional int32 mac_tx_fail_cca = 23;
+    optional int32 mac_rx_fail_decrypt = 24;
+    optional int32 mac_rx_fail_no_frame = 25;
+    optional int32 mac_rx_fail_unknown_neighbor = 26;
+    optional int32 mac_rx_fail_invalid_src_addr = 27;
+    optional int32 mac_rx_fail_fcs = 28;
+    optional int32 mac_rx_fail_other = 29;
+    optional int32 ip_tx_success = 30;
+    optional int32 ip_rx_success = 31;
+    optional int32 ip_tx_failure = 32;
+    optional int32 ip_rx_failure = 33;
+    optional uint32 node_type = 34;
+    optional uint32 channel = 35;
+    optional int32 radio_tx_power = 36;
+    optional float mac_cca_fail_rate = 37;
+  }
+
+  optional WpanStats wpan_stats = 1;
+  // TODO: add fields for topo, border_router, rcp, and coex.
+  reserved 2, 3, 4, 5, 6;
+}

@@ -39,6 +39,9 @@
 #include "common/code_utils.hpp"
 #include "dbus/client/thread_api_dbus.hpp"
 #include "dbus/common/constants.hpp"
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+#include "proto/thread_telemetry.pb.h"
+#endif
 
 using otbr::DBus::ActiveScanResult;
 using otbr::DBus::ClientError;
@@ -239,6 +242,33 @@ void CheckNat64(ThreadApiDBus *aApi)
 #endif
 }
 
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+void CheckTelemetryData(ThreadApiDBus *aApi)
+{
+    std::vector<uint8_t>         responseTelemetryDataBytes;
+    threadnetwork::TelemetryData telemetryData;
+
+    TEST_ASSERT(aApi->GetTelemetryData(responseTelemetryDataBytes) == OTBR_ERROR_NONE);
+    // Print TelemetryData proto in hex format.
+    printf("TelemetryData bytes in hex: ");
+    for (uint8_t byte : responseTelemetryDataBytes)
+    {
+        printf("%02x ", byte);
+    }
+    printf("\n");
+
+    TEST_ASSERT(telemetryData.ParseFromString(
+        std::string(responseTelemetryDataBytes.begin(), responseTelemetryDataBytes.end())));
+    TEST_ASSERT(telemetryData.wpan_stats().node_type() == threadnetwork::TelemetryData::NODE_TYPE_LEADER);
+    TEST_ASSERT(telemetryData.wpan_stats().channel() == 11);
+    TEST_ASSERT(telemetryData.wpan_stats().radio_tx_power() == 0);
+    TEST_ASSERT(telemetryData.wpan_stats().mac_cca_fail_rate() < 1e-6);
+    TEST_ASSERT(telemetryData.wpan_stats().phy_tx() > 0);
+    TEST_ASSERT(telemetryData.wpan_stats().phy_rx() > 0);
+    TEST_ASSERT(telemetryData.wpan_stats().ip_tx_success() > 0);
+}
+#endif
+
 int main()
 {
     DBusError                      error;
@@ -350,6 +380,9 @@ int main()
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+                            CheckTelemetryData(api.get());
+#endif
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);

@@ -63,6 +63,11 @@ if (OTBR_FEATURE_FLAGS)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_FEATURE_FLAGS=1)
 endif()
 
+option(OTBR_TELEMETRY_DATA_API "Enable telemetry data API support" OFF)
+if (OTBR_TELEMETRY_DATA_API)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TELEMETRY_DATA_API=1)
+endif()
+
 option(OTBR_DUA_ROUTING "Enable Backbone Router DUA Routing" OFF)
 if (OTBR_DUA_ROUTING)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DUA_ROUTING=1)

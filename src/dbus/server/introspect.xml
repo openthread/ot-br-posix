@@ -916,6 +916,12 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- TelemetryData: The Thread telemetry data (defined as proto/thread_telemetry.proto)
+      in binary form. -->
+    <property name="TelemetryData" type="ay" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- The Ready signal is sent on start -->
     <signal name="Ready">
     </signal>
