@@ -104,6 +104,16 @@ std::string CString2JsonString(const char *aCString);
 std::string String2JsonString(const std::string &aString);
 
 /**
+ * This method parses a Json string and checks its datatype and returns a string if it is a string.
+ *
+ * @param[in]  aJsonString  A Json string.
+ * @param[out] aString      The string.
+ *
+ * @returns A boolean indicating whether the Json string was indeed a string.
+ */
+bool JsonString2String(const std::string &aJsonString, std::string &aString);
+
+/**
  * This method formats a Node object to a Json object and serialize it to a string.
  *
  * @param[in] aNode  A Node object.

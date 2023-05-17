@@ -73,6 +73,22 @@ exit:
     return ret;
 }
 
+bool JsonString2String(const std::string &aJsonString, std::string &aString)
+{
+    cJSON *jsonString;
+    bool   ret = true;
+
+    VerifyOrExit((jsonString = cJSON_Parse(aJsonString.c_str())) != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsString(jsonString), ret = false);
+
+    aString = std::string(jsonString->valuestring);
+
+exit:
+    cJSON_Delete(jsonString);
+
+    return ret;
+}
+
 std::string Json2String(const cJSON *aJson)
 {
     std::string ret;
@@ -347,7 +363,7 @@ std::string Node2JsonString(const NodeInfo &aNode)
     std::string ret;
 
     cJSON_AddItemToObject(node, "BaId", Bytes2HexJson(aNode.mBaId, OT_BORDER_AGENT_ID_LENGTH));
-    cJSON_AddItemToObject(node, "State", cJSON_CreateNumber(aNode.mRole));
+    cJSON_AddItemToObject(node, "State", cJSON_CreateString(aNode.mRole.c_str()));
     cJSON_AddItemToObject(node, "NumOfRouter", cJSON_CreateNumber(aNode.mNumOfRouter));
     cJSON_AddItemToObject(node, "RlocAddress", IpAddr2Json(aNode.mRlocAddress));
     cJSON_AddItemToObject(node, "ExtAddress", Bytes2HexJson(aNode.mExtAddress, OT_EXT_ADDRESS_SIZE));

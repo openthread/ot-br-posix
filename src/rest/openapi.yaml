@@ -107,20 +107,38 @@ paths:
       summary: Get current Thread state.
       description: |-
         State describing the current Thread role of this Thread node.
-        - 0: disabled
-        - 1: detached
-        - 2: child
-        - 3: router
-        - 4: leader
+        - disabled: The Thread stack is disabled.
+        - detached: Not currently participating in a Thread network/partition.
+        - child: The Thread Child role.
+        - router: The Thread Router role.
+        - leader: The Thread Leader role.
       responses:
         "200":
           description: Successful operation
           content:
             application/json:
               schema:
-                type: number
+                type: string
                 description: Current state
-                example: 4
+                example: "leader"
+    put:
+      tags:
+        - node
+      summary: Set current Thread state.
+      description: |-
+        Enable and disable the Thread protocol operation. If network interface
+        hasn't been started yet, it will get started automatically.
+      responses:
+        "200":
+          description: Successful operation.
+      requestBody:
+        description: New Thread state
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Can be "enable" or "disable".
+              example: "enable"
   /node/network-name:
     get:
       tags:

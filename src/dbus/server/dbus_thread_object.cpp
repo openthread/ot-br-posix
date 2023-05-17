@@ -44,6 +44,7 @@
 #include <openthread/thread_ftd.h>
 #include <openthread/platform/radio.h>
 
+#include "common/api_strings.hpp"
 #include "common/byteswap.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
@@ -57,32 +58,6 @@
 
 using std::placeholders::_1;
 using std::placeholders::_2;
-
-static std::string GetDeviceRoleName(otDeviceRole aRole)
-{
-    std::string roleName;
-
-    switch (aRole)
-    {
-    case OT_DEVICE_ROLE_DISABLED:
-        roleName = OTBR_ROLE_NAME_DISABLED;
-        break;
-    case OT_DEVICE_ROLE_DETACHED:
-        roleName = OTBR_ROLE_NAME_DETACHED;
-        break;
-    case OT_DEVICE_ROLE_CHILD:
-        roleName = OTBR_ROLE_NAME_CHILD;
-        break;
-    case OT_DEVICE_ROLE_ROUTER:
-        roleName = OTBR_ROLE_NAME_ROUTER;
-        break;
-    case OT_DEVICE_ROLE_LEADER:
-        roleName = OTBR_ROLE_NAME_LEADER;
-        break;
-    }
-
-    return roleName;
-}
 
 #if OTBR_ENABLE_NAT64
 static std::string GetNat64StateName(otNat64State aState)

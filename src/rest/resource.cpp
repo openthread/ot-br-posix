@@ -30,8 +30,6 @@
 
 #include "rest/resource.hpp"
 
-#include "string.h"
-
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
 
@@ -238,7 +236,7 @@ void Resource::GetNodeInfo(Response &aResponse) const
         ++node.mNumOfRouter;
     }
 
-    node.mRole        = otThreadGetDeviceRole(mInstance);
+    node.mRole        = GetDeviceRoleName(otThreadGetDeviceRole(mInstance));
     node.mExtAddress  = reinterpret_cast<const uint8_t *>(otLinkGetExtendedAddress(mInstance));
     node.mNetworkName = otThreadGetNetworkName(mInstance);
     node.mRloc16      = otThreadGetRloc16(mInstance);
@@ -339,33 +337,79 @@ void Resource::ExtendedAddr(const Request &aRequest, Response &aResponse) const
 
 void Resource::GetDataState(Response &aResponse) const
 {
-    std::string state;
-    std::string errorCode;
-    uint8_t     role;
-    // 0 : disabled
-    // 1 : detached
-    // 2 : child
-    // 3 : router
-    // 4 : leader
+    std::string  state;
+    std::string  errorCode;
+    otDeviceRole role;
 
     role  = otThreadGetDeviceRole(mInstance);
-    state = Json::Number2JsonString(role);
+    state = Json::String2JsonString(GetDeviceRoleName(role));
     aResponse.SetBody(state);
     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string errorCode;
+    std::string body;
+
+    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
+    if (body == "enable")
+    {
+        if (!otIp6IsEnabled(mInstance))
+        {
+            SuccessOrExit(otIp6SetEnabled(mInstance, true));
+        }
+        VerifyOrExit(otThreadSetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else if (body == "disable")
+    {
+        VerifyOrExit(otThreadSetEnabled(mInstance, false) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else
+    {
+        ExitNow(error = OTBR_ERROR_INVALID_ARGS);
+    }
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+
+exit:
+    if (error == OTBR_ERROR_INVALID_STATE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+    }
+    if (error == OTBR_ERROR_INVALID_ARGS)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
 }
 
 void Resource::State(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+    switch (aRequest.GetMethod())
     {
+    case HttpMethod::kGet:
         GetDataState(aResponse);
-    }
-    else
-    {
+        break;
+    case HttpMethod::kPut:
+        SetDataState(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
     }
 }
 

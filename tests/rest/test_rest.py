@@ -194,7 +194,7 @@ def node_check(data):
         "Rloc16", "LeaderData", "ExtPanId"
     ]
     expected_value_type = [
-        int, int, str, str, str, int, dict, str
+        str, int, str, str, str, int, dict, str
     ]
     expected_check_dict = dict(zip(expected_keys, expected_value_type))
 
@@ -250,7 +250,7 @@ def node_ext_address_check(data):
 def node_state_check(data):
     assert data is not None
 
-    assert (type(data) == int)
+    assert (type(data) == str)
 
     return True
 
