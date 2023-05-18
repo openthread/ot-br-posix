@@ -220,9 +220,8 @@ void Resource::GetNodeInfo(Response &aResponse) const
     uint8_t         maxRouterId;
     std::string     body;
     std::string     errorCode;
-    uint16_t        idLength = OT_BORDER_AGENT_ID_LENGTH;
 
-    VerifyOrExit(otBorderAgentGetId(mInstance, node.mBaId, &idLength) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    VerifyOrExit(otBorderAgentGetId(mInstance, &node.mBaId) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
     (void)otThreadGetLeaderData(mInstance, &node.mLeaderData);
 
     node.mNumOfRouter = 0;
@@ -273,15 +272,14 @@ void Resource::NodeInfo(const Request &aRequest, Response &aResponse) const
 
 void Resource::GetDataBaId(Response &aResponse) const
 {
-    otbrError   error = OTBR_ERROR_NONE;
-    uint8_t     id[OT_BORDER_AGENT_ID_LENGTH];
-    uint16_t    idLength = OT_BORDER_AGENT_ID_LENGTH;
-    std::string body;
-    std::string errorCode;
+    otbrError       error = OTBR_ERROR_NONE;
+    otBorderAgentId id;
+    std::string     body;
+    std::string     errorCode;
 
-    VerifyOrExit(otBorderAgentGetId(mInstance, id, &idLength) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    VerifyOrExit(otBorderAgentGetId(mInstance, &id) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
 
-    body = Json::Bytes2HexJsonString(id, idLength);
+    body = Json::Bytes2HexJsonString(id.mId, sizeof(id));
     aResponse.SetBody(body);
 
 exit:
