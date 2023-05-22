@@ -166,81 +166,6 @@ private:
         }
     };
 
-    struct ServiceSubscription : public Subscription
-    {
-        explicit ServiceSubscription(PublisherAvahi &aPublisherAvahi, std::string aType, std::string aInstanceName)
-            : Subscription(aPublisherAvahi)
-            , mType(std::move(aType))
-            , mInstanceName(std::move(aInstanceName))
-            , mServiceBrowser(nullptr)
-        {
-        }
-
-        ~ServiceSubscription() { Release(); }
-
-        void Release(void);
-        void Browse(void);
-        void Resolve(uint32_t           aInterfaceIndex,
-                     AvahiProtocol      aProtocol,
-                     const std::string &aInstanceName,
-                     const std::string &aType);
-        void AddServiceResolver(const std::string &aInstanceName, AvahiServiceResolver *aServiceResolver);
-        void RemoveServiceResolver(const std::string &aInstanceName);
-
-        static void HandleBrowseResult(AvahiServiceBrowser   *aServiceBrowser,
-                                       AvahiIfIndex           aInterfaceIndex,
-                                       AvahiProtocol          aProtocol,
-                                       AvahiBrowserEvent      aEvent,
-                                       const char            *aName,
-                                       const char            *aType,
-                                       const char            *aDomain,
-                                       AvahiLookupResultFlags aFlags,
-                                       void                  *aContext);
-
-        void HandleBrowseResult(AvahiServiceBrowser   *aServiceBrowser,
-                                AvahiIfIndex           aInterfaceIndex,
-                                AvahiProtocol          aProtocol,
-                                AvahiBrowserEvent      aEvent,
-                                const char            *aName,
-                                const char            *aType,
-                                const char            *aDomain,
-                                AvahiLookupResultFlags aFlags);
-
-        static void HandleResolveResult(AvahiServiceResolver  *aServiceResolver,
-                                        AvahiIfIndex           aInterfaceIndex,
-                                        AvahiProtocol          Protocol,
-                                        AvahiResolverEvent     aEvent,
-                                        const char            *aName,
-                                        const char            *aType,
-                                        const char            *aDomain,
-                                        const char            *aHostName,
-                                        const AvahiAddress    *aAddress,
-                                        uint16_t               aPort,
-                                        AvahiStringList       *aTxt,
-                                        AvahiLookupResultFlags aFlags,
-                                        void                  *aContext);
-
-        void HandleResolveResult(AvahiServiceResolver  *aServiceResolver,
-                                 AvahiIfIndex           aInterfaceIndex,
-                                 AvahiProtocol          Protocol,
-                                 AvahiResolverEvent     aEvent,
-                                 const char            *aName,
-                                 const char            *aType,
-                                 const char            *aDomain,
-                                 const char            *aHostName,
-                                 const AvahiAddress    *aAddress,
-                                 uint16_t               aPort,
-                                 AvahiStringList       *aTxt,
-                                 AvahiLookupResultFlags aFlags);
-
-        std::string          mType;
-        std::string          mInstanceName;
-        AvahiServiceBrowser *mServiceBrowser;
-
-        using ServiceResolversMap = std::map<std::string, std::set<AvahiServiceResolver *>>;
-        ServiceResolversMap mServiceResolvers;
-    };
-
     struct HostSubscription : public Subscription
     {
         explicit HostSubscription(PublisherAvahi &aAvahiPublisher, std::string aHostName)
@@ -280,6 +205,124 @@ private:
         std::string         mHostName;
         DiscoveredHostInfo  mHostInfo;
         AvahiRecordBrowser *mRecordBrowser;
+    };
+
+    struct ServiceResolver
+    {
+        ~ServiceResolver()
+        {
+            if (mServiceResolver)
+            {
+                avahi_service_resolver_free(mServiceResolver);
+            }
+            if (mRecordBrowser)
+            {
+                avahi_record_browser_free(mRecordBrowser);
+            }
+        }
+
+        static void HandleResolveServiceResult(AvahiServiceResolver  *aServiceResolver,
+                                               AvahiIfIndex           aInterfaceIndex,
+                                               AvahiProtocol          Protocol,
+                                               AvahiResolverEvent     aEvent,
+                                               const char            *aName,
+                                               const char            *aType,
+                                               const char            *aDomain,
+                                               const char            *aHostName,
+                                               const AvahiAddress    *aAddress,
+                                               uint16_t               aPort,
+                                               AvahiStringList       *aTxt,
+                                               AvahiLookupResultFlags aFlags,
+                                               void                  *aContext);
+
+        void HandleResolveServiceResult(AvahiServiceResolver  *aServiceResolver,
+                                        AvahiIfIndex           aInterfaceIndex,
+                                        AvahiProtocol          Protocol,
+                                        AvahiResolverEvent     aEvent,
+                                        const char            *aName,
+                                        const char            *aType,
+                                        const char            *aDomain,
+                                        const char            *aHostName,
+                                        const AvahiAddress    *aAddress,
+                                        uint16_t               aPort,
+                                        AvahiStringList       *aTxt,
+                                        AvahiLookupResultFlags aFlags);
+
+        static void HandleResolveHostResult(AvahiRecordBrowser    *aRecordBrowser,
+                                            AvahiIfIndex           aInterfaceIndex,
+                                            AvahiProtocol          aProtocol,
+                                            AvahiBrowserEvent      aEvent,
+                                            const char            *aName,
+                                            uint16_t               aClazz,
+                                            uint16_t               aType,
+                                            const void            *aRdata,
+                                            size_t                 aSize,
+                                            AvahiLookupResultFlags aFlags,
+                                            void                  *aContext);
+
+        void HandleResolveHostResult(AvahiRecordBrowser    *aRecordBrowser,
+                                     AvahiIfIndex           aInterfaceIndex,
+                                     AvahiProtocol          aProtocol,
+                                     AvahiBrowserEvent      aEvent,
+                                     const char            *aName,
+                                     uint16_t               aClazz,
+                                     uint16_t               aType,
+                                     const void            *aRdata,
+                                     size_t                 aSize,
+                                     AvahiLookupResultFlags aFlags);
+
+        std::string            mType;
+        PublisherAvahi        *mPublisherAvahi;
+        AvahiServiceResolver  *mServiceResolver = nullptr;
+        AvahiRecordBrowser    *mRecordBrowser   = nullptr;
+        DiscoveredInstanceInfo mInstanceInfo;
+    };
+    struct ServiceSubscription : public Subscription
+    {
+        explicit ServiceSubscription(PublisherAvahi &aPublisherAvahi, std::string aType, std::string aInstanceName)
+            : Subscription(aPublisherAvahi)
+            , mType(std::move(aType))
+            , mInstanceName(std::move(aInstanceName))
+            , mServiceBrowser(nullptr)
+        {
+        }
+
+        ~ServiceSubscription() { Release(); }
+
+        void Release(void);
+        void Browse(void);
+        void Resolve(uint32_t           aInterfaceIndex,
+                     AvahiProtocol      aProtocol,
+                     const std::string &aInstanceName,
+                     const std::string &aType);
+        void AddServiceResolver(const std::string &aInstanceName, ServiceResolver *aServiceResolver);
+        void RemoveServiceResolver(const std::string &aInstanceName);
+
+        static void HandleBrowseResult(AvahiServiceBrowser   *aServiceBrowser,
+                                       AvahiIfIndex           aInterfaceIndex,
+                                       AvahiProtocol          aProtocol,
+                                       AvahiBrowserEvent      aEvent,
+                                       const char            *aName,
+                                       const char            *aType,
+                                       const char            *aDomain,
+                                       AvahiLookupResultFlags aFlags,
+                                       void                  *aContext);
+
+        void HandleBrowseResult(AvahiServiceBrowser   *aServiceBrowser,
+                                AvahiIfIndex           aInterfaceIndex,
+                                AvahiProtocol          aProtocol,
+                                AvahiBrowserEvent      aEvent,
+                                const char            *aName,
+                                const char            *aType,
+                                const char            *aDomain,
+                                AvahiLookupResultFlags aFlags);
+
+        std::string          mType;
+        std::string          mInstanceName;
+        AvahiServiceBrowser *mServiceBrowser;
+
+        using ServiceResolversMap = std::map<std::string, std::set<ServiceResolver *>>;
+        ServiceResolversMap mServiceResolvers;
     };
 
     typedef std::vector<std::unique_ptr<ServiceSubscription>> ServiceSubscriptionList;
