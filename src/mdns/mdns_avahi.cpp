@@ -1071,18 +1071,22 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
                                                   const std::string &aInstanceName,
                                                   const std::string &aType)
 {
-    AvahiServiceResolver *resolver;
+    auto serviceResolver = MakeUnique<ServiceResolver>();
 
     mPublisherAvahi->mServiceInstanceResolutionBeginTime[std::make_pair(aInstanceName, aType)] = Clock::now();
 
     otbrLogInfo("Resolve service %s.%s inf %" PRIu32, aInstanceName.c_str(), aType.c_str(), aInterfaceIndex);
 
-    resolver = avahi_service_resolver_new(
+    serviceResolver->mType            = aType;
+    serviceResolver->mPublisherAvahi  = this->mPublisherAvahi;
+    serviceResolver->mServiceResolver = avahi_service_resolver_new(
         mPublisherAvahi->mClient, aInterfaceIndex, aProtocol, aInstanceName.c_str(), aType.c_str(),
-        /* domain */ nullptr, AVAHI_PROTO_UNSPEC, static_cast<AvahiLookupFlags>(0), HandleResolveResult, this);
-    if (resolver != nullptr)
+        /* domain */ nullptr, AVAHI_PROTO_UNSPEC, static_cast<AvahiLookupFlags>(AVAHI_LOOKUP_NO_ADDRESS),
+        &ServiceResolver::HandleResolveServiceResult, serviceResolver.get());
+
+    if (serviceResolver->mServiceResolver != nullptr)
     {
-        AddServiceResolver(aInstanceName, resolver);
+        AddServiceResolver(aInstanceName, serviceResolver.release());
     }
     else
     {
@@ -1091,106 +1095,179 @@ void PublisherAvahi::ServiceSubscription::Resolve(uint32_t           aInterfaceI
     }
 }
 
-void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolver  *aServiceResolver,
-                                                              AvahiIfIndex           aInterfaceIndex,
-                                                              AvahiProtocol          aProtocol,
-                                                              AvahiResolverEvent     aEvent,
-                                                              const char            *aName,
-                                                              const char            *aType,
-                                                              const char            *aDomain,
-                                                              const char            *aHostName,
-                                                              const AvahiAddress    *aAddress,
-                                                              uint16_t               aPort,
-                                                              AvahiStringList       *aTxt,
-                                                              AvahiLookupResultFlags aFlags,
-                                                              void                  *aContext)
+void PublisherAvahi::ServiceResolver::HandleResolveServiceResult(AvahiServiceResolver  *aServiceResolver,
+                                                                 AvahiIfIndex           aInterfaceIndex,
+                                                                 AvahiProtocol          aProtocol,
+                                                                 AvahiResolverEvent     aEvent,
+                                                                 const char            *aName,
+                                                                 const char            *aType,
+                                                                 const char            *aDomain,
+                                                                 const char            *aHostName,
+                                                                 const AvahiAddress    *aAddress,
+                                                                 uint16_t               aPort,
+                                                                 AvahiStringList       *aTxt,
+                                                                 AvahiLookupResultFlags aFlags,
+                                                                 void                  *aContext)
 {
-    static_cast<PublisherAvahi::ServiceSubscription *>(aContext)->HandleResolveResult(
+    static_cast<PublisherAvahi::ServiceResolver *>(aContext)->HandleResolveServiceResult(
         aServiceResolver, aInterfaceIndex, aProtocol, aEvent, aName, aType, aDomain, aHostName, aAddress, aPort, aTxt,
         aFlags);
 }
 
-void PublisherAvahi::ServiceSubscription::HandleResolveResult(AvahiServiceResolver  *aServiceResolver,
-                                                              AvahiIfIndex           aInterfaceIndex,
-                                                              AvahiProtocol          aProtocol,
-                                                              AvahiResolverEvent     aEvent,
-                                                              const char            *aName,
-                                                              const char            *aType,
-                                                              const char            *aDomain,
-                                                              const char            *aHostName,
-                                                              const AvahiAddress    *aAddress,
-                                                              uint16_t               aPort,
-                                                              AvahiStringList       *aTxt,
-                                                              AvahiLookupResultFlags aFlags)
+void PublisherAvahi::ServiceResolver::HandleResolveServiceResult(AvahiServiceResolver  *aServiceResolver,
+                                                                 AvahiIfIndex           aInterfaceIndex,
+                                                                 AvahiProtocol          aProtocol,
+                                                                 AvahiResolverEvent     aEvent,
+                                                                 const char            *aName,
+                                                                 const char            *aType,
+                                                                 const char            *aDomain,
+                                                                 const char            *aHostName,
+                                                                 const AvahiAddress    *aAddress,
+                                                                 uint16_t               aPort,
+                                                                 AvahiStringList       *aTxt,
+                                                                 AvahiLookupResultFlags aFlags)
 {
     OT_UNUSED_VARIABLE(aServiceResolver);
     OT_UNUSED_VARIABLE(aInterfaceIndex);
     OT_UNUSED_VARIABLE(aProtocol);
     OT_UNUSED_VARIABLE(aType);
     OT_UNUSED_VARIABLE(aDomain);
+    OT_UNUSED_VARIABLE(aAddress);
 
-    char                   addrBuf[AVAHI_ADDRESS_STR_MAX] = "";
-    Ip6Address             address;
-    size_t                 totalTxtSize = 0;
-    DiscoveredInstanceInfo instanceInfo;
-    bool                   resolved   = false;
-    int                    avahiError = AVAHI_OK;
+    size_t totalTxtSize = 0;
+    bool   resolved     = false;
+    int    avahiError   = AVAHI_OK;
 
     otbrLog(aEvent == AVAHI_RESOLVER_FOUND ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "Resolve service reply: protocol %d %s.%s.%s = host %s port %" PRIu16 " flags %d event %d", aProtocol,
             aName, aType, aDomain, aHostName, aPort, static_cast<int>(aFlags), static_cast<int>(aEvent));
 
     VerifyOrExit(aEvent == AVAHI_RESOLVER_FOUND, avahiError = avahi_client_errno(mPublisherAvahi->mClient));
-
-    avahi_address_snprint(addrBuf, sizeof(addrBuf), aAddress);
-    otbrLogInfo("Resolve service reply: address %s", addrBuf);
-
     VerifyOrExit(aHostName != nullptr, avahiError = AVAHI_ERR_INVALID_HOST_NAME);
 
-    instanceInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
-    instanceInfo.mName       = aName;
-    instanceInfo.mHostName   = std::string(aHostName) + ".";
-    instanceInfo.mPort       = aPort;
-    VerifyOrExit(otbrError::OTBR_ERROR_NONE == Ip6Address::FromString(addrBuf, address),
-                 otbrLogErr("Failed to parse the IP address: %s", addrBuf), avahiError = AVAHI_ERR_INVALID_ADDRESS);
+    mInstanceInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
+    mInstanceInfo.mName       = aName;
+    mInstanceInfo.mHostName   = std::string(aHostName) + ".";
+    mInstanceInfo.mPort       = aPort;
 
     otbrLogInfo("Resolve service reply: flags=%u, host=%s", aFlags, aHostName);
-
-    VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
-                 otbrLogInfo("Ignoring address %s", address.ToString().c_str()),
-                 avahiError = AVAHI_ERR_INVALID_ADDRESS);
-
-    instanceInfo.mAddresses.push_back(address);
 
     // TODO priority
     // TODO weight
     // TODO use a more proper TTL
-    instanceInfo.mTtl = kDefaultTtl;
+    mInstanceInfo.mTtl = kDefaultTtl;
     for (auto p = aTxt; p; p = avahi_string_list_get_next(p))
     {
         totalTxtSize += avahi_string_list_get_size(p) + 1;
     }
-    instanceInfo.mTxtData.resize(totalTxtSize);
-    avahi_string_list_serialize(aTxt, instanceInfo.mTxtData.data(), totalTxtSize);
+    mInstanceInfo.mTxtData.resize(totalTxtSize);
+    avahi_string_list_serialize(aTxt, mInstanceInfo.mTxtData.data(), totalTxtSize);
 
-    otbrLogInfo("Resolve service reply: address=%s, ttl=%" PRIu32, address.ToString().c_str(), instanceInfo.mTtl);
+    // NOTE: Avahi only returns one of the host's addresses in the service resolution callback. However, the address may
+    // be link-local so it may not be preferred from Thread's perspective. We want to go through the complete list of
+    // addresses associated with the host and choose a routable address. Therefore, as below we will resolve the host
+    // and go through all its addresses.
 
     resolved = true;
 
 exit:
     if (resolved)
     {
-        // NOTE: This `ServiceSubscrption` object may be freed in `OnServiceResolved`.
-        mPublisherAvahi->OnServiceResolved(mType, instanceInfo);
+        // In case the callback is triggered when a service instance is updated, there may already be a record browser.
+        // We should free it before switching to the new record browser.
+        if (mRecordBrowser)
+        {
+            avahi_record_browser_free(mRecordBrowser);
+            mRecordBrowser = nullptr;
+        }
+        // NOTE: This `ServiceResolver` object may be freed in `OnServiceResolved`.
+        mRecordBrowser = avahi_record_browser_new(mPublisherAvahi->mClient, aInterfaceIndex, AVAHI_PROTO_UNSPEC,
+                                                  aHostName, AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_AAAA,
+                                                  static_cast<AvahiLookupFlags>(0), HandleResolveHostResult, this);
+        if (!mRecordBrowser)
+        {
+            resolved   = false;
+            avahiError = avahi_client_errno(mPublisherAvahi->mClient);
+        }
     }
-    else if (avahiError != AVAHI_OK)
+    if (!resolved && avahiError != AVAHI_OK)
     {
         mPublisherAvahi->OnServiceResolveFailed(aType, aName, avahiError);
     }
 }
 
-void PublisherAvahi::ServiceSubscription::AddServiceResolver(const std::string    &aInstanceName,
-                                                             AvahiServiceResolver *aServiceResolver)
+void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser    *aRecordBrowser,
+                                                              AvahiIfIndex           aInterfaceIndex,
+                                                              AvahiProtocol          aProtocol,
+                                                              AvahiBrowserEvent      aEvent,
+                                                              const char            *aName,
+                                                              uint16_t               aClazz,
+                                                              uint16_t               aType,
+                                                              const void            *aRdata,
+                                                              size_t                 aSize,
+                                                              AvahiLookupResultFlags aFlags,
+                                                              void                  *aContext)
+{
+    static_cast<PublisherAvahi::ServiceResolver *>(aContext)->HandleResolveHostResult(
+        aRecordBrowser, aInterfaceIndex, aProtocol, aEvent, aName, aClazz, aType, aRdata, aSize, aFlags);
+}
+
+void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser    *aRecordBrowser,
+                                                              AvahiIfIndex           aInterfaceIndex,
+                                                              AvahiProtocol          aProtocol,
+                                                              AvahiBrowserEvent      aEvent,
+                                                              const char            *aName,
+                                                              uint16_t               aClazz,
+                                                              uint16_t               aType,
+                                                              const void            *aRdata,
+                                                              size_t                 aSize,
+                                                              AvahiLookupResultFlags aFlags)
+{
+    OTBR_UNUSED_VARIABLE(aRecordBrowser);
+    OTBR_UNUSED_VARIABLE(aInterfaceIndex);
+    OTBR_UNUSED_VARIABLE(aProtocol);
+    OTBR_UNUSED_VARIABLE(aEvent);
+    OTBR_UNUSED_VARIABLE(aClazz);
+    OTBR_UNUSED_VARIABLE(aType);
+    OTBR_UNUSED_VARIABLE(aFlags);
+
+    Ip6Address address;
+    bool       resolved   = false;
+    int        avahiError = AVAHI_OK;
+
+    otbrLog(aEvent != AVAHI_BROWSER_FAILURE ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
+            "Resolve host reply: %s inf %d protocol %d class %" PRIu16 " type %" PRIu16 " size %zu flags %d event %d",
+            aName, aInterfaceIndex, aProtocol, aClazz, aType, aSize, static_cast<int>(aFlags),
+            static_cast<int>(aEvent));
+
+    VerifyOrExit(aEvent == AVAHI_BROWSER_NEW);
+    VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE || aSize == OTBR_IP4_ADDRESS_SIZE,
+                 otbrLogErr("Unexpected address data length: %zu", aSize), avahiError = AVAHI_ERR_INVALID_ADDRESS);
+    VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE, otbrLogInfo("IPv4 address ignored"),
+                 avahiError = AVAHI_ERR_INVALID_ADDRESS);
+    address = Ip6Address(*static_cast<const uint8_t(*)[OTBR_IP6_ADDRESS_SIZE]>(aRdata));
+
+    VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
+                 avahiError = AVAHI_ERR_INVALID_ADDRESS);
+    otbrLogInfo("Resolved host address: %s", address.ToString().c_str());
+
+    mInstanceInfo.mAddresses.push_back(std::move(address));
+    resolved = true;
+
+exit:
+    if (resolved)
+    {
+        // NOTE: This `HostSubscrption` object may be freed in `OnHostResolved`.
+        mPublisherAvahi->OnServiceResolved(mType, mInstanceInfo);
+    }
+    else if (avahiError != AVAHI_OK)
+    {
+        mPublisherAvahi->OnServiceResolveFailed(mType, mInstanceInfo.mName, avahiError);
+    }
+}
+
+void PublisherAvahi::ServiceSubscription::AddServiceResolver(const std::string &aInstanceName,
+                                                             ServiceResolver   *aServiceResolver)
 {
     assert(aServiceResolver != nullptr);
     mServiceResolvers[aInstanceName].insert(aServiceResolver);
@@ -1208,7 +1285,7 @@ void PublisherAvahi::ServiceSubscription::RemoveServiceResolver(const std::strin
 
     for (auto resolver : mServiceResolvers[aInstanceName])
     {
-        avahi_service_resolver_free(resolver);
+        delete resolver;
     }
 
     mServiceResolvers.erase(aInstanceName);
