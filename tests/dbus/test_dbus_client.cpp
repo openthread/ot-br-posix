@@ -42,6 +42,7 @@
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #include "proto/thread_telemetry.pb.h"
 #endif
+#include "proto/capabilities.pb.h"
 
 using otbr::DBus::ActiveScanResult;
 using otbr::DBus::ClientError;
@@ -269,6 +270,25 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
 }
 #endif
 
+void CheckCapabilities(ThreadApiDBus *aApi)
+{
+    std::vector<uint8_t> responseCapabilitiesBytes;
+    otbr::Capabilities   capabilities;
+
+    TEST_ASSERT(aApi->GetCapabilities(responseCapabilitiesBytes) == OTBR_ERROR_NONE);
+    // Print TelemetryData proto in hex format.
+    printf("TelemetryData bytes in hex: ");
+    for (uint8_t byte : responseCapabilitiesBytes)
+    {
+        printf("%02x ", byte);
+    }
+    printf("\n");
+
+    TEST_ASSERT(
+        capabilities.ParseFromString(std::string(responseCapabilitiesBytes.begin(), responseCapabilitiesBytes.end())));
+    TEST_ASSERT(capabilities.nat64() == OTBR_ENABLE_NAT64);
+}
+
 int main()
 {
     DBusError                      error;
@@ -383,6 +403,7 @@ int main()
 #if OTBR_ENABLE_TELEMETRY_DATA_API
                             CheckTelemetryData(api.get());
 #endif
+                            CheckCapabilities(api.get());
                             api->FactoryReset(nullptr);
                             TEST_ASSERT(api->GetNetworkName(name) == OTBR_ERROR_NONE);
                             TEST_ASSERT(rloc16 != 0xffff);

@@ -43,16 +43,14 @@ add_library(otbr-dbus-server STATIC
 
 target_include_directories(otbr-dbus-server PRIVATE
     ${PROJECT_BINARY_DIR}/src
-    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:${PROJECT_SOURCE_DIR}/build/src>
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:${PROJECT_SOURCE_DIR}/build/src>
+    ${PROJECT_SOURCE_DIR}/build/src
 )
 
 add_dependencies(otbr-dbus-server otbr-dbus-introspect-header)
 
 target_link_libraries(otbr-dbus-server PUBLIC
     otbr-dbus-common
-    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
+    otbr-proto
 )
 
 if(OTBR_DOC)

@@ -32,12 +32,12 @@ add_executable(otbr-test-dbus-client
 
 target_include_directories(otbr-test-dbus-client PRIVATE
     ${PROJECT_BINARY_DIR}/src
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:${PROJECT_SOURCE_DIR}/build/src>
+    ${PROJECT_SOURCE_DIR}/build/src
 )
 
 target_link_libraries(otbr-test-dbus-client PRIVATE
     otbr-dbus-client
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
+    otbr-proto
 )
 
 add_executable(otbr-test-dbus-server
