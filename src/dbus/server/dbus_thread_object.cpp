@@ -1538,8 +1538,8 @@ otError DBusThreadObject::GetCapabilitiesHandler(DBusMessageIter &aIter)
     capabilities.set_nat64(OTBR_ENABLE_NAT64);
 
     {
-        const std::string    telemetryDataBytes = capabilities.SerializeAsString();
-        std::vector<uint8_t> data(telemetryDataBytes.begin(), telemetryDataBytes.end());
+        const std::string    dataBytes = capabilities.SerializeAsString();
+        std::vector<uint8_t> data(dataBytes.begin(), dataBytes.end());
 
         VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     }

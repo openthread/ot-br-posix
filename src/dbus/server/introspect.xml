@@ -934,7 +934,7 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <!-- TelemetryData: The Thread telemetry data (defined as proto/capabilities.proto)
+    <!-- TelemetryData: The Thread capabilities data (defined as proto/capabilities.proto)
       in binary form. -->
     <property name="Capabilities" type="ay" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

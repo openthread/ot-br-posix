@@ -870,7 +870,7 @@ public:
     ClientError GetTelemetryData(std::vector<uint8_t> &aTelemetryData);
 
     /**
-     * This method gets the telemetry data proto serialized byte data.
+     * This method gets the capabilities data proto serialized byte data.
      *
      * @param[out] aCapabilities The capabilities proto serialized byte data
      *                           (see proto/capabilities.proto)
