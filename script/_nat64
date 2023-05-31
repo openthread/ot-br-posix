@@ -40,6 +40,7 @@ NAT64_PREFIX=64:ff9b::/96
 DYNAMIC_POOL="${NAT64_DYNAMIC_POOL:-192.168.255.0/24}"
 NAT44_SERVICE=/etc/init.d/otbr-nat44
 WLAN_IFNAMES="${INFRA_IF_NAME:-eth0}"
+THREAD_IF="${THREAD_IF:-wpan0}"
 
 # Currently solution was verified only on raspbian and ubuntu.
 #
@@ -156,7 +157,9 @@ EOF
             echo "        iptables -t nat -A POSTROUTING -o $IFNAME -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
         done
     else
-        echo "        iptables -t nat -A POSTROUTING -s \"$DYNAMIC_POOL\" -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
+        # Just a random fwmark bits.
+        echo "        iptables -t mangle -A PREROUTING -i $THREAD_IF -j MARK --set-mark 0x1001" | sudo tee -a $NAT44_SERVICE
+        echo "        iptables -t nat -A POSTROUTING -m mark --mark 0x1001 -j MASQUERADE" | sudo tee -a $NAT44_SERVICE
         for IFNAME in $WLAN_IFNAMES; do
             echo "        iptables -t filter -A FORWARD -o $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
             echo "        iptables -t filter -A FORWARD -i $IFNAME -j ACCEPT" | sudo tee -a $NAT44_SERVICE
