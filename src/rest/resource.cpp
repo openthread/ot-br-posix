@@ -659,7 +659,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     struct NodeInfo          node;
     std::string              body;
     std::string              errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
-    otOperationalDataset     dataset;
+    otOperationalDataset     dataset   = {};
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDatasetTlvs datasetUpdateTlvs;
     int                      ret;
