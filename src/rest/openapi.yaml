@@ -239,6 +239,18 @@ paths:
           description: Invalid request body.
         "409":
           description: Writing active operational dataset rejected because Thread network is active.
+    delete:
+      tags:
+        - node
+      summary: Deletes the active operational dataset
+      description: |-
+        Deletes the the active operational dataset on the current node. Only allowed if the Thread node
+        is inactive.
+      responses:
+        "200":
+          description: Successfully deleted the active operational dataset.
+        "409":
+          description: Deleting active operational dataset rejected because Thread network is active.
   /node/dataset/pending:
     get:
       tags:
@@ -282,6 +294,15 @@ paths:
           description: Successfully created the pending operational dataset.
         "400":
           description: Invalid request body.
+    delete:
+      tags:
+        - node
+      summary: Deletes the pending operational dataset
+      description: |-
+        Deletes the the pending operational dataset on the current node.
+      responses:
+        "200":
+          description: Successfully deleted the active operational dataset.
 components:
   schemas:
     LeaderData:

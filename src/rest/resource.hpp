@@ -147,6 +147,7 @@ private:
     void GetDataRloc(Response &aResponse) const;
     void GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
     void SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
+    void DeleteDataset(DatasetType aDatasetType, Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);

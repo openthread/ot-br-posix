@@ -736,12 +736,47 @@ exit:
     }
 }
 
+void Resource::DeleteDataset(DatasetType aDatasetType, Response &aResponse) const
+{
+    otbrError                error       = OTBR_ERROR_NONE;
+    std::string              errorCode   = GetHttpStatus(HttpStatusCode::kStatusOk);
+    otOperationalDatasetTlvs datasetTlvs = {};
+
+    if (aDatasetType == DatasetType::kActive)
+    {
+        VerifyOrExit(otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED, error = OTBR_ERROR_INVALID_STATE);
+    }
+
+    if (aDatasetType == DatasetType::kActive)
+    {
+        VerifyOrExit(otDatasetSetActiveTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    }
+    else if (aDatasetType == DatasetType::kPending)
+    {
+        VerifyOrExit(otDatasetSetPendingTlvs(mInstance, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    }
+    aResponse.SetResponsCode(errorCode);
+
+exit:
+    if (error == OTBR_ERROR_INVALID_STATE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
 void Resource::Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
 
     switch (aRequest.GetMethod())
     {
+    case HttpMethod::kDelete:
+        DeleteDataset(aDatasetType, aResponse);
+        break;
     case HttpMethod::kGet:
         GetDataset(aDatasetType, aRequest, aResponse);
         break;
