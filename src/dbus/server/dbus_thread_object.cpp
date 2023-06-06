@@ -212,6 +212,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::SetRadioRegionHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
                                std::bind(&DBusThreadObject::SetDnsUpstreamQueryState, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
+                               std::bind(&DBusThreadObject::SetNat64Cidr, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObject::GetLinkModeHandler, this, _1));
@@ -310,6 +312,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetNat64ProtocolCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS,
                                std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
+                               std::bind(&DBusThreadObject::GetNat64Cidr, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
                                std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
@@ -1900,6 +1904,36 @@ exit:
     return error;
 }
 
+otError DBusThreadObject::GetNat64Cidr(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    otIp4Cidr cidr;
+    char      cidrString[OT_IP4_CIDR_STRING_SIZE];
+
+    otNat64GetCidr(mNcp->GetThreadHelper()->GetInstance(), &cidr);
+    otIp4CidrToString(&cidr, cidrString, sizeof(cidrString));
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, std::string(cidrString)) == OTBR_ERROR_NONE,
+                 error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::SetNat64Cidr(DBusMessageIter &aIter)
+{
+    otError     error = OT_ERROR_NONE;
+    std::string cidrString;
+    otIp4Cidr   cidr;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, cidrString) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    otIp4CidrFromString(cidrString.c_str(), &cidr);
+    SuccessOrExit(error = otNat64SetIp4Cidr(mNcp->GetThreadHelper()->GetInstance(), &cidr));
+
+exit:
+    return error;
+}
 #else  // OTBR_ENABLE_NAT64
 void DBusThreadObject::SetNat64Enabled(DBusRequest &aRequest)
 {
@@ -1926,6 +1960,18 @@ otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
 }
 
 otError DBusThreadObject::GetNat64ErrorCounters(DBusMessageIter &aIter)
+{
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+otError DBusThreadObject::GetNat64Cidr(DBusMessageIter &aIter)
+{
+    OTBR_UNUSED_VARIABLE(aIter);
+    return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+otError DBusThreadObject::SetNat64Cidr(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
