@@ -34,6 +34,8 @@
 #ifndef BACKBONE_ROUTER_DUA_ROUTING_MANAGER
 #define BACKBONE_ROUTER_DUA_ROUTING_MANAGER
 
+#include "openthread-br/config.h"
+
 #if OTBR_ENABLE_DUA_ROUTING
 
 #include <set>

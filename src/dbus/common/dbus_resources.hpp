@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_DBUS_RESOURCES_HPP_
 #define OTBR_DBUS_DBUS_RESOURCES_HPP_
 
+#include "openthread-br/config.h"
+
 #include <memory>
 #include <utility>
 

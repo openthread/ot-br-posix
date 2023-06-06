@@ -34,6 +34,8 @@
 #ifndef OTBR_REST_CONNECTION_HPP_
 #define OTBR_REST_CONNECTION_HPP_
 
+#include "openthread-br/config.h"
+
 #include <string.h>
 #include <unistd.h>
 

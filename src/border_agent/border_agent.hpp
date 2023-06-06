@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_BORDER_AGENT_HPP_
 #define OTBR_AGENT_BORDER_AGENT_HPP_
 
+#include "openthread-br/config.h"
+
 #if !(OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO)
 #error "Border Agent feature requires at least one `OTBR_MDNS` implementation"
 #endif

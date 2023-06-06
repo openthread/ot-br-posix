@@ -34,6 +34,8 @@
 #ifndef OTBR_REST_JSON_HPP_
 #define OTBR_REST_JSON_HPP_
 
+#include "openthread-br/config.h"
+
 #include "openthread/dataset.h"
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"

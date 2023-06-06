@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_COMMON_TYPES_HPP_
 #define OTBR_DBUS_COMMON_TYPES_HPP_
 
+#include "openthread-br/config.h"
+
 #include "dbus/common/error.hpp"
 
 #include <stdint.h>

@@ -34,6 +34,8 @@
 #ifndef OTBR_UTILS_SYSTEM_UTILS_HPP_
 #define OTBR_UTILS_SYSTEM_UTILS_HPP_
 
+#include "openthread-br/config.h"
+
 namespace otbr {
 namespace SystemUtils {
 

@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_MDNS_HPP_
 #define OTBR_AGENT_MDNS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <functional>
 #include <map>
 #include <memory>

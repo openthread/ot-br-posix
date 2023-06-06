@@ -34,6 +34,8 @@
 #ifndef DBUS_MESSAGE_HELPER_HPP_
 #define DBUS_MESSAGE_HELPER_HPP_
 
+#include "openthread-br/config.h"
+
 #include <array>
 #include <string>
 #include <tuple>

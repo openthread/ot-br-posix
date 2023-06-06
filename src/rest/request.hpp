@@ -34,6 +34,8 @@
 #ifndef OTBR_REST_REQUEST_HPP_
 #define OTBR_REST_REQUEST_HPP_
 
+#include "openthread-br/config.h"
+
 #include <map>
 #include <string>
 

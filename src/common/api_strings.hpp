@@ -35,6 +35,8 @@
 #ifndef OTBR_COMMON_API_STRINGS_HPP_
 #define OTBR_COMMON_API_STRINGS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <string>
 
 #include <openthread/thread.h>

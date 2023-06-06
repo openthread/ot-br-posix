@@ -34,6 +34,8 @@
 #ifndef OTBR_REST_REST_WEB_SERVER_HPP_
 #define OTBR_REST_REST_WEB_SERVER_HPP_
 
+#include "openthread-br/config.h"
+
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>

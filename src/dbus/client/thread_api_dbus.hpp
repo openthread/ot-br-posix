@@ -34,6 +34,8 @@
 #ifndef OTBR_THREAD_API_DBUS_HPP_
 #define OTBR_THREAD_API_DBUS_HPP_
 
+#include "openthread-br/config.h"
+
 #include <functional>
 
 #include <dbus/dbus.h>

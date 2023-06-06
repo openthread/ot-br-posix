@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_VENDOR_HPP_
 #define OTBR_AGENT_VENDOR_HPP_
 
+#include "openthread-br/config.h"
+
 #include "ncp/ncp_openthread.hpp"
 
 namespace otbr {

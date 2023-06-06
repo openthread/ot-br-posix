@@ -34,6 +34,8 @@
 #ifndef OTBR_REST_TYPES_HPP_
 #define OTBR_REST_TYPES_HPP_
 
+#include "openthread-br/config.h"
+
 #include <chrono>
 #include <string>
 #include <vector>

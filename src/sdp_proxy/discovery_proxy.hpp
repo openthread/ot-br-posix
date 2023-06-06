@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_DISCOVERY_PROXY_HPP_
 #define OTBR_AGENT_DISCOVERY_PROXY_HPP_
 
+#include "openthread-br/config.h"
+
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 
 #include <set>

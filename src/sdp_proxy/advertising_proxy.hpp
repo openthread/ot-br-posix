@@ -34,6 +34,8 @@
 #ifndef OTBR_SRP_ADVERTISING_PROXY_HPP_
 #define OTBR_SRP_ADVERTISING_PROXY_HPP_
 
+#include "openthread-br/config.h"
+
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
 #include <stdint.h>

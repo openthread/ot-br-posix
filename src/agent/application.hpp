@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_APPLICATION_HPP_
 #define OTBR_AGENT_APPLICATION_HPP_
 
+#include "openthread-br/config.h"
+
 #include <atomic>
 #include <signal.h>
 #include <stdint.h>

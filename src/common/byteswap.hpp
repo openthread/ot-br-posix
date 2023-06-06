@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMON_BYTESWAP_HPP_
 #define OTBR_COMMON_BYTESWAP_HPP_
 
+#include "openthread-br/config.h"
+
 #if __APPLE__
 #include <libkern/OSByteOrder.h>
 #define bswap_16 OSSwapInt16

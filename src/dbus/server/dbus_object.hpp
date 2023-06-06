@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_DBUS_OBJECT_HPP_
 #define OTBR_DBUS_DBUS_OBJECT_HPP_
 
+#include "openthread-br/config.h"
+
 #ifndef OTBR_LOG_TAG
 #define OTBR_LOG_TAG "DBUS"
 #endif
