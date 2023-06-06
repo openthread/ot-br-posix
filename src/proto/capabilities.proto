@@ -3,7 +3,7 @@ option optimize_for = LITE_RUNTIME;
 
 package otbr;
 
-// Capabilities message exposes a list of values of the macros of ot-br-posix. This is not an exhausted
+// Capabilities message exposes a list of values of the macros of ot-br-posix. This is not an exhaustive
 // list of all macros of ot-br-posix.
 message Capabilities {
     // Each of the following items matches exactly one macro, i.e. OTBR_ENABLE_NAT64 -> nat64
