@@ -55,6 +55,7 @@
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #include "proto/thread_telemetry.pb.h"
 #endif
+#include "proto/capabilities.pb.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -320,6 +321,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetDnsUpstreamQueryState, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TELEMETRY_DATA,
                                std::bind(&DBusThreadObject::GetTelemetryDataHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CAPABILITIES,
+                               std::bind(&DBusThreadObject::GetCapabilitiesHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -1525,6 +1528,24 @@ exit:
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif
+}
+
+otError DBusThreadObject::GetCapabilitiesHandler(DBusMessageIter &aIter)
+{
+    otError            error = OT_ERROR_NONE;
+    otbr::Capabilities capabilities;
+
+    capabilities.set_nat64(OTBR_ENABLE_NAT64);
+
+    {
+        const std::string    dataBytes = capabilities.SerializeAsString();
+        std::vector<uint8_t> data(dataBytes.begin(), dataBytes.end());
+
+        VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    }
+
+exit:
+    return error;
 }
 
 void DBusThreadObject::GetPropertiesHandler(DBusRequest &aRequest)

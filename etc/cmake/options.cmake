@@ -119,6 +119,8 @@ endif()
 option(OTBR_NAT64 "Enable NAT64 support" OFF)
 if(OTBR_NAT64)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NAT64=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_NAT64=0)
 endif()
 
 option(OTBR_VENDOR_INFRA_LINK_SELECT "Enable Vendor-specific infrastructure link selection rules" OFF)

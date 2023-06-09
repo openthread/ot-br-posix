@@ -691,6 +691,11 @@ ClientError ThreadApiDBus::GetTelemetryData(std::vector<uint8_t> &aTelemetryData
     return GetProperty(OTBR_DBUS_PROPERTY_TELEMETRY_DATA, aTelemetryData);
 }
 
+ClientError ThreadApiDBus::GetCapabilities(std::vector<uint8_t> &aCapabilities)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_CAPABILITIES, aCapabilities);
+}
+
 std::string ThreadApiDBus::GetInterfaceName(void)
 {
     return mInterfaceName;
