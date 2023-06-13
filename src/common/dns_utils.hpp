@@ -34,6 +34,8 @@
 #ifndef OTBR_COMMON_DNS_UTILS_HPP_
 #define OTBR_COMMON_DNS_UTILS_HPP_
 
+#include "openthread-br/config.h"
+
 #include "common/types.hpp"
 
 /**

@@ -29,6 +29,8 @@
 #ifndef OTBR_COMMON_CALLBACK_HPP_
 #define OTBR_COMMON_CALLBACK_HPP_
 
+#include "openthread-br/config.h"
+
 #include <functional>
 #include <type_traits>
 

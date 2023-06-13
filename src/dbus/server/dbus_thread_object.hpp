@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_THREAD_OBJECT_HPP_
 #define OTBR_DBUS_THREAD_OBJECT_HPP_
 
+#include "openthread-br/config.h"
+
 #include <string>
 
 #include <openthread/link.h>

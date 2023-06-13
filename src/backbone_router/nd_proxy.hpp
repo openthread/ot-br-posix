@@ -34,6 +34,8 @@
 #ifndef ND_PROXY_HPP_
 #define ND_PROXY_HPP_
 
+#include "openthread-br/config.h"
+
 #if OTBR_ENABLE_DUA_ROUTING
 
 #ifdef __APPLE__

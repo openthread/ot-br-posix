@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_NCP_OPENTHREAD_HPP_
 #define OTBR_AGENT_NCP_OPENTHREAD_HPP_
 
+#include "openthread-br/config.h"
+
 #include <chrono>
 #include <memory>
 

@@ -34,6 +34,8 @@
 #ifndef BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
 #define BACKBONE_ROUTER_BACKBONE_AGENT_HPP_
 
+#include "openthread-br/config.h"
+
 #if OTBR_ENABLE_BACKBONE_ROUTER
 
 #include <openthread/backbone_router_ftd.h>

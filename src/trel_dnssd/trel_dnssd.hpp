@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_TREL_DNSSD_HPP_
 #define OTBR_AGENT_TREL_DNSSD_HPP_
 
+#include "openthread-br/config.h"
+
 #if OTBR_ENABLE_TREL
 
 #include <assert.h>

@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_DBUS_MESSAGE_DUMP_HPP_
 #define OTBR_AGENT_DBUS_MESSAGE_DUMP_HPP_
 
+#include "openthread-br/config.h"
+
 #include <dbus/dbus.h>
 
 namespace otbr {

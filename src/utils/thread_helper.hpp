@@ -34,6 +34,8 @@
 #ifndef OTBR_THREAD_HELPER_HPP_
 #define OTBR_THREAD_HELPER_HPP_
 
+#include "openthread-br/config.h"
+
 #include <chrono>
 #include <functional>
 #include <map>

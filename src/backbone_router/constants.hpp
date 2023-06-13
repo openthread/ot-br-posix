@@ -34,6 +34,8 @@
 #ifndef BACKBONE_CONSTANTS_HPP_
 #define BACKBONE_CONSTANTS_HPP_
 
+#include "openthread-br/config.h"
+
 namespace otbr {
 namespace BackboneRouter {
 

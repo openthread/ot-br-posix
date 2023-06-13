@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_
 #define OTBR_DBUS_CLIENT_CLIENT_ERROR_HPP_
 
+#include "openthread-br/config.h"
+
 #include <string>
 
 #include <dbus/dbus.h>

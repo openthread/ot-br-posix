@@ -34,6 +34,8 @@
 #ifndef OTBR_AGENT_MDNS_AVAHI_HPP_
 #define OTBR_AGENT_MDNS_AVAHI_HPP_
 
+#include "openthread-br/config.h"
+
 #include <memory>
 #include <set>
 #include <vector>

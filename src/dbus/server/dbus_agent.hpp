@@ -34,6 +34,8 @@
 #ifndef OTBR_DBUS_AGENT_HPP_
 #define OTBR_DBUS_AGENT_HPP_
 
+#include "openthread-br/config.h"
+
 #include <functional>
 #include <set>
 #include <string>

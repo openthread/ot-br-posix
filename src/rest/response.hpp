@@ -34,6 +34,8 @@
 #ifndef OTBR_REST_RESPONSE_HPP_
 #define OTBR_REST_RESPONSE_HPP_
 
+#include "openthread-br/config.h"
+
 #include <chrono>
 #include <map>
 #include <string>

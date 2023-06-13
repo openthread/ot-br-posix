@@ -33,6 +33,8 @@
 #ifndef OTBR_COMMON_CODE_UTILS_HPP_
 #define OTBR_COMMON_CODE_UTILS_HPP_
 
+#include "openthread-br/config.h"
+
 #ifndef OTBR_LOG_TAG
 #define OTBR_LOG_TAG "UTILS"
 #endif
