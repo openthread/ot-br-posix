@@ -357,13 +357,14 @@ void Resource::SetDataState(const Request &aRequest, Response &aResponse) const
     {
         if (!otIp6IsEnabled(mInstance))
         {
-            SuccessOrExit(otIp6SetEnabled(mInstance, true));
+            VerifyOrExit(otIp6SetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
         }
         VerifyOrExit(otThreadSetEnabled(mInstance, true) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     }
     else if (body == "disable")
     {
         VerifyOrExit(otThreadSetEnabled(mInstance, false) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+        VerifyOrExit(otIp6SetEnabled(mInstance, false) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     }
     else
     {
