@@ -257,16 +257,46 @@ exit:
     }
 }
 
+void Resource::DeleteNodeInfo(Response &aResponse) const
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string errorCode;
+
+    VerifyOrExit(mNcp->GetThreadHelper()->Detach() == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(otInstanceErasePersistentInfo(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+    mNcp->Reset();
+
+exit:
+    if (error == OTBR_ERROR_NONE)
+    {
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+    }
+    else if (error == OTBR_ERROR_INVALID_STATE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
 void Resource::NodeInfo(const Request &aRequest, Response &aResponse) const
 {
     std::string errorCode;
-    if (aRequest.GetMethod() == HttpMethod::kGet)
+
+    switch (aRequest.GetMethod())
     {
+    case HttpMethod::kGet:
         GetNodeInfo(aResponse);
-    }
-    else
-    {
+        break;
+    case HttpMethod::kDelete:
+        DeleteNodeInfo(aResponse);
+        break;
+    default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
     }
 }
 

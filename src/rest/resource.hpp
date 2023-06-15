@@ -137,6 +137,7 @@ private:
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
 
     void GetNodeInfo(Response &aResponse) const;
+    void DeleteNodeInfo(Response &aResponse) const;
     void GetDataBaId(Response &aResponse) const;
     void GetDataExtendedAddr(Response &aResponse) const;
     void GetDataState(Response &aResponse) const;
