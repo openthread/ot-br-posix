@@ -512,11 +512,12 @@ protected:
     void AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
     void RemoveServiceRegistration(const std::string &aName, const std::string &aType, otbrError aError);
     ServiceRegistration *FindServiceRegistration(const std::string &aName, const std::string &aType);
-    void                 OnServiceResolved(std::string aType, const DiscoveredInstanceInfo &aInstanceInfo);
-    void OnServiceResolveFailed(const std::string &aType, const std::string &aInstanceName, int32_t aErrorCode);
-    void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
-    void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
-    void OnHostResolveFailed(const std::string &aHostName, int32_t aErrorCode);
+
+    void OnServiceResolved(std::string aType, DiscoveredInstanceInfo aInstanceInfo);
+    void OnServiceResolveFailed(std::string aType, std::string aInstanceName, int32_t aErrorCode);
+    void OnServiceRemoved(uint32_t aNetifIndex, std::string aType, std::string aInstanceName);
+    void OnHostResolved(std::string aHostName, DiscoveredHostInfo aHostInfo);
+    void OnHostResolveFailed(std::string aHostName, int32_t aErrorCode);
 
     // Handles the cases that there is already a registration for the same service.
     // If the returned callback is completed, current registration should be considered
