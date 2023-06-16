@@ -175,7 +175,7 @@ uint64_t Publisher::AddSubscriptionCallbacks(Publisher::DiscoveredServiceInstanc
     return subscriberId;
 }
 
-void Publisher::OnServiceResolved(const std::string aType, const DiscoveredInstanceInfo &aInstanceInfo)
+void Publisher::OnServiceResolved(std::string aType, const DiscoveredInstanceInfo &aInstanceInfo)
 {
     std::vector<uint64_t> subscriberIds;
 
