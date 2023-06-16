@@ -63,15 +63,27 @@ public:
     // compiling issue which trying to instantiate this template constructor
     // for use cases like `::mOnceCallback(aOnceCallback)`.
     template <typename T, typename = typename std::enable_if<!std::is_same<OnceCallback, T>::value>::type>
-    OnceCallback(T &&func)
-        : mFunc(std::forward<T>(func))
+    OnceCallback(T &&aFunc)
+        : mFunc(std::forward<T>(aFunc))
     {
+    }
+
+    OnceCallback(OnceCallback &&aCallback)
+        : mFunc(std::move(aCallback.mFunc))
+    {
+        aCallback.mFunc = nullptr;
+    }
+
+    OnceCallback &operator=(OnceCallback &&aCallback)
+    {
+        mFunc           = std::move(aCallback.mFunc);
+        aCallback.mFunc = nullptr;
+
+        return *this;
     }
 
     OnceCallback(const OnceCallback &)            = delete;
     OnceCallback &operator=(const OnceCallback &) = delete;
-    OnceCallback(OnceCallback &&)                 = default;
-    OnceCallback &operator=(OnceCallback &&)      = default;
 
     R operator()(Args...) const &
     {
@@ -79,13 +91,13 @@ public:
                                       "rvalue, i.e. std::move(callback)().");
     }
 
-    R operator()(Args... args) &&
+    R operator()(Args... aArgs) &&
     {
         // Move `this` to a local variable to clear internal state
         // before invoking the callback function.
         OnceCallback cb = std::move(*this);
 
-        return cb.mFunc(std::forward<Args>(args)...);
+        return cb.mFunc(std::forward<Args>(aArgs)...);
     }
 
     bool IsNull() const { return mFunc == nullptr; }
