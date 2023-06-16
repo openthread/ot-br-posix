@@ -512,7 +512,7 @@ protected:
     void AddServiceRegistration(ServiceRegistrationPtr &&aServiceReg);
     void RemoveServiceRegistration(const std::string &aName, const std::string &aType, otbrError aError);
     ServiceRegistration *FindServiceRegistration(const std::string &aName, const std::string &aType);
-    void                 OnServiceResolved(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo);
+    void                 OnServiceResolved(std::string aType, const DiscoveredInstanceInfo &aInstanceInfo);
     void OnServiceResolveFailed(const std::string &aType, const std::string &aInstanceName, int32_t aErrorCode);
     void OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName);
     void OnHostResolved(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo);
