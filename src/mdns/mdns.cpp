@@ -81,14 +81,14 @@ void Publisher::PublishHost(const std::string             &aName,
     }
 }
 
-void Publisher::OnServiceResolveFailed(const std::string &aType, const std::string &aInstanceName, int32_t aErrorCode)
+void Publisher::OnServiceResolveFailed(std::string aType, std::string aInstanceName, int32_t aErrorCode)
 {
     UpdateMdnsResponseCounters(mTelemetryInfo.mServiceResolutions, DnsErrorToOtbrError(aErrorCode));
     UpdateServiceInstanceResolutionEmaLatency(aInstanceName, aType, DnsErrorToOtbrError(aErrorCode));
     OnServiceResolveFailedImpl(aType, aInstanceName, aErrorCode);
 }
 
-void Publisher::OnHostResolveFailed(const std::string &aHostName, int32_t aErrorCode)
+void Publisher::OnHostResolveFailed(std::string aHostName, int32_t aErrorCode)
 {
     UpdateMdnsResponseCounters(mTelemetryInfo.mHostResolutions, DnsErrorToOtbrError(aErrorCode));
     UpdateHostResolutionEmaLatency(aHostName, DnsErrorToOtbrError(aErrorCode));
@@ -175,7 +175,7 @@ uint64_t Publisher::AddSubscriptionCallbacks(Publisher::DiscoveredServiceInstanc
     return subscriberId;
 }
 
-void Publisher::OnServiceResolved(std::string aType, const DiscoveredInstanceInfo &aInstanceInfo)
+void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aInstanceInfo)
 {
     std::vector<uint64_t> subscriberIds;
 
@@ -216,7 +216,7 @@ void Publisher::OnServiceResolved(std::string aType, const DiscoveredInstanceInf
     }
 }
 
-void Publisher::OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType, const std::string &aInstanceName)
+void Publisher::OnServiceRemoved(uint32_t aNetifIndex, std::string aType, std::string aInstanceName)
 {
     DiscoveredInstanceInfo instanceInfo;
 
@@ -229,7 +229,7 @@ void Publisher::OnServiceRemoved(uint32_t aNetifIndex, const std::string &aType,
     OnServiceResolved(aType, instanceInfo);
 }
 
-void Publisher::OnHostResolved(const std::string &aHostName, const Publisher::DiscoveredHostInfo &aHostInfo)
+void Publisher::OnHostResolved(std::string aHostName, Publisher::DiscoveredHostInfo aHostInfo)
 {
     otbrLogInfo("Host %s is resolved successfully: host %s addresses %zu ttl %u", aHostName.c_str(),
                 aHostInfo.mHostName.c_str(), aHostInfo.mAddresses.size(), aHostInfo.mTtl);
