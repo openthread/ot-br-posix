@@ -243,6 +243,9 @@ void ControllerOpenThread::Init(void)
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otDnssdUpstreamQuerySetEnabled(mInstance, /* aEnabled */ true);
 #endif
+#if OTBR_ENABLE_DHCP6_PD
+    otBorderRoutingDhcp6PdSetEnabled(mInstance, /* aEnabled */ true);
+#endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
     mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
@@ -276,6 +279,9 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 #endif
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otDnssdUpstreamQuerySetEnabled(mInstance, aFeatureFlagList.enable_dns_upstream_query());
+#endif
+#if OTBR_ENABLE_DHCP6_PD
+    otBorderRoutingDhcp6PdSetEnabled(mInstance, aFeatureFlagList.enable_dhcp6_pd());
 #endif
 
     return error;

@@ -67,6 +67,7 @@ set(OT_TCP OFF CACHE STRING "disable TCP" FORCE)
 set(OT_TREL ${OTBR_TREL} CACHE STRING "enable TREL" FORCE)
 set(OT_UDP_FORWARD OFF CACHE STRING "disable udp forward" FORCE)
 set(OT_UPTIME ON CACHE STRING "enable uptime" FORCE)
+set(OT_BORDER_ROUTING_DHCP6_PD ${OTBR_DHCP6_PD} CACHE STRING "enable dhcpv6 pd support in border routing" FORCE)
 
 if (OTBR_SRP_ADVERTISING_PROXY)
     set(OT_SRP_SERVER ON CACHE STRING "enable SRP server" FORCE)

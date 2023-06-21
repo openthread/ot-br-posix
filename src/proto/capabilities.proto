@@ -10,4 +10,5 @@ message Capabilities {
     // When some macro is deleted, the corresponding value should be marked as "reserved".
     // It is suggested to assign a new field number to a macro when its scope has significantly changed.
     optional bool nat64 = 1; // OTBR_ENABLE_NAT64
+    optional bool dhcp6_pd = 2; // OTBR_ENABLE_DHCP6_PD
 }
