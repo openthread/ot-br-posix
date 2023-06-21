@@ -126,15 +126,14 @@ case "$(uname)" in
         fi
 
         if [ "${OTBR_MDNS-}" == 'mDNSResponder' ]; then
-            SOURCE_NAME=mDNSResponder-1310.80.1
+            SOURCE_NAME=mDNSResponder-1790.80.10
             wget https://github.com/apple-oss-distributions/mDNSResponder/archive/refs/tags/$SOURCE_NAME.tar.gz \
                 && mkdir -p $SOURCE_NAME \
                 && tar xvf $SOURCE_NAME.tar.gz -C $SOURCE_NAME --strip-components=1 \
-                && cd $SOURCE_NAME/Clients \
-                && sed -i '/#include <ctype.h>/a #include <stdarg.h>' dns-sd.c \
-                && sed -i '/#include <ctype.h>/a #include <sys/param.h>' dns-sd.c \
+                && cd "$SOURCE_NAME"/mDNSShared \
+                && sed -i 's/__block mStatus err;/mStatus err;/' uds_daemon.c \
                 && cd ../mDNSPosix \
-                && make os=linux && sudo make install os=linux
+                && make os=linux tls=no && sudo make install os=linux tls=no
         fi
 
         # Enable IPv6
