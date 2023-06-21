@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/border_routing.h>
 #include <openthread/dataset.h>
 #include <openthread/dnssd_server.h>
 #include <openthread/logging.h>
