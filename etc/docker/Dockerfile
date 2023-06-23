@@ -88,6 +88,7 @@ RUN apt-get update \
   && ln -fs /usr/share/zoneinfo/UTC /etc/localtime
 
 COPY ./script /app/script
+COPY ./third_party/mDNSResponder /app/third_party/mDNSResponder
 WORKDIR /app
 
 RUN ./script/bootstrap
