@@ -62,4 +62,6 @@ message FeatureFlagList {
   optional bool enable_trel = 4 [default = false];
   // Whether to enable upstream DNS forwarding.
   optional bool enable_dns_upstream_query = 5 [default = false];
+  // Whether to enable prefix delegation.
+  optional bool enable_dhcp6_pd = 6 [default = false];
 }

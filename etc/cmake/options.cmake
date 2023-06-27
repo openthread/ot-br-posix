@@ -139,3 +139,10 @@ option(OTBR_PUBLISH_MESHCOP_BA_ID "Publish the MeshCoP mDNS 'id' TXT entry, enab
 if (OTBR_PUBLISH_MESHCOP_BA_ID)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_PUBLISH_MESHCOP_BA_ID=1)
 endif()
+
+option(OTBR_DHCP6_PD "Prefix delegation support" OFF)
+if (OTBR_DHCP6_PD)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DHCP6_PD=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DHCP6_PD=0)
+endif()
