@@ -72,13 +72,14 @@
  *  @param[in] aStatus  A scalar status to be evaluated against zero (0).
  *
  */
-#define SuccessOrExit(aStatus) \
-    do                         \
-    {                          \
-        if ((aStatus) != 0)    \
-        {                      \
-            goto exit;         \
-        }                      \
+#define SuccessOrExit(aStatus, ...) \
+    do                              \
+    {                               \
+        if ((aStatus) != 0)         \
+        {                           \
+            __VA_ARGS__;            \
+            goto exit;              \
+        }                           \
     } while (false)
 
 /**
@@ -89,14 +90,14 @@
  * @param[in] aMessage  A message (text string) to print on failure.
  *
  */
-#define SuccessOrDie(aStatus, aMessage)                                      \
-    do                                                                       \
-    {                                                                        \
-        if ((aStatus) != 0)                                                  \
-        {                                                                    \
-            otbrLogEmerg("FAILED %s:%d - %s", __FILE__, __LINE__, aMessage); \
-            exit(-1);                                                        \
-        }                                                                    \
+#define SuccessOrDie(aStatus, aMessage)                                                   \
+    do                                                                                    \
+    {                                                                                     \
+        if ((aStatus) != 0)                                                               \
+        {                                                                                 \
+            otbrLogEmerg("FAILED %s:%d - %d: %s", __FILE__, __LINE__, aStatus, aMessage); \
+            exit(-1);                                                                     \
+        }                                                                                 \
     } while (false)
 
 /**
