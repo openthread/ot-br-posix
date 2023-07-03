@@ -43,7 +43,7 @@ readonly CONTAINER_NAME
 
 do_prepare()
 {
-    docker create --name "${CONTAINER_NAME}" --rm -v openwrt-bin:/home/build/openwrt/bin -it openwrt/sdk
+    docker create --name "${CONTAINER_NAME}" --rm -v openwrt-bin:/home/build/openwrt/bin -it openwrt/sdk:22.03.3
     docker cp . "${CONTAINER_NAME}":/home/build/ot-br-posix
     echo 'src-link openthread /home/build/ot-br-posix/etc/openwrt' >feeds.conf
 
