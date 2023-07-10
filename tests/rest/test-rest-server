@@ -50,6 +50,10 @@ main()
     sleep 1
     sudo expect <<EOF &
 spawn ${CMAKE_BINARY_DIR}/third_party/openthread/repo/src/posix/ot-ctl
+send "dataset init new\r\n"
+expect "Done"
+send "dataset commit active\r\n"
+expect "Done"
 send "ifconfig up\r\n"
 expect "Done"
 send "thread start\r\n"

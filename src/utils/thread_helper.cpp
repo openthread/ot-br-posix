@@ -39,6 +39,7 @@
 
 #include <openthread/border_router.h>
 #include <openthread/channel_manager.h>
+#include <openthread/dataset_ftd.h>
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
 #include <openthread/thread_ftd.h>
@@ -321,78 +322,51 @@ void ThreadHelper::Attach(const std::string          &aNetworkName,
                           AttachHandler               aHandler)
 
 {
-    otError         error = OT_ERROR_NONE;
-    otExtendedPanId extPanId;
-    otNetworkKey    networkKey;
-    otPskc          pskc;
-    uint32_t        channelMask;
-    uint8_t         channel;
+    otError              error   = OT_ERROR_NONE;
+    otOperationalDataset dataset = {};
 
     VerifyOrExit(aHandler != nullptr, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mAttachHandler == nullptr && mJoinerHandler == nullptr, error = OT_ERROR_INVALID_STATE);
-    VerifyOrExit(aNetworkKey.empty() || aNetworkKey.size() == sizeof(networkKey.m8), error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(pskc.m8), error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aNetworkKey.empty() || aNetworkKey.size() == sizeof(dataset.mNetworkKey.m8),
+                 error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(aPSKc.empty() || aPSKc.size() == sizeof(dataset.mPskc.m8), error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(aChannelMask != 0, error = OT_ERROR_INVALID_ARGS);
 
-    while (aPanId == UINT16_MAX)
-    {
-        RandomFill(&aPanId, sizeof(aPanId));
-    }
+    SuccessOrExit(error = otDatasetCreateNewNetwork(mInstance, &dataset));
 
     if (aExtPanId != UINT64_MAX)
     {
-        extPanId = ToOtExtendedPanId(aExtPanId);
-    }
-    else
-    {
-        *reinterpret_cast<uint64_t *>(&extPanId) = UINT64_MAX;
-
-        while (*reinterpret_cast<uint64_t *>(&extPanId) == UINT64_MAX)
-        {
-            RandomFill(extPanId.m8, sizeof(extPanId.m8));
-        }
+        dataset.mExtendedPanId = ToOtExtendedPanId(aExtPanId);
     }
 
     if (!aNetworkKey.empty())
     {
-        memcpy(networkKey.m8, &aNetworkKey[0], sizeof(networkKey.m8));
+        memcpy(dataset.mNetworkKey.m8, &aNetworkKey[0], sizeof(dataset.mNetworkKey.m8));
     }
-    else
+
+    if (aPanId != UINT16_MAX)
     {
-        RandomFill(networkKey.m8, sizeof(networkKey.m8));
+        dataset.mPanId = aPanId;
     }
 
     if (!aPSKc.empty())
     {
-        memcpy(pskc.m8, &aPSKc[0], sizeof(pskc.m8));
+        memcpy(dataset.mPskc.m8, &aPSKc[0], sizeof(dataset.mPskc.m8));
     }
-    else
-    {
-        RandomFill(pskc.m8, sizeof(pskc.m8));
-    }
+
+    SuccessOrExit(error = otNetworkNameFromString(&dataset.mNetworkName, aNetworkName.c_str()));
+
+    dataset.mChannelMask &= aChannelMask;
+    VerifyOrExit(dataset.mChannelMask != 0, otbrLogWarning("Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
+
+    dataset.mChannel = RandomChannelFromChannelMask(dataset.mChannelMask);
+
+    SuccessOrExit(error = otDatasetSetActive(mInstance, &dataset));
 
     if (!otIp6IsEnabled(mInstance))
     {
         SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
     }
-
-    SuccessOrExit(error = otThreadSetNetworkName(mInstance, aNetworkName.c_str()));
-    SuccessOrExit(error = otLinkSetPanId(mInstance, aPanId));
-    SuccessOrExit(error = otThreadSetExtendedPanId(mInstance, &extPanId));
-    SuccessOrExit(error = otThreadSetNetworkKey(mInstance, &networkKey));
-
-    channelMask = otPlatRadioGetPreferredChannelMask(mInstance) & aChannelMask;
-
-    if (channelMask == 0)
-    {
-        channelMask = otLinkGetSupportedChannelMask(mInstance) & aChannelMask;
-    }
-    VerifyOrExit(channelMask != 0, otbrLogWarning("Invalid channel mask"), error = OT_ERROR_INVALID_ARGS);
-
-    channel = RandomChannelFromChannelMask(channelMask);
-    SuccessOrExit(otLinkSetChannel(mInstance, channel));
-
-    SuccessOrExit(error = otThreadSetPskc(mInstance, &pskc));
 
     SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
     mAttachDelayMs = 0;

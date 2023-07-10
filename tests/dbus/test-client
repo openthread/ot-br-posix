@@ -221,11 +221,15 @@ main()
     # The ot-cli-ftd node is used to test Thread attach.
     expect <<EOF &
 spawn ot-cli-ftd 3
-send "panid 0x7890\r\n"
+send "dataset init new\r\n"
 expect "Done"
-send "networkname Test1\r\n"
+send "dataset panid 0x7890\r\n"
 expect "Done"
-send "channel 15\r\n"
+send "dataset networkname Test1\r\n"
+expect "Done"
+send "dataset channel 15\r\n"
+expect "Done"
+send "dataset commit active\r\n"
 expect "Done"
 send "ifconfig up\r\n"
 expect "Done"
@@ -249,13 +253,17 @@ EOF
     # The ot-cli-mtd node is used to test the child and neighbor table.
     expect <<EOF &
 spawn ot-cli-mtd 2
-send "panid 0x3456\r\n"
+send "dataset clear"
 expect "Done"
-send "networkkey 00112233445566778899aabbccddeeff\r\n"
+send "dataset panid 0x3456\r\n"
 expect "Done"
-send "networkname Test\r\n"
+send "dataset networkkey 00112233445566778899aabbccddeeff\r\n"
 expect "Done"
-send "channel 11\r\n"
+send "dataset networkname Test\r\n"
+expect "Done"
+send "dataset channel 11\r\n"
+expect "Done"
+send "dataset commit active\r\n"
 expect "Done"
 send "ifconfig up\r\n"
 expect "Done"
