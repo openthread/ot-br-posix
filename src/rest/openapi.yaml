@@ -43,6 +43,15 @@ paths:
             application/json:
               schema:
                 type: object
+    delete:
+      tags:
+        - node
+      summary: Erase all persistent information, essentially factory reset the Border Router.
+      responses:
+        "200":
+          description: Successful operation
+        "409":
+          description: Thread interface is in wrong state.
   /node/ba-id:
     get:
       tags:
