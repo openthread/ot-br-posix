@@ -80,8 +80,25 @@ public:
     void Process(const char *aBuf, size_t aLength);
 
 private:
+    class State {
+    public:
+        Request    *mRequest;
+        std::string mUrl;
+        std::string mNextHeaderField;
+    };
+
+    static int OnUrl(http_parser *parser, const char *at, size_t len);
+    static int OnBody(http_parser *parser, const char *at, size_t len);
+    static int OnMessageComplete(http_parser *parser);
+    static int OnMessageBegin(http_parser *parser);
+    static int OnHeaderComplete(http_parser *parser);
+    static int OnHandlerData(http_parser *, const char *, size_t);
+    static int OnHeaderField(http_parser *parser, const char *at, size_t len);
+    static int OnHeaderData(http_parser *parser, const char *at, size_t len);
+
     http_parser          mParser;
     http_parser_settings mSettings;
+    State                mState;
 };
 
 } // namespace rest

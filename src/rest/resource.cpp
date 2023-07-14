@@ -151,7 +151,7 @@ void Resource::Init(void)
 
 void Resource::Handle(Request &aRequest, Response &aResponse) const
 {
-    std::string url = aRequest.GetUrl();
+    std::string url = aRequest.GetUrlPath();
     auto        it  = mResourceMap.find(url);
 
     if (it != mResourceMap.end())
@@ -167,7 +167,7 @@ void Resource::Handle(Request &aRequest, Response &aResponse) const
 
 void Resource::HandleCallback(Request &aRequest, Response &aResponse)
 {
-    std::string url = aRequest.GetUrl();
+    std::string url = aRequest.GetUrlPath();
     auto        it  = mResourceCallbackMap.find(url);
 
     if (it != mResourceCallbackMap.end())

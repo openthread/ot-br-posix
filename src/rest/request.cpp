@@ -37,9 +37,9 @@ Request::Request(void)
 {
 }
 
-void Request::SetUrl(const char *aString, size_t aLength)
+void Request::SetUrlPath(std::string aPath)
 {
-    mUrl += std::string(aString, aLength);
+    mUrlPath = aPath;
 }
 
 void Request::SetBody(const char *aString, size_t aLength)
@@ -57,14 +57,14 @@ void Request::SetMethod(int32_t aMethod)
     mMethod = aMethod;
 }
 
-void Request::SetNextHeaderField(const char *aString, size_t aLength)
+void Request::AddHeaderField(std::string aField, std::string aValue)
 {
-    mNextHeaderField = StringUtils::ToLowercase(std::string(aString, aLength));
+    mHeaders[aField] = aValue;
 }
 
-void Request::SetHeaderValue(const char *aString, size_t aLength)
+void Request::AddQueryField(std::string aField, std::string aValue)
 {
-    mHeaders[mNextHeaderField] = std::string(aString, aLength);
+    mQueryParameters[aField] = aValue;
 }
 
 HttpMethod Request::GetMethod() const
@@ -77,30 +77,21 @@ std::string Request::GetBody() const
     return mBody;
 }
 
-std::string Request::GetUrl(void) const
+std::string Request::GetUrlPath(void) const
 {
-    std::string url = mUrl;
-
-    size_t urlEnd = url.find("?");
-
-    if (urlEnd != std::string::npos)
-    {
-        url = url.substr(0, urlEnd);
-    }
-    while (!url.empty() && url[url.size() - 1] == '/')
-    {
-        url.pop_back();
-    }
-
-    VerifyOrExit(url.size() > 0, url = "/");
-
-exit:
-    return url;
+    return mUrlPath;
 }
 
 std::string Request::GetHeaderValue(const std::string aHeaderField) const
 {
     auto it = mHeaders.find(StringUtils::ToLowercase(aHeaderField));
+
+    return (it == mHeaders.end()) ? "" : it->second;
+}
+
+std::string Request::GetQueryValue(const std::string aQueryName) const
+{
+    auto it = mHeaders.find(aQueryName);
 
     return (it == mHeaders.end()) ? "" : it->second;
 }

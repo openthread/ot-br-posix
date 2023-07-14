@@ -59,13 +59,12 @@ public:
     Request(void);
 
     /**
-     * This method sets the Url field of a request.
+     * This method sets the Url Path field of a request.
      *
-     * @param[in] aString  A pointer points to url string.
-     * @param[in] aLength  Length of the url string
+     * @param[in] aPath  The url path
      *
      */
-    void SetUrl(const char *aString, size_t aLength);
+    void SetUrlPath(std::string aPath);
 
     /**
      * This method sets the body field of a request.
@@ -95,20 +94,19 @@ public:
     /**
      * This method sets the next header field of a request.
      *
-     * @param[in] aString  A pointer points to body string.
-     * @param[in] aLength  Length of the body string
+     * @param[in] aField  The field name.
+     * @param[in] aValue  The value of the field.
      *
      */
-    void SetNextHeaderField(const char *aString, size_t aLength);
+    void AddHeaderField(std::string aField, std::string aValue);
 
     /**
-     * This method sets the header value of the previously set header of a request.
+     * This method adds a query field to the request.
      *
-     * @param[in] aString  A pointer points to body string.
-     * @param[in] aLength  Length of the body string
-     *
+     * @param[in] aField  The field name.
+     * @param[in] aValue  The value of the field.
      */
-    void SetHeaderValue(const char *aString, size_t aLength);
+    void AddQueryField(std::string aField, std::string aValue);
 
     /**
      * This method labels the request as complete which means it no longer need to be parsed one more time .
@@ -141,7 +139,7 @@ public:
      *
      * @returns A string contains the url of this request.
      */
-    std::string GetUrl(void) const;
+    std::string GetUrlPath(void) const;
 
     /**
      * This method returns the specified header field for this request.
@@ -150,6 +148,14 @@ public:
      * @returns A string contains the header value of this request.
      */
     std::string GetHeaderValue(const std::string aHeaderField) const;
+
+    /**
+     * This method returns the specified query for this request.
+     *
+     * @param aQueryName  A query name.
+     * @return A string containing the value of the query or an empty string if the query could not be found.
+     */
+    std::string GetQueryValue(const std::string aQueryName) const;
 
     /**
      * This method indicates whether this request is parsed completely.
@@ -161,10 +167,10 @@ public:
 private:
     int32_t                            mMethod;
     size_t                             mContentLength;
-    std::string                        mUrl;
+    std::string                        mUrlPath;
     std::string                        mBody;
-    std::string                        mNextHeaderField;
     std::map<std::string, std::string> mHeaders;
+    std::map<std::string, std::string> mQueryParameters;
     bool                               mComplete;
 };
 

@@ -34,104 +34,141 @@
 namespace otbr {
 namespace rest {
 
-static int OnUrl(http_parser *parser, const char *at, size_t len)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-
-    if (len > 0)
-    {
-        request->SetUrl(at, len);
-    }
-
-    return 0;
-}
-
-static int OnBody(http_parser *parser, const char *at, size_t len)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-
-    if (len > 0)
-    {
-        request->SetBody(at, len);
-    }
-
-    return 0;
-}
-
-static int OnMessageComplete(http_parser *parser)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-
-    request->SetReadComplete();
-
-    return 0;
-}
-
-static int OnMessageBegin(http_parser *parser)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-    request->ResetReadComplete();
-
-    return 0;
-}
-
-static int OnHeaderComplete(http_parser *parser)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-    request->SetMethod(parser->method);
-    return 0;
-}
-
-static int OnHandlerData(http_parser *, const char *, size_t)
-{
-    return 0;
-}
-
-static int OnHeaderField(http_parser *parser, const char *at, size_t len)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-
-    if (len > 0)
-    {
-        request->SetNextHeaderField(at, len);
-    }
-
-    return 0;
-}
-
-static int OnHeaderData(http_parser *parser, const char *at, size_t len)
-{
-    Request *request = reinterpret_cast<Request *>(parser->data);
-
-    if (len > 0)
-    {
-        request->SetHeaderValue(at, len);
-    }
-
-    return 0;
-}
-
 Parser::Parser(Request *aRequest)
 {
-    mParser.data = aRequest;
+    mState.mRequest = aRequest;
+
+    mParser.data = &mState;
 }
 
 void Parser::Init(void)
 {
-    mSettings.on_message_begin    = OnMessageBegin;
-    mSettings.on_url              = OnUrl;
-    mSettings.on_status           = OnHandlerData;
-    mSettings.on_header_field     = OnHeaderField;
-    mSettings.on_header_value     = OnHeaderData;
-    mSettings.on_body             = OnBody;
-    mSettings.on_headers_complete = OnHeaderComplete;
-    mSettings.on_message_complete = OnMessageComplete;
+    mSettings.on_message_begin    = Parser::OnMessageBegin;
+    mSettings.on_url              = Parser::OnUrl;
+    mSettings.on_status           = Parser::OnHandlerData;
+    mSettings.on_header_field     = Parser::OnHeaderField;
+    mSettings.on_header_value     = Parser::OnHeaderData;
+    mSettings.on_body             = Parser::OnBody;
+    mSettings.on_headers_complete = Parser::OnHeaderComplete;
+    mSettings.on_message_complete = Parser::OnMessageComplete;
     http_parser_init(&mParser, HTTP_REQUEST);
 }
 
 void Parser::Process(const char *aBuf, size_t aLength)
 {
     http_parser_execute(&mParser, &mSettings, aBuf, aLength);
+}
+
+int Parser::OnUrl(http_parser *parser, const char *at, size_t len)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+
+    if (len > 0)
+    {
+        state->mUrl.append(at, len);
+    }
+
+    return 0;
+}
+
+int Parser::OnBody(http_parser *parser, const char *at, size_t len)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+
+    if (len > 0)
+    {
+        state->mRequest->SetBody(at, len);
+    }
+
+    return 0;
+}
+
+int Parser::OnMessageComplete(http_parser *parser)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+
+    http_parser_url urlParser;
+    http_parser_url_init(&urlParser);
+    http_parser_parse_url(state->mUrl.c_str(), state->mUrl.length(), 1, &urlParser);
+
+    if (urlParser.field_set & (1 << UF_PATH))
+    {
+        std::string path = state->mUrl.substr(urlParser.field_data[UF_PATH].off, urlParser.field_data[UF_PATH].len);
+        state->mRequest->SetUrlPath(path);
+    }
+
+    if (urlParser.field_set & (1 << UF_QUERY))
+    {
+        uint16_t offset = urlParser.field_data[UF_QUERY].off;
+        uint16_t end = offset + urlParser.field_data[UF_QUERY].len;
+
+        while(offset < end) {
+            std::string::size_type next = state->mUrl.find('&', offset);
+            if (next == std::string::npos)
+            {
+                next = end;
+            }
+
+            std::string::size_type split = state->mUrl.find('=', offset);
+            if (split != std::string::npos && static_cast<uint16_t>(split) < next)
+            {
+                std::string query = state->mUrl.substr(offset, split - offset);
+                std::string value = state->mUrl.substr(split + 1, next - split - 1);
+
+                state->mRequest->AddQueryField(query, value);
+            }
+
+            offset = static_cast<uint16_t>(next + 1);
+        }
+    }
+
+    state->mRequest->SetReadComplete();
+
+    return 0;
+}
+
+int Parser::OnMessageBegin(http_parser *parser)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+    state->mRequest->ResetReadComplete();
+
+    return 0;
+}
+
+int Parser::OnHeaderComplete(http_parser *parser)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+    state->mRequest->SetMethod(parser->method);
+    return 0;
+}
+
+int Parser::OnHandlerData(http_parser *, const char *, size_t)
+{
+    return 0;
+}
+
+int Parser::OnHeaderField(http_parser *parser, const char *at, size_t len)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+
+    if (len > 0)
+    {
+        state->mNextHeaderField = std::string(at, len);
+    }
+
+    return 0;
+}
+
+int Parser::OnHeaderData(http_parser *parser, const char *at, size_t len)
+{
+    State *state = reinterpret_cast<State *>(parser->data);
+
+    if (len > 0)
+    {
+        state->mRequest->AddHeaderField(state->mNextHeaderField, std::string(at, len));
+    }
+
+    return 0;
 }
 
 } // namespace rest
