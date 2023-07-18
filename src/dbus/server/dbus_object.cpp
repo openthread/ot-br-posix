@@ -115,7 +115,7 @@ DBusHandlerResult DBusObject::MessageHandler(DBusConnection *aConnection, DBusMe
 
     if (dbus_message_get_type(aMessage) == DBUS_MESSAGE_TYPE_METHOD_CALL && iter != mMethodHandlers.end())
     {
-        otbrLogInfo("Handling method %s", memberName.c_str());
+        otbrLogDebug("Handling method %s", memberName.c_str());
         if (otbrLogGetLevel() >= OTBR_LOG_DEBUG)
         {
             DumpDBusMessage(*aMessage);
@@ -144,7 +144,7 @@ void DBusObject::GetPropertyMethodHandler(DBusRequest &aRequest)
     {
         auto propertyIter = mGetPropertyHandlers.find(interfaceName);
 
-        otbrLogInfo("GetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
+        otbrLogDebug("GetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
         VerifyOrExit(propertyIter != mGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
         {
             DBusMessageIter replyIter;
