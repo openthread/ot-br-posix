@@ -80,7 +80,8 @@ public:
     void Process(const char *aBuf, size_t aLength);
 
 private:
-    struct State {
+    struct State
+    {
         Request    *mRequest;
         std::string mUrl;
         std::string mNextHeaderField;

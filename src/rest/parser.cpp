@@ -100,9 +100,10 @@ int Parser::OnMessageComplete(http_parser *parser)
     if (urlParser.field_set & (1 << UF_QUERY))
     {
         uint16_t offset = urlParser.field_data[UF_QUERY].off;
-        uint16_t end = offset + urlParser.field_data[UF_QUERY].len;
+        uint16_t end    = offset + urlParser.field_data[UF_QUERY].len;
 
-        while(offset < end) {
+        while (offset < end)
+        {
             std::string::size_type next = state->mUrl.find('&', offset);
             if (next == std::string::npos)
             {

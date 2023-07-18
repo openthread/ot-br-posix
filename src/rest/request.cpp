@@ -91,9 +91,9 @@ std::string Request::GetHeaderValue(const std::string aHeaderField) const
 
 std::string Request::GetQueryValue(const std::string aQueryName) const
 {
-    auto it = mHeaders.find(aQueryName);
+    auto it = mQueryParameters.find(aQueryName);
 
-    return (it == mHeaders.end()) ? "" : it->second;
+    return (it == mQueryParameters.end()) ? "" : it->second;
 }
 
 void Request::SetReadComplete(void)
