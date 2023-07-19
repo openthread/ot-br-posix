@@ -149,6 +149,7 @@ private:
     otError GetExternalRoutesHandler(DBusMessageIter &aIter);
     otError GetOnMeshPrefixesHandler(DBusMessageIter &aIter);
     otError GetActiveDatasetTlvsHandler(DBusMessageIter &aIter);
+    otError GetPendingDatasetTlvsHandler(DBusMessageIter &aIter);
     otError GetFeatureFlagListDataHandler(DBusMessageIter &aIter);
     otError GetRadioRegionHandler(DBusMessageIter &aIter);
     otError GetSrpServerInfoHandler(DBusMessageIter &aIter);

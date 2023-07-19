@@ -536,6 +536,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- PendingDatasetTlvs: The Thread pending dataset tlv in binary form. -->
+    <property name="PendingDatasetTlvs" type="ay" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
      <!-- FeatureFlagListData: The Thread feature flags (defined as proto/feature_flag.proto)
       in binary form. -->
     <property name="FeatureFlagListData" type="ay" access="readwrite">

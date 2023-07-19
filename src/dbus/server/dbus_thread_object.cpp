@@ -279,6 +279,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetOnMeshPrefixesHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
                                std::bind(&DBusThreadObject::GetActiveDatasetTlvsHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_PENDING_DATASET_TLVS,
+                               std::bind(&DBusThreadObject::GetPendingDatasetTlvsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA,
                                std::bind(&DBusThreadObject::GetFeatureFlagListDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
@@ -1229,6 +1231,22 @@ otError DBusThreadObject::GetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
     otOperationalDatasetTlvs datasetTlvs;
 
     SuccessOrExit(error = otDatasetGetActiveTlvs(threadHelper->GetInstance(), &datasetTlvs));
+    data = std::vector<uint8_t>{std::begin(datasetTlvs.mTlvs), std::begin(datasetTlvs.mTlvs) + datasetTlvs.mLength};
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetPendingDatasetTlvsHandler(DBusMessageIter &aIter)
+{
+    auto                     threadHelper = mNcp->GetThreadHelper();
+    otError                  error        = OT_ERROR_NONE;
+    std::vector<uint8_t>     data;
+    otOperationalDatasetTlvs datasetTlvs;
+
+    SuccessOrExit(error = otDatasetGetPendingTlvs(threadHelper->GetInstance(), &datasetTlvs));
     data = std::vector<uint8_t>{std::begin(datasetTlvs.mTlvs), std::begin(datasetTlvs.mTlvs) + datasetTlvs.mLength};
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
