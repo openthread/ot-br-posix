@@ -70,7 +70,29 @@ message TelemetryData {
     optional float mac_cca_fail_rate = 37;
   }
 
+  message WpanTopoFull {
+    optional uint32 rloc16 = 1;
+    optional uint32 router_id = 2;
+    optional uint32 leader_router_id = 3;
+    // Deprecate bytes ext_address.
+    reserved 4;
+    optional bytes leader_address = 5;
+    optional uint32 leader_weight = 6;
+    optional uint32 leader_local_weight = 7;
+    optional bytes network_data = 8;
+    optional uint32 network_data_version = 9;
+    optional bytes stable_network_data = 10;
+    optional uint32 stable_network_data_version = 11;
+    optional uint32 preferred_router_id = 12;
+    optional uint32 partition_id = 13;
+    optional uint32 child_table_size = 14;
+    optional uint32 neighbor_table_size = 15;
+    optional int32 instant_rssi = 16;
+    optional uint64 extended_pan_id = 17;
+  }
+
   optional WpanStats wpan_stats = 1;
+  optional WpanTopoFull wpan_topo_full = 2;
   // TODO: add fields for topo, border_router, rcp, and coex.
-  reserved 2, 3, 4, 5, 6;
+  reserved 3, 4, 5, 6;
 }
