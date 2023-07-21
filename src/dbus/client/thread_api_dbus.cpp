@@ -639,6 +639,11 @@ ClientError ThreadApiDBus::GetActiveDatasetTlvs(std::vector<uint8_t> &aDataset)
     return GetProperty(OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, aDataset);
 }
 
+ClientError ThreadApiDBus::GetPendingDatasetTlvs(std::vector<uint8_t> &aDataset)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_PENDING_DATASET_TLVS, aDataset);
+}
+
 ClientError ThreadApiDBus::GetFeatureFlagListData(std::vector<uint8_t> &aFeatureFlagListData)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA, aFeatureFlagListData);
