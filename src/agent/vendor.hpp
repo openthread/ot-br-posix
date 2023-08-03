@@ -50,13 +50,19 @@ public:
      * @param[in] aNcp  A reference to the NCP controller.
      *
      */
-    VendorServer(otbr::Ncp::ControllerOpenThread &aNcp);
+    VendorServer(otbr::Ncp::ControllerOpenThread &aNcp)
+        : mNcp(aNcp)
+    {
+    }
 
     /**
      * This method initializes the vendor server.
      *
      */
     void Init(void);
+
+private:
+    otbr::Ncp::ControllerOpenThread &mNcp;
 };
 } // namespace vendor
 } // namespace otbr
