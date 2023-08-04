@@ -111,3 +111,4 @@ RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
 ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
 
 EXPOSE 80
+EXPOSE 8080:8080
