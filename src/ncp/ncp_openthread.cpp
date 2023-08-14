@@ -60,9 +60,10 @@
 namespace otbr {
 namespace Ncp {
 
-static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
-static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
-static const uint16_t kThreadVersion13 = 4; ///< Thread Version 1.3
+static const uint16_t kThreadVersion11  = 2; ///< Thread Version 1.1
+static const uint16_t kThreadVersion12  = 3; ///< Thread Version 1.2
+static const uint16_t kThreadVersion13  = 4; ///< Thread Version 1.3
+static const uint16_t kThreadVersion131 = 5; ///< Thread Version 1.3.1
 
 ControllerOpenThread::ControllerOpenThread(const char                      *aInterfaceName,
                                            const std::vector<const char *> &aRadioUrls,
@@ -383,6 +384,9 @@ const char *ControllerOpenThread::GetThreadVersion(void)
         break;
     case kThreadVersion13:
         version = "1.3.0";
+        break;
+    case kThreadVersion131:
+        version = "1.3.1";
         break;
     default:
         otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
