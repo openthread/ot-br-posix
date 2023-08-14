@@ -58,6 +58,11 @@ add_library(otbr-proto STATIC
 )
 
 find_package(Protobuf REQUIRED)
-target_link_libraries(otbr-proto
+
+target_link_libraries(otbr-proto PUBLIC
     protobuf::libprotobuf-lite
+)
+
+target_include_directories(otbr-proto PUBLIC
+    ${PROJECT_SOURCE_DIR}/build/src
 )

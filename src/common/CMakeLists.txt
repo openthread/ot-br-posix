@@ -37,6 +37,8 @@ add_library(otbr-common
     mainloop.hpp
     mainloop_manager.cpp
     mainloop_manager.hpp
+    num_utils.cpp
+    num_utils.hpp
     task_runner.cpp
     task_runner.hpp
     time.hpp
@@ -49,4 +51,6 @@ target_link_libraries(otbr-common
     PUBLIC otbr-config
     openthread-ftd
     openthread-posix
+    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
+    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
 )

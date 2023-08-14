@@ -49,6 +49,10 @@
 #include <openthread/joiner.h>
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
+#include "mdns/mdns.hpp"
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+#include "proto/thread_telemetry.pb.h"
+#endif
 
 namespace otbr {
 namespace Ncp {
@@ -252,6 +256,17 @@ public:
 
     void DetachGracefully(ResultHandler aHandler);
 
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+    /**
+     * This method populates the telemetry data and returns the error code if error happens.
+     *
+     * @param[in] telemetryData  the telemetry data to be populated.
+     * @returns The error code if error happens during the population of the telemetry data.
+     */
+    otError RetrieveTelemetryData(Mdns::Publisher &aPublisher,
+            threadnetwork::TelemetryData& telemetryData);
+#endif // OTBR_ENABLE_TELEMETRY_DATA_API
+
     /**
      * This method logs OpenThread action result.
      *
@@ -310,6 +325,11 @@ private:
 
 #if OTBR_ENABLE_DBUS_SERVER
     UpdateMeshCopTxtHandler mUpdateMeshCopTxtHandler;
+#endif
+
+#if OTBR_ENABLE_TELEMETRY_DATA_API & OTBR_ENABLE_NAT64
+    static const uint8_t kNat64SourceAddressHashSaltLength = 16;
+    uint8_t mNat64Ipv6AddressSalt[kNat64SourceAddressHashSaltLength];
 #endif
 };
 

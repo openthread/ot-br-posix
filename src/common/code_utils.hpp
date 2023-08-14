@@ -58,6 +58,10 @@
     reinterpret_cast<aAlignType>(      \
         ((reinterpret_cast<unsigned long>(aMem) + sizeof(aAlignType) - 1) / sizeof(aAlignType)) * sizeof(aAlignType))
 
+// Allocate the structure using "raw" storage.
+#define OT_DEFINE_ALIGNED_VAR(name, size, align_type) \
+    align_type name[(((size) + (sizeof(align_type) - 1)) / sizeof(align_type))]
+
 #ifndef CONTAINING_RECORD
 #define BASE 0x1
 #define myoffsetof(s, m) (((size_t) & (((s *)BASE)->m)) - BASE)
@@ -232,6 +236,71 @@ private:
 
     alignas(T) unsigned char mStorage[sizeof(T)];
     bool mHasValue = false;
+};
+
+/**
+ * Defines a `Clearable` object which provides `Clear()` method.
+ *
+ * The `Clear` implementation simply sets all the bytes of a `Type` instance to zero.
+ *
+ * Users of this class should follow CRTP-style inheritance, i.e., the `Type` class itself should publicly inherit
+ * from `Clearable<Type>`.
+ *
+ */
+template <typename Type> class Clearable
+{
+public:
+    void Clear(void) { memset(reinterpret_cast<void *>(static_cast<Type *>(this)), 0, sizeof(Type)); }
+};
+
+/**
+ * Defines an overload of operator `!=`.
+ *
+ * The `!=` implementation uses an existing `==` overload provided by the `Type` class.
+ *
+ * Users of this class should follow CRTP-style inheritance, i.e., the `Type` class itself should publicly inherit
+ * from `Unequatable<Type>`.
+ *
+ */
+template <typename Type> class Unequatable
+{
+public:
+    /**
+     * Overloads operator `!=` to evaluate whether or not two instances of `Type` are equal.
+     *
+     * This is implemented in terms of an existing `==` overload provided by `Type` class itself.
+     *
+     * @param[in]  aOther  The other `Type` instance to compare with.
+     *
+     * @retval TRUE   If the two `Type` instances are not equal.
+     * @retval FALSE  If the two `Type` instances are equal.
+     *
+     */
+    bool operator!=(const Type &aOther) const { return !(*static_cast<const Type *>(this) == aOther); }
+};
+
+/**
+ * This template class defines overloads of operators `==` and `!=`.
+ *
+ * The `==` implementation simply compares all the bytes of two `Type` instances to be equal (using `memcmp()`).
+ *
+ * Users of this class should follow CRTP-style inheritance, i.e., the `Type` class itself should publicly inherit
+ * from `Equatable<Type>`.
+ *
+ */
+template <typename Type> class Equatable : public Unequatable<Type>
+{
+public:
+    /**
+     * This method overloads operator `==` to evaluate whether or not two instances of `Type` are equal.
+     *
+     * @param[in]  aOther  The other `Type` instance to compare with.
+     *
+     * @retval TRUE   If the two `Type` instances are equal.
+     * @retval FALSE  If the two `Type` instances are not equal.
+     *
+     */
+    bool operator==(const Type &aOther) const { return memcmp(this, &aOther, sizeof(Type)) == 0; }
 };
 
 #endif // OTBR_COMMON_CODE_UTILS_HPP_
