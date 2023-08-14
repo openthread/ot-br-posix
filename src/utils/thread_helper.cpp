@@ -125,6 +125,7 @@ static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, 
     return nodeType;
 }
 
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 threadnetwork::TelemetryData_SrpServerState SrpServerStateFromOtSrpServerState(
     otSrpServerState srpServerState)
 {
@@ -154,6 +155,7 @@ threadnetwork::TelemetryData_SrpServerAddressMode SrpServerAddressModeFromOtSrpS
         return threadnetwork::TelemetryData::SRP_SERVER_ADDRESS_MODE_UNSPECIFIED;
     }
 }
+#endif  // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 
 #if OTBR_ENABLE_NAT64
 threadnetwork::TelemetryData_Nat64State Nat64StateFromOtNat64State(otNat64State nat64State)
@@ -1301,6 +1303,58 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher,
 #endif  // OTBR_ENABLE_NAT64
 
         // End of WpanBorderRouter section.
+
+        // Start of WpanRcp section.
+        {
+            auto wpanRcp = telemetryData.mutable_wpan_rcp();
+            auto rcpStabilityStatistics = wpanRcp->mutable_rcp_stability_statistics();
+            otRadioSpinelMetrics otRadioSpinelMetrics = *otSysGetRadioSpinelMetrics();
+
+            rcpStabilityStatistics->set_rcp_timeout_count(otRadioSpinelMetrics.mRcpTimeoutCount);
+            rcpStabilityStatistics->set_rcp_reset_count(otRadioSpinelMetrics.mRcpUnexpectedResetCount);
+            rcpStabilityStatistics->set_rcp_restoration_count(otRadioSpinelMetrics.mRcpRestorationCount);
+            rcpStabilityStatistics->set_spinel_parse_error_count(otRadioSpinelMetrics.mSpinelParseErrorCount);
+
+            // TODO: provide rcp_firmware_update_count info.
+            rcpStabilityStatistics->set_thread_stack_uptime(otInstanceGetUptime(mInstance));
+
+            auto rcpInterfaceStatistics = wpanRcp->mutable_rcp_interface_statistics();
+            otRcpInterfaceMetrics otRcpInterfaceMetrics = *otSysGetRcpInterfaceMetrics();
+
+            rcpInterfaceStatistics->set_rcp_interface_type(otRcpInterfaceMetrics.mRcpInterfaceType);
+            rcpInterfaceStatistics->set_transferred_frames_count(otRcpInterfaceMetrics.mTransferredFrameCount);
+            rcpInterfaceStatistics->set_transferred_valid_frames_count(otRcpInterfaceMetrics.mTransferredValidFrameCount);
+            rcpInterfaceStatistics->set_transferred_garbage_frames_count(otRcpInterfaceMetrics.mTransferredGarbageFrameCount);
+            rcpInterfaceStatistics->set_rx_frames_count(otRcpInterfaceMetrics.mRxFrameCount);
+            rcpInterfaceStatistics->set_rx_bytes_count(otRcpInterfaceMetrics.mRxFrameByteCount);
+            rcpInterfaceStatistics->set_tx_frames_count(otRcpInterfaceMetrics.mTxFrameCount);
+            rcpInterfaceStatistics->set_tx_bytes_count(otRcpInterfaceMetrics.mTxFrameByteCount);
+        }
+        // End of WpanRcp section.
+
+        // Start of CoexMetrics section.
+        {
+            auto coexMetrics = telemetryData.mutable_coex_metrics();
+            otRadioCoexMetrics otRadioCoexMetrics;
+
+            SuccessOrExit(error = otPlatRadioGetCoexMetrics(mInstance, &otRadioCoexMetrics));
+            coexMetrics->set_count_tx_request(otRadioCoexMetrics.mNumTxRequest);
+            coexMetrics->set_count_tx_grant_immediate(otRadioCoexMetrics.mNumTxGrantImmediate);
+            coexMetrics->set_count_tx_grant_wait(otRadioCoexMetrics.mNumTxGrantWait);
+            coexMetrics->set_count_tx_grant_wait_activated(otRadioCoexMetrics.mNumTxGrantWaitActivated);
+            coexMetrics->set_count_tx_grant_wait_timeout(otRadioCoexMetrics.mNumTxGrantWaitTimeout);
+            coexMetrics->set_count_tx_grant_deactivated_during_request(otRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest);
+            coexMetrics->set_tx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgTxRequestToGrantTime);
+            coexMetrics->set_count_rx_request(otRadioCoexMetrics.mNumRxRequest);
+            coexMetrics->set_count_rx_grant_immediate(otRadioCoexMetrics.mNumRxGrantImmediate);
+            coexMetrics->set_count_rx_grant_wait(otRadioCoexMetrics.mNumRxGrantWait);
+            coexMetrics->set_count_rx_grant_wait_activated(otRadioCoexMetrics.mNumRxGrantWaitActivated);
+            coexMetrics->set_count_rx_grant_wait_timeout(otRadioCoexMetrics.mNumRxGrantWaitTimeout);
+            coexMetrics->set_count_rx_grant_deactivated_during_request(otRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest);
+            coexMetrics->set_count_rx_grant_none(otRadioCoexMetrics.mNumRxGrantNone);
+            coexMetrics->set_rx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgRxRequestToGrantTime);
+        }
+        // End of CoexMetrics section.
     }
 
 exit:
