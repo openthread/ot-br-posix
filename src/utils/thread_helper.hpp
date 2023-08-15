@@ -263,8 +263,7 @@ public:
      * @param[in] telemetryData  the telemetry data to be populated.
      * @returns The error code if error happens during the population of the telemetry data.
      */
-    otError RetrieveTelemetryData(Mdns::Publisher &aPublisher,
-            threadnetwork::TelemetryData& telemetryData);
+    otError RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData& telemetryData);
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     /**
@@ -329,7 +328,7 @@ private:
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API & OTBR_ENABLE_NAT64
     static const uint8_t kNat64SourceAddressHashSaltLength = 16;
-    uint8_t mNat64Ipv6AddressSalt[kNat64SourceAddressHashSaltLength];
+    uint8_t              mNat64Ipv6AddressSalt[kNat64SourceAddressHashSaltLength];
 #endif
 };
 
