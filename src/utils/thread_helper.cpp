@@ -45,8 +45,8 @@
 #endif
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
-#include <utils/sha256.hpp>
 #if OTBR_ENABLE_NAT64
+#include <utils/sha256.hpp>
 #include <openthread/crypto.h>
 #include <openthread/nat64.h>
 #endif
@@ -898,7 +898,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
         Sha256::Hash                  hash;
         Sha256                        sha256;
 
-        uint8_t ipAddrShaInput[OT_IP6_ADDRESS_SIZE + kNat64SourceAddressHashSaltLength];
+        uint8_t ipAddrShaInput[OT_IP6_ADDRESS_SIZE + 16];
         sha256.Start();
         sha256.Update(ipAddrShaInput, sizeof(ipAddrShaInput));
         sha256.Finish(hash);
