@@ -174,7 +174,7 @@ threadnetwork::TelemetryData_Nat64State Nat64StateFromOtNat64State(otNat64State 
     }
 }
 
-void CopyNat64TrafficCounters(const otNat64Counters& from, threadnetwork::TelemetryData_Nat64TrafficCounters* to)
+void CopyNat64TrafficCounters(const otNat64Counters &from, threadnetwork::TelemetryData_Nat64TrafficCounters *to)
 {
     to->set_ipv4_to_ipv6_packets(from.m4To6Packets);
     to->set_ipv4_to_ipv6_bytes(from.m4To6Bytes);
@@ -183,7 +183,7 @@ void CopyNat64TrafficCounters(const otNat64Counters& from, threadnetwork::Teleme
 }
 #endif // OTBR_ENABLE_NAT64
 
-void CopyMdnsResponseCounters(const MdnsResponseCounters& from, threadnetwork::TelemetryData_MdnsResponseCounters* to)
+void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::TelemetryData_MdnsResponseCounters *to)
 {
     to->set_success_count(from.mSuccess);
     to->set_not_found_count(from.mNotFound);
@@ -892,7 +892,8 @@ void ThreadHelper::DetachGracefullyCallback(void)
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
-otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData& telemetryData) {
+otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData &telemetryData)
+{
     otError error = OT_ERROR_NONE;
 
     // Begin of WpanStats section.
@@ -1048,7 +1049,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
         // Begin of TopoEntry section.
         std::map<uint16_t, const otChildInfo *> childMap;
 
-        for (const otChildInfo& childInfo : childTable)
+        for (const otChildInfo &childInfo : childTable)
         {
             auto pair = childMap.insert({childInfo.mRloc16, &childInfo});
             if (!pair.second)
@@ -1059,7 +1060,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
             }
         }
 
-        for (const otNeighborInfo& neighborInfo : neighborTable)
+        for (const otNeighborInfo &neighborInfo : neighborTable)
         {
             auto topoEntry = telemetryData.add_topo_entries();
             topoEntry->set_rloc16(neighborInfo.mRloc16);
@@ -1077,7 +1078,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
             topoEntry->set_ip_message_error_rate(static_cast<float>(neighborInfo.mMessageErrorRate) / 0xffff);
             topoEntry->set_version(neighborInfo.mVersion);
 
-            if (!neighborInfo.mIsChild) {
+            if (!neighborInfo.mIsChild)
+            {
                 continue;
             }
 
@@ -1129,7 +1131,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
         {
             auto nat64IcmpCounters = borderRoutingCouters->mutable_nat64_protocol_counters()->mutable_icmp();
             auto nat64UdpCounters  = borderRoutingCouters->mutable_nat64_protocol_counters()->mutable_udp();
-            auto nat64TcpCounters  = borderRoutingCouters->mutable_nat64_protocol_counters()->mutable_tcp();            otNat64ProtocolCounters otCounters;
+            auto nat64TcpCounters  = borderRoutingCouters->mutable_nat64_protocol_counters()->mutable_tcp();
+            otNat64ProtocolCounters otCounters;
 
             otNat64GetCounters(mInstance, &otCounters);
             nat64IcmpCounters->set_ipv4_to_ipv6_packets(otCounters.mIcmp.m4To6Packets);
@@ -1226,7 +1229,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
                         srpServerServices->set_remaining_lease_time_total_ms(
                             srpServerServices->remaining_lease_time_total_ms() + leaseInfo.mRemainingLease);
                         srpServerServices->set_remaining_key_lease_time_total_ms(
-                            srpServerServices->remaining_key_lease_time_total_ms() + leaseInfo.mRemainingKeyLease);                    }
+                            srpServerServices->remaining_key_lease_time_total_ms() + leaseInfo.mRemainingKeyLease);
+                    }
                 }
             }
 

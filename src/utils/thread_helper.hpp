@@ -263,7 +263,7 @@ public:
      * @param[in] telemetryData  the telemetry data to be populated.
      * @returns The error code if error happens during the population of the telemetry data.
      */
-    otError RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData& telemetryData);
+    otError RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData &telemetryData);
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     /**
