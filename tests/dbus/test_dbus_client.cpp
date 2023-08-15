@@ -267,6 +267,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_stats().phy_tx() > 0);
     TEST_ASSERT(telemetryData.wpan_stats().phy_rx() > 0);
     TEST_ASSERT(telemetryData.wpan_stats().ip_tx_success() > 0);
+    TEST_ASSERT(telemetryData.coex_metrics().count_tx_request() == 100);
 }
 #endif
 
