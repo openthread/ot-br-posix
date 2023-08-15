@@ -45,10 +45,8 @@
 #endif
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
-#if OTBR_ENABLE_NAT64
-// #include <openthread/crypto/sha256.hpp>
-// #include <mbedtls/sha256.h>
 #include <utils/sha256.hpp>
+#if OTBR_ENABLE_NAT64
 #include <openthread/crypto.h>
 #include <openthread/nat64.h>
 #endif
@@ -896,6 +894,17 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
 {
     otError error = OT_ERROR_NONE;
 
+    {
+        Sha256::Hash                  hash;
+        Sha256                        sha256;
+
+        uint8_t ipAddrShaInput[OT_IP6_ADDRESS_SIZE + kNat64SourceAddressHashSaltLength];
+        sha256.Start();
+        sha256.Update(ipAddrShaInput, sizeof(ipAddrShaInput));
+        sha256.Finish(hash);
+        printf("Test sha236 function.");
+    }
+
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
 
@@ -1296,14 +1305,6 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
             otNat64AddressMapping         otMapping;
             Sha256::Hash                  hash;
             Sha256                        sha256;
-
-            {
-                uint8_t ipAddrShaInput[OT_IP6_ADDRESS_SIZE + kNat64SourceAddressHashSaltLength];
-                sha256.Start();
-                sha256.Update(ipAddrShaInput, sizeof(ipAddrShaInput));
-                sha256.Finish(hash);
-                printf("Test sha236 function.");
-            }
 
             otNat64InitAddressMappingIterator(mInstance, &iterator);
             while (otNat64GetNextAddressMapping(mInstance, &iterator, &otMapping) == OT_ERROR_NONE)
