@@ -37,72 +37,68 @@ namespace otbr {
 
 Sha256::Sha256(void)
 {
-    // otError                  error;
+    otError                  error;
 
     mContext.mContext     = &mContextStorage;
     mContext.mContextSize = sizeof(mContextStorage);
 
-    SuccessOrDie(otPlatCryptoSha256Init(&mContext), "otPlatCryptoSha256Init failed");
-    // SuccessOrExit(error = otPlatCryptoSha256Init(&mContext));
+    SuccessOrExit(error = otPlatCryptoSha256Init(&mContext));
 
-// exit:
-//     if (error != OT_ERROR_NONE)
-//     {
-//         otbrLogWarning("Error otPlatCryptoSha256Init: %s", otThreadErrorToString(error));
-//     }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogErr("Error otPlatCryptoSha256Init: %s", otThreadErrorToString(error));
+    }
 }
 
 Sha256::~Sha256(void)
 {
-    // otError                  error;
+    otError                  error;
 
-    SuccessOrDie(otPlatCryptoSha256Deinit(&mContext), "otPlatCryptoSha256Deinit failed");
-    // SuccessOrExit(error = otPlatCryptoSha256Deinit(&mContext));
+    SuccessOrExit(error = otPlatCryptoSha256Deinit(&mContext));
 
-// exit:
-//     if (error != OT_ERROR_NONE)
-//     {
-//         otbrLogWarning("Error otPlatCryptoSha256Deinit: %s", otThreadErrorToString(error));
-//     }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogErr("Error otPlatCryptoSha256Deinit: %s", otThreadErrorToString(error));
+    }
 }
 
 void Sha256::Start(void)
 {
-    // otError                  error;
+    otError                  error;
 
-    SuccessOrDie(otPlatCryptoSha256Start(&mContext), "otPlatCryptoSha256Start failed");
-    // SuccessOrExit(error = otPlatCryptoSha256Start(&mContext));
+    SuccessOrExit(error = otPlatCryptoSha256Start(&mContext));
 
-// exit:
-//     if (error != OT_ERROR_NONE)
-//     {
-//         otbrLogWarning("Error otPlatCryptoSha256Start: %s", otThreadErrorToString(error));
-//     }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogErr("Error otPlatCryptoSha256Start: %s", otThreadErrorToString(error));
+    }
 }
 
 void Sha256::Update(const void *aBuf, uint16_t aBufLength)
 {
-    // otError                  error;
+    otError                  error;
 
-    SuccessOrDie(otPlatCryptoSha256Update(&mContext, aBuf, aBufLength), "otPlatCryptoSha256Update failed");
-    // SuccessOrExit(error = otPlatCryptoSha256Update(&mContext));
+    SuccessOrExit(error = otPlatCryptoSha256Update(&mContext, aBuf, aBufLength));
 
-// exit:
-//     if (error != OT_ERROR_NONE)
-//     {
-//         otbrLogWarning("Error otPlatCryptoSha256Update: %s", otThreadErrorToString(error));
-//     }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogErr("Error otPlatCryptoSha256Update: %s", otThreadErrorToString(error));
+    }
 }
 
 void Sha256::Finish(Hash &aHash) {
-    // otError                  error;
+    otError                  error;
 
-    SuccessOrDie(otPlatCryptoSha256Finish(&mContext, aHash.m8, Hash::kSize), "otPlatCryptoSha256Finish failed"); }
-    // SuccessOrExit(error = otPlatCryptoSha256Finish(&mContext));
+    SuccessOrExit(error = otPlatCryptoSha256Finish(&mContext, aHash.m8, Hash::kSize));
 
-// exit:
-//     if (error != OT_ERROR_NONE)
-//     {
-//         otbrLogWarning("Error otPlatCryptoSha256Finish: %s", otThreadErrorToString(error));
-//     }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogErr("Error otPlatCryptoSha256Finish: %s", otThreadErrorToString(error));
+    }
+}
 } // namespace otbr

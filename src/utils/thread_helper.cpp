@@ -45,8 +45,8 @@
 #endif
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
-#include <utils/sha256.hpp>
 #if OTBR_ENABLE_NAT64
+#include <utils/sha256.hpp>
 #include <openthread/crypto.h>
 #include <openthread/nat64.h>
 #endif
@@ -893,18 +893,6 @@ void ThreadHelper::DetachGracefullyCallback(void)
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError error = OT_ERROR_NONE;
-
-    {
-        Sha256::Hash                  hash;
-        Sha256                        sha256;
-
-        uint8_t ipAddrShaInput[OT_IP6_ADDRESS_SIZE + 16];
-        sha256.Start();
-        sha256.Update(ipAddrShaInput, sizeof(ipAddrShaInput));
-        sha256.Finish(hash);
-        printf("Test sha256 function.");
-        SuccessOrDie(OT_ERROR_GENERIC, "Test sha256 planned failure");
-    }
 
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
