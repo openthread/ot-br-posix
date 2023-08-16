@@ -45,8 +45,8 @@
 #endif
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
-#if OTBR_ENABLE_NAT64
 #include <utils/sha256.hpp>
+#if OTBR_ENABLE_NAT64
 #include <openthread/crypto.h>
 #include <openthread/nat64.h>
 #endif
