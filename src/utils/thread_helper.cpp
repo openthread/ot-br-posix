@@ -903,7 +903,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
         sha256.Update(ipAddrShaInput, sizeof(ipAddrShaInput));
         sha256.Finish(hash);
         printf("Test sha256 function.");
-        SuccessOrDie(false, "Test sha256 planned failure");
+        SuccessOrDie(OT_ERROR_GENERIC, "Test sha256 planned failure");
     }
 
     // Begin of WpanStats section.
