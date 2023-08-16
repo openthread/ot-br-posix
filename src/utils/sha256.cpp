@@ -37,7 +37,7 @@ namespace otbr {
 
 Sha256::Sha256(void)
 {
-    otError                  error;
+    otError error;
 
     mContext.mContext     = &mContextStorage;
     mContext.mContextSize = sizeof(mContextStorage);
@@ -53,7 +53,7 @@ exit:
 
 Sha256::~Sha256(void)
 {
-    otError                  error;
+    otError error;
 
     SuccessOrExit(error = otPlatCryptoSha256Deinit(&mContext));
 
@@ -66,7 +66,7 @@ exit:
 
 void Sha256::Start(void)
 {
-    otError                  error;
+    otError error;
 
     SuccessOrExit(error = otPlatCryptoSha256Start(&mContext));
 
@@ -79,7 +79,7 @@ exit:
 
 void Sha256::Update(const void *aBuf, uint16_t aBufLength)
 {
-    otError                  error;
+    otError error;
 
     SuccessOrExit(error = otPlatCryptoSha256Update(&mContext, aBuf, aBufLength));
 
@@ -91,7 +91,7 @@ exit:
 }
 
 void Sha256::Finish(Hash &aHash) {
-    otError                  error;
+    otError error;
 
     SuccessOrExit(error = otPlatCryptoSha256Finish(&mContext, aHash.m8, Hash::kSize));
 
