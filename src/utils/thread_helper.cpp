@@ -45,8 +45,8 @@
 #endif
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
-#include <utils/sha256.hpp>
 #if OTBR_ENABLE_NAT64
+#include <utils/sha256.hpp>
 #include <openthread/crypto.h>
 #include <openthread/nat64.h>
 #endif
@@ -902,7 +902,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
         sha256.Start();
         sha256.Update(ipAddrShaInput, sizeof(ipAddrShaInput));
         sha256.Finish(hash);
-        printf("Test sha236 function.");
+        printf("Test sha256 function.");
+        SuccessOrDie(false, "Test sha256 planned failure");
     }
 
     // Begin of WpanStats section.
