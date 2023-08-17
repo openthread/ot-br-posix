@@ -276,7 +276,8 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().border_routing_counters().rs_tx_failure() == 0);
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     TEST_ASSERT(telemetryData.wpan_border_router().srp_server().state() ==
-                threadnetwork::TelemetryData::SRP_SERVER_STATE_RUNNING);#endif
+                threadnetwork::TelemetryData::SRP_SERVER_STATE_RUNNING);
+#endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     TEST_ASSERT(telemetryData.wpan_border_router().dns_server().response_counters().server_failure_count() == 0);
 #endif
