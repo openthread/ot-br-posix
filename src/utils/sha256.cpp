@@ -90,7 +90,8 @@ exit:
     }
 }
 
-void Sha256::Finish(Hash &aHash) {
+void Sha256::Finish(Hash &aHash)
+{
     otError error;
 
     SuccessOrExit(error = otPlatCryptoSha256Finish(&mContext, aHash.m8, Hash::kSize));

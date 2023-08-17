@@ -271,6 +271,21 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_topo_full().network_data().size() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().partition_id() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().extended_pan_id() > 0);
+    TEST_ASSERT(telemetryData.topo_entries_size() == 1);
+    TEST_ASSERT(telemetryData.topo_entries(0).rloc16() > 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().border_routing_counters().rs_tx_failure() == 0);
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    TEST_ASSERT(telemetryData.wpan_border_router().srp_server().state() == threadnetwork::TelemetryData::SRP_SERVER_STATE_RUNNING);
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    TEST_ASSERT(telemetryData.wpan_border_router().dns_server().response_counters().server_failure_count() == 0);
+#endif
+    TEST_ASSERT(telemetryData.wpan_border_router().mdns().service_registration_responses().success_count() > 0);
+#if OTBR_ENABLE_NAT64
+    TEST_ASSERT(telemetryData.wpan_border_router().nat64_state().prefix_manager_state() == threadnetwork::TelemetryData::NAT64_STATE_NOT_RUNNING);
+#endif
+    TEST_ASSERT(telemetryData.wpan_rcp().rcp_interface_statistics().transferred_frames_count() > 0);
+    TEST_ASSERT(telemetryData.coex_metrics().count_tx_request() == 0);
 }
 #endif
 
