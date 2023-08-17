@@ -38,7 +38,7 @@
 
 /**
  * This method converts 8 uint8_t bytes into uint64_t.
- * 
+ *
  * @param[in] aValue  The input 8 uint8_t bytes.
  * @returns The converted uint64_t.
  */
