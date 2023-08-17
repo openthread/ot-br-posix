@@ -86,18 +86,6 @@ static std::string GetNat64StateName(otNat64State aState)
 }
 #endif // OTBR_ENABLE_NAT64
 
-// static uint64_t ConvertOpenThreadUint64(const uint8_t *aValue)
-// {
-//     uint64_t val = 0;
-
-//     for (size_t i = 0; i < sizeof(uint64_t); i++)
-//     {
-//         val = (val << 8) | aValue[i];
-//     }
-//     return val;
-// }
-
-
 namespace otbr {
 namespace DBus {
 
@@ -1404,7 +1392,7 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
     otError                      error = OT_ERROR_NONE;
     threadnetwork::TelemetryData telemetryData;
-    auto threadHelper = mNcp->GetThreadHelper();
+    auto                         threadHelper = mNcp->GetThreadHelper();
 
     VerifyOrExit(threadHelper->RetrieveTelemetryData(*mPublisher, telemetryData) == OT_ERROR_NONE);
 
