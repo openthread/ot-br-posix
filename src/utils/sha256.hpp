@@ -34,9 +34,9 @@
 #ifndef SHA256_HPP_
 #define SHA256_HPP_
 
-#include "common/code_utils.hpp"
 #include <openthread/crypto.h>
 #include <openthread/platform/crypto.h>
+#include "common/code_utils.hpp"
 
 #include <mbedtls/sha256.h>
 
@@ -109,10 +109,10 @@ public:
     void Finish(Hash &aHash);
 
 private:
-    otCryptoContext mContext;
-    const static uint16_t kSha256ContextSize     = sizeof(mbedtls_sha256_context);
+    otCryptoContext       mContext;
+    const static uint16_t kSha256ContextSize = sizeof(mbedtls_sha256_context);
     OT_DEFINE_ALIGNED_VAR(mContextStorage, kSha256ContextSize, uint64_t);
 };
-}  // namespace otbr
+} // namespace otbr
 
 #endif // SHA256_HPP_
