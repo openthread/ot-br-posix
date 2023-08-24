@@ -1,0 +1,41 @@
+From e501d58e9ec6cb6e19a682d425fa638069585fbc Mon Sep 17 00:00:00 2001
+Message-ID: <e501d58e9ec6cb6e19a682d425fa638069585fbc.1687508149.git.stefan@agner.ch>
+In-Reply-To: <e136dcdcdd93ef32ada981e89c195905eb809eea.1687508149.git.stefan@agner.ch>
+References: <e136dcdcdd93ef32ada981e89c195905eb809eea.1687508149.git.stefan@agner.ch>
+From: Stefan Agner <stefan@agner.ch>
+Date: Fri, 23 Jun 2023 10:10:00 +0200
+Subject: [PATCH] Handle interface without `ifa_addr`
+
+It seems that certain interface types may have `ifa_addr` set to null.
+Handle this case gracefully.
+
+Signed-off-by: Stefan Agner <stefan@agner.ch>
+---
+ mDNSPosix/mDNSPosix.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/mDNSPosix/mDNSPosix.c b/mDNSPosix/mDNSPosix.c
+index 89e108f..2056871 100644
+--- a/mDNSPosix/mDNSPosix.c
++++ b/mDNSPosix/mDNSPosix.c
+@@ -1895,6 +1895,7 @@ mDNSlocal void InterfaceChangeCallback(int fd, void *context)
+ 	    continue;
+ 
+         if ((ifa_loop4 == NULL) &&
++            ((*ifi)->ifa_addr != NULL) &&
+             ((*ifi)->ifa_addr->sa_family == AF_INET) &&
+             ((*ifi)->ifa_flags & IFF_UP) &&
+             ((*ifi)->ifa_flags & IFF_LOOPBACK))
+@@ -1903,7 +1904,8 @@ mDNSlocal void InterfaceChangeCallback(int fd, void *context)
+             continue;
+         }
+ 
+-        if (     (((*ifi)->ifa_addr->sa_family == AF_INET)
++        if (     ((*ifi)->ifa_addr != NULL) &&
++                 (((*ifi)->ifa_addr->sa_family == AF_INET)
+ #if HAVE_IPV6
+                   || ((*ifi)->ifa_addr->sa_family == AF_INET6)
+ #endif
+-- 
+2.41.0
+

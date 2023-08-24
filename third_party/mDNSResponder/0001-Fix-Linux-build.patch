@@ -1,0 +1,32 @@
+From e136dcdcdd93ef32ada981e89c195905eb809eea Mon Sep 17 00:00:00 2001
+Message-ID: <e136dcdcdd93ef32ada981e89c195905eb809eea.1687508149.git.stefan@agner.ch>
+From: Nate Karstens <nate.karstens@garmin.com>
+Date: Thu, 23 Mar 2023 00:15:52 -0500
+Subject: [PATCH] Fix Linux build
+
+The __block qualifier is not used in Linux builds.
+
+Signed-off-by: Nate Karstens <nate.karstens@garmin.com>
+---
+ mDNSShared/uds_daemon.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/mDNSShared/uds_daemon.c b/mDNSShared/uds_daemon.c
+index 9ae5f78..5a00bb5 100644
+--- a/mDNSShared/uds_daemon.c
++++ b/mDNSShared/uds_daemon.c
+@@ -2912,7 +2912,11 @@ exit:
+ mDNSlocal mStatus add_domain_to_browser(request_state *info, const domainname *d)
+ {
+     browser_t *b, *p;
++#if defined(TARGET_OS_MAC) && TARGET_OS_MAC
+     __block mStatus err;
++#else
++    mStatus err;
++#endif
+ 
+     for (p = info->u.browser.browsers; p; p = p->next)
+     {
+-- 
+2.41.0
+

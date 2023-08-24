@@ -1,0 +1,62 @@
+From f7ab91f739b936305ca56743adfb4673e3f2f4ba Mon Sep 17 00:00:00 2001
+Message-ID: <f7ab91f739b936305ca56743adfb4673e3f2f4ba.1687508149.git.stefan@agner.ch>
+In-Reply-To: <e136dcdcdd93ef32ada981e89c195905eb809eea.1687508149.git.stefan@agner.ch>
+References: <e136dcdcdd93ef32ada981e89c195905eb809eea.1687508149.git.stefan@agner.ch>
+From: Nate Karstens <nate.karstens@garmin.com>
+Date: Wed, 28 Jun 2017 17:30:00 -0500
+Subject: [PATCH] Create subroutine for tearing down an interface
+
+Creates a subroutine for tearing down an interface.
+
+Upstream-Status: Submitted [dts@apple.com]
+
+Signed-off-by: Nate Karstens <nate.karstens@garmin.com>
+Signed-off-by: Alex Kiernan <alex.kiernan@gmail.com>
+---
+ mDNSPosix/mDNSPosix.c | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/mDNSPosix/mDNSPosix.c b/mDNSPosix/mDNSPosix.c
+index fe7242d..a32a880 100644
+--- a/mDNSPosix/mDNSPosix.c
++++ b/mDNSPosix/mDNSPosix.c
+@@ -1043,6 +1043,19 @@ mDNSlocal void FreePosixNetworkInterface(PosixNetworkInterface *intf)
+     gRecentInterfaces = intf;
+ }
+ 
++mDNSlocal void TearDownInterface(mDNS *const m, PosixNetworkInterface *intf)
++{
++    mDNS_DeregisterInterface(m, &intf->coreIntf, NormalActivation);
++    if (gMDNSPlatformPosixVerboseLevel > 0) fprintf(stderr, "Deregistered interface %s\n", intf->intfName);
++    FreePosixNetworkInterface(intf);
++
++    num_registered_interfaces--;
++    if (num_registered_interfaces == 0) {
++        num_pkts_accepted = 0;
++        num_pkts_rejected = 0;
++    }
++}
++
+ // Grab the first interface, deregister it, free it, and repeat until done.
+ mDNSlocal void ClearInterfaceList(mDNS *const m)
+ {
+@@ -1051,13 +1064,10 @@ mDNSlocal void ClearInterfaceList(mDNS *const m)
+     while (m->HostInterfaces)
+     {
+         PosixNetworkInterface *intf = (PosixNetworkInterface*)(m->HostInterfaces);
+-        mDNS_DeregisterInterface(m, &intf->coreIntf, NormalActivation);
+-        if (gMDNSPlatformPosixVerboseLevel > 0) fprintf(stderr, "Deregistered interface %s\n", intf->intfName);
+-        FreePosixNetworkInterface(intf);
++        TearDownInterface(m, intf);
+     }
+-    num_registered_interfaces = 0;
+-    num_pkts_accepted = 0;
+-    num_pkts_rejected = 0;
++
++    assert(num_registered_interfaces == 0);
+ }
+ 
+ mDNSlocal int SetupIPv6Socket(int fd)
+-- 
+2.41.0
+
