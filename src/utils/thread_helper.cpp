@@ -46,9 +46,9 @@
 #include <openthread/jam_detection.h>
 #include <openthread/joiner.h>
 #if OTBR_ENABLE_NAT64
-#include <utils/sha256.hpp>
 #include <openthread/crypto.h>
 #include <openthread/nat64.h>
+#include "utils/sha256.hpp"
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #include <openthread/srp_server.h>
@@ -108,7 +108,8 @@ static uint32_t TelemetryNodeTypeFromRoleAndLinkMode(const otDeviceRole &aRole, 
             nodeType = threadnetwork::TelemetryData::NODE_TYPE_SLEEPY_END;
         }
         else if (!aLinkModeCfg.mDeviceType)
-        { // If it's not an FTD, return as minimal end device.
+        {
+            // If it's not an FTD, return as minimal end device.
             nodeType = threadnetwork::TelemetryData::NODE_TYPE_MINIMAL_END;
         }
         else
@@ -199,18 +200,16 @@ ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThrea
     : mInstance(aInstance)
     , mNcp(aNcp)
 {
-#if OTBR_ENABLE_TELEMETRY_DATA_API & OTBR_ENABLE_NAT64
-    // otError                  error;
+#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_NAT64
+    otError                  error;
 
-    SuccessOrDie(otPlatCryptoRandomGet(mNat64Ipv6AddressSalt, sizeof(mNat64Ipv6AddressSalt)),
-                 "otPlatCryptoRandomGet for mNat64Ipv6AddressSalt failed");
-    // SuccessOrExit(error = otPlatCryptoRandomGet(mNat64Ipv6AddressSalt, sizeof(mNat64Ipv6AddressSalt));
+    SuccessOrExit(error = otPlatCryptoRandomGet(mNat64Ipv6AddressSalt, sizeof(mNat64Ipv6AddressSalt)));
 
-// exit:
-//     if (error != OT_ERROR_NONE)
-//     {
-//         otbrLogWarning("Error otPlatCryptoRandomGet: %s", otThreadErrorToString(error));
-//     }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Error otPlatCryptoRandomGet: %s", otThreadErrorToString(error));
+    }
 #endif
 }
 

@@ -59,7 +59,7 @@ public:
      * This type represents a SHA-256 hash.
      *
      */
-    class Hash : public otCryptoSha256Hash, public Clearable<Hash>, public Equatable<Hash>
+    class Hash : public otCryptoSha256Hash
     {
     public:
         static const uint8_t kSize = OT_CRYPTO_SHA256_HASH_SIZE; ///< SHA-256 hash size (bytes)
