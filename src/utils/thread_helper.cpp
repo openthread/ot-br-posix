@@ -201,7 +201,7 @@ ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThrea
     , mNcp(aNcp)
 {
 #if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_NAT64
-    otError                  error;
+    otError error;
 
     SuccessOrExit(error = otPlatCryptoRandomGet(mNat64Ipv6AddressSalt, sizeof(mNat64Ipv6AddressSalt)));
 
