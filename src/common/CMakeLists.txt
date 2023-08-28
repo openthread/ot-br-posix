@@ -29,6 +29,7 @@
 add_library(otbr-common
     api_strings.cpp
     byteswap.hpp
+    code_utils.cpp
     code_utils.hpp
     dns_utils.cpp
     logging.cpp
@@ -37,8 +38,6 @@ add_library(otbr-common
     mainloop.hpp
     mainloop_manager.cpp
     mainloop_manager.hpp
-    num_utils.cpp
-    num_utils.hpp
     task_runner.cpp
     task_runner.hpp
     time.hpp

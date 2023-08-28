@@ -170,6 +170,14 @@ template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&...
 }
 
 /**
+ * This method converts 8 uint8_t bytes into uint64_t.
+ *
+ * @param[in] aValue  The input 8 uint8_t bytes.
+ * @returns The converted uint64_t.
+ */
+uint64_t ConvertOpenThreadUint64(const uint8_t *aValue);
+
+/**
  * This class makes any class that derives from it non-copyable. It is intended to be used as a private base class.
  *
  */

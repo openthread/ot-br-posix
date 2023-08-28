@@ -46,7 +46,7 @@
 
 #include "common/api_strings.hpp"
 #include "common/byteswap.hpp"
-#include "common/num_utils.hpp"
+#include "common/code_utils.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
 #include "dbus/server/dbus_thread_object.hpp"

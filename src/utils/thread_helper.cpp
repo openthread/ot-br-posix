@@ -59,7 +59,6 @@
 #include "common/byteswap.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "common/num_utils.hpp"
 #include "common/tlv.hpp"
 #include "ncp/ncp_openthread.hpp"
 
