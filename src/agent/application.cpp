@@ -76,8 +76,8 @@ Application::Application(const std::string               &aInterfaceName,
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
     , mDBusAgent(mNcp, mBorderAgent.GetPublisher())
 #endif
-#if OTBR_ENABLE_VENDOR_SERVER
-    , mVendorServer(mNcp)
+#if OTBR_ENABLE_ANDROID_OTDAEMON_SERVER
+    , mOtDaemonServer(ndk::SharedRefBase::make<Android::OtDaemonServer>())
 #endif
 {
     OTBR_UNUSED_VARIABLE(aRestListenAddress);
@@ -103,8 +103,8 @@ void Application::Init(void)
 #if OTBR_ENABLE_DBUS_SERVER
     mDBusAgent.Init();
 #endif
-#if OTBR_ENABLE_VENDOR_SERVER
-    mVendorServer.Init();
+#if OTBR_ENABLE_ANDROID_OTDAEMON_SERVER
+    mOtDaemonServer->InitOrDie(&mNcp);
 #endif
 }
 

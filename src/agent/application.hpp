@@ -57,8 +57,8 @@
 #if OTBR_ENABLE_OPENWRT
 #include "openwrt/ubus/otubus.hpp"
 #endif
-#if OTBR_ENABLE_VENDOR_SERVER
-#include "agent/vendor.hpp"
+#if OTBR_ENABLE_ANDROID_OTDAEMON_SERVER
+#include "android/otdaemon_server.hpp"
 #endif
 #include "utils/infra_link_selector.hpp"
 
@@ -146,8 +146,8 @@ private:
 #if OTBR_ENABLE_DBUS_SERVER
     DBus::DBusAgent mDBusAgent;
 #endif
-#if OTBR_ENABLE_VENDOR_SERVER
-    vendor::VendorServer mVendorServer;
+#if OTBR_ENABLE_ANDROID_OTDAEMON_SERVER
+    std::shared_ptr<Android::OtDaemonServer> mOtDaemonServer;
 #endif
 
     static std::atomic_bool sShouldTerminate;
