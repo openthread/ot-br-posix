@@ -73,6 +73,7 @@ otbr_install()
         "-DOTBR_DBUS=ON"
         "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
         "-DOTBR_SRP_ADVERTISING_PROXY=ON"
+        "-DOTBR_DNSSD_PLAT=OFF"
         "-DOTBR_INFRA_IF_NAME=${INFRA_IF_NAME}"
         "-DOTBR_MDNS=${OTBR_MDNS:=mDNSResponder}"
         # Force re-evaluation of version strings
