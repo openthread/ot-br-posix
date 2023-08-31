@@ -47,6 +47,7 @@
 #include "backbone_router/backbone_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
+#include "mdns/dnssd_plat.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
 #include "sdp_proxy/advertising_proxy.hpp"
@@ -137,6 +138,10 @@ private:
     std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
 #endif
 
+#if OTBR_ENABLE_DNSSD_PLAT
+    DnssdPlatform mDnssdPlatform;
+#endif
+// TODO: change these
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;
 #endif
