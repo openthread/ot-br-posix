@@ -495,7 +495,12 @@ void TrelDnssd::Peer::ReadExtAddrFromTxtData(void)
 
     for (const auto &txtEntry : txtEntries)
     {
-        if (StringUtils::EqualCaseInsensitive(txtEntry.mName, kTxtRecordExtAddressKey))
+        if (txtEntry.mIsBooleanAttribute)
+        {
+            continue;
+        }
+
+        if (StringUtils::EqualCaseInsensitive(txtEntry.mKey, kTxtRecordExtAddressKey))
         {
             VerifyOrExit(txtEntry.mValue.size() == sizeof(mExtAddr));
 

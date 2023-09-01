@@ -343,10 +343,11 @@ void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &a
 
         for (auto &addedEntry : aTxtList)
         {
-            if (addedEntry.mName == key)
+            if (addedEntry.mKey == key)
             {
-                addedEntry.mValue = value;
-                found             = true;
+                addedEntry.mValue              = value;
+                addedEntry.mIsBooleanAttribute = false;
+                found                          = true;
                 break;
             }
         }

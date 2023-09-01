@@ -342,18 +342,10 @@ Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService 
 {
     const uint8_t           *txtData;
     uint16_t                 txtDataLength = 0;
-    otDnsTxtEntryIterator    iterator;
-    otDnsTxtEntry            txtEntry;
     Mdns::Publisher::TxtList txtList;
 
     txtData = otSrpServerServiceGetTxtData(aSrpService, &txtDataLength);
-
-    otDnsInitTxtEntryIterator(&iterator, txtData, txtDataLength);
-
-    while (otDnsGetNextTxtEntry(&iterator, &txtEntry) == OT_ERROR_NONE)
-    {
-        txtList.emplace_back(txtEntry.mKey, txtEntry.mValue, txtEntry.mValueLength);
-    }
+    Mdns::Publisher::DecodeTxtData(txtList, txtData, txtDataLength);
 
     return txtList;
 }

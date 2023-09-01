@@ -410,9 +410,64 @@ exit:
     return ret;
 }
 
+otbrError CheckTxtDataEncoderDecoder(void)
+{
+    otbrError                error = OTBR_ERROR_NONE;
+    Mdns::Publisher::TxtList txtList;
+    Mdns::Publisher::TxtList parsedTxtList;
+    std::vector<uint8_t>     txtData;
+
+    // Encode empty `TxtList`
+
+    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
+    VerifyOrExit(txtData.size() == 1, error = OTBR_ERROR_PARSE);
+    VerifyOrExit(txtData[0] == 0, error = OTBR_ERROR_PARSE);
+
+    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    VerifyOrExit(parsedTxtList.size() == 0, error = OTBR_ERROR_PARSE);
+
+    // TxtList with one bool attribute
+
+    txtList.clear();
+    txtList.emplace_back("b1");
+
+    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    VerifyOrExit(parsedTxtList == txtList, error = OTBR_ERROR_PARSE);
+
+    // TxtList with one one key/value
+
+    txtList.clear();
+    txtList.emplace_back("k1", "v1");
+
+    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    VerifyOrExit(parsedTxtList == txtList, error = OTBR_ERROR_PARSE);
+
+    // TxtList with multiple entries
+
+    txtList.clear();
+    txtList.emplace_back("k1", "v1");
+    txtList.emplace_back("b1");
+    txtList.emplace_back("b2");
+    txtList.emplace_back("k2", "valu2");
+
+    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    VerifyOrExit(parsedTxtList == txtList, error = OTBR_ERROR_PARSE);
+
+exit:
+    return error;
+}
+
 int main(int argc, char *argv[])
 {
     int ret = 0;
+
+    if (CheckTxtDataEncoderDecoder() != OTBR_ERROR_NONE)
+    {
+        return 1;
+    }
 
     if (argc < 2)
     {
