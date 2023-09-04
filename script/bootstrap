@@ -35,6 +35,8 @@
 
 NAT64_SERVICE="${NAT64_SERVICE:-openthread}"
 
+FIREWALL="${FIREWALL:-1}"
+
 install_packages_apt()
 {
     sudo apt-get update
