@@ -147,7 +147,7 @@ private:
     DBus::DBusAgent mDBusAgent;
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
-    vendor::VendorServer mVendorServer;
+    std::shared_ptr<vendor::VendorServer> mVendorServer;
 #endif
 
     static std::atomic_bool sShouldTerminate;
