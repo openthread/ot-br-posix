@@ -30,6 +30,7 @@ add_executable(otbr-agent
     application.cpp
     main.cpp
     uris.hpp
+    vendor.hpp
 )
 
 target_link_libraries(otbr-agent PRIVATE
