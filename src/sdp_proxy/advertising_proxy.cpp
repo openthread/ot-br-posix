@@ -265,12 +265,12 @@ otbrError AdvertisingProxy::PublishHostAndItsServices(const otSrpServerHost *aHo
 
         if (!hostDeleted && !otSrpServerServiceIsDeleted(service))
         {
-            Mdns::Publisher::TxtList     txtList     = MakeTxtList(service);
+            Mdns::Publisher::TxtData     txtData     = MakeTxtData(service);
             Mdns::Publisher::SubTypeList subTypeList = MakeSubTypeList(service);
 
             otbrLogDebug("Publish SRP service '%s'", fullServiceName.c_str());
             mPublisher.PublishService(
-                hostName, serviceName, serviceType, subTypeList, otSrpServerServiceGetPort(service), txtList,
+                hostName, serviceName, serviceType, subTypeList, otSrpServerServiceGetPort(service), txtData,
                 [this, hasUpdate, updateId, fullServiceName](otbrError aError) {
                     otbrLogResult(aError, "Handle publish SRP service '%s'", fullServiceName.c_str());
                     if (hasUpdate)
@@ -338,16 +338,14 @@ exit:
     return error;
 }
 
-Mdns::Publisher::TxtList AdvertisingProxy::MakeTxtList(const otSrpServerService *aSrpService)
+Mdns::Publisher::TxtData AdvertisingProxy::MakeTxtData(const otSrpServerService *aSrpService)
 {
-    const uint8_t           *txtData;
-    uint16_t                 txtDataLength = 0;
-    Mdns::Publisher::TxtList txtList;
+    const uint8_t *data;
+    uint16_t       length = 0;
 
-    txtData = otSrpServerServiceGetTxtData(aSrpService, &txtDataLength);
-    Mdns::Publisher::DecodeTxtData(txtList, txtData, txtDataLength);
+    data = otSrpServerServiceGetTxtData(aSrpService, &length);
 
-    return txtList;
+    return Mdns::Publisher::TxtData(data, data + length);
 }
 
 Mdns::Publisher::SubTypeList AdvertisingProxy::MakeSubTypeList(const otSrpServerService *aSrpService)

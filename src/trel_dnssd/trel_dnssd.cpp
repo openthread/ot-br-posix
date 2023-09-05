@@ -249,7 +249,7 @@ void TrelDnssd::PublishTrelService(void)
 
     mRegisterInfo.mInstanceName = GetTrelInstanceName();
     mPublisher.PublishService(/* aHostName */ "", mRegisterInfo.mInstanceName, kTrelServiceName,
-                              Mdns::Publisher::SubTypeList{}, mRegisterInfo.mPort, mRegisterInfo.mTxtEntries,
+                              Mdns::Publisher::SubTypeList{}, mRegisterInfo.mPort, mRegisterInfo.mTxtData,
                               [](otbrError aError) { HandlePublishTrelServiceError(aError); });
 }
 
@@ -461,18 +461,11 @@ uint16_t TrelDnssd::CountDuplicatePeers(const TrelDnssd::Peer &aPeer)
 
 void TrelDnssd::RegisterInfo::Assign(uint16_t aPort, const uint8_t *aTxtData, uint8_t aTxtLength)
 {
-    otbrError error;
-
-    OTBR_UNUSED_VARIABLE(error);
-
     assert(!IsPublished());
     assert(aPort > 0);
 
     mPort = aPort;
-    mTxtEntries.clear();
-
-    error = Mdns::Publisher::DecodeTxtData(mTxtEntries, aTxtData, aTxtLength);
-    assert(error == OTBR_ERROR_NONE);
+    mTxtData.assign(aTxtData, aTxtData + aTxtLength);
 }
 
 void TrelDnssd::RegisterInfo::Clear(void)
@@ -480,7 +473,7 @@ void TrelDnssd::RegisterInfo::Clear(void)
     assert(!IsPublished());
 
     mPort = 0;
-    mTxtEntries.clear();
+    mTxtData.clear();
 }
 
 const char TrelDnssd::Peer::kTxtRecordExtAddressKey[] = "xa";
