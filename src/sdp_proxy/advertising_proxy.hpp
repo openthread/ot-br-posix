@@ -131,9 +131,6 @@ private:
 
     // A vector that tracks outstanding updates.
     std::vector<OutstandingUpdate> mOutstandingUpdates;
-
-    // Task runner for running tasks in the context of the main thread.
-    TaskRunner mTaskRunner;
 };
 
 } // namespace otbr
