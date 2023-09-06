@@ -91,9 +91,9 @@ protected:
                                  uint16_t           aPort,
                                  const TxtData     &aTxtData,
                                  ResultCallback   &&aCallback) override;
-    otbrError PublishHostImpl(const std::string             &aName,
-                              const std::vector<Ip6Address> &aAddress,
-                              ResultCallback               &&aCallback) override;
+    otbrError PublishHostImpl(const std::string &aName,
+                              const AddressList &aAddress,
+                              ResultCallback   &&aCallback) override;
     void      OnServiceResolveFailedImpl(const std::string &aType,
                                          const std::string &aInstanceName,
                                          int32_t            aErrorCode) override;
@@ -137,11 +137,11 @@ private:
     class DnssdHostRegistration : public HostRegistration
     {
     public:
-        DnssdHostRegistration(const std::string             &aName,
-                              const std::vector<Ip6Address> &aAddresses,
-                              ResultCallback               &&aCallback,
-                              DNSServiceRef                  aServiceRef,
-                              Publisher                     *aPublisher)
+        DnssdHostRegistration(const std::string &aName,
+                              const AddressList &aAddresses,
+                              ResultCallback   &&aCallback,
+                              DNSServiceRef      aServiceRef,
+                              Publisher         *aPublisher)
             : HostRegistration(aName, aAddresses, std::move(aCallback), aPublisher)
             , mServiceRef(aServiceRef)
             , mRecordRefMap()

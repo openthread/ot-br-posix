@@ -143,9 +143,9 @@ public:
      */
     struct DiscoveredHostInfo
     {
-        std::string             mHostName;  ///< Full host name.
-        std::vector<Ip6Address> mAddresses; ///< IP6 addresses.
-        uint32_t                mTtl = 0;   ///< Host TTL.
+        std::string mHostName;  ///< Full host name.
+        AddressList mAddresses; ///< IP6 addresses.
+        uint32_t    mTtl = 0;   ///< Host TTL.
     };
 
     /**
@@ -255,7 +255,7 @@ public:
      *                        alternative name is available/acceptable.
      *
      */
-    void PublishHost(const std::string &aName, const std::vector<Ip6Address> &aAddresses, ResultCallback &&aCallback);
+    void PublishHost(const std::string &aName, const AddressList &aAddresses, ResultCallback &&aCallback);
 
     /**
      * This method un-publishes a host.
@@ -344,7 +344,7 @@ public:
      * @returns  The MdnsTelemetryInfo of the publisher.
      *
      */
-    const MdnsTelemetryInfo &GetMdnsTelemetryInfo() const { return mTelemetryInfo; }
+    const MdnsTelemetryInfo &GetMdnsTelemetryInfo(void) const { return mTelemetryInfo; }
 
     virtual ~Publisher(void) = default;
 
@@ -465,8 +465,6 @@ protected:
 
         void Complete(otbrError aError);
 
-        void OnComplete(otbrError aError);
-
         // Tells whether this `ServiceRegistration` object is outdated comparing to the given parameters.
         bool IsOutdated(const std::string &aHostName,
                         const std::string &aName,
@@ -474,13 +472,16 @@ protected:
                         const SubTypeList &aSubTypeList,
                         uint16_t           aPort,
                         const TxtData     &aTxtData) const;
+
+    private:
+        void OnComplete(otbrError aError);
     };
 
     class HostRegistration : public Registration
     {
     public:
-        std::string             mName;
-        std::vector<Ip6Address> mAddresses;
+        std::string mName;
+        AddressList mAddresses;
 
         HostRegistration(std::string aName, AddressList aAddresses, ResultCallback &&aCallback, Publisher *aPublisher)
             : Registration(std::move(aCallback), aPublisher)
@@ -489,14 +490,15 @@ protected:
         {
         }
 
-        ~HostRegistration(void) { OnComplete(OTBR_ERROR_ABORTED); }
+        ~HostRegistration(void) override { OnComplete(OTBR_ERROR_ABORTED); }
 
         void Complete(otbrError aError);
 
-        void OnComplete(otbrError);
-
         // Tells whether this `HostRegistration` object is outdated comparing to the given parameters.
-        bool IsOutdated(const std::string &aName, const std::vector<Ip6Address> &aAddresses) const;
+        bool IsOutdated(const std::string &aName, const AddressList &aAddresses) const;
+
+    private:
+        void OnComplete(otbrError aError);
     };
 
     using ServiceRegistrationPtr = std::unique_ptr<ServiceRegistration>;
@@ -515,14 +517,17 @@ protected:
                                          const SubTypeList &aSubTypeList,
                                          uint16_t           aPort,
                                          const TxtData     &aTxtData,
-                                         ResultCallback   &&aCallback)                            = 0;
-    virtual otbrError PublishHostImpl(const std::string             &aName,
-                                      const std::vector<Ip6Address> &aAddresses,
-                                      ResultCallback               &&aCallback)                               = 0;
-    virtual void      OnServiceResolveFailedImpl(const std::string &aType,
-                                                 const std::string &aInstanceName,
-                                                 int32_t            aErrorCode)                            = 0;
-    virtual void      OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) = 0;
+                                         ResultCallback   &&aCallback) = 0;
+
+    virtual otbrError PublishHostImpl(const std::string &aName,
+                                      const AddressList &aAddresses,
+                                      ResultCallback   &&aCallback) = 0;
+
+    virtual void OnServiceResolveFailedImpl(const std::string &aType,
+                                            const std::string &aInstanceName,
+                                            int32_t            aErrorCode) = 0;
+
+    virtual void OnHostResolveFailedImpl(const std::string &aHostName, int32_t aErrorCode) = 0;
 
     virtual otbrError DnsErrorToOtbrError(int32_t aError) = 0;
 
@@ -547,15 +552,15 @@ protected:
                                                       const TxtData     &aTxtData,
                                                       ResultCallback   &&aCallback);
 
-    ResultCallback HandleDuplicateHostRegistration(const std::string             &aName,
-                                                   const std::vector<Ip6Address> &aAddresses,
-                                                   ResultCallback               &&aCallback);
+    ResultCallback HandleDuplicateHostRegistration(const std::string &aName,
+                                                   const AddressList &aAddresses,
+                                                   ResultCallback   &&aCallback);
 
     void              AddHostRegistration(HostRegistrationPtr &&aHostReg);
     void              RemoveHostRegistration(const std::string &aName, otbrError aError);
     HostRegistration *FindHostRegistration(const std::string &aName);
 
-    static void UpdateMdnsResponseCounters(otbr::MdnsResponseCounters &aCounters, otbrError aError);
+    static void UpdateMdnsResponseCounters(MdnsResponseCounters &aCounters, otbrError aError);
     static void UpdateEmaLatency(uint32_t &aEmaLatency, uint32_t aLatency, otbrError aError);
 
     void UpdateServiceRegistrationEmaLatency(const std::string &aInstanceName,
@@ -582,7 +587,7 @@ protected:
     // host name -> the timepoint to begin host resolution
     std::map<std::string, Timepoint> mHostResolutionBeginTime;
 
-    otbr::MdnsTelemetryInfo mTelemetryInfo{};
+    MdnsTelemetryInfo mTelemetryInfo{};
 };
 
 /**
