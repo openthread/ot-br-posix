@@ -798,47 +798,40 @@ otbrError PublisherAvahi::TxtDataToAvahiStringList(const TxtData    &aTxtData,
     size_t           used  = 0;
     AvahiStringList *last  = nullptr;
     AvahiStringList *curr  = aBuffer;
-    TxtList          txtList;
-
-    SuccessOrExit(error = DecodeTxtData(txtList, aTxtData.data(), aTxtData.size()));
+    const uint8_t   *next;
+    const uint8_t   *data    = aTxtData.data();
+    const uint8_t   *dataEnd = aTxtData.data() + aTxtData.size();
 
     aHead = nullptr;
-    for (const auto &txtEntry : txtList)
-    {
-        const char    *key         = txtEntry.mKey.c_str();
-        size_t         keyLength   = txtEntry.mKey.length();
-        const uint8_t *value       = txtEntry.mValue.data();
-        size_t         valueLength = txtEntry.mValue.size();
-        size_t         needed      = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + keyLength;
-        const uint8_t *next;
 
-        if (!txtEntry.mIsBooleanAttribute)
+    while (data < dataEnd)
+    {
+        uint8_t entryLength = *data++;
+        size_t  needed      = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + entryLength;
+
+        if (entryLength == 0)
         {
-            needed += valueLength + 1; // +1 is for `=` character.
+            continue;
         }
+
+        VerifyOrExit(data + entryLength <= dataEnd, error = OTBR_ERROR_PARSE);
 
         VerifyOrExit(used + needed <= aBufferSize, error = OTBR_ERROR_INVALID_ARGS);
         curr->next = last;
         last       = curr;
-        memcpy(curr->text, key, keyLength);
 
-        if (!txtEntry.mIsBooleanAttribute)
-        {
-            curr->text[keyLength] = '=';
-            memcpy(curr->text + keyLength + 1, value, valueLength);
-            curr->size = keyLength + valueLength + 1;
-        }
-        else
-        {
-            curr->size = keyLength;
-        }
+        memcpy(curr->text, data, entryLength);
+        curr->size = entryLength;
+
+        data += entryLength;
 
         next = curr->text + curr->size;
         curr = OTBR_ALIGNED(next, AvahiStringList *);
         used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(aBuffer));
     }
-    SuccessOrExit(error);
+
     aHead = last;
+
 exit:
     return error;
 }
