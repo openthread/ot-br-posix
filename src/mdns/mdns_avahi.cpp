@@ -492,6 +492,11 @@ PublisherAvahi::AvahiHostRegistration::~AvahiHostRegistration(void)
     ReleaseGroup(mEntryGroup);
 }
 
+PublisherAvahi::AvahiKeyRegistration::~AvahiKeyRegistration(void)
+{
+    ReleaseGroup(mEntryGroup);
+}
+
 otbrError PublisherAvahi::Start(void)
 {
     otbrError error      = OTBR_ERROR_NONE;
@@ -576,6 +581,7 @@ void PublisherAvahi::CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrErro
 {
     ServiceRegistration *serviceReg;
     HostRegistration    *hostReg;
+    KeyRegistration     *keyReg;
 
     if ((serviceReg = FindServiceRegistration(aGroup)) != nullptr)
     {
@@ -597,6 +603,17 @@ void PublisherAvahi::CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrErro
         else
         {
             RemoveHostRegistration(hostReg->mName, aError);
+        }
+    }
+    else if ((keyReg = FindKeyRegistration(aGroup)) != nullptr)
+    {
+        if (aError == OTBR_ERROR_NONE)
+        {
+            keyReg->Complete(aError);
+        }
+        else
+        {
+            RemoveKeyRegistration(keyReg->mName, aError);
         }
     }
     else
@@ -841,6 +858,64 @@ exit:
     std::move(aCallback)(error);
 }
 
+otbrError PublisherAvahi::PublishKeyImpl(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback)
+{
+    otbrError        error      = OTBR_ERROR_NONE;
+    int              avahiError = AVAHI_OK;
+    std::string      fullKeyName;
+    AvahiEntryGroup *group = nullptr;
+
+    VerifyOrExit(mState == State::kReady, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mClient != nullptr, error = OTBR_ERROR_INVALID_STATE);
+
+    aCallback = HandleDuplicateKeyRegistration(aName, aKeyData, std::move(aCallback));
+    VerifyOrExit(!aCallback.IsNull());
+
+    VerifyOrExit((group = CreateGroup(mClient)) != nullptr, error = OTBR_ERROR_MDNS);
+
+    fullKeyName = MakeFullKeyName(aName);
+
+    avahiError = avahi_entry_group_add_record(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, AVAHI_PUBLISH_UNIQUE,
+                                              fullKeyName.c_str(), AVAHI_DNS_CLASS_IN, kDnsKeyRecordType, kDefaultTtl,
+                                              aKeyData.data(), aKeyData.size());
+    VerifyOrExit(avahiError == AVAHI_OK);
+
+    otbrLogInfo("Commit avahi key record for %s", aName.c_str());
+    avahiError = avahi_entry_group_commit(group);
+    VerifyOrExit(avahiError == AVAHI_OK);
+
+    AddKeyRegistration(std::unique_ptr<AvahiKeyRegistration>(
+        new AvahiKeyRegistration(aName, aKeyData, std::move(aCallback), group, this)));
+
+exit:
+    if (avahiError != AVAHI_OK || error != OTBR_ERROR_NONE)
+    {
+        if (avahiError != AVAHI_OK)
+        {
+            error = OTBR_ERROR_MDNS;
+            otbrLogErr("Failed to publish key record - avahi error: %s!", avahi_strerror(avahiError));
+        }
+
+        if (group != nullptr)
+        {
+            ReleaseGroup(group);
+        }
+        std::move(aCallback)(error);
+    }
+    return error;
+}
+
+void PublisherAvahi::UnpublishKey(const std::string &aName, ResultCallback &&aCallback)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(mState == Publisher::State::kReady, error = OTBR_ERROR_INVALID_STATE);
+    RemoveKeyRegistration(aName, OTBR_ERROR_ABORTED);
+
+exit:
+    std::move(aCallback)(error);
+}
+
 otbrError PublisherAvahi::TxtDataToAvahiStringList(const TxtData    &aTxtData,
                                                    AvahiStringList  *aBuffer,
                                                    size_t            aBufferSize,
@@ -915,6 +990,23 @@ Publisher::HostRegistration *PublisherAvahi::FindHostRegistration(const AvahiEnt
         if (hostReg.GetEntryGroup() == aEntryGroup)
         {
             result = kv.second.get();
+            break;
+        }
+    }
+
+    return result;
+}
+
+Publisher::KeyRegistration *PublisherAvahi::FindKeyRegistration(const AvahiEntryGroup *aEntryGroup)
+{
+    KeyRegistration *result = nullptr;
+
+    for (const auto &entry : mKeyRegistrations)
+    {
+        const auto &keyReg = static_cast<const AvahiKeyRegistration &>(*entry.second);
+        if (keyReg.GetEntryGroup() == aEntryGroup)
+        {
+            result = entry.second.get();
             break;
         }
     }

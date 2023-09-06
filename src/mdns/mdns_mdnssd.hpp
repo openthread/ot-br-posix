@@ -70,6 +70,7 @@ public:
     void UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
 
     void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
+    void      UnpublishKey(const std::string &aName, ResultCallback &&aCallback) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      SubscribeHost(const std::string &aHostName) override;
@@ -94,6 +95,7 @@ protected:
     otbrError PublishHostImpl(const std::string &aName,
                               const AddressList &aAddress,
                               ResultCallback   &&aCallback) override;
+    otbrError PublishKeyImpl(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback) override;
     void      OnServiceResolveFailedImpl(const std::string &aType,
                                          const std::string &aInstanceName,
                                          int32_t            aErrorCode) override;
@@ -109,8 +111,12 @@ private:
         kStopOnServiceNotRunningError,
     };
 
+    class DnssdKeyRegistration;
+
     class DnssdServiceRegistration : public ServiceRegistration
     {
+        friend class DnssdKeyRegistration;
+
     public:
         using ServiceRegistration::ServiceRegistration; // Inherit base constructor
 
@@ -132,7 +138,8 @@ private:
                                               const char         *aDomain,
                                               void               *aContext);
 
-        DNSServiceRef mServiceRef = nullptr;
+        DNSServiceRef         mServiceRef    = nullptr;
+        DnssdKeyRegistration *mRelatedKeyReg = nullptr;
     };
 
     class DnssdHostRegistration : public HostRegistration
@@ -156,6 +163,31 @@ private:
 
         std::vector<DNSRecordRef> mAddrRecordRefs;
         std::vector<bool>         mAddrRegistered;
+    };
+
+    class DnssdKeyRegistration : public KeyRegistration
+    {
+        friend class DnssdServiceRegistration;
+
+    public:
+        using KeyRegistration::KeyRegistration; // Inherit base class constructor
+
+        ~DnssdKeyRegistration(void) override { Unregister(); }
+
+        otbrError Register(void);
+
+    private:
+        void             Unregister(void);
+        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+        void             HandleRegisterResult(DNSServiceErrorType aError);
+        static void      HandleRegisterResult(DNSServiceRef       aServiceRef,
+                                              DNSRecordRef        aRecordRef,
+                                              DNSServiceFlags     aFlags,
+                                              DNSServiceErrorType aErrorCode,
+                                              void               *aContext);
+
+        DNSRecordRef              mRecordRef         = nullptr;
+        DnssdServiceRegistration *mRelatedServiceReg = nullptr;
     };
 
     struct ServiceRef : private ::NonCopyable

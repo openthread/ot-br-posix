@@ -78,6 +78,7 @@ public:
 
     void      UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) override;
     void      UnpublishHost(const std::string &aName, ResultCallback &&aCallback) override;
+    void      UnpublishKey(const std::string &aName, ResultCallback &&aCallback) override;
     void      SubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      UnsubscribeService(const std::string &aType, const std::string &aInstanceName) override;
     void      SubscribeHost(const std::string &aHostName) override;
@@ -97,6 +98,7 @@ protected:
     otbrError PublishHostImpl(const std::string &aName,
                               const AddressList &aAddresses,
                               ResultCallback   &&aCallback) override;
+    otbrError PublishKeyImpl(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback) override;
     void      OnServiceResolveFailedImpl(const std::string &aType,
                                          const std::string &aInstanceName,
                                          int32_t            aErrorCode) override;
@@ -106,6 +108,7 @@ protected:
 private:
     static constexpr size_t   kMaxSizeOfTxtRecord = 1024;
     static constexpr uint32_t kDefaultTtl         = 10; // In seconds.
+    static constexpr uint16_t kDnsKeyRecordType   = 25;
 
     class AvahiServiceRegistration : public ServiceRegistration
     {
@@ -152,6 +155,26 @@ private:
         }
 
         ~AvahiHostRegistration(void) override;
+        const AvahiEntryGroup *GetEntryGroup(void) const { return mEntryGroup; }
+
+    private:
+        AvahiEntryGroup *mEntryGroup;
+    };
+
+    class AvahiKeyRegistration : public KeyRegistration
+    {
+    public:
+        AvahiKeyRegistration(const std::string &aName,
+                             const KeyData     &aKeyData,
+                             ResultCallback   &&aCallback,
+                             AvahiEntryGroup   *aEntryGroup,
+                             PublisherAvahi    *aPublisher)
+            : KeyRegistration(aName, aKeyData, std::move(aCallback), aPublisher)
+            , mEntryGroup(aEntryGroup)
+        {
+        }
+
+        ~AvahiKeyRegistration(void) override;
         const AvahiEntryGroup *GetEntryGroup(void) const { return mEntryGroup; }
 
     private:
@@ -347,6 +370,7 @@ private:
 
     ServiceRegistration *FindServiceRegistration(const AvahiEntryGroup *aEntryGroup);
     HostRegistration    *FindHostRegistration(const AvahiEntryGroup *aEntryGroup);
+    KeyRegistration     *FindKeyRegistration(const AvahiEntryGroup *aEntryGroup);
 
     AvahiClient                 *mClient;
     std::unique_ptr<AvahiPoller> mPoller;
