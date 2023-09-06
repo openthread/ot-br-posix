@@ -803,24 +803,36 @@ otbrError PublisherAvahi::TxtListToAvahiStringList(const TxtList    &aTxtList,
     aHead = nullptr;
     for (const auto &txtEntry : aTxtList)
     {
-        const char    *name        = txtEntry.mName.c_str();
-        size_t         nameLength  = txtEntry.mName.length();
+        const char    *key         = txtEntry.mKey.c_str();
+        size_t         keyLength   = txtEntry.mKey.length();
         const uint8_t *value       = txtEntry.mValue.data();
         size_t         valueLength = txtEntry.mValue.size();
-        // +1 for the size of "=", avahi doesn't need '\0' at the end of the entry
-        size_t needed = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + nameLength + valueLength + 1;
+        size_t         needed      = sizeof(AvahiStringList) - sizeof(AvahiStringList::text) + keyLength;
+        const uint8_t *next;
+
+        if (!txtEntry.mIsBooleanAttribute)
+        {
+            needed += valueLength + 1; // +1 is for `=` character.
+        }
 
         VerifyOrExit(used + needed <= aBufferSize, error = OTBR_ERROR_INVALID_ARGS);
         curr->next = last;
         last       = curr;
-        memcpy(curr->text, name, nameLength);
-        curr->text[nameLength] = '=';
-        memcpy(curr->text + nameLength + 1, value, valueLength);
-        curr->size = nameLength + valueLength + 1;
+        memcpy(curr->text, key, keyLength);
+
+        if (!txtEntry.mIsBooleanAttribute)
         {
-            const uint8_t *next = curr->text + curr->size;
-            curr                = OTBR_ALIGNED(next, AvahiStringList *);
+            curr->text[keyLength] = '=';
+            memcpy(curr->text + keyLength + 1, value, valueLength);
+            curr->size = keyLength + valueLength + 1;
         }
+        else
+        {
+            curr->size = keyLength;
+        }
+
+        next = curr->text + curr->size;
+        curr = OTBR_ALIGNED(next, AvahiStringList *);
         used = static_cast<size_t>(reinterpret_cast<uint8_t *>(curr) - reinterpret_cast<uint8_t *>(aBuffer));
     }
     SuccessOrExit(error);
