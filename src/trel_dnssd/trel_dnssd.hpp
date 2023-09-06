@@ -120,9 +120,9 @@ private:
 
     struct RegisterInfo
     {
-        uint16_t                               mPort = 0;
-        std::vector<Mdns::Publisher::TxtEntry> mTxtEntries;
-        std::string                            mInstanceName;
+        uint16_t                 mPort = 0;
+        Mdns::Publisher::TxtData mTxtData;
+        std::string              mInstanceName;
 
         bool IsValid(void) const { return mPort > 0; }
         bool IsPublished(void) const { return !mInstanceName.empty(); }

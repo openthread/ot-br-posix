@@ -89,7 +89,7 @@ protected:
                                  const std::string &aType,
                                  const SubTypeList &aSubTypeList,
                                  uint16_t           aPort,
-                                 const TxtList     &aTxtList,
+                                 const TxtData     &aTxtData,
                                  ResultCallback   &&aCallback) override;
     otbrError PublishHostImpl(const std::string             &aName,
                               const std::vector<Ip6Address> &aAddress,
@@ -111,7 +111,7 @@ private:
                                  const std::string &aType,
                                  const SubTypeList &aSubTypeList,
                                  uint16_t           aPort,
-                                 const TxtList     &aTxtList,
+                                 const TxtData     &aTxtData,
                                  ResultCallback   &&aCallback,
                                  DNSServiceRef      aServiceRef,
                                  PublisherMDnsSd   *aPublisher)
@@ -120,7 +120,7 @@ private:
                                   aType,
                                   aSubTypeList,
                                   aPort,
-                                  aTxtList,
+                                  aTxtData,
                                   std::move(aCallback),
                                   aPublisher)
             , mServiceRef(aServiceRef)

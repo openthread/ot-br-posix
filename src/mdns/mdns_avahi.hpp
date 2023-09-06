@@ -92,7 +92,7 @@ protected:
                                  const std::string &aType,
                                  const SubTypeList &aSubTypeList,
                                  uint16_t           aPort,
-                                 const TxtList     &aTxtList,
+                                 const TxtData     &aTxtData,
                                  ResultCallback   &&aCallback) override;
     otbrError PublishHostImpl(const std::string             &aName,
                               const std::vector<Ip6Address> &aAddresses,
@@ -115,7 +115,7 @@ private:
                                  const std::string &aType,
                                  const SubTypeList &aSubTypeList,
                                  uint16_t           aPort,
-                                 const TxtList     &aTxtList,
+                                 const TxtData     &aTxtData,
                                  ResultCallback   &&aCallback,
                                  AvahiEntryGroup   *aEntryGroup,
                                  PublisherAvahi    *aPublisher)
@@ -124,7 +124,7 @@ private:
                                   aType,
                                   aSubTypeList,
                                   aPort,
-                                  aTxtList,
+                                  aTxtData,
                                   std::move(aCallback),
                                   aPublisher)
             , mEntryGroup(aEntryGroup)
@@ -340,7 +340,7 @@ private:
     void        HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupState aState);
     void        CallHostOrServiceCallback(AvahiEntryGroup *aGroup, otbrError aError);
 
-    static otbrError TxtListToAvahiStringList(const TxtList    &aTxtList,
+    static otbrError TxtDataToAvahiStringList(const TxtData    &aTxtData,
                                               AvahiStringList  *aBuffer,
                                               size_t            aBufferSize,
                                               AvahiStringList *&aHead);

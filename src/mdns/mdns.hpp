@@ -114,6 +114,7 @@ public:
         }
     };
 
+    typedef std::vector<uint8_t>     TxtData;
     typedef std::vector<TxtEntry>    TxtList;
     typedef std::vector<std::string> SubTypeList;
     typedef std::vector<Ip6Address>  AddressList;
@@ -124,16 +125,16 @@ public:
      */
     struct DiscoveredInstanceInfo
     {
-        bool                    mRemoved    = false; ///< The Service Instance is removed.
-        uint32_t                mNetifIndex = 0;     ///< Network interface.
-        std::string             mName;               ///< Instance name.
-        std::string             mHostName;           ///< Full host name.
-        std::vector<Ip6Address> mAddresses;          ///< IPv6 addresses.
-        uint16_t                mPort     = 0;       ///< Port.
-        uint16_t                mPriority = 0;       ///< Service priority.
-        uint16_t                mWeight   = 0;       ///< Service weight.
-        std::vector<uint8_t>    mTxtData;            ///< TXT RDATA bytes.
-        uint32_t                mTtl = 0;            ///< Service TTL.
+        bool        mRemoved    = false; ///< The Service Instance is removed.
+        uint32_t    mNetifIndex = 0;     ///< Network interface.
+        std::string mName;               ///< Instance name.
+        std::string mHostName;           ///< Full host name.
+        AddressList mAddresses;          ///< IPv6 addresses.
+        uint16_t    mPort     = 0;       ///< Port.
+        uint16_t    mPriority = 0;       ///< Service priority.
+        uint16_t    mWeight   = 0;       ///< Service weight.
+        TxtData     mTxtData;            ///< TXT RDATA bytes.
+        uint32_t    mTtl = 0;            ///< Service TTL.
     };
 
     /**
@@ -213,7 +214,7 @@ public:
      * @param[in] aType         The type of this service.
      * @param[in] aSubTypeList  A list of service subtypes.
      * @param[in] aPort         The port number of this service.
-     * @param[in] aTxtList      A list of TXT name/value pairs.
+     * @param[in] aTxtData      The encoded TXT data for this service.
      * @param[in] aCallback     The callback for receiving the publishing result. `OTBR_ERROR_NONE` will be
      *                          returned if the operation is successful and all other values indicate a
      *                          failure. Specifically, `OTBR_ERROR_DUPLICATED` indicates that the name has
@@ -226,7 +227,7 @@ public:
                         const std::string &aType,
                         const SubTypeList &aSubTypeList,
                         uint16_t           aPort,
-                        const TxtList     &aTxtList,
+                        const TxtData     &aTxtData,
                         ResultCallback   &&aCallback);
 
     /**
@@ -381,7 +382,7 @@ public:
      * @sa DecodeTxtData
      *
      */
-    static otbrError EncodeTxtData(const TxtList &aTxtList, std::vector<uint8_t> &aTxtData);
+    static otbrError EncodeTxtData(const TxtList &aTxtList, TxtData &aTxtData);
 
     /**
      * This function decodes a TXT entry list from a TXT data buffer.
@@ -441,14 +442,14 @@ protected:
         std::string mType;
         SubTypeList mSubTypeList;
         uint16_t    mPort;
-        TxtList     mTxtList;
+        TxtData     mTxtData;
 
         ServiceRegistration(std::string      aHostName,
                             std::string      aName,
                             std::string      aType,
                             SubTypeList      aSubTypeList,
                             uint16_t         aPort,
-                            TxtList          aTxtList,
+                            TxtData          aTxtData,
                             ResultCallback &&aCallback,
                             Publisher       *aPublisher)
             : Registration(std::move(aCallback), aPublisher)
@@ -457,7 +458,7 @@ protected:
             , mType(std::move(aType))
             , mSubTypeList(SortSubTypeList(std::move(aSubTypeList)))
             , mPort(aPort)
-            , mTxtList(SortTxtList(std::move(aTxtList)))
+            , mTxtData(std::move(aTxtData))
         {
         }
         ~ServiceRegistration(void) override { OnComplete(OTBR_ERROR_ABORTED); }
@@ -472,7 +473,7 @@ protected:
                         const std::string &aType,
                         const SubTypeList &aSubTypeList,
                         uint16_t           aPort,
-                        const TxtList     &aTxtList) const;
+                        const TxtData     &aTxtData) const;
     };
 
     class HostRegistration : public Registration
@@ -504,7 +505,6 @@ protected:
     using HostRegistrationMap    = std::map<std::string, HostRegistrationPtr>;
 
     static SubTypeList SortSubTypeList(SubTypeList aSubTypeList);
-    static TxtList     SortTxtList(TxtList aTxtList);
     static AddressList SortAddressList(AddressList aAddressList);
     static std::string MakeFullServiceName(const std::string &aName, const std::string &aType);
     static std::string MakeFullHostName(const std::string &aName);
@@ -514,7 +514,7 @@ protected:
                                          const std::string &aType,
                                          const SubTypeList &aSubTypeList,
                                          uint16_t           aPort,
-                                         const TxtList     &aTxtList,
+                                         const TxtData     &aTxtData,
                                          ResultCallback   &&aCallback)                            = 0;
     virtual otbrError PublishHostImpl(const std::string             &aName,
                                       const std::vector<Ip6Address> &aAddresses,
@@ -544,7 +544,7 @@ protected:
                                                       const std::string &aType,
                                                       const SubTypeList &aSubTypeList,
                                                       uint16_t           aPort,
-                                                      const TxtList     &aTxtList,
+                                                      const TxtData     &aTxtData,
                                                       ResultCallback   &&aCallback);
 
     ResultCallback HandleDuplicateHostRegistration(const std::string             &aName,

@@ -52,14 +52,14 @@ void Publisher::PublishService(const std::string &aHostName,
                                const std::string &aType,
                                const SubTypeList &aSubTypeList,
                                uint16_t           aPort,
-                               const TxtList     &aTxtList,
+                               const TxtData     &aTxtData,
                                ResultCallback   &&aCallback)
 {
     otbrError error;
 
     mServiceRegistrationBeginTime[std::make_pair(aName, aType)] = Clock::now();
 
-    error = PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtList, std::move(aCallback));
+    error = PublishServiceImpl(aHostName, aName, aType, aSubTypeList, aPort, aTxtData, std::move(aCallback));
     if (error != OTBR_ERROR_NONE)
     {
         UpdateMdnsResponseCounters(mTelemetryInfo.mServiceRegistrations, error);
@@ -280,13 +280,6 @@ Publisher::SubTypeList Publisher::SortSubTypeList(SubTypeList aSubTypeList)
     return aSubTypeList;
 }
 
-Publisher::TxtList Publisher::SortTxtList(TxtList aTxtList)
-{
-    std::sort(aTxtList.begin(), aTxtList.end(),
-              [](const TxtEntry &aLhs, const TxtEntry &aRhs) { return aLhs.mKey < aRhs.mKey; });
-    return aTxtList;
-}
-
 Publisher::AddressList Publisher::SortAddressList(AddressList aAddressList)
 {
     std::sort(aAddressList.begin(), aAddressList.end());
@@ -339,14 +332,14 @@ Publisher::ResultCallback Publisher::HandleDuplicateServiceRegistration(const st
                                                                         const std::string &aType,
                                                                         const SubTypeList &aSubTypeList,
                                                                         uint16_t           aPort,
-                                                                        const TxtList     &aTxtList,
+                                                                        const TxtData     &aTxtData,
                                                                         ResultCallback   &&aCallback)
 {
     ServiceRegistration *serviceReg = FindServiceRegistration(aName, aType);
 
     VerifyOrExit(serviceReg != nullptr);
 
-    if (serviceReg->IsOutdated(aHostName, aName, aType, aSubTypeList, aPort, aTxtList))
+    if (serviceReg->IsOutdated(aHostName, aName, aType, aSubTypeList, aPort, aTxtData))
     {
         otbrLogInfo("Removing existing service %s.%s: outdated", aName.c_str(), aType.c_str());
         RemoveServiceRegistration(aName, aType, OTBR_ERROR_ABORTED);
@@ -454,10 +447,10 @@ bool Publisher::ServiceRegistration::IsOutdated(const std::string &aHostName,
                                                 const std::string &aType,
                                                 const SubTypeList &aSubTypeList,
                                                 uint16_t           aPort,
-                                                const TxtList     &aTxtList) const
+                                                const TxtData     &aTxtData) const
 {
     return !(mHostName == aHostName && mName == aName && mType == aType && mSubTypeList == aSubTypeList &&
-             mPort == aPort && mTxtList == aTxtList);
+             mPort == aPort && mTxtData == aTxtData);
 }
 
 void Publisher::ServiceRegistration::Complete(otbrError aError)
