@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define OTBR_LOG_TAG "TEST"
+
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
@@ -36,6 +38,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 
+#include <functional>
 #include <vector>
 
 #include "common/code_utils.hpp"
@@ -45,12 +48,11 @@
 #include "mdns/mdns.hpp"
 
 using namespace otbr;
+using namespace otbr::Mdns;
 
-static struct Context
-{
-    Mdns::Publisher *mPublisher;
-    bool             mUpdate;
-} sContext;
+static Publisher *sPublisher = nullptr;
+
+typedef std::function<void(void)> TestRunner;
 
 int RunMainloop(void)
 {
@@ -82,327 +84,300 @@ int RunMainloop(void)
     return rval;
 }
 
-void PublishSingleServiceWithCustomHost(void *aContext, Mdns::Publisher::State aState)
+std::function<void(otbrError aError)> ErrorChecker(std::string aMessage)
 {
-    uint8_t    xpanid[kSizeExtPanId]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t    extAddr[kSizeExtAddr]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t    hostAddr[OTBR_IP6_ADDRESS_SIZE] = {0};
-    const char hostName[]                      = "custom-host";
+    return [aMessage](otbrError aError) {
+        if (aError == OTBR_ERROR_NONE)
+        {
+            otbrLogInfo("Got success callback: %s", aMessage.c_str());
+        }
+        else
+        {
+            otbrLogEmerg("Got error %d callback: %s", aError, aMessage.c_str());
+            exit(-1);
+        }
+    };
+}
+
+void PublishSingleServiceWithCustomHost(void)
+{
+    uint8_t              xpanid[kSizeExtPanId]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t              extAddr[kSizeExtAddr]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t              hostAddr[OTBR_IP6_ADDRESS_SIZE] = {0};
+    const char           hostName[]                      = "custom-host";
+    std::vector<uint8_t> keyData                         = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+    Publisher::TxtData   txtData;
+    Publisher::TxtList   txtList{
+        {"nn", "cool"},
+        {"xp", xpanid, sizeof(xpanid)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+
+    otbrLogInfo("PublishSingleServiceWithCustomHost");
 
     hostAddr[0]  = 0x20;
     hostAddr[1]  = 0x02;
     hostAddr[15] = 0x01;
 
-    VerifyOrDie(aContext == &sContext, "unexpected context");
-    if (aState == Mdns::Publisher::State::kReady)
-    {
-        Mdns::Publisher::TxtData txtData;
-        Mdns::Publisher::TxtList txtList{
-            {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
+    Publisher::EncodeTxtData(txtList, txtData);
 
-        Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-        sContext.mPublisher->PublishHost(hostName, {Ip6Address(hostAddr)},
-                                         [](otbrError aError) { SuccessOrDie(aError, "cannot publish the host"); });
-
-        sContext.mPublisher->PublishService(
-            hostName, "SingleService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "cannot publish the service"); });
-    }
+    sPublisher->PublishKey(hostName, keyData, ErrorChecker("publish key for host"));
+    sPublisher->PublishHost(hostName, {Ip6Address(hostAddr)}, ErrorChecker("publish the host"));
+    sPublisher->PublishService(hostName, "SingleService", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               ErrorChecker("publish the service"));
+    sPublisher->PublishKey("SingleService._meshcop._udp", keyData, ErrorChecker("publish key for service"));
 }
 
-void PublishMultipleServicesWithCustomHost(void *aContext, Mdns::Publisher::State aState)
+void PublishSingleServiceWithKeyAfterwards(void)
 {
-    uint8_t    xpanid[kSizeExtPanId]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t    extAddr[kSizeExtAddr]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t    hostAddr[OTBR_IP6_ADDRESS_SIZE] = {0};
-    const char hostName1[]                     = "custom-host-1";
-    const char hostName2[]                     = "custom-host-2";
+    uint8_t            hostAddr[OTBR_IP6_ADDRESS_SIZE] = {0};
+    const char         hostName[]                      = "custom-host";
+    Publisher::TxtData txtData;
+
+    otbrLogInfo("PublishSingleServiceWithKeyAfterwards");
 
     hostAddr[0]  = 0x20;
     hostAddr[1]  = 0x02;
     hostAddr[15] = 0x01;
-
-    VerifyOrDie(aContext == &sContext, "unexpected context");
-    if (aState == Mdns::Publisher::State::kReady)
-    {
-        Mdns::Publisher::TxtData txtData;
-        Mdns::Publisher::TxtList txtList{
-            {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
-
-        Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-        sContext.mPublisher->PublishHost(hostName1, {Ip6Address(hostAddr)},
-                                         [](otbrError aError) { SuccessOrDie(aError, "cannot publish the host"); });
-
-        sContext.mPublisher->PublishService(
-            hostName1, "MultipleService11", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "cannot publish the first service"); });
-
-        sContext.mPublisher->PublishService(
-            hostName1, "MultipleService12", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "cannot publish the second service"); });
-
-        sContext.mPublisher->PublishHost(hostName2, {Ip6Address(hostAddr)}, [](otbrError aError) {
-            SuccessOrDie(aError, "cannot publish the second host");
-        });
-
-        sContext.mPublisher->PublishService(
-            hostName2, "MultipleService21", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "cannot publish the first service"); });
-
-        sContext.mPublisher->PublishService(
-            hostName2, "MultipleService22", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "cannot publish the second service"); });
-    }
-}
-
-void PublishSingleService(void *aContext, Mdns::Publisher::State aState)
-{
-    OT_UNUSED_VARIABLE(aContext);
-
-    uint8_t                  xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t                  extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    Mdns::Publisher::TxtData txtData;
-    Mdns::Publisher::TxtList txtList{
-        {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
-
-    Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-    assert(aContext == &sContext);
-    if (aState == Mdns::Publisher::State::kReady)
-    {
-        sContext.mPublisher->PublishService(
-            "", "SingleService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "SingleService._meshcop._udp"); });
-    }
-}
-
-void PublishSingleServiceWithEmptyName(void *aContext, Mdns::Publisher::State aState)
-{
-    OT_UNUSED_VARIABLE(aContext);
-
-    uint8_t                  xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t                  extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    Mdns::Publisher::TxtData txtData;
-    Mdns::Publisher::TxtList txtList{
-        {"nn", "cool"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
-
-    Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-    assert(aContext == &sContext);
-    if (aState == Mdns::Publisher::State::kReady)
-    {
-        sContext.mPublisher->PublishService("", "", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-                                            [](otbrError aError) { SuccessOrDie(aError, "(empty)._meshcop._udp"); });
-    }
-}
-
-void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
-{
-    OT_UNUSED_VARIABLE(aContext);
-
-    uint8_t xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-
-    assert(aContext == &sContext);
-    if (aState == Mdns::Publisher::State::kReady)
-    {
-        Mdns::Publisher::TxtData txtData;
-        Mdns::Publisher::TxtList txtList{
-            {"nn", "cool1"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
-
-        Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-        sContext.mPublisher->PublishService(
-            "", "MultipleService1", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "MultipleService1._meshcop._udp"); });
-    }
-
-    if (aState == Mdns::Publisher::State::kReady)
-    {
-        Mdns::Publisher::TxtData txtData;
-        Mdns::Publisher::TxtList txtList{
-            {"nn", "cool2"}, {"xp", xpanid, sizeof(xpanid)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
-
-        Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-        sContext.mPublisher->PublishService(
-            "", "MultipleService2", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "MultipleService2._meshcop._udp"); });
-    }
-}
-
-void PublishUpdateServices(void *aContext)
-{
-    OT_UNUSED_VARIABLE(aContext);
-
-    uint8_t xpanidOld[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-    uint8_t xpanidNew[kSizeExtPanId] = {0x48, 0x47, 0x46, 0x45, 0x44, 0x43, 0x42, 0x41};
-    uint8_t extAddr[kSizeExtAddr]    = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-
-    assert(aContext == &sContext);
-    if (!sContext.mUpdate)
-    {
-        Mdns::Publisher::TxtData txtData;
-        Mdns::Publisher::TxtList txtList{
-            {"nn", "cool"}, {"xp", xpanidOld, sizeof(xpanidOld)}, {"tv", "1.1.1"}, {"xa", extAddr, sizeof(extAddr)}};
-
-        Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-        sContext.mPublisher->PublishService(
-            "", "UpdateService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { otbrLogResult(aError, "UpdateService._meshcop._udp"); });
-    }
-    else
-    {
-        Mdns::Publisher::TxtData txtData;
-        Mdns::Publisher::TxtList txtList{{"nn", "coolcool"},
-                                         {"xp", xpanidNew, sizeof(xpanidNew)},
-                                         {"tv", "1.1.1"},
-                                         {"xa", extAddr, sizeof(extAddr)}};
-
-        Mdns::Publisher::EncodeTxtData(txtList, txtData);
-
-        sContext.mPublisher->PublishService(
-            "", "UpdateService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "UpdateService._meshcop._udp"); });
-    }
-}
-
-void PublishServiceSubTypes(void *aContext)
-{
-    Mdns::Publisher::TxtData txtData;
 
     txtData.push_back(0);
 
-    OT_UNUSED_VARIABLE(aContext);
+    sPublisher->PublishHost(hostName, {Ip6Address(hostAddr)}, ErrorChecker("publish the host"));
 
-    assert(aContext == &sContext);
+    sPublisher->PublishService(
+        hostName, "SingleService", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData, [](otbrError aError) {
+            std::vector<uint8_t> keyData = {0x55, 0xaa, 0xbb, 0xcc, 0x77, 0x33};
 
-    Mdns::Publisher::SubTypeList subTypeList{"_subtype1", "_SUBTYPE2"};
+            SuccessOrDie(aError, "publish the service");
+
+            sPublisher->PublishKey("SingleService._meshcop._udp", keyData, ErrorChecker("publish key for service"));
+        });
+}
+
+void PublishMultipleServicesWithCustomHost(void)
+{
+    uint8_t              xpanid[kSizeExtPanId]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t              extAddr[kSizeExtAddr]           = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t              hostAddr[OTBR_IP6_ADDRESS_SIZE] = {0};
+    const char           hostName1[]                     = "custom-host-1";
+    const char           hostName2[]                     = "custom-host-2";
+    std::vector<uint8_t> keyData1                        = {0x10, 0x20, 0x03, 0x15};
+    std::vector<uint8_t> keyData2                        = {0xCA, 0xFE, 0xBE, 0xEF};
+    Publisher::TxtData   txtData;
+    Publisher::TxtList   txtList{
+        {"nn", "cool"},
+        {"xp", xpanid, sizeof(xpanid)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+
+    otbrLogInfo("PublishMultipleServicesWithCustomHost");
+
+    hostAddr[0]  = 0x20;
+    hostAddr[1]  = 0x02;
+    hostAddr[15] = 0x01;
+
+    Publisher::EncodeTxtData(txtList, txtData);
+
+    // For host1 and its services we register keys first, then host/services
+
+    sPublisher->PublishKey(hostName1, keyData1, ErrorChecker("publish key for host1"));
+    sPublisher->PublishKey("MultipleService11._meshcop._udp", keyData1, ErrorChecker("publish key for service11"));
+    sPublisher->PublishKey("MultipleService12._meshcop._udp", keyData1, ErrorChecker("publish key for service12"));
+
+    sPublisher->PublishHost(hostName1, {Ip6Address(hostAddr)}, ErrorChecker("publish the host1"));
+    sPublisher->PublishService(hostName1, "MultipleService11", "_meshcop._udp", Publisher::SubTypeList{}, 12345,
+                               txtData, ErrorChecker("publish service11"));
+    sPublisher->PublishService(hostName1, "MultipleService12", "_meshcop._udp", Publisher::SubTypeList{}, 12345,
+                               txtData, ErrorChecker("publish service12"));
+
+    // For host2 and its services we register host and services first, then keys.
+
+    sPublisher->PublishHost(hostName2, {Ip6Address(hostAddr)}, ErrorChecker("publish host2"));
+    sPublisher->PublishService(hostName2, "MultipleService21", "_meshcop._udp", Publisher::SubTypeList{}, 12345,
+                               txtData, ErrorChecker("publish service21"));
+    sPublisher->PublishService(hostName2, "MultipleService22", "_meshcop._udp", Publisher::SubTypeList{}, 12345,
+                               txtData, ErrorChecker("publish service22"));
+
+    sPublisher->PublishKey(hostName2, keyData2, ErrorChecker("publish key for host2"));
+    sPublisher->PublishKey("MultipleService21._meshcop._udp", keyData2, ErrorChecker("publish key for service21"));
+    sPublisher->PublishKey("MultipleService22._meshcop._udp", keyData2, ErrorChecker("publish key for service22"));
+}
+
+void PublishSingleService(void)
+{
+    uint8_t            xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t            extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    Publisher::TxtData txtData;
+    Publisher::TxtList txtList{
+        {"nn", "cool"},
+        {"xp", xpanid, sizeof(xpanid)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+
+    otbrLogInfo("PublishSingleService");
+
+    Publisher::EncodeTxtData(txtList, txtData);
+
+    sPublisher->PublishService("", "SingleService", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               ErrorChecker("publish service"));
+}
+
+void PublishSingleServiceWithEmptyName(void)
+{
+    uint8_t            xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t            extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    Publisher::TxtData txtData;
+    Publisher::TxtList txtList{
+        {"nn", "cool"},
+        {"xp", xpanid, sizeof(xpanid)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+
+    otbrLogInfo("PublishSingleServiceWithEmptyName");
+
+    Publisher::EncodeTxtData(txtList, txtData);
+
+    sPublisher->PublishService("", "", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               ErrorChecker("publish (empty)._meshcop._udp"));
+}
+
+void PublishMultipleServices(void)
+{
+    uint8_t            xpanid[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t            extAddr[kSizeExtAddr] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    Publisher::TxtData txtData;
+    Publisher::TxtList txtList1{
+        {"nn", "cool1"},
+        {"xp", xpanid, sizeof(xpanid)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+    Publisher::TxtList txtList2{
+        {"nn", "cool2"},
+        {"xp", xpanid, sizeof(xpanid)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+
+    otbrLogInfo("PublishMultipleServices");
+
+    Publisher::EncodeTxtData(txtList1, txtData);
+
+    sPublisher->PublishService("", "MultipleService1", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               ErrorChecker("publish MultipleService1._meshcop._udp"));
+
+    Publisher::EncodeTxtData(txtList2, txtData);
+
+    sPublisher->PublishService("", "MultipleService2", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               ErrorChecker("publish MultipleService2._meshcop._udp"));
+}
+
+void PublishUpdateServices(void)
+{
+    uint8_t            xpanidOld[kSizeExtPanId] = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    uint8_t            xpanidNew[kSizeExtPanId] = {0x48, 0x47, 0x46, 0x45, 0x44, 0x43, 0x42, 0x41};
+    uint8_t            extAddr[kSizeExtAddr]    = {0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
+    Publisher::TxtData txtData;
+    Publisher::TxtList txtList1{
+        {"nn", "cool"},
+        {"xp", xpanidOld, sizeof(xpanidOld)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+    Publisher::TxtList txtList2{
+        {"nn", "coolcool"},
+        {"xp", xpanidNew, sizeof(xpanidNew)},
+        {"tv", "1.1.1"},
+        {"xa", extAddr, sizeof(extAddr)},
+    };
+
+    otbrLogInfo("PublishUpdateServices");
+
+    Publisher::EncodeTxtData(txtList1, txtData);
+
+    sPublisher->PublishService("", "UpdateService", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               [](otbrError aError) { otbrLogResult(aError, "UpdateService._meshcop._udp"); });
+
+    Publisher::EncodeTxtData(txtList2, txtData);
+
+    sPublisher->PublishService("", "UpdateService", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData,
+                               ErrorChecker("publish UpdateService._meshcop._udp"));
+}
+
+void PublishServiceSubTypes(void)
+{
+    Publisher::TxtData     txtData;
+    Publisher::SubTypeList subTypeList{"_subtype1", "_SUBTYPE2"};
+
+    otbrLogInfo("PublishServiceSubTypes");
+
+    txtData.push_back(0);
 
     subTypeList.back() = "_SUBTYPE3";
 
-    sContext.mPublisher->PublishService(
-        "", "ServiceWithSubTypes", "_meshcop._udp", subTypeList, 12345, txtData,
-        [](otbrError aError) { SuccessOrDie(aError, "ServiceWithSubTypes._meshcop._udp"); });
+    sPublisher->PublishService("", "ServiceWithSubTypes", "_meshcop._udp", subTypeList, 12345, txtData,
+                               ErrorChecker("publish ServiceWithSubTypes._meshcop._udp"));
 }
 
-otbrError TestSingleServiceWithCustomHost(void)
+void PublishKey(void)
+{
+    std::vector<uint8_t> keyData = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0};
+
+    otbrLogInfo("PublishKey");
+
+    sPublisher->PublishKey("SingleService._meshcop._udp", keyData, ErrorChecker("publish key for service"));
+}
+
+void PublishKeyWithServiceRemoved(void)
+{
+    uint8_t            hostAddr[OTBR_IP6_ADDRESS_SIZE] = {0};
+    const char         hostName[]                      = "custom-host";
+    Publisher::TxtData txtData;
+
+    otbrLogInfo("PublishKeyWithServiceRemoved");
+
+    hostAddr[0]  = 0x20;
+    hostAddr[1]  = 0x02;
+    hostAddr[15] = 0x01;
+
+    txtData.push_back(0);
+
+    sPublisher->PublishHost(hostName, {Ip6Address(hostAddr)}, ErrorChecker("publish the host"));
+
+    sPublisher->PublishService(
+        hostName, "SingleService", "_meshcop._udp", Publisher::SubTypeList{}, 12345, txtData, [](otbrError aError) {
+            std::vector<uint8_t> keyData = {0x55, 0xaa, 0xbb, 0xcc, 0x77, 0x33};
+
+            SuccessOrDie(aError, "publish the service");
+
+            sPublisher->PublishKey("SingleService._meshcop._udp", keyData, [](otbrError aError) {
+                SuccessOrDie(aError, "publish key for service");
+
+                sPublisher->UnpublishService("SingleService", "_meshcop._udp", ErrorChecker("unpublish service"));
+            });
+        });
+}
+
+otbrError Test(TestRunner aTestRunner)
 {
     otbrError error = OTBR_ERROR_NONE;
 
-    Mdns::Publisher *pub = Mdns::Publisher::Create(
-        [](Mdns::Publisher::State aState) { PublishSingleServiceWithCustomHost(&sContext, aState); });
-    sContext.mPublisher = pub;
-    SuccessOrExit(error = pub->Start());
-    RunMainloop();
-
-exit:
-    Mdns::Publisher::Destroy(pub);
-    return error;
-}
-
-otbrError TestMultipleServicesWithCustomHost(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    Mdns::Publisher *pub = Mdns::Publisher::Create(
-        [](Mdns::Publisher::State aState) { PublishMultipleServicesWithCustomHost(&sContext, aState); });
-    sContext.mPublisher = pub;
-    SuccessOrExit(error = pub->Start());
-    RunMainloop();
-
-exit:
-    Mdns::Publisher::Destroy(pub);
-    return error;
-}
-
-otbrError TestSingleService(void)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    Mdns::Publisher *pub =
-        Mdns::Publisher::Create([](Mdns::Publisher::State aState) { PublishSingleService(&sContext, aState); });
-    sContext.mPublisher = pub;
-    SuccessOrExit(ret = pub->Start());
-    RunMainloop();
-
-exit:
-    Mdns::Publisher::Destroy(pub);
-    return ret;
-}
-
-otbrError TestSingleServiceWithEmptyName(void)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    Mdns::Publisher *pub = Mdns::Publisher::Create(
-        [](Mdns::Publisher::State aState) { PublishSingleServiceWithEmptyName(&sContext, aState); });
-    sContext.mPublisher = pub;
-    SuccessOrExit(ret = pub->Start());
-    RunMainloop();
-
-exit:
-    Mdns::Publisher::Destroy(pub);
-    return ret;
-}
-
-otbrError TestMultipleServices(void)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    Mdns::Publisher *pub =
-        Mdns::Publisher::Create([](Mdns::Publisher::State aState) { PublishMultipleServices(&sContext, aState); });
-    sContext.mPublisher = pub;
-    SuccessOrExit(ret = pub->Start());
-    RunMainloop();
-
-exit:
-    Mdns::Publisher::Destroy(pub);
-    return ret;
-}
-
-otbrError TestUpdateService(void)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    Mdns::Publisher *pub = Mdns::Publisher::Create([](Mdns::Publisher::State aState) {
-        if (aState == Mdns::Publisher::State::kReady)
+    sPublisher = Publisher::Create([aTestRunner](Publisher::State aState) {
+        if (aState == Publisher::State::kReady)
         {
-            sContext.mUpdate = false;
-            PublishUpdateServices(&sContext);
-            sContext.mUpdate = true;
-            PublishUpdateServices(&sContext);
+            aTestRunner();
         }
     });
-    sContext.mPublisher  = pub;
-    SuccessOrExit(ret = pub->Start());
+    SuccessOrExit(error = sPublisher->Start());
     RunMainloop();
 
 exit:
-    Mdns::Publisher::Destroy(pub);
-    return ret;
-}
-
-otbrError TestServiceSubTypes(void)
-{
-    otbrError ret = OTBR_ERROR_NONE;
-
-    Mdns::Publisher *pub = Mdns::Publisher::Create([](Mdns::Publisher::State aState) {
-        if (aState == Mdns::Publisher::State::kReady)
-        {
-            PublishServiceSubTypes(&sContext);
-        }
-    });
-    sContext.mPublisher  = pub;
-    SuccessOrExit(ret = pub->Start());
-    RunMainloop();
-
-exit:
-    Mdns::Publisher::Destroy(pub);
-    return ret;
+    Publisher::Destroy(sPublisher);
+    return error;
 }
 
 void RecoverSignal(int aSignal)
@@ -421,37 +396,42 @@ otbrError TestStopService(void)
 {
     otbrError ret = OTBR_ERROR_NONE;
 
-    Mdns::Publisher *pub =
-        Mdns::Publisher::Create([](Mdns::Publisher::State aState) { PublishSingleService(&sContext, aState); });
-    sContext.mPublisher = pub;
-    SuccessOrExit(ret = pub->Start());
+    otbrLogInfo("TestStopService");
+
+    sPublisher = Publisher::Create([](Publisher::State aState) {
+        if (aState == Publisher::State::kReady)
+        {
+            PublishSingleService();
+        }
+    });
+    SuccessOrExit(ret = sPublisher->Start());
     signal(SIGUSR1, RecoverSignal);
     signal(SIGUSR2, RecoverSignal);
     RunMainloop();
-    sContext.mPublisher->Stop();
+    sPublisher->Stop();
     RunMainloop();
-    SuccessOrExit(ret = sContext.mPublisher->Start());
+    SuccessOrExit(ret = sPublisher->Start());
     RunMainloop();
 
 exit:
-    Mdns::Publisher::Destroy(pub);
+    Publisher::Destroy(sPublisher);
     return ret;
 }
 
 otbrError CheckTxtDataEncoderDecoder(void)
 {
-    otbrError                error = OTBR_ERROR_NONE;
-    Mdns::Publisher::TxtList txtList;
-    Mdns::Publisher::TxtList parsedTxtList;
-    std::vector<uint8_t>     txtData;
+    otbrError            error = OTBR_ERROR_NONE;
+    Publisher::TxtList   txtList;
+    Publisher::TxtList   parsedTxtList;
+    std::vector<uint8_t> txtData;
 
     // Encode empty `TxtList`
 
-    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Publisher::EncodeTxtData(txtList, txtData));
     VerifyOrExit(txtData.size() == 1, error = OTBR_ERROR_PARSE);
     VerifyOrExit(txtData[0] == 0, error = OTBR_ERROR_PARSE);
 
-    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    SuccessOrExit(error = Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
     VerifyOrExit(parsedTxtList.size() == 0, error = OTBR_ERROR_PARSE);
 
     // TxtList with one bool attribute
@@ -459,8 +439,8 @@ otbrError CheckTxtDataEncoderDecoder(void)
     txtList.clear();
     txtList.emplace_back("b1");
 
-    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
-    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    SuccessOrExit(error = Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
     VerifyOrExit(parsedTxtList == txtList, error = OTBR_ERROR_PARSE);
 
     // TxtList with one one key/value
@@ -468,8 +448,8 @@ otbrError CheckTxtDataEncoderDecoder(void)
     txtList.clear();
     txtList.emplace_back("k1", "v1");
 
-    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
-    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    SuccessOrExit(error = Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
     VerifyOrExit(parsedTxtList == txtList, error = OTBR_ERROR_PARSE);
 
     // TxtList with multiple entries
@@ -480,8 +460,8 @@ otbrError CheckTxtDataEncoderDecoder(void)
     txtList.emplace_back("b2");
     txtList.emplace_back("k2", "valu2");
 
-    SuccessOrExit(error = Mdns::Publisher::EncodeTxtData(txtList, txtData));
-    SuccessOrExit(error = Mdns::Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
+    SuccessOrExit(error = Publisher::EncodeTxtData(txtList, txtData));
+    SuccessOrExit(error = Publisher::DecodeTxtData(parsedTxtList, txtData.data(), txtData.size()));
     VerifyOrExit(parsedTxtList == txtList, error = OTBR_ERROR_PARSE);
 
 exit:
@@ -511,31 +491,42 @@ int main(int argc, char *argv[])
         switch (argv[1][1])
         {
         case 'c':
-            ret = TestSingleServiceWithCustomHost();
+            ret = Test(PublishSingleServiceWithCustomHost);
             break;
         case 'e':
-            ret = TestSingleServiceWithEmptyName();
+            ret = Test(PublishSingleServiceWithEmptyName);
+            break;
+        case 'k':
+            ret = Test(PublishSingleServiceWithKeyAfterwards);
             break;
         default:
-            ret = TestSingleService();
+            ret = Test(PublishSingleService);
             break;
         }
         break;
 
     case 'm':
-        ret = argv[1][1] == 'c' ? TestMultipleServicesWithCustomHost() : TestMultipleServices();
+        ret = argv[1][1] == 'c' ? Test(PublishMultipleServicesWithCustomHost) : Test(PublishMultipleServices);
         break;
 
     case 'u':
-        ret = TestUpdateService();
+        ret = Test(PublishUpdateServices);
         break;
 
     case 't':
-        ret = TestServiceSubTypes();
+        ret = Test(PublishServiceSubTypes);
         break;
 
     case 'k':
         ret = TestStopService();
+        break;
+
+    case 'y':
+        ret = Test(PublishKey);
+        break;
+
+    case 'z':
+        ret = Test(PublishKeyWithServiceRemoved);
         break;
 
     default:

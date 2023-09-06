@@ -402,11 +402,13 @@ struct MdnsTelemetryInfo
                   "kEmaFactorDenominator must be greater than kEmaFactorNumerator");
 
     MdnsResponseCounters mHostRegistrations;
+    MdnsResponseCounters mKeyRegistrations;
     MdnsResponseCounters mServiceRegistrations;
     MdnsResponseCounters mHostResolutions;
     MdnsResponseCounters mServiceResolutions;
 
     uint32_t mHostRegistrationEmaLatency;    ///< The EMA latency of host registrations in milliseconds
+    uint32_t mKeyRegistrationEmaLatency;     ///< The EMA latency of key registrations in milliseconds
     uint32_t mServiceRegistrationEmaLatency; ///< The EMA latency of service registrations in milliseconds
     uint32_t mHostResolutionEmaLatency;      ///< The EMA latency of host resolutions in milliseconds
     uint32_t mServiceResolutionEmaLatency;   ///< The EMA latency of service resolutions in milliseconds
