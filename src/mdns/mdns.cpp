@@ -66,9 +66,7 @@ void Publisher::PublishService(const std::string &aHostName,
     }
 }
 
-void Publisher::PublishHost(const std::string             &aName,
-                            const std::vector<Ip6Address> &aAddresses,
-                            ResultCallback               &&aCallback)
+void Publisher::PublishHost(const std::string &aName, const AddressList &aAddresses, ResultCallback &&aCallback)
 {
     otbrError error;
 
@@ -368,9 +366,9 @@ exit:
     return std::move(aCallback);
 }
 
-Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string             &aName,
-                                                                     const std::vector<Ip6Address> &aAddresses,
-                                                                     ResultCallback               &&aCallback)
+Publisher::ResultCallback Publisher::HandleDuplicateHostRegistration(const std::string &aName,
+                                                                     const AddressList &aAddresses,
+                                                                     ResultCallback   &&aCallback)
 {
     HostRegistration *hostReg = FindHostRegistration(aName);
 
@@ -468,7 +466,7 @@ void Publisher::ServiceRegistration::OnComplete(otbrError aError)
     }
 }
 
-bool Publisher::HostRegistration::IsOutdated(const std::string &aName, const std::vector<Ip6Address> &aAddresses) const
+bool Publisher::HostRegistration::IsOutdated(const std::string &aName, const AddressList &aAddresses) const
 {
     return !(mName == aName && mAddresses == aAddresses);
 }

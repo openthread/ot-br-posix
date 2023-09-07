@@ -723,9 +723,9 @@ exit:
     std::move(aCallback)(error);
 }
 
-otbrError PublisherAvahi::PublishHostImpl(const std::string             &aName,
-                                          const std::vector<Ip6Address> &aAddresses,
-                                          ResultCallback               &&aCallback)
+otbrError PublisherAvahi::PublishHostImpl(const std::string &aName,
+                                          const AddressList &aAddresses,
+                                          ResultCallback   &&aCallback)
 {
     otbrError        error      = OTBR_ERROR_NONE;
     int              avahiError = AVAHI_OK;

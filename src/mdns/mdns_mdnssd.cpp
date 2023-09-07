@@ -556,9 +556,9 @@ exit:
     std::move(aCallback)(error);
 }
 
-otbrError PublisherMDnsSd::PublishHostImpl(const std::string             &aName,
-                                           const std::vector<Ip6Address> &aAddresses,
-                                           ResultCallback               &&aCallback)
+otbrError PublisherMDnsSd::PublishHostImpl(const std::string &aName,
+                                           const AddressList &aAddresses,
+                                           ResultCallback   &&aCallback)
 {
     otbrError              ret   = OTBR_ERROR_NONE;
     int                    error = 0;
