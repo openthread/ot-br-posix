@@ -560,10 +560,10 @@ otbrError PublisherMDnsSd::PublishHostImpl(const std::string &aName,
                                            const AddressList &aAddresses,
                                            ResultCallback   &&aCallback)
 {
-    otbrError              ret   = OTBR_ERROR_NONE;
-    int                    error = 0;
-    std::string            fullName;
-    DnssdHostRegistration *registration;
+    otbrError                              ret   = OTBR_ERROR_NONE;
+    int                                    error = 0;
+    std::string                            fullName;
+    std::unique_ptr<DnssdHostRegistration> registration;
 
     VerifyOrExit(mState == Publisher::State::kReady, ret = OTBR_ERROR_INVALID_STATE);
 
@@ -579,7 +579,7 @@ otbrError PublisherMDnsSd::PublishHostImpl(const std::string &aName,
         otbrLogDebug("Created new DNSServiceRef for hosts: %p", mHostsRef);
     }
 
-    registration = new DnssdHostRegistration(aName, aAddresses, std::move(aCallback), mHostsRef, this);
+    registration.reset(new DnssdHostRegistration(aName, aAddresses, std::move(aCallback), mHostsRef, this));
 
     otbrLogInfo("Registering new host %s", aName.c_str());
     for (const auto &address : aAddresses)
@@ -593,7 +593,7 @@ otbrError PublisherMDnsSd::PublishHostImpl(const std::string &aName,
         registration->GetRecordRefMap()[recordRef] = address;
     }
 
-    AddHostRegistration(std::unique_ptr<DnssdHostRegistration>(registration));
+    AddHostRegistration(std::move(registration));
 
 exit:
     if (error != kDNSServiceErr_NoError || ret != OTBR_ERROR_NONE)
