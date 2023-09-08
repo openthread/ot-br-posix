@@ -934,12 +934,11 @@ void PublisherMDnsSd::ServiceInstanceResolution::Resolve(void)
 {
     assert(mServiceRef == nullptr);
 
-    mSubscription->mMDnsSd->mServiceInstanceResolutionBeginTime[std::make_pair(mInstanceName, mTypeEndWithDot)] =
-        Clock::now();
+    mSubscription->mMDnsSd->mServiceInstanceResolutionBeginTime[std::make_pair(mInstanceName, mType)] = Clock::now();
 
-    otbrLogInfo("DNSServiceResolve %s %s inf %u", mInstanceName.c_str(), mTypeEndWithDot.c_str(), mNetifIndex);
+    otbrLogInfo("DNSServiceResolve %s %s inf %u", mInstanceName.c_str(), mType.c_str(), mNetifIndex);
     DNSServiceResolve(&mServiceRef, /* flags */ kDNSServiceFlagsTimeout, mNetifIndex, mInstanceName.c_str(),
-                      mTypeEndWithDot.c_str(), mDomain.c_str(), HandleResolveResult, this);
+                      mType.c_str(), mDomain.c_str(), HandleResolveResult, this);
 }
 
 void PublisherMDnsSd::ServiceInstanceResolution::HandleResolveResult(DNSServiceRef        aServiceRef,

@@ -106,7 +106,7 @@ void PublishSingleServiceWithCustomHost(void *aContext, Mdns::Publisher::State a
                                          [](otbrError aError) { SuccessOrDie(aError, "cannot publish the host"); });
 
         sContext.mPublisher->PublishService(
-            hostName, "SingleService", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            hostName, "SingleService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { SuccessOrDie(aError, "cannot publish the service"); });
     }
 }
@@ -136,11 +136,11 @@ void PublishMultipleServicesWithCustomHost(void *aContext, Mdns::Publisher::Stat
                                          [](otbrError aError) { SuccessOrDie(aError, "cannot publish the host"); });
 
         sContext.mPublisher->PublishService(
-            hostName1, "MultipleService11", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            hostName1, "MultipleService11", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { SuccessOrDie(aError, "cannot publish the first service"); });
 
         sContext.mPublisher->PublishService(
-            hostName1, "MultipleService12", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            hostName1, "MultipleService12", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { SuccessOrDie(aError, "cannot publish the second service"); });
 
         sContext.mPublisher->PublishHost(hostName2, {Ip6Address(hostAddr)}, [](otbrError aError) {
@@ -148,11 +148,11 @@ void PublishMultipleServicesWithCustomHost(void *aContext, Mdns::Publisher::Stat
         });
 
         sContext.mPublisher->PublishService(
-            hostName2, "MultipleService21", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            hostName2, "MultipleService21", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { SuccessOrDie(aError, "cannot publish the first service"); });
 
         sContext.mPublisher->PublishService(
-            hostName2, "MultipleService22", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            hostName2, "MultipleService22", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { SuccessOrDie(aError, "cannot publish the second service"); });
     }
 }
@@ -173,8 +173,8 @@ void PublishSingleService(void *aContext, Mdns::Publisher::State aState)
     if (aState == Mdns::Publisher::State::kReady)
     {
         sContext.mPublisher->PublishService(
-            "", "SingleService", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "SingleService._meshcop._udp."); });
+            "", "SingleService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            [](otbrError aError) { SuccessOrDie(aError, "SingleService._meshcop._udp"); });
     }
 }
 
@@ -193,8 +193,8 @@ void PublishSingleServiceWithEmptyName(void *aContext, Mdns::Publisher::State aS
     assert(aContext == &sContext);
     if (aState == Mdns::Publisher::State::kReady)
     {
-        sContext.mPublisher->PublishService("", "", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-                                            [](otbrError aError) { SuccessOrDie(aError, "(empty)._meshcop._udp."); });
+        sContext.mPublisher->PublishService("", "", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+                                            [](otbrError aError) { SuccessOrDie(aError, "(empty)._meshcop._udp"); });
     }
 }
 
@@ -215,8 +215,8 @@ void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
         Mdns::Publisher::EncodeTxtData(txtList, txtData);
 
         sContext.mPublisher->PublishService(
-            "", "MultipleService1", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "MultipleService1._meshcop._udp."); });
+            "", "MultipleService1", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            [](otbrError aError) { SuccessOrDie(aError, "MultipleService1._meshcop._udp"); });
     }
 
     if (aState == Mdns::Publisher::State::kReady)
@@ -228,8 +228,8 @@ void PublishMultipleServices(void *aContext, Mdns::Publisher::State aState)
         Mdns::Publisher::EncodeTxtData(txtList, txtData);
 
         sContext.mPublisher->PublishService(
-            "", "MultipleService2", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
-            [](otbrError aError) { SuccessOrDie(aError, "MultipleService2._meshcop._udp."); });
+            "", "MultipleService2", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            [](otbrError aError) { SuccessOrDie(aError, "MultipleService2._meshcop._udp"); });
     }
 }
 
@@ -251,7 +251,7 @@ void PublishUpdateServices(void *aContext)
         Mdns::Publisher::EncodeTxtData(txtList, txtData);
 
         sContext.mPublisher->PublishService(
-            "", "UpdateService", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            "", "UpdateService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { otbrLogResult(aError, "UpdateService._meshcop._udp"); });
     }
     else
@@ -265,7 +265,7 @@ void PublishUpdateServices(void *aContext)
         Mdns::Publisher::EncodeTxtData(txtList, txtData);
 
         sContext.mPublisher->PublishService(
-            "", "UpdateService", "_meshcop._udp.", Mdns::Publisher::SubTypeList{}, 12345, txtData,
+            "", "UpdateService", "_meshcop._udp", Mdns::Publisher::SubTypeList{}, 12345, txtData,
             [](otbrError aError) { SuccessOrDie(aError, "UpdateService._meshcop._udp"); });
     }
 }
@@ -285,8 +285,8 @@ void PublishServiceSubTypes(void *aContext)
     subTypeList.back() = "_SUBTYPE3";
 
     sContext.mPublisher->PublishService(
-        "", "ServiceWithSubTypes", "_meshcop._udp.", subTypeList, 12345, txtData,
-        [](otbrError aError) { SuccessOrDie(aError, "ServiceWithSubTypes._meshcop._udp."); });
+        "", "ServiceWithSubTypes", "_meshcop._udp", subTypeList, 12345, txtData,
+        [](otbrError aError) { SuccessOrDie(aError, "ServiceWithSubTypes._meshcop._udp"); });
 }
 
 otbrError TestSingleServiceWithCustomHost(void)
