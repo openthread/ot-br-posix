@@ -260,7 +260,9 @@ public:
     /**
      * This method populates the telemetry data and returns the error code if error happens.
      *
-     * @param[in] telemetryData  the telemetry data to be populated.
+     * @param[in] aPublisher     The Mdns::Publisher
+     * @param[in] telemetryData  The telemetry data to be populated.
+     *
      * @returns The error code if error happens during the population of the telemetry data.
      */
     otError RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData &telemetryData);

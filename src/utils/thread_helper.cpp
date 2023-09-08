@@ -1248,7 +1248,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
             otDnssdCounters otDnssdCounters           = *otDnssdGetCounters(mInstance);
 
             dnsServerResponseCounters->set_success_count(otDnssdCounters.mSuccessResponse);
-            dnsServerResponseCounters->set_server_failure_count(otDnssdCounters.mSuccessResponse);
+            dnsServerResponseCounters->set_server_failure_count(otDnssdCounters.mServerFailureResponse);
             dnsServerResponseCounters->set_format_error_count(otDnssdCounters.mFormatErrorResponse);
             dnsServerResponseCounters->set_name_error_count(otDnssdCounters.mNameErrorResponse);
             dnsServerResponseCounters->set_not_implemented_count(otDnssdCounters.mNotImplementedResponse);
