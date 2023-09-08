@@ -58,6 +58,10 @@
     reinterpret_cast<aAlignType>(      \
         ((reinterpret_cast<unsigned long>(aMem) + sizeof(aAlignType) - 1) / sizeof(aAlignType)) * sizeof(aAlignType))
 
+// Allocate the structure using "raw" storage.
+#define OT_DEFINE_ALIGNED_VAR(name, size, align_type) \
+    align_type name[(((size) + (sizeof(align_type) - 1)) / sizeof(align_type))]
+
 #ifndef CONTAINING_RECORD
 #define BASE 0x1
 #define myoffsetof(s, m) (((size_t) & (((s *)BASE)->m)) - BASE)
@@ -164,6 +168,14 @@ template <typename T, typename... Args> std::unique_ptr<T> MakeUnique(Args &&...
 {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+
+/**
+ * This method converts 8 uint8_t bytes into uint64_t using big-endian.
+ *
+ * @param[in] aValue  The input 8 uint8_t bytes.
+ * @returns The converted uint64_t.
+ */
+uint64_t ConvertOpenThreadUint64(const uint8_t *aValue);
 
 /**
  * This class makes any class that derives from it non-copyable. It is intended to be used as a private base class.

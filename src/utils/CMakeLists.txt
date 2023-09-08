@@ -32,6 +32,7 @@ add_library(otbr-utils
     hex.cpp
     infra_link_selector.cpp
     pskc.cpp
+    sha256.cpp
     socket_utils.cpp
     steering_data.cpp
     string_utils.cpp
@@ -39,7 +40,10 @@ add_library(otbr-utils
     thread_helper.cpp
     thread_helper.hpp
 )
-target_link_libraries(otbr-utils PRIVATE
+
+target_link_libraries(otbr-utils PUBLIC
     otbr-common
+    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
+    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
     mbedtls
 )

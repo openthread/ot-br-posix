@@ -1,3 +1,30 @@
+/*
+ *  Copyright (c) 2023, The OpenThread Authors.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *  3. Neither the name of the copyright holder nor the
+ *     names of its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
 syntax = "proto2";
 option optimize_for = LITE_RUNTIME;
 
@@ -14,20 +41,19 @@ package threadnetwork;
 // Usage:
 // Delete field: do not directly delete field. Deprecate it instead.
 message TelemetryData {
-  enum NodeType {
-    NODE_TYPE_UNSPECIFIED = 0;
-    NODE_TYPE_ROUTER = 1;
-    NODE_TYPE_END = 2;
-    NODE_TYPE_SLEEPY_END = 3;
-    NODE_TYPE_MINIMAL_END = 4;
+  message Duration {
+    // Signed seconds of the span of time. Must be from -315,576,000,000
+    // to +315,576,000,000 inclusive. Note: these bounds are computed from:
+    // 60 sec/min * 60 min/hr * 24 hr/day * 365.25 days/year * 10000 years
+    optional int64 seconds = 1;
 
-    NODE_TYPE_OFFLINE = 5;
-    NODE_TYPE_DISABLED = 6;
-    NODE_TYPE_DETACHED = 7;
-
-    NODE_TYPE_NL_LURKER = 0x10;
-    NODE_TYPE_COMMISSIONER = 0x20;
-    NODE_TYPE_LEADER = 0x40;
+    // Signed fractions of a second at nanosecond resolution of the span
+    // of time. Durations less than one second are represented with a 0
+    // `seconds` field and a positive or negative `nanos` field. For durations
+    // of one second or more, a non-zero value for the `nanos` field must be
+    // of the same sign as the `seconds` field. Must be from -999,999,999
+    // to +999,999,999 inclusive.
+    optional int32 nanos = 2;
   }
 
   message WpanStats {
@@ -70,7 +96,394 @@ message TelemetryData {
     optional float mac_cca_fail_rate = 37;
   }
 
+  message WpanTopoFull {
+    optional uint32 rloc16 = 1;
+    optional uint32 router_id = 2;
+    optional uint32 leader_router_id = 3;
+    // Deprecate bytes ext_address.
+    reserved 4;
+    optional bytes leader_address = 5;
+    optional uint32 leader_weight = 6;
+    optional uint32 leader_local_weight = 7;
+    optional bytes network_data = 8;
+    optional uint32 network_data_version = 9;
+    optional bytes stable_network_data = 10;
+    optional uint32 stable_network_data_version = 11;
+    optional uint32 preferred_router_id = 12;
+    optional uint32 partition_id = 13;
+    optional uint32 child_table_size = 14;
+    optional uint32 neighbor_table_size = 15;
+    optional int32 instant_rssi = 16;
+    optional uint64 extended_pan_id = 17;
+  }
+
+  message TopoEntry {
+    // deprecate bytes ext_address.
+    reserved 1;
+    optional uint32 rloc16 = 2;
+    // link quality with data range: 0~3.
+    optional uint32 link_quality_in = 3;
+    // the most recent RSSI measurement (8 bit).
+    optional int32 average_rssi = 4;
+    optional Duration age = 5;
+    optional bool rx_on_when_idle = 6;
+    optional bool full_function = 7;
+    optional bool secure_data_request = 8;
+    optional bool full_network_data = 9;
+    optional int32 last_rssi = 10;
+    optional uint32 link_frame_counter = 11;
+    optional uint32 mle_frame_counter = 12;
+    optional bool is_child = 13;
+    optional Duration timeout = 14;
+    optional uint32 network_data_version = 15;
+    optional float mac_frame_error_rate = 16;
+    optional float ip_message_error_rate = 17;
+    optional int32 version = 18;
+  }
+
+  enum NodeType {
+    NODE_TYPE_UNSPECIFIED = 0;
+    NODE_TYPE_ROUTER = 1;
+    NODE_TYPE_END = 2;
+    NODE_TYPE_SLEEPY_END = 3;
+    NODE_TYPE_MINIMAL_END = 4;
+
+    NODE_TYPE_OFFLINE = 5;
+    NODE_TYPE_DISABLED = 6;
+    NODE_TYPE_DETACHED = 7;
+
+    NODE_TYPE_NL_LURKER = 0x10;
+    NODE_TYPE_COMMISSIONER = 0x20;
+    NODE_TYPE_LEADER = 0x40;
+  }
+
+  message PacketsAndBytes {
+    optional int64 packet_count = 1;
+    optional int64 byte_count = 2;
+  }
+
+  message Nat64TrafficCounters {
+    optional int64 ipv4_to_ipv6_packets = 1;
+    optional int64 ipv4_to_ipv6_bytes = 2;
+    optional int64 ipv6_to_ipv4_packets = 3;
+    optional int64 ipv6_to_ipv4_bytes = 4;
+  }
+
+  message Nat64ProtocolCounters {
+    optional Nat64TrafficCounters tcp = 1;
+    optional Nat64TrafficCounters udp = 2;
+    optional Nat64TrafficCounters icmp = 3;
+  }
+
+  message Nat64PacketCounters {
+    optional int64 ipv4_to_ipv6_packets = 1;
+    optional int64 ipv6_to_ipv4_packets = 2;
+  }
+
+  message Nat64ErrorCounters {
+    optional Nat64PacketCounters unknown = 1;
+    optional Nat64PacketCounters illegal_packet = 2;
+    optional Nat64PacketCounters unsupported_protocol = 3;
+    optional Nat64PacketCounters no_mapping = 4;
+  }
+
+  message BorderRoutingCounters {
+    reserved 1 to 8;
+    // The number of Router Advertisement packets received by otbr-agent on the
+    // infra link
+    optional int64 ra_rx = 9;
+
+    // The number of Router Advertisement packets successfully transmitted by
+    // otbr-agent on the infra link.
+    optional int64 ra_tx_success = 10;
+
+    // The number of Router Advertisement packets failed to transmit by
+    // otbr-agent on the infra link.
+    optional int64 ra_tx_failure = 11;
+
+    // The number of Router Solicitation packets received by otbr-agent on the
+    // infra link
+    optional int64 rs_rx = 12;
+
+    // The number of Router Solicitation packets successfully transmitted by
+    // otbr-agent on the infra link.
+    optional int64 rs_tx_success = 13;
+
+    // The number of Router Solicitation packets failed to transmit by
+    // otbr-agent on the infra link.
+    optional int64 rs_tx_failure = 14;
+
+    // The counters for inbound unicast packets
+    optional PacketsAndBytes inbound_unicast = 15;
+
+    // The counters for inbound multicast packets
+    optional PacketsAndBytes inbound_multicast = 16;
+
+    // The counters for outbound unicast packets
+    optional PacketsAndBytes outbound_unicast = 17;
+
+    // The counters for outbound multicast packets
+    optional PacketsAndBytes outbound_multicast = 18;
+
+    // The inbound and outbound NAT64 traffic through the border router
+    optional Nat64ProtocolCounters nat64_protocol_counters = 19;
+
+    // Error counters for NAT64 translator on the border router
+    optional Nat64ErrorCounters nat64_error_counters = 20;
+  }
+
+  message SrpServerRegistrationInfo {
+    // The number of active hosts/services registered on the SRP server.
+    optional uint32 fresh_count = 1;
+
+    // The number of hosts/services in 'Deleted' state on the SRP server.
+    optional uint32 deleted_count = 2;
+
+    // The sum of lease time in milliseconds of all active hosts/services on the
+    // SRP server.
+    optional uint64 lease_time_total_ms = 3;
+
+    // The sum of key lease time in milliseconds of all active hosts/services on
+    // the SRP server.
+    optional uint64 key_lease_time_total_ms = 4;
+
+    // The sum of remaining lease time in milliseconds of all active
+    // hosts/services on the SRP server.
+    optional uint64 remaining_lease_time_total_ms = 5;
+
+    // The sum of remaining key lease time in milliseconds of all active
+    // hosts/services on the SRP server.
+    optional uint64 remaining_key_lease_time_total_ms = 6;
+  }
+
+  message SrpServerResponseCounters {
+    // The number of successful responses
+    optional uint32 success_count = 1;
+
+    // The number of server failure responses
+    optional uint32 server_failure_count = 2;
+
+    // The number of format error responses
+    optional uint32 format_error_count = 3;
+
+    // The number of 'name exists' responses
+    optional uint32 name_exists_count = 4;
+
+    // The number of refused responses
+    optional uint32 refused_count = 5;
+
+    // The number of other responses
+    optional uint32 other_count = 6;
+  }
+
+  enum SrpServerState {
+    SRP_SERVER_STATE_UNSPECIFIED = 0;
+    SRP_SERVER_STATE_DISABLED = 1;
+    SRP_SERVER_STATE_RUNNING = 2;
+    SRP_SERVER_STATE_STOPPED = 3;
+  }
+
+  // The address mode used by the SRP server
+  enum SrpServerAddressMode {
+    SRP_SERVER_ADDRESS_MODE_UNSPECIFIED = 0;
+    SRP_SERVER_ADDRESS_MODE_UNICAST = 1;
+    SRP_SERVER_ADDRESS_MODE_STATE_ANYCAST = 2;
+  }
+
+  message SrpServerInfo {
+    // The state of the SRP server
+    optional SrpServerState state = 1;
+
+    // Listening port number
+    optional uint32 port = 2;
+    // The address mode {unicast, anycast} of the SRP server
+    optional SrpServerAddressMode address_mode = 3;
+
+    // The registration information of hosts on the SRP server
+    optional SrpServerRegistrationInfo hosts = 4;
+
+    // The registration information of services on the SRP server
+    optional SrpServerRegistrationInfo services = 5;
+
+    // The counters of response codes sent by the SRP server
+    optional SrpServerResponseCounters response_counters = 6;
+  }
+
+  message DnsServerResponseCounters {
+    // The number of successful responses
+    optional uint32 success_count = 1;
+
+    // The number of server failure responses
+    optional uint32 server_failure_count = 2;
+
+    // The number of format error responses
+    optional uint32 format_error_count = 3;
+
+    // The number of name error responses
+    optional uint32 name_error_count = 4;
+
+    // The number of 'not implemented' responses
+    optional uint32 not_implemented_count = 5;
+
+    // The number of other responses
+    optional uint32 other_count = 6;
+  }
+
+  message DnsServerInfo {
+    // The counters of response codes sent by the DNS server
+    optional DnsServerResponseCounters response_counters = 1;
+
+    // The number of DNS queries resolved at the local SRP server
+    optional uint32 resolved_by_local_srp_count = 2;
+  }
+
+  message MdnsResponseCounters {
+    // The number of successful responses
+    optional uint32 success_count = 1;
+
+    // The number of 'not found' responses
+    optional uint32 not_found_count = 2;
+
+    // The number of 'invalid arg' responses
+    optional uint32 invalid_args_count = 3;
+
+    // The number of 'duplicated' responses
+    optional uint32 duplicated_count = 4;
+
+    // The number of 'not implemented' responses
+    optional uint32 not_implemented_count = 5;
+
+    // The number of unknown error responses
+    optional uint32 unknown_error_count = 6;
+
+    // The number of aborted responses
+    optional uint32 aborted_count = 7;
+
+    // The number of invalid state responses
+    optional uint32 invalid_state_count = 8;
+  }
+
+  message MdnsInfo {
+    // The response counters of host registrations
+    optional MdnsResponseCounters host_registration_responses = 1;
+
+    // The response counters of service registrations
+    optional MdnsResponseCounters service_registration_responses = 2;
+
+    // The response counters of host resolutions
+    optional MdnsResponseCounters host_resolution_responses = 3;
+
+    // The response counters of service resolutions
+    optional MdnsResponseCounters service_resolution_responses = 4;
+
+    // The EMA (Exponential Moving Average) latencies of mDNS operations
+
+    // The EMA latency of host registrations in milliseconds
+    optional uint32 host_registration_ema_latency_ms = 5;
+
+    // The EMA latency of service registrations in milliseconds
+    optional uint32 service_registration_ema_latency_ms = 6;
+
+    // The EMA latency of host resolutions in milliseconds
+    optional uint32 host_resolution_ema_latency_ms = 7;
+
+    // The EMA latency of service resolutions in milliseconds
+    optional uint32 service_resolution_ema_latency_ms = 8;
+  }
+
+  enum Nat64State {
+    NAT64_STATE_UNSPECIFIED = 0;
+    NAT64_STATE_DISABLED = 1;
+    NAT64_STATE_NOT_RUNNING = 2;
+    NAT64_STATE_IDLE = 3;
+    NAT64_STATE_ACTIVE = 4;
+  }
+
+  message BorderRoutingNat64State {
+    optional Nat64State prefix_manager_state = 1;
+    optional Nat64State translator_state = 2;
+  }
+
+  message Nat64Mapping {
+    optional uint64 mapping_id = 1;
+    optional bytes hashed_ipv6_address = 2;
+    optional Nat64ProtocolCounters counters = 3;
+  }
+
+  message WpanBorderRouter {
+    // Border routing counters
+    optional BorderRoutingCounters border_routing_counters = 1;
+
+    // Information about the SRP server
+    optional SrpServerInfo srp_server = 2;
+
+    // Information about the DNS server
+    optional DnsServerInfo dns_server = 3;
+
+    // Information about the mDNS publisher
+    optional MdnsInfo mdns = 4;
+
+    // TODO(b/285457467): remove this reserved proto field.
+    reserved 5;
+
+    // Information about the state of components of NAT64
+    optional BorderRoutingNat64State nat64_state = 6;
+
+    // Information about the mappings of NAT64 translator
+    repeated Nat64Mapping nat64_mappings = 7;
+  }
+
+  message RcpStabilityStatistics {
+    optional uint32 rcp_timeout_count = 1;
+    optional uint32 rcp_reset_count = 2;
+    optional uint32 rcp_restoration_count = 3;
+    optional uint32 spinel_parse_error_count = 4;
+    optional int32 rcp_firmware_update_count = 5;
+    optional uint32 thread_stack_uptime = 6;
+  }
+
+  message RcpInterfaceStatistics {
+    optional uint32 rcp_interface_type = 1;
+    optional uint64 transferred_frames_count = 2;
+    optional uint64 transferred_valid_frames_count = 3;
+    optional uint64 transferred_garbage_frames_count = 4;
+    optional uint64 rx_frames_count = 5;
+    optional uint64 rx_bytes_count = 6;
+    optional uint64 tx_frames_count = 7;
+    optional uint64 tx_bytes_count = 8;
+  }
+
+  message WpanRcp {
+    optional RcpStabilityStatistics rcp_stability_statistics = 1;
+    optional RcpInterfaceStatistics rcp_interface_statistics = 2;
+  }
+
+  message CoexMetrics {
+    // Use uint32 instead of int64 to save space for payload, and align with the
+    // raw data size.
+    optional uint32 count_tx_request = 1;
+    optional uint32 count_tx_grant_immediate = 2;
+    optional uint32 count_tx_grant_wait = 3;
+    optional uint32 count_tx_grant_wait_activated = 4;
+    optional uint32 count_tx_grant_wait_timeout = 5;
+    optional uint32 count_tx_grant_deactivated_during_request = 6;
+    optional uint32 tx_average_request_to_grant_time_us = 7;
+    optional uint32 count_rx_request = 8;
+    optional uint32 count_rx_grant_immediate = 9;
+    optional uint32 count_rx_grant_wait = 10;
+    optional uint32 count_rx_grant_wait_activated = 11;
+    optional uint32 count_rx_grant_wait_timeout = 12;
+    optional uint32 count_rx_grant_deactivated_during_request = 13;
+    optional uint32 count_rx_grant_none = 14;
+    optional uint32 rx_average_request_to_grant_time_us = 15;
+  }
+
   optional WpanStats wpan_stats = 1;
-  // TODO: add fields for topo, border_router, rcp, and coex.
-  reserved 2, 3, 4, 5, 6;
+  optional WpanTopoFull wpan_topo_full = 2;
+  repeated TopoEntry topo_entries = 3;
+  optional WpanBorderRouter wpan_border_router = 4;
+  optional WpanRcp wpan_rcp = 5;
+  // Deprecate CoexMetrics with int64 as its fields types to save storage.
+  reserved 6;
+  optional CoexMetrics coex_metrics = 7;
 }
