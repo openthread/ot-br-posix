@@ -34,8 +34,11 @@ USE_PROCD=1
 start_service()
 {
     local uci_thread_if_name=$(uci -q get otbr-agent.service.thread_if_name)
+    local uci_infra_if_name=$(uci -q get otbr-agent.service.infra_if_name)
+    local uci_uart_device=$(uci -q get otbr-agent.service.uart_device)
+    local uci_uart_baudrate=$(uci -q get otbr-agent.service.uart_baudrate)
 
     procd_open_instance
-    procd_set_param command @CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent -I $uci_thread_if_name spinel+hdlc+uart:///dev/ttyACM0
+    procd_set_param command @CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent -I $uci_thread_if_name -B $uci_infra_if_name spinel+hdlc+uart://$uci_uart_device?uart-baudrate=$uci_uart_baudrate trel://$uci_infra_if_name
     procd_close_instance
 }
