@@ -129,6 +129,7 @@ private:
 
         ~DnssdServiceRegistration(void) override;
         const DNSServiceRef &GetServiceRef() const { return mServiceRef; }
+        PublisherMDnsSd     &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
 
     private:
         DNSServiceRef mServiceRef;
@@ -164,10 +165,12 @@ private:
 
     struct ServiceRef : private ::NonCopyable
     {
-        DNSServiceRef mServiceRef;
+        DNSServiceRef    mServiceRef;
+        PublisherMDnsSd &mPublisher;
 
-        explicit ServiceRef(void)
+        explicit ServiceRef(PublisherMDnsSd &aPublisher)
             : mServiceRef(nullptr)
+            , mPublisher(aPublisher)
         {
         }
 
@@ -188,7 +191,7 @@ private:
                                            std::string          aType,
                                            std::string          aDomain,
                                            uint32_t             aNetifIndex)
-            : ServiceRef()
+            : ServiceRef(aSubscription.mPublisher)
             , mSubscription(&aSubscription)
             , mInstanceName(std::move(aInstanceName))
             , mType(std::move(aType))
@@ -246,9 +249,8 @@ private:
 
     struct ServiceSubscription : public ServiceRef
     {
-        explicit ServiceSubscription(PublisherMDnsSd &aMDnsSd, std::string aType, std::string aInstanceName)
-            : ServiceRef()
-            , mMDnsSd(&aMDnsSd)
+        explicit ServiceSubscription(PublisherMDnsSd &aPublisher, std::string aType, std::string aInstanceName)
+            : ServiceRef(aPublisher)
             , mType(std::move(aType))
             , mInstanceName(std::move(aInstanceName))
         {
@@ -279,18 +281,16 @@ private:
                                        const char         *aType,
                                        const char         *aDomain);
 
-        PublisherMDnsSd *mMDnsSd;
-        std::string      mType;
-        std::string      mInstanceName;
+        std::string mType;
+        std::string mInstanceName;
 
         std::vector<std::unique_ptr<ServiceInstanceResolution>> mResolvingInstances;
     };
 
     struct HostSubscription : public ServiceRef
     {
-        explicit HostSubscription(PublisherMDnsSd &aMDnsSd, std::string aHostName)
-            : ServiceRef()
-            , mMDnsSd(&aMDnsSd)
+        explicit HostSubscription(PublisherMDnsSd &aPublisher, std::string aHostName)
+            : ServiceRef(aPublisher)
             , mHostName(std::move(aHostName))
         {
         }
@@ -312,7 +312,6 @@ private:
                                         const struct sockaddr *aAddress,
                                         uint32_t               aTtl);
 
-        PublisherMDnsSd   *mMDnsSd;
         std::string        mHostName;
         DiscoveredHostInfo mHostInfo;
     };
@@ -345,6 +344,8 @@ private:
 
     static std::string MakeRegType(const std::string &aType, SubTypeList aSubTypeList);
 
+    void HandleServiceRefDeallocating(const DNSServiceRef &aServiceRef);
+
     ServiceRegistration *FindServiceRegistration(const DNSServiceRef &aServiceRef);
     HostRegistration    *FindHostRegistration(const DNSServiceRef &aServiceRef, const DNSRecordRef &aRecordRef);
 
@@ -354,6 +355,8 @@ private:
 
     ServiceSubscriptionList mSubscribedServices;
     HostSubscriptionList    mSubscribedHosts;
+
+    std::vector<DNSServiceRef> mServiceRefsToProcess;
 };
 
 /**
