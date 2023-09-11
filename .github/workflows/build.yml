@@ -45,7 +45,7 @@ jobs:
   pretty:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Bootstrap
       run: BUILD_TARGET=pretty-check tests/scripts/bootstrap.sh
     - name: Check
@@ -65,7 +65,7 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_BORDER_ROUTING=ON -DOTBR_NAT64=1 -DOTBR_SRP_SERVER_AUTO_ENABLE=OFF"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Bootstrap
@@ -88,7 +88,7 @@ jobs:
       OTBR_OPTIONS: "-DOTBR_SRP_ADVERTISING_PROXY=ON -DOTBR_DNSSD_DISCOVERY_PROXY=ON"
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Bootstrap
@@ -104,7 +104,7 @@ jobs:
       BUILD_TARGET: script-check
       OTBR_COVERAGE: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Bootstrap
@@ -121,7 +121,7 @@ jobs:
       CC: clang
       CXX: clang++
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Bootstrap
@@ -134,7 +134,7 @@ jobs:
     env:
       BUILD_TARGET: package
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Bootstrap
@@ -151,7 +151,7 @@ jobs:
     env:
       BUILD_TARGET: check
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Bootstrap
