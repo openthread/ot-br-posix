@@ -191,7 +191,7 @@ private:
             : ServiceRef()
             , mSubscription(&aSubscription)
             , mInstanceName(std::move(aInstanceName))
-            , mTypeEndWithDot(std::move(aType))
+            , mType(std::move(aType))
             , mDomain(std::move(aDomain))
             , mNetifIndex(aNetifIndex)
         {
@@ -238,7 +238,7 @@ private:
 
         ServiceSubscription   *mSubscription;
         std::string            mInstanceName;
-        std::string            mTypeEndWithDot;
+        std::string            mType;
         std::string            mDomain;
         uint32_t               mNetifIndex;
         DiscoveredInstanceInfo mInstanceInfo;

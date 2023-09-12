@@ -211,7 +211,7 @@ public:
      *                          with method PublishHost.
      * @param[in] aName         The name of this service. If an empty string is provided, the service's name will be the
      *                          same as the platform's hostname.
-     * @param[in] aType         The type of this service.
+     * @param[in] aType         The type of this service, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aSubTypeList  A list of service subtypes.
      * @param[in] aPort         The port number of this service.
      * @param[in] aTxtData      The encoded TXT data for this service.
@@ -234,7 +234,7 @@ public:
      * This method un-publishes a service.
      *
      * @param[in] aName      The name of this service.
-     * @param[in] aType      The type of this service.
+     * @param[in] aType      The type of this service, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aCallback  The callback for receiving the publishing result.
      *
      */
@@ -260,7 +260,7 @@ public:
     /**
      * This method un-publishes a host.
      *
-     * @param[in] aName      A host name.
+     * @param[in] aName      A host name (MUST not end with dot).
      * @param[in] aCallback  The callback for receiving the publishing result.
      *
      */
@@ -276,7 +276,7 @@ public:
      * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same service or service
      * instance.
      *
-     * @param[in] aType          The service type.
+     * @param[in] aType          The service type, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aInstanceName  The service instance to subscribe, or empty to subscribe the service.
      *
      */
@@ -290,7 +290,7 @@ public:
      *
      * @note Discovery Proxy implementation guarantees no redundant unsubscription for a service or service instance.
      *
-     * @param[in] aType          The service type.
+     * @param[in] aType          The service type, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
      *
      */
