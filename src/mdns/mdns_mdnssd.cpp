@@ -222,7 +222,7 @@ PublisherMDnsSd::PublisherMDnsSd(StateCallback aCallback)
 
 PublisherMDnsSd::~PublisherMDnsSd(void)
 {
-    Stop();
+    Stop(kNormalStop);
 }
 
 otbrError PublisherMDnsSd::Start(void)
@@ -237,29 +237,47 @@ bool PublisherMDnsSd::IsStarted(void) const
     return mState == State::kReady;
 }
 
-void PublisherMDnsSd::Stop(void)
+void PublisherMDnsSd::Stop(StopMode aStopMode)
 {
-    ServiceRegistrationMap serviceRegistrations;
-    HostRegistrationMap    hostRegistrations;
-
     VerifyOrExit(mState == State::kReady);
 
-    std::swap(mServiceRegistrations, serviceRegistrations);
-    std::swap(mHostRegistrations, hostRegistrations);
+    // If we get a `kDNSServiceErr_ServiceNotRunning` and need to
+    // restart the `Publisher`, we should immediately de-allocate
+    // all `ServiceRef`. Otherwise, we first clear the `Registrations`
+    // list so that `DnssdHostRegisteration` destructor gets the chance
+    // to update registered records if needed.
 
-    if (mHostsRef != nullptr)
+    switch (aStopMode)
     {
-        HandleServiceRefDeallocating(mHostsRef);
-        DNSServiceRefDeallocate(mHostsRef);
-        otbrLogDebug("Deallocated DNSServiceRef for hosts: %p", mHostsRef);
-        mHostsRef = nullptr;
+    case kNormalStop:
+        break;
+
+    case kStopOnServiceNotRunningError:
+        DeallocateHostsRef();
+        break;
     }
 
-    mSubscribedServices.clear();
+    mServiceRegistrations.clear();
+    mHostRegistrations.clear();
+    DeallocateHostsRef();
 
+    mSubscribedServices.clear();
     mSubscribedHosts.clear();
 
     mState = State::kIdle;
+
+exit:
+    return;
+}
+
+void PublisherMDnsSd::DeallocateHostsRef(void)
+{
+    VerifyOrExit(mHostsRef != nullptr);
+
+    HandleServiceRefDeallocating(mHostsRef);
+    DNSServiceRefDeallocate(mHostsRef);
+    otbrLogDebug("Deallocated DNSServiceRef for hosts: %p", mHostsRef);
+    mHostsRef = nullptr;
 
 exit:
     return;
@@ -370,7 +388,7 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
         if (error == kDNSServiceErr_ServiceNotRunning)
         {
             otbrLogWarning("Need to reconnect to mdnsd");
-            Stop();
+            Stop(kStopOnServiceNotRunningError);
             Start();
             ExitNow();
         }
@@ -403,6 +421,7 @@ PublisherMDnsSd::DnssdHostRegistration::~DnssdHostRegistration(void)
 {
     int dnsError;
 
+    VerifyOrExit(GetPublisher().mHostsRef != nullptr);
     VerifyOrExit(mServiceRef != nullptr);
 
     for (const auto &recordRefAndAddress : GetRecordRefMap())

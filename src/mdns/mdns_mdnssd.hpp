@@ -76,7 +76,7 @@ public:
     void      UnsubscribeHost(const std::string &aHostName) override;
     otbrError Start(void) override;
     bool      IsStarted(void) const override;
-    void      Stop(void) override;
+    void      Stop(void) override { Stop(kNormalStop); }
 
     // Implementation of MainloopProcessor.
 
@@ -102,6 +102,12 @@ protected:
 
 private:
     static constexpr uint32_t kDefaultTtl = 10;
+
+    enum StopMode : uint8_t
+    {
+        kNormalStop,
+        kStopOnServiceNotRunningError,
+    };
 
     class DnssdServiceRegistration : public ServiceRegistration
     {
@@ -156,6 +162,8 @@ private:
         std::map<DNSRecordRef, Ip6Address>       &GetRecordRefMap() { return mRecordRefMap; }
 
     private:
+        PublisherMDnsSd &GetPublisher(void) { return *static_cast<PublisherMDnsSd *>(mPublisher); }
+
         DNSServiceRef mServiceRef;
 
     public:
@@ -344,6 +352,8 @@ private:
 
     static std::string MakeRegType(const std::string &aType, SubTypeList aSubTypeList);
 
+    void Stop(StopMode aStopMode);
+    void DeallocateHostsRef(void);
     void HandleServiceRefDeallocating(const DNSServiceRef &aServiceRef);
 
     ServiceRegistration *FindServiceRegistration(const DNSServiceRef &aServiceRef);
