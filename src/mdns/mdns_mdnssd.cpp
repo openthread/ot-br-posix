@@ -349,10 +349,10 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
         // state of `Publisher` and potentially trigger a previously
         // valid `ServiceRef` in the list to be deallocated. We use
         // `HandleServiceRefDeallocating()` which is called whenever a
-        // `ServcieRef` is being deallocated and from this we update
+        // `ServiceRef` is being deallocated and from this we update
         // the entry in `mServiceRefsToProcess` list to `nullptr` so to
         // avoid calling `DNSServiceProcessResult()` on an already
-        // freed `ServcieRef`.
+        // freed `ServiceRef`.
 
         if (serviceRef == nullptr)
         {
