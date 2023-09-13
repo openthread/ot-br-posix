@@ -1260,7 +1260,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 
         // Start of MdnsInfo section.
-        if (aPublisher != NULL)
+        if (aPublisher != nullptr)
         {
             auto                     mdns     = wpanBorderRouter->mutable_mdns();
             const MdnsTelemetryInfo &mdnsInfo = aPublisher->GetMdnsTelemetryInfo();
