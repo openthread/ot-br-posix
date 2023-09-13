@@ -249,6 +249,7 @@ void PublisherMDnsSd::Stop(void)
 
     if (mHostsRef != nullptr)
     {
+        HandleServiceRefDeallocating(mHostsRef);
         DNSServiceRefDeallocate(mHostsRef);
         otbrLogDebug("Deallocated DNSServiceRef for hosts: %p", mHostsRef);
         mHostsRef = nullptr;
@@ -305,7 +306,7 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 
 void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 {
-    std::vector<DNSServiceRef> readyServices;
+    mServiceRefsToProcess.clear();
 
     for (auto &kv : mServiceRegistrations)
     {
@@ -314,7 +315,7 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
         if (FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
-            readyServices.push_back(serviceReg.GetServiceRef());
+            mServiceRefsToProcess.push_back(serviceReg.GetServiceRef());
         }
     }
 
@@ -324,23 +325,41 @@ void PublisherMDnsSd::Process(const MainloopContext &aMainloop)
 
         if (FD_ISSET(fd, &aMainloop.mReadFdSet))
         {
-            readyServices.push_back(mHostsRef);
+            mServiceRefsToProcess.push_back(mHostsRef);
         }
     }
 
     for (const auto &service : mSubscribedServices)
     {
-        service->ProcessAll(aMainloop, readyServices);
+        service->ProcessAll(aMainloop, mServiceRefsToProcess);
     }
 
     for (const auto &host : mSubscribedHosts)
     {
-        host->Process(aMainloop, readyServices);
+        host->Process(aMainloop, mServiceRefsToProcess);
     }
 
-    for (DNSServiceRef serviceRef : readyServices)
+    for (DNSServiceRef serviceRef : mServiceRefsToProcess)
     {
-        DNSServiceErrorType error = DNSServiceProcessResult(serviceRef);
+        DNSServiceErrorType error;
+
+        // As we go through the list of `mServiceRefsToProcess` the call
+        // to `DNSServiceProcessResult()` can itself invoke callbacks
+        // into `PublisherMDnsSd` and OT, which in turn, may change the
+        // state of `Publisher` and potentially trigger a previously
+        // valid `ServiceRef` in the list to be deallocated. We use
+        // `HandleServiceRefDeallocating()` which is called whenever a
+        // `ServiceRef` is being deallocated and from this we update
+        // the entry in `mServiceRefsToProcess` list to `nullptr` so to
+        // avoid calling `DNSServiceProcessResult()` on an already
+        // freed `ServiceRef`.
+
+        if (serviceRef == nullptr)
+        {
+            continue;
+        }
+
+        error = DNSServiceProcessResult(serviceRef);
 
         if (error != kDNSServiceErr_NoError)
         {
@@ -360,10 +379,22 @@ exit:
     return;
 }
 
+void PublisherMDnsSd::HandleServiceRefDeallocating(const DNSServiceRef &aServiceRef)
+{
+    for (DNSServiceRef &entry : mServiceRefsToProcess)
+    {
+        if (entry == aServiceRef)
+        {
+            entry = nullptr;
+        }
+    }
+}
+
 PublisherMDnsSd::DnssdServiceRegistration::~DnssdServiceRegistration(void)
 {
     if (mServiceRef != nullptr)
     {
+        GetPublisher().HandleServiceRefDeallocating(mServiceRef);
         DNSServiceRefDeallocate(mServiceRef);
     }
 }
@@ -538,6 +569,7 @@ exit:
 
         if (serviceRef != nullptr)
         {
+            HandleServiceRefDeallocating(serviceRef);
             DNSServiceRefDeallocate(serviceRef);
         }
         std::move(aCallback)(ret);
@@ -794,6 +826,7 @@ void PublisherMDnsSd::ServiceRef::DeallocateServiceRef(void)
 {
     if (mServiceRef != nullptr)
     {
+        mPublisher.HandleServiceRefDeallocating(mServiceRef);
         DNSServiceRefDeallocate(mServiceRef);
         mServiceRef = nullptr;
     }
@@ -875,13 +908,13 @@ void PublisherMDnsSd::ServiceSubscription::HandleBrowseResult(DNSServiceRef     
     }
     else
     {
-        mMDnsSd->OnServiceRemoved(aInterfaceIndex, mType, aInstanceName);
+        mPublisher.OnServiceRemoved(aInterfaceIndex, mType, aInstanceName);
     }
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
-        mMDnsSd->OnServiceResolveFailed(mType, mInstanceName, aErrorCode);
+        mPublisher.OnServiceResolveFailed(mType, mInstanceName, aErrorCode);
         Release();
     }
 }
@@ -934,7 +967,7 @@ void PublisherMDnsSd::ServiceInstanceResolution::Resolve(void)
 {
     assert(mServiceRef == nullptr);
 
-    mSubscription->mMDnsSd->mServiceInstanceResolutionBeginTime[std::make_pair(mInstanceName, mType)] = Clock::now();
+    mSubscription->mPublisher.mServiceInstanceResolutionBeginTime[std::make_pair(mInstanceName, mType)] = Clock::now();
 
     otbrLogInfo("DNSServiceResolve %s %s inf %u", mInstanceName.c_str(), mType.c_str(), mNetifIndex);
     DNSServiceResolve(&mServiceRef, /* flags */ kDNSServiceFlagsTimeout, mNetifIndex, mInstanceName.c_str(),
@@ -998,7 +1031,7 @@ exit:
 
     if (aErrorCode != kDNSServiceErr_NoError || error != OTBR_ERROR_NONE)
     {
-        mSubscription->mMDnsSd->OnServiceResolveFailed(mSubscription->mType, mInstanceName, aErrorCode);
+        mSubscription->mPublisher.OnServiceResolveFailed(mSubscription->mType, mInstanceName, aErrorCode);
         FinishResolution();
     }
 }
@@ -1083,7 +1116,7 @@ void PublisherMDnsSd::ServiceInstanceResolution::FinishResolution(void)
     subscription->RemoveInstanceResolution(*this);
 
     // NOTE: The `ServiceSubscription` object may be freed in `OnServiceResolved`.
-    subscription->mMDnsSd->OnServiceResolved(serviceName, instanceInfo);
+    subscription->mPublisher.OnServiceResolved(serviceName, instanceInfo);
 }
 
 void PublisherMDnsSd::HostSubscription::Resolve(void)
@@ -1092,7 +1125,7 @@ void PublisherMDnsSd::HostSubscription::Resolve(void)
 
     assert(mServiceRef == nullptr);
 
-    mMDnsSd->mHostResolutionBeginTime[mHostName] = Clock::now();
+    mPublisher.mHostResolutionBeginTime[mHostName] = Clock::now();
 
     otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", fullHostName.c_str(), kDNSServiceInterfaceIndexAny);
 
@@ -1145,12 +1178,12 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     otbrLogInfo("DNSServiceGetAddrInfo reply: address=%s, ttl=%" PRIu32, address.ToString().c_str(), aTtl);
 
     // NOTE: This `HostSubscription` object may be freed in `OnHostResolved`.
-    mMDnsSd->OnHostResolved(mHostName, mHostInfo);
+    mPublisher.OnHostResolved(mHostName, mHostInfo);
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
     {
-        mMDnsSd->OnHostResolveFailed(aHostName, aErrorCode);
+        mPublisher.OnHostResolveFailed(aHostName, aErrorCode);
     }
 }
 
