@@ -888,7 +888,7 @@ void ThreadHelper::DetachGracefullyCallback(void)
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
-otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData &telemetryData)
+otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError error = OT_ERROR_NONE;
 
@@ -1260,9 +1260,10 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadn
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 
         // Start of MdnsInfo section.
+        if (aPublisher != NULL)
         {
             auto                     mdns     = wpanBorderRouter->mutable_mdns();
-            const MdnsTelemetryInfo &mdnsInfo = aPublisher.GetMdnsTelemetryInfo();
+            const MdnsTelemetryInfo &mdnsInfo = aPublisher->GetMdnsTelemetryInfo();
 
             CopyMdnsResponseCounters(mdnsInfo.mHostRegistrations, mdns->mutable_host_registration_responses());
             CopyMdnsResponseCounters(mdnsInfo.mServiceRegistrations, mdns->mutable_service_registration_responses());
