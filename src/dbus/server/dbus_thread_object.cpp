@@ -1412,7 +1412,7 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
     threadnetwork::TelemetryData telemetryData;
     auto                         threadHelper = mNcp->GetThreadHelper();
 
-    VerifyOrExit(threadHelper->RetrieveTelemetryData(*mPublisher, telemetryData) == OT_ERROR_NONE);
+    VerifyOrExit(threadHelper->RetrieveTelemetryData(mPublisher, telemetryData) == OT_ERROR_NONE);
 
     {
         const std::string    telemetryDataBytes = telemetryData.SerializeAsString();

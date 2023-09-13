@@ -260,12 +260,12 @@ public:
     /**
      * This method populates the telemetry data and returns the error code if error happens.
      *
-     * @param[in] aPublisher     The Mdns::Publisher
+     * @param[in] aPublisher     The Mdns::Publisher to provide MDNS telemetry if it is not `nullptr`.
      * @param[in] telemetryData  The telemetry data to be populated.
      *
      * @returns The error code if error happens during the population of the telemetry data.
      */
-    otError RetrieveTelemetryData(Mdns::Publisher &aPublisher, threadnetwork::TelemetryData &telemetryData);
+    otError RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData);
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     /**
