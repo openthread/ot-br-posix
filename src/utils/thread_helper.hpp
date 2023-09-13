@@ -260,7 +260,7 @@ public:
     /**
      * This method populates the telemetry data and returns the error code if error happens.
      *
-     * @param[in] aPublisher     The Mdns::Publisher to populate MDNS telemetry if it is not NULL.
+     * @param[in] aPublisher     The Mdns::Publisher to provide MDNS telemetry if it is not NULL.
      * @param[in] telemetryData  The telemetry data to be populated.
      *
      * @returns The error code if error happens during the population of the telemetry data.
