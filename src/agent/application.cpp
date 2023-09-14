@@ -77,7 +77,7 @@ Application::Application(const std::string               &aInterfaceName,
     , mDBusAgent(mNcp, mBorderAgent.GetPublisher())
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
-    , mVendorServer(vendor::VendorServer::newInstance(mNcp))
+    , mVendorServer(vendor::VendorServer::newInstance(*this))
 #endif
 {
     OTBR_UNUSED_VARIABLE(aRestListenAddress);
