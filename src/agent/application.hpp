@@ -140,7 +140,10 @@ public:
      *
      * @retval OpenThread border agent.
      */
-    BorderAgent &GetBorderAgent(void) { return mBorderAgent; }
+    BorderAgent &GetBorderAgent(void)
+    {
+        return mBorderAgent;
+    }
 #endif
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
@@ -149,7 +152,10 @@ public:
      *
      * @retval OpenThread backbone agent.
      */
-    BackboneRouter::BackboneAgent &GetBackboneAgent(void) { return mBackboneAgent; }
+    BackboneRouter::BackboneAgent &GetBackboneAgent(void)
+    {
+        return mBackboneAgent;
+    }
 #endif
 
 #if OTBR_ENABLE_OPENWRT
@@ -158,7 +164,10 @@ public:
      *
      * @retval OpenThread UBus agent.
      */
-    ubus::UBusAgent mUbusAgent &GetUBusAgent(void) { return mUBusAgent; }
+    ubus::UBusAgent mUbusAgent &GetUBusAgent(void)
+    {
+        return mUBusAgent;
+    }
 #endif
 
 #if OTBR_ENABLE_REST_SERVER
@@ -167,7 +176,10 @@ public:
      *
      * @retval OpenThread rest web server.
      */
-    rest::RestWebServer &GetRestWebServer(void) { return mRestWebServer; }
+    rest::RestWebServer &GetRestWebServer(void)
+    {
+        return mRestWebServer;
+    }
 #endif
 
 #if OTBR_ENABLE_DBUS_SERVER
@@ -176,7 +188,10 @@ public:
      *
      * @retval OpenThread DBus agent.
      */
-    DBus::DBusAgent &GetDBusAgent(void) { return mDBusAgent; }
+    DBus::DBusAgent &GetDBusAgent(void)
+    {
+        return mDBusAgent;
+    }
 #endif
 
 private:

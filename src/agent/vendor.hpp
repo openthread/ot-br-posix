@@ -61,7 +61,7 @@ public:
      *
      * @returns  New derived VendorServer instance.
      */
-    static std::shared_ptr<VendorServer> newInstance(otbr::Application& application);
+    static std::shared_ptr<VendorServer> newInstance(otbr::Application &application);
 
     /**
      * Initializes the vendor server.
