@@ -166,7 +166,7 @@ public:
      */
     ubus::UBusAgent &GetUBusAgent(void)
     {
-        return mUBusAgent;
+        return mUbusAgent;
     }
 #endif
 
