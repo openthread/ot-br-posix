@@ -164,7 +164,7 @@ public:
      *
      * @retval OpenThread UBus agent.
      */
-    ubus::UBusAgent mUbusAgent &GetUBusAgent(void)
+    ubus::UBusAgent &GetUBusAgent(void)
     {
         return mUBusAgent;
     }
