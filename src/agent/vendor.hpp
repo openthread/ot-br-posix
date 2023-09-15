@@ -57,7 +57,7 @@ public:
      *
      * Custom vendor servers should implement this method to return an object of the derived class.
      *
-     * @param[in]  application  The OpenThread application.
+     * @param[in]  application  The OTBR application.
      *
      * @returns  New derived VendorServer instance.
      */

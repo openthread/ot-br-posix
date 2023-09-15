@@ -130,15 +130,15 @@ public:
     /**
      * Returns the OpenThread controller object the application is using.
      *
-     * @retval OpenThread controller object.
+     * @returns OpenThread controller object.
      */
     Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
 
 #if OTBR_ENABLE_BORDER_AGENT
     /**
-     * Returns the OpenThread border agent the application is using.
+     * Returns the border agent the application is using.
      *
-     * @retval OpenThread border agent.
+     * @returns border agent.
      */
     BorderAgent &GetBorderAgent(void)
     {
@@ -148,9 +148,9 @@ public:
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
     /**
-     * Returns the OpenThread backbone agent the application is using.
+     * Returns the backbone agent the application is using.
      *
-     * @retval OpenThread backbone agent.
+     * @returns backbone agent.
      */
     BackboneRouter::BackboneAgent &GetBackboneAgent(void)
     {
@@ -160,9 +160,9 @@ public:
 
 #if OTBR_ENABLE_OPENWRT
     /**
-     * Returns the OpenThread UBus agent the application is using.
+     * Returns the UBus agent the application is using.
      *
-     * @retval OpenThread UBus agent.
+     * @returns UBus agent.
      */
     ubus::UBusAgent &GetUBusAgent(void)
     {
@@ -172,9 +172,9 @@ public:
 
 #if OTBR_ENABLE_REST_SERVER
     /**
-     * Returns the OpenThread rest web server the application is using.
+     * Returns the rest web server the application is using.
      *
-     * @retval OpenThread rest web server.
+     * @returns rest web server.
      */
     rest::RestWebServer &GetRestWebServer(void)
     {
@@ -184,9 +184,9 @@ public:
 
 #if OTBR_ENABLE_DBUS_SERVER
     /**
-     * Returns the OpenThread DBus agent the application is using.
+     * Returns the DBus agent the application is using.
      *
-     * @retval OpenThread DBus agent.
+     * @returns DBus agent.
      */
     DBus::DBusAgent &GetDBusAgent(void)
     {
