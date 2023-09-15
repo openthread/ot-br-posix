@@ -31,8 +31,12 @@ FIREWALL_SERVICE=/etc/init.d/otbr-firewall
 
 sudo modprobe ip6table_filter || true
 
+FIREWALL="${FIREWALL:-1}"
+
 firewall_uninstall()
 {
+    with FIREWALL || return 0
+
     firewall_stop
     if have systemctl; then
         sudo systemctl disable otbr-firewall || true
@@ -46,6 +50,8 @@ firewall_uninstall()
 
 firewall_install()
 {
+    with FIREWALL || return 0
+
     sudo cp script/otbr-firewall $FIREWALL_SERVICE
     sudo chmod a+x $FIREWALL_SERVICE
     if have systemctl; then
@@ -56,6 +62,8 @@ firewall_install()
 
 firewall_start()
 {
+    with FIREWALL || return 0
+
     if with DOCKER; then
         service otbr-firewall start || die 'Failed to start firewall service'
     elif have systemctl; then
@@ -65,6 +73,8 @@ firewall_start()
 
 firewall_stop()
 {
+    with FIREWALL || return 0
+
     if with DOCKER; then
         service otbr-firewall stop || true
     elif have systemctl; then
