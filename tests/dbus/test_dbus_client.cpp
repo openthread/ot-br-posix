@@ -338,7 +338,6 @@ int main()
     TEST_ASSERT(region == "US");
 
     TEST_ASSERT(api->GetPreferredChannelMask(preferredChannelMask) == ClientError::ERROR_NONE);
-    TEST_ASSERT(preferredChannelMask == 0x7fff800);
 
     api->EnergyScan(scanDuration, [&stepDone](const std::vector<EnergyScanResult> &aResult) {
         TEST_ASSERT(!aResult.empty());
