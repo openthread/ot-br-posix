@@ -128,7 +128,7 @@ public:
     otbrError Run(void);
 
     /**
-     * Returns the OpenThread controller object the application is using.
+     * Get the OpenThread controller object the application is using.
      *
      * @returns OpenThread controller object.
      */
@@ -136,7 +136,7 @@ public:
 
 #if OTBR_ENABLE_BORDER_AGENT
     /**
-     * Returns the border agent the application is using.
+     * Get the border agent the application is using.
      *
      * @returns border agent.
      */
@@ -148,7 +148,7 @@ public:
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
     /**
-     * Returns the backbone agent the application is using.
+     * Get the backbone agent the application is using.
      *
      * @returns backbone agent.
      */
@@ -160,7 +160,7 @@ public:
 
 #if OTBR_ENABLE_OPENWRT
     /**
-     * Returns the UBus agent the application is using.
+     * Get the UBus agent the application is using.
      *
      * @returns UBus agent.
      */
@@ -172,7 +172,7 @@ public:
 
 #if OTBR_ENABLE_REST_SERVER
     /**
-     * Returns the rest web server the application is using.
+     * Get the rest web server the application is using.
      *
      * @returns rest web server.
      */
@@ -184,7 +184,7 @@ public:
 
 #if OTBR_ENABLE_DBUS_SERVER
     /**
-     * Returns the DBus agent the application is using.
+     * Get the DBus agent the application is using.
      *
      * @returns DBus agent.
      */
