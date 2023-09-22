@@ -130,7 +130,7 @@ public:
     /**
      * Get the OpenThread controller object the application is using.
      *
-     * @returns OpenThread controller object.
+     * @returns The OpenThread controller object.
      */
     Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
 
@@ -138,7 +138,7 @@ public:
     /**
      * Get the border agent the application is using.
      *
-     * @returns border agent.
+     * @returns The border agent.
      */
     BorderAgent &GetBorderAgent(void)
     {
@@ -150,7 +150,7 @@ public:
     /**
      * Get the backbone agent the application is using.
      *
-     * @returns backbone agent.
+     * @returns The backbone agent.
      */
     BackboneRouter::BackboneAgent &GetBackboneAgent(void)
     {
@@ -162,7 +162,7 @@ public:
     /**
      * Get the UBus agent the application is using.
      *
-     * @returns UBus agent.
+     * @returns The UBus agent.
      */
     ubus::UBusAgent &GetUBusAgent(void)
     {
@@ -174,7 +174,7 @@ public:
     /**
      * Get the rest web server the application is using.
      *
-     * @returns rest web server.
+     * @returns The rest web server.
      */
     rest::RestWebServer &GetRestWebServer(void)
     {
@@ -186,7 +186,7 @@ public:
     /**
      * Get the DBus agent the application is using.
      *
-     * @returns DBus agent.
+     * @returns The DBus agent.
      */
     DBus::DBusAgent &GetDBusAgent(void)
     {
