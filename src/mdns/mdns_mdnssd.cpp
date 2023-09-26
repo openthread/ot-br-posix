@@ -1168,7 +1168,6 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
                                                             uint32_t               aTtl)
 {
     OTBR_UNUSED_VARIABLE(aServiceRef);
-    OTBR_UNUSED_VARIABLE(aInterfaceIndex);
 
     Ip6Address address;
 
@@ -1185,7 +1184,8 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
 
     mHostInfo.mHostName = aHostName;
     mHostInfo.mAddresses.push_back(address);
-    mHostInfo.mTtl = aTtl;
+    mHostInfo.mNetifIndex = aInterfaceIndex;
+    mHostInfo.mTtl        = aTtl;
 
     otbrLogInfo("DNSServiceGetAddrInfo reply: address=%s, ttl=%" PRIu32, address.ToString().c_str(), aTtl);
 

@@ -1408,7 +1408,6 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
                                                            AvahiLookupResultFlags aFlags)
 {
     OTBR_UNUSED_VARIABLE(aRecordBrowser);
-    OTBR_UNUSED_VARIABLE(aInterfaceIndex);
     OTBR_UNUSED_VARIABLE(aProtocol);
     OTBR_UNUSED_VARIABLE(aEvent);
     OTBR_UNUSED_VARIABLE(aClazz);
@@ -1437,6 +1436,7 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
 
     mHostInfo.mHostName = std::string(aName) + ".";
     mHostInfo.mAddresses.push_back(std::move(address));
+    mHostInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
     // TODO: Use a more proper TTL
     mHostInfo.mTtl = kDefaultTtl;
     resolved       = true;
