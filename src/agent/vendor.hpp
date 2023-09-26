@@ -57,11 +57,11 @@ public:
      *
      * Custom vendor servers should implement this method to return an object of the derived class.
      *
-     * @param[in]  application  The OTBR application.
+     * @param[in]  aApplication  The OTBR application.
      *
      * @returns  New derived VendorServer instance.
      */
-    static std::shared_ptr<VendorServer> newInstance(Application &application);
+    static std::shared_ptr<VendorServer> newInstance(Application &aApplication);
 
     /**
      * Initializes the vendor server.
