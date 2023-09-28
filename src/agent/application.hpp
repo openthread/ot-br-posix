@@ -64,6 +64,14 @@
 
 namespace otbr {
 
+#if OTBR_ENABLE_VENDOR_SERVER
+namespace vendor {
+
+class VendorServer;
+
+}
+#endif
+
 /**
  * @addtogroup border-router-agent
  *
@@ -118,6 +126,73 @@ public:
      *
      */
     otbrError Run(void);
+
+    /**
+     * Get the OpenThread controller object the application is using.
+     *
+     * @returns The OpenThread controller object.
+     */
+    Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
+
+#if OTBR_ENABLE_BORDER_AGENT
+    /**
+     * Get the border agent the application is using.
+     *
+     * @returns The border agent.
+     */
+    BorderAgent &GetBorderAgent(void)
+    {
+        return mBorderAgent;
+    }
+#endif
+
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    /**
+     * Get the backbone agent the application is using.
+     *
+     * @returns The backbone agent.
+     */
+    BackboneRouter::BackboneAgent &GetBackboneAgent(void)
+    {
+        return mBackboneAgent;
+    }
+#endif
+
+#if OTBR_ENABLE_OPENWRT
+    /**
+     * Get the UBus agent the application is using.
+     *
+     * @returns The UBus agent.
+     */
+    ubus::UBusAgent &GetUBusAgent(void)
+    {
+        return mUbusAgent;
+    }
+#endif
+
+#if OTBR_ENABLE_REST_SERVER
+    /**
+     * Get the rest web server the application is using.
+     *
+     * @returns The rest web server.
+     */
+    rest::RestWebServer &GetRestWebServer(void)
+    {
+        return mRestWebServer;
+    }
+#endif
+
+#if OTBR_ENABLE_DBUS_SERVER
+    /**
+     * Get the DBus agent the application is using.
+     *
+     * @returns The DBus agent.
+     */
+    DBus::DBusAgent &GetDBusAgent(void)
+    {
+        return mDBusAgent;
+    }
+#endif
 
 private:
     // Default poll timeout.

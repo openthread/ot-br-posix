@@ -36,9 +36,12 @@
 
 #include "openthread-br/config.h"
 
-#include "ncp/ncp_openthread.hpp"
+#include "agent/application.hpp"
 
 namespace otbr {
+
+class Application;
+
 namespace vendor {
 
 /**
@@ -54,11 +57,11 @@ public:
      *
      * Custom vendor servers should implement this method to return an object of the derived class.
      *
-     * @param[in]  aNcp  The OpenThread controller object.
+     * @param[in]  aApplication  The OTBR application.
      *
      * @returns  New derived VendorServer instance.
      */
-    static std::shared_ptr<VendorServer> newInstance(otbr::Ncp::ControllerOpenThread &aNcp);
+    static std::shared_ptr<VendorServer> newInstance(Application &aApplication);
 
     /**
      * Initializes the vendor server.

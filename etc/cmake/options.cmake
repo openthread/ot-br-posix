@@ -146,3 +146,8 @@ if (OTBR_DHCP6_PD)
 else()
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_DHCP6_PD=0)
 endif()
+
+option(OTBR_VENDOR_SERVER "Enable vendor server" OFF)
+if (OTBR_VENDOR_SERVER)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_VENDOR_SERVER=1)
+endif()
