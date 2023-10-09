@@ -143,9 +143,10 @@ public:
      */
     struct DiscoveredHostInfo
     {
-        std::string mHostName;  ///< Full host name.
-        AddressList mAddresses; ///< IP6 addresses.
-        uint32_t    mTtl = 0;   ///< Host TTL.
+        std::string mHostName;       ///< Full host name.
+        AddressList mAddresses;      ///< IP6 addresses.
+        uint32_t    mNetifIndex = 0; ///< Network interface.
+        uint32_t    mTtl        = 0; ///< Host TTL.
     };
 
     /**
