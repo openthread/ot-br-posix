@@ -44,8 +44,6 @@ jobs:
 
   docker-check:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     env:
       OTBR_COVERAGE: 1
       VERBOSE: 1
