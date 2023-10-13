@@ -53,7 +53,7 @@ main()
 {
     sudo modprobe ip6table_filter
     docker build -t otbr \
-        --build-arg OTBR_OPTIONS=-DOPENTHREAD_POSIX_CONFIG_SPINEL_SPI_INTERFACE_ENABLE=1 \
+        --build-arg OTBR_OPTIONS=-DOT_POSIX_RCP_SPI_BUS=ON \
         --build-arg BACKBONE_ROUTER=0 \
         -f etc/docker/Dockerfile .
 
