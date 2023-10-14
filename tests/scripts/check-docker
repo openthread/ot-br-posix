@@ -29,9 +29,6 @@
 
 set -euxo pipefail
 
-OT_POSIX_CONFIG_RCP_BUS=${OT_POSIX_CONFIG_RCP_BUS:-UART}
-readonly OT_POSIX_CONFIG_RCP_BUS
-
 on_exit()
 {
     local status=$?
@@ -56,15 +53,12 @@ main()
 {
     sudo modprobe ip6table_filter
     docker build -t otbr \
-        --build-arg OTBR_OPTIONS=-DOT_POSIX_CONFIG_RCP_BUS="${OT_POSIX_CONFIG_RCP_BUS}" \
+        --build-arg OTBR_OPTIONS=-DOT_POSIX_RCP_SPI_BUS=ON \
         --build-arg BACKBONE_ROUTER=0 \
         -f etc/docker/Dockerfile .
 
     # SPI simulation is not available yet, so just verify the binary runs
-    if [[ ${OT_POSIX_CONFIG_RCP_BUS} == SPI ]]; then
-        docker run --rm -t --entrypoint otbr-agent otbr -h | grep 'spi://'
-        return 0
-    fi
+    docker run --rm -t --entrypoint otbr-agent otbr -h | grep 'spi://'
 
     local -r SOCAT_OUTPUT=/tmp/ot-socat
     socat -d -d pty,raw,echo=0 pty,raw,echo=0 2>&1 | tee $SOCAT_OUTPUT &

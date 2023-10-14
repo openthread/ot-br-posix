@@ -44,12 +44,7 @@ jobs:
 
   docker-check:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        rcp_bus: ["UART", "SPI"]
     env:
-      OT_POSIX_CONFIG_RCP_BUS: ${{matrix.rcp_bus}}
       OTBR_COVERAGE: 1
       VERBOSE: 1
     steps:
