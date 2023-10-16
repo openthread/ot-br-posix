@@ -287,7 +287,6 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
                 threadnetwork::TelemetryData::NAT64_STATE_NOT_RUNNING);
 #endif
     TEST_ASSERT(telemetryData.wpan_rcp().rcp_interface_statistics().transferred_frames_count() > 0);
-    TEST_ASSERT(telemetryData.coex_metrics().count_tx_request() > 0);
 }
 #endif
 

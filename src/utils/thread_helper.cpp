@@ -910,12 +910,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         wpanStats->set_mac_cca_fail_rate(static_cast<float>(ccaFailureRate) / 0xffff);
     }
 
-    {
-        int8_t radioTxPower;
-
-        SuccessOrExit(error = otPlatRadioGetTransmitPower(mInstance, &radioTxPower));
-        wpanStats->set_radio_tx_power(radioTxPower);
-    }
+    // TODO: Set radio_tx_power by otPlatRadioGetTransmitPower.
 
     {
         const otMacCounters *linkCounters = otLinkGetCounters(mInstance);
@@ -1031,9 +1026,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             wpanTopoFull->set_stable_network_data(std::string(networkData.begin(), networkData.end()));
         }
 
-        int8_t rssi = otPlatRadioGetRssi(mInstance);
-
-        wpanTopoFull->set_instant_rssi(rssi);
+        // TODO: Set instant_rssi by otPlatRadioGetRssi.
 
         const otExtendedPanId *extPanId = otThreadGetExtendedPanId(mInstance);
         uint64_t               extPanIdVal;
@@ -1356,31 +1349,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
         // End of WpanRcp section.
 
-        // Start of CoexMetrics section.
-        {
-            auto               coexMetrics = telemetryData.mutable_coex_metrics();
-            otRadioCoexMetrics otRadioCoexMetrics;
-
-            SuccessOrExit(error = otPlatRadioGetCoexMetrics(mInstance, &otRadioCoexMetrics));
-            coexMetrics->set_count_tx_request(otRadioCoexMetrics.mNumTxRequest);
-            coexMetrics->set_count_tx_grant_immediate(otRadioCoexMetrics.mNumTxGrantImmediate);
-            coexMetrics->set_count_tx_grant_wait(otRadioCoexMetrics.mNumTxGrantWait);
-            coexMetrics->set_count_tx_grant_wait_activated(otRadioCoexMetrics.mNumTxGrantWaitActivated);
-            coexMetrics->set_count_tx_grant_wait_timeout(otRadioCoexMetrics.mNumTxGrantWaitTimeout);
-            coexMetrics->set_count_tx_grant_deactivated_during_request(
-                otRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest);
-            coexMetrics->set_tx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgTxRequestToGrantTime);
-            coexMetrics->set_count_rx_request(otRadioCoexMetrics.mNumRxRequest);
-            coexMetrics->set_count_rx_grant_immediate(otRadioCoexMetrics.mNumRxGrantImmediate);
-            coexMetrics->set_count_rx_grant_wait(otRadioCoexMetrics.mNumRxGrantWait);
-            coexMetrics->set_count_rx_grant_wait_activated(otRadioCoexMetrics.mNumRxGrantWaitActivated);
-            coexMetrics->set_count_rx_grant_wait_timeout(otRadioCoexMetrics.mNumRxGrantWaitTimeout);
-            coexMetrics->set_count_rx_grant_deactivated_during_request(
-                otRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest);
-            coexMetrics->set_count_rx_grant_none(otRadioCoexMetrics.mNumRxGrantNone);
-            coexMetrics->set_rx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgRxRequestToGrantTime);
-        }
-        // End of CoexMetrics section.
+        // TODO: set CoexMetrics by otPlatRadioGetCoexMetrics.
     }
 
 exit:
