@@ -61,7 +61,8 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
     VerifyOrExit(strlen(aNetworkName) > 0, ret = kPskcStatus_InvalidArgument);
 
     remainingSpace = sizeof(mSalt) - cur;
-    if (remainingSpace > 0) {
+    if (remainingSpace > 0)
+    {
         networkNameLen = std::min(static_cast<int>(strlen(aNetworkName)), remainingSpace);
         memcpy(mSalt + cur, aNetworkName, networkNameLen);
         cur += networkNameLen;
