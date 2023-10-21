@@ -49,7 +49,7 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
 
     if (strlen(saltPrefix) + OT_EXTENDED_PAN_ID_LENGTH + strlen(aNetworkName) >= sizeof(mSalt))
     {
-        otbrLogWarning("Network name too long; will be truncated."); 
+        otbrLogWarning("Network name too long; will be truncated.");
     }
 
     memset(mSalt, 0, sizeof(mSalt));
