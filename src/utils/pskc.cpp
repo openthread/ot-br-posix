@@ -41,9 +41,16 @@ namespace Psk {
 
 void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
 {
-    const char *saltPrefix = "Thread";
-    int         cur        = 0;
-    int         ret        = kPskcStatus_Ok;
+    const char *saltPrefix     = "Thread";
+    int         cur            = 0;
+    int         ret            = kPskcStatus_Ok;
+    int         remainingSpace = 0;
+    int         networkNameLen = 0;
+
+    if (strlen(saltPrefix) + OT_EXTENDED_PAN_ID_LENGTH + strlen(aNetworkName) >= sizeof(mSalt))
+    {
+        otbrLogWarning("Network name too long; will be truncated.");
+    }
 
     memset(mSalt, 0, sizeof(mSalt));
     memcpy(mSalt, saltPrefix, strlen(saltPrefix));
@@ -53,8 +60,14 @@ void Pskc::SetSalt(const uint8_t *aExtPanId, const char *aNetworkName)
     cur += OT_EXTENDED_PAN_ID_LENGTH;
 
     VerifyOrExit(strlen(aNetworkName) > 0, ret = kPskcStatus_InvalidArgument);
-    memcpy(mSalt + cur, aNetworkName, strlen(aNetworkName));
-    cur += strlen(aNetworkName);
+
+    remainingSpace = sizeof(mSalt) - cur;
+    if (remainingSpace > 0)
+    {
+        networkNameLen = std::min(static_cast<int>(strlen(aNetworkName)), remainingSpace);
+        memcpy(mSalt + cur, aNetworkName, networkNameLen);
+        cur += networkNameLen;
+    }
 
     mSaltLen = static_cast<uint16_t>(cur);
 
