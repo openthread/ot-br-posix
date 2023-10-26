@@ -890,7 +890,8 @@ void ThreadHelper::DetachGracefullyCallback(void)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
-    otError error = OT_ERROR_NONE;
+    otError error       = OT_ERROR_NONE;
+    otError latestError = OT_ERROR_NONE;
 
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
@@ -913,8 +914,14 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
     {
         int8_t radioTxPower;
 
-        SuccessOrExit(error = otPlatRadioGetTransmitPower(mInstance, &radioTxPower));
-        wpanStats->set_radio_tx_power(radioTxPower);
+        if ((latestError = otPlatRadioGetTransmitPower(mInstance, &radioTxPower)) == OT_ERROR_NONE)
+        {
+            wpanStats->set_radio_tx_power(radioTxPower);
+        }
+        else
+        {
+            error = latestError;
+        }
     }
 
     {
@@ -971,10 +978,13 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         {
             otRouterInfo info;
 
-            // Store router info only when router is in correct status.
-            if (otThreadGetRouterInfo(mInstance, rloc16, &info) == OT_ERROR_NONE)
+            if ((latestError = otThreadGetRouterInfo(mInstance, rloc16, &info)) == OT_ERROR_NONE)
             {
                 wpanTopoFull->set_router_id(info.mRouterId);
+            }
+            else
+            {
+                error = latestError;
             }
         }
 
@@ -1002,12 +1012,16 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         {
             struct otLeaderData leaderData;
 
-            if (otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE)
+            if ((latestError = otThreadGetLeaderData(mInstance, &leaderData)) == OT_ERROR_NONE)
             {
                 wpanTopoFull->set_leader_router_id(leaderData.mLeaderRouterId);
                 wpanTopoFull->set_leader_weight(leaderData.mWeighting);
                 wpanTopoFull->set_network_data_version(leaderData.mDataVersion);
                 wpanTopoFull->set_stable_network_data_version(leaderData.mStableDataVersion);
+            }
+            else
+            {
+                error = latestError;
             }
         }
 
@@ -1025,10 +1039,14 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             uint8_t              len = sizeof(data);
             std::vector<uint8_t> networkData;
 
-            if (otNetDataGet(mInstance, /*stable=*/false, data, &len))
+            if ((latestError = otNetDataGet(mInstance, /*stable=*/false, data, &len)) == OT_ERROR_NONE)
             {
                 networkData = std::vector<uint8_t>(&data[0], &data[len]);
                 wpanTopoFull->set_network_data(std::string(networkData.begin(), networkData.end()));
+            }
+            else
+            {
+                error = latestError;
             }
         }
 
@@ -1037,10 +1055,14 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             uint8_t              len = sizeof(data);
             std::vector<uint8_t> networkData;
 
-            if (otNetDataGet(mInstance, /*stable=*/true, data, &len))
+            if ((latestError = otNetDataGet(mInstance, /*stable=*/true, data, &len)) == OT_ERROR_NONE)
             {
                 networkData = std::vector<uint8_t>(&data[0], &data[len]);
                 wpanTopoFull->set_stable_network_data(std::string(networkData.begin(), networkData.end()));
+            }
+            else
+            {
+                error = latestError;
             }
         }
 
@@ -1381,7 +1403,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             auto               coexMetrics = telemetryData.mutable_coex_metrics();
             otRadioCoexMetrics otRadioCoexMetrics;
 
-            if (otPlatRadioGetCoexMetrics(mInstance, &otRadioCoexMetrics) == OT_ERROR_NONE)
+            if ((latestError = otPlatRadioGetCoexMetrics(mInstance, &otRadioCoexMetrics)) == OT_ERROR_NONE)
             {
                 coexMetrics->set_count_tx_request(otRadioCoexMetrics.mNumTxRequest);
                 coexMetrics->set_count_tx_grant_immediate(otRadioCoexMetrics.mNumTxGrantImmediate);
@@ -1401,11 +1423,14 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
                 coexMetrics->set_count_rx_grant_none(otRadioCoexMetrics.mNumRxGrantNone);
                 coexMetrics->set_rx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgRxRequestToGrantTime);
             }
+            else
+            {
+                error = latestError;
+            }
         }
         // End of CoexMetrics section.
     }
 
-exit:
     return error;
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
