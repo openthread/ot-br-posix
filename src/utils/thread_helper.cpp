@@ -968,10 +968,15 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 
         wpanTopoFull->set_rloc16(rloc16);
 
-        otRouterInfo info;
+        {
+            otRouterInfo info;
 
-        VerifyOrExit(otThreadGetRouterInfo(mInstance, rloc16, &info) == OT_ERROR_NONE, error = OT_ERROR_INVALID_STATE);
-        wpanTopoFull->set_router_id(info.mRouterId);
+            // Store router info only when router is in correct status.
+            if (otThreadGetRouterInfo(mInstance, rloc16, &info) == OT_ERROR_NONE)
+            {
+                wpanTopoFull->set_router_id(info.mRouterId);
+            }
+        }
 
         otNeighborInfoIterator      iter = OT_NEIGHBOR_INFO_ITERATOR_INIT;
         otNeighborInfo              neighborInfo;
@@ -994,13 +999,17 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
         wpanTopoFull->set_child_table_size(childTable.size());
 
-        struct otLeaderData leaderData;
+        {
+            struct otLeaderData leaderData;
 
-        SuccessOrExit(error = otThreadGetLeaderData(mInstance, &leaderData));
-        wpanTopoFull->set_leader_router_id(leaderData.mLeaderRouterId);
-        wpanTopoFull->set_leader_weight(leaderData.mWeighting);
-        wpanTopoFull->set_network_data_version(leaderData.mDataVersion);
-        wpanTopoFull->set_stable_network_data_version(leaderData.mStableDataVersion);
+            if (otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE)
+            {
+                wpanTopoFull->set_leader_router_id(leaderData.mLeaderRouterId);
+                wpanTopoFull->set_leader_weight(leaderData.mWeighting);
+                wpanTopoFull->set_network_data_version(leaderData.mDataVersion);
+                wpanTopoFull->set_stable_network_data_version(leaderData.mStableDataVersion);
+            }
+        }
 
         uint8_t weight = otThreadGetLocalLeaderWeight(mInstance);
 
@@ -1016,9 +1025,11 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             uint8_t              len = sizeof(data);
             std::vector<uint8_t> networkData;
 
-            SuccessOrExit(error = otNetDataGet(mInstance, /*stable=*/false, data, &len));
-            networkData = std::vector<uint8_t>(&data[0], &data[len]);
-            wpanTopoFull->set_network_data(std::string(networkData.begin(), networkData.end()));
+            if (otNetDataGet(mInstance, /*stable=*/false, data, &len))
+            {
+                networkData = std::vector<uint8_t>(&data[0], &data[len]);
+                wpanTopoFull->set_network_data(std::string(networkData.begin(), networkData.end()));
+            }
         }
 
         {
@@ -1026,9 +1037,11 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             uint8_t              len = sizeof(data);
             std::vector<uint8_t> networkData;
 
-            SuccessOrExit(error = otNetDataGet(mInstance, /*stable=*/true, data, &len));
-            networkData = std::vector<uint8_t>(&data[0], &data[len]);
-            wpanTopoFull->set_stable_network_data(std::string(networkData.begin(), networkData.end()));
+            if (otNetDataGet(mInstance, /*stable=*/true, data, &len))
+            {
+                networkData = std::vector<uint8_t>(&data[0], &data[len]);
+                wpanTopoFull->set_stable_network_data(std::string(networkData.begin(), networkData.end()));
+            }
         }
 
         int8_t rssi = otPlatRadioGetRssi(mInstance);
@@ -1328,31 +1341,38 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 
         // Start of WpanRcp section.
         {
-            auto                 wpanRcp                = telemetryData.mutable_wpan_rcp();
-            auto                 rcpStabilityStatistics = wpanRcp->mutable_rcp_stability_statistics();
-            otRadioSpinelMetrics otRadioSpinelMetrics   = *otSysGetRadioSpinelMetrics();
+            auto                        wpanRcp                = telemetryData.mutable_wpan_rcp();
+            const otRadioSpinelMetrics *otRadioSpinelMetrics   = otSysGetRadioSpinelMetrics();
+            auto                        rcpStabilityStatistics = wpanRcp->mutable_rcp_stability_statistics();
 
-            rcpStabilityStatistics->set_rcp_timeout_count(otRadioSpinelMetrics.mRcpTimeoutCount);
-            rcpStabilityStatistics->set_rcp_reset_count(otRadioSpinelMetrics.mRcpUnexpectedResetCount);
-            rcpStabilityStatistics->set_rcp_restoration_count(otRadioSpinelMetrics.mRcpRestorationCount);
-            rcpStabilityStatistics->set_spinel_parse_error_count(otRadioSpinelMetrics.mSpinelParseErrorCount);
+            if (otRadioSpinelMetrics != nullptr)
+            {
+                rcpStabilityStatistics->set_rcp_timeout_count(otRadioSpinelMetrics->mRcpTimeoutCount);
+                rcpStabilityStatistics->set_rcp_reset_count(otRadioSpinelMetrics->mRcpUnexpectedResetCount);
+                rcpStabilityStatistics->set_rcp_restoration_count(otRadioSpinelMetrics->mRcpRestorationCount);
+                rcpStabilityStatistics->set_spinel_parse_error_count(otRadioSpinelMetrics->mSpinelParseErrorCount);
+            }
 
             // TODO: provide rcp_firmware_update_count info.
             rcpStabilityStatistics->set_thread_stack_uptime(otInstanceGetUptime(mInstance));
 
-            auto                  rcpInterfaceStatistics = wpanRcp->mutable_rcp_interface_statistics();
-            otRcpInterfaceMetrics otRcpInterfaceMetrics  = *otSysGetRcpInterfaceMetrics();
+            const otRcpInterfaceMetrics *otRcpInterfaceMetrics = otSysGetRcpInterfaceMetrics();
 
-            rcpInterfaceStatistics->set_rcp_interface_type(otRcpInterfaceMetrics.mRcpInterfaceType);
-            rcpInterfaceStatistics->set_transferred_frames_count(otRcpInterfaceMetrics.mTransferredFrameCount);
-            rcpInterfaceStatistics->set_transferred_valid_frames_count(
-                otRcpInterfaceMetrics.mTransferredValidFrameCount);
-            rcpInterfaceStatistics->set_transferred_garbage_frames_count(
-                otRcpInterfaceMetrics.mTransferredGarbageFrameCount);
-            rcpInterfaceStatistics->set_rx_frames_count(otRcpInterfaceMetrics.mRxFrameCount);
-            rcpInterfaceStatistics->set_rx_bytes_count(otRcpInterfaceMetrics.mRxFrameByteCount);
-            rcpInterfaceStatistics->set_tx_frames_count(otRcpInterfaceMetrics.mTxFrameCount);
-            rcpInterfaceStatistics->set_tx_bytes_count(otRcpInterfaceMetrics.mTxFrameByteCount);
+            if (otRcpInterfaceMetrics != nullptr)
+            {
+                auto rcpInterfaceStatistics = wpanRcp->mutable_rcp_interface_statistics();
+
+                rcpInterfaceStatistics->set_rcp_interface_type(otRcpInterfaceMetrics->mRcpInterfaceType);
+                rcpInterfaceStatistics->set_transferred_frames_count(otRcpInterfaceMetrics->mTransferredFrameCount);
+                rcpInterfaceStatistics->set_transferred_valid_frames_count(
+                    otRcpInterfaceMetrics->mTransferredValidFrameCount);
+                rcpInterfaceStatistics->set_transferred_garbage_frames_count(
+                    otRcpInterfaceMetrics->mTransferredGarbageFrameCount);
+                rcpInterfaceStatistics->set_rx_frames_count(otRcpInterfaceMetrics->mRxFrameCount);
+                rcpInterfaceStatistics->set_rx_bytes_count(otRcpInterfaceMetrics->mRxFrameByteCount);
+                rcpInterfaceStatistics->set_tx_frames_count(otRcpInterfaceMetrics->mTxFrameCount);
+                rcpInterfaceStatistics->set_tx_bytes_count(otRcpInterfaceMetrics->mTxFrameByteCount);
+            }
         }
         // End of WpanRcp section.
 
@@ -1361,24 +1381,26 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             auto               coexMetrics = telemetryData.mutable_coex_metrics();
             otRadioCoexMetrics otRadioCoexMetrics;
 
-            SuccessOrExit(error = otPlatRadioGetCoexMetrics(mInstance, &otRadioCoexMetrics));
-            coexMetrics->set_count_tx_request(otRadioCoexMetrics.mNumTxRequest);
-            coexMetrics->set_count_tx_grant_immediate(otRadioCoexMetrics.mNumTxGrantImmediate);
-            coexMetrics->set_count_tx_grant_wait(otRadioCoexMetrics.mNumTxGrantWait);
-            coexMetrics->set_count_tx_grant_wait_activated(otRadioCoexMetrics.mNumTxGrantWaitActivated);
-            coexMetrics->set_count_tx_grant_wait_timeout(otRadioCoexMetrics.mNumTxGrantWaitTimeout);
-            coexMetrics->set_count_tx_grant_deactivated_during_request(
-                otRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest);
-            coexMetrics->set_tx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgTxRequestToGrantTime);
-            coexMetrics->set_count_rx_request(otRadioCoexMetrics.mNumRxRequest);
-            coexMetrics->set_count_rx_grant_immediate(otRadioCoexMetrics.mNumRxGrantImmediate);
-            coexMetrics->set_count_rx_grant_wait(otRadioCoexMetrics.mNumRxGrantWait);
-            coexMetrics->set_count_rx_grant_wait_activated(otRadioCoexMetrics.mNumRxGrantWaitActivated);
-            coexMetrics->set_count_rx_grant_wait_timeout(otRadioCoexMetrics.mNumRxGrantWaitTimeout);
-            coexMetrics->set_count_rx_grant_deactivated_during_request(
-                otRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest);
-            coexMetrics->set_count_rx_grant_none(otRadioCoexMetrics.mNumRxGrantNone);
-            coexMetrics->set_rx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgRxRequestToGrantTime);
+            if (otPlatRadioGetCoexMetrics(mInstance, &otRadioCoexMetrics) == OT_ERROR_NONE)
+            {
+                coexMetrics->set_count_tx_request(otRadioCoexMetrics.mNumTxRequest);
+                coexMetrics->set_count_tx_grant_immediate(otRadioCoexMetrics.mNumTxGrantImmediate);
+                coexMetrics->set_count_tx_grant_wait(otRadioCoexMetrics.mNumTxGrantWait);
+                coexMetrics->set_count_tx_grant_wait_activated(otRadioCoexMetrics.mNumTxGrantWaitActivated);
+                coexMetrics->set_count_tx_grant_wait_timeout(otRadioCoexMetrics.mNumTxGrantWaitTimeout);
+                coexMetrics->set_count_tx_grant_deactivated_during_request(
+                    otRadioCoexMetrics.mNumTxGrantDeactivatedDuringRequest);
+                coexMetrics->set_tx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgTxRequestToGrantTime);
+                coexMetrics->set_count_rx_request(otRadioCoexMetrics.mNumRxRequest);
+                coexMetrics->set_count_rx_grant_immediate(otRadioCoexMetrics.mNumRxGrantImmediate);
+                coexMetrics->set_count_rx_grant_wait(otRadioCoexMetrics.mNumRxGrantWait);
+                coexMetrics->set_count_rx_grant_wait_activated(otRadioCoexMetrics.mNumRxGrantWaitActivated);
+                coexMetrics->set_count_rx_grant_wait_timeout(otRadioCoexMetrics.mNumRxGrantWaitTimeout);
+                coexMetrics->set_count_rx_grant_deactivated_during_request(
+                    otRadioCoexMetrics.mNumRxGrantDeactivatedDuringRequest);
+                coexMetrics->set_count_rx_grant_none(otRadioCoexMetrics.mNumRxGrantNone);
+                coexMetrics->set_rx_average_request_to_grant_time_us(otRadioCoexMetrics.mAvgRxRequestToGrantTime);
+            }
         }
         // End of CoexMetrics section.
     }
