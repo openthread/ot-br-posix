@@ -258,7 +258,9 @@ public:
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
     /**
-     * This method populates the telemetry data and returns the error code if error happens.
+     * This method populates the telemetry data with best effort and returns the error code if error
+     * happens. Best effort means the telemetry will be populated if it is available; otherwise it
+     * is left unpopulated.
      *
      * @param[in] aPublisher     The Mdns::Publisher to provide MDNS telemetry if it is not `nullptr`.
      * @param[in] telemetryData  The telemetry data to be populated.
