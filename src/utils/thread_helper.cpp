@@ -890,7 +890,7 @@ void ThreadHelper::DetachGracefullyCallback(void)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
-    otError error       = OT_ERROR_NONE;
+    otError error = OT_ERROR_NONE;
 
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
