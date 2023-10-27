@@ -258,15 +258,15 @@ public:
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
     /**
-     * This method populates the telemetry data with best effort. The best effort means, if some error happens
-     * on a telemetry retrieval, it is left unpopulated and the remaining telemetries in telemetryData proto
-     * will still be retrieved with best effort. The last error code will be returned if any error happens
-     * during the whole process, together with the populated telemetryData.
+     * This method populates the telemetry data with best effort. The best effort means, for a given
+     * telemetry, if its retrieval has error, it is left unpopulated and the process continues to
+     * retrieve the remaining telemetries instead of the immediately return. The error code
+     * OT_ERRROR_FAILED will be returned if there is one or more error(s) happened in the process.
      *
      * @param[in] aPublisher     The Mdns::Publisher to provide MDNS telemetry if it is not `nullptr`.
      * @param[in] telemetryData  The telemetry data to be populated.
      *
-     * @returns The last error code if any error happens during the population of the telemetry data.
+     * @returns The error code OT_ERRROR_FAILED if there is one or more error(s) happened in the process
      */
     otError RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData);
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
