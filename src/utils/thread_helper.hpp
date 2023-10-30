@@ -266,7 +266,8 @@ public:
      * @param[in] aPublisher     The Mdns::Publisher to provide MDNS telemetry if it is not `nullptr`.
      * @param[in] telemetryData  The telemetry data to be populated.
      *
-     * @returns The error code OT_ERRROR_FAILED if there is one or more error(s) happened in the process
+     * @retval OTBR_ERROR_NONE  There is no error happened in the process.
+     * @retval OT_ERRROR_FAILED There is one or more error(s) happened in the process.
      */
     otError RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData);
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
