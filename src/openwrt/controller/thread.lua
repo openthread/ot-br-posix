@@ -60,7 +60,7 @@ function thread_handler_setting()
 	local extpanid = luci.http.formvalue("extpanid")
 	local mode = luci.http.formvalue("mode")
 	local networkkey = luci.http.formvalue("networkkey")
-	local pskc = luci.http.formvalue("pskc")
+	local passphrase = luci.http.formvalue("passphrase")
 	--[[
 	local macfilter = luci.http.formvalue("macfilterselect")
 	local macfilteradd = luci.http.formvalue("macfilteradd")
@@ -116,11 +116,12 @@ function thread_handler_setting()
 			conn:call("otbr", "setextpanid", { extpanid = extpanid })
 			conn:call("otbr", "setmode", { mode = mode })
 			conn:call("otbr", "setnetworkkey", { networkkey = networkkey })
-			conn:call("otbr", "setpskc", { pskc = pskc })
+			conn:call("otbr", "setpassphrase", { passphrase = passphrase })
 			-- conn:call("otbr", "macfiltersetstate", { state = macfilter })
 			result = conn:call("otbr", "threadstart", {})
 		else
-			result = conn:call("otbr", "mgmtset", { networkkey = networkkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = pskc })
+			-- TODO ALEX: replace pskc argument with passphrase instead in the mgmtset function
+			result = conn:call("otbr", "mgmtset", { networkkey = networkkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = passphrase })
 			-- conn:call("otbr", "macfiltersetstate", { state = macfilter })
 		end
 		vError = result.Error

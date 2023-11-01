@@ -72,6 +72,12 @@ UbusServer::UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMute
     memset(&mNetworkdataBuf, 0, sizeof(mNetworkdataBuf));
     memset(&mBuf, 0, sizeof(mBuf));
 
+    char* init_value = "PleaseChangeMe";
+    size_t init_len = strlen(init_value) + 1;
+    
+    mCommissionerPassphrase = (char*) malloc(init_len);
+    memcpy(mCommissionerPassphrase, init_value, init_len);
+
     blob_buf_init(&mBuf, 0);
     blob_buf_init(&mNetworkdataBuf, 0);
 }

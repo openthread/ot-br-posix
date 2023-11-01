@@ -183,9 +183,9 @@
 			</div>
 		</div>
 		<div class="cbi-value">
-			<label class="cbi-value-title" style="margin-right:5%;">Network Password</label>
+			<label class="cbi-value-title" style="margin-right:5%;">Commissioner Credential</label>
 			<div class="cbi-value-title">
-				<input type="text" name="pskc" value="<%=threadget("pskc").pskc%>" />
+				<input type="text" name="passphrase" value="<%=threadget("passphrase").passphrase%>" />
 			</div>
 		</div>
 	</div>
@@ -281,12 +281,6 @@
 			var networkkey = document.forms["settingForm"]["networkkey"].value;
 			if (networkkey.length != 32) {
 				alert("Networkkey length must be 32 bytes");
-				return false;
-			}
-
-			var pskc = document.forms["settingForm"]["pskc"].value;
-			if (pskc.length != 32) {
-				alert("Network password length must be 32 bytes");
 				return false;
 			}
 		}
