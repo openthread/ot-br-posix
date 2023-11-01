@@ -46,6 +46,8 @@
 #include "common/logging.hpp"
 #include "ncp/ncp_openthread.hpp"
 
+#include "utils/pskc.hpp"
+
 namespace otbr {
 namespace ubus {
 
@@ -63,6 +65,7 @@ UbusServer::UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMute
     , mContext(nullptr)
     , mSockPath(nullptr)
     , mController(aController)
+    , mCommissionerPassphrase(nullptr)
     , mNcpThreadMutex(aMutex)
     , mSecond(0)
 {
@@ -127,6 +130,10 @@ static const struct blobmsg_policy setPskcPolicy[SET_NETWORK_MAX] = {
     [SETNETWORK] = {.name = "pskc", .type = BLOBMSG_TYPE_STRING},
 };
 
+static const struct blobmsg_policy setPassphrasePolicy[SET_NETWORK_MAX] = {
+    [SETNETWORK] = {.name = "passphrase", .type = BLOBMSG_TYPE_STRING},
+};
+
 static const struct blobmsg_policy setNetworkkeyPolicy[SET_NETWORK_MAX] = {
     [SETNETWORK] = {.name = "networkkey", .type = BLOBMSG_TYPE_STRING},
 };
@@ -183,6 +190,8 @@ static const struct ubus_method otbrMethods[] = {
      ARRAY_SIZE(setNetworkkeyPolicy)},
     {"pskc", &UbusServer::UbusPskcHandler, 0, 0, nullptr, 0},
     {"setpskc", &UbusServer::UbusSetPskcHandler, 0, 0, setPskcPolicy, ARRAY_SIZE(setPskcPolicy)},
+    {"passphrase", &UbusServer::UbusPassphraseHandler, 0, 0, nullptr, 0},
+    {"setpassphrase", &UbusServer::UbusSetPassphraseHandler, 0, 0, setPassphrasePolicy, ARRAY_SIZE(setPassphrasePolicy)},
     {"threadstart", &UbusServer::UbusThreadStartHandler, 0, 0, nullptr, 0},
     {"threadstop", &UbusServer::UbusThreadStopHandler, 0, 0, nullptr, 0},
     {"neighbor", &UbusServer::UbusNeighborHandler, 0, 0, nullptr, 0},
@@ -457,6 +466,24 @@ int UbusServer::UbusSetPskcHandler(struct ubus_context *     aContext,
                                    struct blob_attr *        aMsg)
 {
     return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "pskc");
+}
+
+int UbusServer::UbusPassphraseHandler(struct ubus_context *     aContext,
+                                struct ubus_object *      aObj,
+                                struct ubus_request_data *aRequest,
+                                const char *              aMethod,
+                                struct blob_attr *        aMsg)
+{
+    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "passphrase");
+}
+
+int UbusServer::UbusSetPassphraseHandler(struct ubus_context *     aContext,
+                                   struct ubus_object *      aObj,
+                                   struct ubus_request_data *aRequest,
+                                   const char *              aMethod,
+                                   struct blob_attr *        aMsg)
+{
+    return GetInstance().UbusSetInformation(aContext, aObj, aRequest, aMethod, aMsg, "passphrase");
 }
 
 int UbusServer::UbusNetworkkeyHandler(struct ubus_context *     aContext,
@@ -1120,6 +1147,17 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         OutputBytes(pskc.m8, OT_PSKC_MAX_SIZE, outputPskc);
         blobmsg_add_string(&mBuf, "pskc", outputPskc);
     }
+    else if (!strcmp(aAction, "passphrase"))
+    {
+        if (mCommissionerPassphrase)
+        {
+            blobmsg_add_string(&mBuf, "passphrase", mCommissionerPassphrase);
+        }
+        else
+        {
+            error = (otError)1;
+        }
+    }
     else if (!strcmp(aAction, "extpanid"))
     {
         char           outputExtPanId[XPANID_LENGTH] = "";
@@ -1490,6 +1528,44 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
             VerifyOrExit(Hex2Bin(blobmsg_get_string(tb[SETNETWORK]), pskc.m8, sizeof(pskc)) == OT_PSKC_MAX_SIZE,
                          error = OT_ERROR_PARSE);
             SuccessOrExit(error = otThreadSetPskc(mController->GetInstance(), &pskc));
+        }
+
+        // setting the PSKc directly invalidates the passphrase we have stored, as it is impossible to derive
+        // the passphrase from the PSKc
+        if (mCommissionerPassphrase)
+        {
+            free(mCommissionerPassphrase);
+            mCommissionerPassphrase = nullptr;
+        }
+    }
+    else if (!strcmp(aAction, "passphrase"))
+    {
+        struct blob_attr *tb[SET_NETWORK_MAX];
+
+        blobmsg_parse(setPassphrasePolicy, SET_NETWORK_MAX, tb, blob_data(aMsg), blob_len(aMsg));
+
+        if (tb[SETNETWORK] != nullptr)
+        {
+            char* passphrase = blobmsg_get_string(tb[SETNETWORK]);
+            size_t passphrase_len = strlen(passphrase) + 1;
+            
+            if (mCommissionerPassphrase)
+                free(mCommissionerPassphrase);
+
+            mCommissionerPassphrase = (char*)malloc(passphrase_len);
+            memcpy(mCommissionerPassphrase, passphrase, passphrase_len);
+            
+            otbr::Psk::Pskc psk;
+            otPskc pskc;
+            uint8_t ext_pan_id[OT_EXT_PAN_ID_SIZE];
+            
+            memcpy(ext_pan_id, otThreadGetExtendedPanId(mController->GetInstance())->m8, OT_EXT_PAN_ID_SIZE);
+
+            const uint8_t* pskc_str = psk.ComputePskc(ext_pan_id, otThreadGetNetworkName(mController->GetInstance()),
+                mCommissionerPassphrase);
+            memcpy(pskc.m8, pskc_str, sizeof(pskc.m8));
+
+            otThreadSetPskc(mController->GetInstance(), &pskc);
         }
     }
     else if (!strcmp(aAction, "extpanid"))

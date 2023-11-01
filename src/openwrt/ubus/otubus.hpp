@@ -295,6 +295,42 @@ public:
                                   struct blob_attr *        aMsg);
 
     /**
+     * This method handle ubus get passphrase function request.
+     *
+     * @param[in] aContext  A pointer to the ubus context.
+     * @param[in] aObj      A pointer to the ubus object.
+     * @param[in] aRequest  A pointer to the ubus request.
+     * @param[in] aMethod   A pointer to the ubus method.
+     * @param[in] aMsg      A pointer to the ubus message.
+     *
+     * @retval 0  Successfully handler the request.
+     *
+     */
+    static int UbusPassphraseHandler(struct ubus_context *     aContext,
+                               struct ubus_object *      aObj,
+                               struct ubus_request_data *aRequest,
+                               const char *              aMethod,
+                               struct blob_attr *        aMsg);
+
+    /**
+     * This method handle ubus set passphrase function request.
+     *
+     * @param[in] aContext  A pointer to the ubus context.
+     * @param[in] aObj      A pointer to the ubus object.
+     * @param[in] aRequest  A pointer to the ubus request.
+     * @param[in] aMethod   A pointer to the ubus method.
+     * @param[in] aMsg      A pointer to the ubus message.
+     *
+     * @retval 0  Successfully handler the request.
+     *
+     */
+    static int UbusSetPassphraseHandler(struct ubus_context *     aContext,
+                                  struct ubus_object *      aObj,
+                                  struct ubus_request_data *aRequest,
+                                  const char *              aMethod,
+                                  struct blob_attr *        aMsg);
+
+    /**
      * This method handle ubus get networkkey function request.
      *
      * @param[in] aContext  A pointer to the ubus context.
@@ -775,6 +811,7 @@ private:
     struct blob_buf            mBuf;
     struct blob_buf            mNetworkdataBuf;
     Ncp::ControllerOpenThread *mController;
+    char *                     mCommissionerPassphrase;
     std::mutex *               mNcpThreadMutex;
     time_t                     mSecond;
     enum
