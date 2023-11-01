@@ -1412,7 +1412,8 @@ otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
     threadnetwork::TelemetryData telemetryData;
     auto                         threadHelper = mNcp->GetThreadHelper();
 
-    if (threadHelper->RetrieveTelemetryData(mPublisher, telemetryData) != OT_ERROR_NONE) {
+    if (threadHelper->RetrieveTelemetryData(mPublisher, telemetryData) != OT_ERROR_NONE)
+    {
         otbrLogWarning("Some metrics were not populated in RetrieveTelemetryData");
     }
 
