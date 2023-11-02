@@ -131,7 +131,7 @@ enum
     EXTPANID,
     PANID,
     CHANNEL,
-    PSKC,
+    PASSPHRASE,
     MGMTSET_MAX,
 };
 
@@ -194,7 +194,7 @@ static const struct blobmsg_policy mgmtsetPolicy[MGMTSET_MAX] = {
     [EXTPANID]    = {.name = "extpanid", .type = BLOBMSG_TYPE_STRING},
     [PANID]       = {.name = "panid", .type = BLOBMSG_TYPE_STRING},
     [CHANNEL]     = {.name = "channel", .type = BLOBMSG_TYPE_STRING},
-    [PSKC]        = {.name = "pskc", .type = BLOBMSG_TYPE_STRING},
+    [PASSPHRASE]  = {.name = "passphrase", .type = BLOBMSG_TYPE_STRING},
 };
 
 static const struct ubus_method otbrMethods[] = {
@@ -954,13 +954,29 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
         SuccessOrExit(error = ParseLong(blobmsg_get_string(tb[CHANNEL]), value));
         dataset.mChannel = static_cast<uint16_t>(value);
     }
-    if (tb[PSKC] != nullptr)
+    if (tb[PASSPHRASE] != nullptr)
     {
+        char* passphrase = blobmsg_get_string(tb[PASSPHRASE]);
+        size_t passphrase_len = strlen(passphrase) + 1;
+        
+        if (mCommissionerPassphrase)
+            free(mCommissionerPassphrase);
+
+        mCommissionerPassphrase = (char*)malloc(passphrase_len);
+        memcpy(mCommissionerPassphrase, passphrase, passphrase_len);
+        otPlatSettingsSet(mController->GetInstance(), kPasscodeKey,
+            (uint8_t*) mCommissionerPassphrase, strlen(mCommissionerPassphrase)+1);
+        
+        otbr::Psk::Pskc psk;
+        uint8_t ext_pan_id[OT_EXT_PAN_ID_SIZE];
+        
+        memcpy(ext_pan_id, otThreadGetExtendedPanId(mController->GetInstance())->m8, OT_EXT_PAN_ID_SIZE);
+
+        const uint8_t* pskc_str = psk.ComputePskc(ext_pan_id, otThreadGetNetworkName(mController->GetInstance()),
+            mCommissionerPassphrase);
+        memcpy(dataset.mPskc.m8, pskc_str, sizeof(dataset.mPskc.m8));
+
         dataset.mComponents.mIsPskcPresent = true;
-        VerifyOrExit((length = Hex2Bin(blobmsg_get_string(tb[PSKC]), dataset.mPskc.m8, sizeof(dataset.mPskc.m8))) ==
-                         OT_PSKC_MAX_SIZE,
-                     error = OT_ERROR_PARSE);
-        length = 0;
     }
     dataset.mActiveTimestamp++;
     if (otCommissionerGetState(mController->GetInstance()) == OT_COMMISSIONER_STATE_DISABLED)

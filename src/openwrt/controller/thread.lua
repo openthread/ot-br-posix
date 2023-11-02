@@ -120,8 +120,7 @@ function thread_handler_setting()
 			-- conn:call("otbr", "macfiltersetstate", { state = macfilter })
 			result = conn:call("otbr", "threadstart", {})
 		else
-			-- TODO ALEX: replace pskc argument with passphrase instead in the mgmtset function
-			result = conn:call("otbr", "mgmtset", { networkkey = networkkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), pskc = passphrase })
+			result = conn:call("otbr", "mgmtset", { networkkey = networkkey, networkname = networkname, extpanid = extpanid, panid = panid, channel = tostring(channel), passphrase = passphrase })
 			-- conn:call("otbr", "macfiltersetstate", { state = macfilter })
 		end
 		vError = result.Error
