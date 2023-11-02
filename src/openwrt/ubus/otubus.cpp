@@ -42,6 +42,7 @@
 #include <openthread/commissioner.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
+#include <openthread/platform/settings.h>
 
 #include "common/logging.hpp"
 #include "ncp/ncp_openthread.hpp"
@@ -59,6 +60,8 @@ static int         sBufNum;
 const static int PANID_LENGTH      = 10;
 const static int XPANID_LENGTH     = 64;
 const static int NETWORKKEY_LENGTH = 64;
+const static uint16_t kPasscodeKey = 0xCA60;
+
 
 UbusServer::UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMutex)
     : mIfFinishScan(false)
@@ -71,12 +74,28 @@ UbusServer::UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMute
 {
     memset(&mNetworkdataBuf, 0, sizeof(mNetworkdataBuf));
     memset(&mBuf, 0, sizeof(mBuf));
-
-    char* init_value = "PleaseChangeMe";
-    size_t init_len = strlen(init_value) + 1;
     
-    mCommissionerPassphrase = (char*) malloc(init_len);
-    memcpy(mCommissionerPassphrase, init_value, init_len);
+    // check if there is a passcode set already
+    uint16_t passcode_len;
+    if (otPlatSettingsGet(mController->GetInstance(), kPasscodeKey, 0, nullptr, &passcode_len) == OT_ERROR_NONE)
+    {
+        mCommissionerPassphrase = (char*) malloc(passcode_len);
+        otPlatSettingsGet(mController->GetInstance(), kPasscodeKey, 0, (uint8_t*) mCommissionerPassphrase, &passcode_len);
+    }
+    else
+    {
+        const char* init_value = "PleaseChangeMe_";
+        size_t init_len = strlen(init_value) + 5;
+        otExtAddress  eui64;
+        otLinkGetFactoryAssignedIeeeEui64(mController->GetInstance(), &eui64);
+        
+        mCommissionerPassphrase = (char*) malloc(init_len);
+        memcpy(mCommissionerPassphrase, init_value, init_len);
+        OutputBytes(eui64.m8, 2, mCommissionerPassphrase + strlen (init_value));
+
+        otPlatSettingsSet(mController->GetInstance(), kPasscodeKey, 
+            (uint8_t*) mCommissionerPassphrase, strlen(mCommissionerPassphrase)+1);
+    }
 
     blob_buf_init(&mBuf, 0);
     blob_buf_init(&mNetworkdataBuf, 0);
@@ -1542,6 +1561,7 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
         {
             free(mCommissionerPassphrase);
             mCommissionerPassphrase = nullptr;
+            otPlatSettingsDelete(mController->GetInstance(), kPasscodeKey, 0);
         }
     }
     else if (!strcmp(aAction, "passphrase"))
@@ -1560,6 +1580,8 @@ int UbusServer::UbusSetInformation(struct ubus_context *     aContext,
 
             mCommissionerPassphrase = (char*)malloc(passphrase_len);
             memcpy(mCommissionerPassphrase, passphrase, passphrase_len);
+            otPlatSettingsSet(mController->GetInstance(), kPasscodeKey, 
+                (uint8_t*) mCommissionerPassphrase, strlen(mCommissionerPassphrase)+1);
             
             otbr::Psk::Pskc psk;
             otPskc pskc;
