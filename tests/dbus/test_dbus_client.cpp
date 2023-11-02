@@ -288,6 +288,9 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
 #endif
     TEST_ASSERT(telemetryData.wpan_rcp().rcp_interface_statistics().transferred_frames_count() > 0);
     TEST_ASSERT(telemetryData.coex_metrics().count_tx_request() > 0);
+#if OTBR_ENABLE_LINK_METRICS_TELEMETRY
+    TEST_ASSERT(telemetryData.low_power_metrics().link_metrics_entries_size() >= 0);
+#endif
 }
 #endif
 
