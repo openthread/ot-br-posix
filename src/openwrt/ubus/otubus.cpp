@@ -968,11 +968,8 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
             (uint8_t*) mCommissionerPassphrase, strlen(mCommissionerPassphrase)+1);
         
         otbr::Psk::Pskc psk;
-        uint8_t ext_pan_id[OT_EXT_PAN_ID_SIZE];
-        
-        memcpy(ext_pan_id, otThreadGetExtendedPanId(mController->GetInstance())->m8, OT_EXT_PAN_ID_SIZE);
 
-        const uint8_t* pskc_str = psk.ComputePskc(ext_pan_id, otThreadGetNetworkName(mController->GetInstance()),
+        const uint8_t* pskc_str = psk.ComputePskc(dataset.mExtendedPanId.m8, dataset.mNetworkName.m8,
             mCommissionerPassphrase);
         memcpy(dataset.mPskc.m8, pskc_str, sizeof(dataset.mPskc.m8));
 
