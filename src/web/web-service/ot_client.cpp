@@ -158,7 +158,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     if (static_cast<size_t>(ret) >= sizeof(mBuffer) - 2)
     {
         otbrLogErr("Command exceeds maximum limit: %d", kBufferSize);
-        goto exit;
+        ExitNow();
     }
 
     mBuffer[0]       = '\n';
