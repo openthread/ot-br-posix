@@ -153,7 +153,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     if (ret < 0)
     {
         otbrLogErr("Failed to generate command: %s", strerror(errno));
-        goto exit;
+        ExitNow();
     }
     if (static_cast<size_t>(ret) >= sizeof(mBuffer) - 2)
     {
