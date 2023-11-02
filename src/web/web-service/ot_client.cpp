@@ -171,7 +171,7 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     {
         mBuffer[ret] = '\0';
         otbrLogErr("Failed to send command: %s", mBuffer);
-        goto exit;
+        ExitNow();
     }
 
     for (int i = 0; i < mTimeout; ++i)
