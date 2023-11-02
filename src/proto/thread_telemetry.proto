@@ -478,6 +478,15 @@ message TelemetryData {
     optional uint32 rx_average_request_to_grant_time_us = 15;
   }
 
+  message LinkMetricsEntry {
+    optional int32 link_margin = 1;
+    optional int32 rssi = 2;
+  }
+
+  message LowPowerMetrics {
+    repeated LinkMetricsEntry link_metrics_entries = 1;
+  }
+
   optional WpanStats wpan_stats = 1;
   optional WpanTopoFull wpan_topo_full = 2;
   repeated TopoEntry topo_entries = 3;
@@ -486,4 +495,5 @@ message TelemetryData {
   // Deprecate CoexMetrics with int64 as its fields types to save storage.
   reserved 6;
   optional CoexMetrics coex_metrics = 7;
+  optional LowPowerMetrics low_power_metrics = 8;
 }
