@@ -965,15 +965,18 @@ int UbusServer::UbusMgmtset(struct ubus_context *     aContext,
         mCommissionerPassphrase = (char*)malloc(passphrase_len);
         memcpy(mCommissionerPassphrase, passphrase, passphrase_len);
         otPlatSettingsSet(mController->GetInstance(), kPasscodeKey,
-            (uint8_t*) mCommissionerPassphrase, strlen(mCommissionerPassphrase)+1);
+            (uint8_t*) mCommissionerPassphrase, passphrase_len);
         
         otbr::Psk::Pskc psk;
 
         const uint8_t* pskc_str = psk.ComputePskc(dataset.mExtendedPanId.m8, dataset.mNetworkName.m8,
             mCommissionerPassphrase);
-        memcpy(dataset.mPskc.m8, pskc_str, sizeof(dataset.mPskc.m8));
-
         dataset.mComponents.mIsPskcPresent = true;
+        memcpy(dataset.mPskc.m8, pskc_str, sizeof(dataset.mPskc.m8));
+    }
+    else
+    {
+        otbrLogInfo("PASSPHRASE IS NULL!!");
     }
     dataset.mActiveTimestamp++;
     if (otCommissionerGetState(mController->GetInstance()) == OT_COMMISSIONER_STATE_DISABLED)
