@@ -135,6 +135,7 @@ do_build()
         "-DOTBR_WEB=ON"
         "-DOTBR_UNSECURE_JOIN=ON"
         "-DOTBR_TREL=ON"
+        "-DOTBR_LINK_METRICS_TELEMETRY=ON"
         ${otbr_options[@]+"${otbr_options[@]}"}
     )
 

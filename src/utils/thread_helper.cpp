@@ -50,6 +50,9 @@
 #include <openthread/nat64.h>
 #include "utils/sha256.hpp"
 #endif
+#if OTBR_ENABLE_LINK_METRICS_TELEMETRY
+#include <openthread/link_metrics.h>
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #include <openthread/srp_server.h>
 #endif
@@ -890,7 +893,8 @@ void ThreadHelper::DetachGracefullyCallback(void)
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
-    otError error = OT_ERROR_NONE;
+    otError                     error = OT_ERROR_NONE;
+    std::vector<otNeighborInfo> neighborTable;
 
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
@@ -987,9 +991,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             }
         }
 
-        otNeighborInfoIterator      iter = OT_NEIGHBOR_INFO_ITERATOR_INIT;
-        otNeighborInfo              neighborInfo;
-        std::vector<otNeighborInfo> neighborTable;
+        otNeighborInfoIterator iter = OT_NEIGHBOR_INFO_ITERATOR_INIT;
+        otNeighborInfo         neighborInfo;
 
         while (otThreadGetNextNeighborInfo(mInstance, &iter, &neighborInfo) == OT_ERROR_NONE)
         {
@@ -1429,6 +1432,28 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
         // End of CoexMetrics section.
     }
+
+#if OTBR_ENABLE_LINK_METRICS_TELEMETRY
+    {
+        auto lowPowerMetrics = telemetryData.mutable_low_power_metrics();
+        // Begin of Link Metrics section.
+        for (const otNeighborInfo &neighborInfo : neighborTable)
+        {
+            otError             query_error;
+            otLinkMetricsValues values;
+
+            query_error = otLinkMetricsManagerGetMetricsValueByExtAddr(mInstance, &neighborInfo.mExtAddress, &values);
+            // Some neighbors don't support Link Metrics Subject feature. So it's expected that some other errors
+            // are returned.
+            if (query_error == OT_ERROR_NONE)
+            {
+                auto linkMetricsStats = lowPowerMetrics->add_link_metrics_entries();
+                linkMetricsStats->set_link_margin(values.mLinkMarginValue);
+                linkMetricsStats->set_rssi(values.mRssiValue);
+            }
+        }
+    }
+#endif // OTBR_ENABLE_LINK_METRICS_TELEMETRY
 
     return error;
 }
