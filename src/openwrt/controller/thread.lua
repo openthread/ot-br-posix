@@ -253,6 +253,8 @@ function thread_state()
 		result.panid = threadget("panid").PanId
 		result.channel = threadget("channel").Channel
 		result.networkname = threadget("networkname").NetworkName
+		result.networkkey = threadget("networkkey").Networkkey
+		result.passphrase = threadget("passphrase").passphrase
 	end
 	luci.http.write_json(result)
 end

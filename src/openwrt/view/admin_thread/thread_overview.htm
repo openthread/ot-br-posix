@@ -97,7 +97,9 @@
 							'<strong><%:Network Name: %></strong>' + st.networkname + '<%: | %>' +
 							'<strong><%:State: %></strong>' + st.state + '<br />' +
 							'<strong><%:PAN ID: %></strong>' + st.panid + '<%:   |   %>' +
-							'<strong><%:Channel: %></strong>' + st.channel + '<br />' ;
+							'<strong><%:Channel: %></strong>' + st.channel + '<br />' +
+							'<strong><%:Network Key: %></strong>' + st.networkkey + '<br />' +
+							'<strong><%:Commissioner Passphrase: %></strong>' + st.passphrase + '<br />' ;
 						action.innerHTML =
 							'<form class="inline" action="<%=url('admin/network/thread_stop')%>" method="post">' +
 								'<input type="hidden" name="token" value="<%=token%>" />' +
