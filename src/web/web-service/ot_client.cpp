@@ -147,31 +147,31 @@ char *OpenThreadClient::Execute(const char *aFormat, ...)
     DiscardRead();
 
     va_start(args, aFormat);
-    ret = vsnprintf(&mBuffer[1], sizeof(mBuffer) - 1, aFormat, args);
+    ret = vsnprintf(&mBuffer[1], sizeof(mBuffer) - 2, aFormat, args);
     va_end(args);
 
     if (ret < 0)
     {
         otbrLogErr("Failed to generate command: %s", strerror(errno));
+        ExitNow();
     }
-
-    mBuffer[0] = '\n';
-    ret++;
-
-    if (ret == sizeof(mBuffer))
+    if (static_cast<size_t>(ret) >= sizeof(mBuffer) - 2)
     {
         otbrLogErr("Command exceeds maximum limit: %d", kBufferSize);
+        ExitNow();
     }
 
-    mBuffer[ret] = '\n';
-    ret++;
+    mBuffer[0]       = '\n';
+    mBuffer[ret + 1] = '\n';
+    ret += 2;
 
     count = write(mSocket, mBuffer, ret);
 
-    if (count < ret)
+    if (count != ret)
     {
         mBuffer[ret] = '\0';
         otbrLogErr("Failed to send command: %s", mBuffer);
+        ExitNow();
     }
 
     for (int i = 0; i < mTimeout; ++i)

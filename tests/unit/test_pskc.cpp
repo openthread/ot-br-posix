@@ -46,3 +46,19 @@ TEST(Pskc, Test123456_0001020304050607_OpenThread)
     pskc = mPSKc.ComputePskc(extpanid, "OpenThread", "123456");
     MEMCMP_EQUAL(expected, pskc, sizeof(expected));
 }
+
+TEST(Pskc, Test_TruncatedNetworkNamePskc_OpenThread)
+{
+    uint8_t        extpanid[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+    const uint8_t *pskc       = nullptr;
+    uint8_t        expected[OT_PSKC_LENGTH];
+
+    // First run with shorter network name (max)
+    pskc = mPSKc.ComputePskc(extpanid, "OpenThread123456", "123456");
+    memcpy(expected, pskc, OT_PSKC_LENGTH);
+
+    // Second run with longer network name that gets truncated
+    pskc = mPSKc.ComputePskc(extpanid, "OpenThread123456NetworkNameThatExceedsBuffer", "123456");
+
+    MEMCMP_EQUAL(expected, pskc, OT_PSKC_LENGTH);
+}
