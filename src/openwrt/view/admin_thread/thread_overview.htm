@@ -46,23 +46,19 @@
 </div>
 
 <br />
-<!--
 <h2><%:Neighbors%></h2>
 <br />
 
-<div class="table" id="neighbors">
-	<div class="tr table-titles">
-		<div class="th col-2 center"><%:Signal%></div>
-		<div class="th col-1 center"><%:Role%></div>
-		<div class="th col-4 center"><%:RLOC16%></div>
-		<div class="th col-2 center"><%:Age%></div>
-		<div class="th col-2 center"><%:Avg RSSI%></div>
-		<div class="th col-2 center"><%:Last RSSI%></div>
-	</div>
-	<div class="tr placeholder">
-		<div class="td"><em><%:Collecting data...%></em></div>
-	</div>
-</div>
+<table class="table" id="neighbors">
+	<tr class="tr table-titles">
+		<th class="th col-2 center"><%:Signal%></div>
+		<th class="th col-1 center"><%:Role%></div>
+		<th class="th col-4 center"><%:RLOC16%></div>
+		<th class="th col-2 center"><%:Age%></div>
+		<th class="th col-2 center"><%:Avg RSSI%></div>
+		<th class="th col-2 center"><%:Last RSSI%></div>
+	</tr>
+</table>
 
 <div class="table" id="parent" style="display:none;">
 	<div class="tr table-titles">
@@ -77,11 +73,11 @@
 		<div class="td"><em><%:Collecting data...%></em></div>
 	</div>
 </div>
--->
 <%+footer%>
 
 <script type="text/javascript" src="/luci-static/resources/handle_error.js"></script>
 <script type="text/javascript">//<![CDATA[
+L.require('ui').then(function(ui_res){
 	handle_error(GetURLParameter('error'));
 
 	XHR.poll(2, '<%=url('admin/network/thread_state')%>', null,
@@ -196,9 +192,10 @@
 							'<div class="col-2 center"> %s </div>'.format(bss.LastRssi),
 						]);
 					});
-					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
+					var rows_elem = rows.map((row) => row.map(toElem));
+					cbi_update_table(tb, rows_elem, toElem('<center><em><%:No information available%></em></center>'));
 					tb.style.display = "table";
 				}
 			}
 		});
-//]]></script>
+});//]]></script>
