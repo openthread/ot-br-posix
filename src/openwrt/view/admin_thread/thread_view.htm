@@ -64,41 +64,42 @@
 	</div>
 	<br />
 	<!-- neighbor list -->
-	<!--
-	<div class="table" id="neighbors" style="width:90%;margin-left:5%;">
-		<div class="tr table-titles" style="background-color:#eee;">
-			<div class="th col-2 center"><%:RLOC16%></div>
-			<div class="th col-2 center"><%:Role%></div>
-			<div class="th col-2 center"><%:Age%></div>
-			<div class="th col-2 center"><%:Avg RSSI%></div>
-			<div class="th col-2 center"><%:Last RSSI%></div>
-			<div class="th col-2 center"><%:Mode%></div>
-			<div class="th col-4 center"><%:Extended MAC%></div>
-			<div class="th cbi-section-actions">&#160;</div>
-		</div>
-		<div class="tr placeholder">
-			<div class="td"><em><%:Collecting data...%></em></div>
-		</div>
-	</div>
-	-->
+	<table class="table" id="neighbors" style="width:90%;margin-left:5%;">
+		<tr class="tr table-titles" style="background-color:#eee;">
+			<th class="th col-2 center"><%:RLOC16%></th>
+			<th class="th col-2 center"><%:Role%></th>
+			<th class="th col-2 center"><%:Age%></th>
+			<th class="th col-2 center"><%:Avg RSSI%></th>
+			<th class="th col-2 center"><%:Last RSSI%></th>
+			<th class="th col-2 center"><%:Mode%></th>
+			<th class="th col-4 center"><%:Extended MAC%></th>
+			<th class="th cbi-section-actions">&#160;</th>
+		</tr>
+		<!--
+		<tr class="tr placeholder">
+			<td class="td"><em><%:Collecting data...%></em></td>
+		</tr>
+		-->
+		
+	</table>
 	<!--/neighbor list-->
 
 	<!-- parent list -->
-	<!--
-	<div class="table" id="parent" style="width:90%;margin-left:5%;display:none;">
-		<div class="tr table-titles" style="background-color:#eee;">
-			<div class="th col-2 center"><%:RLOC16%></div>
-			<div class="th col-2 center"><%:Role%></div>
-			<div class="th col-2 center"><%:Age%></div>
-			<div class="th col-2 center"><%:LinkQualityIn%></div>
-			<div class="th col-4 center"><%:ExtAddress%></div>
-			<div class="th cbi-section-actions">&#160;</div>
-		</div>
-		<div class="tr placeholder">
-			<div class="td"><em><%:Collecting data...%></em></div>
-		</div>
-	</div>
-	-->
+	<table class="table" id="parent" style="width:90%;margin-left:5%;display:none;">
+		<tr class="tr table-titles" style="background-color:#eee;">
+			<th class="th col-2 center"><%:RLOC16%></th>
+			<th class="th col-2 center"><%:Role%></th>
+			<th class="th col-2 center"><%:Age%></th>
+			<th class="th col-2 center"><%:LinkQualityIn%></th>
+			<th class="th col-4 center"><%:ExtAddress%></th>
+			<th class="th cbi-section-actions">&#160;</th>
+		</tr>
+		<!--
+		<tr class="tr placeholder">
+			<td class="td"><em><%:Collecting data...%></em></td>
+		</tr>
+		-->
+	</table>
 	<!--/parent list-->
 </div>
 
@@ -338,7 +339,8 @@
 						'</div>'
 						]);
 					}
-					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
+					var rows_elem = rows.map((row) => row.map(toElem));
+					cbi_update_table(tb, rows_elem, '<center><em><%:No information available%></em></center>');
 					tb.style.display = "table";
 				}
 			}
@@ -381,7 +383,8 @@
 						'</div>'
 						]);
 					}
-					cbi_update_table(tb, rows, '<center><em><%:No information available%></em></center>');
+					var rows_elem = rows.map((row) => row.map(toElem));
+					cbi_update_table(tb, rows_elem, '<center><em><%:No information available%></em></center>');
 					tb.style.display = "table";
 				}
 			}
