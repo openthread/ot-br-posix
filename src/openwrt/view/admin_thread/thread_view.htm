@@ -206,12 +206,27 @@
 		text.attr("x",function(d){ return d.x; })
 				.attr("y",function(d){ return d.y; });
 	}
+	
+	// neighbor list is visible by default, so we start this poll
+	var neighbor_request_poll = L.Request.poll.add(2, '<%=url('admin/network/thread_neighbors')%>', null, thread_neighbors_handler);
+	var graph_request_poll = null;
+
+	function cancel_all_polls() {
+		if (neighbor_request_poll !== null)
+			L.Request.poll.remove(neighbor_request_poll);
+
+		if (graph_request_poll !== null)
+			L.Request.poll.remove(graph_request_poll);
+	}
 
 	function showlist() {
 		document.getElementById('listdiv').style.display = "block";
 		document.getElementById('graphdiv').style.display = "none";
 		document.getElementById('listtab').className = "cbi-tab";
 		document.getElementById('graphtab').className = "cbi-tab-disabled";
+
+		cancel_all_polls();
+		neighbor_request_poll = L.Request.poll.add(2, '<%=url('admin/network/thread_neighbors')%>', null, thread_neighbors_handler);
 	}
 
 	function showgraph() {
@@ -219,6 +234,10 @@
 		document.getElementById('graphdiv').style.display = "block";
 		document.getElementById('listtab').className = "cbi-tab-disabled";
 		document.getElementById('graphtab').className = "cbi-tab";
+
+		cancel_all_polls();
+		graph_request_poll = L.Request.poll.add(5, '<%=url('admin/network/thread_graph')%>', null, thread_graph_handler);
+
 	}
 
 	function getRole(rloc, leader) {
@@ -227,68 +246,68 @@
 		else return 'ftd';
 	}
 
-	XHR.poll(5, '<%=url('admin/network/thread_graph')%>', null,
-		function(x, st)
+	//XHR.poll(5, '<%=url('admin/network/thread_graph')%>', null,
+	function thread_graph_handler(x, st, d)
+	{
+		if(st)
 		{
-			if(st)
-			{
-				nodes = [];
-				links = [];
+			nodes = [];
+			links = [];
 
-				var leaderRloc = st.leader << 10;
-				var localrloc = st.rloc16;
-				// get local informatioin
-				st.connect.forEach(function(bss) {
-					var localIndex = getNodesIndex(bss.rloc);
-					if(localIndex == -1)
-					{
-						nodes.push( {
-							rloc: bss.rloc,
-							role: getRole(bss.rloc, leaderRloc)
-						} );
-						localIndex = getNodesIndex(bss.rloc);
-					}
-					if(bss.hasOwnProperty('childdata')) {
-						bss.childdata.forEach(function(child) {
-							if(getNodesIndex(child.rloc) == -1)
-							{
-								nodes.push( {
-									rloc: child.rloc,
-									role: (((child.mode & 0x2) >> 1 == 1) ? 'ftd' : 'mtd')
-								} );
-							}
-							links.push( {
-								source: localIndex,
-								target: getNodesIndex(child.rloc)
-							} );
-						});
-					}
-					bss.routedata.forEach(function(router) {
-						if(getNodesIndex(router.rloc) == -1)
+			var leaderRloc = st.leader << 10;
+			var localrloc = st.rloc16;
+			// get local informatioin
+			st.connect.forEach(function(bss) {
+				var localIndex = getNodesIndex(bss.rloc);
+				if(localIndex == -1)
+				{
+					nodes.push( {
+						rloc: bss.rloc,
+						role: getRole(bss.rloc, leaderRloc)
+					} );
+					localIndex = getNodesIndex(bss.rloc);
+				}
+				if(bss.hasOwnProperty('childdata')) {
+					bss.childdata.forEach(function(child) {
+						if(getNodesIndex(child.rloc) == -1)
 						{
 							nodes.push( {
-								rloc: router.rloc,
-								role: getRole(router.rloc, leaderRloc)
+								rloc: child.rloc,
+								role: (((child.mode & 0x2) >> 1 == 1) ? 'ftd' : 'mtd')
 							} );
 						}
 						links.push( {
 							source: localIndex,
-							target: getNodesIndex(router.rloc)
+							target: getNodesIndex(child.rloc)
 						} );
 					});
-				});
-
-				var i;
-				for(i = 0;i < st.joinernum;i++) {
-					nodes.push( {
-						rloc: "new joiner" + i.toString(),
-						role: 'joiner'
-					} );
 				}
+				bss.routedata.forEach(function(router) {
+					if(getNodesIndex(router.rloc) == -1)
+					{
+						nodes.push( {
+							rloc: router.rloc,
+							role: getRole(router.rloc, leaderRloc)
+						} );
+					}
+					links.push( {
+						source: localIndex,
+						target: getNodesIndex(router.rloc)
+					} );
+				});
+			});
 
-				update_graph(nodes, links, localrloc);
+			var i;
+			for(i = 0;i < st.joinernum;i++) {
+				nodes.push( {
+					rloc: "new joiner" + i.toString(),
+					role: 'joiner'
+				} );
 			}
-		});
+
+			update_graph(nodes, links, localrloc);
+		}
+	}
 
 	function getNodesIndex(targetRloc)
 	{
@@ -301,94 +320,94 @@
 		return Number(-1);
 	}
 
-	XHR.poll(2, '<%=url('admin/network/thread_neighbors')%>', null,
-		function(x, st)
+	//XHR.poll(2, '<%=url('admin/network/thread_neighbors')%>', null,
+	function thread_neighbors_handler(x, st, d)
+	{
+		if (st && st.state == 'child')
 		{
-			if (st && st.state == 'child')
+			var tb = document.getElementById('parent');
+			document.getElementById('neighbors').style.display = "none";
+			if(tb)
 			{
-				var tb = document.getElementById('parent');
-				document.getElementById('neighbors').style.display = "none";
-				if(tb)
-				{
-					var rows = [];
+				var rows = [];
 
-					st.neighbor.forEach(function(bss) {
-						rows.push([
-						'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
-						'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
-						'<div class="col-2 center"> %s </div>'.format(bss.Age),
-						'<div class="col-2 center"> %s </div>'.format(bss.LinkQualityIn),
-						'<div class="col-4 center"> %s </div>'.format(bss.ExtAddress),
-						]);
-					});
-					var joiner;
-					for (joiner = 0; joiner < st.joinernum; joiner++) {
-						rows.push([
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-2 center"> New Joiner </div>',
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
-						'<div class="th cbi-section-actions">' +
-						'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
-							'<input type="hidden" name="token" value="<%=token%>" />' +
-							'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
-							'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
-							'<input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" />' +
-						'</form>' +
-						'</div>'
-						]);
-					}
-					var rows_elem = rows.map((row) => row.map(toElem));
-					cbi_update_table(tb, rows_elem, '<center><em><%:No information available%></em></center>');
-					tb.style.display = "table";
+				st.neighbor.forEach(function(bss) {
+					rows.push([
+					'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
+					'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
+					'<div class="col-2 center"> %s </div>'.format(bss.Age),
+					'<div class="col-2 center"> %s </div>'.format(bss.LinkQualityIn),
+					'<div class="col-4 center"> %s </div>'.format(bss.ExtAddress),
+					]);
+				});
+				var joiner;
+				for (joiner = 0; joiner < st.joinernum; joiner++) {
+					rows.push([
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-2 center"> New Joiner </div>',
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
+					'<div class="th cbi-section-actions">' +
+					'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
+						'<input type="hidden" name="token" value="<%=token%>" />' +
+						'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
+						'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
+						'<input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" />' +
+					'</form>' +
+					'</div>'
+					]);
 				}
+				var rows_elem = rows.map((row) => row.map(toElem));
+				cbi_update_table(tb, rows_elem, '<center><em><%:No information available%></em></center>');
+				tb.style.display = "table";
 			}
-			else if(st)
+		}
+		else if(st)
+		{
+			var tb = document.getElementById('neighbors');
+			document.getElementById('parent').style.display = "none";
+			if(tb)
 			{
-				var tb = document.getElementById('neighbors');
-				document.getElementById('parent').style.display = "none";
-				if(tb)
-				{
-					var rows = [];
+				var rows = [];
 
-					st.neighbor.forEach(function(bss) {
-						rows.push([
-						'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
-						'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
-						'<div class="col-2 center"> %s </div>'.format(bss.Age),
-						'<div class="col-2 center"> %s </div>'.format(bss.AvgRssi),
-						'<div class="col-2 center"> %s </div>'.format(bss.LastRssi),
-						'<div class="col-2 center"> %s </div>'.format(bss.Mode),
-						'<div class="col-4 center"> %s </div>'.format(bss.ExtAddress)
-						]);
-					});
-					var joiner;
-					for (joiner = 0; joiner < st.joinernum; joiner++) {
-						rows.push([
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-2 center"> New Joiner </div>',
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-2 center"> Pending </div>',
-						'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
-						'<div class="th cbi-section-actions">' +
-						'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
-							'<input type="hidden" name="token" value="<%=token%>" />' +
-							'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
-							'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
-							'<input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" />' +
-						'</form>' +
-						'</div>'
-						]);
-					}
-					var rows_elem = rows.map((row) => row.map(toElem));
-					cbi_update_table(tb, rows_elem, '<center><em><%:No information available%></em></center>');
-					tb.style.display = "table";
+				st.neighbor.forEach(function(bss) {
+					rows.push([
+					'<div class="col-2 center"> %s </div>'.format(bss.Rloc16),
+					'<div class="col-2 center"> %s </div>'.format(transRole(bss.Role)),
+					'<div class="col-2 center"> %s </div>'.format(bss.Age),
+					'<div class="col-2 center"> %s </div>'.format(bss.AvgRssi),
+					'<div class="col-2 center"> %s </div>'.format(bss.LastRssi),
+					'<div class="col-2 center"> %s </div>'.format(bss.Mode),
+					'<div class="col-4 center"> %s </div>'.format(bss.ExtAddress)
+					]);
+				});
+				var joiner;
+				for (joiner = 0; joiner < st.joinernum; joiner++) {
+					rows.push([
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-2 center"> New Joiner </div>',
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-2 center"> Pending </div>',
+					'<div class="col-4 center"> %s </div>'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64),
+					'<div class="th cbi-section-actions">' +
+					'<form action="<%=url('admin/network/joiner_remove')%>" method="post">' +
+						'<input type="hidden" name="token" value="<%=token%>" />' +
+						'<input type="hidden" name="isAny" value="%d" />'.format(st.joinerlist[joiner].isAny) +
+						'<input type="hidden" name="eui64" value="%s" />'.format(st.joinerlist[joiner].isAny ? "*" : st.joinerlist[joiner].eui64) +
+						'<input class="cbi-button cbi-button-reset" type="submit" value="<%:Remove%>" />' +
+					'</form>' +
+					'</div>'
+					]);
 				}
+				var rows_elem = rows.map((row) => row.map(toElem));
+				cbi_update_table(tb, rows_elem, '<center><em><%:No information available%></em></center>');
+				tb.style.display = "table";
 			}
-		});
+		}
+	};
 
 	function transRole(info) {
 		if(info == "C") return 'Child';
