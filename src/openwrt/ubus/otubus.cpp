@@ -56,6 +56,7 @@ static UbusServer *sUbusServerInstance = nullptr;
 static int         sUbusEfd            = -1;
 static void *      sJsonUri            = nullptr;
 static int         sBufNum;
+static int         sIpBufNum;
 
 const static int PANID_LENGTH      = 10;
 const static int XPANID_LENGTH     = 64;
@@ -74,6 +75,7 @@ UbusServer::UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMute
 {
     memset(&mNetworkdataBuf, 0, sizeof(mNetworkdataBuf));
     memset(&mBuf, 0, sizeof(mBuf));
+    memset(&mIpDataBuf, 0, sizeof(mIpDataBuf));
     
     // check if there is a passcode set already
     uint16_t passcode_len;
@@ -99,6 +101,7 @@ UbusServer::UbusServer(Ncp::ControllerOpenThread *aController, std::mutex *aMute
 
     blob_buf_init(&mBuf, 0);
     blob_buf_init(&mNetworkdataBuf, 0);
+    blob_buf_init(&mIpDataBuf, 0);
 }
 
 UbusServer &UbusServer::GetInstance(void)
@@ -227,6 +230,7 @@ static const struct ubus_method otbrMethods[] = {
     {"leave", &UbusServer::UbusLeaveHandler, 0, 0, nullptr, 0},
     {"leaderdata", &UbusServer::UbusLeaderdataHandler, 0, 0, nullptr, 0},
     {"networkdata", &UbusServer::UbusNetworkdataHandler, 0, 0, nullptr, 0},
+    {"ipdata", &UbusServer::UbusIpDataHandler, 0, 0, nullptr, 0},
     {"commissionerstart", &UbusServer::UbusCommissionerStartHandler, 0, 0, nullptr, 0},
     {"joinernum", &UbusServer::UbusJoinerNumHandler, 0, 0, nullptr, 0},
     {"joinerremove", &UbusServer::UbusJoinerRemoveHandler, 0, 0, nullptr, 0},
@@ -617,6 +621,15 @@ int UbusServer::UbusNetworkdataHandler(struct ubus_context *     aContext,
                                        struct blob_attr *        aMsg)
 {
     return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "networkdata");
+}
+
+int UbusServer::UbusIpDataHandler(struct ubus_context *     aContext,
+                                       struct ubus_object *      aObj,
+                                       struct ubus_request_data *aRequest,
+                                       const char *              aMethod,
+                                       struct blob_attr *        aMsg)
+{
+    return GetInstance().UbusGetInformation(aContext, aObj, aRequest, aMethod, aMsg, "ipdata");
 }
 
 int UbusServer::UbusCommissionerStartHandler(struct ubus_context *     aContext,
@@ -1276,6 +1289,34 @@ int UbusServer::UbusGetInformation(struct ubus_context *     aContext,
         }
         goto exit;
     }
+    else if (!strcmp(aAction, "ipdata"))
+    {
+        ubus_send_reply(aContext, aRequest, mIpDataBuf.head);
+        if (time(nullptr) - mSecond > 10)
+        {
+            struct otIp6Address address;
+            uint8_t             tlvTypes[OT_NETWORK_DIAGNOSTIC_TYPELIST_MAX_ENTRIES];
+            uint8_t             count             = 0;
+            char                multicastAddr[10] = "ff03::1";
+
+            blob_buf_init(&mIpDataBuf, 0);
+
+            SuccessOrExit(error = otIp6AddressFromString(multicastAddr, &address));
+
+            tlvTypes[count++] = static_cast<uint8_t>(OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST );
+
+            sIpBufNum = 0;
+            otThreadSendDiagnosticGet(mController->GetInstance(), &address, tlvTypes, count,
+                                      &UbusServer::HandleDiagnosticIpGetResponse, this);
+            mSecond = time(nullptr);
+        }
+        goto exit;
+    }
+    // TODO: need to copy the structure for the networkdata TLV for the ipdata request.
+    // send diagnostic get of OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST tlv to ff03::1 (all nodes)
+    // collect responses in the diagnostic get response handler just as for the network data
+    // create admin/network/thread_ipdata API that combines responses from the multicast TLV
+    // use basically same code as the networkdata case, but with the IP6_ADDR_LIST TLV instead
     else if (!strcmp(aAction, "joinernum"))
     {
         void *       jsonTable = nullptr;
@@ -1484,6 +1525,73 @@ void UbusServer::HandleDiagnosticGetResponse(otError aError, otMessage *aMessage
     }
 
     blobmsg_close_table(&mNetworkdataBuf, sJsonUri);
+
+exit:
+    if (aError != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to receive diagnostic response: %s", otThreadErrorToString(aError));
+    }
+}
+
+void UbusServer::HandleDiagnosticIpGetResponse(otError            aError,
+                                             otMessage *          aMessage,
+                                             const otMessageInfo *aMessageInfo,
+                                             void *               aContext)
+{
+    static_cast<UbusServer *>(aContext)->HandleDiagnosticIpGetResponse(aError, aMessage, aMessageInfo);
+}
+
+void UbusServer::HandleDiagnosticIpGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo)
+{
+    uint16_t              sockRloc16 = 0;
+    void *                jsonArray  = nullptr;
+    char                  xrloc[10];
+    otNetworkDiagTlv      diagTlv;
+    otNetworkDiagIterator iterator = OT_NETWORK_DIAGNOSTIC_ITERATOR_INIT;
+
+    SuccessOrExit(aError);
+
+    char ipdata[20];
+    sprintf(ipdata, "ipdata%d", sIpBufNum);
+    sJsonUri = blobmsg_open_table(&mIpDataBuf, ipdata);
+    sIpBufNum++;
+
+    if (IsRoutingLocator(&aMessageInfo->mSockAddr))
+    {
+        sockRloc16 = ntohs(aMessageInfo->mPeerAddr.mFields.m16[7]);
+        sprintf(xrloc, "0x%04x", sockRloc16);
+        blobmsg_add_string(&mIpDataBuf, "rloc", xrloc);
+    }
+
+    while (otThreadGetNextDiagnosticTlv(aMessage, &iterator, &diagTlv) == OT_ERROR_NONE)
+    {
+        switch (diagTlv.mType)
+        {
+        case OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST:
+        {
+            uint8_t addr_count = diagTlv.mData.mIp6AddrList.mCount;
+            otIp6Address *addr_list = diagTlv.mData.mIp6AddrList.mList;
+
+            jsonArray = blobmsg_open_array(&mIpDataBuf, "ip");
+
+            for (uint16_t i = 0; i < addr_count; ++i)
+            {
+                char addr_buf[OT_IP6_ADDRESS_STRING_SIZE];
+                otIp6AddressToString(&addr_list[i], addr_buf, sizeof(addr_buf));
+                
+                blobmsg_add_string(&mIpDataBuf, NULL, addr_buf);
+            }
+            blobmsg_close_array(&mIpDataBuf, jsonArray);
+            break;
+        }
+
+        default:
+            // Ignore other network diagnostics data.
+            break;
+        }
+    }
+
+    blobmsg_close_table(&mIpDataBuf, sJsonUri);
 
 exit:
     if (aError != OT_ERROR_NONE)

@@ -511,6 +511,24 @@ public:
                                       struct blob_attr *        aMsg);
 
     /**
+     * This method handle ubus get ipdata function request.
+     *
+     * @param[in] aContext  A pointer to the ubus context.
+     * @param[in] aObj      A pointer to the ubus object.
+     * @param[in] aRequest  A pointer to the ubus request.
+     * @param[in] aMethod   A pointer to the ubus method.
+     * @param[in] aMsg      A pointer to the ubus message.
+     *
+     * @retval 0  Successfully handler the request.
+     *
+     */
+    static int UbusIpDataHandler(struct ubus_context *     aContext,
+                                 struct ubus_object *      aObj,
+                                 struct ubus_request_data *aRequest,
+                                 const char *              aMethod,
+                                 struct blob_attr *        aMsg);
+
+    /**
      * This method handle ubus get parent function request.
      *
      * @param[in] aContext  A pointer to the ubus context.
@@ -804,12 +822,38 @@ public:
      */
     void HandleDiagnosticGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
+
+    /**
+     * This method handle initial ip diagnostic get response.
+     *
+     * @param[in] aError        A error of receiving the diagnostic response.
+     * @param[in] aMessage      A pointer to the message.
+     * @param[in] aMessageInfo  A pointer to the message information.
+     * @param[in] aContext      A pointer to the context.
+     *
+     */
+    static void HandleDiagnosticIpGetResponse(otError              aError,
+                                            otMessage *          aMessage,
+                                            const otMessageInfo *aMessageInfo,
+                                            void *               aContext);
+
+    /**
+     * This method handle IP diagnostic get response.
+     *
+     * @param[in] aError       A error of receiving the diagnostic response.
+     * @param[in] aMessage     A pointer to the message.
+     * @param[in] aMessageInfo A pointer to the message information.
+     *
+     */
+    void HandleDiagnosticIpGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo);
+
 private:
     bool                       mIfFinishScan;
     struct ubus_context *      mContext;
     const char *               mSockPath;
     struct blob_buf            mBuf;
     struct blob_buf            mNetworkdataBuf;
+    struct blob_buf            mIpDataBuf;
     Ncp::ControllerOpenThread *mController;
     char *                     mCommissionerPassphrase;
     std::mutex *               mNcpThreadMutex;
