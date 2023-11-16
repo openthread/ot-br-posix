@@ -53,6 +53,7 @@ static otbrLogLevel sLevel            = OTBR_LOG_INFO;
 static const char   sLevelString[][8] = {
       "[EMERG]", "[ALERT]", "[CRIT]", "[ERR ]", "[WARN]", "[NOTE]", "[INFO]", "[DEBG]",
 };
+static bool sSyslogDisabled = false;
 
 static otbrLogLevel sDefaultLevel = OTBR_LOG_INFO;
 
@@ -77,8 +78,14 @@ void otbrLogSetLevel(otbrLogLevel aLevel)
     sLevel = aLevel;
 }
 
+/** Enable/disable logging with syslog */
+void otbrLogSyslogSetEnabled(bool aEnabled)
+{
+    sSyslogDisabled = !aEnabled;
+}
+
 /** Initialize logging */
-void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStderr)
+void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStderr, bool aSyslogDisable)
 {
     const char *ident;
 
@@ -88,7 +95,12 @@ void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStder
     ident = strrchr(aProgramName, '/');
     ident = (ident != nullptr) ? ident + 1 : aProgramName;
 
-    openlog(ident, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), OTBR_SYSLOG_FACILITY_ID);
+    otbrLogSyslogSetEnabled(!aSyslogDisable);
+
+    if (!sSyslogDisabled)
+    {
+        openlog(ident, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), OTBR_SYSLOG_FACILITY_ID);
+    }
     sLevel        = aLevel;
     sDefaultLevel = sLevel;
 }
@@ -118,7 +130,7 @@ static const char *GetPrefix(const char *aLogTag)
     return prefix;
 }
 
-/** log to the syslog or log file */
+/** log to the syslog or standard out */
 void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 {
     const uint16_t kBufferSize = 1024;
@@ -129,7 +141,14 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 
     if ((aLevel <= sLevel) && (vsnprintf(buffer, sizeof(buffer), aFormat, ap) > 0))
     {
-        syslog(static_cast<int>(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+        if (sSyslogDisabled)
+        {
+            printf("%s%s: %s\n", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+        }
+        else
+        {
+            syslog(static_cast<int>(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+        }
     }
 
     va_end(ap);
@@ -137,7 +156,7 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
     return;
 }
 
-/** log to the syslog or log file */
+/** log to the syslog or standard out */
 void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
 {
     assert(aFormat);
@@ -148,9 +167,18 @@ void otbrLogv(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
     }
 }
 
+/** log to the syslog or standard out */
 void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)
 {
-    vsyslog(static_cast<int>(aLevel), aFormat, aArgList);
+    if (sSyslogDisabled)
+    {
+        vprintf(aFormat, aArgList);
+        printf("\n");
+    }
+    else
+    {
+        vsyslog(static_cast<int>(aLevel), aFormat, aArgList);
+    }
 }
 
 /** Hex dump data to the log */

@@ -130,7 +130,7 @@ Ip6Address         sAddr4;
 
 void SetUp(void)
 {
-    otbrLogInit("test-mdns-subscriber", OTBR_LOG_INFO, true);
+    otbrLogInit("test-mdns-subscriber", OTBR_LOG_INFO, true, false);
     SuccessOrDie(Ip6Address::FromString("2002::1", sAddr1), "");
     SuccessOrDie(Ip6Address::FromString("2002::2", sAddr2), "");
     SuccessOrDie(Ip6Address::FromString("2002::3", sAddr3), "");
