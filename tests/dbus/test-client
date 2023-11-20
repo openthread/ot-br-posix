@@ -182,6 +182,7 @@ expect {
     timeout { error "Failed to find Ready signal\n" }
 }
 EOF
+    timeout 2 bash -c "while pidof ot-rcp; do logger -t otbr-test-dbus-client; sleep 1; done"
 }
 
 main()
