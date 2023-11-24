@@ -10,6 +10,9 @@ function index()
 	page = entry({"admin", "network", "thread_neighbors"}, call("thread_neighbors"), nil)
 	page.leaf = true
 
+	page = entry({"admin", "network", "thread_ipdata"}, call("thread_ip"), nil)
+	page.leaf = true
+
 	page = entry({"admin", "network", "thread_graph"}, call("thread_graph"), nil)
 	page.leaf = true
 
@@ -265,6 +268,12 @@ function thread_graph()
 	luci.http.write_json(networkdata())
 end
 
+function thread_ip()
+	luci.http.prepare_content("application/json")
+	luci.http.write_json(ipdata())
+end
+
+
 function thread_neighbors()
 	luci.http.prepare_content("application/json")
 
@@ -299,6 +308,10 @@ function networkdata()
 	data.joinernum = threadget("joinernum").joinernum
 	data.leader = threadget("leaderdata").leaderdata.LeaderRouterId
 	return data
+end
+
+function ipdata ()
+	return threadget("ipdata")
 end
 
 function joinerlist()

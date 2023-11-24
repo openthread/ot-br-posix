@@ -32,6 +32,7 @@
 <ul class="cbi-tabmenu">
 	<li class="cbi-tab" id="listtab" style="text-align:center;"><a href="javascript:showlist();"><%:List%></a></li>
 	<li class="cbi-tab-disabled" id="graphtab" style="text-align:center;"><a href="javascript:showgraph();"><%:Topology Graph%></a></li>
+	<li class="cbi-tab-disabled" id="iptab" style="text-align:center;"><a href="javascript:showip();"><%:IPv6 Addresses%></a></li>
 </ul>
 
 <!-- list div -->
@@ -63,6 +64,7 @@
 		</div>
 	</div>
 	<br />
+	<h3><%: Neighbors %></h3><br />
 	<!-- neighbor list -->
 	<table class="table" id="neighbors" style="width:90%;margin-left:5%;">
 		<tr class="tr table-titles" style="background-color:#eee;">
@@ -108,6 +110,18 @@
 	<div style="width:20%"><svg id="topologyLegend"></svg></div>
 	<svg width="960" height="500" id="graph"></svg>
 </div>
+
+<!-- ip table div -->
+<div style="width:100%;margin-left:5%;display:none;" id="ipdiv">
+	<table class="table" id="ip_addresses" style="width:90%;margin-left:5%;">
+		<tr class="tr table-titles" style="background-color:#eee;">
+			<th class="th col-2 center"><%:RLOC16%></th>
+			<th class="th col-2 center"><%:IP Addresses%></th>
+		</tr>
+	</table>
+</div>
+
+
 
 <div class="cbi-page-actions right" style="margin-top:10%;">
 	<form class="inline" action="<%=url('admin/network/thread')%>" method="get">
@@ -210,34 +224,57 @@
 	// neighbor list is visible by default, so we start this poll
 	var neighbor_request_poll = L.Request.poll.add(2, '<%=url('admin/network/thread_neighbors')%>', null, thread_neighbors_handler);
 	var graph_request_poll = null;
+	var ip_request_poll = null;
 
 	function cancel_all_polls() {
 		if (neighbor_request_poll !== null)
 			L.Request.poll.remove(neighbor_request_poll);
-
 		if (graph_request_poll !== null)
 			L.Request.poll.remove(graph_request_poll);
+		if (ip_request_poll !== null)
+			L.Request.poll.remove(ip_request_poll);
 	}
 
 	function showlist() {
 		document.getElementById('listdiv').style.display = "block";
-		document.getElementById('graphdiv').style.display = "none";
 		document.getElementById('listtab').className = "cbi-tab";
+
+		document.getElementById('graphdiv').style.display = "none";
 		document.getElementById('graphtab').className = "cbi-tab-disabled";
+
+		document.getElementById('ipdiv').style.display = "none";
+		document.getElementById('iptab').className = "cbi-tab-disabled";
 
 		cancel_all_polls();
 		neighbor_request_poll = L.Request.poll.add(2, '<%=url('admin/network/thread_neighbors')%>', null, thread_neighbors_handler);
 	}
 
 	function showgraph() {
-		document.getElementById('listdiv').style.display = "none";
 		document.getElementById('graphdiv').style.display = "block";
-		document.getElementById('listtab').className = "cbi-tab-disabled";
 		document.getElementById('graphtab').className = "cbi-tab";
+
+		document.getElementById('listdiv').style.display = "none";
+		document.getElementById('listtab').className = "cbi-tab-disabled";
+		document.getElementById('ipdiv').style.display = "none";
+		document.getElementById('iptab').className = "cbi-tab-disabled";
 
 		cancel_all_polls();
 		graph_request_poll = L.Request.poll.add(5, '<%=url('admin/network/thread_graph')%>', null, thread_graph_handler);
 
+	}
+
+	function showip()
+	{
+		document.getElementById('ipdiv').style.display = "block";
+		document.getElementById('iptab').className = "cbi-tab";
+
+		document.getElementById('listdiv').style.display = "none";
+		document.getElementById('listtab').className = "cbi-tab-disabled";
+		document.getElementById('graphdiv').style.display = "none";
+		document.getElementById('graphtab').className = "cbi-tab-disabled";
+
+		cancel_all_polls();
+		ip_request_poll = L.Request.poll.add(5, '<%=url('admin/network/thread_ipdata')%>', null, thread_ip_handler);
 	}
 
 	function getRole(rloc, leader) {
@@ -408,6 +445,23 @@
 			}
 		}
 	};
+
+	function thread_ip_handler(x, st, d)
+	{
+		if (st)
+		{
+			var table = document.getElementById("ip_addresses");
+			rows = [];
+
+			Object.entries(st).forEach(([k,v]) => {
+				var ip_br = v.ip.reduce((acc, cur) => acc.concat(cur, E('br')), []);
+				rows.push([v.rloc, ip_br]);
+			});
+
+			cbi_update_table(table, rows, E('em', _('No information available')));
+		}
+
+	}
 
 	function transRole(info) {
 		if(info == "C") return 'Child';
