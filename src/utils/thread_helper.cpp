@@ -184,6 +184,23 @@ void CopyNat64TrafficCounters(const otNat64Counters &from, threadnetwork::Teleme
 }
 #endif // OTBR_ENABLE_NAT64
 
+#if OTBR_ENABLE_DHCP6_PD
+threadnetwork::TelemetryData_Dhcp6PdState Dhcp6PdStateFromOtDhcp6PdState(otBorderRoutingDhcp6PdState dhcp6PdState)
+{
+    switch (dhcp6PdState)
+    {
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_DISABLED:
+        return threadnetwork::TelemetryData::DHCP6_PD_STATE_DISABLED;
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_STOPPED:
+        return threadnetwork::TelemetryData::DHCP6_PD_STATE_STOPPED;
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_RUNNING:
+        return threadnetwork::TelemetryData::DHCP6_PD_STATE_RUNNING;
+    default:
+        return threadnetwork::TelemetryData::DHCP6_PD_STATE_DISABLED;
+    }
+}
+#endif  // OTBR_ENABLE_DHCP6_PD
+
 void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::TelemetryData_MdnsResponseCounters *to)
 {
     to->set_success_count(from.mSuccess);
@@ -1145,6 +1162,10 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             otBorderRoutingCounters->mInboundMulticast.mPackets);
         borderRoutingCouters->mutable_inbound_multicast()->set_byte_count(
             otBorderRoutingCounters->mInboundMulticast.mBytes);
+        borderRoutingCouters->mutable_inbound_internet()->set_packet_count(
+            otBorderRoutingCounters->mInboundInternet.mPackets);
+        borderRoutingCouters->mutable_inbound_internet()->set_byte_count(
+            otBorderRoutingCounters->mInboundInternet.mBytes);
         borderRoutingCouters->mutable_outbound_unicast()->set_packet_count(
             otBorderRoutingCounters->mOutboundUnicast.mPackets);
         borderRoutingCouters->mutable_outbound_unicast()->set_byte_count(
@@ -1153,6 +1174,10 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             otBorderRoutingCounters->mOutboundMulticast.mPackets);
         borderRoutingCouters->mutable_outbound_multicast()->set_byte_count(
             otBorderRoutingCounters->mOutboundMulticast.mBytes);
+        borderRoutingCouters->mutable_outbound_internet()->set_packet_count(
+            otBorderRoutingCounters->mOutboundInternet.mPackets);
+        borderRoutingCouters->mutable_outbound_internet()->set_byte_count(
+            otBorderRoutingCounters->mOutboundInternet.mBytes);
         borderRoutingCouters->set_ra_rx(otBorderRoutingCounters->mRaRx);
         borderRoutingCouters->set_ra_tx_success(otBorderRoutingCounters->mRaTxSuccess);
         borderRoutingCouters->set_ra_tx_failure(otBorderRoutingCounters->mRaTxFailure);
@@ -1360,7 +1385,33 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
         // End of Nat64Mapping section.
 #endif // OTBR_ENABLE_NAT64
+#if OTBR_ENABLE_DHCP6_PD
+        // Start of Dhcp6PdState section.
+        {
+            auto dhcp6PdState = wpanBorderRouter->mutable_dhcp6_pd_state();
+            dhcp6PdState->set_dhcp6_pd_state(Dhcp6PdStateFromOtDhcp6PdState(otBorderRoutingDhcp6PdGetState(mInstance)));
+        }
+        // End of Dhcp6PdState section.
 
+        // Start of PD prefix
+        {
+        char buffer[OT_IP6_PREFIX_STRING_SIZE];
+        otBorderRoutingGetPdOmrPrefix(mInstance, &aPrefixInfo);
+        otIp6PrefixToString(aPrefixInfo.mPrefix, buffer, sizeof(string));
+        wpanBorderRouter->set_pd_prefix(buffer);
+        }
+        // End of PD prefix
+        // Start of DHCPv6 PD processed RA Info
+        {
+            auto pdProcessedRaInfo    = wpanBorderRouter->mutable_pd_processed_ra_info();
+            otPdProcessedRaInfo raInfo;
+            otBorderRoutingGetPdProcessedRaInfo(mInstance, &raInfo);
+            pdProcessedRaInfo->set_num_platform_ra_received(raInfo.mNumPlatformRaReceived);
+            pdProcessedRaInfo->set_num_platform_pio_processed(raInfo.mNumPlatformPioProcessed);
+            pdProcessedRaInfo->set_last_platform_ra_msec(raInfo.mLastPlatformRaMsec);
+        }
+        // End of DHCPv6 PD processed RA Info
+#endif  // OTBR_ENABLE_DHCP6_PD
         // End of WpanBorderRouter section.
 
         // Start of WpanRcp section.

@@ -219,17 +219,45 @@ message TelemetryData {
     // The counters for inbound multicast packets
     optional PacketsAndBytes inbound_multicast = 16;
 
+    // The counter for inbound Internet when DHCPv6 PD enabled
+    optional PacketsAndBytes inbound_internet = 17;
+
     // The counters for outbound unicast packets
-    optional PacketsAndBytes outbound_unicast = 17;
+    optional PacketsAndBytes outbound_unicast = 18;
 
     // The counters for outbound multicast packets
-    optional PacketsAndBytes outbound_multicast = 18;
+    optional PacketsAndBytes outbound_multicast = 19;
+
+    // The counter for outbound Internet when DHCPv6 PD enabled
+    optional PacketsAndBytes outbound_internet = 20;
 
     // The inbound and outbound NAT64 traffic through the border router
-    optional Nat64ProtocolCounters nat64_protocol_counters = 19;
+    optional Nat64ProtocolCounters nat64_protocol_counters = 21;
 
     // Error counters for NAT64 translator on the border router
-    optional Nat64ErrorCounters nat64_error_counters = 20;
+    optional Nat64ErrorCounters nat64_error_counters = 22;
+  }
+
+  enum Dhcp6PdState {
+    // DHCPv6 PD is disabled on the border router.
+    DHCP6_PD_STATE_DISABLED = 0;
+
+    // DHCPv6 PD in enabled but won't try to request and publish a prefix.
+    DHCP6_PD_STATE_STOPPED = 1;
+
+    // DHCPv6 PD is enabled and will try to request and publish a prefix.
+    DHCP6_PD_STATE_RUNNING =2;
+  }
+
+  message PdProcessedRaInfo {
+    // The number of platform generated RA handled by ApplyPlatfromGeneratedRa.
+    optional uint32 num_platform_ra_received = 1;
+
+    // The number of PIO processed for adding OMR prefixes.
+    optional uint32 num_platform_pio_processed = 2;
+
+    // The timestamp of last processed RA message.
+    optional uint32 last_platform_ra_msec = 3;
   }
 
   message SrpServerRegistrationInfo {
@@ -431,6 +459,15 @@ message TelemetryData {
 
     // Information about the mappings of NAT64 translator
     repeated Nat64Mapping nat64_mappings = 7;
+
+    // DHCPv6 PD state
+    optional Dhcp6PdState dhcp6_pd_state = 8;
+
+    // DHCPv6 PD prefix
+    optional string pd_prefix = 9;
+
+    // DHCPv6 PD processed RA Info
+    optional PdProcessedRaInfo pd_processed_ra_info= 10;
   }
 
   message RcpStabilityStatistics {
