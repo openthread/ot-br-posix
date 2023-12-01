@@ -219,34 +219,36 @@ message TelemetryData {
     // The counters for inbound multicast packets
     optional PacketsAndBytes inbound_multicast = 16;
 
-    // The counter for inbound Internet when DHCPv6 PD enabled
-    optional PacketsAndBytes inbound_internet = 17;
-
     // The counters for outbound unicast packets
-    optional PacketsAndBytes outbound_unicast = 18;
+    optional PacketsAndBytes outbound_unicast = 17;
 
     // The counters for outbound multicast packets
-    optional PacketsAndBytes outbound_multicast = 19;
-
-    // The counter for outbound Internet when DHCPv6 PD enabled
-    optional PacketsAndBytes outbound_internet = 20;
+    optional PacketsAndBytes outbound_multicast = 18;
 
     // The inbound and outbound NAT64 traffic through the border router
-    optional Nat64ProtocolCounters nat64_protocol_counters = 21;
+    optional Nat64ProtocolCounters nat64_protocol_counters = 19;
 
     // Error counters for NAT64 translator on the border router
-    optional Nat64ErrorCounters nat64_error_counters = 22;
+    optional Nat64ErrorCounters nat64_error_counters = 20;
+
+    // The counter for inbound Internet when DHCPv6 PD enabled
+    optional PacketsAndBytes inbound_internet = 21;
+
+    // The counter for outbound Internet when DHCPv6 PD enabled
+    optional PacketsAndBytes outbound_internet = 22;
   }
 
   enum Dhcp6PdState {
-    // DHCPv6 PD is disabled on the border router.
-    DHCP6_PD_STATE_DISABLED = 0;
+    DHCP6_PD_STATE_UNSPECIFIED = 0;
 
-    // DHCPv6 PD in enabled but won't try to request and publish a prefix.
-    DHCP6_PD_STATE_STOPPED = 1;
+    // DHCPv6 PD is disabled on the border router.
+    DHCP6_PD_STATE_DISABLED = 1;
+
+    // DHCPv6 PD is enabled but won't try to request and publish a prefix.
+    DHCP6_PD_STATE_STOPPED = 2;
 
     // DHCPv6 PD is enabled and will try to request and publish a prefix.
-    DHCP6_PD_STATE_RUNNING =2;
+    DHCP6_PD_STATE_RUNNING = 3;
   }
 
   message PdProcessedRaInfo {
@@ -464,7 +466,7 @@ message TelemetryData {
     optional Dhcp6PdState dhcp6_pd_state = 8;
 
     // DHCPv6 PD prefix
-    optional string pd_prefix = 9;
+    optional bytes hashed_pd_prefix = 9;
 
     // DHCPv6 PD processed RA Info
     optional PdProcessedRaInfo pd_processed_ra_info= 10;
