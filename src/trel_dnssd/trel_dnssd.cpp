@@ -282,6 +282,7 @@ void TrelDnssd::HandleUnpublishTrelServiceError(otbrError aError)
 void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo)
 {
     std::string        instanceName = StringUtils::ToLowercase(aInstanceInfo.mName);
+    Ip6Address         selectedAddress;
     otPlatTrelPeerInfo peerInfo;
 
     // Remove any existing TREL service instance before adding
@@ -295,6 +296,15 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
     for (const auto &addr : aInstanceInfo.mAddresses)
     {
         otbrLogDebug("Peer address: %s", addr.ToString().c_str());
+
+        // If there are multiple addresses, we prefer the address
+        // which is numerically smallest. This prefers GUA over ULA
+        // (`fc00::/7`) and then link-local (`fe80::/10`).
+
+        if (selectedAddress.IsUnspecified() || (addr < selectedAddress))
+        {
+            selectedAddress = addr;
+        }
     }
 
     if (aInstanceInfo.mAddresses.empty())
@@ -304,7 +314,7 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
     }
 
     peerInfo.mRemoved = false;
-    memcpy(&peerInfo.mSockAddr.mAddress, &aInstanceInfo.mAddresses[0], sizeof(peerInfo.mSockAddr.mAddress));
+    memcpy(&peerInfo.mSockAddr.mAddress, &selectedAddress, sizeof(peerInfo.mSockAddr.mAddress));
     peerInfo.mSockAddr.mPort = aInstanceInfo.mPort;
     peerInfo.mTxtData        = aInstanceInfo.mTxtData.data();
     peerInfo.mTxtLength      = aInstanceInfo.mTxtData.size();
