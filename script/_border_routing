@@ -45,8 +45,8 @@ readonly DHCPCD_CONF_BACKUP_FILE
 accept_ra_install()
 {
     sudo tee $SYSCTL_ACCEPT_RA_FILE <<EOF
-net.ipv6.conf.${INFRA_IF_NAME}.accept_ra = 2
-net.ipv6.conf.${INFRA_IF_NAME}.accept_ra_rt_info_max_plen = 64
+net/ipv6/conf/${INFRA_IF_NAME}/accept_ra = 2
+net/ipv6/conf/${INFRA_IF_NAME}/accept_ra_rt_info_max_plen = 64
 EOF
 }
 
