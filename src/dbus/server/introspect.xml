@@ -167,21 +167,22 @@
             uint8[] prefix_bytes
             uint8 prefix_length
           }
+          uint16 rloc16
           byte preference
-          struct {
-            boolean preferred
-            boolean slaac
-            boolean dhcp
-            boolean configure
-            boolean default_route
-            boolean on_mesh
-            boolean stable
-          }
+          bool preferred
+          bool slaac
+          bool dhcp
+          bool configure
+          bool default_route
+          bool on_mesh
+          bool stable
+          bool nd_dns
+          bool dp
         }
       </literallayout>
     -->
     <method name="AddOnMeshPrefix">
-      <arg name="prefix" type="((ayy)y(bbbbbbb))"/>
+      <arg name="prefix" type="((ayy)qybbbbbbbbb)"/>
     </method>
 
     <!-- RemoveOnMeshPrefix: Remove an on-mesh prefix from the network.
