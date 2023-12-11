@@ -31,6 +31,17 @@
 namespace otbr {
 namespace DBus {
 
+otbrError DbusMessageIterRecurse(DBusMessageIter *aIter, DBusMessageIter *aSubIter, int aType)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_get_arg_type(aIter) == aType, error = OTBR_ERROR_DBUS);
+    dbus_message_iter_recurse(aIter, aSubIter);
+
+exit:
+    return error;
+}
+
 otbrError DBusMessageExtract(DBusMessageIter *aIter, bool &aValue)
 {
     otbrError   error = OTBR_ERROR_DBUS;
