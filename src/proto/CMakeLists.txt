@@ -8,6 +8,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 find_package(Protobuf REQUIRED)
 
+# Protobuf library which >= 4.22 requires to link the absl
+if ("${Protobuf_VERSION}" VERSION_GREATER_EQUAL 4.22)
+    find_package(absl REQUIRED)
+    set(ABSL_LIBS absl::log_internal_check_op)
+endif()
+
 # Set up the output path.
 set(PROTO_GEN_DIR ${PROJECT_SOURCE_DIR}/build/src/proto)
 if(NOT (EXISTS "${PROTO_GEN_DIR}" AND IS_DIRECTORY "${PROTO_GEN_DIR}"))
@@ -61,6 +67,7 @@ find_package(Protobuf REQUIRED)
 
 target_link_libraries(otbr-proto PUBLIC
     protobuf::libprotobuf-lite
+    ${ABSL_LIBS}
 )
 
 target_include_directories(otbr-proto PUBLIC
