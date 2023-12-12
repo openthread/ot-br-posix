@@ -448,6 +448,8 @@ template <> struct DBusTypeTrait<bool>
     static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BOOLEAN_AS_STRING;
 };
 
+otbrError DbusMessageIterRecurse(DBusMessageIter *aIter, DBusMessageIter *aSubIter, int aType);
+
 otbrError DBusMessageEncode(DBusMessageIter *aIter, bool aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, int8_t aValue);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const std::string &aValue);
