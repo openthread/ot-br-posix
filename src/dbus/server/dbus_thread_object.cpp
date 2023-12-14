@@ -240,6 +240,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetMdnsTelemetryInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNSSD_COUNTERS,
                                std::bind(&DBusThreadObject::GetDnssdCountersHandler, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OTBR_VERSION,
+                               std::bind(&DBusThreadObject::GetOtbrVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_HOST_VERSION,
                                std::bind(&DBusThreadObject::GetOtHostVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_RCP_VERSION,
@@ -1497,6 +1499,17 @@ void DBusThreadObject::RegisterGetPropertyHandler(const std::string         &aIn
 {
     DBusObject::RegisterGetPropertyHandler(aInterfaceName, aPropertyName, aHandler);
     mGetPropertyHandlers[aPropertyName] = aHandler;
+}
+
+otError DBusThreadObject::GetOtbrVersionHandler(DBusMessageIter &aIter)
+{
+    otError     error   = OT_ERROR_NONE;
+    std::string version = OTBR_PACKAGE_VERSION;
+
+    SuccessOrExit(DBusMessageEncodeToVariant(&aIter, version), error = OT_ERROR_FAILED);
+
+exit:
+    return error;
 }
 
 otError DBusThreadObject::GetOtHostVersionHandler(DBusMessageIter &aIter)

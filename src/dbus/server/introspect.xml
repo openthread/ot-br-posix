@@ -659,6 +659,11 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- OtbrVersion: The version string of the otbr package. -->
+    <property name="OtbrVersion" type="s" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- OtHostVersion: The version string of the host build. -->
     <property name="OtHostVersion" type="s" access="read">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

@@ -155,6 +155,7 @@ private:
     otError GetSrpServerInfoHandler(DBusMessageIter &aIter);
     otError GetMdnsTelemetryInfoHandler(DBusMessageIter &aIter);
     otError GetDnssdCountersHandler(DBusMessageIter &aIter);
+    otError GetOtbrVersionHandler(DBusMessageIter &aIter);
     otError GetOtHostVersionHandler(DBusMessageIter &aIter);
     otError GetOtRcpVersionHandler(DBusMessageIter &aIter);
     otError GetThreadVersionHandler(DBusMessageIter &aIter);
