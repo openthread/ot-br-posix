@@ -1325,6 +1325,11 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             dnsServerResponseCounters->set_other_count(otDnssdCounters.mOtherResponse);
 
             dnsServer->set_resolved_by_local_srp_count(otDnssdCounters.mResolvedBySrp);
+
+            // The counters of queries, responses, failures handled by upstream DNS server.
+            dnsServerResponseCounters->set_upstream_dns_queries(otDnssdCounters.mUpstreamDnsCounters.mQueries);
+            dnsServerResponseCounters->set_upstream_dns_responses(otDnssdCounters.mUpstreamDnsCounters.mResponses);
+            dnsServerResponseCounters->set_upstream_dns_failures(otDnssdCounters.mUpstreamDnsCounters.mFailures);
         }
         // End of DnsServerInfo section.
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY

@@ -357,6 +357,15 @@ message TelemetryData {
 
     // The number of other responses
     optional uint32 other_count = 6;
+
+    // The number of queries handled by Upstream DNS server.
+    optional uint32 upstream_dns_queries = 7;
+
+    // The number of responses handled by Upstream DNS server.
+    optional uint32 upstream_dns_responses = 8;
+
+    // The number of upstream DNS failures.
+    optional uint32 upstream_dns_failures = 9;
   }
 
   message DnsServerInfo {
