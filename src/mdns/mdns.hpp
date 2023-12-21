@@ -136,6 +136,9 @@ public:
         uint16_t    mWeight   = 0;       ///< Service weight.
         TxtData     mTxtData;            ///< TXT RDATA bytes.
         uint32_t    mTtl = 0;            ///< Service TTL.
+
+        void AddAddress(const Ip6Address &aAddress) { Publisher::AddAddress(mAddresses, aAddress); }
+        void RemoveAddress(const Ip6Address &aAddress) { Publisher::RemoveAddress(mAddresses, aAddress); }
     };
 
     /**
@@ -148,6 +151,9 @@ public:
         AddressList mAddresses;      ///< IP6 addresses.
         uint32_t    mNetifIndex = 0; ///< Network interface.
         uint32_t    mTtl        = 0; ///< Host TTL.
+
+        void AddAddress(const Ip6Address &aAddress) { Publisher::AddAddress(mAddresses, aAddress); }
+        void RemoveAddress(const Ip6Address &aAddress) { Publisher::RemoveAddress(mAddresses, aAddress); }
     };
 
     /**
@@ -573,6 +579,9 @@ protected:
                                                    const std::string &aType,
                                                    otbrError          aError);
     void UpdateHostResolutionEmaLatency(const std::string &aHostName, otbrError aError);
+
+    static void AddAddress(AddressList &aAddressList, const Ip6Address &aAddress);
+    static void RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddress);
 
     ServiceRegistrationMap mServiceRegistrations;
     HostRegistrationMap    mHostRegistrations;

@@ -1238,6 +1238,7 @@ exit:
         {
             avahi_record_browser_free(mRecordBrowser);
             mRecordBrowser = nullptr;
+            mInstanceInfo.mAddresses.clear();
         }
         // NOTE: This `ServiceResolver` object may be freed in `OnServiceResolved`.
         mRecordBrowser = avahi_record_browser_new(mPublisherAvahi->mClient, aInterfaceIndex, AVAHI_PROTO_UNSPEC,
@@ -1299,7 +1300,7 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
             aName, aInterfaceIndex, aProtocol, aClazz, aType, aSize, static_cast<int>(aFlags),
             static_cast<int>(aEvent));
 
-    VerifyOrExit(aEvent == AVAHI_BROWSER_NEW);
+    VerifyOrExit(aEvent == AVAHI_BROWSER_NEW || aEvent == AVAHI_BROWSER_REMOVE);
     VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE || aSize == OTBR_IP4_ADDRESS_SIZE,
                  otbrLogErr("Unexpected address data length: %zu", aSize), avahiError = AVAHI_ERR_INVALID_ADDRESS);
     VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE, otbrLogInfo("IPv4 address ignored"),
@@ -1308,9 +1309,16 @@ void PublisherAvahi::ServiceResolver::HandleResolveHostResult(AvahiRecordBrowser
 
     VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
                  avahiError = AVAHI_ERR_INVALID_ADDRESS);
-    otbrLogInfo("Resolved host address: %s", address.ToString().c_str());
-
-    mInstanceInfo.mAddresses.push_back(std::move(address));
+    otbrLogInfo("Resolved host address: %s %s", aEvent == AVAHI_BROWSER_NEW ? "add" : "remove",
+                address.ToString().c_str());
+    if (aEvent == AVAHI_BROWSER_NEW)
+    {
+        mInstanceInfo.AddAddress(address);
+    }
+    else
+    {
+        mInstanceInfo.RemoveAddress(address);
+    }
     resolved = true;
 
 exit:
@@ -1423,7 +1431,7 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
             aName, aInterfaceIndex, aProtocol, aClazz, aType, aSize, static_cast<int>(aFlags),
             static_cast<int>(aEvent));
 
-    VerifyOrExit(aEvent == AVAHI_BROWSER_NEW);
+    VerifyOrExit(aEvent == AVAHI_BROWSER_NEW || aEvent == AVAHI_BROWSER_REMOVE);
     VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE || aSize == OTBR_IP4_ADDRESS_SIZE,
                  otbrLogErr("Unexpected address data length: %zu", aSize), avahiError = AVAHI_ERR_INVALID_ADDRESS);
     VerifyOrExit(aSize == OTBR_IP6_ADDRESS_SIZE, otbrLogInfo("IPv4 address ignored"),
@@ -1432,10 +1440,18 @@ void PublisherAvahi::HostSubscription::HandleResolveResult(AvahiRecordBrowser   
 
     VerifyOrExit(!address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback() && !address.IsUnspecified(),
                  avahiError = AVAHI_ERR_INVALID_ADDRESS);
-    otbrLogInfo("Resolved host address: %s", address.ToString().c_str());
+    otbrLogInfo("Resolved host address: %s %s", aEvent == AVAHI_BROWSER_NEW ? "add" : "remove",
+                address.ToString().c_str());
 
     mHostInfo.mHostName = std::string(aName) + ".";
-    mHostInfo.mAddresses.push_back(std::move(address));
+    if (aEvent == AVAHI_BROWSER_NEW)
+    {
+        mHostInfo.AddAddress(address);
+    }
+    else
+    {
+        mHostInfo.RemoveAddress(address);
+    }
     mHostInfo.mNetifIndex = static_cast<uint32_t>(aInterfaceIndex);
     // TODO: Use a more proper TTL
     mHostInfo.mTtl = kDefaultTtl;
