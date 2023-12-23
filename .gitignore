@@ -109,6 +109,10 @@ tests/unit/unittest
 .idea/**
 cmake-build-*/**
 
+# VS Code
+.vscode
+*.code-workspace
+
 # Thread local storage
 ./tmp/
 *.data
