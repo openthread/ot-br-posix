@@ -162,6 +162,7 @@ private:
     otError GetRadioSpinelMetricsHandler(DBusMessageIter &aIter);
     otError GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter);
     otError GetUptimeHandler(DBusMessageIter &aIter);
+    otError GetTrelInfoHandler(DBusMessageIter &aIter);
     otError GetRadioCoexMetrics(DBusMessageIter &aIter);
     otError GetBorderRoutingCountersHandler(DBusMessageIter &aIter);
     otError GetNat64State(DBusMessageIter &aIter);

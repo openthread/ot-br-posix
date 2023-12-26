@@ -659,6 +659,13 @@ ClientError ThreadApiDBus::GetSrpServerInfo(SrpServerInfo &aSrpServerInfo)
     return GetProperty(OTBR_DBUS_PROPERTY_SRP_SERVER_INFO, aSrpServerInfo);
 }
 
+#if OTBR_ENABLE_TREL
+ClientError ThreadApiDBus::GetTrelInfo(TrelInfo &aTrelInfo)
+{
+    return GetProperty(OTBR_DBUS_PROPERTY_TREL_INFO, aTrelInfo);
+}
+#endif
+
 ClientError ThreadApiDBus::GetMdnsTelemetryInfo(MdnsTelemetryInfo &aMdnsTelemetryInfo)
 {
     return GetProperty(OTBR_DBUS_PROPERTY_MDNS_TELEMETRY_INFO, aMdnsTelemetryInfo);

@@ -703,6 +703,22 @@ struct InfraLinkInfo
     uint32_t    mGlobalUnicastAddresses; ///< The number of global unicast addresses on the infra network interface.
 };
 
+struct TrelInfo
+{
+    struct TrelPacketCounters
+    {
+        uint64_t mTxPackets; ///< Number of packets transmitted through TREL.
+        uint64_t mTxBytes;   ///< Sum of size of packets transmitted through TREL.
+        uint64_t mTxFailure; ///< Number of packet transmission failures through TREL.
+        uint64_t mRxPackets; ///< Number of packets received through TREL.
+        uint64_t mRxBytes;   ///< Sum of size of packets received through TREL.
+    };
+
+    bool               mEnabled;      ///< Whether TREL is enabled.
+    u_int16_t          mNumTrelPeers; ///< The number of TREL peers.
+    TrelPacketCounters mTrelCounters; ///< The TREL counters.
+};
+
 } // namespace DBus
 } // namespace otbr
 

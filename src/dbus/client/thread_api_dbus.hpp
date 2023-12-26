@@ -769,6 +769,20 @@ public:
      */
     ClientError GetSrpServerInfo(SrpServerInfo &aSrpServerInfo);
 
+#if OTBR_ENABLE_TREL
+    /**
+     * This method gets the TREL information.
+     *
+     * @param[out] aTrelInfo  The TREL information.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetTrelInfo(TrelInfo &aTrelInfo);
+#endif
+
     /**
      * This method gets the MDNS telemetry information.
      *
