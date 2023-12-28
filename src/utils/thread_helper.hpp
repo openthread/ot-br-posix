@@ -332,9 +332,9 @@ private:
     UpdateMeshCopTxtHandler mUpdateMeshCopTxtHandler;
 #endif
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API & OTBR_ENABLE_NAT64
-    static const uint8_t kNat64SourceAddressHashSaltLength = 16;
-    uint8_t              mNat64Ipv6AddressSalt[kNat64SourceAddressHashSaltLength];
+#if OTBR_ENABLE_TELEMETRY_DATA_API && (OTBR_ENABLE_NAT64 || OTBR_ENABLE_DHCP6_PD)
+    static constexpr uint8_t kNat64PdCommonHashSaltLength = 16;
+    uint8_t                  mNat64PdCommonSalt[kNat64PdCommonHashSaltLength];
 #endif
 };
 
