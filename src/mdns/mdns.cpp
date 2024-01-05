@@ -200,6 +200,7 @@ void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aIns
     if (!aInstanceInfo.mRemoved)
     {
         std::string addressesString;
+
         for (const auto &address : aInstanceInfo.mAddresses)
         {
             addressesString += address.ToString() + ",";
@@ -641,6 +642,7 @@ void Publisher::AddAddress(AddressList &aAddressList, const Ip6Address &aAddress
 void Publisher::RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddress)
 {
     auto it = std::find(aAddressList.begin(), aAddressList.end(), aAddress);
+
     if (it != aAddressList.end())
     {
         aAddressList.erase(it);
