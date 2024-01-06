@@ -256,7 +256,6 @@ private:
                      const std::string &aInstanceName,
                      const std::string &aType,
                      const std::string &aDomain);
-        void RemoveInstanceResolution(ServiceInstanceResolution &aInstanceResolution);
         void UpdateAll(MainloopContext &aMainloop) const;
         void ProcessAll(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
 

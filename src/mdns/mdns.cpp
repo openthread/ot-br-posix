@@ -197,6 +197,21 @@ void Publisher::OnServiceResolved(std::string aType, DiscoveredInstanceInfo aIns
                 aInstanceInfo.mRemoved ? "remove" : "add", aInstanceInfo.mName.c_str(), aInstanceInfo.mHostName.c_str(),
                 aInstanceInfo.mAddresses.size());
 
+    if (!aInstanceInfo.mRemoved)
+    {
+        std::string addressesString;
+
+        for (const auto &address : aInstanceInfo.mAddresses)
+        {
+            addressesString += address.ToString() + ",";
+        }
+        if (addressesString.size())
+        {
+            addressesString.pop_back();
+        }
+        otbrLogInfo("addresses: [ %s ]", addressesString.c_str());
+    }
+
     DnsUtils::CheckServiceNameSanity(aType);
 
     assert(aInstanceInfo.mNetifIndex > 0);
@@ -616,6 +631,21 @@ void Publisher::UpdateHostResolutionEmaLatency(const std::string &aHostName, otb
         uint32_t latency = std::chrono::duration_cast<Milliseconds>(Clock::now() - it->second).count();
         UpdateEmaLatency(mTelemetryInfo.mHostResolutionEmaLatency, latency, aError);
         mHostResolutionBeginTime.erase(it);
+    }
+}
+
+void Publisher::AddAddress(AddressList &aAddressList, const Ip6Address &aAddress)
+{
+    aAddressList.push_back(aAddress);
+}
+
+void Publisher::RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddress)
+{
+    auto it = std::find(aAddressList.begin(), aAddressList.end(), aAddress);
+
+    if (it != aAddressList.end())
+    {
+        aAddressList.erase(it);
     }
 }
 

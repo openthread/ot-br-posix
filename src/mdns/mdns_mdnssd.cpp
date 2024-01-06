@@ -941,19 +941,6 @@ void PublisherMDnsSd::ServiceSubscription::Resolve(uint32_t           aInterface
     mResolvingInstances.back()->Resolve();
 }
 
-void PublisherMDnsSd::ServiceSubscription::RemoveInstanceResolution(
-    PublisherMDnsSd::ServiceInstanceResolution &aInstanceResolution)
-{
-    auto it = std::find_if(mResolvingInstances.begin(), mResolvingInstances.end(),
-                           [&aInstanceResolution](const std::unique_ptr<ServiceInstanceResolution> &aElem) {
-                               return &aInstanceResolution == aElem.get();
-                           });
-
-    assert(it != mResolvingInstances.end());
-
-    mResolvingInstances.erase(it);
-}
-
 void PublisherMDnsSd::ServiceSubscription::UpdateAll(MainloopContext &aMainloop) const
 {
     Update(aMainloop);
@@ -1056,7 +1043,7 @@ otbrError PublisherMDnsSd::ServiceInstanceResolution::GetAddrInfo(uint32_t aInte
 
     otbrLogInfo("DNSServiceGetAddrInfo %s inf %d", mInstanceInfo.mHostName.c_str(), aInterfaceIndex);
 
-    dnsError = DNSServiceGetAddrInfo(&mServiceRef, kDNSServiceFlagsTimeout, aInterfaceIndex,
+    dnsError = DNSServiceGetAddrInfo(&mServiceRef, /* flags */ 0, aInterfaceIndex,
                                      kDNSServiceProtocol_IPv6 | kDNSServiceProtocol_IPv4,
                                      mInstanceInfo.mHostName.c_str(), HandleGetAddrInfoResult, this);
 
@@ -1093,22 +1080,31 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
     OTBR_UNUSED_VARIABLE(aInterfaceIndex);
 
     Ip6Address address;
+    bool       isAdd = (aFlags & kDNSServiceFlagsAdd) != 0;
 
     otbrLog(aErrorCode == kDNSServiceErr_NoError ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u, error=%" PRId32, aFlags, aHostName,
             static_cast<unsigned int>(aAddress->sa_family), aErrorCode);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
-    VerifyOrExit((aFlags & kDNSServiceFlagsAdd) && aAddress->sa_family == AF_INET6);
+    VerifyOrExit(aAddress->sa_family == AF_INET6);
 
     address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
     VerifyOrExit(!address.IsUnspecified() && !address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback(),
                  otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
-    mInstanceInfo.mAddresses.push_back(address);
-    mInstanceInfo.mTtl = aTtl;
+    otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
+                address.ToString().c_str(), aTtl);
 
-    otbrLogInfo("DNSServiceGetAddrInfo reply: address=%s, ttl=%" PRIu32, address.ToString().c_str(), aTtl);
+    if (isAdd)
+    {
+        mInstanceInfo.AddAddress(address);
+    }
+    else
+    {
+        mInstanceInfo.RemoveAddress(address);
+    }
+    mInstanceInfo.mTtl = aTtl;
 
 exit:
     if (!mInstanceInfo.mAddresses.empty() || aErrorCode != kDNSServiceErr_NoError)
@@ -1122,10 +1118,6 @@ void PublisherMDnsSd::ServiceInstanceResolution::FinishResolution(void)
     ServiceSubscription   *subscription = mSubscription;
     std::string            serviceName  = mSubscription->mType;
     DiscoveredInstanceInfo instanceInfo = mInstanceInfo;
-
-    // NOTE: `RemoveInstanceResolution` will free this `ServiceInstanceResolution` object.
-    //       So, We can't access `mSubscription` after `RemoveInstanceResolution`.
-    subscription->RemoveInstanceResolution(*this);
 
     // NOTE: The `ServiceSubscription` object may be freed in `OnServiceResolved`.
     subscription->mPublisher.OnServiceResolved(serviceName, instanceInfo);
@@ -1170,24 +1162,33 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     OTBR_UNUSED_VARIABLE(aServiceRef);
 
     Ip6Address address;
+    bool       isAdd = (aFlags & kDNSServiceFlagsAdd) != 0;
 
     otbrLog(aErrorCode == kDNSServiceErr_NoError ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u, error=%" PRId32, aFlags, aHostName,
             static_cast<unsigned int>(aAddress->sa_family), aErrorCode);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
-    VerifyOrExit((aFlags & kDNSServiceFlagsAdd) && aAddress->sa_family == AF_INET6);
+    VerifyOrExit(aAddress->sa_family == AF_INET6);
 
     address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
     VerifyOrExit(!address.IsLinkLocal(),
                  otbrLogDebug("DNSServiceGetAddrInfo ignore link-local address %s", address.ToString().c_str()));
 
-    mHostInfo.mHostName = aHostName;
-    mHostInfo.mAddresses.push_back(address);
+    otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
+                address.ToString().c_str(), aTtl);
+
+    if (isAdd)
+    {
+        mHostInfo.AddAddress(address);
+    }
+    else
+    {
+        mHostInfo.RemoveAddress(address);
+    }
+    mHostInfo.mHostName   = aHostName;
     mHostInfo.mNetifIndex = aInterfaceIndex;
     mHostInfo.mTtl        = aTtl;
-
-    otbrLogInfo("DNSServiceGetAddrInfo reply: address=%s, ttl=%" PRIu32, address.ToString().c_str(), aTtl);
 
     // NOTE: This `HostSubscription` object may be freed in `OnHostResolved`.
     mPublisher.OnHostResolved(mHostName, mHostInfo);
