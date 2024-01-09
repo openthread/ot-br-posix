@@ -42,6 +42,7 @@
 #include <openthread/openthread-system.h>
 #include <openthread/srp_server.h>
 #include <openthread/thread_ftd.h>
+#include <openthread/trel.h>
 #include <openthread/platform/radio.h>
 
 #include "common/api_strings.hpp"
@@ -270,6 +271,8 @@ otbrError DBusThreadObject::Init(void)
                                std::bind(&DBusThreadObject::GetNat64Cidr, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
                                std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TREL_INFO,
+                               std::bind(&DBusThreadObject::GetTrelInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
                                std::bind(&DBusThreadObject::GetDnsUpstreamQueryState, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TELEMETRY_DATA,
@@ -1405,6 +1408,33 @@ exit:
 
     return OT_ERROR_NOT_IMPLEMENTED;
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+}
+
+otError DBusThreadObject::GetTrelInfoHandler(DBusMessageIter &aIter)
+{
+#if OTBR_ENABLE_TREL
+    auto           instance = mNcp->GetThreadHelper()->GetInstance();
+    otError        error    = OT_ERROR_NONE;
+    TrelInfo       trelInfo;
+    otTrelCounters otTrelCounters = *otTrelGetCounters(instance);
+
+    trelInfo.mTrelCounters.mTxPackets = otTrelCounters.mTxPackets;
+    trelInfo.mTrelCounters.mTxBytes   = otTrelCounters.mTxBytes;
+    trelInfo.mTrelCounters.mTxFailure = otTrelCounters.mTxFailure;
+    trelInfo.mTrelCounters.mRxPackets = otTrelCounters.mRxPackets;
+    trelInfo.mTrelCounters.mRxBytes   = otTrelCounters.mRxBytes;
+
+    trelInfo.mNumTrelPeers = otTrelGetNumberOfPeers(instance);
+    trelInfo.mEnabled      = otTrelIsEnabled(instance);
+
+    SuccessOrExit(DBusMessageEncodeToVariant(&aIter, trelInfo), error = OT_ERROR_INVALID_ARGS);
+exit:
+    return error;
+#else  // OTBR_ENABLE_TREL
+    OTBR_UNUSED_VARIABLE(aIter);
+
+    return OT_ERROR_NOT_IMPLEMENTED;
+#endif // OTBR_ENABLE_TREL
 }
 
 otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)

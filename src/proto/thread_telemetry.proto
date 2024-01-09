@@ -339,6 +339,34 @@ message TelemetryData {
     optional SrpServerResponseCounters response_counters = 6;
   }
 
+  message TrelPacketCounters {
+    // The number of packets successfully transmitted through TREL
+    optional uint64 trel_tx_packets = 1;
+
+    // The number of bytes successfully transmitted through TREL
+    optional uint64 trel_tx_bytes = 2;
+
+    // The number of packet transmission failures through TREL
+    optional uint64 trel_tx_packets_failed = 3;
+
+    // The number of packets successfully received through TREL
+    optional uint64 tre_rx_packets = 4;
+
+    // The number of bytes successfully received through TREL
+    optional uint64 trel_rx_bytes = 5;
+  }
+
+  message TrelInfo {
+    // Whether TREL is enabled.
+    optional bool is_trel_enabled = 1;
+
+    // The number of TREL peers.
+    optional uint32 num_trel_peers = 2;
+
+    // TREL packet counters
+    optional TrelPacketCounters counters = 3;
+  }
+
   message DnsServerResponseCounters {
     // The number of successful responses
     optional uint32 success_count = 1;
@@ -470,6 +498,9 @@ message TelemetryData {
 
     // DHCPv6 PD processed RA Info
     optional PdProcessedRaInfo pd_processed_ra_info= 10;
+
+    // Information about TREL.
+    optional TrelInfo trel_info = 11;
   }
 
   message RcpStabilityStatistics {

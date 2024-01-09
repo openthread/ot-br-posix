@@ -1194,5 +1194,69 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo &aTrelInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aTrelInfo.mEnabled));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aTrelInfo.mNumTrelPeers));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aTrelInfo.mTrelCounters));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo &aTrelInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelInfo.mEnabled));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelInfo.mNumTrelPeers));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelInfo.mTrelCounters));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo::TrelPacketCounters &aTrelCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+    auto            args  = std::tie(aTrelCounters.mTxPackets, aTrelCounters.mTxBytes, aTrelCounters.mTxFailure,
+                                     aTrelCounters.mRxPackets, aTrelCounters.mRxBytes);
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+    SuccessOrExit(error = ConvertToDBusMessage(&sub, args));
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub) == true, error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo::TrelPacketCounters &aTrelCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelCounters.mTxPackets));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelCounters.mTxBytes));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelCounters.mTxFailure));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelCounters.mRxPackets));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aTrelCounters.mRxBytes));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

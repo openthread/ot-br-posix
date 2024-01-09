@@ -58,6 +58,9 @@
 #include <openthread/srp_server.h>
 #endif
 #include <openthread/thread_ftd.h>
+#if OTBR_ENABLE_TREL
+#include <openthread/trel.h>
+#endif
 #include <openthread/platform/radio.h>
 
 #include "common/byteswap.hpp"
@@ -1239,6 +1242,25 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
 #endif // OTBR_ENABLE_NAT64
        // End of BorderRoutingCounters section.
+
+#if OTBR_ENABLE_TREL
+        // Begin of TrelInfo section.
+        {
+            auto trelInfo       = wpanBorderRouter->mutable_trel_info();
+            auto otTrelCounters = otTrelGetCounters(mInstance);
+            auto trelCounters   = trelInfo->mutable_counters();
+
+            trelInfo->set_is_trel_enabled(otTrelIsEnabled(mInstance));
+            trelInfo->set_num_trel_peers(otTrelGetNumberOfPeers(mInstance));
+
+            trelCounters->set_trel_tx_packets(otTrelCounters->mTxPackets);
+            trelCounters->set_trel_tx_bytes(otTrelCounters->mTxBytes);
+            trelCounters->set_trel_tx_packets_failed(otTrelCounters->mTxFailure);
+            trelCounters->set_tre_rx_packets(otTrelCounters->mRxPackets);
+            trelCounters->set_trel_rx_bytes(otTrelCounters->mRxBytes);
+        }
+        // End of TrelInfo section.
+#endif // OTBR_ENABLE_TREL
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
         // Begin of SrpServerInfo section.

@@ -182,6 +182,24 @@ void CheckSrpServerInfo(ThreadApiDBus *aApi)
     TEST_ASSERT(srpServerInfo.mResponseCounters.mOther == 0);
 }
 
+void CheckTrelInfo(ThreadApiDBus *aApi)
+{
+    OTBR_UNUSED_VARIABLE(aApi);
+
+#if OTBR_ENABLE_TREL
+    otbr::DBus::TrelInfo trelInfo;
+
+    TEST_ASSERT(aApi->GetTrelInfo(trelInfo) == OTBR_ERROR_NONE);
+    TEST_ASSERT(trelInfo.mEnabled);
+    TEST_ASSERT(trelInfo.mNumTrelPeers == 0);
+    TEST_ASSERT(trelInfo.mTrelCounters.mTxPackets == 0);
+    TEST_ASSERT(trelInfo.mTrelCounters.mTxBytes == 0);
+    TEST_ASSERT(trelInfo.mTrelCounters.mTxFailure == 0);
+    TEST_ASSERT(trelInfo.mTrelCounters.mRxPackets == 0);
+    TEST_ASSERT(trelInfo.mTrelCounters.mRxBytes == 0);
+#endif
+}
+
 void CheckDnssdCounters(ThreadApiDBus *aApi)
 {
     OTBR_UNUSED_VARIABLE(aApi);
@@ -280,6 +298,12 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
     TEST_ASSERT(telemetryData.wpan_border_router().dns_server().response_counters().server_failure_count() == 0);
+#endif
+#if OTBR_ENABLE_TREL
+    TEST_ASSERT(telemetryData.wpan_border_router().trel_info().is_trel_enabled());
+    TEST_ASSERT(telemetryData.wpan_border_router().trel_info().has_counters());
+    TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_packets() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_bytes() == 0);
 #endif
     TEST_ASSERT(telemetryData.wpan_border_router().mdns().service_registration_responses().success_count() > 0);
 #if OTBR_ENABLE_NAT64
@@ -423,6 +447,7 @@ int main()
                             TEST_ASSERT(api->GetRadioTxPower(txPower) == OTBR_ERROR_NONE);
                             TEST_ASSERT(api->GetActiveDatasetTlvs(activeDataset) == OTBR_ERROR_NONE);
                             CheckSrpServerInfo(api.get());
+                            CheckTrelInfo(api.get());
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
