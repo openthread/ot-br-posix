@@ -320,6 +320,12 @@ message TelemetryData {
     SRP_SERVER_ADDRESS_MODE_STATE_ANYCAST = 2;
   }
 
+  enum UpstreamDnsQueryState {
+    UPSTREAMDNS_QUERY_STATE_UNSPECIFIED = 0;
+    UPSTREAMDNS_QUERY_STATE_ENABLED = 1;
+    UPSTREAMDNS_QUERY_STATE_DISABLED = 2;
+  }
+
   message SrpServerInfo {
     // The state of the SRP server
     optional SrpServerState state = 1;
@@ -402,6 +408,9 @@ message TelemetryData {
 
     // The number of DNS queries resolved at the local SRP server
     optional uint32 resolved_by_local_srp_count = 2;
+
+    // The state of upstream DNS query
+    optional UpstreamDnsQueryState upstream_dns_query_state = 3;
   }
 
   message MdnsResponseCounters {
