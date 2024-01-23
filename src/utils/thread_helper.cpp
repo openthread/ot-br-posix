@@ -1345,13 +1345,19 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             dnsServerResponseCounters->set_name_error_count(otDnssdCounters.mNameErrorResponse);
             dnsServerResponseCounters->set_not_implemented_count(otDnssdCounters.mNotImplementedResponse);
             dnsServerResponseCounters->set_other_count(otDnssdCounters.mOtherResponse);
-
-            dnsServer->set_resolved_by_local_srp_count(otDnssdCounters.mResolvedBySrp);
-
             // The counters of queries, responses, failures handled by upstream DNS server.
             dnsServerResponseCounters->set_upstream_dns_queries(otDnssdCounters.mUpstreamDnsCounters.mQueries);
             dnsServerResponseCounters->set_upstream_dns_responses(otDnssdCounters.mUpstreamDnsCounters.mResponses);
             dnsServerResponseCounters->set_upstream_dns_failures(otDnssdCounters.mUpstreamDnsCounters.mFailures);
+
+            dnsServer->set_resolved_by_local_srp_count(otDnssdCounters.mResolvedBySrp);
+
+#if OTBR_ENABLE_DNS_UPSTREAM_QUERY
+            dnsServer->set_upstream_dns_query_state(
+                otDnssdUpstreamQueryIsEnabled(mInstance)
+                    ? threadnetwork::TelemetryData::UPSTREAMDNS_QUERY_STATE_ENABLED
+                    : threadnetwork::TelemetryData::UPSTREAMDNS_QUERY_STATE_DISABLED);
+#endif // OTBR_ENABLE_DNS_UPSTREAM_QUERY
         }
         // End of DnsServerInfo section.
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
