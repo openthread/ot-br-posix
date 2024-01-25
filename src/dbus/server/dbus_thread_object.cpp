@@ -1470,6 +1470,7 @@ otError DBusThreadObject::GetCapabilitiesHandler(DBusMessageIter &aIter)
     otbr::Capabilities capabilities;
 
     capabilities.set_nat64(OTBR_ENABLE_NAT64);
+    capabilities.set_dhcp6_pd(OTBR_ENABLE_DHCP6_PD);
 
     {
         const std::string    dataBytes = capabilities.SerializeAsString();
