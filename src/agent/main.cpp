@@ -78,7 +78,9 @@ enum
     OTBR_OPT_REST_LISTEN_PORT,
 };
 
-static jmp_buf            sResetJump;
+#ifndef __ANDROID__
+static jmp_buf sResetJump;
+#endif
 static otbr::Application *gApp = nullptr;
 
 void                       __gcov_flush();
@@ -317,12 +319,19 @@ void otPlatReset(otInstance *aInstance)
     gApp->Deinit();
     gApp = nullptr;
 
+#ifndef __ANDROID__
     longjmp(sResetJump, 1);
     assert(false);
+#else
+    // Exits immediately on Android. The Android system_server will receive the
+    // signal and decide whether (and how) to restart the ot-daemon
+    exit(0);
+#endif
 }
 
 int main(int argc, char *argv[])
 {
+#ifndef __ANDROID__
     if (setjmp(sResetJump))
     {
         std::vector<char *> args = AppendAutoAttachDisableArg(argc, argv);
@@ -334,6 +343,6 @@ int main(int argc, char *argv[])
 
         execvp(args[0], args.data());
     }
-
+#endif
     return realmain(argc, argv);
 }
