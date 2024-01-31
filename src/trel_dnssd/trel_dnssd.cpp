@@ -297,6 +297,12 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
     {
         otbrLogDebug("Peer address: %s", addr.ToString().c_str());
 
+        // Skip anycast (Refer to https://datatracker.ietf.org/doc/html/rfc2373#section-2.6.1)
+        if (addr.m64[1] == 0)
+        {
+            continue;
+        }
+
         // If there are multiple addresses, we prefer the address
         // which is numerically smallest. This prefers GUA over ULA
         // (`fc00::/7`) and then link-local (`fe80::/10`).
