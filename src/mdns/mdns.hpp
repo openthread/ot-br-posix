@@ -36,6 +36,10 @@
 
 #include "openthread-br/config.h"
 
+#ifndef OTBR_ENABLE_MDNS
+#define OTBR_ENABLE_MDNS (OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD)
+#endif
+
 #include <functional>
 #include <list>
 #include <map>

@@ -70,16 +70,26 @@ public:
     explicit DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
 
     /**
-     * This method starts the Discovery Proxy.
+     * This method enables/disables the Discovery Proxy.
+     *
+     * @param[in] aIsEnabled  Whether to enable the Discovery Proxy.
      *
      */
-    void Start(void);
+    void SetEnabled(bool aIsEnabled);
 
     /**
-     * This method stops the Discovery Proxy.
+     * This method handles mDNS publisher's state changes.
+     *
+     * @param[in] aState  The state of mDNS publisher.
      *
      */
-    void Stop(void);
+    void HandleMdnsState(Mdns::Publisher::State aState)
+    {
+        VerifyOrExit(IsEnabled());
+        OTBR_UNUSED_VARIABLE(aState);
+    exit:
+        return;
+    }
 
 private:
     enum : uint32_t
@@ -98,8 +108,13 @@ private:
     void OnHostDiscovered(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aHostInfo);
     static uint32_t CapTtl(uint32_t aTtl);
 
+    void Start(void);
+    void Stop(void);
+    bool IsEnabled(void) const { return mIsEnabled; }
+
     Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher           &mMdnsPublisher;
+    bool                       mIsEnabled;
     uint64_t                   mSubscriberId = 0;
 };
 

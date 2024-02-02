@@ -61,11 +61,28 @@ static inline bool DnsLabelsEqual(const std::string &aLabel1, const std::string 
 DiscoveryProxy::DiscoveryProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
     : mNcp(aNcp)
     , mMdnsPublisher(aPublisher)
+    , mIsEnabled(false)
 {
     mNcp.RegisterResetHandler([this]() {
         otDnssdQuerySetCallbacks(mNcp.GetInstance(), &DiscoveryProxy::OnDiscoveryProxySubscribe,
                                  &DiscoveryProxy::OnDiscoveryProxyUnsubscribe, this);
     });
+}
+
+void DiscoveryProxy::SetEnabled(bool aIsEnabled)
+{
+    VerifyOrExit(IsEnabled() != aIsEnabled);
+    mIsEnabled = aIsEnabled;
+    if (mIsEnabled)
+    {
+        Start();
+    }
+    else
+    {
+        Stop();
+    }
+exit:
+    return;
 }
 
 void DiscoveryProxy::Start(void)

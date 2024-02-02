@@ -61,11 +61,23 @@ Application::Application(const std::string               &aInterfaceName,
     , mBackboneInterfaceName(aBackboneInterfaceNames.empty() ? "" : aBackboneInterfaceNames.front())
 #endif
     , mNcp(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName, /* aDryRun */ false, aEnableAutoAttach)
+#if OTBR_ENABLE_MDNS
+    , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
+#endif
 #if OTBR_ENABLE_BORDER_AGENT
-    , mBorderAgent(mNcp)
+    , mBorderAgent(mNcp, *mPublisher)
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     , mBackboneAgent(mNcp, aInterfaceName, mBackboneInterfaceName)
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    , mAdvertisingProxy(mNcp, *mPublisher)
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    , mDiscoveryProxy(mNcp, *mPublisher)
+#endif
+#if OTBR_ENABLE_TREL
+    , mTrelDnssd(mNcp, *mPublisher)
 #endif
 #if OTBR_ENABLE_OPENWRT
     , mUbusAgent(mNcp)
@@ -74,7 +86,7 @@ Application::Application(const std::string               &aInterfaceName,
     , mRestWebServer(mNcp, aRestListenAddress, aRestListenPort)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
-    , mDBusAgent(mNcp, mBorderAgent.GetPublisher())
+    , mDBusAgent(mNcp, *mPublisher)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(vendor::VendorServer::newInstance(*this))
@@ -88,11 +100,20 @@ void Application::Init(void)
 {
     mNcp.Init();
 
+#if OTBR_ENABLE_MDNS
+    mPublisher->Start();
+#endif
 #if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent.Init();
+    mBorderAgent.SetEnabled(true);
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent.Init();
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mAdvertisingProxy.SetEnabled(true);
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    mDiscoveryProxy.SetEnabled(true);
 #endif
 #if OTBR_ENABLE_OPENWRT
     mUbusAgent.Init();
@@ -110,8 +131,17 @@ void Application::Init(void)
 
 void Application::Deinit(void)
 {
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mAdvertisingProxy.SetEnabled(false);
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    mDiscoveryProxy.SetEnabled(false);
+#endif
 #if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent.Deinit();
+    mBorderAgent.SetEnabled(false);
+#endif
+#if OTBR_ENABLE_MDNS
+    mPublisher->Stop();
 #endif
 
     mNcp.Deinit();
@@ -190,6 +220,24 @@ otbrError Application::Run(void)
     }
 
     return error;
+}
+
+void Application::HandleMdnsState(Mdns::Publisher::State aState)
+{
+    OTBR_UNUSED_VARIABLE(aState);
+
+#if OTBR_ENABLE_BORDER_AGENT
+    mBorderAgent.HandleMdnsState(aState);
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mAdvertisingProxy.HandleMdnsState(aState);
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    mDiscoveryProxy.HandleMdnsState(aState);
+#endif
+#if OTBR_ENABLE_TREL
+    mTrelDnssd.HandleMdnsState(aState);
+#endif
 }
 
 void Application::HandleSignal(int aSignal)

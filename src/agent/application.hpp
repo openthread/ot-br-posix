@@ -134,6 +134,18 @@ public:
      */
     Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
 
+#if OTBR_ENABLE_MDNS
+    /**
+     * Get the Publisher object the application is using.
+     *
+     * @returns The Publisher object.
+     */
+    Mdns::Publisher &GetPublisher(void)
+    {
+        return *mPublisher;
+    }
+#endif
+
 #if OTBR_ENABLE_BORDER_AGENT
     /**
      * Get the border agent the application is using.
@@ -155,6 +167,42 @@ public:
     BackboneRouter::BackboneAgent &GetBackboneAgent(void)
     {
         return mBackboneAgent;
+    }
+#endif
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    /**
+     * Get the advertising proxy the application is using.
+     *
+     * @returns The advertising proxy.
+     */
+    AdvertisingProxy &GetAdvertisingProxy(void)
+    {
+        return mAdvertisingProxy;
+    }
+#endif
+
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    /**
+     * Get the discovery proxy the application is using.
+     *
+     * @returns The discovery proxy.
+     */
+    Dnssd::DiscoveryProxy &GetDiscoveryProxy(void)
+    {
+        return mDiscoveryProxy;
+    }
+#endif
+
+#if OTBR_ENABLE_TREL
+    /**
+     * Get the TrelDnssd object the application is using.
+     *
+     * @returns The TrelDnssd.
+     */
+    TrelDnssd::TrelDnssd &GetTrelDnssd(void)
+    {
+        return mTrelDnssd;
     }
 #endif
 
@@ -194,6 +242,14 @@ public:
     }
 #endif
 
+    /**
+     * This method handles mDNS publisher's state changes.
+     *
+     * @param[in] aState  The state of mDNS publisher.
+     *
+     */
+    void HandleMdnsState(Mdns::Publisher::State aState);
+
 private:
     // Default poll timeout.
     static const struct timeval kPollTimeout;
@@ -206,11 +262,23 @@ private:
 #endif
     const char               *mBackboneInterfaceName;
     Ncp::ControllerOpenThread mNcp;
+#if OTBR_ENABLE_MDNS
+    std::unique_ptr<Mdns::Publisher> mPublisher;
+#endif
 #if OTBR_ENABLE_BORDER_AGENT
     BorderAgent mBorderAgent;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     BackboneRouter::BackboneAgent mBackboneAgent;
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    AdvertisingProxy mAdvertisingProxy;
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    Dnssd::DiscoveryProxy mDiscoveryProxy;
+#endif
+#if OTBR_ENABLE_TREL
+    TrelDnssd::TrelDnssd mTrelDnssd;
 #endif
 #if OTBR_ENABLE_OPENWRT
     ubus::UBusAgent mUbusAgent;

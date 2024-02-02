@@ -109,10 +109,12 @@ public:
     void UnregisterService(void);
 
     /**
-     * This method notifies that mDNS Publisher is ready.
+     * This method handles mDNS publisher's state changes.
+     *
+     * @param[in] aState  The state of mDNS publisher.
      *
      */
-    void OnMdnsPublisherReady(void);
+    void HandleMdnsState(Mdns::Publisher::State aState);
 
 private:
     static constexpr size_t   kPeerCacheSize             = 256;

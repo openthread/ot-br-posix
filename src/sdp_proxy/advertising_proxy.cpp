@@ -96,21 +96,37 @@ static otError OtbrErrorToOtError(otbrError aError)
 AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
     : mNcp(aNcp)
     , mPublisher(aPublisher)
+    , mIsEnabled(false)
 {
     mNcp.RegisterResetHandler(
         [this]() { otSrpServerSetServiceUpdateHandler(GetInstance(), AdvertisingHandler, this); });
 }
 
-otbrError AdvertisingProxy::Start(void)
+void AdvertisingProxy::SetEnabled(bool aIsEnabled)
+{
+    VerifyOrExit(aIsEnabled != IsEnabled());
+    mIsEnabled = aIsEnabled;
+    if (mIsEnabled)
+    {
+        Start();
+    }
+    else
+    {
+        Stop();
+    }
+
+exit:
+    return;
+}
+
+void AdvertisingProxy::Start(void)
 {
     otSrpServerSetServiceUpdateHandler(GetInstance(), AdvertisingHandler, this);
 
     otbrLogInfo("Started");
-
-    return OTBR_ERROR_NONE;
 }
 
-void AdvertisingProxy::Stop()
+void AdvertisingProxy::Stop(void)
 {
     // Outstanding updates will fail on the SRP server because of timeout.
     // TODO: handle this case gracefully.
@@ -141,6 +157,8 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
     OutstandingUpdate *update = nullptr;
     otbrError          error  = OTBR_ERROR_NONE;
 
+    VerifyOrExit(IsEnabled());
+
     mOutstandingUpdates.emplace_back();
     update      = &mOutstandingUpdates.back();
     update->mId = aId;
@@ -152,6 +170,9 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
         mOutstandingUpdates.pop_back();
         otSrpServerHandleServiceUpdateResult(GetInstance(), aId, OtbrErrorToOtError(error));
     }
+
+exit:
+    return;
 }
 
 void AdvertisingProxy::OnMdnsPublishResult(otSrpServerServiceUpdateId aUpdateId, otbrError aError)
@@ -205,11 +226,23 @@ std::vector<Ip6Address> AdvertisingProxy::GetEligibleAddresses(const otIp6Addres
     return addresses;
 }
 
+void AdvertisingProxy::HandleMdnsState(Mdns::Publisher::State aState)
+{
+    VerifyOrExit(IsEnabled());
+    VerifyOrExit(aState == Mdns::Publisher::State::kReady);
+
+    PublishAllHostsAndServices();
+
+exit:
+    return;
+}
+
 void AdvertisingProxy::PublishAllHostsAndServices(void)
 {
     const otSrpServerHost *host = nullptr;
 
-    VerifyOrExit(mPublisher.IsStarted(), mPublisher.Start());
+    VerifyOrExit(IsEnabled());
+    VerifyOrExit(mPublisher.IsStarted());
 
     otbrLogInfo("Publish all hosts and services");
     while ((host = otSrpServerGetNextHost(GetInstance(), host)))
