@@ -38,5 +38,6 @@ start_service() {
 	sleep 4
 	procd_set_param env CASCODA_UART=/dev/ttyS0,115200
 	procd_set_param command @CMAKE_INSTALL_FULL_SBINDIR@/otbr-agent -I wpan0 -B br-lan 'spinel+hdlc+uart://irrelevant-path'
+	procd_set_param respawn
 	procd_close_instance
 }
