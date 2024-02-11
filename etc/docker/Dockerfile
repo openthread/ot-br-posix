@@ -95,7 +95,8 @@ WORKDIR /app
 
 RUN ./script/bootstrap
 COPY . .
-RUN ./script/setup
+
+RUN OTBR_OPTIONS="-DCMAKE_BUILD_TYPE=RelWithDebInfo" ./script/setup
 
 RUN ([ "${DNS64}" = "0" ] || chmod 644 /etc/bind/named.conf.options) \
   && ([ "${OT_BACKBONE_CI}" = "1" ] || ( \
