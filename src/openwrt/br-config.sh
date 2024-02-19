@@ -45,5 +45,4 @@ fw_setenv recovery httpd
 grep -qF cascoda /etc/sysupgrade.conf || echo "/.local/share/cascoda/" >> /etc/sysupgrade.conf
 
 # preserve IoT Router application program across software upgrades
-
 grep -qF kir_new /etc/sysupgrade.conf || echo "/usr/bin/knx_iot_router/kir_new/" >> /etc/sysupgrade.conf
