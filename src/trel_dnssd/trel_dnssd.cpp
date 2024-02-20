@@ -188,9 +188,10 @@ exit:
     return;
 }
 
-void TrelDnssd::OnMdnsPublisherReady(void)
+void TrelDnssd::HandleMdnsState(Mdns::Publisher::State aState)
 {
     VerifyOrExit(IsInitialized());
+    VerifyOrExit(aState == Mdns::Publisher::State::kReady);
 
     otbrLogDebug("mDNS Publisher is Ready");
     mMdnsPublisherReady = true;

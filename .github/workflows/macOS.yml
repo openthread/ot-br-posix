@@ -63,4 +63,10 @@ jobs:
         brew reinstall boost cmake cpputest dbus jsoncpp ninja protobuf@21 pkg-config
     - name: Build
       run: |
-        OTBR_OPTIONS='-DOTBR_BORDER_AGENT=OFF -DOTBR_MDNS=OFF -DOT_FIREWALL=OFF -DOTBR_DBUS=OFF' ./script/test build
+        OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \
+                      -DOTBR_MDNS=OFF \
+                      -DOTBR_ADVERTISING_PROXY=OFF \
+                      -DOTBR_DISCOVERY_PROXY=OFF \
+                      -DOTBR_TREL=OFF \
+                      -DOT_FIREWALL=OFF \
+                      -DOTBR_DBUS=OFF" ./script/test build

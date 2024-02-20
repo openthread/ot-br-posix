@@ -87,36 +87,33 @@ public:
      * The constructor to initialize the Thread border agent.
      *
      * @param[in] aNcp  A reference to the NCP controller.
+     * @param[in] aPublisher  A reference to the mDNS Publisher.
      *
      */
-    BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp);
+    BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
 
-    ~BorderAgent(void);
-
-    /**
-     * This method initialize border agent service.
-     *
-     */
-    void Init(void);
+    ~BorderAgent(void) = default;
 
     /**
-     * This method de-initializes border agent service.
+     * This method enables/disables the Border Agent.
+     *
+     * @param[in] aIsEnabled  Whether to enable the Border Agent.
      *
      */
-    void Deinit(void);
+    void SetEnabled(bool aIsEnabled);
 
     /**
-     * This method returns the Publisher the border agent is using.
+     * This method handles mDNS publisher's state changes.
      *
-     * @returns  A reference to the mPublisher.
+     * @param[in] aState  The state of mDNS publisher.
      *
      */
-    Mdns::Publisher &GetPublisher() { return *mPublisher; }
+    void HandleMdnsState(Mdns::Publisher::State aState);
 
 private:
     void Start(void);
     void Stop(void);
-    void HandleMdnsState(Mdns::Publisher::State aState);
+    bool IsEnabled(void) const { return mIsEnabled; }
     void PublishMeshCopService(void);
     void UpdateMeshCopService(void);
     void UnpublishMeshCopService(void);
@@ -131,20 +128,11 @@ private:
     std::string GetAlternativeServiceInstanceName() const;
 
     otbr::Ncp::ControllerOpenThread &mNcp;
-    Mdns::Publisher                 *mPublisher;
+    Mdns::Publisher                 &mPublisher;
+    bool                             mIsEnabled;
 
 #if OTBR_ENABLE_DBUS_SERVER
     std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
-#endif
-
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    AdvertisingProxy mAdvertisingProxy;
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    Dnssd::DiscoveryProxy mDiscoveryProxy;
-#endif
-#if OTBR_ENABLE_TREL
-    TrelDnssd::TrelDnssd mTrelDnssd;
 #endif
 
     std::string mServiceInstanceName;

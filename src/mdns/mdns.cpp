@@ -35,6 +35,8 @@
 
 #include "mdns/mdns.hpp"
 
+#if OTBR_ENABLE_MDNS
+
 #include <assert.h>
 
 #include <algorithm>
@@ -779,3 +781,5 @@ void Publisher::RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddr
 
 } // namespace Mdns
 } // namespace otbr
+
+#endif // OTBR_ENABLE_MDNS

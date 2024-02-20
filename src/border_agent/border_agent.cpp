@@ -139,23 +139,33 @@ struct StateBitmap
     }
 };
 
-BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp)
+BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
     : mNcp(aNcp)
-    , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aNewState) { HandleMdnsState(aNewState); }))
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    , mAdvertisingProxy(aNcp, *mPublisher)
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    , mDiscoveryProxy(aNcp, *mPublisher)
-#endif
-#if OTBR_ENABLE_TREL
-    , mTrelDnssd(aNcp, *mPublisher)
-#endif
+    , mPublisher(aPublisher)
+    , mIsEnabled(false)
 {
 }
 
-void BorderAgent::Init(void)
+void BorderAgent::SetEnabled(bool aIsEnabled)
 {
+    VerifyOrExit(IsEnabled() != aIsEnabled);
+    mIsEnabled = aIsEnabled;
+    if (mIsEnabled)
+    {
+        Start();
+    }
+    else
+    {
+        Stop();
+    }
+exit:
+    return;
+}
+
+void BorderAgent::Start(void)
+{
+    otbrLogInfo("Start Thread Border Agent");
+
     mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 
 #if OTBR_ENABLE_DBUS_SERVER
@@ -170,73 +180,30 @@ void BorderAgent::Init(void)
 #endif
 
     mServiceInstanceName = BaseServiceInstanceName();
-
-    Start();
-}
-
-void BorderAgent::Deinit(void)
-{
-    Stop();
-}
-
-void BorderAgent::Start(void)
-{
-    otbrError error = OTBR_ERROR_NONE;
-
-    SuccessOrExit(error = mPublisher->Start());
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Start();
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.Start();
-#endif
-
-exit:
-    otbrLogResult(error, "Start Thread Border Agent");
+    UpdateMeshCopService();
 }
 
 void BorderAgent::Stop(void)
 {
     otbrLogInfo("Stop Thread Border Agent");
-
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.Stop();
-#endif
-
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.Stop();
-#endif
-
     UnpublishMeshCopService();
-    mPublisher->Stop();
-}
-
-BorderAgent::~BorderAgent(void)
-{
-    if (mPublisher != nullptr)
-    {
-        delete mPublisher;
-        mPublisher = nullptr;
-    }
 }
 
 void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
 {
+    VerifyOrExit(IsEnabled());
+
     switch (aState)
     {
     case Mdns::Publisher::State::kReady:
         UpdateMeshCopService();
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-        mAdvertisingProxy.PublishAllHostsAndServices();
-#endif
-#if OTBR_ENABLE_TREL
-        mTrelDnssd.OnMdnsPublisherReady();
-#endif
         break;
     default:
         otbrLogWarning("mDNS publisher not available!");
         break;
     }
+exit:
+    return;
 }
 
 static uint64_t ConvertTimestampToUint64(const otTimestamp &aTimestamp)
@@ -441,38 +408,38 @@ void BorderAgent::PublishMeshCopService(void)
     error = Mdns::Publisher::EncodeTxtData(txtList, txtData);
     assert(error == OTBR_ERROR_NONE);
 
-    mPublisher->PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentServiceType,
-                               Mdns::Publisher::SubTypeList{}, port, txtData, [this](otbrError aError) {
-                                   if (aError == OTBR_ERROR_ABORTED)
-                                   {
-                                       // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
-                                       // cancelled. This can happen when the meshcop service is being updated
-                                       // frequently. To avoid false alarms, it should not be logged like a real error.
-                                       otbrLogInfo("Cancelled previous publishing meshcop service %s.%s.local",
-                                                   mServiceInstanceName.c_str(), kBorderAgentServiceType);
-                                   }
-                                   else
-                                   {
-                                       otbrLogResult(aError, "Result of publish meshcop service %s.%s.local",
-                                                     mServiceInstanceName.c_str(), kBorderAgentServiceType);
-                                   }
-                                   if (aError == OTBR_ERROR_DUPLICATED)
-                                   {
-                                       // Try to unpublish current service in case we are trying to register
-                                       // multiple new services simultaneously when the original service name
-                                       // is conflicted.
-                                       UnpublishMeshCopService();
-                                       mServiceInstanceName = GetAlternativeServiceInstanceName();
-                                       PublishMeshCopService();
-                                   }
-                               });
+    mPublisher.PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentServiceType,
+                              Mdns::Publisher::SubTypeList{}, port, txtData, [this](otbrError aError) {
+                                  if (aError == OTBR_ERROR_ABORTED)
+                                  {
+                                      // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
+                                      // cancelled. This can happen when the meshcop service is being updated
+                                      // frequently. To avoid false alarms, it should not be logged like a real error.
+                                      otbrLogInfo("Cancelled previous publishing meshcop service %s.%s.local",
+                                                  mServiceInstanceName.c_str(), kBorderAgentServiceType);
+                                  }
+                                  else
+                                  {
+                                      otbrLogResult(aError, "Result of publish meshcop service %s.%s.local",
+                                                    mServiceInstanceName.c_str(), kBorderAgentServiceType);
+                                  }
+                                  if (aError == OTBR_ERROR_DUPLICATED)
+                                  {
+                                      // Try to unpublish current service in case we are trying to register
+                                      // multiple new services simultaneously when the original service name
+                                      // is conflicted.
+                                      UnpublishMeshCopService();
+                                      mServiceInstanceName = GetAlternativeServiceInstanceName();
+                                      PublishMeshCopService();
+                                  }
+                              });
 }
 
 void BorderAgent::UnpublishMeshCopService(void)
 {
     otbrLogInfo("Unpublish meshcop service %s.%s.local", mServiceInstanceName.c_str(), kBorderAgentServiceType);
 
-    mPublisher->UnpublishService(mServiceInstanceName, kBorderAgentServiceType, [this](otbrError aError) {
+    mPublisher.UnpublishService(mServiceInstanceName, kBorderAgentServiceType, [this](otbrError aError) {
         otbrLogResult(aError, "Result of unpublish meshcop service %s.%s.local", mServiceInstanceName.c_str(),
                       kBorderAgentServiceType);
     });
@@ -480,8 +447,10 @@ void BorderAgent::UnpublishMeshCopService(void)
 
 void BorderAgent::UpdateMeshCopService(void)
 {
-    VerifyOrExit(mPublisher->IsStarted(), mPublisher->Start());
+    VerifyOrExit(IsEnabled());
+    VerifyOrExit(mPublisher.IsStarted());
     PublishMeshCopService();
+
 exit:
     return;
 }
@@ -496,8 +465,6 @@ void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std:
 
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
-    VerifyOrExit(mPublisher != nullptr);
-
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         otbrLogInfo("Thread is %s", (IsThreadStarted() ? "up" : "down"));
@@ -508,8 +475,6 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
     {
         UpdateMeshCopService();
     }
-exit:
-    return;
 }
 
 bool BorderAgent::IsThreadStarted(void) const

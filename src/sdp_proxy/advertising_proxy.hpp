@@ -66,25 +66,26 @@ public:
     explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
 
     /**
-     * This method starts the Advertising Proxy.
+     * This method enables/disables the Advertising Proxy.
      *
-     * @retval OTBR_ERROR_NONE  Successfully started the Advertising Proxy.
-     * @retval ...              Failed to start the Advertising Proxy.
-     *
-     */
-    otbrError Start(void);
-
-    /**
-     * This method stops the Advertising Proxy.
+     * @param[in] aIsEnabled  Whether to enable the Advertising Proxy.
      *
      */
-    void Stop();
+    void SetEnabled(bool aIsEnabled);
 
     /**
      * This method publishes all registered hosts and services.
      *
      */
     void PublishAllHostsAndServices(void);
+
+    /**
+     * This method handles mDNS publisher's state changes.
+     *
+     * @param[in] aState  The state of mDNS publisher.
+     *
+     */
+    void HandleMdnsState(Mdns::Publisher::State aState);
 
 private:
     struct OutstandingUpdate
@@ -105,6 +106,10 @@ private:
     void                                OnMdnsPublishResult(otSrpServerServiceUpdateId aUpdateId, otbrError aError);
 
     std::vector<Ip6Address> GetEligibleAddresses(const otIp6Address *aHostAddresses, uint8_t aHostAddressNum);
+
+    void Start(void);
+    void Stop(void);
+    bool IsEnabled(void) const { return mIsEnabled; }
 
     /**
      * This method publishes a specified host and its services.
@@ -128,6 +133,8 @@ private:
 
     // A reference to the mDNS publisher, has no ownership.
     Mdns::Publisher &mPublisher;
+
+    bool mIsEnabled;
 
     // A vector that tracks outstanding updates.
     std::vector<OutstandingUpdate> mOutstandingUpdates;
