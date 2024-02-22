@@ -1190,8 +1190,10 @@ int UbusServer::UbusGetInformation(struct ubus_context      *aContext,
         ubus_send_reply(aContext, aRequest, mNetworkdataBuf.head);
         if (time(nullptr) - mSecond > 10)
         {
+            static constexpr uint16_t kMaxTlvs = 35;
+
             struct otIp6Address address;
-            uint8_t             tlvTypes[OT_NETWORK_DIAGNOSTIC_TYPELIST_MAX_ENTRIES];
+            uint8_t             tlvTypes[kMaxTlvs];
             uint8_t             count             = 0;
             char                multicastAddr[10] = "ff03::2";
 
