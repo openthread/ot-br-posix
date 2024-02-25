@@ -104,7 +104,13 @@ void Application::Init(void)
     mPublisher->Start();
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
+// This is for delaying publishing the MeshCoP service until the correct
+// vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
+#if OTBR_STOP_BORDER_AGENT_ON_INIT
+    mBorderAgent.SetEnabled(false);
+#else
     mBorderAgent.SetEnabled(true);
+#endif
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
     mBackboneAgent.Init();

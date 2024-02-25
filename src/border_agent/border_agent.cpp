@@ -69,11 +69,7 @@
 
 namespace otbr {
 
-static const char kVendorName[]             = OTBR_VENDOR_NAME;
-static const char kProductName[]            = OTBR_PRODUCT_NAME;
-static const char kBorderAgentServiceType[] = "_meshcop._udp"; ///< Border agent service type of mDNS
-static const char kBorderAgentServiceInstanceName[] =
-    OTBR_MESHCOP_SERVICE_INSTANCE_NAME; ///< Border agent service name of mDNS
+static const char    kBorderAgentServiceType[]    = "_meshcop._udp"; ///< Border agent service type of mDNS
 static constexpr int kBorderAgentServiceDummyPort = 49152;
 
 /**
@@ -143,7 +139,31 @@ BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher 
     : mNcp(aNcp)
     , mPublisher(aPublisher)
     , mIsEnabled(false)
+    , mVendorName(OTBR_VENDOR_NAME)
+    , mProductName(OTBR_PRODUCT_NAME)
+    , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
+}
+
+otbrError BorderAgent::SetMeshCopServiceValues(const std::string          &aServiceInstanceName,
+                                               const std::string          &aProductName,
+                                               const std::string          &aVendorName,
+                                               const std::vector<uint8_t> &aVendorOui)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(aProductName.size() <= kMaxProductNameLength, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aVendorName.size() <= kMaxVendorNameLength, error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(aVendorOui.empty() || aVendorOui.size() == kVendorOuiLength, error = OTBR_ERROR_INVALID_ARGS);
+
+    mProductName = aProductName;
+    mVendorName  = aVendorName;
+    mVendorOui   = aVendorOui;
+
+    mBaseServiceInstanceName = aServiceInstanceName;
+
+exit:
+    return error;
 }
 
 void BorderAgent::SetEnabled(bool aIsEnabled)
@@ -179,7 +199,7 @@ void BorderAgent::Start(void)
     });
 #endif
 
-    mServiceInstanceName = BaseServiceInstanceName();
+    mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
     UpdateMeshCopService();
 }
 
@@ -360,8 +380,18 @@ void BorderAgent::PublishMeshCopService(void)
     }
 #endif
 
-    txtList.emplace_back("vn", kVendorName);
-    txtList.emplace_back("mn", kProductName);
+    if (!mVendorOui.empty())
+    {
+        txtList.emplace_back("vo", mVendorOui.data(), mVendorOui.size());
+    }
+    if (!mVendorName.empty())
+    {
+        txtList.emplace_back("vn", mVendorName.c_str());
+    }
+    if (!mProductName.empty())
+    {
+        txtList.emplace_back("mn", mProductName.c_str());
+    }
     txtList.emplace_back("nn", networkName);
     txtList.emplace_back("xp", extPanId->m8, sizeof(extPanId->m8));
     txtList.emplace_back("tv", mNcp.GetThreadVersion());
@@ -465,6 +495,8 @@ void BorderAgent::HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std:
 
 void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 {
+    VerifyOrExit(IsEnabled());
+
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
         otbrLogInfo("Thread is %s", (IsThreadStarted() ? "up" : "down"));
@@ -475,6 +507,9 @@ void BorderAgent::HandleThreadStateChanged(otChangedFlags aFlags)
     {
         UpdateMeshCopService();
     }
+
+exit:
+    return;
 }
 
 bool BorderAgent::IsThreadStarted(void) const
@@ -484,12 +519,12 @@ bool BorderAgent::IsThreadStarted(void) const
     return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
 }
 
-std::string BorderAgent::BaseServiceInstanceName() const
+std::string BorderAgent::GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const
 {
     const otExtAddress *extAddress = otLinkGetExtendedAddress(mNcp.GetInstance());
     std::stringstream   ss;
 
-    ss << kBorderAgentServiceInstanceName << " #";
+    ss << aServiceInstanceName << " #";
     ss << std::uppercase << std::hex << std::setfill('0');
     ss << std::setw(2) << static_cast<int>(extAddress->m8[6]);
     ss << std::setw(2) << static_cast<int>(extAddress->m8[7]);
@@ -504,7 +539,7 @@ std::string BorderAgent::GetAlternativeServiceInstanceName() const
     uint16_t                                rand = uniform_dist(engine);
     std::stringstream                       ss;
 
-    ss << BaseServiceInstanceName() << " (" << rand << ")";
+    ss << GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName) << " (" << rand << ")";
     return ss.str();
 }
 
