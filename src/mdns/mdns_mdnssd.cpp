@@ -948,7 +948,7 @@ void PublisherMDnsSd::UnsubscribeService(const std::string &aType, const std::st
                       [&aType, &aInstanceName](const std::unique_ptr<ServiceSubscription> &aService) {
                           return aService->mType == aType && aService->mInstanceName == aInstanceName;
                       });
-    assert(it != mSubscribedServices.end());
+    VerifyOrExit(it != mSubscribedServices.end());
 
     mSubscribedServices.erase(it);
 
@@ -998,7 +998,7 @@ void PublisherMDnsSd::UnsubscribeHost(const std::string &aHostName)
         mSubscribedHosts.begin(), mSubscribedHosts.end(),
         [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
-    assert(it != mSubscribedHosts.end());
+    VerifyOrExit(it != mSubscribedHosts.end());
 
     mSubscribedHosts.erase(it);
 
