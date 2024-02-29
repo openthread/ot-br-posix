@@ -570,10 +570,6 @@ void PublisherAvahi::HandleGroupState(AvahiEntryGroup *aGroup, AvahiEntryGroupSt
     case AVAHI_ENTRY_GROUP_UNCOMMITED:
     case AVAHI_ENTRY_GROUP_REGISTERING:
         break;
-
-    default:
-        assert(false);
-        break;
     }
 }
 
@@ -695,10 +691,6 @@ void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aS
 
     case AVAHI_CLIENT_CONNECTING:
         otbrLogInfo("Avahi client is connecting to the server");
-        break;
-
-    default:
-        assert(false);
         break;
     }
 }
