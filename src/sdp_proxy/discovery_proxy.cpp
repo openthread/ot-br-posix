@@ -214,11 +214,9 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string                      
         {
         case OT_DNSSD_QUERY_TYPE_BROWSE:
             splitError = SplitFullServiceName(queryName, serviceName, domain);
-            assert(splitError == OTBR_ERROR_NONE);
             break;
         case OT_DNSSD_QUERY_TYPE_RESOLVE:
             splitError = SplitFullServiceInstanceName(queryName, instanceName, serviceName, domain);
-            assert(splitError == OTBR_ERROR_NONE);
             break;
         default:
             splitError = OTBR_ERROR_NOT_FOUND;
@@ -226,6 +224,7 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string                      
         }
         if (splitError != OTBR_ERROR_NONE)
         {
+            // Incoming service/instance was not what current query wanted to see, move on.
             continue;
         }
 
@@ -284,8 +283,13 @@ void DiscoveryProxy::OnHostDiscovered(const std::string                         
         {
             continue;
         }
+
         splitError = SplitFullHostName(queryName, hostName, domain);
-        assert(splitError == OTBR_ERROR_NONE);
+
+        if (splitError != OTBR_ERROR_NONE)
+        {
+            continue;
+        }
 
         if (DnsLabelsEqual(hostName, aHostName))
         {
