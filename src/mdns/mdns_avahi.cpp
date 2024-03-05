@@ -1047,7 +1047,7 @@ void PublisherAvahi::UnsubscribeService(const std::string &aType, const std::str
                           return aService->mType == aType && aService->mInstanceName == aInstanceName;
                       });
 
-    assert(it != mSubscribedServices.end());
+    VerifyOrExit(it != mSubscribedServices.end());
 
     {
         std::unique_ptr<ServiceSubscription> service = std::move(*it);
@@ -1106,7 +1106,7 @@ void PublisherAvahi::UnsubscribeHost(const std::string &aHostName)
         mSubscribedHosts.begin(), mSubscribedHosts.end(),
         [&aHostName](const std::unique_ptr<HostSubscription> &aHost) { return aHost->mHostName == aHostName; });
 
-    assert(it != mSubscribedHosts.end());
+    VerifyOrExit(it != mSubscribedHosts.end());
 
     {
         std::unique_ptr<HostSubscription> host = std::move(*it);
