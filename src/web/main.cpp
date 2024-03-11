@@ -111,7 +111,7 @@ int main(int argc, char **argv)
         }
     }
 
-    otbrLogInit(argv[0], logLevel, true);
+    otbrLogInit(argv[0], logLevel, true, false);
     otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
 
     if (interfaceName == nullptr)

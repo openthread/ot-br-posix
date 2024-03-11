@@ -43,7 +43,7 @@ TEST(Logging, TestLoggingHigherLevel)
     char ident[20];
 
     snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO, true);
+    otbrLogInit(ident, OTBR_LOG_INFO, true, false);
     otbrLog(OTBR_LOG_DEBUG, OTBR_LOG_TAG, "cool-higher");
     otbrLogDeinit();
     sleep(0);
@@ -58,7 +58,7 @@ TEST(Logging, TestLoggingEqualLevel)
     char ident[20];
 
     snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO, true);
+    otbrLogInit(ident, OTBR_LOG_INFO, true, false);
     otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, "cool-equal");
     otbrLogDeinit();
     sleep(0);
@@ -69,13 +69,29 @@ TEST(Logging, TestLoggingEqualLevel)
     CHECK(0 == system(cmd));
 }
 
+TEST(Logging, TestLoggingEqualLevelNoSyslog)
+{
+    char ident[20];
+
+    snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
+    otbrLogInit(ident, OTBR_LOG_INFO, true, true);
+    otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, "cool-equal");
+    otbrLogDeinit();
+    sleep(0);
+
+    char cmd[128];
+    snprintf(cmd, sizeof(cmd), "grep '%s.*cool-equal' /var/log/syslog", ident);
+    printf("CMD = %s\n", cmd);
+    CHECK(0 != system(cmd));
+}
+
 TEST(Logging, TestLoggingLowerLevel)
 {
     char ident[20];
     char cmd[128];
 
     snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_INFO, true);
+    otbrLogInit(ident, OTBR_LOG_INFO, true, false);
     otbrLog(OTBR_LOG_WARNING, OTBR_LOG_TAG, "cool-lower");
     otbrLogDeinit();
     sleep(0);
@@ -90,7 +106,7 @@ TEST(Logging, TestLoggingDump)
     char cmd[128];
 
     snprintf(ident, sizeof(ident), "otbr-test-%ld", clock());
-    otbrLogInit(ident, OTBR_LOG_DEBUG, true);
+    otbrLogInit(ident, OTBR_LOG_DEBUG, true, false);
     const char s[] = "one super long string with lots of text";
     otbrDump(OTBR_LOG_INFO, "Test", "foobar", s, sizeof(s));
     otbrLogDeinit();

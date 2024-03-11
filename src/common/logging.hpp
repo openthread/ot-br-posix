@@ -78,20 +78,21 @@ void otbrLogSetLevel(otbrLogLevel aLevel);
 /**
  * Control log to syslog.
  *
- * @param[in] enable  True to log to/via syslog.
+ * @param[in] aEnabled  True to enable logging to/via syslog.
  *
  */
-void otbrLogEnableSyslog(bool aEnabled);
+void otbrLogSyslogSetEnabled(bool aEnabled);
 
 /**
  * This function initialize the logging service.
  *
- * @param[in] aProgramName  The name of this runnable program.
- * @param[in] aLevel        Log level of the logger.
- * @param[in] aPrintStderr  Whether to log to stderr.
+ * @param[in] aProgramName    The name of this runnable program.
+ * @param[in] aLevel          Log level of the logger.
+ * @param[in] aPrintStderr    Whether to log to stderr.
+ * @param[in] aSyslogDisable  Whether to disable logging to syslog.
  *
  */
-void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStderr);
+void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStderr, bool aSyslogDisable);
 
 /**
  * This function log at level @p aLevel.

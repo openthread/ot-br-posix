@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    otbrLogInit("otbr-mdns", OTBR_LOG_DEBUG, true);
+    otbrLogInit("otbr-mdns", OTBR_LOG_DEBUG, true, false);
     // allow quitting elegantly
     signal(SIGTERM, RecoverSignal);
     switch (argv[1][0])

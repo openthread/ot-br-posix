@@ -70,6 +70,7 @@ enum
     OTBR_OPT_HELP                    = 'h',
     OTBR_OPT_INTERFACE_NAME          = 'I',
     OTBR_OPT_VERBOSE                 = 'v',
+    OTBR_OPT_SYSLOG_DISABLE          = 's',
     OTBR_OPT_VERSION                 = 'V',
     OTBR_OPT_SHORTMAX                = 128,
     OTBR_OPT_RADIO_VERSION,
@@ -90,6 +91,7 @@ static const struct option kOptions[] = {
     {"help", no_argument, nullptr, OTBR_OPT_HELP},
     {"thread-ifname", required_argument, nullptr, OTBR_OPT_INTERFACE_NAME},
     {"verbose", no_argument, nullptr, OTBR_OPT_VERBOSE},
+    {"syslog-disable", no_argument, nullptr, OTBR_OPT_SYSLOG_DISABLE},
     {"version", no_argument, nullptr, OTBR_OPT_VERSION},
     {"radio-version", no_argument, nullptr, OTBR_OPT_RADIO_VERSION},
     {"auto-attach", optional_argument, nullptr, OTBR_OPT_AUTO_ATTACH},
@@ -136,9 +138,10 @@ static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
 static void PrintHelp(const char *aProgramName)
 {
     fprintf(stderr,
-            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [--auto-attach[=0/1]] RADIO_URL "
-            "[RADIO_URL]\n"
-            "    --auto-attach defaults to 1\n",
+            "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-s] [--auto-attach[=0/1]] "
+            "RADIO_URL [RADIO_URL]\n"
+            "    --auto-attach defaults to 1\n"
+            "    -s disables syslog and prints to standard out\n",
             aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
@@ -195,6 +198,7 @@ static int realmain(int argc, char *argv[])
     int                       ret               = EXIT_SUCCESS;
     const char               *interfaceName     = kDefaultInterfaceName;
     bool                      verbose           = false;
+    bool                      syslogDisable     = false;
     bool                      printRadioVersion = false;
     bool                      enableAutoAttach  = true;
     const char               *restListenAddress = "";
@@ -205,7 +209,7 @@ static int realmain(int argc, char *argv[])
 
     std::set_new_handler(OnAllocateFailed);
 
-    while ((opt = getopt_long(argc, argv, "B:d:hI:Vv", kOptions, nullptr)) != -1)
+    while ((opt = getopt_long(argc, argv, "B:d:hI:Vvs", kOptions, nullptr)) != -1)
     {
         switch (opt)
         {
@@ -226,6 +230,10 @@ static int realmain(int argc, char *argv[])
 
         case OTBR_OPT_VERBOSE:
             verbose = true;
+            break;
+
+        case OTBR_OPT_SYSLOG_DISABLE:
+            syslogDisable = true;
             break;
 
         case OTBR_OPT_VERSION:
@@ -269,7 +277,7 @@ static int realmain(int argc, char *argv[])
         }
     }
 
-    otbrLogInit(argv[0], logLevel, verbose);
+    otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
     otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
     otbrLogNotice("Thread version: %s", otbr::Ncp::ControllerOpenThread::GetThreadVersion());
     otbrLogNotice("Thread interface: %s", interfaceName);
