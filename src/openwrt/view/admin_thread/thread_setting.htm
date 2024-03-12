@@ -27,6 +27,8 @@
 -%>
 <%+header%>
 
+<% include('admin_thread/thread_header')%>
+
 <h2><%:Thread Network: %><%=threadget("networkname").NetworkName%><%: (wpan0)%></h2>
 <div> The Network Configuration section covers physical settings of the Thread Network such as channel, PAN ID. Per interface related settings like networkkey or MAC-filter are grouped in the Interface Configuration.</div>
 <br />
