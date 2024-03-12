@@ -178,7 +178,7 @@
 	function nagon(n, cx, cy, r) {
 		
 		out = []
-		for (let i = 0; i < n; i++) {
+		for (let i = 0; i <= n; i++) {
 			theta = Math.PI * 2 / n * (i+0.5)
 			out.push(cx + Math.sin(theta) * r)
 			out.push(cy + Math.cos(theta) * r)
@@ -209,7 +209,8 @@
 		return l
 			.append("polyline")
 			.attr("points", shape(cx, cy, r))
-			.style("fill", fill_col(node));
+			.attr("fill", fill_col(node))
+			.attr("stroke", "none");
 	}
 
 	make_node(legend, 50, 30, 8, "leader");
@@ -218,11 +219,6 @@
 	make_node(legend, 50, 90, 6, "mtd");
 	make_node(legend, 50, 110, 4, "joiner");
 	
-	legend.append("polyline").attr("points",pentagon(50, 30, 8)).style("fill", getNodeFillColor("leader"));
-	legend.append("polyline").attr("points",pentagon(50, 50, 8)).style("fill", getNodeFillColor("router"));
-	legend.append("circle").attr("cx",50).attr("cy",70).attr("r", 6).style("fill", getNodeFillColor("ftd"));
-	legend.append("circle").attr("cx",50).attr("cy",90).attr("r", 6).style("fill", getNodeFillColor("mtd"));
-	legend.append("circle").attr("cx",50).attr("cy",110).attr("r", 4).style("fill", getNodeFillColor("joiner"));
 	legend.append("text").attr("x", 60).attr("y", 35).text("leader").style("font-size", "15px").attr("alignment-baseline","middle");
 	legend.append("text").attr("x", 60).attr("y", 55).text("router").style("font-size", "15px").attr("alignment-baseline","middle");
 	legend.append("text").attr("x", 60).attr("y", 75).text("FTD child").style("font-size", "15px").attr("alignment-baseline","middle");
