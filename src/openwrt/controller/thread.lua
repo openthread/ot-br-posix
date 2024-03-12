@@ -1,6 +1,22 @@
 module("luci.controller.admin.thread", package.seeall)
 
 function index()
+	page = entry({"admin", "thread"}, firstchild(), translate("Thread"), 60)
+
+	page = entry({"admin", "thread", "overview"}, alias("admin","network","thread"), translate("Overview"), 1)
+	page.leaf = true
+
+	page = entry({"admin", "thread", "view"}, alias("admin","network","thread_view"), translate("View"), 2)
+	page.leaf = true
+
+	page = entry({"admin", "thread", "add"}, alias("admin","network","thread_add_page"), translate("Add Device"), 3)
+	page.leaf = true
+
+	page = entry({"admin", "thread", "docs"}, alias("admin","network","thread_docs"), translate("Documentation"), 4)
+	page.leaf = true
+
+	
+
 	page = entry({"admin", "network", "thread"}, template("admin_thread/thread_overview"), translate("Thread"), 16)
 	page.leaf = true
 
@@ -50,6 +66,9 @@ function index()
 	page.leaf = true
 
 	page = entry({"admin", "network", "thread_stop"}, post("thread_stop"), nil)
+	page.leaf = true
+
+	page = entry({"admin", "network", "thread_docs"}, template("admin_thread/thread_docs"), nil)
 	page.leaf = true
 end
 

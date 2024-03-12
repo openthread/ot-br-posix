@@ -25,6 +25,8 @@
 -%>
 <%+header%>
 
+<% if threadget("state").State == "disabled" then write('<meta http-equiv="refresh" content="0; url=' .. url('admin/network/thread') .. '">') end %>
+
 <h2><%:Add Joiner in Network: %><%=threadget("networkname").NetworkName%></h2>
 <br />
 
