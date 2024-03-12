@@ -108,6 +108,7 @@ define Package/openthread-br/install
 
 	$(INSTALL_DIR) $(1)/www/luci-static/resources
 	$(CP) $(LOCAL_SOURCE_DIR)/src/openwrt/handle_error.js $(1)/www/luci-static/resources
+	$(CP) $(LOCAL_SOURCE_DIR)/src/openwrt/d3.v4.min.js $(1)/www/luci-static/resources
 endef
 
 $(eval $(call BuildPackage,openthread-br))
