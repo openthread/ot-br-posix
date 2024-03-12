@@ -26,6 +26,7 @@
 <%+header%>
 
 <% include("admin_thread/thread_header")%>
+<% if threadget("state").State == "disabled" then write('<meta http-equiv="refresh" content="0; url=' .. url('admin/network/thread') .. '">') end %>
 
 <h2><%:Thread View: %><%=threadget("networkname").NetworkName%><%: (wpan0)%></h2>
 <div>This is the list and topograph of your thread network.</div>
@@ -150,11 +151,11 @@
 		if(rloc == localrloc) return rloc + " ( your device )";
 		else return rloc;
 	}
-	function getColor(role) {
-		if(role == 'ftd') return "#90EE90";
-		else if(role == 'mtd') return "#FFDAB9";
-		else if(role == 'router') return "#87CEFA";
-		else if(role == 'leader') return "#FFA07A";
+	function getNodeFillColor(role) {
+		if(role == 'ftd') return "#33579a";
+		else if(role == 'mtd') return "#00afd8";
+		else if(role == 'router') return "#33579a";
+		else if(role == 'leader') return "#000000";
 		else if(role == 'joiner') return "#778899";
 	}
 	var nodes, links;
@@ -173,11 +174,56 @@
 
 	var legend = d3.select("#topologyLegend");
 
-	legend.append("circle").attr("cx",50).attr("cy",30).attr("r", 6).style("fill", getColor("leader"));
-	legend.append("circle").attr("cx",50).attr("cy",50).attr("r", 6).style("fill", getColor("router"));
-	legend.append("circle").attr("cx",50).attr("cy",70).attr("r", 4).style("fill", getColor("ftd"));
-	legend.append("circle").attr("cx",50).attr("cy",90).attr("r", 4).style("fill", getColor("mtd"));
-	legend.append("circle").attr("cx",50).attr("cy",110).attr("r", 4).style("fill", getColor("joiner"));
+	pentagon = nagon.bind(null, 5)
+
+	function nagon(n, cx, cy, r) {
+		
+		out = []
+		for (let i = 0; i < n; i++) {
+			theta = Math.PI * 2 / n * (i+0.5)
+			out.push(cx + Math.sin(theta) * r)
+			out.push(cy + Math.cos(theta) * r)
+		}
+		return out
+	}
+
+	function getNodeShapeFn(node) {
+		if (node == "leader" || node == "router") 
+			return pentagon;
+		else if (node == "ftd" || node == "mtd" || node == "joiner")
+			return nagon.bind(null, 50);
+	}
+
+	function make_node(l, cx, cy, r, node) {
+		let shape = getNodeShapeFn(node), fill_col = getNodeFillColor;
+		if (typeof(node) == "function") {
+			shape = (x,y,r) => (n) => getNodeShapeFn(node(n))(x, y, r(n));
+			fill_col = _=>n=>getNodeFillColor(node(n));
+		} 
+		if (typeof r == "function") {
+			if (typeof node =="function")
+				shape = (x,y,r) => (n) => getNodeShapeFn(node(n))(x, y, r(n));
+			else
+				shape = (x,y,r) => (n) => getNodeShapeFn(node)(x, y, r(n));
+			
+		}
+		return l
+			.append("polyline")
+			.attr("points", shape(cx, cy, r))
+			.style("fill", fill_col(node));
+	}
+
+	make_node(legend, 50, 30, 8, "leader");
+	make_node(legend, 50, 50, 8, "router");
+	make_node(legend, 50, 70, 6, "ftd");
+	make_node(legend, 50, 90, 6, "mtd");
+	make_node(legend, 50, 110, 4, "joiner");
+	
+	legend.append("polyline").attr("points",pentagon(50, 30, 8)).style("fill", getNodeFillColor("leader"));
+	legend.append("polyline").attr("points",pentagon(50, 50, 8)).style("fill", getNodeFillColor("router"));
+	legend.append("circle").attr("cx",50).attr("cy",70).attr("r", 6).style("fill", getNodeFillColor("ftd"));
+	legend.append("circle").attr("cx",50).attr("cy",90).attr("r", 6).style("fill", getNodeFillColor("mtd"));
+	legend.append("circle").attr("cx",50).attr("cy",110).attr("r", 4).style("fill", getNodeFillColor("joiner"));
 	legend.append("text").attr("x", 60).attr("y", 35).text("leader").style("font-size", "15px").attr("alignment-baseline","middle");
 	legend.append("text").attr("x", 60).attr("y", 55).text("router").style("font-size", "15px").attr("alignment-baseline","middle");
 	legend.append("text").attr("x", 60).attr("y", 75).text("FTD child").style("font-size", "15px").attr("alignment-baseline","middle");
@@ -187,12 +233,9 @@
 	function update_graph(nodes, links, localrloc) {
 		node = node.data(nodes, function(d) { return d.rloc;});
 		node.exit().remove();
-		node = node.enter().append("circle")
-				.attr("fill", function(d) { return getColor(d.role); })
-				.attr("r", function(d) {
-						return (d.role == 'router' || d.role == 'leader' ? 10 : 7);
-				})
-				.merge(node);
+		enter = node.enter();
+		node = make_node(enter, 0, 0, d=>d.role in ['router', 'leader'] ? 10 : 7, d=>d.role).merge(node)
+		
 
 		link = link.data(links, function(d) { return d.source.rloc + "-" + d.target.rloc; });
 		link.exit().remove();
@@ -213,8 +256,8 @@
 	}
 
 	function ticked() {
-		node.attr("cx", function(d) { return d.x; })
-				.attr("cy", function(d) { return d.y; })
+		console.log(node)
+		node.attr("transform", d => `translate(${d.x} ${d.y})`)
 		link.attr("x1", function(d) { return d.source.x; })
 				.attr("y1", function(d) { return d.source.y; })
 				.attr("x2", function(d) { return d.target.x; })
