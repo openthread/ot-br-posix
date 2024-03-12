@@ -5,11 +5,17 @@ uci get network.thread.ifname && \
 	logger -t br-config Thread network interface and firewall already configured! && \
 	exit 0  
 
-logger -t br-config Configuring Thread network interface and firewall rules...
+logger -t br-config Configuring Thread network interface...
 
 uci set network.thread=interface
 uci set network.thread.ifname='wpan0'
 uci set network.thread.proto='static'
+
+uci show firewall | grep thread && \
+	logger -t br-config Thread firewall rules already configured! && \
+	exit 0
+
+logger -t br-config Configuring Thread firewall rules...
 
 uci add firewall zone > /dev/null
 uci set firewall.@zone[-1].name='thread'
