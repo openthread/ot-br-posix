@@ -296,6 +296,9 @@ void ControllerOpenThread::Deinit(void)
 
     otSysDeinit();
     mInstance = nullptr;
+
+    mThreadStateChangedCallbacks.clear();
+    mResetHandlers.clear();
 }
 
 void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
