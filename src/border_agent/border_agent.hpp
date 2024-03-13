@@ -47,6 +47,7 @@
 #include "backbone_router/backbone_agent.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
+#include "mdns/dnssd_plat.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/ncp_openthread.hpp"
 #include "sdp_proxy/advertising_proxy.hpp"

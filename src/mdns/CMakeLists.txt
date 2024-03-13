@@ -30,6 +30,7 @@ if(OTBR_MDNS STREQUAL "avahi")
     add_library(otbr-mdns
         mdns.cpp
         mdns_avahi.cpp
+        dnssd_plat.cpp
     )
     target_compile_definitions(otbr-mdns PUBLIC
         OTBR_ENABLE_MDNS_AVAHI=1
@@ -48,6 +49,7 @@ if(OTBR_MDNS STREQUAL "mDNSResponder")
     add_library(otbr-mdns
         mdns.cpp
         mdns_mdnssd.cpp
+        dnssd_plat.cpp
     )
     target_compile_definitions(otbr-mdns PUBLIC
         OTBR_ENABLE_MDNS_MDNSSD=1

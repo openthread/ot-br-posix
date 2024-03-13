@@ -271,6 +271,9 @@ private:
 #if OTBR_ENABLE_BACKBONE_ROUTER
     BackboneRouter::BackboneAgent mBackboneAgent;
 #endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    DnssdPlatform mDnssdPlatform;
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     AdvertisingProxy mAdvertisingProxy;
 #endif
