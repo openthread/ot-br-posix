@@ -32,12 +32,17 @@
 
 <br/><br/>
 
-<form class="inline" action="<%=url('admin/network/thread_add_joiner')%>" method="post" id="addForm" name="addForm" onsubmit="return validateForm()">
+<ul class="cbi-tabmenu">
+	<li class="cbi-tab" id="qr_entry" style="text-align:center;"><a href="javascript:showqrscan();"><%:QR Code Entry%></a></li>
+	<li class="cbi-tab-disabled" id="manual_entry" style="text-align:center;"><a href="javascript:showmanual();"><%:Manual Entry%></a></li>
+</ul>
+
+<form style="display: none" class="inline" action="<%=url('admin/network/thread_add_joiner')%>" method="post" id="addForm" name="addForm" onsubmit="return validateForm()">
 <div style="width:90%;margin-left:5%;">
 	<div class="cbi-value">
 		<label class="cbi-value-title" style="margin-right:5%;">New Joiner Credential</label>
 		<div class="cbi-value-title">
-			<input type="text" name="pskd" value="J01NME" style="width:40%;"/>
+			<input type="text" name="pskd" placeholder="J01NME" style="width:40%;"/>
 			<div class="cbi-value-description">
 				The Joiner Credential is a device-specific string of all uppercase alphanumeric characters(0-9 and A-Y, excluding I, O, Q and Z for readability), with a length between 6 and 32 characters.
 			</div>
@@ -46,7 +51,7 @@
 	<div class="cbi-value">
 		<label class="cbi-value-title" style="margin-right:5%;">Restrict to a Specific Joiner</label>
 		<div class="cbi-value-title">
-			<input type="text" name="eui64" value="2157d22254527111" style="width:40%;"/>
+			<input type="text" name="eui64" placeholder="2157d22254527111" style="width:40%;"/>
 			<div class="cbi-value-description">
 				To restrict commissioning to a specific Joiner device, which is the devices factory-assigned IEEE EUI-64, use the eui64 parameter to get the EUI-64. You can input '*' to unrestrict to the specific joiner.
 			</div>
@@ -66,9 +71,48 @@
 </div>
 </form>
 
+<div id="qrForm">
+	<div id="qr-reader"class="cbi-value" style="width:500px"></div>
+	<div class="cbi-value">
+		<input type="text" name="qr_text" id="qr_text" placeholder="Paste QR Code contents here">
+	</div>
+	<div class="cbi-page-actions right">
+		<input class="cbi-button cbi-button-neutral" style="float:left;" type="button" onclick="window.location.href='thread_view'" value="<%:Back to View%>" />
+		<button class="cbi-button cbi-button-add important" id="qr_submit" onclick="QrCodeResult(document.getElementById('qr_text').value)"><%:Submit%></button>
+	</div>
+</div>
+
 <%+footer%>
+<script type="text/javascript" src="/luci-static/resources/html5-qrcode.min.js"></script>
 <script type="text/javascript" src="/luci-static/resources/handle_error.js"></script>
 <script type="text/javascript">//<![CDATA[
+	function QrCodeResult(res) {
+		const reThread = /v=(?<version>\d+)&&eui=(?<eui>[0-9a-fA-F]{16})&&cc=(?<cc>[a-zA-Z0-9]{4,12})/
+		const reKNX = /S(?<serial>[0-9A-F]{12})\+3ZEUI:(?<eui>[0-9a-fA-F]{16})\.P:(?<cc>[a-zA-Z0-9]{4,12})\.PA:(?<psk>[0-9A-HJ-NPR-Y]{6,32})/
+		let m;
+		if (m = res.match(reThread)) {
+			console.log(m.groups);
+			document.querySelector('form#addForm>div>div>div>input[name="pskd"]').value = m.groups.cc;
+			document.querySelector('form#addForm>div>div>div>input[name="eui64"]').value = m.groups.eui;
+		} else if (m = res.match(reKNX)) {
+			console.log(m.groups);
+			document.querySelector('form#addForm>div>div>div>input[name="pskd"]').value = m.groups.cc;
+			document.querySelector('form#addForm>div>div>div>input[name="eui64"]').value = m.groups.eui;
+		} else {
+			console.log("Not a valid Thread QR Code!");
+			return;
+		}
+		document.getElementById('addForm').submit()
+	}
+
+	function onScanSuccess(decodedText, decodedResult) {
+		console.log(`scan result: ${decodedText}`, decodedResult)
+		QrCodeResult(decodedText)
+	}
+
+	let html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", {fps: 10, qrbox: 250});
+	html5QrcodeScanner.render(onScanSuccess)
+	
 	handle_error(GetURLParameter('error'));
 	function validateForm()
 	{
@@ -79,4 +123,19 @@
 			return false;
 		}
 	}
+
+	function showmanual() {
+		document.getElementById("addForm").style.display="block"
+		document.getElementById("qrForm").style.display="none"
+		document.getElementById("qr_entry").className="cbi-tab-disabled"
+		document.getElementById("manual_entry").style.display="cbi-tab"
+	}
+
+	function showqrscan() {
+		document.getElementById("qrForm").style.display="block"
+		document.getElementById("addForm").style.display="none"
+		document.getElementById("manual_entry").className="cbi-tab-disabled"
+		document.getElementById("qr_entry").style.display="cbi-tab"
+	}
+
 //]]></script>
