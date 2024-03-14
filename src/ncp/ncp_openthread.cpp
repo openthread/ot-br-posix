@@ -294,7 +294,7 @@ void ControllerOpenThread::Deinit(void)
 {
     assert(mInstance != nullptr);
 
-    otSysDeinit();
+    otSysDeinit(mInstance);
     mInstance = nullptr;
 
     mThreadStateChangedCallbacks.clear();
@@ -362,7 +362,7 @@ void ControllerOpenThread::Reset(void)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
-    otSysDeinit();
+    otSysDeinit(mInstance);
     mInstance = nullptr;
 
     Init();
