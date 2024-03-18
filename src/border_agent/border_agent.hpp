@@ -62,7 +62,7 @@
 #endif
 
 #ifndef OTBR_MESHCOP_SERVICE_INSTANCE_NAME
-#define OTBR_MESHCOP_SERVICE_INSTANCE_NAME OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME
+#define OTBR_MESHCOP_SERVICE_INSTANCE_NAME (OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME)
 #endif
 
 namespace otbr {
@@ -95,6 +95,28 @@ public:
     ~BorderAgent(void) = default;
 
     /**
+     * Overrides MeshCoP service (i.e. _meshcop._udp) instance name, product name, vendor name and vendor OUI.
+     *
+     * This method must be called before this BorderAgent is enabled by SetEnabled.
+     *
+     * @param[in] aServiceInstanceName  The service instance name; suffix may be appended to this value to avoid
+     *                                  name conflicts.
+     * @param[in] aProductName          The product name; must not exceed length of kMaxProductNameLength
+     *                                  and an empty string will be ignored.
+     * @param[in] aVendorName           The vendor name; must not exceed length of kMaxVendorNameLength
+     *                                  and an empty string will be ignored.
+     * @param[in] aVendorOui            The vendor OUI; must have length of 3 bytes or be empty and ignored.
+     *
+     * @returns OTBR_ERROR_INVALID_ARGS  If aVendorName, aProductName or aVendorOui exceeds the
+     *                                   allowed ranges.
+     * @returns OTBR_ERROR_NONE          If successfully set the meshcop service values.
+     */
+    otbrError SetMeshCopServiceValues(const std::string          &aServiceInstanceName,
+                                      const std::string          &aProductName,
+                                      const std::string          &aVendorName,
+                                      const std::vector<uint8_t> &aVendorOui = {});
+
+    /**
      * This method enables/disables the Border Agent.
      *
      * @param[in] aIsEnabled  Whether to enable the Border Agent.
@@ -124,7 +146,7 @@ private:
     void HandleThreadStateChanged(otChangedFlags aFlags);
 
     bool        IsThreadStarted(void) const;
-    std::string BaseServiceInstanceName() const;
+    std::string GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const;
     std::string GetAlternativeServiceInstanceName() const;
 
     otbr::Ncp::ControllerOpenThread &mNcp;
@@ -135,6 +157,20 @@ private:
     std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
 #endif
 
+    std::vector<uint8_t> mVendorOui;
+
+    std::string mVendorName;
+    std::string mProductName;
+
+    // The base service instance name typically consists of the vendor and product name. But it can
+    // also be overridden by `OTBR_MESHCOP_SERVICE_INSTANCE_NAME` or method `SetMeshCopServiceValues()`.
+    // For example, this value can be "OpenThread Border Router".
+    std::string mBaseServiceInstanceName;
+
+    // The actual instance name advertised in the mDNS service. This is usually the value of
+    // `mBaseServiceInstanceName` plus the Extended Address and optional random number for avoiding
+    // conflicts. For example, this value can be "OpenThread Border Router #7AC3" or
+    // "OpenThread Border Router #7AC3 (14379)".
     std::string mServiceInstanceName;
 };
 

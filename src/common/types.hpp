@@ -414,6 +414,10 @@ struct MdnsTelemetryInfo
     uint32_t mServiceResolutionEmaLatency;   ///< The EMA latency of service resolutions in milliseconds
 };
 
+static constexpr size_t kVendorOuiLength      = 3;
+static constexpr size_t kMaxVendorNameLength  = 24;
+static constexpr size_t kMaxProductNameLength = 24;
+
 } // namespace otbr
 
 #endif // OTBR_COMMON_TYPES_HPP_
