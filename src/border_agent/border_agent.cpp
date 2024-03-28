@@ -143,6 +143,7 @@ BorderAgent::BorderAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher 
     , mProductName(OTBR_PRODUCT_NAME)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
+    mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 }
 
 otbrError BorderAgent::SetMeshCopServiceValues(const std::string          &aServiceInstanceName,
@@ -185,8 +186,6 @@ exit:
 void BorderAgent::Start(void)
 {
     otbrLogInfo("Start Thread Border Agent");
-
-    mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 
 #if OTBR_ENABLE_DBUS_SERVER
     mNcp.GetThreadHelper()->SetUpdateMeshCopTxtHandler([this](std::map<std::string, std::vector<uint8_t>> aUpdate) {
