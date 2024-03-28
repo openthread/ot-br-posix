@@ -111,6 +111,7 @@ struct StateBitmap
     uint32_t mAvailability : 2;
     uint32_t mBbrIsActive : 1;
     uint32_t mBbrIsPrimary : 1;
+    uint32_t mEpskcSupported : 1;
 
     StateBitmap(void)
         : mConnectionMode(0)
@@ -118,6 +119,7 @@ struct StateBitmap
         , mAvailability(0)
         , mBbrIsActive(0)
         , mBbrIsPrimary(0)
+        , mEpskcSupported(OTBR_ENABLE_EPSKC)
     {
     }
 
@@ -130,7 +132,7 @@ struct StateBitmap
         bitmap |= mAvailability << 5;
         bitmap |= mBbrIsActive << 7;
         bitmap |= mBbrIsPrimary << 8;
-
+        bitmap |= mEpskcSupported << 11;
         return bitmap;
     }
 };

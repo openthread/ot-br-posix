@@ -108,6 +108,12 @@ if(OTBR_TREL)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TREL=1)
 endif()
 
+option(OTBR_EPSKC "Enable ePSKc Support" OFF)
+if (OTBR_EPSKC)
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_EPSKC=1)
+else()
+    target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_EPSKC=0)
+endif()
 
 option(OTBR_WEB "Enable Web GUI" OFF)
 
