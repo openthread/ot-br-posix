@@ -305,6 +305,15 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_packets() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().trel_info().counters().trel_tx_bytes() == 0);
 #endif
+#if OTBR_ENABLE_BORDER_ROUTING
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().name() == "lo");
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().is_up());
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().is_running());
+    TEST_ASSERT(!telemetryData.wpan_border_router().infra_link_info().is_multicast());
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().link_local_address_count() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().unique_local_address_count() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().global_unicast_address_count() == 0);
+#endif
     TEST_ASSERT(telemetryData.wpan_border_router().mdns().service_registration_responses().success_count() > 0);
 #if OTBR_ENABLE_NAT64
     TEST_ASSERT(telemetryData.wpan_border_router().nat64_state().prefix_manager_state() ==

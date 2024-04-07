@@ -145,7 +145,7 @@ otbr_agent_service_start()
 {
     local -r EXIT_CODE_SHOULD_RESTART=7
 
-    sudo systemd-run --collect --no-ask-password -u test-otbr-agent -p "RestartForceExitStatus=$EXIT_CODE_SHOULD_RESTART" "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
+    sudo systemd-run --collect --no-ask-password -u test-otbr-agent -p "RestartForceExitStatus=$EXIT_CODE_SHOULD_RESTART" "${CMAKE_BINARY_DIR}"/src/agent/otbr-agent -d7 -I wpan0 -B lo "spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1"
     timeout 2 bash -c "while ! ot_ctl state; do sleep 1; done"
 }
 
@@ -175,7 +175,7 @@ test_ready_signal()
     sudo expect <<EOF
 spawn dbus-monitor --system path=/io/openthread/BorderRouter/wpan0,member=Ready
 set dbus_monitor \$spawn_id
-spawn ${CMAKE_BINARY_DIR}/src/agent/otbr-agent -d7 -I wpan0 spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1
+spawn ${CMAKE_BINARY_DIR}/src/agent/otbr-agent -d7 -I wpan0 -B lo spinel+hdlc+forkpty://$(command -v ot-rcp)?forkpty-arg=1
 set spawn_id \$dbus_monitor
 expect {
     "member=Ready" { exit }

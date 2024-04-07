@@ -1165,9 +1165,9 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const InfraLinkInfo &aInfraL
     SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mIsUp));
     SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mIsRunning));
     SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mIsMulticast));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mLinkLocalAddresses));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mUniqueLocalAddresses));
-    SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mGlobalUnicastAddresses));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mLinkLocalAddressCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mUniqueLocalAddressCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aInfraLinkInfo.mGlobalUnicastAddressCount));
 
     VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
 exit:
@@ -1185,9 +1185,9 @@ otbrError DBusMessageExtract(DBusMessageIter *aIter, InfraLinkInfo &aInfraLinkIn
     SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mIsUp));
     SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mIsRunning));
     SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mIsMulticast));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mLinkLocalAddresses));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mUniqueLocalAddresses));
-    SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mGlobalUnicastAddresses));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mLinkLocalAddressCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mUniqueLocalAddressCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aInfraLinkInfo.mGlobalUnicastAddressCount));
 
     dbus_message_iter_next(aIter);
 exit:

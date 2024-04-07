@@ -486,6 +486,16 @@ message TelemetryData {
     optional Nat64ProtocolCounters counters = 3;
   }
 
+  message InfraLinkInfo {
+    optional string name = 1;
+    optional bool is_up = 2;
+    optional bool is_running = 3;
+    optional bool is_multicast = 4;
+    optional uint32 link_local_address_count = 5;
+    optional uint32 unique_local_address_count = 6;
+    optional uint32 global_unicast_address_count = 7;
+  }
+
   message WpanBorderRouter {
     // Border routing counters
     optional BorderRoutingCounters border_routing_counters = 1;
@@ -519,6 +529,9 @@ message TelemetryData {
 
     // Information about TREL.
     optional TrelInfo trel_info = 11;
+
+    // Information about the infra link
+    optional InfraLinkInfo infra_link_info = 12;
   }
 
   message RcpStabilityStatistics {
