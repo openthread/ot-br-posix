@@ -61,6 +61,7 @@
 #if OTBR_ENABLE_TREL
 #include <openthread/trel.h>
 #endif
+#include <net/if.h>
 #include <openthread/platform/radio.h>
 
 #include "common/byteswap.hpp"
@@ -1261,6 +1262,26 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
         // End of TrelInfo section.
 #endif // OTBR_ENABLE_TREL
+
+#if OTBR_ENABLE_BORDER_ROUTING
+        // Begin of InfraLinkInfo section.
+        {
+            auto                           infraLinkInfo = wpanBorderRouter->mutable_infra_link_info();
+            otSysInfraNetIfAddressCounters addressCounters;
+            uint32_t                       ifrFlags = otSysGetInfraNetifFlags();
+
+            otSysCountInfraNetifAddresses(&addressCounters);
+
+            infraLinkInfo->set_name(otSysGetInfraNetifName());
+            infraLinkInfo->set_is_up((ifrFlags & IFF_UP) != 0);
+            infraLinkInfo->set_is_running((ifrFlags & IFF_RUNNING) != 0);
+            infraLinkInfo->set_is_multicast((ifrFlags & IFF_MULTICAST) != 0);
+            infraLinkInfo->set_link_local_address_count(addressCounters.mLinkLocalAddresses);
+            infraLinkInfo->set_unique_local_address_count(addressCounters.mUniqueLocalAddresses);
+            infraLinkInfo->set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
+        }
+        // End of InfraLinkInfo section.
+#endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
         // Begin of SrpServerInfo section.

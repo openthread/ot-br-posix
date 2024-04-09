@@ -1956,13 +1956,13 @@ otError DBusThreadObject::GetInfraLinkInfo(DBusMessageIter &aIter)
     ifrFlags = otSysGetInfraNetifFlags();
     otSysCountInfraNetifAddresses(&addressCounters);
 
-    infraLinkInfo.mName                   = otSysGetInfraNetifName();
-    infraLinkInfo.mIsUp                   = (ifrFlags & IFF_UP) != 0;
-    infraLinkInfo.mIsRunning              = (ifrFlags & IFF_RUNNING) != 0;
-    infraLinkInfo.mIsMulticast            = (ifrFlags & IFF_MULTICAST) != 0;
-    infraLinkInfo.mLinkLocalAddresses     = addressCounters.mLinkLocalAddresses;
-    infraLinkInfo.mUniqueLocalAddresses   = addressCounters.mUniqueLocalAddresses;
-    infraLinkInfo.mGlobalUnicastAddresses = addressCounters.mGlobalUnicastAddresses;
+    infraLinkInfo.mName                      = otSysGetInfraNetifName();
+    infraLinkInfo.mIsUp                      = (ifrFlags & IFF_UP) != 0;
+    infraLinkInfo.mIsRunning                 = (ifrFlags & IFF_RUNNING) != 0;
+    infraLinkInfo.mIsMulticast               = (ifrFlags & IFF_MULTICAST) != 0;
+    infraLinkInfo.mLinkLocalAddressCount     = addressCounters.mLinkLocalAddresses;
+    infraLinkInfo.mUniqueLocalAddressCount   = addressCounters.mUniqueLocalAddresses;
+    infraLinkInfo.mGlobalUnicastAddressCount = addressCounters.mGlobalUnicastAddresses;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, infraLinkInfo) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
