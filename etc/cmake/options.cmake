@@ -108,7 +108,7 @@ if(OTBR_TREL)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_TREL=1)
 endif()
 
-option(OTBR_EPSKC "Enable ePSKc Support" OFF)
+option(OTBR_EPSKC "Enable ephemeral PSKc" ON)
 if (OTBR_EPSKC)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_EPSKC=1)
 else()
