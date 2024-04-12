@@ -38,6 +38,7 @@
 #include <openthread/border_routing.h>
 #include <openthread/dataset.h>
 #include <openthread/dnssd_server.h>
+#include <openthread/link_metrics.h>
 #include <openthread/logging.h>
 #include <openthread/nat64.h>
 #include <openthread/srp_server.h>
@@ -284,6 +285,9 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 #endif
 #if OTBR_ENABLE_DHCP6_PD
     otBorderRoutingDhcp6PdSetEnabled(mInstance, aFeatureFlagList.enable_dhcp6_pd());
+#endif
+#if OTBR_ENABLE_LINK_METRICS_TELEMETRY
+    otLinkMetricsManagerSetEnabled(mInstance, aFeatureFlagList.enable_link_metrics_manager());
 #endif
 
     return error;
