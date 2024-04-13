@@ -145,6 +145,10 @@ private:
 
     void HandleThreadStateChanged(otChangedFlags aFlags);
 
+    static void HandleEpskcStateChanged(void *aContext);
+    void PublishEpskcService();
+    void UnpublishEpskcService();
+
     bool        IsThreadStarted(void) const;
     std::string GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const;
     std::string GetAlternativeServiceInstanceName() const;
