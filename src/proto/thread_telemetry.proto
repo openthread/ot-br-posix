@@ -304,6 +304,9 @@ message TelemetryData {
 
     // The number of other responses
     optional uint32 other_count = 6;
+
+    // TODO: Remove reserved fields, use upstream_dns metrics in DnsServerResponseCounters.
+    reserved 7 to 9;
   }
 
   enum SrpServerState {
