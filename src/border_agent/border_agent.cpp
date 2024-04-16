@@ -69,8 +69,9 @@
 
 namespace otbr {
 
-static const char    kBorderAgentServiceType[]    = "_meshcop._udp"; ///< Border agent service type of mDNS
-static constexpr int kBorderAgentServiceDummyPort = 49152;
+static const char    kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
+static const char    kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
+static constexpr int kBorderAgentServiceDummyPort   = 49152;
 
 /**
  * Locators
@@ -202,12 +203,75 @@ void BorderAgent::Start(void)
 
     mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
     UpdateMeshCopService();
+
+    otBorderAgentSetEphemeralKeyCallback(mNcp.GetInstance(), BorderAgent::HandleEpskcStateChanged, this);
 }
 
 void BorderAgent::Stop(void)
 {
     otbrLogInfo("Stop Thread Border Agent");
     UnpublishMeshCopService();
+}
+
+void BorderAgent::HandleEpskcStateChanged(void *aContext)
+{
+    BorderAgent *borderAgent = static_cast<BorderAgent *>(aContext);
+
+    if (otBorderAgentIsEphemeralKeyActive(borderAgent->mNcp.GetInstance()))
+    {
+        borderAgent->PublishEpskcService();
+    }
+    else
+    {
+        borderAgent->UnpublishEpskcService();
+    }
+}
+
+void BorderAgent::PublishEpskcService()
+{
+    otInstance *instance = mNcp.GetInstance();
+    int         port     = otBorderAgentGetUdpPort(instance);
+
+    otbrLogInfo("Publish meshcop-e service %s.%s.local. port %d", mServiceInstanceName.c_str(),
+                kBorderAgentEpskcServiceType, port);
+
+    mPublisher.PublishService(/* aHostName */ "", mServiceInstanceName, kBorderAgentEpskcServiceType,
+                              Mdns::Publisher::SubTypeList{}, port, /* aTxtData */ {}, [this](otbrError aError) {
+                                  if (aError == OTBR_ERROR_ABORTED)
+                                  {
+                                      // OTBR_ERROR_ABORTED is thrown when an ongoing service registration is
+                                      // cancelled. This can happen when the meshcop-e service is being updated
+                                      // frequently. To avoid false alarms, it should not be logged like a real error.
+                                      otbrLogInfo("Cancelled previous publishing meshcop-e service %s.%s.local",
+                                                  mServiceInstanceName.c_str(), kBorderAgentEpskcServiceType);
+                                  }
+                                  else
+                                  {
+                                      otbrLogResult(aError, "Result of publish meshcop-e service %s.%s.local",
+                                                    mServiceInstanceName.c_str(), kBorderAgentEpskcServiceType);
+                                  }
+
+                                  if (aError == OTBR_ERROR_DUPLICATED)
+                                  {
+                                      // Try to unpublish current service in case we are trying to register
+                                      // multiple new services simultaneously when the original service name
+                                      // is conflicted.
+                                      // Potential risk that instance name is not the same with meshcop service.
+                                      UnpublishEpskcService();
+                                      mServiceInstanceName = GetAlternativeServiceInstanceName();
+                                      PublishEpskcService();
+                                  }
+                              });
+}
+
+void BorderAgent::UnpublishEpskcService()
+{
+    otbrLogInfo("Unpublish meshcop-e service %s.%s.local", mServiceInstanceName.c_str(), kBorderAgentEpskcServiceType);
+
+    mPublisher.UnpublishService(mServiceInstanceName, kBorderAgentEpskcServiceType, [this](otbrError aError) {
+        otbrLogResult(aError, "Result of unpublish meshcop-e service %s.%s.local", mServiceInstanceName.c_str(),
+                      kBorderAgentEpskcServiceType);
+    });
 }
 
 void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)

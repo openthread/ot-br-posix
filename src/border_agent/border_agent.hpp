@@ -149,6 +149,10 @@ private:
     std::string GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const;
     std::string GetAlternativeServiceInstanceName() const;
 
+    static void HandleEpskcStateChanged(void *aContext);
+    void        PublishEpskcService(void);
+    void        UnpublishEpskcService(void);
+
     otbr::Ncp::ControllerOpenThread &mNcp;
     Mdns::Publisher                 &mPublisher;
     bool                             mIsEnabled;
