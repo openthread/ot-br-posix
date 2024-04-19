@@ -64,4 +64,6 @@ message FeatureFlagList {
   optional bool enable_dns_upstream_query = 5 [default = false];
   // Whether to enable prefix delegation.
   optional bool enable_dhcp6_pd = 6 [default = false];
+  // Whether to enable link metrics manager.
+  optional bool enable_link_metrics_manager = 7 [default = false];
 }
