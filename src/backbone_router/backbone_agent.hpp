@@ -36,6 +36,10 @@
 
 #include "openthread-br/config.h"
 
+#ifndef OTBR_ENABLE_BACKBONE_ROUTER_ON_INIT
+#define OTBR_ENABLE_BACKBONE_ROUTER_ON_INIT OTBR_ENABLE_BACKBONE_ROUTER
+#endif
+
 #if OTBR_ENABLE_BACKBONE_ROUTER
 
 #include <openthread/backbone_router_ftd.h>
