@@ -710,7 +710,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     if (errorOt == OT_ERROR_NOT_FOUND)
     {
         VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        VerifyOrExit(otDatasetConvertToTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
         errorCode = GetHttpStatus(HttpStatusCode::kStatusCreated);
     }
 
