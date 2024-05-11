@@ -104,6 +104,30 @@ Ip6Address Ip6Address::FromString(const char *aStr)
     return addr;
 }
 
+bool Ip6Prefix::operator==(const Ip6Prefix &aOther) const
+{
+    bool    isEqual = false;
+    uint8_t lengthFullBytes;
+    uint8_t lengthRemainingBits;
+
+    VerifyOrExit(mLength == aOther.mLength);
+
+    lengthFullBytes     = mLength / 8;
+    lengthRemainingBits = mLength % 8;
+    VerifyOrExit(memcmp(mPrefix.m8, aOther.mPrefix.m8, lengthFullBytes) == 0);
+
+    if (lengthRemainingBits > 0)
+    {
+        uint8_t mask = 0xff << (8 - lengthRemainingBits);
+        VerifyOrExit((mPrefix.m8[lengthFullBytes] & mask) == (aOther.mPrefix.m8[lengthFullBytes] & mask));
+    }
+
+    isEqual = true;
+
+exit:
+    return isEqual;
+}
+
 void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
 {
     memcpy(reinterpret_cast<void *>(this), &aPrefix, sizeof(*this));

@@ -302,6 +302,10 @@ private:
 
     void ActiveDatasetChangedCallback(void);
 
+#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_ROUTING
+    void GetNodeDivergenceInfo(threadnetwork::TelemetryData_NodeDivergenceInfo *aNodeDivergenceInfo);
+#endif
+
     otInstance *mInstance;
 
     otbr::Ncp::RcpHost *mHost;

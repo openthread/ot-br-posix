@@ -920,6 +920,39 @@ void ThreadHelper::DetachGracefullyCallback(void)
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
+#if OTBR_ENABLE_BORDER_ROUTING
+void ThreadHelper::GetNodeDivergenceInfo(threadnetwork::TelemetryData_NodeDivergenceInfo *aNodeDivergenceInfo)
+{
+    bool      isExternalRouteAdded = false;
+    bool      isDefaultRouteAdded  = false;
+    Ip6Prefix prefix;
+    uint16_t  rloc16 = otThreadGetRloc16(mInstance);
+
+    otNetworkDataIterator iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+    otExternalRouteConfig config;
+
+    while (otNetDataGetNextRoute(mInstance, &iterator, &config) == OT_ERROR_NONE)
+    {
+        if (!config.mStable || config.mRloc16 != rloc16)
+        {
+            continue;
+        }
+
+        isExternalRouteAdded = true;
+
+        prefix.Set(config.mPrefix);
+        if (prefix.IsDefaultRoutePrefix())
+        {
+            isDefaultRouteAdded = true;
+            break;
+        }
+    }
+
+    aNodeDivergenceInfo->set_route_ail(isExternalRouteAdded);
+    aNodeDivergenceInfo->set_route_default(isDefaultRouteAdded);
+}
+#endif // OTBR_ENABLE_BORDER_ROUTING
+
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError                     error = OT_ERROR_NONE;
@@ -1281,6 +1314,9 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             infraLinkInfo->set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
         }
         // End of InfraLinkInfo section.
+
+        // NodeDivergenceInfo section
+        GetNodeDivergenceInfo(wpanBorderRouter->mutable_node_divergence_info());
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY

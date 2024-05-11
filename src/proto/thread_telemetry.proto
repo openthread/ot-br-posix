@@ -496,6 +496,16 @@ message TelemetryData {
     optional uint32 global_unicast_address_count = 7;
   }
 
+  // infomation on divergent BRs resulted from multi-AIL
+  // TODO: add more fields to this message to provide more information
+  message NodeDivergenceInfo {
+    // Indicate whether the BR's external route is published
+    optional bool route_ail = 1;
+
+    // Indicate whether the BR's external route is published as default route
+    optional bool route_default = 2;
+  }
+
   message WpanBorderRouter {
     // Border routing counters
     optional BorderRoutingCounters border_routing_counters = 1;
@@ -532,6 +542,9 @@ message TelemetryData {
 
     // Information about the infra link
     optional InfraLinkInfo infra_link_info = 12;
+
+    // Information about the node divergence (multi-AIL)
+    optional NodeDivergenceInfo node_divergence_info = 13;
   }
 
   message RcpStabilityStatistics {
