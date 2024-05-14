@@ -527,7 +527,7 @@ void ThreadHelper::Attach(const std::string          &aNetworkName,
 
     dataset.mChannel = RandomChannelFromChannelMask(dataset.mChannelMask);
 
-    SuccessOrExit(error = otDatasetSetActive(mInstance, &dataset));
+    otDatasetSetActive(mInstance, &dataset);
 
     if (!otIp6IsEnabled(mInstance))
     {
