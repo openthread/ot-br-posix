@@ -37,6 +37,10 @@ NAT64_SERVICE="${NAT64_SERVICE:-openthread}"
 
 FIREWALL="${FIREWALL:-1}"
 
+OTBR_MDNS="${OTBR_MDNS:-mDNSResponder}"
+OT_BACKBONE_CI="${OT_BACKBONE_CI:-0}"
+REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
+
 install_packages_apt()
 {
     sudo apt-get update
@@ -54,10 +58,18 @@ install_packages_apt()
     sudo apt-get install --no-install-recommends -y rsyslog
 
     # For DBus server
-    sudo apt-get install --no-install-recommends -y libdbus-1-dev
+    sudo apt-get install --no-install-recommends -y dbus libdbus-1-dev
 
     # mDNS
-    sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev avahi-daemon
+    sudo apt-get install --no-install-recommends -y libavahi-client3 libavahi-common-dev libavahi-client-dev
+
+    # Thread Certification tests require Avahi to publish records for tests. Since the
+    # same image is used for all tests this needs to be installed here. Additionally
+    # Avahi should be included for reference device builds.
+    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
+        sudo apt-get install --no-install-recommends -y avahi-daemon
+    fi
+
     (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1790.80.10 \
         && MDNS_RESPONDER_PATCH_PATH=$(realpath "$(dirname "$0")"/../third_party/mDNSResponder) \
         && cd /tmp \
