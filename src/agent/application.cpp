@@ -60,33 +60,33 @@ Application::Application(const std::string               &aInterfaceName,
 #else
     , mBackboneInterfaceName(aBackboneInterfaceNames.empty() ? "" : aBackboneInterfaceNames.front())
 #endif
-    , mNcp(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName, /* aDryRun */ false, aEnableAutoAttach)
+    , mHost(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName, /* aDryRun */ false, aEnableAutoAttach)
 #if OTBR_ENABLE_MDNS
     , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    , mBorderAgent(mNcp, *mPublisher)
+    , mBorderAgent(mHost, *mPublisher)
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(mNcp, aInterfaceName, mBackboneInterfaceName)
+    , mBackboneAgent(mHost, aInterfaceName, mBackboneInterfaceName)
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    , mAdvertisingProxy(mNcp, *mPublisher)
+    , mAdvertisingProxy(mHost, *mPublisher)
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    , mDiscoveryProxy(mNcp, *mPublisher)
+    , mDiscoveryProxy(mHost, *mPublisher)
 #endif
 #if OTBR_ENABLE_TREL
-    , mTrelDnssd(mNcp, *mPublisher)
+    , mTrelDnssd(mHost, *mPublisher)
 #endif
 #if OTBR_ENABLE_OPENWRT
-    , mUbusAgent(mNcp)
+    , mUbusAgent(mHost)
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    , mRestWebServer(mNcp, aRestListenAddress, aRestListenPort)
+    , mRestWebServer(mHost, aRestListenAddress, aRestListenPort)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
-    , mDBusAgent(mNcp, *mPublisher)
+    , mDBusAgent(mHost, *mPublisher)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(vendor::VendorServer::newInstance(*this))
@@ -98,7 +98,7 @@ Application::Application(const std::string               &aInterfaceName,
 
 void Application::Init(void)
 {
-    mNcp.Init();
+    mHost.Init();
 
 #if OTBR_ENABLE_MDNS
     mPublisher->Start();
@@ -150,7 +150,7 @@ void Application::Deinit(void)
     mPublisher->Stop();
 #endif
 
-    mNcp.Deinit();
+    mHost.Deinit();
 }
 
 otbrError Application::Run(void)

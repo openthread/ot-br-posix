@@ -48,7 +48,7 @@
 #include "dbus/server/dbus_object.hpp"
 #include "dbus/server/dbus_thread_object.hpp"
 
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -59,10 +59,10 @@ public:
     /**
      * The constructor of dbus agent.
      *
-     * @param[in] aNcp  A reference to the NCP controller.
+     * @param[in] aHost  A reference to the Thread controller.
      *
      */
-    DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    DBusAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the dbus agent.
@@ -88,7 +88,7 @@ private:
     std::string                       mInterfaceName;
     std::unique_ptr<DBusThreadObject> mThreadObject;
     UniqueDBusConnection              mConnection;
-    otbr::Ncp::ControllerOpenThread  &mNcp;
+    otbr::Ncp::RcpHost               &mHost;
     Mdns::Publisher                  &mPublisher;
 
     /**

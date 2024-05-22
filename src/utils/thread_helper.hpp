@@ -56,7 +56,7 @@
 
 namespace otbr {
 namespace Ncp {
-class ControllerOpenThread;
+class RcpHost;
 }
 } // namespace otbr
 
@@ -81,10 +81,10 @@ public:
      * The constructor of a Thread helper.
      *
      * @param[in] aInstance  The Thread instance.
-     * @param[in] aNcp       The ncp controller.
+     * @param[in] aHost      The Thread controller.
      *
      */
-    ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp);
+    ThreadHelper(otInstance *aInstance, otbr::Ncp::RcpHost *aHost);
 
     /**
      * This method adds a callback for device role change.
@@ -304,7 +304,7 @@ private:
 
     otInstance *mInstance;
 
-    otbr::Ncp::ControllerOpenThread *mNcp;
+    otbr::Ncp::RcpHost *mHost;
 
     ScanHandler                     mScanHandler;
     std::vector<otActiveScanResult> mScanResults;

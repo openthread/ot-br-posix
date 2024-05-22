@@ -28,11 +28,11 @@
 
 /**
  * @file
- *   This file includes definitions for NCP service.
+ *   This file includes definitions of Thread Controller under RCP mode.
  */
 
-#ifndef OTBR_AGENT_NCP_OPENTHREAD_HPP_
-#define OTBR_AGENT_NCP_OPENTHREAD_HPP_
+#ifndef OTBR_AGENT_RCP_HOST_HPP_
+#define OTBR_AGENT_RCP_HOST_HPP_
 
 #include "openthread-br/config.h"
 
@@ -60,10 +60,10 @@ class FeatureFlagList;
 namespace Ncp {
 
 /**
- * This interface defines NCP Controller functionality.
+ * This interface defines OpenThread Controller under RCP mode.
  *
  */
-class ControllerOpenThread : public MainloopProcessor
+class RcpHost : public MainloopProcessor
 {
 public:
     using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
@@ -78,11 +78,11 @@ public:
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
      *
      */
-    ControllerOpenThread(const char                      *aInterfaceName,
-                         const std::vector<const char *> &aRadioUrls,
-                         const char                      *aBackboneInterfaceName,
-                         bool                             aDryRun,
-                         bool                             aEnableAutoAttach);
+    RcpHost(const char                      *aInterfaceName,
+            const std::vector<const char *> &aRadioUrls,
+            const char                      *aBackboneInterfaceName,
+            bool                             aDryRun,
+            bool                             aEnableAutoAttach);
 
     /**
      * This method initialize the NCP controller.
@@ -99,7 +99,7 @@ public:
     /**
      * Returns an OpenThread instance.
      *
-     * @retval Non-null OpenThread instance if `ControllerOpenThread::Init()` has been called.
+     * @retval Non-null OpenThread instance if `RcpHost::Init()` has been called.
      *         Otherwise, it's guaranteed to be `null`
      */
     otInstance *GetInstance(void) { return mInstance; }
@@ -191,12 +191,12 @@ public:
     }
 #endif
 
-    ~ControllerOpenThread(void) override;
+    ~RcpHost(void) override;
 
 private:
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
     {
-        static_cast<ControllerOpenThread *>(aContext)->HandleStateChanged(aFlags);
+        static_cast<RcpHost *>(aContext)->HandleStateChanged(aFlags);
     }
     void HandleStateChanged(otChangedFlags aFlags);
 
@@ -237,4 +237,4 @@ private:
 } // namespace Ncp
 } // namespace otbr
 
-#endif // OTBR_AGENT_NCP_OPENTHREAD_HPP_
+#endif // OTBR_AGENT_RCP_HOST_HPP_

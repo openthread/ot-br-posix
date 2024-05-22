@@ -45,7 +45,7 @@
 
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
@@ -66,11 +66,11 @@ public:
     /**
      * This constructor initializes the TrelDnssd instance.
      *
-     * @param[in] aNcp        A reference to the OpenThread Controller instance.
+     * @param[in] aHost       A reference to the OpenThread Controller instance.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
      *
      */
-    explicit TrelDnssd(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    explicit TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the TrelDnssd instance.
@@ -176,15 +176,15 @@ private:
     void     RemoveAllPeers(void);
     uint16_t CountDuplicatePeers(const Peer &aPeer);
 
-    Mdns::Publisher           &mPublisher;
-    Ncp::ControllerOpenThread &mNcp;
-    TaskRunner                 mTaskRunner;
-    std::string                mTrelNetif;
-    uint32_t                   mTrelNetifIndex = 0;
-    uint64_t                   mSubscriberId   = 0;
-    RegisterInfo               mRegisterInfo;
-    PeerMap                    mPeers;
-    bool                       mMdnsPublisherReady = false;
+    Mdns::Publisher &mPublisher;
+    Ncp::RcpHost    &mHost;
+    TaskRunner       mTaskRunner;
+    std::string      mTrelNetif;
+    uint32_t         mTrelNetifIndex = 0;
+    uint64_t         mSubscriberId   = 0;
+    RegisterInfo     mRegisterInfo;
+    PeerMap          mPeers;
+    bool             mMdnsPublisherReady = false;
 };
 
 /**

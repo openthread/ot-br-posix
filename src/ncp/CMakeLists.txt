@@ -27,8 +27,8 @@
 #
 
 add_library(otbr-ncp
-    ncp_openthread.cpp
-    ncp_openthread.hpp
+    rcp_host.cpp
+    rcp_host.hpp
 )
 
 target_link_libraries(otbr-ncp PRIVATE

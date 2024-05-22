@@ -28,7 +28,7 @@
 
 #define OTBR_LOG_TAG "NCP"
 
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 #include <assert.h>
 #include <stdio.h>
@@ -66,11 +66,11 @@ static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 static const uint16_t kThreadVersion13 = 4; ///< Thread Version 1.3
 static const uint16_t kThreadVersion14 = 5; ///< Thread Version 1.4
 
-ControllerOpenThread::ControllerOpenThread(const char                      *aInterfaceName,
-                                           const std::vector<const char *> &aRadioUrls,
-                                           const char                      *aBackboneInterfaceName,
-                                           bool                             aDryRun,
-                                           bool                             aEnableAutoAttach)
+RcpHost::RcpHost(const char                      *aInterfaceName,
+                 const std::vector<const char *> &aRadioUrls,
+                 const char                      *aBackboneInterfaceName,
+                 bool                             aDryRun,
+                 bool                             aEnableAutoAttach)
     : mInstance(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
 {
@@ -89,13 +89,13 @@ ControllerOpenThread::ControllerOpenThread(const char                      *aInt
     mConfig.mSpeedUpFactor = 1;
 }
 
-ControllerOpenThread::~ControllerOpenThread(void)
+RcpHost::~RcpHost(void)
 {
     // Make sure OpenThread Instance was gracefully de-initialized.
     assert(mInstance == nullptr);
 }
 
-otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
+otbrLogLevel RcpHost::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
 {
     otbrLogLevel otbrLogLevel;
 
@@ -164,7 +164,7 @@ otbrLogLevel ConvertProtoToOtbrLogLevel(ProtoLogLevel aProtoLogLevel)
 }
 #endif
 
-otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
+otLogLevel RcpHost::ConvertToOtLogLevel(otbrLogLevel aLevel)
 {
     otLogLevel level;
 
@@ -194,7 +194,7 @@ otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
     return level;
 }
 
-otError ControllerOpenThread::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
+otError RcpHost::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
 {
     otError error = OT_ERROR_NONE;
     otbrLogSetLevel(aLevel);
@@ -202,7 +202,7 @@ otError ControllerOpenThread::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
     return error;
 }
 
-void ControllerOpenThread::Init(void)
+void RcpHost::Init(void)
 {
     otbrError  error = OTBR_ERROR_NONE;
     otLogLevel level = ConvertToOtLogLevel(otbrLogGetLevel());
@@ -217,7 +217,7 @@ void ControllerOpenThread::Init(void)
     assert(mInstance != nullptr);
 
     {
-        otError result = otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+        otError result = otSetStateChangedCallback(mInstance, &RcpHost::HandleStateChanged, this);
 
         agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
@@ -258,7 +258,7 @@ exit:
 }
 
 #if OTBR_ENABLE_FEATURE_FLAGS
-otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
+otError RcpHost::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
 {
     otError error = OT_ERROR_NONE;
     // Save a cached copy of feature flags for debugging purpose.
@@ -294,7 +294,7 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 }
 #endif
 
-void ControllerOpenThread::Deinit(void)
+void RcpHost::Deinit(void)
 {
     assert(mInstance != nullptr);
 
@@ -305,7 +305,7 @@ void ControllerOpenThread::Deinit(void)
     mResetHandlers.clear();
 }
 
-void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
+void RcpHost::HandleStateChanged(otChangedFlags aFlags)
 {
     for (auto &stateCallback : mThreadStateChangedCallbacks)
     {
@@ -315,7 +315,7 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
     mThreadHelper->StateChangedCallback(aFlags);
 }
 
-void ControllerOpenThread::Update(MainloopContext &aMainloop)
+void RcpHost::Update(MainloopContext &aMainloop)
 {
     if (otTaskletsArePending(mInstance))
     {
@@ -325,7 +325,7 @@ void ControllerOpenThread::Update(MainloopContext &aMainloop)
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
-void ControllerOpenThread::Process(const MainloopContext &aMainloop)
+void RcpHost::Process(const MainloopContext &aMainloop)
 {
     otTaskletsProcess(mInstance);
 
@@ -337,32 +337,32 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
     }
 }
 
-bool ControllerOpenThread::IsAutoAttachEnabled(void)
+bool RcpHost::IsAutoAttachEnabled(void)
 {
     return mEnableAutoAttach;
 }
 
-void ControllerOpenThread::DisableAutoAttach(void)
+void RcpHost::DisableAutoAttach(void)
 {
     mEnableAutoAttach = false;
 }
 
-void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
+void RcpHost::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
 {
     mTaskRunner.Post(std::move(aDelay), std::move(aTask));
 }
 
-void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
+void RcpHost::RegisterResetHandler(std::function<void(void)> aHandler)
 {
     mResetHandlers.emplace_back(std::move(aHandler));
 }
 
-void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
+void RcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
 {
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
-void ControllerOpenThread::Reset(void)
+void RcpHost::Reset(void)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
@@ -377,7 +377,7 @@ void ControllerOpenThread::Reset(void)
     mEnableAutoAttach = true;
 }
 
-const char *ControllerOpenThread::GetThreadVersion(void)
+const char *RcpHost::GetThreadVersion(void)
 {
     const char *version;
 
@@ -409,7 +409,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 {
     OT_UNUSED_VARIABLE(aLogRegion);
 
-    otbrLogLevel otbrLogLevel = ControllerOpenThread::ConvertToOtbrLogLevel(aLogLevel);
+    otbrLogLevel otbrLogLevel = RcpHost::ConvertToOtbrLogLevel(aLogLevel);
 
     va_list ap;
     va_start(ap, aFormat);
@@ -419,7 +419,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
 extern "C" void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
 {
-    otbrLogSetLevel(ControllerOpenThread::ConvertToOtbrLogLevel(aLogLevel));
+    otbrLogSetLevel(RcpHost::ConvertToOtbrLogLevel(aLogLevel));
     otbrLogInfo("OpenThread log level changed to %d", aLogLevel);
 }
 
