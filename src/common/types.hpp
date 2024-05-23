@@ -387,6 +387,14 @@ public:
      */
     bool IsDefaultRoutePrefix(void) const { return (*this == Ip6Prefix("::", 0)); }
 
+    /**
+     * This method checks if the object is the ULA prefix ("fc00::/7")
+     *
+     * @returns true if the object is the ULA prefix, false otherwise.
+     *
+     */
+    bool IsUlaPrefix(void) const { return (*this == Ip6Prefix("fc00::", 7)); }
+
     Ip6Address mPrefix; ///< The IPv6 prefix.
     uint8_t    mLength; ///< The IPv6 prefix length (in bits).
 };

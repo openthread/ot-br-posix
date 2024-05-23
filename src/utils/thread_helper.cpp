@@ -921,10 +921,11 @@ void ThreadHelper::DetachGracefullyCallback(void)
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #if OTBR_ENABLE_BORDER_ROUTING
-void ThreadHelper::GetNodeDivergenceInfo(threadnetwork::TelemetryData_NodeDivergenceInfo *aNodeDivergenceInfo)
+void ThreadHelper::GetExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo)
 {
-    bool      isExternalRouteAdded = false;
-    bool      isDefaultRouteAdded  = false;
+    bool      isDefaultRouteAdded = false;
+    bool      isUlaRouteAdded     = false;
+    bool      isOthersRouteAdded  = false;
     Ip6Prefix prefix;
     uint16_t  rloc16 = otThreadGetRloc16(mInstance);
 
@@ -938,18 +939,24 @@ void ThreadHelper::GetNodeDivergenceInfo(threadnetwork::TelemetryData_NodeDiverg
             continue;
         }
 
-        isExternalRouteAdded = true;
-
         prefix.Set(config.mPrefix);
         if (prefix.IsDefaultRoutePrefix())
         {
             isDefaultRouteAdded = true;
-            break;
+        }
+        else if (prefix.IsUlaPrefix())
+        {
+            isUlaRouteAdded = true;
+        }
+        else
+        {
+            isOthersRouteAdded = true;
         }
     }
 
-    aNodeDivergenceInfo->set_route_ail(isExternalRouteAdded);
-    aNodeDivergenceInfo->set_route_default(isDefaultRouteAdded);
+    aExternalRouteInfo->set_has_default_route_added(isDefaultRouteAdded);
+    aExternalRouteInfo->set_has_ula_route_added(isUlaRouteAdded);
+    aExternalRouteInfo->set_has_others_route_added(isOthersRouteAdded);
 }
 #endif // OTBR_ENABLE_BORDER_ROUTING
 
@@ -1315,8 +1322,9 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         }
         // End of InfraLinkInfo section.
 
-        // NodeDivergenceInfo section
-        GetNodeDivergenceInfo(wpanBorderRouter->mutable_node_divergence_info());
+        // ExternalRoutes section
+        GetExternalRouteInfo(wpanBorderRouter->mutable_external_route_info());
+
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
