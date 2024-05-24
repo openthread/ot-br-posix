@@ -43,7 +43,7 @@
 #include "common/mainloop.hpp"
 #include "rest/connection.hpp"
 
-using otbr::Ncp::ControllerOpenThread;
+using otbr::Ncp::RcpHost;
 using std::chrono::steady_clock;
 
 namespace otbr {
@@ -59,10 +59,10 @@ public:
     /**
      * The constructor to initialize a REST server.
      *
-     * @param[in] aNcp  A reference to the NCP controller.
+     * @param[in] aHost  A reference to the Thread controller.
      *
      */
-    RestWebServer(ControllerOpenThread &aNcp, const std::string &aRestListenAddress, int aRestListenPort);
+    RestWebServer(RcpHost &aHost, const std::string &aRestListenAddress, int aRestListenPort);
 
     /**
      * The destructor destroys the server instance.

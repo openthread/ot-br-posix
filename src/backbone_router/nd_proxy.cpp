@@ -311,7 +311,7 @@ void NdProxyManager::SendNeighborAdvertisement(const Ip6Address &aTarget, const 
     otbrError                  error = OTBR_ERROR_NONE;
     otBackboneRouterNdProxyInfo aNdProxyInfo;
 
-    VerifyOrExit(otBackboneRouterGetNdProxyInfo(mNcp.GetInstance(), reinterpret_cast<const otIp6Address *>(&aTarget),
+    VerifyOrExit(otBackboneRouterGetNdProxyInfo(mHost.GetInstance(), reinterpret_cast<const otIp6Address *>(&aTarget),
                                                 &aNdProxyInfo) == OT_ERROR_NONE,
                  error = OTBR_ERROR_OPENTHREAD);
 

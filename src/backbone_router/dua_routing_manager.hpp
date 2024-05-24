@@ -43,7 +43,7 @@
 #include <openthread/backbone_router_ftd.h>
 
 #include "common/code_utils.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 #include "utils/system_utils.hpp"
 
 namespace otbr {

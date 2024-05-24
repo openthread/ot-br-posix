@@ -45,7 +45,7 @@
 
 #include "common/code_utils.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
@@ -59,11 +59,11 @@ public:
     /**
      * This constructor initializes the Advertising Proxy object.
      *
-     * @param[in] aNcp        A reference to the NCP controller.
+     * @param[in] aHost       A reference to the NCP controller.
      * @param[in] aPublisher  A reference to the mDNS publisher.
      *
      */
-    explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    explicit AdvertisingProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method enables/disables the Advertising Proxy.
@@ -126,10 +126,10 @@ private:
      */
     otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
 
-    otInstance *GetInstance(void) { return mNcp.GetInstance(); }
+    otInstance *GetInstance(void) { return mHost.GetInstance(); }
 
     // A reference to the NCP controller, has no ownership.
-    Ncp::ControllerOpenThread &mNcp;
+    Ncp::RcpHost &mHost;
 
     // A reference to the mDNS publisher, has no ownership.
     Mdns::Publisher &mPublisher;

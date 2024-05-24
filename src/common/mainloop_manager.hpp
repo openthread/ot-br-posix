@@ -42,7 +42,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 

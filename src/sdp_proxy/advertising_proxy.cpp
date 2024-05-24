@@ -93,12 +93,12 @@ static otError OtbrErrorToOtError(otbrError aError)
     return error;
 }
 
-AdvertisingProxy::AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
-    : mNcp(aNcp)
+AdvertisingProxy::AdvertisingProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
+    : mHost(aHost)
     , mPublisher(aPublisher)
     , mIsEnabled(false)
 {
-    mNcp.RegisterResetHandler(
+    mHost.RegisterResetHandler(
         [this]() { otSrpServerSetServiceUpdateHandler(GetInstance(), AdvertisingHandler, this); });
 }
 

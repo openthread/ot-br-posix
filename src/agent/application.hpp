@@ -44,7 +44,7 @@
 #if OTBR_ENABLE_BORDER_AGENT
 #include "border_agent/border_agent.hpp"
 #endif
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
@@ -132,7 +132,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
+    Ncp::RcpHost &GetNcp(void) { return mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -260,8 +260,8 @@ private:
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char               *mBackboneInterfaceName;
-    Ncp::ControllerOpenThread mNcp;
+    const char  *mBackboneInterfaceName;
+    Ncp::RcpHost mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif
