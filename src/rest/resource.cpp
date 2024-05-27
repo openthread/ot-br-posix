@@ -121,9 +121,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     return httpStatus;
 }
 
-Resource::Resource(RcpHost *aHost)
+Resource::Resource(void)
     : mInstance(nullptr)
-    , mHost(aHost)
+    , mHost(nullptr)
 {
     // Resource Handler
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::Diagnostic);
@@ -144,8 +144,10 @@ Resource::Resource(RcpHost *aHost)
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
 }
 
-void Resource::Init(void)
+void Resource::Init(RcpHost *aHost)
 {
+    mHost = aHost;
+
     mInstance = mHost->GetThreadHelper()->GetInstance();
 }
 

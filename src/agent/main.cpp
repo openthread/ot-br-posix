@@ -301,11 +301,10 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Application app(interfaceName, backboneInterfaceNames, radioUrls, enableAutoAttach, restListenAddress,
-                              restListenPort);
+        otbr::Application app(interfaceName, backboneInterfaceNames, restListenAddress, restListenPort);
 
         gApp = &app;
-        app.Init();
+        app.Init(radioUrls, enableAutoAttach);
 
         ret = app.Run();
 

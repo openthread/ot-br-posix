@@ -73,16 +73,22 @@ public:
     /**
      * This constructor intiializes the `BackboneAgent` instance.
      *
-     * @param[in] aHost  The Thread controller instance.
-     *
      */
-    BackboneAgent(otbr::Ncp::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName);
+    BackboneAgent(std::string aInterfaceName, std::string aBackboneInterfaceName);
 
     /**
      * This method initializes the Backbone agent.
      *
+     * @param[in] aHost  A pointer to the Thread controller instance.
+     *
      */
-    void Init(void);
+    void Init(Ncp::RcpHost *aHost);
+
+    /**
+     * This method de-initializes the Backbone agent.
+     *
+     */
+    void Deinit(void) { mHost = nullptr; }
 
 private:
     void        OnBecomePrimary(void);
@@ -104,7 +110,7 @@ private:
 
     static const char *StateToString(otBackboneRouterState aState);
 
-    otbr::Ncp::RcpHost   &mHost;
+    otbr::Ncp::RcpHost   *mHost;
     otBackboneRouterState mBackboneRouterState;
     Ip6Prefix             mDomainPrefix;
 #if OTBR_ENABLE_DUA_ROUTING

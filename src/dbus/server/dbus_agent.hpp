@@ -59,16 +59,22 @@ public:
     /**
      * The constructor of dbus agent.
      *
-     * @param[in] aHost  A reference to the Thread controller.
-     *
      */
-    DBusAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
+    DBusAgent(Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the dbus agent.
      *
+     * @param[in] aHost  A pointer to the Thread controller.
+     *
      */
-    void Init(void);
+    void Init(Ncp::RcpHost *aHost);
+
+    /**
+     * This method de-initializes the dbus agent.
+     *
+     */
+    void Deinit(void) { mHost = nullptr; }
 
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
@@ -88,7 +94,7 @@ private:
     std::string                       mInterfaceName;
     std::unique_ptr<DBusThreadObject> mThreadObject;
     UniqueDBusConnection              mConnection;
-    otbr::Ncp::RcpHost               &mHost;
+    otbr::Ncp::RcpHost               *mHost;
     Mdns::Publisher                  &mPublisher;
 
     /**

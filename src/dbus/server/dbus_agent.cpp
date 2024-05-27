@@ -44,16 +44,18 @@ namespace DBus {
 const struct timeval           DBusAgent::kPollTimeout = {0, 0};
 constexpr std::chrono::seconds DBusAgent::kDBusWaitAllowance;
 
-DBusAgent::DBusAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
-    : mInterfaceName(aHost.GetInterfaceName())
-    , mHost(aHost)
+DBusAgent::DBusAgent(Mdns::Publisher &aPublisher)
+    : mHost(nullptr)
     , mPublisher(aPublisher)
 {
 }
 
-void DBusAgent::Init(void)
+void DBusAgent::Init(Ncp::RcpHost *aHost)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    mHost          = aHost;
+    mInterfaceName = mHost->GetInterfaceName();
 
     auto connection_deadline = Clock::now() + kDBusWaitAllowance;
 
@@ -66,7 +68,7 @@ void DBusAgent::Init(void)
     VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
 
     mThreadObject =
-        std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mHost, &mPublisher));
+        std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, mHost, &mPublisher));
     error = mThreadObject->Init();
     VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
 }

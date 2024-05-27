@@ -93,24 +93,23 @@ public:
      *
      * @param[in] aInterfaceName         Name of the Thread network interface.
      * @param[in] aBackboneInterfaceName Name of the backbone network interface.
-     * @param[in] aRadioUrls             The radio URLs (can be IEEE802.15.4 or TREL radio).
-     * @param[in] aEnableAutoAttach      Whether or not to automatically attach to the saved network.
      * @param[in] aRestListenAddress     Network address to listen on.
      * @param[in] aRestListenPort        Network port to listen on.
      *
      */
     explicit Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
-                         const std::vector<const char *> &aRadioUrls,
-                         bool                             aEnableAutoAttach,
                          const std::string               &aRestListenAddress,
                          int                              aRestListenPort);
 
     /**
      * This method initializes the Application instance.
      *
+     * @param[in] aRadioUrls             The radio URLs (can be IEEE802.15.4 or TREL radio).
+     * @param[in] aEnableAutoAttach      Whether or not to automatically attach to the saved network.
+     *
      */
-    void Init(void);
+    void Init(const std::vector<const char *> &aRadioUrls, bool aEnableAutoAttach);
 
     /**
      * This method de-initializes the Application instance.
@@ -126,13 +125,6 @@ public:
      *
      */
     otbrError Run(void);
-
-    /**
-     * Get the OpenThread controller object the application is using.
-     *
-     * @returns The OpenThread controller object.
-     */
-    Ncp::RcpHost &GetNcp(void) { return mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -260,8 +252,8 @@ private:
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char  *mBackboneInterfaceName;
-    Ncp::RcpHost mHost;
+    const char   *mBackboneInterfaceName;
+    Ncp::RcpHost *mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif

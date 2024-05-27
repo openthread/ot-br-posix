@@ -54,7 +54,7 @@ static otbr::TrelDnssd::TrelDnssd *sTrelDnssd = nullptr;
 
 void trelDnssdInitialize(const char *aTrelNetif)
 {
-    sTrelDnssd->Initialize(aTrelNetif);
+    sTrelDnssd->InitializeNetif(aTrelNetif);
 }
 
 void trelDnssdStartBrowse(void)
@@ -81,14 +81,24 @@ namespace otbr {
 
 namespace TrelDnssd {
 
-TrelDnssd::TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
+TrelDnssd::TrelDnssd(Mdns::Publisher &aPublisher)
     : mPublisher(aPublisher)
-    , mHost(aHost)
+    , mHost(nullptr)
 {
     sTrelDnssd = this;
 }
 
-void TrelDnssd::Initialize(std::string aTrelNetif)
+void TrelDnssd::Init(Ncp::RcpHost *aHost)
+{
+    mHost = aHost;
+
+    if (IsInitialized())
+    {
+        OnBecomeReady();
+    }
+}
+
+void TrelDnssd::InitializeNetif(std::string aTrelNetif)
 {
     mTrelNetif = std::move(aTrelNetif);
 
@@ -229,7 +239,7 @@ exit:
 
 std::string TrelDnssd::GetTrelInstanceName(void)
 {
-    const otExtAddress *extaddr = otLinkGetExtendedAddress(mHost.GetInstance());
+    const otExtAddress *extaddr = otLinkGetExtendedAddress(mHost->GetInstance());
     std::string         name;
     char                nameBuf[sizeof(otExtAddress) * 2 + 1];
 
@@ -331,7 +341,7 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
 
         VerifyOrExit(peer.mValid, otbrLogWarning("Peer %s is invalid", aInstanceInfo.mName.c_str()));
 
-        otPlatTrelHandleDiscoveredPeerInfo(mHost.GetInstance(), &peerInfo);
+        otPlatTrelHandleDiscoveredPeerInfo(mHost->GetInstance(), &peerInfo);
 
         mPeers.emplace(instanceName, peer);
         CheckPeersNumLimit();
@@ -392,7 +402,7 @@ void TrelDnssd::NotifyRemovePeer(const Peer &aPeer)
     peerInfo.mTxtLength = aPeer.mTxtData.size();
     peerInfo.mSockAddr  = aPeer.mSockAddr;
 
-    otPlatTrelHandleDiscoveredPeerInfo(mHost.GetInstance(), &peerInfo);
+    otPlatTrelHandleDiscoveredPeerInfo(mHost->GetInstance(), &peerInfo);
 }
 
 void TrelDnssd::RemoveAllPeers(void)
@@ -433,7 +443,7 @@ bool TrelDnssd::IsReady(void) const
 {
     assert(IsInitialized());
 
-    return mTrelNetifIndex > 0 && mMdnsPublisherReady;
+    return mTrelNetifIndex > 0 && mMdnsPublisherReady && mHost != nullptr;
 }
 
 void TrelDnssd::OnBecomeReady(void)

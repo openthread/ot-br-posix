@@ -63,11 +63,24 @@ public:
     /**
      * This constructor initializes the Discovery Proxy instance.
      *
-     * @param[in] aHost       A reference to the OpenThread Controller instance.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
      *
      */
-    explicit DiscoveryProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
+    explicit DiscoveryProxy(Mdns::Publisher &aPublisher);
+
+    /**
+     * Initialize the Border Agent.
+     *
+     * @param[in] aHost  A pointer to the Thread controller.
+     *
+     */
+    void Init(Ncp::RcpHost *aHost);
+
+    /**
+     * This method de-initializes the Discovery Proxy.
+     *
+     */
+    void Deinit(void) { mHost = nullptr; }
 
     /**
      * This method enables/disables the Discovery Proxy.
@@ -112,7 +125,7 @@ private:
     void Stop(void);
     bool IsEnabled(void) const { return mIsEnabled; }
 
-    Ncp::RcpHost    &mHost;
+    Ncp::RcpHost    *mHost;
     Mdns::Publisher &mMdnsPublisher;
     bool             mIsEnabled;
     uint64_t         mSubscriberId = 0;

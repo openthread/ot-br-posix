@@ -1805,11 +1805,13 @@ exit:
     return rval;
 }
 
-void UBusAgent::Init(void)
+void UBusAgent::Init(Ncp::RcpHost *aHost)
 {
+    mHost = aHost;
+
     otbr::ubus::sUbusEfd = eventfd(0, 0);
 
-    otbr::ubus::UbusServer::Initialize(&mHost, &mThreadMutex);
+    otbr::ubus::UbusServer::Initialize(mHost, &mThreadMutex);
 
     if (otbr::ubus::sUbusEfd == -1)
     {

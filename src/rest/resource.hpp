@@ -66,17 +66,22 @@ public:
     /**
      * The constructor initializes the resource handler instance.
      *
-     * @param[in] aHost  A pointer to the Thread controller.
-     *
      */
-    Resource(RcpHost *aHost);
+    Resource(void);
 
     /**
      * This method initialize the Resource handler.
      *
+     * @param[in] aHost  A pointer to the Thread controller.
      *
      */
-    void Init(void);
+    void Init(RcpHost *aHost);
+
+    /**
+     * This method de-initializes the Resource handler.
+     *
+     */
+    void Deinit(void) { mHost = nullptr; }
 
     /**
      * This method is the main entry of resource handler, which find corresponding handler according to request url

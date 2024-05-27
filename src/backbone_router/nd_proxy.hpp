@@ -80,8 +80,8 @@ public:
      * This constructor initializes a NdProxyManager instance.
      *
      */
-    explicit NdProxyManager(otbr::Ncp::RcpHost &aHost, std::string aBackboneInterfaceName)
-        : mHost(aHost)
+    explicit NdProxyManager(std::string aBackboneInterfaceName)
+        : mHost(nullptr)
         , mBackboneInterfaceName(std::move(aBackboneInterfaceName))
         , mIcmp6RawSock(-1)
         , mUnicastNsQueueSock(-1)
@@ -93,8 +93,16 @@ public:
     /**
      * This method initializes a ND Proxy manager instance.
      *
+     * @param[in] aHost  A pointer to the Thread controller instance.
+     *
      */
-    void Init(void);
+    void Init(Ncp::RcpHost *aHost);
+
+    /**
+     * This method de-initializes the ND Proxy manager instance.
+     *
+     */
+    void Deinit(void) { mHost = nullptr; }
 
     /**
      * This method enables the ND Proxy manager.
@@ -153,7 +161,7 @@ private:
                                     void                *aContext);
     int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler, struct nfgenmsg *aNfMsg, struct nfq_data *aNfData);
 
-    otbr::Ncp::RcpHost  &mHost;
+    otbr::Ncp::RcpHost  *mHost;
     std::string          mBackboneInterfaceName;
     std::set<Ip6Address> mNdProxySet;
     uint32_t             mBackboneIfIndex;

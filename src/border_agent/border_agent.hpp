@@ -86,13 +86,26 @@ public:
     /**
      * The constructor to initialize the Thread border agent.
      *
-     * @param[in] aHost       A reference to the Thread controller.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
      *
      */
-    BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
+    BorderAgent(Mdns::Publisher &aPublisher);
 
     ~BorderAgent(void) = default;
+
+    /**
+     * Initialize the Border Agent.
+     *
+     * @param[in] aHost  A pointer to the Thread controller.
+     *
+     */
+    void Init(Ncp::RcpHost *aHost);
+
+    /**
+     * This method de-initializes the Thread border agent.
+     *
+     */
+    void Deinit(void) { mHost = nullptr; }
 
     /**
      * Overrides MeshCoP service (i.e. _meshcop._udp) instance name, product name, vendor name and vendor OUI.
@@ -153,7 +166,7 @@ private:
     void        PublishEpskcService(void);
     void        UnpublishEpskcService(void);
 
-    otbr::Ncp::RcpHost &mHost;
+    otbr::Ncp::RcpHost *mHost;
     Mdns::Publisher    &mPublisher;
     bool                mIsEnabled;
 

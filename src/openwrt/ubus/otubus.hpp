@@ -1149,11 +1149,9 @@ public:
     /**
      * The constructor to initialize the UBus agent.
      *
-     * @param[in] aHost  A reference to the Thread controller.
-     *
      */
-    UBusAgent(otbr::Ncp::RcpHost &aHost)
-        : mHost(aHost)
+    UBusAgent()
+        : mHost(nullptr)
         , mThreadMutex()
     {
     }
@@ -1161,8 +1159,10 @@ public:
     /**
      * This method initializes the UBus agent.
      *
+     * @param[in] aHost  A pointer to the Thread controller.
+     *
      */
-    void Init(void);
+    void Init(Ncp::RcpHost *aHost);
 
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
@@ -1170,7 +1170,7 @@ public:
 private:
     static void UbusServerRun(void) { otbr::ubus::UbusServer::GetInstance().InstallUbusObject(); }
 
-    otbr::Ncp::RcpHost &mHost;
+    otbr::Ncp::RcpHost *mHost;
     std::mutex          mThreadMutex;
 };
 } // namespace ubus
