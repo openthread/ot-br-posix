@@ -83,6 +83,39 @@ without()
     ! with "$1"
 }
 
+HAVE_SYSTEMCTL=0
+if have systemctl; then
+    HAVE_SYSTEMCTL=1
+fi
+HAVE_SERVICE=0
+if have service; then
+    HAVE_SERVICE=1
+fi
+
+start_service()
+{
+    local service_name=$1
+    if [[ ${HAVE_SYSTEMCTL} == 1 ]]; then
+        systemctl is-active "$service_name" || sudo systemctl start "$service_name" || die "Failed to start $service_name!"
+    elif [[ ${HAVE_SERVICE} == 1 ]]; then
+        sudo service "$service_name" status || sudo service "$service_name" start || echo "Failed to start $service_name!"
+    else
+        die 'Unable to find service manager. Try script/console to start in console mode!'
+    fi
+}
+
+stop_service()
+{
+    local service_name=$1
+    if $HAVE_SYSTEMCTL; then
+        systemctl is-active "$service_name" && sudo systemctl stop "$service_name" || echo "Failed to stop $service_name!"
+    elif $HAVE_SERVICE; then
+        sudo service "$service_name" status && sudo service "$service_name" stop || echo "Failed to stop $service_name!"
+    else
+        die 'Unable to find service manager. Try script/console to stop in console mode!'
+    fi
+}
+
 # Platform information is needed to load hooks and default settings.
 
 if [[ ! ${PLATFORM+x} ]]; then
