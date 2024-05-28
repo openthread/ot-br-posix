@@ -402,6 +402,12 @@ const char *RcpHost::GetThreadVersion(void)
     return version;
 }
 
+void RcpHost::GetDeviceRole(const DeviceRoleHandler aHandler)
+{
+    otDeviceRole role = otThreadGetDeviceRole(mInstance);
+    aHandler(OT_ERROR_NONE, role);
+}
+
 /*
  * Provide, if required an "otPlatLog()" function
  */
