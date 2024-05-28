@@ -60,45 +60,48 @@ Application::Application(const std::string               &aInterfaceName,
 #else
     , mBackboneInterfaceName(aBackboneInterfaceNames.empty() ? "" : aBackboneInterfaceNames.front())
 #endif
-    , mHost(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName, /* aDryRun */ false, aEnableAutoAttach)
 #if OTBR_ENABLE_MDNS
     , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
-#endif
-#if OTBR_ENABLE_BORDER_AGENT
-    , mBorderAgent(mHost, *mPublisher)
-#endif
-#if OTBR_ENABLE_BACKBONE_ROUTER
-    , mBackboneAgent(mHost, aInterfaceName, mBackboneInterfaceName)
-#endif
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    , mAdvertisingProxy(mHost, *mPublisher)
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    , mDiscoveryProxy(mHost, *mPublisher)
-#endif
-#if OTBR_ENABLE_TREL
-    , mTrelDnssd(mHost, *mPublisher)
-#endif
-#if OTBR_ENABLE_OPENWRT
-    , mUbusAgent(mHost)
-#endif
-#if OTBR_ENABLE_REST_SERVER
-    , mRestWebServer(mHost, aRestListenAddress, aRestListenPort)
-#endif
-#if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
-    , mDBusAgent(mHost, *mPublisher)
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(vendor::VendorServer::newInstance(*this))
 #endif
 {
-    OTBR_UNUSED_VARIABLE(aRestListenAddress);
-    OTBR_UNUSED_VARIABLE(aRestListenPort);
+    mHost = MakeUnique<Ncp::RcpHost>(mInterfaceName.c_str(), aRadioUrls, mBackboneInterfaceName,
+                                     /* aDryRun */ false, aEnableAutoAttach);
+
+#if OTBR_ENABLE_BORDER_AGENT
+    mBorderAgent = MakeUnique<BorderAgent>(*mHost, *mPublisher);
+#endif
+#if OTBR_ENABLE_BACKBONE_ROUTER
+    mBackboneAgent = MakeUnique<BackboneRouter::BackboneAgent>(*mHost, aInterfaceName, mBackboneInterfaceName);
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mAdvertisingProxy = MakeUnique<AdvertisingProxy>(*mHost, *mPublisher);
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    mDiscoveryProxy = MakeUnique<Dnssd::DiscoveryProxy>(*mHost, *mPublisher);
+#endif
+#if OTBR_ENABLE_TREL
+    mTrelDnssd = MakeUnique<TrelDnssd::TrelDnssd>(*mHost, *mPublisher);
+#endif
+#if OTBR_ENABLE_OPENWRT
+    mUbusAgent = MakeUnique<ubus::UBusAgent>(*mHost);
+#endif
+#if OTBR_ENABLE_REST_SERVER
+    mRestWebServer = MakeUnique<rest::RestWebServer>(*mHost, aRestListenAddress, aRestListenPort);
+#endif
+#if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
+    mDBusAgent = MakeUnique<DBus::DBusAgent>(*mHost, *mPublisher);
+#endif
+
+    OT_UNUSED_VARIABLE(aRestListenAddress);
+    OT_UNUSED_VARIABLE(aRestListenPort);
 }
 
 void Application::Init(void)
 {
-    mHost.Init();
+    mHost->Init();
 
 #if OTBR_ENABLE_MDNS
     mPublisher->Start();
@@ -107,28 +110,28 @@ void Application::Init(void)
 // This is for delaying publishing the MeshCoP service until the correct
 // vendor name and OUI etc. are correctly set by BorderAgent::SetMeshCopServiceValues()
 #if OTBR_STOP_BORDER_AGENT_ON_INIT
-    mBorderAgent.SetEnabled(false);
+    mBorderAgent->SetEnabled(false);
 #else
-    mBorderAgent.SetEnabled(true);
+    mBorderAgent->SetEnabled(true);
 #endif
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    mBackboneAgent.Init();
+    mBackboneAgent->Init();
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.SetEnabled(true);
+    mAdvertisingProxy->SetEnabled(true);
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.SetEnabled(true);
+    mDiscoveryProxy->SetEnabled(true);
 #endif
 #if OTBR_ENABLE_OPENWRT
-    mUbusAgent.Init();
+    mUbusAgent->Init();
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    mRestWebServer.Init();
+    mRestWebServer->Init();
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent.Init();
+    mDBusAgent->Init();
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer->Init();
@@ -138,19 +141,19 @@ void Application::Init(void)
 void Application::Deinit(void)
 {
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.SetEnabled(false);
+    mAdvertisingProxy->SetEnabled(false);
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.SetEnabled(false);
+    mDiscoveryProxy->SetEnabled(false);
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent.SetEnabled(false);
+    mBorderAgent->SetEnabled(false);
 #endif
 #if OTBR_ENABLE_MDNS
     mPublisher->Stop();
 #endif
 
-    mHost.Deinit();
+    mHost->Deinit();
 }
 
 otbrError Application::Run(void)
@@ -233,16 +236,16 @@ void Application::HandleMdnsState(Mdns::Publisher::State aState)
     OTBR_UNUSED_VARIABLE(aState);
 
 #if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent.HandleMdnsState(aState);
+    mBorderAgent->HandleMdnsState(aState);
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy.HandleMdnsState(aState);
+    mAdvertisingProxy->HandleMdnsState(aState);
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy.HandleMdnsState(aState);
+    mDiscoveryProxy->HandleMdnsState(aState);
 #endif
 #if OTBR_ENABLE_TREL
-    mTrelDnssd.HandleMdnsState(aState);
+    mTrelDnssd->HandleMdnsState(aState);
 #endif
 }
 
