@@ -35,6 +35,7 @@
 #define OTBR_AGENT_THREAD_CONTROLLER_HPP_
 
 #include <functional>
+#include <memory>
 
 #include <openthread/error.h>
 #include <openthread/thread.h>
@@ -59,12 +60,65 @@ public:
     using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
 
     /**
+     * Create a Thread Controller Instance.
+     *
+     * This is a factory method that will decide which implementation class will be created.
+     *
+     * @param[in]   aInterfaceName          A string of the Thread interface name.
+     * @param[in]   aRadioUrls              The radio URLs (can be IEEE802.15.4 or TREL radio).
+     * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
+     * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
+     *
+     * @returns Non-null OpenThread Controller instance.
+     *
+     */
+    static std::unique_ptr<ThreadController> Create(const char                      *aInterfaceName,
+                                                    const std::vector<const char *> &aRadioUrls,
+                                                    const char                      *aBackboneInterfaceName,
+                                                    bool                             aDryRun,
+                                                    bool                             aEnableAutoAttach);
+
+    /**
      * This method gets the device role and returns the role through the handler.
      *
      * @param[in] aHandler  A handler to return the role.
      *
      */
     virtual void GetDeviceRole(DeviceRoleHandler aHandler) = 0;
+
+    /**
+     * Returns the co-processor type.
+     *
+     */
+    virtual CoprocessorType GetCoprocessorType(void) = 0;
+
+    /**
+     * Returns the co-processor version string.
+     *
+     */
+    virtual const char *GetCoprocessorVersion(void) = 0;
+
+    /**
+     * Initializes the Thread controller.
+     *
+     */
+    virtual void Init(void) = 0;
+
+    /**
+     * Deinitializes the Thread controller.
+     *
+     */
+    virtual void Deinit(void) = 0;
+
+    /**
+     * The destructor.
+     *
+     */
+    virtual ~ThreadController(void) = default;
+
+protected:
+    static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 };
 
 } // namespace Ncp

@@ -86,16 +86,16 @@ public:
             bool                             aEnableAutoAttach);
 
     /**
-     * This method initialize the NCP controller.
+     * This method initialize the Thread controller.
      *
      */
-    void Init(void);
+    void Init(void) override;
 
     /**
-     * This method deinitialize the NCP controller.
+     * This method deinitialize the Thread controller.
      *
      */
-    void Deinit(void);
+    void Deinit(void) override;
 
     /**
      * Returns an OpenThread instance.
@@ -194,8 +194,18 @@ public:
 
     ~RcpHost(void) override;
 
-    // Thread Control APIs
+    // Thread Control virtual methods
     void GetDeviceRole(const DeviceRoleHandler aHandler) override;
+
+    CoprocessorType GetCoprocessorType(void) override
+    {
+        return OT_COPROCESSOR_RCP;
+    }
+
+    const char *GetCoprocessorVersion(void) override
+    {
+        return otPlatRadioGetVersionString(mInstance);
+    }
 
 private:
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
@@ -219,8 +229,6 @@ private:
 
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
-
-    static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 

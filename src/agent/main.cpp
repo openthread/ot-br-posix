@@ -56,7 +56,7 @@
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
-#include "ncp/rcp_host.hpp"
+#include "ncp/thread_controller.hpp"
 
 static const char kDefaultInterfaceName[] = "wpan0";
 
@@ -176,18 +176,19 @@ static otbrLogLevel GetDefaultLogLevel(void)
 
 static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
-    otbr::Ncp::RcpHost rcpHost{/* aInterfaceName */ "", aRadioUrls,
-                               /* aBackboneInterfaceName */ "",
-                               /* aDryRun */ true, /* aEnableAutoAttach */ false};
-    const char        *radioVersion;
+    auto host = std::unique_ptr<otbr::Ncp::ThreadController>(
+        otbr::Ncp::ThreadController::Create(/* aInterfaceName */ "", aRadioUrls,
+                                            /* aBackboneInterfaceName */ "",
+                                            /* aDryRun */ true, /* aEnableAutoAttach */ false));
+    const char *coprocessorVersion;
 
-    rcpHost.Init();
+    host->Init();
 
-    radioVersion = otPlatRadioGetVersionString(rcpHost.GetInstance());
-    otbrLogNotice("Radio version: %s", radioVersion);
-    printf("%s\n", radioVersion);
+    coprocessorVersion = host->GetCoprocessorVersion();
+    otbrLogNotice("Co-processor version: %s", coprocessorVersion);
+    printf("%s\n", coprocessorVersion);
 
-    rcpHost.Deinit();
+    host->Deinit();
 
     exit(EXIT_SUCCESS);
 }
