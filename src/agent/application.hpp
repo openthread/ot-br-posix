@@ -132,7 +132,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::RcpHost &GetNcp(void) { return mHost; }
+    Ncp::RcpHost &GetNcp(void) { return *mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -154,7 +154,7 @@ public:
      */
     BorderAgent &GetBorderAgent(void)
     {
-        return mBorderAgent;
+        return *mBorderAgent;
     }
 #endif
 
@@ -166,7 +166,7 @@ public:
      */
     BackboneRouter::BackboneAgent &GetBackboneAgent(void)
     {
-        return mBackboneAgent;
+        return *mBackboneAgent;
     }
 #endif
 
@@ -178,7 +178,7 @@ public:
      */
     AdvertisingProxy &GetAdvertisingProxy(void)
     {
-        return mAdvertisingProxy;
+        return *mAdvertisingProxy;
     }
 #endif
 
@@ -190,7 +190,7 @@ public:
      */
     Dnssd::DiscoveryProxy &GetDiscoveryProxy(void)
     {
-        return mDiscoveryProxy;
+        return *mDiscoveryProxy;
     }
 #endif
 
@@ -202,7 +202,7 @@ public:
      */
     TrelDnssd::TrelDnssd &GetTrelDnssd(void)
     {
-        return mTrelDnssd;
+        return *mTrelDnssd;
     }
 #endif
 
@@ -214,7 +214,7 @@ public:
      */
     ubus::UBusAgent &GetUBusAgent(void)
     {
-        return mUbusAgent;
+        return *mUbusAgent;
     }
 #endif
 
@@ -226,7 +226,7 @@ public:
      */
     rest::RestWebServer &GetRestWebServer(void)
     {
-        return mRestWebServer;
+        return *mRestWebServer;
     }
 #endif
 
@@ -238,7 +238,7 @@ public:
      */
     DBus::DBusAgent &GetDBusAgent(void)
     {
-        return mDBusAgent;
+        return *mDBusAgent;
     }
 #endif
 
@@ -260,34 +260,34 @@ private:
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char  *mBackboneInterfaceName;
-    Ncp::RcpHost mHost;
+    const char                   *mBackboneInterfaceName;
+    std::unique_ptr<Ncp::RcpHost> mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    BorderAgent mBorderAgent;
+    std::unique_ptr<BorderAgent> mBorderAgent;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    BackboneRouter::BackboneAgent mBackboneAgent;
+    std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    AdvertisingProxy mAdvertisingProxy;
+    std::unique_ptr<AdvertisingProxy> mAdvertisingProxy;
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    Dnssd::DiscoveryProxy mDiscoveryProxy;
+    std::unique_ptr<Dnssd::DiscoveryProxy> mDiscoveryProxy;
 #endif
 #if OTBR_ENABLE_TREL
-    TrelDnssd::TrelDnssd mTrelDnssd;
+    std::unique_ptr<TrelDnssd::TrelDnssd> mTrelDnssd;
 #endif
 #if OTBR_ENABLE_OPENWRT
-    ubus::UBusAgent mUbusAgent;
+    std::unique_ptr<ubus::UBusAgent> mUbusAgent;
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    rest::RestWebServer mRestWebServer;
+    std::unique_ptr<rest::RestWebServer> mRestWebServer;
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    DBus::DBusAgent mDBusAgent;
+    std::unique_ptr<DBus::DBusAgent> mDBusAgent;
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     std::shared_ptr<vendor::VendorServer> mVendorServer;
