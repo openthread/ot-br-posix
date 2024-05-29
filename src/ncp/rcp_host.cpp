@@ -26,7 +26,7 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define OTBR_LOG_TAG "NCP"
+#define OTBR_LOG_TAG "RCP_HOST"
 
 #include "ncp/rcp_host.hpp"
 
