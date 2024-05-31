@@ -107,8 +107,8 @@ Ip6Address Ip6Address::FromString(const char *aStr)
 bool Ip6Prefix::operator==(const Ip6Prefix &aOther) const
 {
     bool    isEqual = false;
-    uint8_t lengthFullBytes;
-    uint8_t lengthRemainingBits;
+    uint8_t lengthFullBytes;     // the number of complete bytes in the prefix length
+    uint8_t lengthRemainingBits; // the number of remaining bits in the prefix length that do not form a complete byte
 
     VerifyOrExit(mLength == aOther.mLength);
 

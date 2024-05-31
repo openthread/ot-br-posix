@@ -303,7 +303,7 @@ private:
     void ActiveDatasetChangedCallback(void);
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_ROUTING
-    void GetExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo);
+    void RetrieveExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo);
 #endif
 
     otInstance *mInstance;

@@ -921,7 +921,7 @@ void ThreadHelper::DetachGracefullyCallback(void)
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #if OTBR_ENABLE_BORDER_ROUTING
-void ThreadHelper::GetExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo)
+void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo)
 {
     bool      isDefaultRouteAdded = false;
     bool      isUlaRouteAdded     = false;
@@ -1323,7 +1323,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         // End of InfraLinkInfo section.
 
         // ExternalRoutes section
-        GetExternalRouteInfo(wpanBorderRouter->mutable_external_route_info());
+        RetrieveExternalRouteInfo(wpanBorderRouter->mutable_external_route_info());
 
 #endif
 
