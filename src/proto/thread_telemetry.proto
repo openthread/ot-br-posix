@@ -496,6 +496,19 @@ message TelemetryData {
     optional uint32 global_unicast_address_count = 7;
   }
 
+  // Message to indicate the information of external routes in network data.
+  message ExternalRoutes {
+    // Indicates whether the a zero-length prefix (::/0) added from this BR
+    optional bool has_default_route_added = 1;
+
+    // Indicates whether the a ULA prefix (fc00::/7) added from this BR
+    optional bool has_ula_route_added = 2;
+
+    // Indicates whether the other prefixes (other than "::/0" or "fc00::/7") added
+    // from this BR. (BR is a managed infrastructure router).
+    optional bool has_others_route_added = 3;
+  }
+
   message WpanBorderRouter {
     // Border routing counters
     optional BorderRoutingCounters border_routing_counters = 1;
@@ -532,6 +545,9 @@ message TelemetryData {
 
     // Information about the infra link
     optional InfraLinkInfo infra_link_info = 12;
+
+    // Information about the external routes in network data.
+    optional ExternalRoutes external_route_info = 13;
   }
 
   message RcpStabilityStatistics {

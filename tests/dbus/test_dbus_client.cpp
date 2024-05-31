@@ -313,6 +313,9 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().link_local_address_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().unique_local_address_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().global_unicast_address_count() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_default_route_added() == false);
+    TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_ula_route_added() == false);
+    TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_others_route_added() == false);
 #endif
     TEST_ASSERT(telemetryData.wpan_border_router().mdns().service_registration_responses().success_count() > 0);
 #if OTBR_ENABLE_NAT64

@@ -920,6 +920,46 @@ void ThreadHelper::DetachGracefullyCallback(void)
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
+#if OTBR_ENABLE_BORDER_ROUTING
+void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo)
+{
+    bool      isDefaultRouteAdded = false;
+    bool      isUlaRouteAdded     = false;
+    bool      isOthersRouteAdded  = false;
+    Ip6Prefix prefix;
+    uint16_t  rloc16 = otThreadGetRloc16(mInstance);
+
+    otNetworkDataIterator iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+    otExternalRouteConfig config;
+
+    while (otNetDataGetNextRoute(mInstance, &iterator, &config) == OT_ERROR_NONE)
+    {
+        if (!config.mStable || config.mRloc16 != rloc16)
+        {
+            continue;
+        }
+
+        prefix.Set(config.mPrefix);
+        if (prefix.IsDefaultRoutePrefix())
+        {
+            isDefaultRouteAdded = true;
+        }
+        else if (prefix.IsUlaPrefix())
+        {
+            isUlaRouteAdded = true;
+        }
+        else
+        {
+            isOthersRouteAdded = true;
+        }
+    }
+
+    aExternalRouteInfo->set_has_default_route_added(isDefaultRouteAdded);
+    aExternalRouteInfo->set_has_ula_route_added(isUlaRouteAdded);
+    aExternalRouteInfo->set_has_others_route_added(isOthersRouteAdded);
+}
+#endif // OTBR_ENABLE_BORDER_ROUTING
+
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError                     error = OT_ERROR_NONE;
@@ -1281,6 +1321,10 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
             infraLinkInfo->set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
         }
         // End of InfraLinkInfo section.
+
+        // ExternalRoutes section
+        RetrieveExternalRouteInfo(wpanBorderRouter->mutable_external_route_info());
+
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
