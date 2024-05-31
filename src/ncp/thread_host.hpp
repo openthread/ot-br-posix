@@ -37,6 +37,7 @@
 #include <functional>
 #include <memory>
 
+#include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/thread.h>
 
@@ -80,7 +81,8 @@ public:
 class ThreadHost : virtual public NetworkProperties
 {
 public:
-    using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
+    using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
+    using DeviceRoleHandler   = std::function<void(otError, otDeviceRole)>;
 
     /**
      * Create a Thread Controller Instance.
@@ -101,6 +103,35 @@ public:
                                               const char                      *aBackboneInterfaceName,
                                               bool                             aDryRun,
                                               bool                             aEnableAutoAttach);
+
+    /**
+     * This method joins this device to the network specified by @p aActiveOpDatasetTlvs.
+     *
+     * If there is an ongoing 'Join' operation, no action will be taken and @p aReceiver will be
+     * called after the request is completed. The previous @p aReceiver will also be called.
+     *
+     * @param[in] aActiveOpDatasetTlvs  A reference to the active operational dataset of the Thread network.
+     * @param[in] aReceiver             A receiver to get the async result of this operation.
+     *
+     */
+    virtual void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) = 0;
+
+    /**
+     * This method instructs the device to leave the current network gracefully.
+     *
+     * 1. If there is already an ongoing 'Leave' operation, no action will be taken and @p aReceiver
+     *    will be called after the previous request is completed. The previous @p aReceiver will also
+     *    be called.
+     * 2. If this device is not in disabled state, OTBR sends Address Release Notification (i.e. ADDR_REL.ntf)
+     *    to gracefully detach from the current network and it takes 1 second to finish.
+     * 3. Then Operational Dataset will be removed from persistent storage.
+     * 4. If everything goes fine, @p aReceiver will be invoked with OT_ERROR_NONE. Otherwise, other errors
+     *    will be passed to @p aReceiver when the error happens.
+     *
+     * @param[in] aReceiver  A receiver to get the async result of this operation.
+     *
+     */
+    virtual void Leave(const AsyncResultReceiver &aRecevier) = 0;
 
     /**
      * Returns the co-processor type.

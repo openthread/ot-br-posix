@@ -32,12 +32,17 @@
 
 #include <stdarg.h>
 
+#include <algorithm>
+
+#include <openthread/dataset.h>
 #include <openthread/thread.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "lib/spinel/spinel.h"
+#include "lib/spinel/spinel_decoder.hpp"
 #include "lib/spinel/spinel_driver.hpp"
+#include "lib/spinel/spinel_helper.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -48,15 +53,20 @@ NcpSpinel::NcpSpinel(void)
     : mSpinelDriver(nullptr)
     , mCmdTidsInUse(0)
     , mCmdNextTid(1)
+    , mNcpBuffer(mTxBuffer, kTxBufferSize)
+    , mEncoder(mNcpBuffer)
+    , mIid(SPINEL_HEADER_INVALID_IID)
     , mPropsObserver(nullptr)
 {
-    memset(mWaitingKeyTable, 0xff, sizeof(mWaitingKeyTable));
+    std::fill_n(mWaitingKeyTable, SPINEL_PROP_LAST_STATUS, sizeof(mWaitingKeyTable));
+    memset(mCmdTable, 0, sizeof(mCmdTable));
 }
 
 void NcpSpinel::Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aObserver)
 {
     mSpinelDriver  = &aSpinelDriver;
     mPropsObserver = &aObserver;
+    mIid           = mSpinelDriver->GetIid();
     mSpinelDriver->SetFrameHandler(&HandleReceivedFrame, &HandleSavedFrame, this);
 }
 
@@ -79,6 +89,105 @@ otbrError NcpSpinel::SpinelDataUnpack(const uint8_t *aDataIn, spinel_size_t aDat
 
 exit:
     return error;
+}
+
+void NcpSpinel::DatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [this, &aActiveOpDatasetTlvs] {
+        return EncodeDatasetSetActiveTlvs(aActiveOpDatasetTlvs);
+    };
+
+    VerifyOrExit(mDatasetSetActiveTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_THREAD_ACTIVE_DATASET, encodingFunc));
+    mDatasetSetActiveTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to set active dataset!"); });
+    }
+}
+
+void NcpSpinel::Ip6SetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [this, aEnable] { return mEncoder.WriteBool(aEnable); };
+
+    VerifyOrExit(mIp6SetEnabledTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_NET_IF_UP, encodingFunc));
+    mIp6SetEnabledTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to enable the network interface!"); });
+    }
+    return;
+}
+
+void NcpSpinel::ThreadSetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [this, aEnable] { return mEncoder.WriteBool(aEnable); };
+
+    VerifyOrExit(mThreadSetEnabledTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_NET_STACK_UP, encodingFunc));
+    mThreadSetEnabledTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to enable the Thread network!"); });
+    }
+    return;
+}
+
+void NcpSpinel::ThreadDetachGracefully(AsyncTaskPtr aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [] { return OT_ERROR_NONE; };
+
+    VerifyOrExit(mThreadDetachGracefullyTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_NET_LEAVE_GRACEFULLY, encodingFunc));
+    mThreadDetachGracefullyTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to detach gracefully!"); });
+    }
+    return;
+}
+
+void NcpSpinel::ThreadErasePersistentInfo(AsyncTaskPtr aAsyncTask)
+{
+    otError      error = OT_ERROR_NONE;
+    spinel_tid_t tid   = GetNextTid();
+    va_list      args;
+
+    VerifyOrExit(mThreadErasePersistentInfoTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error =
+                      mSpinelDriver->SendCommand(SPINEL_CMD_NET_CLEAR, SPINEL_PROP_LAST_STATUS, tid, nullptr, args));
+
+    mWaitingKeyTable[tid]          = SPINEL_PROP_LAST_STATUS;
+    mCmdTable[tid]                 = SPINEL_CMD_NET_CLEAR;
+    mThreadErasePersistentInfoTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        FreeTid(tid);
+        mTaskRunner.Post(
+            [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to erase persistent info!"); });
+    }
 }
 
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
@@ -152,6 +261,31 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
 
     switch (key)
     {
+    case SPINEL_PROP_LAST_STATUS:
+    {
+        spinel_status_t status = SPINEL_STATUS_OK;
+
+        failureHandler = [this, aTid](otError aError) { HandleResponseForCommand(aTid, aError); };
+        SuccessOrExit(error = SpinelDataUnpack(data, len, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+
+        HandleResponseForCommand(aTid, ot::Spinel::SpinelStatusToOtError(status));
+        break;
+    }
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET:
+    {
+        CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
+        break;
+    }
+    case SPINEL_PROP_NET_IF_UP:
+    {
+        CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+        break;
+    }
+    case SPINEL_PROP_NET_STACK_UP:
+    {
+        CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        break;
+    }
     default:
         break;
     }
@@ -189,6 +323,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         otbrLogInfo("NCP last status: %s", spinel_status_to_cstr(status));
         break;
     }
+
     case SPINEL_PROP_NET_ROLE:
     {
         spinel_net_role_t role;
@@ -203,13 +338,36 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_NET_LEAVE_GRACEFULLY:
+    {
+        CallAndClear(mThreadDetachGracefullyTask, OT_ERROR_NONE);
+        break;
+    }
+
     default:
+        otbrLogWarning("Received uncognized key: %u", aKey);
         break;
     }
 
 exit:
     otbrLogResult(error, "NcpSpinel: %s", __FUNCTION__);
     return;
+}
+
+void NcpSpinel::HandleResponseForCommand(spinel_tid_t aTid, otError aError)
+{
+    switch (mCmdTable[aTid])
+    {
+    case SPINEL_CMD_NET_CLEAR:
+    {
+        CallAndClear(mThreadErasePersistentInfoTask, aError);
+        break;
+    }
+    default:
+        break;
+    }
+
+    mCmdTable[aTid] = SPINEL_CMD_NOOP;
 }
 
 spinel_tid_t NcpSpinel::GetNextTid(void)
@@ -236,6 +394,181 @@ exit:
     return tid;
 }
 
+otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
+{
+    otError      error  = OT_ERROR_NONE;
+    spinel_tid_t tid    = GetNextTid();
+    uint8_t      header = SPINEL_HEADER_FLAG | SPINEL_HEADER_IID(mIid) | tid;
+
+    VerifyOrExit(tid != 0, error = OT_ERROR_BUSY);
+    SuccessOrExit(error = mEncoder.BeginFrame(header, SPINEL_CMD_PROP_VALUE_SET, aKey));
+    SuccessOrExit(error = aEncodingFunc());
+    SuccessOrExit(error = mEncoder.EndFrame());
+    SuccessOrExit(error = SendEncodedFrame());
+
+    mWaitingKeyTable[tid] = aKey;
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        FreeTid(tid);
+    }
+    return error;
+}
+
+otError NcpSpinel::SendEncodedFrame(void)
+{
+    otError  error = OT_ERROR_NONE;
+    uint8_t  frame[kTxBufferSize];
+    uint16_t frameLength;
+
+    SuccessOrExit(error = mNcpBuffer.OutFrameBegin());
+    frameLength = mNcpBuffer.OutFrameGetLength();
+    VerifyOrExit(mNcpBuffer.OutFrameRead(frameLength, frame) == frameLength, error = OT_ERROR_FAILED);
+    SuccessOrExit(error = mSpinelDriver->GetSpinelInterface()->SendFrame(frame, frameLength));
+
+exit:
+    error = mNcpBuffer.OutFrameRemove();
+    return error;
+}
+
+void NcpSpinel::GetFlagsFromSecurityPolicy(const otSecurityPolicy *aSecurityPolicy,
+                                           uint8_t                *aFlags,
+                                           uint8_t                 aFlagsLength)
+{
+    static constexpr uint8_t kObtainNetworkKeyMask        = 1 << 7; // Byte 0
+    static constexpr uint8_t kNativeCommissioningMask     = 1 << 6; // Byte 0
+    static constexpr uint8_t kRoutersMask                 = 1 << 5; // Byte 0
+    static constexpr uint8_t kExternalCommissioningMask   = 1 << 4; // Byte 0
+    static constexpr uint8_t kCommercialCommissioningMask = 1 << 2; // Byte 0
+    static constexpr uint8_t kAutonomousEnrollmentMask    = 1 << 1; // Byte 0
+    static constexpr uint8_t kNetworkKeyProvisioningMask  = 1 << 0; // Byte 0
+
+    static constexpr uint8_t kTobleLinkMask     = 1 << 7; // Byte 1
+    static constexpr uint8_t kNonCcmRoutersMask = 1 << 6; // Byte 1
+    static constexpr uint8_t kReservedMask      = 0x38;   // Byte 1
+
+    VerifyOrExit(aFlagsLength > 1);
+
+    memset(aFlags, 0, aFlagsLength);
+
+    if (aSecurityPolicy->mObtainNetworkKeyEnabled)
+    {
+        aFlags[0] |= kObtainNetworkKeyMask;
+    }
+
+    if (aSecurityPolicy->mNativeCommissioningEnabled)
+    {
+        aFlags[0] |= kNativeCommissioningMask;
+    }
+
+    if (aSecurityPolicy->mRoutersEnabled)
+    {
+        aFlags[0] |= kRoutersMask;
+    }
+
+    if (aSecurityPolicy->mExternalCommissioningEnabled)
+    {
+        aFlags[0] |= kExternalCommissioningMask;
+    }
+
+    if (!aSecurityPolicy->mCommercialCommissioningEnabled)
+    {
+        aFlags[0] |= kCommercialCommissioningMask;
+    }
+
+    if (!aSecurityPolicy->mAutonomousEnrollmentEnabled)
+    {
+        aFlags[0] |= kAutonomousEnrollmentMask;
+    }
+
+    if (!aSecurityPolicy->mNetworkKeyProvisioningEnabled)
+    {
+        aFlags[0] |= kNetworkKeyProvisioningMask;
+    }
+
+    VerifyOrExit(aFlagsLength > sizeof(aFlags[0]));
+
+    if (aSecurityPolicy->mTobleLinkEnabled)
+    {
+        aFlags[1] |= kTobleLinkMask;
+    }
+
+    if (!aSecurityPolicy->mNonCcmRoutersEnabled)
+    {
+        aFlags[1] |= kNonCcmRoutersMask;
+    }
+
+    aFlags[1] |= kReservedMask;
+    aFlags[1] |= aSecurityPolicy->mVersionThresholdForRouting;
+
+exit:
+    return;
+}
+
+otError NcpSpinel::EncodeDatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs)
+{
+    otError              error = OT_ERROR_NONE;
+    otOperationalDataset dataset;
+    otIp6Address         addrMlPrefix;
+    uint8_t              flagsSecurityPolicy[2];
+
+    SuccessOrExit(error = otDatasetParseTlvs(&aActiveOpDatasetTlvs, &dataset));
+    GetFlagsFromSecurityPolicy(&dataset.mSecurityPolicy, flagsSecurityPolicy, sizeof(flagsSecurityPolicy));
+    memcpy(addrMlPrefix.mFields.m8, dataset.mMeshLocalPrefix.m8, sizeof(otMeshLocalPrefix));
+    memset(addrMlPrefix.mFields.m8 + 8, 0, sizeof(otMeshLocalPrefix));
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP));
+    SuccessOrExit(error = mEncoder.WriteUint64(dataset.mActiveTimestamp.mSeconds));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_NETWORK_KEY));
+    SuccessOrExit(error = mEncoder.WriteData(dataset.mNetworkKey.m8, sizeof(dataset.mNetworkKey.m8)));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_NETWORK_NAME));
+    SuccessOrExit(error = mEncoder.WriteUtf8(dataset.mNetworkName.m8));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_XPANID));
+    SuccessOrExit(error = mEncoder.WriteData(dataset.mExtendedPanId.m8, sizeof(dataset.mExtendedPanId.m8)));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_IPV6_ML_PREFIX));
+    SuccessOrExit(error = mEncoder.WriteIp6Address(addrMlPrefix));
+    SuccessOrExit(error = mEncoder.WriteUint8(OT_IP6_PREFIX_BITSIZE));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_MAC_15_4_PANID));
+    SuccessOrExit(error = mEncoder.WriteUint16(dataset.mPanId));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_PHY_CHAN));
+    SuccessOrExit(error = mEncoder.WriteUint16(dataset.mChannel));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_PSKC));
+    SuccessOrExit(error = mEncoder.WriteData(dataset.mPskc.m8, sizeof(dataset.mPskc.m8)));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+    SuccessOrExit(error = mEncoder.OpenStruct());
+    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_DATASET_SECURITY_POLICY));
+    SuccessOrExit(error = mEncoder.WriteUint16(dataset.mSecurityPolicy.mRotationTime));
+    SuccessOrExit(error = mEncoder.WriteUint8(flagsSecurityPolicy[0]));
+    SuccessOrExit(error = mEncoder.WriteUint8(flagsSecurityPolicy[1]));
+    SuccessOrExit(error = mEncoder.CloseStruct());
+
+exit:
+    return error;
+}
+
 otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)
 {
     otDeviceRole role = OT_DEVICE_ROLE_DISABLED;
@@ -258,7 +591,7 @@ otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)
         role = OT_DEVICE_ROLE_LEADER;
         break;
     default:
-        otbrLogWarning("Received invalid spinel net role!");
+        otbrLogWarning("Unsupported spinel net role: %u", aRole);
         break;
     }
 
