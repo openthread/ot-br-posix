@@ -49,6 +49,7 @@
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
+#include "ncp/thread_controller.hpp"
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
@@ -63,7 +64,7 @@ namespace Ncp {
  * This interface defines OpenThread Controller under RCP mode.
  *
  */
-class RcpHost : public MainloopProcessor
+class RcpHost : public MainloopProcessor, public ThreadController
 {
 public:
     using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
@@ -192,6 +193,9 @@ public:
 #endif
 
     ~RcpHost(void) override;
+
+    // Thread Control APIs
+    void GetDeviceRole(const DeviceRoleHandler aHandler) override;
 
 private:
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
