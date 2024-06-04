@@ -921,7 +921,7 @@ void ThreadHelper::DetachGracefullyCallback(void)
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #if OTBR_ENABLE_BORDER_ROUTING
-void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo)
+void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes *aExternalRouteInfo)
 {
     bool      isDefaultRouteAdded = false;
     bool      isUlaRouteAdded     = false;
@@ -959,6 +959,71 @@ void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData_Extern
     aExternalRouteInfo->set_has_others_route_added(isOthersRouteAdded);
 }
 #endif // OTBR_ENABLE_BORDER_ROUTING
+
+#if OTBR_ENABLE_DHCP6_PD
+void ThreadHelper::RetrievePdInfo(threadnetwork::TelemetryData::WpanBorderRouter *aWpanBorderRouter)
+{
+    aWpanBorderRouter->set_dhcp6_pd_state(Dhcp6PdStateFromOtDhcp6PdState(otBorderRoutingDhcp6PdGetState(mInstance)));
+    RetrieveHashedPdPrefix(aWpanBorderRouter->mutable_hashed_pd_prefix());
+    RetrievePdProcessedRaInfo(aWpanBorderRouter->mutable_pd_processed_ra_info());
+}
+
+void ThreadHelper::RetrieveHashedPdPrefix(std::string *aHashedPdPrefix)
+{
+    otBorderRoutingPrefixTableEntry aPrefixInfo;
+    const uint8_t                  *prefixAddr          = nullptr;
+    const uint8_t                  *truncatedHash       = nullptr;
+    constexpr size_t                kHashPrefixLength   = 6;
+    constexpr size_t                kHashedPrefixLength = 2;
+    std::vector<uint8_t>            hashedPdHeader      = {0x20, 0x01, 0x0d, 0xb8};
+    std::vector<uint8_t>            hashedPdTailer      = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    std::vector<uint8_t>            hashedPdPrefix;
+    hashedPdPrefix.reserve(16);
+    Sha256       sha256;
+    Sha256::Hash hash;
+
+    SuccessOrExit(otBorderRoutingGetPdOmrPrefix(mInstance, &aPrefixInfo));
+    prefixAddr = aPrefixInfo.mPrefix.mPrefix.mFields.m8;
+
+    // TODO: Put below steps into a reusable function.
+    sha256.Start();
+    sha256.Update(prefixAddr, kHashPrefixLength);
+    sha256.Update(mNat64PdCommonSalt, kNat64PdCommonHashSaltLength);
+    sha256.Finish(hash);
+
+    // Append hashedPdHeader
+    hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdHeader.begin(), hashedPdHeader.end());
+
+    // Append the first 2 bytes of the hashed prefix
+    truncatedHash = hash.GetBytes();
+    hashedPdPrefix.insert(hashedPdPrefix.end(), truncatedHash, truncatedHash + kHashedPrefixLength);
+
+    // Append ip[6] and ip[7]
+    hashedPdPrefix.push_back(prefixAddr[6]);
+    hashedPdPrefix.push_back(prefixAddr[7]);
+
+    // Append hashedPdTailer
+    hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdTailer.begin(), hashedPdTailer.end());
+
+    aHashedPdPrefix->append(reinterpret_cast<const char *>(hashedPdPrefix.data()), hashedPdPrefix.size());
+
+exit:
+    return;
+}
+
+void ThreadHelper::RetrievePdProcessedRaInfo(threadnetwork::TelemetryData::PdProcessedRaInfo *aPdProcessedRaInfo)
+{
+    otPdProcessedRaInfo raInfo;
+
+    SuccessOrExit(otBorderRoutingGetPdProcessedRaInfo(mInstance, &raInfo));
+    aPdProcessedRaInfo->set_num_platform_ra_received(raInfo.mNumPlatformRaReceived);
+    aPdProcessedRaInfo->set_num_platform_pio_processed(raInfo.mNumPlatformPioProcessed);
+    aPdProcessedRaInfo->set_last_platform_ra_msec(raInfo.mLastPlatformRaMsec);
+
+exit:
+    return;
+}
+#endif // OTBR_ENABLE_DHCP6_PD
 
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
@@ -1486,62 +1551,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         // End of Nat64Mapping section.
 #endif // OTBR_ENABLE_NAT64
 #if OTBR_ENABLE_DHCP6_PD
-        // Start of Dhcp6PdState section.
-        wpanBorderRouter->set_dhcp6_pd_state(Dhcp6PdStateFromOtDhcp6PdState(otBorderRoutingDhcp6PdGetState(mInstance)));
-        // End of Dhcp6PdState section.
-
-        // Start of Hashed PD prefix
-        {
-            otBorderRoutingPrefixTableEntry aPrefixInfo;
-            const uint8_t                  *prefixAddr          = nullptr;
-            const uint8_t                  *truncatedHash       = nullptr;
-            constexpr size_t                kHashPrefixLength   = 6;
-            constexpr size_t                kHashedPrefixLength = 2;
-            std::vector<uint8_t>            hashedPdHeader      = {0x20, 0x01, 0x0d, 0xb8};
-            std::vector<uint8_t>            hashedPdTailer      = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            std::vector<uint8_t>            hashedPdPrefix;
-            hashedPdPrefix.reserve(16);
-            Sha256       sha256;
-            Sha256::Hash hash;
-
-            otBorderRoutingGetPdOmrPrefix(mInstance, &aPrefixInfo);
-            prefixAddr = aPrefixInfo.mPrefix.mPrefix.mFields.m8;
-
-            // TODO: Put below steps into a reusable function.
-            sha256.Start();
-            sha256.Update(prefixAddr, kHashPrefixLength);
-            sha256.Update(mNat64PdCommonSalt, kNat64PdCommonHashSaltLength);
-            sha256.Finish(hash);
-
-            // Append hashedPdHeader
-            hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdHeader.begin(), hashedPdHeader.end());
-
-            // Append the first 2 bytes of the hashed prefix
-            truncatedHash = hash.GetBytes();
-            hashedPdPrefix.insert(hashedPdPrefix.end(), truncatedHash, truncatedHash + kHashedPrefixLength);
-
-            // Append ip[6] and ip[7]
-            hashedPdPrefix.push_back(prefixAddr[6]);
-            hashedPdPrefix.push_back(prefixAddr[7]);
-
-            // Append hashedPdTailer
-            hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdTailer.begin(), hashedPdTailer.end());
-
-            wpanBorderRouter->mutable_hashed_pd_prefix()->append(reinterpret_cast<const char *>(hashedPdPrefix.data()),
-                                                                 hashedPdPrefix.size());
-        }
-        // End of Hashed PD prefix
-        // Start of DHCPv6 PD processed RA Info
-        {
-            auto                pdProcessedRaInfo = wpanBorderRouter->mutable_pd_processed_ra_info();
-            otPdProcessedRaInfo raInfo;
-
-            otBorderRoutingGetPdProcessedRaInfo(mInstance, &raInfo);
-            pdProcessedRaInfo->set_num_platform_ra_received(raInfo.mNumPlatformRaReceived);
-            pdProcessedRaInfo->set_num_platform_pio_processed(raInfo.mNumPlatformPioProcessed);
-            pdProcessedRaInfo->set_last_platform_ra_msec(raInfo.mLastPlatformRaMsec);
-        }
-        // End of DHCPv6 PD processed RA Info
+        RetrievePdInfo(wpanBorderRouter);
 #endif // OTBR_ENABLE_DHCP6_PD
        // End of WpanBorderRouter section.
 
