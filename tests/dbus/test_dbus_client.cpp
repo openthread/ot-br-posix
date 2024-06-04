@@ -323,7 +323,12 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
                 threadnetwork::TelemetryData::NAT64_STATE_NOT_RUNNING);
 #endif
 #if OTBR_ENABLE_DHCP6_PD
-    TEST_ASSERT(!telemetryData.wpan_border_router().hashed_pd_prefix().empty());
+    TEST_ASSERT(telemetryData.wpan_border_router().dhcp6_pd_state() ==
+                threadnetwork::TelemetryData::DHCP6_PD_STATE_DISABLED);
+    TEST_ASSERT(telemetryData.wpan_border_router().hashed_pd_prefix().empty());
+    TEST_ASSERT(telemetryData.wpan_border_router().pd_processed_ra_info().num_platform_ra_received() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().pd_processed_ra_info().num_platform_pio_processed() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().pd_processed_ra_info().last_platform_ra_msec() == 0);
 #endif
     TEST_ASSERT(telemetryData.wpan_rcp().rcp_interface_statistics().transferred_frames_count() > 0);
     TEST_ASSERT(telemetryData.coex_metrics().count_tx_request() > 0);

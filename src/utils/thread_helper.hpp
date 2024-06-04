@@ -302,9 +302,16 @@ private:
 
     void ActiveDatasetChangedCallback(void);
 
-#if OTBR_ENABLE_TELEMETRY_DATA_API && OTBR_ENABLE_BORDER_ROUTING
-    void RetrieveExternalRouteInfo(threadnetwork::TelemetryData_ExternalRoutes *aExternalRouteInfo);
+#if OTBR_ENABLE_TELEMETRY_DATA_API
+#if OTBR_ENABLE_BORDER_ROUTING
+    void RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes *aExternalRouteInfo);
 #endif
+#if OTBR_ENABLE_DHCP6_PD
+    void RetrievePdInfo(threadnetwork::TelemetryData::WpanBorderRouter *aWpanBorderRouter);
+    void RetrieveHashedPdPrefix(std::string *aHashedPdPrefix);
+    void RetrievePdProcessedRaInfo(threadnetwork::TelemetryData::PdProcessedRaInfo *aPdProcessedRaInfo);
+#endif
+#endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     otInstance *mInstance;
 
