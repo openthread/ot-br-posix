@@ -285,12 +285,12 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_stats().phy_tx() > 0);
     TEST_ASSERT(telemetryData.wpan_stats().phy_rx() > 0);
     TEST_ASSERT(telemetryData.wpan_stats().ip_tx_success() > 0);
-    TEST_ASSERT(telemetryData.wpan_topo_full().rloc16() > 0);
+    TEST_ASSERT(telemetryData.wpan_topo_full().rloc16() < 0xffff);
     TEST_ASSERT(telemetryData.wpan_topo_full().network_data().size() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().partition_id() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().extended_pan_id() > 0);
     TEST_ASSERT(telemetryData.topo_entries_size() == 1);
-    TEST_ASSERT(telemetryData.topo_entries(0).rloc16() > 0);
+    TEST_ASSERT(telemetryData.topo_entries(0).rloc16() < 0xffff);
     TEST_ASSERT(telemetryData.wpan_border_router().border_routing_counters().rs_tx_failure() == 0);
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     TEST_ASSERT(telemetryData.wpan_border_router().srp_server().state() ==
