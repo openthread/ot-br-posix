@@ -84,7 +84,7 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
 
     for (const char *url : aRadioUrls)
     {
-        mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;
+        mConfig.mCoprocessorUrls.mUrls[mConfig.mCoprocessorUrls.mNum++] = url;
     }
     mConfig.mSpeedUpFactor = 1;
 }
