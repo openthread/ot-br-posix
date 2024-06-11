@@ -149,20 +149,30 @@ BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
     mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
 }
 
-otbrError BorderAgent::SetMeshCopServiceValues(const std::string          &aServiceInstanceName,
-                                               const std::string          &aProductName,
-                                               const std::string          &aVendorName,
-                                               const std::vector<uint8_t> &aVendorOui)
+otbrError BorderAgent::SetMeshCopServiceValues(const std::string              &aServiceInstanceName,
+                                               const std::string              &aProductName,
+                                               const std::string              &aVendorName,
+                                               const std::vector<uint8_t>     &aVendorOui,
+                                               const Mdns::Publisher::TxtList &aNonStandardTxtEntries)
 {
     otbrError error = OTBR_ERROR_NONE;
 
     VerifyOrExit(aProductName.size() <= kMaxProductNameLength, error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(aVendorName.size() <= kMaxVendorNameLength, error = OTBR_ERROR_INVALID_ARGS);
     VerifyOrExit(aVendorOui.empty() || aVendorOui.size() == kVendorOuiLength, error = OTBR_ERROR_INVALID_ARGS);
+    for (const auto &txtEntry : aNonStandardTxtEntries)
+    {
+        VerifyOrExit(!txtEntry.mKey.empty() && txtEntry.mKey.front() == 'v', error = OTBR_ERROR_INVALID_ARGS);
+    }
 
     mProductName = aProductName;
     mVendorName  = aVendorName;
     mVendorOui   = aVendorOui;
+    mMeshCopTxtUpdate.clear();
+    for (const auto &txtEntry : aNonStandardTxtEntries)
+    {
+        mMeshCopTxtUpdate[txtEntry.mKey] = txtEntry.mValue;
+    }
 
     mBaseServiceInstanceName = aServiceInstanceName;
 
@@ -384,7 +394,6 @@ void AppendActiveTimestampTxtEntry(otInstance &aInstance, Mdns::Publisher::TxtLi
     }
 }
 
-#if OTBR_ENABLE_DBUS_SERVER
 void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &aVendorEntries,
                             Mdns::Publisher::TxtList                          &aTxtList)
 {
@@ -410,7 +419,6 @@ void AppendVendorTxtEntries(const std::map<std::string, std::vector<uint8_t>> &a
         }
     }
 }
-#endif
 
 void BorderAgent::PublishMeshCopService(void)
 {
@@ -484,9 +492,8 @@ void BorderAgent::PublishMeshCopService(void)
 #if OTBR_ENABLE_BORDER_ROUTING
     AppendOmrTxtEntry(*instance, txtList);
 #endif
-#if OTBR_ENABLE_DBUS_SERVER
+
     AppendVendorTxtEntries(mMeshCopTxtUpdate, txtList);
-#endif
 
     if (otBorderAgentGetState(instance) != OT_BORDER_AGENT_STATE_STOPPED)
     {

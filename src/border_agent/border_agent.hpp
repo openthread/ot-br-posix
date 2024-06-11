@@ -99,22 +99,24 @@ public:
      *
      * This method must be called before this BorderAgent is enabled by SetEnabled.
      *
-     * @param[in] aServiceInstanceName  The service instance name; suffix may be appended to this value to avoid
-     *                                  name conflicts.
-     * @param[in] aProductName          The product name; must not exceed length of kMaxProductNameLength
-     *                                  and an empty string will be ignored.
-     * @param[in] aVendorName           The vendor name; must not exceed length of kMaxVendorNameLength
-     *                                  and an empty string will be ignored.
-     * @param[in] aVendorOui            The vendor OUI; must have length of 3 bytes or be empty and ignored.
+     * @param[in] aServiceInstanceName    The service instance name; suffix may be appended to this value to avoid
+     *                                    name conflicts.
+     * @param[in] aProductName            The product name; must not exceed length of kMaxProductNameLength
+     *                                    and an empty string will be ignored.
+     * @param[in] aVendorName             The vendor name; must not exceed length of kMaxVendorNameLength
+     *                                    and an empty string will be ignored.
+     * @param[in] aVendorOui              The vendor OUI; must have length of 3 bytes or be empty and ignored.
+     * @param[in] aNonStandardTxtEntries  Non-standard (vendor-specific) TXT entries whose key MUST start with "v"
      *
      * @returns OTBR_ERROR_INVALID_ARGS  If aVendorName, aProductName or aVendorOui exceeds the
-     *                                   allowed ranges.
+     *                                   allowed ranges or invalid keys are found in aNonStandardTxtEntries
      * @returns OTBR_ERROR_NONE          If successfully set the meshcop service values.
      */
-    otbrError SetMeshCopServiceValues(const std::string          &aServiceInstanceName,
-                                      const std::string          &aProductName,
-                                      const std::string          &aVendorName,
-                                      const std::vector<uint8_t> &aVendorOui = {});
+    otbrError SetMeshCopServiceValues(const std::string              &aServiceInstanceName,
+                                      const std::string              &aProductName,
+                                      const std::string              &aVendorName,
+                                      const std::vector<uint8_t>     &aVendorOui             = {},
+                                      const Mdns::Publisher::TxtList &aNonStandardTxtEntries = {});
 
     /**
      * This method enables/disables the Border Agent.
@@ -157,9 +159,7 @@ private:
     Mdns::Publisher    &mPublisher;
     bool                mIsEnabled;
 
-#if OTBR_ENABLE_DBUS_SERVER
     std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
-#endif
 
     std::vector<uint8_t> mVendorOui;
 
