@@ -132,7 +132,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::RcpHost &GetNcp(void) { return *mHost; }
+    Ncp::ThreadController &GetHost(void) { return *mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -256,12 +256,16 @@ private:
 
     static void HandleSignal(int aSignal);
 
+    void CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
+    void InitRcpMode(void);
+    void DeinitRcpMode(void);
+
     std::string mInterfaceName;
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char                   *mBackboneInterfaceName;
-    std::unique_ptr<Ncp::RcpHost> mHost;
+    const char                            *mBackboneInterfaceName;
+    std::unique_ptr<Ncp::ThreadController> mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif

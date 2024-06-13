@@ -143,6 +143,19 @@
     } while (false)
 
 /**
+ * This macro prints the message and terminates the program.
+ *
+ * @param[in] aMessage    A message (text string) to print.
+ *
+ */
+#define DieNow(aMessage)                                                 \
+    do                                                                   \
+    {                                                                    \
+        otbrLogEmerg("FAILED %s:%d - %s", __FILE__, __LINE__, aMessage); \
+        exit(-1);                                                        \
+    } while (false)
+
+/**
  *  This unconditionally executes @a ... and branches to the local
  *  label 'exit'.
  *
