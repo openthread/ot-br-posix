@@ -71,7 +71,7 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
         break;
 
     case OT_COPROCESSOR_NCP:
-        host = MakeUnique<NcpHost>(aDryRun);
+        host = MakeUnique<NcpHost>(aInterfaceName, aDryRun);
         break;
 
     default:

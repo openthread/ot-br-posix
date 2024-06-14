@@ -40,10 +40,11 @@
 namespace otbr {
 namespace Ncp {
 
-NcpHost::NcpHost(bool aDryRun)
+NcpHost::NcpHost(const char *aInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
 {
     memset(&mConfig, 0, sizeof(mConfig));
+    mConfig.mInterfaceName = aInterfaceName;
     mConfig.mDryRun        = aDryRun;
     mConfig.mSpeedUpFactor = 1;
 }

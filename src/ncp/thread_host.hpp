@@ -100,6 +100,14 @@ public:
     virtual const char *GetCoprocessorVersion(void) = 0;
 
     /**
+     * This method returns the Thread network interface name.
+     *
+     * @returns A pointer to the Thread network interface name string.
+     *
+     */
+    virtual const char *GetInterfaceName(void) const = 0;
+
+    /**
      * Initializes the Thread controller.
      *
      */

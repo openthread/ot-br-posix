@@ -68,6 +68,9 @@ Application::Application(const std::string               &aInterfaceName,
 #if OTBR_ENABLE_MDNS
     , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
 #endif
+#if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
+    , mDBusAgent(MakeUnique<DBus::DBusAgent>(*mHost, *mPublisher))
+#endif
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(vendor::VendorServer::newInstance(*this))
 #endif
@@ -82,9 +85,17 @@ void Application::Init(void)
 {
     mHost->Init();
 
-    if (mHost->GetCoprocessorType() == OT_COPROCESSOR_RCP)
+    switch (mHost->GetCoprocessorType())
     {
+    case OT_COPROCESSOR_RCP:
         InitRcpMode();
+        break;
+    case OT_COPROCESSOR_NCP:
+        InitNcpMode();
+        break;
+    default:
+        DieNow("Unknown coprocessor type!");
+        break;
     }
 
     otbrLogInfo("Co-processor version: %s", mHost->GetCoprocessorVersion());
@@ -92,9 +103,17 @@ void Application::Init(void)
 
 void Application::Deinit(void)
 {
-    if (mHost->GetCoprocessorType() == OT_COPROCESSOR_RCP)
+    switch (mHost->GetCoprocessorType())
     {
+    case OT_COPROCESSOR_RCP:
         DeinitRcpMode();
+        break;
+    case OT_COPROCESSOR_NCP:
+        DeinitNcpMode();
+        break;
+    default:
+        DieNow("Unknown coprocessor type!");
+        break;
     }
 
     mHost->Deinit();
@@ -223,9 +242,6 @@ void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRest
 #if OTBR_ENABLE_REST_SERVER
     mRestWebServer = MakeUnique<rest::RestWebServer>(rcpHost, aRestListenAddress, aRestListenPort);
 #endif
-#if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
-    mDBusAgent = MakeUnique<DBus::DBusAgent>(rcpHost, *mPublisher);
-#endif
 
     OT_UNUSED_VARIABLE(aRestListenAddress);
     OT_UNUSED_VARIABLE(aRestListenPort);
@@ -282,6 +298,18 @@ void Application::DeinitRcpMode(void)
 #if OTBR_ENABLE_MDNS
     mPublisher->Stop();
 #endif
+}
+
+void Application::InitNcpMode(void)
+{
+#if OTBR_ENABLE_DBUS_SERVER
+    mDBusAgent->Init();
+#endif
+}
+
+void Application::DeinitNcpMode(void)
+{
+    /* empty */
 }
 
 } // namespace otbr
