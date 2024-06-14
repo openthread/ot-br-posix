@@ -35,6 +35,7 @@
 
 #include "lib/spinel/coprocessor_type.h"
 
+#include "ncp_host.hpp"
 #include "rcp_host.hpp"
 
 namespace otbr {
@@ -63,14 +64,19 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
 
     coprocessorType = otSysInitCoprocessor(&urls);
 
-    if (coprocessorType == OT_COPROCESSOR_RCP)
+    switch (coprocessorType)
     {
+    case OT_COPROCESSOR_RCP:
         host = MakeUnique<RcpHost>(aInterfaceName, aRadioUrls, aBackboneInterfaceName, aDryRun, aEnableAutoAttach);
-    }
-    else
-    {
-        // TODO: add NCP type
+        break;
+
+    case OT_COPROCESSOR_NCP:
+        host = MakeUnique<NcpHost>(aDryRun);
+        break;
+
+    default:
         DieNow("Unknown coprocessor type!");
+        break;
     }
 
     return host;

@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2021, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,17 +26,42 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_library(otbr-ncp
-    ncp_host.cpp
-    ncp_host.hpp
-    rcp_host.cpp
-    rcp_host.hpp
-    thread_host.cpp
-    thread_host.hpp
-)
+name: NcpMode
 
-target_link_libraries(otbr-ncp PRIVATE
-    otbr-common
-    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
-)
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  ncp_mode:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        mdns: ["mDNSResponder", "avahi"]
+    env:
+        BUILD_TARGET: check
+        OTBR_MDNS: ${{ matrix.mdns }}
+        OTBR_COVERAGE: 1
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Build
+      run: |
+        script/test build
+    - name: Run
+      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test ncp_mode
+    - name: Codecov
+      uses: codecov/codecov-action@v4
