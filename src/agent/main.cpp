@@ -117,6 +117,7 @@ exit:
     return successful;
 }
 
+#ifndef __ANDROID__
 static constexpr char kAutoAttachDisableArg[] = "--auto-attach=0";
 static char           sAutoAttachDisableArgStorage[sizeof(kAutoAttachDisableArg)];
 
@@ -134,6 +135,7 @@ static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
 
     return args;
 }
+#endif
 
 static void PrintHelp(const char *aProgramName)
 {
