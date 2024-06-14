@@ -48,5 +48,6 @@
 #define OTBR_ROLE_NAME_LEADER "leader"
 
 std::string GetDeviceRoleName(otDeviceRole aRole);
+std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aDhcp6PdState);
 
 #endif // OTBR_COMMON_API_STRINGS_HPP_

@@ -291,6 +291,11 @@ void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, GetDeviceRoleName(aDeviceRole));
 }
 
+void DBusThreadObject::Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState)
+{
+    SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DHCP6_PD_STATE, GetDhcp6PdStateName(aDhcp6PdState));
+}
+
 void DBusThreadObject::NcpResetHandler(void)
 {
     mHost->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
@@ -666,6 +671,19 @@ otError DBusThreadObject::GetDeviceRoleHandler(DBusMessageIter &aIter)
     otError      error        = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, roleName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObject::GetDhcp6PdStateHandler(DBusMessageIter &aIter)
+{
+    auto         threadHelper = mHost->GetThreadHelper();
+    otBorderRoutingDhcp6PdState state         = otThreadGetDhcp6PdState(threadHelper->GetInstance());
+    std::string  stateName     = GetDhcp6PdStateName(state);
+    otError      error        = OT_ERROR_NONE;
+
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, stateName) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
 exit:
     return error;
