@@ -144,6 +144,14 @@ public:
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
+    /**
+     * This method create ephemeral key in the Border Agent.
+     *
+     * @param[out] aEPSKc  the ephemeral key generated randomly.
+     *
+     */
+    otbrError CreateEphemeralKey(std::string &aEPSKc);
+
 private:
     void Start(void);
     void Stop(void);

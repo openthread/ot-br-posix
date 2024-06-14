@@ -52,6 +52,7 @@
 #include <openthread/border_routing.h>
 #include <openthread/random_noncrypto.h>
 #include <openthread/thread_ftd.h>
+#include <openthread/verhoeff_checksum.h>
 #include <openthread/platform/settings.h>
 #include <openthread/platform/toolchain.h>
 
@@ -163,6 +164,29 @@ BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
     mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+}
+
+otbrError BorderAgent::CreateEphemeralKey(std::string &aEPSKc)
+{
+    std::random_device              r;
+    std::default_random_engine      engine(r());
+    std::uniform_int_distribution<> dist(0, 9);
+
+    std::string result;
+    char        checksum;
+    otbrError   error = OTBR_ERROR_NONE;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        result += static_cast<char>('0' + dist(engine));
+    }
+
+    SuccessOrExit(otVerhoeffChecksumCalculate(result.c_str(), &checksum), error = OTBR_ERROR_INVALID_ARGS);
+    aEPSKc = result;
+    aEPSKc += checksum;
+
+exit:
+    return error;
 }
 
 otbrError BorderAgent::SetMeshCopServiceValues(const std::string              &aServiceInstanceName,

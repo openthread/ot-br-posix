@@ -235,6 +235,19 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
+    <!-- StartEphemeralKeyMode: Active ePSKc mode and generate ePSKc.
+      @timeout: The live time for ePSKc mode
+      @epskc: The 9 bytes ephemeral key for commission.
+    -->
+    <method name="StartEphemeralKeyMode">
+      <arg name="lifetime" type="u" direction="in"/>
+      <arg name="epskc" type="s" direction="out"/>
+    </method>
+
+    <!-- StopEphemeralKeyMode: Stop ePSKc mode. -->
+    <method name="StopEphemeralKeyMode">
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
