@@ -147,6 +147,8 @@ otbrError DBusThreadObject::Init(void)
                    std::bind(&DBusThreadObject::LeaveNetworkHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
                    std::bind(&DBusThreadObject::SetNat64Enabled, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_EPHEMERAL_KEY_METHOD,
+                   std::bind(&DBusThreadObject::SetEphemeralKeyHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
@@ -1946,6 +1948,26 @@ otError DBusThreadObject::SetNat64Cidr(DBusMessageIter &aIter)
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 #endif // OTBR_ENABLE_NAT64
+
+
+otError DBusThreadObject::SetEphemeralKeyHandler(DBusMessageIter &aIter)
+{
+    auto                 threadHelper = mNcp->GetThreadHelper();
+    otbrError            otbrError    = OTBR_ERROR_NONE;
+    std::vector<uint8_t> data;
+    EphemeralKey         ephemeralKey;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, otError = OT_ERROR_INVALID_ARGS);
+
+    VerifyOrExit(ephemeralKey.ParseFromString(std::string(data.begin(), data.end())), otError = OT_ERROR_INVALID_ARGS);
+
+    VerifyOrExit((error = mHost->ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
+    VerifyOrExit(otBorderAgentSetEphemeralKey(threadHelper->GetInstance(), ephemeralKey.ephemeral_key().c_str(),
+                                              ephemeralKey.timeout(), ephemeralKey.port()) == OT_ERROR_NONE,
+                 otbrError = OTBR_ERROR_REST);
+exit:
+    return otError;
+}
 
 otError DBusThreadObject::GetInfraLinkInfo(DBusMessageIter &aIter)
 {

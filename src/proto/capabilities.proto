@@ -12,3 +12,12 @@ message Capabilities {
     optional bool nat64 = 1; // OTBR_ENABLE_NAT64
     optional bool dhcp6_pd = 2; // OTBR_ENABLE_DHCP6_PD
 }
+
+message EphemeralKey {
+    // 9 bytes Ephemeral Key
+    optional bytes ephemeral_key = 1;
+    // The timeout duration in milliseconds to stay in TAP mode
+    optional int32 timeout = 2;
+    // The UDP port for security connection.
+    optional int32 port = 3;
+};

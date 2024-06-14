@@ -110,6 +110,7 @@ private:
 
     void IntrospectHandler(DBusRequest &aRequest);
 
+    otError SetEphemeralKeyHandler(DBusMessageIter &aIter);
     otError SetMeshLocalPrefixHandler(DBusMessageIter &aIter);
     otError SetLegacyUlaPrefixHandler(DBusMessageIter &aIter);
     otError SetLinkModeHandler(DBusMessageIter &aIter);

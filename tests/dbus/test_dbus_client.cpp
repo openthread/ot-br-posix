@@ -261,6 +261,15 @@ void CheckNat64(ThreadApiDBus *aApi)
 #endif
 }
 
+void CheckEphemeralKey(ThreadApiDBus *aApi)
+{
+    otbr::EphemeralKey ephemeralKey;
+    ephemeralKey.set_ephemeral_key("123456784");
+    ephemeralKey.set_timeout(500000);
+    ephemeralKey.set_port(0);
+    TEST_ASSERT(aApi->SetEphemeralKey() == OTBR_ERROR_NONE);
+}
+
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 void CheckTelemetryData(ThreadApiDBus *aApi)
 {
@@ -468,6 +477,7 @@ int main()
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
+                            CheckEphemeralKey(api.get());
 #if OTBR_ENABLE_TELEMETRY_DATA_API
                             CheckTelemetryData(api.get());
 #endif
