@@ -56,7 +56,7 @@
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
-#include "ncp/thread_controller.hpp"
+#include "ncp/thread_host.hpp"
 
 static const char kDefaultInterfaceName[] = "wpan0";
 
@@ -176,10 +176,10 @@ static otbrLogLevel GetDefaultLogLevel(void)
 
 static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
-    auto host = std::unique_ptr<otbr::Ncp::ThreadController>(
-        otbr::Ncp::ThreadController::Create(/* aInterfaceName */ "", aRadioUrls,
-                                            /* aBackboneInterfaceName */ "",
-                                            /* aDryRun */ true, /* aEnableAutoAttach */ false));
+    auto host = std::unique_ptr<otbr::Ncp::ThreadHost>(
+        otbr::Ncp::ThreadHost::Create(/* aInterfaceName */ "", aRadioUrls,
+                                      /* aBackboneInterfaceName */ "",
+                                      /* aDryRun */ true, /* aEnableAutoAttach */ false));
     const char *coprocessorVersion;
 
     host->Init();

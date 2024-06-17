@@ -31,8 +31,8 @@
  *   This file includes definitions of Thead Controller Interface.
  */
 
-#ifndef OTBR_AGENT_THREAD_CONTROLLER_HPP_
-#define OTBR_AGENT_THREAD_CONTROLLER_HPP_
+#ifndef OTBR_AGENT_THREAD_HOST_HPP_
+#define OTBR_AGENT_THREAD_HOST_HPP_
 
 #include <functional>
 #include <memory>
@@ -54,7 +54,7 @@ namespace Ncp {
  * The APIs are unified for both NCP and RCP cases.
  *
  */
-class ThreadController
+class ThreadHost
 {
 public:
     using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
@@ -73,11 +73,11 @@ public:
      * @returns Non-null OpenThread Controller instance.
      *
      */
-    static std::unique_ptr<ThreadController> Create(const char                      *aInterfaceName,
-                                                    const std::vector<const char *> &aRadioUrls,
-                                                    const char                      *aBackboneInterfaceName,
-                                                    bool                             aDryRun,
-                                                    bool                             aEnableAutoAttach);
+    static std::unique_ptr<ThreadHost> Create(const char                      *aInterfaceName,
+                                              const std::vector<const char *> &aRadioUrls,
+                                              const char                      *aBackboneInterfaceName,
+                                              bool                             aDryRun,
+                                              bool                             aEnableAutoAttach);
 
     /**
      * This method gets the device role and returns the role through the handler.
@@ -115,7 +115,7 @@ public:
      * The destructor.
      *
      */
-    virtual ~ThreadController(void) = default;
+    virtual ~ThreadHost(void) = default;
 
 protected:
     static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
@@ -124,4 +124,4 @@ protected:
 } // namespace Ncp
 } // namespace otbr
 
-#endif // OTBR_AGENT_THREAD_CONTROLLER_HPP_
+#endif // OTBR_AGENT_THREAD_HOST_HPP_

@@ -29,8 +29,8 @@
 add_library(otbr-ncp
     rcp_host.cpp
     rcp_host.hpp
-    thread_controller.cpp
-    thread_controller.hpp
+    thread_host.cpp
+    thread_host.hpp
 )
 
 target_link_libraries(otbr-ncp PRIVATE

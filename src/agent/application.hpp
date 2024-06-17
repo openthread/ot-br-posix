@@ -132,7 +132,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::ThreadController &GetHost(void) { return *mHost; }
+    Ncp::ThreadHost &GetHost(void) { return *mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -264,8 +264,8 @@ private:
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char                            *mBackboneInterfaceName;
-    std::unique_ptr<Ncp::ThreadController> mHost;
+    const char                      *mBackboneInterfaceName;
+    std::unique_ptr<Ncp::ThreadHost> mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif

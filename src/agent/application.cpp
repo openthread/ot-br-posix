@@ -60,11 +60,11 @@ Application::Application(const std::string               &aInterfaceName,
 #else
     , mBackboneInterfaceName(aBackboneInterfaceNames.empty() ? "" : aBackboneInterfaceNames.front())
 #endif
-    , mHost(Ncp::ThreadController::Create(mInterfaceName.c_str(),
-                                          aRadioUrls,
-                                          mBackboneInterfaceName,
-                                          /* aDryRun */ false,
-                                          aEnableAutoAttach))
+    , mHost(Ncp::ThreadHost::Create(mInterfaceName.c_str(),
+                                    aRadioUrls,
+                                    mBackboneInterfaceName,
+                                    /* aDryRun */ false,
+                                    aEnableAutoAttach))
 #if OTBR_ENABLE_MDNS
     , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
 #endif
