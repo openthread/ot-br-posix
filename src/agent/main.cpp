@@ -31,10 +31,6 @@
 #include <openthread-br/config.h>
 
 #include <algorithm>
-#include <fstream>
-#include <mutex>
-#include <sstream>
-#include <string>
 #include <vector>
 
 #include <assert.h>
@@ -47,7 +43,7 @@
 #include <openthread/logging.h>
 #include <openthread/platform/radio.h>
 
-#if __ANDROID__ && OTBR_CONFIG_ANDROID_PROPERTY_ENABLE
+#if OTBR_ENABLE_PLATFORM_ANDROID
 #include <cutils/properties.h>
 #endif
 
@@ -57,6 +53,12 @@
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "ncp/thread_controller.hpp"
+
+#ifdef OTBR_ENABLE_PLATFORM_ANDROID
+#ifndef __ANDROID__
+#error "OTBR_ENABLE_PLATFORM_ANDROID can be enabled for only Android devices"
+#endif
+#endif
 
 static const char kDefaultInterfaceName[] = "wpan0";
 
@@ -79,7 +81,7 @@ enum
     OTBR_OPT_REST_LISTEN_PORT,
 };
 
-#ifndef __ANDROID__
+#ifndef OTBR_ENABLE_PLATFORM_ANDROID
 static jmp_buf sResetJump;
 #endif
 static otbr::Application *gApp = nullptr;
@@ -117,6 +119,7 @@ exit:
     return successful;
 }
 
+#ifndef OTBR_ENABLE_PLATFORM_ANDROID
 static constexpr char kAutoAttachDisableArg[] = "--auto-attach=0";
 static char           sAutoAttachDisableArgStorage[sizeof(kAutoAttachDisableArg)];
 
@@ -134,6 +137,7 @@ static std::vector<char *> AppendAutoAttachDisableArg(int argc, char *argv[])
 
     return args;
 }
+#endif
 
 static void PrintHelp(const char *aProgramName)
 {
@@ -161,7 +165,7 @@ static otbrLogLevel GetDefaultLogLevel(void)
 {
     otbrLogLevel level = OTBR_LOG_INFO;
 
-#if __ANDROID__ && OTBR_CONFIG_ANDROID_PROPERTY_ENABLE
+#if OTBR_ENABLE_PLATFORM_ANDROID
     char value[PROPERTY_VALUE_MAX];
 
     property_get("ro.build.type", value, "user");
@@ -329,7 +333,7 @@ void otPlatReset(otInstance *aInstance)
     gApp->Deinit();
     gApp = nullptr;
 
-#ifndef __ANDROID__
+#ifndef OTBR_ENABLE_PLATFORM_ANDROID
     longjmp(sResetJump, 1);
     assert(false);
 #else
@@ -341,7 +345,7 @@ void otPlatReset(otInstance *aInstance)
 
 int main(int argc, char *argv[])
 {
-#ifndef __ANDROID__
+#ifndef OTBR_ENABLE_PLATFORM_ANDROID
     if (setjmp(sResetJump))
     {
         std::vector<char *> args = AppendAutoAttachDisableArg(argc, argv);
