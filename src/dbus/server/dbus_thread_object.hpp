@@ -85,6 +85,7 @@ public:
 
 private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
+    void Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState);
     void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
     void NcpResetHandler(void);
 
@@ -121,7 +122,6 @@ private:
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
-    otError GetDhcp6PdStateHandler(DBusMessageIter &aIter);
     otError GetNetworkNameHandler(DBusMessageIter &aIter);
     otError GetPanIdHandler(DBusMessageIter &aIter);
     otError GetExtPanIdHandler(DBusMessageIter &aIter);

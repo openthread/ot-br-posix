@@ -55,7 +55,7 @@ std::string GetDeviceRoleName(otDeviceRole aRole)
 }
 
 #if OTBR_ENABLE_DHCP6_PD
-static std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aState)
+std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aState)
 {
     std::string stateName;
 
