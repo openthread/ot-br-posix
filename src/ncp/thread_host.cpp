@@ -28,7 +28,7 @@
 
 #define OTBR_LOG_TAG "CTRLR"
 
-#include "thread_controller.hpp"
+#include "thread_host.hpp"
 
 #include <openthread/logging.h>
 #include <openthread/openthread-system.h>
@@ -40,16 +40,16 @@
 namespace otbr {
 namespace Ncp {
 
-std::unique_ptr<ThreadController> ThreadController::Create(const char                      *aInterfaceName,
-                                                           const std::vector<const char *> &aRadioUrls,
-                                                           const char                      *aBackboneInterfaceName,
-                                                           bool                             aDryRun,
-                                                           bool                             aEnableAutoAttach)
+std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *aInterfaceName,
+                                               const std::vector<const char *> &aRadioUrls,
+                                               const char                      *aBackboneInterfaceName,
+                                               bool                             aDryRun,
+                                               bool                             aEnableAutoAttach)
 {
-    CoprocessorType                   coprocessorType;
-    otPlatformCoprocessorUrls         urls;
-    std::unique_ptr<ThreadController> host;
-    otLogLevel                        level = ConvertToOtLogLevel(otbrLogGetLevel());
+    CoprocessorType             coprocessorType;
+    otPlatformCoprocessorUrls   urls;
+    std::unique_ptr<ThreadHost> host;
+    otLogLevel                  level = ConvertToOtLogLevel(otbrLogGetLevel());
 
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -76,7 +76,7 @@ std::unique_ptr<ThreadController> ThreadController::Create(const char           
     return host;
 }
 
-otLogLevel ThreadController::ConvertToOtLogLevel(otbrLogLevel aLevel)
+otLogLevel ThreadHost::ConvertToOtLogLevel(otbrLogLevel aLevel)
 {
     otLogLevel level;
 
