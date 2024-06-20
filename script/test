@@ -236,6 +236,9 @@ main()
             meshcop)
                 top_builddir="${OTBR_TOP_BUILDDIR}" print_result ./tests/scripts/meshcop
                 ;;
+            ncp_mode)
+                top_builddir="${OTBR_TOP_BUILDDIR}" print_result ./tests/scripts/ncp_mode
+                ;;
             openwrt)
                 print_result ./tests/scripts/openwrt
                 ;;

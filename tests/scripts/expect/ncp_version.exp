@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+
+set timeout 1
+
+# Spawn the otbr-agent with NCP in Dry Run mode
+spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -v -d7 --radio-version "spinel+hdlc+forkpty://$::env(EXP_OT_NCP_PATH)?forkpty-arg=$::env(EXP_LEADER_NODE_ID)"
+
+# Expect the NCP version
+expect -re {OPENTHREAD/[0-9a-z]{9}; SIMULATION} {
+} timeout {
+    puts "timeout!"
+    exit 1
+}
+
+# Wait for the spawned process to terminate
+expect eof
