@@ -86,6 +86,8 @@ void Application::Init(void)
     {
         InitRcpMode();
     }
+
+    otbrLogInfo("Co-processor version: %s", mHost->GetCoprocessorVersion());
 }
 
 void Application::Deinit(void)
