@@ -85,6 +85,7 @@ public:
 
 private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
+    void Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState);
     void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
     void NcpResetHandler(void);
 
