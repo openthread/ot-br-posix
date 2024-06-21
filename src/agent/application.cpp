@@ -68,6 +68,8 @@ Application::Application(const std::string               &aInterfaceName,
 #if OTBR_ENABLE_MDNS
     , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
 #endif
+    // TODO: add macro guard
+    , mSingleUploader(MakeUnique<Uploader>())
 #if OTBR_ENABLE_VENDOR_SERVER
     , mVendorServer(vendor::VendorServer::newInstance(*this))
 #endif

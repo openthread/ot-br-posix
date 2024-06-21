@@ -35,6 +35,7 @@ add_executable(otbr-test-unit
     test_logging.cpp
     test_once_callback.cpp
     test_pskc.cpp
+    test_single_uploader.cpp
     test_task_runner.cpp
 )
 target_include_directories(otbr-test-unit PRIVATE
