@@ -31,6 +31,8 @@ add_library(otbr-utils
     dns_utils.cpp
     hex.cpp
     infra_link_selector.cpp
+    internet_checksum.cpp
+    ping.cpp
     pskc.cpp
     sha256.cpp
     socket_utils.cpp
