@@ -33,6 +33,7 @@ add_library(otbr-utils
     infra_link_selector.cpp
     pskc.cpp
     sha256.cpp
+    single_uploader.cpp
     socket_utils.cpp
     steering_data.cpp
     string_utils.cpp

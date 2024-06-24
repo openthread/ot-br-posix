@@ -61,6 +61,8 @@
 #include "agent/vendor.hpp"
 #endif
 #include "utils/infra_link_selector.hpp"
+// TODO: add macro guard
+#include "utils/single_uploader.hpp"
 
 namespace otbr {
 
@@ -293,6 +295,8 @@ private:
 #if OTBR_ENABLE_DBUS_SERVER
     std::unique_ptr<DBus::DBusAgent> mDBusAgent;
 #endif
+    // TODO: add macro guard
+    std::unique_ptr<Uploader> mSingleUploader;
 #if OTBR_ENABLE_VENDOR_SERVER
     std::shared_ptr<vendor::VendorServer> mVendorServer;
 #endif
