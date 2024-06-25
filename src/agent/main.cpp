@@ -189,7 +189,6 @@ static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls
     host->Init();
 
     coprocessorVersion = host->GetCoprocessorVersion();
-    otbrLogNotice("Co-processor version: %s", coprocessorVersion);
     printf("%s\n", coprocessorVersion);
 
     host->Deinit();
