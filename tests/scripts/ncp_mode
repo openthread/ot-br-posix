@@ -160,8 +160,6 @@ test_setup()
 
 test_teardown()
 {
-    exit_message="Test teardown"
-
     # Capture the exit code so we can return it below
     EXIT_CODE=$?
     readonly EXIT_CODE
@@ -176,6 +174,7 @@ test_teardown()
     sudo rm -rf "${BUILD_DIR}" || true
     sudo rm -rf "${ABS_TOP_OT_BUILDDIR}" || true
 
+    exit_message="Test teardown"
     echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
     exit ${EXIT_CODE}
 }
@@ -218,7 +217,7 @@ main()
     export EXP_TUN_NAME="${TUN_NAME}"
     export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
     export EXP_OT_NCP_PATH="${ot_ncp}"
-    otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_version.exp"
+    otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_version.exp" || die "ncp expect script failed!"
 }
 
 main "$@"

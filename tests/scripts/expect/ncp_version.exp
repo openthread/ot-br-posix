@@ -6,7 +6,7 @@ set timeout 1
 spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -v -d7 --radio-version "spinel+hdlc+forkpty://$::env(EXP_OT_NCP_PATH)?forkpty-arg=$::env(EXP_LEADER_NODE_ID)"
 
 # Expect the NCP version
-expect -re {OPENTHREAD/[0-9a-z]{9}; SIMULATION} {
+expect -re {OPENTHREAD/[0-9a-z]{6,9}; SIMULATION} {
 } timeout {
     puts "timeout!"
     exit 1

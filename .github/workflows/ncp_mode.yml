@@ -62,6 +62,6 @@ jobs:
       run: |
         script/test build
     - name: Run
-      run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test ncp_mode
+      run: OTBR_VERBOSE=1 script/test ncp_mode
     - name: Codecov
       uses: codecov/codecov-action@v4
