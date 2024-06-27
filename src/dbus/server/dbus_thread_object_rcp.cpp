@@ -50,7 +50,7 @@
 #include "common/code_utils.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
-#include "dbus/server/dbus_thread_object.hpp"
+#include "dbus/server/dbus_thread_object_rcp.hpp"
 #if OTBR_ENABLE_FEATURE_FLAGS
 #include "proto/feature_flag.pb.h"
 #endif
@@ -90,199 +90,198 @@ static std::string GetNat64StateName(otNat64State aState)
 namespace otbr {
 namespace DBus {
 
-DBusThreadObject::DBusThreadObject(DBusConnection     *aConnection,
-                                   const std::string  &aInterfaceName,
-                                   otbr::Ncp::RcpHost *aHost,
-                                   Mdns::Publisher    *aPublisher)
-    : DBusObject(aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
+DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection     &aConnection,
+                                         const std::string  &aInterfaceName,
+                                         otbr::Ncp::RcpHost &aHost,
+                                         Mdns::Publisher    *aPublisher)
+    : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mHost(aHost)
     , mPublisher(aPublisher)
 {
 }
 
-otbrError DBusThreadObject::Init(void)
+otbrError DBusThreadObjectRcp::Init(void)
 {
     otbrError error        = OTBR_ERROR_NONE;
-    auto      threadHelper = mHost->GetThreadHelper();
+    auto      threadHelper = mHost.GetThreadHelper();
 
-    SuccessOrExit(error = DBusObject::Init());
+    SuccessOrExit(error = DBusObject::Initialize(false));
 
-    threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
+    threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObjectRcp::DeviceRoleHandler, this, _1));
 #if OTBR_ENABLE_DHCP6_PD
-    threadHelper->SetDhcp6PdStateCallback(std::bind(&DBusThreadObject::Dhcp6PdStateHandler, this, _1));
+    threadHelper->SetDhcp6PdStateCallback(std::bind(&DBusThreadObjectRcp::Dhcp6PdStateHandler, this, _1));
 #endif
-
-    threadHelper->AddActiveDatasetChangeHandler(std::bind(&DBusThreadObject::ActiveDatasetChangeHandler, this, _1));
-    mHost->RegisterResetHandler(std::bind(&DBusThreadObject::NcpResetHandler, this));
+    threadHelper->AddActiveDatasetChangeHandler(std::bind(&DBusThreadObjectRcp::ActiveDatasetChangeHandler, this, _1));
+    mHost.RegisterResetHandler(std::bind(&DBusThreadObjectRcp::NcpResetHandler, this));
 
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCAN_METHOD,
-                   std::bind(&DBusThreadObject::ScanHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::ScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ENERGY_SCAN_METHOD,
-                   std::bind(&DBusThreadObject::EnergyScanHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::EnergyScanHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_METHOD,
-                   std::bind(&DBusThreadObject::AttachHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::AttachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DETACH_METHOD,
-                   std::bind(&DBusThreadObject::DetachHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::DetachHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_FACTORY_RESET_METHOD,
-                   std::bind(&DBusThreadObject::FactoryResetHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::FactoryResetHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_RESET_METHOD,
-                   std::bind(&DBusThreadObject::ResetHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::ResetHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOINER_START_METHOD,
-                   std::bind(&DBusThreadObject::JoinerStartHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::JoinerStartHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOINER_STOP_METHOD,
-                   std::bind(&DBusThreadObject::JoinerStopHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::JoinerStopHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PERMIT_UNSECURE_JOIN_METHOD,
-                   std::bind(&DBusThreadObject::PermitUnsecureJoinHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::PermitUnsecureJoinHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ADD_ON_MESH_PREFIX_METHOD,
-                   std::bind(&DBusThreadObject::AddOnMeshPrefixHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::AddOnMeshPrefixHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_ON_MESH_PREFIX_METHOD,
-                   std::bind(&DBusThreadObject::RemoveOnMeshPrefixHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::RemoveOnMeshPrefixHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ADD_EXTERNAL_ROUTE_METHOD,
-                   std::bind(&DBusThreadObject::AddExternalRouteHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::AddExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_REMOVE_EXTERNAL_ROUTE_METHOD,
-                   std::bind(&DBusThreadObject::RemoveExternalRouteHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::RemoveExternalRouteHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ATTACH_ALL_NODES_TO_METHOD,
-                   std::bind(&DBusThreadObject::AttachAllNodesToHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::AttachAllNodesToHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_UPDATE_VENDOR_MESHCOP_TXT_METHOD,
-                   std::bind(&DBusThreadObject::UpdateMeshCopTxtHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::UpdateMeshCopTxtHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_PROPERTIES_METHOD,
-                   std::bind(&DBusThreadObject::GetPropertiesHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::GetPropertiesHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LEAVE_NETWORK_METHOD,
-                   std::bind(&DBusThreadObject::LeaveNetworkHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::LeaveNetworkHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
-                   std::bind(&DBusThreadObject::SetNat64Enabled, this, _1));
+                   std::bind(&DBusThreadObjectRcp::SetNat64Enabled, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
-                   std::bind(&DBusThreadObject::IntrospectHandler, this, _1));
+                   std::bind(&DBusThreadObjectRcp::IntrospectHandler, this, _1));
 
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX,
-                               std::bind(&DBusThreadObject::SetMeshLocalPrefixHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetMeshLocalPrefixHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
-                               std::bind(&DBusThreadObject::SetLinkModeHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetLinkModeHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
-                               std::bind(&DBusThreadObject::SetActiveDatasetTlvsHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetActiveDatasetTlvsHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA,
-                               std::bind(&DBusThreadObject::SetFeatureFlagListDataHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetFeatureFlagListDataHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
-                               std::bind(&DBusThreadObject::SetRadioRegionHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetRadioRegionHandler, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
-                               std::bind(&DBusThreadObject::SetDnsUpstreamQueryState, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetDnsUpstreamQueryState, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
-                               std::bind(&DBusThreadObject::SetNat64Cidr, this, _1));
+                               std::bind(&DBusThreadObjectRcp::SetNat64Cidr, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
-                               std::bind(&DBusThreadObject::GetLinkModeHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetLinkModeHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
-                               std::bind(&DBusThreadObject::GetDeviceRoleHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetDeviceRoleHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NETWORK_NAME,
-                               std::bind(&DBusThreadObject::GetNetworkNameHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNetworkNameHandler, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_PANID,
-                               std::bind(&DBusThreadObject::GetPanIdHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetPanIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTPANID,
-                               std::bind(&DBusThreadObject::GetExtPanIdHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetExtPanIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EUI64,
-                               std::bind(&DBusThreadObject::GetEui64Handler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetEui64Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL,
-                               std::bind(&DBusThreadObject::GetChannelHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetChannelHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NETWORK_KEY,
-                               std::bind(&DBusThreadObject::GetNetworkKeyHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNetworkKeyHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CCA_FAILURE_RATE,
-                               std::bind(&DBusThreadObject::GetCcaFailureRateHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetCcaFailureRateHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_COUNTERS,
-                               std::bind(&DBusThreadObject::GetLinkCountersHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetLinkCountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_IP6_COUNTERS,
-                               std::bind(&DBusThreadObject::GetIp6CountersHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetIp6CountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SUPPORTED_CHANNEL_MASK,
-                               std::bind(&DBusThreadObject::GetSupportedChannelMaskHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetSupportedChannelMaskHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_PREFERRED_CHANNEL_MASK,
-                               std::bind(&DBusThreadObject::GetPreferredChannelMaskHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetPreferredChannelMaskHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RLOC16,
-                               std::bind(&DBusThreadObject::GetRloc16Handler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRloc16Handler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTENDED_ADDRESS,
-                               std::bind(&DBusThreadObject::GetExtendedAddressHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetExtendedAddressHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ROUTER_ID,
-                               std::bind(&DBusThreadObject::GetRouterIdHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRouterIdHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LEADER_DATA,
-                               std::bind(&DBusThreadObject::GetLeaderDataHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetLeaderDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NETWORK_DATA_PRPOERTY,
-                               std::bind(&DBusThreadObject::GetNetworkDataHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNetworkDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_STABLE_NETWORK_DATA_PRPOERTY,
-                               std::bind(&DBusThreadObject::GetStableNetworkDataHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetStableNetworkDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LOCAL_LEADER_WEIGHT,
-                               std::bind(&DBusThreadObject::GetLocalLeaderWeightHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetLocalLeaderWeightHandler, this, _1));
 #if OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL_MONITOR_SAMPLE_COUNT,
-                               std::bind(&DBusThreadObject::GetChannelMonitorSampleCountHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetChannelMonitorSampleCountHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHANNEL_MONITOR_ALL_CHANNEL_QUALITIES,
-                               std::bind(&DBusThreadObject::GetChannelMonitorAllChannelQualities, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetChannelMonitorAllChannelQualities, this, _1));
 #endif
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CHILD_TABLE,
-                               std::bind(&DBusThreadObject::GetChildTableHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetChildTableHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NEIGHBOR_TABLE_PROEPRTY,
-                               std::bind(&DBusThreadObject::GetNeighborTableHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNeighborTableHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_PARTITION_ID_PROEPRTY,
-                               std::bind(&DBusThreadObject::GetPartitionIDHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetPartitionIDHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INSTANT_RSSI,
-                               std::bind(&DBusThreadObject::GetInstantRssiHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetInstantRssiHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_TX_POWER,
-                               std::bind(&DBusThreadObject::GetRadioTxPowerHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRadioTxPowerHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EXTERNAL_ROUTES,
-                               std::bind(&DBusThreadObject::GetExternalRoutesHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetExternalRoutesHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ON_MESH_PREFIXES,
-                               std::bind(&DBusThreadObject::GetOnMeshPrefixesHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetOnMeshPrefixesHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS,
-                               std::bind(&DBusThreadObject::GetActiveDatasetTlvsHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetActiveDatasetTlvsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_PENDING_DATASET_TLVS,
-                               std::bind(&DBusThreadObject::GetPendingDatasetTlvsHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetPendingDatasetTlvsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_FEATURE_FLAG_LIST_DATA,
-                               std::bind(&DBusThreadObject::GetFeatureFlagListDataHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetFeatureFlagListDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_REGION,
-                               std::bind(&DBusThreadObject::GetRadioRegionHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRadioRegionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_SRP_SERVER_INFO,
-                               std::bind(&DBusThreadObject::GetSrpServerInfoHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetSrpServerInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_MDNS_TELEMETRY_INFO,
-                               std::bind(&DBusThreadObject::GetMdnsTelemetryInfoHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetMdnsTelemetryInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNSSD_COUNTERS,
-                               std::bind(&DBusThreadObject::GetDnssdCountersHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetDnssdCountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OTBR_VERSION,
-                               std::bind(&DBusThreadObject::GetOtbrVersionHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetOtbrVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_HOST_VERSION,
-                               std::bind(&DBusThreadObject::GetOtHostVersionHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetOtHostVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_OT_RCP_VERSION,
-                               std::bind(&DBusThreadObject::GetOtRcpVersionHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetOtRcpVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_THREAD_VERSION,
-                               std::bind(&DBusThreadObject::GetThreadVersionHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetThreadVersionHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_SPINEL_METRICS,
-                               std::bind(&DBusThreadObject::GetRadioSpinelMetricsHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRadioSpinelMetricsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RCP_INTERFACE_METRICS,
-                               std::bind(&DBusThreadObject::GetRcpInterfaceMetricsHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRcpInterfaceMetricsHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_UPTIME,
-                               std::bind(&DBusThreadObject::GetUptimeHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetUptimeHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_RADIO_COEX_METRICS,
-                               std::bind(&DBusThreadObject::GetRadioCoexMetrics, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetRadioCoexMetrics, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_BORDER_ROUTING_COUNTERS,
-                               std::bind(&DBusThreadObject::GetBorderRoutingCountersHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetBorderRoutingCountersHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_STATE,
-                               std::bind(&DBusThreadObject::GetNat64State, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNat64State, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_MAPPINGS,
-                               std::bind(&DBusThreadObject::GetNat64Mappings, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNat64Mappings, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_PROTOCOL_COUNTERS,
-                               std::bind(&DBusThreadObject::GetNat64ProtocolCounters, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNat64ProtocolCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_ERROR_COUNTERS,
-                               std::bind(&DBusThreadObject::GetNat64ErrorCounters, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNat64ErrorCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
-                               std::bind(&DBusThreadObject::GetNat64Cidr, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetNat64Cidr, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
-                               std::bind(&DBusThreadObject::GetInfraLinkInfo, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TREL_INFO,
-                               std::bind(&DBusThreadObject::GetTrelInfoHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetTrelInfoHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DNS_UPSTREAM_QUERY_STATE,
-                               std::bind(&DBusThreadObject::GetDnsUpstreamQueryState, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetDnsUpstreamQueryState, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TELEMETRY_DATA,
-                               std::bind(&DBusThreadObject::GetTelemetryDataHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetTelemetryDataHandler, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_CAPABILITIES,
-                               std::bind(&DBusThreadObject::GetCapabilitiesHandler, this, _1));
+                               std::bind(&DBusThreadObjectRcp::GetCapabilitiesHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 
@@ -290,37 +289,37 @@ exit:
     return error;
 }
 
-void DBusThreadObject::DeviceRoleHandler(otDeviceRole aDeviceRole)
+void DBusThreadObjectRcp::DeviceRoleHandler(otDeviceRole aDeviceRole)
 {
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE, GetDeviceRoleName(aDeviceRole));
 }
 
 #if OTBR_ENABLE_DHCP6_PD
-void DBusThreadObject::Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState)
+void DBusThreadObjectRcp::Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState)
 {
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DHCP6_PD_STATE,
                           GetDhcp6PdStateName(aDhcp6PdState));
 }
 #endif
 
-void DBusThreadObject::NcpResetHandler(void)
+void DBusThreadObjectRcp::NcpResetHandler(void)
 {
-    mHost->GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObject::DeviceRoleHandler, this, _1));
-    mHost->GetThreadHelper()->AddActiveDatasetChangeHandler(
-        std::bind(&DBusThreadObject::ActiveDatasetChangeHandler, this, _1));
+    mHost.GetThreadHelper()->AddDeviceRoleHandler(std::bind(&DBusThreadObjectRcp::DeviceRoleHandler, this, _1));
+    mHost.GetThreadHelper()->AddActiveDatasetChangeHandler(
+        std::bind(&DBusThreadObjectRcp::ActiveDatasetChangeHandler, this, _1));
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
                           GetDeviceRoleName(OT_DEVICE_ROLE_DISABLED));
 }
 
-void DBusThreadObject::ScanHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::ScanHandler(DBusRequest &aRequest)
 {
-    auto threadHelper = mHost->GetThreadHelper();
-    threadHelper->Scan(std::bind(&DBusThreadObject::ReplyScanResult, this, aRequest, _1, _2));
+    auto threadHelper = mHost.GetThreadHelper();
+    threadHelper->Scan(std::bind(&DBusThreadObjectRcp::ReplyScanResult, this, aRequest, _1, _2));
 }
 
-void DBusThreadObject::ReplyScanResult(DBusRequest                           &aRequest,
-                                       otError                                aError,
-                                       const std::vector<otActiveScanResult> &aResult)
+void DBusThreadObjectRcp::ReplyScanResult(DBusRequest                           &aRequest,
+                                          otError                                aError,
+                                          const std::vector<otActiveScanResult> &aResult)
 {
     std::vector<ActiveScanResult> results;
 
@@ -347,16 +346,17 @@ void DBusThreadObject::ReplyScanResult(DBusRequest                           &aR
     }
 }
 
-void DBusThreadObject::EnergyScanHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::EnergyScanHandler(DBusRequest &aRequest)
 {
     otError  error        = OT_ERROR_NONE;
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint32_t scanDuration;
 
     auto args = std::tie(scanDuration);
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    threadHelper->EnergyScan(scanDuration, std::bind(&DBusThreadObject::ReplyEnergyScanResult, this, aRequest, _1, _2));
+    threadHelper->EnergyScan(scanDuration,
+                             std::bind(&DBusThreadObjectRcp::ReplyEnergyScanResult, this, aRequest, _1, _2));
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -365,9 +365,9 @@ exit:
     }
 }
 
-void DBusThreadObject::ReplyEnergyScanResult(DBusRequest                           &aRequest,
-                                             otError                                aError,
-                                             const std::vector<otEnergyScanResult> &aResult)
+void DBusThreadObjectRcp::ReplyEnergyScanResult(DBusRequest                           &aRequest,
+                                                otError                                aError,
+                                                const std::vector<otEnergyScanResult> &aResult)
 {
     std::vector<EnergyScanResult> results;
 
@@ -391,9 +391,9 @@ void DBusThreadObject::ReplyEnergyScanResult(DBusRequest                        
     }
 }
 
-void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AttachHandler(DBusRequest &aRequest)
 {
-    auto                 threadHelper = mHost->GetThreadHelper();
+    auto                 threadHelper = mHost.GetThreadHelper();
     std::string          name;
     uint16_t             panid;
     uint64_t             extPanId;
@@ -426,7 +426,7 @@ void DBusThreadObject::AttachHandler(DBusRequest &aRequest)
     }
 }
 
-void DBusThreadObject::AttachAllNodesToHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AttachAllNodesToHandler(DBusRequest &aRequest)
 {
     std::vector<uint8_t> dataset;
     otError              error = OT_ERROR_NONE;
@@ -435,7 +435,7 @@ void DBusThreadObject::AttachAllNodesToHandler(DBusRequest &aRequest)
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
-    mHost->GetThreadHelper()->AttachAllNodesTo(dataset, [aRequest](otError error, int64_t aAttachDelayMs) mutable {
+    mHost.GetThreadHelper()->AttachAllNodesTo(dataset, [aRequest](otError error, int64_t aAttachDelayMs) mutable {
         aRequest.ReplyOtResult<int64_t>(error, aAttachDelayMs);
     });
 
@@ -446,32 +446,32 @@ exit:
     }
 }
 
-void DBusThreadObject::DetachHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::DetachHandler(DBusRequest &aRequest)
 {
-    aRequest.ReplyOtResult(mHost->GetThreadHelper()->Detach());
+    aRequest.ReplyOtResult(mHost.GetThreadHelper()->Detach());
 }
 
-void DBusThreadObject::FactoryResetHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::FactoryResetHandler(DBusRequest &aRequest)
 {
     otError error = OT_ERROR_NONE;
 
-    SuccessOrExit(error = mHost->GetThreadHelper()->Detach());
-    SuccessOrExit(otInstanceErasePersistentInfo(mHost->GetThreadHelper()->GetInstance()));
-    mHost->Reset();
+    SuccessOrExit(error = mHost.GetThreadHelper()->Detach());
+    SuccessOrExit(otInstanceErasePersistentInfo(mHost.GetThreadHelper()->GetInstance()));
+    mHost.Reset();
 
 exit:
     aRequest.ReplyOtResult(error);
 }
 
-void DBusThreadObject::ResetHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::ResetHandler(DBusRequest &aRequest)
 {
-    mHost->Reset();
+    mHost.Reset();
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
-void DBusThreadObject::JoinerStartHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::JoinerStartHandler(DBusRequest &aRequest)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     std::string pskd, provisionUrl, vendorName, vendorModel, vendorSwVersion, vendorData;
     auto        args = std::tie(pskd, provisionUrl, vendorName, vendorModel, vendorSwVersion, vendorData);
 
@@ -486,18 +486,18 @@ void DBusThreadObject::JoinerStartHandler(DBusRequest &aRequest)
     }
 }
 
-void DBusThreadObject::JoinerStopHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::JoinerStopHandler(DBusRequest &aRequest)
 {
-    auto threadHelper = mHost->GetThreadHelper();
+    auto threadHelper = mHost.GetThreadHelper();
 
     otJoinerStop(threadHelper->GetInstance());
     aRequest.ReplyOtResult(OT_ERROR_NONE);
 }
 
-void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 {
 #ifdef OTBR_ENABLE_UNSECURE_JOIN
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint16_t port;
     uint32_t timeout;
     auto     args = std::tie(port, timeout);
@@ -515,9 +515,9 @@ void DBusThreadObject::PermitUnsecureJoinHandler(DBusRequest &aRequest)
 #endif
 }
 
-void DBusThreadObject::AddOnMeshPrefixHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AddOnMeshPrefixHandler(DBusRequest &aRequest)
 {
-    auto                 threadHelper = mHost->GetThreadHelper();
+    auto                 threadHelper = mHost.GetThreadHelper();
     OnMeshPrefix         onMeshPrefix;
     auto                 args  = std::tie(onMeshPrefix);
     otError              error = OT_ERROR_NONE;
@@ -544,9 +544,9 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
-void DBusThreadObject::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::RemoveOnMeshPrefixHandler(DBusRequest &aRequest)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     Ip6Prefix   onMeshPrefix;
     auto        args  = std::tie(onMeshPrefix);
     otError     error = OT_ERROR_NONE;
@@ -564,9 +564,9 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
-void DBusThreadObject::AddExternalRouteHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::AddExternalRouteHandler(DBusRequest &aRequest)
 {
-    auto                  threadHelper = mHost->GetThreadHelper();
+    auto                  threadHelper = mHost.GetThreadHelper();
     ExternalRoute         route;
     auto                  args  = std::tie(route);
     otError               error = OT_ERROR_NONE;
@@ -591,9 +591,9 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
-void DBusThreadObject::RemoveExternalRouteHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::RemoveExternalRouteHandler(DBusRequest &aRequest)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     Ip6Prefix   routePrefix;
     auto        args  = std::tie(routePrefix);
     otError     error = OT_ERROR_NONE;
@@ -612,7 +612,7 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
-void DBusThreadObject::IntrospectHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::IntrospectHandler(DBusRequest &aRequest)
 {
     std::string xmlString(
 #include "dbus/server/introspect.hpp"
@@ -621,9 +621,9 @@ void DBusThreadObject::IntrospectHandler(DBusRequest &aRequest)
     aRequest.Reply(std::tie(xmlString));
 }
 
-otError DBusThreadObject::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetMeshLocalPrefixHandler(DBusMessageIter &aIter)
 {
-    auto                                      threadHelper = mHost->GetThreadHelper();
+    auto                                      threadHelper = mHost.GetThreadHelper();
     otMeshLocalPrefix                         prefix;
     std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> data{};
     otError                                   error = OT_ERROR_NONE;
@@ -636,9 +636,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::SetLinkModeHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetLinkModeHandler(DBusMessageIter &aIter)
 {
-    auto             threadHelper = mHost->GetThreadHelper();
+    auto             threadHelper = mHost.GetThreadHelper();
     LinkModeConfig   cfg;
     otLinkModeConfig otCfg;
     otError          error = OT_ERROR_NONE;
@@ -653,9 +653,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetLinkModeHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetLinkModeHandler(DBusMessageIter &aIter)
 {
-    auto             threadHelper = mHost->GetThreadHelper();
+    auto             threadHelper = mHost.GetThreadHelper();
     otLinkModeConfig otCfg        = otThreadGetLinkMode(threadHelper->GetInstance());
     LinkModeConfig   cfg;
     otError          error = OT_ERROR_NONE;
@@ -670,9 +670,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetDeviceRoleHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetDeviceRoleHandler(DBusMessageIter &aIter)
 {
-    auto         threadHelper = mHost->GetThreadHelper();
+    auto         threadHelper = mHost.GetThreadHelper();
     otDeviceRole role         = otThreadGetDeviceRole(threadHelper->GetInstance());
     std::string  roleName     = GetDeviceRoleName(role);
     otError      error        = OT_ERROR_NONE;
@@ -683,9 +683,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNetworkNameHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNetworkNameHandler(DBusMessageIter &aIter)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     std::string networkName  = otThreadGetNetworkName(threadHelper->GetInstance());
     otError     error        = OT_ERROR_NONE;
 
@@ -695,9 +695,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetPanIdHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetPanIdHandler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint16_t panId        = otLinkGetPanId(threadHelper->GetInstance());
     otError  error        = OT_ERROR_NONE;
 
@@ -707,9 +707,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetExtPanIdHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetExtPanIdHandler(DBusMessageIter &aIter)
 {
-    auto                   threadHelper = mHost->GetThreadHelper();
+    auto                   threadHelper = mHost.GetThreadHelper();
     const otExtendedPanId *extPanId     = otThreadGetExtendedPanId(threadHelper->GetInstance());
     uint64_t               extPanIdVal;
     otError                error = OT_ERROR_NONE;
@@ -722,9 +722,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetChannelHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetChannelHandler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint16_t channel      = otLinkGetChannel(threadHelper->GetInstance());
     otError  error        = OT_ERROR_NONE;
 
@@ -734,9 +734,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNetworkKeyHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNetworkKeyHandler(DBusMessageIter &aIter)
 {
-    auto         threadHelper = mHost->GetThreadHelper();
+    auto         threadHelper = mHost.GetThreadHelper();
     otNetworkKey networkKey;
     otError      error = OT_ERROR_NONE;
 
@@ -748,9 +748,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetCcaFailureRateHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetCcaFailureRateHandler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint16_t failureRate  = otLinkGetCcaFailureRate(threadHelper->GetInstance());
     otError  error        = OT_ERROR_NONE;
 
@@ -760,9 +760,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetLinkCountersHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetLinkCountersHandler(DBusMessageIter &aIter)
 {
-    auto                 threadHelper = mHost->GetThreadHelper();
+    auto                 threadHelper = mHost.GetThreadHelper();
     const otMacCounters *otCounters   = otLinkGetCounters(threadHelper->GetInstance());
     MacCounters          counters;
     otError              error = OT_ERROR_NONE;
@@ -806,9 +806,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetIp6CountersHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetIp6CountersHandler(DBusMessageIter &aIter)
 {
-    auto                threadHelper = mHost->GetThreadHelper();
+    auto                threadHelper = mHost.GetThreadHelper();
     const otIpCounters *otCounters   = otThreadGetIp6Counters(threadHelper->GetInstance());
     IpCounters          counters;
     otError             error = OT_ERROR_NONE;
@@ -824,9 +824,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetSupportedChannelMaskHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetSupportedChannelMaskHandler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint32_t channelMask  = otLinkGetSupportedChannelMask(threadHelper->GetInstance());
     otError  error        = OT_ERROR_NONE;
 
@@ -836,9 +836,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetPreferredChannelMaskHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetPreferredChannelMaskHandler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     uint32_t channelMask  = otPlatRadioGetPreferredChannelMask(threadHelper->GetInstance());
     otError  error        = OT_ERROR_NONE;
 
@@ -848,9 +848,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRloc16Handler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRloc16Handler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     otError  error        = OT_ERROR_NONE;
     uint16_t rloc16       = otThreadGetRloc16(threadHelper->GetInstance());
 
@@ -860,9 +860,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetExtendedAddressHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetExtendedAddressHandler(DBusMessageIter &aIter)
 {
-    auto                threadHelper    = mHost->GetThreadHelper();
+    auto                threadHelper    = mHost.GetThreadHelper();
     otError             error           = OT_ERROR_NONE;
     const otExtAddress *addr            = otLinkGetExtendedAddress(threadHelper->GetInstance());
     uint64_t            extendedAddress = ConvertOpenThreadUint64(addr->m8);
@@ -873,9 +873,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRouterIdHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRouterIdHandler(DBusMessageIter &aIter)
 {
-    auto         threadHelper = mHost->GetThreadHelper();
+    auto         threadHelper = mHost.GetThreadHelper();
     otError      error        = OT_ERROR_NONE;
     uint16_t     rloc16       = otThreadGetRloc16(threadHelper->GetInstance());
     otRouterInfo info;
@@ -888,9 +888,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetLeaderDataHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetLeaderDataHandler(DBusMessageIter &aIter)
 {
-    auto                threadHelper = mHost->GetThreadHelper();
+    auto                threadHelper = mHost.GetThreadHelper();
     otError             error        = OT_ERROR_NONE;
     struct otLeaderData data;
     LeaderData          leaderData;
@@ -907,10 +907,10 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNetworkDataHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNetworkDataHandler(DBusMessageIter &aIter)
 {
     static constexpr size_t kNetworkDataMaxSize = 255;
-    auto                    threadHelper        = mHost->GetThreadHelper();
+    auto                    threadHelper        = mHost.GetThreadHelper();
     otError                 error               = OT_ERROR_NONE;
     uint8_t                 data[kNetworkDataMaxSize];
     uint8_t                 len = sizeof(data);
@@ -924,10 +924,10 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetStableNetworkDataHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetStableNetworkDataHandler(DBusMessageIter &aIter)
 {
     static constexpr size_t kNetworkDataMaxSize = 255;
-    auto                    threadHelper        = mHost->GetThreadHelper();
+    auto                    threadHelper        = mHost.GetThreadHelper();
     otError                 error               = OT_ERROR_NONE;
     uint8_t                 data[kNetworkDataMaxSize];
     uint8_t                 len = sizeof(data);
@@ -941,9 +941,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetLocalLeaderWeightHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetLocalLeaderWeightHandler(DBusMessageIter &aIter)
 {
-    auto    threadHelper = mHost->GetThreadHelper();
+    auto    threadHelper = mHost.GetThreadHelper();
     otError error        = OT_ERROR_NONE;
     uint8_t weight       = otThreadGetLocalLeaderWeight(threadHelper->GetInstance());
 
@@ -953,10 +953,10 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetChannelMonitorSampleCountHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetChannelMonitorSampleCountHandler(DBusMessageIter &aIter)
 {
 #if OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     otError  error        = OT_ERROR_NONE;
     uint32_t cnt          = otChannelMonitorGetSampleCount(threadHelper->GetInstance());
 
@@ -970,10 +970,10 @@ exit:
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
 
-otError DBusThreadObject::GetChannelMonitorAllChannelQualities(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetChannelMonitorAllChannelQualities(DBusMessageIter &aIter)
 {
 #if OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
-    auto                        threadHelper = mHost->GetThreadHelper();
+    auto                        threadHelper = mHost.GetThreadHelper();
     otError                     error        = OT_ERROR_NONE;
     uint32_t                    channelMask  = otLinkGetSupportedChannelMask(threadHelper->GetInstance());
     constexpr uint8_t           kNumChannels = sizeof(channelMask) * 8; // 8 bit per byte
@@ -999,9 +999,9 @@ exit:
 #endif // OPENTHREAD_CONFIG_CHANNEL_MONITOR_ENABLE
 }
 
-otError DBusThreadObject::GetChildTableHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetChildTableHandler(DBusMessageIter &aIter)
 {
-    auto                   threadHelper = mHost->GetThreadHelper();
+    auto                   threadHelper = mHost.GetThreadHelper();
     otError                error        = OT_ERROR_NONE;
     uint16_t               childIndex   = 0;
     otChildInfo            childInfo;
@@ -1035,9 +1035,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNeighborTableHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNeighborTableHandler(DBusMessageIter &aIter)
 {
-    auto                      threadHelper = mHost->GetThreadHelper();
+    auto                      threadHelper = mHost.GetThreadHelper();
     otError                   error        = OT_ERROR_NONE;
     otNeighborInfoIterator    iter         = OT_NEIGHBOR_INFO_ITERATOR_INIT;
     otNeighborInfo            neighborInfo;
@@ -1071,9 +1071,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetPartitionIDHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetPartitionIDHandler(DBusMessageIter &aIter)
 {
-    auto     threadHelper = mHost->GetThreadHelper();
+    auto     threadHelper = mHost.GetThreadHelper();
     otError  error        = OT_ERROR_NONE;
     uint32_t partitionId  = otThreadGetPartitionId(threadHelper->GetInstance());
 
@@ -1083,9 +1083,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetInstantRssiHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetInstantRssiHandler(DBusMessageIter &aIter)
 {
-    auto    threadHelper = mHost->GetThreadHelper();
+    auto    threadHelper = mHost.GetThreadHelper();
     otError error        = OT_ERROR_NONE;
     int8_t  rssi         = otPlatRadioGetRssi(threadHelper->GetInstance());
 
@@ -1095,9 +1095,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRadioTxPowerHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRadioTxPowerHandler(DBusMessageIter &aIter)
 {
-    auto    threadHelper = mHost->GetThreadHelper();
+    auto    threadHelper = mHost.GetThreadHelper();
     otError error        = OT_ERROR_NONE;
     int8_t  txPower;
 
@@ -1109,9 +1109,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetExternalRoutesHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetExternalRoutesHandler(DBusMessageIter &aIter)
 {
-    auto                       threadHelper = mHost->GetThreadHelper();
+    auto                       threadHelper = mHost.GetThreadHelper();
     otError                    error        = OT_ERROR_NONE;
     otNetworkDataIterator      iter         = OT_NETWORK_DATA_ITERATOR_INIT;
     otExternalRouteConfig      config;
@@ -1138,9 +1138,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetOnMeshPrefixesHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetOnMeshPrefixesHandler(DBusMessageIter &aIter)
 {
-    auto                      threadHelper = mHost->GetThreadHelper();
+    auto                      threadHelper = mHost.GetThreadHelper();
     otError                   error        = OT_ERROR_NONE;
     otNetworkDataIterator     iter         = OT_NETWORK_DATA_ITERATOR_INIT;
     otBorderRouterConfig      config;
@@ -1172,9 +1172,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::SetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
 {
-    auto                     threadHelper = mHost->GetThreadHelper();
+    auto                     threadHelper = mHost.GetThreadHelper();
     std::vector<uint8_t>     data;
     otOperationalDatasetTlvs datasetTlvs;
     otError                  error = OT_ERROR_NONE;
@@ -1189,9 +1189,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetActiveDatasetTlvsHandler(DBusMessageIter &aIter)
 {
-    auto                     threadHelper = mHost->GetThreadHelper();
+    auto                     threadHelper = mHost.GetThreadHelper();
     otError                  error        = OT_ERROR_NONE;
     std::vector<uint8_t>     data;
     otOperationalDatasetTlvs datasetTlvs;
@@ -1205,9 +1205,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetPendingDatasetTlvsHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetPendingDatasetTlvsHandler(DBusMessageIter &aIter)
 {
-    auto                     threadHelper = mHost->GetThreadHelper();
+    auto                     threadHelper = mHost.GetThreadHelper();
     otError                  error        = OT_ERROR_NONE;
     std::vector<uint8_t>     data;
     otOperationalDatasetTlvs datasetTlvs;
@@ -1221,7 +1221,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_FEATURE_FLAGS
     otError              error = OT_ERROR_NONE;
@@ -1230,7 +1230,7 @@ otError DBusThreadObject::SetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())), error = OT_ERROR_INVALID_ARGS);
-    VerifyOrExit((error = mHost->ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
+    VerifyOrExit((error = mHost.ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
 exit:
     return error;
 #else
@@ -1239,11 +1239,11 @@ exit:
 #endif
 }
 
-otError DBusThreadObject::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetFeatureFlagListDataHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_FEATURE_FLAGS
     otError              error                       = OT_ERROR_NONE;
-    const std::string    appliedFeatureFlagListBytes = mHost->GetAppliedFeatureFlagListBytes();
+    const std::string    appliedFeatureFlagListBytes = mHost.GetAppliedFeatureFlagListBytes();
     std::vector<uint8_t> data(appliedFeatureFlagListBytes.begin(), appliedFeatureFlagListBytes.end());
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
@@ -1256,9 +1256,9 @@ exit:
 #endif
 }
 
-otError DBusThreadObject::SetRadioRegionHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetRadioRegionHandler(DBusMessageIter &aIter)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     std::string radioRegion;
     uint16_t    regionCode;
     otError     error = OT_ERROR_NONE;
@@ -1273,9 +1273,9 @@ exit:
     return error;
 }
 
-void DBusThreadObject::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::UpdateMeshCopTxtHandler(DBusRequest &aRequest)
 {
-    auto                                        threadHelper = mHost->GetThreadHelper();
+    auto                                        threadHelper = mHost.GetThreadHelper();
     otError                                     error        = OT_ERROR_NONE;
     std::map<std::string, std::vector<uint8_t>> update;
     std::vector<TxtEntry>                       updatedTxtEntries;
@@ -1296,9 +1296,9 @@ exit:
     aRequest.ReplyOtResult(error);
 }
 
-otError DBusThreadObject::GetRadioRegionHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRadioRegionHandler(DBusMessageIter &aIter)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     otError     error        = OT_ERROR_NONE;
     std::string radioRegion;
     uint16_t    regionCode;
@@ -1314,10 +1314,10 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetSrpServerInfoHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetSrpServerInfoHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    auto                               threadHelper = mHost->GetThreadHelper();
+    auto                               threadHelper = mHost.GetThreadHelper();
     auto                               instance     = threadHelper->GetInstance();
     otError                            error        = OT_ERROR_NONE;
     SrpServerInfo                      srpServerInfo{};
@@ -1383,7 +1383,7 @@ exit:
 #endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
 }
 
-otError DBusThreadObject::GetMdnsTelemetryInfoHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetMdnsTelemetryInfoHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
@@ -1393,10 +1393,10 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetDnssdCountersHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetDnssdCountersHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    auto            threadHelper = mHost->GetThreadHelper();
+    auto            threadHelper = mHost.GetThreadHelper();
     auto            instance     = threadHelper->GetInstance();
     otError         error        = OT_ERROR_NONE;
     DnssdCounters   dnssdCounters;
@@ -1422,10 +1422,10 @@ exit:
 #endif // OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
 }
 
-otError DBusThreadObject::GetTrelInfoHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetTrelInfoHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_TREL
-    auto           instance = mHost->GetThreadHelper()->GetInstance();
+    auto           instance = mHost.GetThreadHelper()->GetInstance();
     otError        error    = OT_ERROR_NONE;
     TrelInfo       trelInfo;
     otTrelCounters otTrelCounters = *otTrelGetCounters(instance);
@@ -1449,12 +1449,12 @@ exit:
 #endif // OTBR_ENABLE_TREL
 }
 
-otError DBusThreadObject::GetTelemetryDataHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetTelemetryDataHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_TELEMETRY_DATA_API
     otError                      error = OT_ERROR_NONE;
     threadnetwork::TelemetryData telemetryData;
-    auto                         threadHelper = mHost->GetThreadHelper();
+    auto                         threadHelper = mHost.GetThreadHelper();
 
     if (threadHelper->RetrieveTelemetryData(mPublisher, telemetryData) != OT_ERROR_NONE)
     {
@@ -1476,7 +1476,7 @@ exit:
 #endif
 }
 
-otError DBusThreadObject::GetCapabilitiesHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetCapabilitiesHandler(DBusMessageIter &aIter)
 {
     otError            error = OT_ERROR_NONE;
     otbr::Capabilities capabilities;
@@ -1495,7 +1495,7 @@ exit:
     return error;
 }
 
-void DBusThreadObject::GetPropertiesHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::GetPropertiesHandler(DBusRequest &aRequest)
 {
     UniqueDBusMessage        reply(dbus_message_new_method_return(aRequest.GetMessage()));
     DBusMessageIter          iter;
@@ -1536,15 +1536,15 @@ exit:
     }
 }
 
-void DBusThreadObject::RegisterGetPropertyHandler(const std::string         &aInterfaceName,
-                                                  const std::string         &aPropertyName,
-                                                  const PropertyHandlerType &aHandler)
+void DBusThreadObjectRcp::RegisterGetPropertyHandler(const std::string         &aInterfaceName,
+                                                     const std::string         &aPropertyName,
+                                                     const PropertyHandlerType &aHandler)
 {
     DBusObject::RegisterGetPropertyHandler(aInterfaceName, aPropertyName, aHandler);
     mGetPropertyHandlers[aPropertyName] = aHandler;
 }
 
-otError DBusThreadObject::GetOtbrVersionHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetOtbrVersionHandler(DBusMessageIter &aIter)
 {
     otError     error   = OT_ERROR_NONE;
     std::string version = OTBR_PACKAGE_VERSION;
@@ -1555,7 +1555,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetOtHostVersionHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetOtHostVersionHandler(DBusMessageIter &aIter)
 {
     otError     error   = OT_ERROR_NONE;
     std::string version = otGetVersionString();
@@ -1566,9 +1566,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetEui64Handler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetEui64Handler(DBusMessageIter &aIter)
 {
-    auto         threadHelper = mHost->GetThreadHelper();
+    auto         threadHelper = mHost.GetThreadHelper();
     otError      error        = OT_ERROR_NONE;
     otExtAddress extAddr;
     uint64_t     eui64;
@@ -1583,9 +1583,9 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetOtRcpVersionHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetOtRcpVersionHandler(DBusMessageIter &aIter)
 {
-    auto        threadHelper = mHost->GetThreadHelper();
+    auto        threadHelper = mHost.GetThreadHelper();
     otError     error        = OT_ERROR_NONE;
     std::string version      = otGetRadioVersionString(threadHelper->GetInstance());
 
@@ -1595,7 +1595,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetThreadVersionHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetThreadVersionHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
@@ -1605,7 +1605,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRadioSpinelMetricsHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRadioSpinelMetricsHandler(DBusMessageIter &aIter)
 {
     otError              error = OT_ERROR_NONE;
     RadioSpinelMetrics   radioSpinelMetrics;
@@ -1623,7 +1623,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRcpInterfaceMetricsHandler(DBusMessageIter &aIter)
 {
     otError               error = OT_ERROR_NONE;
     RcpInterfaceMetrics   rcpInterfaceMetrics;
@@ -1645,11 +1645,11 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetUptimeHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetUptimeHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otInstanceGetUptime(mHost->GetThreadHelper()->GetInstance())) ==
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otInstanceGetUptime(mHost.GetThreadHelper()->GetInstance())) ==
                      OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
@@ -1657,13 +1657,13 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetRadioCoexMetrics(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetRadioCoexMetrics(DBusMessageIter &aIter)
 {
     otError            error = OT_ERROR_NONE;
     otRadioCoexMetrics otRadioCoexMetrics;
     RadioCoexMetrics   radioCoexMetrics;
 
-    SuccessOrExit(error = otPlatRadioGetCoexMetrics(mHost->GetInstance(), &otRadioCoexMetrics));
+    SuccessOrExit(error = otPlatRadioGetCoexMetrics(mHost.GetInstance(), &otRadioCoexMetrics));
 
     radioCoexMetrics.mNumGrantGlitch                     = otRadioCoexMetrics.mNumGrantGlitch;
     radioCoexMetrics.mNumTxRequest                       = otRadioCoexMetrics.mNumTxRequest;
@@ -1692,10 +1692,10 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetBorderRoutingCountersHandler(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetBorderRoutingCountersHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_BORDER_ROUTING_COUNTERS
-    auto                           threadHelper = mHost->GetThreadHelper();
+    auto                           threadHelper = mHost.GetThreadHelper();
     auto                           instance     = threadHelper->GetInstance();
     otError                        error        = OT_ERROR_NONE;
     BorderRoutingCounters          borderRoutingCounters;
@@ -1728,21 +1728,21 @@ exit:
 #endif
 }
 
-void DBusThreadObject::ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs)
+void DBusThreadObjectRcp::ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs)
 {
     std::vector<uint8_t> value(aDatasetTlvs.mLength);
     std::copy(aDatasetTlvs.mTlvs, aDatasetTlvs.mTlvs + aDatasetTlvs.mLength, value.begin());
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, value);
 }
 
-void DBusThreadObject::LeaveNetworkHandler(DBusRequest &aRequest)
+void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
 {
     constexpr int kExitCodeShouldRestart = 7;
 
-    mHost->GetThreadHelper()->DetachGracefully([aRequest, this](otError error) mutable {
+    mHost.GetThreadHelper()->DetachGracefully([aRequest, this](otError error) mutable {
         SuccessOrExit(error);
         mPublisher->Stop();
-        SuccessOrExit(error = otInstanceErasePersistentInfo(mHost->GetThreadHelper()->GetInstance()));
+        SuccessOrExit(error = otInstanceErasePersistentInfo(mHost.GetThreadHelper()->GetInstance()));
 
     exit:
         aRequest.ReplyOtResult(error);
@@ -1755,28 +1755,27 @@ void DBusThreadObject::LeaveNetworkHandler(DBusRequest &aRequest)
 }
 
 #if OTBR_ENABLE_NAT64
-void DBusThreadObject::SetNat64Enabled(DBusRequest &aRequest)
+void DBusThreadObjectRcp::SetNat64Enabled(DBusRequest &aRequest)
 {
     otError error = OT_ERROR_NONE;
     bool    enable;
     auto    args = std::tie(enable);
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otNat64SetEnabled(mHost->GetThreadHelper()->GetInstance(), enable);
+    otNat64SetEnabled(mHost.GetThreadHelper()->GetInstance(), enable);
 
 exit:
     aRequest.ReplyOtResult(error);
 }
 
-otError DBusThreadObject::GetNat64State(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64State(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
     Nat64ComponentState state;
 
-    state.mPrefixManagerState =
-        GetNat64StateName(otNat64GetPrefixManagerState(mHost->GetThreadHelper()->GetInstance()));
-    state.mTranslatorState = GetNat64StateName(otNat64GetTranslatorState(mHost->GetThreadHelper()->GetInstance()));
+    state.mPrefixManagerState = GetNat64StateName(otNat64GetPrefixManagerState(mHost.GetThreadHelper()->GetInstance()));
+    state.mTranslatorState    = GetNat64StateName(otNat64GetTranslatorState(mHost.GetThreadHelper()->GetInstance()));
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, state) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -1784,7 +1783,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNat64Mappings(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64Mappings(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
@@ -1793,9 +1792,8 @@ otError DBusThreadObject::GetNat64Mappings(DBusMessageIter &aIter)
     otNat64AddressMapping            otMapping;
     Nat64AddressMapping              mapping;
 
-    otNat64InitAddressMappingIterator(mHost->GetThreadHelper()->GetInstance(), &iterator);
-    while (otNat64GetNextAddressMapping(mHost->GetThreadHelper()->GetInstance(), &iterator, &otMapping) ==
-           OT_ERROR_NONE)
+    otNat64InitAddressMappingIterator(mHost.GetThreadHelper()->GetInstance(), &iterator);
+    while (otNat64GetNextAddressMapping(mHost.GetThreadHelper()->GetInstance(), &iterator, &otMapping) == OT_ERROR_NONE)
     {
         mapping.mId = otMapping.mId;
         std::copy(std::begin(otMapping.mIp4.mFields.m8), std::end(otMapping.mIp4.mFields.m8), mapping.mIp4.data());
@@ -1831,13 +1829,13 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64ProtocolCounters(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
     otNat64ProtocolCounters otCounters;
     Nat64ProtocolCounters   counters;
-    otNat64GetCounters(mHost->GetThreadHelper()->GetInstance(), &otCounters);
+    otNat64GetCounters(mHost.GetThreadHelper()->GetInstance(), &otCounters);
 
     counters.mTotal.m4To6Packets = otCounters.mTotal.m4To6Packets;
     counters.mTotal.m4To6Bytes   = otCounters.mTotal.m4To6Bytes;
@@ -1862,13 +1860,13 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNat64ErrorCounters(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64ErrorCounters(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
     otNat64ErrorCounters otCounters;
     Nat64ErrorCounters   counters;
-    otNat64GetErrorCounters(mHost->GetThreadHelper()->GetInstance(), &otCounters);
+    otNat64GetErrorCounters(mHost.GetThreadHelper()->GetInstance(), &otCounters);
 
     counters.mUnknown.m4To6Packets          = otCounters.mCount4To6[OT_NAT64_DROP_REASON_UNKNOWN];
     counters.mUnknown.m6To4Packets          = otCounters.mCount6To4[OT_NAT64_DROP_REASON_UNKNOWN];
@@ -1885,14 +1883,14 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::GetNat64Cidr(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64Cidr(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
     otIp4Cidr cidr;
     char      cidrString[OT_IP4_CIDR_STRING_SIZE];
 
-    SuccessOrExit(error = otNat64GetCidr(mHost->GetThreadHelper()->GetInstance(), &cidr));
+    SuccessOrExit(error = otNat64GetCidr(mHost.GetThreadHelper()->GetInstance(), &cidr));
     otIp4CidrToString(&cidr, cidrString, sizeof(cidrString));
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, std::string(cidrString)) == OTBR_ERROR_NONE,
@@ -1902,7 +1900,7 @@ exit:
     return error;
 }
 
-otError DBusThreadObject::SetNat64Cidr(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetNat64Cidr(DBusMessageIter &aIter)
 {
     otError     error = OT_ERROR_NONE;
     std::string cidrString;
@@ -1910,56 +1908,56 @@ otError DBusThreadObject::SetNat64Cidr(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, cidrString) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     SuccessOrExit(error = otIp4CidrFromString(cidrString.c_str(), &cidr));
-    SuccessOrExit(error = otNat64SetIp4Cidr(mHost->GetThreadHelper()->GetInstance(), &cidr));
+    SuccessOrExit(error = otNat64SetIp4Cidr(mHost.GetThreadHelper()->GetInstance(), &cidr));
 
 exit:
     return error;
 }
 #else  // OTBR_ENABLE_NAT64
-void DBusThreadObject::SetNat64Enabled(DBusRequest &aRequest)
+void DBusThreadObjectRcp::SetNat64Enabled(DBusRequest &aRequest)
 {
     OTBR_UNUSED_VARIABLE(aRequest);
     aRequest.ReplyOtResult(OT_ERROR_NOT_IMPLEMENTED);
 }
 
-otError DBusThreadObject::GetNat64State(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64State(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 
-otError DBusThreadObject::GetNat64Mappings(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64Mappings(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 
-otError DBusThreadObject::GetNat64ProtocolCounters(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64ProtocolCounters(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 
-otError DBusThreadObject::GetNat64ErrorCounters(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64ErrorCounters(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 
-otError DBusThreadObject::GetNat64Cidr(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetNat64Cidr(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 
-otError DBusThreadObject::SetNat64Cidr(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetNat64Cidr(DBusMessageIter &aIter)
 {
     OTBR_UNUSED_VARIABLE(aIter);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 #endif // OTBR_ENABLE_NAT64
 
-otError DBusThreadObject::GetInfraLinkInfo(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetInfraLinkInfo(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_BORDER_ROUTING
     otError                        error = OT_ERROR_NONE;
@@ -1989,14 +1987,14 @@ exit:
 #endif
 }
 
-otError DBusThreadObject::SetDnsUpstreamQueryState(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::SetDnsUpstreamQueryState(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otError error = OT_ERROR_NONE;
     bool    enable;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, enable) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otDnssdUpstreamQuerySetEnabled(mHost->GetThreadHelper()->GetInstance(), enable);
+    otDnssdUpstreamQuerySetEnabled(mHost.GetThreadHelper()->GetInstance(), enable);
 
 exit:
     return error;
@@ -2007,13 +2005,13 @@ exit:
 #endif
 }
 
-otError DBusThreadObject::GetDnsUpstreamQueryState(DBusMessageIter &aIter)
+otError DBusThreadObjectRcp::GetDnsUpstreamQueryState(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otError error = OT_ERROR_NONE;
 
     VerifyOrExit(DBusMessageEncodeToVariant(
-                     &aIter, otDnssdUpstreamQueryIsEnabled(mHost->GetThreadHelper()->GetInstance())) == OTBR_ERROR_NONE,
+                     &aIter, otDnssdUpstreamQueryIsEnabled(mHost.GetThreadHelper()->GetInstance())) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
 exit:

@@ -42,6 +42,8 @@
 #include <string>
 #include <vector>
 
+#include <openthread/error.h>
+
 #include "common/byteswap.hpp"
 
 #ifndef IN6ADDR_ANY
@@ -468,6 +470,16 @@ struct MdnsTelemetryInfo
 static constexpr size_t kVendorOuiLength      = 3;
 static constexpr size_t kMaxVendorNameLength  = 24;
 static constexpr size_t kMaxProductNameLength = 24;
+
+/**
+ * This method converts a otbrError to a otError.
+ *
+ * @param[in]  aError  a otbrError code.
+ *
+ * @returns  a otError code.
+ *
+ */
+otError OtbrErrorToOtError(otbrError aError);
 
 } // namespace otbr
 

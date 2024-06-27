@@ -49,10 +49,11 @@ public:
     /**
      * Constructor.
      *
-     * @param[in]   aDryRun  TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in]   aInterfaceName  A string of the NCP interface name.
+     * @param[in]   aDryRun         TRUE to indicate dry-run mode. FALSE otherwise.
      *
      */
-    NcpHost(bool aDryRun);
+    NcpHost(const char *aInterfaceName, bool aDryRun);
 
     /**
      * Destructor.
@@ -64,6 +65,7 @@ public:
     void            GetDeviceRole(const DeviceRoleHandler aHandler) override;
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
+    const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
     void            Init(void) override;
     void            Deinit(void) override;
 
