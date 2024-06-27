@@ -383,6 +383,9 @@ std::string WpanService::HandleStatusRequest()
     VerifyOrExit((rval = client.Execute("partitionid")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
     networkInfo["Network:PartitionID"] = rval;
 
+    VerifyOrExit((rval = client.Execute("pskc")) != nullptr, ret = kWpanStatus_GetPropertyFailed);
+    networkInfo["Network:PSKc"] = rval;
+
     {
         static const char kMeshLocalPrefixLocator[]       = "Mesh Local Prefix: ";
         static const char kMeshLocalAddressTokenLocator[] = "0:ff:fe00:";
