@@ -101,6 +101,14 @@ enum : uint8_t
 
 enum : uint8_t
 {
+    kThreadRoleDisabledOrDetached = 0,
+    kThreadRoleChild              = 1,
+    kThreadRoleRouter             = 2,
+    kThreadRoleLeader             = 3,
+};
+
+enum : uint8_t
+{
     kAvailabilityInfrequent = 0,
     kAvailabilityHigh       = 1,
 };
@@ -112,6 +120,7 @@ struct StateBitmap
     uint32_t mAvailability : 2;
     uint32_t mBbrIsActive : 1;
     uint32_t mBbrIsPrimary : 1;
+    uint32_t mThreadRole : 2;
     uint32_t mEpskcSupported : 1;
 
     StateBitmap(void)
@@ -120,6 +129,7 @@ struct StateBitmap
         , mAvailability(0)
         , mBbrIsActive(0)
         , mBbrIsPrimary(0)
+        , mThreadRole(kThreadRoleDisabledOrDetached)
         , mEpskcSupported(OTBR_ENABLE_EPSKC)
     {
     }
@@ -133,6 +143,7 @@ struct StateBitmap
         bitmap |= mAvailability << 5;
         bitmap |= mBbrIsActive << 7;
         bitmap |= mBbrIsPrimary << 8;
+        bitmap |= mThreadRole << 9;
         bitmap |= mEpskcSupported << 11;
         return bitmap;
     }
@@ -341,12 +352,24 @@ StateBitmap GetStateBitmap(otInstance &aInstance)
     {
     case OT_DEVICE_ROLE_DISABLED:
         state.mThreadIfStatus = kThreadIfStatusNotInitialized;
+        state.mThreadRole     = kThreadRoleDisabledOrDetached;
         break;
     case OT_DEVICE_ROLE_DETACHED:
         state.mThreadIfStatus = kThreadIfStatusInitialized;
+        state.mThreadRole     = kThreadRoleDisabledOrDetached;
         break;
-    default:
+    case OT_DEVICE_ROLE_CHILD:
         state.mThreadIfStatus = kThreadIfStatusActive;
+        state.mThreadRole     = kThreadRoleChild;
+        break;
+    case OT_DEVICE_ROLE_ROUTER:
+        state.mThreadIfStatus = kThreadIfStatusActive;
+        state.mThreadRole     = kThreadRoleRouter;
+        break;
+    case OT_DEVICE_ROLE_LEADER:
+        state.mThreadIfStatus = kThreadIfStatusActive;
+        state.mThreadRole     = kThreadRoleLeader;
+        break;
     }
 
 #if OTBR_ENABLE_BACKBONE_ROUTER
