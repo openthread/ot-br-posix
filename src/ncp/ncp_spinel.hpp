@@ -88,7 +88,7 @@ public:
      * This method gets the device role and return the role through the handler.
      *
      * If this method is called again before the handler is called, the previous handler will be
-     * overriden and there will be only one call to the latest handler.
+     * overridden and there will be only one call to the latest handler.
      *
      * @param[in]  aHandler   A handler to return the role.
      *
