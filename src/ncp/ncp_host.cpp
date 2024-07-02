@@ -57,17 +57,18 @@ const char *NcpHost::GetCoprocessorVersion(void)
 void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
+    mNcpSpinel.Init(mSpinelDriver);
 }
 
 void NcpHost::Deinit(void)
 {
+    mNcpSpinel.Deinit();
     otSysDeinit();
 }
 
 void NcpHost::GetDeviceRole(DeviceRoleHandler aHandler)
 {
-    // TODO: Implement the API with NCP Spinel
-    aHandler(OT_ERROR_NOT_IMPLEMENTED, OT_DEVICE_ROLE_DISABLED);
+    mNcpSpinel.GetDeviceRole(aHandler);
 }
 
 void NcpHost::Process(const MainloopContext &aMainloop)

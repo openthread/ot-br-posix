@@ -35,7 +35,7 @@ sleep 1
 
 spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply --reply-timeout=1000 /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
 
-expect -re {NotImplemented} {
+expect -re {disabled} {
 } timeout {
     puts "timeout!"
     exit 1

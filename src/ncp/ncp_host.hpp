@@ -38,6 +38,7 @@
 #include "lib/spinel/spinel_driver.hpp"
 
 #include "common/mainloop.hpp"
+#include "ncp/ncp_spinel.hpp"
 #include "ncp/thread_host.hpp"
 
 namespace otbr {
@@ -76,6 +77,7 @@ public:
 private:
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
+    NcpSpinel                 mNcpSpinel;
 };
 
 } // namespace Ncp
