@@ -32,6 +32,7 @@ add_executable(otbr-test-unit
     main.cpp
     test_common_types.cpp
     test_dns_utils.cpp
+    test_icmp_ping.cpp
     test_logging.cpp
     test_once_callback.cpp
     test_pskc.cpp
