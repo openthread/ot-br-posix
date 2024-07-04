@@ -332,6 +332,12 @@ private:
     void RetrieveHashedPdPrefix(std::string *aHashedPdPrefix);
     void RetrievePdProcessedRaInfo(threadnetwork::TelemetryData::PdProcessedRaInfo *aPdProcessedRaInfo);
 #endif
+    /**
+     * @brief Retrieve network data and counts the total number of BRs that have add external routes in network data.
+     *
+     * @returns The number of BRs that have added external routes in network data.
+     */
+    uint8_t NumOfBorderRoutersAddedExternalRoute();
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     otInstance *mInstance;

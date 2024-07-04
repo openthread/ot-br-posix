@@ -1048,6 +1048,27 @@ exit:
 }
 #endif // OTBR_ENABLE_DHCP6_PD
 
+uint8_t ThreadHelper::NumOfBorderRoutersAddedExternalRoute()
+{
+    std::set<uint16_t> rloc16Set;
+
+    otNetworkDataIterator iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+    otExternalRouteConfig config;
+
+    while (otNetDataGetNextRoute(mInstance, &iterator, &config) == OT_ERROR_NONE)
+    {
+        if (!config.mStable)
+        {
+            continue;
+        }
+
+        rloc16Set.insert(config.mRloc16);
+    }
+
+    // it's safe to convert to uint8_t as the maximum size of the network data is less than 256 bytes (254 bytes)
+    return rloc16Set.size();
+}
+
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError                     error = OT_ERROR_NONE;
