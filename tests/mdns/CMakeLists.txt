@@ -87,20 +87,3 @@ set_tests_properties(
     PROPERTIES
         ENVIRONMENT "OTBR_MDNS=${OTBR_MDNS};OTBR_TEST_MDNS=$<TARGET_FILE:otbr-test-mdns>"
 )
-
-add_executable(otbr-test-mdns-subscribe
-    test_subscribe.cpp
-)
-
-target_link_libraries(otbr-test-mdns-subscribe PRIVATE
-    otbr-config
-    otbr-mdns
-    $<$<BOOL:${CPPUTEST_LIBRARY_DIRS}>:-L$<JOIN:${CPPUTEST_LIBRARY_DIRS}," -L">>
-    ${CPPUTEST_LIBRARIES}
-)
-
-
-add_test(
-    NAME mdns-subscribe
-    COMMAND otbr-test-mdns-subscribe
-)

@@ -54,7 +54,7 @@ jobs:
         rm -f /usr/local/bin/pydoc3*
         rm -f /usr/local/bin/python3*
         brew update
-        brew reinstall boost cmake cpputest dbus jsoncpp ninja protobuf@21 pkg-config
+        brew reinstall boost cmake dbus jsoncpp ninja protobuf@21 pkg-config
         brew upgrade node
     - name: Build
       run: |

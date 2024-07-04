@@ -26,10 +26,25 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-unit
-    $<$<BOOL:${OTBR_DBUS}>:test_dbus_message.cpp>
-    $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:test_mdns_mdnssd.cpp>
-    main.cpp
+cmake_minimum_required(VERSION 3.14)
+project(openthread-br-gtest)
+
+# GoogleTest requires at least C++14
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+include(GoogleTest)
+
+add_executable(otbr-gtest-unit
     test_common_types.cpp
     test_dns_utils.cpp
     test_logging.cpp
@@ -37,20 +52,22 @@ add_executable(otbr-test-unit
     test_pskc.cpp
     test_task_runner.cpp
 )
-target_include_directories(otbr-test-unit PRIVATE
-    ${CPPUTEST_INCLUDE_DIRS}
-)
-target_link_libraries(otbr-test-unit
-    $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-common>
-    $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:otbr-mdns>
-    $<$<BOOL:${CPPUTEST_LIBRARY_DIRS}>:-L$<JOIN:${CPPUTEST_LIBRARY_DIRS}," -L">>
-    ${CPPUTEST_LIBRARIES}
+target_link_libraries(otbr-gtest-unit
     mbedtls
     otbr-common
     otbr-utils
-    pthread
+    GTest::gmock_main
 )
-add_test(
-    NAME unit
-    COMMAND otbr-test-unit
-)
+gtest_discover_tests(otbr-gtest-unit)
+
+if(OTBR_MDNS)
+    add_executable(otbr-gtest-mdns-subscribe
+        test_mdns_subscribe.cpp
+    )
+    target_link_libraries(otbr-gtest-mdns-subscribe
+        otbr-common
+        otbr-mdns
+        GTest::gmock_main
+    )
+    gtest_discover_tests(otbr-gtest-mdns-subscribe)
+endif()

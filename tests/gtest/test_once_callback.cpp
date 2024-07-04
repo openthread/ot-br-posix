@@ -1,5 +1,5 @@
 /*
- *    Copyright (c) 2017, The OpenThread Authors.
+ *    Copyright (c) 2021, The OpenThread Authors.
  *    All rights reserved.
  *
  *    Redistribution and use in source and binary forms, with or without
@@ -26,9 +26,38 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <CppUTest/CommandLineTestRunner.h>
+#include <gtest/gtest.h>
 
-int main(int argc, const char *argv[])
+#include "common/callback.hpp"
+
+TEST(IsNull, NullptrIsNull)
 {
-    return RUN_ALL_TESTS(argc, argv);
+    otbr::OnceCallback<void(void)> noop = nullptr;
+
+    EXPECT_TRUE(noop.IsNull());
+}
+
+TEST(IsNull, NonNullptrIsNotNull)
+{
+    otbr::OnceCallback<void(void)> noop = [](void) {};
+
+    EXPECT_FALSE(noop.IsNull());
+}
+
+TEST(IsNull, IsNullAfterInvoking)
+{
+    otbr::OnceCallback<int(int)> square = [](int x) { return x * x; };
+
+    std::move(square)(5);
+
+    EXPECT_TRUE(square.IsNull());
+}
+
+TEST(VerifyInvocation, CallbackResultIsExpected)
+{
+    otbr::OnceCallback<int(int)> square = [](int x) { return x * x; };
+
+    int ret = std::move(square)(5);
+
+    EXPECT_EQ(ret, 25);
 }
