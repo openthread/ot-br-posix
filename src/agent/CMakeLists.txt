@@ -33,10 +33,6 @@ add_executable(otbr-agent
     vendor.hpp
 )
 
-target_link_libraries(openthread-radio-spinel INTERFACE
-    openthread-spinel-rcp
-)
-
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_BORDER_AGENT}>:otbr-border-agent>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
