@@ -128,6 +128,11 @@ exit:
     return isEqual;
 }
 
+bool Ip6Prefix::operator!=(const Ip6Prefix &aOther) const
+{
+    return !(*this == aOther);
+}
+
 void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
 {
     memcpy(reinterpret_cast<void *>(this), &aPrefix, sizeof(*this));
