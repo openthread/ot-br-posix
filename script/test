@@ -62,7 +62,7 @@ readonly OTBR_REST
 OTBR_OPTIONS="${OTBR_OPTIONS-}"
 readonly OTBR_OPTIONS
 
-OTBR_TOP_BUILDDIR="${BUILD_DIR}/otbr"
+OTBR_TOP_BUILDDIR="${OTBR_TOP_BUILDDIR:-${BUILD_DIR}/otbr}"
 readonly OTBR_TOP_BUILDDIR
 
 #######################################
