@@ -88,7 +88,7 @@ TEST(TaskRunner, TestTasksOrder)
     taskRunner.Update(mainloop);
     rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                   &mainloop.mTimeout);
-    EXPECT_TRUE(rval == 1);
+    EXPECT_EQ(rval, 1);
 
     taskRunner.Process(mainloop);
 

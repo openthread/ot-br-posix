@@ -172,6 +172,16 @@ public:
     bool operator==(const Ip6Address &aOther) const { return m64[0] == aOther.m64[0] && m64[1] == aOther.m64[1]; }
 
     /**
+     * This method overloads `!=` operator and compares if the Ip6 address is NOT equal to the other address.
+     *
+     * @param[in] aOther  The other Ip6 address to compare with.
+     *
+     * @returns Whether the Ip6 address is NOT equal to the other address.
+     *
+     */
+    bool operator!=(const Ip6Address &aOther) const { return !(*this == aOther); }
+
+    /**
      * Retrieve the 16-bit Thread locator.
      *
      * @returns RLOC16 or ALOC16.
@@ -350,6 +360,16 @@ public:
      *
      */
     bool operator==(const Ip6Prefix &aOther) const;
+
+    /**
+     * This method overloads `!=` operator for comparing two Ip6Prefix objects.
+
+     * @param[in] aOther The Ip6Prefix object to compare with.
+     *
+     * @returns True if the two objects are NOT equal, false otherwise.
+     *
+     */
+    bool operator!=(const Ip6Prefix &aOther) const;
 
     /**
      * This method sets the Ip6 prefix to an `otIp6Prefix` value.
