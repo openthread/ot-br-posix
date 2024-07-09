@@ -93,10 +93,12 @@ namespace DBus {
 DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection     &aConnection,
                                          const std::string  &aInterfaceName,
                                          otbr::Ncp::RcpHost &aHost,
-                                         Mdns::Publisher    *aPublisher)
+                                         Mdns::Publisher    *aPublisher,
+                                         otbr::BorderAgent  &aBorderAgent)
     : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mHost(aHost)
     , mPublisher(aPublisher)
+    , mBorderAgent(aBorderAgent)
 {
 }
 
@@ -168,6 +170,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::SetDnsUpstreamQueryState, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
                                std::bind(&DBusThreadObjectRcp::SetNat64Cidr, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
+                               std::bind(&DBusThreadObjectRcp::SetEphemeralKeyEnabled, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObjectRcp::GetLinkModeHandler, this, _1));
@@ -272,6 +276,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::GetNat64ErrorCounters, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
                                std::bind(&DBusThreadObjectRcp::GetNat64Cidr, this, _1));
+    RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED,
+                               std::bind(&DBusThreadObjectRcp::GetEphemeralKeyEnabled, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_INFRA_LINK_INFO,
                                std::bind(&DBusThreadObjectRcp::GetInfraLinkInfo, this, _1));
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_TREL_INFO,
@@ -1956,6 +1962,29 @@ otError DBusThreadObjectRcp::SetNat64Cidr(DBusMessageIter &aIter)
     return OT_ERROR_NOT_IMPLEMENTED;
 }
 #endif // OTBR_ENABLE_NAT64
+
+otError DBusThreadObjectRcp::GetEphemeralKeyEnabled(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+
+    SuccessOrExit(DBusMessageEncodeToVariant(&aIter, mBorderAgent.GetEphemeralKeyEnabled()),
+                  error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObjectRcp::SetEphemeralKeyEnabled(DBusMessageIter &aIter)
+{
+    otError error = OT_ERROR_NONE;
+    bool    enable;
+
+    SuccessOrExit(DBusMessageExtractFromVariant(&aIter, enable), error = OT_ERROR_INVALID_ARGS);
+    mBorderAgent.SetEphemeralKeyEnabled(enable);
+
+exit:
+    return error;
+}
 
 otError DBusThreadObjectRcp::GetInfraLinkInfo(DBusMessageIter &aIter)
 {

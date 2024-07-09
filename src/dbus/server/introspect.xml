@@ -231,6 +231,10 @@
       <arg name="enable" type="b" direction="in"/>
     </method>
 
+    <property name="EphemeralKeyEnabled" type="b" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

@@ -40,6 +40,7 @@
 
 #include <openthread/link.h>
 
+#include "border_agent/border_agent.hpp"
 #include "dbus/server/dbus_object.hpp"
 #include "mdns/mdns.hpp"
 #include "ncp/rcp_host.hpp"
@@ -66,12 +67,14 @@ public:
      * @param[in] aInterfaceName  The dbus interface name.
      * @param[in] aHost           The Thread controller
      * @param[in] aPublisher      The Mdns::Publisher
+     * @param[in] aBorderAgent    The Border Agent
      *
      */
     DBusThreadObjectRcp(DBusConnection     &aConnection,
                         const std::string  &aInterfaceName,
                         otbr::Ncp::RcpHost &aHost,
-                        Mdns::Publisher    *aPublisher);
+                        Mdns::Publisher    *aPublisher,
+                        otbr::BorderAgent  &aBorderAgent);
 
     otbrError Init(void) override;
 
@@ -115,6 +118,7 @@ private:
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
     otError SetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError SetNat64Cidr(DBusMessageIter &aIter);
+    otError SetEphemeralKeyEnabled(DBusMessageIter &aIter);
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
@@ -167,6 +171,7 @@ private:
     otError GetNat64Mappings(DBusMessageIter &aIter);
     otError GetNat64ProtocolCounters(DBusMessageIter &aIter);
     otError GetNat64ErrorCounters(DBusMessageIter &aIter);
+    otError GetEphemeralKeyEnabled(DBusMessageIter &aIter);
     otError GetInfraLinkInfo(DBusMessageIter &aIter);
     otError GetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError GetTelemetryDataHandler(DBusMessageIter &aIter);
@@ -178,6 +183,7 @@ private:
     otbr::Ncp::RcpHost                                  &mHost;
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
     otbr::Mdns::Publisher                               *mPublisher;
+    otbr::BorderAgent                                   &mBorderAgent;
 };
 
 /**
