@@ -71,9 +71,6 @@ Application::Application(const std::string               &aInterfaceName,
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
     , mDBusAgent(MakeUnique<DBus::DBusAgent>(*mHost, *mPublisher))
 #endif
-#if OTBR_ENABLE_VENDOR_SERVER
-    , mVendorServer(vendor::VendorServer::newInstance(*this))
-#endif
 {
     if (mHost->GetCoprocessorType() == OT_COPROCESSOR_RCP)
     {
@@ -241,6 +238,9 @@ void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRest
 #endif
 #if OTBR_ENABLE_REST_SERVER
     mRestWebServer = MakeUnique<rest::RestWebServer>(rcpHost, aRestListenAddress, aRestListenPort);
+#endif
+#if OTBR_ENABLE_VENDOR_SERVER
+    mVendorServer = vendor::VendorServer::newInstance(*this);
 #endif
 
     OT_UNUSED_VARIABLE(aRestListenAddress);
