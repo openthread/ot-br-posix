@@ -231,6 +231,10 @@
       <arg name="enable" type="b" direction="in"/>
     </method>
 
+    <!-- TakeoverLeader: Takeover as the current partition leader if possible. -->
+    <method name="TakeoverLeader">
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
@@ -397,8 +401,8 @@
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 
-    <!-- LocalLeaderWeight: The leader weight of the current node. -->
-    <property name="LocalLeaderWeight" type="y" access="read">
+    <!-- LocalLeaderWeight: Get or set the leader weight of the current node. -->
+    <property name="LocalLeaderWeight" type="y" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
     </property>
 

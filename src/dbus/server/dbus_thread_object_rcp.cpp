@@ -150,6 +150,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                    std::bind(&DBusThreadObjectRcp::LeaveNetworkHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
                    std::bind(&DBusThreadObjectRcp::SetNat64Enabled, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_TAKEOVER_LEADER_METHOD,
+                   std::bind(&DBusThreadObjectRcp::TakeoverLeaderHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObjectRcp::IntrospectHandler, this, _1));
@@ -168,6 +170,8 @@ otbrError DBusThreadObjectRcp::Init(void)
                                std::bind(&DBusThreadObjectRcp::SetDnsUpstreamQueryState, this, _1));
     RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_NAT64_CIDR,
                                std::bind(&DBusThreadObjectRcp::SetNat64Cidr, this, _1));
+    RegisterSetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LOCAL_LEADER_WEIGHT,
+                               std::bind(&DBusThreadObjectRcp::SetLocalLeaderWeightHandler, this, _1));
 
     RegisterGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_LINK_MODE,
                                std::bind(&DBusThreadObjectRcp::GetLinkModeHandler, this, _1));
@@ -948,6 +952,19 @@ otError DBusThreadObjectRcp::GetLocalLeaderWeightHandler(DBusMessageIter &aIter)
     uint8_t weight       = otThreadGetLocalLeaderWeight(threadHelper->GetInstance());
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, weight) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+
+exit:
+    return error;
+}
+
+otError DBusThreadObjectRcp::SetLocalLeaderWeightHandler(DBusMessageIter &aIter)
+{
+    auto    threadHelper = mHost.GetThreadHelper();
+    otError error        = OT_ERROR_NONE;
+    uint8_t weight;
+
+    VerifyOrExit(DBusMessageExtractFromVariant(&aIter, weight) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
+    otThreadSetLocalLeaderWeight(threadHelper->GetInstance(), weight);
 
 exit:
     return error;
@@ -1752,6 +1769,17 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
             exit(kExitCodeShouldRestart);
         }
     });
+}
+
+void DBusThreadObjectRcp::TakeoverLeaderHandler(DBusRequest &aRequest)
+{
+    auto    threadHelper = mHost.GetThreadHelper();
+    otError error        = OT_ERROR_NONE;
+
+    SuccessOrExit(error = otThreadBecomeLeader(threadHelper->GetInstance()));
+
+exit:
+    aRequest.ReplyOtResult(error);
 }
 
 #if OTBR_ENABLE_NAT64
