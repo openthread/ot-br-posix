@@ -50,6 +50,7 @@
 #include <openthread/joiner.h>
 #include <openthread/netdata.h>
 #include <openthread/thread.h>
+#include <openthread/thread_ftd.h>
 #include "mdns/mdns.hpp"
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #include "proto/thread_telemetry.pb.h"
@@ -324,6 +325,12 @@ private:
     void        BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState);
 #endif
 #if OTBR_ENABLE_TELEMETRY_DATA_API
+    void TelemetryGetNeighborTable(std::vector<otNeighborInfo> &aNeighborTable);
+    void TelemetryGetChildTable(std::vector<otChildInfo> &aChildTable);
+
+    otError RetrieveWpanTopoFull(std::vector<otNeighborInfo>                &aNeighborTable,
+                                 std::vector<otChildInfo>                   &aChildTable,
+                                 threadnetwork::TelemetryData::WpanTopoFull *aWpanTopoFull);
 #if OTBR_ENABLE_BORDER_ROUTING
     void RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes *aExternalRouteInfo);
 #endif

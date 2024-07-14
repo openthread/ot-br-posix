@@ -57,7 +57,6 @@
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
 #include <openthread/srp_server.h>
 #endif
-#include <openthread/thread_ftd.h>
 #if OTBR_ENABLE_TREL
 #include <openthread/trel.h>
 #endif
@@ -943,6 +942,124 @@ void ThreadHelper::DetachGracefullyCallback(void)
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
+void ThreadHelper::TelemetryGetNeighborTable(std::vector<otNeighborInfo> &aNeighborTable)
+{
+    otNeighborInfoIterator iter = OT_NEIGHBOR_INFO_ITERATOR_INIT;
+    otNeighborInfo         neighborInfo;
+
+    while (otThreadGetNextNeighborInfo(mInstance, &iter, &neighborInfo) == OT_ERROR_NONE)
+    {
+        aNeighborTable.push_back(neighborInfo);
+    }
+}
+
+void ThreadHelper::TelemetryGetChildTable(std::vector<otChildInfo> &aChildTable)
+{
+    uint16_t    childIndex = 0;
+    otChildInfo childInfo;
+
+    while (otThreadGetChildInfoByIndex(mInstance, childIndex, &childInfo) == OT_ERROR_NONE)
+    {
+        aChildTable.push_back(childInfo);
+        childIndex++;
+    }
+}
+
+otError ThreadHelper::RetrieveWpanTopoFull(std::vector<otNeighborInfo>                &aNeighborTable,
+                                           std::vector<otChildInfo>                   &aChildTable,
+                                           threadnetwork::TelemetryData::WpanTopoFull *aWpanTopoFull)
+{
+    otError                 error               = OT_ERROR_NONE;
+    static constexpr size_t kNetworkDataMaxSize = 255;
+    uint16_t                rloc16              = otThreadGetRloc16(mInstance);
+
+    //----- rloc16
+    aWpanTopoFull->set_rloc16(rloc16);
+
+    //----- router_id
+    {
+        otRouterInfo info;
+        if (otThreadGetRouterInfo(mInstance, rloc16, &info) == OT_ERROR_NONE)
+        {
+            aWpanTopoFull->set_router_id(info.mRouterId);
+        }
+        else
+        {
+            error = OT_ERROR_FAILED;
+        }
+    }
+
+    //----- leader_router_id, leader_weight, network_data_version, stable_network_data_version
+    {
+        struct otLeaderData leaderData;
+
+        if (otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE)
+        {
+            aWpanTopoFull->set_leader_router_id(leaderData.mLeaderRouterId);
+            aWpanTopoFull->set_leader_weight(leaderData.mWeighting);
+            aWpanTopoFull->set_network_data_version(leaderData.mDataVersion);
+            aWpanTopoFull->set_stable_network_data_version(leaderData.mStableDataVersion);
+        }
+        else
+        {
+            error = OT_ERROR_FAILED;
+        }
+    }
+
+    //----- leader_local_weight
+    aWpanTopoFull->set_leader_local_weight(otThreadGetLocalLeaderWeight(mInstance));
+
+    //----- network_data
+    {
+        uint8_t              data[kNetworkDataMaxSize];
+        uint8_t              len = sizeof(data);
+        std::vector<uint8_t> networkData;
+
+        if (otNetDataGet(mInstance, /*stable=*/false, data, &len) == OT_ERROR_NONE)
+        {
+            networkData = std::vector<uint8_t>(&data[0], &data[len]);
+            aWpanTopoFull->set_network_data(std::string(networkData.begin(), networkData.end()));
+        }
+        else
+        {
+            error = OT_ERROR_FAILED;
+        }
+    }
+
+    //----- stable_network_data
+    {
+        uint8_t              data[kNetworkDataMaxSize];
+        uint8_t              len = sizeof(data);
+        std::vector<uint8_t> networkData;
+
+        if (otNetDataGet(mInstance, /*stable=*/true, data, &len) == OT_ERROR_NONE)
+        {
+            networkData = std::vector<uint8_t>(&data[0], &data[len]);
+            aWpanTopoFull->set_stable_network_data(std::string(networkData.begin(), networkData.end()));
+        }
+        else
+        {
+            error = OT_ERROR_FAILED;
+        }
+    }
+
+    //----- partition_id, child_table_size, neighbor_table_size, instant_rssi
+    aWpanTopoFull->set_partition_id(otThreadGetPartitionId(mInstance));
+    aWpanTopoFull->set_child_table_size(aChildTable.size());
+    aWpanTopoFull->set_neighbor_table_size(aNeighborTable.size());
+    aWpanTopoFull->set_instant_rssi(otPlatRadioGetRssi(mInstance));
+
+    //----- extended_pan_id
+    {
+        const otExtendedPanId *extPanId = otThreadGetExtendedPanId(mInstance);
+        uint64_t               extPanIdVal;
+        extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
+        aWpanTopoFull->set_extended_pan_id(extPanIdVal);
+    }
+
+    return error;
+}
+
 #if OTBR_ENABLE_BORDER_ROUTING
 void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes *aExternalRouteInfo)
 {
@@ -1052,6 +1169,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 {
     otError                     error = OT_ERROR_NONE;
     std::vector<otNeighborInfo> neighborTable;
+    std::vector<otChildInfo>    childTable;
 
     // Begin of WpanStats section.
     auto wpanStats = telemetryData.mutable_wpan_stats();
@@ -1129,112 +1247,11 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
     // End of WpanStats section.
 
     {
-        // Begin of WpanTopoFull section.
-        auto     wpanTopoFull = telemetryData.mutable_wpan_topo_full();
-        uint16_t rloc16       = otThreadGetRloc16(mInstance);
+        TelemetryGetNeighborTable(neighborTable);
+        TelemetryGetChildTable(childTable);
 
-        wpanTopoFull->set_rloc16(rloc16);
-
-        {
-            otRouterInfo info;
-
-            if (otThreadGetRouterInfo(mInstance, rloc16, &info) == OT_ERROR_NONE)
-            {
-                wpanTopoFull->set_router_id(info.mRouterId);
-            }
-            else
-            {
-                error = OT_ERROR_FAILED;
-            }
-        }
-
-        otNeighborInfoIterator iter = OT_NEIGHBOR_INFO_ITERATOR_INIT;
-        otNeighborInfo         neighborInfo;
-
-        while (otThreadGetNextNeighborInfo(mInstance, &iter, &neighborInfo) == OT_ERROR_NONE)
-        {
-            neighborTable.push_back(neighborInfo);
-        }
-        wpanTopoFull->set_neighbor_table_size(neighborTable.size());
-
-        uint16_t                 childIndex = 0;
-        otChildInfo              childInfo;
-        std::vector<otChildInfo> childTable;
-
-        while (otThreadGetChildInfoByIndex(mInstance, childIndex, &childInfo) == OT_ERROR_NONE)
-        {
-            childTable.push_back(childInfo);
-            childIndex++;
-        }
-        wpanTopoFull->set_child_table_size(childTable.size());
-
-        {
-            struct otLeaderData leaderData;
-
-            if (otThreadGetLeaderData(mInstance, &leaderData) == OT_ERROR_NONE)
-            {
-                wpanTopoFull->set_leader_router_id(leaderData.mLeaderRouterId);
-                wpanTopoFull->set_leader_weight(leaderData.mWeighting);
-                wpanTopoFull->set_network_data_version(leaderData.mDataVersion);
-                wpanTopoFull->set_stable_network_data_version(leaderData.mStableDataVersion);
-            }
-            else
-            {
-                error = OT_ERROR_FAILED;
-            }
-        }
-
-        uint8_t weight = otThreadGetLocalLeaderWeight(mInstance);
-
-        wpanTopoFull->set_leader_local_weight(weight);
-
-        uint32_t partitionId = otThreadGetPartitionId(mInstance);
-
-        wpanTopoFull->set_partition_id(partitionId);
-
-        static constexpr size_t kNetworkDataMaxSize = 255;
-        {
-            uint8_t              data[kNetworkDataMaxSize];
-            uint8_t              len = sizeof(data);
-            std::vector<uint8_t> networkData;
-
-            if (otNetDataGet(mInstance, /*stable=*/false, data, &len) == OT_ERROR_NONE)
-            {
-                networkData = std::vector<uint8_t>(&data[0], &data[len]);
-                wpanTopoFull->set_network_data(std::string(networkData.begin(), networkData.end()));
-            }
-            else
-            {
-                error = OT_ERROR_FAILED;
-            }
-        }
-
-        {
-            uint8_t              data[kNetworkDataMaxSize];
-            uint8_t              len = sizeof(data);
-            std::vector<uint8_t> networkData;
-
-            if (otNetDataGet(mInstance, /*stable=*/true, data, &len) == OT_ERROR_NONE)
-            {
-                networkData = std::vector<uint8_t>(&data[0], &data[len]);
-                wpanTopoFull->set_stable_network_data(std::string(networkData.begin(), networkData.end()));
-            }
-            else
-            {
-                error = OT_ERROR_FAILED;
-            }
-        }
-
-        int8_t rssi = otPlatRadioGetRssi(mInstance);
-
-        wpanTopoFull->set_instant_rssi(rssi);
-
-        const otExtendedPanId *extPanId = otThreadGetExtendedPanId(mInstance);
-        uint64_t               extPanIdVal;
-
-        extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
-        wpanTopoFull->set_extended_pan_id(extPanIdVal);
-        // End of WpanTopoFull section.
+        // WpanTopoFull section
+        error = RetrieveWpanTopoFull(neighborTable, childTable, telemetryData.mutable_wpan_topo_full());
 
         // Begin of TopoEntry section.
         std::map<uint16_t, const otChildInfo *> childMap;
