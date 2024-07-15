@@ -60,7 +60,7 @@ jobs:
       run: tests/scripts/bootstrap.sh
     - name: Build
       run: |
-        OTBR_BUILD_DIR="./build/temp" script/cmake-build -DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.3 -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_WEB=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON
+        OTBR_BUILD_DIR="./build/temp" script/cmake-build -DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.3 -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_WEB=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON
     - name: Run
       run: OTBR_VERBOSE=1 OTBR_TOP_BUILDDIR="./build/temp" script/test ncp_mode
     - name: Codecov
