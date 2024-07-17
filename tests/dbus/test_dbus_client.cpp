@@ -289,6 +289,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_topo_full().network_data().size() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().partition_id() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().extended_pan_id() > 0);
+    TEST_ASSERT(telemetryData.wpan_topo_full().peer_br_count() == 0);
     TEST_ASSERT(telemetryData.topo_entries_size() == 1);
     TEST_ASSERT(telemetryData.topo_entries(0).rloc16() < 0xffff);
     TEST_ASSERT(telemetryData.wpan_border_router().border_routing_counters().rs_tx_failure() == 0);

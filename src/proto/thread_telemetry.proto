@@ -115,6 +115,8 @@ message TelemetryData {
     optional uint32 neighbor_table_size = 15;
     optional int32 instant_rssi = 16;
     optional uint64 extended_pan_id = 17;
+    // Indicates the number peer BR in Thread mesh network (from network data)
+    optional uint32 peer_br_count = 18;
   }
 
   message TopoEntry {

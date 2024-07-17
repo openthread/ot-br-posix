@@ -1234,6 +1234,9 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 
         extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
         wpanTopoFull->set_extended_pan_id(extPanIdVal);
+#if OTBR_ENABLE_BORDER_ROUTING
+        wpanTopoFull->set_peer_br_count(otBorderRoutingCountPeerBrs(mInstance, /*minAge=*/nullptr));
+#endif
         // End of WpanTopoFull section.
 
         // Begin of TopoEntry section.
