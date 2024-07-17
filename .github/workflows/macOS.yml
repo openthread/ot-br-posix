@@ -60,8 +60,8 @@ jobs:
       run: |
         OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \
                       -DOTBR_MDNS=OFF \
-                      -DOTBR_ADVERTISING_PROXY=OFF \
-                      -DOTBR_DISCOVERY_PROXY=OFF \
+                      -DOTBR_SRP_ADVERTISING_PROXY=OFF \
+                      -DOTBR_DNSSD_DISCOVERY_PROXY=OFF \
                       -DOTBR_TREL=OFF \
                       -DOT_FIREWALL=OFF \
                       -DOTBR_DBUS=OFF" ./script/test build
