@@ -63,16 +63,9 @@ exit:
 
 void DBusThreadObjectNcp::AsyncGetDeviceRoleHandler(DBusRequest &aRequest)
 {
-    mHost.GetDeviceRole([this, aRequest](otError aError, otDeviceRole aRole) mutable {
-        if (aError == OT_ERROR_NONE)
-        {
-            this->ReplyAsyncGetProperty(aRequest, GetDeviceRoleName(aRole));
-        }
-        else
-        {
-            aRequest.ReplyOtResult(aError);
-        }
-    });
+    otDeviceRole role = mHost.GetDeviceRole();
+
+    ReplyAsyncGetProperty(aRequest, GetDeviceRoleName(role));
 }
 
 void DBusThreadObjectNcp::ReplyAsyncGetProperty(DBusRequest &aRequest, const std::string &aContent)

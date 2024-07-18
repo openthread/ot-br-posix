@@ -50,14 +50,34 @@ namespace otbr {
 namespace Ncp {
 
 /**
+ * This interface is an observer to subscribe the network properties from NCP.
+ *
+ */
+class PropsObserver
+{
+public:
+    /**
+     * Updates the device role.
+     *
+     * @param[in] aRole  The device role.
+     *
+     */
+    virtual void SetDeviceRole(otDeviceRole aRole) = 0;
+
+    /**
+     * The destructor.
+     *
+     */
+    virtual ~PropsObserver(void) = default;
+};
+
+/**
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
  *
  */
 class NcpSpinel
 {
 public:
-    using GetDeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
-
     /**
      * Constructor.
      *
@@ -68,9 +88,10 @@ public:
      * Do the initialization.
      *
      * @param[in]  aSpinelDriver   A reference to the SpinelDriver instance that this object depends.
+     * @param[in]  aObserver       A reference to the Network properties observer.
      *
      */
-    void Init(ot::Spinel::SpinelDriver &aSpinelDriver);
+    void Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aObserver);
 
     /**
      * Do the de-initialization.
@@ -83,17 +104,6 @@ public:
      *
      */
     const char *GetCoprocessorVersion(void) { return mSpinelDriver->GetVersion(); }
-
-    /**
-     * This method gets the device role and return the role through the handler.
-     *
-     * If this method is called again before the handler is called, the previous handler will be
-     * overridden and there will be only one call to the latest handler.
-     *
-     * @param[in]  aHandler   A handler to return the role.
-     *
-     */
-    void GetDeviceRole(GetDeviceRoleHandler aHandler);
 
 private:
     using FailureHandler = std::function<void(otError)>;
@@ -133,10 +143,9 @@ private:
     spinel_tid_t              mCmdNextTid;                ///< Next available transaction id.
     spinel_prop_key_t         mWaitingKeyTable[kMaxTids]; ///< The property keys of ongoing transactions.
 
-    otDeviceRole         mDeviceRole;
-    GetDeviceRoleHandler mGetDeviceRoleHandler;
-
     TaskRunner mTaskRunner;
+
+    PropsObserver *mPropsObserver;
 };
 
 } // namespace Ncp

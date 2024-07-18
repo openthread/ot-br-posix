@@ -44,7 +44,30 @@
 namespace otbr {
 namespace Ncp {
 
-class NcpHost : public MainloopProcessor, public ThreadHost
+/**
+ * This class implements the NetworkProperties under NCP mode.
+ *
+ */
+class NcpNetworkProperties : virtual public NetworkProperties, public PropsObserver
+{
+public:
+    /**
+     * Constructor
+     *
+     */
+    explicit NcpNetworkProperties(void);
+
+    // NetworkProperties methods
+    otDeviceRole GetDeviceRole(void) const override;
+
+private:
+    // PropsObserver methods
+    void SetDeviceRole(otDeviceRole aRole) override;
+
+    otDeviceRole mDeviceRole;
+};
+
+class NcpHost : public MainloopProcessor, public ThreadHost, public NcpNetworkProperties
 {
 public:
     /**
@@ -63,7 +86,6 @@ public:
     ~NcpHost(void) override = default;
 
     // ThreadHost methods
-    void            GetDeviceRole(const DeviceRoleHandler aHandler) override;
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
     const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
