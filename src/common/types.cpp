@@ -30,6 +30,7 @@
 #include <sstream>
 #include <sys/socket.h>
 
+#include "types.hpp"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
@@ -39,6 +40,11 @@ namespace otbr {
 Ip6Address::Ip6Address(const uint8_t (&aAddress)[16])
 {
     memcpy(m8, aAddress, sizeof(m8));
+}
+
+Ip6Address::Ip6Address(const otIp6Address &aAddress)
+{
+    memcpy(m8, aAddress.mFields.m8, sizeof(m8));
 }
 
 std::string Ip6Address::ToString() const
