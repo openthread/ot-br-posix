@@ -496,6 +496,8 @@ message TelemetryData {
     optional uint32 link_local_address_count = 5;
     optional uint32 unique_local_address_count = 6;
     optional uint32 global_unicast_address_count = 7;
+    // Indicates how many peer BRs (connected to the same Thread mesh network) are on the infra link.
+    optional uint32 peer_br_count = 8;
   }
 
   // Message to indicate the information of external routes in network data.

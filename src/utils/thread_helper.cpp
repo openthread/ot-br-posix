@@ -944,7 +944,44 @@ void ThreadHelper::DetachGracefullyCallback(void)
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 #if OTBR_ENABLE_BORDER_ROUTING
-void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes *aExternalRouteInfo)
+void ThreadHelper::RetrieveInfraLinkInfo(threadnetwork::TelemetryData::InfraLinkInfo &aInfraLinkInfo)
+{
+    {
+        otSysInfraNetIfAddressCounters addressCounters;
+        uint32_t                       ifrFlags = otSysGetInfraNetifFlags();
+
+        otSysCountInfraNetifAddresses(&addressCounters);
+
+        aInfraLinkInfo.set_name(otSysGetInfraNetifName());
+        aInfraLinkInfo.set_is_up((ifrFlags & IFF_UP) != 0);
+        aInfraLinkInfo.set_is_running((ifrFlags & IFF_RUNNING) != 0);
+        aInfraLinkInfo.set_is_multicast((ifrFlags & IFF_MULTICAST) != 0);
+        aInfraLinkInfo.set_link_local_address_count(addressCounters.mLinkLocalAddresses);
+        aInfraLinkInfo.set_unique_local_address_count(addressCounters.mUniqueLocalAddresses);
+        aInfraLinkInfo.set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
+    }
+
+    //---- peer_br_count
+    {
+        uint32_t                           count = 0;
+        otBorderRoutingPrefixTableIterator iterator;
+        otBorderRoutingRouterEntry         entry;
+
+        otBorderRoutingPrefixTableInitIterator(mInstance, &iterator);
+
+        while (otBorderRoutingGetNextRouterEntry(mInstance, &iterator, &entry) == OT_ERROR_NONE)
+        {
+            if (entry.mIsPeerBr)
+            {
+                count++;
+            }
+        }
+
+        aInfraLinkInfo.set_peer_br_count(count);
+    }
+}
+
+void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes &aExternalRouteInfo)
 {
     bool      isDefaultRouteAdded = false;
     bool      isUlaRouteAdded     = false;
@@ -977,9 +1014,9 @@ void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData::Exter
         }
     }
 
-    aExternalRouteInfo->set_has_default_route_added(isDefaultRouteAdded);
-    aExternalRouteInfo->set_has_ula_route_added(isUlaRouteAdded);
-    aExternalRouteInfo->set_has_others_route_added(isOthersRouteAdded);
+    aExternalRouteInfo.set_has_default_route_added(isDefaultRouteAdded);
+    aExternalRouteInfo.set_has_ula_route_added(isUlaRouteAdded);
+    aExternalRouteInfo.set_has_others_route_added(isOthersRouteAdded);
 }
 #endif // OTBR_ENABLE_BORDER_ROUTING
 
@@ -1395,27 +1432,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #endif // OTBR_ENABLE_TREL
 
 #if OTBR_ENABLE_BORDER_ROUTING
-        // Begin of InfraLinkInfo section.
-        {
-            auto                           infraLinkInfo = wpanBorderRouter->mutable_infra_link_info();
-            otSysInfraNetIfAddressCounters addressCounters;
-            uint32_t                       ifrFlags = otSysGetInfraNetifFlags();
-
-            otSysCountInfraNetifAddresses(&addressCounters);
-
-            infraLinkInfo->set_name(otSysGetInfraNetifName());
-            infraLinkInfo->set_is_up((ifrFlags & IFF_UP) != 0);
-            infraLinkInfo->set_is_running((ifrFlags & IFF_RUNNING) != 0);
-            infraLinkInfo->set_is_multicast((ifrFlags & IFF_MULTICAST) != 0);
-            infraLinkInfo->set_link_local_address_count(addressCounters.mLinkLocalAddresses);
-            infraLinkInfo->set_unique_local_address_count(addressCounters.mUniqueLocalAddresses);
-            infraLinkInfo->set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
-        }
-        // End of InfraLinkInfo section.
-
-        // ExternalRoutes section
-        RetrieveExternalRouteInfo(wpanBorderRouter->mutable_external_route_info());
-
+        RetrieveInfraLinkInfo(*wpanBorderRouter->mutable_infra_link_info());
+        RetrieveExternalRouteInfo(*wpanBorderRouter->mutable_external_route_info());
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
