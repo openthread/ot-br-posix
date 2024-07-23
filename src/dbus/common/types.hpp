@@ -715,7 +715,7 @@ struct TrelInfo
     };
 
     bool               mEnabled;      ///< Whether TREL is enabled.
-    uint16_t          mNumTrelPeers; ///< The number of TREL peers.
+    uint16_t           mNumTrelPeers; ///< The number of TREL peers.
     TrelPacketCounters mTrelCounters; ///< The TREL counters.
 };
 
