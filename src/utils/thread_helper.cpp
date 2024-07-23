@@ -1429,12 +1429,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #endif // OTBR_ENABLE_TREL
 
 #if OTBR_ENABLE_BORDER_ROUTING
-        // InfraLinkInfo section.
         RetrieveInfraLinkInfo(*wpanBorderRouter->mutable_infra_link_info());
-
-        // ExternalRoutes section
         RetrieveExternalRouteInfo(*wpanBorderRouter->mutable_external_route_info());
-
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
