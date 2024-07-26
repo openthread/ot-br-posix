@@ -69,7 +69,7 @@ void NcpSpinel::GetDeviceRole(GetDeviceRoleHandler aHandler)
 {
     otError      error = OT_ERROR_NONE;
     spinel_tid_t tid   = GetNextTid();
-    va_list      args;
+    va_list      args  = {};
 
     error = mSpinelDriver->SendCommand(SPINEL_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_ROLE, tid, nullptr, args);
     if (error != OT_ERROR_NONE)
