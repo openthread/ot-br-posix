@@ -40,6 +40,25 @@
 namespace otbr {
 namespace Ncp {
 
+// =============================== NcpNetworkProperties ===============================
+
+NcpNetworkProperties::NcpNetworkProperties(void)
+    : mDeviceRole(OT_DEVICE_ROLE_DISABLED)
+{
+}
+
+otDeviceRole NcpNetworkProperties::GetDeviceRole(void) const
+{
+    return mDeviceRole;
+}
+
+void NcpNetworkProperties::SetDeviceRole(otDeviceRole aRole)
+{
+    mDeviceRole = aRole;
+}
+
+// ===================================== NcpHost ======================================
+
 NcpHost::NcpHost(const char *aInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
 {
@@ -57,18 +76,13 @@ const char *NcpHost::GetCoprocessorVersion(void)
 void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
-    mNcpSpinel.Init(mSpinelDriver);
+    mNcpSpinel.Init(mSpinelDriver, *this);
 }
 
 void NcpHost::Deinit(void)
 {
     mNcpSpinel.Deinit();
     otSysDeinit();
-}
-
-void NcpHost::GetDeviceRole(DeviceRoleHandler aHandler)
-{
-    mNcpSpinel.GetDeviceRole(aHandler);
 }
 
 void NcpHost::Process(const MainloopContext &aMainloop)

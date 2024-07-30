@@ -48,42 +48,21 @@ NcpSpinel::NcpSpinel(void)
     : mSpinelDriver(nullptr)
     , mCmdTidsInUse(0)
     , mCmdNextTid(1)
-    , mDeviceRole(OT_DEVICE_ROLE_DISABLED)
-    , mGetDeviceRoleHandler(nullptr)
+    , mPropsObserver(nullptr)
 {
     memset(mWaitingKeyTable, 0xff, sizeof(mWaitingKeyTable));
 }
 
-void NcpSpinel::Init(ot::Spinel::SpinelDriver &aSpinelDriver)
+void NcpSpinel::Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aObserver)
 {
-    mSpinelDriver = &aSpinelDriver;
+    mSpinelDriver  = &aSpinelDriver;
+    mPropsObserver = &aObserver;
     mSpinelDriver->SetFrameHandler(&HandleReceivedFrame, &HandleSavedFrame, this);
 }
 
 void NcpSpinel::Deinit(void)
 {
     mSpinelDriver = nullptr;
-}
-
-void NcpSpinel::GetDeviceRole(GetDeviceRoleHandler aHandler)
-{
-    otError      error = OT_ERROR_NONE;
-    spinel_tid_t tid   = GetNextTid();
-    va_list      args  = {};
-
-    error = mSpinelDriver->SendCommand(SPINEL_CMD_PROP_VALUE_GET, SPINEL_PROP_NET_ROLE, tid, nullptr, args);
-    if (error != OT_ERROR_NONE)
-    {
-        FreeTid(tid);
-        mTaskRunner.Post([aHandler, error](void) { aHandler(error, OT_DEVICE_ROLE_DISABLED); });
-        ExitNow();
-    }
-
-    mWaitingKeyTable[tid] = SPINEL_PROP_NET_ROLE;
-    mGetDeviceRoleHandler = aHandler;
-
-exit:
-    return;
 }
 
 otbrError NcpSpinel::SpinelDataUnpack(const uint8_t *aDataIn, spinel_size_t aDataLen, const char *aPackFormat, ...)
@@ -173,17 +152,6 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
 
     switch (key)
     {
-    case SPINEL_PROP_NET_ROLE:
-    {
-        spinel_net_role_t spinelRole;
-        failureHandler = [this](otError aError) { CallAndClear(mGetDeviceRoleHandler, aError, mDeviceRole); };
-
-        SuccessOrExit(error = SpinelDataUnpack(data, len, SPINEL_DATATYPE_UINT_PACKED_S, &spinelRole));
-
-        mDeviceRole = SpinelRoleToDeviceRole(spinelRole);
-        CallAndClear(mGetDeviceRoleHandler, OtbrErrorToOtError(error), mDeviceRole);
-        break;
-    }
     default:
         break;
     }
@@ -224,12 +192,14 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
     case SPINEL_PROP_NET_ROLE:
     {
         spinel_net_role_t role;
+        otDeviceRole      deviceRole;
 
         SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_UINT8_S, &role));
 
-        mDeviceRole = SpinelRoleToDeviceRole(role);
+        deviceRole = SpinelRoleToDeviceRole(role);
+        mPropsObserver->SetDeviceRole(deviceRole);
 
-        otbrLogInfo("Device role changed to %s", otThreadDeviceRoleToString(mDeviceRole));
+        otbrLogInfo("Device role changed to %s", otThreadDeviceRoleToString(deviceRole));
         break;
     }
 

@@ -48,13 +48,36 @@ namespace otbr {
 namespace Ncp {
 
 /**
+ * This interface provides access to some Thread network properties in a sync way.
+ *
+ * The APIs are unified for both NCP and RCP cases.
+ */
+class NetworkProperties
+{
+public:
+    /**
+     * Returns the device role.
+     *
+     * @returns the device role.
+     *
+     */
+    virtual otDeviceRole GetDeviceRole(void) const = 0;
+
+    /**
+     * The destructor.
+     *
+     */
+    virtual ~NetworkProperties(void) = default;
+};
+
+/**
  * This class is an interface which provides a set of async APIs to control the
  * Thread network.
  *
  * The APIs are unified for both NCP and RCP cases.
  *
  */
-class ThreadHost
+class ThreadHost : virtual public NetworkProperties
 {
 public:
     using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
@@ -78,14 +101,6 @@ public:
                                               const char                      *aBackboneInterfaceName,
                                               bool                             aDryRun,
                                               bool                             aEnableAutoAttach);
-
-    /**
-     * This method gets the device role and returns the role through the handler.
-     *
-     * @param[in] aHandler  A handler to return the role.
-     *
-     */
-    virtual void GetDeviceRole(DeviceRoleHandler aHandler) = 0;
 
     /**
      * Returns the co-processor type.

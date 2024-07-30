@@ -610,7 +610,7 @@ exit:
 
 bool BorderAgent::IsThreadStarted(void) const
 {
-    otDeviceRole role = otThreadGetDeviceRole(mHost.GetInstance());
+    otDeviceRole role = mHost.GetDeviceRole();
 
     return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
 }

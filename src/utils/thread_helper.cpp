@@ -248,7 +248,7 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
 {
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        otDeviceRole role = otThreadGetDeviceRole(mInstance);
+        otDeviceRole role = mHost->GetDeviceRole();
 
         for (const auto &handler : mDeviceRoleHandlers)
         {
@@ -670,7 +670,7 @@ otError ThreadHelper::TryResumeNetwork(void)
 {
     otError error = OT_ERROR_NONE;
 
-    if (otLinkGetPanId(mInstance) != UINT16_MAX && otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
+    if (otLinkGetPanId(mInstance) != UINT16_MAX && mHost->GetDeviceRole() == OT_DEVICE_ROLE_DISABLED)
     {
         if (!otIp6IsEnabled(mInstance))
         {
@@ -708,7 +708,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDataset     dataset;
     otOperationalDataset     emptyDataset{};
-    otDeviceRole             role = otThreadGetDeviceRole(mInstance);
+    otDeviceRole             role = mHost->GetDeviceRole();
     Tlv                     *tlv;
     uint64_t                 pendingTimestamp = 0;
     timespec                 currentTime;
@@ -1094,7 +1094,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
     auto wpanStats = telemetryData.mutable_wpan_stats();
 
     {
-        otDeviceRole     role  = otThreadGetDeviceRole(mInstance);
+        otDeviceRole     role  = mHost->GetDeviceRole();
         otLinkModeConfig otCfg = otThreadGetLinkMode(mInstance);
 
         wpanStats->set_node_type(TelemetryNodeTypeFromRoleAndLinkMode(role, otCfg));
