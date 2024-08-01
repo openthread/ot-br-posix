@@ -394,6 +394,20 @@ const char *RcpHost::GetThreadVersion(void)
     return version;
 }
 
+void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
+{
+    OT_UNUSED_VARIABLE(aActiveOpDatasetTlvs);
+
+    // TODO: Implement Join under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
+{
+    // TODO: Implement Leave under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
 /*
  * Provide, if required an "otPlatLog()" function
  */

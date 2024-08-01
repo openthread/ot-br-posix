@@ -217,6 +217,10 @@ public:
 
     ~RcpHost(void) override;
 
+    // Thread Control virtual methods
+    void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
+    void Leave(const AsyncResultReceiver &aRecevier) override;
+
     CoprocessorType GetCoprocessorType(void) override
     {
         return OT_COPROCESSOR_RCP;

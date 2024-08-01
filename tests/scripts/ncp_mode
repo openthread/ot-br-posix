@@ -173,6 +173,8 @@ test_teardown()
     write_syslog "EXIT ${EXIT_CODE} - output logs"
 
     sudo pkill -f "${OTBR_AGENT}" || true
+    sudo pkill -f "${OT_CLI}" || true
+    sudo pkill -f "${OT_NCP}" || true
     wait
 
     echo 'clearing all'
@@ -253,6 +255,7 @@ main()
     else
         otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_version.exp" || die "ncp expect script failed!"
         otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_get_device_role.exp" || die "ncp expect script failed!"
+        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_join_leave.exp" || die "ncp expect script failed!"
     fi
 }
 

@@ -45,6 +45,7 @@ FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 
 add_executable(otbr-gtest-unit
+    test_async_task.cpp
     test_common_types.cpp
     test_dns_utils.cpp
     test_logging.cpp
@@ -55,6 +56,7 @@ add_executable(otbr-gtest-unit
 target_link_libraries(otbr-gtest-unit
     mbedtls
     otbr-common
+    otbr-ncp
     otbr-utils
     GTest::gmock_main
 )
