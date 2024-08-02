@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2021, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,23 +26,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_subdirectory(posix)
-
-add_library(otbr-ncp
-    async_task.cpp
-    async_task.hpp
-    ncp_host.cpp
-    ncp_host.hpp
-    ncp_spinel.cpp
-    ncp_spinel.hpp
-    rcp_host.cpp
-    rcp_host.hpp
-    thread_host.cpp
-    thread_host.hpp
+add_library(otbr-posix
+    netif.cpp
+    netif_linux.cpp
+    netif_unix.cpp
+    netif.hpp
 )
 
-target_link_libraries(otbr-ncp PRIVATE
+target_link_libraries(otbr-posix
     otbr-common
-    $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
-    $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
+    otbr-utils
 )

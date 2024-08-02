@@ -152,7 +152,8 @@ do_check()
 {
     (cd "${OTBR_TOP_BUILDDIR}" \
         && ninja && sudo ninja install \
-        && CTEST_OUTPUT_ON_FAILURE=1 ninja test)
+        && CTEST_OUTPUT_ON_FAILURE=1 ctest -LE sudo \
+        && CTEST_OUTPUT_ON_FAILURE=1 sudo ctest -L sudo) # Seperate running tests for sudo and non-sudo cases.
 }
 
 do_doxygen()
