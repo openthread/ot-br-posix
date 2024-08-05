@@ -67,6 +67,10 @@
 #include "common/types.hpp"
 #include "utils/hex.hpp"
 
+#if !(OTBR_ENABLE_MDNS_AVAHI || OTBR_ENABLE_MDNS_MDNSSD || OTBR_ENABLE_MDNS_MOJO)
+#error "Border Agent feature requires at least one `OTBR_MDNS` implementation"
+#endif
+
 namespace otbr {
 
 static const char    kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
@@ -130,7 +134,7 @@ struct StateBitmap
         , mBbrIsActive(0)
         , mBbrIsPrimary(0)
         , mThreadRole(kThreadRoleDisabledOrDetached)
-        , mEpskcSupported(OTBR_ENABLE_EPSKC)
+        , mEpskcSupported(0)
     {
     }
 
@@ -153,6 +157,7 @@ BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mHost(aHost)
     , mPublisher(aPublisher)
     , mIsEnabled(false)
+    , mIsEphemeralKeyEnabled(false)
     , mVendorName(OTBR_VENDOR_NAME)
     , mProductName(OTBR_PRODUCT_NAME)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
@@ -203,6 +208,25 @@ void BorderAgent::SetEnabled(bool aIsEnabled)
     {
         Stop();
     }
+exit:
+    return;
+}
+
+void BorderAgent::SetEphemeralKeyEnabled(bool aIsEnabled)
+{
+    VerifyOrExit(GetEphemeralKeyEnabled() != aIsEnabled);
+    mIsEphemeralKeyEnabled = aIsEnabled;
+
+    if (!mIsEphemeralKeyEnabled)
+    {
+        // If the ePSKc feature is enabled, we call the clear function which
+        // will wait for the session to close if it is in active use before
+        // removing ephemeral key and unpublishing the service.
+        otBorderAgentClearEphemeralKey(mHost.GetInstance());
+    }
+
+    UpdateMeshCopService();
+
 exit:
     return;
 }
@@ -495,9 +519,9 @@ void BorderAgent::PublishMeshCopService(void)
 
     // "xa" stands for Extended MAC Address (64-bit) of the Thread Interface of the Border Agent.
     txtList.emplace_back("xa", extAddr->m8, sizeof(extAddr->m8));
-
-    state       = GetStateBitmap(*instance);
-    stateUint32 = htobe32(state.ToUint32());
+    state                 = GetStateBitmap(*instance);
+    state.mEpskcSupported = GetEphemeralKeyEnabled();
+    stateUint32           = htobe32(state.ToUint32());
     txtList.emplace_back("sb", reinterpret_cast<uint8_t *>(&stateUint32), sizeof(stateUint32));
 
     if (state.mThreadIfStatus == kThreadIfStatusActive)

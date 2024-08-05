@@ -277,7 +277,7 @@ void Application::InitRcpMode(void)
     mRestWebServer->Init();
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent->Init();
+    mDBusAgent->Init(*mBorderAgent);
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer->Init();
@@ -303,7 +303,7 @@ void Application::DeinitRcpMode(void)
 void Application::InitNcpMode(void)
 {
 #if OTBR_ENABLE_DBUS_SERVER
-    mDBusAgent->Init();
+    mDBusAgent->Init(*mBorderAgent);
 #endif
 }
 

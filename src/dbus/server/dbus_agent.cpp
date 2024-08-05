@@ -53,7 +53,7 @@ DBusAgent::DBusAgent(otbr::Ncp::ThreadHost &aHost, Mdns::Publisher &aPublisher)
 {
 }
 
-void DBusAgent::Init(void)
+void DBusAgent::Init(otbr::BorderAgent &aBorderAgent)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -71,7 +71,7 @@ void DBusAgent::Init(void)
     {
     case OT_COPROCESSOR_RCP:
         mThreadObject = MakeUnique<DBusThreadObjectRcp>(*mConnection, mInterfaceName,
-                                                        static_cast<Ncp::RcpHost &>(mHost), &mPublisher);
+                                                        static_cast<Ncp::RcpHost &>(mHost), &mPublisher, aBorderAgent);
         break;
 
     case OT_COPROCESSOR_NCP:

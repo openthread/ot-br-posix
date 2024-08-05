@@ -362,7 +362,7 @@ public:
     /**
      * This method sets the NAT64 switch.
      *
-     * @param[in] aEnable  A boolean to enable/disable the NAT64.
+     * @param[in] aEnabled  A boolean to enable/disable the NAT64.
      *
      * @retval ERROR_NONE  Successfully performed the dbus function call
      * @retval ERROR_DBUS  dbus encode/decode error
@@ -370,6 +370,30 @@ public:
      *
      */
     ClientError SetNat64Enabled(bool aEnabled);
+
+    /**
+     * This method sets the Ephemeral Key switch.
+     *
+     * @param[in] aEnabled  A boolean to enable/disable the Ephemeral Key.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError SetEphemeralKeyEnabled(bool aEnabled);
+
+    /**
+     * This method gets the Ephemeral Key switch.
+     *
+     * @param[out] aEnabled  A boolean of enable/disable for Ephemeral Key state.
+     *
+     * @retval ERROR_NONE  Successfully performed the dbus function call
+     * @retval ERROR_DBUS  dbus encode/decode error
+     * @retval ...         OpenThread defined error value otherwise
+     *
+     */
+    ClientError GetEphemeralKeyEnabled(bool &aEnabled);
 
     /**
      * This method gets the link operating mode.
