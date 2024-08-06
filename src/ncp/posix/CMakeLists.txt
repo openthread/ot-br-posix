@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,59 +26,13 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-cmake_minimum_required(VERSION 3.14)
-project(openthread-br-gtest)
-
-# GoogleTest requires at least C++14
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+add_library(otbr-posix
+    netif.cpp
+    netif_linux.cpp
+    netif_unix.cpp
+    netif.hpp
 )
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
 
-include(GoogleTest)
-
-add_executable(otbr-gtest-unit
-    test_async_task.cpp
-    test_common_types.cpp
-    test_dns_utils.cpp
-    test_logging.cpp
-    test_once_callback.cpp
-    test_pskc.cpp
-    test_task_runner.cpp
-)
-target_link_libraries(otbr-gtest-unit
-    mbedtls
+target_link_libraries(otbr-posix
     otbr-common
-    otbr-ncp
-    otbr-utils
-    GTest::gmock_main
 )
-gtest_discover_tests(otbr-gtest-unit)
-
-if(OTBR_MDNS)
-    add_executable(otbr-gtest-mdns-subscribe
-        test_mdns_subscribe.cpp
-    )
-    target_link_libraries(otbr-gtest-mdns-subscribe
-        otbr-common
-        otbr-mdns
-        GTest::gmock_main
-    )
-    gtest_discover_tests(otbr-gtest-mdns-subscribe)
-endif()
-
-add_executable(otbr-posix-gtest-unit
-    test_netif.cpp
-)
-target_link_libraries(otbr-posix-gtest-unit
-    otbr-posix
-    GTest::gmock_main
-)
-gtest_discover_tests(otbr-posix-gtest-unit)
