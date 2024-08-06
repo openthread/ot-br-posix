@@ -385,7 +385,7 @@ const char *RcpHost::GetThreadVersion(void)
         version = "1.3.0";
         break;
     case kThreadVersion14:
-        version = "1.4";
+        version = "1.4.0";
         break;
     default:
         otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
