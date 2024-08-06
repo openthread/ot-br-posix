@@ -61,6 +61,16 @@
 #define OTBR_MESHCOP_SERVICE_INSTANCE_NAME (OTBR_VENDOR_NAME " " OTBR_PRODUCT_NAME)
 #endif
 
+/**
+ * @def OTBR_CONFIG_MESHCOP_EPHEMERAL_BORDER_AGENT_UDP_PORT
+ *
+ * Specifies the border agent UDP port for ephemeral meshcop service, and use 0 for ephemeral port.
+ *
+ */
+#ifndef OTBR_CONFIG_MESHCOP_EPHEMERAL_BORDER_AGENT_UDP_PORT
+#define OTBR_CONFIG_MESHCOP_EPHEMERAL_BORDER_AGENT_UDP_PORT 0
+#endif
+
 namespace otbr {
 
 /**
