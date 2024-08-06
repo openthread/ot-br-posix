@@ -57,9 +57,15 @@ private:
     void Clear(void);
 
     otbrError CreateTunDevice(const std::string &aInterfaceName);
+    otbrError InitNetlink(void);
 
-    int mTunFd; ///< Used to exchange IPv6 packets.
-    int mIpFd;  ///< Used to manage IPv6 stack on the network interface.
+    void PlatformSpecificInit(void);
+    void SetAddrGenModeToNone(void);
+
+    int      mTunFd;           ///< Used to exchange IPv6 packets.
+    int      mIpFd;            ///< Used to manage IPv6 stack on the network interface.
+    int      mNetlinkFd;       ///< Used to receive netlink events.
+    uint32_t mNetlinkSequence; ///< Netlink message sequence.
 
     unsigned int mNetifIndex;
     std::string  mNetifName;

@@ -46,12 +46,33 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/types.hpp"
+#include "utils/socket_utils.hpp"
 
 #ifndef OTBR_POSIX_TUN_DEVICE
 #define OTBR_POSIX_TUN_DEVICE "/dev/net/tun"
 #endif
 
 namespace otbr {
+
+static struct rtattr *AddRtAttr(nlmsghdr *aHeader, uint32_t aMaxLen, uint8_t aType, const void *aData, uint8_t aLen)
+{
+    uint8_t len = RTA_LENGTH(aLen);
+    rtattr *rta;
+
+    assert(NLMSG_ALIGN(aHeader->nlmsg_len) + RTA_ALIGN(len) <= aMaxLen);
+    OTBR_UNUSED_VARIABLE(aMaxLen);
+
+    rta           = reinterpret_cast<rtattr *>(reinterpret_cast<char *>(aHeader) + NLMSG_ALIGN((aHeader)->nlmsg_len));
+    rta->rta_type = aType;
+    rta->rta_len  = len;
+    if (aLen)
+    {
+        memcpy(RTA_DATA(rta), aData, aLen);
+    }
+    aHeader->nlmsg_len = NLMSG_ALIGN(aHeader->nlmsg_len) + RTA_ALIGN(len);
+
+    return rta;
+}
 
 otbrError Netif::CreateTunDevice(const std::string &aInterfaceName)
 {
@@ -86,6 +107,92 @@ otbrError Netif::CreateTunDevice(const std::string &aInterfaceName)
 
 exit:
     return error;
+}
+
+otbrError Netif::InitNetlink(void)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    mNetlinkFd = SocketWithCloseExec(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE, kSocketNonBlock);
+    VerifyOrExit(mNetlinkFd >= 0, error = OTBR_ERROR_ERRNO);
+
+#if defined(SOL_NETLINK)
+    {
+        int enable = 1;
+
+#if defined(NETLINK_EXT_ACK)
+        if (setsockopt(mNetlinkFd, SOL_NETLINK, NETLINK_EXT_ACK, &enable, sizeof(enable)) != 0)
+        {
+            otbrLogWarning("Failed to enable NETLINK_EXT_ACK: %s", strerror(errno));
+        }
+#endif
+#if defined(NETLINK_CAP_ACK)
+        if (setsockopt(mNetlinkFd, SOL_NETLINK, NETLINK_CAP_ACK, &enable, sizeof(enable)) != 0)
+        {
+            otbrLogWarning("Failed to enable NETLINK_CAP_ACK: %s", strerror(errno));
+        }
+#endif
+    }
+#endif
+
+    {
+        sockaddr_nl sa;
+
+        memset(&sa, 0, sizeof(sa));
+        sa.nl_family = AF_NETLINK;
+        sa.nl_groups = RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
+        VerifyOrExit(bind(mNetlinkFd, reinterpret_cast<sockaddr *>(&sa), sizeof(sa)) == 0, error = OTBR_ERROR_ERRNO);
+    }
+
+exit:
+    return error;
+}
+
+void Netif::PlatformSpecificInit(void)
+{
+    SetAddrGenModeToNone();
+}
+
+void Netif::SetAddrGenModeToNone(void)
+{
+    struct
+    {
+        nlmsghdr  nh;
+        ifinfomsg ifi;
+        char      buf[512];
+    } req;
+
+    const uint8_t mode = IN6_ADDR_GEN_MODE_NONE;
+
+    memset(&req, 0, sizeof(req));
+
+    req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifinfomsg));
+    req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+    req.nh.nlmsg_type  = RTM_NEWLINK;
+    req.nh.nlmsg_pid   = 0;
+    req.nh.nlmsg_seq   = ++mNetlinkSequence;
+
+    req.ifi.ifi_index  = static_cast<int>(mNetifIndex);
+    req.ifi.ifi_change = 0xffffffff;
+    req.ifi.ifi_flags  = IFF_MULTICAST | IFF_NOARP;
+
+    {
+        rtattr *afSpec           = AddRtAttr(&req.nh, sizeof(req), IFLA_AF_SPEC, 0, 0);
+        rtattr *afInet6          = AddRtAttr(&req.nh, sizeof(req), AF_INET6, 0, 0);
+        rtattr *inet6AddrGenMode = AddRtAttr(&req.nh, sizeof(req), IFLA_INET6_ADDR_GEN_MODE, &mode, sizeof(mode));
+
+        afInet6->rta_len += inet6AddrGenMode->rta_len;
+        afSpec->rta_len += afInet6->rta_len;
+    }
+
+    if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1)
+    {
+        otbrLogInfo("Sent request#%u to set addr_gen_mode to %d", mNetlinkSequence, mode);
+    }
+    else
+    {
+        otbrLogWarning("Failed to send request#%u to set addr_gen_mode to %d", mNetlinkSequence, mode);
+    }
 }
 
 } // namespace otbr
