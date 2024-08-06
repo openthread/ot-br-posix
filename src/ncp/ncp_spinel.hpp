@@ -218,10 +218,6 @@ private:
     otError SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError SendEncodedFrame(void);
 
-    void GetFlagsFromSecurityPolicy(const otSecurityPolicy *aSecurityPolicy, uint8_t *aFlags, uint8_t aFlagsLength);
-
-    otError EncodeDatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs);
-
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
     spinel_tid_t              mCmdNextTid;   ///< Next available transaction id.
