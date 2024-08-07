@@ -87,6 +87,7 @@ parse_args "$@"
 [ -n "$BACKBONE_INTERFACE" ] || BACKBONE_INTERFACE="eth0"
 [ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
 [ -n "$DEBUG_LEVEL" ] || DEBUG_LEVEL="7"
+[ -n "$HTTP_PORT" ] || HTTP_PORT=80
 
 echo "RADIO_URL:" $RADIO_URL
 echo "TREL_URL:" "$TREL_URL"
@@ -104,7 +105,7 @@ BIND_CONF_OPTIONS=/etc/bind/named.conf.options
 sed -i "s/$INFRA_IF_NAME/$BACKBONE_INTERFACE/" /etc/sysctl.d/60-otbr-accept-ra.conf
 
 echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -B $BACKBONE_INTERFACE -d${DEBUG_LEVEL} $RADIO_URL $TREL_URL\"" >/etc/default/otbr-agent
-echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d${DEBUG_LEVEL} -p 80\"" >/etc/default/otbr-web
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d${DEBUG_LEVEL} -p $HTTP_PORT\"" >/etc/default/otbr-web
 
 /app/script/server
 
