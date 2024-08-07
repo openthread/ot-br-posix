@@ -1,0 +1,59 @@
+#!/bin/bash
+
+WAN_INTERFACE="eth0"
+WPAN_INTERFACE="wpan0"
+RADVD_CONF="/etc/radvd.conf"
+LOG_TAG="dhcpcd.enter.hook:"
+
+
+config_ra()
+{
+    logger -t "$LOG_TAG $reason start config radvd"
+
+sudo tee "${RADVD_CONF}" > /dev/null <<EOF
+interface ${WPAN_INTERFACE}
+{
+    AdvSendAdvert on;
+    prefix ${1}/${2}
+    {
+        AdvOnLink on;
+        AdvAutonomous on;
+        AdvRouterAddr off;
+        AdvPreferredLifetime ${3};
+        AdvValidLifetime ${4};
+    };
+};
+EOF
+}
+
+
+if [ "${interface}" = "eth0" ]; then
+
+    for var in $(env); do
+        # Split the variable into name and value
+        name="${var%%=*}"
+        value="${var#*=}"
+        # Log to syslog
+        logger -t "$LOG_TAG $reason sysenv: " "$name=$value"
+    done
+
+    case $reason in
+    # | DELEGATED6 | BOUND6 | RENEW6 | REBIND6 | ROUTERADVERT
+        DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
+            logger "$LOG_TAG prefix is $new_dhcp6_ia_pd1_prefix1  length is $new_dhcp6_ia_pd1_prefix1_length pltime is  $new_dhcp6_ia_pd1_prefix1_pltime vltime is $new_dhcp6_ia_pd1_prefix1_vltime"
+            config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
+            #  "$new_dhcp6_ia_pd1_prefix1" "$new_dhcp6_ia_pd1_prefix1_pltime" "$new_dhcp6_ia_pd1_prefix1_vltime"
+            sudo systemctl restart radvd || logger "$LOG_TAG Failed to restart radvd"
+            ;;
+        # RENEW6)
+        #     if ["${new_dhcp6_ia_pd1_prefix1}" == "${old_dhcp6_ia_pd1_prefix1}"]; then
+        #     {
+        #         config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
+        #         sudo systemctl restart radvd || logger "$LOG_TAG Failed to restart radvd"
+        #     }
+        #     else
+        #     {
+
+        #     }
+    esac
+fi
