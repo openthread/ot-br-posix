@@ -271,6 +271,11 @@ void BorderAgent::HandleEpskcStateChanged(void *aContext)
     {
         borderAgent->UnpublishEpskcService();
     }
+
+    for (auto &ephemeralKeyCallback : borderAgent->mEphemeralKeyChangedCallbacks)
+    {
+        ephemeralKeyCallback();
+    }
 }
 
 void BorderAgent::PublishEpskcService()
@@ -318,6 +323,11 @@ void BorderAgent::UnpublishEpskcService()
         otbrLogResult(aError, "Result of unpublish meshcop-e service %s.%s.local", mServiceInstanceName.c_str(),
                       kBorderAgentEpskcServiceType);
     });
+}
+
+void BorderAgent::AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback)
+{
+    mEphemeralKeyChangedCallbacks.push_back(std::move(aCallback));
 }
 
 void BorderAgent::HandleMdnsState(Mdns::Publisher::State aState)
