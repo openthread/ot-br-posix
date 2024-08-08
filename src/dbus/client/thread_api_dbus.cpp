@@ -468,6 +468,16 @@ ClientError ThreadApiDBus::SetEphemeralKeyEnabled(bool aEnabled)
     return SetProperty(OTBR_DBUS_PROPERTY_EPHEMERAL_KEY_ENABLED, aEnabled);
 }
 
+ClientError ThreadApiDBus::StartEphemeralKeyMode(const uint32_t aLifetime, std::string &aEPSKc)
+{
+    return CallDBusMethodSync(OTBR_DBUS_START_EPHEMERAL_KEY_MODE_METHOD, std::tie(aLifetime, aEPSKc));
+}
+
+ClientError ThreadApiDBus::StopEphemeralKeyMode(void)
+{
+    return CallDBusMethodSync(OTBR_DBUS_STOP_EPHEMERAL_KEY_MODE_METHOD);
+}
+
 ClientError ThreadApiDBus::SetMeshLocalPrefix(const std::array<uint8_t, OTBR_IP6_PREFIX_SIZE> &aPrefix)
 {
     return SetProperty(OTBR_DBUS_PROPERTY_MESH_LOCAL_PREFIX, aPrefix);

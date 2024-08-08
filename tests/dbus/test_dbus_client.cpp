@@ -263,7 +263,8 @@ void CheckNat64(ThreadApiDBus *aApi)
 
 void CheckEphemeralKey(ThreadApiDBus *aApi)
 {
-    bool enabled;
+    bool        enabled;
+    std::string ePSKc = '0';
 
     TEST_ASSERT(aApi->SetEphemeralKeyEnabled(false) == OTBR_ERROR_NONE);
     TEST_ASSERT(aApi->GetEphemeralKeyEnabled(enabled) == OTBR_ERROR_NONE);
@@ -271,6 +272,11 @@ void CheckEphemeralKey(ThreadApiDBus *aApi)
     TEST_ASSERT(aApi->SetEphemeralKeyEnabled(true) == OTBR_ERROR_NONE);
     TEST_ASSERT(aApi->GetEphemeralKeyEnabled(enabled) == OTBR_ERROR_NONE);
     TEST_ASSERT(enabled == true);
+
+    // temp for CI failure
+    aApi->StartEphemeralKeyMode(500000, ePSKc);
+    TEST_ASSERT(ePSKc.length() == 9);
+    // printf("ePSKc is generated: %s\n", ePSKc.c_str());
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
