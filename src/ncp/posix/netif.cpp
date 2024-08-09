@@ -51,6 +51,8 @@ namespace otbr {
 Netif::Netif(void)
     : mTunFd(-1)
     , mIpFd(-1)
+    , mNetlinkFd(-1)
+    , mNetlinkSequence(0)
     , mNetifIndex(0)
 {
 }
@@ -63,9 +65,12 @@ otbrError Netif::Init(const std::string &aInterfaceName)
     VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_ERRNO);
 
     SuccessOrExit(error = CreateTunDevice(aInterfaceName));
+    SuccessOrExit(error = InitNetlink());
 
     mNetifIndex = if_nametoindex(mNetifName.c_str());
     VerifyOrExit(mNetifIndex > 0, error = OTBR_ERROR_INVALID_STATE);
+
+    PlatformSpecificInit();
 
 exit:
     if (error != OTBR_ERROR_NONE)
@@ -92,6 +97,12 @@ void Netif::Clear(void)
     {
         close(mIpFd);
         mIpFd = -1;
+    }
+
+    if (mNetlinkFd != -1)
+    {
+        close(mNetlinkFd);
+        mNetlinkFd = -1;
     }
 
     mNetifIndex = 0;

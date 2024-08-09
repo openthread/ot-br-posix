@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
+#include <fstream>
 #include <ifaddrs.h>
 #include <iostream>
 #include <net/if.h>
@@ -42,6 +43,10 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <vector>
+
+#ifdef __linux__
+#include <linux/if_link.h>
+#endif
 
 #include <openthread/ip6.h>
 
@@ -175,6 +180,23 @@ TEST(Netif, WpanDeinit)
 
     netif.Deinit();
     EXPECT_LT(ioctl(sockfd, SIOCGIFFLAGS, &ifr), 0) << "'" << wpan << "' isn't shutdown";
+}
+
+TEST(Netif, WpanAddrGenMode)
+{
+    otbr::Netif netif;
+    EXPECT_EQ(netif.Init("wpan0"), OT_ERROR_NONE);
+
+    std::fstream file("/proc/sys/net/ipv6/conf/wpan0/addr_gen_mode", std::ios::in);
+    if (!file.is_open())
+    {
+        FAIL() << "wpan0 interface doesn't exist!";
+    }
+    std::string fileContents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    EXPECT_EQ(std::stoi(fileContents), IN6_ADDR_GEN_MODE_NONE);
+
+    netif.Deinit();
 }
 
 #endif // __linux__
