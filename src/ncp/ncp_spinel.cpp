@@ -184,7 +184,7 @@ void NcpSpinel::ThreadErasePersistentInfo(AsyncTaskPtr aAsyncTask)
 exit:
     if (error != OT_ERROR_NONE)
     {
-        FreeTid(tid);
+        FreeTidTableItem(tid);
         mTaskRunner.Post(
             [aAsyncTask, error](void) { aAsyncTask->SetResult(error, "Failed to erase persistent info!"); });
     }
@@ -257,33 +257,21 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
 
     SuccessOrExit(error = SpinelDataUnpack(aFrame, aLength, kSpinelDataUnpackFormat, &header, &cmd, &key, &data, &len));
 
-    VerifyOrExit(cmd == SPINEL_CMD_PROP_VALUE_IS && key == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(cmd == SPINEL_CMD_PROP_VALUE_IS, error = OTBR_ERROR_INVALID_STATE);
 
-    switch (key)
+    switch (mCmdTable[aTid])
     {
-    case SPINEL_PROP_LAST_STATUS:
+    case SPINEL_CMD_PROP_VALUE_SET:
+    {
+        error = HandleResponseForPropSet(aTid, key, data, len);
+        break;
+    }
+    case SPINEL_CMD_NET_CLEAR:
     {
         spinel_status_t status = SPINEL_STATUS_OK;
 
-        failureHandler = [this, aTid](otError aError) { HandleResponseForCommand(aTid, aError); };
         SuccessOrExit(error = SpinelDataUnpack(data, len, SPINEL_DATATYPE_UINT_PACKED_S, &status));
-
-        HandleResponseForCommand(aTid, ot::Spinel::SpinelStatusToOtError(status));
-        break;
-    }
-    case SPINEL_PROP_THREAD_ACTIVE_DATASET:
-    {
-        CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
-        break;
-    }
-    case SPINEL_PROP_NET_IF_UP:
-    {
-        CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
-        break;
-    }
-    case SPINEL_PROP_NET_STACK_UP:
-    {
-        CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        CallAndClear(mThreadErasePersistentInfoTask, ot::Spinel::SpinelStatusToOtError(status));
         break;
     }
     default:
@@ -291,21 +279,16 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
     }
 
 exit:
-    FreeTid(aTid);
-
     if (error == OTBR_ERROR_INVALID_STATE)
     {
-        otbrLogCrit("Received unexpected response with cmd:%u, key:%u, waiting key:%u for tid:%u", cmd, key,
-                    mWaitingKeyTable[aTid], aTid);
+        otbrLogCrit("Received unexpected response with (cmd:%u, key:%u), waiting (cmd:%u, key:%u) for tid:%u", cmd, key,
+                    mCmdTable[aTid], mWaitingKeyTable[aTid], aTid);
     }
     else if (error == OTBR_ERROR_PARSE)
     {
         otbrLogCrit("Error parsing response with tid:%u", aTid);
-        if (failureHandler)
-        {
-            failureHandler(OtbrErrorToOtError(error));
-        }
     }
+    FreeTidTableItem(aTid);
 }
 
 void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength)
@@ -326,7 +309,7 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
 
     case SPINEL_PROP_NET_ROLE:
     {
-        spinel_net_role_t role;
+        spinel_net_role_t role = SPINEL_NET_ROLE_DISABLED;
         otDeviceRole      deviceRole;
 
         SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_UINT8_S, &role));
@@ -354,20 +337,40 @@ exit:
     return;
 }
 
-void NcpSpinel::HandleResponseForCommand(spinel_tid_t aTid, otError aError)
+otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
+                                              spinel_prop_key_t aKey,
+                                              const uint8_t    *aData,
+                                              uint16_t          aLength)
 {
-    switch (mCmdTable[aTid])
+    OTBR_UNUSED_VARIABLE(aData);
+    OTBR_UNUSED_VARIABLE(aLength);
+
+    otbrError error = OTBR_ERROR_NONE;
+
+    switch (mWaitingKeyTable[aTid])
     {
-    case SPINEL_CMD_NET_CLEAR:
-    {
-        CallAndClear(mThreadErasePersistentInfoTask, aError);
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET:
+        VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET, error = OTBR_ERROR_INVALID_STATE);
+        CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
         break;
-    }
+
+    case SPINEL_PROP_NET_IF_UP:
+        VerifyOrExit(aKey == SPINEL_PROP_NET_IF_UP, error = OTBR_ERROR_INVALID_STATE);
+        CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+        break;
+
+    case SPINEL_PROP_NET_STACK_UP:
+        VerifyOrExit(aKey == SPINEL_PROP_NET_STACK_UP, error = OTBR_ERROR_INVALID_STATE);
+        CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        break;
+
     default:
+        VerifyOrExit(aKey == mWaitingKeyTable[aTid], error = OTBR_ERROR_INVALID_STATE);
         break;
     }
 
-    mCmdTable[aTid] = SPINEL_CMD_NOOP;
+exit:
+    return error;
 }
 
 spinel_tid_t NcpSpinel::GetNextTid(void)
@@ -394,6 +397,14 @@ exit:
     return tid;
 }
 
+void NcpSpinel::FreeTidTableItem(spinel_tid_t aTid)
+{
+    mCmdTidsInUse &= ~(1 << aTid);
+
+    mCmdTable[aTid]        = SPINEL_CMD_NOOP;
+    mWaitingKeyTable[aTid] = SPINEL_PROP_LAST_STATUS;
+}
+
 otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
 {
     otError      error  = OT_ERROR_NONE;
@@ -406,11 +417,12 @@ otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEnco
     SuccessOrExit(error = mEncoder.EndFrame());
     SuccessOrExit(error = SendEncodedFrame());
 
+    mCmdTable[tid]        = SPINEL_CMD_PROP_VALUE_SET;
     mWaitingKeyTable[tid] = aKey;
 exit:
     if (error != OT_ERROR_NONE)
     {
-        FreeTid(tid);
+        FreeTidTableItem(tid);
     }
     return error;
 }

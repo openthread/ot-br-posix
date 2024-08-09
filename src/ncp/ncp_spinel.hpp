@@ -203,13 +203,16 @@ private:
 
     static otDeviceRole SpinelRoleToDeviceRole(spinel_net_role_t aRole);
 
-    void HandleNotification(const uint8_t *aFrame, uint16_t aLength);
-    void HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_t aLength);
-    void HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength);
-    void HandleResponseForCommand(spinel_tid_t aTid, otError aError);
+    void      HandleNotification(const uint8_t *aFrame, uint16_t aLength);
+    void      HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_t aLength);
+    void      HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength);
+    otbrError HandleResponseForPropSet(spinel_tid_t      aTid,
+                                       spinel_prop_key_t aKey,
+                                       const uint8_t    *aData,
+                                       uint16_t          aLength);
 
     spinel_tid_t GetNextTid(void);
-    void         FreeTid(spinel_tid_t tid) { mCmdTidsInUse &= ~(1 << tid); }
+    void         FreeTidTableItem(spinel_tid_t aTid);
 
     using EncodingFunc = std::function<otError(void)>;
     otError SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
