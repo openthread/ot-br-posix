@@ -50,8 +50,10 @@
 
 #include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
+#include <openthread/random_crypto.h>
 #include <openthread/random_noncrypto.h>
 #include <openthread/thread_ftd.h>
+#include <openthread/verhoeff_checksum.h>
 #include <openthread/platform/settings.h>
 #include <openthread/platform/toolchain.h>
 
@@ -76,6 +78,7 @@ namespace otbr {
 static const char    kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Border agent service type of mDNS
 static const char    kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
 static constexpr int kBorderAgentServiceDummyPort   = 49152;
+static constexpr int kEpskcRandomGenLen             = 8;
 
 /**
  * Locators
@@ -163,6 +166,33 @@ BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
     mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+}
+
+otbrError BorderAgent::CreateEphemeralKey(std::string &aEphemeralKey)
+{
+    std::string digitString;
+    char        checksum;
+    uint8_t     candidateBuffer[1];
+    otbrError   error = OTBR_ERROR_NONE;
+
+    for (uint8_t i = 0; i < kEpskcRandomGenLen; ++i)
+    {
+        while (true)
+        {
+            SuccessOrExit(otRandomCryptoFillBuffer(candidateBuffer, 1), error = OTBR_ERROR_ABORTED);
+            // Generates a random number in the range [0, 9] with equal probability.
+            if (candidateBuffer[0] < 250)
+            {
+                digitString += static_cast<char>('0' + candidateBuffer[0] % 10);
+                break;
+            }
+        }
+    }
+    SuccessOrExit(otVerhoeffChecksumCalculate(digitString.c_str(), &checksum), error = OTBR_ERROR_INVALID_ARGS);
+    aEphemeralKey = digitString + checksum;
+
+exit:
+    return error;
 }
 
 otbrError BorderAgent::SetMeshCopServiceValues(const std::string              &aServiceInstanceName,

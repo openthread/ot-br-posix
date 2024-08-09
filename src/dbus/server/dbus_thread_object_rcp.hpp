@@ -107,6 +107,8 @@ private:
     void GetPropertiesHandler(DBusRequest &aRequest);
     void LeaveNetworkHandler(DBusRequest &aRequest);
     void SetNat64Enabled(DBusRequest &aRequest);
+    void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
+    void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 

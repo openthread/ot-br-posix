@@ -30,6 +30,7 @@
 #include <net/if.h>
 #include <string.h>
 
+#include <openthread/border_agent.h>
 #include <openthread/border_router.h>
 #include <openthread/channel_monitor.h>
 #include <openthread/dnssd_server.h>
@@ -58,6 +59,16 @@
 #include "proto/thread_telemetry.pb.h"
 #endif
 #include "proto/capabilities.pb.h"
+
+/**
+ * @def OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
+ *
+ * Specifies the border agent UDP port for meshcop-e service.
+ * If zero, an ephemeral port will be used.
+ */
+#ifndef OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT
+#define OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT 0
+#endif
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -152,6 +163,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                    std::bind(&DBusThreadObjectRcp::LeaveNetworkHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
                    std::bind(&DBusThreadObjectRcp::SetNat64Enabled, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_ACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
+                   std::bind(&DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_DEACTIVATE_EPHEMERAL_KEY_MODE_METHOD,
+                   std::bind(&DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler, this, _1));
 
     RegisterMethod(DBUS_INTERFACE_INTROSPECTABLE, DBUS_INTROSPECT_METHOD,
                    std::bind(&DBusThreadObjectRcp::IntrospectHandler, this, _1));
@@ -1984,6 +1999,42 @@ otError DBusThreadObjectRcp::SetEphemeralKeyEnabled(DBusMessageIter &aIter)
 
 exit:
     return error;
+}
+
+void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+{
+    otError error        = OT_ERROR_NONE;
+    auto    threadHelper = mHost.GetThreadHelper();
+
+    otBorderAgentClearEphemeralKey(threadHelper->GetInstance());
+    aRequest.ReplyOtResult(error);
+}
+
+void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
+{
+    otError     error        = OT_ERROR_NONE;
+    auto        threadHelper = mHost.GetThreadHelper();
+    uint32_t    lifetime     = 0;
+    auto        args         = std::tie(lifetime);
+    std::string ePskc;
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    SuccessOrExit(mBorderAgent.CreateEphemeralKey(ePskc), error = OT_ERROR_INVALID_ARGS);
+    otbrLogInfo("Created Ephemeral Key: %s", ePskc.c_str());
+
+    SuccessOrExit(error = otBorderAgentSetEphemeralKey(threadHelper->GetInstance(), ePskc.c_str(), lifetime,
+                                                       OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT));
+
+exit:
+    if (error == OT_ERROR_NONE)
+    {
+        aRequest.Reply(std::tie(ePskc));
+    }
+    else
+    {
+        aRequest.ReplyOtResult(error);
+    }
 }
 
 otError DBusThreadObjectRcp::GetInfraLinkInfo(DBusMessageIter &aIter)

@@ -144,6 +144,17 @@ public:
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
+    /**
+     * This method creates ephemeral key in the Border Agent.
+     *
+     * @param[out] aEphemeralKey  The ephemeral key digit string of length 9 with first 8 digits randomly
+     *                            generated, and the last 9th digit as verhoeff checksum.
+     *
+     * @returns OTBR_ERROR_INVALID_ARGS  If Verhoeff checksum calculate returns error.
+     * @returns OTBR_ERROR_NONE          If successfully generate the ePSKc.
+     */
+    static otbrError CreateEphemeralKey(std::string &aEphemeralKey);
+
 private:
     void Start(void);
     void Stop(void);
