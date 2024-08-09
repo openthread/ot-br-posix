@@ -95,12 +95,12 @@ void NcpSpinel::DatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDa
 {
     otError      error        = OT_ERROR_NONE;
     EncodingFunc encodingFunc = [this, &aActiveOpDatasetTlvs] {
-        return EncodeDatasetSetActiveTlvs(aActiveOpDatasetTlvs);
+        return mEncoder.WriteData(aActiveOpDatasetTlvs.mTlvs, aActiveOpDatasetTlvs.mLength);
     };
 
     VerifyOrExit(mDatasetSetActiveTask == nullptr, error = OT_ERROR_BUSY);
 
-    SuccessOrExit(error = SetProperty(SPINEL_PROP_THREAD_ACTIVE_DATASET, encodingFunc));
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, encodingFunc));
     mDatasetSetActiveTask = aAsyncTask;
 
 exit:
@@ -349,8 +349,8 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
 
     switch (mWaitingKeyTable[aTid])
     {
-    case SPINEL_PROP_THREAD_ACTIVE_DATASET:
-        VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET, error = OTBR_ERROR_INVALID_STATE);
+    case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
+        VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, error = OTBR_ERROR_INVALID_STATE);
         CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
         break;
 
@@ -440,144 +440,6 @@ otError NcpSpinel::SendEncodedFrame(void)
 
 exit:
     error = mNcpBuffer.OutFrameRemove();
-    return error;
-}
-
-void NcpSpinel::GetFlagsFromSecurityPolicy(const otSecurityPolicy *aSecurityPolicy,
-                                           uint8_t                *aFlags,
-                                           uint8_t                 aFlagsLength)
-{
-    static constexpr uint8_t kObtainNetworkKeyMask        = 1 << 7; // Byte 0
-    static constexpr uint8_t kNativeCommissioningMask     = 1 << 6; // Byte 0
-    static constexpr uint8_t kRoutersMask                 = 1 << 5; // Byte 0
-    static constexpr uint8_t kExternalCommissioningMask   = 1 << 4; // Byte 0
-    static constexpr uint8_t kCommercialCommissioningMask = 1 << 2; // Byte 0
-    static constexpr uint8_t kAutonomousEnrollmentMask    = 1 << 1; // Byte 0
-    static constexpr uint8_t kNetworkKeyProvisioningMask  = 1 << 0; // Byte 0
-
-    static constexpr uint8_t kTobleLinkMask     = 1 << 7; // Byte 1
-    static constexpr uint8_t kNonCcmRoutersMask = 1 << 6; // Byte 1
-    static constexpr uint8_t kReservedMask      = 0x38;   // Byte 1
-
-    VerifyOrExit(aFlagsLength > 1);
-
-    memset(aFlags, 0, aFlagsLength);
-
-    if (aSecurityPolicy->mObtainNetworkKeyEnabled)
-    {
-        aFlags[0] |= kObtainNetworkKeyMask;
-    }
-
-    if (aSecurityPolicy->mNativeCommissioningEnabled)
-    {
-        aFlags[0] |= kNativeCommissioningMask;
-    }
-
-    if (aSecurityPolicy->mRoutersEnabled)
-    {
-        aFlags[0] |= kRoutersMask;
-    }
-
-    if (aSecurityPolicy->mExternalCommissioningEnabled)
-    {
-        aFlags[0] |= kExternalCommissioningMask;
-    }
-
-    if (!aSecurityPolicy->mCommercialCommissioningEnabled)
-    {
-        aFlags[0] |= kCommercialCommissioningMask;
-    }
-
-    if (!aSecurityPolicy->mAutonomousEnrollmentEnabled)
-    {
-        aFlags[0] |= kAutonomousEnrollmentMask;
-    }
-
-    if (!aSecurityPolicy->mNetworkKeyProvisioningEnabled)
-    {
-        aFlags[0] |= kNetworkKeyProvisioningMask;
-    }
-
-    VerifyOrExit(aFlagsLength > sizeof(aFlags[0]));
-
-    if (aSecurityPolicy->mTobleLinkEnabled)
-    {
-        aFlags[1] |= kTobleLinkMask;
-    }
-
-    if (!aSecurityPolicy->mNonCcmRoutersEnabled)
-    {
-        aFlags[1] |= kNonCcmRoutersMask;
-    }
-
-    aFlags[1] |= kReservedMask;
-    aFlags[1] |= aSecurityPolicy->mVersionThresholdForRouting;
-
-exit:
-    return;
-}
-
-otError NcpSpinel::EncodeDatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs)
-{
-    otError              error = OT_ERROR_NONE;
-    otOperationalDataset dataset;
-    otIp6Address         addrMlPrefix;
-    uint8_t              flagsSecurityPolicy[2];
-
-    SuccessOrExit(error = otDatasetParseTlvs(&aActiveOpDatasetTlvs, &dataset));
-    GetFlagsFromSecurityPolicy(&dataset.mSecurityPolicy, flagsSecurityPolicy, sizeof(flagsSecurityPolicy));
-    memcpy(addrMlPrefix.mFields.m8, dataset.mMeshLocalPrefix.m8, sizeof(otMeshLocalPrefix));
-    memset(addrMlPrefix.mFields.m8 + 8, 0, sizeof(otMeshLocalPrefix));
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_DATASET_ACTIVE_TIMESTAMP));
-    SuccessOrExit(error = mEncoder.WriteUint64(dataset.mActiveTimestamp.mSeconds));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_NETWORK_KEY));
-    SuccessOrExit(error = mEncoder.WriteData(dataset.mNetworkKey.m8, sizeof(dataset.mNetworkKey.m8)));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_NETWORK_NAME));
-    SuccessOrExit(error = mEncoder.WriteUtf8(dataset.mNetworkName.m8));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_XPANID));
-    SuccessOrExit(error = mEncoder.WriteData(dataset.mExtendedPanId.m8, sizeof(dataset.mExtendedPanId.m8)));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_IPV6_ML_PREFIX));
-    SuccessOrExit(error = mEncoder.WriteIp6Address(addrMlPrefix));
-    SuccessOrExit(error = mEncoder.WriteUint8(OT_IP6_PREFIX_BITSIZE));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_MAC_15_4_PANID));
-    SuccessOrExit(error = mEncoder.WriteUint16(dataset.mPanId));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_PHY_CHAN));
-    SuccessOrExit(error = mEncoder.WriteUint16(dataset.mChannel));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_NET_PSKC));
-    SuccessOrExit(error = mEncoder.WriteData(dataset.mPskc.m8, sizeof(dataset.mPskc.m8)));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-    SuccessOrExit(error = mEncoder.OpenStruct());
-    SuccessOrExit(error = mEncoder.WriteUintPacked(SPINEL_PROP_DATASET_SECURITY_POLICY));
-    SuccessOrExit(error = mEncoder.WriteUint16(dataset.mSecurityPolicy.mRotationTime));
-    SuccessOrExit(error = mEncoder.WriteUint8(flagsSecurityPolicy[0]));
-    SuccessOrExit(error = mEncoder.WriteUint8(flagsSecurityPolicy[1]));
-    SuccessOrExit(error = mEncoder.CloseStruct());
-
-exit:
     return error;
 }
 
