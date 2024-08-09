@@ -77,6 +77,8 @@ static const char    kBorderAgentServiceType[]      = "_meshcop._udp";   ///< Bo
 static const char    kBorderAgentEpskcServiceType[] = "_meshcop-e._udp"; ///< Border agent ePSKc service
 static constexpr int kBorderAgentServiceDummyPort   = 49152;
 
+static constexpr uint16_t kThreadVersion14 = 5; ///< Thread Version 1.4
+
 /**
  * Locators
  *
@@ -163,6 +165,9 @@ BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
     mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+    mIsEphemeralKeyEnabled = (otThreadGetVersion() >= kThreadVersion14);
+    otbrLogInfo("Thread Version: %d. ", otThreadGetVersion());
+    otbrLogInfo("IsEphemeralKeyEnabled: %s during initialization", (mIsEphemeralKeyEnabled ? "enabled" : "disabled"));
 }
 
 otbrError BorderAgent::SetMeshCopServiceValues(const std::string              &aServiceInstanceName,
