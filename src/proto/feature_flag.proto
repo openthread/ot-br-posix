@@ -66,4 +66,6 @@ message FeatureFlagList {
   optional bool enable_dhcp6_pd = 6 [default = false];
   // Whether to enable link metrics manager.
   optional bool enable_link_metrics_manager = 7 [default = false];
+  // Whether to enable the ePSKc feature.
+  optional bool enable_ephemeralkey = 8 [default = false];
 }
