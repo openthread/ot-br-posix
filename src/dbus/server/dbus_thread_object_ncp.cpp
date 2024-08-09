@@ -33,6 +33,7 @@
 #include "common/code_utils.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
+#include "utils/thread_helper.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -61,6 +62,8 @@ otbrError DBusThreadObjectNcp::Init(void)
                    std::bind(&DBusThreadObjectNcp::JoinHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LEAVE_NETWORK_METHOD,
                    std::bind(&DBusThreadObjectNcp::LeaveHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCHEDULE_MIGRATION_METHOD,
+                   std::bind(&DBusThreadObjectNcp::ScheduleMigrationHandler, this, _1));
 
     SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 exit:
@@ -126,6 +129,33 @@ void DBusThreadObjectNcp::LeaveHandler(DBusRequest &aRequest)
         OT_UNUSED_VARIABLE(aErrorInfo);
         aRequest.ReplyOtResult(aError);
     });
+}
+
+void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t>     dataset;
+    uint32_t                 delayInMilli;
+    otOperationalDatasetTlvs pendingOpDatasetTlvs;
+    otError                  error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset, delayInMilli);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    VerifyOrExit(dataset.size() <= sizeof(pendingOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
+    std::copy(dataset.begin(), dataset.end(), pendingOpDatasetTlvs.mTlvs);
+    pendingOpDatasetTlvs.mLength = dataset.size();
+
+    SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
+
+    // TODO: Change to use Migrate API
+    error = OT_ERROR_NOT_IMPLEMENTED;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
 }
 
 } // namespace DBus
