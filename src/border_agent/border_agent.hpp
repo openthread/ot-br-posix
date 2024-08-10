@@ -79,6 +79,9 @@ namespace otbr {
 class BorderAgent : private NonCopyable
 {
 public:
+    /** The callback for receiving ephemeral key changes. */
+    using EphemeralKeyChangedCallback = std::function<void(void)>;
+
     /**
      * The constructor to initialize the Thread border agent.
      *
@@ -155,6 +158,14 @@ public:
      */
     static otbrError CreateEphemeralKey(std::string &aEphemeralKey);
 
+    /**
+     * This method adds a callback for ephemeral key changes.
+     *
+     * @param[in] aCallback  The callback to receive ephemeral key changed events.
+     *
+     */
+    void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback);
+
 private:
     void Start(void);
     void Stop(void);
@@ -198,6 +209,8 @@ private:
     // conflicts. For example, this value can be "OpenThread Border Router #7AC3" or
     // "OpenThread Border Router #7AC3 (14379)".
     std::string mServiceInstanceName;
+
+    std::vector<EphemeralKeyChangedCallback> mEphemeralKeyChangedCallbacks;
 };
 
 /**

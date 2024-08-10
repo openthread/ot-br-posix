@@ -73,3 +73,12 @@ if(OTBR_MDNS)
     )
     gtest_discover_tests(otbr-gtest-mdns-subscribe)
 endif()
+
+add_executable(otbr-posix-gtest-unit
+    test_netif.cpp
+)
+target_link_libraries(otbr-posix-gtest-unit
+    otbr-posix
+    GTest::gmock_main
+)
+gtest_discover_tests(otbr-posix-gtest-unit PROPERTIES LABELS "sudo")
