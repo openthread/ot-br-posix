@@ -1258,5 +1258,93 @@ exit:
     return error;
 }
 
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderAgentInfo &aBorderAgentInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentInfo.mEpskcState));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentInfo.mBorderAgentCounters));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderAgentInfo &aBorderAgentInfo)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentInfo.mEpskcState));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentInfo.mBorderAgentCounters));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderAgentCounters &aBorderAgentCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(dbus_message_iter_open_container(aIter, DBUS_TYPE_STRUCT, nullptr, &sub), error = OTBR_ERROR_DBUS);
+
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcActivations));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcDeactivationClears));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcDeactivationTimeouts));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcDeactivationMaxAttempts));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcDeactivationDisconnects));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcInvalidBaStateErrors));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcInvalidArgsErrors));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcStartSecureSessionErrors));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcSecureSessionSuccesses));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcSecureSessionFailures));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mEpskcCommissionerPetitions));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mPskcSecureSessionSuccesses));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mPskcSecureSessionFailures));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mPskcCommissionerPetitions));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mMgmtActiveGetCount));
+    SuccessOrExit(error = DBusMessageEncode(&sub, aBorderAgentCounters.mMgmtPendingGetCount));
+
+    VerifyOrExit(dbus_message_iter_close_container(aIter, &sub), error = OTBR_ERROR_DBUS);
+exit:
+    return error;
+}
+
+otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderAgentCounters &aBorderAgentCounters)
+{
+    DBusMessageIter sub;
+    otbrError       error = OTBR_ERROR_NONE;
+
+    dbus_message_iter_recurse(aIter, &sub);
+
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcActivations));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcDeactivationClears));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcDeactivationTimeouts));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcDeactivationMaxAttempts));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcDeactivationDisconnects));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcInvalidBaStateErrors));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcInvalidArgsErrors));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcStartSecureSessionErrors));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcSecureSessionSuccesses));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcSecureSessionFailures));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mEpskcCommissionerPetitions));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mPskcSecureSessionSuccesses));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mPskcSecureSessionFailures));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mPskcCommissionerPetitions));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mMgmtActiveGetCount));
+    SuccessOrExit(error = DBusMessageExtract(&sub, aBorderAgentCounters.mMgmtPendingGetCount));
+
+    dbus_message_iter_next(aIter);
+exit:
+    return error;
+}
+
 } // namespace DBus
 } // namespace otbr

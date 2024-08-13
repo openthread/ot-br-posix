@@ -35,6 +35,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <openthread/border_agent.h>
 #include <openthread/border_router.h>
 #include <openthread/channel_manager.h>
 #include <openthread/dataset_ftd.h>
@@ -223,6 +224,26 @@ void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::T
     to->set_unknown_error_count(from.mUnknownError);
     to->set_aborted_count(from.mAborted);
     to->set_invalid_state_count(from.mInvalidState);
+}
+
+threadnetwork::TelemetryData_EpskcState GetEpskcState(otInstance *aInstance)
+{
+    threadnetwork::TelemetryData::EpskcState epskcState;
+
+    VerifyOrExit(otBorderAgentIsEphemeralKeyActive(aInstance),
+                 epskcState = threadnetwork::TelemetryData::EPSKC_STATE_INACTIVE);
+
+    if (otBorderAgentGetState(aInstance) == OT_BORDER_AGENT_STATE_ACTIVE)
+    {
+        epskcState = threadnetwork::TelemetryData::EPSKC_STATE_CONNECTED;
+    }
+    else
+    {
+        epskcState = threadnetwork::TelemetryData::EPSKC_STATE_READY_FOR_CONNECTION;
+    }
+
+exit:
+    return epskcState;
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 } // namespace
@@ -1571,7 +1592,32 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #if OTBR_ENABLE_DHCP6_PD
         RetrievePdInfo(wpanBorderRouter);
 #endif // OTBR_ENABLE_DHCP6_PD
-       // End of WpanBorderRouter section.
+        {
+            auto baInfo                = wpanBorderRouter->mutable_border_agent_info();
+            auto baCounters            = baInfo->mutable_border_agent_counters();
+            auto otBorderAgentCounters = *otBorderAgentGetCounters(mInstance);
+
+            baInfo->set_epskc_state(GetEpskcState(mInstance));
+            baCounters->set_activation_count(otBorderAgentCounters.mEpskcActivations);
+            baCounters->set_deactivation_clear_count(otBorderAgentCounters.mEpskcDeactivationClears);
+            baCounters->set_epskc_deactivation_timeouts(otBorderAgentCounters.mEpskcDeactivationTimeouts);
+            baCounters->set_epskc_deactivation_max_attempts(otBorderAgentCounters.mEpskcDeactivationMaxAttempts);
+            baCounters->set_epskc_deactivation_disconnects(otBorderAgentCounters.mEpskcDeactivationDisconnects);
+            baCounters->set_epskc_invalid_ba_state_errors(otBorderAgentCounters.mEpskcInvalidBaStateErrors);
+            baCounters->set_epskc_invalid_args_errors(otBorderAgentCounters.mEpskcInvalidArgsErrors);
+            baCounters->set_epskc_start_secure_session_errors(otBorderAgentCounters.mEpskcStartSecureSessionErrors);
+            baCounters->set_epskc_secure_session_successes(otBorderAgentCounters.mEpskcSecureSessionSuccesses);
+            baCounters->set_epskc_secure_session_failures(otBorderAgentCounters.mEpskcSecureSessionFailures);
+            baCounters->set_epskc_commissioner_petitions(otBorderAgentCounters.mEpskcCommissionerPetitions);
+
+            baCounters->set_pskc_secure_session_successes(otBorderAgentCounters.mPskcSecureSessionSuccesses);
+            baCounters->set_pskc_secure_session_failures(otBorderAgentCounters.mPskcSecureSessionFailures);
+            baCounters->set_pskc_commissioner_petitions(otBorderAgentCounters.mPskcCommissionerPetitions);
+
+            baCounters->set_mgmt_active_gets(otBorderAgentCounters.mMgmtActiveGets);
+            baCounters->set_mgmt_pending_gets(otBorderAgentCounters.mMgmtPendingGets);
+        }
+        // End of WpanBorderRouter section.
 
         // Start of WpanRcp section.
         {

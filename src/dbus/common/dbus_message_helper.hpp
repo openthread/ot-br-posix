@@ -119,6 +119,10 @@ otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo &aTrelInfo);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo &aTrelInfo);
 otbrError DBusMessageEncode(DBusMessageIter *aIter, const TrelInfo::TrelPacketCounters &aCounters);
 otbrError DBusMessageExtract(DBusMessageIter *aIter, TrelInfo::TrelPacketCounters &aCounters);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderAgentInfo &aBorderAgentInfo);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderAgentInfo &aBorderAgentInfo);
+otbrError DBusMessageEncode(DBusMessageIter *aIter, const BorderAgentCounters &aBorderAgentCounters);
+otbrError DBusMessageExtract(DBusMessageIter *aIter, BorderAgentCounters &aBorderAgentCounters);
 
 template <typename T> struct DBusTypeTrait;
 
@@ -405,6 +409,31 @@ template <> struct DBusTypeTrait<InfraLinkInfo>
 {
     // struct of { string, bool, bool, bool, uint32, uint32, uint32 }
     static constexpr const char *TYPE_AS_STRING = "(sbbbuuu)";
+};
+
+template <> struct DBusTypeTrait<EpskcState>
+{
+    static constexpr int         TYPE           = DBUS_TYPE_BYTE;
+    static constexpr const char *TYPE_AS_STRING = DBUS_TYPE_BYTE_AS_STRING;
+};
+
+template <> struct DBusTypeTrait<BorderAgentInfo>
+{
+    // struct of { uint8,
+    //             struct of {uint32, uint32, uint32, uint32, uint32,
+    //                        uint32, uint32, uint32, uint32, uint32,
+    //                        uint32, uint32, uint32, uint32, uint32,
+    //                        uint32 } }
+    static constexpr const char *TYPE_AS_STRING = "(y(uuuuuuuuuuuuuuuu))";
+};
+
+template <> struct DBusTypeTrait<BorderAgentCounters>
+{
+    // struct of {uint32, uint32, uint32, uint32, uint32,
+    //            uint32, uint32, uint32, uint32, uint32,
+    //            uint32, uint32, uint32, uint32, uint32,
+    //            uint32 }
+    static constexpr const char *TYPE_AS_STRING = "(uuuuuuuuuuuuuuuu)";
 };
 
 template <> struct DBusTypeTrait<int8_t>
