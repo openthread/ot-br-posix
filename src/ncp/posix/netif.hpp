@@ -36,6 +36,8 @@
 
 #include <net/if.h>
 
+#include <vector>
+
 #include <openthread/ip6.h>
 
 #include "common/types.hpp"
@@ -50,9 +52,42 @@ public:
     otbrError Init(const std::string &aInterfaceName);
     void      Deinit(void);
 
+    void UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAddrInfos);
+
 private:
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.
     static constexpr size_t kIp6Mtu = 1280;
+
+    class Ip6AddressInfo
+    {
+    public:
+        explicit Ip6AddressInfo(const otIp6AddressInfo &aOtAddrInfo)
+            : mPrefixLength(aOtAddrInfo.mPrefixLength)
+            , mScope(aOtAddrInfo.mScope)
+            , mPreferred(aOtAddrInfo.mPreferred)
+            , mMeshLocal(aOtAddrInfo.mMeshLocal)
+        {
+            memcpy(&mAddress, aOtAddrInfo.mAddress, sizeof(otIp6Address));
+        }
+
+        otIp6Address mAddress;       ///< A pointer to the IPv6 address.
+        uint8_t      mPrefixLength;  ///< The prefix length of mAddress if it is a unicast address.
+        uint8_t      mScope : 4;     ///< The scope of this address.
+        bool         mPreferred : 1; ///< Whether this is a preferred address.
+        bool         mMeshLocal : 1; ///< Whether this is a mesh-local unicast/anycast address.
+
+        bool operator==(const Ip6AddressInfo &aOther) const
+        {
+            return memcmp(this, &aOther, sizeof(Ip6AddressInfo)) == 0;
+        }
+
+        bool operator==(const otIp6AddressInfo &aOtAddrInfo) const
+        {
+            return memcmp(&mAddress, aOtAddrInfo.mAddress, sizeof(mAddress)) == 0 &&
+                   mPrefixLength == aOtAddrInfo.mPrefixLength && mScope == aOtAddrInfo.mScope &&
+                   mPreferred == aOtAddrInfo.mPreferred && mMeshLocal == aOtAddrInfo.mMeshLocal;
+        }
+    };
 
     void Clear(void);
 
@@ -61,6 +96,7 @@ private:
 
     void PlatformSpecificInit(void);
     void SetAddrGenModeToNone(void);
+    void ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
 
     int      mTunFd;           ///< Used to exchange IPv6 packets.
     int      mIpFd;            ///< Used to manage IPv6 stack on the network interface.
@@ -69,6 +105,8 @@ private:
 
     unsigned int mNetifIndex;
     std::string  mNetifName;
+
+    std::vector<Ip6AddressInfo> mIp6UnicastAddresses;
 };
 
 } // namespace otbr

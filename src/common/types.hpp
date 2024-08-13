@@ -43,6 +43,7 @@
 #include <vector>
 
 #include <openthread/error.h>
+#include <openthread/ip6.h>
 
 #include "common/byteswap.hpp"
 
@@ -142,6 +143,14 @@ public:
      *
      */
     Ip6Address(const uint8_t (&aAddress)[16]);
+
+    /**
+     * Constructor with an otIp6Address.
+     *
+     * @param[in] aAddress  A const reference to an otIp6Address.
+     *
+     */
+    explicit Ip6Address(const otIp6Address &aAddress);
 
     /**
      * Constructor with a string.

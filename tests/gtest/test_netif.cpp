@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <arpa/inet.h>
 #include <cstring>
 #include <fstream>
 #include <ifaddrs.h>
@@ -57,6 +58,45 @@
 #ifdef __linux__
 
 static constexpr size_t kMaxIp6Size = 1280;
+
+std::vector<std::string> GetAllIp6Addrs(const char *aInterfaceName)
+{
+    struct ifaddrs          *ifaddr, *ifa;
+    int                      family;
+    std::vector<std::string> ip6Addrs;
+
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == NULL)
+        {
+            continue;
+        }
+
+        family = ifa->ifa_addr->sa_family;
+        if (family == AF_INET6 && strcmp(ifa->ifa_name, aInterfaceName) == 0)
+        {
+            struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)ifa->ifa_addr;
+            char                 addrstr[INET6_ADDRSTRLEN];
+            if (inet_ntop(AF_INET6, &(in6->sin6_addr), addrstr, sizeof(addrstr)) == NULL)
+            {
+                perror("inet_ntop");
+                exit(EXIT_FAILURE);
+            }
+
+            ip6Addrs.emplace_back(addrstr);
+        }
+    }
+
+    freeifaddrs(ifaddr);
+
+    return ip6Addrs;
+}
 
 TEST(Netif, WpanInitWithFullInterfaceName)
 {
@@ -199,4 +239,60 @@ TEST(Netif, WpanAddrGenMode)
     netif.Deinit();
 }
 
+TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
+{
+    const char *wpan = "wpan0";
+
+    const otIp6Address kLl = {
+        {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x14, 0x03, 0x32, 0x4c, 0xc2, 0xf8, 0xd0}};
+    const otIp6Address kMlEid = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x03, 0xf1, 0x47, 0xce, 0x85, 0xd3, 0x07, 0x7f}};
+    const otIp6Address kMlRloc = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0xff, 0xfe, 0x00, 0xb8, 0x00}};
+    const otIp6Address kMlAloc = {
+        {0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0xff, 0xfe, 0x00, 0xfc, 0x00}};
+
+    const char *kLlStr     = "fe80::8014:332:4cc2:f8d0";
+    const char *kMlEidStr  = "fd0d:7fc:a1b9:f050:3f1:47ce:85d3:77f";
+    const char *kMlRlocStr = "fd0d:7fc:a1b9:f050:0:ff:fe00:b800";
+    const char *kMlAlocStr = "fd0d:7fc:a1b9:f050:0:ff:fe00:fc00";
+
+    otbr::Netif netif;
+    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+
+    otIp6AddressInfo testArray1[] = {
+        {&kLl, 64, 0, 1, 0},
+        {&kMlEid, 64, 0, 1, 1},
+        {&kMlRloc, 64, 0, 1, 1},
+    };
+    std::vector<otIp6AddressInfo> testVec1(testArray1, testArray1 + sizeof(testArray1) / sizeof(otIp6AddressInfo));
+    netif.UpdateIp6UnicastAddresses(testVec1);
+    std::vector<std::string> wpan_addrs = GetAllIp6Addrs(wpan);
+    EXPECT_EQ(wpan_addrs.size(), 3);
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kLlStr));
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlEidStr));
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlRlocStr));
+
+    otIp6AddressInfo testArray2[] = {
+        {&kLl, 64, 0, 1, 0},
+        {&kMlEid, 64, 0, 1, 1},
+        {&kMlRloc, 64, 0, 1, 1},
+        {&kMlAloc, 64, 0, 1, 1},
+    };
+    std::vector<otIp6AddressInfo> testVec2(testArray2, testArray2 + sizeof(testArray2) / sizeof(otIp6AddressInfo));
+    netif.UpdateIp6UnicastAddresses(testVec2);
+    wpan_addrs = GetAllIp6Addrs(wpan);
+    EXPECT_EQ(wpan_addrs.size(), 4);
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kLlStr));
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlEidStr));
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlRlocStr));
+    EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlAlocStr));
+
+    std::vector<otIp6AddressInfo> testVec3;
+    netif.UpdateIp6UnicastAddresses(testVec3);
+    wpan_addrs = GetAllIp6Addrs(wpan);
+    EXPECT_EQ(wpan_addrs.size(), 0);
+
+    netif.Deinit();
+}
 #endif // __linux__

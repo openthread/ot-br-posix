@@ -195,6 +195,54 @@ void Netif::SetAddrGenModeToNone(void)
     }
 }
 
+void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+{
+    struct
+    {
+        nlmsghdr  nh;
+        ifaddrmsg ifa;
+        char      buf[512];
+    } req;
+
+    assert(mIpFd >= 0);
+    memset(&req, 0, sizeof(req));
+
+    req.nh.nlmsg_len   = NLMSG_LENGTH(sizeof(ifaddrmsg));
+    req.nh.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | (aIsAdded ? (NLM_F_CREATE | NLM_F_EXCL) : 0);
+    req.nh.nlmsg_type  = aIsAdded ? RTM_NEWADDR : RTM_DELADDR;
+    req.nh.nlmsg_pid   = 0;
+    req.nh.nlmsg_seq   = ++mNetlinkSequence;
+
+    req.ifa.ifa_family    = AF_INET6;
+    req.ifa.ifa_prefixlen = aAddressInfo.mPrefixLength;
+    req.ifa.ifa_flags     = IFA_F_NODAD;
+    req.ifa.ifa_scope     = aAddressInfo.mScope;
+    req.ifa.ifa_index     = mNetifIndex;
+
+    AddRtAttr(&req.nh, sizeof(req), IFA_LOCAL, &aAddressInfo.mAddress, sizeof(aAddressInfo.mAddress));
+
+    if (!aAddressInfo.mPreferred || aAddressInfo.mMeshLocal)
+    {
+        ifa_cacheinfo cacheinfo;
+
+        memset(&cacheinfo, 0, sizeof(cacheinfo));
+        cacheinfo.ifa_valid = UINT32_MAX;
+
+        AddRtAttr(&req.nh, sizeof(req), IFA_CACHEINFO, &cacheinfo, sizeof(cacheinfo));
+    }
+
+    if (send(mNetlinkFd, &req, req.nh.nlmsg_len, 0) != -1)
+    {
+        otbrLogInfo("Sent request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
+                    Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+    }
+    else
+    {
+        otbrLogWarning("Failed to send request#%u to %s %s/%u", mNetlinkSequence, (aIsAdded ? "add" : "remove"),
+                       Ip6Address(aAddressInfo.mAddress).ToString().c_str(), aAddressInfo.mPrefixLength);
+    }
+}
+
 } // namespace otbr
 
 #endif // __linux__
