@@ -85,6 +85,7 @@ private:
 
     void JoinHandler(DBusRequest &aRequest);
     void LeaveHandler(DBusRequest &aRequest);
+    void ScheduleMigrationHandler(DBusRequest &aRequest);
 
     otbr::Ncp::NcpHost &mHost;
 };

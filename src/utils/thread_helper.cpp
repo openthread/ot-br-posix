@@ -709,9 +709,6 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     otOperationalDataset     dataset;
     otOperationalDataset     emptyDataset{};
     otDeviceRole             role = mHost->GetDeviceRole();
-    Tlv                     *tlv;
-    uint64_t                 pendingTimestamp = 0;
-    timespec                 currentTime;
 
     if (aHandler == nullptr)
     {
@@ -736,30 +733,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     VerifyOrExit(dataset.mComponents.mIsSecurityPolicyPresent, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(dataset.mComponents.mIsChannelMaskPresent, error = OT_ERROR_INVALID_ARGS);
 
-    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr &&
-                     FindTlv(OT_MESHCOP_TLV_DELAYTIMER, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr,
-                 error = OT_ERROR_INVALID_ARGS);
-
-    // There must be sufficient space for a Pending Timestamp TLV and a Delay Timer TLV.
-    VerifyOrExit(
-        static_cast<int>(datasetTlvs.mLength +
-                         (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint64_t))    // Pending Timestamp TLV (10 bytes)
-                         + (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t))) // Delay Timer TLV (6 bytes)
-            <= int{sizeof(datasetTlvs.mTlvs)},
-        error = OT_ERROR_INVALID_ARGS);
-
-    tlv = reinterpret_cast<Tlv *>(datasetTlvs.mTlvs + datasetTlvs.mLength);
-    tlv->SetType(OT_MESHCOP_TLV_PENDINGTIMESTAMP);
-    clock_gettime(CLOCK_REALTIME, &currentTime);
-    pendingTimestamp |= (static_cast<uint64_t>(currentTime.tv_sec) << 16);
-    pendingTimestamp |= (((static_cast<uint64_t>(currentTime.tv_nsec) * 32768 / 1000000000) & 0x7fff) << 1);
-    tlv->SetValue(pendingTimestamp);
-
-    tlv = tlv->GetNext();
-    tlv->SetType(OT_MESHCOP_TLV_DELAYTIMER);
-    tlv->SetValue(kDelayTimerMilliseconds);
-
-    datasetTlvs.mLength = reinterpret_cast<uint8_t *>(tlv->GetNext()) - datasetTlvs.mTlvs;
+    SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, kDelayTimerMilliseconds));
 
     assert(datasetTlvs.mLength > 0);
 
@@ -1694,5 +1668,52 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
     return error;
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
+
+otError ThreadHelper::ProcessDatasetForMigration(otOperationalDatasetTlvs &aDatasetTlvs, uint32_t aDelayMilli)
+{
+    otError  error = OT_ERROR_NONE;
+    Tlv     *tlv;
+    timespec currentTime;
+    uint64_t pendingTimestamp = 0;
+
+    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, aDatasetTlvs.mTlvs, aDatasetTlvs.mLength) == nullptr,
+                 error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_DELAYTIMER, aDatasetTlvs.mTlvs, aDatasetTlvs.mLength) == nullptr,
+                 error = OT_ERROR_INVALID_ARGS);
+
+    // There must be sufficient space for a Pending Timestamp TLV and a Delay Timer TLV.
+    VerifyOrExit(
+        static_cast<int>(aDatasetTlvs.mLength +
+                         (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint64_t))    // Pending Timestamp TLV (10 bytes)
+                         + (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t))) // Delay Timer TLV (6 bytes)
+            <= int{sizeof(aDatasetTlvs.mTlvs)},
+        error = OT_ERROR_INVALID_ARGS);
+
+    tlv = reinterpret_cast<Tlv *>(aDatasetTlvs.mTlvs + aDatasetTlvs.mLength);
+    /*
+     * Pending Timestamp TLV
+     *
+     * | Type | Value | Timestamp Seconds | Timestamp Ticks | U bit |
+     * |  8   |   8   |         48        |         15      |   1   |
+     *
+     */
+    tlv->SetType(OT_MESHCOP_TLV_PENDINGTIMESTAMP);
+    clock_gettime(CLOCK_REALTIME, &currentTime);
+    pendingTimestamp |= (static_cast<uint64_t>(currentTime.tv_sec) << 16); // Set the 48 bits of Timestamp seconds.
+    pendingTimestamp |= (((static_cast<uint64_t>(currentTime.tv_nsec) * 32768 / 1000000000) & 0x7fff)
+                         << 1); // Set the 15 bits of Timestamp ticks, the fractional Unix Time value in 32.768 kHz
+                                // resolution. Leave the U-bit unset.
+    tlv->SetValue(pendingTimestamp);
+
+    tlv = tlv->GetNext();
+    tlv->SetType(OT_MESHCOP_TLV_DELAYTIMER);
+    tlv->SetValue(aDelayMilli);
+
+    aDatasetTlvs.mLength = reinterpret_cast<uint8_t *>(tlv->GetNext()) - aDatasetTlvs.mTlvs;
+
+exit:
+    return error;
+}
+
 } // namespace agent
 } // namespace otbr
