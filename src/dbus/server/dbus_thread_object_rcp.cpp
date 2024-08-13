@@ -1251,6 +1251,10 @@ otError DBusThreadObjectRcp::SetFeatureFlagListDataHandler(DBusMessageIter &aIte
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, data) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(featureFlagList.ParseFromString(std::string(data.begin(), data.end())), error = OT_ERROR_INVALID_ARGS);
+    // TODO: implement the feature flag handler at every component
+    mBorderAgent.SetEphemeralKeyEnabled(featureFlagList.enable_ephemeralkey());
+    otbrLogInfo("Border Agent Ephemeral Key Feature has been %s by feature flag",
+                (featureFlagList.enable_ephemeralkey() ? "enable" : "disable"));
     VerifyOrExit((error = mHost.ApplyFeatureFlagList(featureFlagList)) == OT_ERROR_NONE);
 exit:
     return error;
