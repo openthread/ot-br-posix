@@ -48,6 +48,11 @@ otbrError Netif::CreateTunDevice(const std::string &aInterfaceName)
     return OTBR_ERROR_NONE;
 }
 
+void Netif::PlatformSpecificInit(void)
+{
+    /* Empty */
+}
+
 } // namespace otbr
 
 #endif // __APPLE__ || __NetBSD__ || __OpenBSD__
