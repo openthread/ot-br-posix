@@ -53,6 +53,12 @@ void Netif::PlatformSpecificInit(void)
     /* Empty */
 }
 
+void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+{
+    OTBR_UNUSED_VARIABLE(aAddressInfo);
+    OTBR_UNUSED_VARIABLE(aIsAdded);
+}
+
 } // namespace otbr
 
 #endif // __APPLE__ || __NetBSD__ || __OpenBSD__
