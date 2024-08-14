@@ -134,6 +134,16 @@ public:
     virtual void Leave(const AsyncResultReceiver &aRecevier) = 0;
 
     /**
+     * This method migrates this device to the new network specified by @p aPendingOpDatasetTlvs.
+     *
+     * @param[in] aPendingOpDatasetTlvs  A reference to the pending operational dataset of the Thread network.
+     * @param[in] aReceiver              A receiver to get the async result of this operation.
+     *
+     */
+    virtual void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                   const AsyncResultReceiver       aReceiver) = 0;
+
+    /**
      * Returns the co-processor type.
      *
      */

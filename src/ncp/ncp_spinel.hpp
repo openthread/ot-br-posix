@@ -123,6 +123,19 @@ public:
     void DatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask);
 
     /**
+     * This method instructs the NCP to send a MGMT_SET to set Thread Pending Operational Dataset.
+     *
+     * If this method is called again before the previous call completed, no action will be taken.
+     * The new receiver @p aAsyncTask will be set a result OT_ERROR_BUSY.
+     *
+     * @param[in] aPendingOpDatasetTlvsPtr  A shared pointer to the pending operational dataset of the Thread network.
+     * @param[in] aAsyncTask                A pointer to an async result to receive the result of this operation.
+     *
+     */
+    void DatasetMgmtSetPending(std::shared_ptr<otOperationalDatasetTlvs> aPendingOpDatasetTlvsPtr,
+                               AsyncTaskPtr                              aAsyncTask);
+
+    /**
      * This method enableds/disables the IP6 on the NCP.
      *
      * If this method is called again before the previous call completed, no action will be taken.
@@ -237,6 +250,7 @@ private:
     PropsObserver *mPropsObserver;
 
     AsyncTaskPtr mDatasetSetActiveTask;
+    AsyncTaskPtr mDatasetMgmtSetPendingTask;
     AsyncTaskPtr mIp6SetEnabledTask;
     AsyncTaskPtr mThreadSetEnabledTask;
     AsyncTaskPtr mThreadDetachGracefullyTask;

@@ -110,6 +110,26 @@ exit:
     }
 }
 
+void NcpSpinel::DatasetMgmtSetPending(std::shared_ptr<otOperationalDatasetTlvs> aPendingOpDatasetTlvsPtr,
+                                      AsyncTaskPtr                              aAsyncTask)
+{
+    otError      error        = OT_ERROR_NONE;
+    EncodingFunc encodingFunc = [this, aPendingOpDatasetTlvsPtr] {
+        return mEncoder.WriteData(aPendingOpDatasetTlvsPtr->mTlvs, aPendingOpDatasetTlvsPtr->mLength);
+    };
+
+    VerifyOrExit(mDatasetMgmtSetPendingTask == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = SetProperty(SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS, encodingFunc));
+    mDatasetMgmtSetPendingTask = aAsyncTask;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([aAsyncTask, error] { aAsyncTask->SetResult(error, "Failed to set pending dataset!"); });
+    }
+}
+
 void NcpSpinel::Ip6SetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
@@ -327,6 +347,15 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS:
+    {
+        spinel_status_t status = SPINEL_STATUS_OK;
+
+        SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+        CallAndClear(mDatasetMgmtSetPendingTask, ot::Spinel::SpinelStatusToOtError(status));
+        break;
+    }
+
     default:
         otbrLogWarning("Received uncognized key: %u", aKey);
         break;
@@ -362,6 +391,20 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
     case SPINEL_PROP_NET_STACK_UP:
         VerifyOrExit(aKey == SPINEL_PROP_NET_STACK_UP, error = OTBR_ERROR_INVALID_STATE);
         CallAndClear(mThreadSetEnabledTask, OT_ERROR_NONE);
+        break;
+
+    case SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS:
+        if (aKey == SPINEL_PROP_LAST_STATUS)
+        { // Failed case
+            spinel_status_t status = SPINEL_STATUS_OK;
+
+            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+            CallAndClear(mDatasetMgmtSetPendingTask, ot::Spinel::SpinelStatusToOtError(status));
+        }
+        else if (aKey != SPINEL_PROP_THREAD_MGMT_SET_PENDING_DATASET_TLVS)
+        {
+            ExitNow(error = OTBR_ERROR_INVALID_STATE);
+        }
         break;
 
     default:

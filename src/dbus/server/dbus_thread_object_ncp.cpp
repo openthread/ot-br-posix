@@ -148,8 +148,10 @@ void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
 
     SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
 
-    // TODO: Change to use Migrate API
-    error = OT_ERROR_NOT_IMPLEMENTED;
+    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
 
 exit:
     if (error != OT_ERROR_NONE)
