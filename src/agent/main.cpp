@@ -165,16 +165,6 @@ static otbrLogLevel GetDefaultLogLevel(void)
 {
     otbrLogLevel level = OTBR_LOG_INFO;
 
-#if OTBR_ENABLE_PLATFORM_ANDROID
-    char value[PROPERTY_VALUE_MAX];
-
-    property_get("ro.build.type", value, "user");
-    if (!strcmp(value, "user"))
-    {
-        level = OTBR_LOG_WARNING;
-    }
-#endif
-
     return level;
 }
 
