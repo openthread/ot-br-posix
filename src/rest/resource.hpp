@@ -134,6 +134,7 @@ private:
     void DatasetActive(const Request &aRequest, Response &aResponse) const;
     void DatasetPending(const Request &aRequest, Response &aResponse) const;
     void CommissionerState(const Request &aRequest, Response &aResponse) const;
+    void CommissionerJoiner(const Request &aRequest, Response &aResponse) const;
     void Diagnostic(const Request &aRequest, Response &aResponse) const;
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
 
@@ -153,6 +154,9 @@ private:
     void SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
     void GetCommissionerState(Response &aResponse) const;
     void SetCommissionerState(const Request &aRequest, Response &aResponse) const;
+    void GetJoiners(Response &aResponse) const;
+    void AddJoiner(const Request &aRequest, Response &aResponse) const;
+    void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);

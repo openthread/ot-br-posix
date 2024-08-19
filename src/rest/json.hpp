@@ -272,6 +272,12 @@ bool JsonActiveDatasetString2Dataset(const std::string &aJsonActiveDataset, otOp
  */
 bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, otOperationalDataset &aDataset);
 
+std::string JoinerInfo2JsonString(const otJoinerInfo &aJoinerInfo);
+
+bool JsonJoinerInfoString2JoinerInfo(const std::string &aJsonJoinerInfo, otJoinerInfo &aJoinerInfo);
+
+std::string JoinerTable2JsonString(const std::vector<otJoinerInfo> &aJoinerTable);
+
 }; // namespace Json
 
 } // namespace rest

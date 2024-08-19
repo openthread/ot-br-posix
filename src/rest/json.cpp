@@ -926,6 +926,104 @@ exit:
     return ret;
 }
 
+cJSON *JoinerInfo2Json(const otJoinerInfo &aJoinerInfo)
+{
+    cJSON *node = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(node, "Pskd", Bytes2HexJson((const uint8_t *) aJoinerInfo.mPskd.m8, OT_JOINER_MAX_PSKD_LENGTH));
+    cJSON_AddItemToObject(node, "Eui64", Bytes2HexJson(aJoinerInfo.mSharedId.mEui64.m8, OT_EXT_ADDRESS_SIZE));
+    cJSON_AddItemToObject(node, "Timeout", cJSON_CreateNumber(aJoinerInfo.mExpirationTime));
+
+    return node;
+}
+
+std::string JoinerInfo2JsonString(const otJoinerInfo &aJoinerInfo) 
+{
+    cJSON      *node;
+    std::string ret;
+
+    node = JoinerInfo2Json(aJoinerInfo);
+    ret  = Json2String(node);
+    cJSON_Delete(node);
+
+    return ret;
+}
+
+bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoinerInfo)
+{
+    cJSON      *value;
+    bool        ret = true;
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Pskd");
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(strlen(value->valuestring) <= OT_JOINER_MAX_PSKD_LENGTH, ret = false);
+        strncpy(aJoinerInfo.mPskd.m8, value->valuestring, OT_JOINER_MAX_PSKD_LENGTH);
+    }
+    else
+    {
+        ExitNow(ret = false);
+    } 
+
+    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Eui64");
+    memset(&aJoinerInfo.mSharedId.mEui64, 0, OT_EXT_ADDRESS_SIZE);
+    if (cJSON_IsString(value))
+    {
+        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        if (strncmp(value->valuestring, "*", 1) != 0) 
+        {
+            VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aJoinerInfo.mSharedId.mEui64.m8,
+                                            OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE,
+                        ret = false);
+        } 
+        else 
+        {
+            memset(&aJoinerInfo.mSharedId.mEui64, 0, OT_EXT_ADDRESS_SIZE);
+        }
+    }
+
+    aJoinerInfo.mExpirationTime = 60;
+    value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Timeout");
+    if (cJSON_IsNumber(value))
+    {
+        aJoinerInfo.mExpirationTime = value->valueint;
+    }
+
+exit:
+    return ret;
+}
+
+bool JsonJoinerInfoString2JoinerInfo(const std::string &aJsonJoinerInfo, otJoinerInfo &aJoinerInfo)
+{
+    cJSON *jsonJoinerInfo;
+    bool   ret = true;
+
+    VerifyOrExit((jsonJoinerInfo = cJSON_Parse(aJsonJoinerInfo.c_str())) != nullptr, ret = false);
+    VerifyOrExit(cJSON_IsObject(jsonJoinerInfo), ret = false);
+
+    ret = JsonJoinerInfo2JoinerInfo(jsonJoinerInfo, aJoinerInfo);
+
+exit:
+    cJSON_Delete(jsonJoinerInfo);
+
+    return ret;
+}
+
+cJSON *JoinerTable2Json(const std::vector<otJoinerInfo> &aJoinerTable) {
+    cJSON *table = cJSON_CreateArray();
+    for (const otJoinerInfo joiner : aJoinerTable) {
+        cJSON *joinerJson = JoinerInfo2Json(joiner);
+        cJSON_AddItemToArray(table, joinerJson);
+    }
+
+    return table;
+}
+
+std::string JoinerTable2JsonString(const std::vector<otJoinerInfo> &aJoinerTable) {
+    return Json2String(JoinerTable2Json(aJoinerTable));
+}
+
 } // namespace Json
 } // namespace rest
 } // namespace otbr
