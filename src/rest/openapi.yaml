@@ -321,8 +321,8 @@ paths:
       responses:
         "200":
           description: Successful operation.
-        "304":
-          description: Commissioner is already in requested state
+        "409":
+          description: Cannot set commissioner state because border router state is not active
       requestBody:
         description: New Commissioner state
         content:
@@ -338,19 +338,17 @@ paths:
       summary: Get current joiner data
       responses:
         "200":
-          description: Returns an array of currently active joiner data
+          description: Returns an array of currently active joiners
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/JoinerData"
-        "204":
-          description: No active operational dataset
     put:
       tags:
         - node
-      summary: Creates or updates the active operational dataset
+      summary: Creates a new joiner
       requestBody:
         content:
           application/json:
@@ -367,6 +365,20 @@ paths:
       tags: 
         - node
       summary: Removes a joiner from the node
+      requestBody:
+        content:
+          application/json:
+            schema:
+                type: string
+                description: Eui64 address of joiner to remove
+                example: "0123456789abcdef"
+      responses:
+        "200":
+          description: Successfully removed joiner.
+        "400":
+          description: Invalid request body.
+        "409":
+          description: request rejected because commissioner is not active.
 
 components:
   schemas:
@@ -548,9 +560,10 @@ components:
           example: J01N
         Eui64:
           type: string
-          description: A string of the EUI-64 of the device to join
+          description: A string of the EUI-64 of the device to join or "*" for any
           example: "0123456789abcdef"
+          default: "*"
         Timeout:
           type: uint32
-          description: Joiner expiration time in milliseconds 
-          default:
+          description: Joiner expiration time in milliseconds on response and seconds on request 
+          default: 60 
