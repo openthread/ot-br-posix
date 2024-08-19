@@ -29,6 +29,7 @@
 #define OTBR_LOG_TAG "REST"
 
 #include "rest/resource.hpp"
+#include <openthread/commissioner.h>
 
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
@@ -46,6 +47,7 @@
 #define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE "/node/dataset/active"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING "/node/dataset/pending"
+#define OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE "/node/commissioner/state"
 #define OT_REST_RESOURCE_PATH_NETWORK "/networks"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
@@ -139,6 +141,7 @@ Resource::Resource(RcpHost *aHost)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, &Resource::CommissionerState);
 
     // Resource callback handler
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
@@ -798,6 +801,83 @@ void Resource::DatasetActive(const Request &aRequest, Response &aResponse) const
 void Resource::DatasetPending(const Request &aRequest, Response &aResponse) const
 {
     Dataset(DatasetType::kPending, aRequest, aResponse);
+}
+
+void Resource::GetCommissionerState(Response &aResponse) const 
+{
+    std::string  state;
+    std::string  errorCode;
+    otCommissionerState stateCode;
+
+    stateCode = otCommissionerGetState(mInstance);
+    state = Json::String2JsonString(GetCommissionerStateName(stateCode));
+    aResponse.SetBody(state);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse) const 
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string errorCode;
+    std::string body;
+
+    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
+    if (body == "enable")
+    {
+        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED);
+        VerifyOrExit(otCommissionerStart(mInstance, NULL, NULL, NULL) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else if (body == "disable")
+    {
+        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED);
+        VerifyOrExit(otCommissionerStop(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else
+    {
+        ExitNow(error = OTBR_ERROR_INVALID_ARGS);
+    }
+
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+
+exit:
+    if (error == OTBR_ERROR_INVALID_STATE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+    }
+    if (error == OTBR_ERROR_INVALID_ARGS)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+    }
+    else if (error != OTBR_ERROR_NONE)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+    }
+}
+
+void Resource::CommissionerState(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        GetCommissionerState(aResponse);
+        break;
+    case HttpMethod::kPut:
+        SetCommissionerState(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
+
 }
 
 void Resource::DeleteOutDatedDiagnostic(void)
