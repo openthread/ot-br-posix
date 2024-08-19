@@ -114,6 +114,65 @@ void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrIn
     mIp6UnicastAddresses.assign(aAddrInfos.begin(), aAddrInfos.end());
 }
 
+otbrError Netif::UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    // Remove stale addresses
+    for (const Ip6Address &address : mIp6MulticastAddresses)
+    {
+        if (std::find(aAddrs.begin(), aAddrs.end(), address) == aAddrs.end())
+        {
+            otbrLogInfo("Remove address: %s", Ip6Address(address).ToString().c_str());
+            SuccessOrExit(error = ProcessMulticastAddressChange(address, /* aIsAdded */ false));
+        }
+    }
+
+    // Add new addresses
+    for (const Ip6Address &address : aAddrs)
+    {
+        if (std::find(mIp6MulticastAddresses.begin(), mIp6MulticastAddresses.end(), address) ==
+            mIp6MulticastAddresses.end())
+        {
+            otbrLogInfo("Add address: %s", Ip6Address(address).ToString().c_str());
+            SuccessOrExit(error = ProcessMulticastAddressChange(address, /* aIsAdded */ true));
+        }
+    }
+
+    mIp6MulticastAddresses.assign(aAddrs.begin(), aAddrs.end());
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        mIp6MulticastAddresses.clear();
+    }
+    return error;
+}
+
+otbrError Netif::ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded)
+{
+    struct ipv6_mreq mreq;
+    otbrError        error = OTBR_ERROR_NONE;
+    int              err;
+
+    VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_INVALID_STATE);
+    memcpy(&mreq.ipv6mr_multiaddr, &aAddress, sizeof(mreq.ipv6mr_multiaddr));
+    mreq.ipv6mr_interface = mNetifIndex;
+
+    err = setsockopt(mIpFd, IPPROTO_IPV6, (aIsAdded ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP), &mreq, sizeof(mreq));
+
+    if (err != 0)
+    {
+        otbrLogWarning("%s failure (%d)", aIsAdded ? "IPV6_JOIN_GROUP" : "IPV6_LEAVE_GROUP", errno);
+        ExitNow(error = OTBR_ERROR_ERRNO);
+    }
+
+    otbrLogInfo("%s multicast address %s", aIsAdded ? "Added" : "Removed", Ip6Address(aAddress).ToString().c_str());
+
+exit:
+    return error;
+}
+
 void Netif::Clear(void)
 {
     if (mTunFd != -1)
@@ -135,6 +194,8 @@ void Netif::Clear(void)
     }
 
     mNetifIndex = 0;
+    mIp6UnicastAddresses.clear();
+    mIp6MulticastAddresses.clear();
 }
 
 } // namespace otbr

@@ -52,7 +52,8 @@ public:
     otbrError Init(const std::string &aInterfaceName);
     void      Deinit(void);
 
-    void UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos);
+    void      UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aOtAddrInfos);
+    otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
 
 private:
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.
@@ -63,9 +64,10 @@ private:
     otbrError CreateTunDevice(const std::string &aInterfaceName);
     otbrError InitNetlink(void);
 
-    void PlatformSpecificInit(void);
-    void SetAddrGenModeToNone(void);
-    void ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
+    void      PlatformSpecificInit(void);
+    void      SetAddrGenModeToNone(void);
+    void      ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
+    otbrError ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
 
     int      mTunFd;           ///< Used to exchange IPv6 packets.
     int      mIpFd;            ///< Used to manage IPv6 stack on the network interface.
@@ -76,6 +78,7 @@ private:
     std::string  mNetifName;
 
     std::vector<Ip6AddressInfo> mIp6UnicastAddresses;
+    std::vector<Ip6Address>     mIp6MulticastAddresses;
 };
 
 } // namespace otbr
