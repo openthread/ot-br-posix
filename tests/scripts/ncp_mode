@@ -253,10 +253,8 @@ main()
     if [[ ${RUN_ALL_TESTS} == 0 ]]; then
         otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/${TEST_NAME}" || die "ncp expect script failed!"
     else
-        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_version.exp" || die "ncp expect script failed!"
-        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_get_device_role.exp" || die "ncp expect script failed!"
-        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_join_leave.exp" || die "ncp expect script failed!"
-        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_test_schedule_migration_dbus_api.exp" || die "ncp expect script failed!"
+        mapfile -t test_files < <(find "${EXPECT_SCRIPT_DIR}" -type f -name "ncp_*.exp")
+        otbr_exec_expect_script "${test_files[@]}" || die "ncp expect script failed!"
     fi
 }
 
