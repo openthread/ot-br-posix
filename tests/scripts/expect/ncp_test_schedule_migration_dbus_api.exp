@@ -39,7 +39,7 @@ spawn_node 1 otbr $::env(EXP_OT_NCP_PATH)
 sleep 1
 
 spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.ScheduleMigration "array:byte:${dataset_valid}" "uint32:0x7530"
-expect Error.NotImplemented
+expect Error.InvalidState
 expect eof
 
 spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.ScheduleMigration "array:byte:${dataset_has_pending_timestamp}" "uint32:0x7530"

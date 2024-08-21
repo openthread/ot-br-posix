@@ -408,6 +408,15 @@ void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
     mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
+void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                const AsyncResultReceiver       aReceiver)
+{
+    OT_UNUSED_VARIABLE(aPendingOpDatasetTlvs);
+
+    // TODO: Implement ScheduleMigration under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
 /*
  * Provide, if required an "otPlatLog()" function
  */

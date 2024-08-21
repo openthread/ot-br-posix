@@ -114,6 +114,26 @@ void NcpHost::Leave(const AsyncResultReceiver &aReceiver)
     task->Run();
 }
 
+void NcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                const AsyncResultReceiver       aReceiver)
+{
+    otDeviceRole role  = GetDeviceRole();
+    otError      error = OT_ERROR_NONE;
+    auto errorHandler  = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    VerifyOrExit(role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED, error = OT_ERROR_INVALID_STATE);
+
+    mNcpSpinel.DatasetMgmtSetPending(std::make_shared<otOperationalDatasetTlvs>(aPendingOpDatasetTlvs),
+                                     std::make_shared<AsyncTask>(errorHandler));
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aReceiver, error](void) { aReceiver(error, "Cannot schedule migration when this device is detached"); });
+    }
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
