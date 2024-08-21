@@ -83,6 +83,8 @@ public:
 class NcpSpinel
 {
 public:
+    using Ip6AddressTableCallback = std::function<void(const std::vector<Ip6AddressInfo> &)>;
+
     /**
      * Constructor.
      *
@@ -148,6 +150,18 @@ public:
     void Ip6SetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask);
 
     /**
+     * This method sets the callback to receive the IPv6 address table from the NCP.
+     *
+     * The callback will be invoked when receiving an IPv6 address table from the NCP. When the
+     * callback is invoked, the callback MUST copy the otIp6AddressInfo objects and maintain it
+     * if it's not used immediately (within the callback).
+     *
+     * @param[in] aCallback  The callback to handle the IP6 address table.
+     *
+     */
+    void Ip6SetAddressCallback(const Ip6AddressTableCallback &aCallback) { mIp6AddressTableCallback = aCallback; }
+
+    /**
      * This method enableds/disables the Thread network on the NCP.
      *
      * If this method is called again before the previous call completed, no action will be taken.
@@ -186,12 +200,11 @@ private:
 
     static constexpr uint8_t kMaxTids = 16;
 
-    template <typename Function, typename... Args> static void CallAndClear(Function &aFunc, Args &&...aArgs)
+    template <typename Function, typename... Args> static void SafeInvoke(Function &aFunc, Args &&...aArgs)
     {
         if (aFunc)
         {
             aFunc(std::forward<Args>(aArgs)...);
-            aFunc = nullptr;
         }
     }
 
@@ -231,6 +244,8 @@ private:
     otError SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError SendEncodedFrame(void);
 
+    otError ParseIp6AddressTable(const uint8_t *aBuf, uint16_t aLength, std::vector<Ip6AddressInfo> &aAddressTable);
+
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
     spinel_tid_t              mCmdNextTid;   ///< Next available transaction id.
@@ -255,6 +270,8 @@ private:
     AsyncTaskPtr mThreadSetEnabledTask;
     AsyncTaskPtr mThreadDetachGracefullyTask;
     AsyncTaskPtr mThreadErasePersistentInfoTask;
+
+    Ip6AddressTableCallback mIp6AddressTableCallback;
 };
 
 } // namespace Ncp

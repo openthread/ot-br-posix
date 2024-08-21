@@ -260,12 +260,13 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
     otbr::Netif netif;
     EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
 
-    otIp6AddressInfo testArray1[] = {
-        {&kLl, 64, 0, 1, 0},
-        {&kMlEid, 64, 0, 1, 1},
-        {&kMlRloc, 64, 0, 1, 1},
+    otbr::Ip6AddressInfo testArray1[] = {
+        {kLl, 64, 0, 1, 0},
+        {kMlEid, 64, 0, 1, 1},
+        {kMlRloc, 64, 0, 1, 1},
     };
-    std::vector<otIp6AddressInfo> testVec1(testArray1, testArray1 + sizeof(testArray1) / sizeof(otIp6AddressInfo));
+    std::vector<otbr::Ip6AddressInfo> testVec1(testArray1,
+                                               testArray1 + sizeof(testArray1) / sizeof(otbr::Ip6AddressInfo));
     netif.UpdateIp6UnicastAddresses(testVec1);
     std::vector<std::string> wpan_addrs = GetAllIp6Addrs(wpan);
     EXPECT_EQ(wpan_addrs.size(), 3);
@@ -273,13 +274,14 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
     EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlEidStr));
     EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlRlocStr));
 
-    otIp6AddressInfo testArray2[] = {
-        {&kLl, 64, 0, 1, 0},
-        {&kMlEid, 64, 0, 1, 1},
-        {&kMlRloc, 64, 0, 1, 1},
-        {&kMlAloc, 64, 0, 1, 1},
+    otbr::Ip6AddressInfo testArray2[] = {
+        {kLl, 64, 0, 1, 0},
+        {kMlEid, 64, 0, 1, 1},
+        {kMlRloc, 64, 0, 1, 1},
+        {kMlAloc, 64, 0, 1, 1},
     };
-    std::vector<otIp6AddressInfo> testVec2(testArray2, testArray2 + sizeof(testArray2) / sizeof(otIp6AddressInfo));
+    std::vector<otbr::Ip6AddressInfo> testVec2(testArray2,
+                                               testArray2 + sizeof(testArray2) / sizeof(otbr::Ip6AddressInfo));
     netif.UpdateIp6UnicastAddresses(testVec2);
     wpan_addrs = GetAllIp6Addrs(wpan);
     EXPECT_EQ(wpan_addrs.size(), 4);
@@ -288,7 +290,7 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
     EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlRlocStr));
     EXPECT_THAT(wpan_addrs, ::testing::Contains(kMlAlocStr));
 
-    std::vector<otIp6AddressInfo> testVec3;
+    std::vector<otbr::Ip6AddressInfo> testVec3;
     netif.UpdateIp6UnicastAddresses(testVec3);
     wpan_addrs = GetAllIp6Addrs(wpan);
     EXPECT_EQ(wpan_addrs.size(), 0);

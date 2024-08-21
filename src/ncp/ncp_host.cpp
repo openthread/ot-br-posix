@@ -65,6 +65,7 @@ void NcpNetworkProperties::SetDeviceRole(otDeviceRole aRole)
 
 NcpHost::NcpHost(const char *aInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
+    , mNetif()
 {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName = aInterfaceName;
@@ -81,11 +82,16 @@ void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
+    mNetif.Init(mConfig.mInterfaceName);
+
+    mNcpSpinel.Ip6SetAddressCallback(
+        [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
 }
 
 void NcpHost::Deinit(void)
 {
     mNcpSpinel.Deinit();
+    mNetif.Deinit();
     otSysDeinit();
 }
 
