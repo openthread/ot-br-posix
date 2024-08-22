@@ -36,11 +36,14 @@
 #include <iostream>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <netinet/ip6.h>
+#include <netinet/udp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <vector>
@@ -52,6 +55,7 @@
 #include <openthread/ip6.h>
 
 #include "common/code_utils.hpp"
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 #include "ncp/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
@@ -163,6 +167,13 @@ std::vector<std::string> GetAllIp6MulAddrs(const char *aInterfaceName)
     return ip6MulAddrs;
 }
 
+otbrError Ip6SendEmptyImpl(const uint8_t *aData, uint16_t aLength)
+{
+    OTBR_UNUSED_VARIABLE(aData);
+    OTBR_UNUSED_VARIABLE(aLength);
+    return OTBR_ERROR_NONE;
+}
+
 TEST(Netif, WpanInitWithFullInterfaceName)
 {
     const char  *wpan = "wpan0";
@@ -170,7 +181,7 @@ TEST(Netif, WpanInitWithFullInterfaceName)
     struct ifreq ifr;
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -194,7 +205,7 @@ TEST(Netif, WpanInitWithFormatInterfaceName)
     struct ifreq ifr;
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -217,7 +228,7 @@ TEST(Netif, WpanInitWithEmptyInterfaceName)
     struct ifreq ifr;
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(""), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init("", Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -238,7 +249,7 @@ TEST(Netif, WpanInitWithInvalidInterfaceName)
     const char *invalid_netif_name = "invalid_netif_name";
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(invalid_netif_name), OTBR_ERROR_INVALID_ARGS);
+    EXPECT_EQ(netif.Init(invalid_netif_name, Ip6SendEmptyImpl), OTBR_ERROR_INVALID_ARGS);
 }
 
 TEST(Netif, WpanMtuSize)
@@ -248,7 +259,7 @@ TEST(Netif, WpanMtuSize)
     struct ifreq ifr;
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -271,7 +282,7 @@ TEST(Netif, WpanDeinit)
     struct ifreq ifr;
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -290,7 +301,7 @@ TEST(Netif, WpanDeinit)
 TEST(Netif, WpanAddrGenMode)
 {
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init("wpan0"), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init("wpan0", Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     std::fstream file("/proc/sys/net/ipv6/conf/wpan0/addr_gen_mode", std::ios::in);
     if (!file.is_open())
@@ -323,7 +334,7 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
     const char *kMlAlocStr = "fd0d:7fc:a1b9:f050:0:ff:fe00:fc00";
 
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     otbr::Ip6AddressInfo testArray1[] = {
         {kLl, 64, 0, 1, 0},
@@ -367,7 +378,7 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
 {
     const char *wpan = "wpan0";
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OT_ERROR_NONE);
 
     otbr::Ip6Address kDefaultMulAddr1 = {
         {0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
@@ -429,7 +440,7 @@ TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
 {
     otbr::Netif netif;
     const char *wpan = "wpan0";
-    EXPECT_EQ(netif.Init(wpan), OTBR_ERROR_NONE);
+    EXPECT_EQ(netif.Init(wpan, Ip6SendEmptyImpl), OTBR_ERROR_NONE);
 
     int fd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
     if (fd < 0)
@@ -456,7 +467,7 @@ TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
 TEST(Netif, WpanIfRecvIp6PacketCorrectly_AfterReceivingFromNetif)
 {
     otbr::Netif netif;
-    EXPECT_EQ(netif.Init("wpan0"), OTBR_ERROR_NONE);
+    EXPECT_EQ(netif.Init("wpan0", Ip6SendEmptyImpl), OTBR_ERROR_NONE);
 
     const otIp6Address kOmr = {
         {0xfd, 0x2a, 0xc3, 0x0c, 0x87, 0xd3, 0x00, 0x01, 0xed, 0x1c, 0x0c, 0x91, 0xcc, 0xb6, 0x57, 0x8b}};
@@ -511,4 +522,85 @@ TEST(Netif, WpanIfRecvIp6PacketCorrectly_AfterReceivingFromNetif)
     netif.Deinit();
 }
 
+TEST(Netif, WpanIfSendIp6PacketCorrectly_AfterReceivingOnIf)
+{
+    bool        received = false;
+    std::string receivedPayload;
+    const char *hello = "Hello Otbr Netif!";
+
+    auto Ip6SendTestImpl = [&received, &receivedPayload](const uint8_t *aData, uint16_t aLength) {
+        const ip6_hdr *ipv6_header = reinterpret_cast<const ip6_hdr *>(aData);
+        if (ipv6_header->ip6_nxt == IPPROTO_UDP)
+        {
+            const uint8_t *udpPayload    = aData + aLength - ntohs(ipv6_header->ip6_plen) + sizeof(udphdr);
+            uint16_t       udpPayloadLen = ntohs(ipv6_header->ip6_plen) - sizeof(udphdr);
+            receivedPayload              = std::string(reinterpret_cast<const char *>(udpPayload), udpPayloadLen);
+
+            received = true;
+        }
+
+        return OTBR_ERROR_NONE;
+    };
+
+    otbr::Netif netif;
+    EXPECT_EQ(netif.Init("wpan0", Ip6SendTestImpl), OT_ERROR_NONE);
+
+    // OMR Prefix: fd76:a5d1:fcb0:1707::/64
+    const otIp6Address kOmr = {
+        {0xfd, 0x76, 0xa5, 0xd1, 0xfc, 0xb0, 0x17, 0x07, 0xf3, 0xc7, 0xd8, 0x8c, 0xef, 0xd1, 0x24, 0xa9}};
+    std::vector<otbr::Ip6AddressInfo> addrs = {
+        {kOmr, 64, 0, 1, 0},
+    };
+    netif.UpdateIp6UnicastAddresses(addrs);
+    netif.SetNetifState(true);
+
+    // Send a UDP packet destined to an address with OMR prefix.
+    {
+        int                 sockFd;
+        const uint16_t      destPort = 12345;
+        struct sockaddr_in6 destAddr;
+        const char         *destIp = "fd76:a5d1:fcb0:1707:3f1:47ce:85d3:77f";
+
+        if ((sockFd = socket(AF_INET6, SOCK_DGRAM, 0)) < 0)
+        {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+
+        memset(&destAddr, 0, sizeof(destAddr));
+        destAddr.sin6_family = AF_INET6;
+        destAddr.sin6_port   = htons(destPort);
+        inet_pton(AF_INET6, destIp, &(destAddr.sin6_addr));
+
+        if (sendto(sockFd, hello, strlen(hello), MSG_CONFIRM, (const struct sockaddr *)&destAddr, sizeof(destAddr)) < 0)
+        {
+            FAIL() << "Failed to send UDP packet through WPAN interface";
+        }
+        close(sockFd);
+    }
+
+    otbr::MainloopContext context;
+    while (!received)
+    {
+        context.mMaxFd   = -1;
+        context.mTimeout = {100, 0};
+        FD_ZERO(&context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+
+        netif.UpdateFdSet(&context);
+        int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
+                          &context.mTimeout);
+        if (rval < 0)
+        {
+            perror("select failed");
+            exit(EXIT_FAILURE);
+        }
+        netif.Process(&context);
+    }
+
+    EXPECT_STREQ(receivedPayload.c_str(), hello);
+
+    netif.Deinit();
+}
 #endif // __linux__
