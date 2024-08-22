@@ -354,6 +354,16 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_IPV6_ADDRESS_TABLE:
+    {
+        std::vector<Ip6AddressInfo> addressInfoTable;
+
+        VerifyOrExit(ParseIp6AddressTable(aBuffer, aLength, addressInfoTable) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        SafeInvoke(mIp6AddressTableCallback, addressInfoTable);
+        break;
+    }
+
     default:
         otbrLogWarning("Received uncognized key: %u", aKey);
         break;
@@ -481,6 +491,42 @@ otError NcpSpinel::SendEncodedFrame(void)
 
 exit:
     error = mNcpBuffer.OutFrameRemove();
+    return error;
+}
+
+otError NcpSpinel::ParseIp6AddressTable(const uint8_t               *aBuf,
+                                        uint16_t                     aLength,
+                                        std::vector<Ip6AddressInfo> &aAddressTable)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+    decoder.Init(aBuf, aLength);
+
+    while (!decoder.IsAllReadInStruct())
+    {
+        Ip6AddressInfo      cur;
+        const otIp6Address *addr;
+        uint8_t             prefixLength;
+        uint32_t            preferredLifetime;
+        uint32_t            validLifetime;
+
+        SuccessOrExit(error = decoder.OpenStruct());
+        SuccessOrExit(error = decoder.ReadIp6Address(addr));
+        memcpy(&cur.mAddress, addr, sizeof(otIp6Address));
+        SuccessOrExit(error = decoder.ReadUint8(prefixLength));
+        cur.mPrefixLength = prefixLength;
+        SuccessOrExit(error = decoder.ReadUint32(preferredLifetime));
+        cur.mPreferred = preferredLifetime ? true : false;
+        SuccessOrExit(error = decoder.ReadUint32(validLifetime));
+        OTBR_UNUSED_VARIABLE(validLifetime);
+        SuccessOrExit((error = decoder.CloseStruct()));
+
+        aAddressTable.push_back(cur);
+    }
+
+exit:
     return error;
 }
 

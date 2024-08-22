@@ -87,13 +87,12 @@ void Netif::Deinit(void)
     Clear();
 }
 
-void Netif::UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAddrInfos)
+void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
 {
     // Remove stale addresses
     for (const Ip6AddressInfo &addrInfo : mIp6UnicastAddresses)
     {
-        auto comparator = [&addrInfo](const otIp6AddressInfo &aOtAddrInfo) { return addrInfo == aOtAddrInfo; };
-        if (std::find_if(aOtAddrInfos.begin(), aOtAddrInfos.end(), comparator) == aOtAddrInfos.end())
+        if (std::find(aAddrInfos.begin(), aAddrInfos.end(), addrInfo) == aAddrInfos.end())
         {
             otbrLogInfo("Remove address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
             // TODO: Verify success of the addition or deletion in Netlink response.
@@ -102,9 +101,8 @@ void Netif::UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAd
     }
 
     // Add new addresses
-    for (const otIp6AddressInfo &otAddrInfo : aOtAddrInfos)
+    for (const Ip6AddressInfo &addrInfo : aAddrInfos)
     {
-        Ip6AddressInfo addrInfo(otAddrInfo);
         if (std::find(mIp6UnicastAddresses.begin(), mIp6UnicastAddresses.end(), addrInfo) == mIp6UnicastAddresses.end())
         {
             otbrLogInfo("Add address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
@@ -113,11 +111,7 @@ void Netif::UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAd
         }
     }
 
-    mIp6UnicastAddresses.clear();
-    for (const otIp6AddressInfo &otAddrInfo : aOtAddrInfos)
-    {
-        mIp6UnicastAddresses.emplace_back(Ip6AddressInfo(otAddrInfo));
-    }
+    mIp6UnicastAddresses.assign(aAddrInfos.begin(), aAddrInfos.end());
 }
 
 void Netif::Clear(void)
