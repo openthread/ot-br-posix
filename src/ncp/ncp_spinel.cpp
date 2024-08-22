@@ -190,12 +190,10 @@ void NcpSpinel::ThreadErasePersistentInfo(AsyncTaskPtr aAsyncTask)
 {
     otError      error = OT_ERROR_NONE;
     spinel_tid_t tid   = GetNextTid();
-    va_list      args;
 
     VerifyOrExit(mThreadErasePersistentInfoTask == nullptr, error = OT_ERROR_BUSY);
 
-    SuccessOrExit(error =
-                      mSpinelDriver->SendCommand(SPINEL_CMD_NET_CLEAR, SPINEL_PROP_LAST_STATUS, tid, nullptr, args));
+    SuccessOrExit(error = mSpinelDriver->SendCommand(SPINEL_CMD_NET_CLEAR, SPINEL_PROP_LAST_STATUS, tid));
 
     mWaitingKeyTable[tid]          = SPINEL_PROP_LAST_STATUS;
     mCmdTable[tid]                 = SPINEL_CMD_NET_CLEAR;
