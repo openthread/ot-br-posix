@@ -513,10 +513,11 @@ message TelemetryData {
     optional bool has_others_route_added = 3;
   }
 
-  enum EpskcState {
-    EPSKC_STATE_READY_FOR_CONNECTION = 0;
-    EPSKC_STATE_CONNECTED = 1;
-    EPSKC_STATE_INACTIVE = 2;
+  enum BorderAgentState {
+    BORDER_AGENT_STATE_UNSPECIFIED = 0;
+    BORDER_AGENT_STATE_STOPPED = 1;
+    BORDER_AGENT_STATE_STARTED = 2;
+    BORDER_AGENT_STATE_ACTIVE = 3;
   }
 
   message BorderAgentCounters {
@@ -563,17 +564,21 @@ message TelemetryData {
     optional uint32 pskc_commissioner_petitions = 14;
 
     // The number of MGMT_ACTIVE_GET.req received
-    optional uint32 mgmt_active_gets = 15;
+    optional uint32 mgmt_active_get_reqs = 15;
 
     // The number of MGMT_PENDING_GET.req received
-    optional uint32 mgmt_pending_gets = 16;
+    optional uint32 mgmt_pending_get_reqs = 16;
   }
 
   message BorderAgentInfo {
-    // The ePSKc state
-    optional EpskcState epskc_state = 1;
+    // The border agent state
+    optional BorderAgentState border_agent_state = 1;
 
-    optional BorderAgentCounters border_agent_counters = 2;
+    // The ePSKc active state
+    optional bool epskc_is_active = 2;
+
+    // The border agent counters
+    optional BorderAgentCounters border_agent_counters = 3;
   }
 
   message WpanBorderRouter {
@@ -616,7 +621,7 @@ message TelemetryData {
     // Information about the external routes in network data.
     optional ExternalRoutes external_route_info = 13;
 
-    // Information about the Thread administration procedures
+    // Information about the Border Agent
     optional BorderAgentInfo border_agent_info = 14;
   }
 

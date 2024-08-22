@@ -273,6 +273,28 @@ void CheckEphemeralKey(ThreadApiDBus *aApi)
     TEST_ASSERT(enabled == true);
 }
 
+void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aBorderAgentInfo)
+{
+    TEST_ASSERT(aBorderAgentInfo.border_agent_state() == threadnetwork::TelemetryData::BORDER_AGENT_STATE_STARTED);
+    TEST_ASSERT(aBorderAgentInfo.epskc_is_active() == false);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_activations() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_clears() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_timeouts() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_max_attempts() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_disconnects() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_invalid_ba_state_errors() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_invalid_args_errors() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_start_secure_session_errors() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_secure_session_successes() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_secure_session_failures() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_commissioner_petitions() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_secure_session_successes() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_secure_session_failures() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_commissioner_petitions() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_active_get_reqs() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_pending_get_reqs() == 0);
+}
+
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 void CheckTelemetryData(ThreadApiDBus *aApi)
 {
@@ -350,57 +372,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.low_power_metrics().link_metrics_entries_size() >= 0);
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    TEST_ASSERT(telemetryData.wpan_border_router().border_agent_info().epskc_state() ==
-                threadnetwork::TelemetryData::EPSKC_STATE_INACTIVE);
-    TEST_ASSERT(telemetryData.wpan_border_router().border_agent_info().border_agent_counters().activation_count() == 0);
-    TEST_ASSERT(
-        telemetryData.wpan_border_router().border_agent_info().border_agent_counters().deactivation_clear_count() == 0);
-    TEST_ASSERT(
-        telemetryData.wpan_border_router().border_agent_info().border_agent_counters().epskc_deactivation_timeouts() ==
-        0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .epskc_deactivation_max_attempts() == 0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .epskc_deactivation_disconnects() == 0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .epskc_invalid_ba_state_errors() == 0);
-    TEST_ASSERT(
-        telemetryData.wpan_border_router().border_agent_info().border_agent_counters().epskc_invalid_args_errors() ==
-        0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .epskc_start_secure_session_errors() == 0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .epskc_secure_session_successes() == 0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .epskc_secure_session_failures() == 0);
-    TEST_ASSERT(
-        telemetryData.wpan_border_router().border_agent_info().border_agent_counters().epskc_commissioner_petitions() ==
-        0);
-    TEST_ASSERT(telemetryData.wpan_border_router()
-                    .border_agent_info()
-                    .border_agent_counters()
-                    .pskc_secure_session_successes() == 0);
-    TEST_ASSERT(
-        telemetryData.wpan_border_router().border_agent_info().border_agent_counters().pskc_secure_session_failures() ==
-        0);
-    TEST_ASSERT(
-        telemetryData.wpan_border_router().border_agent_info().border_agent_counters().pskc_commissioner_petitions() ==
-        0);
-    TEST_ASSERT(telemetryData.wpan_border_router().border_agent_info().border_agent_counters().mgmt_active_gets() == 0);
-    TEST_ASSERT(telemetryData.wpan_border_router().border_agent_info().border_agent_counters().mgmt_pending_gets() ==
-                0);
+    CheckBorderAgentInfo(telemetryData.wpan_border_router().border_agent_info());
 #endif
 }
 #endif

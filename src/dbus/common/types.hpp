@@ -719,39 +719,6 @@ struct TrelInfo
     TrelPacketCounters mTrelCounters; ///< The TREL counters.
 };
 
-enum EpskcState : uint8_t
-{
-    EPSKC_STATE_READY_FOR_CONNECTION = 0, ///< The ephemeral key is set and ready for secure connection.
-    EPSKC_STATE_CONNECTED            = 1, ///< The ephemeral key is active with a commissioner connected.
-    EPSKC_STATE_INACTIVE             = 2, ///< The ephemeral key is inactive.
-};
-
-struct BorderAgentCounters
-{
-    uint32_t mEpskcActivations;              ///< The number of activations
-    uint32_t mEpskcDeactivationClears;       ///< The number of deactivations due to cleared via API
-    uint32_t mEpskcDeactivationTimeouts;     ///< The number of deactivations due to timeout
-    uint32_t mEpskcDeactivationMaxAttempts;  ///< The number of deactivations due to max connection attempts
-    uint32_t mEpskcDeactivationDisconnects;  ///< The number of deactivations due to commissioner disconnected
-    uint32_t mEpskcInvalidBaStateErrors;     ///< The number of activation failures caused by invalid border agent state
-    uint32_t mEpskcInvalidArgsErrors;        ///< The number of activation failures caused by invalid argument
-    uint32_t mEpskcStartSecureSessionErrors; ///< The number of activation failures due to start secure session error
-    uint32_t mEpskcSecureSessionSuccesses;   ///< The number of successful secure session establishment
-    uint32_t mEpskcSecureSessionFailures;    ///< The number of failed secure session establishement
-    uint32_t mEpskcCommissionerPetitions;    ///< The number of active commissioner petitioned
-    uint32_t mPskcSecureSessionSuccesses;    ///< The number of successful secure session establishment
-    uint32_t mPskcSecureSessionFailures;     ///< The number of failed secure session establishement
-    uint32_t mPskcCommissionerPetitions;     ///< The number of active commissioner petitioned
-    uint32_t mMgmtActiveGetCount;            ///< The number of MGMT_ACTIVE_GET.req received
-    uint32_t mMgmtPendingGetCount;           ///< The number of MGMT_PENDING_GET.req received
-};
-
-struct BorderAgentInfo
-{
-    EpskcState          mEpskcState;          ///< The ePSKc state
-    BorderAgentCounters mBorderAgentCounters; ///< The border agent counters
-};
-
 } // namespace DBus
 } // namespace otbr
 

@@ -226,25 +226,23 @@ void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::T
     to->set_invalid_state_count(from.mInvalidState);
 }
 
-threadnetwork::TelemetryData_EpskcState GetEpskcState(otInstance *aInstance)
+#if OTBR_ENABLE_BORDER_AGENT
+threadnetwork::TelemetryData_BorderAgentState BorderAgentStateFromOtBorderAgentState(
+    otBorderAgentState aBorderAgentState)
 {
-    threadnetwork::TelemetryData::EpskcState epskcState;
-
-    VerifyOrExit(otBorderAgentIsEphemeralKeyActive(aInstance),
-                 epskcState = threadnetwork::TelemetryData::EPSKC_STATE_INACTIVE);
-
-    if (otBorderAgentGetState(aInstance) == OT_BORDER_AGENT_STATE_ACTIVE)
+    switch (aBorderAgentState)
     {
-        epskcState = threadnetwork::TelemetryData::EPSKC_STATE_CONNECTED;
+    case OT_BORDER_AGENT_STATE_STOPPED:
+        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_STOPPED;
+    case OT_BORDER_AGENT_STATE_STARTED:
+        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_STARTED;
+    case OT_BORDER_AGENT_STATE_ACTIVE:
+        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_ACTIVE;
+    default:
+        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_UNSPECIFIED;
     }
-    else
-    {
-        epskcState = threadnetwork::TelemetryData::EPSKC_STATE_READY_FOR_CONNECTION;
-    }
-
-exit:
-    return epskcState;
 }
+#endif // OTBR_ENABLE_BORDER_AGENT
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 } // namespace
 
@@ -1080,6 +1078,36 @@ exit:
 }
 #endif // OTBR_ENABLE_DHCP6_PD
 
+#if OTBR_ENABLE_BORDER_AGENT
+void ThreadHelper::RetrieveBorderAgentInfo(threadnetwork::TelemetryData::BorderAgentInfo *aBorderAgentInfo)
+{
+    auto baCounters            = aBorderAgentInfo->mutable_border_agent_counters();
+    auto otBorderAgentCounters = *otBorderAgentGetCounters(mInstance);
+
+    aBorderAgentInfo->set_border_agent_state(BorderAgentStateFromOtBorderAgentState(otBorderAgentGetState(mInstance)));
+    aBorderAgentInfo->set_epskc_is_active(otBorderAgentIsEphemeralKeyActive(mInstance));
+
+    baCounters->set_epskc_activations(otBorderAgentCounters.mEpskcActivations);
+    baCounters->set_epskc_deactivation_clears(otBorderAgentCounters.mEpskcDeactivationClears);
+    baCounters->set_epskc_deactivation_timeouts(otBorderAgentCounters.mEpskcDeactivationTimeouts);
+    baCounters->set_epskc_deactivation_max_attempts(otBorderAgentCounters.mEpskcDeactivationMaxAttempts);
+    baCounters->set_epskc_deactivation_disconnects(otBorderAgentCounters.mEpskcDeactivationDisconnects);
+    baCounters->set_epskc_invalid_ba_state_errors(otBorderAgentCounters.mEpskcInvalidBaStateErrors);
+    baCounters->set_epskc_invalid_args_errors(otBorderAgentCounters.mEpskcInvalidArgsErrors);
+    baCounters->set_epskc_start_secure_session_errors(otBorderAgentCounters.mEpskcStartSecureSessionErrors);
+    baCounters->set_epskc_secure_session_successes(otBorderAgentCounters.mEpskcSecureSessionSuccesses);
+    baCounters->set_epskc_secure_session_failures(otBorderAgentCounters.mEpskcSecureSessionFailures);
+    baCounters->set_epskc_commissioner_petitions(otBorderAgentCounters.mEpskcCommissionerPetitions);
+
+    baCounters->set_pskc_secure_session_successes(otBorderAgentCounters.mPskcSecureSessionSuccesses);
+    baCounters->set_pskc_secure_session_failures(otBorderAgentCounters.mPskcSecureSessionFailures);
+    baCounters->set_pskc_commissioner_petitions(otBorderAgentCounters.mPskcCommissionerPetitions);
+
+    baCounters->set_mgmt_active_get_reqs(otBorderAgentCounters.mMgmtActiveGets);
+    baCounters->set_mgmt_pending_get_reqs(otBorderAgentCounters.mMgmtPendingGets);
+}
+#endif
+
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError                     error = OT_ERROR_NONE;
@@ -1592,32 +1620,10 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #if OTBR_ENABLE_DHCP6_PD
         RetrievePdInfo(wpanBorderRouter);
 #endif // OTBR_ENABLE_DHCP6_PD
-        {
-            auto baInfo                = wpanBorderRouter->mutable_border_agent_info();
-            auto baCounters            = baInfo->mutable_border_agent_counters();
-            auto otBorderAgentCounters = *otBorderAgentGetCounters(mInstance);
-
-            baInfo->set_epskc_state(GetEpskcState(mInstance));
-            baCounters->set_activation_count(otBorderAgentCounters.mEpskcActivations);
-            baCounters->set_deactivation_clear_count(otBorderAgentCounters.mEpskcDeactivationClears);
-            baCounters->set_epskc_deactivation_timeouts(otBorderAgentCounters.mEpskcDeactivationTimeouts);
-            baCounters->set_epskc_deactivation_max_attempts(otBorderAgentCounters.mEpskcDeactivationMaxAttempts);
-            baCounters->set_epskc_deactivation_disconnects(otBorderAgentCounters.mEpskcDeactivationDisconnects);
-            baCounters->set_epskc_invalid_ba_state_errors(otBorderAgentCounters.mEpskcInvalidBaStateErrors);
-            baCounters->set_epskc_invalid_args_errors(otBorderAgentCounters.mEpskcInvalidArgsErrors);
-            baCounters->set_epskc_start_secure_session_errors(otBorderAgentCounters.mEpskcStartSecureSessionErrors);
-            baCounters->set_epskc_secure_session_successes(otBorderAgentCounters.mEpskcSecureSessionSuccesses);
-            baCounters->set_epskc_secure_session_failures(otBorderAgentCounters.mEpskcSecureSessionFailures);
-            baCounters->set_epskc_commissioner_petitions(otBorderAgentCounters.mEpskcCommissionerPetitions);
-
-            baCounters->set_pskc_secure_session_successes(otBorderAgentCounters.mPskcSecureSessionSuccesses);
-            baCounters->set_pskc_secure_session_failures(otBorderAgentCounters.mPskcSecureSessionFailures);
-            baCounters->set_pskc_commissioner_petitions(otBorderAgentCounters.mPskcCommissionerPetitions);
-
-            baCounters->set_mgmt_active_gets(otBorderAgentCounters.mMgmtActiveGets);
-            baCounters->set_mgmt_pending_gets(otBorderAgentCounters.mMgmtPendingGets);
-        }
-        // End of WpanBorderRouter section.
+#if OTBR_ENABLE_BORDER_AGENT
+        RetrieveBorderAgentInfo(wpanBorderRouter->mutable_border_agent_info());
+#endif // OTBR_ENABLE_BORDER_AGENT
+       // End of WpanBorderRouter section.
 
         // Start of WpanRcp section.
         {
