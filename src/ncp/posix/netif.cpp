@@ -173,6 +173,35 @@ exit:
     return error;
 }
 
+void Netif::SetNetifState(bool aState)
+{
+    otbrError    error = OTBR_ERROR_NONE;
+    struct ifreq ifr;
+    bool         ifState = false;
+
+    VerifyOrExit(mIpFd >= 0);
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, mNetifName.c_str(), IFNAMSIZ - 1);
+    VerifyOrExit(ioctl(mIpFd, SIOCGIFFLAGS, &ifr) == 0, error = OTBR_ERROR_ERRNO);
+
+    ifState = ((ifr.ifr_flags & IFF_UP) == IFF_UP) ? true : false;
+
+    otbrLogInfo("Changing interface state to %s%s.", aState ? "up" : "down",
+                (ifState == aState) ? " (already done, ignoring)" : "");
+
+    if (ifState != aState)
+    {
+        ifr.ifr_flags = aState ? (ifr.ifr_flags | IFF_UP) : (ifr.ifr_flags & ~IFF_UP);
+        VerifyOrExit(ioctl(mIpFd, SIOCSIFFLAGS, &ifr) == 0, error = OTBR_ERROR_ERRNO);
+    }
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to update state %s", otbrErrorString(error));
+    }
+}
+
 void Netif::Clear(void)
 {
     if (mTunFd != -1)
