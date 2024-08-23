@@ -121,7 +121,7 @@ otbrError DBusThreadObjectRcp::Init(void)
     SuccessOrExit(error = DBusObject::Initialize(false));
 
     threadHelper->AddDeviceRoleHandler(std::bind(&DBusThreadObjectRcp::DeviceRoleHandler, this, _1));
-#if OTBR_ENABLE_DHCP6_PD
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
     threadHelper->SetDhcp6PdStateCallback(std::bind(&DBusThreadObjectRcp::Dhcp6PdStateHandler, this, _1));
 #endif
     threadHelper->AddActiveDatasetChangeHandler(std::bind(&DBusThreadObjectRcp::ActiveDatasetChangeHandler, this, _1));
