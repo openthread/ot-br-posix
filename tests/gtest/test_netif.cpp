@@ -51,6 +51,7 @@
 
 #include <openthread/ip6.h>
 
+#include "common/code_utils.hpp"
 #include "common/types.hpp"
 #include "ncp/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
@@ -449,6 +450,64 @@ TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
     ioctl(fd, SIOCGIFFLAGS, &ifr);
     EXPECT_EQ(ifr.ifr_flags & IFF_UP, 0);
 
+    netif.Deinit();
+}
+
+TEST(Netif, WpanIfRecvIp6PacketCorrectly_AfterReceivingFromNetif)
+{
+    otbr::Netif netif;
+    EXPECT_EQ(netif.Init("wpan0"), OTBR_ERROR_NONE);
+
+    const otIp6Address kOmr = {
+        {0xfd, 0x2a, 0xc3, 0x0c, 0x87, 0xd3, 0x00, 0x01, 0xed, 0x1c, 0x0c, 0x91, 0xcc, 0xb6, 0x57, 0x8b}};
+    std::vector<otbr::Ip6AddressInfo> addrs = {
+        {kOmr, 64, 0, 1, 0},
+    };
+    netif.UpdateIp6UnicastAddresses(addrs);
+    netif.SetNetifState(true);
+
+    // Receive UDP packets on wpan address with specified port.
+    int                 sockFd;
+    const uint16_t      port = 12345;
+    struct sockaddr_in6 listenAddr;
+    const char         *listenIp = "fd2a:c30c:87d3:1:ed1c:c91:ccb6:578b";
+    uint8_t             recvBuf[kMaxIp6Size];
+
+    if ((sockFd = socket(AF_INET6, SOCK_DGRAM, 0)) < 0)
+    {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(&listenAddr, 0, sizeof(listenAddr));
+    listenAddr.sin6_family = AF_INET6;
+    listenAddr.sin6_port   = htons(port);
+    inet_pton(AF_INET6, listenIp, &(listenAddr.sin6_addr));
+
+    if (bind(sockFd, (const struct sockaddr *)&listenAddr, sizeof(listenAddr)) < 0)
+    {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Udp Packet
+    // Ip6 source: fd2a:c30c:87d3:1:ed1c:c91:ccb6:578a
+    // Ip6 destination: fd2a:c30c:87d3:1:ed1c:c91:ccb6:578b
+    // Udp destination port: 12345
+    // Udp payload: "Hello Otbr Netif!"
+    const uint8_t udpPacket[] = {0x60, 0x0e, 0xea, 0x69, 0x00, 0x19, 0x11, 0x40, 0xfd, 0x2a, 0xc3, 0x0c, 0x87,
+                                 0xd3, 0x00, 0x01, 0xed, 0x1c, 0x0c, 0x91, 0xcc, 0xb6, 0x57, 0x8a, 0xfd, 0x2a,
+                                 0xc3, 0x0c, 0x87, 0xd3, 0x00, 0x01, 0xed, 0x1c, 0x0c, 0x91, 0xcc, 0xb6, 0x57,
+                                 0x8b, 0xe7, 0x08, 0x30, 0x39, 0x00, 0x19, 0x36, 0x81, 0x48, 0x65, 0x6c, 0x6c,
+                                 0x6f, 0x20, 0x4f, 0x74, 0x62, 0x72, 0x20, 0x4e, 0x65, 0x74, 0x69, 0x66, 0x21};
+    netif.Ip6Receive(udpPacket, sizeof(udpPacket));
+
+    socklen_t   len = sizeof(listenAddr);
+    int         n   = recvfrom(sockFd, (char *)recvBuf, kMaxIp6Size, MSG_WAITALL, (struct sockaddr *)&listenAddr, &len);
+    std::string udpPayload(reinterpret_cast<const char *>(recvBuf), n);
+    EXPECT_EQ(udpPayload, "Hello Otbr Netif!");
+
+    close(sockFd);
     netif.Deinit();
 }
 
