@@ -1226,9 +1226,9 @@ int UbusServer::UbusGetInformation(struct ubus_context      *aContext,
         void        *jsonTable = nullptr;
         void        *jsonArray = nullptr;
         otJoinerInfo joinerInfo;
-        uint16_t     iterator        = 0;
-        int          joinerNum       = 0;
-        char         eui64[EXTPANID] = "";
+        uint16_t     iterator             = 0;
+        int          joinerNum            = 0;
+        char         eui64[XPANID_LENGTH] = "";
 
         blob_buf_init(&mBuf, 0);
 
@@ -1240,6 +1240,7 @@ int UbusServer::UbusGetInformation(struct ubus_context      *aContext,
             jsonTable = blobmsg_open_table(&mBuf, nullptr);
 
             blobmsg_add_string(&mBuf, "pskd", joinerInfo.mPskd.m8);
+            blobmsg_add_u64(&mBuf, "expiration_time", joinerInfo.mExpirationTime);
 
             switch (joinerInfo.mType)
             {
