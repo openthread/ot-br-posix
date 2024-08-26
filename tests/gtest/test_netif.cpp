@@ -98,6 +98,69 @@ std::vector<std::string> GetAllIp6Addrs(const char *aInterfaceName)
     return ip6Addrs;
 }
 
+static int ParseHex(char *aStr, unsigned char *aAddr)
+{
+    int len = 0;
+
+    while (*aStr)
+    {
+        int tmp;
+        if (aStr[1] == 0)
+        {
+            return -1;
+        }
+        if (sscanf(aStr, "%02x", &tmp) != 1)
+        {
+            return -1;
+        }
+        aAddr[len] = tmp;
+        len++;
+        aStr += 2;
+    }
+
+    return len;
+}
+
+std::vector<std::string> GetAllIp6MulAddrs(const char *aInterfaceName)
+{
+    const char              *kPathIgmp6 = "/proc/net/igmp6";
+    std::string              line;
+    std::vector<std::string> ip6MulAddrs;
+
+    std::ifstream file(kPathIgmp6);
+    if (!file.is_open())
+    {
+        perror("Cannot open IGMP6 file");
+        exit(EXIT_FAILURE);
+    }
+
+    while (std::getline(file, line))
+    {
+        char          interfaceName[256] = {0};
+        char          hexa[256]          = {0};
+        int           index;
+        int           users;
+        unsigned char addr[16];
+
+        sscanf(line.c_str(), "%d%s%s%d", &index, interfaceName, hexa, &users);
+        if (strcmp(interfaceName, aInterfaceName) == 0)
+        {
+            char addrStr[INET6_ADDRSTRLEN];
+            ParseHex(hexa, addr);
+            if (inet_ntop(AF_INET6, addr, addrStr, sizeof(addrStr)) == NULL)
+            {
+                perror("inet_ntop");
+                exit(EXIT_FAILURE);
+            }
+            ip6MulAddrs.emplace_back(addrStr);
+        }
+    }
+
+    file.close();
+
+    return ip6MulAddrs;
+}
+
 TEST(Netif, WpanInitWithFullInterfaceName)
 {
     const char  *wpan = "wpan0";
@@ -294,6 +357,68 @@ TEST(Netif, WpanIfHasCorrectUnicastAddresses_AfterUpdatingUnicastAddresses)
     netif.UpdateIp6UnicastAddresses(testVec3);
     wpan_addrs = GetAllIp6Addrs(wpan);
     EXPECT_EQ(wpan_addrs.size(), 0);
+
+    netif.Deinit();
+}
+
+TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
+{
+    const char *wpan = "wpan0";
+    otbr::Netif netif;
+    EXPECT_EQ(netif.Init(wpan), OT_ERROR_NONE);
+
+    otbr::Ip6Address kDefaultMulAddr1 = {
+        {0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+    const char *kDefaultMulAddr1Str = "ff01::1";
+    const char *kDefaultMulAddr2Str = "ff02::1";
+    const char *kDefaultMulAddr3Str = "ff02::2";
+
+    otbr::Ip6Address kMulAddr1 = {
+        {0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc}};
+    otbr::Ip6Address kMulAddr2 = {
+        {0xff, 0x32, 0x00, 0x40, 0xfd, 0x0d, 0x07, 0xfc, 0xa1, 0xb9, 0xf0, 0x50, 0x00, 0x00, 0x00, 0x01}};
+    const char *kMulAddr1Str = "ff03::fc";
+    const char *kMulAddr2Str = "ff32:40:fd0d:7fc:a1b9:f050:0:1";
+
+    otbr::Ip6Address testArray1[] = {
+        kMulAddr1,
+    };
+    std::vector<otbr::Ip6Address> testVec1(testArray1, testArray1 + sizeof(testArray1) / sizeof(otbr::Ip6Address));
+    netif.UpdateIp6MulticastAddresses(testVec1);
+    std::vector<std::string> wpanMulAddrs = GetAllIp6MulAddrs(wpan);
+    EXPECT_EQ(wpanMulAddrs.size(), 4);
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr1Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+
+    otbr::Ip6Address              testArray2[] = {kMulAddr1, kMulAddr2};
+    std::vector<otbr::Ip6Address> testVec2(testArray2, testArray2 + sizeof(testArray2) / sizeof(otbr::Ip6Address));
+    netif.UpdateIp6MulticastAddresses(testVec2);
+    wpanMulAddrs = GetAllIp6MulAddrs(wpan);
+    EXPECT_EQ(wpanMulAddrs.size(), 5);
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr1Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr2Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+
+    otbr::Ip6Address              testArray3[] = {kDefaultMulAddr1};
+    std::vector<otbr::Ip6Address> testVec3(testArray3, testArray3 + sizeof(testArray3) / sizeof(otbr::Ip6Address));
+    netif.UpdateIp6MulticastAddresses(testVec3);
+    wpanMulAddrs = GetAllIp6MulAddrs(wpan);
+    EXPECT_EQ(wpanMulAddrs.size(), 3);
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+
+    std::vector<otbr::Ip6Address> empty;
+    netif.UpdateIp6MulticastAddresses(empty);
+    wpanMulAddrs = GetAllIp6MulAddrs(wpan);
+    EXPECT_EQ(wpanMulAddrs.size(), 3);
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
 
     netif.Deinit();
 }
