@@ -352,6 +352,9 @@ private:
     void RetrieveHashedPdPrefix(std::string *aHashedPdPrefix);
     void RetrievePdProcessedRaInfo(threadnetwork::TelemetryData::PdProcessedRaInfo *aPdProcessedRaInfo);
 #endif
+#if OTBR_ENABLE_BORDER_AGENT
+    void RetrieveBorderAgentInfo(threadnetwork::TelemetryData::BorderAgentInfo *aBorderAgentInfo);
+#endif
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 
     otInstance *mInstance;
