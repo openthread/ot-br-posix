@@ -195,7 +195,7 @@ static const struct ubus_method otbrMethods[] = {
     {"networkdata", &UbusServer::UbusNetworkdataHandler, 0, 0, nullptr, 0},
     {"commissionerstart", &UbusServer::UbusCommissionerStartHandler, 0, 0, nullptr, 0},
     {"joinernum", &UbusServer::UbusJoinerNumHandler, 0, 0, nullptr, 0},
-    {"joinerremove", &UbusServer::UbusJoinerRemoveHandler, 0, 0, nullptr, 0},
+    {"joinerremove", &UbusServer::UbusJoinerRemoveHandler, 0, 0, removeJoinerPolicy, ARRAY_SIZE(removeJoinerPolicy)},
     {"macfiltersetstate", &UbusServer::UbusMacfilterSetStateHandler, 0, 0, macfilterSetStatePolicy,
      ARRAY_SIZE(macfilterSetStatePolicy)},
     {"macfilteradd", &UbusServer::UbusMacfilterAddHandler, 0, 0, macfilterAddPolicy, ARRAY_SIZE(macfilterAddPolicy)},
