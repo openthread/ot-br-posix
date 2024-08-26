@@ -93,6 +93,7 @@ enum
 {
     PSKD,
     EUI64,
+    TIMEOUT,
     ADD_JOINER_MAX,
 };
 
@@ -152,8 +153,9 @@ static const struct blobmsg_policy removeJoinerPolicy[SET_NETWORK_MAX] = {
 };
 
 static const struct blobmsg_policy addJoinerPolicy[ADD_JOINER_MAX] = {
-    [PSKD]  = {.name = "pskd", .type = BLOBMSG_TYPE_STRING},
-    [EUI64] = {.name = "eui64", .type = BLOBMSG_TYPE_STRING},
+    [PSKD]    = {.name = "pskd", .type = BLOBMSG_TYPE_STRING},
+    [EUI64]   = {.name = "eui64", .type = BLOBMSG_TYPE_STRING},
+    [TIMEOUT] = {.name = "timeout", .type = BLOBMSG_TYPE_INT32},
 };
 
 static const struct blobmsg_policy mgmtsetPolicy[MGMTSET_MAX] = {
@@ -960,6 +962,7 @@ int UbusServer::UbusCommissioner(struct ubus_context      *aContext,
         otExtAddress        addr;
         const otExtAddress *addrPtr = nullptr;
         char               *pskd    = nullptr;
+        unsigned long       timeout = 0;
 
         blobmsg_parse(addJoinerPolicy, ADD_JOINER_MAX, tb, blob_data(aMsg), blob_len(aMsg));
         if (tb[PSKD] != nullptr)
@@ -981,7 +984,15 @@ int UbusServer::UbusCommissioner(struct ubus_context      *aContext,
             }
         }
 
-        unsigned long timeout = kDefaultJoinerTimeout;
+        if (tb[TIMEOUT] != nullptr)
+        {
+            timeout = blobmsg_get_u32(tb[TIMEOUT]);
+        }
+        else
+        {
+            timeout = kDefaultJoinerTimeout;
+        }
+
         SuccessOrExit(error =
                           otCommissionerAddJoiner(mHost->GetInstance(), addrPtr, pskd, static_cast<uint32_t>(timeout)));
     }
