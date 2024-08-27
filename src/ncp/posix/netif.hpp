@@ -54,6 +54,7 @@ public:
 
     void      UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aOtAddrInfos);
     otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
+    void      SetNetifState(bool aState);
 
 private:
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.

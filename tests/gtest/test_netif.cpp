@@ -53,6 +53,7 @@
 
 #include "common/types.hpp"
 #include "ncp/posix/netif.hpp"
+#include "utils/socket_utils.hpp"
 
 // Only Test on linux platform for now.
 #ifdef __linux__
@@ -422,4 +423,33 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
 
     netif.Deinit();
 }
+
+TEST(Netif, WpanIfStateChangesCorrectly_AfterSettingNetifState)
+{
+    otbr::Netif netif;
+    const char *wpan = "wpan0";
+    EXPECT_EQ(netif.Init(wpan), OTBR_ERROR_NONE);
+
+    int fd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
+    if (fd < 0)
+    {
+        perror("Failed to create test socket");
+        exit(EXIT_FAILURE);
+    }
+
+    struct ifreq ifr;
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, wpan, IFNAMSIZ - 1);
+
+    netif.SetNetifState(true);
+    ioctl(fd, SIOCGIFFLAGS, &ifr);
+    EXPECT_EQ(ifr.ifr_flags & IFF_UP, IFF_UP);
+
+    netif.SetNetifState(false);
+    ioctl(fd, SIOCGIFFLAGS, &ifr);
+    EXPECT_EQ(ifr.ifr_flags & IFF_UP, 0);
+
+    netif.Deinit();
+}
+
 #endif // __linux__
