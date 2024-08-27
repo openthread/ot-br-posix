@@ -83,8 +83,9 @@ public:
 class NcpSpinel
 {
 public:
-    using Ip6AddressTableCallback   = std::function<void(const std::vector<Ip6AddressInfo> &)>;
-    using NetifStateChangedCallback = std::function<void(bool)>;
+    using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
+    using Ip6MulticastAddressTableCallback = std::function<void(const std::vector<Ip6Address> &)>;
+    using NetifStateChangedCallback        = std::function<void(bool)>;
 
     /**
      * Constructor.
@@ -161,6 +162,21 @@ public:
      *
      */
     void Ip6SetAddressCallback(const Ip6AddressTableCallback &aCallback) { mIp6AddressTableCallback = aCallback; }
+
+    /**
+     * This method sets the callback to receive the IPv6 multicast address table from the NCP.
+     *
+     * @param[in] aCallback  The callback to handle the IPv6 address table.
+     *
+     * The callback will be invoked when receiving an IPv6 multicast address table from the NCP.
+     * When the callback is invoked, the callback MUST copy the otIp6Address objects and maintain it
+     * if it's not used immediately (within the callback).
+     *
+     */
+    void Ip6SetAddressMulticastCallback(const Ip6MulticastAddressTableCallback &aCallback)
+    {
+        mIp6MulticastAddressTableCallback = aCallback;
+    }
 
     /**
      * This method enableds/disables the Thread network on the NCP.
@@ -257,6 +273,7 @@ private:
     otError SendEncodedFrame(void);
 
     otError ParseIp6AddressTable(const uint8_t *aBuf, uint16_t aLength, std::vector<Ip6AddressInfo> &aAddressTable);
+    otError ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen, std::vector<Ip6Address> &aAddressList);
 
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
@@ -283,8 +300,9 @@ private:
     AsyncTaskPtr mThreadDetachGracefullyTask;
     AsyncTaskPtr mThreadErasePersistentInfoTask;
 
-    Ip6AddressTableCallback   mIp6AddressTableCallback;
-    NetifStateChangedCallback mNetifStateChangedCallback;
+    Ip6AddressTableCallback          mIp6AddressTableCallback;
+    Ip6MulticastAddressTableCallback mIp6MulticastAddressTableCallback;
+    NetifStateChangedCallback        mNetifStateChangedCallback;
 };
 
 } // namespace Ncp

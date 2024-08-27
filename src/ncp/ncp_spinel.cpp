@@ -366,6 +366,16 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE:
+    {
+        std::vector<Ip6Address> addressTable;
+
+        VerifyOrExit(ParseIp6MulticastAddresses(aBuffer, aLength, addressTable) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_PARSE);
+        SafeInvoke(mIp6MulticastAddressTableCallback, addressTable);
+        break;
+    }
+
     case SPINEL_PROP_NET_IF_UP:
     {
         bool isUp;
@@ -539,6 +549,29 @@ otError NcpSpinel::ParseIp6AddressTable(const uint8_t               *aBuf,
         SuccessOrExit((error = decoder.CloseStruct()));
 
         aAddressTable.push_back(cur);
+    }
+
+exit:
+    return error;
+}
+
+otError NcpSpinel::ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen, std::vector<Ip6Address> &aAddressList)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+
+    decoder.Init(aBuf, aLen);
+
+    while (!decoder.IsAllReadInStruct())
+    {
+        const otIp6Address *addr;
+
+        SuccessOrExit(error = decoder.OpenStruct());
+        SuccessOrExit(error = decoder.ReadIp6Address(addr));
+        aAddressList.emplace_back(Ip6Address(*addr));
+        SuccessOrExit((error = decoder.CloseStruct()));
     }
 
 exit:
