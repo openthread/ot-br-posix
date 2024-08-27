@@ -72,7 +72,9 @@ void NcpSpinel::Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aOb
 
 void NcpSpinel::Deinit(void)
 {
-    mSpinelDriver = nullptr;
+    mSpinelDriver              = nullptr;
+    mIp6AddressTableCallback   = nullptr;
+    mNetifStateChangedCallback = nullptr;
 }
 
 otbrError NcpSpinel::SpinelDataUnpack(const uint8_t *aDataIn, spinel_size_t aDataLen, const char *aPackFormat, ...)
@@ -364,6 +366,14 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_NET_IF_UP:
+    {
+        bool isUp;
+        SuccessOrExit(error = SpinelDataUnpack(aBuffer, aLength, SPINEL_DATATYPE_BOOL_S, &isUp));
+        SafeInvoke(mNetifStateChangedCallback, isUp);
+        break;
+    }
+
     default:
         otbrLogWarning("Received uncognized key: %u", aKey);
         break;
@@ -394,6 +404,11 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
     case SPINEL_PROP_NET_IF_UP:
         VerifyOrExit(aKey == SPINEL_PROP_NET_IF_UP, error = OTBR_ERROR_INVALID_STATE);
         CallAndClear(mIp6SetEnabledTask, OT_ERROR_NONE);
+        {
+            bool isUp;
+            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_BOOL_S, &isUp));
+            SafeInvoke(mNetifStateChangedCallback, isUp);
+        }
         break;
 
     case SPINEL_PROP_NET_STACK_UP:
