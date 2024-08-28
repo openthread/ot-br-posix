@@ -86,6 +86,8 @@ void NcpHost::Init(void)
 
     mNcpSpinel.Ip6SetAddressCallback(
         [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
+    mNcpSpinel.Ip6SetAddressMulticastCallback(
+        [this](const std::vector<Ip6Address> &aAddrs) { mNetif.UpdateIp6MulticastAddresses(aAddrs); });
     mNcpSpinel.NetifSetStateChangedCallback([this](bool aState) { mNetif.SetNetifState(aState); });
 }
 
