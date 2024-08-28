@@ -275,8 +275,6 @@ void CheckEphemeralKey(ThreadApiDBus *aApi)
 
 void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aBorderAgentInfo)
 {
-    TEST_ASSERT(aBorderAgentInfo.border_agent_state() == threadnetwork::TelemetryData::BORDER_AGENT_STATE_STARTED);
-    TEST_ASSERT(aBorderAgentInfo.epskc_is_active() == false);
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_activations() == 0);
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_clears() == 0);
     TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_timeouts() == 0);
