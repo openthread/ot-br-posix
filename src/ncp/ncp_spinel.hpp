@@ -83,7 +83,8 @@ public:
 class NcpSpinel
 {
 public:
-    using Ip6AddressTableCallback = std::function<void(const std::vector<Ip6AddressInfo> &)>;
+    using Ip6AddressTableCallback   = std::function<void(const std::vector<Ip6AddressInfo> &)>;
+    using NetifStateChangedCallback = std::function<void(bool)>;
 
     /**
      * Constructor.
@@ -195,6 +196,17 @@ public:
      */
     void ThreadErasePersistentInfo(AsyncTaskPtr aAsyncTask);
 
+    /**
+     * This method sets the callback invoked when the network interface state changes.
+     *
+     * @param[in] aCallback  The callback invoked when the network interface state changes.
+     *
+     */
+    void NetifSetStateChangedCallback(const NetifStateChangedCallback &aCallback)
+    {
+        mNetifStateChangedCallback = aCallback;
+    }
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -271,7 +283,8 @@ private:
     AsyncTaskPtr mThreadDetachGracefullyTask;
     AsyncTaskPtr mThreadErasePersistentInfoTask;
 
-    Ip6AddressTableCallback mIp6AddressTableCallback;
+    Ip6AddressTableCallback   mIp6AddressTableCallback;
+    NetifStateChangedCallback mNetifStateChangedCallback;
 };
 
 } // namespace Ncp
