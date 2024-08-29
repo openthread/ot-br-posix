@@ -513,13 +513,6 @@ message TelemetryData {
     optional bool has_others_route_added = 3;
   }
 
-  enum BorderAgentState {
-    BORDER_AGENT_STATE_UNSPECIFIED = 0;
-    BORDER_AGENT_STATE_STOPPED = 1;
-    BORDER_AGENT_STATE_STARTED = 2;
-    BORDER_AGENT_STATE_ACTIVE = 3;
-  }
-
   message BorderAgentCounters {
     // The number of ePSKc activations
     optional uint32 epskc_activations = 1;
@@ -571,14 +564,8 @@ message TelemetryData {
   }
 
   message BorderAgentInfo {
-    // The border agent state
-    optional BorderAgentState border_agent_state = 1;
-
-    // The ePSKc active state
-    optional bool epskc_is_active = 2;
-
     // The border agent counters
-    optional BorderAgentCounters border_agent_counters = 3;
+    optional BorderAgentCounters border_agent_counters = 1;
   }
 
   message WpanBorderRouter {

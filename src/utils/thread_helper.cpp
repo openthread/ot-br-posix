@@ -225,24 +225,6 @@ void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::T
     to->set_aborted_count(from.mAborted);
     to->set_invalid_state_count(from.mInvalidState);
 }
-
-#if OTBR_ENABLE_BORDER_AGENT
-threadnetwork::TelemetryData_BorderAgentState BorderAgentStateFromOtBorderAgentState(
-    otBorderAgentState aBorderAgentState)
-{
-    switch (aBorderAgentState)
-    {
-    case OT_BORDER_AGENT_STATE_STOPPED:
-        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_STOPPED;
-    case OT_BORDER_AGENT_STATE_STARTED:
-        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_STARTED;
-    case OT_BORDER_AGENT_STATE_ACTIVE:
-        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_ACTIVE;
-    default:
-        return threadnetwork::TelemetryData::BORDER_AGENT_STATE_UNSPECIFIED;
-    }
-}
-#endif // OTBR_ENABLE_BORDER_AGENT
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 } // namespace
 
@@ -1083,9 +1065,6 @@ void ThreadHelper::RetrieveBorderAgentInfo(threadnetwork::TelemetryData::BorderA
 {
     auto baCounters            = aBorderAgentInfo->mutable_border_agent_counters();
     auto otBorderAgentCounters = *otBorderAgentGetCounters(mInstance);
-
-    aBorderAgentInfo->set_border_agent_state(BorderAgentStateFromOtBorderAgentState(otBorderAgentGetState(mInstance)));
-    aBorderAgentInfo->set_epskc_is_active(otBorderAgentIsEphemeralKeyActive(mInstance));
 
     baCounters->set_epskc_activations(otBorderAgentCounters.mEpskcActivations);
     baCounters->set_epskc_deactivation_clears(otBorderAgentCounters.mEpskcDeactivationClears);
