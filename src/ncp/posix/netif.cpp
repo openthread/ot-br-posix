@@ -202,6 +202,23 @@ exit:
     }
 }
 
+void Netif::Ip6Receive(const uint8_t *aBuf, uint16_t aLen)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(aLen <= kIp6Mtu, error = OTBR_ERROR_DROPPED);
+    VerifyOrExit(mTunFd > 0, error = OTBR_ERROR_INVALID_STATE);
+
+    otbrLogInfo("Packet from NCP (%u bytes)", aLen);
+    VerifyOrExit(write(mTunFd, aBuf, aLen) == aLen, error = OTBR_ERROR_ERRNO);
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to receive, error:%s", otbrErrorString(error));
+    }
+}
+
 void Netif::Clear(void)
 {
     if (mTunFd != -1)

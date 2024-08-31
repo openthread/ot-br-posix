@@ -56,6 +56,8 @@ public:
     otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
     void      SetNetifState(bool aState);
 
+    void Ip6Receive(const uint8_t *aBuf, uint16_t aLen);
+
 private:
     // TODO: Retrieve the Maximum Ip6 size from the coprocessor.
     static constexpr size_t kIp6Mtu = 1280;
