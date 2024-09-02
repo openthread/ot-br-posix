@@ -86,6 +86,7 @@ public:
     using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
     using Ip6MulticastAddressTableCallback = std::function<void(const std::vector<Ip6Address> &)>;
     using NetifStateChangedCallback        = std::function<void(bool)>;
+    using Ip6ReceiveCallback               = std::function<void(const uint8_t *, uint16_t)>;
 
     /**
      * Constructor.
@@ -177,6 +178,14 @@ public:
     {
         mIp6MulticastAddressTableCallback = aCallback;
     }
+
+    /**
+     * This method sets the callback to receive IP6 datagrams.
+     *
+     * @param[in] aCallback  The callback to receive IP6 datagrams.
+     *
+     */
+    void Ip6SetReceiveCallback(const Ip6ReceiveCallback &aCallback) { mIp6ReceiveCallback = aCallback; }
 
     /**
      * This methods sends an IP6 datagram through the NCP.
@@ -286,6 +295,7 @@ private:
 
     otError ParseIp6AddressTable(const uint8_t *aBuf, uint16_t aLength, std::vector<Ip6AddressInfo> &aAddressTable);
     otError ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen, std::vector<Ip6Address> &aAddressList);
+    otError ParseIp6StreamNet(const uint8_t *aBuf, uint8_t aLen, const uint8_t *&aData, uint16_t &aDataLen);
 
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
@@ -314,6 +324,7 @@ private:
 
     Ip6AddressTableCallback          mIp6AddressTableCallback;
     Ip6MulticastAddressTableCallback mIp6MulticastAddressTableCallback;
+    Ip6ReceiveCallback               mIp6ReceiveCallback;
     NetifStateChangedCallback        mNetifStateChangedCallback;
 };
 

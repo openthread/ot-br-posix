@@ -101,3 +101,12 @@ proc switch_node {id} {
     send_user "\n# ${id}\n"
     set spawn_id $spawn_ids($id)
 }
+
+proc get_ipaddr {type} {
+    send "ipaddr $type\n"
+    expect "ipaddr $type"
+    set rval [expect_line {([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}}]
+    expect_line "Done"
+
+    return $rval
+}
