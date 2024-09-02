@@ -179,6 +179,18 @@ public:
     }
 
     /**
+     * This methods sends an IP6 datagram through the NCP.
+     *
+     * @param[in] aData      A pointer to the beginning of the IP6 datagram.
+     * @param[in] aLength    The length of the datagram.
+     *
+     * @retval OTBR_ERROR_NONE  The datagram is sent to NCP successfully.
+     * @retval OTBR_ERROR_BUSY  NcpSpinel is busy with other requests.
+     *
+     */
+    otbrError Ip6Send(const uint8_t *aData, uint16_t aLength);
+
+    /**
      * This method enableds/disables the Thread network on the NCP.
      *
      * If this method is called again before the previous call completed, no action will be taken.

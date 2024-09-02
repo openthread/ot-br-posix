@@ -36,10 +36,12 @@
 
 #include <net/if.h>
 
+#include <functional>
 #include <vector>
 
 #include <openthread/ip6.h>
 
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -47,12 +49,16 @@ namespace otbr {
 class Netif
 {
 public:
+    using Ip6SendFunc = std::function<otbrError(const uint8_t *, uint16_t)>;
+
     Netif(void);
 
-    otbrError Init(const std::string &aInterfaceName);
+    otbrError Init(const std::string &aInterfaceName, const Ip6SendFunc &aIp6SendFunc);
     void      Deinit(void);
 
-    void      UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aOtAddrInfos);
+    void      Process(const MainloopContext *aContext);
+    void      UpdateFdSet(MainloopContext *aContext);
+    void      UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos);
     otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
     void      SetNetifState(bool aState);
 
@@ -71,6 +77,7 @@ private:
     void      SetAddrGenModeToNone(void);
     void      ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded);
     otbrError ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded);
+    void      ProcessIp6Send(void);
 
     int      mTunFd;           ///< Used to exchange IPv6 packets.
     int      mIpFd;            ///< Used to manage IPv6 stack on the network interface.
@@ -82,6 +89,7 @@ private:
 
     std::vector<Ip6AddressInfo> mIp6UnicastAddresses;
     std::vector<Ip6Address>     mIp6MulticastAddresses;
+    Ip6SendFunc                 mIp6SendFunc;
 };
 
 } // namespace otbr

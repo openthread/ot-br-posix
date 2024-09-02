@@ -59,9 +59,12 @@ Netif::Netif(void)
 {
 }
 
-otbrError Netif::Init(const std::string &aInterfaceName)
+otbrError Netif::Init(const std::string &aInterfaceName, const Ip6SendFunc &aIp6SendFunc)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(aIp6SendFunc, error = OTBR_ERROR_INVALID_ARGS);
+    mIp6SendFunc = aIp6SendFunc;
 
     mIpFd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
     VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_ERRNO);
@@ -85,6 +88,35 @@ exit:
 void Netif::Deinit(void)
 {
     Clear();
+}
+
+void Netif::Process(const MainloopContext *aContext)
+{
+    if (FD_ISSET(mTunFd, &aContext->mErrorFdSet))
+    {
+        close(mTunFd);
+        DieNow("Error on Tun Fd!");
+    }
+
+    if (FD_ISSET(mTunFd, &aContext->mReadFdSet))
+    {
+        ProcessIp6Send();
+    }
+}
+
+void Netif::UpdateFdSet(MainloopContext *aContext)
+{
+    assert(aContext != nullptr);
+    assert(mTunFd >= 0);
+    assert(mIpFd >= 0);
+
+    FD_SET(mTunFd, &aContext->mReadFdSet);
+    FD_SET(mTunFd, &aContext->mErrorFdSet);
+
+    if (mTunFd > aContext->mMaxFd)
+    {
+        aContext->mMaxFd = mTunFd;
+    }
 }
 
 void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
@@ -219,6 +251,28 @@ exit:
     }
 }
 
+void Netif::ProcessIp6Send(void)
+{
+    ssize_t   rval;
+    uint8_t   packet[kIp6Mtu];
+    otbrError error = OTBR_ERROR_NONE;
+
+    rval = read(mTunFd, packet, sizeof(packet));
+    VerifyOrExit(rval > 0, error = OTBR_ERROR_ERRNO);
+
+    otbrLogInfo("Send packet (%hu bytes)", static_cast<uint16_t>(rval));
+
+    if (mIp6SendFunc != nullptr)
+    {
+        error = mIp6SendFunc(packet, rval);
+    }
+exit:
+    if (error == OTBR_ERROR_ERRNO)
+    {
+        otbrLogInfo("Error reading from Tun Fd: %s", strerror(errno));
+    }
+}
+
 void Netif::Clear(void)
 {
     if (mTunFd != -1)
@@ -242,6 +296,7 @@ void Netif::Clear(void)
     mNetifIndex = 0;
     mIp6UnicastAddresses.clear();
     mIp6MulticastAddresses.clear();
+    mIp6SendFunc = nullptr;
 }
 
 } // namespace otbr
