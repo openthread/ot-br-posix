@@ -52,6 +52,7 @@
 #include <openthread/border_routing.h>
 #include <openthread/random_crypto.h>
 #include <openthread/random_noncrypto.h>
+#include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/verhoeff_checksum.h>
 #include <openthread/platform/settings.h>
@@ -160,12 +161,13 @@ BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mHost(aHost)
     , mPublisher(aPublisher)
     , mIsEnabled(false)
-    , mIsEphemeralKeyEnabled(false)
+    , mIsEphemeralKeyEnabled(otThreadGetVersion() >= OT_THREAD_VERSION_1_4)
     , mVendorName(OTBR_VENDOR_NAME)
     , mProductName(OTBR_PRODUCT_NAME)
     , mBaseServiceInstanceName(OTBR_MESHCOP_SERVICE_INSTANCE_NAME)
 {
     mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+    otbrLogInfo("Ephemeral Key is: %s during initialization", (mIsEphemeralKeyEnabled ? "enabled" : "disabled"));
 }
 
 otbrError BorderAgent::CreateEphemeralKey(std::string &aEphemeralKey)

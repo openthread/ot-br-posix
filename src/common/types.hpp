@@ -88,6 +88,7 @@ enum otbrError
     OTBR_ERROR_ABORTED            = -12, ///< The operation is aborted.
     OTBR_ERROR_INVALID_STATE      = -13, ///< The target isn't in a valid state.
     OTBR_ERROR_INFRA_LINK_CHANGED = -14, ///< The infrastructure link is changed.
+    OTBR_ERROR_DROPPED            = -15, ///< The packet is dropped.
 };
 
 namespace otbr {
@@ -428,6 +429,39 @@ public:
 
     Ip6Address mPrefix; ///< The IPv6 prefix.
     uint8_t    mLength; ///< The IPv6 prefix length (in bits).
+};
+
+/**
+ * This class represents a Ipv6 address and its info.
+ *
+ */
+class Ip6AddressInfo
+{
+public:
+    Ip6AddressInfo(void) { Clear(); }
+
+    Ip6AddressInfo(const otIp6Address &aAddress,
+                   uint8_t             aPrefixLength,
+                   uint8_t             aScope,
+                   bool                aPreferred,
+                   bool                aMeshLocal)
+        : mAddress(aAddress)
+        , mPrefixLength(aPrefixLength)
+        , mScope(aScope)
+        , mPreferred(aPreferred)
+        , mMeshLocal(aMeshLocal)
+    {
+    }
+
+    void Clear(void) { memset(reinterpret_cast<void *>(this), 0, sizeof(*this)); }
+
+    otIp6Address mAddress;
+    uint8_t      mPrefixLength;
+    uint8_t      mScope : 4;
+    bool         mPreferred : 1;
+    bool         mMeshLocal : 1;
+
+    bool operator==(const Ip6AddressInfo &aOther) const { return memcmp(this, &aOther, sizeof(Ip6AddressInfo)) == 0; }
 };
 
 /**

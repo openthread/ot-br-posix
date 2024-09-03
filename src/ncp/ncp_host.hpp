@@ -40,6 +40,7 @@
 #include "common/mainloop.hpp"
 #include "ncp/ncp_spinel.hpp"
 #include "ncp/thread_host.hpp"
+#include "posix/netif.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -88,6 +89,8 @@ public:
     // ThreadHost methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver) override;
     void Leave(const AsyncResultReceiver &aReceiver) override;
+    void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                           const AsyncResultReceiver       aReceiver) override;
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
     const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
@@ -102,6 +105,8 @@ private:
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;
+    TaskRunner                mTaskRunner;
+    Netif                     mNetif;
 };
 
 } // namespace Ncp

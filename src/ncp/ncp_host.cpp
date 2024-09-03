@@ -65,6 +65,7 @@ void NcpNetworkProperties::SetDeviceRole(otDeviceRole aRole)
 
 NcpHost::NcpHost(const char *aInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
+    , mNetif()
 {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName = aInterfaceName;
@@ -81,11 +82,20 @@ void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
+    mNetif.Init(mConfig.mInterfaceName,
+                [this](const uint8_t *aData, uint16_t aLength) { return mNcpSpinel.Ip6Send(aData, aLength); });
+
+    mNcpSpinel.Ip6SetAddressCallback(
+        [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
+    mNcpSpinel.Ip6SetAddressMulticastCallback(
+        [this](const std::vector<Ip6Address> &aAddrs) { mNetif.UpdateIp6MulticastAddresses(aAddrs); });
+    mNcpSpinel.NetifSetStateChangedCallback([this](bool aState) { mNetif.SetNetifState(aState); });
 }
 
 void NcpHost::Deinit(void)
 {
     mNcpSpinel.Deinit();
+    mNetif.Deinit();
     otSysDeinit();
 }
 
@@ -112,6 +122,26 @@ void NcpHost::Leave(const AsyncResultReceiver &aReceiver)
     task->First([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadDetachGracefully(std::move(aNext)); })
         ->Then([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadErasePersistentInfo(std::move(aNext)); });
     task->Run();
+}
+
+void NcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                const AsyncResultReceiver       aReceiver)
+{
+    otDeviceRole role  = GetDeviceRole();
+    otError      error = OT_ERROR_NONE;
+    auto errorHandler  = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    VerifyOrExit(role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED, error = OT_ERROR_INVALID_STATE);
+
+    mNcpSpinel.DatasetMgmtSetPending(std::make_shared<otOperationalDatasetTlvs>(aPendingOpDatasetTlvs),
+                                     std::make_shared<AsyncTask>(errorHandler));
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aReceiver, error](void) { aReceiver(error, "Cannot schedule migration when this device is detached"); });
+    }
 }
 
 void NcpHost::Process(const MainloopContext &aMainloop)

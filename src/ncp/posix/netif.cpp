@@ -59,9 +59,12 @@ Netif::Netif(void)
 {
 }
 
-otbrError Netif::Init(const std::string &aInterfaceName)
+otbrError Netif::Init(const std::string &aInterfaceName, const Ip6SendFunc &aIp6SendFunc)
 {
     otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(aIp6SendFunc, error = OTBR_ERROR_INVALID_ARGS);
+    mIp6SendFunc = aIp6SendFunc;
 
     mIpFd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
     VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_ERRNO);
@@ -87,13 +90,41 @@ void Netif::Deinit(void)
     Clear();
 }
 
-void Netif::UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAddrInfos)
+void Netif::Process(const MainloopContext *aContext)
+{
+    if (FD_ISSET(mTunFd, &aContext->mErrorFdSet))
+    {
+        close(mTunFd);
+        DieNow("Error on Tun Fd!");
+    }
+
+    if (FD_ISSET(mTunFd, &aContext->mReadFdSet))
+    {
+        ProcessIp6Send();
+    }
+}
+
+void Netif::UpdateFdSet(MainloopContext *aContext)
+{
+    assert(aContext != nullptr);
+    assert(mTunFd >= 0);
+    assert(mIpFd >= 0);
+
+    FD_SET(mTunFd, &aContext->mReadFdSet);
+    FD_SET(mTunFd, &aContext->mErrorFdSet);
+
+    if (mTunFd > aContext->mMaxFd)
+    {
+        aContext->mMaxFd = mTunFd;
+    }
+}
+
+void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)
 {
     // Remove stale addresses
     for (const Ip6AddressInfo &addrInfo : mIp6UnicastAddresses)
     {
-        auto comparator = [&addrInfo](const otIp6AddressInfo &aOtAddrInfo) { return addrInfo == aOtAddrInfo; };
-        if (std::find_if(aOtAddrInfos.begin(), aOtAddrInfos.end(), comparator) == aOtAddrInfos.end())
+        if (std::find(aAddrInfos.begin(), aAddrInfos.end(), addrInfo) == aAddrInfos.end())
         {
             otbrLogInfo("Remove address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
             // TODO: Verify success of the addition or deletion in Netlink response.
@@ -102,9 +133,8 @@ void Netif::UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAd
     }
 
     // Add new addresses
-    for (const otIp6AddressInfo &otAddrInfo : aOtAddrInfos)
+    for (const Ip6AddressInfo &addrInfo : aAddrInfos)
     {
-        Ip6AddressInfo addrInfo(otAddrInfo);
         if (std::find(mIp6UnicastAddresses.begin(), mIp6UnicastAddresses.end(), addrInfo) == mIp6UnicastAddresses.end())
         {
             otbrLogInfo("Add address: %s", Ip6Address(addrInfo.mAddress).ToString().c_str());
@@ -113,10 +143,133 @@ void Netif::UpdateIp6UnicastAddresses(const std::vector<otIp6AddressInfo> &aOtAd
         }
     }
 
-    mIp6UnicastAddresses.clear();
-    for (const otIp6AddressInfo &otAddrInfo : aOtAddrInfos)
+    mIp6UnicastAddresses.assign(aAddrInfos.begin(), aAddrInfos.end());
+}
+
+otbrError Netif::UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    // Remove stale addresses
+    for (const Ip6Address &address : mIp6MulticastAddresses)
     {
-        mIp6UnicastAddresses.emplace_back(Ip6AddressInfo(otAddrInfo));
+        if (std::find(aAddrs.begin(), aAddrs.end(), address) == aAddrs.end())
+        {
+            otbrLogInfo("Remove address: %s", Ip6Address(address).ToString().c_str());
+            SuccessOrExit(error = ProcessMulticastAddressChange(address, /* aIsAdded */ false));
+        }
+    }
+
+    // Add new addresses
+    for (const Ip6Address &address : aAddrs)
+    {
+        if (std::find(mIp6MulticastAddresses.begin(), mIp6MulticastAddresses.end(), address) ==
+            mIp6MulticastAddresses.end())
+        {
+            otbrLogInfo("Add address: %s", Ip6Address(address).ToString().c_str());
+            SuccessOrExit(error = ProcessMulticastAddressChange(address, /* aIsAdded */ true));
+        }
+    }
+
+    mIp6MulticastAddresses.assign(aAddrs.begin(), aAddrs.end());
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        mIp6MulticastAddresses.clear();
+    }
+    return error;
+}
+
+otbrError Netif::ProcessMulticastAddressChange(const Ip6Address &aAddress, bool aIsAdded)
+{
+    struct ipv6_mreq mreq;
+    otbrError        error = OTBR_ERROR_NONE;
+    int              err;
+
+    VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_INVALID_STATE);
+    memcpy(&mreq.ipv6mr_multiaddr, &aAddress, sizeof(mreq.ipv6mr_multiaddr));
+    mreq.ipv6mr_interface = mNetifIndex;
+
+    err = setsockopt(mIpFd, IPPROTO_IPV6, (aIsAdded ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP), &mreq, sizeof(mreq));
+
+    if (err != 0)
+    {
+        otbrLogWarning("%s failure (%d)", aIsAdded ? "IPV6_JOIN_GROUP" : "IPV6_LEAVE_GROUP", errno);
+        ExitNow(error = OTBR_ERROR_ERRNO);
+    }
+
+    otbrLogInfo("%s multicast address %s", aIsAdded ? "Added" : "Removed", Ip6Address(aAddress).ToString().c_str());
+
+exit:
+    return error;
+}
+
+void Netif::SetNetifState(bool aState)
+{
+    otbrError    error = OTBR_ERROR_NONE;
+    struct ifreq ifr;
+    bool         ifState = false;
+
+    VerifyOrExit(mIpFd >= 0);
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, mNetifName.c_str(), IFNAMSIZ - 1);
+    VerifyOrExit(ioctl(mIpFd, SIOCGIFFLAGS, &ifr) == 0, error = OTBR_ERROR_ERRNO);
+
+    ifState = ((ifr.ifr_flags & IFF_UP) == IFF_UP) ? true : false;
+
+    otbrLogInfo("Changing interface state to %s%s.", aState ? "up" : "down",
+                (ifState == aState) ? " (already done, ignoring)" : "");
+
+    if (ifState != aState)
+    {
+        ifr.ifr_flags = aState ? (ifr.ifr_flags | IFF_UP) : (ifr.ifr_flags & ~IFF_UP);
+        VerifyOrExit(ioctl(mIpFd, SIOCSIFFLAGS, &ifr) == 0, error = OTBR_ERROR_ERRNO);
+    }
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to update state %s", otbrErrorString(error));
+    }
+}
+
+void Netif::Ip6Receive(const uint8_t *aBuf, uint16_t aLen)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    VerifyOrExit(aLen <= kIp6Mtu, error = OTBR_ERROR_DROPPED);
+    VerifyOrExit(mTunFd > 0, error = OTBR_ERROR_INVALID_STATE);
+
+    otbrLogInfo("Packet from NCP (%u bytes)", aLen);
+    VerifyOrExit(write(mTunFd, aBuf, aLen) == aLen, error = OTBR_ERROR_ERRNO);
+
+exit:
+    if (error != OTBR_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to receive, error:%s", otbrErrorString(error));
+    }
+}
+
+void Netif::ProcessIp6Send(void)
+{
+    ssize_t   rval;
+    uint8_t   packet[kIp6Mtu];
+    otbrError error = OTBR_ERROR_NONE;
+
+    rval = read(mTunFd, packet, sizeof(packet));
+    VerifyOrExit(rval > 0, error = OTBR_ERROR_ERRNO);
+
+    otbrLogInfo("Send packet (%hu bytes)", static_cast<uint16_t>(rval));
+
+    if (mIp6SendFunc != nullptr)
+    {
+        error = mIp6SendFunc(packet, rval);
+    }
+exit:
+    if (error == OTBR_ERROR_ERRNO)
+    {
+        otbrLogInfo("Error reading from Tun Fd: %s", strerror(errno));
     }
 }
 
@@ -141,6 +294,9 @@ void Netif::Clear(void)
     }
 
     mNetifIndex = 0;
+    mIp6UnicastAddresses.clear();
+    mIp6MulticastAddresses.clear();
+    mIp6SendFunc = nullptr;
 }
 
 } // namespace otbr
