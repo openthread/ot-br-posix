@@ -380,6 +380,7 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
     const char *kDefaultMulAddr1Str = "ff01::1";
     const char *kDefaultMulAddr2Str = "ff02::1";
     const char *kDefaultMulAddr3Str = "ff02::2";
+    const char *kDefaultMulAddr4Str = "ff02::16";
 
     otbr::Ip6Address kMulAddr1 = {
         {0xff, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc}};
@@ -394,39 +395,43 @@ TEST(Netif, WpanIfHasCorrectMulticastAddresses_AfterUpdatingMulticastAddresses)
     std::vector<otbr::Ip6Address> testVec1(testArray1, testArray1 + sizeof(testArray1) / sizeof(otbr::Ip6Address));
     netif.UpdateIp6MulticastAddresses(testVec1);
     std::vector<std::string> wpanMulAddrs = GetAllIp6MulAddrs(wpan);
-    EXPECT_EQ(wpanMulAddrs.size(), 4);
+    EXPECT_EQ(wpanMulAddrs.size(), 5);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr1Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr4Str));
 
     otbr::Ip6Address              testArray2[] = {kMulAddr1, kMulAddr2};
     std::vector<otbr::Ip6Address> testVec2(testArray2, testArray2 + sizeof(testArray2) / sizeof(otbr::Ip6Address));
     netif.UpdateIp6MulticastAddresses(testVec2);
     wpanMulAddrs = GetAllIp6MulAddrs(wpan);
-    EXPECT_EQ(wpanMulAddrs.size(), 5);
+    EXPECT_EQ(wpanMulAddrs.size(), 6);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr1Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kMulAddr2Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr4Str));
 
     otbr::Ip6Address              testArray3[] = {kDefaultMulAddr1};
     std::vector<otbr::Ip6Address> testVec3(testArray3, testArray3 + sizeof(testArray3) / sizeof(otbr::Ip6Address));
     netif.UpdateIp6MulticastAddresses(testVec3);
     wpanMulAddrs = GetAllIp6MulAddrs(wpan);
-    EXPECT_EQ(wpanMulAddrs.size(), 3);
+    EXPECT_EQ(wpanMulAddrs.size(), 4);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr4Str));
 
     std::vector<otbr::Ip6Address> empty;
     netif.UpdateIp6MulticastAddresses(empty);
     wpanMulAddrs = GetAllIp6MulAddrs(wpan);
-    EXPECT_EQ(wpanMulAddrs.size(), 3);
+    EXPECT_EQ(wpanMulAddrs.size(), 4);
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr1Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr2Str));
     EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr3Str));
+    EXPECT_THAT(wpanMulAddrs, ::testing::Contains(kDefaultMulAddr4Str));
 
     netif.Deinit();
 }
@@ -613,4 +618,108 @@ TEST(Netif, WpanIfSendIp6PacketCorrectly_AfterReceivingOnIf)
 
     netif.Deinit();
 }
+
+class NetifDependencyTestMulSub : public otbr::Netif::Dependencies
+{
+public:
+    NetifDependencyTestMulSub(bool &aReceived, otIp6Address &aMulAddr, bool &aIsAdded)
+        : mReceived(aReceived)
+        , mMulAddr(aMulAddr)
+        , mIsAdded(aIsAdded)
+    {
+    }
+
+    otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded) override
+    {
+        mMulAddr  = aAddress;
+        mIsAdded  = aIsAdded;
+        mReceived = true;
+        return OTBR_ERROR_NONE;
+    }
+
+    bool         &mReceived;
+    otIp6Address &mMulAddr;
+    bool         &mIsAdded;
+};
+
+TEST(Netif, WpanIfUpdateMulAddrSubscription_AfterAppJoiningMulGrp)
+{
+    bool                      received = false;
+    otIp6Address              subscribedMulAddr;
+    bool                      isAdded = false;
+    NetifDependencyTestMulSub dependency(received, subscribedMulAddr, isAdded);
+    const char               *multicastGroup = "ff99::1";
+    const char               *wpan           = "wpan0";
+    int                       sockFd;
+    otbr::Netif               netif(dependency);
+    const otIp6Address        expectedMulAddr = {0xff, 0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+
+    EXPECT_EQ(netif.Init("wpan0"), OT_ERROR_NONE);
+
+    const otIp6Address kLl = {
+        {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x14, 0x03, 0x32, 0x4c, 0xc2, 0xf8, 0xd0}};
+    std::vector<otbr::Ip6AddressInfo> addrs = {
+        {kLl, 64, 0, 1, 0},
+    };
+    netif.UpdateIp6UnicastAddresses(addrs);
+    netif.SetNetifState(true);
+
+    {
+        struct ipv6_mreq    mreq;
+        struct sockaddr_in6 addr;
+
+        if ((sockFd = socket(AF_INET6, SOCK_DGRAM, 0)) < 0)
+        {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+
+        memset(&addr, 0, sizeof(addr));
+        addr.sin6_family = AF_INET6;
+        addr.sin6_addr   = in6addr_any;
+        addr.sin6_port   = htons(9999);
+
+        if (bind(sockFd, (const struct sockaddr *)&addr, sizeof(addr)) < 0)
+        {
+            perror("bind failed");
+            exit(EXIT_FAILURE);
+        }
+
+        inet_pton(AF_INET6, multicastGroup, &(mreq.ipv6mr_multiaddr));
+        mreq.ipv6mr_interface = if_nametoindex(wpan);
+
+        if (setsockopt(sockFd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) < 0)
+        {
+            perror("Error joining multicast group");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    otbr::MainloopContext context;
+    while (!received)
+    {
+        context.mMaxFd   = -1;
+        context.mTimeout = {100, 0};
+        FD_ZERO(&context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+
+        netif.UpdateFdSet(&context);
+        int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
+                          &context.mTimeout);
+        if (rval < 0)
+        {
+            perror("select failed");
+            exit(EXIT_FAILURE);
+        }
+        netif.Process(&context);
+    }
+
+    EXPECT_EQ(otbr::Ip6Address(subscribedMulAddr), otbr::Ip6Address(expectedMulAddr));
+    EXPECT_EQ(isAdded, true);
+    close(sockFd);
+    netif.Deinit();
+}
+
 #endif // __linux__

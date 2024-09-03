@@ -287,6 +287,8 @@ private:
                                        const uint8_t    *aData,
                                        uint16_t          aLength);
 
+    otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded) override;
+
     spinel_tid_t GetNextTid(void);
     void         FreeTidTableItem(spinel_tid_t aTid);
 
