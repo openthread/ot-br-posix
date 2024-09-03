@@ -110,13 +110,7 @@ void Netif::UpdateFdSet(MainloopContext *aContext)
     assert(mTunFd >= 0);
     assert(mIpFd >= 0);
 
-    FD_SET(mTunFd, &aContext->mReadFdSet);
-    FD_SET(mTunFd, &aContext->mErrorFdSet);
-
-    if (mTunFd > aContext->mMaxFd)
-    {
-        aContext->mMaxFd = mTunFd;
-    }
+    aContext->AddFdToSet(mTunFd, MainloopContext::kErrorFdSet | MainloopContext::kReadFdSet);
 }
 
 void Netif::UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos)

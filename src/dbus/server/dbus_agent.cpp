@@ -139,6 +139,7 @@ void DBusAgent::Update(MainloopContext &aMainloop)
 {
     unsigned int flags;
     int          fd;
+    uint8_t      fdSetMask = MainloopContext::kErrorFdSet;
 
     if (dbus_connection_get_dispatch_status(mConnection.get()) == DBUS_DISPATCH_DATA_REMAINS)
     {
@@ -162,17 +163,15 @@ void DBusAgent::Update(MainloopContext &aMainloop)
 
         if (flags & DBUS_WATCH_READABLE)
         {
-            FD_SET(fd, &aMainloop.mReadFdSet);
+            fdSetMask |= MainloopContext::kReadFdSet;
         }
 
         if ((flags & DBUS_WATCH_WRITABLE))
         {
-            FD_SET(fd, &aMainloop.mWriteFdSet);
+            fdSetMask |= MainloopContext::kWriteFdSet;
         }
 
-        FD_SET(fd, &aMainloop.mErrorFdSet);
-
-        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
+        aMainloop.AddFdToSet(fd, fdSetMask);
     }
 }
 
