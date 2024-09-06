@@ -50,6 +50,7 @@
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
 #include "ncp/async_task.hpp"
+#include "ncp/posix/netif.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -80,7 +81,7 @@ public:
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
  *
  */
-class NcpSpinel
+class NcpSpinel : public Netif::Dependencies
 {
 public:
     using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
@@ -197,7 +198,7 @@ public:
      * @retval OTBR_ERROR_BUSY  NcpSpinel is busy with other requests.
      *
      */
-    otbrError Ip6Send(const uint8_t *aData, uint16_t aLength);
+    otbrError Ip6Send(const uint8_t *aData, uint16_t aLength) override;
 
     /**
      * This method enableds/disables the Thread network on the NCP.
