@@ -90,6 +90,8 @@ void NcpHost::Init(void)
     mNcpSpinel.Ip6SetAddressMulticastCallback(
         [this](const std::vector<Ip6Address> &aAddrs) { mNetif.UpdateIp6MulticastAddresses(aAddrs); });
     mNcpSpinel.NetifSetStateChangedCallback([this](bool aState) { mNetif.SetNetifState(aState); });
+    mNcpSpinel.Ip6SetReceiveCallback(
+        [this](const uint8_t *aData, uint16_t aLength) { mNetif.Ip6Receive(aData, aLength); });
 }
 
 void NcpHost::Deinit(void)
@@ -147,6 +149,8 @@ exit:
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
+
+    mNetif.Process(&aMainloop);
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -158,6 +162,8 @@ void NcpHost::Update(MainloopContext &aMainloop)
         aMainloop.mTimeout.tv_sec  = 0;
         aMainloop.mTimeout.tv_usec = 0;
     }
+
+    mNetif.UpdateFdSet(&aMainloop);
 }
 
 } // namespace Ncp

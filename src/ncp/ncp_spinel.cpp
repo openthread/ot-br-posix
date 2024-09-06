@@ -153,11 +153,13 @@ exit:
 
 otbrError NcpSpinel::Ip6Send(const uint8_t *aData, uint16_t aLength)
 {
-    // TODO: Impelement this function.
-    OTBR_UNUSED_VARIABLE(aData);
-    OTBR_UNUSED_VARIABLE(aLength);
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [this, aData, aLength] { return mEncoder.WriteDataWithLen(aData, aLength); };
 
-    return OTBR_ERROR_NONE;
+    SuccessOrExit(SetProperty(SPINEL_PROP_STREAM_NET, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    return error;
 }
 
 void NcpSpinel::ThreadSetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
@@ -393,6 +395,16 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         break;
     }
 
+    case SPINEL_PROP_STREAM_NET:
+    {
+        const uint8_t *data;
+        uint16_t       dataLen;
+
+        SuccessOrExit(ParseIp6StreamNet(aBuffer, aLength, data, dataLen), error = OTBR_ERROR_PARSE);
+        SafeInvoke(mIp6ReceiveCallback, data, dataLen);
+        break;
+    }
+
     default:
         otbrLogWarning("Received uncognized key: %u", aKey);
         break;
@@ -447,6 +459,9 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
         {
             ExitNow(error = OTBR_ERROR_INVALID_STATE);
         }
+        break;
+
+    case SPINEL_PROP_STREAM_NET:
         break;
 
     default:
@@ -582,6 +597,20 @@ otError NcpSpinel::ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen,
         aAddressList.emplace_back(Ip6Address(*addr));
         SuccessOrExit((error = decoder.CloseStruct()));
     }
+
+exit:
+    return error;
+}
+
+otError NcpSpinel::ParseIp6StreamNet(const uint8_t *aBuf, uint8_t aLen, const uint8_t *&aData, uint16_t &aDataLen)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuf != nullptr, error = OT_ERROR_INVALID_ARGS);
+
+    decoder.Init(aBuf, aLen);
+    error = decoder.ReadDataWithLen(aData, aDataLen);
 
 exit:
     return error;
