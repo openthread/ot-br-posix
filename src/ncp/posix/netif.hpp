@@ -49,11 +49,17 @@ namespace otbr {
 class Netif
 {
 public:
-    using Ip6SendFunc = std::function<otbrError(const uint8_t *, uint16_t)>;
+    class Dependencies
+    {
+    public:
+        virtual ~Dependencies(void) = default;
 
-    Netif(void);
+        virtual otbrError Ip6Send(const uint8_t *aData, uint16_t aLength);
+    };
 
-    otbrError Init(const std::string &aInterfaceName, const Ip6SendFunc &aIp6SendFunc);
+    Netif(Dependencies &aDependencies);
+
+    otbrError Init(const std::string &aInterfaceName);
     void      Deinit(void);
 
     void      Process(const MainloopContext *aContext);
@@ -89,7 +95,7 @@ private:
 
     std::vector<Ip6AddressInfo> mIp6UnicastAddresses;
     std::vector<Ip6Address>     mIp6MulticastAddresses;
-    Ip6SendFunc                 mIp6SendFunc;
+    Dependencies               &mDeps;
 };
 
 } // namespace otbr

@@ -50,21 +50,26 @@
 
 namespace otbr {
 
-Netif::Netif(void)
+otbrError Netif::Dependencies::Ip6Send(const uint8_t *aData, uint16_t aLength)
+{
+    OTBR_UNUSED_VARIABLE(aData);
+    OTBR_UNUSED_VARIABLE(aLength);
+    return OTBR_ERROR_NONE;
+}
+
+Netif::Netif(Dependencies &aDependencies)
     : mTunFd(-1)
     , mIpFd(-1)
     , mNetlinkFd(-1)
     , mNetlinkSequence(0)
     , mNetifIndex(0)
+    , mDeps(aDependencies)
 {
 }
 
-otbrError Netif::Init(const std::string &aInterfaceName, const Ip6SendFunc &aIp6SendFunc)
+otbrError Netif::Init(const std::string &aInterfaceName)
 {
     otbrError error = OTBR_ERROR_NONE;
-
-    VerifyOrExit(aIp6SendFunc, error = OTBR_ERROR_INVALID_ARGS);
-    mIp6SendFunc = aIp6SendFunc;
 
     mIpFd = SocketWithCloseExec(AF_INET6, SOCK_DGRAM, IPPROTO_IP, kSocketNonBlock);
     VerifyOrExit(mIpFd >= 0, error = OTBR_ERROR_ERRNO);
@@ -256,10 +261,7 @@ void Netif::ProcessIp6Send(void)
 
     otbrLogInfo("Send packet (%hu bytes)", static_cast<uint16_t>(rval));
 
-    if (mIp6SendFunc != nullptr)
-    {
-        error = mIp6SendFunc(packet, rval);
-    }
+    error = mDeps.Ip6Send(packet, rval);
 exit:
     if (error == OTBR_ERROR_ERRNO)
     {
@@ -290,7 +292,6 @@ void Netif::Clear(void)
     mNetifIndex = 0;
     mIp6UnicastAddresses.clear();
     mIp6MulticastAddresses.clear();
-    mIp6SendFunc = nullptr;
 }
 
 } // namespace otbr
