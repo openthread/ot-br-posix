@@ -273,7 +273,7 @@ void NcpSpinel::HandleNotification(const uint8_t *aFrame, uint16_t aLength)
     HandleValueIs(key, data, static_cast<uint16_t>(len));
 
 exit:
-    otbrLogResult(error, "HandleNotification: %s", __FUNCTION__);
+    otbrLogResult(error, "%s", __FUNCTION__);
 }
 
 void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_t aLength)
