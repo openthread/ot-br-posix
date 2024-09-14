@@ -75,6 +75,7 @@ if(OTBR_MDNS)
 endif()
 
 add_executable(otbr-posix-gtest-unit
+    test_infra_if.cpp
     test_netif.cpp
 )
 target_link_libraries(otbr-posix-gtest-unit
