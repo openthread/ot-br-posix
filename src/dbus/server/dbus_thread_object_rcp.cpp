@@ -2010,7 +2010,22 @@ void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aReques
     otError error        = OT_ERROR_NONE;
     auto    threadHelper = mHost.GetThreadHelper();
 
-    otBorderAgentClearEphemeralKey(threadHelper->GetInstance());
+    VerifyOrExit(mBorderAgent.GetEphemeralKeyEnabled(), error = OT_ERROR_NOT_CAPABLE);
+
+    switch (otBorderAgentGetState(threadHelper->GetInstance()))
+    {
+    case OT_BORDER_AGENT_STATE_STOPPED:
+        error = OT_ERROR_FAILED;
+        break;
+    case OT_BORDER_AGENT_STATE_ACTIVE:
+        error = OT_ERROR_INVALID_STATE;
+        break;
+    case OT_BORDER_AGENT_STATE_STARTED:
+        otBorderAgentClearEphemeralKey(threadHelper->GetInstance());
+        break;
+    }
+
+exit:
     aRequest.ReplyOtResult(error);
 }
 
@@ -2021,6 +2036,8 @@ void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
     uint32_t    lifetime     = 0;
     auto        args         = std::tie(lifetime);
     std::string ePskc;
+
+    VerifyOrExit(mBorderAgent.GetEphemeralKeyEnabled(), error = OT_ERROR_NOT_CAPABLE);
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
