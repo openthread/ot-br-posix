@@ -473,6 +473,14 @@ exit:
     return error;
 }
 
+otbrError NcpSpinel::Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded)
+{
+    OTBR_UNUSED_VARIABLE(aAddress);
+    OTBR_UNUSED_VARIABLE(aIsAdded);
+
+    return OTBR_ERROR_NOT_IMPLEMENTED;
+}
+
 spinel_tid_t NcpSpinel::GetNextTid(void)
 {
     spinel_tid_t tid = mCmdNextTid;
