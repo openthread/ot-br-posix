@@ -286,6 +286,16 @@ private:
                                        spinel_prop_key_t aKey,
                                        const uint8_t    *aData,
                                        uint16_t          aLength);
+    otbrError HandleResponseForPropInsert(spinel_tid_t      aTid,
+                                          spinel_command_t  aCmd,
+                                          spinel_prop_key_t aKey,
+                                          const uint8_t    *aData,
+                                          uint16_t          aLength);
+    otbrError HandleResponseForPropRemove(spinel_tid_t      aTid,
+                                          spinel_command_t  aCmd,
+                                          spinel_prop_key_t aKey,
+                                          const uint8_t    *aData,
+                                          uint16_t          aLength);
 
     otbrError Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded) override;
 
@@ -293,7 +303,11 @@ private:
     void         FreeTidTableItem(spinel_tid_t aTid);
 
     using EncodingFunc = std::function<otError(void)>;
+    otError SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
+    otError InsertProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
+    otError RemoveProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
+
     otError SendEncodedFrame(void);
 
     otError ParseIp6AddressTable(const uint8_t *aBuf, uint16_t aLength, std::vector<Ip6AddressInfo> &aAddressTable);

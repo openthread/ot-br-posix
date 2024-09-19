@@ -288,13 +288,21 @@ void NcpSpinel::HandleResponse(spinel_tid_t aTid, const uint8_t *aFrame, uint16_
 
     SuccessOrExit(error = SpinelDataUnpack(aFrame, aLength, kSpinelDataUnpackFormat, &header, &cmd, &key, &data, &len));
 
-    VerifyOrExit(cmd == SPINEL_CMD_PROP_VALUE_IS, error = OTBR_ERROR_INVALID_STATE);
-
     switch (mCmdTable[aTid])
     {
     case SPINEL_CMD_PROP_VALUE_SET:
     {
         error = HandleResponseForPropSet(aTid, key, data, len);
+        break;
+    }
+    case SPINEL_CMD_PROP_VALUE_INSERT:
+    {
+        error = HandleResponseForPropInsert(aTid, cmd, key, data, len);
+        break;
+    }
+    case SPINEL_CMD_PROP_VALUE_REMOVE:
+    {
+        error = HandleResponseForPropRemove(aTid, cmd, key, data, len);
         break;
     }
     case SPINEL_CMD_NET_CLEAR:
@@ -473,12 +481,90 @@ exit:
     return error;
 }
 
+otbrError NcpSpinel::HandleResponseForPropInsert(spinel_tid_t      aTid,
+                                                 spinel_command_t  aCmd,
+                                                 spinel_prop_key_t aKey,
+                                                 const uint8_t    *aData,
+                                                 uint16_t          aLength)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    switch (mWaitingKeyTable[aTid])
+    {
+    case SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE:
+        if (aCmd == SPINEL_CMD_PROP_VALUE_IS)
+        {
+            spinel_status_t status = SPINEL_STATUS_OK;
+
+            VerifyOrExit(aKey == SPINEL_PROP_LAST_STATUS, error = OTBR_ERROR_INVALID_STATE);
+            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+            otbrLogInfo("Failed to subscribe to multicast address on NCP, error:%s", spinel_status_to_cstr(status));
+        }
+        else
+        {
+            error = aCmd == SPINEL_CMD_PROP_VALUE_INSERTED ? OTBR_ERROR_NONE : OTBR_ERROR_INVALID_STATE;
+        }
+        break;
+    default:
+        break;
+    }
+
+exit:
+    otbrLogResult(error, "HandleResponseForPropInsert, key:%u", mWaitingKeyTable[aTid]);
+    return error;
+}
+
+otbrError NcpSpinel::HandleResponseForPropRemove(spinel_tid_t      aTid,
+                                                 spinel_command_t  aCmd,
+                                                 spinel_prop_key_t aKey,
+                                                 const uint8_t    *aData,
+                                                 uint16_t          aLength)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    switch (mWaitingKeyTable[aTid])
+    {
+    case SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE:
+        if (aCmd == SPINEL_CMD_PROP_VALUE_IS)
+        {
+            spinel_status_t status = SPINEL_STATUS_OK;
+
+            VerifyOrExit(aKey == SPINEL_PROP_LAST_STATUS, error = OTBR_ERROR_INVALID_STATE);
+            SuccessOrExit(error = SpinelDataUnpack(aData, aLength, SPINEL_DATATYPE_UINT_PACKED_S, &status));
+            otbrLogInfo("Failed to unsubscribe to multicast address on NCP, error:%s", spinel_status_to_cstr(status));
+        }
+        else
+        {
+            error = aCmd == SPINEL_CMD_PROP_VALUE_REMOVED ? OTBR_ERROR_NONE : OTBR_ERROR_INVALID_STATE;
+        }
+        break;
+    default:
+        break;
+    }
+
+exit:
+    otbrLogResult(error, "HandleResponseForPropRemove, key:%u", mWaitingKeyTable[aTid]);
+    return error;
+}
+
 otbrError NcpSpinel::Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded)
 {
-    OTBR_UNUSED_VARIABLE(aAddress);
-    OTBR_UNUSED_VARIABLE(aIsAdded);
+    otbrError    error        = OTBR_ERROR_NONE;
+    EncodingFunc encodingFunc = [this, aAddress] { return mEncoder.WriteIp6Address(aAddress); };
 
-    return OTBR_ERROR_NOT_IMPLEMENTED;
+    if (aIsAdded)
+    {
+        SuccessOrExit(InsertProperty(SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE, encodingFunc),
+                      error = OTBR_ERROR_OPENTHREAD);
+    }
+    else
+    {
+        SuccessOrExit(RemoveProperty(SPINEL_PROP_IPV6_MULTICAST_ADDRESS_TABLE, encodingFunc),
+                      error = OTBR_ERROR_OPENTHREAD);
+    }
+
+exit:
+    return error;
 }
 
 spinel_tid_t NcpSpinel::GetNextTid(void)
@@ -513,19 +599,19 @@ void NcpSpinel::FreeTidTableItem(spinel_tid_t aTid)
     mWaitingKeyTable[aTid] = SPINEL_PROP_LAST_STATUS;
 }
 
-otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
+otError NcpSpinel::SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
 {
     otError      error  = OT_ERROR_NONE;
     spinel_tid_t tid    = GetNextTid();
     uint8_t      header = SPINEL_HEADER_FLAG | SPINEL_HEADER_IID(mIid) | tid;
 
     VerifyOrExit(tid != 0, error = OT_ERROR_BUSY);
-    SuccessOrExit(error = mEncoder.BeginFrame(header, SPINEL_CMD_PROP_VALUE_SET, aKey));
+    SuccessOrExit(error = mEncoder.BeginFrame(header, aCmd, aKey));
     SuccessOrExit(error = aEncodingFunc());
     SuccessOrExit(error = mEncoder.EndFrame());
     SuccessOrExit(error = SendEncodedFrame());
 
-    mCmdTable[tid]        = SPINEL_CMD_PROP_VALUE_SET;
+    mCmdTable[tid]        = aCmd;
     mWaitingKeyTable[tid] = aKey;
 exit:
     if (error != OT_ERROR_NONE)
@@ -533,6 +619,21 @@ exit:
         FreeTidTableItem(tid);
     }
     return error;
+}
+
+otError NcpSpinel::SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
+{
+    return SendCommand(SPINEL_CMD_PROP_VALUE_SET, aKey, aEncodingFunc);
+}
+
+otError NcpSpinel::InsertProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
+{
+    return SendCommand(SPINEL_CMD_PROP_VALUE_INSERT, aKey, aEncodingFunc);
+}
+
+otError NcpSpinel::RemoveProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc)
+{
+    return SendCommand(SPINEL_CMD_PROP_VALUE_REMOVE, aKey, aEncodingFunc);
 }
 
 otError NcpSpinel::SendEncodedFrame(void)
