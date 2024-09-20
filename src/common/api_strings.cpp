@@ -72,7 +72,7 @@ std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aState)
     case OT_BORDER_ROUTING_DHCP6_PD_STATE_RUNNING:
         stateName = OTBR_DHCP6_PD_STATE_NAME_RUNNING;
         break;
-#if OPENTHREAD_API_VERSION >= 442
+#if OPENTHREAD_API_VERSION >= 447
     case OT_BORDER_ROUTING_DHCP6_PD_STATE_IDLE:
         stateName = OTBR_DHCP6_PD_STATE_NAME_IDLE;
         break;
