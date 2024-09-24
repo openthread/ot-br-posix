@@ -133,6 +133,7 @@ private:
     void Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
     void DatasetActive(const Request &aRequest, Response &aResponse) const;
     void DatasetPending(const Request &aRequest, Response &aResponse) const;
+    void IpaddrMleid(const Request &aRequest, Response &aResponse) const;
     void CommissionerState(const Request &aRequest, Response &aResponse) const;
     void CommissionerJoiner(const Request &aRequest, Response &aResponse) const;
     void Diagnostic(const Request &aRequest, Response &aResponse) const;
@@ -152,6 +153,7 @@ private:
     void GetDataRloc(Response &aResponse) const;
     void GetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
     void SetDataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
+    void GetIpaddrMleid(Response &aResponse) const;
     void GetCommissionerState(Response &aResponse) const;
     void SetCommissionerState(const Request &aRequest, Response &aResponse) const;
     void GetJoiners(Response &aResponse) const;

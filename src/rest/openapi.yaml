@@ -202,6 +202,20 @@ paths:
                 type: number
                 description: Number of routers
                 example: 1
+  /node/ipaddr/mleid:
+    get:
+      tags:
+        - node
+      summary: Gets the mesh-local EID ip address of the border router
+      responses:
+        "200":
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: string
+                description: mleid ip address
+                example: "fd06:1488:f31:d0f9:f4f4:3594:e17c:4882"
   /node/dataset/active:
     get:
       tags:

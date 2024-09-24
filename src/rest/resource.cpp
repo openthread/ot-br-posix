@@ -47,6 +47,7 @@
 #define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE "/node/dataset/active"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING "/node/dataset/pending"
+#define OT_REST_RESOURCE_PATH_NODE_IPADDR_MLEID "/node/ipaddr/mleid"
 #define OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE "/node/commissioner/state"
 #define OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER "/node/commissioner/joiner"
 #define OT_REST_RESOURCE_PATH_NETWORK "/networks"
@@ -142,6 +143,7 @@ Resource::Resource(RcpHost *aHost)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_IPADDR_MLEID, &Resource::IpaddrMleid);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, &Resource::CommissionerState);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, &Resource::CommissionerJoiner);
 
@@ -806,6 +808,40 @@ void Resource::DatasetPending(const Request &aRequest, Response &aResponse) cons
     Dataset(DatasetType::kPending, aRequest, aResponse);
 }
 
+void Resource::GetIpaddrMleid(Response &aResponse) const 
+{
+    std::string errorCode;
+    std::string mleidJsonString;
+    const otIp6Address *mleid;
+
+    mleid = otThreadGetMeshLocalEid(mInstance);
+
+    mleidJsonString = Json::IpAddr2JsonString(*mleid);
+    aResponse.SetBody(mleidJsonString);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::IpaddrMleid(const Request &aRequest, Response &aResponse) const 
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        GetIpaddrMleid(aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
+}
+
 void Resource::GetCommissionerState(Response &aResponse) const 
 {
     std::string  state;
@@ -899,8 +935,6 @@ void Resource::GetJoiners(Response &aResponse) const
     aResponse.SetBody(joinerJson);
     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
-
-    OT_UNUSED_VARIABLE(aResponse);
 }
 
 void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const 
