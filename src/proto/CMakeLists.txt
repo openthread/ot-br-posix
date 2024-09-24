@@ -1,9 +1,9 @@
 # Config brew protobuf version for Mac, see .github/workflows/macOS.yml
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(Protobuf_PREFIX_PATH
-        "/usr/local/opt/protobuf@21/include"            
-        "/usr/local/opt/protobuf@21/lib"             
-        "/usr/local/opt/protobuf@21/bin")
+        "/opt/homebrew/opt/protobuf@21/include"
+        "/opt/homebrew/opt/protobuf@21/lib"
+        "/opt/homebrew/opt/protobuf@21/bin")
     list(APPEND CMAKE_PREFIX_PATH "${Protobuf_PREFIX_PATH}")
 endif()
 find_package(Protobuf REQUIRED)
