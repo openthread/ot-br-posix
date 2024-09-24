@@ -1726,7 +1726,6 @@ otError ThreadHelper::ProcessDatasetForMigration(otOperationalDatasetTlvs &aData
      *
      * | Type | Value | Timestamp Seconds | Timestamp Ticks | U bit |
      * |  8   |   8   |         48        |         15      |   1   |
-     *
      */
     tlv->SetType(OT_MESHCOP_TLV_PENDINGTIMESTAMP);
     clock_gettime(CLOCK_REALTIME, &currentTime);

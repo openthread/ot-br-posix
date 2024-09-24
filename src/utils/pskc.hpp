@@ -67,7 +67,6 @@ public:
      * @param[in] aPassphrase   A pointer to passphrase.
      *
      * @returns The pointer to PSKc value.
-     *
      */
     const uint8_t *ComputePskc(const uint8_t *aExtPanId, const char *aNetworkName, const char *aPassphrase);
 

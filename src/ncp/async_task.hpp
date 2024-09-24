@@ -56,13 +56,11 @@ public:
      * Constructor.
      *
      * @param[in]  The error handler called when the result is not OT_ERROR_NONE;
-     *
      */
     AsyncTask(const ResultHandler &aResultHandler);
 
     /**
      * Destructor.
-     *
      */
     ~AsyncTask(void);
 
@@ -70,7 +68,6 @@ public:
      * Trigger the initial action of the chained async operations.
      *
      * This method should be called to trigger the chained async operations.
-     *
      */
     void Run(void);
 
@@ -81,7 +78,6 @@ public:
      * This method will pass the result to next operation.
      *
      * @param[in] aError  The result for the previous async operation.
-     *
      */
     void SetResult(otError aError, const std::string &aErrorInfo);
 
@@ -91,7 +87,6 @@ public:
      * @param[in] aFirst  A reference to a function object for the initial action.
      *
      * @returns  A shared pointer to a AsyncTask object created in this method.
-     *
      */
     AsyncTaskPtr &First(const ThenHandler &aFirst);
 
@@ -101,7 +96,6 @@ public:
      * @param[in] aThen  A reference to a function object for the next action.
      *
      * @returns A shared pointer to a AsyncTask object created in this method.
-     *
      */
     AsyncTaskPtr &Then(const ThenHandler &aThen);
 

@@ -54,7 +54,6 @@ enum SocketBlockOption
  *
  * @retval -1   Failed to create socket.
  * @retval ...  The file descriptor of the created socket.
- *
  */
 int SocketWithCloseExec(int aDomain, int aType, int aProtocol, SocketBlockOption aBlockOption);
 
@@ -65,7 +64,6 @@ int SocketWithCloseExec(int aDomain, int aType, int aProtocol, SocketBlockOption
  *
  * @retval  -1  Failed to create the netlink socket.
  * @retval ...  The file descriptor of the created netlink socket.
- *
  */
 int CreateNetLinkRouteSocket(uint32_t aNlGroups);
 

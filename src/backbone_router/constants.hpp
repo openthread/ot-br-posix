@@ -50,7 +50,6 @@ namespace BackboneRouter {
 
 /**
  * Backbone configurations.
- *
  */
 enum
 {

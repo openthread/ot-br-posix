@@ -57,7 +57,6 @@ namespace Ncp {
 
 /**
  * This interface is an observer to subscribe the network properties from NCP.
- *
  */
 class PropsObserver
 {
@@ -66,20 +65,17 @@ public:
      * Updates the device role.
      *
      * @param[in] aRole  The device role.
-     *
      */
     virtual void SetDeviceRole(otDeviceRole aRole) = 0;
 
     /**
      * The destructor.
-     *
      */
     virtual ~PropsObserver(void) = default;
 };
 
 /**
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
- *
  */
 class NcpSpinel : public Netif::Dependencies
 {
@@ -91,7 +87,6 @@ public:
 
     /**
      * Constructor.
-     *
      */
     NcpSpinel(void);
 
@@ -100,19 +95,16 @@ public:
      *
      * @param[in]  aSpinelDriver   A reference to the SpinelDriver instance that this object depends.
      * @param[in]  aObserver       A reference to the Network properties observer.
-     *
      */
     void Init(ot::Spinel::SpinelDriver &aSpinelDriver, PropsObserver &aObserver);
 
     /**
      * Do the de-initialization.
-     *
      */
     void Deinit(void);
 
     /**
      * Returns the Co-processor version string.
-     *
      */
     const char *GetCoprocessorVersion(void) { return mSpinelDriver->GetVersion(); }
 
@@ -124,7 +116,6 @@ public:
      *
      * @param[in] aActiveOpDatasetTlvs  A reference to the active operational dataset of the Thread network.
      * @param[in] aAsyncTask            A pointer to an async result to receive the result of this operation.
-     *
      */
     void DatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask);
 
@@ -136,7 +127,6 @@ public:
      *
      * @param[in] aPendingOpDatasetTlvsPtr  A shared pointer to the pending operational dataset of the Thread network.
      * @param[in] aAsyncTask                A pointer to an async result to receive the result of this operation.
-     *
      */
     void DatasetMgmtSetPending(std::shared_ptr<otOperationalDatasetTlvs> aPendingOpDatasetTlvsPtr,
                                AsyncTaskPtr                              aAsyncTask);
@@ -149,7 +139,6 @@ public:
      *
      * @param[in] aEnable     TRUE to enable and FALSE to disable.
      * @param[in] aAsyncTask  A pointer to an async result to receive the result of this operation.
-     *
      */
     void Ip6SetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask);
 
@@ -161,7 +150,6 @@ public:
      * if it's not used immediately (within the callback).
      *
      * @param[in] aCallback  The callback to handle the IP6 address table.
-     *
      */
     void Ip6SetAddressCallback(const Ip6AddressTableCallback &aCallback) { mIp6AddressTableCallback = aCallback; }
 
@@ -173,7 +161,6 @@ public:
      * The callback will be invoked when receiving an IPv6 multicast address table from the NCP.
      * When the callback is invoked, the callback MUST copy the otIp6Address objects and maintain it
      * if it's not used immediately (within the callback).
-     *
      */
     void Ip6SetAddressMulticastCallback(const Ip6MulticastAddressTableCallback &aCallback)
     {
@@ -184,7 +171,6 @@ public:
      * This method sets the callback to receive IP6 datagrams.
      *
      * @param[in] aCallback  The callback to receive IP6 datagrams.
-     *
      */
     void Ip6SetReceiveCallback(const Ip6ReceiveCallback &aCallback) { mIp6ReceiveCallback = aCallback; }
 
@@ -196,7 +182,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  The datagram is sent to NCP successfully.
      * @retval OTBR_ERROR_BUSY  NcpSpinel is busy with other requests.
-     *
      */
     otbrError Ip6Send(const uint8_t *aData, uint16_t aLength) override;
 
@@ -208,7 +193,6 @@ public:
      *
      * @param[in] aEnable     TRUE to enable and FALSE to disable.
      * @param[in] aAsyncTask  A pointer to an async result to receive the result of this operation.
-     *
      */
     void ThreadSetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask);
 
@@ -219,7 +203,6 @@ public:
      * The new receiver @p aAsyncTask will be set a result OT_ERROR_BUSY.
      *
      * @param[in] aAsyncTask  A pointer to an async result to receive the result of this operation.
-     *
      */
     void ThreadDetachGracefully(AsyncTaskPtr aAsyncTask);
 
@@ -230,7 +213,6 @@ public:
      * The new receiver @p aAsyncTask will be set a result OT_ERROR_BUSY.
      *
      * @param[in] aAsyncTask  A pointer to an async result to receive the result of this operation.
-     *
      */
     void ThreadErasePersistentInfo(AsyncTaskPtr aAsyncTask);
 
@@ -238,7 +220,6 @@ public:
      * This method sets the callback invoked when the network interface state changes.
      *
      * @param[in] aCallback  The callback invoked when the network interface state changes.
-     *
      */
     void NetifSetStateChangedCallback(const NetifStateChangedCallback &aCallback)
     {

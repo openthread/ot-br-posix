@@ -47,14 +47,12 @@ namespace Ncp {
 
 /**
  * This class implements the NetworkProperties under NCP mode.
- *
  */
 class NcpNetworkProperties : virtual public NetworkProperties, public PropsObserver
 {
 public:
     /**
      * Constructor
-     *
      */
     explicit NcpNetworkProperties(void);
 
@@ -76,13 +74,11 @@ public:
      *
      * @param[in]   aInterfaceName  A string of the NCP interface name.
      * @param[in]   aDryRun         TRUE to indicate dry-run mode. FALSE otherwise.
-     *
      */
     NcpHost(const char *aInterfaceName, bool aDryRun);
 
     /**
      * Destructor.
-     *
      */
     ~NcpHost(void) override = default;
 

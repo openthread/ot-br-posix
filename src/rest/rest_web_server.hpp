@@ -51,7 +51,6 @@ namespace rest {
 
 /**
  * This class implements a REST server.
- *
  */
 class RestWebServer : public MainloopProcessor
 {
@@ -60,19 +59,16 @@ public:
      * The constructor to initialize a REST server.
      *
      * @param[in] aHost  A reference to the Thread controller.
-     *
      */
     RestWebServer(RcpHost &aHost, const std::string &aRestListenAddress, int aRestListenPort);
 
     /**
      * The destructor destroys the server instance.
-     *
      */
     ~RestWebServer(void) override;
 
     /**
      * This method initializes the REST server.
-     *
      */
     void Init(void);
 

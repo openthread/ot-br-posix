@@ -68,7 +68,6 @@ public:
      * @param[in] aHost           The Thread controller
      * @param[in] aPublisher      The Mdns::Publisher
      * @param[in] aBorderAgent    The Border Agent
-     *
      */
     DBusThreadObjectRcp(DBusConnection     &aConnection,
                         const std::string  &aInterfaceName,

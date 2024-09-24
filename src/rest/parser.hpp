@@ -51,7 +51,6 @@ namespace rest {
 
 /**
  * This class implements Parser class in OTBR-REST which is used to parse the data from read buffer and form a request.
- *
  */
 class Parser
 {
@@ -60,13 +59,11 @@ public:
      * The constructor of a http request parser instance.
      *
      * @param[in] aRequest  A pointer to a request instance.
-     *
      */
     Parser(Request *aRequest);
 
     /**
      * This method initializea the http-parser.
-     *
      */
     void Init(void);
 
@@ -75,7 +72,6 @@ public:
      *
      * @param[in] aBuf     A pointer pointing to read buffer.
      * @param[in] aLength  An integer indicates how much data is to be processed by parser.
-     *
      */
     void Process(const char *aBuf, size_t aLength);
 
