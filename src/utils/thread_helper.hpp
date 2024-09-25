@@ -86,7 +86,6 @@ public:
      *
      * @param[in] aInstance  The Thread instance.
      * @param[in] aHost      The Thread controller.
-     *
      */
     ThreadHelper(otInstance *aInstance, otbr::Ncp::RcpHost *aHost);
 
@@ -94,7 +93,6 @@ public:
      * This method adds a callback for device role change.
      *
      * @param[in] aHandler  The device role handler.
-     *
      */
     void AddDeviceRoleHandler(DeviceRoleHandler aHandler);
 
@@ -103,7 +101,6 @@ public:
      * This method adds a callback for DHCPv6 PD state change.
      *
      * @param[in] aCallback  The DHCPv6 PD state change callback.
-     *
      */
     void SetDhcp6PdStateCallback(Dhcp6PdStateCallback aCallback);
 #endif
@@ -122,7 +119,6 @@ public:
      * @param[in] aSeconds  The timeout to close the port, 0 for never close.
      *
      * @returns The error value of underlying OpenThread api calls.
-     *
      */
     otError PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds);
 
@@ -130,7 +126,6 @@ public:
      * This method performs a Thread network scan.
      *
      * @param[in] aHandler  The scan result handler.
-     *
      */
     void Scan(ScanHandler aHandler);
 
@@ -139,7 +134,6 @@ public:
      *
      * @param[in] aScanDuration  The duration for the scan, in milliseconds.
      * @param[in] aHandler       The scan result handler.
-     *
      */
     void EnergyScan(uint32_t aScanDuration, EnergyScanHandler aHandler);
 
@@ -155,7 +149,6 @@ public:
      * @param[in] aPSKc         The pre-shared commissioner key, empty for random.
      * @param[in] aChannelMask  A bitmask for valid channels, will random select one.
      * @param[in] aHandler      The attach result handler.
-     *
      */
     void Attach(const std::string          &aNetworkName,
                 uint16_t                    aPanId,
@@ -169,7 +162,6 @@ public:
      * This method detaches the device from the Thread network.
      *
      * @returns The error value of underlying OpenThread API calls.
-     *
      */
     otError Detach(void);
 
@@ -180,7 +172,6 @@ public:
      *       network parameter will be set through the active dataset.
      *
      * @param[in] aHandler  The attach result handler.
-     *
      */
     void Attach(AttachHandler aHandler);
 
@@ -189,7 +180,6 @@ public:
      *
      * @param[in] aDatasetTlvs  The dataset TLVs.
      * @param[in] aHandler      The result handler.
-     *
      */
     void AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, AttachHandler aHandler);
 
@@ -197,7 +187,6 @@ public:
      * This method resets the OpenThread stack.
      *
      * @returns The error value of underlying OpenThread api calls.
-     *
      */
     otError Reset(void);
 
@@ -213,7 +202,6 @@ public:
      * @param[in] aVendorSwVersion  The vendor software version.
      * @param[in] aVendorData       The vendor custom data.
      * @param[in] aHandler          The join result handler.
-     *
      */
     void JoinerStart(const std::string &aPskd,
                      const std::string &aProvisioningUrl,
@@ -227,7 +215,6 @@ public:
      * This method tries to restore the network after reboot
      *
      * @returns The error value of underlying OpenThread api calls.
-     *
      */
     otError TryResumeNetwork(void);
 
@@ -235,7 +222,6 @@ public:
      * This method returns the underlying OpenThread instance.
      *
      * @returns The underlying instance.
-     *
      */
     otInstance *GetInstance(void)
     {
@@ -246,7 +232,6 @@ public:
      * This method handles OpenThread state changed notification.
      *
      * @param[in] aFlags    A bit-field indicating specific state that has changed.  See `OT_CHANGED_*` definitions.
-     *
      */
     void StateChangedCallback(otChangedFlags aFlags);
 
@@ -255,7 +240,6 @@ public:
      * This method sets a callback for calls of UpdateVendorMeshCopTxtEntries D-Bus API.
      *
      * @param[in] aHandler  The handler on MeshCoP TXT changes.
-     *
      */
     void SetUpdateMeshCopTxtHandler(UpdateMeshCopTxtHandler aHandler)
     {
@@ -266,7 +250,6 @@ public:
      * This method handles MeshCoP TXT updates done by UpdateVendorMeshCopTxtEntries D-Bus API.
      *
      * @param[in] aUpdate  The key-value pairs to be updated in the TXT record.
-     *
      */
     void OnUpdateMeshCopTxt(std::map<std::string, std::vector<uint8_t>> aUpdate);
 #endif
@@ -294,7 +277,6 @@ public:
      *
      * @param[in] aAction  The action OpenThread performs.
      * @param[in] aError   The action result.
-     *
      */
     static void LogOpenThreadResult(const char *aAction, otError aError);
 
@@ -313,7 +295,6 @@ public:
      *
      * @retval OT_ERROR_NONE          Dataset is valid to do Thread network migration.
      * @retval OT_ERROR_INVALID_ARGS  Dataset is invalid to do Thread network migration.
-     *
      */
     static otError ProcessDatasetForMigration(otOperationalDatasetTlvs &aDatasetTlvs, uint32_t aDelayMilli);
 

@@ -83,7 +83,6 @@ static constexpr int kEpskcRandomGenLen             = 8;
 
 /**
  * Locators
- *
  */
 enum
 {

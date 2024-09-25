@@ -68,7 +68,6 @@ class AvahiPoller;
 
 /**
  * This class implements mDNS publisher with avahi.
- *
  */
 class PublisherAvahi : public Publisher
 {

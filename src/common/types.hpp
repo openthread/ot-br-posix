@@ -50,7 +50,6 @@
 #ifndef IN6ADDR_ANY
 /**
  * Any IPv6 address literal.
- *
  */
 #define IN6ADDR_ANY "::"
 #endif
@@ -63,7 +62,6 @@
 
 /**
  * Forward declaration for otIp6Prefix to avoid including <openthread/ip6.h>
- *
  */
 struct otIp6Prefix;
 
@@ -107,14 +105,12 @@ static constexpr char kLinkLocalAllNodesMulticastAddress[] = "ff02::01";
 
 /**
  * This class implements the Ipv6 address functionality.
- *
  */
 class Ip6Address
 {
 public:
     /**
      * Default constructor.
-     *
      */
     Ip6Address(void)
     {
@@ -126,7 +122,6 @@ public:
      * Constructor with an 16-bit Thread locator.
      *
      * @param[in] aLocator  The 16-bit Thread locator, RLOC or ALOC.
-     *
      */
     Ip6Address(uint16_t aLocator)
     {
@@ -141,7 +136,6 @@ public:
      * Constructor with an Ip6 address.
      *
      * @param[in] aAddress  The Ip6 address.
-     *
      */
     Ip6Address(const uint8_t (&aAddress)[16]);
 
@@ -149,7 +143,6 @@ public:
      * Constructor with an otIp6Address.
      *
      * @param[in] aAddress  A const reference to an otIp6Address.
-     *
      */
     explicit Ip6Address(const otIp6Address &aAddress);
 
@@ -157,7 +150,6 @@ public:
      * Constructor with a string.
      *
      * @param[in] aString The string representing the IPv6 address.
-     *
      */
     Ip6Address(const char *aString) { FromString(aString, *this); }
 
@@ -167,7 +159,6 @@ public:
      * @param[in] aOther  The other Ip6 address to compare with.
      *
      * @returns Whether the Ip6 address is smaller than the other address.
-     *
      */
     bool operator<(const Ip6Address &aOther) const { return memcmp(this, &aOther, sizeof(Ip6Address)) < 0; }
 
@@ -177,7 +168,6 @@ public:
      * @param[in] aOther  The other Ip6 address to compare with.
      *
      * @returns Whether the Ip6 address is equal to the other address.
-     *
      */
     bool operator==(const Ip6Address &aOther) const { return m64[0] == aOther.m64[0] && m64[1] == aOther.m64[1]; }
 
@@ -187,7 +177,6 @@ public:
      * @param[in] aOther  The other Ip6 address to compare with.
      *
      * @returns Whether the Ip6 address is NOT equal to the other address.
-     *
      */
     bool operator!=(const Ip6Address &aOther) const { return !(*this == aOther); }
 
@@ -195,7 +184,6 @@ public:
      * Retrieve the 16-bit Thread locator.
      *
      * @returns RLOC16 or ALOC16.
-     *
      */
     uint16_t ToLocator(void) const { return static_cast<uint16_t>(m8[14] << 8 | m8[15]); }
 
@@ -203,7 +191,6 @@ public:
      * This method returns the solicited node multicast address.
      *
      * @returns The solicited node multicast address.
-     *
      */
     Ip6Address ToSolicitedNodeMulticastAddress(void) const;
 
@@ -211,7 +198,6 @@ public:
      * This method returns the string representation for the Ip6 address.
      *
      * @returns The string representation of the Ip6 address.
-     *
      */
     std::string ToString(void) const;
 
@@ -220,7 +206,6 @@ public:
      *
      * @retval TRUE   If the Ip6 address is the Unspecified Address.
      * @retval FALSE  If the Ip6 address is not the Unspecified Address.
-     *
      */
     bool IsUnspecified(void) const { return m64[0] == 0 && m64[1] == 0; }
 
@@ -228,7 +213,6 @@ public:
      * This method returns if the Ip6 address is a multicast address.
      *
      * @returns Whether the Ip6 address is a multicast address.
-     *
      */
     bool IsMulticast(void) const { return m8[0] == 0xff; }
 
@@ -236,7 +220,6 @@ public:
      * This method returns if the Ip6 address is a link-local address.
      *
      * @returns Whether the Ip6 address is a link-local address.
-     *
      */
     bool IsLinkLocal(void) const { return (m16[0] & bswap_16(0xffc0)) == bswap_16(0xfe80); }
 
@@ -245,7 +228,6 @@ public:
      *
      * @retval TRUE   If the Ip6 address is the Loopback Address.
      * @retval FALSE  If the Ip6 address is not the Loopback Address.
-     *
      */
     bool IsLoopback(void) const { return (m32[0] == 0 && m32[1] == 0 && m32[2] == 0 && m32[3] == htobe32(1)); }
 
@@ -253,7 +235,6 @@ public:
      * This function returns the wellknown Link Local All Nodes Multicast Address (ff02::1).
      *
      * @returns The Link Local All Nodes Multicast Address.
-     *
      */
     static const Ip6Address &GetLinkLocalAllNodesMulticastAddress(void)
     {
@@ -266,7 +247,6 @@ public:
      * This function returns the wellknown Solicited Node Multicast Address Prefix (ff02::01:ff00:0).
      *
      * @returns The Solicited Node Multicast Address Prefix.
-     *
      */
     static const Ip6Address &GetSolicitedMulticastAddressPrefix(void)
     {
@@ -283,7 +263,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE          If the Ip6 address was successfully converted.
      * @retval OTBR_ERROR_INVALID_ARGS  If @p `aStr` is not a valid string representing of Ip6 address.
-     *
      */
     static otbrError FromString(const char *aStr, Ip6Address &aAddr);
 
@@ -291,7 +270,6 @@ public:
      * This method copies the Ip6 address to a `sockaddr_in6` structure.
      *
      * @param[out] aSockAddr  The `sockaddr_in6` structure to copy the Ip6 address to.
-     *
      */
     void CopyTo(struct sockaddr_in6 &aSockAddr) const;
 
@@ -299,7 +277,6 @@ public:
      * This method copies the Ip6 address from a `sockaddr_in6` structure.
      *
      * @param[in] aSockAddr  The `sockaddr_in6` structure to copy the Ip6 address from.
-     *
      */
     void CopyFrom(const struct sockaddr_in6 &aSockAddr);
 
@@ -307,7 +284,6 @@ public:
      * This method copies the Ip6 address to a `in6_addr` structure.
      *
      * @param[out] aIn6Addr  The `in6_addr` structure to copy the Ip6 address to.
-     *
      */
     void CopyTo(struct in6_addr &aIn6Addr) const;
 
@@ -315,7 +291,6 @@ public:
      * This method copies the Ip6 address from a `in6_addr` structure.
      *
      * @param[in] aIn6Addr  The `in6_addr` structure to copy the Ip6 address from.
-     *
      */
     void CopyFrom(const struct in6_addr &aIn6Addr);
 
@@ -333,14 +308,12 @@ private:
 
 /**
  * This class represents a Ipv6 prefix.
- *
  */
 class Ip6Prefix
 {
 public:
     /**
      * Default constructor.
-     *
      */
     Ip6Prefix(void) { Clear(); }
 
@@ -349,7 +322,6 @@ public:
      *
      * @param[in] aIp6AddrStr The IPv6 address string.
      * @param[in] aLength     The prefix length.
-     *
      */
     Ip6Prefix(const char *aIp6AddrStr, uint8_t aLength)
         : mPrefix(aIp6AddrStr)
@@ -367,7 +339,6 @@ public:
      * @param[in] aOther The Ip6Prefix object to compare with.
      *
      * @returns True if the two objects are equal, false otherwise.
-     *
      */
     bool operator==(const Ip6Prefix &aOther) const;
 
@@ -377,7 +348,6 @@ public:
      * @param[in] aOther The Ip6Prefix object to compare with.
      *
      * @returns True if the two objects are NOT equal, false otherwise.
-     *
      */
     bool operator!=(const Ip6Prefix &aOther) const;
 
@@ -385,7 +355,6 @@ public:
      * This method sets the Ip6 prefix to an `otIp6Prefix` value.
      *
      * @param[in] aPrefix  The `otIp6Prefix` value to set the Ip6 prefix.
-     *
      */
     void Set(const otIp6Prefix &aPrefix);
 
@@ -393,13 +362,11 @@ public:
      * This method returns the string representation for the Ip6 prefix.
      *
      * @returns The string representation of the Ip6 prefix.
-     *
      */
     std::string ToString(void) const;
 
     /**
      * This method clears the Ip6 prefix to be unspecified.
-     *
      */
     void Clear(void) { memset(reinterpret_cast<void *>(this), 0, sizeof(*this)); }
 
@@ -407,7 +374,6 @@ public:
      * This method returns if the Ip6 prefix is valid.
      *
      * @returns If the Ip6 prefix is valid.
-     *
      */
     bool IsValid(void) const { return mLength > 0 && mLength <= 128; }
 
@@ -415,7 +381,6 @@ public:
      * This method checks if the object is the default route prefix ("::/0")
      *
      * @returns true if the object is the default route prefix, false otherwise.
-     *
      */
     bool IsDefaultRoutePrefix(void) const { return (*this == Ip6Prefix("::", 0)); }
 
@@ -423,7 +388,6 @@ public:
      * This method checks if the object is the ULA prefix ("fc00::/7")
      *
      * @returns true if the object is the ULA prefix, false otherwise.
-     *
      */
     bool IsUlaPrefix(void) const { return (*this == Ip6Prefix("fc00::", 7)); }
 
@@ -433,7 +397,6 @@ public:
 
 /**
  * This class represents a Ipv6 address and its info.
- *
  */
 class Ip6AddressInfo
 {
@@ -472,7 +435,6 @@ class MacAddress
 public:
     /**
      * Default constructor.
-     *
      */
     MacAddress(void)
     {
@@ -485,7 +447,6 @@ public:
      * This method returns the string representation for the MAC address.
      *
      * @returns The string representation of the MAC address.
-     *
      */
     std::string ToString(void) const;
 
@@ -540,7 +501,6 @@ static constexpr size_t kMaxProductNameLength = 24;
  * @param[in]  aError  a otbrError code.
  *
  * @returns  a otError code.
- *
  */
 otError OtbrErrorToOtError(otbrError aError);
 

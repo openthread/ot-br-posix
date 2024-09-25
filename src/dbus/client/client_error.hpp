@@ -52,7 +52,6 @@ namespace DBus {
  *
  * @returns The corresponding otError. OT_ERROR_GENERIC will be returned
  *          if the error name is not defined in OpenThread.
- *
  */
 ClientError ConvertFromDBusErrorName(const std::string &aErrorName);
 
@@ -62,7 +61,6 @@ ClientError ConvertFromDBusErrorName(const std::string &aErrorName);
  * @param[in] aMessage  The dbus reply message.
  *
  * @returns The error code encoded in the message.
- *
  */
 ClientError CheckErrorMessage(DBusMessage *aMessage);
 

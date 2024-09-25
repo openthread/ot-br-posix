@@ -56,7 +56,6 @@ namespace Mdns {
 
 /**
  * This class implements mDNS publisher with mDNSResponder.
- *
  */
 class PublisherMDnsSd : public MainloopProcessor, public Publisher
 {

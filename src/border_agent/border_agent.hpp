@@ -74,7 +74,6 @@ namespace otbr {
 
 /**
  * This class implements Thread border agent functionality.
- *
  */
 class BorderAgent : private NonCopyable
 {
@@ -87,7 +86,6 @@ public:
      *
      * @param[in] aHost       A reference to the Thread controller.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
-     *
      */
     BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
@@ -121,7 +119,6 @@ public:
      * This method enables/disables the Border Agent.
      *
      * @param[in] aIsEnabled  Whether to enable the Border Agent.
-     *
      */
     void SetEnabled(bool aIsEnabled);
 
@@ -129,13 +126,11 @@ public:
      * This method enables/disables the Border Agent Ephemeral Key feature.
      *
      * @param[in] aIsEnabled  Whether to enable the BA Ephemeral Key feature.
-     *
      */
     void SetEphemeralKeyEnabled(bool aIsEnabled);
 
     /**
      * This method returns the Border Agent Ephemeral Key feature state.
-     *
      */
     bool GetEphemeralKeyEnabled(void) const { return mIsEphemeralKeyEnabled; }
 
@@ -143,7 +138,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
@@ -162,7 +156,6 @@ public:
      * This method adds a callback for ephemeral key changes.
      *
      * @param[in] aCallback  The callback to receive ephemeral key changed events.
-     *
      */
     void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback);
 

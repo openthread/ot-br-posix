@@ -66,7 +66,6 @@ public:
      * @param[in] aConnection     The dbus connection.
      * @param[in] aInterfaceName  The dbus interface name.
      * @param[in] aHost           The Thread controller.
-     *
      */
     DBusThreadObjectNcp(DBusConnection &aConnection, const std::string &aInterfaceName, otbr::Ncp::NcpHost &aHost);
 
@@ -75,7 +74,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  The initialization succeeded.
      * @retval OTBR_ERROR_DBUS  The initialization failed due to dbus connection.
-     *
      */
     otbrError Init(void) override;
 

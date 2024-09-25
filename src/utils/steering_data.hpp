@@ -43,7 +43,6 @@ namespace otbr {
 
 /**
  * This class represents Steering Data
- *
  */
 class SteeringData
 {
@@ -58,19 +57,16 @@ public:
      * This method initializes the bloom filter.
      *
      * @param[in] aLength  The length of the bloom filter in bytes.
-     *
      */
     void Init(uint8_t aLength);
 
     /**
      * This method sets all bits in the bloom filter to zero.
-     *
      */
     void Clear(void) { memset(mBloomFilter, 0, sizeof(mBloomFilter)); }
 
     /**
      * Ths method sets all bits in the bloom filter to one.
-     *
      */
     void Set(void) { memset(mBloomFilter, 0xff, sizeof(mBloomFilter)); }
 
@@ -78,7 +74,6 @@ public:
      * This method sets bit @p aBit.
      *
      * @param[in] aBit  The bit offset.
-     *
      */
     void SetBit(uint8_t aBit) { mBloomFilter[mLength - 1 - (aBit / 8)] |= 1 << (aBit % 8); }
 
@@ -86,7 +81,6 @@ public:
      * This method computes the Bloom Filter.
      *
      * @param[in] aJoinerId  Extended address
-     *
      */
     void ComputeBloomFilter(const uint8_t *aJoinerId);
 
@@ -95,7 +89,6 @@ public:
      *
      * @param[in]  aEui64     A pointer to EUI64.
      * @param[out] aJoinerId  A pointer to receive joiner id. This pointer can be the same as @p aEui64.
-     *
      */
     static void ComputeJoinerId(const uint8_t *aEui64, uint8_t *aJoinerId);
 
@@ -103,13 +96,11 @@ public:
      * This method returns a pointer to the bloom filter.
      *
      * @returns A pointer to the computed bloom filter.
-     *
      */
     const uint8_t *GetBloomFilter(void) const { return mBloomFilter; }
 
     /**
      * This method returns the length of the bloom filter.
-     *
      */
     uint8_t GetLength(void) const { return mLength; }
 
