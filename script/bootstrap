@@ -106,6 +106,20 @@ install_packages_apt()
         fi
     }
 
+    # dhcpv6 pd
+    with DHCPV6_PD_REF && if [[ "$PLATFORM" = "raspbian" ]]; then
+        sudo apt-get install --no-install-recommends -y dhcpcd
+        sudo mkdir -p /etc/systemd/system/dhcpcd.service.d
+        # allow edit system config file eg. /etc/radvd.conf
+sudo tee /etc/systemd/system/dhcpcd.service.d/custom.conf > /dev/null <<EOF
+[Service]
+ProtectSystem=false
+EOF
+    # reload dhcpcd daemon to activate the custom.conf
+    sudo systemctl daemon-reload
+    sudo apt-get install --no-install-recommends -y radvd
+    fi
+
     # network-manager
     without NETWORK_MANAGER || sudo apt-get install --no-install-recommends -y dnsmasq network-manager
 
