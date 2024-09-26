@@ -2,7 +2,7 @@
 
 customise_dhcpcd_conf()
 {
-sudo tee /etc/dhcpcd.conf > /dev/null <<EOF
+    sudo tee /etc/dhcpcd.conf >/dev/null <<EOF
 # A sample configuration for dhcpcd.
 # See dhcpcd.conf(5) for details.
 
@@ -50,27 +50,24 @@ EOF
 # EOF
 # }
 
-dhcp6_pd_ref_stop()
+dhcpv6_pd_ref_stop()
 {
     if [[ -f "/etc/dhcpcd.conf.orig" ]]; then
         sudo mv /etc/dhcpcd.conf.orig /etc/dhcpcd.conf
     fi
-    # sudo systemctl restart dhcpcd 
-    sudo rm /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
+    # sudo systemctl restart dhcpcd
+    sudo rm -f /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
 
 }
 
-dhcp6_pd_ref_start()
+dhcpv6_pd_ref_start()
 {
     if [[ -f "/etc/dhcpcd.conf" ]]; then
         sudo mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig
     fi
     customise_dhcpcd_conf
     # Add dhcpcd.hooks
-    sudo mv ~/repo/script/reference-device/dhcpcd.enter-hook /etc/dhcpcd.enter-hook
-    sudo mv ~/repo/script/reference-device/dhcpcd.exit-hook /etc/dhcpcd.exit-hook
-    sudo chmod +x /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook /etc/dhcpcd.enter-hook
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook /etc/dhcpcd.exit-hook
 
 }
-
-dhcp6_pd_ref "$@"
