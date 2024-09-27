@@ -38,18 +38,6 @@ interface eth0
 EOF
 }
 
-# customise_dhcpcd_hooks90
-# {
-#     #dhcpcd.enter-hook
-# sudo tee /etc/dhcpcd.enter-hook > /dev/null <<EOF
-
-# EOF
-
-#     #dhcpcd.exit-hook
-# sudo tee /etc/dhcpcd.exit-hook > /dev/null <<EOF
-# EOF
-# }
-
 dhcpv6_pd_ref_stop()
 {
     if [[ -f "/etc/dhcpcd.conf.orig" ]]; then

@@ -38,22 +38,10 @@ if [ "${interface}" = "eth0" ]; then
     done
 
     case $reason in
-    # | DELEGATED6 | BOUND6 | RENEW6 | REBIND6 | ROUTERADVERT
         DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
             logger "$LOG_TAG prefix is $new_dhcp6_ia_pd1_prefix1  length is $new_dhcp6_ia_pd1_prefix1_length pltime is  $new_dhcp6_ia_pd1_prefix1_pltime vltime is $new_dhcp6_ia_pd1_prefix1_vltime"
             config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
-            #  "$new_dhcp6_ia_pd1_prefix1" "$new_dhcp6_ia_pd1_prefix1_pltime" "$new_dhcp6_ia_pd1_prefix1_vltime"
             sudo systemctl restart radvd || logger "$LOG_TAG Failed to restart radvd"
             ;;
-        # RENEW6)
-        #     if ["${new_dhcp6_ia_pd1_prefix1}" == "${old_dhcp6_ia_pd1_prefix1}"]; then
-        #     {
-        #         config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
-        #         sudo systemctl restart radvd || logger "$LOG_TAG Failed to restart radvd"
-        #     }
-        #     else
-        #     {
-
-        #     }
     esac
 fi
