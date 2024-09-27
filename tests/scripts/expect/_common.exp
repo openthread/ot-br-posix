@@ -1,0 +1,112 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2024, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+proc wait_for {command success {failure {[\r\n]FAILURE_NOT_EXPECTED[\r\n]}}} {
+    set timeout 1
+    for {set i 0} {$i < 40} {incr i} {
+        if {$command != ""} {
+            send "$command\n"
+        }
+
+        expect {
+            -re $success {
+                return 0
+            }
+            -re $failure {
+                fail "Failed due to '$failure' found"
+            }
+            timeout {
+                # Do nothing
+            }
+        }
+    }
+    fail "Failed due to '$success' not found"
+}
+
+proc expect_line {line} {
+    set timeout 10
+    expect -re "\[\r\n \]($line)(?=\[\r\n>\])"
+    return $expect_out(1,string)
+}
+
+# type: The type of the node.
+#   Possible values:
+#   1. cli: The cli app. ot-cli-ftd or ot-cli-mtd
+#   2. otbr: The otbr-agent.
+#
+# sim_app: The path of the simulation app to start the node.
+#   If type is 'cli', sim_app is the path of the cli app.
+#   If type is 'otbr', sim_app is the path of the coprocessor. It could be 'ot-rcp', 'ot-ncp-ftd'
+#     or 'ot-ncp-mtd'.
+proc spawn_node {id type sim_app} {
+    global spawn_id
+    global spawn_ids
+    global argv0
+
+    send_user "\n# ${id} ${type} ${sim_app}\n"
+
+    switch -regexp ${type} {
+        cli {
+            spawn $sim_app $id
+            send "factoryreset\n"
+            wait_for "state" "disabled"
+            expect_line "Done"
+            send "routerselectionjitter 1\n"
+            expect_line "Done"
+
+            expect_after {
+                timeout { fail "Timed out" }
+            }
+        }
+        otbr {
+            spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -d7 "spinel+hdlc+forkpty://${sim_app}?forkpty-arg=${id}"
+        }
+    }
+
+    set spawn_ids($id) $spawn_id
+
+    return $spawn_id
+}
+
+proc switch_node {id} {
+    global spawn_ids
+    global spawn_id
+
+    send_user "\n# ${id}\n"
+    set spawn_id $spawn_ids($id)
+}
+
+proc get_ipaddr {type} {
+    send "ipaddr $type\n"
+    expect "ipaddr $type"
+    set rval [expect_line {([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}}]
+    expect_line "Done"
+
+    return $rval
+}

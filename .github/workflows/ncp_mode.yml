@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,31 +26,42 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-unit
-    $<$<BOOL:${OTBR_DBUS}>:test_dbus_message.cpp>
-    $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:test_mdns_mdnssd.cpp>
-    main.cpp
-    test_common_types.cpp
-    test_dns_utils.cpp
-    test_logging.cpp
-    test_once_callback.cpp
-    test_pskc.cpp
-    test_task_runner.cpp
-)
-target_include_directories(otbr-test-unit PRIVATE
-    ${CPPUTEST_INCLUDE_DIRS}
-)
-target_link_libraries(otbr-test-unit
-    $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-common>
-    $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:otbr-mdns>
-    $<$<BOOL:${CPPUTEST_LIBRARY_DIRS}>:-L$<JOIN:${CPPUTEST_LIBRARY_DIRS}," -L">>
-    ${CPPUTEST_LIBRARIES}
-    mbedtls
-    otbr-common
-    otbr-utils
-    pthread
-)
-add_test(
-    NAME unit
-    COMMAND otbr-test-unit
-)
+name: NcpMode
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || (github.repository == 'openthread/ot-br-posix' && github.run_id) || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  ncp_mode:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        mdns: ["mDNSResponder", "avahi"]
+    env:
+        BUILD_TARGET: check
+        OTBR_MDNS: ${{ matrix.mdns }}
+        OTBR_COVERAGE: 1
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Bootstrap
+      run: tests/scripts/bootstrap.sh
+    - name: Build
+      run: |
+        OTBR_BUILD_DIR="./build/temp" script/cmake-build -DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.4 -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_WEB=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON
+    - name: Run
+      run: OTBR_VERBOSE=1 OTBR_TOP_BUILDDIR="./build/temp" script/test ncp_mode
+    - name: Codecov
+      uses: codecov/codecov-action@v4

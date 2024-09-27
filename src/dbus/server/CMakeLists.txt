@@ -37,7 +37,8 @@ add_custom_target(otbr-dbus-introspect-header ALL
 add_library(otbr-dbus-server STATIC
     dbus_agent.cpp
     dbus_object.cpp
-    dbus_thread_object.cpp
+    dbus_thread_object_ncp.cpp
+    dbus_thread_object_rcp.cpp
     error_helper.cpp
 )
 
@@ -55,7 +56,7 @@ target_link_libraries(otbr-dbus-server PUBLIC
 
 if(OTBR_DOC)
 add_custom_target(otbr-dbus-server-doc ALL
-    COMMAND gdbus-codegen --generate-docbook generated-docs ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml 
+    COMMAND gdbus-codegen --generate-docbook generated-docs ${CMAKE_CURRENT_SOURCE_DIR}/introspect.xml
     COMMAND xmlto html generated-docs-io.openthread.BorderRouter.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     VERBATIM

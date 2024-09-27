@@ -41,6 +41,11 @@ Ip6Address::Ip6Address(const uint8_t (&aAddress)[16])
     memcpy(m8, aAddress, sizeof(m8));
 }
 
+Ip6Address::Ip6Address(const otIp6Address &aAddress)
+{
+    memcpy(m8, aAddress.mFields.m8, sizeof(m8));
+}
+
 std::string Ip6Address::ToString() const
 {
     char strbuf[INET6_ADDRSTRLEN];
@@ -128,6 +133,11 @@ exit:
     return isEqual;
 }
 
+bool Ip6Prefix::operator!=(const Ip6Prefix &aOther) const
+{
+    return !(*this == aOther);
+}
+
 void Ip6Prefix::Set(const otIp6Prefix &aPrefix)
 {
     memcpy(reinterpret_cast<void *>(this), &aPrefix, sizeof(*this));
@@ -157,6 +167,48 @@ std::string MacAddress::ToString(void) const
     snprintf(strbuf, sizeof(strbuf), "%02x:%02x:%02x:%02x:%02x:%02x", m8[0], m8[1], m8[2], m8[3], m8[4], m8[5]);
 
     return std::string(strbuf);
+}
+
+otError OtbrErrorToOtError(otbrError aError)
+{
+    otError error;
+
+    switch (aError)
+    {
+    case OTBR_ERROR_NONE:
+        error = OT_ERROR_NONE;
+        break;
+
+    case OTBR_ERROR_NOT_FOUND:
+        error = OT_ERROR_NOT_FOUND;
+        break;
+
+    case OTBR_ERROR_PARSE:
+        error = OT_ERROR_PARSE;
+        break;
+
+    case OTBR_ERROR_NOT_IMPLEMENTED:
+        error = OT_ERROR_NOT_IMPLEMENTED;
+        break;
+
+    case OTBR_ERROR_INVALID_ARGS:
+        error = OT_ERROR_INVALID_ARGS;
+        break;
+
+    case OTBR_ERROR_DUPLICATED:
+        error = OT_ERROR_DUPLICATED;
+        break;
+
+    case OTBR_ERROR_INVALID_STATE:
+        error = OT_ERROR_INVALID_STATE;
+        break;
+
+    default:
+        error = OT_ERROR_FAILED;
+        break;
+    }
+
+    return error;
 }
 
 } // namespace otbr

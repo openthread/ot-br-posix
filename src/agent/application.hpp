@@ -83,7 +83,6 @@ class VendorServer;
 
 /**
  * This class implements OTBR application management.
- *
  */
 class Application : private NonCopyable
 {
@@ -97,7 +96,6 @@ public:
      * @param[in] aEnableAutoAttach      Whether or not to automatically attach to the saved network.
      * @param[in] aRestListenAddress     Network address to listen on.
      * @param[in] aRestListenPort        Network port to listen on.
-     *
      */
     explicit Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
@@ -108,13 +106,11 @@ public:
 
     /**
      * This method initializes the Application instance.
-     *
      */
     void Init(void);
 
     /**
      * This method de-initializes the Application instance.
-     *
      */
     void Deinit(void);
 
@@ -123,7 +119,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  The application exited without any error.
      * @retval OTBR_ERROR_ERRNO The application exited with some system error.
-     *
      */
     otbrError Run(void);
 
@@ -132,7 +127,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::RcpHost &GetNcp(void) { return *mHost; }
+    Ncp::ThreadHost &GetHost(void) { return *mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -246,7 +241,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
@@ -256,12 +250,19 @@ private:
 
     static void HandleSignal(int aSignal);
 
+    void CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
+    void InitRcpMode(void);
+    void DeinitRcpMode(void);
+
+    void InitNcpMode(void);
+    void DeinitNcpMode(void);
+
     std::string mInterfaceName;
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char                   *mBackboneInterfaceName;
-    std::unique_ptr<Ncp::RcpHost> mHost;
+    const char                      *mBackboneInterfaceName;
+    std::unique_ptr<Ncp::ThreadHost> mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif

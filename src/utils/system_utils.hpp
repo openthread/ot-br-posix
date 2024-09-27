@@ -50,7 +50,6 @@ extern "C" {
  * @param[in] ...      Arguments for the format specification.
  *
  * @returns The command exit code.
- *
  */
 int ExecuteCommand(const char *aFormat, ...);
 

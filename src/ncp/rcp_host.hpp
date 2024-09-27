@@ -49,7 +49,7 @@
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
-#include "ncp/thread_controller.hpp"
+#include "ncp/thread_host.hpp"
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
@@ -61,10 +61,30 @@ class FeatureFlagList;
 namespace Ncp {
 
 /**
- * This interface defines OpenThread Controller under RCP mode.
- *
+ * This class implements the NetworkProperties for architectures where OT APIs are directly accessible.
  */
-class RcpHost : public MainloopProcessor, public ThreadController
+class OtNetworkProperties : virtual public NetworkProperties
+{
+public:
+    /**
+     * Constructor.
+     */
+    explicit OtNetworkProperties(void);
+
+    // NetworkProperties methods
+    otDeviceRole GetDeviceRole(void) const override;
+
+    // Set the otInstance
+    void SetInstance(otInstance *aInstance);
+
+private:
+    otInstance *mInstance;
+};
+
+/**
+ * This interface defines OpenThread Controller under RCP mode.
+ */
+class RcpHost : public MainloopProcessor, public ThreadHost, public OtNetworkProperties
 {
 public:
     using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
@@ -77,7 +97,6 @@ public:
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
-     *
      */
     RcpHost(const char                      *aInterfaceName,
             const std::vector<const char *> &aRadioUrls,
@@ -86,16 +105,14 @@ public:
             bool                             aEnableAutoAttach);
 
     /**
-     * This method initialize the NCP controller.
-     *
+     * This method initialize the Thread controller.
      */
-    void Init(void);
+    void Init(void) override;
 
     /**
-     * This method deinitialize the NCP controller.
-     *
+     * This method deinitialize the Thread controller.
      */
-    void Deinit(void);
+    void Deinit(void) override;
 
     /**
      * Returns an OpenThread instance.
@@ -109,7 +126,6 @@ public:
      * This method gets the thread functionality helper.
      *
      * @retval The pointer to the helper object.
-     *
      */
     otbr::agent::ThreadHelper *GetThreadHelper(void)
     {
@@ -125,7 +141,6 @@ public:
      *
      * @param[in] aDelay  The delay in milliseconds before executing the task.
      * @param[in] aTask   The task function.
-     *
      */
     void PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask);
 
@@ -133,7 +148,6 @@ public:
      * This method registers a reset handler.
      *
      * @param[in] aHandler  The handler function.
-     *
      */
     void RegisterResetHandler(std::function<void(void)> aHandler);
 
@@ -141,13 +155,11 @@ public:
      * This method adds a event listener for Thread state changes.
      *
      * @param[in] aCallback  The callback to receive Thread state changed events.
-     *
      */
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
 
     /**
      * This method resets the OpenThread instance.
-     *
      */
     void Reset(void);
 
@@ -155,7 +167,6 @@ public:
      * This method returns the Thread protocol version as a string.
      *
      * @returns A pointer to the Thread version string.
-     *
      */
     static const char *GetThreadVersion(void);
 
@@ -163,9 +174,8 @@ public:
      * This method returns the Thread network interface name.
      *
      * @returns A pointer to the Thread network interface name string.
-     *
      */
-    const char *GetInterfaceName(void) const { return mConfig.mInterfaceName; }
+    const char *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
 
     static otbrLogLevel ConvertToOtbrLogLevel(otLogLevel aLogLevel);
 
@@ -176,7 +186,6 @@ public:
      * @param[in] aFeatureFlagList  The feature flag list to be applied to OpenThread.
      *
      * @returns The error value of underlying OpenThread API calls.
-     *
      */
     otError ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList);
 
@@ -184,7 +193,6 @@ public:
      * This method returns the applied FeatureFlagList in ApplyFeatureFlagList call.
      *
      * @returns the applied FeatureFlagList's serialized bytes.
-     *
      */
     const std::string &GetAppliedFeatureFlagListBytes(void)
     {
@@ -194,8 +202,21 @@ public:
 
     ~RcpHost(void) override;
 
-    // Thread Control APIs
-    void GetDeviceRole(const DeviceRoleHandler aHandler) override;
+    // Thread Control virtual methods
+    void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
+    void Leave(const AsyncResultReceiver &aRecevier) override;
+    void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                           const AsyncResultReceiver       aReceiver) override;
+
+    CoprocessorType GetCoprocessorType(void) override
+    {
+        return OT_COPROCESSOR_RCP;
+    }
+
+    const char *GetCoprocessorVersion(void) override
+    {
+        return otPlatRadioGetVersionString(mInstance);
+    }
 
 private:
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
@@ -220,8 +241,6 @@ private:
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
 
-    static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
-
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
     otInstance *mInstance;
@@ -232,6 +251,7 @@ private:
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
+
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
     std::string mAppliedFeatureFlagListBytes;

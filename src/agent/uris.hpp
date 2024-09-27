@@ -38,7 +38,6 @@ namespace otbr {
 
 /**
  * The URI Path for Address Query.
- *
  */
 #define OT_URI_PATH_ADDRESS_QUERY "a/aq"
 
@@ -46,7 +45,6 @@ namespace otbr {
  * @def OT_URI_PATH_ADDRESS_NOTIFY
  *
  * The URI Path for Address Notify.
- *
  */
 #define OT_URI_PATH_ADDRESS_NOTIFY "a/an"
 
@@ -54,7 +52,6 @@ namespace otbr {
  * @def OT_URI_PATH_ADDRESS_ERROR
  *
  * The URI Path for Address Error.
- *
  */
 #define OT_URI_PATH_ADDRESS_ERROR "a/ae"
 
@@ -62,7 +59,6 @@ namespace otbr {
  * @def OT_URI_PATH_ADDRESS_RELEASE
  *
  * The URI Path for Address Release.
- *
  */
 #define OT_URI_PATH_ADDRESS_RELEASE "a/ar"
 
@@ -70,7 +66,6 @@ namespace otbr {
  * @def OT_URI_PATH_ADDRESS_SOLICIT
  *
  * The URI Path for Address Solicit.
- *
  */
 #define OT_URI_PATH_ADDRESS_SOLICIT "a/as"
 
@@ -78,7 +73,6 @@ namespace otbr {
  * @def OT_URI_PATH_ACTIVE_GET
  *
  * The URI Path for MGMT_ACTIVE_GET
- *
  */
 #define OT_URI_PATH_ACTIVE_GET "c/ag"
 
@@ -86,7 +80,6 @@ namespace otbr {
  * @def OT_URI_PATH_ACTIVE_SET
  *
  * The URI Path for MGMT_ACTIVE_SET
- *
  */
 #define OT_URI_PATH_ACTIVE_SET "c/as"
 
@@ -94,7 +87,6 @@ namespace otbr {
  * @def OT_URI_PATH_DATASET_CHANGED
  *
  * The URI Path for MGMT_DATASET_CHANGED
- *
  */
 #define OT_URI_PATH_DATASET_CHANGED "c/dc"
 
@@ -102,7 +94,6 @@ namespace otbr {
  * @def OT_URI_PATH_ENERGY_SCAN
  *
  * The URI Path for Energy Scan
- *
  */
 #define OT_URI_PATH_ENERGY_SCAN "c/es"
 
@@ -110,7 +101,6 @@ namespace otbr {
  * @def OT_URI_PATH_ENERGY_REPORT
  *
  * The URI Path for Energy Report
- *
  */
 #define OT_URI_PATH_ENERGY_REPORT "c/er"
 
@@ -118,7 +108,6 @@ namespace otbr {
  * @def OT_URI_PATH_PENDING_GET
  *
  * The URI Path for MGMT_PENDING_GET
- *
  */
 #define OT_URI_PATH_PENDING_GET "c/pg"
 
@@ -126,7 +115,6 @@ namespace otbr {
  * @def OT_URI_PATH_PENDING_SET
  *
  * The URI Path for MGMT_PENDING_SET
- *
  */
 #define OT_URI_PATH_PENDING_SET "c/ps"
 
@@ -134,7 +122,6 @@ namespace otbr {
  * @def OT_URI_PATH_SERVER_DATA
  *
  * The URI Path for Server Data Registration.
- *
  */
 #define OT_URI_PATH_SERVER_DATA "a/sd"
 
@@ -142,7 +129,6 @@ namespace otbr {
  * @def OT_URI_PATH_ANNOUNCE_BEGIN
  *
  * The URI Path for Announce Begin.
- *
  */
 #define OT_URI_PATH_ANNOUNCE_BEGIN "c/ab"
 
@@ -150,7 +136,6 @@ namespace otbr {
  * @def OT_URI_PATH_RELAY_RX
  *
  * The URI Path for Relay RX.
- *
  */
 #define OT_URI_PATH_RELAY_RX "c/rx"
 
@@ -158,7 +143,6 @@ namespace otbr {
  * @def OT_URI_PATH_RELAY_TX
  *
  * The URI Path for Relay TX.
- *
  */
 #define OT_URI_PATH_RELAY_TX "c/tx"
 
@@ -166,7 +150,6 @@ namespace otbr {
  * @def OT_URI_PATH_JOINER_FINALIZE
  *
  * The URI Path for Joiner Finalize
- *
  */
 #define OT_URI_PATH_JOINER_FINALIZE "c/jf"
 
@@ -174,7 +157,6 @@ namespace otbr {
  * @def OT_URI_PATH_JOINER_ENTRUST
  *
  * The URI Path for Joiner Entrust
- *
  */
 #define OT_URI_PATH_JOINER_ENTRUST "c/je"
 
@@ -182,7 +164,6 @@ namespace otbr {
  * @def OT_URI_PATH_LEADER_PETITION
  *
  * The URI Path for Leader Petition
- *
  */
 #define OT_URI_PATH_LEADER_PETITION "c/lp"
 
@@ -190,7 +171,6 @@ namespace otbr {
  * @def OT_URI_PATH_LEADER_KEEP_ALIVE
  *
  * The URI Path for Leader Keep Alive
- *
  */
 #define OT_URI_PATH_LEADER_KEEP_ALIVE "c/la"
 
@@ -198,7 +178,6 @@ namespace otbr {
  * @def OT_URI_PATH_PANID_CONFLICT
  *
  * The URI Path for PAN ID Conflict
- *
  */
 #define OT_URI_PATH_PANID_CONFLICT "c/pc"
 
@@ -206,7 +185,6 @@ namespace otbr {
  * @def OT_URI_PATH_PANID_QUERY
  *
  * The URI Path for PAN ID Query
- *
  */
 #define OT_URI_PATH_PANID_QUERY "c/pq"
 
@@ -214,7 +192,6 @@ namespace otbr {
  * @def OT_URI_PATH_COMMISSIONER_GET
  *
  * The URI Path for MGMT_COMMISSIONER_GET
- *
  */
 #define OT_URI_PATH_COMMISSIONER_GET "c/cg"
 
@@ -222,7 +199,6 @@ namespace otbr {
  * @def OT_URI_PATH_COMMISSIONER_SET
  *
  * The URI Path for MGMT_COMMISSIONER_SET
- *
  */
 #define OT_URI_PATH_COMMISSIONER_SET "c/cs"
 
@@ -230,7 +206,6 @@ namespace otbr {
  * @def OT_URI_PATH_COMMISSIONER_PETITION
  *
  * The URI Path for Commissioner Petition.
- *
  */
 #define OT_URI_PATH_COMMISSIONER_PETITION "c/cp"
 
@@ -238,7 +213,6 @@ namespace otbr {
  * @def OT_URI_PATH_COMMISSIONER_KEEP_ALIVE
  *
  * The URI Path for Commissioner Keep Alive.
- *
  */
 #define OT_URI_PATH_COMMISSIONER_KEEP_ALIVE "c/ca"
 
@@ -246,7 +220,6 @@ namespace otbr {
  * @def OT_URI_PATH_DIAGNOSTIC_GET_REQUEST
  *
  * The URI Path for Network Diagnostic Get Request.
- *
  */
 #define OT_URI_PATH_DIAGNOSTIC_GET_REQUEST "d/dg"
 
@@ -254,7 +227,6 @@ namespace otbr {
  * @def OT_URI_PATH_DIAGNOSTIC_GET_QUERY
  *
  * The URI Path for Network Diagnostic Get Query.
- *
  */
 #define OT_URI_PATH_DIAGNOSTIC_GET_QUERY "d/dq"
 
@@ -262,7 +234,6 @@ namespace otbr {
  * @def OT_URI_PATH_DIAGNOSTIC_GET_ANSWER
  *
  * The URI Path for Network Diagnostic Get Answer.
- *
  */
 #define OT_URI_PATH_DIAGNOSTIC_GET_ANSWER "d/da"
 
@@ -270,7 +241,6 @@ namespace otbr {
  * @def OT_URI_PATH_DIAG_RST
  *
  * The URI Path for Network Diagnostic Reset.
- *
  */
 #define OT_URI_PATH_DIAGNOSTIC_RESET "d/dr"
 

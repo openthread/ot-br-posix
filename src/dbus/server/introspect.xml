@@ -231,6 +231,25 @@
       <arg name="enable" type="b" direction="in"/>
     </method>
 
+    <property name="EphemeralKeyEnabled" type="b" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+
+    <!-- ActivateEphemeralKeyMode: Activate ePSKc mode.
+      @lifetime: in milliseconds, duration of active ePSKc mode before secure session is established.
+                 0 for OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 min).
+      @epskc: returns the ephemeral key digit string of length 9 with first 8 digits randomly generated,
+              and the last digit as verhoeff checksum.
+    -->
+    <method name="ActivateEphemeralKeyMode">
+      <arg name="lifetime" type="u" direction="in"/>
+      <arg name="epskc" type="s" direction="out"/>
+    </method>
+
+    <!-- DeactivateEphemeralKeyMode: Deactivate ePSKc mode. -->
+    <method name="DeactivateEphemeralKeyMode">
+    </method>
+
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
     <property name="MeshLocalPrefix" type="ay" access="readwrite">
       <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>

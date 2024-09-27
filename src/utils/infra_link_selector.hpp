@@ -56,7 +56,6 @@
  *
  * This function should return the infrastructure link that is selected by platform specific rules.
  * If the function returns nullptr, the generic infrastructure link selections rules will be applied.
- *
  */
 extern "C" const char *otbrVendorInfraLinkSelect(void);
 #endif
@@ -66,7 +65,6 @@ namespace Utils {
 
 /**
  * This class implements Infrastructure Link Selector.
- *
  */
 class InfraLinkSelector : public MainloopProcessor, private NonCopyable
 {
@@ -75,13 +73,11 @@ public:
      * This constructor initializes the InfraLinkSelector instance.
      *
      * @param[in]  aInfraLinkNames  A list of infrastructure link candidates to select from.
-     *
      */
     explicit InfraLinkSelector(std::vector<const char *> aInfraLinkNames);
 
     /**
      * This destructor destroys the InfraLinkSelector instance.
-     *
      */
     ~InfraLinkSelector(void);
 
@@ -98,14 +94,12 @@ public:
      *      The interface has been `up and running` within last 10 seconds
      *
      * @returns  The selected infrastructure link.
-     *
      */
     const char *Select(void);
 
 private:
     /**
      * This enumeration infrastructure link states.
-     *
      */
     enum LinkState : uint8_t
     {

@@ -76,9 +76,10 @@ int main(int argc, char **argv)
     otbrLogLevel logLevel       = OTBR_LOG_INFO;
     int          ret            = 0;
     int          opt;
-    uint16_t     port = OT_HTTP_PORT;
+    uint16_t     port          = OT_HTTP_PORT;
+    bool         syslogDisable = false;
 
-    while ((opt = getopt(argc, argv, "d:I:p:va:")) != -1)
+    while ((opt = getopt(argc, argv, "d:I:p:va:s")) != -1)
     {
         switch (opt)
         {
@@ -103,6 +104,10 @@ int main(int argc, char **argv)
             ExitNow();
             break;
 
+        case 's':
+            syslogDisable = true;
+            break;
+
         default:
             fprintf(stderr, "Usage: %s [-d DEBUG_LEVEL] [-I interfaceName] [-p port] [-a listenAddress] [-v]\n",
                     argv[0]);
@@ -111,7 +116,7 @@ int main(int argc, char **argv)
         }
     }
 
-    otbrLogInit(argv[0], logLevel, true, false);
+    otbrLogInit(argv[0], logLevel, true, syslogDisable);
     otbrLogInfo("Running %s", OTBR_PACKAGE_VERSION);
 
     if (interfaceName == nullptr)

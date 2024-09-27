@@ -53,8 +53,6 @@ install_packages_apt()
 
     sudo apt-get install --no-install-recommends -y build-essential ninja-build cmake
 
-    with RELEASE || sudo apt-get install --no-install-recommends -y libcpputest-dev
-
     sudo apt-get install --no-install-recommends -y rsyslog
 
     # For DBus server
@@ -132,7 +130,7 @@ EOF
     sudo apt-get install --no-install-recommends -y libjsoncpp-dev
 
     # reference device
-    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils avahi-utils
+    without REFERENCE_DEVICE || sudo apt-get install --no-install-recommends -y radvd dnsutils avahi-utils iperf3
 
     # backbone-router
     without BACKBONE_ROUTER || sudo apt-get install --no-install-recommends -y libnetfilter-queue1 libnetfilter-queue-dev
@@ -173,7 +171,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install boost cmake cpputest dbus jsoncpp ninja
+    brew install boost cmake dbus jsoncpp ninja
 }
 
 install_packages_source()

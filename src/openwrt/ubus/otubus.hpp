@@ -68,7 +68,6 @@ namespace ubus {
  *
  * @brief
  *   This namespace contains definitions for ubus related instance.
- *
  */
 
 class UbusServer
@@ -86,13 +85,11 @@ public:
      * This method return the instance of the global UbusServer.
      *
      * @retval The reference of the UbusServer Instance.
-     *
      */
     static UbusServer &GetInstance(void);
 
     /**
      * This method install ubus object onto OpenWRT.
-     *
      */
     void InstallUbusObject(void);
 
@@ -106,7 +103,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusScanHandler(struct ubus_context      *aContext,
                                struct ubus_object       *aObj,
@@ -124,7 +120,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusChannelHandler(struct ubus_context      *aContext,
                                   struct ubus_object       *aObj,
@@ -142,7 +137,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetChannelHandler(struct ubus_context      *aContext,
                                      struct ubus_object       *aObj,
@@ -160,7 +154,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusNetworknameHandler(struct ubus_context      *aContext,
                                       struct ubus_object       *aObj,
@@ -178,7 +171,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetNetworknameHandler(struct ubus_context      *aContext,
                                          struct ubus_object       *aObj,
@@ -196,7 +188,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusStateHandler(struct ubus_context      *aContext,
                                 struct ubus_object       *aObj,
@@ -214,7 +205,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMacfilterSetStateHandler(struct ubus_context      *aContext,
                                             struct ubus_object       *aObj,
@@ -232,7 +222,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusPanIdHandler(struct ubus_context      *aContext,
                                 struct ubus_object       *aObj,
@@ -250,7 +239,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetPanIdHandler(struct ubus_context      *aContext,
                                    struct ubus_object       *aObj,
@@ -268,7 +256,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusPskcHandler(struct ubus_context      *aContext,
                                struct ubus_object       *aObj,
@@ -286,7 +273,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetPskcHandler(struct ubus_context      *aContext,
                                   struct ubus_object       *aObj,
@@ -304,7 +290,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusNetworkkeyHandler(struct ubus_context      *aContext,
                                      struct ubus_object       *aObj,
@@ -322,7 +307,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetNetworkkeyHandler(struct ubus_context      *aContext,
                                         struct ubus_object       *aObj,
@@ -340,7 +324,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusRloc16Handler(struct ubus_context      *aContext,
                                  struct ubus_object       *aObj,
@@ -358,7 +341,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusExtPanIdHandler(struct ubus_context      *aContext,
                                    struct ubus_object       *aObj,
@@ -376,7 +358,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetExtPanIdHandler(struct ubus_context      *aContext,
                                       struct ubus_object       *aObj,
@@ -394,7 +375,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusModeHandler(struct ubus_context      *aContext,
                                struct ubus_object       *aObj,
@@ -412,7 +392,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusSetModeHandler(struct ubus_context      *aContext,
                                   struct ubus_object       *aObj,
@@ -430,7 +409,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusPartitionIdHandler(struct ubus_context      *aContext,
                                       struct ubus_object       *aObj,
@@ -448,7 +426,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusLeaderdataHandler(struct ubus_context      *aContext,
                                      struct ubus_object       *aObj,
@@ -466,7 +443,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusNetworkdataHandler(struct ubus_context      *aContext,
                                       struct ubus_object       *aObj,
@@ -484,7 +460,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusParentHandler(struct ubus_context      *aContext,
                                  struct ubus_object       *aObj,
@@ -502,7 +477,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusNeighborHandler(struct ubus_context      *aContext,
                                    struct ubus_object       *aObj,
@@ -520,7 +494,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusThreadStartHandler(struct ubus_context      *aContext,
                                       struct ubus_object       *aObj,
@@ -538,7 +511,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusThreadStopHandler(struct ubus_context      *aContext,
                                      struct ubus_object       *aObj,
@@ -556,7 +528,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusLeaveHandler(struct ubus_context      *aContext,
                                 struct ubus_object       *aObj,
@@ -574,7 +545,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMacfilterAddrHandler(struct ubus_context      *aContext,
                                         struct ubus_object       *aObj,
@@ -592,7 +562,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMacfilterStateHandler(struct ubus_context      *aContext,
                                          struct ubus_object       *aObj,
@@ -610,7 +579,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMacfilterAddHandler(struct ubus_context      *aContext,
                                        struct ubus_object       *aObj,
@@ -628,7 +596,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMacfilterClearHandler(struct ubus_context      *aContext,
                                          struct ubus_object       *aObj,
@@ -646,7 +613,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMacfilterRemoveHandler(struct ubus_context      *aContext,
                                           struct ubus_object       *aObj,
@@ -664,7 +630,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusCommissionerStartHandler(struct ubus_context      *aContext,
                                             struct ubus_object       *aObj,
@@ -682,7 +647,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusJoinerAddHandler(struct ubus_context      *aContext,
                                     struct ubus_object       *aObj,
@@ -700,7 +664,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusJoinerRemoveHandler(struct ubus_context      *aContext,
                                        struct ubus_object       *aObj,
@@ -718,7 +681,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusJoinerNumHandler(struct ubus_context      *aContext,
                                     struct ubus_object       *aObj,
@@ -736,7 +698,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusMgmtsetHandler(struct ubus_context      *aContext,
                                   struct ubus_object       *aObj,
@@ -754,7 +715,6 @@ public:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     static int UbusInterfaceNameHandler(struct ubus_context      *aContext,
                                         struct ubus_object       *aObj,
@@ -769,7 +729,6 @@ public:
      * @param[in] aMessage      A pointer to the message.
      * @param[in] aMessageInfo  A pointer to the message information.
      * @param[in] aContext      A pointer to the context.
-     *
      */
     static void HandleDiagnosticGetResponse(otError              aError,
                                             otMessage           *aMessage,
@@ -782,7 +741,6 @@ public:
      * @param[in] aError       A error of receiving the diagnostic response.
      * @param[in] aMessage     A pointer to the message.
      * @param[in] aMessageInfo A pointer to the message information.
-     *
      */
     void HandleDiagnosticGetResponse(otError aError, otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
@@ -810,7 +768,6 @@ private:
 
     /**
      * This method start scan.
-     *
      */
     void ProcessScan(void);
 
@@ -824,7 +781,6 @@ private:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusScanHandlerDetail(struct ubus_context      *aContext,
                               struct ubus_object       *aObj,
@@ -837,7 +793,6 @@ private:
      *
      * @param[in] aResult   A pointer to result.
      * @param[in] aContext  A pointer to context.
-     *
      */
     static void HandleActiveScanResult(otActiveScanResult *aResult, void *aContext);
 
@@ -845,7 +800,6 @@ private:
      * This method detailly handler the scan result, called by HandleActiveScanResult.
      *
      * @param[in] aResult  A pointer to result.
-     *
      */
     void HandleActiveScanResultDetail(otActiveScanResult *aResult);
 
@@ -859,7 +813,6 @@ private:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusNeighborHandlerDetail(struct ubus_context      *aContext,
                                   struct ubus_object       *aObj,
@@ -877,7 +830,6 @@ private:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusParentHandlerDetail(struct ubus_context      *aContext,
                                 struct ubus_object       *aObj,
@@ -895,7 +847,6 @@ private:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusMgmtset(struct ubus_context      *aContext,
                     struct ubus_object       *aObj,
@@ -913,7 +864,6 @@ private:
      * @param[in] aMsg      A pointer to the ubus message.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusLeaveHandlerDetail(struct ubus_context      *aContext,
                                struct ubus_object       *aObj,
@@ -932,7 +882,6 @@ private:
      * @param[in] aAction   A pointer to the action needed.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusThreadHandler(struct ubus_context      *aContext,
                           struct ubus_object       *aObj,
@@ -952,7 +901,6 @@ private:
      * @param[in] aAction   A pointer to the action needed.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusGetInformation(struct ubus_context      *aContext,
                            struct ubus_object       *aObj,
@@ -972,7 +920,6 @@ private:
      * @param[in] aAction   A pointer to the action needed.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusSetInformation(struct ubus_context      *aContext,
                            struct ubus_object       *aObj,
@@ -992,7 +939,6 @@ private:
      * @param[in] aAction   A pointer to the action needed.
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int UbusCommissioner(struct ubus_context      *aContext,
                          struct ubus_object       *aObj,
@@ -1006,7 +952,6 @@ private:
      *
      * @param[in] aState    The state of commissioner.
      * @param[in] aContext  A pointer to the ubus context.
-     *
      */
     static void HandleStateChanged(otCommissionerState aState, void *aContext);
 
@@ -1014,7 +959,6 @@ private:
      * This method handle conmmissione state change.
      *
      * @param[in] aState  The state of commissioner.
-     *
      */
     void HandleStateChanged(otCommissionerState aState);
 
@@ -1025,7 +969,6 @@ private:
      * @param[in] aJoinerInfo  A pointer to the Joiner Info.
      * @param[in] aJoinerId    A pointer to the Joiner ID (if not known, it will be NULL).
      * @param[in] aContext     A pointer to application-specific context.
-     *
      */
     static void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
                                   const otJoinerInfo       *aJoinerInfo,
@@ -1038,7 +981,6 @@ private:
      * @param[in] aEvent       The joiner event type.
      * @param[in] aJoinerInfo  A pointer to the Joiner Info.
      * @param[in] aJoinerId    A pointer to the Joiner ID (if not known, it will be NULL).
-     *
      */
     void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
                            const otJoinerInfo       *aJoinerInfo,
@@ -1049,13 +991,11 @@ private:
      *
      * @param[in]  aInstance  A pointer to the instance.
      * @param[out] aState     A pointer to the string address.
-     *
      */
     void GetState(otInstance *aInstance, char *aState);
 
     /**
      * This method add fd of ubus object.
-     *
      */
     void UbusAddFd(void);
 
@@ -1063,7 +1003,6 @@ private:
      * This method set ubus reconnect time.
      *
      * @param[in] aTimeout  A pointer to the timeout.
-     *
      */
     static void UbusReconnTimer(struct uloop_timeout *aTimeout);
 
@@ -1071,7 +1010,6 @@ private:
      * This method detailly handle ubus reconnect time.
      *
      * @param[in] aTimeout  A pointer to the timeout.
-     *
      */
     void UbusReconnTimerDetail(struct uloop_timeout *aTimeout);
 
@@ -1079,7 +1017,6 @@ private:
      * This method handle ubus connection lost.
      *
      * @param[in] aContext  A pointer to the context.
-     *
      */
     static void UbusConnectionLost(struct ubus_context *aContext);
 
@@ -1089,13 +1026,11 @@ private:
      * @param[in] aPath  A pointer to the ubus server path(default is nullptr).
      *
      * @retval 0  Successfully handler the request.
-     *
      */
     int DisplayUbusInit(const char *aPath);
 
     /**
      * This method disconnect and display ubus.
-     *
      */
     void DisplayUbusDone(void);
 
@@ -1107,7 +1042,6 @@ private:
      *
      * @retval OT_ERROR_NONE   Successfully parsed the ASCII string.
      * @retval OT_ERROR_PARSE  Could not parse the ASCII string.
-     *
      */
     otError ParseLong(char *aString, long &aLong);
 
@@ -1128,7 +1062,6 @@ private:
      * @param[in]  aBytes   A pointer to the bytes need to be convert.
      * @param[in]  aLength  The length of the bytes.
      * @param[out] aOutput  A pointer to the char* string.
-     *
      */
     void OutputBytes(const uint8_t *aBytes, uint8_t aLength, char *aOutput);
 
@@ -1138,7 +1071,6 @@ private:
      * @param[in] aError    The error type of the message.
      * @param[in] aContext  A pointer to the context.
      * @param[in] aRequest  A pointer to the request.
-     *
      */
     void AppendResult(otError aError, struct ubus_context *aContext, struct ubus_request_data *aRequest);
 };
@@ -1150,7 +1082,6 @@ public:
      * The constructor to initialize the UBus agent.
      *
      * @param[in] aHost  A reference to the Thread controller.
-     *
      */
     UBusAgent(otbr::Ncp::RcpHost &aHost)
         : mHost(aHost)
@@ -1160,7 +1091,6 @@ public:
 
     /**
      * This method initializes the UBus agent.
-     *
      */
     void Init(void);
 

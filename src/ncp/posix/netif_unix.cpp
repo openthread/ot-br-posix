@@ -26,48 +26,44 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes definitions of Thead Controller Interface.
- */
+#if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 
-#ifndef OTBR_AGENT_THREAD_CONTROLLER_HPP_
-#define OTBR_AGENT_THREAD_CONTROLLER_HPP_
+#define OTBR_LOG_TAG "NETIF"
 
-#include <functional>
+#include "netif.hpp"
 
-#include <openthread/error.h>
-#include <openthread/thread.h>
-
-#include "lib/spinel/coprocessor_type.h"
-
-#include "common/logging.hpp"
+#include "common/code_utils.hpp"
 
 namespace otbr {
-namespace Ncp {
 
-/**
- * This class is an interface which provides a set of async APIs to control the
- * Thread network.
- *
- * The APIs are unified for both NCP and RCP cases.
- *
- */
-class ThreadController
+// TODO: implement platform netif functionalities on unix platforms: APPLE, NetBSD, OpenBSD
+//
+// Currently we let otbr-agent can be compiled on unix platforms and can work under RCP mode
+// but NCP mode cannot be used on unix platforms. It will crash at code here.
+
+otbrError Netif::CreateTunDevice(const std::string &aInterfaceName)
 {
-public:
-    using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
+    OTBR_UNUSED_VARIABLE(aInterfaceName);
+    DieNow("OTBR posix not supported on this platform");
+    return OTBR_ERROR_NONE;
+}
 
-    /**
-     * This method gets the device role and returns the role through the handler.
-     *
-     * @param[in] aHandler  A handler to return the role.
-     *
-     */
-    virtual void GetDeviceRole(DeviceRoleHandler aHandler) = 0;
-};
+otbrError Netif::InitNetlink(void)
+{
+    return OTBR_ERROR_NONE;
+}
 
-} // namespace Ncp
+void Netif::PlatformSpecificInit(void)
+{
+    /* Empty */
+}
+
+void Netif::ProcessUnicastAddressChange(const Ip6AddressInfo &aAddressInfo, bool aIsAdded)
+{
+    OTBR_UNUSED_VARIABLE(aAddressInfo);
+    OTBR_UNUSED_VARIABLE(aIsAdded);
+}
+
 } // namespace otbr
 
-#endif // OTBR_AGENT_THREAD_CONTROLLER_HPP_
+#endif // __APPLE__ || __NetBSD__ || __OpenBSD__

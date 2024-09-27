@@ -26,6 +26,8 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <gtest/gtest.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <signal.h>
 
@@ -36,28 +38,10 @@
 #include "common/mainloop_manager.hpp"
 #include "mdns/mdns.hpp"
 
-#include <CppUTest/CommandLineTestRunner.h>
-#include <CppUTest/TestHarness.h>
-
 using namespace otbr;
 using namespace otbr::Mdns;
 
-TEST_GROUP(Mdns){};
-
 static constexpr int kTimeoutSeconds = 3;
-
-SimpleString StringFrom(const std::set<Ip6Address> &aAddresses)
-{
-    std::string result = "[";
-
-    for (const auto &address : aAddresses)
-    {
-        result += address.ToString() + ",";
-    }
-    result.back() = ']';
-
-    return SimpleString(result.c_str());
-}
 
 int RunMainloopUntilTimeout(int aSeconds)
 {
@@ -128,20 +112,23 @@ Ip6Address         sAddr2;
 Ip6Address         sAddr3;
 Ip6Address         sAddr4;
 
-void SetUp(void)
+class MdnsTest : public ::testing::Test
 {
-    otbrLogInit("test-mdns-subscriber", OTBR_LOG_INFO, true, false);
-    SuccessOrDie(Ip6Address::FromString("2002::1", sAddr1), "");
-    SuccessOrDie(Ip6Address::FromString("2002::2", sAddr2), "");
-    SuccessOrDie(Ip6Address::FromString("2002::3", sAddr3), "");
-    SuccessOrDie(Ip6Address::FromString("2002::4", sAddr4), "");
-    SuccessOrDie(Publisher::EncodeTxtData(sTxtList1, sTxtData1), "");
-}
+protected:
+    MdnsTest()
+    {
+        SuccessOrDie(Ip6Address::FromString("2002::1", sAddr1), "");
+        SuccessOrDie(Ip6Address::FromString("2002::2", sAddr2), "");
+        SuccessOrDie(Ip6Address::FromString("2002::3", sAddr3), "");
+        SuccessOrDie(Ip6Address::FromString("2002::4", sAddr4), "");
+        SuccessOrDie(Publisher::EncodeTxtData(sTxtList1, sTxtData1), "");
+    }
+};
 
 std::unique_ptr<Publisher> CreatePublisher(void)
 {
     bool                       ready = false;
-    std::unique_ptr<Publisher> publisher{Publisher::Create([&publisher, &ready](Mdns::Publisher::State aState) {
+    std::unique_ptr<Publisher> publisher{Publisher::Create([&ready](Mdns::Publisher::State aState) {
         if (aState == Publisher::State::kReady)
         {
             ready = true;
@@ -150,7 +137,7 @@ std::unique_ptr<Publisher> CreatePublisher(void)
 
     publisher->Start();
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_TRUE(ready);
+    EXPECT_TRUE(ready);
 
     return publisher;
 }
@@ -163,14 +150,14 @@ void CheckServiceInstance(const Publisher::DiscoveredInstanceInfo aInstanceInfo,
                           uint16_t                                aPort,
                           const Publisher::TxtData                aTxtData)
 {
-    CHECK_EQUAL(aRemoved, aInstanceInfo.mRemoved);
-    CHECK_EQUAL(aServiceName, aInstanceInfo.mName);
+    EXPECT_EQ(aRemoved, aInstanceInfo.mRemoved);
+    EXPECT_EQ(aServiceName, aInstanceInfo.mName);
     if (!aRemoved)
     {
-        CHECK_EQUAL(aHostName, aInstanceInfo.mHostName);
-        CHECK_EQUAL(AsSet(aAddresses), AsSet(aInstanceInfo.mAddresses));
-        CHECK_EQUAL(aPort, aInstanceInfo.mPort);
-        CHECK(AsTxtMap(aTxtData) == AsTxtMap(aInstanceInfo.mTxtData));
+        EXPECT_EQ(aHostName, aInstanceInfo.mHostName);
+        EXPECT_EQ(AsSet(aAddresses), AsSet(aInstanceInfo.mAddresses));
+        EXPECT_EQ(aPort, aInstanceInfo.mPort);
+        EXPECT_TRUE(AsTxtMap(aTxtData) == AsTxtMap(aInstanceInfo.mTxtData));
     }
 }
 
@@ -193,11 +180,11 @@ void CheckHostAdded(const Publisher::DiscoveredHostInfo &aHostInfo,
                     const std::string                   &aHostName,
                     const std::vector<Ip6Address>       &aAddresses)
 {
-    CHECK_EQUAL(aHostName, aHostInfo.mHostName);
-    CHECK_EQUAL(AsSet(aAddresses), AsSet(aHostInfo.mAddresses));
+    EXPECT_EQ(aHostName, aHostInfo.mHostName);
+    EXPECT_EQ(AsSet(aAddresses), AsSet(aHostInfo.mAddresses));
 }
 
-TEST(Mdns, SubscribeHost)
+TEST_F(MdnsTest, SubscribeHost)
 {
     std::unique_ptr<Publisher>    pub = CreatePublisher();
     std::string                   lastHostName;
@@ -220,23 +207,23 @@ TEST(Mdns, SubscribeHost)
     pub->PublishService("host1", "service1", "_test._tcp", Publisher::SubTypeList{"_sub1", "_sub2"}, 11111, sTxtData1,
                         NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("host1", lastHostName);
+    EXPECT_EQ("host1", lastHostName);
     CheckHostAdded(lastHostInfo, "host1.local.", {sAddr1, sAddr2});
     clearLastHost();
 
     pub->PublishService("host1", "service2", "_test._tcp", {}, 22222, {}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("", lastHostName);
+    EXPECT_EQ("", lastHostName);
     clearLastHost();
 
     pub->PublishHost("host2", Publisher::AddressList{sAddr3}, NoOpCallback());
     pub->PublishService("host2", "service3", "_test._tcp", {}, 33333, {}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("", lastHostName);
+    EXPECT_EQ("", lastHostName);
     clearLastHost();
 }
 
-TEST(Mdns, SubscribeServiceInstance)
+TEST_F(MdnsTest, SubscribeServiceInstance)
 {
     std::unique_ptr<Publisher>        pub = CreatePublisher();
     std::string                       lastServiceType;
@@ -260,23 +247,23 @@ TEST(Mdns, SubscribeServiceInstance)
     pub->PublishService("host1", "service1", "_test._tcp", Publisher::SubTypeList{"_sub1", "_sub2"}, 11111, sTxtData1,
                         NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host1.local.", {sAddr1, sAddr2}, "service1", 11111, sTxtData1);
     clearLastInstance();
 
     pub->PublishService("host1", "service2", "_test._tcp", {}, 22222, {}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("", lastServiceType);
+    EXPECT_EQ("", lastServiceType);
     clearLastInstance();
 
     pub->PublishHost("host2", Publisher::AddressList{sAddr3}, NoOpCallback());
     pub->PublishService("host2", "service3", "_test._tcp", {}, 33333, {}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("", lastServiceType);
+    EXPECT_EQ("", lastServiceType);
     clearLastInstance();
 }
 
-TEST(Mdns, SubscribeServiceType)
+TEST_F(MdnsTest, SubscribeServiceType)
 {
     std::unique_ptr<Publisher>        pub = CreatePublisher();
     std::string                       lastServiceType;
@@ -300,27 +287,27 @@ TEST(Mdns, SubscribeServiceType)
     pub->PublishService("host1", "service1", "_test._tcp", Publisher::SubTypeList{"_sub1", "_sub2"}, 11111, sTxtData1,
                         NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host1.local.", {sAddr1, sAddr2}, "service1", 11111, sTxtData1);
     clearLastInstance();
 
     pub->PublishService("host1", "service2", "_test._tcp", {}, 22222, {}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host1.local.", {sAddr1, sAddr2}, "service2", 22222, {});
     clearLastInstance();
 
     pub->PublishHost("host2", Publisher::AddressList{sAddr3}, NoOpCallback());
     pub->PublishService("host2", "service3", "_test._tcp", {}, 33333, {}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host2.local.", {sAddr3}, "service3", 33333, {});
     clearLastInstance();
 
     pub->UnpublishHost("host2", NoOpCallback());
     pub->UnpublishService("service3", "_test._tcp", NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceRemoved(lastInstanceInfo, "service3");
     clearLastInstance();
 
@@ -328,20 +315,13 @@ TEST(Mdns, SubscribeServiceType)
     pub->PublishService("host2", "service3", "_test._tcp", {}, 44444, {}, NoOpCallback());
     pub->PublishHost("host2", {sAddr3, sAddr4}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host2.local.", {sAddr3, sAddr4}, "service3", 44444, {});
     clearLastInstance();
 
     pub->PublishHost("host2", {sAddr4}, NoOpCallback());
     RunMainloopUntilTimeout(kTimeoutSeconds);
-    CHECK_EQUAL("_test._tcp", lastServiceType);
+    EXPECT_EQ("_test._tcp", lastServiceType);
     CheckServiceInstanceAdded(lastInstanceInfo, "host2.local.", {sAddr4}, "service3", 44444, {});
     clearLastInstance();
-}
-
-int main(int argc, const char *argv[])
-{
-    SetUp();
-
-    return RUN_ALL_TESTS(argc, argv);
 }

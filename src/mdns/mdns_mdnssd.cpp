@@ -312,9 +312,7 @@ void PublisherMDnsSd::Update(MainloopContext &aMainloop)
 
         assert(fd != -1);
 
-        FD_SET(fd, &aMainloop.mReadFdSet);
-
-        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
+        aMainloop.AddFdToReadSet(fd);
     }
 
     for (const auto &service : mSubscribedServices)
@@ -419,8 +417,7 @@ void PublisherMDnsSd::DnssdServiceRegistration::Update(MainloopContext &aMainloo
     fd = DNSServiceRefSockFD(mServiceRef);
     VerifyOrExit(fd != -1);
 
-    FD_SET(fd, &aMainloop.mReadFdSet);
-    aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
+    aMainloop.AddFdToReadSet(fd);
 
 exit:
     return;
@@ -1041,8 +1038,7 @@ void PublisherMDnsSd::ServiceRef::Update(MainloopContext &aMainloop) const
 
     fd = DNSServiceRefSockFD(mServiceRef);
     assert(fd != -1);
-    FD_SET(fd, &aMainloop.mReadFdSet);
-    aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
+    aMainloop.AddFdToReadSet(fd);
 exit:
     return;
 }

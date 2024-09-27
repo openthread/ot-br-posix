@@ -60,6 +60,7 @@ jobs:
     - name: Build
       env:
         OTBR_MDNS: ${{ matrix.mdns }}
+        OTBR_COVERAGE: 1
       run: |
         script/bootstrap
         script/test build

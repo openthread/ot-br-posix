@@ -26,16 +26,14 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "common/task_runner.hpp"
-
 #include <atomic>
 #include <mutex>
 #include <thread>
+
+#include <gtest/gtest.h>
 #include <unistd.h>
 
-#include <CppUTest/TestHarness.h>
-
-TEST_GROUP(TaskRunner){};
+#include "common/task_runner.hpp"
 
 TEST(TaskRunner, TestSingleThread)
 {
@@ -63,10 +61,10 @@ TEST(TaskRunner, TestSingleThread)
     taskRunner.Update(mainloop);
     rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                   &mainloop.mTimeout);
-    CHECK_EQUAL(1, rval);
+    EXPECT_EQ(1, rval);
 
     taskRunner.Process(mainloop);
-    CHECK_EQUAL(3, counter);
+    EXPECT_EQ(3, counter);
 }
 
 TEST(TaskRunner, TestTasksOrder)
@@ -90,12 +88,12 @@ TEST(TaskRunner, TestTasksOrder)
     taskRunner.Update(mainloop);
     rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                   &mainloop.mTimeout);
-    CHECK_TRUE(rval == 1);
+    EXPECT_EQ(rval, 1);
 
     taskRunner.Process(mainloop);
 
     // Make sure the tasks are executed in the order of posting.
-    STRCMP_EQUAL("abc", str.c_str());
+    EXPECT_STREQ("abc", str.c_str());
 }
 
 TEST(TaskRunner, TestMultipleThreads)
@@ -125,7 +123,7 @@ TEST(TaskRunner, TestMultipleThreads)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        CHECK_EQUAL(1, rval);
+        EXPECT_EQ(1, rval);
 
         taskRunner.Process(mainloop);
     }
@@ -135,7 +133,7 @@ TEST(TaskRunner, TestMultipleThreads)
         th.join();
     }
 
-    CHECK_EQUAL(10, counter.load());
+    EXPECT_EQ(10, counter.load());
 }
 
 TEST(TaskRunner, TestPostAndWait)
@@ -166,7 +164,7 @@ TEST(TaskRunner, TestPostAndWait)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        CHECK_EQUAL(1, rval);
+        EXPECT_EQ(1, rval);
 
         taskRunner.Process(mainloop);
     }
@@ -176,8 +174,8 @@ TEST(TaskRunner, TestPostAndWait)
         th.join();
     }
 
-    CHECK_EQUAL(55, total);
-    CHECK_EQUAL(10, counter.load());
+    EXPECT_EQ(55, total);
+    EXPECT_EQ(10, counter.load());
 }
 
 TEST(TaskRunner, TestDelayedTasks)
@@ -207,7 +205,7 @@ TEST(TaskRunner, TestDelayedTasks)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
+        EXPECT_TRUE(rval >= 0 || errno == EINTR);
 
         taskRunner.Process(mainloop);
     }
@@ -217,7 +215,7 @@ TEST(TaskRunner, TestDelayedTasks)
         th.join();
     }
 
-    CHECK_EQUAL(10, counter.load());
+    EXPECT_EQ(10, counter.load());
 }
 
 TEST(TaskRunner, TestDelayedTasksOrder)
@@ -244,13 +242,13 @@ TEST(TaskRunner, TestDelayedTasksOrder)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
+        EXPECT_TRUE(rval >= 0 || errno == EINTR);
 
         taskRunner.Process(mainloop);
     }
 
     // Make sure that tasks with smaller delay are executed earlier.
-    STRCMP_EQUAL("bac", str.c_str());
+    EXPECT_STREQ("bac", str.c_str());
 }
 
 TEST(TaskRunner, TestCancelDelayedTasks)
@@ -265,11 +263,11 @@ TEST(TaskRunner, TestCancelDelayedTasks)
     tid4 = taskRunner.Post(std::chrono::milliseconds(40), [&]() { str.push_back('d'); });
     tid5 = taskRunner.Post(std::chrono::milliseconds(50), [&]() { str.push_back('e'); });
 
-    CHECK(0 < tid1);
-    CHECK(tid1 < tid2);
-    CHECK(tid2 < tid3);
-    CHECK(tid3 < tid4);
-    CHECK(tid4 < tid5);
+    EXPECT_TRUE(0 < tid1);
+    EXPECT_TRUE(tid1 < tid2);
+    EXPECT_TRUE(tid2 < tid3);
+    EXPECT_TRUE(tid3 < tid4);
+    EXPECT_TRUE(tid4 < tid5);
 
     taskRunner.Cancel(tid2);
 
@@ -294,13 +292,13 @@ TEST(TaskRunner, TestCancelDelayedTasks)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
+        EXPECT_TRUE(rval >= 0 || errno == EINTR);
 
         taskRunner.Process(mainloop);
     }
 
     // Make sure the delayed task was not executed.
-    STRCMP_EQUAL("ae", str.c_str());
+    EXPECT_STREQ("ae", str.c_str());
 
     // Make sure it's fine to cancel expired task IDs.
     taskRunner.Cancel(tid1);
@@ -337,7 +335,7 @@ TEST(TaskRunner, TestAllAPIs)
         taskRunner.Update(mainloop);
         rval = select(mainloop.mMaxFd + 1, &mainloop.mReadFdSet, &mainloop.mWriteFdSet, &mainloop.mErrorFdSet,
                       &mainloop.mTimeout);
-        CHECK_TRUE(rval >= 0 || errno == EINTR);
+        EXPECT_TRUE(rval >= 0 || errno == EINTR);
 
         taskRunner.Process(mainloop);
     }
@@ -347,5 +345,5 @@ TEST(TaskRunner, TestAllAPIs)
         th.join();
     }
 
-    CHECK_EQUAL(30, counter.load());
+    EXPECT_EQ(30, counter.load());
 }
