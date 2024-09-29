@@ -63,7 +63,6 @@ namespace BackboneRouter {
 
 /**
  * This class implements Thread Backbone agent functionality.
- *
  */
 class BackboneAgent : private NonCopyable
 {
@@ -74,13 +73,11 @@ public:
      * This constructor intiializes the `BackboneAgent` instance.
      *
      * @param[in] aHost  The Thread controller instance.
-     *
      */
     BackboneAgent(otbr::Ncp::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName);
 
     /**
      * This method initializes the Backbone agent.
-     *
      */
     void Init(void);
 

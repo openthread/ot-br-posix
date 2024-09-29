@@ -47,14 +47,12 @@ namespace rest {
 
 /**
  * This class implements an instance to host services used by border router.
- *
  */
 class Request
 {
 public:
     /**
      * The constructor is to initialize Request instance.
-     *
      */
     Request(void);
 
@@ -63,7 +61,6 @@ public:
      *
      * @param[in] aString  A pointer points to url string.
      * @param[in] aLength  Length of the url string
-     *
      */
     void SetUrl(const char *aString, size_t aLength);
 
@@ -72,7 +69,6 @@ public:
      *
      * @param[in] aString  A pointer points to body string.
      * @param[in] aLength  Length of the body string
-     *
      */
     void SetBody(const char *aString, size_t aLength);
 
@@ -80,7 +76,6 @@ public:
      * This method sets the content-length field of a request.
      *
      * @param[in] aContentLength  An unsigned integer representing content-length.
-     *
      */
     void SetContentLength(size_t aContentLength);
 
@@ -88,7 +83,6 @@ public:
      * This method sets the method of the parsed request.
      *
      * @param[in] aMethod  An integer representing request method.
-     *
      */
     void SetMethod(int32_t aMethod);
 
@@ -97,7 +91,6 @@ public:
      *
      * @param[in] aString  A pointer points to body string.
      * @param[in] aLength  Length of the body string
-     *
      */
     void SetNextHeaderField(const char *aString, size_t aLength);
 
@@ -106,19 +99,16 @@ public:
      *
      * @param[in] aString  A pointer points to body string.
      * @param[in] aLength  Length of the body string
-     *
      */
     void SetHeaderValue(const char *aString, size_t aLength);
 
     /**
      * This method labels the request as complete which means it no longer need to be parsed one more time .
-     *
      */
     void SetReadComplete(void);
 
     /**
      * This method resets the request then it could be set by parser from start.
-     *
      */
     void ResetReadComplete(void);
 
@@ -153,8 +143,6 @@ public:
 
     /**
      * This method indicates whether this request is parsed completely.
-     *
-     *
      */
     bool IsComplete(void) const;
 

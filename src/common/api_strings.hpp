@@ -30,7 +30,6 @@
  * @file
  * This file has helper functions to convert internal state representations
  * to string (useful for APIs).
- *
  */
 #ifndef OTBR_COMMON_API_STRINGS_HPP_
 #define OTBR_COMMON_API_STRINGS_HPP_

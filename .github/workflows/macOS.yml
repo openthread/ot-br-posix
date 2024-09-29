@@ -42,7 +42,7 @@ concurrency:
 
 jobs:
   build-check:
-    runs-on: macos-12
+    runs-on: macos-14
     steps:
     - uses: actions/checkout@v4
       with:
@@ -55,7 +55,6 @@ jobs:
         rm -f /usr/local/bin/python3*
         brew update
         brew reinstall boost cmake dbus jsoncpp ninja protobuf@21 pkg-config
-        brew upgrade node
     - name: Build
       run: |
         OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \

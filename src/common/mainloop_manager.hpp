@@ -48,20 +48,17 @@ namespace otbr {
 
 /**
  * This class implements the mainloop manager.
- *
  */
 class MainloopManager : private NonCopyable
 {
 public:
     /**
      * The constructor to initialize the mainloop manager.
-     *
      */
     MainloopManager() = default;
 
     /**
      * This method returns the singleton instance of the mainloop manager.
-     *
      */
     static MainloopManager &GetInstance(void)
     {
@@ -73,7 +70,6 @@ public:
      * This method adds a mainloop processors to the mainloop managger.
      *
      * @param[in] aMainloopProcessor  A pointer to the mainloop processor.
-     *
      */
     void AddMainloopProcessor(MainloopProcessor *aMainloopProcessor);
 
@@ -81,7 +77,6 @@ public:
      * This method removes a mainloop processors from the mainloop managger.
      *
      * @param[in] aMainloopProcessor  A pointer to the mainloop processor.
-     *
      */
     void RemoveMainloopProcessor(MainloopProcessor *aMainloopProcessor);
 
@@ -89,7 +84,6 @@ public:
      * This method updates the mainloop context of all mainloop processors.
      *
      * @param[in,out] aMainloop  A reference to the mainloop to be updated.
-     *
      */
     void Update(MainloopContext &aMainloop);
 
@@ -97,7 +91,6 @@ public:
      * This method processes mainloop events of all mainloop processors.
      *
      * @param[in] aMainloop  A reference to the mainloop context.
-     *
      */
     void Process(const MainloopContext &aMainloop);
 

@@ -453,12 +453,32 @@ void Netif::ProcessMldEvent(void)
             case kIcmpv6Mldv2ModeIsExcludeType:
                 error = OTBR_ERROR_NONE;
                 break;
+            ///< Only update subscription on NCP when the target multicast address is not in `mIp6MulticastAddresses`.
+            ///< This indicates that this is the first time the multicast address subscription needs to be updated.
             case kIcmpv6Mldv2RecordChangeToIncludeType:
-                error = (record->mNumSources == 0) ? mDeps.Ip6MulAddrUpdateSubscription(address, /* isAdd */ false)
-                                                   : OTBR_ERROR_NONE;
+                if (record->mNumSources == 0)
+                {
+                    if (std::find(mIp6MulticastAddresses.begin(), mIp6MulticastAddresses.end(), Ip6Address(address)) !=
+                        mIp6MulticastAddresses.end())
+                    {
+                        error = mDeps.Ip6MulAddrUpdateSubscription(address, /* isAdd */ false);
+                    }
+                    else
+                    {
+                        error = OTBR_ERROR_NONE;
+                    }
+                }
                 break;
             case kIcmpv6Mldv2RecordChangeToExcludeType:
-                error = mDeps.Ip6MulAddrUpdateSubscription(address, /* isAdd */ true);
+                if (std::find(mIp6MulticastAddresses.begin(), mIp6MulticastAddresses.end(), Ip6Address(address)) ==
+                    mIp6MulticastAddresses.end())
+                {
+                    error = mDeps.Ip6MulAddrUpdateSubscription(address, /* isAdd */ true);
+                }
+                else
+                {
+                    error = OTBR_ERROR_NONE;
+                }
                 break;
             }
 

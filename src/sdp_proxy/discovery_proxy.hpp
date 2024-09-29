@@ -55,7 +55,6 @@ namespace Dnssd {
 
 /**
  * This class implements the DNS-SD Discovery Proxy.
- *
  */
 class DiscoveryProxy : private NonCopyable
 {
@@ -65,7 +64,6 @@ public:
      *
      * @param[in] aHost       A reference to the OpenThread Controller instance.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
-     *
      */
     explicit DiscoveryProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
@@ -73,7 +71,6 @@ public:
      * This method enables/disables the Discovery Proxy.
      *
      * @param[in] aIsEnabled  Whether to enable the Discovery Proxy.
-     *
      */
     void SetEnabled(bool aIsEnabled);
 
@@ -81,7 +78,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState)
     {

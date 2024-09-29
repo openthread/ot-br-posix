@@ -68,7 +68,6 @@ public:
      *
      * @param[in] aHost       A reference to the OpenThread Controller instance.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
-     *
      */
     explicit TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
@@ -76,19 +75,16 @@ public:
      * This method initializes the TrelDnssd instance.
      *
      * @param[in] aTrelNetif  The network interface for discovering TREL peers.
-     *
      */
     void Initialize(std::string aTrelNetif);
 
     /**
      * This method starts browsing for TREL peers.
-     *
      */
     void StartBrowse(void);
 
     /**
      * This method stops browsing for TREL peers.
-     *
      */
     void StopBrowse(void);
 
@@ -98,13 +94,11 @@ public:
      * @param[in] aPort         The UDP port of TREL service.
      * @param[in] aTxtData      The TXT data of TREL service.
      * @param[in] aTxtLength    The TXT length of TREL service.
-     *
      */
     void RegisterService(uint16_t aPort, const uint8_t *aTxtData, uint8_t aTxtLength);
 
     /**
      * This method removes the TREL service from DNS-SD.
-     *
      */
     void UnregisterService(void);
 
@@ -112,7 +106,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 

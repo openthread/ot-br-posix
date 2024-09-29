@@ -62,14 +62,12 @@ namespace Ncp {
 
 /**
  * This class implements the NetworkProperties for architectures where OT APIs are directly accessible.
- *
  */
 class OtNetworkProperties : virtual public NetworkProperties
 {
 public:
     /**
      * Constructor.
-     *
      */
     explicit OtNetworkProperties(void);
 
@@ -85,7 +83,6 @@ private:
 
 /**
  * This interface defines OpenThread Controller under RCP mode.
- *
  */
 class RcpHost : public MainloopProcessor, public ThreadHost, public OtNetworkProperties
 {
@@ -100,7 +97,6 @@ public:
      * @param[in]   aBackboneInterfaceName  The Backbone network interface name.
      * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
-     *
      */
     RcpHost(const char                      *aInterfaceName,
             const std::vector<const char *> &aRadioUrls,
@@ -110,13 +106,11 @@ public:
 
     /**
      * This method initialize the Thread controller.
-     *
      */
     void Init(void) override;
 
     /**
      * This method deinitialize the Thread controller.
-     *
      */
     void Deinit(void) override;
 
@@ -132,7 +126,6 @@ public:
      * This method gets the thread functionality helper.
      *
      * @retval The pointer to the helper object.
-     *
      */
     otbr::agent::ThreadHelper *GetThreadHelper(void)
     {
@@ -148,7 +141,6 @@ public:
      *
      * @param[in] aDelay  The delay in milliseconds before executing the task.
      * @param[in] aTask   The task function.
-     *
      */
     void PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask);
 
@@ -156,7 +148,6 @@ public:
      * This method registers a reset handler.
      *
      * @param[in] aHandler  The handler function.
-     *
      */
     void RegisterResetHandler(std::function<void(void)> aHandler);
 
@@ -164,13 +155,11 @@ public:
      * This method adds a event listener for Thread state changes.
      *
      * @param[in] aCallback  The callback to receive Thread state changed events.
-     *
      */
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback);
 
     /**
      * This method resets the OpenThread instance.
-     *
      */
     void Reset(void);
 
@@ -178,7 +167,6 @@ public:
      * This method returns the Thread protocol version as a string.
      *
      * @returns A pointer to the Thread version string.
-     *
      */
     static const char *GetThreadVersion(void);
 
@@ -186,7 +174,6 @@ public:
      * This method returns the Thread network interface name.
      *
      * @returns A pointer to the Thread network interface name string.
-     *
      */
     const char *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
 
@@ -199,7 +186,6 @@ public:
      * @param[in] aFeatureFlagList  The feature flag list to be applied to OpenThread.
      *
      * @returns The error value of underlying OpenThread API calls.
-     *
      */
     otError ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList);
 
@@ -207,7 +193,6 @@ public:
      * This method returns the applied FeatureFlagList in ApplyFeatureFlagList call.
      *
      * @returns the applied FeatureFlagList's serialized bytes.
-     *
      */
     const std::string &GetAppliedFeatureFlagListBytes(void)
     {

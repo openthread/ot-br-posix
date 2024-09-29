@@ -51,7 +51,6 @@ template <class T> class OnceCallback;
  *
  * Inspired by Chromium base::OnceCallback
  * (https://chromium.googlesource.com/chromium/src.git/+/refs/heads/main/base/callback.h).
- *
  */
 template <typename R, typename... Args> class OnceCallback<R(Args...)>
 {
