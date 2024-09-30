@@ -1,0 +1,25 @@
+meta {
+  name: Get Device Item by DeviceId
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/devices/{{deviceId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+  ~Accept: application/json
+}
+
+vars:pre-request {
+  ~deviceId: 9e34bf94725f930e
+  deviceId: abcdef1234567890
+}
+
+assert {
+  res.status: eq 404
+}

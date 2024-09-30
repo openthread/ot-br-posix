@@ -42,13 +42,16 @@
 
 #include <openthread/border_agent.h>
 
+#include "openthread/mesh_diag.h"
 #include "openthread/netdiag.h"
 
 #define OT_REST_ACCEPT_HEADER "Accept"
+#define OT_REST_ALLOW_HEADER "Allow"
 #define OT_REST_CONTENT_TYPE_HEADER "Content-Type"
 
 #define OT_REST_CONTENT_TYPE_JSON "application/json"
 #define OT_REST_CONTENT_TYPE_PLAIN "text/plain"
+#define OT_REST_CONTENT_TYPE_JSONAPI "application/vnd.api+json"
 
 using std::chrono::steady_clock;
 
@@ -68,15 +71,17 @@ enum class HttpMethod : std::uint8_t
 
 enum class HttpStatusCode : std::uint16_t
 {
-    kStatusOk                  = 200,
-    kStatusCreated             = 201,
-    kStatusNoContent           = 204,
-    kStatusBadRequest          = 400,
-    kStatusResourceNotFound    = 404,
-    kStatusMethodNotAllowed    = 405,
-    kStatusRequestTimeout      = 408,
-    kStatusConflict            = 409,
-    kStatusInternalServerError = 500,
+    kStatusOk                   = 200,
+    kStatusCreated              = 201,
+    kStatusNoContent            = 204,
+    kStatusBadRequest           = 400,
+    kStatusResourceNotFound     = 404,
+    kStatusMethodNotAllowed     = 405,
+    kStatusRequestTimeout       = 408,
+    kStatusConflict             = 409,
+    kStatusUnsupportedMediaType = 415,
+    kStatusInternalServerError  = 500,
+    kStatusServiceUnavailable   = 503,
 };
 
 enum class PostError : std::uint8_t
@@ -100,22 +105,117 @@ enum class ConnectionState : std::uint8_t
 };
 struct NodeInfo
 {
-    otBorderAgentId mBaId;
-    std::string     mRole;
-    uint32_t        mNumOfRouter;
-    uint16_t        mRloc16;
-    const uint8_t  *mExtPanId;
-    const uint8_t  *mExtAddress;
-    otIp6Address    mRlocAddress;
-    otLeaderData    mLeaderData;
-    std::string     mNetworkName;
+    otBorderAgentId    mBaId;
+    otBorderAgentState mBaState;
+    std::string        mRole;
+    uint32_t           mNumOfRouter;
+    uint16_t           mRloc16;
+    const uint8_t     *mExtPanId;
+    const uint8_t     *mExtAddress;
+    otIp6Address       mRlocAddress;
+    otLeaderData       mLeaderData;
+    std::string        mNetworkName;
 };
+
+// move into rest_task_energy_scan.hpp?
+
+//#define MAX_ENERGYSCAN_COUNT 255
+//#define MAX_CHANNELS 16
+
+typedef struct EnergyReport
+{
+    uint8_t             channel;
+    std::vector<int8_t> maxRssi;
+} EnergyReport;
+
+typedef struct EnergyScanReport
+{
+    otIp6InterfaceIdentifier origin; // deviceId ml-eidiid
+    // char origin_str[16];
+    uint8_t count; // the number of repeated measurements, equivalent to the length of the EnergyReport vector
+    std::vector<EnergyReport> report;
+    // std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> created;
+} EnergyScanReport;
 
 struct DiagInfo
 {
     steady_clock::time_point      mStartTime;
     std::vector<otNetworkDiagTlv> mDiagContent;
 };
+
+enum class DeviceSelfType
+{
+    kNone,
+    kThisDevice,
+    kThisDeviceParent,
+};
+
+struct DeviceIp6Addrs // item of TLV 30
+{
+    uint16_t                  mRloc16;
+    std::vector<otIp6Address> mIp6Addrs;
+};
+
+struct RouterNeighborLink
+{
+    uint8_t mRouterId;
+    uint8_t mLinkQuality;
+};
+
+struct RouterInfo
+{
+    otExtAddress   mExtAddress;
+    uint16_t       mRloc16;
+    uint8_t        mRouterId;
+    uint16_t       mVersion;
+    DeviceSelfType mSelfType;
+    bool           mIsLeader;
+    bool           mIsBorderRouter;
+
+    std::vector<RouterNeighborLink>            mNeighborLinks;
+    std::vector<otMeshDiagRouterNeighborEntry> mNeighborLinksEntry; // TLV 31
+    std::vector<otMeshDiagChildInfo>           mChildren;
+    std::vector<otMeshDiagChildEntry>          mChildrenEntry;    // TLV 29
+    std::vector<DeviceIp6Addrs>                mChildrenIp6Addrs; // TLV 30
+    std::vector<otIp6Address>                  mIpAddresses;
+};
+
+/**
+ * Represents static device infos
+ *
+ */
+struct DeviceInfo
+{
+    std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> mUpdate;
+
+    otExtAddress     mExtAddress;
+    bool             mNeedsUpdate;
+    std::string      mRole;
+    otExtAddress     mMlEidIid;
+    otExtAddress     mEui64;
+    otIp6Address     mIp6Addr;
+    std::string      mHostName = "";
+    otLinkModeConfig mode;
+};
+
+// custom Tlvs
+#define NETWORK_DIAGNOSTIC_TLVEXT_BR_COUNTER 255
+#define NETWORK_DIAGNOSTIC_TLVEXT_SERVICEROLEFLAGS 254
+typedef struct networkDiagTlvExtensions
+{
+    uint8_t mType; // custom Tlvs
+    union
+    {
+        otBorderRoutingCounters mBrCounters;
+        struct
+        {
+            bool mIsLeader;
+            bool mHostsService;
+            bool mIsPrimaryBBR;
+            bool mIsBorderRouter;
+        } mServiceRoleFlags;
+    } mData;
+} networkDiagTlvExtensions;
 
 } // namespace rest
 } // namespace otbr
