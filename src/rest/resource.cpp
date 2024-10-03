@@ -63,6 +63,7 @@
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
 #define OT_REST_HTTP_STATUS_409 "409 Conflict"
 #define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
+#define OT_REST_HTTP_STATUS_507 "507 Insufficient Storage"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -118,6 +119,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
         break;
     case HttpStatusCode::kStatusInternalServerError:
         httpStatus = OT_REST_HTTP_STATUS_500;
+        break;
+    case HttpStatusCode::kStatusInsufficientStorage:
+        httpStatus = OT_REST_HTTP_STATUS_507;
         break;
     }
 
@@ -910,7 +914,8 @@ void Resource::GetJoiners(Response &aResponse) const
 
 void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
 {
-    otbrError           error = OTBR_ERROR_NONE;
+    otbrError           error   = OTBR_ERROR_NONE;
+    otError             otError = OT_ERROR_NONE;
     std::string         errorCode;
     otJoinerInfo        joiner;
     const otExtAddress *addrPtr                         = nullptr;
@@ -928,16 +933,16 @@ void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
 
     if (joiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
     {
-        VerifyOrExit(otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
-                                                          joiner.mExpirationTime) == OT_ERROR_NONE,
-                     error = OTBR_ERROR_OPENTHREAD);
+        otError = otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
+                                                       joiner.mExpirationTime);
     }
     else
     {
-        VerifyOrExit(otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime) ==
-                         OT_ERROR_NONE,
-                     error = OTBR_ERROR_OPENTHREAD);
+        otError = otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime);
     }
+
+    VerifyOrExit(otError != OT_ERROR_NO_BUFS, error = OTBR_ERROR_OPENTHREAD);
+    VerifyOrExit(otError != OT_ERROR_INVALID_ARGS, error = OTBR_ERROR_INVALID_ARGS);
 
     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
@@ -950,6 +955,10 @@ exit:
     else if (error == OTBR_ERROR_INVALID_ARGS)
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+    }
+    else if (error == OTBR_ERROR_OPENTHREAD)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInsufficientStorage);
     }
     else if (error != OTBR_ERROR_NONE)
     {

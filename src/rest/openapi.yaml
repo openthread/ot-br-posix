@@ -363,6 +363,8 @@ paths:
           description: Invalid request body.
         "409":
           description: Adding joiner rejected because commissioner is not active.
+        "507":
+          description: Number of joiners the commissioner supports is full and the new one cannot be added.
     delete:
       tags: 
         - node
