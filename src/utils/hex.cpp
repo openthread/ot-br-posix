@@ -94,8 +94,8 @@ int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength)
 
 size_t Uint2Hex(const uint64_t aUint, const uint8_t aUintLength, char *aHex)
 {
-    uint8_t *buffer = (uint8_t *) &aUint;
-    char uintHex[3];
+    uint8_t *buffer = (uint8_t *)&aUint;
+    char     uintHex[3];
 
     // Make sure strcat appends at the beginning of the output buffer even
     // if uninitialized.
@@ -103,7 +103,7 @@ size_t Uint2Hex(const uint64_t aUint, const uint8_t aUintLength, char *aHex)
 
     for (int i = aUintLength; i > 0; i--)
     {
-        snprintf(uintHex, sizeof(uintHex), "%02X", buffer[i-1]);
+        snprintf(uintHex, sizeof(uintHex), "%02X", buffer[i - 1]);
         strcat(aHex, uintHex);
     }
 

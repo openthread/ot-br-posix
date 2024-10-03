@@ -40,9 +40,9 @@
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"
 
+#include "common/types.hpp"
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
-#include "common/types.hpp"
 
 namespace otbr {
 namespace rest {
