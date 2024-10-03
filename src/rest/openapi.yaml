@@ -321,6 +321,8 @@ paths:
       responses:
         "200":
           description: Successful operation.
+        "204":
+          description: Already in state.
         "409":
           description: Cannot set commissioner state because border router state is not active
       requestBody:

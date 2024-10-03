@@ -828,12 +828,12 @@ void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse
     VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
     if (body == "enable")
     {
-        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED);
+        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_DUPLICATED);
         VerifyOrExit(otCommissionerStart(mInstance, NULL, NULL, NULL) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     }
     else if (body == "disable")
     {
-        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED);
+        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_DUPLICATED);
         VerifyOrExit(otCommissionerStop(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     }
     else
@@ -845,18 +845,22 @@ void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse
     aResponse.SetResponsCode(errorCode);
 
 exit:
-    if (error == OTBR_ERROR_INVALID_STATE)
+    if (error == OTBR_ERROR_DUPLICATED)
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusNoContent);
+    }
+    else if (error == OTBR_ERROR_INVALID_STATE)
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
     }
-    if (error == OTBR_ERROR_INVALID_ARGS)
+    else if (error == OTBR_ERROR_INVALID_ARGS)
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
     }
     else if (error != OTBR_ERROR_NONE)
     {
         ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
-    }
+    } 
 }
 
 void Resource::CommissionerState(const Request &aRequest, Response &aResponse) const
@@ -899,8 +903,6 @@ void Resource::GetJoiners(Response &aResponse) const
     aResponse.SetBody(joinerJson);
     errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
     aResponse.SetResponsCode(errorCode);
-
-    OT_UNUSED_VARIABLE(aResponse);
 }
 
 void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const 
