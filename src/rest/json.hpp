@@ -42,6 +42,7 @@
 
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
+#include "common/types.hpp"
 
 namespace otbr {
 namespace rest {
@@ -252,6 +253,8 @@ bool JsonActiveDatasetString2Dataset(const std::string &aJsonActiveDataset, otOp
 bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, otOperationalDataset &aDataset);
 
 std::string JoinerInfo2JsonString(const otJoinerInfo &aJoinerInfo);
+
+otbrError StringDiscerner2Discerner(char *aString, otJoinerDiscerner &aDiscerner);
 
 bool JsonJoinerInfoString2JoinerInfo(const std::string &aJsonJoinerInfo, otJoinerInfo &aJoinerInfo);
 

@@ -57,6 +57,17 @@ namespace Utils {
 int Hex2Bytes(const char *aHex, uint8_t *aBytes, uint16_t aBytesLength);
 
 /**
+ * @brief Converts a unsinged integer to a hexadecimal string.
+ * 
+ * @param aUint The integer to be converted.
+ * @param aUintLength The length of the integer in bytes.
+ * @param[out] aHex A character array to store the resulting hexadecimal string.
+ *                  Must be at least 2 * @param aUintLength + 1 long.
+ * @return size_t 
+ */
+size_t Uint2Hex(const uint64_t aUint, const uint8_t aUintLength, char *aHex);
+
+/**
  * @brief Converts a byte array to a hexadecimal string.
  *
  * @param[in]  aBytes A pointer to the byte array to be converted.

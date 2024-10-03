@@ -345,10 +345,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/JoinerData"
-    put:
+    post:
       tags:
         - node
-      summary: Creates a new joiner
+      summary: Adds a new joiner
       requestBody:
         content:
           application/json:
@@ -370,11 +370,13 @@ paths:
           application/json:
             schema:
                 type: string
-                description: Eui64 address of joiner to remove
-                example: "0123456789abcdef"
+                description: Eui64 address or discerner of joiner to remove
+                example: "0xabc/12"
       responses:
         "200":
           description: Successfully removed joiner.
+        "204":
+          description: Joiner not found.
         "400":
           description: Invalid request body.
         "409":
@@ -558,12 +560,20 @@ components:
           type: string
           description: Joining device's pre-shared key
           example: J01N
+        JoinerId:
+          type: string
+          description: A string of the EUI-64, Discerner, or "*", mutually exclusive with Eui64 and Discerner
+          example: "0xabc/12"
+          default: "*"
         Eui64:
           type: string
-          description: A string of the EUI-64 of the device to join or "*" for any
+          description: A string of the EUI-64, mutually exclusive with JoinerId and Discerner
           example: "0123456789abcdef"
-          default: "*"
+        Discerner:
+          type: string
+          description: A string of the joiner discerner, mutually exclusive with JoinerId and Eui64
+          example: "0xabc/12"
         Timeout:
-          type: uint32
+          type: integer
           description: Joiner expiration time in milliseconds on response and seconds on request 
           default: 60 
