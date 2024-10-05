@@ -738,7 +738,6 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     {
         if (aDatasetType == DatasetType::kActive)
         {
-            otbrLogInfo("SET DATASET: %s", aRequest.GetBody());
             VerifyOrExit(Json::JsonActiveDatasetString2Dataset(aRequest.GetBody(), dataset),
                          error = OTBR_ERROR_INVALID_ARGS);
         }
