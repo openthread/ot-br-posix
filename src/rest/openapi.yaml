@@ -374,7 +374,11 @@ paths:
           application/json:
             schema:
                 type: string
-                description: Eui64 address or discerner of joiner to remove
+                description: |-
+                  Joiner ID to remove, can be either:
+                   - An EUI64 in the form of a 16 character hex string
+                   - A discerner in the form of the discerner hex value 
+                     (optionally with leading 0x) and bit length separated by a '/'
                 example: "0xabc/12"
       responses:
         "200":
@@ -575,7 +579,10 @@ components:
           example: "0123456789abcdef"
         Discerner:
           type: string
-          description: A string of the joiner discerner, mutually exclusive with JoinerId and Eui64
+          description: |- 
+            A discerner in the form of the discerner hex value (optionally with leading 0x) 
+            and bit length separated by a '/'.
+            Field is mutually exclusive with JoinerId and Eui64.
           example: "0xabc/12"
         Timeout:
           type: integer
