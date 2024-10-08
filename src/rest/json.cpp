@@ -939,7 +939,7 @@ cJSON *JoinerInfo2Json(const otJoinerInfo &aJoinerInfo)
         char hexValue[((OT_JOINER_MAX_DISCERNER_LENGTH / 8) * 2) + 1]                              = {0};
         char string[sizeof("0x") + ((OT_JOINER_MAX_DISCERNER_LENGTH / 8) * 2) + sizeof("/xx") + 1] = {0};
 
-        otbr::Utils::Uint2Hex(aJoinerInfo.mSharedId.mDiscerner.mValue, (OT_JOINER_MAX_DISCERNER_LENGTH / 8), hexValue);
+        otbr::Utils::Long2Hex(aJoinerInfo.mSharedId.mDiscerner.mValue, hexValue);
         snprintf(string, sizeof(string), "0x%s/%d", hexValue, aJoinerInfo.mSharedId.mDiscerner.mLength);
         cJSON_AddItemToObject(node, "Discerner", cJSON_CreateString(string));
     }
