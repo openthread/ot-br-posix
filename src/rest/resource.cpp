@@ -912,7 +912,7 @@ void Resource::GetJoiners(Response &aResponse) const
 void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
 {
     otbrError           error   = OTBR_ERROR_NONE;
-    otError             otError = OT_ERROR_NONE;
+    otError             errorOt = OT_ERROR_NONE;
     std::string         errorCode;
     otJoinerInfo        joiner;
     const otExtAddress *addrPtr                         = nullptr;
@@ -930,14 +930,14 @@ void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
 
     if (joiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
     {
-        otError = otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
+        errorOt = otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
                                                        joiner.mExpirationTime);
     }
     else
     {
-        otError = otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime);
+        errorOt = otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime);
     }
-    VerifyOrExit(otError == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+    VerifyOrExit(errorOt == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
 exit:
     if (error == OTBR_ERROR_NONE)
@@ -955,11 +955,11 @@ exit:
     }
     else if (error == OTBR_ERROR_OPENTHREAD)
     {
-        if (otError == OT_ERROR_INVALID_ARGS)
+        if (errorOt == OT_ERROR_INVALID_ARGS)
         {
             ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
         }
-        else if (otError == OT_ERROR_NO_BUFS)
+        else if (errorOt == OT_ERROR_NO_BUFS)
         {
             ErrorHandler(aResponse, HttpStatusCode::kStatusInsufficientStorage);
         }
