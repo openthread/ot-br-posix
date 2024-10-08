@@ -41,28 +41,15 @@
 namespace otbr {
 namespace Ncp {
 
+#if !OTBR_ENABLE_VENDOR_THREAD_HOST
 std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *aInterfaceName,
                                                const std::vector<const char *> &aRadioUrls,
                                                const char                      *aBackboneInterfaceName,
                                                bool                             aDryRun,
                                                bool                             aEnableAutoAttach)
 {
-    CoprocessorType             coprocessorType;
-    otPlatformCoprocessorUrls   urls;
+    CoprocessorType             coprocessorType = InitCoprocessor(aRadioUrls);
     std::unique_ptr<ThreadHost> host;
-    otLogLevel                  level = ConvertToOtLogLevel(otbrLogGetLevel());
-
-    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
-
-    urls.mNum = 0;
-    for (const char *url : aRadioUrls)
-    {
-        urls.mUrls[urls.mNum++] = url;
-    }
-
-    VerifyOrDie(otLoggingSetLevel(level) == OT_ERROR_NONE, "Failed to set OT log Level!");
-
-    coprocessorType = otSysInitCoprocessor(&urls);
 
     switch (coprocessorType)
     {
@@ -80,6 +67,25 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
     }
 
     return host;
+}
+#endif // !OTBR_ENABLE_VENDOR_THREAD_HOST
+
+CoprocessorType ThreadHost::InitCoprocessor(const std::vector<const char *> &aRadioUrls)
+{
+    otPlatformCoprocessorUrls urls;
+    otLogLevel                level = ConvertToOtLogLevel(otbrLogGetLevel());
+
+    VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
+
+    urls.mNum = 0;
+    for (const char *url : aRadioUrls)
+    {
+        urls.mUrls[urls.mNum++] = url;
+    }
+
+    VerifyOrDie(otLoggingSetLevel(level) == OT_ERROR_NONE, "Failed to set OT log Level!");
+
+    return otSysInitCoprocessor(&urls);
 }
 
 } // namespace Ncp

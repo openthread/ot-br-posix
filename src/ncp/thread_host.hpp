@@ -232,6 +232,9 @@ public:
      * The destructor.
      */
     virtual ~ThreadHost(void) = default;
+
+protected:
+    static CoprocessorType InitCoprocessor(const std::vector<const char *> &aRadioUrls);
 };
 
 } // namespace Ncp

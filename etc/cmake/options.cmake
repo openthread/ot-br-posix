@@ -158,6 +158,11 @@ if (OTBR_VENDOR_SERVER)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_VENDOR_SERVER=1)
 endif()
 
+option(OTBR_VENDOR_THREAD_HOST "Use vendor thread host implementation" OFF)
+if (OTBR_VENDOR_THREAD_HOST)
+    target_compile_definitions(otbr-config OTBR_ENABLE_VENDOR_THREAD_HOST=1)
+endif()
+
 option(OTBR_LINK_METRICS_TELEMETRY "Enable Link Metrics Telemetry Upload" OFF)
 if (OTBR_LINK_METRICS_TELEMETRY)
     target_compile_definitions(otbr-config INTERFACE OTBR_ENABLE_LINK_METRICS_TELEMETRY=1)
