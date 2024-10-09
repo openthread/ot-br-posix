@@ -3,6 +3,7 @@
 
 
 WAN_INTERFACE="eth0"
+WLAN_INTERFACE="wlan0"
 WPAN_INTERFACE="wpan0"
 
 RADVD_CONF="/etc/radvd.conf"
@@ -10,7 +11,7 @@ LOG_TAG="dhcpcd.exit.hook:"
 
 config_ra()
 {
-    logger -t "$LOG_TAG $reason start config radvd"
+    logger "$LOG_TAG $reason start config radvd"
 
 sudo tee "${RADVD_CONF}" > /dev/null <<EOF
 interface ${WPAN_INTERFACE}
