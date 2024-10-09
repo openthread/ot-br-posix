@@ -47,10 +47,9 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
                                                bool                             aDryRun,
                                                bool                             aEnableAutoAttach)
 {
-    CoprocessorType             coprocessorType;
-    otPlatformCoprocessorUrls   urls;
-    std::unique_ptr<ThreadHost> host;
-    otLogLevel                  level = ConvertToOtLogLevel(otbrLogGetLevel());
+    CoprocessorType           coprocessorType;
+    otPlatformCoprocessorUrls urls;
+    otLogLevel                level = ConvertToOtLogLevel(otbrLogGetLevel());
 
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -64,22 +63,8 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
 
     coprocessorType = otSysInitCoprocessor(&urls);
 
-    switch (coprocessorType)
-    {
-    case OT_COPROCESSOR_RCP:
-        host = MakeUnique<RcpHost>(aInterfaceName, aRadioUrls, aBackboneInterfaceName, aDryRun, aEnableAutoAttach);
-        break;
-
-    case OT_COPROCESSOR_NCP:
-        host = MakeUnique<NcpHost>(aInterfaceName, aDryRun);
-        break;
-
-    default:
-        DieNow("Unknown coprocessor type!");
-        break;
-    }
-
-    return host;
+    return CreateThreadHost(coprocessorType, aInterfaceName, aRadioUrls, aBackboneInterfaceName, aDryRun,
+                            aEnableAutoAttach);
 }
 
 otLogLevel ThreadHost::ConvertToOtLogLevel(otbrLogLevel aLevel)
@@ -111,6 +96,35 @@ otLogLevel ThreadHost::ConvertToOtLogLevel(otbrLogLevel aLevel)
 
     return level;
 }
+
+#if !OTBR_VENDOR_THREAD_HOST
+std::unique_ptr<ThreadHost> ThreadHost::CreateThreadHost(CoprocessorType                  aType,
+                                                         const char                      *aInterfaceName,
+                                                         const std::vector<const char *> &aRadioUrls,
+                                                         const char                      *aBackboneInterfaceName,
+                                                         bool                             aDryRun,
+                                                         bool                             aEnableAutoAttach)
+{
+    std::unique_ptr<ThreadHost> host;
+
+    switch (aType)
+    {
+    case OT_COPROCESSOR_RCP:
+        host = MakeUnique<RcpHost>(aInterfaceName, aRadioUrls, aBackboneInterfaceName, aDryRun, aEnableAutoAttach);
+        break;
+
+    case OT_COPROCESSOR_NCP:
+        host = MakeUnique<NcpHost>(aInterfaceName, aDryRun);
+        break;
+
+    default:
+        DieNow("Unknown coprocessor type!");
+        break;
+    }
+
+    return host;
+}
+#endif // !OTBR_VENDOR_THREAD_HOST
 
 } // namespace Ncp
 } // namespace otbr

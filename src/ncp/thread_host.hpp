@@ -170,6 +170,14 @@ public:
 
 protected:
     static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
+
+private:
+    static std::unique_ptr<ThreadHost> CreateThreadHost(CoprocessorType                  aType,
+                                                        const char                      *aInterfaceName,
+                                                        const std::vector<const char *> &aRadioUrls,
+                                                        const char                      *aBackboneInterfaceName,
+                                                        bool                             aDryRun,
+                                                        bool                             aEnableAutoAttach);
 };
 
 } // namespace Ncp
