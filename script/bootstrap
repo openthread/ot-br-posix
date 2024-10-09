@@ -107,7 +107,7 @@ install_packages_apt()
     }
 
     # dhcpv6 pd
-    with DHCPV6_PD_REF && if [[ $PLATFORM == "raspbian" ]]; then
+    with DHCPV6_PD_REF && if command -v apt-get &>/dev/null; then
         sudo apt-get install --no-install-recommends -y dhcpcd
         sudo mkdir -p /etc/systemd/system/dhcpcd.service.d
         # allow edit system config file eg. /etc/radvd.conf

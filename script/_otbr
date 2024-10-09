@@ -91,6 +91,12 @@ otbr_install()
         )
     fi
 
+    if with DHCPV6_PD_REF; then
+        otbr_options+=(
+            "-DOTBR_DHCP6_PD=ON"
+        )
+    fi
+
     if with REST_API; then
         otbr_options+=("-DOTBR_REST=ON")
     fi

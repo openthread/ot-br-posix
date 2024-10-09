@@ -81,7 +81,6 @@ dhcpcd_disable_ipv6()
     if [ -f $DHCPCD_CONF_FILE ]; then
         sudo cp $DHCPCD_CONF_FILE $DHCPCD_CONF_BACKUP_FILE
         sudo tee -a $DHCPCD_CONF_FILE <<EOF
-noipv6
 noipv6rs
 EOF
     fi

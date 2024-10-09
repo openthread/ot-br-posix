@@ -35,6 +35,11 @@ interface eth0
   ipv6rs
   iaid 1
   ia_pd 2/::/64 -
+
+interface wlan0
+  ipv6rs
+  iaid 2
+  ia_pd 3/::/64 -
 EOF
 }
 

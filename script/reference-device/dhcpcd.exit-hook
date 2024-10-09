@@ -3,6 +3,7 @@
 
 
 WAN_INTERFACE="eth0"
+WLAN_INTERFACE="wlan0"
 WPAN_INTERFACE="wpan0"
 
 RADVD_CONF="/etc/radvd.conf"
@@ -10,7 +11,7 @@ LOG_TAG="dhcpcd.exit.hook:"
 
 config_ra()
 {
-    logger -t "$LOG_TAG $reason start config radvd"
+    logger "$LOG_TAG $reason start config radvd"
 
 sudo tee "${RADVD_CONF}" > /dev/null <<EOF
 interface ${WPAN_INTERFACE}
@@ -28,7 +29,7 @@ interface ${WPAN_INTERFACE}
 EOF
 }
 
-if [ “${interface}” = “eth0” ]; then
+if [ “${interface}” = “eth0” ] || [ “${interface}” = “wlan0” ]; then
 
     for var in $(env); do
         # Split the variable into name and value
@@ -40,7 +41,7 @@ if [ “${interface}” = “eth0” ]; then
 
     case $reason in
         EXPIRE6 | STOP6)
-            config_ra $old_dhcp6_ia_pd1_prefix1 $old_dhcp6_ia_pd1_prefix1 0 0
+            config_ra $old_dhcp6_ia_pd1_prefix1 $old_dhcp6_ia_pd1_prefix1_length 0 0
             sudo systemctl restart radvd
             ;;
     esac
