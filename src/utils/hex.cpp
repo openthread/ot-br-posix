@@ -123,19 +123,17 @@ std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength)
 
 size_t Long2Hex(const uint64_t aLong, char *aHex)
 {
-    char     byteHex[3];
-    uint64_t longValue = aLong;
+    char byteHex[3];
 
     // Make sure strcat appends at the beginning of the output buffer even
     // if uninitialized.
     aHex[0] = '\0';
 
-    for (uint8_t i = 0; i < sizeof(uint64_t); i++)
+    for (uint8_t i = 0; i < sizeof(aLong); i++)
     {
-        uint8_t byte = longValue & 0xff;
+        uint8_t byte = (aLong >> (8 * (sizeof(aLong) - i - 1))) & 0xff;
         snprintf(byteHex, sizeof(byteHex), "%02X", byte);
         strcat(aHex, byteHex);
-        longValue = longValue >> 8;
     }
 
     return strlen(aHex);
