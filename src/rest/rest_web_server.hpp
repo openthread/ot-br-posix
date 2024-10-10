@@ -42,6 +42,9 @@
 
 #include "common/mainloop.hpp"
 #include "rest/connection.hpp"
+#include "rest/extensions/rest_task_add_thread_device.hpp"
+#include "rest/extensions/rest_task_queue.hpp"
+#include "rest/resource.hpp"
 
 using otbr::Ncp::RcpHost;
 using std::chrono::steady_clock;
@@ -85,6 +88,12 @@ private:
 
     // Resource handler
     Resource mResource;
+
+    // OpenThread Controller reference
+    RcpHost &mHost;
+
+    // Openthread Instance pointer
+    otInstance *mInstance;
     // Struct for server configuration
     sockaddr_in6 mAddress;
     // File descriptor for listening
