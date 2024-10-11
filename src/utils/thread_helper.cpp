@@ -427,7 +427,7 @@ void ThreadHelper::ActiveScanHandler(otActiveScanResult *aResult)
     }
 }
 
-#if OTBR_ENABLE_DHCP6_PD
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
 void ThreadHelper::SetDhcp6PdStateCallback(Dhcp6PdStateCallback aCallback)
 {
     mDhcp6PdCallback = std::move(aCallback);
@@ -448,7 +448,7 @@ void ThreadHelper::BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aSta
         mDhcp6PdCallback(aState);
     }
 }
-#endif // OTBR_ENABLE_DHCP6_PD
+#endif // OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
 
 void ThreadHelper::EnergyScanCallback(otEnergyScanResult *aResult, void *aThreadHelper)
 {

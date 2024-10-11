@@ -51,6 +51,7 @@
 #define OTBR_DHCP6_PD_STATE_NAME_DISABLED "disabled"
 #define OTBR_DHCP6_PD_STATE_NAME_STOPPED "stopped"
 #define OTBR_DHCP6_PD_STATE_NAME_RUNNING "running"
+#define OTBR_DHCP6_PD_STATE_NAME_IDLE "idle"
 #endif
 
 std::string GetDeviceRoleName(otDeviceRole aRole);

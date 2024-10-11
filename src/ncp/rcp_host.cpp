@@ -235,7 +235,7 @@ void RcpHost::Init(void)
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otDnssdUpstreamQuerySetEnabled(mInstance, /* aEnabled */ true);
 #endif
-#if OTBR_ENABLE_DHCP6_PD
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
     otBorderRoutingDhcp6PdSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
