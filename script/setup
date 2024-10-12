@@ -57,7 +57,7 @@ main()
     border_routing_uninstall
     network_manager_uninstall
     dhcpv6_pd_uninstall
-    dhcpv6_pd_ref_stop
+    dhcpv6_pd_ref_uninstall
     nat64_uninstall
     dns64_uninstall
     rt_tables_uninstall
@@ -71,7 +71,7 @@ main()
     dns64_install
     network_manager_install
     dhcpv6_pd_install
-    dhcpv6_pd_ref_start
+    dhcpv6_pd_ref_install
     border_routing_install
     otbr_install
     # shellcheck source=/dev/null

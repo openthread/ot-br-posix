@@ -35,7 +35,6 @@ if [ "${interface}" = "eth0" ] || [ “${interface}” = “wlan0” ]; then
         # Split the variable into name and value
         name="${var%%=*}"
         value="${var#*=}"
-        # Log to syslog
         logger -t "$LOG_TAG $reason sysenv: " "$name=$value"
     done
 

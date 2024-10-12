@@ -3,34 +3,8 @@
 customise_dhcpcd_conf()
 {
     sudo tee /etc/dhcpcd.conf >/dev/null <<EOF
-# A sample configuration for dhcpcd.
-# See dhcpcd.conf(5) for details.
-
-# Allow users of this group to interact with dhcpcd via the control socket.
-#controlgroup wheel
-
-# Inform the DHCP server of our hostname for DDNS.
-#hostname
-
-# Use the hardware address of the interface for the Client ID.
-#clientid
-# or
-# Use the same DUID + IAID as set in DHCPv6 for DHCPv4 ClientID as per RFC4361.
-# Some non-RFC compliant DHCP servers do not reply with this set.
-# In this case, comment out duid and enable clientid above.
-#duid
-
-# Rapid commit support.
-# Safe to enable by default because it requires the equivalent option set
-# on the server to actually work.
-option rapid_commit
-
-# A ServerID is required by RFC2131.
-#require dhcp_server_identifier
-
 noipv6rs 
 # disable routing solicitation
-# denyinterfaces eth1  # Don't touch other_interfaces at all
 interface eth0
   ipv6rs
   iaid 1
@@ -43,18 +17,22 @@ interface wlan0
 EOF
 }
 
-dhcpv6_pd_ref_stop()
+dhcpv6_pd_ref_uninstall()
 {
+    with DHCPV6_PD_REF || return 0
+
     if [[ -f "/etc/dhcpcd.conf.orig" ]]; then
         sudo mv /etc/dhcpcd.conf.orig /etc/dhcpcd.conf
     fi
-    # sudo systemctl restart dhcpcd
+    sudo systemctl restart dhcpcd
     sudo rm -f /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
 
 }
 
-dhcpv6_pd_ref_start()
+dhcpv6_pd_ref_install()
 {
+    with DHCPV6_PD_REF || return 0
+
     if [[ -f "/etc/dhcpcd.conf" ]]; then
         sudo mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig
     fi
