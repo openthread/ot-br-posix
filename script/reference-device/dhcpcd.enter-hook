@@ -1,7 +1,6 @@
 #!/bin/bash
 
-WAN_INTERFACE="eth0"
-WLAN_INTERFACE="wlan0"
+UPSTREAM_INTERFACE="eth0"
 WPAN_INTERFACE="wpan0"
 
 RADVD_CONF="/etc/radvd.conf"
@@ -29,7 +28,8 @@ EOF
 }
 
 
-if [ "${interface}" = "eth0" ] || [ “${interface}” = “wlan0” ]; then
+# TODO: set the upstream interface according to the environment variables of `script/setup`.
+if [ "${interface}" = ${UPSTREAM_INTERFACE} ]; then
 
     for var in $(env); do
         # Split the variable into name and value

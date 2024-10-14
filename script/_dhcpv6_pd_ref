@@ -2,18 +2,14 @@
 
 customise_dhcpcd_conf()
 {
+    # This has to be run after script/_border_routing, and this will
+    # invalidate all changes to dhcpcd.conf made by script/_border_routing.
     sudo tee /etc/dhcpcd.conf >/dev/null <<EOF
 noipv6rs 
-# disable routing solicitation
+# disable router solicitation
 interface eth0
-  ipv6rs
   iaid 1
   ia_pd 2/::/64 -
-
-interface wlan0
-  ipv6rs
-  iaid 2
-  ia_pd 3/::/64 -
 EOF
 }
 
@@ -40,5 +36,4 @@ dhcpv6_pd_ref_install()
     # Add dhcpcd.hooks
     sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook /etc/dhcpcd.enter-hook
     sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook /etc/dhcpcd.exit-hook
-
 }
