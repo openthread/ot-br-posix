@@ -69,6 +69,13 @@ public:
     virtual void SetDeviceRole(otDeviceRole aRole) = 0;
 
     /**
+     * Updates the active dataset.
+     *
+     * @param[in] aActiveOpDatasetTlvs  The active dataset tlvs.
+     */
+    virtual void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) = 0;
+
+    /**
      * The destructor.
      */
     virtual ~PropsObserver(void) = default;
@@ -294,6 +301,7 @@ private:
     otError ParseIp6AddressTable(const uint8_t *aBuf, uint16_t aLength, std::vector<Ip6AddressInfo> &aAddressTable);
     otError ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen, std::vector<Ip6Address> &aAddressList);
     otError ParseIp6StreamNet(const uint8_t *aBuf, uint8_t aLen, const uint8_t *&aData, uint16_t &aDataLen);
+    otError ParseOperationalDatasetTlvs(const uint8_t *aBuf, uint8_t aLen, otOperationalDatasetTlvs &aDatasetTlvs);
 
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
