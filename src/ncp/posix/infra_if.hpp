@@ -40,6 +40,7 @@
 
 #include <openthread/ip6.h>
 
+#include "common/mainloop.hpp"
 #include "common/types.hpp"
 
 namespace otbr {
@@ -65,6 +66,8 @@ public:
 
     void      Init(void);
     void      Deinit(void);
+    void      Process(const MainloopContext &aContext);
+    void      UpdateFdSet(MainloopContext &aContext);
     otbrError SetInfraIf(const char *aIfName);
 
 private:
@@ -72,10 +75,16 @@ private:
     short                   GetFlags(void) const;
     std::vector<Ip6Address> GetAddresses(void);
     static bool             HasLinkLocalAddress(const std::vector<Ip6Address> &aAddrs);
+#ifdef __linux__
+    void ReceiveNetlinkMessage(void);
+#endif
 
     Dependencies &mDeps;
     char          mInfraIfName[IFNAMSIZ];
     unsigned int  mInfraIfIndex;
+#ifdef __linux__
+    int mNetlinkSocket;
+#endif
 };
 
 } // namespace otbr
