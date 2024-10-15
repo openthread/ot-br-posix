@@ -70,16 +70,11 @@ accept_ra_enable()
 
 # This function disables IPv6 Router Solicitation (RS) in dhcpcd.
 #
-# dhcpcd on Raspberry Pi enables IPv6 support by default, including Router
-# Solicitations (RS).  While we want to use dhcpcd for IPv6 address management,
-# dhcpcd's handling of RS can conflict with the kernel's IPv6 configuration,
-# specifically the 'accept_ra' setting.
-#
-# By disabling RS in dhcpcd with 'noipv6rs', we prevent dhcpcd from interfering
-# with the kernel's 'accept_ra' setting, allowing us to manage IPv6 routing and
-# other aspects of IPv6 configuration at the kernel level. This approach ensures
-# that we can leverage dhcpcd for IPv6 address assignment while maintaining
-# control over 'accept_ra'.
+# dhcpcd on raspberry Pi enables IPv6 support by default. The problem with
+# dhcpcd is that it does't support Route Information Option (RIO), so we need
+# to rely on the kernel implementation. dhcpcd will force set accept_ra to 0
+# for all interfaces it is currently running on, if IPv6 RS is enabled. This
+# conflicts with our accept_ra* configurations.
 #
 dhcpcd_disable_ipv6()
 {
