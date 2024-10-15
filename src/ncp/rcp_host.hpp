@@ -207,6 +207,7 @@ public:
     void Leave(const AsyncResultReceiver &aRecevier) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
+    void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
@@ -219,6 +220,15 @@ public:
     }
 
 private:
+    static void SafeInvokeAndClear(AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
+    {
+        if (aReceiver)
+        {
+            aReceiver(aError, aErrorInfo);
+            aReceiver = nullptr;
+        }
+    }
+
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
     {
         static_cast<RcpHost *>(aContext)->HandleStateChanged(aFlags);
@@ -238,6 +248,9 @@ private:
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 
+    static void DisableThreadAfterDetach(void *aContext);
+    void        DisableThreadAfterDetach(void);
+
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
 
@@ -251,6 +264,8 @@ private:
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
+
+    AsyncResultReceiver mSetThreadEnabledReceiver;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.

@@ -137,6 +137,20 @@ public:
                                    const AsyncResultReceiver       aReceiver) = 0;
 
     /**
+     * This method enables/disables the Thread network.
+     *
+     * 1. If there is an ongoing 'SetThreadEnabled' operation, no action will be taken and @p aReceiver
+     *    will be invoked with error OT_ERROR_BUSY.
+     * 2. If the host hasn't been initialized, @p aReceiver will be invoked with error OT_ERROR_INVALID_STATE.
+     * 3. When @p aEnabled is false, this method will first trigger a graceful detach and then disable Thread
+     *    network interface and the stack.
+     *
+     * @param[in] aEnabled  true to enable and false to disable.
+     * @param[in] aReceiver  A receiver to get the async result of this operation.
+     */
+    virtual void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) = 0;
+
+    /**
      * Returns the co-processor type.
      */
     virtual CoprocessorType GetCoprocessorType(void) = 0;
