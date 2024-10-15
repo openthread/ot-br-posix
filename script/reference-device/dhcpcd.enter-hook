@@ -69,7 +69,7 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
         DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
             logger "$LOG_TAG prefix is $new_dhcp6_ia_pd1_prefix1  length is $new_dhcp6_ia_pd1_prefix1_length pltime is  $new_dhcp6_ia_pd1_prefix1_pltime vltime is $new_dhcp6_ia_pd1_prefix1_vltime"
             config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
-            sudo systemctl restart radvd || logger "$LOG_TAG Failed to restart radvd"
+            sudo systemctl reload radvd || logger "$LOG_TAG Failed to reload radvd"
             ;;
     esac
 fi

@@ -67,7 +67,7 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
     case $reason in
         EXPIRE6 | STOP6)
             config_ra $old_dhcp6_ia_pd1_prefix1 $old_dhcp6_ia_pd1_prefix1_length 0 0
-            sudo systemctl restart radvd
+            sudo systemctl reload radvd
             ;;
     esac
 fi
