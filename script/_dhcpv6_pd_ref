@@ -27,7 +27,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 #   Description:
-#       This script sets up border routing configurations.
+#       This script manipulates DHCPv6-PD-REF configuration.
 #
 
 customise_dhcpcd_conf()

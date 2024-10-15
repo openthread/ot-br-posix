@@ -76,7 +76,7 @@ accept_ra_enable()
 # for all interfaces it is currently running on, if IPv6 RS is enabled. This
 # conflicts with our accept_ra* configurations.
 #
-dhcpcd_disable_ipv6()
+dhcpcd_disable_ipv6rs()
 {
     if [ -f $DHCPCD_CONF_FILE ]; then
         sudo cp $DHCPCD_CONF_FILE $DHCPCD_CONF_BACKUP_FILE
@@ -106,7 +106,7 @@ border_routing_install()
 {
     with BORDER_ROUTING || return 0
 
-    dhcpcd_disable_ipv6
+    dhcpcd_disable_ipv6rs
     accept_ra_install
 
     # /proc/sys/net/ipv6/conf/* files are read-only in docker
