@@ -86,8 +86,8 @@ EOF
     fi
 }
 
-# This function enables IPv6 support in dhcpcd.
-dhcpcd_enable_ipv6()
+# This function enables IPv6 Router Solicitation (RS) in dhcpcd.
+dhcpcd_enable_ipv6rs()
 {
     if [ -f $DHCPCD_CONF_BACKUP_FILE ]; then
         sudo cp $DHCPCD_CONF_BACKUP_FILE $DHCPCD_CONF_FILE
@@ -99,7 +99,7 @@ border_routing_uninstall()
     with BORDER_ROUTING || return 0
 
     accept_ra_uninstall
-    dhcpcd_enable_ipv6
+    dhcpcd_enable_ipv6rs
 }
 
 border_routing_install()
