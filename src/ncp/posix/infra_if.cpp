@@ -56,16 +56,81 @@ otbrError InfraIf::Dependencies::SetInfraIf(unsigned int                   aInfr
 InfraIf::InfraIf(Dependencies &aDependencies)
     : mDeps(aDependencies)
     , mInfraIfIndex(0)
+#ifdef __linux__
+    , mNetlinkSocket(-1)
+#endif
 {
 }
 
+#ifdef __linux__
+// Create a Netlink socket that subscribes to link & addresses events.
+int CreateNetlinkSocket(void)
+{
+    int                sock;
+    int                rval;
+    struct sockaddr_nl addr;
+
+    sock = SocketWithCloseExec(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE, kSocketBlock);
+    VerifyOrDie(sock != -1, strerror(errno));
+
+    memset(&addr, 0, sizeof(addr));
+    addr.nl_family = AF_NETLINK;
+    addr.nl_groups = RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
+
+    rval = bind(sock, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    return sock;
+}
+#endif // __linux__
+
 void InfraIf::Init(void)
 {
+#ifdef __linux__
+    mNetlinkSocket = CreateNetlinkSocket();
+#endif
 }
 
 void InfraIf::Deinit(void)
 {
+#ifdef __linux__
+    if (mNetlinkSocket != -1)
+    {
+        close(mNetlinkSocket);
+        mNetlinkSocket = -1;
+    }
+#endif
     mInfraIfIndex = 0;
+}
+
+void InfraIf::Process(const MainloopContext &aContext)
+{
+    OT_UNUSED_VARIABLE(aContext);
+#ifdef __linux__
+    VerifyOrExit(mNetlinkSocket != -1);
+
+    if (FD_ISSET(mNetlinkSocket, &aContext.mReadFdSet))
+    {
+        ReceiveNetlinkMessage();
+    }
+
+exit:
+#endif
+    return;
+}
+
+void InfraIf::UpdateFdSet(MainloopContext &aContext)
+{
+    OT_UNUSED_VARIABLE(aContext);
+#ifdef __linux__
+    VerifyOrExit(mNetlinkSocket != -1);
+
+    FD_SET(mNetlinkSocket, &aContext.mReadFdSet);
+    aContext.mMaxFd = std::max(aContext.mMaxFd, mNetlinkSocket);
+
+exit:
+#endif
+    return;
 }
 
 otbrError InfraIf::SetInfraIf(const char *aIfName)
@@ -162,5 +227,59 @@ bool InfraIf::HasLinkLocalAddress(const std::vector<Ip6Address> &aAddrs)
 
     return hasLla;
 }
+
+#ifdef __linux__
+void InfraIf::ReceiveNetlinkMessage(void)
+{
+    const size_t kMaxNetlinkBufSize = 8192;
+    ssize_t      len;
+    union
+    {
+        nlmsghdr mHeader;
+        uint8_t  mBuffer[kMaxNetlinkBufSize];
+    } msgBuffer;
+
+    len = recv(mNetlinkSocket, msgBuffer.mBuffer, sizeof(msgBuffer.mBuffer), /* flags */ 0);
+    if (len < 0)
+    {
+        otbrLogCrit("Failed to receive netlink message: %s", strerror(errno));
+        ExitNow();
+    }
+
+    for (struct nlmsghdr *header = &msgBuffer.mHeader; NLMSG_OK(header, static_cast<size_t>(len));
+         header                  = NLMSG_NEXT(header, len))
+    {
+        switch (header->nlmsg_type)
+        {
+        // There are no effective netlink message types to get us notified
+        // of interface RUNNING state changes. But addresses events are
+        // usually associated with interface state changes.
+        case RTM_NEWADDR:
+        case RTM_DELADDR:
+        case RTM_NEWLINK:
+        case RTM_DELLINK:
+        {
+            std::vector<Ip6Address> addresses = GetAddresses();
+
+            mDeps.SetInfraIf(mInfraIfIndex, IsRunning(addresses), addresses);
+            break;
+        }
+        case NLMSG_ERROR:
+        {
+            struct nlmsgerr *errMsg = reinterpret_cast<struct nlmsgerr *>(NLMSG_DATA(header));
+
+            OTBR_UNUSED_VARIABLE(errMsg);
+            otbrLogWarning("netlink NLMSG_ERROR response: seq=%u, error=%d", header->nlmsg_seq, errMsg->error);
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+exit:
+    return;
+}
+#endif // __linux__
 
 } // namespace otbr
