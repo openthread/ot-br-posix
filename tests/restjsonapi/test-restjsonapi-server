@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -25,30 +26,25 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+# Run Bruno tests
+#
+# Note: The border router is expected to be connected to a network and not in detached state.
 
-# TODO: Make this KConfig, maybe something like this
-# if(OTBR_REST_API_EXTENSIONS)
-add_subdirectory(extensions)
-# endif()
+# Check DELETE collections
+bru run actions/Delete_Actions_Collection.bru --env localhost --output results_$LINENO.json
 
-add_library(otbr-rest
-    rest_web_server.cpp
-    connection.cpp
-    resource.cpp
-    json.cpp
-    parser.cpp
-    request.cpp
-    response.cpp
-)
+##############################################################
+## Actions ##
+##############################################################
+# POST Actions
+# add a Thread Joiner Device. Note: we will not check success of joining in this script.
+bru run actions/Post_Add_ThreadDevice.bru --env localhost --output results_$LINENO.json
 
-target_link_libraries(otbr-rest
-    PUBLIC
-        http_parser
-    PRIVATE
-        cjson
-        otbr-config
-        otbr-utils
-        openthread-ftd
-        openthread-posix
-        otbr-rest-extension
-)
+# GET Actions
+bru run actions/Get_Actions_Collection.bru --env localhost --output results_$LINENO.json
+# GET by itemId
+# GET a non-existing item
+bru run actions/Get_ActionItem_by_ItemId_404.bru --env localhost --output results_$LINENO.json
+
+# Check valid options
+bru run actions/Options.bru --env localhost --output results_$LINENO.json
