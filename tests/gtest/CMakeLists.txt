@@ -83,3 +83,23 @@ target_link_libraries(otbr-posix-gtest-unit
     GTest::gmock_main
 )
 gtest_discover_tests(otbr-posix-gtest-unit PROPERTIES LABELS "sudo")
+
+add_executable(otbr-gtest-host-api
+    ${OTBR_PROJECT_DIRECTORY}/src/ncp/rcp_host.cpp
+    ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
+    fake_posix_platform.cpp
+    test_rcp_host_api.cpp
+)
+target_include_directories(otbr-gtest-host-api
+    PRIVATE
+        ${OTBR_PROJECT_DIRECTORY}/src
+        ${OPENTHREAD_PROJECT_DIRECTORY}/src/core
+        ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest
+)
+target_link_libraries(otbr-gtest-host-api
+    mbedtls
+    otbr-common
+    otbr-utils
+    GTest::gmock_main
+)
+gtest_discover_tests(otbr-gtest-host-api)

@@ -297,3 +297,33 @@ void otbrLogDeinit(void)
 {
     closelog();
 }
+
+otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel)
+{
+    otLogLevel level;
+
+    switch (aLevel)
+    {
+    case OTBR_LOG_EMERG:
+    case OTBR_LOG_ALERT:
+    case OTBR_LOG_CRIT:
+        level = OT_LOG_LEVEL_CRIT;
+        break;
+    case OTBR_LOG_ERR:
+    case OTBR_LOG_WARNING:
+        level = OT_LOG_LEVEL_WARN;
+        break;
+    case OTBR_LOG_NOTICE:
+        level = OT_LOG_LEVEL_NOTE;
+        break;
+    case OTBR_LOG_INFO:
+        level = OT_LOG_LEVEL_INFO;
+        break;
+    case OTBR_LOG_DEBUG:
+    default:
+        level = OT_LOG_LEVEL_DEBG;
+        break;
+    }
+
+    return level;
+}

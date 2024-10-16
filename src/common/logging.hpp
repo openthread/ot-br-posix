@@ -233,4 +233,13 @@ void otbrLogDeinit(void);
 #define otbrLogInfo(...) otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, __VA_ARGS__)
 #define otbrLogDebug(...) otbrLog(OTBR_LOG_DEBUG, OTBR_LOG_TAG, __VA_ARGS__)
 
+/**
+ * Convert otbrLogLevel to otLogLevel.
+ *
+ * @param[in] aLevel  The otbrLogLevel to convert.
+ *
+ * @return the corresponding OT log level.
+ */
+otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
+
 #endif // OTBR_COMMON_LOGGING_HPP_
