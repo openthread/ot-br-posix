@@ -112,7 +112,19 @@ public:
     virtual void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) = 0;
 
     /**
-     * This method instructs the device to leave the current network gracefully.
+     * This method instructs the device to detach from the current network gracefully without erasing the persistent
+     * network credentials.
+     *
+     * If there is an ongoing 'DetachGracefully' operation, @p aReceiver will be called with OT_ERROR_BUSY.
+     * Otherwise, @p aReceiver will be invoked after the detach is completed with its error code.
+     *
+     * @param[in] aReceiver  A receiver to get the async result of this operation.
+     */
+    virtual void DetachGracefully(const AsyncResultReceiver &aRecevier) = 0;
+
+    /**
+     * This method instructs the device to detach from the current network gracefully and then erase the persistent
+     * network credentials.
      *
      * 1. If there is already an ongoing 'Leave' operation, no action will be taken and @p aReceiver
      *    will be called after the previous request is completed. The previous @p aReceiver will also

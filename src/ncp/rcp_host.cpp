@@ -295,6 +295,9 @@ void RcpHost::Deinit(void)
     OtNetworkProperties::SetInstance(nullptr);
     mThreadStateChangedCallbacks.clear();
     mResetHandlers.clear();
+
+    mDetachGracefullyResultReceiver = nullptr;
+    mLeaveResultReceiver            = nullptr;
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -402,10 +405,65 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
+void RcpHost::DetachGracefullyCallback(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->DetachGracefullyCallback();
+}
+
+void RcpHost::DetachGracefullyCallback(void)
+{
+    if (mDetachGracefullyResultReceiver)
+    {
+        mDetachGracefullyResultReceiver(OT_ERROR_NONE, "");
+        mDetachGracefullyResultReceiver = nullptr;
+    }
+}
+
+void RcpHost::DetachGracefully(const AsyncResultReceiver &aReceiver)
+{
+    otError error = OT_ERROR_NONE;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mDetachGracefullyResultReceiver == nullptr, error = OT_ERROR_BUSY);
+
+    SuccessOrExit(error = otThreadDetachGracefully(mInstance, DetachGracefullyCallback, this));
+    mDetachGracefullyResultReceiver = aReceiver;
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([&aReceiver](void) { aReceiver(error, ""); });
+    }
+}
+
+void RcpHost::DetachGracefullyCallbackForLeave(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->DetachGracefullyCallbackForLeave();
+}
+
+void RcpHost::DetachGracefullyCallbackForLeave(void)
+{
+    otError error = otInstanceErasePersistentInfo(mInstance);
+
+    if (mLeaveResultReceiver)
+    {
+        mLeaveResultReceiver(error, "");
+        mLeaveResultReceiver = nullptr;
+    }
+}
+
 void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
 {
-    // TODO: Implement Leave under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    if (mInstance == nullptr)
+    {
+        mTaskRunner.Post([&aReceiver](void) { aReceiver(OT_ERROR_INVALID_STATE, ""); });
+        ExitNow();
+    }
+
+    mLeaveResultReceiver = aReceiver;
+    OT_UNUSED_VARIABLE(otThreadDetachGracefully(mInstance, DetachGracefullyCallbackForLeave, this));
+exit:
+    return;
 }
 
 void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,

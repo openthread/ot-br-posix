@@ -204,6 +204,7 @@ public:
 
     // Thread Control virtual methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
+    void DetachGracefully(const AsyncResultReceiver &aRecevier) override;
     void Leave(const AsyncResultReceiver &aRecevier) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
@@ -238,6 +239,11 @@ private:
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 
+    static void DetachGracefullyCallback(void *aContext);
+    void        DetachGracefullyCallback(void);
+    static void DetachGracefullyCallbackForLeave(void *aContext);
+    void        DetachGracefullyCallbackForLeave(void);
+
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
 
@@ -251,6 +257,8 @@ private:
     TaskRunner                                 mTaskRunner;
     std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
     bool                                       mEnableAutoAttach = false;
+    AsyncResultReceiver                        mDetachGracefullyResultReceiver;
+    AsyncResultReceiver                        mLeaveResultReceiver;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
