@@ -79,7 +79,7 @@ size_t Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)
 std::string Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength);
 
 /**
- * @brief Converts a 64-bit integer to a hexadecimal string.
+ * @brief Converts a 64-bit integer to a big endian formatted hexadecimal string.
  *
  * @param[in]  aLong The 64-bit integer to be converted.
  * @param[out] aHex A character array to store the resulting hexadecimal string.
