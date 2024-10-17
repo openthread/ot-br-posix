@@ -28,6 +28,10 @@
 
 #define OTBR_LOG_TAG "INFRAIF"
 
+#ifdef __APPLE__
+#define __APPLE_USE_RFC_3542
+#endif
+
 #include "infra_if.hpp"
 
 #include <ifaddrs.h>
@@ -35,7 +39,10 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #endif
+// clang-format off
+#include <netinet/in.h>
 #include <netinet/icmp6.h>
+// clang-format on
 #include <sys/ioctl.h>
 
 #include "utils/socket_utils.hpp"
@@ -56,16 +63,87 @@ otbrError InfraIf::Dependencies::SetInfraIf(unsigned int                   aInfr
 InfraIf::InfraIf(Dependencies &aDependencies)
     : mDeps(aDependencies)
     , mInfraIfIndex(0)
+#ifdef __linux__
+    , mNetlinkSocket(-1)
+#endif
+    , mInfraIfIcmp6Socket(-1)
 {
 }
 
+#ifdef __linux__
+// Create a Netlink socket that subscribes to link & addresses events.
+int CreateNetlinkSocket(void)
+{
+    int                sock;
+    int                rval;
+    struct sockaddr_nl addr;
+
+    sock = SocketWithCloseExec(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE, kSocketBlock);
+    VerifyOrDie(sock != -1, strerror(errno));
+
+    memset(&addr, 0, sizeof(addr));
+    addr.nl_family = AF_NETLINK;
+    addr.nl_groups = RTMGRP_LINK | RTMGRP_IPV6_IFADDR;
+
+    rval = bind(sock, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    return sock;
+}
+#endif // __linux__
+
 void InfraIf::Init(void)
 {
+#ifdef __linux__
+    mNetlinkSocket = CreateNetlinkSocket();
+#endif
 }
 
 void InfraIf::Deinit(void)
 {
+#ifdef __linux__
+    if (mNetlinkSocket != -1)
+    {
+        close(mNetlinkSocket);
+        mNetlinkSocket = -1;
+    }
+#endif
     mInfraIfIndex = 0;
+
+    if (mInfraIfIcmp6Socket != -1)
+    {
+        close(mInfraIfIcmp6Socket);
+    }
+}
+
+void InfraIf::Process(const MainloopContext &aContext)
+{
+    OT_UNUSED_VARIABLE(aContext);
+#ifdef __linux__
+    VerifyOrExit(mNetlinkSocket != -1);
+
+    if (FD_ISSET(mNetlinkSocket, &aContext.mReadFdSet))
+    {
+        ReceiveNetlinkMessage();
+    }
+
+exit:
+#endif
+    return;
+}
+
+void InfraIf::UpdateFdSet(MainloopContext &aContext)
+{
+    OT_UNUSED_VARIABLE(aContext);
+#ifdef __linux__
+    VerifyOrExit(mNetlinkSocket != -1);
+
+    FD_SET(mNetlinkSocket, &aContext.mReadFdSet);
+    aContext.mMaxFd = std::max(aContext.mMaxFd, mNetlinkSocket);
+
+exit:
+#endif
+    return;
 }
 
 otbrError InfraIf::SetInfraIf(const char *aIfName)
@@ -80,6 +158,13 @@ otbrError InfraIf::SetInfraIf(const char *aIfName)
     mInfraIfIndex = if_nametoindex(aIfName);
     VerifyOrExit(mInfraIfIndex != 0, error = OTBR_ERROR_INVALID_STATE);
 
+    if (mInfraIfIcmp6Socket != -1)
+    {
+        close(mInfraIfIcmp6Socket);
+    }
+    mInfraIfIcmp6Socket = CreateIcmp6Socket(aIfName);
+    VerifyOrDie(mInfraIfIcmp6Socket != -1, "Failed to create Icmp6 socket!");
+
     addresses = GetAddresses();
 
     SuccessOrExit(mDeps.SetInfraIf(mInfraIfIndex, IsRunning(addresses), addresses), error = OTBR_ERROR_OPENTHREAD);
@@ -87,6 +172,134 @@ exit:
     otbrLogResult(error, "SetInfraIf");
 
     return error;
+}
+
+otbrError InfraIf::SendIcmp6Nd(uint32_t            aInfraIfIndex,
+                               const otIp6Address &aDestAddress,
+                               const uint8_t      *aBuffer,
+                               uint16_t            aBufferLength)
+{
+    otbrError error = OTBR_ERROR_NONE;
+
+    struct iovec        iov;
+    struct in6_pktinfo *packetInfo;
+
+    int                 hopLimit = 255;
+    uint8_t             cmsgBuffer[CMSG_SPACE(sizeof(*packetInfo)) + CMSG_SPACE(sizeof(hopLimit))];
+    struct msghdr       msgHeader;
+    struct cmsghdr     *cmsgPointer;
+    ssize_t             rval;
+    struct sockaddr_in6 dest;
+
+    VerifyOrExit(mInfraIfIcmp6Socket >= 0, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(aInfraIfIndex == mInfraIfIndex, error = OTBR_ERROR_DROPPED);
+
+    memset(cmsgBuffer, 0, sizeof(cmsgBuffer));
+
+    // Send the message
+    memset(&dest, 0, sizeof(dest));
+    dest.sin6_family = AF_INET6;
+    memcpy(&dest.sin6_addr, &aDestAddress, sizeof(aDestAddress));
+    if (IN6_IS_ADDR_LINKLOCAL(&dest.sin6_addr) || IN6_IS_ADDR_MC_LINKLOCAL(&dest.sin6_addr))
+    {
+        dest.sin6_scope_id = mInfraIfIndex;
+    }
+
+    iov.iov_base = const_cast<uint8_t *>(aBuffer);
+    iov.iov_len  = aBufferLength;
+
+    msgHeader.msg_namelen    = sizeof(dest);
+    msgHeader.msg_name       = &dest;
+    msgHeader.msg_iov        = &iov;
+    msgHeader.msg_iovlen     = 1;
+    msgHeader.msg_control    = cmsgBuffer;
+    msgHeader.msg_controllen = sizeof(cmsgBuffer);
+
+    // Specify the interface.
+    cmsgPointer             = CMSG_FIRSTHDR(&msgHeader);
+    cmsgPointer->cmsg_level = IPPROTO_IPV6;
+    cmsgPointer->cmsg_type  = IPV6_PKTINFO;
+    cmsgPointer->cmsg_len   = CMSG_LEN(sizeof(*packetInfo));
+    packetInfo              = (struct in6_pktinfo *)CMSG_DATA(cmsgPointer);
+    memset(packetInfo, 0, sizeof(*packetInfo));
+    packetInfo->ipi6_ifindex = mInfraIfIndex;
+
+    // Per section 6.1.2 of RFC 4861, we need to send the ICMPv6 message with IP Hop Limit 255.
+    cmsgPointer             = CMSG_NXTHDR(&msgHeader, cmsgPointer);
+    cmsgPointer->cmsg_level = IPPROTO_IPV6;
+    cmsgPointer->cmsg_type  = IPV6_HOPLIMIT;
+    cmsgPointer->cmsg_len   = CMSG_LEN(sizeof(hopLimit));
+    memcpy(CMSG_DATA(cmsgPointer), &hopLimit, sizeof(hopLimit));
+
+    rval = sendmsg(mInfraIfIcmp6Socket, &msgHeader, 0);
+
+    if (rval < 0)
+    {
+        otbrLogWarning("failed to send ICMPv6 message: %s", strerror(errno));
+        ExitNow(error = OTBR_ERROR_ERRNO);
+    }
+
+    if (static_cast<size_t>(rval) != iov.iov_len)
+    {
+        otbrLogWarning("failed to send ICMPv6 message: partially sent");
+        ExitNow(error = OTBR_ERROR_ERRNO);
+    }
+
+exit:
+    return error;
+}
+
+int InfraIf::CreateIcmp6Socket(const char *aInfraIfName)
+{
+    int                 sock;
+    int                 rval;
+    struct icmp6_filter filter;
+    const int           kEnable             = 1;
+    const int           kIpv6ChecksumOffset = 2;
+    const int           kHopLimit           = 255;
+
+    // Initializes the ICMPv6 socket.
+    sock = SocketWithCloseExec(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6, kSocketBlock);
+    VerifyOrDie(sock != -1, strerror(errno));
+
+    // Only accept Router Advertisements, Router Solicitations and Neighbor Advertisements.
+    ICMP6_FILTER_SETBLOCKALL(&filter);
+    ICMP6_FILTER_SETPASS(ND_ROUTER_SOLICIT, &filter);
+    ICMP6_FILTER_SETPASS(ND_ROUTER_ADVERT, &filter);
+    ICMP6_FILTER_SETPASS(ND_NEIGHBOR_ADVERT, &filter);
+
+    rval = setsockopt(sock, IPPROTO_ICMPV6, ICMP6_FILTER, &filter, sizeof(filter));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    // We want a source address and interface index.
+    rval = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &kEnable, sizeof(kEnable));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+#ifdef __linux__
+    rval = setsockopt(sock, IPPROTO_RAW, IPV6_CHECKSUM, &kIpv6ChecksumOffset, sizeof(kIpv6ChecksumOffset));
+#else
+    rval = setsockopt(sock, IPPROTO_IPV6, IPV6_CHECKSUM, &kIpv6ChecksumOffset, sizeof(kIpv6ChecksumOffset));
+#endif
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    // We need to be able to reject RAs arriving from off-link.
+    rval = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &kEnable, sizeof(kEnable));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    rval = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &kHopLimit, sizeof(kHopLimit));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    rval = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &kHopLimit, sizeof(kHopLimit));
+    VerifyOrDie(rval == 0, strerror(errno));
+
+#ifdef __linux__
+    rval = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, aInfraIfName, strlen(aInfraIfName));
+#else  // __NetBSD__ || __FreeBSD__ || __APPLE__
+    rval = setsockopt(sock, IPPROTO_IPV6, IPV6_BOUND_IF, aInfraIfName, strlen(aInfraIfName));
+#endif // __linux__
+    VerifyOrDie(rval == 0, strerror(errno));
+
+    return sock;
 }
 
 bool InfraIf::IsRunning(const std::vector<Ip6Address> &aAddrs) const
@@ -162,5 +375,59 @@ bool InfraIf::HasLinkLocalAddress(const std::vector<Ip6Address> &aAddrs)
 
     return hasLla;
 }
+
+#ifdef __linux__
+void InfraIf::ReceiveNetlinkMessage(void)
+{
+    const size_t kMaxNetlinkBufSize = 8192;
+    ssize_t      len;
+    union
+    {
+        nlmsghdr mHeader;
+        uint8_t  mBuffer[kMaxNetlinkBufSize];
+    } msgBuffer;
+
+    len = recv(mNetlinkSocket, msgBuffer.mBuffer, sizeof(msgBuffer.mBuffer), /* flags */ 0);
+    if (len < 0)
+    {
+        otbrLogCrit("Failed to receive netlink message: %s", strerror(errno));
+        ExitNow();
+    }
+
+    for (struct nlmsghdr *header = &msgBuffer.mHeader; NLMSG_OK(header, static_cast<size_t>(len));
+         header                  = NLMSG_NEXT(header, len))
+    {
+        switch (header->nlmsg_type)
+        {
+        // There are no effective netlink message types to get us notified
+        // of interface RUNNING state changes. But addresses events are
+        // usually associated with interface state changes.
+        case RTM_NEWADDR:
+        case RTM_DELADDR:
+        case RTM_NEWLINK:
+        case RTM_DELLINK:
+        {
+            std::vector<Ip6Address> addresses = GetAddresses();
+
+            mDeps.SetInfraIf(mInfraIfIndex, IsRunning(addresses), addresses);
+            break;
+        }
+        case NLMSG_ERROR:
+        {
+            struct nlmsgerr *errMsg = reinterpret_cast<struct nlmsgerr *>(NLMSG_DATA(header));
+
+            OTBR_UNUSED_VARIABLE(errMsg);
+            otbrLogWarning("netlink NLMSG_ERROR response: seq=%u, error=%d", header->nlmsg_seq, errMsg->error);
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+exit:
+    return;
+}
+#endif // __linux__
 
 } // namespace otbr

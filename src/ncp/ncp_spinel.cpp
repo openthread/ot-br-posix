@@ -438,6 +438,12 @@ otbrError NcpSpinel::HandleResponseForPropSet(spinel_tid_t      aTid,
     case SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS:
         VerifyOrExit(aKey == SPINEL_PROP_THREAD_ACTIVE_DATASET_TLVS, error = OTBR_ERROR_INVALID_STATE);
         CallAndClear(mDatasetSetActiveTask, OT_ERROR_NONE);
+        {
+            otOperationalDatasetTlvs datasetTlvs;
+            VerifyOrExit(ParseOperationalDatasetTlvs(aData, aLength, datasetTlvs) == OT_ERROR_NONE,
+                         error = OTBR_ERROR_PARSE);
+            mPropsObserver->SetDatasetActiveTlvs(datasetTlvs);
+        }
         break;
 
     case SPINEL_PROP_NET_IF_UP:
@@ -720,6 +726,26 @@ otError NcpSpinel::ParseIp6StreamNet(const uint8_t *aBuf, uint8_t aLen, const ui
 
     decoder.Init(aBuf, aLen);
     error = decoder.ReadDataWithLen(aData, aDataLen);
+
+exit:
+    return error;
+}
+
+otError NcpSpinel::ParseOperationalDatasetTlvs(const uint8_t            *aBuf,
+                                               uint8_t                   aLen,
+                                               otOperationalDatasetTlvs &aDatasetTlvs)
+{
+    otError             error = OT_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+    const uint8_t      *datasetTlvsData;
+    uint16_t            datasetTlvsLen;
+
+    decoder.Init(aBuf, aLen);
+    SuccessOrExit(error = decoder.ReadData(datasetTlvsData, datasetTlvsLen));
+    VerifyOrExit(datasetTlvsLen <= sizeof(aDatasetTlvs.mTlvs), error = OT_ERROR_PARSE);
+
+    memcpy(aDatasetTlvs.mTlvs, datasetTlvsData, datasetTlvsLen);
+    aDatasetTlvs.mLength = datasetTlvsLen;
 
 exit:
     return error;

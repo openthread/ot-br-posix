@@ -38,6 +38,7 @@
 . script/_nat64
 . script/_dns64
 . script/_dhcpv6_pd
+. script/_dhcpv6_pd_ref
 . script/_network_manager
 . script/_rt_tables
 . script/_swapfile
@@ -56,6 +57,7 @@ main()
     border_routing_uninstall
     network_manager_uninstall
     dhcpv6_pd_uninstall
+    dhcpv6_pd_ref_uninstall
     nat64_uninstall
     dns64_uninstall
     rt_tables_uninstall
@@ -69,6 +71,7 @@ main()
     dns64_install
     network_manager_install
     dhcpv6_pd_install
+    dhcpv6_pd_ref_install
     border_routing_install
     otbr_install
     # shellcheck source=/dev/null

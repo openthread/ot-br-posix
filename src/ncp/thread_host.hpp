@@ -64,6 +64,13 @@ public:
     virtual otDeviceRole GetDeviceRole(void) const = 0;
 
     /**
+     * Returns the active operational dataset tlvs.
+     *
+     * @param[out] aDatasetTlvs  A reference to where the Active Operational Dataset will be placed.
+     */
+    virtual void GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
+
+    /**
      * The destructor.
      */
     virtual ~NetworkProperties(void) = default;
@@ -135,6 +142,20 @@ public:
      */
     virtual void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                                    const AsyncResultReceiver       aReceiver) = 0;
+
+    /**
+     * This method enables/disables the Thread network.
+     *
+     * 1. If there is an ongoing 'SetThreadEnabled' operation, no action will be taken and @p aReceiver
+     *    will be invoked with error OT_ERROR_BUSY.
+     * 2. If the host hasn't been initialized, @p aReceiver will be invoked with error OT_ERROR_INVALID_STATE.
+     * 3. When @p aEnabled is false, this method will first trigger a graceful detach and then disable Thread
+     *    network interface and the stack.
+     *
+     * @param[in] aEnabled  true to enable and false to disable.
+     * @param[in] aReceiver  A receiver to get the async result of this operation.
+     */
+    virtual void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) = 0;
 
     /**
      * Returns the co-processor type.

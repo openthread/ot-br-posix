@@ -107,9 +107,9 @@ start_service()
 stop_service()
 {
     local service_name=$1
-    if $HAVE_SYSTEMCTL; then
+    if [[ ${HAVE_SYSTEMCTL} == 1 ]]; then
         systemctl is-active "$service_name" && sudo systemctl stop "$service_name" || echo "Failed to stop $service_name!"
-    elif $HAVE_SERVICE; then
+    elif [[ ${HAVE_SERVICE} == 1 ]]; then
         sudo service "$service_name" status && sudo service "$service_name" stop || echo "Failed to stop $service_name!"
     else
         die 'Unable to find service manager. Try script/console to stop in console mode!'

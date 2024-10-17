@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-#  Copyright (c) 2021, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,13 +26,43 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+#   Description:
+#       This script manipulates DHCPv6-PD-REF configuration.
+#
 
-# shellcheck disable=SC2034
-NAT64=0
-DNS64=0
-DHCPV6_PD=0
-DHCPV6_PD_REF=1
-NETWORK_MANAGER=0
-BACKBONE_ROUTER=1
-BORDER_ROUTING=1
-REST_API=1
+customise_dhcpcd_conf()
+{
+    # This has to be run after script/_border_routing, and this will
+    # invalidate all changes to dhcpcd.conf made by script/_border_routing.
+    sudo tee /etc/dhcpcd.conf >/dev/null <<EOF
+noipv6rs # disable router solicitation
+interface eth0
+  iaid 1
+  ia_pd 2/::/64 -
+EOF
+}
+
+dhcpv6_pd_ref_uninstall()
+{
+    with DHCPV6_PD_REF || return 0
+
+    if [[ -f "/etc/dhcpcd.conf.orig" ]]; then
+        sudo mv /etc/dhcpcd.conf.orig /etc/dhcpcd.conf
+    fi
+    sudo systemctl restart dhcpcd
+    sudo rm -f /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
+
+}
+
+dhcpv6_pd_ref_install()
+{
+    with DHCPV6_PD_REF || return 0
+
+    if [[ -f "/etc/dhcpcd.conf" ]]; then
+        sudo mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig
+    fi
+    customise_dhcpcd_conf
+    # Add dhcpcd.hooks
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook /etc/dhcpcd.enter-hook
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook /etc/dhcpcd.exit-hook
+}

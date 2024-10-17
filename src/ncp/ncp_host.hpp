@@ -58,12 +58,15 @@ public:
 
     // NetworkProperties methods
     otDeviceRole GetDeviceRole(void) const override;
+    void         GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
 
 private:
     // PropsObserver methods
     void SetDeviceRole(otDeviceRole aRole) override;
+    void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) override;
 
-    otDeviceRole mDeviceRole;
+    otDeviceRole             mDeviceRole;
+    otOperationalDatasetTlvs mDatasetActiveTlvs;
 };
 
 class NcpHost : public MainloopProcessor, public ThreadHost, public NcpNetworkProperties
@@ -87,6 +90,7 @@ public:
     void Leave(const AsyncResultReceiver &aReceiver) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
+    void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
     const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
