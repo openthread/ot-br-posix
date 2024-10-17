@@ -246,8 +246,15 @@
       <arg name="epskc" type="s" direction="out"/>
     </method>
 
-    <!-- DeactivateEphemeralKeyMode: Deactivate ePSKc mode. -->
+    <!-- DeactivateEphemeralKeyMode: Deactivate ePSKc mode.
+      @retain_active_session: 
+        "false" - Disconnects the Border Agent from any active secure sessions.
+                  Ephemeral key would be cleared after the session is disconnected.
+        "true" - Deactivate ephemeral key mode softly. If there is already an active commissioner
+                 connection, the session will be retained and the ephemeral key mode is still active.
+    -->
     <method name="DeactivateEphemeralKeyMode">
+      <arg name="retain_active_session" type="b" direction="in"/>
     </method>
 
     <!-- MeshLocalPrefix: The /64 mesh-local prefix.  -->
