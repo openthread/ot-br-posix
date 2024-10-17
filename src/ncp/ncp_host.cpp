@@ -145,6 +145,14 @@ exit:
     }
 }
 
+void NcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
+{
+    OT_UNUSED_VARIABLE(aEnabled);
+
+    // TODO: Implement SetThreadEnabled under NCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
