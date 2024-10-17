@@ -73,6 +73,7 @@ public:
 
     // NetworkProperties methods
     otDeviceRole GetDeviceRole(void) const override;
+    void         GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
 
     // Set the otInstance
     void SetInstance(otInstance *aInstance);

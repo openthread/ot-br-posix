@@ -58,12 +58,15 @@ public:
 
     // NetworkProperties methods
     otDeviceRole GetDeviceRole(void) const override;
+    void         GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
 
 private:
     // PropsObserver methods
     void SetDeviceRole(otDeviceRole aRole) override;
+    void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs) override;
 
-    otDeviceRole mDeviceRole;
+    otDeviceRole             mDeviceRole;
+    otOperationalDatasetTlvs mDatasetActiveTlvs;
 };
 
 class NcpHost : public MainloopProcessor, public ThreadHost, public NcpNetworkProperties

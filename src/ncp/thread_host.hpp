@@ -64,6 +64,13 @@ public:
     virtual otDeviceRole GetDeviceRole(void) const = 0;
 
     /**
+     * Returns the active operational dataset tlvs.
+     *
+     * @param[out] aDatasetTlvs  A reference to where the Active Operational Dataset will be placed.
+     */
+    virtual void GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
+
+    /**
      * The destructor.
      */
     virtual ~NetworkProperties(void) = default;

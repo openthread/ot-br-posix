@@ -78,6 +78,17 @@ otDeviceRole OtNetworkProperties::GetDeviceRole(void) const
     return otThreadGetDeviceRole(mInstance);
 }
 
+void OtNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    otError error = otDatasetGetActiveTlvs(mInstance, &aDatasetTlvs);
+
+    if (error != OT_ERROR_NONE)
+    {
+        aDatasetTlvs.mLength = 0;
+        memset(aDatasetTlvs.mTlvs, 0, sizeof(aDatasetTlvs.mTlvs));
+    }
+}
+
 void OtNetworkProperties::SetInstance(otInstance *aInstance)
 {
     mInstance = aInstance;
