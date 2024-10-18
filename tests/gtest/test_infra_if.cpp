@@ -42,7 +42,10 @@ public:
         : mInfraIfIndex(0)
         , mIsRunning(false)
         , mSetInfraIfInvoked(false)
+        , mIcmp6NdDataLen(0)
+        , mHandleIcmp6NdInvoked(false)
     {
+        memset(mIcmp6NdData, 0, sizeof(mIcmp6NdData));
     }
 
     otbrError SetInfraIf(unsigned int                         aInfraIfIndex,
@@ -57,10 +60,29 @@ public:
         return OTBR_ERROR_NONE;
     }
 
+    otbrError HandleIcmp6Nd(uint32_t                aInfraIfIndex,
+                            const otbr::Ip6Address &aSrcAddress,
+                            const uint8_t          *aData,
+                            uint16_t                aDataLen) override
+    {
+        mInfraIfIndex      = aInfraIfIndex;
+        mIcmp6NdSrcAddress = aSrcAddress;
+        memcpy(mIcmp6NdData, aData, aDataLen);
+        mIcmp6NdDataLen       = aDataLen;
+        mHandleIcmp6NdInvoked = true;
+
+        return OTBR_ERROR_NONE;
+    }
+
     unsigned int                  mInfraIfIndex;
     bool                          mIsRunning;
     std::vector<otbr::Ip6Address> mIp6Addresses;
     bool                          mSetInfraIfInvoked;
+
+    otbr::Ip6Address mIcmp6NdSrcAddress;
+    uint8_t          mIcmp6NdData[1280];
+    uint16_t         mIcmp6NdDataLen;
+    bool             mHandleIcmp6NdInvoked;
 };
 
 TEST(InfraIf, DepsSetInfraIfInvokedCorrectly_AfterSpecifyingInfraIf)
@@ -170,4 +192,67 @@ TEST(InfraIf, DepsUpdateInfraIfStateInvokedCorrectly_AfterInfraIfStateChange)
     netif.Deinit();
 }
 
+TEST(InfraIf, DepsHandleIcmp6NdInvokedCorrectly_AfterInfraIfReceivesIcmp6Nd)
+{
+    const std::string     fakeInfraIf = "wlx123";
+    otbr::MainloopContext context;
+
+    // Utilize the Netif module to create a network interface as the fake infrastructure interface.
+    otbr::Netif::Dependencies defaultNetifDep;
+    otbr::Netif               netif(defaultNetifDep);
+    EXPECT_EQ(netif.Init(fakeInfraIf), OTBR_ERROR_NONE);
+
+    const otIp6Address kLinkLocalAddr = {
+        {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xa8, 0xa5, 0x42, 0xb7, 0x91, 0x80, 0xc3, 0xf8}};
+    const otIp6Address kPeerLinkLocalAddr = {
+        {0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xde, 0xe5, 0x5b, 0xff, 0xfe, 0xc6, 0x8a, 0xf3}};
+    std::vector<otbr::Ip6AddressInfo> addrs = {{kLinkLocalAddr, 64, 0, 1, 0}};
+    netif.UpdateIp6UnicastAddresses(addrs);
+
+    InfraIfDependencyTest testInfraIfDep;
+    otbr::InfraIf         infraIf(testInfraIfDep);
+    infraIf.Init();
+    EXPECT_EQ(infraIf.SetInfraIf(fakeInfraIf.c_str()), OTBR_ERROR_NONE);
+    netif.SetNetifState(true);
+
+    // Let the fake infrastructure interface receive a fake Icmp6 Nd message
+    // - Source Address: fe80::dee5:5bff:fec6:8af3
+    const uint8_t kTestMsg[] = {
+        0x60, 0x06, 0xce, 0x11, 0x00, 0x48, 0x3a, 0xff, 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xde, 0xe5, 0x5b, 0xff, 0xfe, 0xc6, 0x8a, 0xf3, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x86, 0x00, 0xac, 0xf5, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1a, 0x01, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x03, 0x04, 0x40, 0xc0, 0x00, 0x00, 0x07, 0x08, 0x00, 0x00, 0x07, 0x08, 0x00, 0x00, 0x00, 0x00,
+        0xfd, 0x38, 0x5f, 0xf4, 0x61, 0x0b, 0x40, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x18, 0x02, 0x40, 0x00, 0x00, 0x00, 0x07, 0x08, 0xfd, 0x9f, 0x5c, 0xfa, 0x66, 0x3e, 0x00, 0x01,
+    };
+    const uint8_t  kTestMsgBodyOffset = 40;
+    const uint16_t kTestMsgBodySize   = sizeof(kTestMsg) - kTestMsgBodyOffset;
+    netif.Ip6Receive(kTestMsg, sizeof(kTestMsg));
+
+    while (!testInfraIfDep.mHandleIcmp6NdInvoked)
+    {
+        context.mMaxFd   = -1;
+        context.mTimeout = {100, 0};
+        FD_ZERO(&context.mReadFdSet);
+        FD_ZERO(&context.mWriteFdSet);
+        FD_ZERO(&context.mErrorFdSet);
+
+        infraIf.UpdateFdSet(context);
+        int rval = select(context.mMaxFd + 1, &context.mReadFdSet, &context.mWriteFdSet, &context.mErrorFdSet,
+                          &context.mTimeout);
+        if (rval < 0)
+        {
+            perror("select failed");
+            exit(EXIT_FAILURE);
+        }
+        infraIf.Process(context);
+    }
+    EXPECT_EQ(testInfraIfDep.mIcmp6NdSrcAddress, otbr::Ip6Address(kPeerLinkLocalAddr));
+    EXPECT_EQ(testInfraIfDep.mIcmp6NdDataLen, kTestMsgBodySize);
+    EXPECT_EQ(memcmp(testInfraIfDep.mIcmp6NdData, kTestMsg + kTestMsgBodyOffset, kTestMsgBodySize), 0);
+
+    infraIf.Deinit();
+    netif.Deinit();
+}
 #endif // __linux__
