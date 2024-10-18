@@ -60,6 +60,10 @@ public:
         virtual otbrError SetInfraIf(unsigned int                   aInfraIfIndex,
                                      bool                           aIsRunning,
                                      const std::vector<Ip6Address> &aIp6Addresses);
+        virtual otbrError HandleIcmp6Nd(uint32_t          aInfraIfIndex,
+                                        const Ip6Address &aSrcAddress,
+                                        const uint8_t    *aData,
+                                        uint16_t          aDataLen);
     };
 
     InfraIf(Dependencies &aDependencies);
@@ -80,6 +84,7 @@ private:
     short                   GetFlags(void) const;
     std::vector<Ip6Address> GetAddresses(void);
     static bool             HasLinkLocalAddress(const std::vector<Ip6Address> &aAddrs);
+    void                    ReceiveIcmp6Message(void);
 #ifdef __linux__
     void ReceiveNetlinkMessage(void);
 #endif
