@@ -91,6 +91,7 @@ public:
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
+    void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) override;
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
     const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
