@@ -31,6 +31,7 @@
 #include "ncp/rcp_host.hpp"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -485,6 +486,52 @@ exit:
     {
         mTaskRunner.Post([aErrReceiver, error](void) { aErrReceiver(error, "OT is not initialized"); });
     }
+}
+
+void RcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
+                                  const AsyncResultReceiver          &aReceiver)
+{
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+    uint8_t     channel;
+    int16_t     maxPower;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+
+    for (ChannelMaxPower channelMaxPower : aChannelMaxPowers)
+    {
+        VerifyOrExit((channelMaxPower.mChannel >= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN) &&
+                         (channelMaxPower.mChannel <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX),
+                     error = OT_ERROR_INVALID_ARGS, errorMsg = "The channel is invalid");
+    }
+
+    for (ChannelMaxPower channelMaxPower : aChannelMaxPowers)
+    {
+        channel = static_cast<uint8_t>(channelMaxPower.mChannel);
+
+        // INT_MIN indicates that the corresponding channel is disabled in Thread Android API `setChannelMaxPowers()`
+        if (channelMaxPower.mMaxPower == INT_MIN)
+        {
+            // INT16_MAX indicates that the corresponding channel is disabled in OpenThread API
+            // `otPlatRadioSetChannelTargetPower()`.
+            maxPower = INT16_MAX;
+        }
+        else
+        {
+            // Equivalent to a `clamp` operation here. However `std::clamp` is only available since c++17.
+            maxPower = channelMaxPower.mMaxPower < INT16_MIN       ? INT16_MIN
+                       : channelMaxPower.mMaxPower > INT16_MAX - 1 ? INT16_MAX - 1
+                                                                   : channelMaxPower.mMaxPower;
+        }
+
+        otbrLogInfo("Set channel max power: channel=%u, maxPower=%d", static_cast<unsigned int>(channel),
+                    static_cast<int>(maxPower));
+        SuccessOrExit(error    = otPlatRadioSetChannelTargetPower(mInstance, channel, maxPower),
+                      errorMsg = "Failed to set channel max power");
+    }
+
+exit:
+    mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
 }
 
 void RcpHost::DisableThreadAfterDetach(void *aContext)
