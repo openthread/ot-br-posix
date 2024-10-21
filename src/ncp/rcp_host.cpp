@@ -307,7 +307,8 @@ void RcpHost::Deinit(void)
     mThreadStateChangedCallbacks.clear();
     mResetHandlers.clear();
 
-    mSetThreadEnabledReceiver = nullptr;
+    mSetThreadEnabledReceiver  = nullptr;
+    mScheduleMigrationReceiver = nullptr;
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -424,10 +425,43 @@ void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
 void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                                 const AsyncResultReceiver       aReceiver)
 {
-    OT_UNUSED_VARIABLE(aPendingOpDatasetTlvs);
+    otError              error = OT_ERROR_NONE;
+    std::string          errorMsg;
+    otOperationalDataset emptyDataset;
 
-    // TODO: Implement ScheduleMigration under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(IsAttached(), error = OT_ERROR_FAILED,
+                 errorMsg = "Cannot schedule migration when this device is detached");
+
+    // TODO: check supported channel mask
+
+    SuccessOrExit(error    = otDatasetSendMgmtPendingSet(mInstance, &emptyDataset, aPendingOpDatasetTlvs.mTlvs,
+                                                         static_cast<uint8_t>(aPendingOpDatasetTlvs.mLength),
+                                                         SendMgmtPendingSetCallback, this),
+                  errorMsg = "Failed to send MGMT_PENDING_SET.req");
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+    }
+    else
+    {
+        // otDatasetSendMgmtPendingSet() returns OT_ERROR_BUSY if it has already been called before but the
+        // callback hasn't been invoked. So we can guarantee that mMigrationReceiver is always nullptr here
+        assert(mScheduleMigrationReceiver == nullptr);
+        mScheduleMigrationReceiver = aReceiver;
+    }
+}
+
+void RcpHost::SendMgmtPendingSetCallback(otError aError, void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->SendMgmtPendingSetCallback(aError);
+}
+
+void RcpHost::SendMgmtPendingSetCallback(otError aError)
+{
+    SafeInvokeAndClear(mScheduleMigrationReceiver, aError, "");
 }
 
 void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
@@ -522,6 +556,13 @@ void RcpHost::SetCountryCode(const std::string &aCountryCode, const AsyncResultR
 
 exit:
     mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+}
+
+bool RcpHost::IsAttached(void)
+{
+    otDeviceRole role = GetDeviceRole();
+
+    return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
 }
 
 /*
