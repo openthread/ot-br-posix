@@ -2009,21 +2009,17 @@ void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aReques
 {
     otError error        = OT_ERROR_NONE;
     auto    threadHelper = mHost.GetThreadHelper();
+    bool    retain_active_session;
+    auto    args = std::tie(retain_active_session);
 
     VerifyOrExit(mBorderAgent.GetEphemeralKeyEnabled(), error = OT_ERROR_NOT_CAPABLE);
 
-    switch (otBorderAgentGetState(threadHelper->GetInstance()))
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+    if (!retain_active_session)
     {
-    case OT_BORDER_AGENT_STATE_STOPPED:
-        error = OT_ERROR_FAILED;
-        break;
-    case OT_BORDER_AGENT_STATE_ACTIVE:
-        error = OT_ERROR_INVALID_STATE;
-        break;
-    case OT_BORDER_AGENT_STATE_STARTED:
-        otBorderAgentClearEphemeralKey(threadHelper->GetInstance());
-        break;
+        otBorderAgentDisconnect(threadHelper->GetInstance());
     }
+    otBorderAgentClearEphemeralKey(threadHelper->GetInstance());
 
 exit:
     aRequest.ReplyOtResult(error);
