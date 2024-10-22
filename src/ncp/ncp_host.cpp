@@ -166,6 +166,14 @@ void NcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
     mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
+void NcpHost::SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver)
+{
+    OT_UNUSED_VARIABLE(aCountryCode);
+
+    // TODO: Implement SetCountryCode under NCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
