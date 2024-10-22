@@ -49,7 +49,7 @@ namespace otbr {
 #endif
 
 std::atomic_bool     Application::sShouldTerminate(false);
-const struct timeval Application::kPollTimeout = {OTBR_MAINLOOP_POLL_TIMEOUT, 0};
+const struct timeval Application::kPollTimeout = {OTBR_MAINLOOP_POLL_TIMEOUT_SEC, 0};
 
 Application::Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
