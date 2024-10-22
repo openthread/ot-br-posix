@@ -44,8 +44,8 @@
 
 namespace otbr {
 
-#ifndef OTBR_MAINLOOP_POLL_TIMEOUT
-#define OTBR_MAINLOOP_POLL_TIMEOUT 10
+#ifndef OTBR_MAINLOOP_POLL_TIMEOUT_SEC
+#define OTBR_MAINLOOP_POLL_TIMEOUT_SEC 10
 #endif
 
 std::atomic_bool     Application::sShouldTerminate(false);
