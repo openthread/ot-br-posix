@@ -1,0 +1,24 @@
+meta {
+  name: Get Action Item by ActionId
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions/{{actionId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+  ~Accept: application/json
+}
+
+vars:pre-request {
+  actionId: 9ecae480-07a0-4b72-869d-15858196144f
+}
+
+assert {
+  res.status: eq 404
+}

@@ -43,6 +43,11 @@
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
 
+#include <set>
+#include <unordered_map>
+
+// #include "extensions/rest_task_network_diagnostic.hpp"
+
 namespace otbr {
 namespace rest {
 
@@ -51,6 +56,66 @@ namespace rest {
  * string.
  */
 namespace Json {
+
+// key names used in json objects
+#define KEY_ORIGIN "origin"
+#define KEY_COUNT "count"
+#define KEY_REPORT "report"
+#define KEY_CHANNEL "channel"
+#define KEY_MAXRSSI "maxRssi"
+
+#define KEY_EXTADDRESS "extAddress" // 64-bit MAC address
+#define KEY_MLEIDIID "mlEidIid"
+#define KEY_OMRIPV6 "omrIpv6Address"
+#define KEY_EUI64 "eui64" // EUI-64 address
+#define KEY_HOSTNAME "hostName"
+
+#define KEY_BORDERAGENTID "baId"
+#define KEY_BORDERAGENTSTATE "baState"
+#define KEY_STATE "state"
+#define KEY_ROLE "role"
+#define KEY_ROUTERCOUNT "routerCount"
+#define KEY_RLOC16_IPV6ADDRESS "rlocAddress"
+#define KEY_NETWORKNAME "networkName"
+#define KEY_RLOC16 "rloc16" // 16-bit MAC address
+#define KEY_ROUTERID "routerId"
+#define KEY_LEADERDATA "leaderData" // Leader data
+#define KEY_EXTPANID "extPanId"
+
+#define KEY_IP6ADDRESSLIST "ipv6Addresses"          // List of IPv6 addresses
+#define KEY_MACCOUNTERS "macCounters"               // MAC packet/event counters
+#define KEY_CHANNELPAGES "channelPages"             // Supported frequency bands
+#define KEY_VERSION "version"                       // Thread version
+#define KEY_VENDORNAME "vendorName"                 // Vendor name
+#define KEY_VENDORMODEL "vendorModel"               // Vendor model
+#define KEY_VENDORSWVERSION "vendorSwVersion"       // Vendor software version
+#define KEY_THREADSTACKVERSION "threadStackVersion" // Thread stack version
+#define KEY_MLECOUNTERS "mleCounters"               // MLE counters
+#define KEY_CHILDREN "children"                     // Child table
+#define KEY_CHILDRENIP6 "childIpv6Addresses"        // IPv6 addresses of child
+#define KEY_NEIGHBORS "routerNeighbor"              // Router neighbor info
+#define KEY_BRCOUNTERS "brCounters"
+#define KEY_LEADER "isLeader"
+#define KEY_SERVICE "hostsService"
+#define KEY_PBBR "isPrimaryBBR"
+#define KEY_BR "isBorderRouter"
+
+#define KEY_MODE "mode"           // Mode
+#define KEY_ISFTD "deviceTypeFTD" // is FullThreadDevice
+#define KEY_RXONWHENIDLE "rxOnWhenIdle"
+#define KEY_FULLNETWORKDATA "fullNetworkData"
+#define KEY_TIMEOUT "timeout"                 // Timeout (max polling time period for SEDs)
+#define KEY_CONNECTIVITY "connectivity"       // Connectivity information
+#define KEY_ROUTE "route"                     // Route64 information
+#define KEY_NETWORKDATA "networkData"         // Network data
+#define KEY_BATTERYLEVEL "batteryLevel"       // Battery energy level
+#define KEY_SUPPLYVOLTAGE "supplyVoltage"     // Current supply voltage
+#define KEY_CHILDTABLE "childTable"           // List of children
+#define KEY_MAXCHILDTIMEOUT "maxChildTimeout" // Max child timeout
+
+// unused
+#define KEY_LDEVID "lDevIdSubject" // LDevID subject public key info
+#define KEY_IDEV "iDevIdCert"      // IDevID certificate
 
 /**
  * This method formats an integer to a Json number and serialize it to a string.
@@ -119,13 +184,112 @@ bool JsonString2String(const std::string &aJsonString, std::string &aString);
 std::string Node2JsonString(const NodeInfo &aNode);
 
 /**
+ * This method formats a Node object to a Json object and serialize the key-value pairs defined in aFieldset to a
+ * string.
+ *
+ * @param[in] aNode  A Node object.
+ * @param[in] aFieldset  A set of strings comprising requested keys. A empty set defaults to any key.
+ *
+ * @returns A string of serialized Json object.
+ *
+ */
+std::string SparseNode2JsonString(const NodeInfo &aNode, std::set<std::string> aFieldset);
+
+/**
+ * This method formats a vector of diagnostic objects to a Json array and serialize it to a string.
+ *
+ * @param[in] aDiagSet  A vector of diagnostic objects.
+ * @param[in] aChildTable  A vector of diagnostic objects.
+ * @param[in] aChildIps  A vector of diagnostic objects.
+ * @param[in] aNeighbors  A vector of diagnostic objects.
+ * @param[in] aDeviceTlvSetExtension  A vector of diagnostic objects.
+ *
+ * @returns A string of serialized Json array.
+ *
+ */
+std::string DiagSet2JsonString(const std::vector<otNetworkDiagTlv>         &aDiagSet,
+                               std::vector<otMeshDiagChildEntry>            aChildTable,
+                               std::vector<DeviceIp6Addrs>                  aChildIps,
+                               std::vector<otMeshDiagRouterNeighborEntry>   aNeighbors,
+                               const std::vector<networkDiagTlvExtensions> &aDeviceTlvSetExtension,
+                               std::set<std::string>                        aFieldset);
+
+/**
  * This method formats a vector of diagnostic objects to a Json array and serialize it to a string.
  *
  * @param[in] aDiagSet  A vector of diagnostic objects.
  *
  * @returns A string of serialized Json array.
  */
-std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet);
+std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagCollection,
+                            const std::vector<uint16_t>                      &aUnresponsive);
+
+/**
+ * This method formats a pre-formated Json string of attributes to a Json:Api item string.
+ *
+ * @param[in] aId  A string of a Json:Api compliant Id.
+ * @param[in] aType  A string of a Json:Api compliant type name.
+ * @param[in] aAttribute  A pre-formated Json string of a attributes.
+ *
+ * @returns A string of a serialized Json:Api item.
+ *
+ */
+std::string jsonStr2JsonApiItem(std::string aId, const std::string aType, std::string aAttribute);
+
+/**
+ * This method formats a pre-formated Json:Api string of data to a Json:Api Collection including meta data.
+ *
+ * @param[in] data  A string of a Json:Api compliant data.
+ * @param[in] meta  A string of a Json:Api compliant meta data.
+ *
+ * @returns A string of a serialized Json:Api collection.
+ *
+ */
+std::string jsonStr2JsonApiColl(std::string data, std::string meta = "");
+
+/**
+ * This method formats a EnergyScanReport to a Json string and serialize it to a string.
+ *
+ * @param[in] aReport  A EnergyScanReport object.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string EnergyReport2JsonString(const EnergyScanReport &aReport);
+
+/**
+ * This method formats a EnergyScanReport to a Json object and serialize the key-value pairs defined in aFieldset to a
+ * string.
+ *
+ * @param[in] aNode  A EnergyScanReport object.
+ * @param[in] aFieldset  A set of strings comprising requested keys. A empty set defaults to any key.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string SparseEnergyReport2JsonString(const EnergyScanReport &aReport, std::set<std::string> aFieldset);
+
+/**
+ * This method formats a device info to a Json object and serialize it to a string.
+ *
+ * @param[in] aDeviceInfo  A DeviceInfo object.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string DeviceInfo2JsonString(const DeviceInfo &aDeviceInfo);
+
+/**
+ * This method formats a device info to a Json object and serialize the key-value pairs defined in aFieldset to a
+ * string.
+ *
+ * @param[in] aDeviceInfo  A DeviceInfo object.
+ * @param[in] aFieldset  A set of strings comprising requested keys. A empty set defaults to any key.
+ *
+ * @returns A string of a serialized Json object.
+ *
+ */
+std::string SparseDeviceInfo2JsonString(const DeviceInfo &aDeviceInfo, std::set<std::string> aFieldset);
 
 /**
  * This method formats an Ipv6Address to a Json string and serialize it to a string.
