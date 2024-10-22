@@ -35,6 +35,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <openthread/border_agent.h>
 #include <openthread/border_router.h>
 #include <openthread/channel_manager.h>
 #include <openthread/dataset_ftd.h>
@@ -68,7 +69,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 namespace agent {
@@ -227,9 +228,9 @@ void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::T
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 } // namespace
 
-ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::ControllerOpenThread *aNcp)
+ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::RcpHost *aHost)
     : mInstance(aInstance)
-    , mNcp(aNcp)
+    , mHost(aHost)
 {
 #if OTBR_ENABLE_TELEMETRY_DATA_API && (OTBR_ENABLE_NAT64 || OTBR_ENABLE_DHCP6_PD)
     otError error;
@@ -248,7 +249,7 @@ void ThreadHelper::StateChangedCallback(otChangedFlags aFlags)
 {
     if (aFlags & OT_CHANGED_THREAD_ROLE)
     {
-        otDeviceRole role = otThreadGetDeviceRole(mInstance);
+        otDeviceRole role = mHost->GetDeviceRole();
 
         for (const auto &handler : mDeviceRoleHandlers)
         {
@@ -425,6 +426,29 @@ void ThreadHelper::ActiveScanHandler(otActiveScanResult *aResult)
         mScanResults.push_back(*aResult);
     }
 }
+
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
+void ThreadHelper::SetDhcp6PdStateCallback(Dhcp6PdStateCallback aCallback)
+{
+    mDhcp6PdCallback = std::move(aCallback);
+    otBorderRoutingDhcp6PdSetRequestCallback(mInstance, &ThreadHelper::BorderRoutingDhcp6PdCallback, this);
+}
+
+void ThreadHelper::BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState, void *aThreadHelper)
+{
+    ThreadHelper *helper = static_cast<ThreadHelper *>(aThreadHelper);
+
+    helper->BorderRoutingDhcp6PdCallback(aState);
+}
+
+void ThreadHelper::BorderRoutingDhcp6PdCallback(otBorderRoutingDhcp6PdState aState)
+{
+    if (mDhcp6PdCallback != nullptr)
+    {
+        mDhcp6PdCallback(aState);
+    }
+}
+#endif // OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
 
 void ThreadHelper::EnergyScanCallback(otEnergyScanResult *aResult, void *aThreadHelper)
 {
@@ -647,7 +671,7 @@ otError ThreadHelper::TryResumeNetwork(void)
 {
     otError error = OT_ERROR_NONE;
 
-    if (otLinkGetPanId(mInstance) != UINT16_MAX && otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
+    if (otLinkGetPanId(mInstance) != UINT16_MAX && mHost->GetDeviceRole() == OT_DEVICE_ROLE_DISABLED)
     {
         if (!otIp6IsEnabled(mInstance))
         {
@@ -685,10 +709,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     otOperationalDatasetTlvs datasetTlvs;
     otOperationalDataset     dataset;
     otOperationalDataset     emptyDataset{};
-    otDeviceRole             role = otThreadGetDeviceRole(mInstance);
-    Tlv                     *tlv;
-    uint64_t                 pendingTimestamp = 0;
-    timespec                 currentTime;
+    otDeviceRole             role = mHost->GetDeviceRole();
 
     if (aHandler == nullptr)
     {
@@ -713,30 +734,7 @@ void ThreadHelper::AttachAllNodesTo(const std::vector<uint8_t> &aDatasetTlvs, At
     VerifyOrExit(dataset.mComponents.mIsSecurityPolicyPresent, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(dataset.mComponents.mIsChannelMaskPresent, error = OT_ERROR_INVALID_ARGS);
 
-    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr &&
-                     FindTlv(OT_MESHCOP_TLV_DELAYTIMER, datasetTlvs.mTlvs, datasetTlvs.mLength) == nullptr,
-                 error = OT_ERROR_INVALID_ARGS);
-
-    // There must be sufficient space for a Pending Timestamp TLV and a Delay Timer TLV.
-    VerifyOrExit(
-        static_cast<int>(datasetTlvs.mLength +
-                         (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint64_t))    // Pending Timestamp TLV (10 bytes)
-                         + (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t))) // Delay Timer TLV (6 bytes)
-            <= int{sizeof(datasetTlvs.mTlvs)},
-        error = OT_ERROR_INVALID_ARGS);
-
-    tlv = reinterpret_cast<Tlv *>(datasetTlvs.mTlvs + datasetTlvs.mLength);
-    tlv->SetType(OT_MESHCOP_TLV_PENDINGTIMESTAMP);
-    clock_gettime(CLOCK_REALTIME, &currentTime);
-    pendingTimestamp |= (static_cast<uint64_t>(currentTime.tv_sec) << 16);
-    pendingTimestamp |= (((static_cast<uint64_t>(currentTime.tv_nsec) * 32768 / 1000000000) & 0x7fff) << 1);
-    tlv->SetValue(pendingTimestamp);
-
-    tlv = tlv->GetNext();
-    tlv->SetType(OT_MESHCOP_TLV_DELAYTIMER);
-    tlv->SetValue(kDelayTimerMilliseconds);
-
-    datasetTlvs.mLength = reinterpret_cast<uint8_t *>(tlv->GetNext()) - datasetTlvs.mTlvs;
+    SuccessOrExit(error = ProcessDatasetForMigration(datasetTlvs, kDelayTimerMilliseconds));
 
     assert(datasetTlvs.mLength > 0);
 
@@ -855,7 +853,7 @@ otError ThreadHelper::PermitUnsecureJoin(uint16_t aPort, uint32_t aSeconds)
 
         ++mUnsecurePortRefCounter[aPort];
 
-        mNcp->PostTimerTask(delay, [this, aPort]() {
+        mHost->PostTimerTask(delay, [this, aPort]() {
             assert(mUnsecurePortRefCounter.find(aPort) != mUnsecurePortRefCounter.end());
             assert(mUnsecurePortRefCounter[aPort] > 0);
 
@@ -920,6 +918,175 @@ void ThreadHelper::DetachGracefullyCallback(void)
 }
 
 #if OTBR_ENABLE_TELEMETRY_DATA_API
+#if OTBR_ENABLE_BORDER_ROUTING
+void ThreadHelper::RetrieveInfraLinkInfo(threadnetwork::TelemetryData::InfraLinkInfo &aInfraLinkInfo)
+{
+    {
+        otSysInfraNetIfAddressCounters addressCounters;
+        uint32_t                       ifrFlags = otSysGetInfraNetifFlags();
+
+        otSysCountInfraNetifAddresses(&addressCounters);
+
+        aInfraLinkInfo.set_name(otSysGetInfraNetifName());
+        aInfraLinkInfo.set_is_up((ifrFlags & IFF_UP) != 0);
+        aInfraLinkInfo.set_is_running((ifrFlags & IFF_RUNNING) != 0);
+        aInfraLinkInfo.set_is_multicast((ifrFlags & IFF_MULTICAST) != 0);
+        aInfraLinkInfo.set_link_local_address_count(addressCounters.mLinkLocalAddresses);
+        aInfraLinkInfo.set_unique_local_address_count(addressCounters.mUniqueLocalAddresses);
+        aInfraLinkInfo.set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
+    }
+
+    //---- peer_br_count
+    {
+        uint32_t                           count = 0;
+        otBorderRoutingPrefixTableIterator iterator;
+        otBorderRoutingRouterEntry         entry;
+
+        otBorderRoutingPrefixTableInitIterator(mInstance, &iterator);
+
+        while (otBorderRoutingGetNextRouterEntry(mInstance, &iterator, &entry) == OT_ERROR_NONE)
+        {
+            if (entry.mIsPeerBr)
+            {
+                count++;
+            }
+        }
+
+        aInfraLinkInfo.set_peer_br_count(count);
+    }
+}
+
+void ThreadHelper::RetrieveExternalRouteInfo(threadnetwork::TelemetryData::ExternalRoutes &aExternalRouteInfo)
+{
+    bool      isDefaultRouteAdded = false;
+    bool      isUlaRouteAdded     = false;
+    bool      isOthersRouteAdded  = false;
+    Ip6Prefix prefix;
+    uint16_t  rloc16 = otThreadGetRloc16(mInstance);
+
+    otNetworkDataIterator iterator = OT_NETWORK_DATA_ITERATOR_INIT;
+    otExternalRouteConfig config;
+
+    while (otNetDataGetNextRoute(mInstance, &iterator, &config) == OT_ERROR_NONE)
+    {
+        if (!config.mStable || config.mRloc16 != rloc16)
+        {
+            continue;
+        }
+
+        prefix.Set(config.mPrefix);
+        if (prefix.IsDefaultRoutePrefix())
+        {
+            isDefaultRouteAdded = true;
+        }
+        else if (prefix.IsUlaPrefix())
+        {
+            isUlaRouteAdded = true;
+        }
+        else
+        {
+            isOthersRouteAdded = true;
+        }
+    }
+
+    aExternalRouteInfo.set_has_default_route_added(isDefaultRouteAdded);
+    aExternalRouteInfo.set_has_ula_route_added(isUlaRouteAdded);
+    aExternalRouteInfo.set_has_others_route_added(isOthersRouteAdded);
+}
+#endif // OTBR_ENABLE_BORDER_ROUTING
+
+#if OTBR_ENABLE_DHCP6_PD
+void ThreadHelper::RetrievePdInfo(threadnetwork::TelemetryData::WpanBorderRouter *aWpanBorderRouter)
+{
+    aWpanBorderRouter->set_dhcp6_pd_state(Dhcp6PdStateFromOtDhcp6PdState(otBorderRoutingDhcp6PdGetState(mInstance)));
+    RetrieveHashedPdPrefix(aWpanBorderRouter->mutable_hashed_pd_prefix());
+    RetrievePdProcessedRaInfo(aWpanBorderRouter->mutable_pd_processed_ra_info());
+}
+
+void ThreadHelper::RetrieveHashedPdPrefix(std::string *aHashedPdPrefix)
+{
+    otBorderRoutingPrefixTableEntry aPrefixInfo;
+    const uint8_t                  *prefixAddr          = nullptr;
+    const uint8_t                  *truncatedHash       = nullptr;
+    constexpr size_t                kHashPrefixLength   = 6;
+    constexpr size_t                kHashedPrefixLength = 2;
+    std::vector<uint8_t>            hashedPdHeader      = {0x20, 0x01, 0x0d, 0xb8};
+    std::vector<uint8_t>            hashedPdTailer      = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    std::vector<uint8_t>            hashedPdPrefix;
+    hashedPdPrefix.reserve(16);
+    Sha256       sha256;
+    Sha256::Hash hash;
+
+    SuccessOrExit(otBorderRoutingGetPdOmrPrefix(mInstance, &aPrefixInfo));
+    prefixAddr = aPrefixInfo.mPrefix.mPrefix.mFields.m8;
+
+    // TODO: Put below steps into a reusable function.
+    sha256.Start();
+    sha256.Update(prefixAddr, kHashPrefixLength);
+    sha256.Update(mNat64PdCommonSalt, kNat64PdCommonHashSaltLength);
+    sha256.Finish(hash);
+
+    // Append hashedPdHeader
+    hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdHeader.begin(), hashedPdHeader.end());
+
+    // Append the first 2 bytes of the hashed prefix
+    truncatedHash = hash.GetBytes();
+    hashedPdPrefix.insert(hashedPdPrefix.end(), truncatedHash, truncatedHash + kHashedPrefixLength);
+
+    // Append ip[6] and ip[7]
+    hashedPdPrefix.push_back(prefixAddr[6]);
+    hashedPdPrefix.push_back(prefixAddr[7]);
+
+    // Append hashedPdTailer
+    hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdTailer.begin(), hashedPdTailer.end());
+
+    aHashedPdPrefix->append(reinterpret_cast<const char *>(hashedPdPrefix.data()), hashedPdPrefix.size());
+
+exit:
+    return;
+}
+
+void ThreadHelper::RetrievePdProcessedRaInfo(threadnetwork::TelemetryData::PdProcessedRaInfo *aPdProcessedRaInfo)
+{
+    otPdProcessedRaInfo raInfo;
+
+    SuccessOrExit(otBorderRoutingGetPdProcessedRaInfo(mInstance, &raInfo));
+    aPdProcessedRaInfo->set_num_platform_ra_received(raInfo.mNumPlatformRaReceived);
+    aPdProcessedRaInfo->set_num_platform_pio_processed(raInfo.mNumPlatformPioProcessed);
+    aPdProcessedRaInfo->set_last_platform_ra_msec(raInfo.mLastPlatformRaMsec);
+
+exit:
+    return;
+}
+#endif // OTBR_ENABLE_DHCP6_PD
+
+#if OTBR_ENABLE_BORDER_AGENT
+void ThreadHelper::RetrieveBorderAgentInfo(threadnetwork::TelemetryData::BorderAgentInfo *aBorderAgentInfo)
+{
+    auto baCounters            = aBorderAgentInfo->mutable_border_agent_counters();
+    auto otBorderAgentCounters = *otBorderAgentGetCounters(mInstance);
+
+    baCounters->set_epskc_activations(otBorderAgentCounters.mEpskcActivations);
+    baCounters->set_epskc_deactivation_clears(otBorderAgentCounters.mEpskcDeactivationClears);
+    baCounters->set_epskc_deactivation_timeouts(otBorderAgentCounters.mEpskcDeactivationTimeouts);
+    baCounters->set_epskc_deactivation_max_attempts(otBorderAgentCounters.mEpskcDeactivationMaxAttempts);
+    baCounters->set_epskc_deactivation_disconnects(otBorderAgentCounters.mEpskcDeactivationDisconnects);
+    baCounters->set_epskc_invalid_ba_state_errors(otBorderAgentCounters.mEpskcInvalidBaStateErrors);
+    baCounters->set_epskc_invalid_args_errors(otBorderAgentCounters.mEpskcInvalidArgsErrors);
+    baCounters->set_epskc_start_secure_session_errors(otBorderAgentCounters.mEpskcStartSecureSessionErrors);
+    baCounters->set_epskc_secure_session_successes(otBorderAgentCounters.mEpskcSecureSessionSuccesses);
+    baCounters->set_epskc_secure_session_failures(otBorderAgentCounters.mEpskcSecureSessionFailures);
+    baCounters->set_epskc_commissioner_petitions(otBorderAgentCounters.mEpskcCommissionerPetitions);
+
+    baCounters->set_pskc_secure_session_successes(otBorderAgentCounters.mPskcSecureSessionSuccesses);
+    baCounters->set_pskc_secure_session_failures(otBorderAgentCounters.mPskcSecureSessionFailures);
+    baCounters->set_pskc_commissioner_petitions(otBorderAgentCounters.mPskcCommissionerPetitions);
+
+    baCounters->set_mgmt_active_get_reqs(otBorderAgentCounters.mMgmtActiveGets);
+    baCounters->set_mgmt_pending_get_reqs(otBorderAgentCounters.mMgmtPendingGets);
+}
+#endif
+
 otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadnetwork::TelemetryData &telemetryData)
 {
     otError                     error = OT_ERROR_NONE;
@@ -929,7 +1096,7 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
     auto wpanStats = telemetryData.mutable_wpan_stats();
 
     {
-        otDeviceRole     role  = otThreadGetDeviceRole(mInstance);
+        otDeviceRole     role  = mHost->GetDeviceRole();
         otLinkModeConfig otCfg = otThreadGetLinkMode(mInstance);
 
         wpanStats->set_node_type(TelemetryNodeTypeFromRoleAndLinkMode(role, otCfg));
@@ -1106,6 +1273,9 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 
         extPanIdVal = ConvertOpenThreadUint64(extPanId->m8);
         wpanTopoFull->set_extended_pan_id(extPanIdVal);
+#if OTBR_ENABLE_BORDER_ROUTING
+        wpanTopoFull->set_peer_br_count(otBorderRoutingCountPeerBrs(mInstance, /*minAge=*/nullptr));
+#endif
         // End of WpanTopoFull section.
 
         // Begin of TopoEntry section.
@@ -1264,23 +1434,8 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
 #endif // OTBR_ENABLE_TREL
 
 #if OTBR_ENABLE_BORDER_ROUTING
-        // Begin of InfraLinkInfo section.
-        {
-            auto                           infraLinkInfo = wpanBorderRouter->mutable_infra_link_info();
-            otSysInfraNetIfAddressCounters addressCounters;
-            uint32_t                       ifrFlags = otSysGetInfraNetifFlags();
-
-            otSysCountInfraNetifAddresses(&addressCounters);
-
-            infraLinkInfo->set_name(otSysGetInfraNetifName());
-            infraLinkInfo->set_is_up((ifrFlags & IFF_UP) != 0);
-            infraLinkInfo->set_is_running((ifrFlags & IFF_RUNNING) != 0);
-            infraLinkInfo->set_is_multicast((ifrFlags & IFF_MULTICAST) != 0);
-            infraLinkInfo->set_link_local_address_count(addressCounters.mLinkLocalAddresses);
-            infraLinkInfo->set_unique_local_address_count(addressCounters.mUniqueLocalAddresses);
-            infraLinkInfo->set_global_unicast_address_count(addressCounters.mGlobalUnicastAddresses);
-        }
-        // End of InfraLinkInfo section.
+        RetrieveInfraLinkInfo(*wpanBorderRouter->mutable_infra_link_info());
+        RetrieveExternalRouteInfo(*wpanBorderRouter->mutable_external_route_info());
 #endif
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
@@ -1442,63 +1597,11 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
         // End of Nat64Mapping section.
 #endif // OTBR_ENABLE_NAT64
 #if OTBR_ENABLE_DHCP6_PD
-        // Start of Dhcp6PdState section.
-        wpanBorderRouter->set_dhcp6_pd_state(Dhcp6PdStateFromOtDhcp6PdState(otBorderRoutingDhcp6PdGetState(mInstance)));
-        // End of Dhcp6PdState section.
-
-        // Start of Hashed PD prefix
-        {
-            otBorderRoutingPrefixTableEntry aPrefixInfo;
-            const uint8_t                  *prefixAddr          = nullptr;
-            const uint8_t                  *truncatedHash       = nullptr;
-            constexpr size_t                kHashPrefixLength   = 6;
-            constexpr size_t                kHashedPrefixLength = 2;
-            std::vector<uint8_t>            hashedPdHeader      = {0x20, 0x01, 0x0d, 0xb8};
-            std::vector<uint8_t>            hashedPdTailer      = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            std::vector<uint8_t>            hashedPdPrefix;
-            hashedPdPrefix.reserve(16);
-            Sha256       sha256;
-            Sha256::Hash hash;
-
-            otBorderRoutingGetPdOmrPrefix(mInstance, &aPrefixInfo);
-            prefixAddr = aPrefixInfo.mPrefix.mPrefix.mFields.m8;
-
-            // TODO: Put below steps into a reusable function.
-            sha256.Start();
-            sha256.Update(prefixAddr, kHashPrefixLength);
-            sha256.Update(mNat64PdCommonSalt, kNat64PdCommonHashSaltLength);
-            sha256.Finish(hash);
-
-            // Append hashedPdHeader
-            hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdHeader.begin(), hashedPdHeader.end());
-
-            // Append the first 2 bytes of the hashed prefix
-            truncatedHash = hash.GetBytes();
-            hashedPdPrefix.insert(hashedPdPrefix.end(), truncatedHash, truncatedHash + kHashedPrefixLength);
-
-            // Append ip[6] and ip[7]
-            hashedPdPrefix.push_back(prefixAddr[6]);
-            hashedPdPrefix.push_back(prefixAddr[7]);
-
-            // Append hashedPdTailer
-            hashedPdPrefix.insert(hashedPdPrefix.end(), hashedPdTailer.begin(), hashedPdTailer.end());
-
-            wpanBorderRouter->mutable_hashed_pd_prefix()->append(reinterpret_cast<const char *>(hashedPdPrefix.data()),
-                                                                 hashedPdPrefix.size());
-        }
-        // End of Hashed PD prefix
-        // Start of DHCPv6 PD processed RA Info
-        {
-            auto                pdProcessedRaInfo = wpanBorderRouter->mutable_pd_processed_ra_info();
-            otPdProcessedRaInfo raInfo;
-
-            otBorderRoutingGetPdProcessedRaInfo(mInstance, &raInfo);
-            pdProcessedRaInfo->set_num_platform_ra_received(raInfo.mNumPlatformRaReceived);
-            pdProcessedRaInfo->set_num_platform_pio_processed(raInfo.mNumPlatformPioProcessed);
-            pdProcessedRaInfo->set_last_platform_ra_msec(raInfo.mLastPlatformRaMsec);
-        }
-        // End of DHCPv6 PD processed RA Info
+        RetrievePdInfo(wpanBorderRouter);
 #endif // OTBR_ENABLE_DHCP6_PD
+#if OTBR_ENABLE_BORDER_AGENT
+        RetrieveBorderAgentInfo(wpanBorderRouter->mutable_border_agent_info());
+#endif // OTBR_ENABLE_BORDER_AGENT
        // End of WpanBorderRouter section.
 
         // Start of WpanRcp section.
@@ -1596,5 +1699,51 @@ otError ThreadHelper::RetrieveTelemetryData(Mdns::Publisher *aPublisher, threadn
     return error;
 }
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
+
+otError ThreadHelper::ProcessDatasetForMigration(otOperationalDatasetTlvs &aDatasetTlvs, uint32_t aDelayMilli)
+{
+    otError  error = OT_ERROR_NONE;
+    Tlv     *tlv;
+    timespec currentTime;
+    uint64_t pendingTimestamp = 0;
+
+    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_PENDINGTIMESTAMP, aDatasetTlvs.mTlvs, aDatasetTlvs.mLength) == nullptr,
+                 error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(FindTlv(OT_MESHCOP_TLV_DELAYTIMER, aDatasetTlvs.mTlvs, aDatasetTlvs.mLength) == nullptr,
+                 error = OT_ERROR_INVALID_ARGS);
+
+    // There must be sufficient space for a Pending Timestamp TLV and a Delay Timer TLV.
+    VerifyOrExit(
+        static_cast<int>(aDatasetTlvs.mLength +
+                         (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint64_t))    // Pending Timestamp TLV (10 bytes)
+                         + (sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t))) // Delay Timer TLV (6 bytes)
+            <= int{sizeof(aDatasetTlvs.mTlvs)},
+        error = OT_ERROR_INVALID_ARGS);
+
+    tlv = reinterpret_cast<Tlv *>(aDatasetTlvs.mTlvs + aDatasetTlvs.mLength);
+    /*
+     * Pending Timestamp TLV
+     *
+     * | Type | Value | Timestamp Seconds | Timestamp Ticks | U bit |
+     * |  8   |   8   |         48        |         15      |   1   |
+     */
+    tlv->SetType(OT_MESHCOP_TLV_PENDINGTIMESTAMP);
+    clock_gettime(CLOCK_REALTIME, &currentTime);
+    pendingTimestamp |= (static_cast<uint64_t>(currentTime.tv_sec) << 16); // Set the 48 bits of Timestamp seconds.
+    pendingTimestamp |= (((static_cast<uint64_t>(currentTime.tv_nsec) * 32768 / 1000000000) & 0x7fff)
+                         << 1); // Set the 15 bits of Timestamp ticks, the fractional Unix Time value in 32.768 kHz
+                                // resolution. Leave the U-bit unset.
+    tlv->SetValue(pendingTimestamp);
+
+    tlv = tlv->GetNext();
+    tlv->SetType(OT_MESHCOP_TLV_DELAYTIMER);
+    tlv->SetValue(aDelayMilli);
+
+    aDatasetTlvs.mLength = reinterpret_cast<uint8_t *>(tlv->GetNext()) - aDatasetTlvs.mTlvs;
+
+exit:
+    return error;
+}
+
 } // namespace agent
 } // namespace otbr

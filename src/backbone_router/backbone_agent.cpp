@@ -47,13 +47,11 @@
 namespace otbr {
 namespace BackboneRouter {
 
-BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp,
-                             std::string                      aInterfaceName,
-                             std::string                      aBackboneInterfaceName)
-    : mNcp(aNcp)
+BackboneAgent::BackboneAgent(otbr::Ncp::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName)
+    : mHost(aHost)
     , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
 #if OTBR_ENABLE_DUA_ROUTING
-    , mNdProxyManager(aNcp, aBackboneInterfaceName)
+    , mNdProxyManager(aHost, aBackboneInterfaceName)
     , mDuaRoutingManager(aInterfaceName, aBackboneInterfaceName)
 #endif
 {
@@ -63,15 +61,17 @@ BackboneAgent::BackboneAgent(otbr::Ncp::ControllerOpenThread &aNcp,
 
 void BackboneAgent::Init(void)
 {
-    mNcp.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
-    otBackboneRouterSetDomainPrefixCallback(mNcp.GetInstance(), &BackboneAgent::HandleBackboneRouterDomainPrefixEvent,
+    mHost.AddThreadStateChangedCallback([this](otChangedFlags aFlags) { HandleThreadStateChanged(aFlags); });
+    otBackboneRouterSetDomainPrefixCallback(mHost.GetInstance(), &BackboneAgent::HandleBackboneRouterDomainPrefixEvent,
                                             this);
 #if OTBR_ENABLE_DUA_ROUTING
-    otBackboneRouterSetNdProxyCallback(mNcp.GetInstance(), &BackboneAgent::HandleBackboneRouterNdProxyEvent, this);
+    otBackboneRouterSetNdProxyCallback(mHost.GetInstance(), &BackboneAgent::HandleBackboneRouterNdProxyEvent, this);
     mNdProxyManager.Init();
 #endif
 
-    otBackboneRouterSetEnabled(mNcp.GetInstance(), /* aEnabled */ true);
+#if OTBR_ENABLE_BACKBONE_ROUTER_ON_INIT
+    otBackboneRouterSetEnabled(mHost.GetInstance(), /* aEnabled */ true);
+#endif
 }
 
 void BackboneAgent::HandleThreadStateChanged(otChangedFlags aFlags)
@@ -84,7 +84,7 @@ void BackboneAgent::HandleThreadStateChanged(otChangedFlags aFlags)
 
 void BackboneAgent::HandleBackboneRouterState(void)
 {
-    otBackboneRouterState state      = otBackboneRouterGetState(mNcp.GetInstance());
+    otBackboneRouterState state      = otBackboneRouterGetState(mHost.GetInstance());
     bool                  wasPrimary = (mBackboneRouterState == OT_BACKBONE_ROUTER_STATE_PRIMARY);
 
     otbrLogDebug("BackboneAgent: HandleBackboneRouterState: state=%d, mBackboneRouterState=%d", state,

@@ -42,14 +42,33 @@ namespace otbr {
 
 /**
  * This type defines the context data for running a mainloop.
- *
  */
-using MainloopContext = otSysMainloopContext;
+class MainloopContext : public otSysMainloopContext
+{
+public:
+    static constexpr uint8_t kErrorFdSet = 1 << 0;
+    static constexpr uint8_t kReadFdSet  = 1 << 1;
+    static constexpr uint8_t kWriteFdSet = 1 << 2;
+
+    /**
+     * This method adds a fd to the read fd set inside the MainloopContext.
+     *
+     * @param[in] aFd  The fd to add.
+     */
+    void AddFdToReadSet(int aFd);
+
+    /**
+     * This method adds a fd to the fd sets inside the MainloopContext.
+     *
+     * @param[in] aFd          The fd to add.
+     * @param[in] aFdSetsMask  A bitmask indicating which fd sets to add.
+     */
+    void AddFdToSet(int aFd, uint8_t aFdSetsMask);
+};
 
 /**
  * This abstract class defines the interface of a mainloop processor
  * which adds fds to the mainloop context and handles fds events.
- *
  */
 class MainloopProcessor
 {
@@ -62,7 +81,6 @@ public:
      * This method updates the mainloop context.
      *
      * @param[in,out] aMainloop  A reference to the mainloop to be updated.
-     *
      */
     virtual void Update(MainloopContext &aMainloop) = 0;
 
@@ -70,7 +88,6 @@ public:
      * This method processes mainloop events.
      *
      * @param[in] aMainloop  A reference to the mainloop context.
-     *
      */
     virtual void Process(const MainloopContext &aMainloop) = 0;
 };

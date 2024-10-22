@@ -50,7 +50,6 @@ namespace rest {
 
 /**
  * This class implements a Connection class of each socket connection.
- *
  */
 class Connection : public MainloopProcessor
 {
@@ -64,20 +63,16 @@ public:
      *                        state.
      * @param[in] aResource   A pointer to the resource handler.
      * @param[in] aFd         The file descriptor for the connection.
-     *
      */
     Connection(steady_clock::time_point aStartTime, Resource *aResource, int aFd);
 
     /**
      * The desctructor destroys the connection instance.
-     *
      */
     ~Connection(void) override;
 
     /**
      * This method initializes the connection.
-     *
-     *
      */
     void Init(void);
 
@@ -89,7 +84,6 @@ public:
      *
      * @retval TRUE   This connection could be released in next loop.
      * @retval FALSE  This connection still needs to be processed in next loop.
-     *
      */
     bool IsComplete(void) const;
 

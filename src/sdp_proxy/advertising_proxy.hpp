@@ -45,13 +45,12 @@
 
 #include "common/code_utils.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
 /**
  * This class implements the Advertising Proxy.
- *
  */
 class AdvertisingProxy : private NonCopyable
 {
@@ -59,23 +58,20 @@ public:
     /**
      * This constructor initializes the Advertising Proxy object.
      *
-     * @param[in] aNcp        A reference to the NCP controller.
+     * @param[in] aHost       A reference to the NCP controller.
      * @param[in] aPublisher  A reference to the mDNS publisher.
-     *
      */
-    explicit AdvertisingProxy(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    explicit AdvertisingProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method enables/disables the Advertising Proxy.
      *
      * @param[in] aIsEnabled  Whether to enable the Advertising Proxy.
-     *
      */
     void SetEnabled(bool aIsEnabled);
 
     /**
      * This method publishes all registered hosts and services.
-     *
      */
     void PublishAllHostsAndServices(void);
 
@@ -83,7 +79,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
@@ -122,14 +117,13 @@ private:
      *
      * @retval  OTBR_ERROR_NONE  Successfully published the host and its services.
      * @retval  ...              Failed to publish the host and/or its services.
-     *
      */
     otbrError PublishHostAndItsServices(const otSrpServerHost *aHost, OutstandingUpdate *aUpdate);
 
-    otInstance *GetInstance(void) { return mNcp.GetInstance(); }
+    otInstance *GetInstance(void) { return mHost.GetInstance(); }
 
     // A reference to the NCP controller, has no ownership.
-    Ncp::ControllerOpenThread &mNcp;
+    Ncp::RcpHost &mHost;
 
     // A reference to the mDNS publisher, has no ownership.
     Mdns::Publisher &mPublisher;

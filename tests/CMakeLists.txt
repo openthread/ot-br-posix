@@ -39,4 +39,4 @@ if(OTBR_REST)
 endif()
 
 add_subdirectory(tools)
-add_subdirectory(unit)
+add_subdirectory(gtest)

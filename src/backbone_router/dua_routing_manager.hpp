@@ -43,7 +43,7 @@
 #include <openthread/backbone_router_ftd.h>
 
 #include "common/code_utils.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 #include "utils/system_utils.hpp"
 
 namespace otbr {
@@ -60,14 +60,12 @@ namespace BackboneRouter {
 
 /**
  * This class implements the DUA routing manager.
- *
  */
 class DuaRoutingManager : private NonCopyable
 {
 public:
     /**
      * This constructor initializes a DUA routing manager instance.
-     *
      */
     explicit DuaRoutingManager(std::string aInterfaceName, std::string aBackboneInterfaceName)
         : mEnabled(false)
@@ -78,13 +76,11 @@ public:
 
     /**
      * This method enables the DUA routing manager.
-     *
      */
     void Enable(const Ip6Prefix &aDomainPrefix);
 
     /**
      * This method disables the DUA routing manager.
-     *
      */
     void Disable(void);
 

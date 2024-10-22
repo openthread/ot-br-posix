@@ -239,7 +239,7 @@ void WebServer::DefaultHttpResponse(void)
 
             auto ifs = std::make_shared<std::ifstream>();
             ifs->open(path.string(), std::ifstream::in | std::ios::binary | std::ios::ate);
-            std::string extension = boost::filesystem::extension(path.string());
+            std::string extension = path.extension().string();
             std::string header    = "";
             if (extension == ".css")
             {

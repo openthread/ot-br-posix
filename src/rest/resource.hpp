@@ -42,7 +42,7 @@
 #include <openthread/border_router.h>
 
 #include "common/api_strings.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 #include "openthread/dataset.h"
 #include "openthread/dataset_ftd.h"
 #include "rest/json.hpp"
@@ -50,7 +50,7 @@
 #include "rest/response.hpp"
 #include "utils/thread_helper.hpp"
 
-using otbr::Ncp::ControllerOpenThread;
+using otbr::Ncp::RcpHost;
 using std::chrono::steady_clock;
 
 namespace otbr {
@@ -58,7 +58,6 @@ namespace rest {
 
 /**
  * This class implements the Resource handler for OTBR-REST.
- *
  */
 class Resource
 {
@@ -66,15 +65,12 @@ public:
     /**
      * The constructor initializes the resource handler instance.
      *
-     * @param[in] aNcp  A pointer to the NCP controller.
-     *
+     * @param[in] aHost  A pointer to the Thread controller.
      */
-    Resource(ControllerOpenThread *aNcp);
+    Resource(RcpHost *aHost);
 
     /**
      * This method initialize the Resource handler.
-     *
-     *
      */
     void Init(void);
 
@@ -84,7 +80,6 @@ public:
      *
      * @param[in]     aRequest  A request instance referred by the Resource handler.
      * @param[in,out] aResponse  A response instance will be set by the Resource handler.
-     *
      */
     void Handle(Request &aRequest, Response &aResponse) const;
 
@@ -93,7 +88,6 @@ public:
      *
      * @param[in]     aRequest   A request instance referred by the Resource handler.
      * @param[in,out] aResponse  A response instance will be set by the Resource handler.
-     *
      */
     void HandleCallback(Request &aRequest, Response &aResponse);
 
@@ -103,14 +97,12 @@ public:
      *
      * @param[in]     aRequest    A request instance referred by the Resource handler.
      * @param[in,out] aErrorCode  An enum class represents the status code.
-     *
      */
     void ErrorHandler(Response &aResponse, HttpStatusCode aErrorCode) const;
 
 private:
     /**
      * This enumeration represents the Dataset type (active or pending).
-     *
      */
     enum class DatasetType : uint8_t
     {
@@ -160,8 +152,8 @@ private:
                                           void                *aContext);
     void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
-    otInstance           *mInstance;
-    ControllerOpenThread *mNcp;
+    otInstance *mInstance;
+    RcpHost    *mHost;
 
     std::unordered_map<std::string, ResourceHandler>         mResourceMap;
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;

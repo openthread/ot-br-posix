@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+#  Copyright (c) 2024, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#   Description:
+#       This script manipulates DHCPv6-PD-REF configuration.
+#
+
+customise_dhcpcd_conf()
+{
+    # This has to be run after script/_border_routing, and this will
+    # invalidate all changes to dhcpcd.conf made by script/_border_routing.
+    sudo tee /etc/dhcpcd.conf >/dev/null <<EOF
+noipv6rs # disable router solicitation
+interface eth0
+  iaid 1
+  ia_pd 2/::/64 -
+EOF
+}
+
+dhcpv6_pd_ref_uninstall()
+{
+    with DHCPV6_PD_REF || return 0
+
+    if [[ -f "/etc/dhcpcd.conf.orig" ]]; then
+        sudo mv /etc/dhcpcd.conf.orig /etc/dhcpcd.conf
+    fi
+    sudo systemctl restart dhcpcd
+    sudo rm -f /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
+
+}
+
+dhcpv6_pd_ref_install()
+{
+    with DHCPV6_PD_REF || return 0
+
+    if [[ -f "/etc/dhcpcd.conf" ]]; then
+        sudo mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig
+    fi
+    customise_dhcpcd_conf
+    # Add dhcpcd.hooks
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook /etc/dhcpcd.enter-hook
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook /etc/dhcpcd.exit-hook
+}

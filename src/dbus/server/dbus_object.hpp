@@ -60,21 +60,19 @@ namespace DBus {
 
 /**
  * This class is a base class for implementing a d-bus object.
- *
  */
 class DBusObject : private NonCopyable
 {
 public:
-    using MethodHandlerType = std::function<void(DBusRequest &)>;
-
-    using PropertyHandlerType = std::function<otError(DBusMessageIter &)>;
+    using MethodHandlerType        = std::function<void(DBusRequest &)>;
+    using AsyncPropertyHandlerType = std::function<void(DBusRequest &)>;
+    using PropertyHandlerType      = std::function<otError(DBusMessageIter &)>;
 
     /**
      * The constructor of a d-bus object.
      *
      * @param[in] aConnection  The dbus-connection the object bounds to.
      * @param[in] aObjectPath  The path of the object.
-     *
      */
     DBusObject(DBusConnection *aConnection, const std::string &aObjectPath);
 
@@ -85,7 +83,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  Successfully registered the object.
      * @retval OTBR_ERROR_DBUS  Failed to ragister an object.
-     *
      */
     virtual otbrError Init(void);
 
@@ -95,7 +92,6 @@ public:
      * @param[in] aInterfaceName  The interface name.
      * @param[in] aMethodName     The method name.
      * @param[in] aHandler        The method handler.
-     *
      */
     void RegisterMethod(const std::string       &aInterfaceName,
                         const std::string       &aMethodName,
@@ -107,7 +103,6 @@ public:
      * @param[in] aInterfaceName  The interface name.
      * @param[in] aPropertyName   The property name.
      * @param[in] aHandler        The method handler.
-     *
      */
     virtual void RegisterGetPropertyHandler(const std::string         &aInterfaceName,
                                             const std::string         &aPropertyName,
@@ -119,11 +114,21 @@ public:
      * @param[in] aInterfaceName  The interface name.
      * @param[in] aPropertyName   The property name.
      * @param[in] aHandler        The method handler.
-     *
      */
     virtual void RegisterSetPropertyHandler(const std::string         &aInterfaceName,
                                             const std::string         &aPropertyName,
                                             const PropertyHandlerType &aHandler);
+
+    /**
+     * This method registers the async get handler for a property.
+     *
+     * @param[in] aInterfaceName  The interface name.
+     * @param[in] aPropertyName   The property name.
+     * @param[in] aHandler        The method handler.
+     */
+    virtual void RegisterAsyncGetPropertyHandler(const std::string              &aInterfaceName,
+                                                 const std::string              &aPropertyName,
+                                                 const AsyncPropertyHandlerType &aHandler);
 
     /**
      * This method sends a signal.
@@ -134,7 +139,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  Signal successfully sent.
      * @retval OTBR_ERROR_DBUS  Failed to send the signal.
-     *
      */
     template <typename... FieldTypes>
     otbrError Signal(const std::string               &aInterfaceName,
@@ -162,7 +166,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  Signal successfully sent.
      * @retval OTBR_ERROR_DBUS  Failed to send the signal.
-     *
      */
     template <typename ValueType>
     otbrError SignalPropertyChanged(const std::string &aInterfaceName,
@@ -210,20 +213,22 @@ public:
 
     /**
      * The destructor of a d-bus object.
-     *
      */
     virtual ~DBusObject(void);
 
     /**
      * Sends all outgoing messages, blocks until the message queue is empty.
-     *
      */
     void Flush(void);
+
+protected:
+    otbrError Initialize(bool aIsAsyncPropertyHandler);
 
 private:
     void GetAllPropertiesMethodHandler(DBusRequest &aRequest);
     void GetPropertyMethodHandler(DBusRequest &aRequest);
     void SetPropertyMethodHandler(DBusRequest &aRequest);
+    void AsyncGetPropertyMethodHandler(DBusRequest &aRequest);
 
     static DBusHandlerResult sMessageHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aData);
     DBusHandlerResult        MessageHandler(DBusConnection *aConnection, DBusMessage *aMessage);
@@ -232,9 +237,11 @@ private:
 
     std::unordered_map<std::string, MethodHandlerType>                                    mMethodHandlers;
     std::unordered_map<std::string, std::unordered_map<std::string, PropertyHandlerType>> mGetPropertyHandlers;
-    std::unordered_map<std::string, PropertyHandlerType>                                  mSetPropertyHandlers;
-    DBusConnection                                                                       *mConnection;
-    std::string                                                                           mObjectPath;
+    std::unordered_map<std::string, std::unordered_map<std::string, AsyncPropertyHandlerType>>
+                                                         mAsyncGetPropertyHandlers;
+    std::unordered_map<std::string, PropertyHandlerType> mSetPropertyHandlers;
+    DBusConnection                                      *mConnection;
+    std::string                                          mObjectPath;
 };
 
 } // namespace DBus

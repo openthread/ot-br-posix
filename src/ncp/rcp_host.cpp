@@ -26,9 +26,9 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define OTBR_LOG_TAG "NCP"
+#define OTBR_LOG_TAG "RCP_HOST"
 
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 #include <assert.h>
 #include <stdio.h>
@@ -66,11 +66,41 @@ static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 static const uint16_t kThreadVersion13 = 4; ///< Thread Version 1.3
 static const uint16_t kThreadVersion14 = 5; ///< Thread Version 1.4
 
-ControllerOpenThread::ControllerOpenThread(const char                      *aInterfaceName,
-                                           const std::vector<const char *> &aRadioUrls,
-                                           const char                      *aBackboneInterfaceName,
-                                           bool                             aDryRun,
-                                           bool                             aEnableAutoAttach)
+// =============================== OtNetworkProperties ===============================
+
+OtNetworkProperties::OtNetworkProperties(void)
+    : mInstance(nullptr)
+{
+}
+
+otDeviceRole OtNetworkProperties::GetDeviceRole(void) const
+{
+    return otThreadGetDeviceRole(mInstance);
+}
+
+void OtNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    otError error = otDatasetGetActiveTlvs(mInstance, &aDatasetTlvs);
+
+    if (error != OT_ERROR_NONE)
+    {
+        aDatasetTlvs.mLength = 0;
+        memset(aDatasetTlvs.mTlvs, 0, sizeof(aDatasetTlvs.mTlvs));
+    }
+}
+
+void OtNetworkProperties::SetInstance(otInstance *aInstance)
+{
+    mInstance = aInstance;
+}
+
+// =============================== RcpHost ===============================
+
+RcpHost::RcpHost(const char                      *aInterfaceName,
+                 const std::vector<const char *> &aRadioUrls,
+                 const char                      *aBackboneInterfaceName,
+                 bool                             aDryRun,
+                 bool                             aEnableAutoAttach)
     : mInstance(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
 {
@@ -84,18 +114,18 @@ ControllerOpenThread::ControllerOpenThread(const char                      *aInt
 
     for (const char *url : aRadioUrls)
     {
-        mConfig.mRadioUrls[mConfig.mRadioUrlNum++] = url;
+        mConfig.mCoprocessorUrls.mUrls[mConfig.mCoprocessorUrls.mNum++] = url;
     }
     mConfig.mSpeedUpFactor = 1;
 }
 
-ControllerOpenThread::~ControllerOpenThread(void)
+RcpHost::~RcpHost(void)
 {
     // Make sure OpenThread Instance was gracefully de-initialized.
     assert(mInstance == nullptr);
 }
 
-otbrLogLevel ControllerOpenThread::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
+otbrLogLevel RcpHost::ConvertToOtbrLogLevel(otLogLevel aLogLevel)
 {
     otbrLogLevel otbrLogLevel;
 
@@ -164,37 +194,7 @@ otbrLogLevel ConvertProtoToOtbrLogLevel(ProtoLogLevel aProtoLogLevel)
 }
 #endif
 
-otLogLevel ControllerOpenThread::ConvertToOtLogLevel(otbrLogLevel aLevel)
-{
-    otLogLevel level;
-
-    switch (aLevel)
-    {
-    case OTBR_LOG_EMERG:
-    case OTBR_LOG_ALERT:
-    case OTBR_LOG_CRIT:
-        level = OT_LOG_LEVEL_CRIT;
-        break;
-    case OTBR_LOG_ERR:
-    case OTBR_LOG_WARNING:
-        level = OT_LOG_LEVEL_WARN;
-        break;
-    case OTBR_LOG_NOTICE:
-        level = OT_LOG_LEVEL_NOTE;
-        break;
-    case OTBR_LOG_INFO:
-        level = OT_LOG_LEVEL_INFO;
-        break;
-    case OTBR_LOG_DEBUG:
-    default:
-        level = OT_LOG_LEVEL_DEBG;
-        break;
-    }
-
-    return level;
-}
-
-otError ControllerOpenThread::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
+otError RcpHost::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
 {
     otError error = OT_ERROR_NONE;
     otbrLogSetLevel(aLevel);
@@ -202,7 +202,7 @@ otError ControllerOpenThread::SetOtbrAndOtLogLevel(otbrLogLevel aLevel)
     return error;
 }
 
-void ControllerOpenThread::Init(void)
+void RcpHost::Init(void)
 {
     otbrError  error = OTBR_ERROR_NONE;
     otLogLevel level = ConvertToOtLogLevel(otbrLogGetLevel());
@@ -217,7 +217,7 @@ void ControllerOpenThread::Init(void)
     assert(mInstance != nullptr);
 
     {
-        otError result = otSetStateChangedCallback(mInstance, &ControllerOpenThread::HandleStateChanged, this);
+        otError result = otSetStateChangedCallback(mInstance, &RcpHost::HandleStateChanged, this);
 
         agent::ThreadHelper::LogOpenThreadResult("Set state callback", result);
         VerifyOrExit(result == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
@@ -246,19 +246,21 @@ void ControllerOpenThread::Init(void)
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otDnssdUpstreamQuerySetEnabled(mInstance, /* aEnabled */ true);
 #endif
-#if OTBR_ENABLE_DHCP6_PD
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
     otBorderRoutingDhcp6PdSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
-    mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
+    mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
+
+    OtNetworkProperties::SetInstance(mInstance);
 
 exit:
-    SuccessOrDie(error, "Failed to initialize NCP!");
+    SuccessOrDie(error, "Failed to initialize the RCP Host!");
 }
 
 #if OTBR_ENABLE_FEATURE_FLAGS
-otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
+otError RcpHost::ApplyFeatureFlagList(const FeatureFlagList &aFeatureFlagList)
 {
     otError error = OT_ERROR_NONE;
     // Save a cached copy of feature flags for debugging purpose.
@@ -294,18 +296,21 @@ otError ControllerOpenThread::ApplyFeatureFlagList(const FeatureFlagList &aFeatu
 }
 #endif
 
-void ControllerOpenThread::Deinit(void)
+void RcpHost::Deinit(void)
 {
     assert(mInstance != nullptr);
 
     otSysDeinit();
     mInstance = nullptr;
 
+    OtNetworkProperties::SetInstance(nullptr);
     mThreadStateChangedCallbacks.clear();
     mResetHandlers.clear();
+
+    mSetThreadEnabledReceiver = nullptr;
 }
 
-void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
+void RcpHost::HandleStateChanged(otChangedFlags aFlags)
 {
     for (auto &stateCallback : mThreadStateChangedCallbacks)
     {
@@ -315,7 +320,7 @@ void ControllerOpenThread::HandleStateChanged(otChangedFlags aFlags)
     mThreadHelper->StateChangedCallback(aFlags);
 }
 
-void ControllerOpenThread::Update(MainloopContext &aMainloop)
+void RcpHost::Update(MainloopContext &aMainloop)
 {
     if (otTaskletsArePending(mInstance))
     {
@@ -325,7 +330,7 @@ void ControllerOpenThread::Update(MainloopContext &aMainloop)
     otSysMainloopUpdate(mInstance, &aMainloop);
 }
 
-void ControllerOpenThread::Process(const MainloopContext &aMainloop)
+void RcpHost::Process(const MainloopContext &aMainloop)
 {
     otTaskletsProcess(mInstance);
 
@@ -337,32 +342,32 @@ void ControllerOpenThread::Process(const MainloopContext &aMainloop)
     }
 }
 
-bool ControllerOpenThread::IsAutoAttachEnabled(void)
+bool RcpHost::IsAutoAttachEnabled(void)
 {
     return mEnableAutoAttach;
 }
 
-void ControllerOpenThread::DisableAutoAttach(void)
+void RcpHost::DisableAutoAttach(void)
 {
     mEnableAutoAttach = false;
 }
 
-void ControllerOpenThread::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
+void RcpHost::PostTimerTask(Milliseconds aDelay, TaskRunner::Task<void> aTask)
 {
     mTaskRunner.Post(std::move(aDelay), std::move(aTask));
 }
 
-void ControllerOpenThread::RegisterResetHandler(std::function<void(void)> aHandler)
+void RcpHost::RegisterResetHandler(std::function<void(void)> aHandler)
 {
     mResetHandlers.emplace_back(std::move(aHandler));
 }
 
-void ControllerOpenThread::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
+void RcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
 {
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
-void ControllerOpenThread::Reset(void)
+void RcpHost::Reset(void)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
 
@@ -377,7 +382,7 @@ void ControllerOpenThread::Reset(void)
     mEnableAutoAttach = true;
 }
 
-const char *ControllerOpenThread::GetThreadVersion(void)
+const char *RcpHost::GetThreadVersion(void)
 {
     const char *version;
 
@@ -393,13 +398,106 @@ const char *ControllerOpenThread::GetThreadVersion(void)
         version = "1.3.0";
         break;
     case kThreadVersion14:
-        version = "1.4";
+        version = "1.4.0";
         break;
     default:
         otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
         exit(-1);
     }
     return version;
+}
+
+void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
+{
+    OT_UNUSED_VARIABLE(aActiveOpDatasetTlvs);
+
+    // TODO: Implement Join under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
+{
+    // TODO: Implement Leave under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                const AsyncResultReceiver       aReceiver)
+{
+    OT_UNUSED_VARIABLE(aPendingOpDatasetTlvs);
+
+    // TODO: Implement ScheduleMigration under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
+{
+    otError error             = OT_ERROR_NONE;
+    bool    receiveResultHere = true;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mSetThreadEnabledReceiver == nullptr, error = OT_ERROR_BUSY);
+
+    if (aEnabled)
+    {
+        otOperationalDatasetTlvs datasetTlvs;
+
+        if (otDatasetGetActiveTlvs(mInstance, &datasetTlvs) != OT_ERROR_NOT_FOUND && datasetTlvs.mLength > 0 &&
+            otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
+        {
+            SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+            SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+        }
+    }
+    else
+    {
+        SuccessOrExit(error = otThreadDetachGracefully(mInstance, DisableThreadAfterDetach, this));
+        mSetThreadEnabledReceiver = aReceiver;
+        receiveResultHere         = false;
+    }
+
+exit:
+    if (receiveResultHere)
+    {
+        mTaskRunner.Post([aReceiver, error](void) { aReceiver(error, ""); });
+    }
+}
+
+void RcpHost::DisableThreadAfterDetach(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->DisableThreadAfterDetach();
+}
+
+void RcpHost::DisableThreadAfterDetach(void)
+{
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, false), errorMsg = "Failed to disable Thread stack");
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, false), errorMsg = "Failed to disable Thread interface");
+
+exit:
+    SafeInvokeAndClear(mSetThreadEnabledReceiver, error, errorMsg);
+}
+
+void RcpHost::SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver)
+{
+    static constexpr int kCountryCodeLength = 2;
+    otError              error              = OT_ERROR_NONE;
+    std::string          errorMsg;
+    uint16_t             countryCode;
+
+    VerifyOrExit((aCountryCode.length() == kCountryCodeLength) && isalpha(aCountryCode[0]) && isalpha(aCountryCode[1]),
+                 error = OT_ERROR_INVALID_ARGS, errorMsg = "The country code is invalid");
+
+    otbrLogInfo("Set country code: %c%c", aCountryCode[0], aCountryCode[1]);
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+
+    countryCode = static_cast<uint16_t>((aCountryCode[0] << 8) | aCountryCode[1]);
+    SuccessOrExit(error = otLinkSetRegion(mInstance, countryCode), errorMsg = "Failed to set the country code");
+
+exit:
+    mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
 }
 
 /*
@@ -409,7 +507,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 {
     OT_UNUSED_VARIABLE(aLogRegion);
 
-    otbrLogLevel otbrLogLevel = ControllerOpenThread::ConvertToOtbrLogLevel(aLogLevel);
+    otbrLogLevel otbrLogLevel = RcpHost::ConvertToOtbrLogLevel(aLogLevel);
 
     va_list ap;
     va_start(ap, aFormat);
@@ -419,7 +517,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
 extern "C" void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
 {
-    otbrLogSetLevel(ControllerOpenThread::ConvertToOtbrLogLevel(aLogLevel));
+    otbrLogSetLevel(RcpHost::ConvertToOtbrLogLevel(aLogLevel));
     otbrLogInfo("OpenThread log level changed to %d", aLogLevel);
 }
 

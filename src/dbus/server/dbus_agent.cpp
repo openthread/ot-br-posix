@@ -36,6 +36,8 @@
 
 #include "common/logging.hpp"
 #include "dbus/common/constants.hpp"
+#include "dbus/server/dbus_thread_object_ncp.hpp"
+#include "dbus/server/dbus_thread_object_rcp.hpp"
 #include "mdns/mdns.hpp"
 
 namespace otbr {
@@ -44,14 +46,14 @@ namespace DBus {
 const struct timeval           DBusAgent::kPollTimeout = {0, 0};
 constexpr std::chrono::seconds DBusAgent::kDBusWaitAllowance;
 
-DBusAgent::DBusAgent(otbr::Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher)
-    : mInterfaceName(aNcp.GetInterfaceName())
-    , mNcp(aNcp)
+DBusAgent::DBusAgent(otbr::Ncp::ThreadHost &aHost, Mdns::Publisher &aPublisher)
+    : mInterfaceName(aHost.GetInterfaceName())
+    , mHost(aHost)
     , mPublisher(aPublisher)
 {
 }
 
-void DBusAgent::Init(void)
+void DBusAgent::Init(otbr::BorderAgent &aBorderAgent)
 {
     otbrError error = OTBR_ERROR_NONE;
 
@@ -65,8 +67,23 @@ void DBusAgent::Init(void)
 
     VerifyOrDie(mConnection != nullptr, "Failed to get DBus connection");
 
-    mThreadObject =
-        std::unique_ptr<DBusThreadObject>(new DBusThreadObject(mConnection.get(), mInterfaceName, &mNcp, &mPublisher));
+    switch (mHost.GetCoprocessorType())
+    {
+    case OT_COPROCESSOR_RCP:
+        mThreadObject = MakeUnique<DBusThreadObjectRcp>(*mConnection, mInterfaceName,
+                                                        static_cast<Ncp::RcpHost &>(mHost), &mPublisher, aBorderAgent);
+        break;
+
+    case OT_COPROCESSOR_NCP:
+        mThreadObject =
+            MakeUnique<DBusThreadObjectNcp>(*mConnection, mInterfaceName, static_cast<Ncp::NcpHost &>(mHost));
+        break;
+
+    default:
+        DieNow("Unknown coprocessor type!");
+        break;
+    }
+
     error = mThreadObject->Init();
     VerifyOrDie(error == OTBR_ERROR_NONE, "Failed to initialize DBus Agent");
 }
@@ -122,6 +139,7 @@ void DBusAgent::Update(MainloopContext &aMainloop)
 {
     unsigned int flags;
     int          fd;
+    uint8_t      fdSetMask = MainloopContext::kErrorFdSet;
 
     if (dbus_connection_get_dispatch_status(mConnection.get()) == DBUS_DISPATCH_DATA_REMAINS)
     {
@@ -145,17 +163,15 @@ void DBusAgent::Update(MainloopContext &aMainloop)
 
         if (flags & DBUS_WATCH_READABLE)
         {
-            FD_SET(fd, &aMainloop.mReadFdSet);
+            fdSetMask |= MainloopContext::kReadFdSet;
         }
 
         if ((flags & DBUS_WATCH_WRITABLE))
         {
-            FD_SET(fd, &aMainloop.mWriteFdSet);
+            fdSetMask |= MainloopContext::kWriteFdSet;
         }
 
-        FD_SET(fd, &aMainloop.mErrorFdSet);
-
-        aMainloop.mMaxFd = std::max(aMainloop.mMaxFd, fd);
+        aMainloop.AddFdToSet(fd, fdSetMask);
     }
 }
 

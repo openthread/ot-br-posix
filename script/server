@@ -36,6 +36,10 @@
 . script/_dns64
 . script/_firewall
 
+OTBR_MDNS="${OTBR_MDNS:-mDNSResponder}"
+OT_BACKBONE_CI="${OT_BACKBONE_CI:-0}"
+REFERENCE_DEVICE="${REFERENCE_DEVICE:-0}"
+
 startup()
 {
     # shellcheck source=/dev/null
@@ -44,23 +48,21 @@ startup()
     nat64_start || die 'Failed to start NAT64!'
     dns64_start || die 'Failed to start DNS64!'
     firewall_start || die 'Failed to start firewall'
-    if have systemctl; then
-        systemctl is-active rsyslog || sudo systemctl start rsyslog || die 'Failed to start rsyslog!'
-        systemctl is-active dbus || sudo systemctl start dbus || die 'Failed to start dbus!'
-        systemctl is-active avahi-daemon || sudo systemctl start avahi-daemon || die 'Failed to start avahi!'
-        without WEB_GUI || systemctl is-active otbr-web || sudo systemctl start otbr-web || die 'Failed to start otbr-web!'
-        systemctl is-active otbr-agent || sudo systemctl start otbr-agent || die 'Failed to start otbr-agent!'
-    elif have service; then
-        sudo service rsyslog status || sudo service rsyslog start || die 'Failed to start rsyslog!'
-        sudo service dbus status || sudo service dbus start || die 'Failed to start dbus!'
-        # Tolerate the mdns failure as it is installed for only CI docker.
-        sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
-        sudo service avahi-daemon status || sudo service avahi-daemon start || die 'Failed to start avahi!'
-        sudo service otbr-agent status || sudo service otbr-agent start || die 'Failed to start otbr-agent!'
-        without WEB_GUI || sudo service otbr-web status || sudo service otbr-web start || die 'Failed to start otbr-web!'
-    else
-        die 'Unable to find service manager. Try script/console to start in console mode!'
+
+    start_service rsyslog
+    start_service dbus
+    # Thread Certification tests require Avahi to publish records for tests. Since the
+    # same image is used for all tests Avahi needs to be started here and if
+    # building a reference device.
+    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
+        start_service avahi-daemon
     fi
+    if have service; then
+        sudo service mdns status || sudo service mdns start || echo "service mdns is not available!"
+    fi
+    without WEB_GUI || start_service otbr-web
+    start_service otbr-agent
+
     # shellcheck source=/dev/null
     . "$AFTER_HOOK"
 }
@@ -70,22 +72,17 @@ shutdown()
     nat64_stop || echo 'Failed to stop NAT64!'
     dns64_stop || echo 'Failed to stop DNS64!'
     firewall_stop || echo 'Failed to stop firewall'
-    if have systemctl; then
-        systemctl is-active rsyslog && sudo systemctl stop rsyslog || echo 'Failed to stop rsyslog!'
-        systemctl is-active dbus && sudo systemctl stop dbus || echo 'Failed to stop dbus!'
+
+    stop_service rsyslog
+    stop_service dbus
+    if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
         systemctl is-active avahi-daemon && sudo systemctl stop avahi-daemon || echo 'Failed to stop avahi!'
-        without WEB_GUI || systemctl is-active otbr-web && sudo systemctl stop otbr-web || echo 'Failed to stop otbr-web!'
-        systemctl is-active otbr-agent && sudo systemctl stop otbr-agent || echo 'Failed to stop otbr-agent!'
-    elif have service; then
-        sudo service rsyslog status && sudo service rsyslog stop || echo 'Failed to stop rsyslog!'
-        sudo service dbus status && sudo service dbus stop || echo 'Failed to stop dbus!'
-        sudo service mdns status && sudo service mdns stop || echo "service mdns is not available!"
-        sudo service avahi-daemon status && sudo service avahi-daemon stop || echo 'Failed to stop avahi!'
-        sudo service otbr-agent status && sudo service otbr-agent stop || echo 'Failed to stop otbr-agent!'
-        without WEB_GUI || sudo service otbr-web status && sudo service otbr-web stop || echo 'Failed to stop otbr-web!'
-    else
-        echo 'Unable to find service manager. Try script/console to stop in console mode!'
     fi
+    if have service; then
+        stop_service mdns
+    fi
+    without WEB_GUI || stop_service otbr-web
+    stop_service otbr-agent
 }
 
 main()

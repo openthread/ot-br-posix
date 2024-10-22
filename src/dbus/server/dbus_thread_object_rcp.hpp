@@ -31,8 +31,8 @@
  * This file includes definitions for the d-bus object of OpenThread service.
  */
 
-#ifndef OTBR_DBUS_THREAD_OBJECT_HPP_
-#define OTBR_DBUS_THREAD_OBJECT_HPP_
+#ifndef OTBR_DBUS_THREAD_OBJECT_RCP_HPP_
+#define OTBR_DBUS_THREAD_OBJECT_RCP_HPP_
 
 #include "openthread-br/config.h"
 
@@ -40,9 +40,10 @@
 
 #include <openthread/link.h>
 
+#include "border_agent/border_agent.hpp"
 #include "dbus/server/dbus_object.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -54,13 +55,9 @@ namespace DBus {
  *   This module includes the <a href="dbus-api.html">dbus server api</a>.
  *
  * @{
- * @}
- *
  */
 
-class DBusAgent;
-
-class DBusThreadObject : public DBusObject
+class DBusThreadObjectRcp : public DBusObject
 {
 public:
     /**
@@ -68,14 +65,15 @@ public:
      *
      * @param[in] aConnection     The dbus connection.
      * @param[in] aInterfaceName  The dbus interface name.
-     * @param[in] aNcp            The ncp controller
+     * @param[in] aHost           The Thread controller
      * @param[in] aPublisher      The Mdns::Publisher
-     *
+     * @param[in] aBorderAgent    The Border Agent
      */
-    DBusThreadObject(DBusConnection                  *aConnection,
-                     const std::string               &aInterfaceName,
-                     otbr::Ncp::ControllerOpenThread *aNcp,
-                     Mdns::Publisher                 *aPublisher);
+    DBusThreadObjectRcp(DBusConnection     &aConnection,
+                        const std::string  &aInterfaceName,
+                        otbr::Ncp::RcpHost &aHost,
+                        Mdns::Publisher    *aPublisher,
+                        otbr::BorderAgent  &aBorderAgent);
 
     otbrError Init(void) override;
 
@@ -85,6 +83,7 @@ public:
 
 private:
     void DeviceRoleHandler(otDeviceRole aDeviceRole);
+    void Dhcp6PdStateHandler(otBorderRoutingDhcp6PdState aDhcp6PdState);
     void ActiveDatasetChangeHandler(const otOperationalDatasetTlvs &aDatasetTlvs);
     void NcpResetHandler(void);
 
@@ -107,6 +106,8 @@ private:
     void GetPropertiesHandler(DBusRequest &aRequest);
     void LeaveNetworkHandler(DBusRequest &aRequest);
     void SetNat64Enabled(DBusRequest &aRequest);
+    void ActivateEphemeralKeyModeHandler(DBusRequest &aRequest);
+    void DeactivateEphemeralKeyModeHandler(DBusRequest &aRequest);
 
     void IntrospectHandler(DBusRequest &aRequest);
 
@@ -118,6 +119,7 @@ private:
     otError SetRadioRegionHandler(DBusMessageIter &aIter);
     otError SetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError SetNat64Cidr(DBusMessageIter &aIter);
+    otError SetEphemeralKeyEnabled(DBusMessageIter &aIter);
 
     otError GetLinkModeHandler(DBusMessageIter &aIter);
     otError GetDeviceRoleHandler(DBusMessageIter &aIter);
@@ -170,6 +172,7 @@ private:
     otError GetNat64Mappings(DBusMessageIter &aIter);
     otError GetNat64ProtocolCounters(DBusMessageIter &aIter);
     otError GetNat64ErrorCounters(DBusMessageIter &aIter);
+    otError GetEphemeralKeyEnabled(DBusMessageIter &aIter);
     otError GetInfraLinkInfo(DBusMessageIter &aIter);
     otError GetDnsUpstreamQueryState(DBusMessageIter &aIter);
     otError GetTelemetryDataHandler(DBusMessageIter &aIter);
@@ -178,12 +181,17 @@ private:
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
-    otbr::Ncp::ControllerOpenThread                     *mNcp;
+    otbr::Ncp::RcpHost                                  &mHost;
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
     otbr::Mdns::Publisher                               *mPublisher;
+    otbr::BorderAgent                                   &mBorderAgent;
 };
+
+/**
+ * @}
+ */
 
 } // namespace DBus
 } // namespace otbr
 
-#endif // OTBR_DBUS_THREAD_OBJECT_HPP_
+#endif // OTBR_DBUS_THREAD_OBJECT_RCP_HPP_

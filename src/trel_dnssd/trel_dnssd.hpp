@@ -45,7 +45,7 @@
 
 #include "common/types.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
@@ -66,29 +66,25 @@ public:
     /**
      * This constructor initializes the TrelDnssd instance.
      *
-     * @param[in] aNcp        A reference to the OpenThread Controller instance.
+     * @param[in] aHost       A reference to the OpenThread Controller instance.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
-     *
      */
-    explicit TrelDnssd(Ncp::ControllerOpenThread &aNcp, Mdns::Publisher &aPublisher);
+    explicit TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the TrelDnssd instance.
      *
      * @param[in] aTrelNetif  The network interface for discovering TREL peers.
-     *
      */
     void Initialize(std::string aTrelNetif);
 
     /**
      * This method starts browsing for TREL peers.
-     *
      */
     void StartBrowse(void);
 
     /**
      * This method stops browsing for TREL peers.
-     *
      */
     void StopBrowse(void);
 
@@ -98,13 +94,11 @@ public:
      * @param[in] aPort         The UDP port of TREL service.
      * @param[in] aTxtData      The TXT data of TREL service.
      * @param[in] aTxtLength    The TXT length of TREL service.
-     *
      */
     void RegisterService(uint16_t aPort, const uint8_t *aTxtData, uint8_t aTxtLength);
 
     /**
      * This method removes the TREL service from DNS-SD.
-     *
      */
     void UnregisterService(void);
 
@@ -112,7 +106,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
@@ -176,15 +169,15 @@ private:
     void     RemoveAllPeers(void);
     uint16_t CountDuplicatePeers(const Peer &aPeer);
 
-    Mdns::Publisher           &mPublisher;
-    Ncp::ControllerOpenThread &mNcp;
-    TaskRunner                 mTaskRunner;
-    std::string                mTrelNetif;
-    uint32_t                   mTrelNetifIndex = 0;
-    uint64_t                   mSubscriberId   = 0;
-    RegisterInfo               mRegisterInfo;
-    PeerMap                    mPeers;
-    bool                       mMdnsPublisherReady = false;
+    Mdns::Publisher &mPublisher;
+    Ncp::RcpHost    &mHost;
+    TaskRunner       mTaskRunner;
+    std::string      mTrelNetif;
+    uint32_t         mTrelNetifIndex = 0;
+    uint64_t         mSubscriberId   = 0;
+    RegisterInfo     mRegisterInfo;
+    PeerMap          mPeers;
+    bool             mMdnsPublisherReady = false;
 };
 
 /**

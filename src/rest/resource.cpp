@@ -121,9 +121,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     return httpStatus;
 }
 
-Resource::Resource(ControllerOpenThread *aNcp)
+Resource::Resource(RcpHost *aHost)
     : mInstance(nullptr)
-    , mNcp(aNcp)
+    , mHost(aHost)
 {
     // Resource Handler
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::Diagnostic);
@@ -146,7 +146,7 @@ Resource::Resource(ControllerOpenThread *aNcp)
 
 void Resource::Init(void)
 {
-    mInstance = mNcp->GetThreadHelper()->GetInstance();
+    mInstance = mHost->GetThreadHelper()->GetInstance();
 }
 
 void Resource::Handle(Request &aRequest, Response &aResponse) const
@@ -262,9 +262,9 @@ void Resource::DeleteNodeInfo(Response &aResponse) const
     otbrError   error = OTBR_ERROR_NONE;
     std::string errorCode;
 
-    VerifyOrExit(mNcp->GetThreadHelper()->Detach() == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    VerifyOrExit(mHost->GetThreadHelper()->Detach() == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     VerifyOrExit(otInstanceErasePersistentInfo(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-    mNcp->Reset();
+    mHost->Reset();
 
 exit:
     if (error == OTBR_ERROR_NONE)
@@ -710,7 +710,7 @@ void Resource::SetDataset(DatasetType aDatasetType, const Request &aRequest, Res
     if (errorOt == OT_ERROR_NOT_FOUND)
     {
         VerifyOrExit(otDatasetCreateNewNetwork(mInstance, &dataset) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
-        VerifyOrExit(otDatasetConvertToTlvs(&dataset, &datasetTlvs) == OT_ERROR_NONE, error = OTBR_ERROR_REST);
+        otDatasetConvertToTlvs(&dataset, &datasetTlvs);
         errorCode = GetHttpStatus(HttpStatusCode::kStatusCreated);
     }
 

@@ -517,7 +517,7 @@ test_meshcop_service()
     service="$(scan_meshcop_service)"
     grep "${OT_SERVICE_INSTANCE}._meshcop\._udp" <<<"${service}"
     grep "rv=1" <<<"${service}"
-    grep "tv=1\.3\.0" <<<"${service}"
+    grep "tv=1\.4\.0" <<<"${service}"
     grep "nn=${network_name}" <<<"${service}"
     grep "xp=${xpanid_txt}" <<<"${service}"
     grep "xa=${extaddr_txt}" <<<"${service}"

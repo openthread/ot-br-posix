@@ -44,7 +44,7 @@
 #if OTBR_ENABLE_BORDER_AGENT
 #include "border_agent/border_agent.hpp"
 #endif
-#include "ncp/ncp_openthread.hpp"
+#include "ncp/rcp_host.hpp"
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
@@ -83,7 +83,6 @@ class VendorServer;
 
 /**
  * This class implements OTBR application management.
- *
  */
 class Application : private NonCopyable
 {
@@ -97,7 +96,6 @@ public:
      * @param[in] aEnableAutoAttach      Whether or not to automatically attach to the saved network.
      * @param[in] aRestListenAddress     Network address to listen on.
      * @param[in] aRestListenPort        Network port to listen on.
-     *
      */
     explicit Application(const std::string               &aInterfaceName,
                          const std::vector<const char *> &aBackboneInterfaceNames,
@@ -108,13 +106,11 @@ public:
 
     /**
      * This method initializes the Application instance.
-     *
      */
     void Init(void);
 
     /**
      * This method de-initializes the Application instance.
-     *
      */
     void Deinit(void);
 
@@ -123,7 +119,6 @@ public:
      *
      * @retval OTBR_ERROR_NONE  The application exited without any error.
      * @retval OTBR_ERROR_ERRNO The application exited with some system error.
-     *
      */
     otbrError Run(void);
 
@@ -132,7 +127,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::ControllerOpenThread &GetNcp(void) { return mNcp; }
+    Ncp::ThreadHost &GetHost(void) { return *mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -154,7 +149,7 @@ public:
      */
     BorderAgent &GetBorderAgent(void)
     {
-        return mBorderAgent;
+        return *mBorderAgent;
     }
 #endif
 
@@ -166,7 +161,7 @@ public:
      */
     BackboneRouter::BackboneAgent &GetBackboneAgent(void)
     {
-        return mBackboneAgent;
+        return *mBackboneAgent;
     }
 #endif
 
@@ -178,7 +173,7 @@ public:
      */
     AdvertisingProxy &GetAdvertisingProxy(void)
     {
-        return mAdvertisingProxy;
+        return *mAdvertisingProxy;
     }
 #endif
 
@@ -190,7 +185,7 @@ public:
      */
     Dnssd::DiscoveryProxy &GetDiscoveryProxy(void)
     {
-        return mDiscoveryProxy;
+        return *mDiscoveryProxy;
     }
 #endif
 
@@ -202,7 +197,7 @@ public:
      */
     TrelDnssd::TrelDnssd &GetTrelDnssd(void)
     {
-        return mTrelDnssd;
+        return *mTrelDnssd;
     }
 #endif
 
@@ -214,7 +209,7 @@ public:
      */
     ubus::UBusAgent &GetUBusAgent(void)
     {
-        return mUbusAgent;
+        return *mUbusAgent;
     }
 #endif
 
@@ -226,7 +221,7 @@ public:
      */
     rest::RestWebServer &GetRestWebServer(void)
     {
-        return mRestWebServer;
+        return *mRestWebServer;
     }
 #endif
 
@@ -238,7 +233,7 @@ public:
      */
     DBus::DBusAgent &GetDBusAgent(void)
     {
-        return mDBusAgent;
+        return *mDBusAgent;
     }
 #endif
 
@@ -246,7 +241,6 @@ public:
      * This method handles mDNS publisher's state changes.
      *
      * @param[in] aState  The state of mDNS publisher.
-     *
      */
     void HandleMdnsState(Mdns::Publisher::State aState);
 
@@ -256,38 +250,45 @@ private:
 
     static void HandleSignal(int aSignal);
 
+    void CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort);
+    void InitRcpMode(void);
+    void DeinitRcpMode(void);
+
+    void InitNcpMode(void);
+    void DeinitNcpMode(void);
+
     std::string mInterfaceName;
 #if __linux__
     otbr::Utils::InfraLinkSelector mInfraLinkSelector;
 #endif
-    const char               *mBackboneInterfaceName;
-    Ncp::ControllerOpenThread mNcp;
+    const char                      *mBackboneInterfaceName;
+    std::unique_ptr<Ncp::ThreadHost> mHost;
 #if OTBR_ENABLE_MDNS
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
-    BorderAgent mBorderAgent;
+    std::unique_ptr<BorderAgent> mBorderAgent;
 #endif
 #if OTBR_ENABLE_BACKBONE_ROUTER
-    BackboneRouter::BackboneAgent mBackboneAgent;
+    std::unique_ptr<BackboneRouter::BackboneAgent> mBackboneAgent;
 #endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    AdvertisingProxy mAdvertisingProxy;
+    std::unique_ptr<AdvertisingProxy> mAdvertisingProxy;
 #endif
 #if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    Dnssd::DiscoveryProxy mDiscoveryProxy;
+    std::unique_ptr<Dnssd::DiscoveryProxy> mDiscoveryProxy;
 #endif
 #if OTBR_ENABLE_TREL
-    TrelDnssd::TrelDnssd mTrelDnssd;
+    std::unique_ptr<TrelDnssd::TrelDnssd> mTrelDnssd;
 #endif
 #if OTBR_ENABLE_OPENWRT
-    ubus::UBusAgent mUbusAgent;
+    std::unique_ptr<ubus::UBusAgent> mUbusAgent;
 #endif
 #if OTBR_ENABLE_REST_SERVER
-    rest::RestWebServer mRestWebServer;
+    std::unique_ptr<rest::RestWebServer> mRestWebServer;
 #endif
 #if OTBR_ENABLE_DBUS_SERVER
-    DBus::DBusAgent mDBusAgent;
+    std::unique_ptr<DBus::DBusAgent> mDBusAgent;
 #endif
 #if OTBR_ENABLE_VENDOR_SERVER
     std::shared_ptr<vendor::VendorServer> mVendorServer;

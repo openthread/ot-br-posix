@@ -1,0 +1,261 @@
+#!/bin/bash
+#
+#  Copyright (c) 2024, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+# Test basic functionality of otbr-agent under NCP mode.
+#
+# Usage:
+#   ./ncp_mode
+set -euxo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+readonly SCRIPT_DIR
+EXPECT_SCRIPT_DIR="${SCRIPT_DIR}/expect"
+readonly EXPECT_SCRIPT_DIR
+
+#---------------------------------------
+# Configurations
+#---------------------------------------
+OT_CLI="${OT_CLI:-ot-cli-ftd}"
+readonly OT_CLI
+
+OT_NCP="${OT_NCP:-ot-ncp-ftd}"
+readonly OT_NCP
+
+ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly ABS_TOP_BUILDDIR
+
+ABS_TOP_SRCDIR="$(cd "${top_srcdir:-"${SCRIPT_DIR}"/../../}" && pwd)"
+readonly ABS_TOP_SRCDIR
+
+ABS_TOP_OT_SRCDIR="${ABS_TOP_SRCDIR}/third_party/openthread/repo"
+readonly ABS_TOP_OT_SRCDIR
+
+ABS_TOP_OT_BUILDDIR="${ABS_TOP_BUILDDIR}/../simulation"
+readonly ABS_TOP_BUILDDIR
+
+OTBR_COLOR_PASS='\033[0;32m'
+readonly OTBR_COLOR_PASS
+
+OTBR_COLOR_FAIL='\033[0;31m'
+readonly OTBR_COLOR_FAIL
+
+OTBR_COLOR_NONE='\033[0m'
+readonly OTBR_COLOR_NONE
+
+readonly OTBR_VERBOSE="${OTBR_VERBOSE:-0}"
+
+#----------------------------------------
+# Helper functions
+#----------------------------------------
+die()
+{
+    exit_message="$*"
+    echo " *** ERROR: $*"
+    exit 1
+}
+
+exists_or_die()
+{
+    [[ -f $1 ]] || die "Missing file: $1"
+}
+
+executable_or_die()
+{
+    [[ -x $1 ]] || die "Missing executable: $1"
+}
+
+write_syslog()
+{
+    logger -s -p syslog.alert "OTBR_TEST: $*"
+}
+
+#----------------------------------------
+# Test constants
+#----------------------------------------
+TEST_BASE=/tmp/test-otbr
+readonly TEST_BASE
+
+OTBR_AGENT=otbr-agent
+readonly OTBR_AGENT
+
+STAGE_DIR="${TEST_BASE}/stage"
+readonly STAGE_DIR
+
+BUILD_DIR="${TEST_BASE}/build"
+readonly BUILD_DIR
+
+OTBR_DBUS_CONF="${ABS_TOP_BUILDDIR}/src/agent/otbr-agent.conf"
+readonly OTBR_DBUS_CONF
+
+OTBR_AGENT_PATH="${ABS_TOP_BUILDDIR}/src/agent/${OTBR_AGENT}"
+readonly OTBR_AGENT_PATH
+
+# The node ids
+LEADER_NODE_ID=1
+readonly LEADER_NODE_ID
+
+# The TUN device for OpenThread border router.
+TUN_NAME=wpan0
+readonly TUN_NAME
+
+#----------------------------------------
+# Test steps
+#----------------------------------------
+build_ot_simulation()
+{
+    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp"
+    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/cli"
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF -DOT_RCP=OFF
+}
+
+test_setup()
+{
+    executable_or_die "${OTBR_AGENT_PATH}"
+
+    # Remove flashes
+    sudo rm -vrf "${TEST_BASE}/tmp"
+    # OPENTHREAD_POSIX_DAEMON_SOCKET_LOCK
+    sudo rm -vf "/tmp/openthread.lock"
+
+    [[ ${BUILD_OT_SIM} == 1 ]] && build_ot_simulation
+    ot_cli=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_CLI}")
+    ot_ncp=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_NCP}")
+
+    # We will be creating a lot of log information
+    # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
+    if [[ -f /etc/logrotate.conf ]]; then
+        sudo logrotate -f /etc/logrotate.conf || true
+    fi
+
+    # Preparation for otbr-agent
+    exists_or_die "${OTBR_DBUS_CONF}"
+    sudo cp "${OTBR_DBUS_CONF}" /etc/dbus-1/system.d
+
+    write_syslog "AGENT: kill old"
+    sudo killall "${OTBR_AGENT}" || true
+
+    # From now on - all exits are TRAPPED
+    # When they occur, we call the function: output_logs'.
+    trap test_teardown EXIT
+}
+
+test_teardown()
+{
+    # Capture the exit code so we can return it below
+    EXIT_CODE=$?
+    readonly EXIT_CODE
+    write_syslog "EXIT ${EXIT_CODE} - output logs"
+
+    sudo pkill -f "${OTBR_AGENT}" || true
+    sudo pkill -f "${OT_CLI}" || true
+    sudo pkill -f "${OT_NCP}" || true
+    wait
+
+    echo 'clearing all'
+    sudo rm /etc/dbus-1/system.d/otbr-agent.conf || true
+    sudo rm -rf "${STAGE_DIR}" || true
+    sudo rm -rf "${BUILD_DIR}" || true
+
+    exit_message="Test teardown"
+    echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
+    exit ${EXIT_CODE}
+}
+
+otbr_exec_expect_script()
+{
+    local log_file="tmp/log_expect"
+
+    for script in "$@"; do
+        echo -e "\n${OTBR_COLOR_PASS}EXEC${OTBR_COLOR_NONE} ${script}"
+        sudo killall ot-rcp || true
+        sudo killall ot-cli || true
+        sudo killall ot-cli-ftd || true
+        sudo killall ot-cli-mtd || true
+        sudo killall ot-ncp-ftd || true
+        sudo killall ot-ncp-mtd || true
+        sudo rm -rf tmp
+        mkdir tmp
+        {
+            sudo -E expect -df "${script}" 2>"${log_file}"
+        } || {
+            local EXIT_CODE=$?
+
+            echo -e "\n${OTBR_COLOR_FAIL}FAIL${OTBR_COLOR_NONE} ${script}"
+            cat "${log_file}" >&2
+            return "${EXIT_CODE}"
+        }
+        echo -e "\n${OTBR_COLOR_PASS}PASS${OTBR_COLOR_NONE} ${script}"
+        if [[ ${OTBR_VERBOSE} == 1 ]]; then
+            cat "${log_file}" >&2
+        fi
+    done
+}
+
+parse_args()
+{
+    BUILD_OT_SIM=1
+    RUN_ALL_TESTS=1
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --build-ot-sim)
+                BUILD_OT_SIM="$2"
+                shift
+                ;;
+            --one-test)
+                RUN_ALL_TESTS=0
+                TEST_NAME="$2"
+                shift
+                ;;
+        esac
+        shift
+    done
+}
+
+main()
+{
+    parse_args "$@"
+
+    test_setup
+
+    export EXP_OTBR_AGENT_PATH="${OTBR_AGENT_PATH}"
+    export EXP_TUN_NAME="${TUN_NAME}"
+    export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
+    export EXP_OT_CLI_PATH="${ot_cli}"
+    export EXP_OT_NCP_PATH="${ot_ncp}"
+
+    if [[ ${RUN_ALL_TESTS} == 0 ]]; then
+        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/${TEST_NAME}" || die "ncp expect script failed!"
+    else
+        mapfile -t test_files < <(find "${EXPECT_SCRIPT_DIR}" -type f -name "ncp_*.exp")
+        otbr_exec_expect_script "${test_files[@]}" || die "ncp expect script failed!"
+    fi
+}
+
+main "$@"

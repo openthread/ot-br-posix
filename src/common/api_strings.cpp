@@ -28,6 +28,8 @@
 
 #include "common/api_strings.hpp"
 
+#include <openthread/instance.h>
+
 std::string GetDeviceRoleName(otDeviceRole aRole)
 {
     std::string roleName;
@@ -53,3 +55,30 @@ std::string GetDeviceRoleName(otDeviceRole aRole)
 
     return roleName;
 }
+
+#if OTBR_ENABLE_DHCP6_PD
+std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aState)
+{
+    std::string stateName;
+
+    switch (aState)
+    {
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_DISABLED:
+        stateName = OTBR_DHCP6_PD_STATE_NAME_DISABLED;
+        break;
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_STOPPED:
+        stateName = OTBR_DHCP6_PD_STATE_NAME_STOPPED;
+        break;
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_RUNNING:
+        stateName = OTBR_DHCP6_PD_STATE_NAME_RUNNING;
+        break;
+#if OPENTHREAD_API_VERSION >= 451
+    case OT_BORDER_ROUTING_DHCP6_PD_STATE_IDLE:
+        stateName = OTBR_DHCP6_PD_STATE_NAME_IDLE;
+        break;
+#endif
+    }
+
+    return stateName;
+}
+#endif // OTBR_ENABLE_DHCP6_PD

@@ -36,7 +36,6 @@ extraction:
         - libboost-dev
         - libboost-filesystem-dev
         - libboost-system-dev
-        - libcpputest-dev
         - libdbus-1-dev
         - libjsoncpp-dev
         - ninja-build

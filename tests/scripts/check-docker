@@ -77,9 +77,11 @@ main()
     # shellcheck disable=SC2094
     ot-rcp 1 >"$DEVICE_PTY" <"$DEVICE_PTY" &
 
-    OTBR_DOCKER_PID=$(docker run -d \
-        --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
-        --privileged -p 8080:80 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr --backbone-interface eth0)
+    OTBR_DOCKER_PID=$(
+        docker run -d -e HTTP_PORT=10080 \
+            --sysctl "net.ipv6.conf.all.disable_ipv6=0 net.ipv4.conf.all.forwarding=1 net.ipv6.conf.all.forwarding=1" \
+            --privileged -p 8080:10080 --dns=127.0.0.1 --volume "$DOCKER_PTY":/dev/ttyUSB0 otbr --backbone-interface eth0
+    )
     readonly OTBR_DOCKER_PID
     sleep 10
     sudo lsof -i :8080

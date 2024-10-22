@@ -30,7 +30,6 @@
  * @file
  * This file has helper functions to convert internal state representations
  * to string (useful for APIs).
- *
  */
 #ifndef OTBR_COMMON_API_STRINGS_HPP_
 #define OTBR_COMMON_API_STRINGS_HPP_
@@ -39,6 +38,7 @@
 
 #include <string>
 
+#include <openthread/border_routing.h>
 #include <openthread/thread.h>
 
 #define OTBR_ROLE_NAME_DISABLED "disabled"
@@ -47,6 +47,17 @@
 #define OTBR_ROLE_NAME_ROUTER "router"
 #define OTBR_ROLE_NAME_LEADER "leader"
 
+#if OTBR_ENABLE_DHCP6_PD
+#define OTBR_DHCP6_PD_STATE_NAME_DISABLED "disabled"
+#define OTBR_DHCP6_PD_STATE_NAME_STOPPED "stopped"
+#define OTBR_DHCP6_PD_STATE_NAME_RUNNING "running"
+#define OTBR_DHCP6_PD_STATE_NAME_IDLE "idle"
+#endif
+
 std::string GetDeviceRoleName(otDeviceRole aRole);
+
+#if OTBR_ENABLE_DHCP6_PD
+std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aDhcp6PdState);
+#endif // OTBR_ENABLE_DHCP6_PD
 
 #endif // OTBR_COMMON_API_STRINGS_HPP_

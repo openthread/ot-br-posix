@@ -51,6 +51,11 @@ DBusObject::DBusObject(DBusConnection *aConnection, const std::string &aObjectPa
 
 otbrError DBusObject::Init(void)
 {
+    return Initialize(/* aIsAsyncPropertyHandler */ false);
+}
+
+otbrError DBusObject::Initialize(bool aIsAsyncPropertyHandler)
+{
     otbrError            error = OTBR_ERROR_NONE;
     DBusObjectPathVTable vTable;
 
@@ -60,12 +65,21 @@ otbrError DBusObject::Init(void)
 
     VerifyOrExit(dbus_connection_register_object_path(mConnection, mObjectPath.c_str(), &vTable, this),
                  error = OTBR_ERROR_DBUS);
-    RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_METHOD,
-                   std::bind(&DBusObject::GetPropertyMethodHandler, this, _1));
-    RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_SET_METHOD,
-                   std::bind(&DBusObject::SetPropertyMethodHandler, this, _1));
-    RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_ALL_METHOD,
-                   std::bind(&DBusObject::GetAllPropertiesMethodHandler, this, _1));
+
+    if (aIsAsyncPropertyHandler)
+    {
+        RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_METHOD,
+                       std::bind(&DBusObject::AsyncGetPropertyMethodHandler, this, _1));
+    }
+    else
+    {
+        RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_METHOD,
+                       std::bind(&DBusObject::GetPropertyMethodHandler, this, _1));
+        RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_SET_METHOD,
+                       std::bind(&DBusObject::SetPropertyMethodHandler, this, _1));
+        RegisterMethod(DBUS_INTERFACE_PROPERTIES, DBUS_PROPERTY_GET_ALL_METHOD,
+                       std::bind(&DBusObject::GetAllPropertiesMethodHandler, this, _1));
+    }
 
 exit:
     return error;
@@ -96,6 +110,13 @@ void DBusObject::RegisterSetPropertyHandler(const std::string         &aInterfac
 
     assert(mSetPropertyHandlers.find(fullPath) == mSetPropertyHandlers.end());
     mSetPropertyHandlers.emplace(fullPath, aHandler);
+}
+
+void DBusObject::RegisterAsyncGetPropertyHandler(const std::string              &aInterfaceName,
+                                                 const std::string              &aPropertyName,
+                                                 const AsyncPropertyHandlerType &aHandler)
+{
+    mAsyncGetPropertyHandlers[aInterfaceName].emplace(aPropertyName, aHandler);
 }
 
 DBusHandlerResult DBusObject::sMessageHandler(DBusConnection *aConnection, DBusMessage *aMessage, void *aData)
@@ -250,6 +271,40 @@ exit:
     }
     aRequest.ReplyOtResult(error);
     return;
+}
+
+void DBusObject::AsyncGetPropertyMethodHandler(DBusRequest &aRequest)
+{
+    DBusMessageIter iter;
+    std::string     interfaceName;
+    otError         error = OT_ERROR_NONE;
+    std::string     propertyName;
+
+    VerifyOrExit(dbus_message_iter_init(aRequest.GetMessage(), &iter), error = OT_ERROR_FAILED);
+    SuccessOrExit(error = OtbrErrorToOtError(DBusMessageExtract(&iter, interfaceName)));
+    SuccessOrExit(error = OtbrErrorToOtError(DBusMessageExtract(&iter, propertyName)));
+
+    {
+        auto propertyIter = mAsyncGetPropertyHandlers.find(interfaceName);
+
+        otbrLogDebug("AsyncGetProperty %s.%s", interfaceName.c_str(), propertyName.c_str());
+        VerifyOrExit(propertyIter != mAsyncGetPropertyHandlers.end(), error = OT_ERROR_NOT_FOUND);
+        {
+            auto &interfaceHandlers = propertyIter->second;
+            auto  interfaceIter     = interfaceHandlers.find(propertyName);
+
+            VerifyOrExit(interfaceIter != interfaceHandlers.end(), error = OT_ERROR_NOT_FOUND);
+            (interfaceIter->second)(aRequest);
+        }
+    }
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("GetProperty %s.%s error:%s", interfaceName.c_str(), propertyName.c_str(),
+                       ConvertToDBusErrorName(error));
+        aRequest.ReplyOtResult(error);
+    }
 }
 
 DBusObject::~DBusObject(void)
