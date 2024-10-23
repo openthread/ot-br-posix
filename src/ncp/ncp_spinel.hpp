@@ -50,6 +50,7 @@
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
 #include "ncp/async_task.hpp"
+#include "ncp/posix/infra_if.hpp"
 #include "ncp/posix/netif.hpp"
 
 namespace otbr {
@@ -84,13 +85,14 @@ public:
 /**
  * The class provides methods for controlling the Thread stack on the network co-processor (NCP).
  */
-class NcpSpinel : public Netif::Dependencies
+class NcpSpinel : public Netif::Dependencies, public InfraIf::Dependencies
 {
 public:
     using Ip6AddressTableCallback          = std::function<void(const std::vector<Ip6AddressInfo> &)>;
     using Ip6MulticastAddressTableCallback = std::function<void(const std::vector<Ip6Address> &)>;
     using NetifStateChangedCallback        = std::function<void(bool)>;
     using Ip6ReceiveCallback               = std::function<void(const uint8_t *, uint16_t)>;
+    using InfraIfSendIcmp6NdCallback = std::function<void(uint32_t, const otIp6Address &, const uint8_t *, uint16_t)>;
 
     /**
      * Constructor.
@@ -233,6 +235,17 @@ public:
         mNetifStateChangedCallback = aCallback;
     }
 
+    /**
+     * This method sets the function to send an Icmp6 ND message on the infrastructure link.
+     *
+     * @param[in] aCallback  The callback to send an Icmp6 ND message on the infrastructure link.
+     *
+     */
+    void InfraIfSetIcmp6NdSendCallback(const InfraIfSendIcmp6NdCallback &aCallback)
+    {
+        mInfraIfIcmp6NdCallback = aCallback;
+    }
+
 private:
     using FailureHandler = std::function<void(otError)>;
 
@@ -302,6 +315,20 @@ private:
     otError ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen, std::vector<Ip6Address> &aAddressList);
     otError ParseIp6StreamNet(const uint8_t *aBuf, uint8_t aLen, const uint8_t *&aData, uint16_t &aDataLen);
     otError ParseOperationalDatasetTlvs(const uint8_t *aBuf, uint8_t aLen, otOperationalDatasetTlvs &aDatasetTlvs);
+    otError ParseInfraIfIcmp6Nd(const uint8_t       *aBuf,
+                                uint8_t              aLen,
+                                uint32_t            &aInfraIfIndex,
+                                const otIp6Address *&aAddr,
+                                const uint8_t      *&aData,
+                                uint16_t            &aDataLen);
+
+    otbrError SetInfraIf(uint32_t                       aInfraIfIndex,
+                         bool                           aIsRunning,
+                         const std::vector<Ip6Address> &aIp6Addresses) override;
+    otbrError HandleIcmp6Nd(uint32_t          aInfraIfIndex,
+                            const Ip6Address &aIp6Address,
+                            const uint8_t    *aData,
+                            uint16_t          aDataLen) override;
 
     ot::Spinel::SpinelDriver *mSpinelDriver;
     uint16_t                  mCmdTidsInUse; ///< Used transaction ids.
@@ -332,6 +359,7 @@ private:
     Ip6MulticastAddressTableCallback mIp6MulticastAddressTableCallback;
     Ip6ReceiveCallback               mIp6ReceiveCallback;
     NetifStateChangedCallback        mNetifStateChangedCallback;
+    InfraIfSendIcmp6NdCallback       mInfraIfIcmp6NdCallback;
 };
 
 } // namespace Ncp
