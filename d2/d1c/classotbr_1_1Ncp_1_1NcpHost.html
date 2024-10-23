@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-dcf6ec4</span>
+   &#160;<span id="projectnumber">0.3.0-85b8c97</span>
    </div>
   </td>
  </tr>
@@ -104,6 +104,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a2a1e476b9f45e11ec13d78732017320c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd90cc9144be9bb1a635b4c289527ff4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#abd90cc9144be9bb1a635b4c289527ff4">SetCountryCode</a> (const std::string &amp;aCountryCode, const AsyncResultReceiver &amp;aReceiver) override</td></tr>
 <tr class="separator:abd90cc9144be9bb1a635b4c289527ff4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ec8c8bce05e22f8ebb174d834d45b14"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a6ec8c8bce05e22f8ebb174d834d45b14">GetChannelMasks</a> (const ChannelMasksReceiver &amp;aReceiver, const AsyncResultReceiver &amp;aErrReceiver) override</td></tr>
+<tr class="separator:a6ec8c8bce05e22f8ebb174d834d45b14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d407eb00d5bf7d98d958ba49e797f3b"><td class="memItemLeft" align="right" valign="top">CoprocessorType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a8d407eb00d5bf7d98d958ba49e797f3b">GetCoprocessorType</a> (void) override</td></tr>
 <tr class="separator:a8d407eb00d5bf7d98d958ba49e797f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a876473d36f2169cecfb94c3bf8981ed4"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a876473d36f2169cecfb94c3bf8981ed4">GetCoprocessorVersion</a> (void) override</td></tr>
@@ -141,6 +143,9 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a0c472ee90d2abc040a0210f9ad30e2a4 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="a0c472ee90d2abc040a0210f9ad30e2a4"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>AsyncResultReceiver</b> = std::function&lt; void(otError, const std::string &amp;)&gt;</td></tr>
 <tr class="separator:a0c472ee90d2abc040a0210f9ad30e2a4 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab384d9b73304048a19223f06ebfe7e0e inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="ab384d9b73304048a19223f06ebfe7e0e"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ChannelMasksReceiver</b> = std::function&lt; void(uint32_t, uint32_t)&gt;</td></tr>
+<tr class="separator:ab384d9b73304048a19223f06ebfe7e0e inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84c8612c8ea95e5dd5f9f6684b53a62c inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="a84c8612c8ea95e5dd5f9f6684b53a62c"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b> = std::function&lt; void(otError, otDeviceRole)&gt;</td></tr>
 <tr class="separator:a84c8612c8ea95e5dd5f9f6684b53a62c inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -243,6 +248,53 @@ static otLogLevel&#160;</td><td class="memItemRight" valign="bottom"><b>ConvertT
 <p>Deinitializes the Thread controller. </p>
 
 <p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#ac8cbf3916b97cbd9a79ace92eee61f8a">otbr::Ncp::ThreadHost</a>.</p>
+
+</div>
+</div>
+<a id="a6ec8c8bce05e22f8ebb174d834d45b14"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ec8c8bce05e22f8ebb174d834d45b14">&#9670;&nbsp;</a></span>GetChannelMasks()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void otbr::Ncp::NcpHost::GetChannelMasks </td>
+          <td>(</td>
+          <td class="paramtype">const ChannelMasksReceiver &amp;&#160;</td>
+          <td class="paramname"><em>aReceiver</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const AsyncResultReceiver &amp;&#160;</td>
+          <td class="paramname"><em>aErrReceiver</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Gets the supported and preferred channel masks.</p>
+<p>If the operation succeeded, <code>aReceiver</code> will be invoked with the supported and preferred channel masks. Otherwise, <code>aErrReceiver</code> will be invoked with the error and <code>aReceiver</code> won't be invoked in this case.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">aReceiver</td><td>A receiver to get the channel masks. </td></tr>
+    <tr><td class="paramname">aErrReceiver</td><td>A receiver to get the error if the operation fails. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a6c338dd2fa0ecd3290bff34d3f59fbd1">otbr::Ncp::ThreadHost</a>.</p>
 
 </div>
 </div>
