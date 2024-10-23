@@ -123,6 +123,10 @@ readonly LEADER_NODE_ID
 TUN_NAME=wpan0
 readonly TUN_NAME
 
+# OTBR docker image name
+OTBR_DOCKER_IMAGE=otbr-ncp
+readonly OTBR_DOCKER_IMAGE
+
 #----------------------------------------
 # Test steps
 #----------------------------------------
@@ -130,8 +134,34 @@ build_ot_simulation()
 {
     sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp"
     sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/cli"
-    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF
-    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF -DOT_RCP=OFF
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF -DOT_BORDER_ROUTING=ON -DOT_NCP_INFRA_IF=ON -DOT_SIMULATION_INFRA_IF=OFF
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF -DOT_RCP=OFF -DOT_BORDER_ROUTING=OFF -DOT_NCP_INFRA_IF=OFF
+}
+
+setup_infraif()
+{
+    if ! ip link show backbone1 >/dev/null 2>&1; then
+        echo "Creating backbone1 with Docker..."
+        docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "com.docker.network.bridge.name"="backbone1" backbone1
+    else
+        echo "backbone1 already exists."
+    fi
+    sysctl -w net.ipv6.conf.backbone1.accept_ra=2
+    sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
+}
+
+do_build_docker()
+{
+    docker_image_name="$1"
+    sudo docker build -t "${docker_image_name}" \
+        -f ./etc/docker/Dockerfile . \
+        --build-arg NAT64=0 \
+        --build-arg NAT64_SERVICE=0 \
+        --build-arg DNS64=0 \
+        --build-arg WEB_GUI=0 \
+        --build-arg REST_API=0 \
+        --build-arg FIREWALL=0 \
+        --build-arg OTBR_OPTIONS="-DOT_THREAD_VERSION=1.3"
 }
 
 test_setup()
@@ -159,6 +189,13 @@ test_setup()
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
+
+    # Build otbr docker image
+    if [[ ${BUILD_OTBR_DOCKER} == 1 ]]; then
+        cd "${ABS_TOP_SRCDIR}"
+        do_build_docker "${OTBR_DOCKER_IMAGE}"
+    fi
+    setup_infraif
 
     # From now on - all exits are TRAPPED
     # When they occur, we call the function: output_logs'.
@@ -220,12 +257,17 @@ otbr_exec_expect_script()
 parse_args()
 {
     BUILD_OT_SIM=1
+    BUILD_OTBR_DOCKER=1
     RUN_ALL_TESTS=1
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             --build-ot-sim)
                 BUILD_OT_SIM="$2"
+                shift
+                ;;
+            --build-otbr-docker)
+                BUILD_OTBR_DOCKER="$2"
                 shift
                 ;;
             --one-test)
@@ -249,6 +291,7 @@ main()
     export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
     export EXP_OT_CLI_PATH="${ot_cli}"
     export EXP_OT_NCP_PATH="${ot_ncp}"
+    export EXP_OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE}"
 
     if [[ ${RUN_ALL_TESTS} == 0 ]]; then
         otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/${TEST_NAME}" || die "ncp expect script failed!"
