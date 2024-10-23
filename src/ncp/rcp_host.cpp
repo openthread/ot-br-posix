@@ -463,6 +463,30 @@ exit:
     }
 }
 
+void RcpHost::GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver)
+{
+    otError  error = OT_ERROR_NONE;
+    uint32_t supportedChannelMask;
+    uint32_t preferredChannelMask;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+
+    supportedChannelMask = otLinkGetSupportedChannelMask(mInstance);
+    preferredChannelMask = otPlatRadioGetPreferredChannelMask(mInstance);
+
+exit:
+    if (error == OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([aReceiver, supportedChannelMask, preferredChannelMask](void) {
+            aReceiver(supportedChannelMask, preferredChannelMask);
+        });
+    }
+    else
+    {
+        mTaskRunner.Post([aErrReceiver, error](void) { aErrReceiver(error, "OT is not initialized"); });
+    }
+}
+
 void RcpHost::DisableThreadAfterDetach(void *aContext)
 {
     static_cast<RcpHost *>(aContext)->DisableThreadAfterDetach();

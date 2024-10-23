@@ -86,7 +86,9 @@ class ThreadHost : virtual public NetworkProperties
 {
 public:
     using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
-    using DeviceRoleHandler   = std::function<void(otError, otDeviceRole)>;
+    using ChannelMasksReceiver =
+        std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
+    using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
 
     /**
      * Create a Thread Controller Instance.
@@ -168,6 +170,17 @@ public:
      * @param[in] aCountryCode  The country code.
      */
     virtual void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) = 0;
+
+    /**
+     * Gets the supported and preferred channel masks.
+     *
+     * If the operation succeeded, @p aReceiver will be invoked with the supported and preferred channel masks.
+     * Otherwise, @p aErrReceiver will be invoked with the error and @p aReceiver won't be invoked in this case.
+     *
+     * @param aReceiver     A receiver to get the channel masks.
+     * @param aErrReceiver  A receiver to get the error if the operation fails.
+     */
+    virtual void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) = 0;
 
     /**
      * Returns the co-processor type.
