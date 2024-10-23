@@ -68,7 +68,8 @@ install_common_dependencies()
         coreutils \
         git \
         libprotobuf-dev \
-        protobuf-compiler
+        protobuf-compiler \
+        socat
 }
 
 install_openthread_binraries()

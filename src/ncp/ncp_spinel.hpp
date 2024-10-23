@@ -239,7 +239,6 @@ public:
      * This method sets the function to send an Icmp6 ND message on the infrastructure link.
      *
      * @param[in] aCallback  The callback to send an Icmp6 ND message on the infrastructure link.
-     *
      */
     void InfraIfSetIcmp6NdSendCallback(const InfraIfSendIcmp6NdCallback &aCallback)
     {

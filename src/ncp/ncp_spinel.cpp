@@ -423,7 +423,8 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
         const uint8_t      *data;
         uint16_t            dataLen;
 
-        SuccessOrExit(ParseInfraIfIcmp6Nd(aBuffer, aLength, infraIfIndex, destAddress, data, dataLen));
+        SuccessOrExit(ParseInfraIfIcmp6Nd(aBuffer, aLength, infraIfIndex, destAddress, data, dataLen),
+                      error = OTBR_ERROR_PARSE);
         SafeInvoke(mInfraIfIcmp6NdCallback, infraIfIndex, *destAddress, data, dataLen);
         break;
     }
@@ -803,19 +804,21 @@ exit:
 otbrError NcpSpinel::SetInfraIf(uint32_t aInfraIfIndex, bool aIsRunning, const std::vector<Ip6Address> &aIp6Addresses)
 {
     otbrError    error        = OTBR_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aInfraIfIndex, aIsRunning, &aIp6Addresses] {
+    EncodingFunc encodingFunc = [aInfraIfIndex, aIsRunning, &aIp6Addresses](ot::Spinel::Encoder &aEncoder) {
         otError error = OT_ERROR_NONE;
-        SuccessOrExit(error = mEncoder.WriteUint32(aInfraIfIndex));
-        SuccessOrExit(error = mEncoder.WriteBool(aIsRunning));
+        SuccessOrExit(error = aEncoder.WriteUint32(aInfraIfIndex));
+        SuccessOrExit(error = aEncoder.WriteBool(aIsRunning));
         for (const Ip6Address &addr : aIp6Addresses)
         {
-            SuccessOrExit(error = mEncoder.WriteIp6Address(reinterpret_cast<const otIp6Address &>(addr)));
+            SuccessOrExit(error = aEncoder.WriteIp6Address(reinterpret_cast<const otIp6Address &>(addr)));
         }
+
     exit:
         return error;
     };
 
     SuccessOrExit(SetProperty(SPINEL_PROP_INFRA_IF_STATE, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
+
 exit:
     return error;
 }
@@ -826,11 +829,11 @@ otbrError NcpSpinel::HandleIcmp6Nd(uint32_t          aInfraIfIndex,
                                    uint16_t          aDataLen)
 {
     otbrError    error        = OTBR_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aInfraIfIndex, &aIp6Address, aData, aDataLen] {
+    EncodingFunc encodingFunc = [aInfraIfIndex, &aIp6Address, aData, aDataLen](ot::Spinel::Encoder &aEncoder) {
         otError error = OT_ERROR_NONE;
-        SuccessOrExit(error = mEncoder.WriteUint32(aInfraIfIndex));
-        SuccessOrExit(error = mEncoder.WriteIp6Address(reinterpret_cast<const otIp6Address &>(aIp6Address)));
-        SuccessOrExit(error = mEncoder.WriteData(aData, aDataLen));
+        SuccessOrExit(error = aEncoder.WriteUint32(aInfraIfIndex));
+        SuccessOrExit(error = aEncoder.WriteIp6Address(reinterpret_cast<const otIp6Address &>(aIp6Address)));
+        SuccessOrExit(error = aEncoder.WriteData(aData, aDataLen));
     exit:
         return error;
     };
