@@ -60,7 +60,7 @@ namespace TrelDnssd {
  * @{
  */
 
-class TrelDnssd
+class TrelDnssd : public Mdns::StateObserver
 {
 public:
     /**
@@ -107,7 +107,7 @@ public:
      *
      * @param[in] aState  The state of mDNS publisher.
      */
-    void HandleMdnsState(Mdns::Publisher::State aState);
+    void HandleMdnsState(Mdns::Publisher::State aState) override;
 
 private:
     static constexpr size_t   kPeerCacheSize             = 256;

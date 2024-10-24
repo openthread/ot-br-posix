@@ -56,7 +56,7 @@ namespace Dnssd {
 /**
  * This class implements the DNS-SD Discovery Proxy.
  */
-class DiscoveryProxy : private NonCopyable
+class DiscoveryProxy : public Mdns::StateObserver, private NonCopyable
 {
 public:
     /**
