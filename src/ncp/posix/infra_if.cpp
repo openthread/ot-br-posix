@@ -60,6 +60,11 @@ otbrError InfraIf::Dependencies::SetInfraIf(unsigned int                   aInfr
     return OTBR_ERROR_NONE;
 }
 
+otbrError InfraIf::Dependencies::HandleIcmp6Nd(uint32_t, const Ip6Address &, const uint8_t *, uint16_t)
+{
+    return OTBR_ERROR_NONE;
+}
+
 InfraIf::InfraIf(Dependencies &aDependencies)
     : mDeps(aDependencies)
     , mInfraIfIndex(0)
@@ -118,31 +123,41 @@ void InfraIf::Deinit(void)
 
 void InfraIf::Process(const MainloopContext &aContext)
 {
-    OT_UNUSED_VARIABLE(aContext);
+    VerifyOrExit(mInfraIfIcmp6Socket != -1);
 #ifdef __linux__
     VerifyOrExit(mNetlinkSocket != -1);
+#endif
 
+    if (FD_ISSET(mInfraIfIcmp6Socket, &aContext.mReadFdSet))
+    {
+        ReceiveIcmp6Message();
+    }
+#ifdef __linux__
     if (FD_ISSET(mNetlinkSocket, &aContext.mReadFdSet))
     {
         ReceiveNetlinkMessage();
     }
+#endif
 
 exit:
-#endif
     return;
 }
 
 void InfraIf::UpdateFdSet(MainloopContext &aContext)
 {
-    OT_UNUSED_VARIABLE(aContext);
+    VerifyOrExit(mInfraIfIcmp6Socket != -1);
 #ifdef __linux__
     VerifyOrExit(mNetlinkSocket != -1);
+#endif
 
+    FD_SET(mInfraIfIcmp6Socket, &aContext.mReadFdSet);
+    aContext.mMaxFd = std::max(aContext.mMaxFd, mInfraIfIcmp6Socket);
+#ifdef __linux__
     FD_SET(mNetlinkSocket, &aContext.mReadFdSet);
     aContext.mMaxFd = std::max(aContext.mMaxFd, mNetlinkSocket);
+#endif
 
 exit:
-#endif
     return;
 }
 
@@ -374,6 +389,75 @@ bool InfraIf::HasLinkLocalAddress(const std::vector<Ip6Address> &aAddrs)
     }
 
     return hasLla;
+}
+
+void InfraIf::ReceiveIcmp6Message(void)
+{
+    static constexpr size_t kIp6Mtu = 1280;
+
+    otbrError error = OTBR_ERROR_NONE;
+    uint8_t   buffer[kIp6Mtu];
+    uint16_t  bufferLength;
+
+    ssize_t         rval;
+    struct msghdr   msg;
+    struct iovec    bufp;
+    char            cmsgbuf[128];
+    struct cmsghdr *cmh;
+    uint32_t        ifIndex  = 0;
+    int             hopLimit = -1;
+
+    struct sockaddr_in6 srcAddr;
+    struct in6_addr     dstAddr;
+
+    memset(&srcAddr, 0, sizeof(srcAddr));
+    memset(&dstAddr, 0, sizeof(dstAddr));
+
+    bufp.iov_base      = buffer;
+    bufp.iov_len       = sizeof(buffer);
+    msg.msg_iov        = &bufp;
+    msg.msg_iovlen     = 1;
+    msg.msg_name       = &srcAddr;
+    msg.msg_namelen    = sizeof(srcAddr);
+    msg.msg_control    = cmsgbuf;
+    msg.msg_controllen = sizeof(cmsgbuf);
+
+    rval = recvmsg(mInfraIfIcmp6Socket, &msg, 0);
+    if (rval < 0)
+    {
+        otbrLogWarning("Failed to receive ICMPv6 message: %s", strerror(errno));
+        ExitNow(error = OTBR_ERROR_DROPPED);
+    }
+
+    bufferLength = static_cast<uint16_t>(rval);
+
+    for (cmh = CMSG_FIRSTHDR(&msg); cmh; cmh = CMSG_NXTHDR(&msg, cmh))
+    {
+        if (cmh->cmsg_level == IPPROTO_IPV6 && cmh->cmsg_type == IPV6_PKTINFO &&
+            cmh->cmsg_len == CMSG_LEN(sizeof(struct in6_pktinfo)))
+        {
+            const struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmh));
+            ifIndex                           = pktinfo->ipi6_ifindex;
+            dstAddr                           = pktinfo->ipi6_addr;
+        }
+        else if (cmh->cmsg_level == IPPROTO_IPV6 && cmh->cmsg_type == IPV6_HOPLIMIT &&
+                 cmh->cmsg_len == CMSG_LEN(sizeof(int)))
+        {
+            hopLimit = *(int *)CMSG_DATA(cmh);
+        }
+    }
+
+    VerifyOrExit(ifIndex == mInfraIfIndex, error = OTBR_ERROR_DROPPED);
+
+    // We currently accept only RA & RS messages for the Border Router and it requires that
+    // the hoplimit must be 255 and the source address must be a link-local address.
+    VerifyOrExit(hopLimit == 255 && IN6_IS_ADDR_LINKLOCAL(&srcAddr.sin6_addr), error = OTBR_ERROR_DROPPED);
+
+    mDeps.HandleIcmp6Nd(mInfraIfIndex, Ip6Address(reinterpret_cast<otIp6Address &>(srcAddr.sin6_addr)), buffer,
+                        bufferLength);
+
+exit:
+    otbrLogResult(error, "InfraIf: %s", __FUNCTION__);
 }
 
 #ifdef __linux__
