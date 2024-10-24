@@ -75,7 +75,7 @@ namespace otbr {
 /**
  * This class implements Thread border agent functionality.
  */
-class BorderAgent : private NonCopyable
+class BorderAgent : private NonCopyable, public Mdns::StateObserver
 {
 public:
     /** The callback for receiving ephemeral key changes. */
@@ -139,7 +139,7 @@ public:
      *
      * @param[in] aState  The state of mDNS publisher.
      */
-    void HandleMdnsState(Mdns::Publisher::State aState);
+    void HandleMdnsState(Mdns::Publisher::State aState) override;
 
     /**
      * This method creates ephemeral key in the Border Agent.

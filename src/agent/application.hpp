@@ -237,13 +237,6 @@ public:
     }
 #endif
 
-    /**
-     * This method handles mDNS publisher's state changes.
-     *
-     * @param[in] aState  The state of mDNS publisher.
-     */
-    void HandleMdnsState(Mdns::Publisher::State aState);
-
 private:
     // Default poll timeout.
     static const struct timeval kPollTimeout;
@@ -264,6 +257,7 @@ private:
     const char                      *mBackboneInterfaceName;
     std::unique_ptr<Ncp::ThreadHost> mHost;
 #if OTBR_ENABLE_MDNS
+    Mdns::StateSubject               mMdnsStateSubject;
     std::unique_ptr<Mdns::Publisher> mPublisher;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT

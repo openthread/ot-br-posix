@@ -666,6 +666,59 @@ protected:
 };
 
 /**
+ * This interface is a mDNS State Observer.
+ */
+class StateObserver
+{
+public:
+    /**
+     * This method notifies the mDNS state to the observer.
+     *
+     * @param[in] aState  The mDNS State.
+     */
+    virtual void HandleMdnsState(Publisher::State aState) = 0;
+
+    /**
+     * The destructor.
+     */
+    virtual ~StateObserver(void) = default;
+};
+
+/**
+ * This class defines a mDNS State Subject.
+ */
+class StateSubject
+{
+public:
+    /**
+     * Constructor.
+     */
+    StateSubject(void) = default;
+
+    /**
+     * Destructor.
+     */
+    ~StateSubject(void) = default;
+
+    /**
+     * This method adds an mDNS State Observer to this subject.
+     *
+     * @param[in] aObserver  A pointer to the observer. If it's nullptr, it won't be added.
+     */
+    void AddObserver(StateObserver *aObserver);
+
+    /**
+     * This method updates the mDNS State.
+     *
+     * @param[in] aState  The mDNS State.
+     */
+    void UpdateState(Publisher::State aState);
+
+private:
+    std::vector<StateObserver *> mObservers;
+};
+
+/**
  * @}
  */
 
