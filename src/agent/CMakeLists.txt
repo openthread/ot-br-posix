@@ -40,12 +40,12 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
-    openthread-posix
     openthread-cli-ftd
     openthread-ftd
     openthread-spinel-rcp
     openthread-radio-spinel
     openthread-hdlc
+    openthread-posix
     otbr-sdp-proxy
     otbr-ncp
     otbr-common
