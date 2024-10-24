@@ -34,6 +34,10 @@
 #ifndef OTBR_REST_RESOURCE_HPP_
 #define OTBR_REST_RESOURCE_HPP_
 
+/*
+Include necessary headers for OpenThread functions, REST utilities, and JSON processing.
+*/
+
 #include "openthread-br/config.h"
 
 #include <unordered_map>
@@ -45,6 +49,9 @@
 #include "ncp/rcp_host.hpp"
 #include "openthread/dataset.h"
 #include "openthread/dataset_ftd.h"
+#include "rest/extensions/rest_task_add_thread_device.hpp"
+#include "rest/extensions/rest_task_handler.hpp"
+#include "rest/extensions/rest_task_queue.hpp"
 #include "rest/json.hpp"
 #include "rest/request.hpp"
 #include "rest/response.hpp"
@@ -81,7 +88,7 @@ public:
      * @param[in]     aRequest  A request instance referred by the Resource handler.
      * @param[in,out] aResponse  A response instance will be set by the Resource handler.
      */
-    void Handle(Request &aRequest, Response &aResponse) const;
+    void Handle(Request &aRequest, Response &aResponse);
 
     /**
      * This method distributes a callback handler for each connection needs a callback.
@@ -110,22 +117,22 @@ private:
         kPending, ///< Pending Dataset
     };
 
-    typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse) const;
+    typedef void (Resource::*ResourceHandler)(const Request &aRequest, Response &aResponse);
     typedef void (Resource::*ResourceCallbackHandler)(const Request &aRequest, Response &aResponse);
-    void NodeInfo(const Request &aRequest, Response &aResponse) const;
-    void BaId(const Request &aRequest, Response &aResponse) const;
-    void ExtendedAddr(const Request &aRequest, Response &aResponse) const;
-    void State(const Request &aRequest, Response &aResponse) const;
-    void NetworkName(const Request &aRequest, Response &aResponse) const;
-    void LeaderData(const Request &aRequest, Response &aResponse) const;
-    void NumOfRoute(const Request &aRequest, Response &aResponse) const;
-    void Rloc16(const Request &aRequest, Response &aResponse) const;
-    void ExtendedPanId(const Request &aRequest, Response &aResponse) const;
-    void Rloc(const Request &aRequest, Response &aResponse) const;
-    void Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse) const;
-    void DatasetActive(const Request &aRequest, Response &aResponse) const;
-    void DatasetPending(const Request &aRequest, Response &aResponse) const;
-    void Diagnostic(const Request &aRequest, Response &aResponse) const;
+    void NodeInfo(const Request &aRequest, Response &aResponse);
+    void BaId(const Request &aRequest, Response &aResponse);
+    void ExtendedAddr(const Request &aRequest, Response &aResponse);
+    void State(const Request &aRequest, Response &aResponse);
+    void NetworkName(const Request &aRequest, Response &aResponse);
+    void LeaderData(const Request &aRequest, Response &aResponse);
+    void NumOfRoute(const Request &aRequest, Response &aResponse);
+    void Rloc16(const Request &aRequest, Response &aResponse);
+    void ExtendedPanId(const Request &aRequest, Response &aResponse);
+    void Rloc(const Request &aRequest, Response &aResponse);
+    void Dataset(DatasetType aDatasetType, const Request &aRequest, Response &aResponse);
+    void DatasetActive(const Request &aRequest, Response &aResponse);
+    void DatasetPending(const Request &aRequest, Response &aResponse);
+    void Diagnostic(const Request &aRequest, Response &aResponse);
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
 
     void GetNodeInfo(Response &aResponse) const;
@@ -152,6 +159,66 @@ private:
                                           void                *aContext);
     void        DiagnosticResponseHandler(otError aError, const otMessage *aMessage, const otMessageInfo *aMessageInfo);
 
+    /**
+     * Redirects requests from '/api/{collection}/{collectionItem}' to the corresponding collection.
+     *
+     * @param[in]     aRequest A request instance to be checked and redirected.
+     * @returns       A string containing the redirected url.
+     */
+    std::string redirectToCollection(Request &aRequest);
+
+    /**
+     * Handles all requests received on 'api/action'. [POST|GET|DELETE]
+     *
+     * Routes POST, GET, and DELETE requests to their respective handlers.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated based on the request.
+     */
+    void ApiActionHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Repeatedly iterates through the list of tasks.
+     *
+     * Calls `rest_task_queue_handle` after a specified delay, continuing the iteration.
+     * TODO: post repeatedly
+     *
+     * @param[in] delay_ms  The delay in milliseconds between each iteration.
+     */
+    void ApiActionRepeatedTaskRunner(uint16_t delay_ms);
+
+    /**
+     * Handles the POST request received on 'api/actions'.
+     *
+     * This method parses the received JSON data, validates it, and updates the task status
+     * for further processing. The request will be processed and evaluated by the
+     * "rest_task_queue_task" thread function.
+     *
+     * @param[in]  aRequest   A request instance containing the POST data.
+     * @param[out] aResponse  A response instance that will be set by an appropriate rest task action.
+     */
+    void ApiActionPostHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles the GET request received on 'api/actions'.
+     *
+     * This method retrieves the collection of actions.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance that will be populated with the collection of actions.
+     */
+    void ApiActionGetHandler(const Request &aRequest, Response &aResponse);
+
+    /**
+     * Handles the DELETE request received on 'api/actions'.
+     *
+     * This method clears all items in the collection of actions.
+     *
+     * @param[in]  aRequest   A request instance.
+     * @param[out] aResponse  A response instance populated with the outcome of the request.
+     */
+    void ApiActionDeleteHandler(const Request &aRequest, Response &aResponse);
+
     otInstance *mInstance;
     RcpHost    *mHost;
 
@@ -159,6 +226,14 @@ private:
     std::unordered_map<std::string, ResourceCallbackHandler> mResourceCallbackMap;
 
     std::unordered_map<std::string, DiagInfo> mDiagSet;
+
+    /**
+     * @brief A state change handler. Handle list of actions waiting for commissioner
+     *
+     * @param aFlags
+     * @return * void
+     */
+    static void HandleThreadStateChanges(otChangedFlags aFlags);
 };
 
 } // namespace rest
