@@ -36,6 +36,7 @@
 
 #include "openthread-br/config.h"
 
+#include <memory>
 #include <string>
 
 #include <openthread/link.h>
@@ -188,6 +189,11 @@ private:
     otError GetTelemetryDataHandler(DBusMessageIter &aIter);
     otError GetCapabilitiesHandler(DBusMessageIter &aIter);
 
+    void MeshDiagTopologyHandler(DBusRequest &aRequest);
+    void ReplyMeshDiagTopologyResult(DBusRequest                                     &aRequest,
+                                     std::shared_ptr<std::vector<MeshDiagRouterInfo>> aResults,
+                                     otError                                          aError,
+                                     otMeshDiagRouterInfo                            *aResult);
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
