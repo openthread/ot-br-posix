@@ -136,6 +136,7 @@ do_build_ot_simulation()
     OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF \
         -DOT_BORDER_ROUTING=ON -DOT_NCP_INFRA_IF=ON -DOT_SIMULATION_INFRA_IF=OFF \
+        -DOT_SRP_SERVER=ON -DOT_SRP_ADV_PROXY=ON -DOT_PLATFORM_DNSSD=ON -DOT_SIMULATION_DNSSD=OFF -DOT_NCP_DNSSD=ON \
         -DBUILD_TESTING=OFF
     OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
         -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF \
@@ -152,6 +153,7 @@ do_build_otbr_docker()
         "-DOTBR_TELEMETRY_DATA_API=ON"
         "-DOTBR_TREL=ON"
         "-DOTBR_LINK_METRICS_TELEMETRY=ON"
+        "-DOTBR_SRP_ADVERTISING_PROXY=ON"
     )
     sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
         -f ./etc/docker/Dockerfile . \
