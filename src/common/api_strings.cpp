@@ -82,3 +82,23 @@ std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aState)
     return stateName;
 }
 #endif // OTBR_ENABLE_DHCP6_PD
+
+std::string GetCommissionerStateName(otCommissionerState aState)
+{
+    std::string stateName;
+
+    switch (aState)
+    {
+    case OT_COMMISSIONER_STATE_DISABLED:
+        stateName = OTBR_COMMISSIONER_STATE_NAME_DISABLED;
+        break;
+    case OT_COMMISSIONER_STATE_PETITION:
+        stateName = OTBR_COMMISSIONER_STATE_NAME_PETITION;
+        break;
+    case OT_COMMISSIONER_STATE_ACTIVE:
+        stateName = OTBR_COMMISSIONER_STATE_NAME_ACTIVE;
+        break;
+    }
+
+    return stateName;
+}

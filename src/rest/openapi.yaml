@@ -291,6 +291,105 @@ paths:
           description: Successfully created the pending operational dataset.
         "400":
           description: Invalid request body.
+  /node/commissioner/state:
+    get:
+      tags: 
+        - node
+        - commissioner
+      summary: Get current Commissioner state.
+      description: |-
+        State describing the current Commissioner role of this Thread node.
+        - disabled
+        - petitioning
+        - active
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Current state
+                example: "active"
+    put:
+      tags:
+        - node
+        - commissioner
+      summary: Set current Commissioner state.
+      description: |-
+        Enable or disable the Commissioner.
+      responses:
+        "200":
+          description: Successful operation.
+        "204":
+          description: Already in state.
+        "409":
+          description: Cannot set commissioner state because border router state is not active
+      requestBody:
+        description: New Commissioner state
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Can be "enable" or "disable".
+              example: "enable"
+  /node/commissioner/joiner:
+    get:
+      tags:
+        - node
+      summary: Get current joiner data
+      responses:
+        "200":
+          description: Returns an array of currently active joiners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JoinerData"
+    post:
+      tags:
+        - node
+      summary: Adds a new joiner
+      requestBody:
+        content:
+          application/json:
+            schema:
+                $ref: "#/components/schemas/JoinerData"
+      responses:
+        "200":
+          description: Successfully added joiner.
+        "400":
+          description: Invalid request body.
+        "409":
+          description: Adding joiner rejected because commissioner is not active.
+        "507":
+          description: Number of joiners the commissioner supports is full and the new one cannot be added.
+    delete:
+      tags: 
+        - node
+      summary: Removes a joiner from the node
+      requestBody:
+        content:
+          application/json:
+            schema:
+                type: string
+                description: |-
+                  Joiner ID to remove, can be either:
+                   - An EUI64 in the form of a 16 character hex string
+                   - A discerner in the form of the discerner hex value 
+                     (optionally with leading 0x) and bit length separated by a '/'
+                example: "0xabc/12"
+      responses:
+        "200":
+          description: Successfully removed joiner.
+        "204":
+          description: Joiner not found.
+        "400":
+          description: Invalid request body.
+        "409":
+          description: request rejected because commissioner is not active.
+
 components:
   schemas:
     LeaderData:
@@ -462,3 +561,30 @@ components:
       type: string
       description: Operational dataset as hex-encoded TLVs.
       example: 0E080000000000010000000300000F35060004001FFFE0020811111111222222220708FDAD70BFE5AA15DD051000112233445566778899AABBCCDDEEFF030E4F70656E54687265616444656D6F010212340410445F2B5CA6F2A93A55CE570A70EFEECB0C0402A0F7F8
+    JoinerData:
+      type: object
+      properties:
+        Pksd:
+          type: string
+          description: Joining device's pre-shared key
+          example: J01N
+        JoinerId:
+          type: string
+          description: A string of the EUI-64, Discerner, or "*", mutually exclusive with Eui64 and Discerner
+          example: "0xabc/12"
+          default: "*"
+        Eui64:
+          type: string
+          description: A string of the EUI-64, mutually exclusive with JoinerId and Discerner
+          example: "0123456789abcdef"
+        Discerner:
+          type: string
+          description: |- 
+            A discerner in the form of the discerner hex value (optionally with leading 0x) 
+            and bit length separated by a '/'.
+            Field is mutually exclusive with JoinerId and Eui64.
+          example: "0xabc/12"
+        Timeout:
+          type: integer
+          description: Joiner expiration time in milliseconds on response and seconds on request 
+          default: 60 
