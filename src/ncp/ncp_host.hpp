@@ -75,10 +75,11 @@ public:
     /**
      * Constructor.
      *
-     * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aDryRun         TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in]   aInterfaceName          A string of the NCP interface name.
+     * @param[in]   aBackboneInterfaceName  A string of the backbone interface name.
+     * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      */
-    NcpHost(const char *aInterfaceName, bool aDryRun);
+    NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun);
 
     /**
      * Destructor.
@@ -109,6 +110,7 @@ private:
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
     Netif                     mNetif;
+    InfraIf                   mInfraIf;
 };
 
 } // namespace Ncp

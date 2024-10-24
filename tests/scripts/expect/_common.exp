@@ -84,6 +84,10 @@ proc spawn_node {id type sim_app} {
                 timeout { fail "Timed out" }
             }
         }
+        otbr-docker {
+            spawn docker exec -it $sim_app bash
+            expect "app#"
+        }
         otbr {
             spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -d7 "spinel+hdlc+forkpty://${sim_app}?forkpty-arg=${id}"
         }
@@ -94,12 +98,68 @@ proc spawn_node {id type sim_app} {
     return $spawn_id
 }
 
+proc create_socat {id} {
+    global socat_pid
+    spawn socat -d -d pty,raw,echo=0 pty,raw,echo=0
+    set socat_pid [exp_pid]
+    set pty1 ""
+    set pty2 ""
+    expect {
+        -re {PTY is (\S+).*PTY is (\S+)} {
+            set pty1 $expect_out(1,string)
+            set pty2 $expect_out(2,string)
+        }
+        timeout {
+            fail "Timed out"
+        }
+    }
+    set spawn_ids($id) $spawn_id
+    return [list $pty1 $pty2]
+}
+
+proc start_otbr_docker {name sim_app sim_id pty1 pty2} {
+    exec $sim_app $sim_id <$pty1 >$pty1 &
+    exec docker run -d \
+        --name $name \
+        --network backbone1 \
+        --cap-add=NET_ADMIN \
+        --privileged \
+        --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+        --sysctl net.ipv4.conf.all.forwarding=1 \
+        --sysctl net.ipv6.conf.all.forwarding=1 \
+        -v $pty2:/dev/ttyUSB0 \
+        $::env(EXP_OTBR_DOCKER_IMAGE)
+}
+
 proc switch_node {id} {
     global spawn_ids
     global spawn_id
 
     send_user "\n# ${id}\n"
     set spawn_id $spawn_ids($id)
+}
+
+proc dispose_node {id} {
+    switch_node $id
+    send "\x04"
+    expect eof
+}
+proc dispose_socat {} {
+    global socat_pid
+    if { [info exists socat_pid] } {
+        exec kill $socat_pid
+    }
+}
+proc dispose_all {} {
+    global spawn_ids
+    set max_node [array size spawn_ids]
+    for {set i 1} {$i <= $max_node} {incr i} {
+        if { [info exists spawn_ids($i)] } {
+            dispose_node $i
+        }
+    }
+    array unset spawn_ids
+    dispose_socat
 }
 
 proc get_ipaddr {type} {
@@ -109,4 +169,10 @@ proc get_ipaddr {type} {
     expect_line "Done"
 
     return $rval
+}
+
+proc get_omr_addr {} {
+    send "ipaddr -v\r\n"
+    expect -re {(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}(?= origin:slaac)}
+    return $expect_out(0,string)
 }
