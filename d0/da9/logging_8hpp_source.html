@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-b8fa70c</span>
+   &#160;<span id="projectnumber">0.3.0-fdeb3e0</span>
    </div>
   </td>
  </tr>
@@ -163,10 +163,13 @@ $(function() {
 <div class="line"><a name="l00233"></a><span class="lineno"><a class="line" href="../../d0/da9/logging_8hpp.html#a5ca08d770b1d74e048e5c9c45c266306">  233</a></span>&#160;<span class="preprocessor">#define otbrLogInfo(...) otbrLog(OTBR_LOG_INFO, OTBR_LOG_TAG, __VA_ARGS__)</span></div>
 <div class="line"><a name="l00234"></a><span class="lineno"><a class="line" href="../../d0/da9/logging_8hpp.html#a9b4d3c93aabc4c083089de439213931a">  234</a></span>&#160;<span class="preprocessor">#define otbrLogDebug(...) otbrLog(OTBR_LOG_DEBUG, OTBR_LOG_TAG, __VA_ARGS__)</span></div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_COMMON_LOGGING_HPP_</span></div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;otLogLevel <a class="code" href="../../d0/da9/logging_8hpp.html#a35f788c3c36e993dcc0dd223ea133cc1">ConvertToOtLogLevel</a>(<a class="code" href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a> aLevel);</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160; </div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_COMMON_LOGGING_HPP_</span></div>
 <div class="ttc" id="acommon_2types_8hpp_html_a9addd74a14dca1dab1b3e7a8205455aa"><div class="ttname"><a href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a></div><div class="ttdeci">otbrError</div><div class="ttdef"><b>Definition:</b> types.hpp:72</div></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="../../db/d16/config_8h.html">config.h</a></div></div>
 <div class="ttc" id="alogging_8hpp_html_a13b760a72ea9fe45589aa46998847373"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html#a13b760a72ea9fe45589aa46998847373">otbrLogvNoFilter</a></div><div class="ttdeci">void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList)</div><div class="ttdef"><b>Definition:</b> logging.cpp:171</div></div>
+<div class="ttc" id="alogging_8hpp_html_a35f788c3c36e993dcc0dd223ea133cc1"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html#a35f788c3c36e993dcc0dd223ea133cc1">ConvertToOtLogLevel</a></div><div class="ttdeci">otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel)</div><div class="ttdef"><b>Definition:</b> logging.cpp:301</div></div>
 <div class="ttc" id="alogging_8hpp_html_a5a2bf385c625fa5e9beaba21d26326fe"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html#a5a2bf385c625fa5e9beaba21d26326fe">otbrLogDeinit</a></div><div class="ttdeci">void otbrLogDeinit(void)</div><div class="ttdef"><b>Definition:</b> logging.cpp:296</div></div>
 <div class="ttc" id="alogging_8hpp_html_a5b31d571fd35078bf0d4c1fe252f1e8b"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html#a5b31d571fd35078bf0d4c1fe252f1e8b">otbrLogGetDefaultLevel</a></div><div class="ttdeci">otbrLogLevel otbrLogGetDefaultLevel(void)</div><div class="ttdef"><b>Definition:</b> logging.cpp:67</div></div>
 <div class="ttc" id="alogging_8hpp_html_aa4b0bf2713442aa78a8c2ecf5c5f8c5d"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html#aa4b0bf2713442aa78a8c2ecf5c5f8c5d">otbrLogSetLevel</a></div><div class="ttdeci">void otbrLogSetLevel(otbrLogLevel aLevel)</div><div class="ttdef"><b>Definition:</b> logging.cpp:75</div></div>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-b8fa70c</span>
+   &#160;<span id="projectnumber">0.3.0-fdeb3e0</span>
    </div>
   </td>
  </tr>
@@ -163,15 +163,12 @@ $(function() {
 <div class="line"><a name="l00210"></a><span class="lineno"><a class="line" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#ac8cbf3916b97cbd9a79ace92eee61f8a">  210</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#ac8cbf3916b97cbd9a79ace92eee61f8a">Deinit</a>(<span class="keywordtype">void</span>) = 0;</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160; </div>
 <div class="line"><a name="l00215"></a><span class="lineno"><a class="line" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#aa7f21698ff1121ffca8fb0c9a4528346">  215</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#aa7f21698ff1121ffca8fb0c9a4528346">~ThreadHost</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160; </div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="keyword">static</span> otLogLevel ConvertToOtLogLevel(<a class="code" href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a> aLevel);</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;};</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;};</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;} <span class="comment">// namespace Ncp</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;} <span class="comment">// namespace otbr</span></div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160; </div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;} <span class="comment">// namespace Ncp</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160; </div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_THREAD_HOST_HPP_</span></div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_THREAD_HOST_HPP_</span></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NetworkProperties_html"><div class="ttname"><a href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html">otbr::Ncp::NetworkProperties</a></div><div class="ttdef"><b>Definition:</b> thread_host.hpp:57</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NetworkProperties_html_a1ec5f6feabe51e8871a42ae2ea6eff55"><div class="ttname"><a href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#a1ec5f6feabe51e8871a42ae2ea6eff55">otbr::Ncp::NetworkProperties::GetDatasetActiveTlvs</a></div><div class="ttdeci">virtual void GetDatasetActiveTlvs(otOperationalDatasetTlvs &amp;aDatasetTlvs) const =0</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NetworkProperties_html_ab087e5291102e803aad375d73018bb7b"><div class="ttname"><a href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#ab087e5291102e803aad375d73018bb7b">otbr::Ncp::NetworkProperties::~NetworkProperties</a></div><div class="ttdeci">virtual ~NetworkProperties(void)=default</div></div>
@@ -191,7 +188,6 @@ $(function() {
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1ThreadHost_html_ab7c9fbb1889a7b1f31ddea0981ccbaef"><div class="ttname"><a href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#ab7c9fbb1889a7b1f31ddea0981ccbaef">otbr::Ncp::ThreadHost::Leave</a></div><div class="ttdeci">virtual void Leave(const AsyncResultReceiver &amp;aRecevier)=0</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1ThreadHost_html_ac8cbf3916b97cbd9a79ace92eee61f8a"><div class="ttname"><a href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#ac8cbf3916b97cbd9a79ace92eee61f8a">otbr::Ncp::ThreadHost::Deinit</a></div><div class="ttdeci">virtual void Deinit(void)=0</div></div>
 <div class="ttc" id="alogging_8hpp_html"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html">logging.hpp</a></div></div>
-<div class="ttc" id="alogging_8hpp_html_ada87d1da6f6926eb3d881aae37340f10"><div class="ttname"><a href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a></div><div class="ttdeci">otbrLogLevel</div><div class="ttdef"><b>Definition:</b> logging.hpp:51</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

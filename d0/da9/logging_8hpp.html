@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-b8fa70c</span>
+   &#160;<span id="projectnumber">0.3.0-fdeb3e0</span>
    </div>
   </td>
  </tr>
@@ -142,6 +142,8 @@ Functions</h2></td></tr>
 <tr class="separator:ada4d1801b5705ba2b957fd1802b8a984"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a2bf385c625fa5e9beaba21d26326fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/da9/logging_8hpp.html#a5a2bf385c625fa5e9beaba21d26326fe">otbrLogDeinit</a> (void)</td></tr>
 <tr class="separator:a5a2bf385c625fa5e9beaba21d26326fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35f788c3c36e993dcc0dd223ea133cc1"><td class="memItemLeft" align="right" valign="top">otLogLevel&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/da9/logging_8hpp.html#a35f788c3c36e993dcc0dd223ea133cc1">ConvertToOtLogLevel</a> (<a class="el" href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a> aLevel)</td></tr>
+<tr class="separator:a35f788c3c36e993dcc0dd223ea133cc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file define logging interface. </p>
@@ -435,6 +437,32 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="a35f788c3c36e993dcc0dd223ea133cc1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35f788c3c36e993dcc0dd223ea133cc1">&#9670;&nbsp;</a></span>ConvertToOtLogLevel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">otLogLevel ConvertToOtLogLevel </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a>&#160;</td>
+          <td class="paramname"><em>aLevel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Convert otbrLogLevel to otLogLevel.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">aLevel</td><td>The otbrLogLevel to convert.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the corresponding OT log level. </dd></dl>
+
+</div>
+</div>
 <a id="ab4d8013f506ecb2f6d625eb40b3022ce"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab4d8013f506ecb2f6d625eb40b3022ce">&#9670;&nbsp;</a></span>otbrDump()</h2>
 
