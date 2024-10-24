@@ -779,6 +779,22 @@ void Publisher::RemoveAddress(AddressList &aAddressList, const Ip6Address &aAddr
     }
 }
 
+void StateSubject::AddObserver(StateObserver *aObserver)
+{
+    if (aObserver != nullptr)
+    {
+        mObservers.push_back(aObserver);
+    }
+}
+
+void StateSubject::UpdateState(Publisher::State aState)
+{
+    for (StateObserver *observer : mObservers)
+    {
+        observer->HandleMdnsState(aState);
+    }
+}
+
 } // namespace Mdns
 } // namespace otbr
 

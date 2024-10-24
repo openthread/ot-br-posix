@@ -66,7 +66,8 @@ Application::Application(const std::string               &aInterfaceName,
                                     /* aDryRun */ false,
                                     aEnableAutoAttach))
 #if OTBR_ENABLE_MDNS
-    , mPublisher(Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { this->HandleMdnsState(aState); }))
+    , mPublisher(
+          Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { mMdnsStateSubject.UpdateState(aState); }))
 #endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
     , mDBusAgent(MakeUnique<DBus::DBusAgent>(*mHost, *mPublisher))
@@ -191,24 +192,6 @@ otbrError Application::Run(void)
     return error;
 }
 
-void Application::HandleMdnsState(Mdns::Publisher::State aState)
-{
-    OTBR_UNUSED_VARIABLE(aState);
-
-#if OTBR_ENABLE_BORDER_AGENT
-    mBorderAgent->HandleMdnsState(aState);
-#endif
-#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    mAdvertisingProxy->HandleMdnsState(aState);
-#endif
-#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
-    mDiscoveryProxy->HandleMdnsState(aState);
-#endif
-#if OTBR_ENABLE_TREL
-    mTrelDnssd->HandleMdnsState(aState);
-#endif
-}
-
 void Application::HandleSignal(int aSignal)
 {
     sShouldTerminate = true;
@@ -249,6 +232,19 @@ void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRest
 
 void Application::InitRcpMode(void)
 {
+#if OTBR_ENABLE_BORDER_AGENT
+    mMdnsStateSubject.AddObserver(mBorderAgent.get());
+#endif
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mMdnsStateSubject.AddObserver(mAdvertisingProxy.get());
+#endif
+#if OTBR_ENABLE_DNSSD_DISCOVERY_PROXY
+    mMdnsStateSubject.AddObserver(mDiscoveryProxy.get());
+#endif
+#if OTBR_ENABLE_TREL
+    mMdnsStateSubject.AddObserver(mTrelDnssd.get());
+#endif
+
 #if OTBR_ENABLE_MDNS
     mPublisher->Start();
 #endif
