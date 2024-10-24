@@ -831,15 +831,13 @@ void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse
     VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
     if (body == "enable")
     {
-        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED,
-                     error = OTBR_ERROR_DUPLICATED);
+        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_NONE);
         VerifyOrExit(otCommissionerStart(mInstance, NULL, NULL, NULL) == OT_ERROR_NONE,
                      error = OTBR_ERROR_INVALID_STATE);
     }
     else if (body == "disable")
     {
-        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED,
-                     error = OTBR_ERROR_DUPLICATED);
+        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_NONE);
         VerifyOrExit(otCommissionerStop(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
     }
     else
@@ -848,7 +846,7 @@ void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse
     }
 
 exit:
-    if (error == OTBR_ERROR_NONE || error == OTBR_ERROR_DUPLICATED)
+    if (error == OTBR_ERROR_NONE)
     {
         errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
@@ -1007,16 +1005,15 @@ void Resource::RemoveJoiner(const Request &aRequest, Response &aResponse) const
 
     if (discerner.mLength == 0)
     {
-        VerifyOrExit(otCommissionerRemoveJoiner(mInstance, addrPtr) == OT_ERROR_NONE, error = OTBR_ERROR_NOT_FOUND);
+        otCommissionerRemoveJoiner(mInstance, addrPtr);
     }
     else
     {
-        VerifyOrExit(otCommissionerRemoveJoinerWithDiscerner(mInstance, &discerner) == OT_ERROR_NONE,
-                     error = OTBR_ERROR_NOT_FOUND);
+        otCommissionerRemoveJoinerWithDiscerner(mInstance, &discerner);
     }
 
 exit:
-    if (error == OTBR_ERROR_NONE || error == OTBR_ERROR_NOT_FOUND)
+    if (error == OTBR_ERROR_NONE)
     {
         errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
