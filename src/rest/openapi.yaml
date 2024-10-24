@@ -317,7 +317,7 @@ paths:
         - commissioner
       summary: Set current Commissioner state.
       description: |-
-        Enable and disable the Commissioner.
+        Enable or disable the Commissioner.
       responses:
         "200":
           description: Successful operation.
