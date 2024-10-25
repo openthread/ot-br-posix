@@ -28,10 +28,12 @@
 
 #include "fake_platform.hpp"
 
+#include <assert.h>
+
 #include "openthread/openthread-system.h"
 
-otPlatResetReason       gPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
-static ot::FakePlatform sFakePlatform;
+otPlatResetReason        gPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
+static ot::FakePlatform *sFakePlatform;
 
 const otRadioSpinelMetrics *otSysGetRadioSpinelMetrics(void)
 {
@@ -60,11 +62,18 @@ otInstance *otSysInit(otPlatformConfig *aPlatformConfig)
 {
     OT_UNUSED_VARIABLE(aPlatformConfig);
 
-    return sFakePlatform.CurrentInstance();
+    assert(sFakePlatform == nullptr);
+    sFakePlatform = new ot::FakePlatform();
+    return sFakePlatform->CurrentInstance();
 }
 
 void otSysDeinit(void)
 {
+    if (sFakePlatform != nullptr)
+    {
+        delete sFakePlatform;
+        sFakePlatform = nullptr;
+    }
 }
 
 void otSysMainloopUpdate(otInstance *, otSysMainloopContext *)
@@ -73,5 +82,5 @@ void otSysMainloopUpdate(otInstance *, otSysMainloopContext *)
 
 void otSysMainloopProcess(otInstance *, const otSysMainloopContext *)
 {
-    sFakePlatform.Run(/* microseconds */ 1000);
+    sFakePlatform->Run(/* microseconds */ 1000);
 }

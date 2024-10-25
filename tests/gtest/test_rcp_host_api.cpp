@@ -129,3 +129,55 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
 
     host.Deinit();
 }
+
+TEST(RcpHostApi, SetCountryCodeWorkCorrectly)
+{
+    otError                                    error          = OT_ERROR_FAILED;
+    bool                                       resultReceived = false;
+    otbr::MainloopContext                      mainloop;
+    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
+                                                                                    const std::string &aErrorMsg) {
+        OT_UNUSED_VARIABLE(aErrorMsg);
+        resultReceived = true;
+        error          = aError;
+    };
+    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                            /* aEnableAutoAttach */ false);
+
+    // 1. Call SetCountryCode when host hasn't been initialized.
+    otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
+        &host); // Temporarily remove RcpHost because it's not initialized yet.
+    host.SetCountryCode("AF", receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    otbr::MainloopManager::GetInstance().AddMainloopProcessor(&host);
+
+    host.Init();
+    // 2. Call SetCountryCode with invalid arguments
+    resultReceived = false;
+    error          = OT_ERROR_NONE;
+    host.SetCountryCode("AFA", receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+
+    resultReceived = false;
+    error          = OT_ERROR_NONE;
+    host.SetCountryCode("A", receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+
+    resultReceived = false;
+    error          = OT_ERROR_NONE;
+    host.SetCountryCode("12", receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_ARGS);
+
+    // 3. Call SetCountryCode with valid argument
+    resultReceived = false;
+    error          = OT_ERROR_NONE;
+    host.SetCountryCode("AF", receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NOT_IMPLEMENTED); // The current platform weak implmentation returns 'NOT_IMPLEMENTED'.
+
+    host.Deinit();
+}
