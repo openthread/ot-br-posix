@@ -46,6 +46,9 @@ readonly OT_CLI
 OT_NCP="${OT_NCP:-ot-ncp-ftd}"
 readonly OT_NCP
 
+OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE:-otbr-ncp}"
+readonly OTBR_DOCKER_IMAGE
+
 ABS_TOP_BUILDDIR="$(cd "${top_builddir:-"${SCRIPT_DIR}"/../../}" && pwd)"
 readonly ABS_TOP_BUILDDIR
 
@@ -126,12 +129,39 @@ readonly TUN_NAME
 #----------------------------------------
 # Test steps
 #----------------------------------------
-build_ot_simulation()
+do_build_ot_simulation()
 {
     sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp"
     sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/cli"
-    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF
-    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF -DOT_RCP=OFF
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
+        -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF \
+        -DOT_BORDER_ROUTING=ON -DOT_NCP_INFRA_IF=ON -DOT_SIMULATION_INFRA_IF=OFF \
+        -DBUILD_TESTING=OFF
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation \
+        -DOT_MTD=OFF -DOT_RCP=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF \
+        -DOT_BORDER_ROUTING=OFF \
+        -DBUILD_TESTING=OFF
+}
+
+do_build_otbr_docker()
+{
+    otbr_docker_options=(
+        "-DOT_THREAD_VERSION=1.4"
+        "-DOTBR_DBUS=ON"
+        "-DOTBR_FEATURE_FLAGS=ON"
+        "-DOTBR_TELEMETRY_DATA_API=ON"
+        "-DOTBR_TREL=ON"
+        "-DOTBR_LINK_METRICS_TELEMETRY=ON"
+    )
+    sudo docker build -t "${OTBR_DOCKER_IMAGE}" \
+        -f ./etc/docker/Dockerfile . \
+        --build-arg NAT64=0 \
+        --build-arg NAT64_SERVICE=0 \
+        --build-arg DNS64=0 \
+        --build-arg WEB_GUI=0 \
+        --build-arg REST_API=0 \
+        --build-arg FIREWALL=0 \
+        --build-arg OTBR_OPTIONS="${otbr_docker_options[*]}"
 }
 
 test_setup()
@@ -143,9 +173,14 @@ test_setup()
     # OPENTHREAD_POSIX_DAEMON_SOCKET_LOCK
     sudo rm -vf "/tmp/openthread.lock"
 
-    [[ ${BUILD_OT_SIM} == 1 ]] && build_ot_simulation
     ot_cli=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_CLI}")
     ot_ncp=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_NCP}")
+    executable_or_die "${ot_cli}"
+    executable_or_die "${ot_ncp}"
+
+    export EXP_OTBR_AGENT_PATH="${OTBR_AGENT_PATH}"
+    export EXP_OT_CLI_PATH="${ot_cli}"
+    export EXP_OT_NCP_PATH="${ot_ncp}"
 
     # We will be creating a lot of log information
     # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
@@ -217,45 +252,68 @@ otbr_exec_expect_script()
     done
 }
 
-parse_args()
+do_expect()
 {
-    BUILD_OT_SIM=1
-    RUN_ALL_TESTS=1
-
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --build-ot-sim)
-                BUILD_OT_SIM="$2"
-                shift
-                ;;
-            --one-test)
-                RUN_ALL_TESTS=0
-                TEST_NAME="$2"
-                shift
-                ;;
-        esac
-        shift
-    done
-}
-
-main()
-{
-    parse_args "$@"
-
-    test_setup
-
-    export EXP_OTBR_AGENT_PATH="${OTBR_AGENT_PATH}"
-    export EXP_TUN_NAME="${TUN_NAME}"
-    export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
-    export EXP_OT_CLI_PATH="${ot_cli}"
-    export EXP_OT_NCP_PATH="${ot_ncp}"
-
-    if [[ ${RUN_ALL_TESTS} == 0 ]]; then
-        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/${TEST_NAME}" || die "ncp expect script failed!"
+    if [[ $# != 0 ]]; then
+        otbr_exec_expect_script "$@"
     else
         mapfile -t test_files < <(find "${EXPECT_SCRIPT_DIR}" -type f -name "ncp_*.exp")
         otbr_exec_expect_script "${test_files[@]}" || die "ncp expect script failed!"
     fi
+
+    exit 0
+}
+
+print_usage()
+{
+    cat <<EOF
+USAGE: $0 COMMAND
+
+COMMAND:
+    build_ot_sim         Build simulated ot-cli-ftd and ot-ncp-ftd for testing.
+    build_otbr_docker    Build otbr docker image for testing.
+    expect               Run expect tests for otbr NCP mode.
+    help                 Print this help.
+
+EXAMPLES:
+    $0 build_ot_sim build_otbr_docker expect
+EOF
+    exit 0
+}
+
+main()
+{
+    if [[ $# == 0 ]]; then
+        print_usage
+    fi
+
+    export EXP_TUN_NAME="${TUN_NAME}"
+    export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
+    export EXP_OTBR_DOCKER_IMAGE="${OTBR_DOCKER_IMAGE}"
+
+    while [[ $# != 0 ]]; do
+        case "$1" in
+            build_ot_sim)
+                do_build_ot_simulation
+                ;;
+            build_otbr_docker)
+                do_build_otbr_docker
+                ;;
+            expect)
+                shift
+                test_setup
+                do_expect "$@"
+                ;;
+            help)
+                print_usage
+                ;;
+            *)
+                echo
+                echo -e "${OTBR_COLOR_FAIL}Warning:${OTBR_COLOR_NONE} Ignoring: '$1'"
+                ;;
+        esac
+        shift
+    done
 }
 
 main "$@"
