@@ -66,6 +66,36 @@ static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
 static const uint16_t kThreadVersion13 = 4; ///< Thread Version 1.3
 static const uint16_t kThreadVersion14 = 5; ///< Thread Version 1.4
 
+// =============================== OtNetworkProperties ===============================
+
+OtNetworkProperties::OtNetworkProperties(void)
+    : mInstance(nullptr)
+{
+}
+
+otDeviceRole OtNetworkProperties::GetDeviceRole(void) const
+{
+    return otThreadGetDeviceRole(mInstance);
+}
+
+void OtNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    otError error = otDatasetGetActiveTlvs(mInstance, &aDatasetTlvs);
+
+    if (error != OT_ERROR_NONE)
+    {
+        aDatasetTlvs.mLength = 0;
+        memset(aDatasetTlvs.mTlvs, 0, sizeof(aDatasetTlvs.mTlvs));
+    }
+}
+
+void OtNetworkProperties::SetInstance(otInstance *aInstance)
+{
+    mInstance = aInstance;
+}
+
+// =============================== RcpHost ===============================
+
 RcpHost::RcpHost(const char                      *aInterfaceName,
                  const std::vector<const char *> &aRadioUrls,
                  const char                      *aBackboneInterfaceName,
@@ -216,15 +246,17 @@ void RcpHost::Init(void)
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otDnssdUpstreamQuerySetEnabled(mInstance, /* aEnabled */ true);
 #endif
-#if OTBR_ENABLE_DHCP6_PD
+#if OTBR_ENABLE_DHCP6_PD && OTBR_ENABLE_BORDER_ROUTING
     otBorderRoutingDhcp6PdSetEnabled(mInstance, /* aEnabled */ true);
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
-    mThreadHelper = std::unique_ptr<otbr::agent::ThreadHelper>(new otbr::agent::ThreadHelper(mInstance, this));
+    mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
+
+    OtNetworkProperties::SetInstance(mInstance);
 
 exit:
-    SuccessOrDie(error, "Failed to initialize NCP!");
+    SuccessOrDie(error, "Failed to initialize the RCP Host!");
 }
 
 #if OTBR_ENABLE_FEATURE_FLAGS
@@ -271,8 +303,11 @@ void RcpHost::Deinit(void)
     otSysDeinit();
     mInstance = nullptr;
 
+    OtNetworkProperties::SetInstance(nullptr);
     mThreadStateChangedCallbacks.clear();
     mResetHandlers.clear();
+
+    mSetThreadEnabledReceiver = nullptr;
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -363,7 +398,7 @@ const char *RcpHost::GetThreadVersion(void)
         version = "1.3.0";
         break;
     case kThreadVersion14:
-        version = "1.4";
+        version = "1.4.0";
         break;
     default:
         otbrLogEmerg("Unexpected thread version %hu", otThreadGetVersion());
@@ -372,10 +407,121 @@ const char *RcpHost::GetThreadVersion(void)
     return version;
 }
 
-void RcpHost::GetDeviceRole(const DeviceRoleHandler aHandler)
+void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
 {
-    otDeviceRole role = otThreadGetDeviceRole(mInstance);
-    aHandler(OT_ERROR_NONE, role);
+    OT_UNUSED_VARIABLE(aActiveOpDatasetTlvs);
+
+    // TODO: Implement Join under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
+{
+    // TODO: Implement Leave under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                const AsyncResultReceiver       aReceiver)
+{
+    OT_UNUSED_VARIABLE(aPendingOpDatasetTlvs);
+
+    // TODO: Implement ScheduleMigration under RCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
+{
+    otError error             = OT_ERROR_NONE;
+    bool    receiveResultHere = true;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mSetThreadEnabledReceiver == nullptr, error = OT_ERROR_BUSY);
+
+    if (aEnabled)
+    {
+        otOperationalDatasetTlvs datasetTlvs;
+
+        if (otDatasetGetActiveTlvs(mInstance, &datasetTlvs) != OT_ERROR_NOT_FOUND && datasetTlvs.mLength > 0 &&
+            otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
+        {
+            SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
+            SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
+        }
+    }
+    else
+    {
+        SuccessOrExit(error = otThreadDetachGracefully(mInstance, DisableThreadAfterDetach, this));
+        mSetThreadEnabledReceiver = aReceiver;
+        receiveResultHere         = false;
+    }
+
+exit:
+    if (receiveResultHere)
+    {
+        mTaskRunner.Post([aReceiver, error](void) { aReceiver(error, ""); });
+    }
+}
+
+void RcpHost::GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver)
+{
+    otError  error = OT_ERROR_NONE;
+    uint32_t supportedChannelMask;
+    uint32_t preferredChannelMask;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
+
+    supportedChannelMask = otLinkGetSupportedChannelMask(mInstance);
+    preferredChannelMask = otPlatRadioGetPreferredChannelMask(mInstance);
+
+exit:
+    if (error == OT_ERROR_NONE)
+    {
+        mTaskRunner.Post([aReceiver, supportedChannelMask, preferredChannelMask](void) {
+            aReceiver(supportedChannelMask, preferredChannelMask);
+        });
+    }
+    else
+    {
+        mTaskRunner.Post([aErrReceiver, error](void) { aErrReceiver(error, "OT is not initialized"); });
+    }
+}
+
+void RcpHost::DisableThreadAfterDetach(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->DisableThreadAfterDetach();
+}
+
+void RcpHost::DisableThreadAfterDetach(void)
+{
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, false), errorMsg = "Failed to disable Thread stack");
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, false), errorMsg = "Failed to disable Thread interface");
+
+exit:
+    SafeInvokeAndClear(mSetThreadEnabledReceiver, error, errorMsg);
+}
+
+void RcpHost::SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver)
+{
+    static constexpr int kCountryCodeLength = 2;
+    otError              error              = OT_ERROR_NONE;
+    std::string          errorMsg;
+    uint16_t             countryCode;
+
+    VerifyOrExit((aCountryCode.length() == kCountryCodeLength) && isalpha(aCountryCode[0]) && isalpha(aCountryCode[1]),
+                 error = OT_ERROR_INVALID_ARGS, errorMsg = "The country code is invalid");
+
+    otbrLogInfo("Set country code: %c%c", aCountryCode[0], aCountryCode[1]);
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+
+    countryCode = static_cast<uint16_t>((aCountryCode[0] << 8) | aCountryCode[1]);
+    SuccessOrExit(error = otLinkSetRegion(mInstance, countryCode), errorMsg = "Failed to set the country code");
+
+exit:
+    mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
 }
 
 /*

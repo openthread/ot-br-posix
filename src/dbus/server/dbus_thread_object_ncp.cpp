@@ -33,6 +33,7 @@
 #include "common/code_utils.hpp"
 #include "dbus/common/constants.hpp"
 #include "dbus/server/dbus_agent.hpp"
+#include "utils/thread_helper.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -57,22 +58,23 @@ otbrError DBusThreadObjectNcp::Init(void)
     RegisterAsyncGetPropertyHandler(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_DEVICE_ROLE,
                                     std::bind(&DBusThreadObjectNcp::AsyncGetDeviceRoleHandler, this, _1));
 
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOIN_METHOD,
+                   std::bind(&DBusThreadObjectNcp::JoinHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LEAVE_NETWORK_METHOD,
+                   std::bind(&DBusThreadObjectNcp::LeaveHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SCHEDULE_MIGRATION_METHOD,
+                   std::bind(&DBusThreadObjectNcp::ScheduleMigrationHandler, this, _1));
+
+    SuccessOrExit(error = Signal(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SIGNAL_READY, std::make_tuple()));
 exit:
     return error;
 }
 
 void DBusThreadObjectNcp::AsyncGetDeviceRoleHandler(DBusRequest &aRequest)
 {
-    mHost.GetDeviceRole([this, aRequest](otError aError, otDeviceRole aRole) mutable {
-        if (aError == OT_ERROR_NONE)
-        {
-            this->ReplyAsyncGetProperty(aRequest, GetDeviceRoleName(aRole));
-        }
-        else
-        {
-            aRequest.ReplyOtResult(aError);
-        }
-    });
+    otDeviceRole role = mHost.GetDeviceRole();
+
+    ReplyAsyncGetProperty(aRequest, GetDeviceRoleName(role));
 }
 
 void DBusThreadObjectNcp::ReplyAsyncGetProperty(DBusRequest &aRequest, const std::string &aContent)
@@ -90,6 +92,69 @@ exit:
         dbus_connection_send(aRequest.GetConnection(), reply.get(), nullptr);
     }
     else
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectNcp::JoinHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t>     dataset;
+    otOperationalDatasetTlvs activeOpDatasetTlvs;
+    otError                  error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    VerifyOrExit(dataset.size() <= sizeof(activeOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
+    std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
+    activeOpDatasetTlvs.mLength = dataset.size();
+
+    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectNcp::LeaveHandler(DBusRequest &aRequest)
+{
+    mHost.Leave([aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+}
+
+void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t>     dataset;
+    uint32_t                 delayInMilli;
+    otOperationalDatasetTlvs pendingOpDatasetTlvs;
+    otError                  error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset, delayInMilli);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    VerifyOrExit(dataset.size() <= sizeof(pendingOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
+    std::copy(dataset.begin(), dataset.end(), pendingOpDatasetTlvs.mTlvs);
+    pendingOpDatasetTlvs.mLength = dataset.size();
+
+    SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
+
+    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+
+exit:
+    if (error != OT_ERROR_NONE)
     {
         aRequest.ReplyOtResult(error);
     }

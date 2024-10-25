@@ -26,43 +26,36 @@
  *    POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <CppUTest/TestHarness.h>
+#include <gtest/gtest.h>
 
 #include "common/types.hpp"
 
 //-------------------------------------------------------------
 // Test for Ip6Address
 // TODO: Add Ip6Address tests
-TEST_GROUP(Ip6Address){};
-
-TEST(Ip6Address, NULL)
-{
-    TEST_EXIT;
-}
 
 //-------------------------------------------------------------
 // Test for Ip6Prefix
-TEST_GROUP(Ip6Prefix){};
 
 TEST(Ip6Prefix, ConstructorWithAddressAndLength)
 {
     using otbr::Ip6Prefix;
 
     Ip6Prefix prefix1("::", 0);
-    STRCMP_EQUAL("::/0", prefix1.ToString().c_str());
-    CHECK_EQUAL(0, prefix1.mLength);
+    EXPECT_STREQ(prefix1.ToString().c_str(), "::/0");
+    EXPECT_EQ(prefix1.mLength, 0);
 
     Ip6Prefix prefix2("fc00::", 7);
-    STRCMP_EQUAL("fc00::/7", prefix2.ToString().c_str());
-    CHECK_EQUAL(7, prefix2.mLength);
+    EXPECT_STREQ(prefix2.ToString().c_str(), "fc00::/7");
+    EXPECT_EQ(prefix2.mLength, 7);
 
     Ip6Prefix prefix3("2001:db8::", 64);
-    STRCMP_EQUAL("2001:db8::/64", prefix3.ToString().c_str());
-    CHECK_EQUAL(64, prefix3.mLength);
+    EXPECT_STREQ(prefix3.ToString().c_str(), "2001:db8::/64");
+    EXPECT_EQ(prefix3.mLength, 64);
 
     Ip6Prefix prefix4("2001:db8::1", 128);
-    STRCMP_EQUAL("2001:db8::1/128", prefix4.ToString().c_str());
-    CHECK_EQUAL(128, prefix4.mLength);
+    EXPECT_STREQ(prefix4.ToString().c_str(), "2001:db8::1/128");
+    EXPECT_EQ(prefix4.mLength, 128);
 }
 
 TEST(Ip6Prefix, EqualityOperator)
@@ -70,37 +63,37 @@ TEST(Ip6Prefix, EqualityOperator)
     using otbr::Ip6Prefix;
 
     // same prefix and length
-    CHECK(Ip6Prefix("::", 0) == Ip6Prefix("::", 0));
-    CHECK(Ip6Prefix("fc00::", 0) == Ip6Prefix("fc00::", 0));
-    CHECK(Ip6Prefix("2001:db8::", 64) == Ip6Prefix("2001:db8::", 64));
+    EXPECT_EQ(Ip6Prefix("::", 0), Ip6Prefix("::", 0));
+    EXPECT_EQ(Ip6Prefix("fc00::", 0), Ip6Prefix("fc00::", 0));
+    EXPECT_EQ(Ip6Prefix("2001:db8::", 64), Ip6Prefix("2001:db8::", 64));
 
     // same prefix, different length
-    CHECK_FALSE(Ip6Prefix("::", 0) == Ip6Prefix("::", 7));
-    CHECK_FALSE(Ip6Prefix("fc00::", 0) == Ip6Prefix("fc00::", 7));
-    CHECK_FALSE(Ip6Prefix("fc00::", 7) == Ip6Prefix("fc00::", 8));
-    CHECK_FALSE(Ip6Prefix("2001:db8::", 64) == Ip6Prefix("2001:db8::", 32));
+    EXPECT_NE(Ip6Prefix("::", 0), Ip6Prefix("::", 7));
+    EXPECT_NE(Ip6Prefix("fc00::", 0), Ip6Prefix("fc00::", 7));
+    EXPECT_NE(Ip6Prefix("fc00::", 7), Ip6Prefix("fc00::", 8));
+    EXPECT_NE(Ip6Prefix("2001:db8::", 64), Ip6Prefix("2001:db8::", 32));
 
     // different prefix object, same length
-    CHECK(Ip6Prefix("::", 0) == Ip6Prefix("::1", 0));
-    CHECK(Ip6Prefix("::", 0) == Ip6Prefix("2001::", 0));
-    CHECK(Ip6Prefix("::", 0) == Ip6Prefix("2001:db8::1", 0));
-    CHECK(Ip6Prefix("fc00::", 7) == Ip6Prefix("fd00::", 7));
-    CHECK(Ip6Prefix("fc00::", 8) == Ip6Prefix("fc00:1234::", 8));
-    CHECK(Ip6Prefix("2001:db8::", 32) == Ip6Prefix("2001:db8:abcd::", 32));
-    CHECK(Ip6Prefix("2001:db8:0:1::", 63) == Ip6Prefix("2001:db8::", 63));
-    CHECK(Ip6Prefix("2001:db8::", 64) == Ip6Prefix("2001:db8::1", 64));
-    CHECK(Ip6Prefix("2001:db8::3", 127) == Ip6Prefix("2001:db8::2", 127));
+    EXPECT_EQ(Ip6Prefix("::", 0), Ip6Prefix("::1", 0));
+    EXPECT_EQ(Ip6Prefix("::", 0), Ip6Prefix("2001::", 0));
+    EXPECT_EQ(Ip6Prefix("::", 0), Ip6Prefix("2001:db8::1", 0));
+    EXPECT_EQ(Ip6Prefix("fc00::", 7), Ip6Prefix("fd00::", 7));
+    EXPECT_EQ(Ip6Prefix("fc00::", 8), Ip6Prefix("fc00:1234::", 8));
+    EXPECT_EQ(Ip6Prefix("2001:db8::", 32), Ip6Prefix("2001:db8:abcd::", 32));
+    EXPECT_EQ(Ip6Prefix("2001:db8:0:1::", 63), Ip6Prefix("2001:db8::", 63));
+    EXPECT_EQ(Ip6Prefix("2001:db8::", 64), Ip6Prefix("2001:db8::1", 64));
+    EXPECT_EQ(Ip6Prefix("2001:db8::3", 127), Ip6Prefix("2001:db8::2", 127));
 
-    CHECK_FALSE(Ip6Prefix("fc00::", 7) == Ip6Prefix("fe00::", 7));
-    CHECK_FALSE(Ip6Prefix("fc00::", 16) == Ip6Prefix("fc01::", 16));
-    CHECK_FALSE(Ip6Prefix("fc00::", 32) == Ip6Prefix("fc00:1::", 32));
-    CHECK_FALSE(Ip6Prefix("2001:db8:0:1::", 64) == Ip6Prefix("2001:db8::", 64));
-    CHECK_FALSE(Ip6Prefix("2001:db8::1", 128) == Ip6Prefix("2001:db8::", 128));
+    EXPECT_NE(Ip6Prefix("fc00::", 7), Ip6Prefix("fe00::", 7));
+    EXPECT_NE(Ip6Prefix("fc00::", 16), Ip6Prefix("fc01::", 16));
+    EXPECT_NE(Ip6Prefix("fc00::", 32), Ip6Prefix("fc00:1::", 32));
+    EXPECT_NE(Ip6Prefix("2001:db8:0:1::", 64), Ip6Prefix("2001:db8::", 64));
+    EXPECT_NE(Ip6Prefix("2001:db8::1", 128), Ip6Prefix("2001:db8::", 128));
 
     // different prefix object, different length
-    CHECK_FALSE(Ip6Prefix("::", 0) == Ip6Prefix("2001::", 7));
-    CHECK_FALSE(Ip6Prefix("fc00::", 7) == Ip6Prefix("fd00::", 8));
-    CHECK_FALSE(Ip6Prefix("2001:db8:0:1::", 63) == Ip6Prefix("2001:db8::", 64));
+    EXPECT_NE(Ip6Prefix("::", 0), Ip6Prefix("2001::", 7));
+    EXPECT_NE(Ip6Prefix("fc00::", 7), Ip6Prefix("fd00::", 8));
+    EXPECT_NE(Ip6Prefix("2001:db8:0:1::", 63), Ip6Prefix("2001:db8::", 64));
 }
 
 // TODO: add more test cases for otbr::Ip6Prefix
@@ -108,9 +101,3 @@ TEST(Ip6Prefix, EqualityOperator)
 //-------------------------------------------------------------
 // Test for MacAddress
 // TODO: Add MacAddress tests
-TEST_GROUP(MacAddress){};
-
-TEST(MacAddress, NULL)
-{
-    TEST_EXIT;
-}

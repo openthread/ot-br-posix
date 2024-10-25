@@ -40,4 +40,36 @@ MainloopProcessor::~MainloopProcessor(void)
 {
     MainloopManager::GetInstance().RemoveMainloopProcessor(this);
 }
+
+void MainloopContext::AddFdToReadSet(int aFd)
+{
+    AddFdToSet(aFd, kReadFdSet);
+}
+
+void MainloopContext::AddFdToSet(int aFd, uint8_t aFdSetsMask)
+{
+    bool isSet = false;
+
+    if (aFdSetsMask & kErrorFdSet)
+    {
+        FD_SET(aFd, &mErrorFdSet);
+        isSet = true;
+    }
+    if (aFdSetsMask & kReadFdSet)
+    {
+        FD_SET(aFd, &mReadFdSet);
+        isSet = true;
+    }
+    if (aFdSetsMask & kWriteFdSet)
+    {
+        FD_SET(aFd, &mWriteFdSet);
+        isSet = true;
+    }
+
+    if (isSet)
+    {
+        mMaxFd = std::max(mMaxFd, aFd);
+    }
+}
+
 } // namespace otbr

@@ -378,7 +378,7 @@ EOF
     ot_ctl dataset active | grep "Done"
 
     sudo dbus-send --system --dest=io.openthread.BorderRouter.wpan0 \
-        --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 \
+        --type=method_call --reply-timeout=40000 --print-reply /io/openthread/BorderRouter/wpan0 \
         io.openthread.BorderRouter.AttachAllNodesTo \
         "array:byte:${dataset}" \
         | grep "int64 300000"

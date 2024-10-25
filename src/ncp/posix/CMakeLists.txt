@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,31 +26,16 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-add_executable(otbr-test-unit
-    $<$<BOOL:${OTBR_DBUS}>:test_dbus_message.cpp>
-    $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:test_mdns_mdnssd.cpp>
-    main.cpp
-    test_common_types.cpp
-    test_dns_utils.cpp
-    test_logging.cpp
-    test_once_callback.cpp
-    test_pskc.cpp
-    test_task_runner.cpp
+add_library(otbr-posix
+    infra_if.hpp
+    infra_if.cpp
+    netif.cpp
+    netif_linux.cpp
+    netif_unix.cpp
+    netif.hpp
 )
-target_include_directories(otbr-test-unit PRIVATE
-    ${CPPUTEST_INCLUDE_DIRS}
-)
-target_link_libraries(otbr-test-unit
-    $<$<BOOL:${OTBR_DBUS}>:otbr-dbus-common>
-    $<$<STREQUAL:${OTBR_MDNS},"mDNSResponder">:otbr-mdns>
-    $<$<BOOL:${CPPUTEST_LIBRARY_DIRS}>:-L$<JOIN:${CPPUTEST_LIBRARY_DIRS}," -L">>
-    ${CPPUTEST_LIBRARIES}
-    mbedtls
+
+target_link_libraries(otbr-posix
     otbr-common
     otbr-utils
-    pthread
-)
-add_test(
-    NAME unit
-    COMMAND otbr-test-unit
 )

@@ -51,7 +51,6 @@ namespace DnsUtils {
  * @param[in] aName  The DNS Service Instance name to unescape.
  *
  * @returns  The unescaped DNS Service Instance name.
- *
  */
 std::string UnescapeInstanceName(const std::string &aName);
 
@@ -62,7 +61,6 @@ std::string UnescapeInstanceName(const std::string &aName);
  *      The host name must ends with dot.
  *
  * @param[in] aHostName  The host name to check.
- *
  */
 void CheckHostnameSanity(const std::string &aHostName);
 
@@ -74,7 +72,6 @@ void CheckHostnameSanity(const std::string &aHostName);
  *      The service name must not end with dot.
  *
  * @param[in] aServiceName  The service name to check.
- *
  */
 void CheckServiceNameSanity(const std::string &aServiceName);
 

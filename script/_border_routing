@@ -68,27 +68,26 @@ accept_ra_enable()
     fi
 }
 
-# This function disables IPv6 support in dhcpcd.
+# This function disables IPv6 Router Solicitation (RS) in dhcpcd.
 #
 # dhcpcd on raspberry Pi enables IPv6 support by default. The problem with
 # dhcpcd is that it does't support Route Information Option (RIO), so we need
 # to rely on the kernel implementation. dhcpcd will force set accept_ra to 0
-# for all interfaces it is currently running on, if IPv6 is enabled. This
+# for all interfaces it is currently running on, if IPv6 RS is enabled. This
 # conflicts with our accept_ra* configurations.
 #
-dhcpcd_disable_ipv6()
+dhcpcd_disable_ipv6rs()
 {
     if [ -f $DHCPCD_CONF_FILE ]; then
         sudo cp $DHCPCD_CONF_FILE $DHCPCD_CONF_BACKUP_FILE
         sudo tee -a $DHCPCD_CONF_FILE <<EOF
-noipv6
 noipv6rs
 EOF
     fi
 }
 
-# This function enables IPv6 support in dhcpcd.
-dhcpcd_enable_ipv6()
+# This function enables IPv6 Router Solicitation (RS) in dhcpcd.
+dhcpcd_enable_ipv6rs()
 {
     if [ -f $DHCPCD_CONF_BACKUP_FILE ]; then
         sudo cp $DHCPCD_CONF_BACKUP_FILE $DHCPCD_CONF_FILE
@@ -100,14 +99,14 @@ border_routing_uninstall()
     with BORDER_ROUTING || return 0
 
     accept_ra_uninstall
-    dhcpcd_enable_ipv6
+    dhcpcd_enable_ipv6rs
 }
 
 border_routing_install()
 {
     with BORDER_ROUTING || return 0
 
-    dhcpcd_disable_ipv6
+    dhcpcd_disable_ipv6rs
     accept_ra_install
 
     # /proc/sys/net/ipv6/conf/* files are read-only in docker

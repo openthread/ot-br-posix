@@ -29,10 +29,7 @@
 #include "common/dns_utils.hpp"
 
 #include <assert.h>
-
-#include <CppUTest/TestHarness.h>
-
-TEST_GROUP(DnsUtils){};
+#include <gtest/gtest.h>
 
 static void CheckSplitFullDnsName(const std::string &aFullName,
                                   bool               aIsServiceInstance,
@@ -49,23 +46,23 @@ static void CheckSplitFullDnsName(const std::string &aFullName,
 
     info = SplitFullDnsName(aFullName);
 
-    CHECK_EQUAL(aIsServiceInstance, info.IsServiceInstance());
-    CHECK_EQUAL(aIsService, info.IsService());
-    CHECK_EQUAL(aIsHost, info.IsHost());
-    CHECK_EQUAL(aInstanceName, info.mInstanceName);
-    CHECK_EQUAL(aServiceName, info.mServiceName);
-    CHECK_EQUAL(aHostName, info.mHostName);
-    CHECK_EQUAL(aDomain, info.mDomain);
+    EXPECT_EQ(aIsServiceInstance, info.IsServiceInstance());
+    EXPECT_EQ(aIsService, info.IsService());
+    EXPECT_EQ(aIsHost, info.IsHost());
+    EXPECT_EQ(aInstanceName, info.mInstanceName);
+    EXPECT_EQ(aServiceName, info.mServiceName);
+    EXPECT_EQ(aHostName, info.mHostName);
+    EXPECT_EQ(aDomain, info.mDomain);
 
     info = SplitFullDnsName(aFullName + ".");
 
-    CHECK_EQUAL(aIsServiceInstance, info.IsServiceInstance());
-    CHECK_EQUAL(aIsService, info.IsService());
-    CHECK_EQUAL(aIsHost, info.IsHost());
-    CHECK_EQUAL(aInstanceName, info.mInstanceName);
-    CHECK_EQUAL(aServiceName, info.mServiceName);
-    CHECK_EQUAL(aHostName, info.mHostName);
-    CHECK_EQUAL(aDomain, info.mDomain);
+    EXPECT_EQ(aIsServiceInstance, info.IsServiceInstance());
+    EXPECT_EQ(aIsService, info.IsService());
+    EXPECT_EQ(aIsHost, info.IsHost());
+    EXPECT_EQ(aInstanceName, info.mInstanceName);
+    EXPECT_EQ(aServiceName, info.mServiceName);
+    EXPECT_EQ(aHostName, info.mHostName);
+    EXPECT_EQ(aDomain, info.mDomain);
 }
 
 TEST(DnsUtils, TestSplitFullDnsName)

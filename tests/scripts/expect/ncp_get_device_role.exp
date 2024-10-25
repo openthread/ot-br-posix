@@ -26,24 +26,21 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
-set timeout 1
+source "tests/scripts/expect/_common.exp"
 
-spawn $::env(EXP_OTBR_AGENT_PATH) -I $::env(EXP_TUN_NAME) -v -d7 "spinel+hdlc+forkpty://$::env(EXP_OT_NCP_PATH)?forkpty-arg=$::env(EXP_LEADER_NODE_ID)"
+spawn_node 1 otbr $::env(EXP_OT_NCP_PATH)
 
-set otbr_id $spawn_id
 sleep 1
 
 spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply --reply-timeout=1000 /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
-
 expect -re {disabled} {
 } timeout {
     puts "timeout!"
     exit 1
 }
-
 expect eof
 
 # Shut down otbr-agent
-set spawn_id $otbr_id
+switch_node 1
 send "\x04"
 expect eof

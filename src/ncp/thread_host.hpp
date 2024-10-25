@@ -37,6 +37,7 @@
 #include <functional>
 #include <memory>
 
+#include <openthread/dataset.h>
 #include <openthread/error.h>
 #include <openthread/thread.h>
 
@@ -48,15 +49,45 @@ namespace otbr {
 namespace Ncp {
 
 /**
+ * This interface provides access to some Thread network properties in a sync way.
+ *
+ * The APIs are unified for both NCP and RCP cases.
+ */
+class NetworkProperties
+{
+public:
+    /**
+     * Returns the device role.
+     *
+     * @returns the device role.
+     */
+    virtual otDeviceRole GetDeviceRole(void) const = 0;
+
+    /**
+     * Returns the active operational dataset tlvs.
+     *
+     * @param[out] aDatasetTlvs  A reference to where the Active Operational Dataset will be placed.
+     */
+    virtual void GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
+
+    /**
+     * The destructor.
+     */
+    virtual ~NetworkProperties(void) = default;
+};
+
+/**
  * This class is an interface which provides a set of async APIs to control the
  * Thread network.
  *
  * The APIs are unified for both NCP and RCP cases.
- *
  */
-class ThreadHost
+class ThreadHost : virtual public NetworkProperties
 {
 public:
+    using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
+    using ChannelMasksReceiver =
+        std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
     using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
 
     /**
@@ -71,7 +102,6 @@ public:
      * @param[in]   aEnableAutoAttach       Whether or not to automatically attach to the saved network.
      *
      * @returns Non-null OpenThread Controller instance.
-     *
      */
     static std::unique_ptr<ThreadHost> Create(const char                      *aInterfaceName,
                                               const std::vector<const char *> &aRadioUrls,
@@ -80,22 +110,85 @@ public:
                                               bool                             aEnableAutoAttach);
 
     /**
-     * This method gets the device role and returns the role through the handler.
+     * This method joins this device to the network specified by @p aActiveOpDatasetTlvs.
      *
-     * @param[in] aHandler  A handler to return the role.
+     * If there is an ongoing 'Join' operation, no action will be taken and @p aReceiver will be
+     * called after the request is completed. The previous @p aReceiver will also be called.
      *
+     * @param[in] aActiveOpDatasetTlvs  A reference to the active operational dataset of the Thread network.
+     * @param[in] aReceiver             A receiver to get the async result of this operation.
      */
-    virtual void GetDeviceRole(DeviceRoleHandler aHandler) = 0;
+    virtual void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) = 0;
+
+    /**
+     * This method instructs the device to leave the current network gracefully.
+     *
+     * 1. If there is already an ongoing 'Leave' operation, no action will be taken and @p aReceiver
+     *    will be called after the previous request is completed. The previous @p aReceiver will also
+     *    be called.
+     * 2. If this device is not in disabled state, OTBR sends Address Release Notification (i.e. ADDR_REL.ntf)
+     *    to gracefully detach from the current network and it takes 1 second to finish.
+     * 3. Then Operational Dataset will be removed from persistent storage.
+     * 4. If everything goes fine, @p aReceiver will be invoked with OT_ERROR_NONE. Otherwise, other errors
+     *    will be passed to @p aReceiver when the error happens.
+     *
+     * @param[in] aReceiver  A receiver to get the async result of this operation.
+     */
+    virtual void Leave(const AsyncResultReceiver &aRecevier) = 0;
+
+    /**
+     * This method migrates this device to the new network specified by @p aPendingOpDatasetTlvs.
+     *
+     * @param[in] aPendingOpDatasetTlvs  A reference to the pending operational dataset of the Thread network.
+     * @param[in] aReceiver              A receiver to get the async result of this operation.
+     */
+    virtual void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                   const AsyncResultReceiver       aReceiver) = 0;
+
+    /**
+     * This method enables/disables the Thread network.
+     *
+     * 1. If there is an ongoing 'SetThreadEnabled' operation, no action will be taken and @p aReceiver
+     *    will be invoked with error OT_ERROR_BUSY.
+     * 2. If the host hasn't been initialized, @p aReceiver will be invoked with error OT_ERROR_INVALID_STATE.
+     * 3. When @p aEnabled is false, this method will first trigger a graceful detach and then disable Thread
+     *    network interface and the stack.
+     *
+     * @param[in] aEnabled  true to enable and false to disable.
+     * @param[in] aReceiver  A receiver to get the async result of this operation.
+     */
+    virtual void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) = 0;
+
+    /**
+     * This method sets the country code.
+     *
+     * The country code refers to the 2-alpha code defined in ISO-3166.
+     *
+     * 1. If @p aCountryCode isn't valid, @p aReceiver will be invoked with error OT_ERROR_INVALID_ARGS.
+     * 2. If the host hasn't been initialized, @p aReceiver will be invoked with error OT_ERROR_INVALID_STATE.
+     *
+     * @param[in] aCountryCode  The country code.
+     */
+    virtual void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) = 0;
+
+    /**
+     * Gets the supported and preferred channel masks.
+     *
+     * If the operation succeeded, @p aReceiver will be invoked with the supported and preferred channel masks.
+     * Otherwise, @p aErrReceiver will be invoked with the error and @p aReceiver won't be invoked in this case.
+     *
+     * @param aReceiver     A receiver to get the channel masks.
+     * @param aErrReceiver  A receiver to get the error if the operation fails.
+     */
+    virtual void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) = 0;
 
     /**
      * Returns the co-processor type.
-     *
      */
     virtual CoprocessorType GetCoprocessorType(void) = 0;
 
     /**
      * Returns the co-processor version string.
-     *
      */
     virtual const char *GetCoprocessorVersion(void) = 0;
 
@@ -103,30 +196,23 @@ public:
      * This method returns the Thread network interface name.
      *
      * @returns A pointer to the Thread network interface name string.
-     *
      */
     virtual const char *GetInterfaceName(void) const = 0;
 
     /**
      * Initializes the Thread controller.
-     *
      */
     virtual void Init(void) = 0;
 
     /**
      * Deinitializes the Thread controller.
-     *
      */
     virtual void Deinit(void) = 0;
 
     /**
      * The destructor.
-     *
      */
     virtual ~ThreadHost(void) = default;
-
-protected:
-    static otLogLevel ConvertToOtLogLevel(otbrLogLevel aLevel);
 };
 
 } // namespace Ncp

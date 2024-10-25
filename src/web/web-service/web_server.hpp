@@ -61,20 +61,17 @@ typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 
 /**
  * This class implements the http server.
- *
  */
 class WebServer
 {
 public:
     /**
      * This method is constructor to initialize the WebServer.
-     *
      */
     WebServer(void);
 
     /**
      * This method is destructor to free the WebServer.
-     *
      */
     ~WebServer(void);
 
@@ -84,13 +81,11 @@ public:
      * @param[in] aIfName      The pointer to the Thread interface name.
      * @param[in] aListenAddr  The http server listen address, can be nullptr for any address.
      * @param[in] aPort        The port of http server.
-     *
      */
     void StartWebServer(const char *aIfName, const char *aListenAddr, uint16_t aPort);
 
     /**
      * This method stops the Web Server.
-     *
      */
     void StopWebServer(void);
 

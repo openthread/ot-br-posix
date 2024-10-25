@@ -61,15 +61,13 @@ public:
      *
      * @param[in] aHost           A reference to the Thread host.
      * @param[in] aPublisher      A reference to the MDNS publisher.
-     *
      */
     DBusAgent(otbr::Ncp::ThreadHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the dbus agent.
-     *
      */
-    void Init(void);
+    void Init(otbr::BorderAgent &aBorderAgent);
 
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
@@ -94,7 +92,6 @@ private:
 
     /**
      * This map is used to track DBusWatch-es.
-     *
      */
     std::set<DBusWatch *> mWatches;
 };

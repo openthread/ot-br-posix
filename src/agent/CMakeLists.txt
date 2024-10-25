@@ -33,10 +33,6 @@ add_executable(otbr-agent
     vendor.hpp
 )
 
-target_link_libraries(openthread-radio-spinel INTERFACE
-    openthread-spinel-rcp
-)
-
 target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_BORDER_AGENT}>:otbr-border-agent>
     $<$<BOOL:${OTBR_BACKBONE_ROUTER}>:otbr-backbone-router>
@@ -44,12 +40,12 @@ target_link_libraries(otbr-agent PRIVATE
     $<$<BOOL:${OTBR_MDNS}>:otbr-mdns>
     $<$<BOOL:${OTBR_OPENWRT}>:otbr-ubus>
     $<$<BOOL:${OTBR_REST}>:otbr-rest>
-    openthread-posix
     openthread-cli-ftd
     openthread-ftd
     openthread-spinel-rcp
     openthread-radio-spinel
     openthread-hdlc
+    openthread-posix
     otbr-sdp-proxy
     otbr-ncp
     otbr-common

@@ -261,6 +261,38 @@ void CheckNat64(ThreadApiDBus *aApi)
 #endif
 }
 
+void CheckEphemeralKey(ThreadApiDBus *aApi)
+{
+    bool enabled;
+
+    TEST_ASSERT(aApi->SetEphemeralKeyEnabled(false) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetEphemeralKeyEnabled(enabled) == OTBR_ERROR_NONE);
+    TEST_ASSERT(enabled == false);
+    TEST_ASSERT(aApi->SetEphemeralKeyEnabled(true) == OTBR_ERROR_NONE);
+    TEST_ASSERT(aApi->GetEphemeralKeyEnabled(enabled) == OTBR_ERROR_NONE);
+    TEST_ASSERT(enabled == true);
+}
+
+void CheckBorderAgentInfo(const threadnetwork::TelemetryData_BorderAgentInfo &aBorderAgentInfo)
+{
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_activations() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_clears() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_timeouts() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_max_attempts() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_deactivation_disconnects() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_invalid_ba_state_errors() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_invalid_args_errors() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_start_secure_session_errors() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_secure_session_successes() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_secure_session_failures() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().epskc_commissioner_petitions() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_secure_session_successes() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_secure_session_failures() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().pskc_commissioner_petitions() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_active_get_reqs() == 0);
+    TEST_ASSERT(aBorderAgentInfo.border_agent_counters().mgmt_pending_get_reqs() == 0);
+}
+
 #if OTBR_ENABLE_TELEMETRY_DATA_API
 void CheckTelemetryData(ThreadApiDBus *aApi)
 {
@@ -289,6 +321,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_topo_full().network_data().size() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().partition_id() > 0);
     TEST_ASSERT(telemetryData.wpan_topo_full().extended_pan_id() > 0);
+    TEST_ASSERT(telemetryData.wpan_topo_full().peer_br_count() == 0);
     TEST_ASSERT(telemetryData.topo_entries_size() == 1);
     TEST_ASSERT(telemetryData.topo_entries(0).rloc16() < 0xffff);
     TEST_ASSERT(telemetryData.wpan_border_router().border_routing_counters().rs_tx_failure() == 0);
@@ -313,6 +346,7 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().link_local_address_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().unique_local_address_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().global_unicast_address_count() == 0);
+    TEST_ASSERT(telemetryData.wpan_border_router().infra_link_info().peer_br_count() == 0);
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_default_route_added() == false);
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_ula_route_added() == false);
     TEST_ASSERT(telemetryData.wpan_border_router().external_route_info().has_others_route_added() == false);
@@ -334,6 +368,9 @@ void CheckTelemetryData(ThreadApiDBus *aApi)
     TEST_ASSERT(telemetryData.coex_metrics().count_tx_request() > 0);
 #if OTBR_ENABLE_LINK_METRICS_TELEMETRY
     TEST_ASSERT(telemetryData.low_power_metrics().link_metrics_entries_size() >= 0);
+#endif
+#if OTBR_ENABLE_BORDER_AGENT
+    CheckBorderAgentInfo(telemetryData.wpan_border_router().border_agent_info());
 #endif
 }
 #endif
@@ -468,6 +505,7 @@ int main()
                             CheckMdnsInfo(api.get());
                             CheckDnssdCounters(api.get());
                             CheckNat64(api.get());
+                            CheckEphemeralKey(api.get());
 #if OTBR_ENABLE_TELEMETRY_DATA_API
                             CheckTelemetryData(api.get());
 #endif

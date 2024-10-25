@@ -82,8 +82,7 @@ TaskRunner::TaskId TaskRunner::Post(Milliseconds aDelay, Task<void> aTask)
 
 void TaskRunner::Update(MainloopContext &aMainloop)
 {
-    FD_SET(mEventFd[kRead], &aMainloop.mReadFdSet);
-    aMainloop.mMaxFd = std::max(mEventFd[kRead], aMainloop.mMaxFd);
+    aMainloop.AddFdToReadSet(mEventFd[kRead]);
 
     {
         std::lock_guard<std::mutex> _(mTaskQueueMutex);

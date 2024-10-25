@@ -115,6 +115,8 @@ message TelemetryData {
     optional uint32 neighbor_table_size = 15;
     optional int32 instant_rssi = 16;
     optional uint64 extended_pan_id = 17;
+    // Indicates the number peer BR in Thread mesh network (from network data)
+    optional uint32 peer_br_count = 18;
   }
 
   message TopoEntry {
@@ -494,6 +496,8 @@ message TelemetryData {
     optional uint32 link_local_address_count = 5;
     optional uint32 unique_local_address_count = 6;
     optional uint32 global_unicast_address_count = 7;
+    // Indicates how many peer BRs (connected to the same Thread mesh network) are on the infra link.
+    optional uint32 peer_br_count = 8;
   }
 
   // Message to indicate the information of external routes in network data.
@@ -507,6 +511,61 @@ message TelemetryData {
     // Indicates whether the other prefixes (other than "::/0" or "fc00::/7") added
     // from this BR. (BR is a managed infrastructure router).
     optional bool has_others_route_added = 3;
+  }
+
+  message BorderAgentCounters {
+    // The number of ePSKc activations
+    optional uint32 epskc_activations = 1;
+
+    // The number of ePSKc deactivations due to cleared via API
+    optional uint32 epskc_deactivation_clears = 2;
+
+    // The number of ePSKc deactivations due to timeout
+    optional uint32 epskc_deactivation_timeouts = 3;
+
+    // The number of ePSKc deactivations due to max connection attempts reached
+    optional uint32 epskc_deactivation_max_attempts = 4;
+
+    // The number of ePSKc deactivations due to commissioner disconnected
+    optional uint32 epskc_deactivation_disconnects = 5;
+
+    // The number of ePSKc activation failures caused by invalid border agent state
+    optional uint32 epskc_invalid_ba_state_errors = 6;
+
+    // The number of ePSKc activation failures caused by invalid argument
+    optional uint32 epskc_invalid_args_errors = 7;
+
+    // The number of ePSKc activation failures caused by failed to start secure session
+    optional uint32 epskc_start_secure_session_errors = 8;
+
+    // The number of successful secure session establishment with ePSKc
+    optional uint32 epskc_secure_session_successes = 9;
+
+    // The number of failed secure session establishement with ePSKc
+    optional uint32 epskc_secure_session_failures = 10;
+
+    // The number of active commissioner petitioned over secure session establishment with ePSKc
+    optional uint32 epskc_commissioner_petitions = 11;
+
+    // The number of successful secure session establishment with PSKc
+    optional uint32 pskc_secure_session_successes = 12;
+
+    // The number of failed secure session establishement with PSKc
+    optional uint32 pskc_secure_session_failures = 13;
+
+    // The number of active commissioner petitioned over secure session establishment with PSKc
+    optional uint32 pskc_commissioner_petitions = 14;
+
+    // The number of MGMT_ACTIVE_GET.req received
+    optional uint32 mgmt_active_get_reqs = 15;
+
+    // The number of MGMT_PENDING_GET.req received
+    optional uint32 mgmt_pending_get_reqs = 16;
+  }
+
+  message BorderAgentInfo {
+    // The border agent counters
+    optional BorderAgentCounters border_agent_counters = 1;
   }
 
   message WpanBorderRouter {
@@ -548,6 +607,9 @@ message TelemetryData {
 
     // Information about the external routes in network data.
     optional ExternalRoutes external_route_info = 13;
+
+    // Information about the Border Agent
+    optional BorderAgentInfo border_agent_info = 14;
   }
 
   message RcpStabilityStatistics {

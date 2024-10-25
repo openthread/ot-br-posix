@@ -30,6 +30,8 @@
 
 #include "ncp_host.hpp"
 
+#include <memory>
+
 #include <openthread/error.h>
 #include <openthread/thread.h>
 
@@ -37,11 +39,46 @@
 
 #include "lib/spinel/spinel_driver.hpp"
 
+#include "ncp/async_task.hpp"
+
 namespace otbr {
 namespace Ncp {
 
+// =============================== NcpNetworkProperties ===============================
+
+NcpNetworkProperties::NcpNetworkProperties(void)
+    : mDeviceRole(OT_DEVICE_ROLE_DISABLED)
+{
+    memset(&mDatasetActiveTlvs, 0, sizeof(mDatasetActiveTlvs));
+}
+
+otDeviceRole NcpNetworkProperties::GetDeviceRole(void) const
+{
+    return mDeviceRole;
+}
+
+void NcpNetworkProperties::SetDeviceRole(otDeviceRole aRole)
+{
+    mDeviceRole = aRole;
+}
+
+void NcpNetworkProperties::SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs)
+{
+    mDatasetActiveTlvs.mLength = aActiveOpDatasetTlvs.mLength;
+    memcpy(mDatasetActiveTlvs.mTlvs, aActiveOpDatasetTlvs.mTlvs, aActiveOpDatasetTlvs.mLength);
+}
+
+void NcpNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    aDatasetTlvs.mLength = mDatasetActiveTlvs.mLength;
+    memcpy(aDatasetTlvs.mTlvs, mDatasetActiveTlvs.mTlvs, mDatasetActiveTlvs.mLength);
+}
+
+// ===================================== NcpHost ======================================
+
 NcpHost::NcpHost(const char *aInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
+    , mNetif(mNcpSpinel)
 {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName = aInterfaceName;
@@ -57,23 +94,99 @@ const char *NcpHost::GetCoprocessorVersion(void)
 void NcpHost::Init(void)
 {
     otSysInit(&mConfig);
-    mNcpSpinel.Init(mSpinelDriver);
+    mNcpSpinel.Init(mSpinelDriver, *this);
+    mNetif.Init(mConfig.mInterfaceName);
+
+    mNcpSpinel.Ip6SetAddressCallback(
+        [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
+    mNcpSpinel.Ip6SetAddressMulticastCallback(
+        [this](const std::vector<Ip6Address> &aAddrs) { mNetif.UpdateIp6MulticastAddresses(aAddrs); });
+    mNcpSpinel.NetifSetStateChangedCallback([this](bool aState) { mNetif.SetNetifState(aState); });
+    mNcpSpinel.Ip6SetReceiveCallback(
+        [this](const uint8_t *aData, uint16_t aLength) { mNetif.Ip6Receive(aData, aLength); });
 }
 
 void NcpHost::Deinit(void)
 {
     mNcpSpinel.Deinit();
+    mNetif.Deinit();
     otSysDeinit();
 }
 
-void NcpHost::GetDeviceRole(DeviceRoleHandler aHandler)
+void NcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
 {
-    mNcpSpinel.GetDeviceRole(aHandler);
+    AsyncTaskPtr task;
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    task = std::make_shared<AsyncTask>(errorHandler);
+    task->First([this, aActiveOpDatasetTlvs](AsyncTaskPtr aNext) {
+            mNcpSpinel.DatasetSetActiveTlvs(aActiveOpDatasetTlvs, std::move(aNext));
+        })
+        ->Then([this](AsyncTaskPtr aNext) { mNcpSpinel.Ip6SetEnabled(true, std::move(aNext)); })
+        ->Then([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadSetEnabled(true, std::move(aNext)); });
+    task->Run();
+}
+
+void NcpHost::Leave(const AsyncResultReceiver &aReceiver)
+{
+    AsyncTaskPtr task;
+    auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    task = std::make_shared<AsyncTask>(errorHandler);
+    task->First([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadDetachGracefully(std::move(aNext)); })
+        ->Then([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadErasePersistentInfo(std::move(aNext)); });
+    task->Run();
+}
+
+void NcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
+                                const AsyncResultReceiver       aReceiver)
+{
+    otDeviceRole role  = GetDeviceRole();
+    otError      error = OT_ERROR_NONE;
+    auto errorHandler  = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
+
+    VerifyOrExit(role != OT_DEVICE_ROLE_DISABLED && role != OT_DEVICE_ROLE_DETACHED, error = OT_ERROR_INVALID_STATE);
+
+    mNcpSpinel.DatasetMgmtSetPending(std::make_shared<otOperationalDatasetTlvs>(aPendingOpDatasetTlvs),
+                                     std::make_shared<AsyncTask>(errorHandler));
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mTaskRunner.Post(
+            [aReceiver, error](void) { aReceiver(error, "Cannot schedule migration when this device is detached"); });
+    }
+}
+
+void NcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
+{
+    OT_UNUSED_VARIABLE(aEnabled);
+
+    // TODO: Implement SetThreadEnabled under NCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void NcpHost::SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver)
+{
+    OT_UNUSED_VARIABLE(aCountryCode);
+
+    // TODO: Implement SetCountryCode under NCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
+void NcpHost::GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver)
+{
+    OT_UNUSED_VARIABLE(aReceiver);
+
+    // TODO: Implement GetChannelMasks under NCP mode.
+    mTaskRunner.Post([aErrReceiver](void) { aErrReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
+
+    mNetif.Process(&aMainloop);
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -85,6 +198,8 @@ void NcpHost::Update(MainloopContext &aMainloop)
         aMainloop.mTimeout.tv_sec  = 0;
         aMainloop.mTimeout.tv_usec = 0;
     }
+
+    mNetif.UpdateFdSet(&aMainloop);
 }
 
 } // namespace Ncp

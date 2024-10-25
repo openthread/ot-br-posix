@@ -1,0 +1,94 @@
+#!/usr/bin/expect -f
+#
+#  Copyright (c) 2024, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+source "tests/scripts/expect/_common.exp"
+
+# Dataset
+# Mesh Local Prefix: fd0d:7fc:a1b9:f050::/64
+set dataset_dbus "0x0e,0x08,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x03,0x00,0x00,0x14,0x35,0x06,0x00,0x04,0x00,0x1f,0xff,0xe0,0x02,0x08,0x7d,0x61,0xeb,0x42,0xcd,0xc4,0x8d,0x6a,0x07,0x08,0xfd,0x0d,0x07,0xfc,0xa1,0xb9,0xf0,0x50,0x05,0x10,0xba,0x08,0x8f,0xc2,0xbd,0x6c,0x3b,0x38,0x97,0xf7,0xa1,0x0f,0x58,0x26,0x3f,0xf3,0x03,0x0f,0x4f,0x70,0x65,0x6e,0x54,0x68,0x72,0x65,0x61,0x64,0x2d,0x35,0x32,0x34,0x66,0x01,0x02,0x52,0x4f,0x04,0x10,0x9d,0xc0,0x23,0xcc,0xd4,0x47,0xb1,0x2b,0x50,0x99,0x7e,0xf6,0x80,0x20,0xf1,0x9e,0x0c,0x04,0x02,0xa0,0xf7,0xf8"
+
+# Step 1. Start otbr-agent with a NCP and join the network by dbus join method.
+spawn_node 2 otbr $::env(EXP_OT_NCP_PATH)
+sleep 1
+
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.Join "array:byte:${dataset_dbus}"
+expect eof
+
+# Step 2. Wait 10 seconds for it becomes a leader.
+sleep 10
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --print-reply --reply-timeout=1000 /io/openthread/BorderRouter/wpan0 org.freedesktop.DBus.Properties.Get string:io.openthread.BorderRouter string:DeviceRole
+expect -re {leader} {
+} timeout {
+    puts "timeout!"
+    exit 1
+}
+expect eof
+
+# Step 3. Verify the addresses on wpan.
+# There should be:
+#   1. ml eid
+#   2. ml anycast
+#   3. ml rloc
+#   4. link local
+spawn ip addr show wpan0
+expect -re {fd0d:7fc:a1b9:f050(:[0-9a-f]{1,4}){4,4}}
+expect -re {fd0d:7fc:a1b9:f050(:[0-9a-f]{1,4}){4,4}}
+expect -re {fd0d:7fc:a1b9:f050(:[0-9a-f]{1,4}){4,4}}
+expect -re {fe80:(:[0-9a-f]{1,4}){4,4}}
+expect eof
+
+# Multicast addresses should contain:
+#   1. ff01::1
+#   2. ff02::1
+#   3. ff02::2
+#   4. ff03::1
+#   5. ff03::2
+spawn ip maddr show dev wpan0
+expect eof
+set maddr_output $expect_out(buffer)
+if {![string match "*ff01::1*" $maddr_output]} { fail "No multicast address ff01::1" }
+if {![string match "*ff02::1*" $maddr_output]} { fail "No multicast address ff02::1" }
+if {![string match "*ff02::2*" $maddr_output]} { fail "No multicast address ff02::2" }
+if {![string match "*ff03::1*" $maddr_output]} { fail "No multicast address ff03::1" }
+if {![string match "*ff03::2*" $maddr_output]} { fail "No multicast address ff03::2" }
+
+# Step 4. Verify the wpan isUp state
+spawn ip link show wpan0
+expect -re {UP}
+expect eof
+
+# Step 5. Use dbus leave method to let the node leave the network
+spawn dbus-send --system --dest=io.openthread.BorderRouter.wpan0 --type=method_call --print-reply /io/openthread/BorderRouter/wpan0 io.openthread.BorderRouter.LeaveNetwork
+expect eof
+
+# Step 6. Verify the addresses on wpan.
+# There should be:
+#   1. link local
+spawn ip addr show wpan0
+expect -re {fe80:(:[0-9a-f]{1,4}){4,4}}
+expect eof

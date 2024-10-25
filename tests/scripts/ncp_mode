@@ -40,6 +40,9 @@ readonly EXPECT_SCRIPT_DIR
 #---------------------------------------
 # Configurations
 #---------------------------------------
+OT_CLI="${OT_CLI:-ot-cli-ftd}"
+readonly OT_CLI
+
 OT_NCP="${OT_NCP:-ot-ncp-ftd}"
 readonly OT_NCP
 
@@ -49,10 +52,10 @@ readonly ABS_TOP_BUILDDIR
 ABS_TOP_SRCDIR="$(cd "${top_srcdir:-"${SCRIPT_DIR}"/../../}" && pwd)"
 readonly ABS_TOP_SRCDIR
 
-ABS_TOP_OT_SRCDIR=${ABS_TOP_SRCDIR}/third_party/openthread/repo
+ABS_TOP_OT_SRCDIR="${ABS_TOP_SRCDIR}/third_party/openthread/repo"
 readonly ABS_TOP_OT_SRCDIR
 
-ABS_TOP_OT_BUILDDIR=${ABS_TOP_BUILDDIR}/../simulation
+ABS_TOP_OT_BUILDDIR="${ABS_TOP_BUILDDIR}/../simulation"
 readonly ABS_TOP_BUILDDIR
 
 OTBR_COLOR_PASS='\033[0;32m'
@@ -64,7 +67,7 @@ readonly OTBR_COLOR_FAIL
 OTBR_COLOR_NONE='\033[0m'
 readonly OTBR_COLOR_NONE
 
-readonly OTBR_VERBOSE=${OTBR_VERBOSE:-0}
+readonly OTBR_VERBOSE="${OTBR_VERBOSE:-0}"
 
 #----------------------------------------
 # Helper functions
@@ -125,8 +128,10 @@ readonly TUN_NAME
 #----------------------------------------
 build_ot_simulation()
 {
-    "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_APP_CLI=OFF -DOT_MTD=OFF
-    ot_ncp=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_NCP}")
+    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/ncp"
+    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}/cli"
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/ncp "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_CLI=OFF -DOT_APP_RCP=OFF
+    OT_CMAKE_BUILD_DIR=${ABS_TOP_OT_BUILDDIR}/cli "${ABS_TOP_OT_SRCDIR}"/script/cmake-build simulation -DOT_MTD=OFF -DOT_APP_NCP=OFF -DOT_APP_RCP=OFF -DOT_RCP=OFF
 }
 
 test_setup()
@@ -138,7 +143,9 @@ test_setup()
     # OPENTHREAD_POSIX_DAEMON_SOCKET_LOCK
     sudo rm -vf "/tmp/openthread.lock"
 
-    build_ot_simulation
+    [[ ${BUILD_OT_SIM} == 1 ]] && build_ot_simulation
+    ot_cli=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_CLI}")
+    ot_ncp=$(find "${ABS_TOP_OT_BUILDDIR}" -name "${OT_NCP}")
 
     # We will be creating a lot of log information
     # Rotate logs so we have a clean and empty set of logs uncluttered with other stuff
@@ -166,13 +173,14 @@ test_teardown()
     write_syslog "EXIT ${EXIT_CODE} - output logs"
 
     sudo pkill -f "${OTBR_AGENT}" || true
+    sudo pkill -f "${OT_CLI}" || true
+    sudo pkill -f "${OT_NCP}" || true
     wait
 
     echo 'clearing all'
     sudo rm /etc/dbus-1/system.d/otbr-agent.conf || true
     sudo rm -rf "${STAGE_DIR}" || true
     sudo rm -rf "${BUILD_DIR}" || true
-    sudo rm -rf "${ABS_TOP_OT_BUILDDIR}" || true
 
     exit_message="Test teardown"
     echo "EXIT ${EXIT_CODE}: MESSAGE: ${exit_message}"
@@ -209,16 +217,45 @@ otbr_exec_expect_script()
     done
 }
 
+parse_args()
+{
+    BUILD_OT_SIM=1
+    RUN_ALL_TESTS=1
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --build-ot-sim)
+                BUILD_OT_SIM="$2"
+                shift
+                ;;
+            --one-test)
+                RUN_ALL_TESTS=0
+                TEST_NAME="$2"
+                shift
+                ;;
+        esac
+        shift
+    done
+}
+
 main()
 {
+    parse_args "$@"
+
     test_setup
 
     export EXP_OTBR_AGENT_PATH="${OTBR_AGENT_PATH}"
     export EXP_TUN_NAME="${TUN_NAME}"
     export EXP_LEADER_NODE_ID="${LEADER_NODE_ID}"
+    export EXP_OT_CLI_PATH="${ot_cli}"
     export EXP_OT_NCP_PATH="${ot_ncp}"
-    otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_version.exp" || die "ncp expect script failed!"
-    otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/ncp_get_device_role.exp" || die "ncp expect script failed!"
+
+    if [[ ${RUN_ALL_TESTS} == 0 ]]; then
+        otbr_exec_expect_script "${EXPECT_SCRIPT_DIR}/${TEST_NAME}" || die "ncp expect script failed!"
+    else
+        mapfile -t test_files < <(find "${EXPECT_SCRIPT_DIR}" -type f -name "ncp_*.exp")
+        otbr_exec_expect_script "${test_files[@]}" || die "ncp expect script failed!"
+    fi
 }
 
 main "$@"

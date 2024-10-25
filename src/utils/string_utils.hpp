@@ -50,7 +50,6 @@ namespace StringUtils {
  * @param[in] aString2 The second string.
  *
  * @returns  Whether the two strings are equal in a case-insensitive manner.
- *
  */
 bool EqualCaseInsensitive(const std::string &aString1, const std::string &aString2);
 
@@ -60,7 +59,6 @@ bool EqualCaseInsensitive(const std::string &aString1, const std::string &aStrin
  * @param[in] aString The string to convert.
  *
  * @returns  A copy of @p aString with all letters converted to lowercase.
- *
  */
 std::string ToLowercase(const std::string &aString);
 

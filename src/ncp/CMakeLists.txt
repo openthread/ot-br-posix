@@ -26,7 +26,11 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+add_subdirectory(posix)
+
 add_library(otbr-ncp
+    async_task.cpp
+    async_task.hpp
     ncp_host.cpp
     ncp_host.hpp
     ncp_spinel.cpp
@@ -39,6 +43,7 @@ add_library(otbr-ncp
 
 target_link_libraries(otbr-ncp PRIVATE
     otbr-common
+    otbr-posix
     $<$<BOOL:${OTBR_FEATURE_FLAGS}>:otbr-proto>
     $<$<BOOL:${OTBR_TELEMETRY_DATA_API}>:otbr-proto>
 )

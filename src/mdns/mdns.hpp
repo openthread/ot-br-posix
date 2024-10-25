@@ -69,14 +69,12 @@ namespace Mdns {
 
 /**
  * This interface defines the functionality of mDNS publisher.
- *
  */
 class Publisher : private NonCopyable
 {
 public:
     /**
      * This structure represents a key/value pair of the TXT record.
-     *
      */
     struct TxtEntry
     {
@@ -127,7 +125,6 @@ public:
 
     /**
      * This structure represents information of a discovered service instance.
-     *
      */
     struct DiscoveredInstanceInfo
     {
@@ -148,7 +145,6 @@ public:
 
     /**
      * This structure represents information of a discovered host.
-     *
      */
     struct DiscoveredHostInfo
     {
@@ -163,21 +159,18 @@ public:
 
     /**
      * This function is called to notify a discovered service instance.
-     *
      */
     using DiscoveredServiceInstanceCallback =
         std::function<void(const std::string &aType, const DiscoveredInstanceInfo &aInstanceInfo)>;
 
     /**
      * This function is called to notify a discovered host.
-     *
      */
     using DiscoveredHostCallback =
         std::function<void(const std::string &aHostName, const DiscoveredHostInfo &aHostInfo)>;
 
     /**
      * mDNS state values.
-     *
      */
     enum class State
     {
@@ -196,13 +189,11 @@ public:
      *
      * @retval OTBR_ERROR_NONE  Successfully started mDNS publisher;
      * @retval OTBR_ERROR_MDNS  Failed to start mDNS publisher.
-     *
      */
     virtual otbrError Start(void) = 0;
 
     /**
      * This method stops the mDNS publisher.
-     *
      */
     virtual void Stop(void) = 0;
 
@@ -211,7 +202,6 @@ public:
      *
      * @retval true   Already started.
      * @retval false  Not started.
-     *
      */
     virtual bool IsStarted(void) const = 0;
 
@@ -233,7 +223,6 @@ public:
      *                          failure. Specifically, `OTBR_ERROR_DUPLICATED` indicates that the name has
      *                          already been published and the caller can re-publish with a new name if an
      *                          alternative name is available/acceptable.
-     *
      */
     void PublishService(const std::string &aHostName,
                         const std::string &aName,
@@ -249,7 +238,6 @@ public:
      * @param[in] aName      The name of this service.
      * @param[in] aType      The type of this service, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aCallback  The callback for receiving the publishing result.
-     *
      */
     virtual void UnpublishService(const std::string &aName, const std::string &aType, ResultCallback &&aCallback) = 0;
 
@@ -266,7 +254,6 @@ public:
      *                        failure. Specifically, `OTBR_ERROR_DUPLICATED` indicates that the name has
      *                        already been published and the caller can re-publish with a new name if an
      *                        alternative name is available/acceptable.
-     *
      */
     void PublishHost(const std::string &aName, const AddressList &aAddresses, ResultCallback &&aCallback);
 
@@ -275,7 +262,6 @@ public:
      *
      * @param[in] aName      A host name (MUST not end with dot).
      * @param[in] aCallback  The callback for receiving the publishing result.
-     *
      */
     virtual void UnpublishHost(const std::string &aName, ResultCallback &&aCallback) = 0;
 
@@ -289,7 +275,6 @@ public:
      *                        failure. Specifically, `OTBR_ERROR_DUPLICATED` indicates that the name has
      *                        already been published and the caller can re-publish with a new name if an
      *                        alternative name is available/acceptable.
-     *
      */
     void PublishKey(const std::string &aName, const KeyData &aKeyData, ResultCallback &&aCallback);
 
@@ -298,7 +283,6 @@ public:
      *
      * @param[in] aName      The name associated with key record.
      * @param[in] aCallback  The callback for receiving the publishing result.
-     *
      */
     virtual void UnpublishKey(const std::string &aName, ResultCallback &&aCallback) = 0;
 
@@ -314,7 +298,6 @@ public:
      *
      * @param[in] aType          The service type, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aInstanceName  The service instance to subscribe, or empty to subscribe the service.
-     *
      */
     virtual void SubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
 
@@ -328,7 +311,6 @@ public:
      *
      * @param[in] aType          The service type, e.g., "_srv._udp" (MUST NOT end with dot).
      * @param[in] aInstanceName  The service instance to unsubscribe, or empty to unsubscribe the service.
-     *
      */
     virtual void UnsubscribeService(const std::string &aType, const std::string &aInstanceName) = 0;
 
@@ -340,7 +322,6 @@ public:
      * @note Discovery Proxy implementation guarantees no duplicate subscriptions for the same host.
      *
      * @param[in] aHostName  The host name (without domain).
-     *
      */
     virtual void SubscribeHost(const std::string &aHostName) = 0;
 
@@ -350,7 +331,6 @@ public:
      * @note Discovery Proxy implementation guarantees no redundant unsubscription for a host.
      *
      * @param[in] aHostName  The host name (without domain).
-     *
      */
     virtual void UnsubscribeHost(const std::string &aHostName) = 0;
 
@@ -361,7 +341,6 @@ public:
      * @param[in] aHostCallback      The callback function to receive discovered hosts.
      *
      * @returns  The Subscriber ID for the callbacks.
-     *
      */
     uint64_t AddSubscriptionCallbacks(DiscoveredServiceInstanceCallback aInstanceCallback,
                                       DiscoveredHostCallback            aHostCallback);
@@ -370,7 +349,6 @@ public:
      * This method cancels callbacks for subscriptions.
      *
      * @param[in] aSubscriberId  The Subscriber ID previously returned by `AddSubscriptionCallbacks`.
-     *
      */
     void RemoveSubscriptionCallbacks(uint64_t aSubscriberId);
 
@@ -378,7 +356,6 @@ public:
      * This method returns the mDNS statistics information of the publisher.
      *
      * @returns  The MdnsTelemetryInfo of the publisher.
-     *
      */
     const MdnsTelemetryInfo &GetMdnsTelemetryInfo(void) const { return mTelemetryInfo; }
 
@@ -390,7 +367,6 @@ public:
      * @param[in] aCallback  The callback for receiving mDNS publisher state changes.
      *
      * @returns A pointer to the newly created mDNS publisher.
-     *
      */
     static Publisher *Create(StateCallback aCallback);
 
@@ -398,7 +374,6 @@ public:
      * This function destroys the mDNS publisher.
      *
      * @param[in] aPublisher  A pointer to the publisher.
-     *
      */
     static void Destroy(Publisher *aPublisher);
 
@@ -416,7 +391,6 @@ public:
      * @retval OTBR_ERROR_INVALID_ARGS  The @p aTxtList includes invalid TXT entry.
      *
      * @sa DecodeTxtData
-     *
      */
     static otbrError EncodeTxtData(const TxtList &aTxtList, TxtData &aTxtData);
 
@@ -434,7 +408,6 @@ public:
      * @retval OTBR_ERROR_INVALID_ARGS  The @p aTxtdata has invalid TXT format.
      *
      * @sa EncodeTxtData
-     *
      */
     static otbrError DecodeTxtData(TxtList &aTxtList, const uint8_t *aTxtData, uint16_t aTxtLength);
 

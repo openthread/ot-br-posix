@@ -30,7 +30,6 @@
  * @file
  * This file has helper functions to convert internal state representations
  * to string (useful for APIs).
- *
  */
 #ifndef OTBR_COMMON_API_STRINGS_HPP_
 #define OTBR_COMMON_API_STRINGS_HPP_
@@ -52,6 +51,7 @@
 #define OTBR_DHCP6_PD_STATE_NAME_DISABLED "disabled"
 #define OTBR_DHCP6_PD_STATE_NAME_STOPPED "stopped"
 #define OTBR_DHCP6_PD_STATE_NAME_RUNNING "running"
+#define OTBR_DHCP6_PD_STATE_NAME_IDLE "idle"
 #endif
 
 std::string GetDeviceRoleName(otDeviceRole aRole);
