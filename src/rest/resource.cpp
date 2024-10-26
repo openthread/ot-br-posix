@@ -1003,13 +1003,14 @@ void Resource::RemoveJoiner(const Request &aRequest, Response &aResponse) const
         }
     }
 
+    // These functions should only return OT_ERROR_NONE or OT_ERROR_NOT_FOUND both treated as successful
     if (discerner.mLength == 0)
     {
-        otCommissionerRemoveJoiner(mInstance, addrPtr);
+        (void)otCommissionerRemoveJoiner(mInstance, addrPtr);
     }
     else
     {
-        otCommissionerRemoveJoinerWithDiscerner(mInstance, &discerner);
+        (void)otCommissionerRemoveJoinerWithDiscerner(mInstance, &discerner);
     }
 
 exit:
