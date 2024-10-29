@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7c8e39a</span>
+   &#160;<span id="projectnumber">0.3.0-aa00c76</span>
    </div>
   </td>
  </tr>
@@ -522,11 +522,36 @@ $(function() {
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;    <a class="code" href="../../df/d8c/structotbr_1_1MdnsTelemetryInfo.html">MdnsTelemetryInfo</a> mTelemetryInfo{};</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;};</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160; </div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;} <span class="comment">// namespace Mdns</span></div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160; </div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160; </div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_MDNS_HPP_</span></div>
+<div class="line"><a name="l00671"></a><span class="lineno"><a class="line" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html">  671</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html">StateObserver</a></div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;{</div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00679"></a><span class="lineno"><a class="line" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html#add889933f8c9c72324a62acdfb3ad49e">  679</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html#add889933f8c9c72324a62acdfb3ad49e">HandleMdnsState</a>(<a class="code" href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#a33836f14c4f81a2487616acc08296fa4">Publisher::State</a> aState) = 0;</div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160; </div>
+<div class="line"><a name="l00684"></a><span class="lineno"><a class="line" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html#ad1f4ca327f3c8f17b1dbd3e1f879cb7f">  684</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html#ad1f4ca327f3c8f17b1dbd3e1f879cb7f">~StateObserver</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;};</div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160; </div>
+<div class="line"><a name="l00690"></a><span class="lineno"><a class="line" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html">  690</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html">StateSubject</a></div>
+<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;{</div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00696"></a><span class="lineno"><a class="line" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ae5553cd6ae77371e4ee2beb6adf40ab3">  696</a></span>&#160;    <a class="code" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ae5553cd6ae77371e4ee2beb6adf40ab3">StateSubject</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160; </div>
+<div class="line"><a name="l00701"></a><span class="lineno"><a class="line" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#a5839c7b14295d781f068b3d75ea8b8a3">  701</a></span>&#160;    <a class="code" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#a5839c7b14295d781f068b3d75ea8b8a3">~StateSubject</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160; </div>
+<div class="line"><a name="l00708"></a><span class="lineno"><a class="line" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ad6c9ebeace9ce58a8e58f3574f0df453">  708</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ad6c9ebeace9ce58a8e58f3574f0df453">AddObserver</a>(<a class="code" href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html">StateObserver</a> &amp;aObserver);</div>
+<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160; </div>
+<div class="line"><a name="l00715"></a><span class="lineno"><a class="line" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#adc619062881dc94d55e621c01e23b12a">  715</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#adc619062881dc94d55e621c01e23b12a">UpdateState</a>(<a class="code" href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#a33836f14c4f81a2487616acc08296fa4">Publisher::State</a> aState);</div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160; </div>
+<div class="line"><a name="l00720"></a><span class="lineno"><a class="line" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#a1d0b4121a5b49d779ebd41114ec2ff0f">  720</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#a1d0b4121a5b49d779ebd41114ec2ff0f">Clear</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160; </div>
+<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;    std::vector&lt;StateObserver *&gt; mObservers;</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;};</div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160; </div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;} <span class="comment">// namespace Mdns</span></div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160; </div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160; </div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_MDNS_HPP_</span></div>
 <div class="ttc" id="aclassNonCopyable_html"><div class="ttname"><a href="../../dc/d3c/classNonCopyable.html">NonCopyable</a></div><div class="ttdef"><b>Definition:</b> code_utils.hpp:190</div></div>
 <div class="ttc" id="aclassotbr_1_1Ip6Address_html"><div class="ttname"><a href="../../d2/dfe/classotbr_1_1Ip6Address.html">otbr::Ip6Address</a></div><div class="ttdef"><b>Definition:</b> types.hpp:110</div></div>
 <div class="ttc" id="aclassotbr_1_1Mdns_1_1Publisher_1_1HostRegistration_html"><div class="ttname"><a href="../../d4/d91/classotbr_1_1Mdns_1_1Publisher_1_1HostRegistration.html">otbr::Mdns::Publisher::HostRegistration</a></div><div class="ttdef"><b>Definition:</b> mdns.hpp:490</div></div>
@@ -561,6 +586,15 @@ $(function() {
 <div class="ttc" id="aclassotbr_1_1Mdns_1_1Publisher_html_adeb467b4e2b34bd533156005f56e0844"><div class="ttname"><a href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#adeb467b4e2b34bd533156005f56e0844">otbr::Mdns::Publisher::Stop</a></div><div class="ttdeci">virtual void Stop(void)=0</div></div>
 <div class="ttc" id="aclassotbr_1_1Mdns_1_1Publisher_html_ae28cea59926db61523595d4e6967afd7"><div class="ttname"><a href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#ae28cea59926db61523595d4e6967afd7">otbr::Mdns::Publisher::DiscoveredServiceInstanceCallback</a></div><div class="ttdeci">std::function&lt; void(const std::string &amp;aType, const DiscoveredInstanceInfo &amp;aInstanceInfo)&gt; DiscoveredServiceInstanceCallback</div><div class="ttdef"><b>Definition:</b> mdns.hpp:164</div></div>
 <div class="ttc" id="aclassotbr_1_1Mdns_1_1Publisher_html_aea1cfd72140d8d469b149ee279b44766"><div class="ttname"><a href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#aea1cfd72140d8d469b149ee279b44766">otbr::Mdns::Publisher::DiscoveredHostCallback</a></div><div class="ttdeci">std::function&lt; void(const std::string &amp;aHostName, const DiscoveredHostInfo &amp;aHostInfo)&gt; DiscoveredHostCallback</div><div class="ttdef"><b>Definition:</b> mdns.hpp:170</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateObserver_html"><div class="ttname"><a href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html">otbr::Mdns::StateObserver</a></div><div class="ttdef"><b>Definition:</b> mdns.hpp:672</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateObserver_html_ad1f4ca327f3c8f17b1dbd3e1f879cb7f"><div class="ttname"><a href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html#ad1f4ca327f3c8f17b1dbd3e1f879cb7f">otbr::Mdns::StateObserver::~StateObserver</a></div><div class="ttdeci">virtual ~StateObserver(void)=default</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateObserver_html_add889933f8c9c72324a62acdfb3ad49e"><div class="ttname"><a href="../../d9/d9e/classotbr_1_1Mdns_1_1StateObserver.html#add889933f8c9c72324a62acdfb3ad49e">otbr::Mdns::StateObserver::HandleMdnsState</a></div><div class="ttdeci">virtual void HandleMdnsState(Publisher::State aState)=0</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateSubject_html"><div class="ttname"><a href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html">otbr::Mdns::StateSubject</a></div><div class="ttdef"><b>Definition:</b> mdns.hpp:691</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateSubject_html_a1d0b4121a5b49d779ebd41114ec2ff0f"><div class="ttname"><a href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#a1d0b4121a5b49d779ebd41114ec2ff0f">otbr::Mdns::StateSubject::Clear</a></div><div class="ttdeci">void Clear(void)</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateSubject_html_a5839c7b14295d781f068b3d75ea8b8a3"><div class="ttname"><a href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#a5839c7b14295d781f068b3d75ea8b8a3">otbr::Mdns::StateSubject::~StateSubject</a></div><div class="ttdeci">~StateSubject(void)=default</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateSubject_html_ad6c9ebeace9ce58a8e58f3574f0df453"><div class="ttname"><a href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ad6c9ebeace9ce58a8e58f3574f0df453">otbr::Mdns::StateSubject::AddObserver</a></div><div class="ttdeci">void AddObserver(StateObserver &amp;aObserver)</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateSubject_html_adc619062881dc94d55e621c01e23b12a"><div class="ttname"><a href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#adc619062881dc94d55e621c01e23b12a">otbr::Mdns::StateSubject::UpdateState</a></div><div class="ttdeci">void UpdateState(Publisher::State aState)</div></div>
+<div class="ttc" id="aclassotbr_1_1Mdns_1_1StateSubject_html_ae5553cd6ae77371e4ee2beb6adf40ab3"><div class="ttname"><a href="../../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ae5553cd6ae77371e4ee2beb6adf40ab3">otbr::Mdns::StateSubject::StateSubject</a></div><div class="ttdeci">StateSubject(void)=default</div></div>
 <div class="ttc" id="aclassotbr_1_1OnceCallback_html"><div class="ttname"><a href="../../d3/d2f/classotbr_1_1OnceCallback.html">otbr::OnceCallback&lt; void(otbrError aError)&gt;</a></div></div>
 <div class="ttc" id="acode__utils_8hpp_html"><div class="ttname"><a href="../../da/d7b/code__utils_8hpp.html">code_utils.hpp</a></div></div>
 <div class="ttc" id="acommon_2types_8hpp_html_a9addd74a14dca1dab1b3e7a8205455aa"><div class="ttname"><a href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a></div><div class="ttdeci">otbrError</div><div class="ttdef"><b>Definition:</b> types.hpp:72</div></div>
