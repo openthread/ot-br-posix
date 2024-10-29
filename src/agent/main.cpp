@@ -60,10 +60,12 @@
 #endif
 #endif
 
-static const char kDefaultInterfaceName[] = "wpan0";
+#define DEFAULT_INTERFACE_NAME "wpan0"
+static const char kDefaultInterfaceName[] = DEFAULT_INTERFACE_NAME;
 
 // Port number used by Rest server.
 static const uint32_t kPortNumber = 8081;
+#define HELP_DEFAULT_REST_PORT_NUMBER "8081"
 
 enum
 {
@@ -144,8 +146,20 @@ static void PrintHelp(const char *aProgramName)
     fprintf(stderr,
             "Usage: %s [-I interfaceName] [-B backboneIfName] [-d DEBUG_LEVEL] [-v] [-s] [--auto-attach[=0/1]] "
             "RADIO_URL [RADIO_URL]\n"
-            "    --auto-attach defaults to 1\n"
-            "    -s disables syslog and prints to standard out\n",
+            "     -I, --thread-ifname    Name of the Thread network interface (default: " DEFAULT_INTERFACE_NAME ").\n"
+            "     -B, --backbone-ifname  Name of the backbone network interfaces (can be specified multiple times).\n"
+            "     -d, --debug-level      The log level (EMERG=0, ALERT=1, CRIT=2, ERR=3, WARNING=4, NOTICE=5, INFO=6, "
+            "DEBUG=7).\n"
+            "     -v, --verbose          Enable verbose logging.\n"
+            "     -s, --syslog-disable   Disable syslog and print to standard out.\n"
+            "     -h, --help             Show this help text.\n"
+            "     -V, --version          Print the application's version and exit.\n"
+            "     --radio-version        Print the radio coprocessor version and exit.\n"
+            "     --auto-attach          Whether or not to automatically attach to the saved network (default: 1).\n"
+            "     --rest-listen-address  Network address to listen on for the REST API (default: [::]).\n"
+            "     --rest-listen-port     Network port to listen on for the REST API "
+            "(default: " HELP_DEFAULT_REST_PORT_NUMBER ").\n"
+            "\n",
             aProgramName);
     fprintf(stderr, "%s", otSysGetRadioUrlHelpString());
 }
