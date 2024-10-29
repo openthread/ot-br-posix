@@ -1000,7 +1000,8 @@ exit:
 bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoinerInfo)
 {
     cJSON *value;
-    bool   ret        = true;
+    bool   ret  = true;
+
     aJoinerInfo.mType = OT_JOINER_INFO_TYPE_ANY;
     memset(&aJoinerInfo.mSharedId.mEui64, 0, OT_EXT_ADDRESS_SIZE);
 
@@ -1097,6 +1098,7 @@ exit:
 cJSON *JoinerTable2Json(const std::vector<otJoinerInfo> &aJoinerTable)
 {
     cJSON *table = cJSON_CreateArray();
+
     for (const otJoinerInfo joiner : aJoinerTable)
     {
         cJSON *joinerJson = JoinerInfo2Json(joiner);
