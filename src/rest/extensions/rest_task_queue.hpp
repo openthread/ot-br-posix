@@ -37,6 +37,7 @@
 #include "rest_task_handler.hpp"
 #include "utils/thread_helper.hpp"
 
+// Forward declare cJSON in the global scope
 struct cJSON;
 
 #ifdef __cplusplus
@@ -141,13 +142,13 @@ uint8_t validate_task(cJSON *task);
  *        be proccessed on different thread.
  *
  * @param task A pointer to JSON array item.
- * @param uuid_t *task_id A reference to get the task_id
+ * @param task_id A reference to get the task_id
  * @return true     Task queued
  *  @return false    Not able to queue task
  */
-bool         queue_task(cJSON *task, uuid_t *task_id);
+bool         queue_task(cJSON *task, otbr::rest::uuid_t *task_id);
 cJSON       *task_to_json(task_node_t *task_node);
-task_node_t *task_node_find_by_id(uuid_t uuid);
+task_node_t *task_node_find_by_id(otbr::rest::uuid_t uuid);
 
 /**
  * @brief When called, I generate a CJSON object for the task metadata
@@ -203,4 +204,4 @@ bool task_type_id_from_name(const char *task_name, rest_actions_task_t *type_id)
 } // end of extern "C"
 #endif
 
-#endif
+#endif // REST_TASK_QUEUE_HPP_

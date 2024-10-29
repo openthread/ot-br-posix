@@ -33,6 +33,9 @@
 #include <cstring>
 #include <string>
 
+namespace otbr {
+namespace rest {
+
 const int UUID_LEN     = 16;
 const int UUID_STR_LEN = 37;
 
@@ -111,5 +114,8 @@ private:
  * @return
  */
 int uuid_equals(uuid_t uuid1, uuid_t uuid2);
+
+} // namespace rest
+} // namespace otbr
 
 #endif // UUID_HPP

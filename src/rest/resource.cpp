@@ -37,14 +37,9 @@
 
 #include "common/logging.hpp"
 #include "common/task_runner.hpp"
+#include "rest/extensions/rest_task_queue.hpp"
 #include "rest/resource.hpp"
 #include "utils/string_utils.hpp"
-
-extern "C" {
-#include <cJSON.h>
-extern task_node_t *task_queue;
-extern uint8_t      task_queue_len;
-}
 
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
@@ -76,6 +71,7 @@ extern uint8_t      task_queue_len;
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
 #define OT_REST_HTTP_STATUS_409 "409 Conflict"
 #define OT_REST_HTTP_STATUS_415 "415 Unsupported Media Type"
+#define OT_REST_HTTP_STATUS_422 "422 Unprocessable Content"
 #define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
 #define OT_REST_HTTP_STATUS_503 "503 Service Unavailable"
 
@@ -86,6 +82,12 @@ using std::chrono::steady_clock;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
+
+extern "C" {
+#include <cJSON.h>
+extern task_node_t *task_queue;
+extern uint8_t      task_queue_len;
+}
 
 namespace otbr {
 namespace rest {
@@ -134,6 +136,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
         break;
     case HttpStatusCode::kStatusUnsupportedMediaType:
         httpStatus = OT_REST_HTTP_STATUS_415;
+        break;
+    case HttpStatusCode::kStatusUnprocessable:
+        httpStatus = OT_REST_HTTP_STATUS_422;
         break;
     case HttpStatusCode::kStatusInternalServerError:
         httpStatus = OT_REST_HTTP_STATUS_500;
@@ -1008,7 +1013,7 @@ void Resource::ApiActionPostHandler(const Request &aRequest, Response &aResponse
     std::string    responseMessage;
     std::string    errorCode;
     HttpStatusCode statusCode = HttpStatusCode::kStatusOk;
-    cJSON         *root;
+    cJSON         *root       = nullptr;
     cJSON         *dataArray;
     cJSON         *resp_data;
     cJSON         *datum;
@@ -1021,27 +1026,28 @@ void Resource::ApiActionPostHandler(const Request &aRequest, Response &aResponse
                  statusCode = HttpStatusCode::kStatusUnsupportedMediaType);
 
     root = cJSON_Parse(aRequest.GetBody().c_str());
-    VerifyOrExit(root != NULL, statusCode = HttpStatusCode::kStatusBadRequest);
+    VerifyOrExit(root != nullptr, statusCode = HttpStatusCode::kStatusBadRequest);
 
     // perform general validation before we attempt to
     // perform any task specific validation
     dataArray = cJSON_GetObjectItemCaseSensitive(root, "data");
-    VerifyOrExit((dataArray != NULL) && cJSON_IsArray(dataArray), statusCode = HttpStatusCode::kStatusConflict);
+    VerifyOrExit((dataArray != nullptr) && cJSON_IsArray(dataArray), statusCode = HttpStatusCode::kStatusUnprocessable);
 
     // validate the form and arguments of all tasks
     // before we attempt to perform processing on any of the tasks.
     for (int idx = 0; idx < cJSON_GetArraySize(dataArray); idx++)
     {
         // Require all items in the list to be valid Task items with all required attributes;
-        // otherwise rejects whole list and returns 409 Conflict.
+        // otherwise rejects whole list and returns 422 Unprocessable.
         // Unimplemented tasks counted as failed / invalid tasks
         VerifyOrExit(ACTIONS_TASK_VALID == validate_task(cJSON_GetArrayItem(dataArray, idx)),
-                     statusCode = HttpStatusCode::kStatusConflict);
+                     statusCode = HttpStatusCode::kStatusUnprocessable);
     }
 
     // Check queueing all tasks does not exceed the max number of tasks we can have queued
+    VerifyOrExit((TASK_QUEUE_MAX > cJSON_GetArraySize(dataArray)), statusCode = HttpStatusCode::kStatusConflict);
     VerifyOrExit((TASK_QUEUE_MAX - task_queue_len + can_remove_task_max()) > cJSON_GetArraySize(dataArray),
-                 statusCode = HttpStatusCode::kStatusConflict);
+                 statusCode = HttpStatusCode::kStatusServiceUnavailable);
 
     // Queue the tasks and prepare response data
     resp_data = cJSON_CreateArray();
@@ -1079,12 +1085,12 @@ void Resource::ApiActionPostHandler(const Request &aRequest, Response &aResponse
 
     // Clear the 'root' JSON object and release its memory (this should also delete 'data')
     cJSON_Delete(root);
-    root = NULL;
+    root = nullptr;
 
 exit:
     if (statusCode != HttpStatusCode::kStatusOk)
     {
-        if (root != NULL)
+        if (root != nullptr)
         {
             cJSON_Delete(root);
         }
@@ -1112,6 +1118,9 @@ void Resource::ApiActionGetHandler(const Request &aRequest, Response &aResponse)
     // and another attempt after 2s
     ApiActionRepeatedTaskRunner(2000);
 
+    resp      = cJSON_CreateObject();
+    task_node = task_queue;
+
     if (aRequest.GetHeaderValue(OT_REST_ACCEPT_HEADER).compare(OT_REST_CONTENT_TYPE_JSONAPI) == 0)
     {
         aResponse.SetContentType(OT_REST_CONTENT_TYPE_JSONAPI);
@@ -1119,7 +1128,6 @@ void Resource::ApiActionGetHandler(const Request &aRequest, Response &aResponse)
         if (!itemId.empty())
         {
             // return the item
-            task_node = task_queue;
             while (std::string(task_node->id_str) != itemId)
             {
                 VerifyOrExit(task_node->next != nullptr, statusCode = HttpStatusCode::kStatusResourceNotFound);
@@ -1128,18 +1136,14 @@ void Resource::ApiActionGetHandler(const Request &aRequest, Response &aResponse)
             }
             evaluate_task(task_node);
 
-            resp = cJSON_CreateObject();
             cJSON_AddItemToObject(resp, "data", task_to_json(task_node));
             resp_body = std::string(cJSON_PrintUnformatted(resp));
         }
         else
         {
             // return all items
-            task_node = task_queue;
-            resp      = cJSON_CreateObject();
-
             resp_data = cJSON_CreateArray();
-            while (task_node != NULL)
+            while (task_node != nullptr)
             {
                 evaluate_task(task_node);
                 cJSON_AddItemToObject(resp_data, "data", task_to_json(task_node));

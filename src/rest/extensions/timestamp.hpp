@@ -26,11 +26,22 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef TIMESTAMP_HPP
+#define TIMESTAMP_HPP
+
 #include <chrono>
 #include <string>
+
+namespace otbr {
+namespace rest {
 
 std::string now_rfc3339();
 
 // std::string toRfc3339Utc(std::chrono::system_clock::time_point timepoint);
 
 std::string toRfc3339(std::chrono::system_clock::time_point timepoint);
+
+} // namespace rest
+} // namespace otbr
+
+#endif // TIMESTAMP_HPP

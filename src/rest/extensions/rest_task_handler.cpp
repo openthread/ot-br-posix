@@ -31,6 +31,8 @@
  *          update task status and conversion of `task_node` to `JSON` format.
  *
  */
+#include <assert.h>
+
 #include "rest_task_handler.hpp"
 #include "rest_task_queue.hpp"
 #include "uuid.hpp"
@@ -61,7 +63,7 @@ task_node_t *task_node_new(cJSON *task)
     task_node_t *task_node = (task_node_t *)calloc(1, sizeof(task_node_t)); // free in rest_task_queue_handle on delete
     assert(NULL != task_node);
 
-    UUID uuid = UUID();
+    otbr::rest::UUID uuid = otbr::rest::UUID();
 
     // Duplicate the client data associated with this task
     task_node->task = cJSON_Duplicate(task, cJSON_True);
@@ -75,7 +77,7 @@ task_node_t *task_node_new(cJSON *task)
     // Populate UUID
     uuid.generateRandom();
     uuid.getUuid(task_node->id);
-    snprintf(task_node->id_str, sizeof(task_node->id_str), uuid.toString().c_str());
+    snprintf(task_node->id_str, sizeof(task_node->id_str), "%s", uuid.toString().c_str());
     otbrLogWarning("creating new task with id %s", task_node->id_str);
     cJSON_AddStringToObject(task_node->task, "id", task_node->id_str);
 

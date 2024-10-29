@@ -91,7 +91,7 @@ public:
     /**
      * This constructor creates an AllowListEntry.
      */
-    AllowListEntry(otExtAddress aEui64, uuid_t uuid, uint32_t aTimeout, char *aPskd)
+    AllowListEntry(otExtAddress aEui64, otbr::rest::uuid_t uuid, uint32_t aTimeout, char *aPskd)
     {
         meui64   = aEui64;
         muuid    = uuid;
@@ -101,7 +101,11 @@ public:
         mNext    = nullptr;
     }
 
-    AllowListEntry(otExtAddress aEui64, uuid_t uuid, uint32_t aTimeout, AllowListEntryState state, char *aPskd)
+    AllowListEntry(otExtAddress        aEui64,
+                   otbr::rest::uuid_t  uuid,
+                   uint32_t            aTimeout,
+                   AllowListEntryState state,
+                   char               *aPskd)
     {
         meui64   = aEui64;
         muuid    = uuid;
@@ -136,7 +140,7 @@ public:
 
     // Members
     otExtAddress        meui64;
-    uuid_t              muuid;
+    otbr::rest::uuid_t  muuid;
     uint32_t            mTimeout;
     char               *mPSKd;
     AllowListEntryState mstate;
@@ -180,11 +184,11 @@ bool eui64IsNull(const otExtAddress aEui64);
  * is not set. OT_ERROR_INVALID_STATE On-Mesh commissioner is not active.
  *
  */
-otError allowListCommissionerJoinerAdd(otExtAddress aEui64,
-                                       uint32_t     aTimeout,
-                                       char        *aPskd,
-                                       otInstance  *aInstance,
-                                       uuid_t       uuid);
+otError allowListCommissionerJoinerAdd(otExtAddress       aEui64,
+                                       uint32_t           aTimeout,
+                                       char              *aPskd,
+                                       otInstance        *aInstance,
+                                       otbr::rest::uuid_t uuid);
 
 /**
  * @brief Remove a single entry from On-Mesh commissioner joiner table
@@ -216,7 +220,7 @@ otError allowListEntryErase(otExtAddress aEui64);
  * automatically removed, in seconds.
  * @param[in]  aPskd Pskd to use when joinig the device
  */
-void allowListAddDevice(otExtAddress aEui64, uint32_t aTimeout, char *aPskd, uuid_t uuid);
+void allowListAddDevice(otExtAddress aEui64, uint32_t aTimeout, char *aPskd, otbr::rest::uuid_t uuid);
 
 /**
  * @brief    Print Allow List Entries available in memory to console
@@ -270,4 +274,4 @@ otError allowListEntryJoinStatusGet(const otExtAddress *eui64);
 }
 #endif
 
-#endif /* EXTENSIONS_COMMISSIONER_ALLOW_LIST_HPP_ */
+#endif // EXTENSIONS_COMMISSIONER_ALLOW_LIST_HPP_

@@ -57,6 +57,7 @@ extern "C" {
 #define COMMISSIONER_START_WAIT_TIME_MS 100
 #define COMMISSIONER_START_MAX_ATTEMPTS 5
 
+static otInstance                            *mInstance;
 static allow_list::LinkedList<AllowListEntry> AllowListEntryList;
 static void                                   consoleEntryPrint(AllowListEntry *aEntry);
 
@@ -104,11 +105,11 @@ AllowListEntry *entryEui64Find(const otExtAddress *aEui64)
     return entry;
 }
 
-otError allowListCommissionerJoinerAdd(otExtAddress aEui64,
-                                       uint32_t     aTimeout,
-                                       char        *aPskd,
-                                       otInstance  *aInstance,
-                                       uuid_t       uuid)
+otError allowListCommissionerJoinerAdd(otExtAddress       aEui64,
+                                       uint32_t           aTimeout,
+                                       char              *aPskd,
+                                       otInstance        *aInstance,
+                                       otbr::rest::uuid_t uuid)
 {
     otError             error;
     AllowListEntry     *entry   = nullptr;
@@ -197,8 +198,8 @@ AllowListEntry *parse_buf_as_json(char *aBuf)
     otExtAddress                        eui64;
     uint32_t                            timeout = 0;
     AllowListEntry::AllowListEntryState state   = AllowListEntry::kAllowListEntryNew;
-    UUID                                uuid_obj;
-    uuid_t                              uuid;
+    otbr::rest::UUID                    uuid_obj;
+    otbr::rest::uuid_t                  uuid;
     char                               *uuid_str     = nullptr;
     char                               *eui64_str    = nullptr;
     char                               *pskdValue    = nullptr;
@@ -274,10 +275,10 @@ exit:
     return pEntry;
 }
 
-void allowListAddDevice(otExtAddress aEui64, uint32_t aTimeout, char *aPskd, uuid_t aUuid)
+void allowListAddDevice(otExtAddress aEui64, uint32_t aTimeout, char *aPskd, otbr::rest::uuid_t aUuid)
 {
     assert(nullptr != aPskd);
-
+    otError         error;
     AllowListEntry *pEntry = entryEui64Find(&aEui64);
 
     int   pskd_len = strlen(aPskd);
@@ -294,19 +295,18 @@ void allowListAddDevice(otExtAddress aEui64, uint32_t aTimeout, char *aPskd, uui
     }
     else
     {
-        // TODO if (aUuid == NULL)
-        //{
-        //     //  this may not be needed
-        //     uuid_generate_random(&aUuid);
-        // }
         pEntry = new AllowListEntry(aEui64, aUuid, aTimeout, pskd_new);
         if (nullptr == pEntry)
         {
-            //  otbrLogErr("%s: Err creating a new AllowListEntry", __func__);
+            otbrLogErr("%s: Err creating a new AllowListEntry", __func__);
             free(pskd_new);
             return;
         }
-        AllowListEntryList.Add(*pEntry);
+        error = AllowListEntryList.Add(*pEntry);
+        if (error != OT_ERROR_NONE)
+        {
+            otbrLogWarning("%s: already have AllowListEntry", __func__);
+        }
     }
 
     consoleEntryPrint(pEntry);
@@ -322,7 +322,7 @@ static void consoleEntryPrint(AllowListEntry *aEntry)
     assert(nullptr != aEntry);
     // char uuidStr[UUID_STR_LEN] = {0};
 
-    UUID uuid_obj = UUID();
+    otbr::rest::UUID uuid_obj = otbr::rest::UUID();
     uuid_obj.setUuid(aEntry->muuid);
 
     // uuid_unparse(aEntry->muuid, uuidStr);
@@ -432,7 +432,7 @@ uint8_t allowListGetPendingJoinersCount(void)
 
     while (entry)
     {
-        if ((AllowListEntry::kAllowListEntryJoined != entry->mstate) ||
+        if ((AllowListEntry::kAllowListEntryJoined != entry->mstate) &&
             (AllowListEntry::kAllowListEntryJoinFailed != entry->mstate))
         {
             pendingJoinersCount++;
@@ -453,6 +453,8 @@ void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
     OT_UNUSED_VARIABLE(aJoinerId);
     AllowListEntry *entry               = nullptr;
     uint8_t         pendingDevicesCount = 0;
+
+    otError error = OT_ERROR_NONE;
 
     // @note: Thread may call this for joiners that we are not supposed to join
     //        do not assume `entry` is not null in the rest of the code.
@@ -510,7 +512,8 @@ void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
         // If all entries have been attempted and nothing is pending, stop the commissioner
         if (0 == pendingDevicesCount)
         {
-            allowListCommissionerStopPost();
+            error = allowListCommissionerStopPost();
+            otbrLogWarning("Commissioner Stop: %s", otThreadErrorToString(error));
         }
         else
         {
@@ -525,6 +528,7 @@ void HandleJoinerEvent(otCommissionerJoinerEvent aEvent,
 otError allowListCommissionerStart(otInstance *aInstance)
 {
     otError error = OT_ERROR_FAILED;
+    mInstance     = aInstance;
 
     error = otCommissionerStart(aInstance, &HandleStateChanged, &HandleJoinerEvent, NULL);
 
@@ -533,33 +537,29 @@ otError allowListCommissionerStart(otInstance *aInstance)
 
 otError allowListCommissionerStopPost(void)
 {
-    return OT_ERROR_NONE;
+    otError error = OT_ERROR_FAILED;
+
+    error = otCommissionerStop(mInstance);
+
+    return error;
 }
 
 cJSON *AllowListEntry::Allow_list_entry_as_CJSON(const char *entryType)
 {
     assert(nullptr != entryType);
 
-    cJSON *entry_json_obj = nullptr;
-    // cJSON *hasActivationKey    = nullptr;
+    cJSON *entry_json_obj      = nullptr;
     cJSON *attributes_json_obj = nullptr;
     char   eui64_str[17]       = {0};
-    // char   uuid_str[UUID_STR_LEN] = {0};
 
-    UUID uuid_obj = UUID();
+    otbr::rest::UUID uuid_obj = otbr::rest::UUID();
 
-    // hasActivationKey = cJSON_CreateObject();
+    snprintf(eui64_str, sizeof(eui64_str), "%02x%02x%02x%02x%02x%02x%02x%02x", meui64.m8[0], meui64.m8[1], meui64.m8[2],
+             meui64.m8[3], meui64.m8[4], meui64.m8[5], meui64.m8[6], meui64.m8[7]);
 
-    memset(eui64_str, 0, sizeof(eui64_str));
-    sprintf(eui64_str, "%02x%02x%02x%02x%02x%02x%02x%02x", meui64.m8[0], meui64.m8[1], meui64.m8[2], meui64.m8[3],
-            meui64.m8[4], meui64.m8[5], meui64.m8[6], meui64.m8[7]);
-
-    // memset(uuid_str, 0, sizeof(uuid_str));
-    // uuid_unparse(muuid, uuid_str);
     uuid_obj.setUuid(muuid);
 
     attributes_json_obj = cJSON_CreateObject();
-    // cJSON_AddItemToObject(attributes_json_obj, "hasActivationKey", hasActivationKey);
     cJSON_AddItemToObject(attributes_json_obj, "eui", cJSON_CreateString(eui64_str));
     cJSON_AddItemToObject(attributes_json_obj, "pskd", cJSON_CreateString(mPSKd));
 

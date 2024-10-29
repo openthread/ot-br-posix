@@ -115,12 +115,12 @@ cJSON *task_to_json(task_node_t *aTaskNode)
     return handlers->jsonify(aTaskNode);
 }
 
-task_node_t *task_node_find_by_id(uuid_t uuid)
+task_node_t *task_node_find_by_id(otbr::rest::uuid_t uuid)
 {
     task_node_t *head = task_queue;
     while (NULL != head)
     {
-        if (uuid_equals(uuid, head->id))
+        if (otbr::rest::uuid_equals(uuid, head->id))
         {
             return head;
         }
@@ -226,7 +226,7 @@ uint8_t validate_task(cJSON *task)
     return ACTIONS_TASK_INVALID;
 }
 
-bool queue_task(cJSON *task, uuid_t *task_id)
+bool queue_task(cJSON *task, otbr::rest::uuid_t *task_id)
 {
     otbrLogWarning("Queueing task: %s", cJSON_PrintUnformatted(task));
     if (TASK_QUEUE_MAX <= task_queue_len)
@@ -244,7 +244,7 @@ bool queue_task(cJSON *task, uuid_t *task_id)
     }
     // Generate the task object, and copy the ID to the output
     task_node_t *task_node = task_node_new(task);
-    memcpy(task_id, &(task_node->id), sizeof(uuid_t));
+    memcpy(task_id, &(task_node->id), sizeof(otbr::rest::uuid_t));
 
     if (NULL == task_queue)
     {
@@ -485,10 +485,6 @@ void rest_task_queue_handle(void)
         // Get ready to process the next task in the queue
         head = head->next;
     }
-    // otbrLogWarning("EXITING rest_task_queue_task");
-    // pthread_exit(NULL);
-
-    // return NULL;
 }
 
 void rest_task_queue_task_init(otInstance *aInstance)
@@ -506,11 +502,9 @@ void rest_task_queue_task_init(otInstance *aInstance)
     //
     // This check iterates over the list an ensures that each entry has a
     // type_id which is exactly 1 greater than the previous entry.
-    rest_actions_task_t previous_id = handlers[0].type_id;
     for (size_t idx = 1; idx < ARRAY_SIZE(handlers); idx++)
     {
-        assert(previous_id + 1 == handlers[idx].type_id);
-        previous_id = handlers[idx].type_id;
+        assert(handlers[idx - 1].type_id + 1 == handlers[idx].type_id);
     }
 }
 

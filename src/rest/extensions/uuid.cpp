@@ -36,6 +36,9 @@
 #include <random>
 #include <sstream>
 
+namespace otbr {
+namespace rest {
+
 UUID::UUID()
 {
     std::memset(&uuid, 0, sizeof(uuid));
@@ -122,3 +125,6 @@ int uuid_equals(uuid_t uuid1, uuid_t uuid2)
            uuid1.node[1] == uuid2.node[1] && uuid1.node[2] == uuid2.node[2] && uuid1.node[3] == uuid2.node[3] &&
            uuid1.node[4] == uuid2.node[4] && uuid1.node[5] == uuid2.node[5];
 }
+
+} // namespace rest
+} // namespace otbr

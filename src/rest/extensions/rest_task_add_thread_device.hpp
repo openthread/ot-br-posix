@@ -37,6 +37,7 @@
 #include "rest_task_handler.hpp"
 #include "rest_task_queue.hpp"
 
+// Forward declare cJSON in the global scope
 struct cJSON;
 
 #ifdef __cplusplus

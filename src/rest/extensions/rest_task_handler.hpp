@@ -36,6 +36,7 @@
 
 #include "uuid.hpp"
 
+// Forward declare cJSON in the global scope
 struct cJSON;
 
 #ifdef __cplusplus
@@ -98,14 +99,14 @@ typedef enum
 typedef struct relationship
 {
     char mType[MAX_TYPELENGTH];
-    char mId[UUID_STR_LEN];
+    char mId[otbr::rest::UUID_STR_LEN];
 } relationship_t;
 
 typedef struct task_node_s
 {
     cJSON                     *task;
-    uuid_t                     id;
-    char                       id_str[UUID_STR_LEN];
+    otbr::rest::uuid_t         id;
+    char                       id_str[otbr::rest::UUID_STR_LEN];
     rest_actions_task_t        type;
     rest_actions_task_status_t status;
     int                        created;
@@ -159,4 +160,4 @@ bool can_remove_task(task_node_t *aTaskNode);
 } // end of extern "C"
 #endif
 
-#endif
+#endif // REST_TASK_HANDLER_HPP_

@@ -81,13 +81,6 @@ void RestWebServer::Init(void)
     mInstance         = threadHelper->GetInstance();
     if (mInstance != NULL)
     {
-        // Initialize the mutex and creates a thread to process the 'api/actions'
-        // Pass the openthread instance that can be used to call openthread apis.
-
-        // removed 'task' (pthread) in the sense of a task for multithreading and do not create such
-        // parallel task objects that consequently require complicated lock and semaphore mechanisms.
-        // TODO: stick with term 'action' for an activity that requires indirect response.
-
         // Initialize the instance pointer
         rest_task_queue_task_init(mInstance);
     }

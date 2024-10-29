@@ -31,8 +31,9 @@
 
 # installs fnm (Fast Node Manager)
 curl -fsSL https://fnm.vercel.app/install | bash
-# activate fnm
+# shellcheck source=/dev/null
 source ~/.bashrc
+# activate fnm
 # download and install Node.js
 fnm use --install-if-missing 20
 # verifies the right Node.js version is in the environment

@@ -35,6 +35,9 @@
 
 #include "utils/thread_helper.hpp"
 
+namespace otbr {
+namespace rest {
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,7 +67,7 @@ void combineMeshLocalPrefixAndIID(const otMeshLocalPrefix        *meshLocalPrefi
                                   otIp6Address                   *ip6Address);
 
 // count number of 1s in bitmask
-int my_count_ones(uint32_t bitmask);
+int count_ones(uint32_t bitmask);
 
 uint8_t joiner_verify_pskd(char *pskd);
 
@@ -94,4 +97,7 @@ bool is_hex_string(char *str);
 } // end of extern "C"
 #endif
 
-#endif
+} // namespace rest
+} // namespace otbr
+
+#endif // REST_SERVER_COMMON_HPP_

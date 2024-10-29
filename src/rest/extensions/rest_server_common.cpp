@@ -32,11 +32,13 @@
  */
 #include "rest_server_common.hpp"
 
+namespace otbr {
+namespace rest {
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <cJSON.h>
 #include <ctype.h>
 #include <openthread/logging.h>
 
@@ -59,7 +61,7 @@ void combineMeshLocalPrefixAndIID(const otMeshLocalPrefix        *meshLocalPrefi
 }
 
 // count number of 1s in bitmask
-int my_count_ones(uint32_t bitmask)
+int count_ones(uint32_t bitmask)
 {
     int count = 0;
     while (bitmask)
@@ -166,3 +168,6 @@ bool is_hex_string(char *str)
 #ifdef __cplusplus
 }
 #endif
+
+} // namespace rest
+} // namespace otbr

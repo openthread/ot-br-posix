@@ -37,6 +37,9 @@
 using namespace std;
 using namespace std::chrono;
 
+namespace otbr {
+namespace rest {
+
 std::string now_rfc3339()
 {
     return toRfc3339(system_clock::now());
@@ -81,3 +84,6 @@ std::string toRfc3339(system_clock::time_point timepoint)
 
     return std::string(updated_str);
 }
+
+} // namespace rest
+} // namespace otbr

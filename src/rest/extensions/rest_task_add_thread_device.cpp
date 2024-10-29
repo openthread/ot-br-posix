@@ -57,6 +57,7 @@ uint32_t getJoinerExpirationTime(otExtAddress *aEui);
 cJSON *jsonify_add_thread_device_task(task_node_t *task_node)
 {
     otExtAddress eui64 = {0};
+    otError      error = OT_ERROR_NONE;
 
     cJSON *task_json  = task_node_to_json(task_node);
     cJSON *attributes = cJSON_GetObjectItemCaseSensitive(task_json, "attributes");
@@ -66,7 +67,7 @@ cJSON *jsonify_add_thread_device_task(task_node_t *task_node)
     if ((task_node->status > ACTIONS_TASK_STATUS_PENDING) && (task_node->status != ACTIONS_TASK_STATUS_UNIMPLEMENTED))
     {
         // find allowListEntry and get more detailed status
-        str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE);
+        SuccessOrExit(error = otbr::rest::str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
 
         if (entryEui64Find(&eui64) != nullptr)
         {
@@ -80,6 +81,12 @@ cJSON *jsonify_add_thread_device_task(task_node_t *task_node)
             otbrLogWarning("%s:%d - %s - eui not in allowlist: %s", __FILE__, __LINE__, __func__,
                            cJSON_Print(attributes));
         }
+    }
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("%s:%d - %s - missing or bad value in a field: %s", __FILE__, __LINE__, __func__,
+                       cJSON_Print(attributes));
     }
     return task_json;
 }
@@ -95,14 +102,15 @@ uint8_t validate_add_thread_device_task(cJSON *attributes)
 
     VerifyOrExit((NULL != timeout && cJSON_IsNumber(timeout)), error = OT_ERROR_FAILED);
 
-    VerifyOrExit(
-        (NULL != eui && cJSON_IsString(eui) && 16 == strlen(eui->valuestring) && is_hex_string(eui->valuestring)),
-        error = OT_ERROR_FAILED);
-    // check eui is convertable
-    SuccessOrExit(error = str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
-
-    VerifyOrExit((NULL != pskd && cJSON_IsString(pskd) && (WPANSTATUS_OK == joiner_verify_pskd(pskd->valuestring))),
+    VerifyOrExit((NULL != eui && cJSON_IsString(eui) && 16 == strlen(eui->valuestring) &&
+                  otbr::rest::is_hex_string(eui->valuestring)),
                  error = OT_ERROR_FAILED);
+    // check eui is convertable
+    SuccessOrExit(error = otbr::rest::str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
+
+    VerifyOrExit(
+        (NULL != pskd && cJSON_IsString(pskd) && (WPANSTATUS_OK == otbr::rest::joiner_verify_pskd(pskd->valuestring))),
+        error = OT_ERROR_FAILED);
 
 exit:
     if (error != OT_ERROR_NONE)
@@ -128,7 +136,7 @@ otError addJoiner(task_node_t *task_node, otInstance *aInstance)
     cJSON *pskd       = cJSON_GetObjectItemCaseSensitive(attributes, ATTRIBUTE_PSKD);
     cJSON *timeout    = cJSON_GetObjectItemCaseSensitive(attributes, "timeout");
 
-    str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE);
+    SuccessOrExit(error = otbr::rest::str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
 
     if ((entryEui64Find(&eui64) != NULL) &&
         (entryEui64Find(&eui64)->mstate < AllowListEntry::kAllowListEntryJoinFailed))
@@ -231,7 +239,7 @@ rest_actions_task_result_t evaluate_add_thread_device_task(task_node_t *task_nod
     cJSON *attributes = cJSON_GetObjectItemCaseSensitive(task, "attributes");
     cJSON *eui        = cJSON_GetObjectItemCaseSensitive(attributes, "eui");
 
-    str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE);
+    SuccessOrExit(error = otbr::rest::str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
 
     addrPtr = &eui64;
     SuccessOrExit(error = allowListEntryJoinStatusGet(addrPtr));
@@ -259,7 +267,7 @@ rest_actions_task_result_t clean_add_thread_device_task(task_node_t *task_node, 
     otError error = OT_ERROR_NONE;
 
     otExtAddress eui64 = {0};
-    str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE);
+    SuccessOrExit(error = otbr::rest::str_to_m8(eui64.m8, eui->valuestring, OT_EXT_ADDRESS_SIZE));
 
     SuccessOrExit(error = allowListCommissionerJoinerRemove(eui64, aInstance));
     SuccessOrExit(error = allowListEntryErase(eui64));

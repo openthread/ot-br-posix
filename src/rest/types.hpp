@@ -79,6 +79,7 @@ enum class HttpStatusCode : std::uint16_t
     kStatusRequestTimeout       = 408,
     kStatusConflict             = 409,
     kStatusUnsupportedMediaType = 415,
+    kStatusUnprocessable        = 422,
     kStatusInternalServerError  = 500,
     kStatusServiceUnavailable   = 503,
 };
