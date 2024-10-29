@@ -846,22 +846,21 @@ void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse
     }
 
 exit:
-    if (error == OTBR_ERROR_NONE)
+    switch (error)
     {
+    case OTBR_ERROR_NONE:
         errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
-    }
-    else if (error == OTBR_ERROR_INVALID_STATE)
-    {
+        break;
+    case OTBR_ERROR_INVALID_STATE:
         ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
-    }
-    else if (error == OTBR_ERROR_INVALID_ARGS)
-    {
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
         ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
-    }
-    else
-    {
+        break;
+    default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        break;
     }
 }
 
@@ -938,37 +937,35 @@ void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
     VerifyOrExit(errorOt == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
 
 exit:
-    if (error == OTBR_ERROR_NONE)
+    switch (error)
     {
+    case OTBR_ERROR_NONE:
         errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
-    }
-    else if (error == OTBR_ERROR_INVALID_STATE)
-    {
+        break;
+    case OTBR_ERROR_INVALID_STATE:
         ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
-    }
-    else if (error == OTBR_ERROR_INVALID_ARGS)
-    {
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
         ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
-    }
-    else if (error == OTBR_ERROR_OPENTHREAD)
-    {
-        if (errorOt == OT_ERROR_INVALID_ARGS)
+        break;
+    case OTBR_ERROR_OPENTHREAD:
+        switch (errorOt)
         {
+        case OT_ERROR_INVALID_ARGS:
             ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
-        }
-        else if (errorOt == OT_ERROR_NO_BUFS)
-        {
+            break;
+        case OT_ERROR_NO_BUFS:
             ErrorHandler(aResponse, HttpStatusCode::kStatusInsufficientStorage);
-        }
-        else
-        {
+            break;
+        default:
             ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+            break;
         }
-    }
-    else
-    {
+        break;
+    default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        break;
     }
 }
 
@@ -1014,22 +1011,21 @@ void Resource::RemoveJoiner(const Request &aRequest, Response &aResponse) const
     }
 
 exit:
-    if (error == OTBR_ERROR_NONE)
+    switch (error)
     {
+    case OTBR_ERROR_NONE:
         errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
         aResponse.SetResponsCode(errorCode);
-    }
-    else if (error == OTBR_ERROR_INVALID_STATE)
-    {
+        break;
+    case OTBR_ERROR_INVALID_STATE:
         ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
-    }
-    else if (error == OTBR_ERROR_INVALID_ARGS)
-    {
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
         ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
-    }
-    else
-    {
+        break;
+    default:
         ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        break;
     }
 }
 
