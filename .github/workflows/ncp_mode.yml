@@ -49,9 +49,11 @@ jobs:
       matrix:
         mdns: ["mDNSResponder", "avahi"]
     env:
-        BUILD_TARGET: check
+        BUILD_TARGET: ncp_mode
         OTBR_MDNS: ${{ matrix.mdns }}
         OTBR_COVERAGE: 1
+        OTBR_VERBOSE: 1
+        OTBR_OPTIONS: "-DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.4 -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON -DBUILD_TESTING=OFF"
     steps:
     - uses: actions/checkout@v4
       with:
@@ -60,8 +62,20 @@ jobs:
       run: tests/scripts/bootstrap.sh
     - name: Build
       run: |
-        OTBR_BUILD_DIR="./build/temp" script/cmake-build -DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.4 -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_WEB=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON
+        OTBR_BUILD_DIR="./build/temp" script/cmake-build ${OTBR_OPTIONS}
+    - name: Build OTBR Docker Image
+      run: |
+        sudo docker build -t otbr-ncp \
+            -f ./etc/docker/Dockerfile . \
+            --build-arg NAT64=0 \
+            --build-arg NAT64_SERVICE=0 \
+            --build-arg DNS64=0 \
+            --build-arg WEB_GUI=0 \
+            --build-arg REST_API=0 \
+            --build-arg FIREWALL=0 \
+            --build-arg OTBR_OPTIONS="${OTBR_OPTIONS}"
     - name: Run
-      run: OTBR_VERBOSE=1 OTBR_TOP_BUILDDIR="./build/temp" script/test ncp_mode
+      run: |
+       top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim expect
     - name: Codecov
       uses: codecov/codecov-action@v4
