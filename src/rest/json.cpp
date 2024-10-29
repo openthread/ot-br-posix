@@ -35,6 +35,10 @@ extern "C" {
 #include <cJSON.h>
 }
 
+#ifndef BITS_PER_BYTE
+#define BITS_PER_BYTE 8
+#endif
+
 namespace otbr {
 namespace rest {
 namespace Json {
@@ -969,8 +973,8 @@ otbrError StringDiscerner2Discerner(char *aString, otJoinerDiscerner &aDiscerner
     otbrError error = OTBR_ERROR_NONE;
     char     *separator;
     uint8_t   byteLength;
-    uint8_t   byteSwapBuffer[8] = {0};
-    uint8_t  *buffer            = (uint8_t *)&aDiscerner.mValue;
+    uint8_t   byteSwapBuffer[OT_JOINER_MAX_DISCERNER_LENGTH / BITS_PER_BYTE] = {0};
+    uint8_t  *buffer                                                         = (uint8_t *)&aDiscerner.mValue;
 
     separator = strstr(aString, "/");
     VerifyOrExit(separator != nullptr, error = OTBR_ERROR_NOT_FOUND);
@@ -985,7 +989,7 @@ otbrError StringDiscerner2Discerner(char *aString, otJoinerDiscerner &aDiscerner
 
     *separator = '\0';
     byteLength = Hex2BytesJsonString(std::string(aString), byteSwapBuffer, OT_JOINER_MAX_DISCERNER_LENGTH);
-    VerifyOrExit(byteLength <= (1 + ((aDiscerner.mLength - 1) / 8)), error = OTBR_ERROR_INVALID_ARGS);
+    VerifyOrExit(byteLength <= (1 + ((aDiscerner.mLength - 1) / BITS_PER_BYTE)), error = OTBR_ERROR_INVALID_ARGS);
 
     // The discerner is expected to be big endian
     for (uint8_t i = 0; i < byteLength; i++)
@@ -1000,7 +1004,7 @@ exit:
 bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoinerInfo)
 {
     cJSON *value;
-    bool   ret  = true;
+    bool   ret = false;
 
     aJoinerInfo.mType = OT_JOINER_INFO_TYPE_ANY;
     memset(&aJoinerInfo.mSharedId.mEui64, 0, OT_EXT_ADDRESS_SIZE);
@@ -1008,33 +1012,32 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
     value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Pskd");
     if (cJSON_IsString(value))
     {
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
-        VerifyOrExit(strlen(value->valuestring) <= OT_JOINER_MAX_PSKD_LENGTH, ret = false);
+        VerifyOrExit(value->valuestring != nullptr);
+        VerifyOrExit(strlen(value->valuestring) <= OT_JOINER_MAX_PSKD_LENGTH);
         strncpy(aJoinerInfo.mPskd.m8, value->valuestring, OT_JOINER_MAX_PSKD_LENGTH);
     }
     else
     {
-        ExitNow(ret = false);
+        ExitNow();
     }
 
     value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "JoinerId");
     if (cJSON_IsString(value))
     {
-        VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY, ret = false);
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY);
+        VerifyOrExit(value->valuestring != nullptr);
         if (strncmp(value->valuestring, "*", 1) != 0)
         {
             otbrError err = StringDiscerner2Discerner(value->valuestring, aJoinerInfo.mSharedId.mDiscerner);
             if (err == OTBR_ERROR_NOT_FOUND)
             {
                 VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aJoinerInfo.mSharedId.mEui64.m8,
-                                                 OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE,
-                             ret = false);
+                                                 OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE);
                 aJoinerInfo.mType = OT_JOINER_INFO_TYPE_EUI64;
             }
             else
             {
-                VerifyOrExit(err == OTBR_ERROR_NONE, ret = false);
+                VerifyOrExit(err == OTBR_ERROR_NONE);
                 aJoinerInfo.mType = OT_JOINER_INFO_TYPE_DISCERNER;
             }
         }
@@ -1043,13 +1046,12 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
     value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Discerner");
     if (cJSON_IsString(value))
     {
-        VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY, ret = false);
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY);
+        VerifyOrExit(value->valuestring != nullptr);
         if (strncmp(value->valuestring, "*", 1) != 0)
         {
             VerifyOrExit(StringDiscerner2Discerner(value->valuestring, aJoinerInfo.mSharedId.mDiscerner) ==
-                             OTBR_ERROR_NONE,
-                         ret = false);
+                         OTBR_ERROR_NONE);
             aJoinerInfo.mType = OT_JOINER_INFO_TYPE_DISCERNER;
         }
     }
@@ -1057,13 +1059,12 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
     value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Eui64");
     if (cJSON_IsString(value))
     {
-        VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY, ret = false);
-        VerifyOrExit(value->valuestring != nullptr, ret = false);
+        VerifyOrExit(aJoinerInfo.mType == OT_JOINER_INFO_TYPE_ANY);
+        VerifyOrExit(value->valuestring != nullptr);
         if (strncmp(value->valuestring, "*", 1) != 0)
         {
             VerifyOrExit(Hex2BytesJsonString(std::string(value->valuestring), aJoinerInfo.mSharedId.mEui64.m8,
-                                             OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE,
-                         ret = false);
+                                             OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE);
             aJoinerInfo.mType = OT_JOINER_INFO_TYPE_EUI64;
         }
     }
@@ -1075,6 +1076,7 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
         aJoinerInfo.mExpirationTime = value->valueint;
     }
 
+    ret = true;
 exit:
     return ret;
 }
