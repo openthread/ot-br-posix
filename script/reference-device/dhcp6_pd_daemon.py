@@ -28,33 +28,38 @@
 #
 
 import logging
-from dbus.mainloop.glib import DBusGMainLoop
-
 import dbus
 import gi.repository.GLib as GLib
 import subprocess
 import os
+
+from dbus.mainloop.glib import DBusGMainLoop
+DBusGMainLoop(set_as_default=True)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 bus = dbus.SystemBus()
 thread_dbus_obj = None
 iface = None
+backup_dir = "/var/lib/ot-dhcpcd-backup"
 
 def properties_changed_handler(interface_name, changed_properties, invalidated_properties):
     if "Dhcp6PdState" in changed_properties:
         new_state = changed_properties["Dhcp6PdState"]
         logging.info(f"Dhcp6PdState changed to: {new_state}")
         if new_state == "running":
+            os.makedirs(backup_dir, exist_ok=True)
+            subprocess.run(["sudo", "cp", "/etc/dhcpcd.conf", f"{backup_dir}/dhcpcd.conf.orig"], check=True)
             try:
+                subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
                 subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
                 logging.info("Successfully restarted dhcpcd service.")
             except subprocess.CalledProcessError as e:
                 logging.error(f"Error restarting dhcpcd service: {e}")
         elif new_state == "stopped":
-            if os.path.isfile("/etc/dhcpcd.conf.orig"):
+            if os.path.isfile(f"{backup_dir}/dhcpcd.conf.orig"):
                 try:
-                    subprocess.run(["sudo", "cp", "/etc/dhcpcd.conf.orig", "/etc/dhcpcd.conf"], check=True)
+                    subprocess.run(["sudo", "cp", f"{backup_dir}/dhcpcd.conf.orig", "/etc/dhcpcd.conf"], check=True)
                     logging.info("Successfully restored default dhcpcd config.")
                 except subprocess.CalledProcessError as e:
                     logging.error(f"Error restoring dhcpcd config: {e}")
@@ -72,18 +77,15 @@ def connect_to_signal():
         logging.error(f"Error connecting to D-Bus: {e}")
         thread_dbus_obj = None
         thread_properties_dbus_iface = None
-        
 
 def check_and_reconnect():
     if thread_dbus_obj is None:
         connect_to_signal()
 
 def main():
-    dbus_loop = DBusGMainLoop(set_as_default=True)
+    loop = GLib.MainLoop()
 
     connect_to_signal()
-
-    loop = GLib.MainLoop()
 
     GLib.timeout_add_seconds(5, check_and_reconnect)
 
