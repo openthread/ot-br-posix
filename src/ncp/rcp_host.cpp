@@ -31,6 +31,7 @@
 #include "ncp/rcp_host.hpp"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -485,6 +486,34 @@ exit:
     {
         mTaskRunner.Post([aErrReceiver, error](void) { aErrReceiver(error, "OT is not initialized"); });
     }
+}
+
+void RcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
+                                  const AsyncResultReceiver          &aReceiver)
+{
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+
+    for (ChannelMaxPower channelMaxPower : aChannelMaxPowers)
+    {
+        VerifyOrExit((channelMaxPower.mChannel >= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN) &&
+                         (channelMaxPower.mChannel <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX),
+                     error = OT_ERROR_INVALID_ARGS, errorMsg = "The channel is invalid");
+    }
+
+    for (ChannelMaxPower channelMaxPower : aChannelMaxPowers)
+    {
+        otbrLogInfo("Set channel max power: channel=%u, maxPower=%u", static_cast<uint32_t>(channelMaxPower.mChannel),
+                    static_cast<uint32_t>(channelMaxPower.mMaxPower));
+        SuccessOrExit(error = otPlatRadioSetChannelTargetPower(
+                          mInstance, static_cast<uint8_t>(channelMaxPower.mChannel), channelMaxPower.mMaxPower),
+                      errorMsg = "Failed to set channel max power");
+    }
+
+exit:
+    mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
 }
 
 void RcpHost::DisableThreadAfterDetach(void *aContext)

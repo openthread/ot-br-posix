@@ -182,6 +182,15 @@ void NcpHost::GetChannelMasks(const ChannelMasksReceiver &aReceiver, const Async
     mTaskRunner.Post([aErrReceiver](void) { aErrReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
+void NcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
+                                  const AsyncResultReceiver          &aReceiver)
+{
+    OT_UNUSED_VARIABLE(aChannelMaxPowers);
+
+    // TODO: Implement SetChannelMaxPowers under NCP mode.
+    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);

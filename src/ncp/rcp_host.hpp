@@ -211,6 +211,8 @@ public:
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
     void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) override;
     void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) override;
+    void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
+                             const AsyncResultReceiver          &aReceiver) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
