@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7e03f9a</span>
+   &#160;<span id="projectnumber">0.3.0-f9b3bd3</span>
    </div>
   </td>
  </tr>
@@ -106,6 +106,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:abd90cc9144be9bb1a635b4c289527ff4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ec8c8bce05e22f8ebb174d834d45b14"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a6ec8c8bce05e22f8ebb174d834d45b14">GetChannelMasks</a> (const ChannelMasksReceiver &amp;aReceiver, const AsyncResultReceiver &amp;aErrReceiver) override</td></tr>
 <tr class="separator:a6ec8c8bce05e22f8ebb174d834d45b14"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d40e6c9a17d695bb781946f1f472938"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a2d40e6c9a17d695bb781946f1f472938">SetChannelMaxPowers</a> (const std::vector&lt; <a class="el" href="../../d7/d8d/structotbr_1_1Ncp_1_1ThreadHost_1_1ChannelMaxPower.html">ChannelMaxPower</a> &gt; &amp;aChannelMaxPowers, const AsyncResultReceiver &amp;aReceiver) override</td></tr>
+<tr class="separator:a2d40e6c9a17d695bb781946f1f472938"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d407eb00d5bf7d98d958ba49e797f3b"><td class="memItemLeft" align="right" valign="top">CoprocessorType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a8d407eb00d5bf7d98d958ba49e797f3b">GetCoprocessorType</a> (void) override</td></tr>
 <tr class="separator:a8d407eb00d5bf7d98d958ba49e797f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a876473d36f2169cecfb94c3bf8981ed4"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a876473d36f2169cecfb94c3bf8981ed4">GetCoprocessorVersion</a> (void) override</td></tr>
@@ -577,6 +579,56 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b
 </dl>
 
 <p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a26b4c0983dbf032f5d635f1524d93b91">otbr::Ncp::ThreadHost</a>.</p>
+
+</div>
+</div>
+<a id="a2d40e6c9a17d695bb781946f1f472938"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d40e6c9a17d695bb781946f1f472938">&#9670;&nbsp;</a></span>SetChannelMaxPowers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void otbr::Ncp::NcpHost::SetChannelMaxPowers </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="../../d7/d8d/structotbr_1_1Ncp_1_1ThreadHost_1_1ChannelMaxPower.html">ChannelMaxPower</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>aChannelMaxPowers</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const AsyncResultReceiver &amp;&#160;</td>
+          <td class="paramname"><em>aReceiver</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Sets the max power of each channel.</p>
+<ol type="1">
+<li>If the host hasn't been initialized, <code>aReceiver</code> will be invoked with error OT_ERROR_INVALID_STATE.</li>
+<li>If any value in <code>aChannelMaxPowers</code> is invalid, <code>aReceiver</code> will be invoked with error OT_ERROR_INVALID_ARGS.</li>
+</ol>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">aChannelMaxPowers</td><td>A vector of ChannelMaxPower. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">aReceiver</td><td>A receiver to get the async result of this operation. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a99558f6baef98c133cea8c6ae87f04e1">otbr::Ncp::ThreadHost</a>.</p>
 
 </div>
 </div>
