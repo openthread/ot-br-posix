@@ -51,33 +51,23 @@ namespace otbr {
 std::atomic_bool     Application::sShouldTerminate(false);
 const struct timeval Application::kPollTimeout = {OTBR_MAINLOOP_POLL_TIMEOUT_SEC, 0};
 
-Application::Application(const std::string               &aInterfaceName,
-                         const std::vector<const char *> &aBackboneInterfaceNames,
-                         const std::vector<const char *> &aRadioUrls,
-                         bool                             aEnableAutoAttach,
-                         const std::string               &aRestListenAddress,
-                         int                              aRestListenPort)
+Application::Application(Ncp::ThreadHost   &aHost,
+                         const std::string &aInterfaceName,
+                         const std::string &aBackboneInterfaceName,
+                         const std::string &aRestListenAddress,
+                         int                aRestListenPort)
     : mInterfaceName(aInterfaceName)
-#if __linux__
-    , mInfraLinkSelector(aBackboneInterfaceNames)
-    , mBackboneInterfaceName(mInfraLinkSelector.Select())
-#else
-    , mBackboneInterfaceName(aBackboneInterfaceNames.empty() ? "" : aBackboneInterfaceNames.front())
-#endif
-    , mHost(Ncp::ThreadHost::Create(mInterfaceName.c_str(),
-                                    aRadioUrls,
-                                    mBackboneInterfaceName,
-                                    /* aDryRun */ false,
-                                    aEnableAutoAttach))
+    , mBackboneInterfaceName(aBackboneInterfaceName.c_str())
+    , mHost(aHost)
 #if OTBR_ENABLE_MDNS
     , mPublisher(
           Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { mMdnsStateSubject.UpdateState(aState); }))
 #endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
-    , mDBusAgent(MakeUnique<DBus::DBusAgent>(*mHost, *mPublisher))
+    , mDBusAgent(MakeUnique<DBus::DBusAgent>(mHost, *mPublisher))
 #endif
 {
-    if (mHost->GetCoprocessorType() == OT_COPROCESSOR_RCP)
+    if (mHost.GetCoprocessorType() == OT_COPROCESSOR_RCP)
     {
         CreateRcpMode(aRestListenAddress, aRestListenPort);
     }
@@ -85,9 +75,9 @@ Application::Application(const std::string               &aInterfaceName,
 
 void Application::Init(void)
 {
-    mHost->Init();
+    mHost.Init();
 
-    switch (mHost->GetCoprocessorType())
+    switch (mHost.GetCoprocessorType())
     {
     case OT_COPROCESSOR_RCP:
         InitRcpMode();
@@ -100,12 +90,12 @@ void Application::Init(void)
         break;
     }
 
-    otbrLogInfo("Co-processor version: %s", mHost->GetCoprocessorVersion());
+    otbrLogInfo("Co-processor version: %s", mHost.GetCoprocessorVersion());
 }
 
 void Application::Deinit(void)
 {
-    switch (mHost->GetCoprocessorType())
+    switch (mHost.GetCoprocessorType())
     {
     case OT_COPROCESSOR_RCP:
         DeinitRcpMode();
@@ -118,14 +108,12 @@ void Application::Deinit(void)
         break;
     }
 
-    mHost->Deinit();
+    mHost.Deinit();
 }
 
 otbrError Application::Run(void)
 {
     otbrError error = OTBR_ERROR_NONE;
-
-    otbrLogInfo("Thread Border Router started on AIL %s.", mBackboneInterfaceName);
 
 #ifdef HAVE_LIBSYSTEMD
     if (getenv("SYSTEMD_EXEC_PID") != nullptr)
@@ -173,17 +161,14 @@ otbrError Application::Run(void)
         {
             MainloopManager::GetInstance().Process(mainloop);
 
-#if __linux__
+            if (mErrorCondition)
             {
-                const char *newInfraLink = mInfraLinkSelector.Select();
-
-                if (mBackboneInterfaceName != newInfraLink)
+                error = mErrorCondition();
+                if (error != OTBR_ERROR_NONE)
                 {
-                    error = OTBR_ERROR_INFRA_LINK_CHANGED;
                     break;
                 }
             }
-#endif
         }
         else if (errno != EINTR)
         {
@@ -204,7 +189,7 @@ void Application::HandleSignal(int aSignal)
 
 void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort)
 {
-    otbr::Ncp::RcpHost &rcpHost = static_cast<otbr::Ncp::RcpHost &>(*mHost);
+    otbr::Ncp::RcpHost &rcpHost = static_cast<otbr::Ncp::RcpHost &>(mHost);
 #if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent = MakeUnique<BorderAgent>(rcpHost, *mPublisher);
 #endif
