@@ -121,6 +121,7 @@ jobs:
       BORDER_ROUTING: ${{ matrix.border_routing }}
       NAT64: ${{ matrix.internet }}
       MAX_JOBS: 3
+      VERBOSE: 1
     steps:
     - uses: actions/checkout@v4
       with:
