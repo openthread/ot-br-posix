@@ -67,9 +67,16 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
 
     case $reason in
         DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
-            logger "$LOG_TAG prefix is $new_dhcp6_ia_pd1_prefix1  length is $new_dhcp6_ia_pd1_prefix1_length pltime is  $new_dhcp6_ia_pd1_prefix1_pltime vltime is $new_dhcp6_ia_pd1_prefix1_vltime"
-            config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
-            sudo systemctl reload radvd || logger "$LOG_TAG Failed to reload radvd"
+            if [ -z "$new_dhcp6_ia_pd1_prefix1" ] || [ -z "$new_dhcp6_ia_pd1_prefix1_length" ] || \
+               [ -z "$new_dhcp6_ia_pd1_prefix1_pltime" ] || [ -z "$new_dhcp6_ia_pd1_prefix1_vltime" ]; then
+                logger "$LOG_TAG WARNING: Missing DHCPv6 prefix information. Skipping radvd configuration."
+            else
+                logger "$LOG_TAG prefix is $new_dhcp6_ia_pd1_prefix1  length is $new_dhcp6_ia_pd1_prefix1_length pltime is  $new_dhcp6_ia_pd1_prefix1_pltime vltime is $new_dhcp6_ia_pd1_prefix1_vltime"
+                config_ra $new_dhcp6_ia_pd1_prefix1 $new_dhcp6_ia_pd1_prefix1_length $new_dhcp6_ia_pd1_prefix1_pltime  $new_dhcp6_ia_pd1_prefix1_vltime
+                if systemctl is-active network.target; then
+                    sudo systemctl reload-or-restart radvd || logger "$LOG_TAG Failed to reload radvd"
+                fi
+            fi
             ;;
     esac
 fi
