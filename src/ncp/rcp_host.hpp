@@ -255,9 +255,13 @@ private:
 
     static void DisableThreadAfterDetach(void *aContext);
     void        DisableThreadAfterDetach(void);
+    static void SendMgmtPendingSetCallback(otError aError, void *aContext);
+    void        SendMgmtPendingSetCallback(otError aError);
 
     bool IsAutoAttachEnabled(void);
     void DisableAutoAttach(void);
+
+    bool IsAttached(void);
 
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
@@ -271,6 +275,7 @@ private:
     bool                                       mEnableAutoAttach = false;
 
     AsyncResultReceiver mSetThreadEnabledReceiver;
+    AsyncResultReceiver mScheduleMigrationReceiver;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
