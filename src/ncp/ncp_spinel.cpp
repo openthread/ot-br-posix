@@ -42,6 +42,7 @@
 #include "lib/spinel/spinel.h"
 #include "lib/spinel/spinel_decoder.hpp"
 #include "lib/spinel/spinel_driver.hpp"
+#include "lib/spinel/spinel_encoder.hpp"
 #include "lib/spinel/spinel_helper.hpp"
 
 namespace otbr {
@@ -96,8 +97,8 @@ exit:
 void NcpSpinel::DatasetSetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, &aActiveOpDatasetTlvs] {
-        return mEncoder.WriteData(aActiveOpDatasetTlvs.mTlvs, aActiveOpDatasetTlvs.mLength);
+    EncodingFunc encodingFunc = [&aActiveOpDatasetTlvs](ot::Spinel::Encoder &aEncoder) {
+        return aEncoder.WriteData(aActiveOpDatasetTlvs.mTlvs, aActiveOpDatasetTlvs.mLength);
     };
 
     VerifyOrExit(mDatasetSetActiveTask == nullptr, error = OT_ERROR_BUSY);
@@ -116,8 +117,8 @@ void NcpSpinel::DatasetMgmtSetPending(std::shared_ptr<otOperationalDatasetTlvs> 
                                       AsyncTaskPtr                              aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aPendingOpDatasetTlvsPtr] {
-        return mEncoder.WriteData(aPendingOpDatasetTlvsPtr->mTlvs, aPendingOpDatasetTlvsPtr->mLength);
+    EncodingFunc encodingFunc = [aPendingOpDatasetTlvsPtr](ot::Spinel::Encoder &aEncoder) {
+        return aEncoder.WriteData(aPendingOpDatasetTlvsPtr->mTlvs, aPendingOpDatasetTlvsPtr->mLength);
     };
 
     VerifyOrExit(mDatasetMgmtSetPendingTask == nullptr, error = OT_ERROR_BUSY);
@@ -135,7 +136,7 @@ exit:
 void NcpSpinel::Ip6SetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aEnable] { return mEncoder.WriteBool(aEnable); };
+    EncodingFunc encodingFunc = [aEnable](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnable); };
 
     VerifyOrExit(mIp6SetEnabledTask == nullptr, error = OT_ERROR_BUSY);
 
@@ -154,7 +155,9 @@ exit:
 otbrError NcpSpinel::Ip6Send(const uint8_t *aData, uint16_t aLength)
 {
     otbrError    error        = OTBR_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aData, aLength] { return mEncoder.WriteDataWithLen(aData, aLength); };
+    EncodingFunc encodingFunc = [aData, aLength](ot::Spinel::Encoder &aEncoder) {
+        return aEncoder.WriteDataWithLen(aData, aLength);
+    };
 
     SuccessOrExit(SetProperty(SPINEL_PROP_STREAM_NET, encodingFunc), error = OTBR_ERROR_OPENTHREAD);
 
@@ -165,7 +168,7 @@ exit:
 void NcpSpinel::ThreadSetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aEnable] { return mEncoder.WriteBool(aEnable); };
+    EncodingFunc encodingFunc = [aEnable](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnable); };
 
     VerifyOrExit(mThreadSetEnabledTask == nullptr, error = OT_ERROR_BUSY);
 
@@ -184,7 +187,7 @@ exit:
 void NcpSpinel::ThreadDetachGracefully(AsyncTaskPtr aAsyncTask)
 {
     otError      error        = OT_ERROR_NONE;
-    EncodingFunc encodingFunc = [] { return OT_ERROR_NONE; };
+    EncodingFunc encodingFunc = [](ot::Spinel::Encoder &) { return OT_ERROR_NONE; };
 
     VerifyOrExit(mThreadDetachGracefullyTask == nullptr, error = OT_ERROR_BUSY);
 
@@ -556,7 +559,9 @@ exit:
 otbrError NcpSpinel::Ip6MulAddrUpdateSubscription(const otIp6Address &aAddress, bool aIsAdded)
 {
     otbrError    error        = OTBR_ERROR_NONE;
-    EncodingFunc encodingFunc = [this, aAddress] { return mEncoder.WriteIp6Address(aAddress); };
+    EncodingFunc encodingFunc = [&aAddress](ot::Spinel::Encoder &aEncoder) {
+        return aEncoder.WriteIp6Address(aAddress);
+    };
 
     if (aIsAdded)
     {
@@ -613,7 +618,7 @@ otError NcpSpinel::SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, co
 
     VerifyOrExit(tid != 0, error = OT_ERROR_BUSY);
     SuccessOrExit(error = mEncoder.BeginFrame(header, aCmd, aKey));
-    SuccessOrExit(error = aEncodingFunc());
+    SuccessOrExit(error = aEncodingFunc(mEncoder));
     SuccessOrExit(error = mEncoder.EndFrame());
     SuccessOrExit(error = SendEncodedFrame());
 
