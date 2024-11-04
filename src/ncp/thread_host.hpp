@@ -90,6 +90,12 @@ public:
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
     using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
 
+    struct ChannelMaxPower
+    {
+        uint16_t mChannel;
+        int16_t  mMaxPower; // INT16_MAX indicates that the corresponding channel is disabled.
+    };
+
     /**
      * Create a Thread Controller Instance.
      *
@@ -181,6 +187,19 @@ public:
      * @param aErrReceiver  A receiver to get the error if the operation fails.
      */
     virtual void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) = 0;
+
+    /**
+     * Sets the max power of each channel.
+     *
+     * 1. If the host hasn't been initialized, @p aReceiver will be invoked with error OT_ERROR_INVALID_STATE.
+     * 2. If any value in @p aChannelMaxPowers is invalid, @p aReceiver will be invoked with error
+     * OT_ERROR_INVALID_ARGS.
+     *
+     * @param[in] aChannelMaxPowers  A vector of ChannelMaxPower.
+     * @param[in] aReceiver          A receiver to get the async result of this operation.
+     */
+    virtual void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
+                                     const AsyncResultReceiver          &aReceiver) = 0;
 
     /**
      * Returns the co-processor type.

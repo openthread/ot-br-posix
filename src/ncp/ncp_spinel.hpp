@@ -290,7 +290,7 @@ private:
     spinel_tid_t GetNextTid(void);
     void         FreeTidTableItem(spinel_tid_t aTid);
 
-    using EncodingFunc = std::function<otError(void)>;
+    using EncodingFunc = std::function<otError(ot::Spinel::Encoder &aEncoder)>;
     otError SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError SetProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);
     otError InsertProperty(spinel_prop_key_t aKey, const EncodingFunc &aEncodingFunc);

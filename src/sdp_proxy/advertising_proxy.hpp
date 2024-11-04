@@ -52,7 +52,7 @@ namespace otbr {
 /**
  * This class implements the Advertising Proxy.
  */
-class AdvertisingProxy : private NonCopyable
+class AdvertisingProxy : public Mdns::StateObserver, private NonCopyable
 {
 public:
     /**
@@ -80,7 +80,7 @@ public:
      *
      * @param[in] aState  The state of mDNS publisher.
      */
-    void HandleMdnsState(Mdns::Publisher::State aState);
+    void HandleMdnsState(Mdns::Publisher::State aState) override;
 
 private:
     struct OutstandingUpdate
