@@ -723,7 +723,7 @@ exit:
     return error;
 }
 
-otError NcpSpinel::ParseIp6MulticastAddresses(const uint8_t *aBuf, uint8_t aLen, std::vector<Ip6Address> &aAddressList)
+otError NcpSpinel::ParseIp6MulticastAddresses(const uint8_t *aBuf, uint16_t aLen, std::vector<Ip6Address> &aAddressList)
 {
     otError             error = OT_ERROR_NONE;
     ot::Spinel::Decoder decoder;
@@ -746,7 +746,7 @@ exit:
     return error;
 }
 
-otError NcpSpinel::ParseIp6StreamNet(const uint8_t *aBuf, uint8_t aLen, const uint8_t *&aData, uint16_t &aDataLen)
+otError NcpSpinel::ParseIp6StreamNet(const uint8_t *aBuf, uint16_t aLen, const uint8_t *&aData, uint16_t &aDataLen)
 {
     otError             error = OT_ERROR_NONE;
     ot::Spinel::Decoder decoder;
@@ -761,7 +761,7 @@ exit:
 }
 
 otError NcpSpinel::ParseOperationalDatasetTlvs(const uint8_t            *aBuf,
-                                               uint8_t                   aLen,
+                                               uint16_t                  aLen,
                                                otOperationalDatasetTlvs &aDatasetTlvs)
 {
     otError             error = OT_ERROR_NONE;
