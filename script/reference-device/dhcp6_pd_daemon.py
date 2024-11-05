@@ -43,37 +43,36 @@ bus = dbus.SystemBus()
 intended_dhcp6pd_state = None
 
 DHCP_CONFIG_FILE = "/etc/dhcpcd.conf"
-DHCP_CONFIG_PD_FILE = "/etc/dhcpcd.conf.pd"
-DHCP_CONFIG_ORIG_FILE = "/etc/dhcpcd.conf.orig"
+DHCP_CONFIG_WITH_PD_FILE = "/etc/dhcpcd.conf.with-pd"
+DHCP_CONFIG_NO_PD_FILE = "/etc/dhcpcd.conf.no-pd"
 
 def restart_dhcpcd_with_pd_config():
     global intended_dhcp6pd_state
-    if os.path.isfile(DHCP_CONFIG_PD_FILE):
+    if os.path.isfile(DHCP_CONFIG_WITH_PD_FILE):
         try:
-            subprocess.run(["sudo", "cp", DHCP_CONFIG_PD_FILE, DHCP_CONFIG_FILE], check=True)
+            subprocess.run(["sudo", "cp", DHCP_CONFIG_WITH_PD_FILE, DHCP_CONFIG_FILE], check=True)
             subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
             subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
-            logging.info("Successfully restarted dhcpcd service.")
+            logging.info("Successfully restarted dhcpcd service with pd enabled.")
             intended_dhcp6pd_state = None
         except subprocess.CalledProcessError as e:
             logging.error(f"Error restarting dhcpcd service: {e}")
             intended_dhcp6pd_state = None
     else:
-        logging.error(f"{DHCP_CONFIG_PD_FILE} not found. Cannot apply configuration with prefix delegation.")
+        logging.error(f"{DHCP_CONFIG_WITH_PD_FILE} not found. Cannot apply configuration with pd enabled.")
         intended_dhcp6pd_state = None
 
 def restore_default_config():
-    if os.path.isfile(DHCP_CONFIG_ORIG_FILE):
+    if os.path.isfile(DHCP_CONFIG_NO_PD_FILE):
         try:
-            subprocess.run(["sudo", "cp", DHCP_CONFIG_ORIG_FILE, DHCP_CONFIG_FILE], check=True)
+            subprocess.run(["sudo", "cp", DHCP_CONFIG_NO_PD_FILE, DHCP_CONFIG_FILE], check=True)
             subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
-            subprocess.run(["sudo", "dhcpcd", "--release"], check=True)
             subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
-            logging.info("Successfully restored default dhcpcd config.")
+            logging.info("Successfully restarted dhcpcd service with pd disabled.")
         except subprocess.CalledProcessError as e:
-            logging.error(f"Error restoring dhcpcd config: {e}")
+            logging.error(f"Error restarting dhcpcd service: {e}")
     else:
-        logging.error(f"{DHCP_CONFIG_ORIG_FILE} not found. Cannot restore default configuration.")
+        logging.error(f"{DHCP_CONFIG_NO_PD_FILE} not found. Cannot apply configuration with pd disabled.")
 
 def properties_changed_handler(interface_name, changed_properties, invalidated_properties):
     global intended_dhcp6pd_state
@@ -103,7 +102,8 @@ def check_and_reconnect(dbus_obj, properties_dbus_iface):
         dbus_obj, properties_dbus_iface = connect_to_signal()
 
 def main():
-    # always restart dhcpcd to begin with a previous saved state
+    # Ensure dhcpcd is running in its last known state. In case it was killed or crashed previously, or
+    # radvd is not yet enabled because of inactive network.target
     try:
         subprocess.run(["sudo", "systemctl", "reload-or-restart", "dhcpcd"], check=True)
         logging.info("Successfully restarting dhcpcd service.")

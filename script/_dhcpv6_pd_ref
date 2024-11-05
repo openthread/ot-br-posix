@@ -38,13 +38,32 @@ PD_DAEMON_PATH="${PD_DAEMON_DIR}/dhcp6_pd_daemon.py"
 PD_DAEMON_SERVICE_NAME="dhcp6_pd_daemon.service"
 PD_DAEMON_SERVICE_PATH="/etc/systemd/system/${PD_DAEMON_SERVICE_NAME}"
 
-create_pd_dhcpcd_conf()
+DHCP_CONFIG_FILE="/etc/dhcpcd.conf.orig"
+DHCP_CONFIG_ORIG_FILE="/etc/dhcpcd.conf.orig"
+DHCP_CONFIG_WITH_PD_FILE="/etc/dhcpcd.conf.with-pd"
+DHCP_CONFIG_NO_PD_FILE="/etc/dhcpcd.conf.no-pd"
+
+# Create dhcpcd configuration file with ipv6 prefix request.
+create_dhcpcd_conf_with_pd()
 {
-    sudo tee /etc/dhcpcd.conf.pd >/dev/null <<EOF
+    sudo tee ${DHCP_CONFIG_WITH_PD_FILE} >/dev/null <<EOF
 noipv6rs # disable router solicitation
 interface eth0
   iaid 1
   ia_pd 2/::/64 -
+release
+noipv6rs
+EOF
+}
+
+# Create dhcpcd configuration file with no prefix request.
+create_dhcpcd_conf_no_pd()
+{
+    sudo tee ${DHCP_CONFIG_NO_PD_FILE} >/dev/null <<EOF
+noipv6rs # disable router solicitation
+interface eth0
+  iaid 1
+release
 noipv6rs
 EOF
 }
@@ -78,8 +97,8 @@ dhcpv6_pd_ref_uninstall()
         sudo rm -f ${PD_DAEMON_SERVICE_PATH} || true
     fi
 
-    if [[ -f "/etc/dhcpcd.conf.orig" ]]; then
-        sudo mv /etc/dhcpcd.conf.orig /etc/dhcpcd.conf
+    if [[ -f ${DHCP_CONFIG_ORIG_FILE} ]]; then
+        sudo mv ${DHCP_CONFIG_ORIG_FILE} ${DHCP_CONFIG_FILE}
     fi
 
     sudo rm -f ${DHCPCD_ENTER_HOOK} ${DHCPCD_EXIT_HOOK}
@@ -98,10 +117,8 @@ dhcpv6_pd_ref_install()
 {
     with DHCPV6_PD_REF || return 0
 
-    if [[ -f "/etc/dhcpcd.conf" ]]; then
-        sudo mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig
-    else
-        sudo touch /etc/dhcpcd.conf.orig
+    if [[ -f ${DHCP_CONFIG_FILE} ]]; then
+        sudo mv ${DHCP_CONFIG_FILE} ${DHCP_CONFIG_ORIG_FILE}
     fi
 
     # Add dhcpcd.hooks
@@ -110,7 +127,8 @@ dhcpv6_pd_ref_install()
     sudo mkdir -p ${PD_DAEMON_DIR}
     sudo install -m 755 "$(dirname "$0")"/reference-device/dhcp6_pd_daemon.py ${PD_DAEMON_PATH}
 
-    create_pd_dhcpcd_conf
+    create_dhcpcd_conf_with_pd
+    create_dhcpcd_conf_no_pd
     create_dhcp6_pd_daemon_service
 
     if have systemctl; then
