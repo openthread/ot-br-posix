@@ -42,49 +42,42 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 bus = dbus.SystemBus()
 intended_dhcp6pd_state = None
 
-DHCP_CONFIG_FILE = "/etc/dhcpcd.conf"
-DHCP_CONFIG_WITH_PD_FILE = "/etc/dhcpcd.conf.with-pd"
-DHCP_CONFIG_NO_PD_FILE = "/etc/dhcpcd.conf.no-pd"
+DHCP_CONFIG_PATH = "/etc/dhcpcd.conf"
+DHCP_CONFIG_PD_PATH = "/etc/dhcpcd.conf.pd"
+DHCP_CONFIG_NO_PD_PATH = "/etc/dhcpcd.conf.no-pd"
+
+def restart_dhcpcd_service(config_path):
+    if not os.path.isfile(config_path):
+        logging.error(f"{config_path} not found. Cannot apply configuration.")
+        return
+    try:
+        subprocess.run(["sudo", "cp", config_path, DHCP_CONFIG_PATH], check=True)
+        subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
+        subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
+        logging.info(f"Successfully restarted dhcpcd service with {config_path}.")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error restarting dhcpcd service: {e}")
 
 def restart_dhcpcd_with_pd_config():
     global intended_dhcp6pd_state
-    if os.path.isfile(DHCP_CONFIG_WITH_PD_FILE):
-        try:
-            subprocess.run(["sudo", "cp", DHCP_CONFIG_WITH_PD_FILE, DHCP_CONFIG_FILE], check=True)
-            subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
-            subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
-            logging.info("Successfully restarted dhcpcd service with pd enabled.")
-            intended_dhcp6pd_state = None
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Error restarting dhcpcd service: {e}")
-            intended_dhcp6pd_state = None
-    else:
-        logging.error(f"{DHCP_CONFIG_WITH_PD_FILE} not found. Cannot apply configuration with pd enabled.")
-        intended_dhcp6pd_state = None
+    restart_dhcpcd_service(DHCP_CONFIG_PD_PATH)
+    intended_dhcp6pd_state = None
 
-def restore_default_config():
-    if os.path.isfile(DHCP_CONFIG_NO_PD_FILE):
-        try:
-            subprocess.run(["sudo", "cp", DHCP_CONFIG_NO_PD_FILE, DHCP_CONFIG_FILE], check=True)
-            subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
-            subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
-            logging.info("Successfully restarted dhcpcd service with pd disabled.")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Error restarting dhcpcd service: {e}")
-    else:
-        logging.error(f"{DHCP_CONFIG_NO_PD_FILE} not found. Cannot apply configuration with pd disabled.")
+def restart_dhcpcd_with_no_pd_config():
+    restart_dhcpcd_service(DHCP_CONFIG_NO_PD_PATH)
 
 def properties_changed_handler(interface_name, changed_properties, invalidated_properties):
     global intended_dhcp6pd_state
-    if "Dhcp6PdState" in changed_properties:
-        new_state = changed_properties["Dhcp6PdState"]
-        logging.info(f"Dhcp6PdState changed to: {new_state}")
-        if new_state == "running" and intended_dhcp6pd_state != "running":
-            intended_dhcp6pd_state = "running"
-            thread = threading.Thread(target=restart_dhcpcd_with_pd_config)
-            thread.start()
-        elif new_state in ("stopped", "disabled") and intended_dhcp6pd_state is None:
-            restore_default_config()
+    if "Dhcp6PdState" not in changed_properties:
+        return
+    new_state = changed_properties["Dhcp6PdState"]
+    logging.info(f"Dhcp6PdState changed to: {new_state}")
+    if new_state == "running" and intended_dhcp6pd_state != "running":
+        intended_dhcp6pd_state = "running"
+        thread = threading.Thread(target=restart_dhcpcd_with_pd_config)
+        thread.start()
+    elif new_state in ("stopped", "disabled") and intended_dhcp6pd_state is None:
+        restart_dhcpcd_with_no_pd_config()
 
 def connect_to_signal():
     try:
@@ -92,18 +85,26 @@ def connect_to_signal():
         properties_dbus_iface = dbus.Interface(dbus_obj, 'org.freedesktop.DBus.Properties')
         dbus_obj.connect_to_signal("PropertiesChanged", properties_changed_handler, dbus_interface=properties_dbus_iface.dbus_interface)
         logging.info("Connected to D-Bus signal.")
-        return dbus_obj, properties_dbus_iface
+        return dbus_obj
     except dbus.DBusException as e:
         logging.error(f"Error connecting to D-Bus: {e}")
-        return None, None
+        return None
 
-def check_and_reconnect(dbus_obj, properties_dbus_iface):
+def check_and_reconnect(dbus_obj):
     if dbus_obj is None:
-        dbus_obj, properties_dbus_iface = connect_to_signal()
+        connect_to_signal()
 
 def main():
-    # Ensure dhcpcd is running in its last known state. In case it was killed or crashed previously, or
-    # radvd is not yet enabled because of inactive network.target
+    # Ensure dhcpcd is running in its last known state. This addresses a potential race condition
+    # during system startup due to the loop dependency in dhcpcd-radvd-network.target. 
+    #
+    #   - network.target activation relies on the completion of dhcpcd start
+    #   - during bootup, dhcpcd tries to start radvd with PD enabled before network.target is 
+    #     active, which leads to a timeout failure
+    #   - so we will prevent radvd from starting before target.network is active
+    #
+    # By restarting dhcpcd here, we ensure it runs after network.target is active, allowing 
+    # radvd to start correctly and dhcpcd to configure the interface.
     try:
         subprocess.run(["sudo", "systemctl", "reload-or-restart", "dhcpcd"], check=True)
         logging.info("Successfully restarting dhcpcd service.")
@@ -112,9 +113,9 @@ def main():
 
     loop = GLib.MainLoop()
 
-    thread_dbus_obj, thread_properties_dbus_iface = connect_to_signal()
+    thread_dbus_obj = connect_to_signal()
 
-    GLib.timeout_add_seconds(5, check_and_reconnect, thread_dbus_obj, thread_properties_dbus_iface) 
+    GLib.timeout_add_seconds(5, check_and_reconnect, thread_dbus_obj) 
 
     loop.run()
 

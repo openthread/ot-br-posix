@@ -38,20 +38,26 @@ PD_DAEMON_PATH="${PD_DAEMON_DIR}/dhcp6_pd_daemon.py"
 PD_DAEMON_SERVICE_NAME="dhcp6_pd_daemon.service"
 PD_DAEMON_SERVICE_PATH="/etc/systemd/system/${PD_DAEMON_SERVICE_NAME}"
 
-DHCP_CONFIG_FILE="/etc/dhcpcd.conf.orig"
-DHCP_CONFIG_ORIG_FILE="/etc/dhcpcd.conf.orig"
-DHCP_CONFIG_WITH_PD_FILE="/etc/dhcpcd.conf.with-pd"
-DHCP_CONFIG_NO_PD_FILE="/etc/dhcpcd.conf.no-pd"
+DHCP_CONFIG_PATH="/etc/dhcpcd.conf"
+DHCP_CONFIG_ORIG_PATH="/etc/dhcpcd.conf.orig"
+DHCP_CONFIG_PD_PATH="/etc/dhcpcd.conf.pd"
+DHCP_CONFIG_NO_PD_PATH="/etc/dhcpcd.conf.no-pd"
 
 # Create dhcpcd configuration file with ipv6 prefix request.
-create_dhcpcd_conf_with_pd()
+create_dhcpcd_conf_pd()
 {
-    sudo tee ${DHCP_CONFIG_WITH_PD_FILE} >/dev/null <<EOF
+    sudo tee ${DHCP_CONFIG_PD_PATH} >/dev/null <<EOF
 noipv6rs # disable router solicitation
 interface eth0
   iaid 1
   ia_pd 2/::/64 -
 release
+# Disable Router Solicitations (RS) again, specifically for eth0.
+# This ensures that accept_ra is prevented from being set to 0, allowing
+# the interface to accepting Router Advertisements and configuring IPv6
+# based on them. The exact reason for requiring 'noipv6rs' twice
+# is not fully understood but has been observed to be necessary through 
+# experimentation.
 noipv6rs
 EOF
 }
@@ -59,12 +65,8 @@ EOF
 # Create dhcpcd configuration file with no prefix request.
 create_dhcpcd_conf_no_pd()
 {
-    sudo tee ${DHCP_CONFIG_NO_PD_FILE} >/dev/null <<EOF
+    sudo tee ${DHCP_CONFIG_NO_PD_PATH} >/dev/null <<EOF
 noipv6rs # disable router solicitation
-interface eth0
-  iaid 1
-release
-noipv6rs
 EOF
 }
 
@@ -97,8 +99,8 @@ dhcpv6_pd_ref_uninstall()
         sudo rm -f ${PD_DAEMON_SERVICE_PATH} || true
     fi
 
-    if [[ -f ${DHCP_CONFIG_ORIG_FILE} ]]; then
-        sudo mv ${DHCP_CONFIG_ORIG_FILE} ${DHCP_CONFIG_FILE}
+    if [[ -f ${DHCP_CONFIG_ORIG_PATH} ]]; then
+        sudo mv ${DHCP_CONFIG_ORIG_PATH} ${DHCP_CONFIG_PATH}
     fi
 
     sudo rm -f ${DHCPCD_ENTER_HOOK} ${DHCPCD_EXIT_HOOK}
@@ -117,8 +119,8 @@ dhcpv6_pd_ref_install()
 {
     with DHCPV6_PD_REF || return 0
 
-    if [[ -f ${DHCP_CONFIG_FILE} ]]; then
-        sudo mv ${DHCP_CONFIG_FILE} ${DHCP_CONFIG_ORIG_FILE}
+    if [[ -f ${DHCP_CONFIG_PATH} ]]; then
+        sudo mv ${DHCP_CONFIG_PATH} ${DHCP_CONFIG_ORIG_PATH}
     fi
 
     # Add dhcpcd.hooks
@@ -127,7 +129,7 @@ dhcpv6_pd_ref_install()
     sudo mkdir -p ${PD_DAEMON_DIR}
     sudo install -m 755 "$(dirname "$0")"/reference-device/dhcp6_pd_daemon.py ${PD_DAEMON_PATH}
 
-    create_dhcpcd_conf_with_pd
+    create_dhcpcd_conf_pd
     create_dhcpcd_conf_no_pd
     create_dhcp6_pd_daemon_service
 
