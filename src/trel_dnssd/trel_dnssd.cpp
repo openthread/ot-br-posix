@@ -91,6 +91,9 @@ TrelDnssd::TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
 void TrelDnssd::Initialize(std::string aTrelNetif)
 {
     mTrelNetif = std::move(aTrelNetif);
+    // Reset mTrelNetifIndex to 0 so that when this function is called with a different aTrelNetif
+    // than the current mTrelNetif, CheckTrelNetifReady() will update mTrelNetifIndex accordingly.
+    mTrelNetifIndex = 0;
 
     if (IsInitialized())
     {
@@ -190,7 +193,6 @@ exit:
 
 void TrelDnssd::HandleMdnsState(Mdns::Publisher::State aState)
 {
-    VerifyOrExit(IsInitialized());
     VerifyOrExit(aState == Mdns::Publisher::State::kReady);
 
     otbrLogDebug("mDNS Publisher is Ready");
@@ -202,6 +204,7 @@ void TrelDnssd::HandleMdnsState(Mdns::Publisher::State aState)
         mRegisterInfo.mInstanceName = "";
     }
 
+    VerifyOrExit(IsInitialized());
     OnBecomeReady();
 
 exit:
