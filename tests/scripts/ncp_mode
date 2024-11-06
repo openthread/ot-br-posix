@@ -164,6 +164,18 @@ do_build_otbr_docker()
         --build-arg OTBR_OPTIONS="${otbr_docker_options[*]}"
 }
 
+setup_infraif()
+{
+    if ! ip link show backbone1 >/dev/null 2>&1; then
+        echo "Creating backbone1 with Docker..."
+        docker network create --driver bridge --ipv6 --subnet 9101::/64 -o "com.docker.network.bridge.name"="backbone1" backbone1
+    else
+        echo "backbone1 already exists."
+    fi
+    sysctl -w net.ipv6.conf.backbone1.accept_ra=2
+    sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
+}
+
 test_setup()
 {
     executable_or_die "${OTBR_AGENT_PATH}"
@@ -194,6 +206,8 @@ test_setup()
 
     write_syslog "AGENT: kill old"
     sudo killall "${OTBR_AGENT}" || true
+
+    setup_infraif
 
     # From now on - all exits are TRAPPED
     # When they occur, we call the function: output_logs'.

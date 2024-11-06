@@ -76,14 +76,16 @@ void NcpNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatas
 
 // ===================================== NcpHost ======================================
 
-NcpHost::NcpHost(const char *aInterfaceName, bool aDryRun)
+NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
     , mNetif(mNcpSpinel)
+    , mInfraIf(mNcpSpinel)
 {
     memset(&mConfig, 0, sizeof(mConfig));
-    mConfig.mInterfaceName = aInterfaceName;
-    mConfig.mDryRun        = aDryRun;
-    mConfig.mSpeedUpFactor = 1;
+    mConfig.mInterfaceName         = aInterfaceName;
+    mConfig.mBackboneInterfaceName = aBackboneInterfaceName;
+    mConfig.mDryRun                = aDryRun;
+    mConfig.mSpeedUpFactor         = 1;
 }
 
 const char *NcpHost::GetCoprocessorVersion(void)
@@ -96,6 +98,7 @@ void NcpHost::Init(void)
     otSysInit(&mConfig);
     mNcpSpinel.Init(mSpinelDriver, *this);
     mNetif.Init(mConfig.mInterfaceName);
+    mInfraIf.Init();
 
     mNcpSpinel.Ip6SetAddressCallback(
         [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
@@ -104,6 +107,15 @@ void NcpHost::Init(void)
     mNcpSpinel.NetifSetStateChangedCallback([this](bool aState) { mNetif.SetNetifState(aState); });
     mNcpSpinel.Ip6SetReceiveCallback(
         [this](const uint8_t *aData, uint16_t aLength) { mNetif.Ip6Receive(aData, aLength); });
+    mNcpSpinel.InfraIfSetIcmp6NdSendCallback(
+        [this](uint32_t aInfraIfIndex, const otIp6Address &aAddr, const uint8_t *aData, uint16_t aDataLen) {
+            OTBR_UNUSED_VARIABLE(mInfraIf.SendIcmp6Nd(aInfraIfIndex, aAddr, aData, aDataLen));
+        });
+
+    if (mConfig.mBackboneInterfaceName != nullptr && strlen(mConfig.mBackboneInterfaceName) > 0)
+    {
+        mInfraIf.SetInfraIf(mConfig.mBackboneInterfaceName);
+    }
 }
 
 void NcpHost::Deinit(void)
