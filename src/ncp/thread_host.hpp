@@ -88,7 +88,8 @@ public:
     using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
     using ChannelMasksReceiver =
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
-    using DeviceRoleHandler = std::function<void(otError, otDeviceRole)>;
+    using DeviceRoleHandler          = std::function<void(otError, otDeviceRole)>;
+    using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
 
     struct ChannelMaxPower
     {
@@ -200,6 +201,13 @@ public:
      */
     virtual void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                                      const AsyncResultReceiver          &aReceiver) = 0;
+
+    /**
+     * This method adds a event listener for Thread state changes.
+     *
+     * @param[in] aCallback  The callback to receive Thread state changed events.
+     */
+    virtual void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) = 0;
 
     /**
      * Returns the co-processor type.
