@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-327e6a3</span>
+   &#160;<span id="projectnumber">0.3.0-ad4c611</span>
    </div>
   </td>
  </tr>
@@ -90,8 +90,8 @@ Inheritance diagram for otbr::Ncp::NcpHost:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ae555985e827fee5a090c2764e4e189ac"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#ae555985e827fee5a090c2764e4e189ac">NcpHost</a> (const char *aInterfaceName, bool aDryRun)</td></tr>
-<tr class="separator:ae555985e827fee5a090c2764e4e189ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a318314c13371ac92a7adf3bd0ce6f122"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a318314c13371ac92a7adf3bd0ce6f122">NcpHost</a> (const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun)</td></tr>
+<tr class="separator:a318314c13371ac92a7adf3bd0ce6f122"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a579bdab56b3d24460308e4b962575ac2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a579bdab56b3d24460308e4b962575ac2">~NcpHost</a> (void) override=default</td></tr>
 <tr class="separator:a579bdab56b3d24460308e4b962575ac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a256706fb4109f21d6ed08aeebd8b788d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a256706fb4109f21d6ed08aeebd8b788d">Join</a> (const otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs, const AsyncResultReceiver &amp;aReceiver) override</td></tr>
@@ -156,8 +156,8 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b
 <tr class="separator:a4ecc9e39fb16da42b9b809f2ce5fd4fe inherit pub_static_methods_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ae555985e827fee5a090c2764e4e189ac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae555985e827fee5a090c2764e4e189ac">&#9670;&nbsp;</a></span>NcpHost()</h2>
+<a id="a318314c13371ac92a7adf3bd0ce6f122"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a318314c13371ac92a7adf3bd0ce6f122">&#9670;&nbsp;</a></span>NcpHost()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -167,6 +167,12 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>aInterfaceName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>aBackboneInterfaceName</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -185,6 +191,7 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">aInterfaceName</td><td>A string of the NCP interface name. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">aBackboneInterfaceName</td><td>A string of the backbone interface name. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">aDryRun</td><td>TRUE to indicate dry-run mode. FALSE otherwise. </td></tr>
   </table>
   </dd>

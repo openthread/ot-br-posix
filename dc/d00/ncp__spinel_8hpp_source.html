@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-327e6a3</span>
+   &#160;<span id="projectnumber">0.3.0-ad4c611</span>
    </div>
   </td>
  </tr>
@@ -117,193 +117,218 @@ $(function() {
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="../../df/db8/task__runner_8hpp.html">common/task_runner.hpp</a>&quot;</span></div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#include &quot;common/types.hpp&quot;</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="../../da/d20/async__task_8hpp.html">ncp/async_task.hpp</a>&quot;</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="../../d0/d86/netif_8hpp.html">ncp/posix/netif.hpp</a>&quot;</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">namespace </span>otbr {</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">namespace </span>Ncp {</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">   61</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">PropsObserver</a></div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;{</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00069"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#accd7cfa7dd384eab980bd43a5a6ae59e">   69</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#accd7cfa7dd384eab980bd43a5a6ae59e">SetDeviceRole</a>(otDeviceRole aRole) = 0;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac480ee8162825b04f6c4d64b2d29b952">   76</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac480ee8162825b04f6c4d64b2d29b952">SetDatasetActiveTlvs</a>(<span class="keyword">const</span> otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs) = 0;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac5de3831f0d74c9ee0e93ca755123ba2">   81</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac5de3831f0d74c9ee0e93ca755123ba2">~PropsObserver</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;};</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html">   87</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html">NcpSpinel</a> : <span class="keyword">public</span> <a class="code" href="../../da/d4a/classotbr_1_1Netif_1_1Dependencies.html">Netif::Dependencies</a></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;{</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">using</span> Ip6AddressTableCallback          = std::function&lt;void(<span class="keyword">const</span> std::vector&lt;Ip6AddressInfo&gt; &amp;)&gt;;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keyword">using</span> Ip6MulticastAddressTableCallback = std::function&lt;void(<span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;)&gt;;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keyword">using</span> NetifStateChangedCallback        = std::function&lt;void(<span class="keywordtype">bool</span>)&gt;;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keyword">using</span> Ip6ReceiveCallback               = std::function&lt;void(<span class="keyword">const</span> uint8_t *, uint16_t)&gt;;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a216ac6f4e594505804a810b8ef64ae87">NcpSpinel</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a6a3d5ce7927e04ef4ea30998bcb5f84b">Init</a>(ot::Spinel::SpinelDriver &amp;aSpinelDriver, <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">PropsObserver</a> &amp;aObserver);</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ae15972ed8abb397f6d890efb8a0833b2">Deinit</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160; </div>
-<div class="line"><a name="l00116"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5acddf4a65bb228ea4bd43d53dd24bd9">  116</a></span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5acddf4a65bb228ea4bd43d53dd24bd9">GetCoprocessorVersion</a>(<span class="keywordtype">void</span>) { <span class="keywordflow">return</span> mSpinelDriver-&gt;GetVersion(); }</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160; </div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ae465aba60678c6bb8e38a2b98629671a">DatasetSetActiveTlvs</a>(<span class="keyword">const</span> otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask);</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af1c16a22f4e0e2fb725455c98e02eaf5">DatasetMgmtSetPending</a>(std::shared_ptr&lt;otOperationalDatasetTlvs&gt; aPendingOpDatasetTlvsPtr,</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;                               AsyncTaskPtr                              aAsyncTask);</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5552a680bafcd37905a2c47ac2cb7e50">Ip6SetEnabled</a>(<span class="keywordtype">bool</span> aEnable, AsyncTaskPtr aAsyncTask);</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
-<div class="line"><a name="l00161"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a9adba505196d1391551fe631e4b404cb">  161</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a9adba505196d1391551fe631e4b404cb">Ip6SetAddressCallback</a>(<span class="keyword">const</span> Ip6AddressTableCallback &amp;aCallback) { mIp6AddressTableCallback = aCallback; }</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160; </div>
-<div class="line"><a name="l00172"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a765ff33f16c94fd9c5979eed65604872">  172</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a765ff33f16c94fd9c5979eed65604872">Ip6SetAddressMulticastCallback</a>(<span class="keyword">const</span> Ip6MulticastAddressTableCallback &amp;aCallback)</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    {</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;        mIp6MulticastAddressTableCallback = aCallback;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    }</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
-<div class="line"><a name="l00182"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af45c6c5378a724b13046c6c62e59c5f9">  182</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af45c6c5378a724b13046c6c62e59c5f9">Ip6SetReceiveCallback</a>(<span class="keyword">const</span> Ip6ReceiveCallback &amp;aCallback) { mIp6ReceiveCallback = aCallback; }</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160; </div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#aab4ce0841ba9f9590c8e2bd30c2639dc">Ip6Send</a>(<span class="keyword">const</span> uint8_t *aData, uint16_t aLength) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160; </div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af3b6e5f0379780bf9754b0193d262ed8">ThreadSetEnabled</a>(<span class="keywordtype">bool</span> aEnable, AsyncTaskPtr aAsyncTask);</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160; </div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ac2399b0d6b98ef35766af549201a9fff">ThreadDetachGracefully</a>(AsyncTaskPtr aAsyncTask);</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160; </div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#adf4ab7e9fab26afc8933d87821177071">ThreadErasePersistentInfo</a>(AsyncTaskPtr aAsyncTask);</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160; </div>
-<div class="line"><a name="l00231"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a706456328269ca63d5532cc4ee6c434c">  231</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a706456328269ca63d5532cc4ee6c434c">NetifSetStateChangedCallback</a>(<span class="keyword">const</span> NetifStateChangedCallback &amp;aCallback)</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    {</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        mNetifStateChangedCallback = aCallback;</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    }</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <span class="keyword">using</span> FailureHandler = std::function&lt;void(otError)&gt;;</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="keyword">static</span> constexpr uint8_t kMaxTids = 16;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160; </div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Function, <span class="keyword">typename</span>... Args&gt; <span class="keyword">static</span> <span class="keywordtype">void</span> SafeInvoke(Function &amp;aFunc, Args &amp;&amp;...aArgs)</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    {</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="keywordflow">if</span> (aFunc)</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        {</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;            aFunc(std::forward&lt;Args&gt;(aArgs)...);</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        }</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    }</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> CallAndClear(AsyncTaskPtr &amp;aResult, otError aError, <span class="keyword">const</span> std::string &amp;aErrorInfo = <span class="stringliteral">&quot;&quot;</span>)</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    {</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="keywordflow">if</span> (aResult)</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        {</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            aResult-&gt;SetResult(aError, aErrorInfo);</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            aResult = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        }</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    }</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <span class="keyword">static</span> <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SpinelDataUnpack(<span class="keyword">const</span> uint8_t *aDataIn, spinel_size_t aDataLen, <span class="keyword">const</span> <span class="keywordtype">char</span> *aPackFormat, ...);</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160; </div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleReceivedFrame(<span class="keyword">const</span> uint8_t *aFrame,</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;                                    uint16_t       aLength,</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;                                    uint8_t        aHeader,</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;                                    <span class="keywordtype">bool</span>          &amp;aSave,</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;                                    <span class="keywordtype">void</span>          *aContext);</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    <span class="keywordtype">void</span>        HandleReceivedFrame(<span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength, uint8_t aHeader, <span class="keywordtype">bool</span> &amp;aShouldSaveFrame);</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleSavedFrame(<span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength, <span class="keywordtype">void</span> *aContext);</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keyword">static</span> otDeviceRole SpinelRoleToDeviceRole(spinel_net_role_t aRole);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="../../da/d4e/infra__if_8hpp.html">ncp/posix/infra_if.hpp</a>&quot;</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="../../d0/d86/netif_8hpp.html">ncp/posix/netif.hpp</a>&quot;</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">namespace </span>otbr {</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">namespace </span>Ncp {</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">   62</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">PropsObserver</a></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;{</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00070"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#accd7cfa7dd384eab980bd43a5a6ae59e">   70</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#accd7cfa7dd384eab980bd43a5a6ae59e">SetDeviceRole</a>(otDeviceRole aRole) = 0;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00077"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac480ee8162825b04f6c4d64b2d29b952">   77</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac480ee8162825b04f6c4d64b2d29b952">SetDatasetActiveTlvs</a>(<span class="keyword">const</span> otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs) = 0;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac5de3831f0d74c9ee0e93ca755123ba2">   82</a></span>&#160;    <span class="keyword">virtual</span> <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac5de3831f0d74c9ee0e93ca755123ba2">~PropsObserver</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;};</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html">   88</a></span>&#160;<span class="keyword">class </span><a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html">NcpSpinel</a> : <span class="keyword">public</span> <a class="code" href="../../da/d4a/classotbr_1_1Netif_1_1Dependencies.html">Netif::Dependencies</a>, <span class="keyword">public</span> <a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">InfraIf::Dependencies</a></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;{</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keyword">using</span> Ip6AddressTableCallback          = std::function&lt;void(<span class="keyword">const</span> std::vector&lt;Ip6AddressInfo&gt; &amp;)&gt;;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keyword">using</span> Ip6MulticastAddressTableCallback = std::function&lt;void(<span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;)&gt;;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keyword">using</span> NetifStateChangedCallback        = std::function&lt;void(<span class="keywordtype">bool</span>)&gt;;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keyword">using</span> Ip6ReceiveCallback               = std::function&lt;void(<span class="keyword">const</span> uint8_t *, uint16_t)&gt;;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keyword">using</span> InfraIfSendIcmp6NdCallback = std::function&lt;void(uint32_t, <span class="keyword">const</span> otIp6Address &amp;, <span class="keyword">const</span> uint8_t *, uint16_t)&gt;;</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a216ac6f4e594505804a810b8ef64ae87">NcpSpinel</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a6a3d5ce7927e04ef4ea30998bcb5f84b">Init</a>(ot::Spinel::SpinelDriver &amp;aSpinelDriver, <a class="code" href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">PropsObserver</a> &amp;aObserver);</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ae15972ed8abb397f6d890efb8a0833b2">Deinit</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
+<div class="line"><a name="l00118"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5acddf4a65bb228ea4bd43d53dd24bd9">  118</a></span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *<a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5acddf4a65bb228ea4bd43d53dd24bd9">GetCoprocessorVersion</a>(<span class="keywordtype">void</span>) { <span class="keywordflow">return</span> mSpinelDriver-&gt;GetVersion(); }</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ae465aba60678c6bb8e38a2b98629671a">DatasetSetActiveTlvs</a>(<span class="keyword">const</span> otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask);</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160; </div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af1c16a22f4e0e2fb725455c98e02eaf5">DatasetMgmtSetPending</a>(std::shared_ptr&lt;otOperationalDatasetTlvs&gt; aPendingOpDatasetTlvsPtr,</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;                               AsyncTaskPtr                              aAsyncTask);</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5552a680bafcd37905a2c47ac2cb7e50">Ip6SetEnabled</a>(<span class="keywordtype">bool</span> aEnable, AsyncTaskPtr aAsyncTask);</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
+<div class="line"><a name="l00163"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a9adba505196d1391551fe631e4b404cb">  163</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a9adba505196d1391551fe631e4b404cb">Ip6SetAddressCallback</a>(<span class="keyword">const</span> Ip6AddressTableCallback &amp;aCallback) { mIp6AddressTableCallback = aCallback; }</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
+<div class="line"><a name="l00174"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a765ff33f16c94fd9c5979eed65604872">  174</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a765ff33f16c94fd9c5979eed65604872">Ip6SetAddressMulticastCallback</a>(<span class="keyword">const</span> Ip6MulticastAddressTableCallback &amp;aCallback)</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    {</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        mIp6MulticastAddressTableCallback = aCallback;</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    }</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00184"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af45c6c5378a724b13046c6c62e59c5f9">  184</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af45c6c5378a724b13046c6c62e59c5f9">Ip6SetReceiveCallback</a>(<span class="keyword">const</span> Ip6ReceiveCallback &amp;aCallback) { mIp6ReceiveCallback = aCallback; }</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#aab4ce0841ba9f9590c8e2bd30c2639dc">Ip6Send</a>(<span class="keyword">const</span> uint8_t *aData, uint16_t aLength) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; </div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af3b6e5f0379780bf9754b0193d262ed8">ThreadSetEnabled</a>(<span class="keywordtype">bool</span> aEnable, AsyncTaskPtr aAsyncTask);</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160; </div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ac2399b0d6b98ef35766af549201a9fff">ThreadDetachGracefully</a>(AsyncTaskPtr aAsyncTask);</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160; </div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#adf4ab7e9fab26afc8933d87821177071">ThreadErasePersistentInfo</a>(AsyncTaskPtr aAsyncTask);</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
+<div class="line"><a name="l00233"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a706456328269ca63d5532cc4ee6c434c">  233</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a706456328269ca63d5532cc4ee6c434c">NetifSetStateChangedCallback</a>(<span class="keyword">const</span> NetifStateChangedCallback &amp;aCallback)</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    {</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        mNetifStateChangedCallback = aCallback;</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    }</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160; </div>
+<div class="line"><a name="l00243"></a><span class="lineno"><a class="line" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#acf99ad8a793adbd1a81b79f8c28273d9">  243</a></span>&#160;    <span class="keywordtype">void</span> <a class="code" href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#acf99ad8a793adbd1a81b79f8c28273d9">InfraIfSetIcmp6NdSendCallback</a>(<span class="keyword">const</span> InfraIfSendIcmp6NdCallback &amp;aCallback)</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    {</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        mInfraIfIcmp6NdCallback = aCallback;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    }</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160; </div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keyword">using</span> FailureHandler = std::function&lt;void(otError)&gt;;</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160; </div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keyword">static</span> constexpr uint8_t kMaxTids = 16;</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; </div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Function, <span class="keyword">typename</span>... Args&gt; <span class="keyword">static</span> <span class="keywordtype">void</span> SafeInvoke(Function &amp;aFunc, Args &amp;&amp;...aArgs)</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    {</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        <span class="keywordflow">if</span> (aFunc)</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        {</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            aFunc(std::forward&lt;Args&gt;(aArgs)...);</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        }</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    }</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> CallAndClear(AsyncTaskPtr &amp;aResult, otError aError, <span class="keyword">const</span> std::string &amp;aErrorInfo = <span class="stringliteral">&quot;&quot;</span>)</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    {</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        <span class="keywordflow">if</span> (aResult)</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        {</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;            aResult-&gt;SetResult(aError, aErrorInfo);</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;            aResult = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        }</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    }</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160; </div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="keywordtype">void</span>      HandleNotification(<span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength);</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    <span class="keywordtype">void</span>      HandleResponse(spinel_tid_t aTid, <span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength);</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keywordtype">void</span>      HandleValueIs(spinel_prop_key_t aKey, <span class="keyword">const</span> uint8_t *aBuffer, uint16_t aLength);</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleResponseForPropSet(spinel_tid_t      aTid,</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                                       spinel_prop_key_t aKey,</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                                       <span class="keyword">const</span> uint8_t    *aData,</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                                       uint16_t          aLength);</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleResponseForPropInsert(spinel_tid_t      aTid,</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;                                          spinel_command_t  aCmd,</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;                                          spinel_prop_key_t aKey,</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;                                          <span class="keyword">const</span> uint8_t    *aData,</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;                                          uint16_t          aLength);</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleResponseForPropRemove(spinel_tid_t      aTid,</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;                                          spinel_command_t  aCmd,</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;                                          spinel_prop_key_t aKey,</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;                                          <span class="keyword">const</span> uint8_t    *aData,</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                                          uint16_t          aLength);</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160; </div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> Ip6MulAddrUpdateSubscription(<span class="keyword">const</span> otIp6Address &amp;aAddress, <span class="keywordtype">bool</span> aIsAdded) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    spinel_tid_t GetNextTid(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    <span class="keywordtype">void</span>         FreeTidTableItem(spinel_tid_t aTid);</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160; </div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    <span class="keyword">using</span> EncodingFunc = std::function&lt;otError(ot::Spinel::Encoder &amp;aEncoder)&gt;;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    otError SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    otError SetProperty(spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    otError InsertProperty(spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    otError RemoveProperty(spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    otError SendEncodedFrame(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160; </div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    otError ParseIp6AddressTable(<span class="keyword">const</span> uint8_t *aBuf, uint16_t aLength, std::vector&lt;Ip6AddressInfo&gt; &amp;aAddressTable);</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    otError ParseIp6MulticastAddresses(<span class="keyword">const</span> uint8_t *aBuf, uint8_t aLen, std::vector&lt;Ip6Address&gt; &amp;aAddressList);</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    otError ParseIp6StreamNet(<span class="keyword">const</span> uint8_t *aBuf, uint8_t aLen, <span class="keyword">const</span> uint8_t *&amp;aData, uint16_t &amp;aDataLen);</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    otError ParseOperationalDatasetTlvs(<span class="keyword">const</span> uint8_t *aBuf, uint8_t aLen, otOperationalDatasetTlvs &amp;aDatasetTlvs);</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    ot::Spinel::SpinelDriver *mSpinelDriver;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    uint16_t                  mCmdTidsInUse; </div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    spinel_tid_t              mCmdNextTid;   </div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160; </div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    spinel_prop_key_t mWaitingKeyTable[kMaxTids]; </div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    spinel_command_t  mCmdTable[kMaxTids];        </div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160; </div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    <span class="keyword">static</span> constexpr uint16_t kTxBufferSize = 2048;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    uint8_t                   mTxBuffer[kTxBufferSize];</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    ot::Spinel::Buffer        mNcpBuffer;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    ot::Spinel::Encoder       mEncoder;</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    spinel_iid_t              mIid; </div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    TaskRunner mTaskRunner;</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160; </div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    PropsObserver *mPropsObserver;</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="keyword">static</span> <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SpinelDataUnpack(<span class="keyword">const</span> uint8_t *aDataIn, spinel_size_t aDataLen, <span class="keyword">const</span> <span class="keywordtype">char</span> *aPackFormat, ...);</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160; </div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleReceivedFrame(<span class="keyword">const</span> uint8_t *aFrame,</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;                                    uint16_t       aLength,</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;                                    uint8_t        aHeader,</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                                    <span class="keywordtype">bool</span>          &amp;aSave,</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                                    <span class="keywordtype">void</span>          *aContext);</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    <span class="keywordtype">void</span>        HandleReceivedFrame(<span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength, uint8_t aHeader, <span class="keywordtype">bool</span> &amp;aShouldSaveFrame);</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleSavedFrame(<span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength, <span class="keywordtype">void</span> *aContext);</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    <span class="keyword">static</span> otDeviceRole SpinelRoleToDeviceRole(spinel_net_role_t aRole);</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160; </div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <span class="keywordtype">void</span>      HandleNotification(<span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength);</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;    <span class="keywordtype">void</span>      HandleResponse(spinel_tid_t aTid, <span class="keyword">const</span> uint8_t *aFrame, uint16_t aLength);</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <span class="keywordtype">void</span>      HandleValueIs(spinel_prop_key_t aKey, <span class="keyword">const</span> uint8_t *aBuffer, uint16_t aLength);</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleResponseForPropSet(spinel_tid_t      aTid,</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;                                       spinel_prop_key_t aKey,</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;                                       <span class="keyword">const</span> uint8_t    *aData,</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;                                       uint16_t          aLength);</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleResponseForPropInsert(spinel_tid_t      aTid,</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;                                          spinel_command_t  aCmd,</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;                                          spinel_prop_key_t aKey,</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;                                          <span class="keyword">const</span> uint8_t    *aData,</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;                                          uint16_t          aLength);</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleResponseForPropRemove(spinel_tid_t      aTid,</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;                                          spinel_command_t  aCmd,</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;                                          spinel_prop_key_t aKey,</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;                                          <span class="keyword">const</span> uint8_t    *aData,</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;                                          uint16_t          aLength);</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> Ip6MulAddrUpdateSubscription(<span class="keyword">const</span> otIp6Address &amp;aAddress, <span class="keywordtype">bool</span> aIsAdded) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160; </div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    spinel_tid_t GetNextTid(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    <span class="keywordtype">void</span>         FreeTidTableItem(spinel_tid_t aTid);</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160; </div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    <span class="keyword">using</span> EncodingFunc = std::function&lt;otError(ot::Spinel::Encoder &amp;aEncoder)&gt;;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    otError SendCommand(spinel_command_t aCmd, spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    otError SetProperty(spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    otError InsertProperty(spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    otError RemoveProperty(spinel_prop_key_t aKey, <span class="keyword">const</span> EncodingFunc &amp;aEncodingFunc);</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160; </div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    otError SendEncodedFrame(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    otError ParseIp6AddressTable(<span class="keyword">const</span> uint8_t *aBuf, uint16_t aLength, std::vector&lt;Ip6AddressInfo&gt; &amp;aAddressTable);</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    otError ParseIp6MulticastAddresses(<span class="keyword">const</span> uint8_t *aBuf, uint8_t aLen, std::vector&lt;Ip6Address&gt; &amp;aAddressList);</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    otError ParseIp6StreamNet(<span class="keyword">const</span> uint8_t *aBuf, uint8_t aLen, <span class="keyword">const</span> uint8_t *&amp;aData, uint16_t &amp;aDataLen);</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    otError ParseOperationalDatasetTlvs(<span class="keyword">const</span> uint8_t *aBuf, uint8_t aLen, otOperationalDatasetTlvs &amp;aDatasetTlvs);</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    otError ParseInfraIfIcmp6Nd(<span class="keyword">const</span> uint8_t       *aBuf,</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;                                uint8_t              aLen,</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;                                uint32_t            &amp;aInfraIfIndex,</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;                                <span class="keyword">const</span> otIp6Address *&amp;aAddr,</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                                <span class="keyword">const</span> uint8_t      *&amp;aData,</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                                uint16_t            &amp;aDataLen);</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160; </div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    AsyncTaskPtr mDatasetSetActiveTask;</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    AsyncTaskPtr mDatasetMgmtSetPendingTask;</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    AsyncTaskPtr mIp6SetEnabledTask;</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    AsyncTaskPtr mThreadSetEnabledTask;</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    AsyncTaskPtr mThreadDetachGracefullyTask;</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    AsyncTaskPtr mThreadErasePersistentInfoTask;</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160; </div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    Ip6AddressTableCallback          mIp6AddressTableCallback;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    Ip6MulticastAddressTableCallback mIp6MulticastAddressTableCallback;</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    Ip6ReceiveCallback               mIp6ReceiveCallback;</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    NetifStateChangedCallback        mNetifStateChangedCallback;</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;};</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160; </div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;} <span class="comment">// namespace Ncp</span></div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SetInfraIf(uint32_t                       aInfraIfIndex,</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;                         <span class="keywordtype">bool</span>                           aIsRunning,</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;                         <span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aIp6Addresses) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleIcmp6Nd(uint32_t          aInfraIfIndex,</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                            <span class="keyword">const</span> Ip6Address &amp;aIp6Address,</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;                            <span class="keyword">const</span> uint8_t    *aData,</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;                            uint16_t          aDataLen) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    ot::Spinel::SpinelDriver *mSpinelDriver;</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    uint16_t                  mCmdTidsInUse; </div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    spinel_tid_t              mCmdNextTid;   </div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    spinel_prop_key_t mWaitingKeyTable[kMaxTids]; </div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    spinel_command_t  mCmdTable[kMaxTids];        </div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160; </div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_NCP_SPINEL_HPP_</span></div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keyword">static</span> constexpr uint16_t kTxBufferSize = 2048;</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    uint8_t                   mTxBuffer[kTxBufferSize];</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    ot::Spinel::Buffer        mNcpBuffer;</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;    ot::Spinel::Encoder       mEncoder;</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;    spinel_iid_t              mIid; </div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160; </div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    TaskRunner mTaskRunner;</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160; </div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    PropsObserver *mPropsObserver;</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160; </div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    AsyncTaskPtr mDatasetSetActiveTask;</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    AsyncTaskPtr mDatasetMgmtSetPendingTask;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    AsyncTaskPtr mIp6SetEnabledTask;</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    AsyncTaskPtr mThreadSetEnabledTask;</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    AsyncTaskPtr mThreadDetachGracefullyTask;</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    AsyncTaskPtr mThreadErasePersistentInfoTask;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160; </div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    Ip6AddressTableCallback          mIp6AddressTableCallback;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    Ip6MulticastAddressTableCallback mIp6MulticastAddressTableCallback;</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    Ip6ReceiveCallback               mIp6ReceiveCallback;</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    NetifStateChangedCallback        mNetifStateChangedCallback;</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    InfraIfSendIcmp6NdCallback       mInfraIfIcmp6NdCallback;</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;};</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;} <span class="comment">// namespace Ncp</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160; </div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_NCP_SPINEL_HPP_</span></div>
 <div class="ttc" id="aasync__task_8hpp_html"><div class="ttname"><a href="../../da/d20/async__task_8hpp.html">async_task.hpp</a></div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html">otbr::Ncp::NcpSpinel</a></div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:88</div></div>
+<div class="ttc" id="aclassotbr_1_1InfraIf_1_1Dependencies_html"><div class="ttname"><a href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">otbr::InfraIf::Dependencies</a></div><div class="ttdef"><b>Definition:</b> infra_if.hpp:58</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html">otbr::Ncp::NcpSpinel</a></div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:89</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a216ac6f4e594505804a810b8ef64ae87"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a216ac6f4e594505804a810b8ef64ae87">otbr::Ncp::NcpSpinel::NcpSpinel</a></div><div class="ttdeci">NcpSpinel(void)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:53</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a5552a680bafcd37905a2c47ac2cb7e50"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5552a680bafcd37905a2c47ac2cb7e50">otbr::Ncp::NcpSpinel::Ip6SetEnabled</a></div><div class="ttdeci">void Ip6SetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:136</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a5acddf4a65bb228ea4bd43d53dd24bd9"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5acddf4a65bb228ea4bd43d53dd24bd9">otbr::Ncp::NcpSpinel::GetCoprocessorVersion</a></div><div class="ttdeci">const char * GetCoprocessorVersion(void)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:116</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a5acddf4a65bb228ea4bd43d53dd24bd9"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a5acddf4a65bb228ea4bd43d53dd24bd9">otbr::Ncp::NcpSpinel::GetCoprocessorVersion</a></div><div class="ttdeci">const char * GetCoprocessorVersion(void)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:118</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a6a3d5ce7927e04ef4ea30998bcb5f84b"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a6a3d5ce7927e04ef4ea30998bcb5f84b">otbr::Ncp::NcpSpinel::Init</a></div><div class="ttdeci">void Init(ot::Spinel::SpinelDriver &amp;aSpinelDriver, PropsObserver &amp;aObserver)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:66</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a706456328269ca63d5532cc4ee6c434c"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a706456328269ca63d5532cc4ee6c434c">otbr::Ncp::NcpSpinel::NetifSetStateChangedCallback</a></div><div class="ttdeci">void NetifSetStateChangedCallback(const NetifStateChangedCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:231</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a765ff33f16c94fd9c5979eed65604872"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a765ff33f16c94fd9c5979eed65604872">otbr::Ncp::NcpSpinel::Ip6SetAddressMulticastCallback</a></div><div class="ttdeci">void Ip6SetAddressMulticastCallback(const Ip6MulticastAddressTableCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:172</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a9adba505196d1391551fe631e4b404cb"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a9adba505196d1391551fe631e4b404cb">otbr::Ncp::NcpSpinel::Ip6SetAddressCallback</a></div><div class="ttdeci">void Ip6SetAddressCallback(const Ip6AddressTableCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:161</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a706456328269ca63d5532cc4ee6c434c"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a706456328269ca63d5532cc4ee6c434c">otbr::Ncp::NcpSpinel::NetifSetStateChangedCallback</a></div><div class="ttdeci">void NetifSetStateChangedCallback(const NetifStateChangedCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:233</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a765ff33f16c94fd9c5979eed65604872"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a765ff33f16c94fd9c5979eed65604872">otbr::Ncp::NcpSpinel::Ip6SetAddressMulticastCallback</a></div><div class="ttdeci">void Ip6SetAddressMulticastCallback(const Ip6MulticastAddressTableCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:174</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_a9adba505196d1391551fe631e4b404cb"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#a9adba505196d1391551fe631e4b404cb">otbr::Ncp::NcpSpinel::Ip6SetAddressCallback</a></div><div class="ttdeci">void Ip6SetAddressCallback(const Ip6AddressTableCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:163</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_aab4ce0841ba9f9590c8e2bd30c2639dc"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#aab4ce0841ba9f9590c8e2bd30c2639dc">otbr::Ncp::NcpSpinel::Ip6Send</a></div><div class="ttdeci">otbrError Ip6Send(const uint8_t *aData, uint16_t aLength) override</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:155</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_ac2399b0d6b98ef35766af549201a9fff"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ac2399b0d6b98ef35766af549201a9fff">otbr::Ncp::NcpSpinel::ThreadDetachGracefully</a></div><div class="ttdeci">void ThreadDetachGracefully(AsyncTaskPtr aAsyncTask)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:187</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_acf99ad8a793adbd1a81b79f8c28273d9"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#acf99ad8a793adbd1a81b79f8c28273d9">otbr::Ncp::NcpSpinel::InfraIfSetIcmp6NdSendCallback</a></div><div class="ttdeci">void InfraIfSetIcmp6NdSendCallback(const InfraIfSendIcmp6NdCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:243</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_adf4ab7e9fab26afc8933d87821177071"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#adf4ab7e9fab26afc8933d87821177071">otbr::Ncp::NcpSpinel::ThreadErasePersistentInfo</a></div><div class="ttdeci">void ThreadErasePersistentInfo(AsyncTaskPtr aAsyncTask)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:205</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_ae15972ed8abb397f6d890efb8a0833b2"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ae15972ed8abb397f6d890efb8a0833b2">otbr::Ncp::NcpSpinel::Deinit</a></div><div class="ttdeci">void Deinit(void)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:74</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_ae465aba60678c6bb8e38a2b98629671a"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#ae465aba60678c6bb8e38a2b98629671a">otbr::Ncp::NcpSpinel::DatasetSetActiveTlvs</a></div><div class="ttdeci">void DatasetSetActiveTlvs(const otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs, AsyncTaskPtr aAsyncTask)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:97</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_af1c16a22f4e0e2fb725455c98e02eaf5"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af1c16a22f4e0e2fb725455c98e02eaf5">otbr::Ncp::NcpSpinel::DatasetMgmtSetPending</a></div><div class="ttdeci">void DatasetMgmtSetPending(std::shared_ptr&lt; otOperationalDatasetTlvs &gt; aPendingOpDatasetTlvsPtr, AsyncTaskPtr aAsyncTask)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:116</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_af3b6e5f0379780bf9754b0193d262ed8"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af3b6e5f0379780bf9754b0193d262ed8">otbr::Ncp::NcpSpinel::ThreadSetEnabled</a></div><div class="ttdeci">void ThreadSetEnabled(bool aEnable, AsyncTaskPtr aAsyncTask)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.cpp:168</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_af45c6c5378a724b13046c6c62e59c5f9"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af45c6c5378a724b13046c6c62e59c5f9">otbr::Ncp::NcpSpinel::Ip6SetReceiveCallback</a></div><div class="ttdeci">void Ip6SetReceiveCallback(const Ip6ReceiveCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:182</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1PropsObserver_html"><div class="ttname"><a href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">otbr::Ncp::PropsObserver</a></div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:62</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1NcpSpinel_html_af45c6c5378a724b13046c6c62e59c5f9"><div class="ttname"><a href="../../da/d1b/classotbr_1_1Ncp_1_1NcpSpinel.html#af45c6c5378a724b13046c6c62e59c5f9">otbr::Ncp::NcpSpinel::Ip6SetReceiveCallback</a></div><div class="ttdeci">void Ip6SetReceiveCallback(const Ip6ReceiveCallback &amp;aCallback)</div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:184</div></div>
+<div class="ttc" id="aclassotbr_1_1Ncp_1_1PropsObserver_html"><div class="ttname"><a href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html">otbr::Ncp::PropsObserver</a></div><div class="ttdef"><b>Definition:</b> ncp_spinel.hpp:63</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1PropsObserver_html_ac480ee8162825b04f6c4d64b2d29b952"><div class="ttname"><a href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac480ee8162825b04f6c4d64b2d29b952">otbr::Ncp::PropsObserver::SetDatasetActiveTlvs</a></div><div class="ttdeci">virtual void SetDatasetActiveTlvs(const otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs)=0</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1PropsObserver_html_ac5de3831f0d74c9ee0e93ca755123ba2"><div class="ttname"><a href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#ac5de3831f0d74c9ee0e93ca755123ba2">otbr::Ncp::PropsObserver::~PropsObserver</a></div><div class="ttdeci">virtual ~PropsObserver(void)=default</div></div>
 <div class="ttc" id="aclassotbr_1_1Ncp_1_1PropsObserver_html_accd7cfa7dd384eab980bd43a5a6ae59e"><div class="ttname"><a href="../../d0/d5a/classotbr_1_1Ncp_1_1PropsObserver.html#accd7cfa7dd384eab980bd43a5a6ae59e">otbr::Ncp::PropsObserver::SetDeviceRole</a></div><div class="ttdeci">virtual void SetDeviceRole(otDeviceRole aRole)=0</div></div>
 <div class="ttc" id="aclassotbr_1_1Netif_1_1Dependencies_html"><div class="ttname"><a href="../../da/d4a/classotbr_1_1Netif_1_1Dependencies.html">otbr::Netif::Dependencies</a></div><div class="ttdef"><b>Definition:</b> netif.hpp:53</div></div>
 <div class="ttc" id="acommon_2types_8hpp_html_a9addd74a14dca1dab1b3e7a8205455aa"><div class="ttname"><a href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a></div><div class="ttdeci">otbrError</div><div class="ttdef"><b>Definition:</b> types.hpp:72</div></div>
+<div class="ttc" id="ainfra__if_8hpp_html"><div class="ttname"><a href="../../da/d4e/infra__if_8hpp.html">infra_if.hpp</a></div></div>
 <div class="ttc" id="anetif_8hpp_html"><div class="ttname"><a href="../../d0/d86/netif_8hpp.html">netif.hpp</a></div></div>
 <div class="ttc" id="atask__runner_8hpp_html"><div class="ttname"><a href="../../df/db8/task__runner_8hpp.html">task_runner.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
