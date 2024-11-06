@@ -12,7 +12,7 @@ var searchData=
   ['addobserver_9',['AddObserver',['../dd/dd6/classotbr_1_1Mdns_1_1StateSubject.html#ad6c9ebeace9ce58a8e58f3574f0df453',1,'otbr::Mdns::StateSubject']]],
   ['addonmeshprefix_10',['AddOnMeshPrefix',['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#ab87331038d68084d03c1ba1a2f140776',1,'otbr::DBus::ThreadApiDBus']]],
   ['addsubscriptioncallbacks_11',['AddSubscriptionCallbacks',['../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#a54d15649205370cd1b67002c8d88511e',1,'otbr::Mdns::Publisher']]],
-  ['addthreadstatechangedcallback_12',['AddThreadStateChangedCallback',['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#a0e90b04252d31f512b5f6d7887323a02',1,'otbr::Ncp::RcpHost']]],
+  ['addthreadstatechangedcallback_12',['AddThreadStateChangedCallback',['../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a9f9f36135f6c171acba0ec2cde09c0e5',1,'otbr::Ncp::ThreadHost::AddThreadStateChangedCallback()'],['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#a87ffaf0a462e4a618ab0b7eb6581cdf3',1,'otbr::Ncp::RcpHost::AddThreadStateChangedCallback()'],['../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#af5e019af5dc80e8656cb312d651b1fd2',1,'otbr::Ncp::NcpHost::AddThreadStateChangedCallback()']]],
   ['advertising_5fproxy_2ecpp_13',['advertising_proxy.cpp',['../d7/d33/advertising__proxy_8cpp.html',1,'']]],
   ['advertising_5fproxy_2ehpp_14',['advertising_proxy.hpp',['../dd/d20/advertising__proxy_8hpp.html',1,'']]],
   ['api_5fstrings_2ehpp_15',['api_strings.hpp',['../d4/d20/api__strings_8hpp.html',1,'']]],
