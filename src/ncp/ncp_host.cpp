@@ -203,6 +203,12 @@ void NcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMa
     mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
+void NcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
+{
+    // TODO: Implement AddThreadStateChangedCallback under NCP mode.
+    OT_UNUSED_VARIABLE(aCallback);
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
