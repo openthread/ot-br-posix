@@ -35,9 +35,11 @@ import threading
 import os
 
 from dbus.mainloop.glib import DBusGMainLoop
+
 DBusGMainLoop(set_as_default=True)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 bus = dbus.SystemBus()
 intended_dhcp6pd_state = None
@@ -46,27 +48,34 @@ DHCP_CONFIG_PATH = "/etc/dhcpcd.conf"
 DHCP_CONFIG_PD_PATH = "/etc/dhcpcd.conf.pd"
 DHCP_CONFIG_NO_PD_PATH = "/etc/dhcpcd.conf.no-pd"
 
+
 def restart_dhcpcd_service(config_path):
     if not os.path.isfile(config_path):
         logging.error(f"{config_path} not found. Cannot apply configuration.")
         return
     try:
-        subprocess.run(["sudo", "cp", config_path, DHCP_CONFIG_PATH], check=True)
+        subprocess.run(["sudo", "cp", config_path, DHCP_CONFIG_PATH],
+                       check=True)
         subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
         subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
-        logging.info(f"Successfully restarted dhcpcd service with {config_path}.")
+        logging.info(
+            f"Successfully restarted dhcpcd service with {config_path}.")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error restarting dhcpcd service: {e}")
+
 
 def restart_dhcpcd_with_pd_config():
     global intended_dhcp6pd_state
     restart_dhcpcd_service(DHCP_CONFIG_PD_PATH)
     intended_dhcp6pd_state = None
 
+
 def restart_dhcpcd_with_no_pd_config():
     restart_dhcpcd_service(DHCP_CONFIG_NO_PD_PATH)
 
-def properties_changed_handler(interface_name, changed_properties, invalidated_properties):
+
+def properties_changed_handler(interface_name, changed_properties,
+                               invalidated_properties):
     global intended_dhcp6pd_state
     if "Dhcp6PdState" not in changed_properties:
         return
@@ -76,37 +85,47 @@ def properties_changed_handler(interface_name, changed_properties, invalidated_p
         intended_dhcp6pd_state = "running"
         thread = threading.Thread(target=restart_dhcpcd_with_pd_config)
         thread.start()
-    elif new_state in ("stopped", "disabled") and intended_dhcp6pd_state is None:
+    elif new_state in ("stopped",
+                       "disabled") and intended_dhcp6pd_state is None:
         restart_dhcpcd_with_no_pd_config()
+
 
 def connect_to_signal():
     try:
-        dbus_obj = bus.get_object('io.openthread.BorderRouter.wpan0', '/io/openthread/BorderRouter/wpan0')
-        properties_dbus_iface = dbus.Interface(dbus_obj, 'org.freedesktop.DBus.Properties')
-        dbus_obj.connect_to_signal("PropertiesChanged", properties_changed_handler, dbus_interface=properties_dbus_iface.dbus_interface)
+        dbus_obj = bus.get_object('io.openthread.BorderRouter.wpan0',
+                                  '/io/openthread/BorderRouter/wpan0')
+        properties_dbus_iface = dbus.Interface(
+            dbus_obj, 'org.freedesktop.DBus.Properties')
+        dbus_obj.connect_to_signal(
+            "PropertiesChanged",
+            properties_changed_handler,
+            dbus_interface=properties_dbus_iface.dbus_interface)
         logging.info("Connected to D-Bus signal.")
         return dbus_obj
     except dbus.DBusException as e:
         logging.error(f"Error connecting to D-Bus: {e}")
         return None
 
+
 def check_and_reconnect(dbus_obj):
     if dbus_obj is None:
         connect_to_signal()
 
+
 def main():
     # Ensure dhcpcd is running in its last known state. This addresses a potential race condition
-    # during system startup due to the loop dependency in dhcpcd-radvd-network.target. 
+    # during system startup due to the loop dependency in dhcpcd-radvd-network.target.
     #
     #   - network.target activation relies on the completion of dhcpcd start
-    #   - during bootup, dhcpcd tries to start radvd with PD enabled before network.target is 
+    #   - during bootup, dhcpcd tries to start radvd with PD enabled before network.target is
     #     active, which leads to a timeout failure
     #   - so we will prevent radvd from starting before target.network is active
     #
-    # By restarting dhcpcd here, we ensure it runs after network.target is active, allowing 
+    # By restarting dhcpcd here, we ensure it runs after network.target is active, allowing
     # radvd to start correctly and dhcpcd to configure the interface.
     try:
-        subprocess.run(["sudo", "systemctl", "reload-or-restart", "dhcpcd"], check=True)
+        subprocess.run(["sudo", "systemctl", "reload-or-restart", "dhcpcd"],
+                       check=True)
         logging.info("Successfully restarting dhcpcd service.")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error restarting dhcpcd service: {e}")
@@ -115,10 +134,10 @@ def main():
 
     thread_dbus_obj = connect_to_signal()
 
-    GLib.timeout_add_seconds(5, check_and_reconnect, thread_dbus_obj) 
+    GLib.timeout_add_seconds(5, check_and_reconnect, thread_dbus_obj)
 
     loop.run()
 
+
 if __name__ == '__main__':
     main()
-
