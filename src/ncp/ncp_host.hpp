@@ -75,10 +75,11 @@ public:
     /**
      * Constructor.
      *
-     * @param[in]   aInterfaceName  A string of the NCP interface name.
-     * @param[in]   aDryRun         TRUE to indicate dry-run mode. FALSE otherwise.
+     * @param[in]   aInterfaceName          A string of the NCP interface name.
+     * @param[in]   aBackboneInterfaceName  A string of the backbone interface name.
+     * @param[in]   aDryRun                 TRUE to indicate dry-run mode. FALSE otherwise.
      */
-    NcpHost(const char *aInterfaceName, bool aDryRun);
+    NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName, bool aDryRun);
 
     /**
      * Destructor.
@@ -95,6 +96,7 @@ public:
     void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) override;
     void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                              const AsyncResultReceiver          &aReceiver) override;
+    void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
     CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
     const char     *GetCoprocessorVersion(void) override;
     const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
@@ -111,6 +113,7 @@ private:
     NcpSpinel                 mNcpSpinel;
     TaskRunner                mTaskRunner;
     Netif                     mNetif;
+    InfraIf                   mInfraIf;
 };
 
 } // namespace Ncp

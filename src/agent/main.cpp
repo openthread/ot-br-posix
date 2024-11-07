@@ -319,11 +319,26 @@ static int realmain(int argc, char *argv[])
     }
 
     {
-        otbr::Application app(interfaceName, backboneInterfaceNames, radioUrls, enableAutoAttach, restListenAddress,
-                              restListenPort);
+#if __linux__
+        otbr::Utils::InfraLinkSelector    infraLinkSelector(backboneInterfaceNames);
+        const std::string                 backboneInterfaceName = infraLinkSelector.Select();
+        otbr::Application::ErrorCondition errorCondition        = [&backboneInterfaceName, &infraLinkSelector](void) {
+            return std::string(infraLinkSelector.Select()) == backboneInterfaceName ? OTBR_ERROR_NONE
+                                                                                           : OTBR_ERROR_INFRA_LINK_CHANGED;
+        };
+#else
+        const std::string backboneInterfaceName = backboneInterfaceNames.empty() ? "" : backboneInterfaceNames.front();
+#endif
+        std::unique_ptr<otbr::Ncp::ThreadHost> host = otbr::Ncp::ThreadHost::Create(
+            interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach);
+
+        otbr::Application app(*host, interfaceName, backboneInterfaceName, restListenAddress, restListenPort);
 
         gApp = &app;
         app.Init();
+#if __linux__
+        app.SetErrorCondition(errorCondition);
+#endif
 
         ret = app.Run();
 
