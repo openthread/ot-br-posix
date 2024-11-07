@@ -85,7 +85,7 @@ def properties_changed_handler(interface_name, changed_properties,
         intended_dhcp6pd_state = "running"
         thread = threading.Thread(target=restart_dhcpcd_with_pd_config)
         thread.start()
-    elif new_state in ("stopped",
+    elif new_state in ("stopped", "idle",
                        "disabled") and intended_dhcp6pd_state is None:
         restart_dhcpcd_with_no_pd_config()
 
