@@ -66,9 +66,14 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
 
     case $reason in
         EXPIRE6 | STOP6)
-            config_ra $old_dhcp6_ia_pd1_prefix1 $old_dhcp6_ia_pd1_prefix1_length 0 0
-            sudo systemctl reload radvd
+            if [ -z "$old_dhcp6_ia_pd1_prefix1" ] || [ -z "$old_dhcp6_ia_pd1_prefix1_length" ]; then
+                logger "$LOG_TAG WARNING: Missing DHCPv6 prefix information. Skipping radvd configuration."
+            else
+                config_ra $old_dhcp6_ia_pd1_prefix1 $old_dhcp6_ia_pd1_prefix1_length 0 0
+                if systemctl is-active network.target; then
+                    sudo systemctl reload-or-restart radvd
+                fi
+            fi
             ;;
     esac
 fi
-

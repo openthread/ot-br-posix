@@ -30,15 +30,65 @@
 #       This script manipulates DHCPv6-PD-REF configuration.
 #
 
-customise_dhcpcd_conf()
+# TODO: set the upstream interface according to the environment variables of `script/setup`.
+UPSTREAM_INTERFACE="eth0"
+
+DHCPCD_ENTER_HOOK="/etc/dhcpcd.enter-hook"
+DHCPCD_EXIT_HOOK="/etc/dhcpcd.exit-hook"
+
+PD_DAEMON_DIR="/opt/pd-daemon"
+PD_DAEMON_PATH="${PD_DAEMON_DIR}/dhcp6_pd_daemon.py"
+PD_DAEMON_SERVICE_NAME="dhcp6_pd_daemon.service"
+PD_DAEMON_SERVICE_PATH="/etc/systemd/system/${PD_DAEMON_SERVICE_NAME}"
+
+DHCP_CONFIG_PATH="/etc/dhcpcd.conf"
+DHCP_CONFIG_ORIG_PATH="/etc/dhcpcd.conf.orig"
+DHCP_CONFIG_PD_PATH="/etc/dhcpcd.conf.pd"
+DHCP_CONFIG_NO_PD_PATH="/etc/dhcpcd.conf.no-pd"
+
+# Create dhcpcd configuration file with ipv6 prefix request.
+create_dhcpcd_conf_pd()
 {
-    # This has to be run after script/_border_routing, and this will
-    # invalidate all changes to dhcpcd.conf made by script/_border_routing.
-    sudo tee /etc/dhcpcd.conf >/dev/null <<EOF
+    sudo tee ${DHCP_CONFIG_PD_PATH} >/dev/null <<EOF
 noipv6rs # disable router solicitation
-interface eth0
+interface ${UPSTREAM_INTERFACE}
   iaid 1
   ia_pd 2/::/64 -
+release
+# Disable Router Solicitations (RS) again, specifically for ${UPSTREAM_INTERFACE}.
+# This ensures that accept_ra is prevented from being set to 0, allowing
+# the interface to accepting Router Advertisements and configuring IPv6
+# based on them. The exact reason for requiring 'noipv6rs' twice
+# is not fully understood but has been observed to be necessary through 
+# experimentation.
+noipv6rs
+EOF
+}
+
+# Create dhcpcd configuration file with no prefix request.
+create_dhcpcd_conf_no_pd()
+{
+    sudo tee ${DHCP_CONFIG_NO_PD_PATH} >/dev/null <<EOF
+noipv6rs # disable router solicitation
+EOF
+}
+
+create_dhcp6_pd_daemon_service()
+{
+    sudo tee ${PD_DAEMON_SERVICE_PATH} <<EOF
+[Unit]
+Description=Daemon to manage dhcpcd based on otbr-agent's PD state change
+After=multi-user.service
+ConditionPathExists=${PD_DAEMON_PATH}
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 ${PD_DAEMON_PATH}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
 EOF
 }
 
@@ -46,23 +96,49 @@ dhcpv6_pd_ref_uninstall()
 {
     with DHCPV6_PD_REF || return 0
 
-    if [[ -f "/etc/dhcpcd.conf.orig" ]]; then
-        sudo mv /etc/dhcpcd.conf.orig /etc/dhcpcd.conf
+    if have systemctl; then
+        sudo systemctl disable ${PD_DAEMON_SERVICE_NAME} || true
+        sudo systemctl stop ${PD_DAEMON_SERVICE_NAME} || true
+        sudo rm -f ${PD_DAEMON_SERVICE_PATH} || true
     fi
-    sudo systemctl restart dhcpcd
-    sudo rm -f /etc/dhcpcd.enter-hook /etc/dhcpcd.exit-hook
 
+    if [[ -f ${DHCP_CONFIG_ORIG_PATH} ]]; then
+        sudo mv ${DHCP_CONFIG_ORIG_PATH} ${DHCP_CONFIG_PATH}
+    fi
+
+    sudo rm -f ${DHCPCD_ENTER_HOOK} ${DHCPCD_EXIT_HOOK}
+    sudo rm -f ${PD_DAEMON_PATH}
+
+    if have systemctl; then
+        sudo systemctl daemon-reload
+
+        if systemctl is-active dhcpcd; then
+            sudo systemctl restart dhcpcd || true
+        fi
+    fi
 }
 
 dhcpv6_pd_ref_install()
 {
     with DHCPV6_PD_REF || return 0
 
-    if [[ -f "/etc/dhcpcd.conf" ]]; then
-        sudo mv /etc/dhcpcd.conf /etc/dhcpcd.conf.orig
+    if [[ -f ${DHCP_CONFIG_PATH} ]]; then
+        sudo mv ${DHCP_CONFIG_PATH} ${DHCP_CONFIG_ORIG_PATH}
     fi
-    customise_dhcpcd_conf
+
     # Add dhcpcd.hooks
-    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook /etc/dhcpcd.enter-hook
-    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook /etc/dhcpcd.exit-hook
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.enter-hook ${DHCPCD_ENTER_HOOK}
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcpcd.exit-hook ${DHCPCD_EXIT_HOOK}
+    sudo mkdir -p ${PD_DAEMON_DIR}
+    sudo install -m 755 "$(dirname "$0")"/reference-device/dhcp6_pd_daemon.py ${PD_DAEMON_PATH}
+
+    create_dhcpcd_conf_pd
+    create_dhcpcd_conf_no_pd
+    create_dhcp6_pd_daemon_service
+
+    if have systemctl; then
+        sudo systemctl daemon-reload
+        sudo systemctl enable ${PD_DAEMON_SERVICE_NAME}
+        sudo systemctl start ${PD_DAEMON_SERVICE_NAME}
+    fi
 }
