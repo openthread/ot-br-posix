@@ -202,8 +202,10 @@ public:
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
     void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) override;
     void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) override;
+#if OTBR_ENABLE_POWER_CALIBRATION
     void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                              const AsyncResultReceiver          &aReceiver) override;
+#endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override

@@ -194,6 +194,7 @@ void NcpHost::GetChannelMasks(const ChannelMasksReceiver &aReceiver, const Async
     mTaskRunner.Post([aErrReceiver](void) { aErrReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
+#if OTBR_ENABLE_POWER_CALIBRATION
 void NcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                                   const AsyncResultReceiver          &aReceiver)
 {
@@ -202,6 +203,7 @@ void NcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMa
     // TODO: Implement SetChannelMaxPowers under NCP mode.
     mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
+#endif
 
 void NcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
 {

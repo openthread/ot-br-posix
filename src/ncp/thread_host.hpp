@@ -189,6 +189,7 @@ public:
      */
     virtual void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) = 0;
 
+#if OTBR_ENABLE_POWER_CALIBRATION
     /**
      * Sets the max power of each channel.
      *
@@ -201,6 +202,7 @@ public:
      */
     virtual void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                                      const AsyncResultReceiver          &aReceiver) = 0;
+#endif
 
     /**
      * This method adds a event listener for Thread state changes.

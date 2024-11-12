@@ -94,14 +94,22 @@ public:
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
     void SetCountryCode(const std::string &aCountryCode, const AsyncResultReceiver &aReceiver) override;
     void GetChannelMasks(const ChannelMasksReceiver &aReceiver, const AsyncResultReceiver &aErrReceiver) override;
+#if OTBR_ENABLE_POWER_CALIBRATION
     void SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                              const AsyncResultReceiver          &aReceiver) override;
-    void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
-    CoprocessorType GetCoprocessorType(void) override { return OT_COPROCESSOR_NCP; }
-    const char     *GetCoprocessorVersion(void) override;
-    const char     *GetInterfaceName(void) const override { return mConfig.mInterfaceName; }
-    void            Init(void) override;
-    void            Deinit(void) override;
+#endif
+    void            AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
+    CoprocessorType GetCoprocessorType(void) override
+    {
+        return OT_COPROCESSOR_NCP;
+    }
+    const char *GetCoprocessorVersion(void) override;
+    const char *GetInterfaceName(void) const override
+    {
+        return mConfig.mInterfaceName;
+    }
+    void Init(void) override;
+    void Deinit(void) override;
 
     // MainloopProcessor methods
     void Update(MainloopContext &aMainloop) override;

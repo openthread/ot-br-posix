@@ -522,6 +522,7 @@ exit:
     }
 }
 
+#if OTBR_ENABLE_POWER_CALIBRATION
 void RcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMaxPowers,
                                   const AsyncResultReceiver          &aReceiver)
 {
@@ -549,6 +550,7 @@ void RcpHost::SetChannelMaxPowers(const std::vector<ChannelMaxPower> &aChannelMa
 exit:
     mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
 }
+#endif // OTBR_ENABLE_POWER_CALIBRATION
 
 void RcpHost::DisableThreadAfterDetach(void *aContext)
 {
