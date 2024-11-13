@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-e71af95</span>
+   &#160;<span id="projectnumber">0.3.0-25273ba</span>
    </div>
   </td>
  </tr>
@@ -95,8 +95,14 @@ Inheritance diagram for otbr::Ncp::NetworkProperties:</div>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aee2ebb3ccc5155f612099df2b655665e"><td class="memItemLeft" align="right" valign="top">virtual otDeviceRole&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#aee2ebb3ccc5155f612099df2b655665e">GetDeviceRole</a> (void) const =0</td></tr>
 <tr class="separator:aee2ebb3ccc5155f612099df2b655665e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab08af18907d91744ccab7742295c52e8"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#ab08af18907d91744ccab7742295c52e8">Ip6IsEnabled</a> (void) const =0</td></tr>
+<tr class="separator:ab08af18907d91744ccab7742295c52e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace765608aceedac813fb389b0665c458"><td class="memItemLeft" align="right" valign="top">virtual uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#ace765608aceedac813fb389b0665c458">GetPartitionId</a> (void) const =0</td></tr>
+<tr class="separator:ace765608aceedac813fb389b0665c458"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ec5f6feabe51e8871a42ae2ea6eff55"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#a1ec5f6feabe51e8871a42ae2ea6eff55">GetDatasetActiveTlvs</a> (otOperationalDatasetTlvs &amp;aDatasetTlvs) const =0</td></tr>
 <tr class="separator:a1ec5f6feabe51e8871a42ae2ea6eff55"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11f4f3cc93a3478e723032529deb9c55"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#a11f4f3cc93a3478e723032529deb9c55">GetDatasetPendingTlvs</a> (otOperationalDatasetTlvs &amp;aDatasetTlvs) const =0</td></tr>
+<tr class="separator:a11f4f3cc93a3478e723032529deb9c55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab087e5291102e803aad375d73018bb7b"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d6/d75/classotbr_1_1Ncp_1_1NetworkProperties.html#ab087e5291102e803aad375d73018bb7b">~NetworkProperties</a> (void)=default</td></tr>
 <tr class="separator:ab087e5291102e803aad375d73018bb7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -167,6 +173,41 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a11f4f3cc93a3478e723032529deb9c55"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11f4f3cc93a3478e723032529deb9c55">&#9670;&nbsp;</a></span>GetDatasetPendingTlvs()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void otbr::Ncp::NetworkProperties::GetDatasetPendingTlvs </td>
+          <td>(</td>
+          <td class="paramtype">otOperationalDatasetTlvs &amp;&#160;</td>
+          <td class="paramname"><em>aDatasetTlvs</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the pending operational dataset tlvs.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">aDatasetTlvs</td><td>A reference to where the Pending Operational Dataset will be placed. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implemented in <a class="el" href="../../d3/d8c/classotbr_1_1Ncp_1_1OtNetworkProperties.html#ace8130d71fbb730c16ccabd3b07f45ce">otbr::Ncp::OtNetworkProperties</a>, and <a class="el" href="../../d3/d1e/classotbr_1_1Ncp_1_1NcpNetworkProperties.html#a96826996d4d67e1f507ba4fca170b08b">otbr::Ncp::NcpNetworkProperties</a>.</p>
+
+</div>
+</div>
 <a id="aee2ebb3ccc5155f612099df2b655665e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aee2ebb3ccc5155f612099df2b655665e">&#9670;&nbsp;</a></span>GetDeviceRole()</h2>
 
@@ -194,6 +235,72 @@ Public Member Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>the device role. </dd></dl>
 
 <p>Implemented in <a class="el" href="../../d3/d8c/classotbr_1_1Ncp_1_1OtNetworkProperties.html#ab7fec2c8e7b2f0cb67bc02558e8e04f5">otbr::Ncp::OtNetworkProperties</a>, and <a class="el" href="../../d3/d1e/classotbr_1_1Ncp_1_1NcpNetworkProperties.html#a8d859b4647f4ccd39cabbd652bb07c3b">otbr::Ncp::NcpNetworkProperties</a>.</p>
+
+</div>
+</div>
+<a id="ace765608aceedac813fb389b0665c458"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace765608aceedac813fb389b0665c458">&#9670;&nbsp;</a></span>GetPartitionId()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual uint32_t otbr::Ncp::NetworkProperties::GetPartitionId </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns the Partition ID.</p>
+<dl class="section return"><dt>Returns</dt><dd>The Partition ID. </dd></dl>
+
+<p>Implemented in <a class="el" href="../../d3/d8c/classotbr_1_1Ncp_1_1OtNetworkProperties.html#afbdb4726add09dac4a00d5427ac64d09">otbr::Ncp::OtNetworkProperties</a>, and <a class="el" href="../../d3/d1e/classotbr_1_1Ncp_1_1NcpNetworkProperties.html#adc4efb3ea2db1e3ef61b673ccae47b8b">otbr::Ncp::NcpNetworkProperties</a>.</p>
+
+</div>
+</div>
+<a id="ab08af18907d91744ccab7742295c52e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab08af18907d91744ccab7742295c52e8">&#9670;&nbsp;</a></span>Ip6IsEnabled()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool otbr::Ncp::NetworkProperties::Ip6IsEnabled </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Returns whether or not the IPv6 interface is up.</p>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">TRUE</td><td>The IPv6 interface is enabled. </td></tr>
+    <tr><td class="paramname">FALSE</td><td>The IPv6 interface is disabled. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implemented in <a class="el" href="../../d3/d8c/classotbr_1_1Ncp_1_1OtNetworkProperties.html#a9b7040715a60d7d541fca86b8ace1b18">otbr::Ncp::OtNetworkProperties</a>, and <a class="el" href="../../d3/d1e/classotbr_1_1Ncp_1_1NcpNetworkProperties.html#a797472df743afd9110f56295538d16dc">otbr::Ncp::NcpNetworkProperties</a>.</p>
 
 </div>
 </div>
