@@ -64,11 +64,33 @@ public:
     virtual otDeviceRole GetDeviceRole(void) const = 0;
 
     /**
+     * Returns whether or not the IPv6 interface is up.
+     *
+     * @retval TRUE   The IPv6 interface is enabled.
+     * @retval FALSE  The IPv6 interface is disabled.
+     */
+    virtual bool Ip6IsEnabled(void) const = 0;
+
+    /**
+     * Returns the Partition ID.
+     *
+     * @returns The Partition ID.
+     */
+    virtual uint32_t GetPartitionId(void) const = 0;
+
+    /**
      * Returns the active operational dataset tlvs.
      *
      * @param[out] aDatasetTlvs  A reference to where the Active Operational Dataset will be placed.
      */
     virtual void GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
+
+    /**
+     * Returns the pending operational dataset tlvs.
+     *
+     * @param[out] aDatasetTlvs  A reference to where the Pending Operational Dataset will be placed.
+     */
+    virtual void GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
 
     /**
      * The destructor.

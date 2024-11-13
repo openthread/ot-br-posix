@@ -79,9 +79,30 @@ otDeviceRole OtNetworkProperties::GetDeviceRole(void) const
     return otThreadGetDeviceRole(mInstance);
 }
 
+bool OtNetworkProperties::Ip6IsEnabled(void) const
+{
+    return otIp6IsEnabled(mInstance);
+}
+
+uint32_t OtNetworkProperties::GetPartitionId(void) const
+{
+    return otThreadGetPartitionId(mInstance);
+}
+
 void OtNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
 {
     otError error = otDatasetGetActiveTlvs(mInstance, &aDatasetTlvs);
+
+    if (error != OT_ERROR_NONE)
+    {
+        aDatasetTlvs.mLength = 0;
+        memset(aDatasetTlvs.mTlvs, 0, sizeof(aDatasetTlvs.mTlvs));
+    }
+}
+
+void OtNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    otError error = otDatasetGetPendingTlvs(mInstance, &aDatasetTlvs);
 
     if (error != OT_ERROR_NONE)
     {
