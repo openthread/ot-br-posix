@@ -389,6 +389,21 @@ paths:
           description: Invalid request body.
         "409":
           description: request rejected because commissioner is not active.
+  /node/coprocessor/version:
+    get:
+      tags:
+        - node
+      summary: Get the coprocessor version
+      description: Retrieves the NCP or RCP coprocessor version string.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Coprocessor version string
+                example: "OPENTHREAD/20210309-00615-g9836b6f18; NRF52840; Mar 9 2021 13:30:04"
 
 components:
   schemas:
