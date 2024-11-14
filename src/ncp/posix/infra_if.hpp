@@ -57,6 +57,8 @@ public:
     class Dependencies
     {
     public:
+        virtual ~Dependencies(void) = default;
+
         virtual otbrError SetInfraIf(unsigned int                   aInfraIfIndex,
                                      bool                           aIsRunning,
                                      const std::vector<Ip6Address> &aIp6Addresses);
