@@ -73,7 +73,10 @@ public:
 
     // NetworkProperties methods
     otDeviceRole GetDeviceRole(void) const override;
+    bool         Ip6IsEnabled(void) const override;
+    uint32_t     GetPartitionId(void) const override;
     void         GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
+    void         GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const override;
 
     // Set the otInstance
     void SetInstance(otInstance *aInstance);
