@@ -393,8 +393,8 @@ paths:
     get:
       tags:
         - node
-      summary: Get the coprocessor version
-      description: Retrieves the NCP or RCP coprocessor version string.
+      summary: Get the coprocessor firmware version
+      description: Retrieves the NCP or RCP coprocessor firmware version string.
       responses:
         "200":
           description: Successful operation
@@ -403,7 +403,7 @@ paths:
               schema:
                 type: string
                 description: Coprocessor version string
-                example: "OPENTHREAD/20210309-00615-g9836b6f18; NRF52840; Mar 9 2021 13:30:04"
+                example: "OPENTHREAD/thread-reference-20200818-1740-g33cc75ed3; NRF52840; Jun  2 2022 14:25:49"
 
 components:
   schemas:
