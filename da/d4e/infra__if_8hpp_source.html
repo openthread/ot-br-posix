@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-25273ba</span>
+   &#160;<span id="projectnumber">0.3.0-4589255</span>
    </div>
   </td>
  </tr>
@@ -118,50 +118,52 @@ $(function() {
 <div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">   57</a></span>&#160;    <span class="keyword">class </span><a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">Dependencies</a></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    {</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keyword">virtual</span> <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SetInfraIf(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>                   aInfraIfIndex,</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;                                     <span class="keywordtype">bool</span>                           aIsRunning,</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                                     <span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aIp6Addresses);</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keyword">virtual</span> <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleIcmp6Nd(uint32_t          aInfraIfIndex,</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                        <span class="keyword">const</span> <a class="code" href="../../d2/dfe/classotbr_1_1Ip6Address.html">Ip6Address</a> &amp;aSrcAddress,</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;                                        <span class="keyword">const</span> uint8_t    *aData,</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                        uint16_t          aDataLen);</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    };</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <a class="code" href="../../db/df9/classotbr_1_1InfraIf.html">InfraIf</a>(<a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">Dependencies</a> &amp;aDependencies);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;        <span class="keyword">virtual</span> ~<a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">Dependencies</a>(<span class="keywordtype">void</span>) = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;        <span class="keyword">virtual</span> <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SetInfraIf(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>                   aInfraIfIndex,</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                                     <span class="keywordtype">bool</span>                           aIsRunning,</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;                                     <span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aIp6Addresses);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        <span class="keyword">virtual</span> <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> HandleIcmp6Nd(uint32_t          aInfraIfIndex,</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;                                        <span class="keyword">const</span> <a class="code" href="../../d2/dfe/classotbr_1_1Ip6Address.html">Ip6Address</a> &amp;aSrcAddress,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                                        <span class="keyword">const</span> uint8_t    *aData,</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                                        uint16_t          aDataLen);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    };</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">void</span>      Init(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordtype">void</span>      Deinit(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordtype">void</span>      Process(<span class="keyword">const</span> <a class="code" href="../../d0/d6c/classotbr_1_1MainloopContext.html">MainloopContext</a> &amp;aContext);</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordtype">void</span>      UpdateFdSet(<a class="code" href="../../d0/d6c/classotbr_1_1MainloopContext.html">MainloopContext</a> &amp;aContext);</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SetInfraIf(<span class="keyword">const</span> <span class="keywordtype">char</span> *aIfName);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SendIcmp6Nd(uint32_t            aInfraIfIndex,</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                          <span class="keyword">const</span> otIp6Address &amp;aDestAddress,</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                          <span class="keyword">const</span> uint8_t      *aBuffer,</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                          uint16_t            aBufferLength);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span>              CreateIcmp6Socket(<span class="keyword">const</span> <span class="keywordtype">char</span> *aInfraIfName);</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keywordtype">bool</span>                    IsRunning(<span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aAddrs) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keywordtype">short</span>                   GetFlags(<span class="keywordtype">void</span>) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    std::vector&lt;Ip6Address&gt; GetAddresses(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span>             HasLinkLocalAddress(<span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aAddrs);</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordtype">void</span>                    ReceiveIcmp6Message(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="preprocessor">#ifdef __linux__</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keywordtype">void</span> ReceiveNetlinkMessage(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">Dependencies</a> &amp;mDeps;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordtype">char</span>          mInfraIfName[IFNAMSIZ];</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>  mInfraIfIndex;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor">#ifdef __linux__</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordtype">int</span> mNetlinkSocket;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordtype">int</span> mInfraIfIcmp6Socket;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;};</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <a class="code" href="../../db/df9/classotbr_1_1InfraIf.html">InfraIf</a>(<a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">Dependencies</a> &amp;aDependencies);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordtype">void</span>      Init(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keywordtype">void</span>      Deinit(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordtype">void</span>      Process(<span class="keyword">const</span> <a class="code" href="../../d0/d6c/classotbr_1_1MainloopContext.html">MainloopContext</a> &amp;aContext);</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordtype">void</span>      UpdateFdSet(<a class="code" href="../../d0/d6c/classotbr_1_1MainloopContext.html">MainloopContext</a> &amp;aContext);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SetInfraIf(<span class="keyword">const</span> <span class="keywordtype">char</span> *aIfName);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> SendIcmp6Nd(uint32_t            aInfraIfIndex,</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                          <span class="keyword">const</span> otIp6Address &amp;aDestAddress,</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                          <span class="keyword">const</span> uint8_t      *aBuffer,</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;                          uint16_t            aBufferLength);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span>              CreateIcmp6Socket(<span class="keyword">const</span> <span class="keywordtype">char</span> *aInfraIfName);</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordtype">bool</span>                    IsRunning(<span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aAddrs) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordtype">short</span>                   GetFlags(<span class="keywordtype">void</span>) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    std::vector&lt;Ip6Address&gt; GetAddresses(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span>             HasLinkLocalAddress(<span class="keyword">const</span> std::vector&lt;Ip6Address&gt; &amp;aAddrs);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keywordtype">void</span>                    ReceiveIcmp6Message(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor">#ifdef __linux__</span></div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordtype">void</span> ReceiveNetlinkMessage(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">Dependencies</a> &amp;mDeps;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="keywordtype">char</span>          mInfraIfName[IFNAMSIZ];</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>  mInfraIfIndex;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="preprocessor">#ifdef __linux__</span></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keywordtype">int</span> mNetlinkSocket;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordtype">int</span> mInfraIfIcmp6Socket;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;};</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_POSIX_INFRA_IF_HPP_</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_POSIX_INFRA_IF_HPP_</span></div>
 <div class="ttc" id="aclassotbr_1_1InfraIf_1_1Dependencies_html"><div class="ttname"><a href="../../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html">otbr::InfraIf::Dependencies</a></div><div class="ttdef"><b>Definition:</b> infra_if.hpp:58</div></div>
 <div class="ttc" id="aclassotbr_1_1InfraIf_html"><div class="ttname"><a href="../../db/df9/classotbr_1_1InfraIf.html">otbr::InfraIf</a></div><div class="ttdef"><b>Definition:</b> infra_if.hpp:55</div></div>
 <div class="ttc" id="aclassotbr_1_1Ip6Address_html"><div class="ttname"><a href="../../d2/dfe/classotbr_1_1Ip6Address.html">otbr::Ip6Address</a></div><div class="ttdef"><b>Definition:</b> types.hpp:110</div></div>
