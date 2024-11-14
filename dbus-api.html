@@ -309,7 +309,8 @@ ActivateEphemeralKeyMode (IN  u lifetime,
 </pre><p>
 Activate ePSKc mode.
 </p><p>
-0 for OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 min).
+0 for OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 min). Valid value is [0,
+OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 min)].
 <em class="parameter"><code>epskc</code></em>: returns the ephemeral key digit string of length 9 with first 8 digits randomly generated,
 and the last digit as verhoeff checksum.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN u <em class="parameter"><code>lifetime</code></em></code>:</span></dt><dd><p>
