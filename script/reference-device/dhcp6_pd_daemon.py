@@ -108,7 +108,16 @@ def connect_to_signal():
 
 
 def check_and_reconnect(dbus_obj):
+    global bus
     if dbus_obj is None:
+        connect_to_signal()
+    bus.watch_name_owner(bus_name='io.openthread.BorderRouter.wpan0',
+                         callback=handle_name_owner_changed)
+
+
+def handle_name_owner_changed(new_owner):
+    if not new_owner:
+        logging.warning("Otbr-agent likely reloaded, reconnecting to D-Bus")
         connect_to_signal()
 
 
