@@ -62,6 +62,18 @@ void NcpNetworkProperties::SetDeviceRole(otDeviceRole aRole)
     mDeviceRole = aRole;
 }
 
+bool NcpNetworkProperties::Ip6IsEnabled(void) const
+{
+    // TODO: Implement the method under NCP mode.
+    return false;
+}
+
+uint32_t NcpNetworkProperties::GetPartitionId(void) const
+{
+    // TODO: Implement the method under NCP mode.
+    return 0;
+}
+
 void NcpNetworkProperties::SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs)
 {
     mDatasetActiveTlvs.mLength = aActiveOpDatasetTlvs.mLength;
@@ -72,6 +84,12 @@ void NcpNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatas
 {
     aDatasetTlvs.mLength = mDatasetActiveTlvs.mLength;
     memcpy(aDatasetTlvs.mTlvs, mDatasetActiveTlvs.mTlvs, mDatasetActiveTlvs.mLength);
+}
+
+void NcpNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
+{
+    // TODO: Implement the method under NCP mode.
+    OTBR_UNUSED_VARIABLE(aDatasetTlvs);
 }
 
 // ===================================== NcpHost ======================================
