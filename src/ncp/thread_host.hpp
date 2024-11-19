@@ -98,6 +98,14 @@ public:
     virtual ~NetworkProperties(void) = default;
 };
 
+enum ThreadEnabledState
+{
+    kStateDisabled  = 0,
+    kStateEnabled   = 1,
+    kStateDisabling = 2,
+    kStateInvalid   = 255,
+};
+
 /**
  * This class is an interface which provides a set of async APIs to control the
  * Thread network.
@@ -112,6 +120,7 @@ public:
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
     using DeviceRoleHandler          = std::function<void(otError, otDeviceRole)>;
     using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
+    using ThreadEnabledStateCallback = std::function<void(ThreadEnabledState aState)>;
 
     struct ChannelMaxPower
     {
@@ -232,6 +241,13 @@ public:
      * @param[in] aCallback  The callback to receive Thread state changed events.
      */
     virtual void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) = 0;
+
+    /**
+     * This method adds a event listener for Thread Enabled state changes.
+     *
+     * @param[in] aCallback  The callback to receive Thread Enabled state changed events.
+     */
+    virtual void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) = 0;
 
     /**
      * Returns the co-processor type.

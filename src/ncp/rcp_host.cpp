@@ -125,6 +125,7 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
                  bool                             aEnableAutoAttach)
     : mInstance(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
+    , mThreadEnabledState(ThreadEnabledState::kStateDisabled)
 {
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -327,6 +328,7 @@ void RcpHost::Deinit(void)
 
     OtNetworkProperties::SetInstance(nullptr);
     mThreadStateChangedCallbacks.clear();
+    mThreadEnabledStateChangedCallbacks.clear();
     mResetHandlers.clear();
 
     mSetThreadEnabledReceiver  = nullptr;
@@ -388,6 +390,11 @@ void RcpHost::RegisterResetHandler(std::function<void(void)> aHandler)
 void RcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback)
 {
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
+}
+
+void RcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback)
+{
+    mThreadEnabledStateChangedCallbacks.push_back(aCallback);
 }
 
 void RcpHost::Reset(void)
@@ -452,8 +459,13 @@ void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatase
     otOperationalDataset emptyDataset;
 
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
-    VerifyOrExit(IsAttached(), error = OT_ERROR_FAILED,
-                 errorMsg = "Cannot schedule migration when this device is detached");
+
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
+    VerifyOrExit(mThreadEnabledState == ThreadEnabledState::kStateEnabled, error = OT_ERROR_INVALID_STATE,
+                 errorMsg = "Thread is disabled");
+
+    VerifyOrExit(IsAttached(), error = OT_ERROR_INVALID_STATE, errorMsg = "Device is detached");
 
     // TODO: check supported channel mask
 
@@ -488,15 +500,22 @@ void RcpHost::SendMgmtPendingSetCallback(otError aError)
 
 void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
 {
-    otError error             = OT_ERROR_NONE;
-    bool    receiveResultHere = true;
+    otError     error             = OT_ERROR_NONE;
+    std::string errorMsg          = "";
+    bool        receiveResultHere = true;
 
-    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
-    VerifyOrExit(mSetThreadEnabledReceiver == nullptr, error = OT_ERROR_BUSY);
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
 
     if (aEnabled)
     {
         otOperationalDatasetTlvs datasetTlvs;
+
+        if (mThreadEnabledState == ThreadEnabledState::kStateEnabled)
+        {
+            ExitNow();
+        }
 
         if (otDatasetGetActiveTlvs(mInstance, &datasetTlvs) != OT_ERROR_NOT_FOUND && datasetTlvs.mLength > 0 &&
             otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
@@ -504,9 +523,12 @@ void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
             SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
             SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
         }
+        UpdateThreadEnabledState(ThreadEnabledState::kStateEnabled);
     }
     else
     {
+        UpdateThreadEnabledState(ThreadEnabledState::kStateDisabling);
+
         SuccessOrExit(error = otThreadDetachGracefully(mInstance, DisableThreadAfterDetach, this));
         mSetThreadEnabledReceiver = aReceiver;
         receiveResultHere         = false;
@@ -515,7 +537,7 @@ void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
 exit:
     if (receiveResultHere)
     {
-        mTaskRunner.Post([aReceiver, error](void) { aReceiver(error, ""); });
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
     }
 }
 
@@ -586,6 +608,8 @@ void RcpHost::DisableThreadAfterDetach(void)
     SuccessOrExit(error = otThreadSetEnabled(mInstance, false), errorMsg = "Failed to disable Thread stack");
     SuccessOrExit(error = otIp6SetEnabled(mInstance, false), errorMsg = "Failed to disable Thread interface");
 
+    UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
+
 exit:
     SafeInvokeAndClear(mSetThreadEnabledReceiver, error, errorMsg);
 }
@@ -615,6 +639,16 @@ bool RcpHost::IsAttached(void)
     otDeviceRole role = GetDeviceRole();
 
     return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
+}
+
+void RcpHost::UpdateThreadEnabledState(ThreadEnabledState aState)
+{
+    mThreadEnabledState = aState;
+
+    for (auto &callback : mThreadEnabledStateChangedCallbacks)
+    {
+        callback(mThreadEnabledState);
+    }
 }
 
 /*
