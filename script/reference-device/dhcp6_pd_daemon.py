@@ -32,7 +32,6 @@ import dbus
 import gi.repository.GLib as GLib
 import subprocess
 import threading
-import time
 import os
 
 from dbus.mainloop.glib import DBusGMainLoop
@@ -42,8 +41,7 @@ DBusGMainLoop(set_as_default=True)
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-dbus_obj = None
-dbus_owner = None
+bus = dbus.SystemBus()
 intended_dhcp6pd_state = None
 
 DHCP_CONFIG_PATH = "/etc/dhcpcd.conf"
@@ -91,8 +89,7 @@ def properties_changed_handler(interface_name, changed_properties,
         restart_dhcpcd_with_no_pd_config()
 
 
-def connect_to_signal(bus):
-    global dbus_obj
+def connect_to_signal():
     try:
         dbus_obj = bus.get_object('io.openthread.BorderRouter.wpan0',
                                   '/io/openthread/BorderRouter/wpan0')
@@ -103,23 +100,14 @@ def connect_to_signal(bus):
             properties_changed_handler,
             dbus_interface=properties_dbus_iface.dbus_interface)
         logging.info("Connected to D-Bus signal.")
-        return dbus_obj
     except dbus.DBusException as e:
         logging.error(f"Error connecting to D-Bus: {e}")
-        return None
 
 
-def check_and_reconnect(bus):
-    global dbus_obj, dbus_owner
-    current_owner = bus.get_name_owner('io.openthread.BorderRouter.wpan0')
-    if dbus_obj is None or current_owner != dbus_owner:
-        if dbus_obj is not None:
-            logging.warning("D-Bus owner changed, reconnecting...")
-
-        time.sleep(2)  # Add a small delay to avoid aggressive reconnects
-        dbus_obj = connect_to_signal(bus)
-        dbus_owner = current_owner
-    return True
+def handle_name_owner_changed(new_owner):
+    if new_owner:
+        logging.info(f"New D-Bus owner({new_owner}) assigned, connecting...")
+        connect_to_signal()
 
 
 def main():
@@ -139,11 +127,10 @@ def main():
     except subprocess.CalledProcessError as e:
         logging.error(f"Error restarting dhcpcd service: {e}")
 
-    bus = dbus.SystemBus()
-
     loop = GLib.MainLoop()
 
-    GLib.timeout_add_seconds(5, check_and_reconnect, bus)
+    bus.watch_name_owner(bus_name='io.openthread.BorderRouter.wpan0',
+                         callback=handle_name_owner_changed)
 
     loop.run()
 
