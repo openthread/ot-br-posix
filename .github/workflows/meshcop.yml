@@ -81,4 +81,4 @@ jobs:
         OTBR_USE_WEB_COMMISSIONER: 1
       run: OTBR_VERBOSE=${RUNNER_DEBUG:-0} script/test meshcop
     - name: Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5

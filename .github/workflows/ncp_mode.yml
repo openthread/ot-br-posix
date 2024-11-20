@@ -78,4 +78,4 @@ jobs:
       run: |
        top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim expect
     - name: Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5

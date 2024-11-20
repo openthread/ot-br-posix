@@ -184,7 +184,7 @@ jobs:
           third_party/openthread/repo/ot_testing/*.log
     - name: Codecov
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
     - name: Cache test result
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
