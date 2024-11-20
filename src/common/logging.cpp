@@ -44,6 +44,10 @@
 #include <sys/time.h>
 #include <syslog.h>
 
+#if OTBR_ENABLE_PLATFORM_ANDROID
+#include <log/log.h>
+#endif
+
 #include <sstream>
 
 #include "common/code_utils.hpp"
@@ -87,20 +91,25 @@ void otbrLogSyslogSetEnabled(bool aEnabled)
 /** Initialize logging */
 void otbrLogInit(const char *aProgramName, otbrLogLevel aLevel, bool aPrintStderr, bool aSyslogDisable)
 {
-    const char *ident;
-
-    assert(aProgramName != nullptr);
     assert(aLevel >= OTBR_LOG_EMERG && aLevel <= OTBR_LOG_DEBUG);
-
-    ident = strrchr(aProgramName, '/');
-    ident = (ident != nullptr) ? ident + 1 : aProgramName;
-
     otbrLogSyslogSetEnabled(!aSyslogDisable);
+
+#if OTBR_ENABLE_PLATFORM_ANDROID
+    OTBR_UNUSED_VARIABLE(aProgramName);
+#else
+    assert(aProgramName != nullptr);
 
     if (!sSyslogDisabled)
     {
+        const char *ident;
+
+        ident = strrchr(aProgramName, '/');
+        ident = (ident != nullptr) ? ident + 1 : aProgramName;
+
         openlog(ident, (LOG_CONS | LOG_PID) | (aPrintStderr ? LOG_PERROR : 0), OTBR_SYSLOG_FACILITY_ID);
     }
+#endif
+
     sLevel        = aLevel;
     sDefaultLevel = sLevel;
 }
@@ -130,6 +139,38 @@ static const char *GetPrefix(const char *aLogTag)
     return prefix;
 }
 
+#if OTBR_ENABLE_PLATFORM_ANDROID
+static android_LogPriority ConvertToAndroidLogPriority(otbrLogLevel aLevel)
+{
+    android_LogPriority priority;
+
+    switch (aLevel)
+    {
+    case OTBR_LOG_EMERG:
+    case OTBR_LOG_ALERT:
+    case OTBR_LOG_CRIT:
+        priority = ANDROID_LOG_FATAL;
+        break;
+    case OTBR_LOG_ERR:
+        priority = ANDROID_LOG_ERROR;
+        break;
+    case OTBR_LOG_WARNING:
+        priority = ANDROID_LOG_WARN;
+        break;
+    case OTBR_LOG_NOTICE:
+    case OTBR_LOG_INFO:
+        priority = ANDROID_LOG_INFO;
+        break;
+    case OTBR_LOG_DEBUG:
+    default:
+        priority = ANDROID_LOG_DEBUG;
+        break;
+    }
+
+    return priority;
+}
+#endif
+
 /** log to the syslog or standard out */
 void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
 {
@@ -147,7 +188,12 @@ void otbrLog(otbrLogLevel aLevel, const char *aLogTag, const char *aFormat, ...)
         }
         else
         {
+#if OTBR_ENABLE_PLATFORM_ANDROID
+            __android_log_print(ConvertToAndroidLogPriority(aLevel), LOG_TAG, "%s%s: %s", sLevelString[aLevel],
+                                GetPrefix(aLogTag), buffer);
+#else
             syslog(static_cast<int>(aLevel), "%s%s: %s", sLevelString[aLevel], GetPrefix(aLogTag), buffer);
+#endif
         }
     }
 
@@ -177,7 +223,11 @@ void otbrLogvNoFilter(otbrLogLevel aLevel, const char *aFormat, va_list aArgList
     }
     else
     {
+#if OTBR_ENABLE_PLATFORM_ANDROID
+        __android_log_vprint(ConvertToAndroidLogPriority(aLevel), LOG_TAG, aFormat, aArgList);
+#else
         vsyslog(static_cast<int>(aLevel), aFormat, aArgList);
+#endif
     }
 }
 

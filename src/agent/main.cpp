@@ -55,6 +55,7 @@
 #include "ncp/thread_host.hpp"
 
 #ifdef OTBR_ENABLE_PLATFORM_ANDROID
+#include <log/log.h>
 #ifndef __ANDROID__
 #error "OTBR_ENABLE_PLATFORM_ANDROID can be enabled for only Android devices"
 #endif
@@ -177,16 +178,21 @@ static void OnAllocateFailed(void)
 
 static otbrLogLevel GetDefaultLogLevel(void)
 {
-    otbrLogLevel level = OTBR_LOG_INFO;
-
 #if OTBR_ENABLE_PLATFORM_ANDROID
-    char value[PROPERTY_VALUE_MAX];
+    // The log level is set to DEBUG by default, the final output log will be filtered by Android log system.
+    otbrLogLevel level = OTBR_LOG_DEBUG;
+    char         value[PROPERTY_VALUE_MAX];
+
+    // Set the Android log level to INFO by default.
+    __android_log_set_minimum_priority(ANDROID_LOG_INFO);
 
     property_get("ro.build.type", value, "user");
     if (!strcmp(value, "user"))
     {
         level = OTBR_LOG_WARNING;
     }
+#else
+    otbrLogLevel level = OTBR_LOG_INFO;
 #endif
 
     return level;
