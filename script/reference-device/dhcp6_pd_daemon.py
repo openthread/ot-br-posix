@@ -54,10 +54,9 @@ def restart_dhcpcd_service(config_path):
         logging.error(f"{config_path} not found. Cannot apply configuration.")
         return
     try:
-        subprocess.run(["sudo", "cp", config_path, DHCP_CONFIG_PATH],
-                       check=True)
-        subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
-        subprocess.run(["sudo", "service", "dhcpcd", "restart"], check=True)
+        subprocess.run(["cp", config_path, DHCP_CONFIG_PATH], check=True)
+        subprocess.run(["systemctl", "daemon-reload"], check=True)
+        subprocess.run(["service", "dhcpcd", "restart"], check=True)
         logging.info(
             f"Successfully restarted dhcpcd service with {config_path}.")
     except subprocess.CalledProcessError as e:
@@ -124,8 +123,7 @@ def main():
     # By restarting dhcpcd here, we ensure it runs after network.target is active, allowing
     # radvd to start correctly and dhcpcd to configure the interface.
     try:
-        subprocess.run(["sudo", "systemctl", "reload-or-restart", "dhcpcd"],
-                       check=True)
+        subprocess.run(["systemctl", "reload-or-restart", "dhcpcd"], check=True)
         logging.info("Successfully restarting dhcpcd service.")
     except subprocess.CalledProcessError as e:
         logging.error(f"Error restarting dhcpcd service: {e}")

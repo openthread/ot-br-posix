@@ -78,8 +78,9 @@ create_dhcp6_pd_daemon_service()
     sudo tee ${PD_DAEMON_SERVICE_PATH} <<EOF
 [Unit]
 Description=Daemon to manage dhcpcd based on otbr-agent's PD state change
-After=multi-user.service
 ConditionPathExists=${PD_DAEMON_PATH}
+Requires=otbr-agent.service
+After=otbr-agent.service
 
 [Service]
 Type=simple
