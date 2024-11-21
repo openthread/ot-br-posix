@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-bd7bc77</span>
+   &#160;<span id="projectnumber">0.3.0-fe769eb</span>
    </div>
   </td>
  </tr>
@@ -128,6 +128,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a32891e0231dc26beac3f3647ae65fa82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87ffaf0a462e4a618ab0b7eb6581cdf3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#a87ffaf0a462e4a618ab0b7eb6581cdf3">AddThreadStateChangedCallback</a> (ThreadStateChangedCallback aCallback) override</td></tr>
 <tr class="separator:a87ffaf0a462e4a618ab0b7eb6581cdf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1f4d5a5cf61cd102cbd6e18ed37a149"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#ab1f4d5a5cf61cd102cbd6e18ed37a149">AddThreadEnabledStateChangedCallback</a> (ThreadEnabledStateCallback aCallback) override</td></tr>
+<tr class="separator:ab1f4d5a5cf61cd102cbd6e18ed37a149"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a13506183984ded2c39515e0fc3d81b33"><td class="memItemLeft" align="right" valign="top">CoprocessorType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#a13506183984ded2c39515e0fc3d81b33">GetCoprocessorType</a> (void) override</td></tr>
 <tr class="separator:a13506183984ded2c39515e0fc3d81b33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae02340ac02b7e45f0ba8ddbc18bc3cf7"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#ae02340ac02b7e45f0ba8ddbc18bc3cf7">GetCoprocessorVersion</a> (void) override</td></tr>
@@ -181,6 +183,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b
 <tr class="memitem:a9aa182aa965d36214f803bfd4b38b1b1 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="a9aa182aa965d36214f803bfd4b38b1b1"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadStateChangedCallback</b> = std::function&lt; void(otChangedFlags aFlags)&gt;</td></tr>
 <tr class="separator:a9aa182aa965d36214f803bfd4b38b1b1 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac53ca3659235a33ae303a5ff7b2e4707 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="ac53ca3659235a33ae303a5ff7b2e4707"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadEnabledStateCallback</b> = std::function&lt; void(ThreadEnabledState aState)&gt;</td></tr>
+<tr class="separator:ac53ca3659235a33ae303a5ff7b2e4707 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This interface defines OpenThread Controller under RCP mode. </p>
@@ -243,6 +248,41 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadStateChangedCa
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab1f4d5a5cf61cd102cbd6e18ed37a149"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1f4d5a5cf61cd102cbd6e18ed37a149">&#9670;&nbsp;</a></span>AddThreadEnabledStateChangedCallback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void otbr::Ncp::RcpHost::AddThreadEnabledStateChangedCallback </td>
+          <td>(</td>
+          <td class="paramtype">ThreadEnabledStateCallback&#160;</td>
+          <td class="paramname"><em>aCallback</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This method adds a event listener for Thread Enabled state changes.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">aCallback</td><td>The callback to receive Thread Enabled state changed events. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a2754f02d2be603cfcc07da856cfb2ef8">otbr::Ncp::ThreadHost</a>.</p>
+
+</div>
+</div>
 <a id="a87ffaf0a462e4a618ab0b7eb6581cdf3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a87ffaf0a462e4a618ab0b7eb6581cdf3">&#9670;&nbsp;</a></span>AddThreadStateChangedCallback()</h2>
 

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-bd7bc77</span>
+   &#160;<span id="projectnumber">0.3.0-fe769eb</span>
    </div>
   </td>
  </tr>
@@ -108,6 +108,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a6ec8c8bce05e22f8ebb174d834d45b14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5e019af5dc80e8656cb312d651b1fd2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#af5e019af5dc80e8656cb312d651b1fd2">AddThreadStateChangedCallback</a> (ThreadStateChangedCallback aCallback) override</td></tr>
 <tr class="separator:af5e019af5dc80e8656cb312d651b1fd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80084badf6bf5b038e2575dfa5f704eb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a80084badf6bf5b038e2575dfa5f704eb">AddThreadEnabledStateChangedCallback</a> (ThreadEnabledStateCallback aCallback) override</td></tr>
+<tr class="separator:a80084badf6bf5b038e2575dfa5f704eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d407eb00d5bf7d98d958ba49e797f3b"><td class="memItemLeft" align="right" valign="top">CoprocessorType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a8d407eb00d5bf7d98d958ba49e797f3b">GetCoprocessorType</a> (void) override</td></tr>
 <tr class="separator:a8d407eb00d5bf7d98d958ba49e797f3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a876473d36f2169cecfb94c3bf8981ed4"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a876473d36f2169cecfb94c3bf8981ed4">GetCoprocessorVersion</a> (void) override</td></tr>
@@ -160,6 +162,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>DeviceRoleHandler</b
 <tr class="memitem:a9aa182aa965d36214f803bfd4b38b1b1 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="a9aa182aa965d36214f803bfd4b38b1b1"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadStateChangedCallback</b> = std::function&lt; void(otChangedFlags aFlags)&gt;</td></tr>
 <tr class="separator:a9aa182aa965d36214f803bfd4b38b1b1 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac53ca3659235a33ae303a5ff7b2e4707 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top"><a id="ac53ca3659235a33ae303a5ff7b2e4707"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadEnabledStateCallback</b> = std::function&lt; void(ThreadEnabledState aState)&gt;</td></tr>
+<tr class="separator:ac53ca3659235a33ae303a5ff7b2e4707 inherit pub_types_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_static_methods_classotbr_1_1Ncp_1_1ThreadHost"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classotbr_1_1Ncp_1_1ThreadHost')"><img src="../../closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html">otbr::Ncp::ThreadHost</a></td></tr>
 <tr class="memitem:a4ecc9e39fb16da42b9b809f2ce5fd4fe inherit pub_static_methods_classotbr_1_1Ncp_1_1ThreadHost"><td class="memItemLeft" align="right" valign="top">static std::unique_ptr&lt; <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html">ThreadHost</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a4ecc9e39fb16da42b9b809f2ce5fd4fe">Create</a> (const char *aInterfaceName, const std::vector&lt; const char * &gt; &amp;aRadioUrls, const char *aBackboneInterfaceName, bool aDryRun, bool aEnableAutoAttach)</td></tr>
 <tr class="separator:a4ecc9e39fb16da42b9b809f2ce5fd4fe inherit pub_static_methods_classotbr_1_1Ncp_1_1ThreadHost"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -236,6 +241,41 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadStateChangedCa
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a80084badf6bf5b038e2575dfa5f704eb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a80084badf6bf5b038e2575dfa5f704eb">&#9670;&nbsp;</a></span>AddThreadEnabledStateChangedCallback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void otbr::Ncp::NcpHost::AddThreadEnabledStateChangedCallback </td>
+          <td>(</td>
+          <td class="paramtype">ThreadEnabledStateCallback&#160;</td>
+          <td class="paramname"><em>aCallback</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>This method adds a event listener for Thread Enabled state changes.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">aCallback</td><td>The callback to receive Thread Enabled state changed events. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a2754f02d2be603cfcc07da856cfb2ef8">otbr::Ncp::ThreadHost</a>.</p>
+
+</div>
+</div>
 <a id="af5e019af5dc80e8656cb312d651b1fd2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af5e019af5dc80e8656cb312d651b1fd2">&#9670;&nbsp;</a></span>AddThreadStateChangedCallback()</h2>
 
