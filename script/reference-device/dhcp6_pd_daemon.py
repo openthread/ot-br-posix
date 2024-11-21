@@ -100,14 +100,13 @@ def connect_to_signal():
             properties_changed_handler,
             dbus_interface=properties_dbus_iface.dbus_interface)
         logging.info("Connected to D-Bus signal.")
-        return dbus_obj
     except dbus.DBusException as e:
         logging.error(f"Error connecting to D-Bus: {e}")
-        return None
 
 
-def check_and_reconnect(dbus_obj):
-    if dbus_obj is None:
+def handle_name_owner_changed(new_owner):
+    if new_owner:
+        logging.info(f"New D-Bus owner({new_owner}) assigned, connecting...")
         connect_to_signal()
 
 
@@ -130,9 +129,8 @@ def main():
 
     loop = GLib.MainLoop()
 
-    thread_dbus_obj = connect_to_signal()
-
-    GLib.timeout_add_seconds(5, check_and_reconnect, thread_dbus_obj)
+    bus.watch_name_owner(bus_name='io.openthread.BorderRouter.wpan0',
+                         callback=handle_name_owner_changed)
 
     loop.run()
 
