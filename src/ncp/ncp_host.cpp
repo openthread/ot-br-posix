@@ -229,6 +229,12 @@ void NcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback
     OT_UNUSED_VARIABLE(aCallback);
 }
 
+void NcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback)
+{
+    // TODO: Implement AddThreadEnabledStateChangedCallback under NCP mode.
+    OT_UNUSED_VARIABLE(aCallback);
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);

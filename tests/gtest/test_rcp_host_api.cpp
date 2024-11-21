@@ -64,8 +64,9 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
 
 TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
 {
-    otError                                    error          = OT_ERROR_FAILED;
-    bool                                       resultReceived = false;
+    otError                                    error              = OT_ERROR_FAILED;
+    bool                                       resultReceived     = false;
+    otbr::Ncp::ThreadEnabledState              threadEnabledState = otbr::Ncp::ThreadEnabledState::kStateInvalid;
     otbr::MainloopContext                      mainloop;
     otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
                                                                                     const std::string &aErrorMsg) {
@@ -73,18 +74,22 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
         resultReceived = true;
         error          = aError;
     };
+    otbr::Ncp::ThreadHost::ThreadEnabledStateCallback enabledStateCallback =
+        [&threadEnabledState](otbr::Ncp::ThreadEnabledState aState) { threadEnabledState = aState; };
     otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
                             /* aEnableAutoAttach */ false);
 
     host.Init();
+    host.AddThreadEnabledStateChangedCallback(enabledStateCallback);
 
     // 1. Active dataset hasn't been set, should succeed with device role still being disabled.
     host.SetThreadEnabled(true, receiver);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateEnabled);
 
-    // 2. Set active dataset and enable it
+    // 2. Set active dataset and start it
     {
         otOperationalDataset     dataset;
         otOperationalDatasetTlvs datasetTlvs;
@@ -92,26 +97,32 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
         otDatasetConvertToTlvs(&dataset, &datasetTlvs);
         OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(ot::FakePlatform::CurrentInstance(), &datasetTlvs));
     }
-    error          = OT_ERROR_FAILED;
-    resultReceived = false;
-    host.SetThreadEnabled(true, receiver);
-    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
-    EXPECT_EQ(error, OT_ERROR_NONE);
-    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DETACHED);
+    OT_UNUSED_VARIABLE(otIp6SetEnabled(ot::FakePlatform::CurrentInstance(), true));
+    OT_UNUSED_VARIABLE(otThreadSetEnabled(ot::FakePlatform::CurrentInstance(), true));
 
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
                          [&host]() { return host.GetDeviceRole() != OT_DEVICE_ROLE_DETACHED; });
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
 
-    // 3. Disable it
+    // 3. Enable again, the enabled state should not change.
+    error          = OT_ERROR_FAILED;
+    resultReceived = false;
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateEnabled);
+
+    // 4. Disable it
     error          = OT_ERROR_FAILED;
     resultReceived = false;
     host.SetThreadEnabled(false, receiver);
+    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateDisabling);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateDisabled);
 
-    // 4. Duplicate call, should get OT_ERROR_BUSY
+    // 5. Duplicate call, should get OT_ERROR_BUSY
     error                   = OT_ERROR_FAILED;
     resultReceived          = false;
     otError error2          = OT_ERROR_FAILED;
@@ -126,6 +137,7 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
                          [&resultReceived, &resultReceived2]() { return resultReceived && resultReceived2; });
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(error2, OT_ERROR_BUSY);
+    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateDisabled);
 
     host.Deinit();
 }
@@ -185,13 +197,14 @@ TEST(RcpHostApi, SetCountryCodeWorkCorrectly)
 TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
 {
     otError                                    error          = OT_ERROR_NONE;
+    std::string                                errorMsg       = "";
     bool                                       resultReceived = false;
     otbr::MainloopContext                      mainloop;
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
-                                                                                    const std::string &aErrorMsg) {
-        OT_UNUSED_VARIABLE(aErrorMsg);
+    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
+                                                           &errorMsg](otError aError, const std::string &aErrorMsg) {
         resultReceived = true;
         error          = aError;
+        errorMsg       = aErrorMsg;
     };
     otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
                             /* aEnableAutoAttach */ false);
@@ -205,16 +218,18 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
     host.ScheduleMigration(datasetTlvs, receiver);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
     EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    EXPECT_STREQ(errorMsg.c_str(), "OT is not initialized");
     otbr::MainloopManager::GetInstance().AddMainloopProcessor(&host);
 
     host.Init();
 
-    // 2. Call ScheduleMigration when the device is not attached.
+    // 2. Call ScheduleMigration when the Thread is not enabled.
     error          = OT_ERROR_NONE;
     resultReceived = false;
     host.ScheduleMigration(datasetTlvs, receiver);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
-    EXPECT_EQ(error, OT_ERROR_FAILED);
+    EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    EXPECT_STREQ(errorMsg.c_str(), "Thread is disabled");
 
     // 3. Schedule migration to another network.
     OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset));
