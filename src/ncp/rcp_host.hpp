@@ -210,6 +210,7 @@ public:
                              const AsyncResultReceiver          &aReceiver) override;
 #endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
+    void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
@@ -260,6 +261,8 @@ private:
 
     bool IsAttached(void);
 
+    void UpdateThreadEnabledState(ThreadEnabledState aState);
+
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
     otInstance *mInstance;
@@ -268,11 +271,13 @@ private:
     std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
-    std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
-    bool                                       mEnableAutoAttach = false;
 
-    AsyncResultReceiver mSetThreadEnabledReceiver;
-    AsyncResultReceiver mScheduleMigrationReceiver;
+    std::vector<ThreadStateChangedCallback> mThreadStateChangedCallbacks;
+    std::vector<ThreadEnabledStateCallback> mThreadEnabledStateChangedCallbacks;
+    bool                                    mEnableAutoAttach = false;
+    ThreadEnabledState                      mThreadEnabledState;
+    AsyncResultReceiver                     mSetThreadEnabledReceiver;
+    AsyncResultReceiver                     mScheduleMigrationReceiver;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.
