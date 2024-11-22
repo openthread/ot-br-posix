@@ -94,8 +94,14 @@ void Ip6Address::CopyFrom(const struct in6_addr &aIn6Addr)
 otbrError Ip6Address::FromString(const char *aStr, Ip6Address &aAddr)
 {
     int ret;
+    // The aStr may be in the format of "fe80::1%eth0"
+    char  strCopy[strlen(aStr) + 1];
+    char *addr;
 
-    ret = inet_pton(AF_INET6, aStr, &aAddr.m8);
+    strcpy(strCopy, aStr);
+    addr = strtok(strCopy, "%");
+
+    ret = inet_pton(AF_INET6, addr, &aAddr.m8);
 
     return ret == 1 ? OTBR_ERROR_NONE : OTBR_ERROR_INVALID_ARGS;
 }
