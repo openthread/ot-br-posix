@@ -74,6 +74,8 @@ jobs:
             --build-arg REST_API=0 \
             --build-arg FIREWALL=0 \
             --build-arg OTBR_OPTIONS="${OTBR_OPTIONS}"
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Run
       run: |
        top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim expect
