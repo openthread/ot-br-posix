@@ -333,6 +333,7 @@ void RcpHost::Deinit(void)
 
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
+    mDetachGracefullyCallbacks.clear();
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -445,10 +446,35 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
 }
 
-void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
+void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
 {
-    // TODO: Implement Leave under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+    bool        receiveResultHere = true;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
+
+    if (mThreadEnabledState == ThreadEnabledState::kStateDisabled)
+    {
+        ConditionalErasePersistentInfo(aEraseDataset);
+        ExitNow();
+    }
+
+    ThreadDetachGracefully([aEraseDataset, aReceiver, this] {
+        ConditionalErasePersistentInfo(aEraseDataset);
+        if (aReceiver)
+        {
+            aReceiver(OT_ERROR_NONE, "");
+        }
+    });
+
+exit:
+    if (receiveResultHere)
+    {
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+    }
 }
 
 void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
@@ -529,7 +555,7 @@ void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
     {
         UpdateThreadEnabledState(ThreadEnabledState::kStateDisabling);
 
-        SuccessOrExit(error = otThreadDetachGracefully(mInstance, DisableThreadAfterDetach, this));
+        ThreadDetachGracefully([this](void) { DisableThreadAfterDetach(); });
         mSetThreadEnabledReceiver = aReceiver;
         receiveResultHere         = false;
     }
@@ -537,7 +563,7 @@ void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
 exit:
     if (receiveResultHere)
     {
-        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { SafeInvoke(aReceiver, error, errorMsg); });
     }
 }
 
@@ -595,9 +621,36 @@ exit:
 }
 #endif // OTBR_ENABLE_POWER_CALIBRATION
 
-void RcpHost::DisableThreadAfterDetach(void *aContext)
+void RcpHost::ThreadDetachGracefully(const DetachGracefullyCallback &aCallback)
 {
-    static_cast<RcpHost *>(aContext)->DisableThreadAfterDetach();
+    mDetachGracefullyCallbacks.push_back(aCallback);
+
+    // Ignores the OT_ERROR_BUSY error if a detach has already been requested
+    OT_UNUSED_VARIABLE(otThreadDetachGracefully(mInstance, ThreadDetachGracefullyCallback, this));
+}
+
+void RcpHost::ThreadDetachGracefullyCallback(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->ThreadDetachGracefullyCallback();
+}
+
+void RcpHost::ThreadDetachGracefullyCallback(void)
+{
+    SafeInvokeAndClear(mScheduleMigrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+
+    for (auto &callback : mDetachGracefullyCallbacks)
+    {
+        callback();
+    }
+    mDetachGracefullyCallbacks.clear();
+}
+
+void RcpHost::ConditionalErasePersistentInfo(bool aErase)
+{
+    if (aErase)
+    {
+        OT_UNUSED_VARIABLE(otInstanceErasePersistentInfo(mInstance));
+    }
 }
 
 void RcpHost::DisableThreadAfterDetach(void)

@@ -194,6 +194,75 @@ TEST(RcpHostApi, SetCountryCodeWorkCorrectly)
     host.Deinit();
 }
 
+TEST(RcpHostApi, StateChangesCorrectlyAfterLeave)
+{
+    otError                                    error          = OT_ERROR_NONE;
+    std::string                                errorMsg       = "";
+    bool                                       resultReceived = false;
+    otbr::MainloopContext                      mainloop;
+    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
+                                                           &errorMsg](otError aError, const std::string &aErrorMsg) {
+        resultReceived = true;
+        error          = aError;
+        errorMsg       = aErrorMsg;
+    };
+
+    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                            /* aEnableAutoAttach */ false);
+
+    // 1. Call Leave when host hasn't been initialized.
+    otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
+        &host); // Temporarily remove RcpHost because it's not initialized yet.
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    EXPECT_STREQ(errorMsg.c_str(), "OT is not initialized");
+    otbr::MainloopManager::GetInstance().AddMainloopProcessor(&host);
+
+    host.Init();
+
+    // 2. Call Leave when disabling Thread.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.SetThreadEnabled(false, nullptr);
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_BUSY);
+    EXPECT_STREQ(errorMsg.c_str(), "Thread is disabling");
+
+    // 3. Call Leave when Thread is disabled.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    otOperationalDataset     dataset;
+    otOperationalDatasetTlvs datasetTlvs;
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(ot::FakePlatform::CurrentInstance(), &datasetTlvs));
+    host.Leave(/* aEraseDataset */ true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+
+    error = otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &dataset);
+    EXPECT_EQ(error, OT_ERROR_NOT_FOUND);
+
+    // 4. Call Leave when Thread is enabled.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    OT_UNUSED_VARIABLE(otDatasetSetActiveTlvs(ot::FakePlatform::CurrentInstance(), &datasetTlvs));
+    host.SetThreadEnabled(true, nullptr);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1,
+                         [&host]() { return host.GetDeviceRole() != OT_DEVICE_ROLE_DETACHED; });
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+    host.Leave(/* aEraseDataset */ false, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+
+    error = otDatasetGetActive(ot::FakePlatform::CurrentInstance(), &dataset); // Dataset should still be there.
+    EXPECT_EQ(error, OT_ERROR_NONE);
+
+    host.Deinit();
+}
+
 TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
 {
     otError                                    error          = OT_ERROR_NONE;
