@@ -172,8 +172,8 @@ setup_infraif()
     else
         echo "backbone1 already exists."
     fi
-    sysctl -w net.ipv6.conf.backbone1.accept_ra=2
-    sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
+    sudo sysctl -w net.ipv6.conf.backbone1.accept_ra=2
+    sudo sysctl -w net.ipv6.conf.backbone1.accept_ra_rt_info_max_plen=64
 }
 
 test_setup()
