@@ -1007,7 +1007,8 @@ bool JsonJoinerInfo2JoinerInfo(const cJSON *jsonJoinerInfo, otJoinerInfo &aJoine
     bool   ret = false;
 
     aJoinerInfo.mType = OT_JOINER_INFO_TYPE_ANY;
-    memset(&aJoinerInfo.mSharedId.mEui64, 0, OT_EXT_ADDRESS_SIZE);
+    memset(&aJoinerInfo.mSharedId.mEui64, 0, sizeof(aJoinerInfo.mSharedId.mEui64));
+    memset(&aJoinerInfo.mPskd.m8, 0, sizeof(aJoinerInfo.mPskd.m8));
 
     value = cJSON_GetObjectItemCaseSensitive(jsonJoinerInfo, "Pskd");
     if (cJSON_IsString(value))
