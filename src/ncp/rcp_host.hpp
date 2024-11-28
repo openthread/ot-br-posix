@@ -199,7 +199,7 @@ public:
 
     // Thread Control virtual methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
-    void Leave(const AsyncResultReceiver &aRecevier) override;
+    void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
@@ -231,6 +231,13 @@ private:
             aReceiver = nullptr;
         }
     }
+    static void SafeInvoke(const AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
+    {
+        if (aReceiver)
+        {
+            aReceiver(aError, aErrorInfo);
+        }
+    }
 
     static void HandleStateChanged(otChangedFlags aFlags, void *aContext)
     {
@@ -251,7 +258,11 @@ private:
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 
-    static void DisableThreadAfterDetach(void *aContext);
+    using DetachGracefullyCallback = std::function<void()>;
+    void        ThreadDetachGracefully(const DetachGracefullyCallback &aCallback);
+    static void ThreadDetachGracefullyCallback(void *aContext);
+    void        ThreadDetachGracefullyCallback(void);
+    void        ConditionalErasePersistentInfo(bool aErase);
     void        DisableThreadAfterDetach(void);
     static void SendMgmtPendingSetCallback(otError aError, void *aContext);
     void        SendMgmtPendingSetCallback(otError aError);
@@ -278,6 +289,7 @@ private:
     ThreadEnabledState                      mThreadEnabledState;
     AsyncResultReceiver                     mSetThreadEnabledReceiver;
     AsyncResultReceiver                     mScheduleMigrationReceiver;
+    std::vector<DetachGracefullyCallback>   mDetachGracefullyCallbacks;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.

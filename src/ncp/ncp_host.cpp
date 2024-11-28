@@ -157,14 +157,23 @@ void NcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     task->Run();
 }
 
-void NcpHost::Leave(const AsyncResultReceiver &aReceiver)
+void NcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
 {
     AsyncTaskPtr task;
     auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
 
     task = std::make_shared<AsyncTask>(errorHandler);
     task->First([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadDetachGracefully(std::move(aNext)); })
-        ->Then([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadErasePersistentInfo(std::move(aNext)); });
+        ->Then([this, aEraseDataset](AsyncTaskPtr aNext) {
+            if (aEraseDataset)
+            {
+                mNcpSpinel.ThreadErasePersistentInfo(std::move(aNext));
+            }
+            else
+            {
+                aNext->SetResult(OT_ERROR_NONE, "");
+            }
+        });
     task->Run();
 }
 

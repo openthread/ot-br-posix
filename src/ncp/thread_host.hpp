@@ -166,13 +166,13 @@ public:
      *    be called.
      * 2. If this device is not in disabled state, OTBR sends Address Release Notification (i.e. ADDR_REL.ntf)
      *    to gracefully detach from the current network and it takes 1 second to finish.
-     * 3. Then Operational Dataset will be removed from persistent storage.
+     * 3. Then Operational Dataset will be removed from persistent storage if @p aEraseDataset is true.
      * 4. If everything goes fine, @p aReceiver will be invoked with OT_ERROR_NONE. Otherwise, other errors
      *    will be passed to @p aReceiver when the error happens.
      *
      * @param[in] aReceiver  A receiver to get the async result of this operation.
      */
-    virtual void Leave(const AsyncResultReceiver &aRecevier) = 0;
+    virtual void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) = 0;
 
     /**
      * This method migrates this device to the new network specified by @p aPendingOpDatasetTlvs.

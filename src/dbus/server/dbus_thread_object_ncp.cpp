@@ -125,7 +125,7 @@ exit:
 
 void DBusThreadObjectNcp::LeaveHandler(DBusRequest &aRequest)
 {
-    mHost.Leave([aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Leave(true /* aEraseDataset */, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
         aRequest.ReplyOtResult(aError);
     });
