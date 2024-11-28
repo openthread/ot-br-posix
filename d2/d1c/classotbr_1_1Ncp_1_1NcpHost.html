@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-eee8ad3</span>
+   &#160;<span id="projectnumber">0.3.0-db68d5b</span>
    </div>
   </td>
  </tr>
@@ -96,8 +96,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a579bdab56b3d24460308e4b962575ac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a256706fb4109f21d6ed08aeebd8b788d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a256706fb4109f21d6ed08aeebd8b788d">Join</a> (const otOperationalDatasetTlvs &amp;aActiveOpDatasetTlvs, const AsyncResultReceiver &amp;aReceiver) override</td></tr>
 <tr class="separator:a256706fb4109f21d6ed08aeebd8b788d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d952014815c0e074a493a1859f3bb6d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a4d952014815c0e074a493a1859f3bb6d">Leave</a> (const AsyncResultReceiver &amp;aReceiver) override</td></tr>
-<tr class="separator:a4d952014815c0e074a493a1859f3bb6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1b3bccfd185de7f268975785c1c8bd7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#aa1b3bccfd185de7f268975785c1c8bd7">Leave</a> (bool aEraseDataset, const AsyncResultReceiver &amp;aReceiver) override</td></tr>
+<tr class="separator:aa1b3bccfd185de7f268975785c1c8bd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b04350e2912a71c83058c120331d9c1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a0b04350e2912a71c83058c120331d9c1">ScheduleMigration</a> (const otOperationalDatasetTlvs &amp;aPendingOpDatasetTlvs, const AsyncResultReceiver aReceiver) override</td></tr>
 <tr class="separator:a0b04350e2912a71c83058c120331d9c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a1e476b9f45e11ec13d78732017320c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d2/d1c/classotbr_1_1Ncp_1_1NcpHost.html#a2a1e476b9f45e11ec13d78732017320c">SetThreadEnabled</a> (bool aEnabled, const AsyncResultReceiver aReceiver) override</td></tr>
@@ -551,8 +551,8 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadEnabledStateCa
 
 </div>
 </div>
-<a id="a4d952014815c0e074a493a1859f3bb6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4d952014815c0e074a493a1859f3bb6d">&#9670;&nbsp;</a></span>Leave()</h2>
+<a id="aa1b3bccfd185de7f268975785c1c8bd7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa1b3bccfd185de7f268975785c1c8bd7">&#9670;&nbsp;</a></span>Leave()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -563,9 +563,19 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadEnabledStateCa
         <tr>
           <td class="memname">void otbr::Ncp::NcpHost::Leave </td>
           <td>(</td>
-          <td class="paramtype">const AsyncResultReceiver &amp;&#160;</td>
-          <td class="paramname"><em>aRecevier</em></td><td>)</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>aEraseDataset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const AsyncResultReceiver &amp;&#160;</td>
+          <td class="paramname"><em>aRecevier</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -578,7 +588,7 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadEnabledStateCa
 <ol type="1">
 <li>If there is already an ongoing 'Leave' operation, no action will be taken and <code>aReceiver</code> will be called after the previous request is completed. The previous <code>aReceiver</code> will also be called.</li>
 <li>If this device is not in disabled state, OTBR sends Address Release Notification (i.e. ADDR_REL.ntf) to gracefully detach from the current network and it takes 1 second to finish.</li>
-<li>Then Operational Dataset will be removed from persistent storage.</li>
+<li>Then Operational Dataset will be removed from persistent storage if <code>aEraseDataset</code> is true.</li>
 <li>If everything goes fine, <code>aReceiver</code> will be invoked with OT_ERROR_NONE. Otherwise, other errors will be passed to <code>aReceiver</code> when the error happens.</li>
 </ol>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -588,7 +598,7 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>ThreadEnabledStateCa
   </dd>
 </dl>
 
-<p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#ab7c9fbb1889a7b1f31ddea0981ccbaef">otbr::Ncp::ThreadHost</a>.</p>
+<p>Implements <a class="el" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html#a7eba48a10b411f6d712453fc301c9322">otbr::Ncp::ThreadHost</a>.</p>
 
 </div>
 </div>
