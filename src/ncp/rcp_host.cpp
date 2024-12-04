@@ -331,6 +331,7 @@ void RcpHost::Deinit(void)
     mThreadEnabledStateChangedCallbacks.clear();
     mResetHandlers.clear();
 
+    mJoinReceiver              = nullptr;
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
     mDetachGracefullyCallbacks.clear();
@@ -344,6 +345,12 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
     }
 
     mThreadHelper->StateChangedCallback(aFlags);
+
+    if ((aFlags & OT_CHANGED_THREAD_ROLE) && IsAttached() && mJoinReceiver != nullptr)
+    {
+        otbrLogInfo("Join succeeded");
+        SafeInvokeAndClear(mJoinReceiver, OT_ERROR_NONE, "Join succeeded");
+    }
 }
 
 void RcpHost::Update(MainloopContext &aMainloop)
@@ -438,12 +445,82 @@ const char *RcpHost::GetThreadVersion(void)
     return version;
 }
 
+static bool noNeedRejoin(const otOperationalDatasetTlvs &aLhs, const otOperationalDatasetTlvs &aRhs)
+{
+    bool result = false;
+
+    otOperationalDataset lhsDataset;
+    otOperationalDataset rhsDataset;
+
+    SuccessOrExit(otDatasetParseTlvs(&aLhs, &lhsDataset));
+    SuccessOrExit(otDatasetParseTlvs(&aRhs, &rhsDataset));
+
+    result =
+        (lhsDataset.mChannel == rhsDataset.mChannel) &&
+        (memcmp(lhsDataset.mNetworkKey.m8, rhsDataset.mNetworkKey.m8, sizeof(lhsDataset.mNetworkKey)) == 0) &&
+        (memcmp(lhsDataset.mExtendedPanId.m8, rhsDataset.mExtendedPanId.m8, sizeof(lhsDataset.mExtendedPanId)) == 0);
+
+exit:
+    return result;
+}
+
 void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
 {
-    OT_UNUSED_VARIABLE(aActiveOpDatasetTlvs);
+    otError                  error = OT_ERROR_NONE;
+    std::string              errorMsg;
+    bool                     receiveResultHere = true;
+    otOperationalDatasetTlvs curDatasetTlvs;
 
-    // TODO: Implement Join under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
+    VerifyOrExit(mThreadEnabledState == ThreadEnabledState::kStateEnabled, error = OT_ERROR_INVALID_STATE,
+                 errorMsg = "Thread is not enabled");
+
+    otbrLogInfo("Start joining...");
+
+    error = otDatasetGetActiveTlvs(mInstance, &curDatasetTlvs);
+    if (error == OT_ERROR_NONE && noNeedRejoin(aActiveOpDatasetTlvs, curDatasetTlvs) && IsAttached())
+    {
+        // Do not leave and re-join if this device has already joined the same network. This can help elimilate
+        // unnecessary connectivity and topology disruption and save the time for re-joining. It's more useful for use
+        // cases where Thread networks are dynamically brought up and torn down (e.g. Thread on mobile phones).
+        SuccessOrExit(error    = otDatasetSetActiveTlvs(mInstance, &aActiveOpDatasetTlvs),
+                      errorMsg = "Failed to set Active Operational Dataset");
+        errorMsg = "Already Joined the target network";
+        ExitNow();
+    }
+
+    if (GetDeviceRole() != OT_DEVICE_ROLE_DISABLED)
+    {
+        ThreadDetachGracefully([aActiveOpDatasetTlvs, aReceiver, this] {
+            ConditionalErasePersistentInfo(true);
+            Join(aActiveOpDatasetTlvs, aReceiver);
+        });
+        receiveResultHere = false;
+        ExitNow();
+    }
+
+    SuccessOrExit(error    = otDatasetSetActiveTlvs(mInstance, &aActiveOpDatasetTlvs),
+                  errorMsg = "Failed to set Active Operational Dataset");
+
+    // TODO(b/273160198): check how we can implement join as a child
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, true), errorMsg = "Failed to bring up Thread interface");
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, true), errorMsg = "Failed to bring up Thread stack");
+
+    // Abort an ongoing join()
+    if (mJoinReceiver != nullptr)
+    {
+        SafeInvoke(mJoinReceiver, OT_ERROR_ABORT, "Join() is aborted");
+    }
+    mJoinReceiver     = aReceiver;
+    receiveResultHere = false;
+
+exit:
+    if (receiveResultHere)
+    {
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+    }
 }
 
 void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
@@ -636,6 +713,7 @@ void RcpHost::ThreadDetachGracefullyCallback(void *aContext)
 
 void RcpHost::ThreadDetachGracefullyCallback(void)
 {
+    SafeInvokeAndClear(mJoinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
     SafeInvokeAndClear(mScheduleMigrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
 
     for (auto &callback : mDetachGracefullyCallbacks)
