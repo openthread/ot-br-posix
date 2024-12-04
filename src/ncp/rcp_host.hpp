@@ -287,6 +287,7 @@ private:
     std::vector<ThreadEnabledStateCallback> mThreadEnabledStateChangedCallbacks;
     bool                                    mEnableAutoAttach = false;
     ThreadEnabledState                      mThreadEnabledState;
+    AsyncResultReceiver                     mJoinReceiver;
     AsyncResultReceiver                     mSetThreadEnabledReceiver;
     AsyncResultReceiver                     mScheduleMigrationReceiver;
     std::vector<DetachGracefullyCallback>   mDetachGracefullyCallbacks;

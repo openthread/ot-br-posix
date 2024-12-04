@@ -317,3 +317,122 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
 
     host.Deinit();
 }
+
+TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
+{
+    otError                                    error           = OT_ERROR_NONE;
+    otError                                    error_          = OT_ERROR_NONE;
+    std::string                                errorMsg        = "";
+    std::string                                errorMsg_       = "";
+    bool                                       resultReceived  = false;
+    bool                                       resultReceived_ = false;
+    otbr::MainloopContext                      mainloop;
+    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
+                                                           &errorMsg](otError aError, const std::string &aErrorMsg) {
+        resultReceived = true;
+        error          = aError;
+        errorMsg       = aErrorMsg;
+    };
+    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver_ = [&resultReceived_, &error_,
+                                                            &errorMsg_](otError aError, const std::string &aErrorMsg) {
+        resultReceived_ = true;
+        error_          = aError;
+        errorMsg_       = aErrorMsg;
+    };
+    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                            /* aEnableAutoAttach */ false);
+
+    otOperationalDataset dataset;
+    (void)dataset;
+    otOperationalDatasetTlvs datasetTlvs;
+
+    // 1. Call Join when host hasn't been initialized.
+    otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
+        &host); // Temporarily remove RcpHost because it's not initialized yet.
+    host.Join(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    EXPECT_STREQ(errorMsg.c_str(), "OT is not initialized");
+    otbr::MainloopManager::GetInstance().AddMainloopProcessor(&host);
+
+    host.Init();
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs);
+
+    // 2. Call Join when Thread is not enabled.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_INVALID_STATE);
+    EXPECT_STREQ(errorMsg.c_str(), "Thread is not enabled");
+
+    // 3. Call two consecutive Join. The first one should be aborted. The second one should succeed.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(datasetTlvs, receiver_);
+    host.Join(datasetTlvs, receiver);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+                         [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
+    EXPECT_EQ(error_, OT_ERROR_ABORT);
+    EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation"); // The second Join will trigger Leave first.
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_STREQ(errorMsg.c_str(), "Join succeeded");
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_LEADER);
+
+    // 4. Call Join with the same dataset.
+    error          = OT_ERROR_NONE;
+    resultReceived = false;
+    host.Join(datasetTlvs, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_STREQ(errorMsg.c_str(), "Already Joined the target network");
+
+    // 5. Call Disable right after Join (Already Attached).
+    error           = OT_ERROR_NONE;
+    resultReceived  = false;
+    error_          = OT_ERROR_NONE;
+    resultReceived_ = false;
+
+    OT_UNUSED_VARIABLE(otDatasetCreateNewNetwork(ot::FakePlatform::CurrentInstance(), &dataset));
+    otDatasetConvertToTlvs(&dataset, &datasetTlvs); // Use a different dataset.
+
+    host.Join(datasetTlvs, receiver_);
+    host.SetThreadEnabled(false, receiver);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+                         [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
+    EXPECT_EQ(error_, OT_ERROR_BUSY);
+    EXPECT_STREQ(errorMsg_.c_str(), "Thread is disabling");
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    // 6. Call Disable right after Join (not attached).
+    resultReceived = false;
+    host.Leave(true, receiver); // Leave the network first.
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+    resultReceived = false; // Enale Thread.
+    host.SetThreadEnabled(true, receiver);
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0, [&resultReceived]() { return resultReceived; });
+
+    error           = OT_ERROR_NONE;
+    resultReceived  = false;
+    error_          = OT_ERROR_NONE;
+    resultReceived_ = false;
+    host.Join(datasetTlvs, receiver_);
+    host.SetThreadEnabled(false, receiver);
+
+    MainloopProcessUntil(mainloop, /* aTimeoutSec */ 0,
+                         [&resultReceived, &resultReceived_]() { return resultReceived && resultReceived_; });
+    EXPECT_EQ(error_, OT_ERROR_ABORT);
+    EXPECT_STREQ(errorMsg_.c_str(), "Aborted by leave/disable operation");
+    EXPECT_EQ(error, OT_ERROR_NONE);
+    EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
+
+    host.Deinit();
+}
