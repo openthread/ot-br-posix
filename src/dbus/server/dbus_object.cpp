@@ -85,6 +85,22 @@ exit:
     return error;
 }
 
+/*
+ * TODO: Update DBusRequest::ReplyOtResult to accept Host::Error.
+ * This method is a workaround to cast Host::Error to otError and thus can be passed to DBusRequest::ReplyOtResult.
+ */
+otError DBusObject::HostErrorToOtError(Host::Error aError)
+{
+    otError error = OT_ERROR_FAILED;
+
+    if (aError >= Host::kErrorNone && aError <= Host::kErrorGeneric)
+    {
+        error = static_cast<otError>(aError);
+    }
+
+    return error;
+}
+
 void DBusObject::RegisterMethod(const std::string       &aInterfaceName,
                                 const std::string       &aMethodName,
                                 const MethodHandlerType &aHandler)
