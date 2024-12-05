@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020, The OpenThread Authors.
+#  Copyright (c) 2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,22 +26,17 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# TODO: Make this KConfig, maybe something like this
-# if(OTBR_REST_API_EXTENSIONS)
-add_subdirectory(extensions)
-# endif()
-
-add_library(otbr-rest
-    rest_web_server.cpp
-    connection.cpp
-    resource.cpp
-    json.cpp
-    parser.cpp
-    request.cpp
-    response.cpp
+add_library(otbr-rest-extension
+    timestamp.cpp
+    uuid.cpp
+    rest_task_add_thread_device.cpp
+    rest_task_handler.cpp
+    rest_task_queue.cpp
+    rest_server_common.cpp
+    commissioner_allow_list.cpp
 )
 
-target_link_libraries(otbr-rest
+target_link_libraries(otbr-rest-extension
     PUBLIC
         http_parser
     PRIVATE
@@ -50,5 +45,4 @@ target_link_libraries(otbr-rest
         otbr-utils
         openthread-ftd
         openthread-posix
-        otbr-rest-extension
 )
