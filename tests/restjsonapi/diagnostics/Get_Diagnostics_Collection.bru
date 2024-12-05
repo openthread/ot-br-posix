@@ -1,0 +1,72 @@
+meta {
+  name: Get Diagnostics Collection
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].type: neq ""
+  res.body.data[0].attributes.created: isDefined
+}
+
+tests {
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+
+    const offset = res.getBody().meta.collection.offset;
+    const limit = res.getBody().meta.collection.limit;
+    const total = res.getBody().meta.collection.total;
+    
+    expect(data).to.be.an.instanceOf(Array);
+    expect(offset).to.be.a('number');
+    expect(limit).to.be.a('number');
+    expect(total).to.be.a('number');
+
+    expect(data).to.be.an.instanceOf(Array);
+    for (let i=0; i < total; i++){
+      item = data[i];
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).to.have.property("created");
+      
+      if (item.type.includes("Diag")){
+        expect(item.attributes).to.have.property("eui64");
+        expect(item.attributes).to.have.property("macCounters");
+        expect(item.attributes).to.have.property("mleCounters");
+        expect(item.attributes).to.have.property("children");
+      }
+  
+      if (item.type.includes("energyScanReport")){
+        expect(item.attributes).to.have.property("origin");
+        expect(item.attributes).to.have.property("count");
+        expect(item.attributes).to.have.property("report");
+        expect(item.attributes.report).to.be.an.instanceOf(Array);
+        expect(item.attributes.report[0]).to.have.property("channel");
+        expect(item.attributes.report[0]).to.have.property("maxRssi");
+      }
+    }
+  });
+  
+}
+
+docs {
+  Return all items stored in the Diagnostics Collection.
+}

@@ -1,0 +1,19 @@
+meta {
+  name: Delete Diagnostics Collection
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Delete all items stored in the Collection.
+}

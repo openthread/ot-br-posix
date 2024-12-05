@@ -1,0 +1,59 @@
+meta {
+  name: Get Actions Collection
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.meta.collection.pending: eq 1
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].attributes.status: isDefined
+}
+
+tests {
+  
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+    const size = res.getBody().data.size;
+    expect(data).to.be.an.instanceOf(Array);
+    for (let i=0; i < size; i++){
+      item = data[i];
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).to.have.property("status");
+      if (['getEnergyScanTask', 'getNetworkDiagnosticTask'].includes(item.type)){
+        expect(item.attributes.status == "completed");
+        expect(item).to.have.property("relationships");
+        expect(item.relationships).to.have.property("result");
+        expect(item.relationships.result).to.have.property("data");
+      };
+      if (['resetNetworkDiagCounterTask'].includes(item.type)){
+        expect(item.attributes.status == "completed");
+      };
+      if (['addThreadDeviceTask'].includes(item.type)){
+        expect(item.attributes.status == "pending");
+      };
+    }
+  });
+}
+
+docs {
+  Return all items stored in the Collection.
+}

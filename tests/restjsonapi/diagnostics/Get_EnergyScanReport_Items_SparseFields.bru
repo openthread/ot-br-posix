@@ -1,0 +1,56 @@
+meta {
+  name: Get EnergyScanReport SparseFields
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/diagnostics?fields[energyScanReport]=report.maxRssi
+  body: json
+  auth: none
+}
+
+query {
+  fields[energyScanReport]: report.maxRssi
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+}
+
+tests {
+  
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+    const size = res.getBody().data.size;
+    expect(data).to.be.an.instanceOf(Array);
+    for (let i=0; i < size; i++){
+      item = data[i];
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item.type).to.equal("energyScanReport");
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).to.have.property("created");
+      expect(item.attributes).to.not.have.property("origin");
+      expect(item.attributes).to.not.have.property("count");
+      expect(item.attributes).to.have.property("report");
+      expect(item.attributes.report).to.be.an.instanceOf(Array);
+      expect(item.attributes.report[0]).to.not.have.property("channel");
+      expect(item.attributes.report[0]).to.have.property("maxRssi");
+    }
+  });
+  
+}
+
+docs {
+  Return only requested fields in EnergyScanReport stored in the Diagnostics Collection.
+}
