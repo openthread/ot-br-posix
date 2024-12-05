@@ -46,6 +46,8 @@
 #define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE "/node/dataset/active"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING "/node/dataset/pending"
+#define OT_REST_RESOURCE_PATH_NODE_COPROCESSOR "/node/coprocessor"
+#define OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION "/node/coprocessor/version"
 #define OT_REST_RESOURCE_PATH_NETWORK "/networks"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
@@ -139,6 +141,7 @@ Resource::Resource(RcpHost *aHost)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COPROCESSOR_VERSION, &Resource::CoprocessorVersion);
 
     // Resource callback handler
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
@@ -798,6 +801,33 @@ void Resource::DatasetActive(const Request &aRequest, Response &aResponse) const
 void Resource::DatasetPending(const Request &aRequest, Response &aResponse) const
 {
     Dataset(DatasetType::kPending, aRequest, aResponse);
+}
+
+void Resource::GetCoprocessorVersion(Response &aResponse) const
+{
+    std::string coprocessorVersion;
+    std::string errorCode;
+
+    coprocessorVersion = mHost->GetCoprocessorVersion();
+    coprocessorVersion = Json::String2JsonString(coprocessorVersion);
+
+    aResponse.SetBody(coprocessorVersion);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::CoprocessorVersion(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    if (aRequest.GetMethod() == HttpMethod::kGet)
+    {
+        GetCoprocessorVersion(aResponse);
+    }
+    else
+    {
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+    }
 }
 
 void Resource::DeleteOutDatedDiagnostic(void)
