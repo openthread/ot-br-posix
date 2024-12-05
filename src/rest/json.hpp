@@ -40,6 +40,7 @@
 #include "openthread/link.h"
 #include "openthread/thread_ftd.h"
 
+#include "common/types.hpp"
 #include "rest/types.hpp"
 #include "utils/hex.hpp"
 
@@ -250,6 +251,14 @@ bool JsonActiveDatasetString2Dataset(const std::string &aJsonActiveDataset, otOp
  * @returns If the Json string has been successfully parsed.
  */
 bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, otOperationalDataset &aDataset);
+
+std::string JoinerInfo2JsonString(const otJoinerInfo &aJoinerInfo);
+
+otbrError StringDiscerner2Discerner(char *aString, otJoinerDiscerner &aDiscerner);
+
+bool JsonJoinerInfoString2JoinerInfo(const std::string &aJsonJoinerInfo, otJoinerInfo &aJoinerInfo);
+
+std::string JoinerTable2JsonString(const std::vector<otJoinerInfo> &aJoinerTable);
 
 }; // namespace Json
 
