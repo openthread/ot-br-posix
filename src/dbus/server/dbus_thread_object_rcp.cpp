@@ -1770,9 +1770,9 @@ void DBusThreadObjectRcp::SetThreadEnabledHandler(DBusRequest &aRequest)
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
 
-    mHost.SetThreadEnabled(enable, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.SetThreadEnabled(enable, [aRequest](Host::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 
 exit:
@@ -1796,9 +1796,9 @@ void DBusThreadObjectRcp::JoinHandler(DBusRequest &aRequest)
     std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
     activeOpDatasetTlvs.mLength = dataset.size();
 
-    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Join(activeOpDatasetTlvs, [aRequest](Host::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 
 exit:

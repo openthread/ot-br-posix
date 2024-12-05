@@ -111,9 +111,9 @@ void DBusThreadObjectNcp::JoinHandler(DBusRequest &aRequest)
     std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
     activeOpDatasetTlvs.mLength = dataset.size();
 
-    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Join(activeOpDatasetTlvs, [aRequest](Host::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 
 exit:
@@ -125,9 +125,9 @@ exit:
 
 void DBusThreadObjectNcp::LeaveHandler(DBusRequest &aRequest)
 {
-    mHost.Leave(true /* aEraseDataset */, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Leave(true /* aEraseDataset */, [aRequest](Host::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 }
 
@@ -148,10 +148,11 @@ void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
 
     SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
 
-    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
-        OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
-    });
+    mHost.ScheduleMigration(pendingOpDatasetTlvs,
+                            [aRequest](Host::Error aError, const std::string &aErrorInfo) mutable {
+                                OT_UNUSED_VARIABLE(aErrorInfo);
+                                aRequest.ReplyOtResult(HostErrorToOtError(aError));
+                            });
 
 exit:
     if (error != OT_ERROR_NONE)
