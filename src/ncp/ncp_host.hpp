@@ -72,7 +72,13 @@ private:
     otOperationalDatasetTlvs mDatasetActiveTlvs;
 };
 
-class NcpHost : public MainloopProcessor, public ThreadHost, public NcpNetworkProperties
+class NcpHost : public MainloopProcessor,
+                public ThreadHost,
+                public NcpNetworkProperties
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    ,
+                public Mdns::StateObserver
+#endif
 {
 public:
     /**
@@ -119,7 +125,15 @@ public:
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
 
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    void SetMdnsPublisher(Mdns::Publisher *aPublisher);
+#endif
+
 private:
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    void HandleMdnsState(Mdns::Publisher::State aState) override;
+#endif
+
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;

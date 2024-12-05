@@ -118,6 +118,10 @@ case "$(uname)" in
             configure_network
         fi
 
+        if [ "$BUILD_TARGET" == ncp_mode ]; then
+            sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils
+        fi
+
         if [ "$BUILD_TARGET" == scan-build ]; then
             pip3 install -U cmake
             sudo apt-get install --no-install-recommends -y clang clang-tools
