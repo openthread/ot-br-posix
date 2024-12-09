@@ -41,6 +41,22 @@ using std::placeholders::_2;
 namespace otbr {
 namespace DBus {
 
+/*
+ * TODO: Update DBusRequest::ReplyOtResult so that it can return Host error code.
+ * This method is a workaround to cast Ncp::Error to otError and thus can be passed to DBusRequest::ReplyOtResult.
+ */
+static otError HostErrorToOtError(Ncp::Error aError)
+{
+    otError error = OT_ERROR_FAILED;
+
+    if (aError >= Ncp::kErrorNone && aError <= Ncp::kErrorGeneric)
+    {
+        error = static_cast<otError>(aError);
+    }
+
+    return error;
+}
+
 DBusThreadObjectNcp::DBusThreadObjectNcp(DBusConnection     &aConnection,
                                          const std::string  &aInterfaceName,
                                          otbr::Ncp::NcpHost &aHost)
@@ -111,9 +127,9 @@ void DBusThreadObjectNcp::JoinHandler(DBusRequest &aRequest)
     std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
     activeOpDatasetTlvs.mLength = dataset.size();
 
-    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Join(activeOpDatasetTlvs, [aRequest](Ncp::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 
 exit:
@@ -125,9 +141,9 @@ exit:
 
 void DBusThreadObjectNcp::LeaveHandler(DBusRequest &aRequest)
 {
-    mHost.Leave(true /* aEraseDataset */, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.Leave(true /* aEraseDataset */, [aRequest](Ncp::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 }
 
@@ -148,9 +164,9 @@ void DBusThreadObjectNcp::ScheduleMigrationHandler(DBusRequest &aRequest)
 
     SuccessOrExit(error = agent::ThreadHelper::ProcessDatasetForMigration(pendingOpDatasetTlvs, delayInMilli));
 
-    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+    mHost.ScheduleMigration(pendingOpDatasetTlvs, [aRequest](Ncp::Error aError, const std::string &aErrorInfo) mutable {
         OT_UNUSED_VARIABLE(aErrorInfo);
-        aRequest.ReplyOtResult(aError);
+        aRequest.ReplyOtResult(HostErrorToOtError(aError));
     });
 
 exit:

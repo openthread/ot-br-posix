@@ -107,6 +107,56 @@ enum ThreadEnabledState
 };
 
 /**
+ * Some cases in ThreadHost APIs cannot be denoted by otError. This enumeration is a superset of otErrors
+ * and contains some error code specific to ThreadHost APIs.
+ */
+typedef int16_t Error;
+
+// otErrors: 0 ~ 255
+constexpr Error kErrorNone                       = OT_ERROR_NONE;
+constexpr Error kErrorFailed                     = OT_ERROR_FAILED;
+constexpr Error kErrorDrop                       = OT_ERROR_DROP;
+constexpr Error kErrorNoBufs                     = OT_ERROR_NO_BUFS;
+constexpr Error kErrorNoRoute                    = OT_ERROR_NO_ROUTE;
+constexpr Error kErrorBusy                       = OT_ERROR_BUSY;
+constexpr Error kErrorParse                      = OT_ERROR_PARSE;
+constexpr Error kErrorInvalidArgs                = OT_ERROR_INVALID_ARGS;
+constexpr Error kErrorSecurity                   = OT_ERROR_SECURITY;
+constexpr Error kErrorAddressQuery               = OT_ERROR_ADDRESS_QUERY;
+constexpr Error kErrorNoAddress                  = OT_ERROR_NO_ADDRESS;
+constexpr Error kErrorAbort                      = OT_ERROR_ABORT;
+constexpr Error kErrorNotImplemented             = OT_ERROR_NOT_IMPLEMENTED;
+constexpr Error kErrorInvalidState               = OT_ERROR_INVALID_STATE;
+constexpr Error kErrorNoAck                      = OT_ERROR_NO_ACK;
+constexpr Error kErrorChannelAccessFailure       = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+constexpr Error kErrorDetached                   = OT_ERROR_DETACHED;
+constexpr Error kErrorFcs                        = OT_ERROR_FCS;
+constexpr Error kErrorNoFrameReceived            = OT_ERROR_NO_FRAME_RECEIVED;
+constexpr Error kErrorUnknownNeighbor            = OT_ERROR_UNKNOWN_NEIGHBOR;
+constexpr Error kErrorInvalidSourceAddress       = OT_ERROR_INVALID_SOURCE_ADDRESS;
+constexpr Error kErrorAddressFiltered            = OT_ERROR_ADDRESS_FILTERED;
+constexpr Error kErrorDestinationAddressFiltered = OT_ERROR_DESTINATION_ADDRESS_FILTERED;
+constexpr Error kErrorNotFound                   = OT_ERROR_NOT_FOUND;
+constexpr Error kErrorAlready                    = OT_ERROR_ALREADY;
+constexpr Error kErrorIp6AddressCreationFailure  = OT_ERROR_IP6_ADDRESS_CREATION_FAILURE;
+constexpr Error kErrorNotCapable                 = OT_ERROR_NOT_CAPABLE;
+constexpr Error kErrorResponseTimeout            = OT_ERROR_RESPONSE_TIMEOUT;
+constexpr Error kErrorDuplicated                 = OT_ERROR_DUPLICATED;
+constexpr Error kErrorReassemblyTimeout          = OT_ERROR_REASSEMBLY_TIMEOUT;
+constexpr Error kErrorNotTmf                     = OT_ERROR_NOT_TMF;
+constexpr Error kErrorNotLowpanDataFrame         = OT_ERROR_NOT_LOWPAN_DATA_FRAME;
+constexpr Error kErrorLinkMarginLow              = OT_ERROR_LINK_MARGIN_LOW;
+constexpr Error kErrorInvalidCommand             = OT_ERROR_INVALID_COMMAND;
+constexpr Error kErrorPending                    = OT_ERROR_PENDING;
+constexpr Error kErrorRejected                   = OT_ERROR_REJECTED;
+constexpr Error kErrorGeneric                    = OT_ERROR_GENERIC;
+
+// Proprietary errors: -32768 ~ -1
+constexpr Error kErrorUnsupportedChannel = -1; // The channel provided is not supported.
+constexpr Error kErrorDisabled           = -2; // The action didn't succeed because Thread is in Disabled state.
+constexpr Error kErrorFailedPrecondition = -3; // The action didn't succeed because some precondition isn't satisfied.
+
+/**
  * This class is an interface which provides a set of async APIs to control the
  * Thread network.
  *
@@ -115,10 +165,9 @@ enum ThreadEnabledState
 class ThreadHost : virtual public NetworkProperties
 {
 public:
-    using AsyncResultReceiver = std::function<void(otError, const std::string &)>;
+    using AsyncResultReceiver = std::function<void(Error, const std::string &)>;
     using ChannelMasksReceiver =
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
-    using DeviceRoleHandler          = std::function<void(otError, otDeviceRole)>;
     using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
     using ThreadEnabledStateCallback = std::function<void(ThreadEnabledState aState)>;
 

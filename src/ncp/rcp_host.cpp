@@ -443,7 +443,7 @@ void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     OT_UNUSED_VARIABLE(aActiveOpDatasetTlvs);
 
     // TODO: Implement Join under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    mTaskRunner.Post([aReceiver](void) { aReceiver(kErrorNotImplemented, "Not implemented!"); });
 }
 
 void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
