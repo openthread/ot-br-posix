@@ -464,12 +464,12 @@ void AppendBbrTxtEntries(otInstance &aInstance, StateBitmap aState, Mdns::Publis
 }
 #endif
 
-void AppendActiveTimestampTxtEntry(otInstance &aInstance, Mdns::Publisher::TxtList &aTxtList)
+void AppendActiveTimestampTxtEntry(Ncp::ThreadHost &aHost, Mdns::Publisher::TxtList &aTxtList)
 {
     otError              error;
     otOperationalDataset activeDataset;
 
-    if ((error = otDatasetGetActive(&aInstance, &activeDataset)) != OT_ERROR_NONE)
+    if ((error = aHost.GetDatasetActive(activeDataset)) != OT_ERROR_NONE)
     {
         otbrLogWarning("Failed to get active dataset: %s", otThreadErrorToString(error));
     }
@@ -513,9 +513,9 @@ void BorderAgent::PublishMeshCopService(void)
     StateBitmap              state;
     uint32_t                 stateUint32;
     otInstance              *instance    = mHost.GetInstance();
-    const otExtendedPanId   *extPanId    = otThreadGetExtendedPanId(instance);
-    const otExtAddress      *extAddr     = otLinkGetExtendedAddress(instance);
-    const char              *networkName = otThreadGetNetworkName(instance);
+    const otExtendedPanId   *extPanId    = mHost.GetExtendedPanId();
+    const otExtAddress      *extAddr     = mHost.GetExtendedAddress();
+    const char              *networkName = mHost.GetNetworkName();
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
     Mdns::Publisher::TxtData txtData;
     int                      port;
@@ -569,7 +569,7 @@ void BorderAgent::PublishMeshCopService(void)
     {
         uint32_t partitionId;
 
-        AppendActiveTimestampTxtEntry(*instance, txtList);
+        AppendActiveTimestampTxtEntry(mHost, txtList);
         partitionId = otThreadGetPartitionId(instance);
         txtList.emplace_back("pt", reinterpret_cast<uint8_t *>(&partitionId), sizeof(partitionId));
     }

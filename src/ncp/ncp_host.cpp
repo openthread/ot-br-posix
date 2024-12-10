@@ -73,6 +73,24 @@ uint32_t NcpNetworkProperties::GetPartitionId(void) const
     return 0;
 }
 
+const otExtendedPanId *NcpNetworkProperties::GetExtendedPanId(void) const
+{
+    // TODO: Implement the method under NCP mode.
+    return nullptr;
+}
+
+const otExtAddress *NcpNetworkProperties::GetExtendedAddress(void) const
+{
+    // TODO: Implement the method under NCP mode.
+    return nullptr;
+}
+
+const char *NcpNetworkProperties::GetNetworkName(void) const
+{
+    // TODO: Implement the method under NCP mode.
+    return nullptr;
+}
+
 void NcpNetworkProperties::SetDatasetActiveTlvs(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs)
 {
     mDatasetActiveTlvs.mLength = aActiveOpDatasetTlvs.mLength;
@@ -89,6 +107,22 @@ void NcpNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aData
 {
     // TODO: Implement the method under NCP mode.
     OTBR_UNUSED_VARIABLE(aDatasetTlvs);
+}
+
+otError NcpNetworkProperties::GetDatasetActive(otOperationalDataset &aDataset) const
+{
+    otError error = OT_ERROR_NONE;
+
+    if (mDatasetActiveTlvs.mLength == 0)
+    {
+        error = OT_ERROR_NOT_FOUND;
+    }
+    else
+    {
+        error = otDatasetParseTlvs(&mDatasetActiveTlvs, &aDataset);
+    }
+
+    return error;
 }
 
 // ===================================== NcpHost ======================================

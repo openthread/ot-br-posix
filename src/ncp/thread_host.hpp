@@ -79,11 +79,42 @@ public:
     virtual uint32_t GetPartitionId(void) const = 0;
 
     /**
+     * Returns the extended Pan ID.
+     *
+     * @returns The extended Pan ID.
+     */
+    virtual const otExtendedPanId *GetExtendedPanId(void) const = 0;
+
+    /**
+     * Returns the extended address.
+     *
+     * @returns The extended address.
+     */
+    virtual const otExtAddress *GetExtendedAddress(void) const = 0;
+
+    /**
+     * Returns the network name.
+     *
+     * @returns The network name.
+     */
+    virtual const char *GetNetworkName(void) const = 0;
+
+    /**
      * Returns the active operational dataset tlvs.
      *
      * @param[out] aDatasetTlvs  A reference to where the Active Operational Dataset will be placed.
      */
     virtual void GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const = 0;
+
+    /**
+     * Returns the active operational dataset.
+     *
+     * @param[out] aDataset  A reference to where the Active Operational Dataset will be placed.
+     *
+     * @retval OT_ERROR_NONE        Successfully retrieved the Active Operational Dataset.
+     * @retval OT_ERROR_NOT_FOUND   No corresponding value in the setting store.
+     */
+    virtual otError GetDatasetActive(otOperationalDataset &aDataset) const = 0;
 
     /**
      * Returns the pending operational dataset tlvs.

@@ -89,6 +89,21 @@ uint32_t OtNetworkProperties::GetPartitionId(void) const
     return otThreadGetPartitionId(mInstance);
 }
 
+const otExtendedPanId *OtNetworkProperties::GetExtendedPanId(void) const
+{
+    return otThreadGetExtendedPanId(mInstance);
+}
+
+const otExtAddress *OtNetworkProperties::GetExtendedAddress(void) const
+{
+    return otLinkGetExtendedAddress(mInstance);
+}
+
+const char *OtNetworkProperties::GetNetworkName(void) const
+{
+    return otThreadGetNetworkName(mInstance);
+}
+
 void OtNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
 {
     otError error = otDatasetGetActiveTlvs(mInstance, &aDatasetTlvs);
@@ -98,6 +113,11 @@ void OtNetworkProperties::GetDatasetActiveTlvs(otOperationalDatasetTlvs &aDatase
         aDatasetTlvs.mLength = 0;
         memset(aDatasetTlvs.mTlvs, 0, sizeof(aDatasetTlvs.mTlvs));
     }
+}
+
+otError OtNetworkProperties::GetDatasetActive(otOperationalDataset &aDataset) const
+{
+    return otDatasetGetActive(mInstance, &aDataset);
 }
 
 void OtNetworkProperties::GetDatasetPendingTlvs(otOperationalDatasetTlvs &aDatasetTlvs) const
