@@ -29,6 +29,7 @@
 #define OTBR_LOG_TAG "REST"
 
 #include "rest/resource.hpp"
+#include <openthread/commissioner.h>
 
 #define OT_PSKC_MAX_LENGTH 16
 #define OT_EXTENDED_PANID_LENGTH 8
@@ -46,6 +47,8 @@
 #define OT_REST_RESOURCE_PATH_NODE_EXTPANID "/node/ext-panid"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE "/node/dataset/active"
 #define OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING "/node/dataset/pending"
+#define OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE "/node/commissioner/state"
+#define OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER "/node/commissioner/joiner"
 #define OT_REST_RESOURCE_PATH_NETWORK "/networks"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT "/networks/current"
 #define OT_REST_RESOURCE_PATH_NETWORK_CURRENT_COMMISSION "/networks/commission"
@@ -60,6 +63,7 @@
 #define OT_REST_HTTP_STATUS_408 "408 Request Timeout"
 #define OT_REST_HTTP_STATUS_409 "409 Conflict"
 #define OT_REST_HTTP_STATUS_500 "500 Internal Server Error"
+#define OT_REST_HTTP_STATUS_507 "507 Insufficient Storage"
 
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
@@ -116,6 +120,9 @@ static std::string GetHttpStatus(HttpStatusCode aErrorCode)
     case HttpStatusCode::kStatusInternalServerError:
         httpStatus = OT_REST_HTTP_STATUS_500;
         break;
+    case HttpStatusCode::kStatusInsufficientStorage:
+        httpStatus = OT_REST_HTTP_STATUS_507;
+        break;
     }
 
     return httpStatus;
@@ -139,6 +146,8 @@ Resource::Resource(RcpHost *aHost)
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_RLOC, &Resource::Rloc);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_ACTIVE, &Resource::DatasetActive);
     mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_DATASET_PENDING, &Resource::DatasetPending);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_STATE, &Resource::CommissionerState);
+    mResourceMap.emplace(OT_REST_RESOURCE_PATH_NODE_COMMISSIONER_JOINER, &Resource::CommissionerJoiner);
 
     // Resource callback handler
     mResourceCallbackMap.emplace(OT_REST_RESOURCE_PATH_DIAGNOSTICS, &Resource::HandleDiagnosticCallback);
@@ -798,6 +807,253 @@ void Resource::DatasetActive(const Request &aRequest, Response &aResponse) const
 void Resource::DatasetPending(const Request &aRequest, Response &aResponse) const
 {
     Dataset(DatasetType::kPending, aRequest, aResponse);
+}
+
+void Resource::GetCommissionerState(Response &aResponse) const
+{
+    std::string         state;
+    std::string         errorCode;
+    otCommissionerState stateCode;
+
+    stateCode = otCommissionerGetState(mInstance);
+    state     = Json::String2JsonString(GetCommissionerStateName(stateCode));
+    aResponse.SetBody(state);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::SetCommissionerState(const Request &aRequest, Response &aResponse) const
+{
+    otbrError   error = OTBR_ERROR_NONE;
+    std::string errorCode;
+    std::string body;
+
+    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
+    if (body == "enable")
+    {
+        VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_NONE);
+        VerifyOrExit(otCommissionerStart(mInstance, NULL, NULL, NULL) == OT_ERROR_NONE,
+                     error = OTBR_ERROR_INVALID_STATE);
+    }
+    else if (body == "disable")
+    {
+        VerifyOrExit(otCommissionerGetState(mInstance) != OT_COMMISSIONER_STATE_DISABLED, error = OTBR_ERROR_NONE);
+        VerifyOrExit(otCommissionerStop(mInstance) == OT_ERROR_NONE, error = OTBR_ERROR_INVALID_STATE);
+    }
+    else
+    {
+        ExitNow(error = OTBR_ERROR_INVALID_ARGS);
+    }
+
+exit:
+    switch (error)
+    {
+    case OTBR_ERROR_NONE:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        break;
+    case OTBR_ERROR_INVALID_STATE:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        break;
+    }
+}
+
+void Resource::CommissionerState(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        GetCommissionerState(aResponse);
+        break;
+    case HttpMethod::kPut:
+        SetCommissionerState(aRequest, aResponse);
+        break;
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
+}
+
+void Resource::GetJoiners(Response &aResponse) const
+{
+    uint16_t                  iter = 0;
+    otJoinerInfo              joinerInfo;
+    std::vector<otJoinerInfo> joinerTable;
+    std::string               joinerJson;
+    std::string               errorCode;
+
+    while (otCommissionerGetNextJoinerInfo(mInstance, &iter, &joinerInfo) == OT_ERROR_NONE)
+    {
+        joinerTable.push_back(joinerInfo);
+    }
+
+    joinerJson = Json::JoinerTable2JsonString(joinerTable);
+    aResponse.SetBody(joinerJson);
+    errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+    aResponse.SetResponsCode(errorCode);
+}
+
+void Resource::AddJoiner(const Request &aRequest, Response &aResponse) const
+{
+    otbrError           error   = OTBR_ERROR_NONE;
+    otError             errorOt = OT_ERROR_NONE;
+    std::string         errorCode;
+    otJoinerInfo        joiner;
+    const otExtAddress *addrPtr                         = nullptr;
+    const uint8_t       emptyArray[OT_EXT_ADDRESS_SIZE] = {0};
+
+    VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_ACTIVE, error = OTBR_ERROR_INVALID_STATE);
+
+    VerifyOrExit(Json::JsonJoinerInfoString2JoinerInfo(aRequest.GetBody(), joiner), error = OTBR_ERROR_INVALID_ARGS);
+
+    addrPtr = &joiner.mSharedId.mEui64;
+    if (memcmp(&joiner.mSharedId.mEui64, emptyArray, OT_EXT_ADDRESS_SIZE) == 0)
+    {
+        addrPtr = nullptr;
+    }
+
+    if (joiner.mType == OT_JOINER_INFO_TYPE_DISCERNER)
+    {
+        errorOt = otCommissionerAddJoinerWithDiscerner(mInstance, &joiner.mSharedId.mDiscerner, joiner.mPskd.m8,
+                                                       joiner.mExpirationTime);
+    }
+    else
+    {
+        errorOt = otCommissionerAddJoiner(mInstance, addrPtr, joiner.mPskd.m8, joiner.mExpirationTime);
+    }
+    VerifyOrExit(errorOt == OT_ERROR_NONE, error = OTBR_ERROR_OPENTHREAD);
+
+exit:
+    switch (error)
+    {
+    case OTBR_ERROR_NONE:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        break;
+    case OTBR_ERROR_INVALID_STATE:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        break;
+    case OTBR_ERROR_OPENTHREAD:
+        switch (errorOt)
+        {
+        case OT_ERROR_INVALID_ARGS:
+            ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+            break;
+        case OT_ERROR_NO_BUFS:
+            ErrorHandler(aResponse, HttpStatusCode::kStatusInsufficientStorage);
+            break;
+        default:
+            ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+            break;
+        }
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        break;
+    }
+}
+
+void Resource::RemoveJoiner(const Request &aRequest, Response &aResponse) const
+{
+    otbrError         error = OTBR_ERROR_NONE;
+    std::string       errorCode;
+    otExtAddress      eui64;
+    otExtAddress     *addrPtr   = nullptr;
+    otJoinerDiscerner discerner = {
+        .mValue  = 0,
+        .mLength = 0,
+    };
+    std::string body;
+
+    VerifyOrExit(otCommissionerGetState(mInstance) == OT_COMMISSIONER_STATE_ACTIVE, error = OTBR_ERROR_INVALID_STATE);
+
+    VerifyOrExit(Json::JsonString2String(aRequest.GetBody(), body), error = OTBR_ERROR_INVALID_ARGS);
+    if (body != "*")
+    {
+        error = Json::StringDiscerner2Discerner(const_cast<char *>(body.c_str()), discerner);
+        if (error == OTBR_ERROR_NOT_FOUND)
+        {
+            error = OTBR_ERROR_NONE;
+            VerifyOrExit(Json::Hex2BytesJsonString(body, eui64.m8, OT_EXT_ADDRESS_SIZE) == OT_EXT_ADDRESS_SIZE,
+                         error = OTBR_ERROR_INVALID_ARGS);
+            addrPtr = &eui64;
+        }
+        else if (error != OTBR_ERROR_NONE)
+        {
+            ExitNow(error = OTBR_ERROR_INVALID_ARGS);
+        }
+    }
+
+    // These functions should only return OT_ERROR_NONE or OT_ERROR_NOT_FOUND both treated as successful
+    if (discerner.mLength == 0)
+    {
+        (void)otCommissionerRemoveJoiner(mInstance, addrPtr);
+    }
+    else
+    {
+        (void)otCommissionerRemoveJoinerWithDiscerner(mInstance, &discerner);
+    }
+
+exit:
+    switch (error)
+    {
+    case OTBR_ERROR_NONE:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        break;
+    case OTBR_ERROR_INVALID_STATE:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusConflict);
+        break;
+    case OTBR_ERROR_INVALID_ARGS:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusBadRequest);
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusInternalServerError);
+        break;
+    }
+}
+
+void Resource::CommissionerJoiner(const Request &aRequest, Response &aResponse) const
+{
+    std::string errorCode;
+
+    switch (aRequest.GetMethod())
+    {
+    case HttpMethod::kGet:
+        GetJoiners(aResponse);
+        break;
+    case HttpMethod::kPost:
+        AddJoiner(aRequest, aResponse);
+        break;
+    case HttpMethod::kDelete:
+        RemoveJoiner(aRequest, aResponse);
+        break;
+
+    case HttpMethod::kOptions:
+        errorCode = GetHttpStatus(HttpStatusCode::kStatusOk);
+        aResponse.SetResponsCode(errorCode);
+        aResponse.SetComplete();
+        break;
+    default:
+        ErrorHandler(aResponse, HttpStatusCode::kStatusMethodNotAllowed);
+        break;
+    }
 }
 
 void Resource::DeleteOutDatedDiagnostic(void)

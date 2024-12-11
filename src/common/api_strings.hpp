@@ -54,10 +54,16 @@
 #define OTBR_DHCP6_PD_STATE_NAME_IDLE "idle"
 #endif
 
+#define OTBR_COMMISSIONER_STATE_NAME_DISABLED "disabled"
+#define OTBR_COMMISSIONER_STATE_NAME_PETITION "petitioning"
+#define OTBR_COMMISSIONER_STATE_NAME_ACTIVE "active"
+
 std::string GetDeviceRoleName(otDeviceRole aRole);
 
 #if OTBR_ENABLE_DHCP6_PD
 std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aDhcp6PdState);
 #endif // OTBR_ENABLE_DHCP6_PD
+
+std::string GetCommissionerStateName(otCommissionerState aState);
 
 #endif // OTBR_COMMON_API_STRINGS_HPP_
