@@ -1,0 +1,66 @@
+meta {
+  name: Get Devices Collection
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/devices
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.meta.collection: isDefined
+  res.body.meta.collection.total: gte 1
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].type: neq ""
+  res.body.data[0].attributes.created: isDefined
+}
+
+tests {
+  test("Data contains fields requested", function() {
+    const data = res.getBody().data;
+    const size = res.getBody().data.size;
+    const offset = res.getBody().meta.collection.offset;
+    const limit = res.getBody().meta.collection.limit;
+    const total = res.getBody().meta.collection.total;
+    
+    expect(data).to.be.an.instanceOf(Array);
+    expect(offset).to.be.a('number');
+    expect(limit).to.be.a('number');
+    expect(total).to.be.a('number');
+    
+    for (let i=0; i < size-1; i++){
+      let item = data[i];
+      
+      expect(item, `Item at index ${i}/${size} is null or undefined`).to.exist;
+  
+      expect(item).to.have.property("id");
+      expect(item).to.have.property("type");
+      expect(item.type).to.be.oneOf(["threadDevice", "threadBorderRouter"]);
+      expect(item).to.have.property("attributes");
+      expect(item.attributes).to.have.property("extAddress").that.is.not.oneOf(["", "0000000000000000"]);
+      expect(item.attributes).to.have.property("mlEidIid").that.is.not.oneOf(["", "0000000000000000"]);
+      expect(item.attributes).to.have.property("omrIpv6Address").that.is.not.oneOf(["", "::"]);
+      expect(item.attributes).to.have.property("mode");
+      expect(item.attributes).to.have.property("hostName");
+      expect(item.attributes).to.have.property("created").that.is.not.empty;
+      expect(item.attributes).to.have.property("updated").that.is.not.empty;
+    }
+  });
+}
+
+docs {
+  Returns basic static device attributes.
+  On first GET request, requests diagnostic TLVs from each device,
+  otherwise returns buffered information.
+}

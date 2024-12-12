@@ -1,0 +1,42 @@
+meta {
+  name: Post Get EnergyScan
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": [
+      {
+        "type": "getEnergyScanTask",
+        "attributes": {
+          "destination": "32ba6e34fd4c0299",
+          "channelMask": [11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],
+          "count": 4,
+          "period": 32,
+          "scanDuration": 16,
+          "timeout": 10
+        }
+      }
+    ]
+  }
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].attributes.status: isDefined
+}

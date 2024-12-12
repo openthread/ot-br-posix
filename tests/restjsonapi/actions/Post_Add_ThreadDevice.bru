@@ -1,0 +1,39 @@
+meta {
+  name: Post Add ThreadDevice Joiner
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": [
+      {
+        "type": "addThreadDeviceTask",
+        "attributes": {
+          "eui": "f4ce36bac3135ee2",
+          "pskd": "J01NMERANGETEST",
+          "timeout": 3600
+        }
+      }
+    ]
+  }
+}
+
+assert {
+  res.headers['content-type']: eq application/vnd.api+json
+  res.body: isJson
+  res.status: eq 200
+  res.body.data: isDefined
+  res.body.data[0].id: isDefined
+  res.body.data[0].attributes.status: isDefined
+}
