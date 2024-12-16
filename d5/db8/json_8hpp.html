@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7772fd8</span>
+   &#160;<span id="projectnumber">0.3.0-d0b395e</span>
    </div>
   </td>
  </tr>
@@ -77,6 +77,7 @@ $(function() {
 <code>#include &quot;openthread/dataset.h&quot;</code><br />
 <code>#include &quot;openthread/link.h&quot;</code><br />
 <code>#include &quot;openthread/thread_ftd.h&quot;</code><br />
+<code>#include &quot;common/types.hpp&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../de/daa/rest_2types_8hpp_source.html">rest/types.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../df/d51/hex_8hpp_source.html">utils/hex.hpp</a>&quot;</code><br />
 </div>
@@ -131,6 +132,18 @@ Functions</h2></td></tr>
 <tr class="separator:a79ca16b109e01d07117cf1ef260e0757"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ba9747cce3e7351f049c754a8570bc9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d6c/namespaceotbr_1_1rest_1_1Json.html#a9ba9747cce3e7351f049c754a8570bc9">otbr::rest::Json::JsonPendingDatasetString2Dataset</a> (const std::string &amp;aJsonPendingDataset, otOperationalDataset &amp;aDataset)</td></tr>
 <tr class="separator:a9ba9747cce3e7351f049c754a8570bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b07a0161010abfca1c5f0ae63c4ee9f"><td class="memItemLeft" align="right" valign="top"><a id="a9b07a0161010abfca1c5f0ae63c4ee9f"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>otbr::rest::Json::JoinerInfo2JsonString</b> (const otJoinerInfo &amp;aJoinerInfo)</td></tr>
+<tr class="separator:a9b07a0161010abfca1c5f0ae63c4ee9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa5bb14599d26533196956231a3d8e4a2"><td class="memItemLeft" align="right" valign="top"><a id="aa5bb14599d26533196956231a3d8e4a2"></a>
+<a class="el" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a>&#160;</td><td class="memItemRight" valign="bottom"><b>otbr::rest::Json::StringDiscerner2Discerner</b> (char *aString, otJoinerDiscerner &amp;aDiscerner)</td></tr>
+<tr class="separator:aa5bb14599d26533196956231a3d8e4a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c26fa47b93d033cd22d5d9fcee59097"><td class="memItemLeft" align="right" valign="top"><a id="a3c26fa47b93d033cd22d5d9fcee59097"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>otbr::rest::Json::JsonJoinerInfoString2JoinerInfo</b> (const std::string &amp;aJsonJoinerInfo, otJoinerInfo &amp;aJoinerInfo)</td></tr>
+<tr class="separator:a3c26fa47b93d033cd22d5d9fcee59097"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0fa9e7490b62207d7917c5994153116"><td class="memItemLeft" align="right" valign="top"><a id="ac0fa9e7490b62207d7917c5994153116"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>otbr::rest::Json::JoinerTable2JsonString</b> (const std::vector&lt; otJoinerInfo &gt; &amp;aJoinerTable)</td></tr>
+<tr class="separator:ac0fa9e7490b62207d7917c5994153116"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file includes JSON formatter definition for RESTful HTTP server. </p>

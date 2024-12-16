@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7772fd8</span>
+   &#160;<span id="projectnumber">0.3.0-d0b395e</span>
    </div>
   </td>
  </tr>
@@ -89,7 +89,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:ab39cd153b273e06f7b06b4f8a8650c79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a byte array to a hexadecimal string.  <a href="../../d4/dfd/hex_8cpp.html#ab39cd153b273e06f7b06b4f8a8650c79">More...</a><br /></td></tr>
 <tr class="separator:ab39cd153b273e06f7b06b4f8a8650c79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15cd9a1b807a906b5b35afeeee15c00b"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/dfd/hex_8cpp.html#a15cd9a1b807a906b5b35afeeee15c00b">otbr::Utils::Long2Hex</a> (const uint64_t aLong, char *aHex)</td></tr>
-<tr class="memdesc:a15cd9a1b807a906b5b35afeeee15c00b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a 64-bit integer to a hexadecimal string.  <a href="../../d4/dfd/hex_8cpp.html#a15cd9a1b807a906b5b35afeeee15c00b">More...</a><br /></td></tr>
+<tr class="memdesc:a15cd9a1b807a906b5b35afeeee15c00b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Converts a 64-bit integer to a big endian formatted hexadecimal string.  <a href="../../d4/dfd/hex_8cpp.html#a15cd9a1b807a906b5b35afeeee15c00b">More...</a><br /></td></tr>
 <tr class="separator:a15cd9a1b807a906b5b35afeeee15c00b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -250,7 +250,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Converts a 64-bit integer to a hexadecimal string. </p>
+<p>Converts a 64-bit integer to a big endian formatted hexadecimal string. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">aLong</td><td>The 64-bit integer to be converted. </td></tr>

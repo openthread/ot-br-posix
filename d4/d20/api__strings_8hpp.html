@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7772fd8</span>
+   &#160;<span id="projectnumber">0.3.0-d0b395e</span>
    </div>
   </td>
  </tr>
@@ -97,12 +97,24 @@ Macros</h2></td></tr>
 <tr class="memitem:afdfbb74c51eaed025abf1b8908c77164"><td class="memItemLeft" align="right" valign="top"><a id="afdfbb74c51eaed025abf1b8908c77164"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>OTBR_ROLE_NAME_LEADER</b>&#160;&#160;&#160;&quot;leader&quot;</td></tr>
 <tr class="separator:afdfbb74c51eaed025abf1b8908c77164"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58cd69861e6bedb563767b6ef0f3f9ac"><td class="memItemLeft" align="right" valign="top"><a id="a58cd69861e6bedb563767b6ef0f3f9ac"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>OTBR_COMMISSIONER_STATE_NAME_DISABLED</b>&#160;&#160;&#160;&quot;disabled&quot;</td></tr>
+<tr class="separator:a58cd69861e6bedb563767b6ef0f3f9ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73004838f9e4e0109b1cc79f704193ac"><td class="memItemLeft" align="right" valign="top"><a id="a73004838f9e4e0109b1cc79f704193ac"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>OTBR_COMMISSIONER_STATE_NAME_PETITION</b>&#160;&#160;&#160;&quot;petitioning&quot;</td></tr>
+<tr class="separator:a73004838f9e4e0109b1cc79f704193ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d37c322c0e2678d73eece047c621803"><td class="memItemLeft" align="right" valign="top"><a id="a0d37c322c0e2678d73eece047c621803"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>OTBR_COMMISSIONER_STATE_NAME_ACTIVE</b>&#160;&#160;&#160;&quot;active&quot;</td></tr>
+<tr class="separator:a0d37c322c0e2678d73eece047c621803"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ab70fa9047cdb1be9caadc14dc5829694"><td class="memItemLeft" align="right" valign="top"><a id="ab70fa9047cdb1be9caadc14dc5829694"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>GetDeviceRoleName</b> (otDeviceRole aRole)</td></tr>
 <tr class="separator:ab70fa9047cdb1be9caadc14dc5829694"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22e951547718ae1fc79bfbb3aac472b3"><td class="memItemLeft" align="right" valign="top"><a id="a22e951547718ae1fc79bfbb3aac472b3"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>GetCommissionerStateName</b> (otCommissionerState aState)</td></tr>
+<tr class="separator:a22e951547718ae1fc79bfbb3aac472b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file has helper functions to convert internal state representations to string (useful for APIs). </p>

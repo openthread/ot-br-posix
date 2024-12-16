@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7772fd8</span>
+   &#160;<span id="projectnumber">0.3.0-d0b395e</span>
    </div>
   </td>
  </tr>
@@ -121,13 +121,19 @@ $(function() {
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="preprocessor">#define OTBR_DHCP6_PD_STATE_NAME_IDLE &quot;idle&quot;</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;std::string GetDeviceRoleName(otDeviceRole aRole);</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#if OTBR_ENABLE_DHCP6_PD</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aDhcp6PdState);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_ENABLE_DHCP6_PD</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor">#define OTBR_COMMISSIONER_STATE_NAME_DISABLED &quot;disabled&quot;</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">#define OTBR_COMMISSIONER_STATE_NAME_PETITION &quot;petitioning&quot;</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#define OTBR_COMMISSIONER_STATE_NAME_ACTIVE &quot;active&quot;</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;std::string GetDeviceRoleName(otDeviceRole aRole);</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_COMMON_API_STRINGS_HPP_</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor">#if OTBR_ENABLE_DHCP6_PD</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;std::string GetDhcp6PdStateName(otBorderRoutingDhcp6PdState aDhcp6PdState);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_ENABLE_DHCP6_PD</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;std::string GetCommissionerStateName(otCommissionerState aState);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_COMMON_API_STRINGS_HPP_</span></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="../../db/d16/config_8h.html">config.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

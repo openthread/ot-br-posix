@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">openthread-br
-   &#160;<span id="projectnumber">0.3.0-7772fd8</span>
+   &#160;<span id="projectnumber">0.3.0-d0b395e</span>
    </div>
   </td>
  </tr>
@@ -144,50 +144,51 @@ $(function() {
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    kStatusRequestTimeout      = 408,</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    kStatusConflict            = 409,</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    kStatusInternalServerError = 500,</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;};</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno"><a class="line" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97">   82</a></span>&#160;<span class="keyword">enum class</span> <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97">PostError</a> : std::uint8_t</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;{</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a61a772e57fd7b15d2526f3402f2d4256">kPostErrorNone</a>  = 0, </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a1102bf32006835696a0fb6347814d018">kPostBadRequest</a> = 1, </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a8890d647cd9ce5aaf08536c59bc6abb7">kPostSetFail</a>    = 2, </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;};</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00089"></a><span class="lineno"><a class="line" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755">   89</a></span>&#160;<span class="keyword">enum class</span> <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755">ConnectionState</a> : std::uint8_t</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;{</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755ab217b1cb58a6ee4ef35a6c84cf367659">kInit</a>          = 0, </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a008c6024842739f1f7a5ad4c2df158fc">kReadWait</a>      = 1, </div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a4bc147473ba41e0048a95ff6d21519e8">kReadTimeout</a>   = 2, </div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a65b75a56caae758a8c28dd7ab0be9771">kCallbackWait</a>  = 3, </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a43bbdfcbb27a83be829e677f434911b0">kWriteWait</a>     = 4, </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a6d18feb23b82487646f7dc3f2097ca2e">kWriteTimeout</a>  = 5, </div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755afcd417a134c251034b0d61b07c826394">kInternalError</a> = 6, </div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a5849f449d026268058ff70e25c57c14a">kComplete</a>      = 7, </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;};</div>
-<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="../../d6/dbf/structotbr_1_1rest_1_1NodeInfo.html">  101</a></span>&#160;<span class="keyword">struct </span><a class="code" href="../../d6/dbf/structotbr_1_1rest_1_1NodeInfo.html">NodeInfo</a></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;{</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    otBorderAgentId mBaId;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    std::string     mRole;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    uint32_t        mNumOfRouter;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    uint16_t        mRloc16;</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keyword">const</span> uint8_t  *mExtPanId;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">const</span> uint8_t  *mExtAddress;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    otIp6Address    mRlocAddress;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    otLeaderData    mLeaderData;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    std::string     mNetworkName;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;};</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
-<div class="line"><a name="l00114"></a><span class="lineno"><a class="line" href="../../da/dfd/structotbr_1_1rest_1_1DiagInfo.html">  114</a></span>&#160;<span class="keyword">struct </span><a class="code" href="../../da/dfd/structotbr_1_1rest_1_1DiagInfo.html">DiagInfo</a></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;{</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    steady_clock::time_point      mStartTime;</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    std::vector&lt;otNetworkDiagTlv&gt; mDiagContent;</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;};</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;} <span class="comment">// namespace rest</span></div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160; </div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_REST_TYPES_HPP_</span></div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    kStatusInsufficientStorage = 507,</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;};</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
+<div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97">   83</a></span>&#160;<span class="keyword">enum class</span> <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97">PostError</a> : std::uint8_t</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;{</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a61a772e57fd7b15d2526f3402f2d4256">kPostErrorNone</a>  = 0, </div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a1102bf32006835696a0fb6347814d018">kPostBadRequest</a> = 1, </div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a8890d647cd9ce5aaf08536c59bc6abb7">kPostSetFail</a>    = 2, </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;};</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00090"></a><span class="lineno"><a class="line" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755">   90</a></span>&#160;<span class="keyword">enum class</span> <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755">ConnectionState</a> : std::uint8_t</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;{</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755ab217b1cb58a6ee4ef35a6c84cf367659">kInit</a>          = 0, </div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a008c6024842739f1f7a5ad4c2df158fc">kReadWait</a>      = 1, </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a4bc147473ba41e0048a95ff6d21519e8">kReadTimeout</a>   = 2, </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a65b75a56caae758a8c28dd7ab0be9771">kCallbackWait</a>  = 3, </div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a43bbdfcbb27a83be829e677f434911b0">kWriteWait</a>     = 4, </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a6d18feb23b82487646f7dc3f2097ca2e">kWriteTimeout</a>  = 5, </div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755afcd417a134c251034b0d61b07c826394">kInternalError</a> = 6, </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <a class="code" href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a5849f449d026268058ff70e25c57c14a">kComplete</a>      = 7, </div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;};</div>
+<div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="../../d6/dbf/structotbr_1_1rest_1_1NodeInfo.html">  102</a></span>&#160;<span class="keyword">struct </span><a class="code" href="../../d6/dbf/structotbr_1_1rest_1_1NodeInfo.html">NodeInfo</a></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;{</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    otBorderAgentId mBaId;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    std::string     mRole;</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    uint32_t        mNumOfRouter;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    uint16_t        mRloc16;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">const</span> uint8_t  *mExtPanId;</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="keyword">const</span> uint8_t  *mExtAddress;</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    otIp6Address    mRlocAddress;</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    otLeaderData    mLeaderData;</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    std::string     mNetworkName;</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;};</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
+<div class="line"><a name="l00115"></a><span class="lineno"><a class="line" href="../../da/dfd/structotbr_1_1rest_1_1DiagInfo.html">  115</a></span>&#160;<span class="keyword">struct </span><a class="code" href="../../da/dfd/structotbr_1_1rest_1_1DiagInfo.html">DiagInfo</a></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;{</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    steady_clock::time_point      mStartTime;</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    std::vector&lt;otNetworkDiagTlv&gt; mDiagContent;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;};</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160; </div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;} <span class="comment">// namespace rest</span></div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// OTBR_REST_TYPES_HPP_</span></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="../../db/d16/config_8h.html">config.h</a></div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a06f5b86d59d177d419e9af98c501151b"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a06f5b86d59d177d419e9af98c501151b">otbr::rest::HttpMethod</a></div><div class="ttdeci">HttpMethod</div><div class="ttdef"><b>Definition:</b> types.hpp:59</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a06f5b86d59d177d419e9af98c501151ba35a066c0e13328b52559d97ec54653e1"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a06f5b86d59d177d419e9af98c501151ba35a066c0e13328b52559d97ec54653e1">otbr::rest::HttpMethod::kPost</a></div><div class="ttdeci">@ kPost</div><div class="ttdoc">POST.</div></div>
@@ -196,11 +197,11 @@ $(function() {
 <div class="ttc" id="arest_2types_8hpp_html_a06f5b86d59d177d419e9af98c501151baa2598ea1b9c49e158bc197c788e03cc3"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a06f5b86d59d177d419e9af98c501151baa2598ea1b9c49e158bc197c788e03cc3">otbr::rest::HttpMethod::kGet</a></div><div class="ttdeci">@ kGet</div><div class="ttdoc">GET.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a06f5b86d59d177d419e9af98c501151bacccdc85a08bd17cac22ce181572ee93c"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a06f5b86d59d177d419e9af98c501151bacccdc85a08bd17cac22ce181572ee93c">otbr::rest::HttpMethod::kPut</a></div><div class="ttdeci">@ kPut</div><div class="ttdoc">PUT.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a06f5b86d59d177d419e9af98c501151baf13d21a798857b5c0955da60e79969fd"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a06f5b86d59d177d419e9af98c501151baf13d21a798857b5c0955da60e79969fd">otbr::rest::HttpMethod::kHead</a></div><div class="ttdeci">@ kHead</div><div class="ttdoc">HEAD.</div></div>
-<div class="ttc" id="arest_2types_8hpp_html_a17db696f088dfb810d2d249fc03e6b97"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97">otbr::rest::PostError</a></div><div class="ttdeci">PostError</div><div class="ttdef"><b>Definition:</b> types.hpp:83</div></div>
+<div class="ttc" id="arest_2types_8hpp_html_a17db696f088dfb810d2d249fc03e6b97"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97">otbr::rest::PostError</a></div><div class="ttdeci">PostError</div><div class="ttdef"><b>Definition:</b> types.hpp:84</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a17db696f088dfb810d2d249fc03e6b97a1102bf32006835696a0fb6347814d018"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a1102bf32006835696a0fb6347814d018">otbr::rest::PostError::kPostBadRequest</a></div><div class="ttdeci">@ kPostBadRequest</div><div class="ttdoc">Bad request for post.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a17db696f088dfb810d2d249fc03e6b97a61a772e57fd7b15d2526f3402f2d4256"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a61a772e57fd7b15d2526f3402f2d4256">otbr::rest::PostError::kPostErrorNone</a></div><div class="ttdeci">@ kPostErrorNone</div><div class="ttdoc">No error.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_a17db696f088dfb810d2d249fc03e6b97a8890d647cd9ce5aaf08536c59bc6abb7"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#a17db696f088dfb810d2d249fc03e6b97a8890d647cd9ce5aaf08536c59bc6abb7">otbr::rest::PostError::kPostSetFail</a></div><div class="ttdeci">@ kPostSetFail</div><div class="ttdoc">Fail when set value.</div></div>
-<div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755">otbr::rest::ConnectionState</a></div><div class="ttdeci">ConnectionState</div><div class="ttdef"><b>Definition:</b> types.hpp:90</div></div>
+<div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755">otbr::rest::ConnectionState</a></div><div class="ttdeci">ConnectionState</div><div class="ttdef"><b>Definition:</b> types.hpp:91</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755a008c6024842739f1f7a5ad4c2df158fc"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a008c6024842739f1f7a5ad4c2df158fc">otbr::rest::ConnectionState::kReadWait</a></div><div class="ttdeci">@ kReadWait</div><div class="ttdoc">Wait to read.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755a43bbdfcbb27a83be829e677f434911b0"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a43bbdfcbb27a83be829e677f434911b0">otbr::rest::ConnectionState::kWriteWait</a></div><div class="ttdeci">@ kWriteWait</div><div class="ttdoc">Wait for write.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755a4bc147473ba41e0048a95ff6d21519e8"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a4bc147473ba41e0048a95ff6d21519e8">otbr::rest::ConnectionState::kReadTimeout</a></div><div class="ttdeci">@ kReadTimeout</div><div class="ttdoc">Reach read timeout.</div></div>
@@ -209,8 +210,8 @@ $(function() {
 <div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755a6d18feb23b82487646f7dc3f2097ca2e"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755a6d18feb23b82487646f7dc3f2097ca2e">otbr::rest::ConnectionState::kWriteTimeout</a></div><div class="ttdeci">@ kWriteTimeout</div><div class="ttdoc">Reach write timeout.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755ab217b1cb58a6ee4ef35a6c84cf367659"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755ab217b1cb58a6ee4ef35a6c84cf367659">otbr::rest::ConnectionState::kInit</a></div><div class="ttdeci">@ kInit</div><div class="ttdoc">Init.</div></div>
 <div class="ttc" id="arest_2types_8hpp_html_addcd75255725aaedf1056b927da71755afcd417a134c251034b0d61b07c826394"><div class="ttname"><a href="../../de/daa/rest_2types_8hpp.html#addcd75255725aaedf1056b927da71755afcd417a134c251034b0d61b07c826394">otbr::rest::ConnectionState::kInternalError</a></div><div class="ttdeci">@ kInternalError</div><div class="ttdoc">Occur internal call error.</div></div>
-<div class="ttc" id="astructotbr_1_1rest_1_1DiagInfo_html"><div class="ttname"><a href="../../da/dfd/structotbr_1_1rest_1_1DiagInfo.html">otbr::rest::DiagInfo</a></div><div class="ttdef"><b>Definition:</b> types.hpp:115</div></div>
-<div class="ttc" id="astructotbr_1_1rest_1_1NodeInfo_html"><div class="ttname"><a href="../../d6/dbf/structotbr_1_1rest_1_1NodeInfo.html">otbr::rest::NodeInfo</a></div><div class="ttdef"><b>Definition:</b> types.hpp:102</div></div>
+<div class="ttc" id="astructotbr_1_1rest_1_1DiagInfo_html"><div class="ttname"><a href="../../da/dfd/structotbr_1_1rest_1_1DiagInfo.html">otbr::rest::DiagInfo</a></div><div class="ttdef"><b>Definition:</b> types.hpp:116</div></div>
+<div class="ttc" id="astructotbr_1_1rest_1_1NodeInfo_html"><div class="ttname"><a href="../../d6/dbf/structotbr_1_1rest_1_1NodeInfo.html">otbr::rest::NodeInfo</a></div><div class="ttdef"><b>Definition:</b> types.hpp:103</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
