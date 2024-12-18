@@ -288,6 +288,12 @@ void Application::DeinitRcpMode(void)
 
 void Application::InitNcpMode(void)
 {
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    otbr::Ncp::NcpHost &ncpHost = static_cast<otbr::Ncp::NcpHost &>(mHost);
+    ncpHost.SetMdnsPublisher(mPublisher.get());
+    mMdnsStateSubject.AddObserver(ncpHost);
+    mPublisher->Start();
+#endif
 #if OTBR_ENABLE_DBUS_SERVER
     mDBusAgent->Init(*mBorderAgent);
 #endif
@@ -295,7 +301,9 @@ void Application::InitNcpMode(void)
 
 void Application::DeinitNcpMode(void)
 {
-    /* empty */
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mPublisher->Stop();
+#endif
 }
 
 } // namespace otbr

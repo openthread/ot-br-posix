@@ -199,7 +199,7 @@ public:
 
     // Thread Control virtual methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aRecevier) override;
-    void Leave(const AsyncResultReceiver &aRecevier) override;
+    void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
@@ -210,6 +210,7 @@ public:
                              const AsyncResultReceiver          &aReceiver) override;
 #endif
     void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
+    void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
 
     CoprocessorType GetCoprocessorType(void) override
     {
@@ -228,6 +229,13 @@ private:
         {
             aReceiver(aError, aErrorInfo);
             aReceiver = nullptr;
+        }
+    }
+    static void SafeInvoke(const AsyncResultReceiver &aReceiver, otError aError, const std::string &aErrorInfo = "")
+    {
+        if (aReceiver)
+        {
+            aReceiver(aError, aErrorInfo);
         }
     }
 
@@ -250,7 +258,11 @@ private:
     void        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, const otIp6Address *aAddress);
 #endif
 
-    static void DisableThreadAfterDetach(void *aContext);
+    using DetachGracefullyCallback = std::function<void()>;
+    void        ThreadDetachGracefully(const DetachGracefullyCallback &aCallback);
+    static void ThreadDetachGracefullyCallback(void *aContext);
+    void        ThreadDetachGracefullyCallback(void);
+    void        ConditionalErasePersistentInfo(bool aErase);
     void        DisableThreadAfterDetach(void);
     static void SendMgmtPendingSetCallback(otError aError, void *aContext);
     void        SendMgmtPendingSetCallback(otError aError);
@@ -260,6 +272,8 @@ private:
 
     bool IsAttached(void);
 
+    void UpdateThreadEnabledState(ThreadEnabledState aState);
+
     otError SetOtbrAndOtLogLevel(otbrLogLevel aLevel);
 
     otInstance *mInstance;
@@ -268,11 +282,15 @@ private:
     std::unique_ptr<otbr::agent::ThreadHelper> mThreadHelper;
     std::vector<std::function<void(void)>>     mResetHandlers;
     TaskRunner                                 mTaskRunner;
-    std::vector<ThreadStateChangedCallback>    mThreadStateChangedCallbacks;
-    bool                                       mEnableAutoAttach = false;
 
-    AsyncResultReceiver mSetThreadEnabledReceiver;
-    AsyncResultReceiver mScheduleMigrationReceiver;
+    std::vector<ThreadStateChangedCallback> mThreadStateChangedCallbacks;
+    std::vector<ThreadEnabledStateCallback> mThreadEnabledStateChangedCallbacks;
+    bool                                    mEnableAutoAttach = false;
+    ThreadEnabledState                      mThreadEnabledState;
+    AsyncResultReceiver                     mJoinReceiver;
+    AsyncResultReceiver                     mSetThreadEnabledReceiver;
+    AsyncResultReceiver                     mScheduleMigrationReceiver;
+    std::vector<DetachGracefullyCallback>   mDetachGracefullyCallbacks;
 
 #if OTBR_ENABLE_FEATURE_FLAGS
     // The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.

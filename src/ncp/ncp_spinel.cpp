@@ -36,6 +36,7 @@
 
 #include <openthread/dataset.h>
 #include <openthread/thread.h>
+#include <openthread/platform/dnssd.h>
 
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
@@ -44,6 +45,7 @@
 #include "lib/spinel/spinel_driver.hpp"
 #include "lib/spinel/spinel_encoder.hpp"
 #include "lib/spinel/spinel_helper.hpp"
+#include "lib/spinel/spinel_prop_codec.hpp"
 
 namespace otbr {
 namespace Ncp {
@@ -58,6 +60,9 @@ NcpSpinel::NcpSpinel(void)
     , mEncoder(mNcpBuffer)
     , mIid(SPINEL_HEADER_INVALID_IID)
     , mPropsObserver(nullptr)
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    , mPublisher(nullptr)
+#endif
 {
     std::fill_n(mWaitingKeyTable, SPINEL_PROP_LAST_STATUS, sizeof(mWaitingKeyTable));
     memset(mCmdTable, 0, sizeof(mCmdTable));
@@ -76,6 +81,9 @@ void NcpSpinel::Deinit(void)
     mSpinelDriver              = nullptr;
     mIp6AddressTableCallback   = nullptr;
     mNetifStateChangedCallback = nullptr;
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    mPublisher = nullptr;
+#endif
 }
 
 otbrError NcpSpinel::SpinelDataUnpack(const uint8_t *aDataIn, spinel_size_t aDataLen, const char *aPackFormat, ...)
@@ -224,6 +232,45 @@ exit:
     }
 }
 
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+void NcpSpinel::SrpServerSetAutoEnableMode(bool aEnabled)
+{
+    otError      error;
+    EncodingFunc encodingFunc = [aEnabled](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnabled); };
+
+    error = SetProperty(SPINEL_PROP_SRP_SERVER_AUTO_ENABLE_MODE, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to call SrpServerSetAutoEnableMode, %s", otThreadErrorToString(error));
+    }
+}
+
+void NcpSpinel::SrpServerSetEnabled(bool aEnabled)
+{
+    otError      error;
+    EncodingFunc encodingFunc = [aEnabled](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteBool(aEnabled); };
+
+    error = SetProperty(SPINEL_PROP_SRP_SERVER_ENABLED, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to call SrpServerSetEnabled, %s", otThreadErrorToString(error));
+    }
+}
+
+void NcpSpinel::DnssdSetState(Mdns::Publisher::State aState)
+{
+    otError          error;
+    otPlatDnssdState state = (aState == Mdns::Publisher::State::kReady) ? OT_PLAT_DNSSD_READY : OT_PLAT_DNSSD_STOPPED;
+    EncodingFunc     encodingFunc = [state](ot::Spinel::Encoder &aEncoder) { return aEncoder.WriteUint8(state); };
+
+    error = SetProperty(SPINEL_PROP_DNSSD_STATE, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to call DnssdSetState, %s", otThreadErrorToString(error));
+    }
+}
+#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+
 void NcpSpinel::HandleReceivedFrame(const uint8_t *aFrame,
                                     uint16_t       aLength,
                                     uint8_t        aHeader,
@@ -272,8 +319,19 @@ void NcpSpinel::HandleNotification(const uint8_t *aFrame, uint16_t aLength)
 
     SuccessOrExit(error = SpinelDataUnpack(aFrame, aLength, kSpinelDataUnpackFormat, &header, &cmd, &key, &data, &len));
     VerifyOrExit(SPINEL_HEADER_GET_TID(header) == 0, error = OTBR_ERROR_PARSE);
-    VerifyOrExit(cmd == SPINEL_CMD_PROP_VALUE_IS);
-    HandleValueIs(key, data, static_cast<uint16_t>(len));
+
+    switch (cmd)
+    {
+    case SPINEL_CMD_PROP_VALUE_IS:
+        HandleValueIs(key, data, static_cast<uint16_t>(len));
+        break;
+    case SPINEL_CMD_PROP_VALUE_INSERTED:
+        HandleValueInserted(key, data, static_cast<uint16_t>(len));
+        break;
+    case SPINEL_CMD_PROP_VALUE_REMOVED:
+        HandleValueRemoved(key, data, static_cast<uint16_t>(len));
+        break;
+    }
 
 exit:
     otbrLogResult(error, "%s", __FUNCTION__);
@@ -436,6 +494,184 @@ void NcpSpinel::HandleValueIs(spinel_prop_key_t aKey, const uint8_t *aBuffer, ui
 
 exit:
     otbrLogResult(error, "NcpSpinel: %s", __FUNCTION__);
+    return;
+}
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+static std::string KeyNameFor(const otPlatDnssdKey &aKey)
+{
+    std::string name(aKey.mName);
+
+    if (aKey.mServiceType != nullptr)
+    {
+        // TODO: current code would not work with service instance labels that include a '.'
+        name += ".";
+        name += aKey.mServiceType;
+    }
+    return name;
+}
+#endif
+
+void NcpSpinel::HandleValueInserted(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength)
+{
+    otbrError           error = OTBR_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuffer != nullptr, error = OTBR_ERROR_INVALID_ARGS);
+    decoder.Init(aBuffer, aLength);
+
+    switch (aKey)
+    {
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    case SPINEL_PROP_DNSSD_HOST:
+    {
+        Mdns::Publisher::AddressList addressList;
+        otPlatDnssdHost              host;
+        otPlatDnssdRequestId         requestId;
+        const uint8_t               *callbackData;
+        uint16_t                     callbackDataSize;
+        std::vector<uint8_t>         callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdHost(decoder, host, requestId, callbackData, callbackDataSize));
+        for (uint16_t i = 0; i < host.mAddressesLength; i++)
+        {
+            addressList.push_back(Ip6Address(host.mAddresses[i].mFields.m8));
+        }
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        mPublisher->PublishHost(host.mHostName, addressList, [this, requestId, callbackDataCopy](otbrError aError) {
+            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+        });
+        break;
+    }
+    case SPINEL_PROP_DNSSD_SERVICE:
+    {
+        otPlatDnssdService           service;
+        Mdns::Publisher::SubTypeList subTypeList;
+        const char                  *subTypeArray[kMaxSubTypes];
+        uint16_t                     subTypeCount;
+        Mdns::Publisher::TxtData     txtData;
+        otPlatDnssdRequestId         requestId;
+        const uint8_t               *callbackData;
+        uint16_t                     callbackDataSize;
+        std::vector<uint8_t>         callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdService(decoder, service, subTypeArray, subTypeCount, requestId,
+                                                     callbackData, callbackDataSize));
+        for (uint16_t i = 0; i < subTypeCount; i++)
+        {
+            subTypeList.push_back(subTypeArray[i]);
+        }
+        txtData.assign(service.mTxtData, service.mTxtData + service.mTxtDataLength);
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        mPublisher->PublishService(service.mHostName, service.mServiceInstance, service.mServiceType, subTypeList,
+                                   service.mPort, txtData, [this, requestId, callbackDataCopy](otbrError aError) {
+                                       OT_UNUSED_VARIABLE(
+                                           SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+                                   });
+        break;
+    }
+    case SPINEL_PROP_DNSSD_KEY_RECORD:
+    {
+        otPlatDnssdKey           key;
+        Mdns::Publisher::KeyData keyData;
+        otPlatDnssdRequestId     requestId;
+        const uint8_t           *callbackData;
+        uint16_t                 callbackDataSize;
+        std::vector<uint8_t>     callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdKey(decoder, key, requestId, callbackData, callbackDataSize));
+        keyData.assign(key.mKeyData, key.mKeyData + key.mKeyDataLength);
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        mPublisher->PublishKey(KeyNameFor(key), keyData, [this, requestId, callbackDataCopy](otbrError aError) {
+            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+        });
+        break;
+    }
+#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    default:
+        error = OTBR_ERROR_DROPPED;
+        break;
+    }
+
+exit:
+    otbrLogResult(error, "HandleValueInserted, key:%u", aKey);
+    return;
+}
+
+void NcpSpinel::HandleValueRemoved(spinel_prop_key_t aKey, const uint8_t *aBuffer, uint16_t aLength)
+{
+    otbrError           error = OTBR_ERROR_NONE;
+    ot::Spinel::Decoder decoder;
+
+    VerifyOrExit(aBuffer != nullptr, error = OTBR_ERROR_INVALID_ARGS);
+    decoder.Init(aBuffer, aLength);
+
+    switch (aKey)
+    {
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    case SPINEL_PROP_DNSSD_HOST:
+    {
+        otPlatDnssdHost      host;
+        otPlatDnssdRequestId requestId;
+        const uint8_t       *callbackData;
+        uint16_t             callbackDataSize;
+        std::vector<uint8_t> callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdHost(decoder, host, requestId, callbackData, callbackDataSize));
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        mPublisher->UnpublishHost(host.mHostName, [this, requestId, callbackDataCopy](otbrError aError) {
+            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+        });
+        break;
+    }
+    case SPINEL_PROP_DNSSD_SERVICE:
+    {
+        otPlatDnssdService   service;
+        const char          *subTypeArray[kMaxSubTypes];
+        uint16_t             subTypeCount;
+        otPlatDnssdRequestId requestId;
+        const uint8_t       *callbackData;
+        uint16_t             callbackDataSize;
+        std::vector<uint8_t> callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdService(decoder, service, subTypeArray, subTypeCount, requestId,
+                                                     callbackData, callbackDataSize));
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        mPublisher->UnpublishService(
+            service.mHostName, service.mServiceType, [this, requestId, callbackDataCopy](otbrError aError) {
+                OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+            });
+        break;
+    }
+    case SPINEL_PROP_DNSSD_KEY_RECORD:
+    {
+        otPlatDnssdKey       key;
+        otPlatDnssdRequestId requestId;
+        const uint8_t       *callbackData;
+        uint16_t             callbackDataSize;
+        std::vector<uint8_t> callbackDataCopy;
+
+        SuccessOrExit(ot::Spinel::DecodeDnssdKey(decoder, key, requestId, callbackData, callbackDataSize));
+        callbackDataCopy.assign(callbackData, callbackData + callbackDataSize);
+
+        mPublisher->UnpublishKey(KeyNameFor(key), [this, requestId, callbackDataCopy](otbrError aError) {
+            OT_UNUSED_VARIABLE(SendDnssdResult(requestId, callbackDataCopy, OtbrErrorToOtError(aError)));
+        });
+        break;
+    }
+#endif // OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    default:
+        error = OTBR_ERROR_DROPPED;
+        break;
+    }
+
+exit:
+    otbrLogResult(error, "HandleValueRemoved, key:%u", aKey);
     return;
 }
 
@@ -798,6 +1034,31 @@ otError NcpSpinel::ParseInfraIfIcmp6Nd(const uint8_t       *aBuf,
     SuccessOrExit(error = decoder.ReadDataWithLen(aData, aDataLen));
 
 exit:
+    return error;
+}
+
+otError NcpSpinel::SendDnssdResult(otPlatDnssdRequestId        aRequestId,
+                                   const std::vector<uint8_t> &aCallbackData,
+                                   otError                     aError)
+{
+    otError      error;
+    EncodingFunc encodingFunc = [aRequestId, &aCallbackData, aError](ot::Spinel::Encoder &aEncoder) {
+        otError error = OT_ERROR_NONE;
+
+        SuccessOrExit(aEncoder.WriteUint8(aError));
+        SuccessOrExit(aEncoder.WriteUint32(aRequestId));
+        SuccessOrExit(aEncoder.WriteData(aCallbackData.data(), aCallbackData.size()));
+
+    exit:
+        return error;
+    };
+
+    error = SetProperty(SPINEL_PROP_DNSSD_REQUEST_RESULT, encodingFunc);
+    if (error != OT_ERROR_NONE)
+    {
+        otbrLogWarning("Failed to SendDnssdResult, %s", otThreadErrorToString(error));
+    }
+
     return error;
 }
 

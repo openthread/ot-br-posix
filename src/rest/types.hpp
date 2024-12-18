@@ -77,6 +77,7 @@ enum class HttpStatusCode : std::uint16_t
     kStatusRequestTimeout      = 408,
     kStatusConflict            = 409,
     kStatusInternalServerError = 500,
+    kStatusInsufficientStorage = 507,
 };
 
 enum class PostError : std::uint8_t

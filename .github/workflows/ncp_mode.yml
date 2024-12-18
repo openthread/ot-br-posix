@@ -53,7 +53,7 @@ jobs:
         OTBR_MDNS: ${{ matrix.mdns }}
         OTBR_COVERAGE: 1
         OTBR_VERBOSE: 1
-        OTBR_OPTIONS: "-DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.4 -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON -DBUILD_TESTING=OFF"
+        OTBR_OPTIONS: "-DCMAKE_BUILD_TYPE=Debug -DOT_THREAD_VERSION=1.4 -DOTBR_COVERAGE=ON -DOTBR_DBUS=ON -DOTBR_FEATURE_FLAGS=ON -DOTBR_TELEMETRY_DATA_API=ON -DOTBR_UNSECURE_JOIN=ON -DOTBR_TREL=ON -DOTBR_SRP_ADVERTISING_PROXY=ON -DBUILD_TESTING=OFF"
     steps:
     - uses: actions/checkout@v4
       with:
@@ -76,6 +76,6 @@ jobs:
             --build-arg OTBR_OPTIONS="${OTBR_OPTIONS}"
     - name: Run
       run: |
-       top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim expect
+        top_builddir="./build/temp" tests/scripts/ncp_mode build_ot_sim expect
     - name: Codecov
       uses: codecov/codecov-action@v5

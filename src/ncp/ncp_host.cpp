@@ -38,7 +38,6 @@
 #include <openthread/openthread-system.h>
 
 #include "lib/spinel/spinel_driver.hpp"
-
 #include "ncp/async_task.hpp"
 
 namespace otbr {
@@ -134,6 +133,16 @@ void NcpHost::Init(void)
     {
         mInfraIf.SetInfraIf(mConfig.mBackboneInterfaceName);
     }
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+#if OTBR_ENABLE_SRP_SERVER_AUTO_ENABLE_MODE
+    // Let SRP server use auto-enable mode. The auto-enable mode delegates the control of SRP server to the Border
+    // Routing Manager. SRP server automatically starts when bi-directional connectivity is ready.
+    mNcpSpinel.SrpServerSetAutoEnableMode(/* aEnabled */ true);
+#else
+    mNcpSpinel.SrpServerSetEnabled(/* aEnabled */ true);
+#endif
+#endif
 }
 
 void NcpHost::Deinit(void)
@@ -157,14 +166,23 @@ void NcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const A
     task->Run();
 }
 
-void NcpHost::Leave(const AsyncResultReceiver &aReceiver)
+void NcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
 {
     AsyncTaskPtr task;
     auto errorHandler = [aReceiver](otError aError, const std::string &aErrorInfo) { aReceiver(aError, aErrorInfo); };
 
     task = std::make_shared<AsyncTask>(errorHandler);
     task->First([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadDetachGracefully(std::move(aNext)); })
-        ->Then([this](AsyncTaskPtr aNext) { mNcpSpinel.ThreadErasePersistentInfo(std::move(aNext)); });
+        ->Then([this, aEraseDataset](AsyncTaskPtr aNext) {
+            if (aEraseDataset)
+            {
+                mNcpSpinel.ThreadErasePersistentInfo(std::move(aNext));
+            }
+            else
+            {
+                aNext->SetResult(OT_ERROR_NONE, "");
+            }
+        });
     task->Run();
 }
 
@@ -229,6 +247,12 @@ void NcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback
     OT_UNUSED_VARIABLE(aCallback);
 }
 
+void NcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback)
+{
+    // TODO: Implement AddThreadEnabledStateChangedCallback under NCP mode.
+    OT_UNUSED_VARIABLE(aCallback);
+}
+
 void NcpHost::Process(const MainloopContext &aMainloop)
 {
     mSpinelDriver.Process(&aMainloop);
@@ -248,6 +272,18 @@ void NcpHost::Update(MainloopContext &aMainloop)
 
     mNetif.UpdateFdSet(&aMainloop);
 }
+
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+void NcpHost::SetMdnsPublisher(Mdns::Publisher *aPublisher)
+{
+    mNcpSpinel.SetMdnsPublisher(aPublisher);
+}
+
+void NcpHost::HandleMdnsState(Mdns::Publisher::State aState)
+{
+    mNcpSpinel.DnssdSetState(aState);
+}
+#endif
 
 } // namespace Ncp
 } // namespace otbr

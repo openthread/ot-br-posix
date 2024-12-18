@@ -49,13 +49,8 @@ jobs:
         submodules: true
     - name: Bootstrap
       run: |
-        rm -f /usr/local/bin/2to3*
-        rm -f /usr/local/bin/idle3*
-        rm -f /usr/local/bin/pydoc3*
-        rm -f /usr/local/bin/python3*
         brew update
-        brew unlink pkg-config
-        brew reinstall boost cmake dbus jsoncpp ninja protobuf@21 pkg-config
+        brew reinstall boost jsoncpp ninja protobuf@21
     - name: Build
       run: |
         OTBR_OPTIONS="-DOTBR_BORDER_AGENT=OFF \

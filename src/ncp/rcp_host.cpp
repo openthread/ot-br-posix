@@ -125,6 +125,7 @@ RcpHost::RcpHost(const char                      *aInterfaceName,
                  bool                             aEnableAutoAttach)
     : mInstance(nullptr)
     , mEnableAutoAttach(aEnableAutoAttach)
+    , mThreadEnabledState(ThreadEnabledState::kStateDisabled)
 {
     VerifyOrDie(aRadioUrls.size() <= OT_PLATFORM_CONFIG_MAX_RADIO_URLS, "Too many Radio URLs!");
 
@@ -327,10 +328,13 @@ void RcpHost::Deinit(void)
 
     OtNetworkProperties::SetInstance(nullptr);
     mThreadStateChangedCallbacks.clear();
+    mThreadEnabledStateChangedCallbacks.clear();
     mResetHandlers.clear();
 
+    mJoinReceiver              = nullptr;
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
+    mDetachGracefullyCallbacks.clear();
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -341,6 +345,12 @@ void RcpHost::HandleStateChanged(otChangedFlags aFlags)
     }
 
     mThreadHelper->StateChangedCallback(aFlags);
+
+    if ((aFlags & OT_CHANGED_THREAD_ROLE) && IsAttached() && mJoinReceiver != nullptr)
+    {
+        otbrLogInfo("Join succeeded");
+        SafeInvokeAndClear(mJoinReceiver, OT_ERROR_NONE, "Join succeeded");
+    }
 }
 
 void RcpHost::Update(MainloopContext &aMainloop)
@@ -390,6 +400,11 @@ void RcpHost::AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback
     mThreadStateChangedCallbacks.emplace_back(std::move(aCallback));
 }
 
+void RcpHost::AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback)
+{
+    mThreadEnabledStateChangedCallbacks.push_back(aCallback);
+}
+
 void RcpHost::Reset(void)
 {
     gPlatResetReason = OT_PLAT_RESET_REASON_SOFTWARE;
@@ -430,18 +445,113 @@ const char *RcpHost::GetThreadVersion(void)
     return version;
 }
 
-void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
+static bool noNeedRejoin(const otOperationalDatasetTlvs &aLhs, const otOperationalDatasetTlvs &aRhs)
 {
-    OT_UNUSED_VARIABLE(aActiveOpDatasetTlvs);
+    bool result = false;
 
-    // TODO: Implement Join under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    otOperationalDataset lhsDataset;
+    otOperationalDataset rhsDataset;
+
+    SuccessOrExit(otDatasetParseTlvs(&aLhs, &lhsDataset));
+    SuccessOrExit(otDatasetParseTlvs(&aRhs, &rhsDataset));
+
+    result =
+        (lhsDataset.mChannel == rhsDataset.mChannel) &&
+        (memcmp(lhsDataset.mNetworkKey.m8, rhsDataset.mNetworkKey.m8, sizeof(lhsDataset.mNetworkKey)) == 0) &&
+        (memcmp(lhsDataset.mExtendedPanId.m8, rhsDataset.mExtendedPanId.m8, sizeof(lhsDataset.mExtendedPanId)) == 0);
+
+exit:
+    return result;
 }
 
-void RcpHost::Leave(const AsyncResultReceiver &aReceiver)
+void RcpHost::Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver)
 {
-    // TODO: Implement Leave under RCP mode.
-    mTaskRunner.Post([aReceiver](void) { aReceiver(OT_ERROR_NOT_IMPLEMENTED, "Not implemented!"); });
+    otError                  error = OT_ERROR_NONE;
+    std::string              errorMsg;
+    bool                     receiveResultHere = true;
+    otOperationalDatasetTlvs curDatasetTlvs;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
+    VerifyOrExit(mThreadEnabledState == ThreadEnabledState::kStateEnabled, error = OT_ERROR_INVALID_STATE,
+                 errorMsg = "Thread is not enabled");
+
+    otbrLogInfo("Start joining...");
+
+    error = otDatasetGetActiveTlvs(mInstance, &curDatasetTlvs);
+    if (error == OT_ERROR_NONE && noNeedRejoin(aActiveOpDatasetTlvs, curDatasetTlvs) && IsAttached())
+    {
+        // Do not leave and re-join if this device has already joined the same network. This can help elimilate
+        // unnecessary connectivity and topology disruption and save the time for re-joining. It's more useful for use
+        // cases where Thread networks are dynamically brought up and torn down (e.g. Thread on mobile phones).
+        SuccessOrExit(error    = otDatasetSetActiveTlvs(mInstance, &aActiveOpDatasetTlvs),
+                      errorMsg = "Failed to set Active Operational Dataset");
+        errorMsg = "Already Joined the target network";
+        ExitNow();
+    }
+
+    if (GetDeviceRole() != OT_DEVICE_ROLE_DISABLED)
+    {
+        ThreadDetachGracefully([aActiveOpDatasetTlvs, aReceiver, this] {
+            ConditionalErasePersistentInfo(true);
+            Join(aActiveOpDatasetTlvs, aReceiver);
+        });
+        receiveResultHere = false;
+        ExitNow();
+    }
+
+    SuccessOrExit(error    = otDatasetSetActiveTlvs(mInstance, &aActiveOpDatasetTlvs),
+                  errorMsg = "Failed to set Active Operational Dataset");
+
+    // TODO(b/273160198): check how we can implement join as a child
+    SuccessOrExit(error = otIp6SetEnabled(mInstance, true), errorMsg = "Failed to bring up Thread interface");
+    SuccessOrExit(error = otThreadSetEnabled(mInstance, true), errorMsg = "Failed to bring up Thread stack");
+
+    // Abort an ongoing join()
+    if (mJoinReceiver != nullptr)
+    {
+        SafeInvoke(mJoinReceiver, OT_ERROR_ABORT, "Join() is aborted");
+    }
+    mJoinReceiver     = aReceiver;
+    receiveResultHere = false;
+
+exit:
+    if (receiveResultHere)
+    {
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+    }
+}
+
+void RcpHost::Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver)
+{
+    otError     error = OT_ERROR_NONE;
+    std::string errorMsg;
+    bool        receiveResultHere = true;
+
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
+
+    if (mThreadEnabledState == ThreadEnabledState::kStateDisabled)
+    {
+        ConditionalErasePersistentInfo(aEraseDataset);
+        ExitNow();
+    }
+
+    ThreadDetachGracefully([aEraseDataset, aReceiver, this] {
+        ConditionalErasePersistentInfo(aEraseDataset);
+        if (aReceiver)
+        {
+            aReceiver(OT_ERROR_NONE, "");
+        }
+    });
+
+exit:
+    if (receiveResultHere)
+    {
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { aReceiver(error, errorMsg); });
+    }
 }
 
 void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
@@ -452,8 +562,13 @@ void RcpHost::ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatase
     otOperationalDataset emptyDataset;
 
     VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
-    VerifyOrExit(IsAttached(), error = OT_ERROR_FAILED,
-                 errorMsg = "Cannot schedule migration when this device is detached");
+
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
+    VerifyOrExit(mThreadEnabledState == ThreadEnabledState::kStateEnabled, error = OT_ERROR_INVALID_STATE,
+                 errorMsg = "Thread is disabled");
+
+    VerifyOrExit(IsAttached(), error = OT_ERROR_INVALID_STATE, errorMsg = "Device is detached");
 
     // TODO: check supported channel mask
 
@@ -488,15 +603,22 @@ void RcpHost::SendMgmtPendingSetCallback(otError aError)
 
 void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver)
 {
-    otError error             = OT_ERROR_NONE;
-    bool    receiveResultHere = true;
+    otError     error             = OT_ERROR_NONE;
+    std::string errorMsg          = "";
+    bool        receiveResultHere = true;
 
-    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE);
-    VerifyOrExit(mSetThreadEnabledReceiver == nullptr, error = OT_ERROR_BUSY);
+    VerifyOrExit(mInstance != nullptr, error = OT_ERROR_INVALID_STATE, errorMsg = "OT is not initialized");
+    VerifyOrExit(mThreadEnabledState != ThreadEnabledState::kStateDisabling, error = OT_ERROR_BUSY,
+                 errorMsg = "Thread is disabling");
 
     if (aEnabled)
     {
         otOperationalDatasetTlvs datasetTlvs;
+
+        if (mThreadEnabledState == ThreadEnabledState::kStateEnabled)
+        {
+            ExitNow();
+        }
 
         if (otDatasetGetActiveTlvs(mInstance, &datasetTlvs) != OT_ERROR_NOT_FOUND && datasetTlvs.mLength > 0 &&
             otThreadGetDeviceRole(mInstance) == OT_DEVICE_ROLE_DISABLED)
@@ -504,10 +626,13 @@ void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
             SuccessOrExit(error = otIp6SetEnabled(mInstance, true));
             SuccessOrExit(error = otThreadSetEnabled(mInstance, true));
         }
+        UpdateThreadEnabledState(ThreadEnabledState::kStateEnabled);
     }
     else
     {
-        SuccessOrExit(error = otThreadDetachGracefully(mInstance, DisableThreadAfterDetach, this));
+        UpdateThreadEnabledState(ThreadEnabledState::kStateDisabling);
+
+        ThreadDetachGracefully([this](void) { DisableThreadAfterDetach(); });
         mSetThreadEnabledReceiver = aReceiver;
         receiveResultHere         = false;
     }
@@ -515,7 +640,7 @@ void RcpHost::SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceive
 exit:
     if (receiveResultHere)
     {
-        mTaskRunner.Post([aReceiver, error](void) { aReceiver(error, ""); });
+        mTaskRunner.Post([aReceiver, error, errorMsg](void) { SafeInvoke(aReceiver, error, errorMsg); });
     }
 }
 
@@ -573,9 +698,37 @@ exit:
 }
 #endif // OTBR_ENABLE_POWER_CALIBRATION
 
-void RcpHost::DisableThreadAfterDetach(void *aContext)
+void RcpHost::ThreadDetachGracefully(const DetachGracefullyCallback &aCallback)
 {
-    static_cast<RcpHost *>(aContext)->DisableThreadAfterDetach();
+    mDetachGracefullyCallbacks.push_back(aCallback);
+
+    // Ignores the OT_ERROR_BUSY error if a detach has already been requested
+    OT_UNUSED_VARIABLE(otThreadDetachGracefully(mInstance, ThreadDetachGracefullyCallback, this));
+}
+
+void RcpHost::ThreadDetachGracefullyCallback(void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->ThreadDetachGracefullyCallback();
+}
+
+void RcpHost::ThreadDetachGracefullyCallback(void)
+{
+    SafeInvokeAndClear(mJoinReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+    SafeInvokeAndClear(mScheduleMigrationReceiver, OT_ERROR_ABORT, "Aborted by leave/disable operation");
+
+    for (auto &callback : mDetachGracefullyCallbacks)
+    {
+        callback();
+    }
+    mDetachGracefullyCallbacks.clear();
+}
+
+void RcpHost::ConditionalErasePersistentInfo(bool aErase)
+{
+    if (aErase)
+    {
+        OT_UNUSED_VARIABLE(otInstanceErasePersistentInfo(mInstance));
+    }
 }
 
 void RcpHost::DisableThreadAfterDetach(void)
@@ -585,6 +738,8 @@ void RcpHost::DisableThreadAfterDetach(void)
 
     SuccessOrExit(error = otThreadSetEnabled(mInstance, false), errorMsg = "Failed to disable Thread stack");
     SuccessOrExit(error = otIp6SetEnabled(mInstance, false), errorMsg = "Failed to disable Thread interface");
+
+    UpdateThreadEnabledState(ThreadEnabledState::kStateDisabled);
 
 exit:
     SafeInvokeAndClear(mSetThreadEnabledReceiver, error, errorMsg);
@@ -615,6 +770,16 @@ bool RcpHost::IsAttached(void)
     otDeviceRole role = GetDeviceRole();
 
     return role == OT_DEVICE_ROLE_CHILD || role == OT_DEVICE_ROLE_ROUTER || role == OT_DEVICE_ROLE_LEADER;
+}
+
+void RcpHost::UpdateThreadEnabledState(ThreadEnabledState aState)
+{
+    mThreadEnabledState = aState;
+
+    for (auto &callback : mThreadEnabledStateChangedCallbacks)
+    {
+        callback(mThreadEnabledState);
+    }
 }
 
 /*

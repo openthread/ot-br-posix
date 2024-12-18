@@ -72,7 +72,13 @@ private:
     otOperationalDatasetTlvs mDatasetActiveTlvs;
 };
 
-class NcpHost : public MainloopProcessor, public ThreadHost, public NcpNetworkProperties
+class NcpHost : public MainloopProcessor,
+                public ThreadHost,
+                public NcpNetworkProperties
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    ,
+                public Mdns::StateObserver
+#endif
 {
 public:
     /**
@@ -91,7 +97,7 @@ public:
 
     // ThreadHost methods
     void Join(const otOperationalDatasetTlvs &aActiveOpDatasetTlvs, const AsyncResultReceiver &aReceiver) override;
-    void Leave(const AsyncResultReceiver &aReceiver) override;
+    void Leave(bool aEraseDataset, const AsyncResultReceiver &aReceiver) override;
     void ScheduleMigration(const otOperationalDatasetTlvs &aPendingOpDatasetTlvs,
                            const AsyncResultReceiver       aReceiver) override;
     void SetThreadEnabled(bool aEnabled, const AsyncResultReceiver aReceiver) override;
@@ -102,6 +108,7 @@ public:
                              const AsyncResultReceiver          &aReceiver) override;
 #endif
     void            AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) override;
+    void            AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) override;
     CoprocessorType GetCoprocessorType(void) override
     {
         return OT_COPROCESSOR_NCP;
@@ -118,7 +125,15 @@ public:
     void Update(MainloopContext &aMainloop) override;
     void Process(const MainloopContext &aMainloop) override;
 
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    void SetMdnsPublisher(Mdns::Publisher *aPublisher);
+#endif
+
 private:
+#if OTBR_ENABLE_SRP_ADVERTISING_PROXY
+    void HandleMdnsState(Mdns::Publisher::State aState) override;
+#endif
+
     ot::Spinel::SpinelDriver &mSpinelDriver;
     otPlatformConfig          mConfig;
     NcpSpinel                 mNcpSpinel;

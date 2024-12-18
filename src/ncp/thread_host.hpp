@@ -98,6 +98,14 @@ public:
     virtual ~NetworkProperties(void) = default;
 };
 
+enum ThreadEnabledState
+{
+    kStateDisabled  = 0,
+    kStateEnabled   = 1,
+    kStateDisabling = 2,
+    kStateInvalid   = 255,
+};
+
 /**
  * This class is an interface which provides a set of async APIs to control the
  * Thread network.
@@ -112,6 +120,7 @@ public:
         std::function<void(uint32_t /*aSupportedChannelMask*/, uint32_t /*aPreferredChannelMask*/)>;
     using DeviceRoleHandler          = std::function<void(otError, otDeviceRole)>;
     using ThreadStateChangedCallback = std::function<void(otChangedFlags aFlags)>;
+    using ThreadEnabledStateCallback = std::function<void(ThreadEnabledState aState)>;
 
     struct ChannelMaxPower
     {
@@ -157,13 +166,13 @@ public:
      *    be called.
      * 2. If this device is not in disabled state, OTBR sends Address Release Notification (i.e. ADDR_REL.ntf)
      *    to gracefully detach from the current network and it takes 1 second to finish.
-     * 3. Then Operational Dataset will be removed from persistent storage.
+     * 3. Then Operational Dataset will be removed from persistent storage if @p aEraseDataset is true.
      * 4. If everything goes fine, @p aReceiver will be invoked with OT_ERROR_NONE. Otherwise, other errors
      *    will be passed to @p aReceiver when the error happens.
      *
      * @param[in] aReceiver  A receiver to get the async result of this operation.
      */
-    virtual void Leave(const AsyncResultReceiver &aRecevier) = 0;
+    virtual void Leave(bool aEraseDataset, const AsyncResultReceiver &aRecevier) = 0;
 
     /**
      * This method migrates this device to the new network specified by @p aPendingOpDatasetTlvs.
@@ -232,6 +241,13 @@ public:
      * @param[in] aCallback  The callback to receive Thread state changed events.
      */
     virtual void AddThreadStateChangedCallback(ThreadStateChangedCallback aCallback) = 0;
+
+    /**
+     * This method adds a event listener for Thread Enabled state changes.
+     *
+     * @param[in] aCallback  The callback to receive Thread Enabled state changed events.
+     */
+    virtual void AddThreadEnabledStateChangedCallback(ThreadEnabledStateCallback aCallback) = 0;
 
     /**
      * Returns the co-processor type.
