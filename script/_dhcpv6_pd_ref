@@ -30,8 +30,7 @@
 #       This script manipulates DHCPv6-PD-REF configuration.
 #
 
-# TODO: set the upstream interface according to the environment variables of `script/setup`.
-UPSTREAM_INTERFACE="eth0"
+UPSTREAM_INTERFACE=${INFRA_IF_NAME}
 
 DHCPCD_ENTER_HOOK="/etc/dhcpcd.enter-hook"
 DHCPCD_EXIT_HOOK="/etc/dhcpcd.exit-hook"

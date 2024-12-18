@@ -27,8 +27,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-# TODO: set the upstream interface according to the environment variables of `script/setup`.
-UPSTREAM_INTERFACE="eth0"
+UPSTREAM_INTERFACE=${INFRA_IF_NAME}
 WPAN_INTERFACE="wpan0"
 
 RADVD_CONF="/etc/radvd.conf"
