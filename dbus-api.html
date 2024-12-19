@@ -33,9 +33,9 @@
 <a class="link" href="index.html#gdbus-method-io-openthread-BorderRouter.ActivateEphemeralKeyMode" title="The ActivateEphemeralKeyMode() method">ActivateEphemeralKeyMode</a>      (IN  u                  lifetime,
                                OUT s                  epskc);
 <a class="link" href="index.html#gdbus-method-io-openthread-BorderRouter.DeactivateEphemeralKeyMode" title="The DeactivateEphemeralKeyMode() method">DeactivateEphemeralKeyMode</a>    (IN  b                  retain_active_session);
-</pre></div><div class="refsect1"><a name="idm32"></a><h2>Signals</h2><pre class="synopsis">
+</pre></div><div class="refsect1"><a name="id1368"></a><h2>Signals</h2><pre class="synopsis">
 <a class="link" href="index.html#gdbus-signal-io-openthread-BorderRouter.Ready" title='The "Ready" signal'>Ready</a> ();
-</pre></div><div class="refsect1"><a name="idm36"></a><h2>Properties</h2><pre class="synopsis">
+</pre></div><div class="refsect1"><a name="id1372"></a><h2>Properties</h2><pre class="synopsis">
 <a class="link" href="index.html#gdbus-property-io-openthread-BorderRouter.EphemeralKeyEnabled" title='The "EphemeralKeyEnabled" property'>EphemeralKeyEnabled</a>              readwrite  b
 <a class="link" href="index.html#gdbus-property-io-openthread-BorderRouter.MeshLocalPrefix" title='The "MeshLocalPrefix" property'>MeshLocalPrefix</a>                  readwrite  ay
 <a class="link" href="index.html#gdbus-property-io-openthread-BorderRouter.LinkMode" title='The "LinkMode" property'>LinkMode</a>                         readwrite  (bbb)
@@ -93,30 +93,33 @@
 <a class="link" href="index.html#gdbus-property-io-openthread-BorderRouter.Capabilities" title='The "Capabilities" property'>Capabilities</a>                     readable   ay
 </pre></div><div class="refsect1"><a name="gdbus-interface-io-openthread-BorderRouter"></a><h2>Description</h2><p>
 </p><p>
-</p></div><div class="refsect1"><a name="gdbus-methods-io.openthread.BorderRouter"></a><h2>Method Details</h2><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Scan"></a><h3>The Scan() method</h3><a class="indexterm" name="idm102"></a><pre class="programlisting">
+</p></div><div class="refsect1"><a name="gdbus-methods-io.openthread.BorderRouter"></a><h2>Method Details</h2><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Scan"></a><h3>The Scan() method</h3><a class="indexterm" name="id1438"></a><pre class="programlisting">
 Scan (OUT a(tstayqqynyybb) scan_result);
 </pre><p>
 Perform a Thread network scan.
-The result struture definition is:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint64 ext_address<br>
-string network_name<br>
-uint64 ext_panid<br>
-uint8[] steering_data<br>
-uint16 panid<br>
-uint16 joiner_udp_port<br>
-uint8 channel<br>
-int16 rssi<br>
-uint8 lqi<br>
-uint8 version<br>
-bool is_native<br>
-bool is_joinable<br>
-}<br>
-</p></div><p>
+</p><p>
+     <em class="parameter"><code>scan_result</code></em>: array of scan results.
+</p><p>
+     The result struture definition is:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint64 ext_address<br>
+         string network_name<br>
+         uint64 ext_panid<br>
+         uint8[] steering_data<br>
+         uint16 panid<br>
+         uint16 joiner_udp_port<br>
+         uint8 channel<br>
+         int16 rssi<br>
+         uint8 lqi<br>
+         uint8 version<br>
+         bool is_native<br>
+         bool is_joinable<br>
+       }<br>
+     </p></div><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">OUT a(tstayqqynyybb) <em class="parameter"><code>scan_result</code></em></code>:</span></dt><dd><p>
-array of scan results.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.EnergyScan"></a><h3>The EnergyScan() method</h3><a class="indexterm" name="idm116"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.EnergyScan"></a><h3>The EnergyScan() method</h3><a class="indexterm" name="id1456"></a><pre class="programlisting">
 EnergyScan (IN  u     scanduration,
             OUT a(yy) result);
 </pre><p>
@@ -125,7 +128,7 @@ EnergyScan (IN  u     scanduration,
 </p><p>
 </p></dd><dt><span class="term"><code class="literal">OUT a(yy) <em class="parameter"><code>result</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Attach"></a><h3>The Attach() method</h3><a class="indexterm" name="idm138"></a><pre class="programlisting">
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Attach"></a><h3>The Attach() method</h3><a class="indexterm" name="id1478"></a><pre class="programlisting">
 Attach (IN  ay networkkey,
         IN  q  panid,
         IN  s  networkname,
@@ -134,49 +137,61 @@ Attach (IN  ay networkkey,
         IN  u  channel_mask);
 </pre><p>
 Attach the current device to the Thread network.
-You can also call this method with no arugment to use the current active network dataset.
+</p><p>
+     <em class="parameter"><code>networkkey</code></em>: The 128-bit network network key, empty for random.
+     <em class="parameter"><code>panid</code></em>: The 16-bit panid, UINT16_MAX for any.
+     <em class="parameter"><code>networkname</code></em>: The Thread network name.
+     <em class="parameter"><code>extpanid</code></em>: The 64-bit extended panid, UINT64_MAX for random.
+     <em class="parameter"><code>pskc</code></em>: The 128-bit pre-shared key for commissione, empty for random.
+     <em class="parameter"><code>channel_mask</code></em>: The bitwise channel mask, will randomly select a valid channel.
+</p><p>
+     You can also call this method with no arugment to use the current active network dataset.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN ay <em class="parameter"><code>networkkey</code></em></code>:</span></dt><dd><p>
-The 128-bit network network key, empty for random.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN q <em class="parameter"><code>panid</code></em></code>:</span></dt><dd><p>
-The 16-bit panid, UINT16_MAX for any.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN s <em class="parameter"><code>networkname</code></em></code>:</span></dt><dd><p>
-The Thread network name.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN t <em class="parameter"><code>extpanid</code></em></code>:</span></dt><dd><p>
-The 64-bit extended panid, UINT64_MAX for random.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN ay <em class="parameter"><code>pskc</code></em></code>:</span></dt><dd><p>
-The 128-bit pre-shared key for commissione, empty for random.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN u <em class="parameter"><code>channel_mask</code></em></code>:</span></dt><dd><p>
-The bitwise channel mask, will randomly select a valid channel.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.AttachAllNodesTo"></a><h3>The AttachAllNodesTo() method</h3><a class="indexterm" name="idm181"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.AttachAllNodesTo"></a><h3>The AttachAllNodesTo() method</h3><a class="indexterm" name="id1535"></a><pre class="programlisting">
 AttachAllNodesTo (IN  ay dataset,
                   OUT x  delay_ms);
 </pre><p>
 Request to attach all nodes to the specified Thread network.
 </p><p>
-to attach to. It must be a full dataset.
-<em class="parameter"><code>delay_ms</code></em>: The delay between the method returns and the dataset takes effect, in
-milliseconds. If this value is 0, then the node is attached to the given network
-when this method returns. If this value is not 0, then the node is attached to
-its existing network when this method returns, and will attach to the given
-network after the delay.
+     <em class="parameter"><code>dataset</code></em>: The Operational Dataset that contains parameter values of the Thread network
+               to attach to. It must be a full dataset.
+     <em class="parameter"><code>delay_ms</code></em>: The delay between the method returns and the dataset takes effect, in
+                milliseconds. If this value is 0, then the node is attached to the given network
+                when this method returns. If this value is not 0, then the node is attached to
+                its existing network when this method returns, and will attach to the given
+                network after the delay.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN ay <em class="parameter"><code>dataset</code></em></code>:</span></dt><dd><p>
-The Operational Dataset that contains parameter values of the Thread network
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">OUT x <em class="parameter"><code>delay_ms</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Detach"></a><h3>The Detach() method</h3><a class="indexterm" name="idm203"></a><pre class="programlisting">
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Detach"></a><h3>The Detach() method</h3><a class="indexterm" name="id1559"></a><pre class="programlisting">
 Detach ();
 </pre><p>
 Detach the current device from the Thread network.
-</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.PermitUnsecureJoin"></a><h3>The PermitUnsecureJoin() method</h3><a class="indexterm" name="idm209"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.PermitUnsecureJoin"></a><h3>The PermitUnsecureJoin() method</h3><a class="indexterm" name="id1565"></a><pre class="programlisting">
 PermitUnsecureJoin (IN  q port,
                     IN  u timeout);
 </pre><p>
 Allow joining the network via unsecure traffic temporarily.
+</p><p>
+     <em class="parameter"><code>port</code></em>: The port of the unsecure traffic.
+     <em class="parameter"><code>timeout</code></em>: The timeout for the permission.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN q <em class="parameter"><code>port</code></em></code>:</span></dt><dd><p>
-The port of the unsecure traffic.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN u <em class="parameter"><code>timeout</code></em></code>:</span></dt><dd><p>
-The timeout for the permission.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.JoinerStart"></a><h3>The JoinerStart() method</h3><a class="indexterm" name="idm228"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.JoinerStart"></a><h3>The JoinerStart() method</h3><a class="indexterm" name="id1589"></a><pre class="programlisting">
 JoinerStart (IN  s pskd,
              IN  s provision_url,
              IN  s vendor_name,
@@ -185,10 +200,17 @@ JoinerStart (IN  s pskd,
              IN  s vendor_data);
 </pre><p>
 Start Thread joining.
+</p><p>
+     <em class="parameter"><code>pskd</code></em>: The pre-shared key for the device.
+     <em class="parameter"><code>provision_url</code></em>: The url for further provision.
+     <em class="parameter"><code>vendor</code></em> vendor_name: The current device vendor name.
+     <em class="parameter"><code>vendor</code></em> vendor_model: The current device model.
+     <em class="parameter"><code>vendor</code></em> vendor_sw_version: The current device software version.
+     <em class="parameter"><code>vendor</code></em> vendor_data: The additional vendor data.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN s <em class="parameter"><code>pskd</code></em></code>:</span></dt><dd><p>
-The pre-shared key for the device.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN s <em class="parameter"><code>provision_url</code></em></code>:</span></dt><dd><p>
-The url for further provision.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">IN s <em class="parameter"><code>vendor_name</code></em></code>:</span></dt><dd><p>
 </p><p>
 </p></dd><dt><span class="term"><code class="literal">IN s <em class="parameter"><code>vendor_model</code></em></code>:</span></dt><dd><p>
@@ -197,814 +219,830 @@ The url for further provision.
 </p><p>
 </p></dd><dt><span class="term"><code class="literal">IN s <em class="parameter"><code>vendor_data</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.JoinerStop"></a><h3>The JoinerStop() method</h3><a class="indexterm" name="idm275"></a><pre class="programlisting">
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.JoinerStop"></a><h3>The JoinerStop() method</h3><a class="indexterm" name="id1645"></a><pre class="programlisting">
 JoinerStop ();
 </pre><p>
 Stop Thread joining.
-</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.FactoryReset"></a><h3>The FactoryReset() method</h3><a class="indexterm" name="idm281"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.FactoryReset"></a><h3>The FactoryReset() method</h3><a class="indexterm" name="id1651"></a><pre class="programlisting">
 FactoryReset ();
 </pre><p>
 Perform a factory reset, will wipe all Thread persistent data.
-</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Reset"></a><h3>The Reset() method</h3><a class="indexterm" name="idm287"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.Reset"></a><h3>The Reset() method</h3><a class="indexterm" name="id1657"></a><pre class="programlisting">
 Reset ();
 </pre><p>
 Perform a reset, will try to resume the network after reset.
-</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.AddExternalRoute"></a><h3>The AddExternalRoute() method</h3><a class="indexterm" name="idm293"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.AddExternalRoute"></a><h3>The AddExternalRoute() method</h3><a class="indexterm" name="id1663"></a><pre class="programlisting">
 AddExternalRoute (IN  ((ayy)qybb) prefix);
 </pre><p>
 Add an external border routing rule to the network.
-This will make the current device act as the border router for the prefix.
-The prefix structure is:
-</p><div class="literallayout"><p><br>
-struct {<br>
-struct {<br>
-uint8[] prefix_bytes<br>
-uint8 prefix_length<br>
-}<br>
-uint16 rloc // Not used<br>
-uint8 preference<br>
-bool stable<br>
-bool next_hop_is_self // Not used<br>
-}<br>
-</p></div><p>
+</p><p>
+     <em class="parameter"><code>prefix</code></em>: The prefix for border routing.
+</p><p>
+     This will make the current device act as the border router for the prefix.
+     The prefix structure is:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         struct {<br>
+           uint8[] prefix_bytes<br>
+           uint8 prefix_length<br>
+         }<br>
+         uint16 rloc // Not used<br>
+         uint8 preference<br>
+         bool stable<br>
+         bool next_hop_is_self // Not used<br>
+       }<br>
+     </p></div><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN ((ayy)qybb) <em class="parameter"><code>prefix</code></em></code>:</span></dt><dd><p>
-The prefix for border routing.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.RemoveExternalRoute"></a><h3>The RemoveExternalRoute() method</h3><a class="indexterm" name="idm307"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.RemoveExternalRoute"></a><h3>The RemoveExternalRoute() method</h3><a class="indexterm" name="id1681"></a><pre class="programlisting">
 RemoveExternalRoute (IN  (ayy) prefix);
 </pre><p>
 Remove an external border routing rule from the network.
-The prefix structure is:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint8[] prefix_bytes<br>
-uint8 prefix_length<br>
-}<br>
-</p></div><p>
+</p><p>
+     <em class="parameter"><code>prefix</code></em>: The prefix for border routing.
+</p><p>
+     The prefix structure is:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint8[] prefix_bytes<br>
+         uint8 prefix_length<br>
+       }<br>
+     </p></div><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN (ayy) <em class="parameter"><code>prefix</code></em></code>:</span></dt><dd><p>
-The prefix for border routing.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.AddOnMeshPrefix"></a><h3>The AddOnMeshPrefix() method</h3><a class="indexterm" name="idm321"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.AddOnMeshPrefix"></a><h3>The AddOnMeshPrefix() method</h3><a class="indexterm" name="id1699"></a><pre class="programlisting">
 AddOnMeshPrefix (IN  ((ayy)qybbbbbbbbb) prefix);
 </pre><p>
 Add an on-mesh prefix to the network.
-The on-mesh prefix structure is:
-</p><div class="literallayout"><p><br>
-struct {<br>
-struct {<br>
-uint8[] prefix_bytes<br>
-uint8 prefix_length<br>
-}<br>
-uint16 rloc16<br>
-byte preference<br>
-bool preferred<br>
-bool slaac<br>
-bool dhcp<br>
-bool configure<br>
-bool default_route<br>
-bool on_mesh<br>
-bool stable<br>
-bool nd_dns<br>
-bool dp<br>
-}<br>
-</p></div><p>
+</p><p>
+     <em class="parameter"><code>prefix</code></em>: The on-mesh prefix.
+</p><p>
+     The on-mesh prefix structure is:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         struct {<br>
+           uint8[] prefix_bytes<br>
+           uint8 prefix_length<br>
+         }<br>
+         uint16 rloc16<br>
+         byte preference<br>
+         bool preferred<br>
+         bool slaac<br>
+         bool dhcp<br>
+         bool configure<br>
+         bool default_route<br>
+         bool on_mesh<br>
+         bool stable<br>
+         bool nd_dns<br>
+         bool dp<br>
+       }<br>
+     </p></div><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN ((ayy)qybbbbbbbbb) <em class="parameter"><code>prefix</code></em></code>:</span></dt><dd><p>
-The on-mesh prefix.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.RemoveOnMeshPrefix"></a><h3>The RemoveOnMeshPrefix() method</h3><a class="indexterm" name="idm335"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.RemoveOnMeshPrefix"></a><h3>The RemoveOnMeshPrefix() method</h3><a class="indexterm" name="id1717"></a><pre class="programlisting">
 RemoveOnMeshPrefix (IN  (ayy) prefix);
 </pre><p>
 Remove an on-mesh prefix from the network.
-The prefix structure is:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint8[] prefix_bytes<br>
-uint8 prefix_length<br>
-}<br>
-</p></div><p>
+</p><p>
+     <em class="parameter"><code>prefix</code></em>: The on-mesh prefix.
+</p><p>
+     The prefix structure is:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint8[] prefix_bytes<br>
+         uint8 prefix_length<br>
+       }<br>
+     </p></div><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN (ayy) <em class="parameter"><code>prefix</code></em></code>:</span></dt><dd><p>
-The on-mesh prefix.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.UpdateVendorMeshCopTxtEntries"></a><h3>The UpdateVendorMeshCopTxtEntries() method</h3><a class="indexterm" name="idm349"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.UpdateVendorMeshCopTxtEntries"></a><h3>The UpdateVendorMeshCopTxtEntries() method</h3><a class="indexterm" name="id1735"></a><pre class="programlisting">
 UpdateVendorMeshCopTxtEntries (IN  a(say) update);
 </pre><p>
 </p><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN a(say) <em class="parameter"><code>update</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.GetProperties"></a><h3>The GetProperties() method</h3><a class="indexterm" name="idm364"></a><pre class="programlisting">
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.GetProperties"></a><h3>The GetProperties() method</h3><a class="indexterm" name="id1750"></a><pre class="programlisting">
 GetProperties (IN  as properties);
 </pre><p>
 Get one or more OpenThread properties.
+</p><p>
+     <em class="parameter"><code>properties</code></em>: Names of properties.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN as <em class="parameter"><code>properties</code></em></code>:</span></dt><dd><p>
-Names of properties.
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.LeaveNetwork"></a><h3>The LeaveNetwork() method</h3><a class="indexterm" name="idm377"></a><pre class="programlisting">
+</p><p>
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.LeaveNetwork"></a><h3>The LeaveNetwork() method</h3><a class="indexterm" name="id1766"></a><pre class="programlisting">
 LeaveNetwork ();
 </pre><p>
 Detach from the network and forget the credentials.
-</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.SetNat64Enabled"></a><h3>The SetNat64Enabled() method</h3><a class="indexterm" name="idm383"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.SetNat64Enabled"></a><h3>The SetNat64Enabled() method</h3><a class="indexterm" name="id1772"></a><pre class="programlisting">
 SetNat64Enabled (IN  b enable);
 </pre><p>
 </p><p>
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN b <em class="parameter"><code>enable</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.ActivateEphemeralKeyMode"></a><h3>The ActivateEphemeralKeyMode() method</h3><a class="indexterm" name="idm398"></a><pre class="programlisting">
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.ActivateEphemeralKeyMode"></a><h3>The ActivateEphemeralKeyMode() method</h3><a class="indexterm" name="id1787"></a><pre class="programlisting">
 ActivateEphemeralKeyMode (IN  u lifetime,
                           OUT s epskc);
 </pre><p>
 Activate ePSKc mode.
 </p><p>
-0 for OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 min). Valid value is [0,
-OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 min)].
-<em class="parameter"><code>epskc</code></em>: returns the ephemeral key digit string of length 9 with first 8 digits randomly generated,
-and the last digit as verhoeff checksum.
+     <em class="parameter"><code>lifetime</code></em>: in milliseconds, duration of active ePSKc mode before secure session is established.
+                0 for OT_BORDER_AGENT_DEFAULT_EPHEMERAL_KEY_TIMEOUT (2 min). Valid value is [0,
+                OT_BORDER_AGENT_MAX_EPHEMERAL_KEY_TIMEOUT (10 min)].
+     <em class="parameter"><code>epskc</code></em>: returns the ephemeral key digit string of length 9 with first 8 digits randomly generated,
+             and the last digit as verhoeff checksum.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN u <em class="parameter"><code>lifetime</code></em></code>:</span></dt><dd><p>
-in milliseconds, duration of active ePSKc mode before secure session is established.
+</p><p>
 </p></dd><dt><span class="term"><code class="literal">OUT s <em class="parameter"><code>epskc</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.DeactivateEphemeralKeyMode"></a><h3>The DeactivateEphemeralKeyMode() method</h3><a class="indexterm" name="idm420"></a><pre class="programlisting">
+</p></dd></dl></div></div><div class="refsect2"><a name="gdbus-method-io-openthread-BorderRouter.DeactivateEphemeralKeyMode"></a><h3>The DeactivateEphemeralKeyMode() method</h3><a class="indexterm" name="id1811"></a><pre class="programlisting">
 DeactivateEphemeralKeyMode (IN  b retain_active_session);
 </pre><p>
 Deactivate ePSKc mode.
 </p><p>
-"false" - Disconnects the Border Agent from any active secure sessions.
-Ephemeral key would be cleared after the session is disconnected.
-"true" - Deactivate ephemeral key mode softly. If there is already an active commissioner
-connection, the session will be retained and the ephemeral key mode is still active.
+     <em class="parameter"><code>retain_active_session</code></em>:
+       "false" - Disconnects the Border Agent from any active secure sessions.
+                 Ephemeral key would be cleared after the session is disconnected.
+       "true" - Deactivate ephemeral key mode softly. If there is already an active commissioner
+                connection, the session will be retained and the ephemeral key mode is still active.
 </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IN b <em class="parameter"><code>retain_active_session</code></em></code>:</span></dt><dd><p>
 </p><p>
-</p></dd></dl></div></div></div><div class="refsect1"><a name="gdbus-signals-io.openthread.BorderRouter"></a><h2>Signal Details</h2><div class="refsect2"><a name="gdbus-signal-io-openthread-BorderRouter.Ready"></a><h3>The "Ready" signal</h3><a class="indexterm" name="idm437"></a><pre class="programlisting">
+</p></dd></dl></div></div></div><div class="refsect1"><a name="gdbus-signals-io.openthread.BorderRouter"></a><h2>Signal Details</h2><div class="refsect2"><a name="gdbus-signal-io-openthread-BorderRouter.Ready"></a><h3>The "Ready" signal</h3><a class="indexterm" name="id1829"></a><pre class="programlisting">
 Ready ();
 </pre><p>
 </p><p>
-</p></div></div><div class="refsect1"><a name="gdbus-properties-io.openthread.BorderRouter"></a><h2>Property Details</h2><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.EphemeralKeyEnabled"></a><h3>The "EphemeralKeyEnabled" property</h3><a class="indexterm" name="idm446"></a><pre class="programlisting">
+</p></div></div><div class="refsect1"><a name="gdbus-properties-io.openthread.BorderRouter"></a><h2>Property Details</h2><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.EphemeralKeyEnabled"></a><h3>The "EphemeralKeyEnabled" property</h3><a class="indexterm" name="id1838"></a><pre class="programlisting">
 EphemeralKeyEnabled  readwrite  b
 </pre><p>
 </p><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.MeshLocalPrefix"></a><h3>The "MeshLocalPrefix" property</h3><a class="indexterm" name="idm453"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.MeshLocalPrefix"></a><h3>The "MeshLocalPrefix" property</h3><a class="indexterm" name="id1845"></a><pre class="programlisting">
 MeshLocalPrefix  readwrite  ay
 </pre><p>
 The /64 mesh-local prefix.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkMode"></a><h3>The "LinkMode" property</h3><a class="indexterm" name="idm459"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkMode"></a><h3>The "LinkMode" property</h3><a class="indexterm" name="id1851"></a><pre class="programlisting">
 LinkMode  readwrite  (bbb)
 </pre><p>
 The current link mode.
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-bool rx_on_when_idle    //whether the radio receiving is on when idle<br>
-bool device_type        //ftd or mtd<br>
-bool network_data       //full or stable<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.DeviceRole"></a><h3>The "DeviceRole" property</h3><a class="indexterm" name="idm467"></a><pre class="programlisting">
+     </p><div class="literallayout"><p><br>
+     struct {<br>
+       bool rx_on_when_idle    //whether the radio receiving is on when idle<br>
+       bool device_type        //ftd or mtd<br>
+       bool network_data       //full or stable<br>
+     }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.DeviceRole"></a><h3>The "DeviceRole" property</h3><a class="indexterm" name="id1859"></a><pre class="programlisting">
 DeviceRole  readable   s
 </pre><p>
 The current device role.
 </p><p>
-Possible values are:
-</p><div class="literallayout"><p><br>
-0: Disabled<br>
-1: Detached<br>
-2: Child<br>
-3: Router<br>
-4: Leader<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.NetworkName"></a><h3>The "NetworkName" property</h3><a class="indexterm" name="idm475"></a><pre class="programlisting">
+     Possible values are:
+     </p><div class="literallayout"><p><br>
+       0: Disabled<br>
+       1: Detached<br>
+       2: Child<br>
+       3: Router<br>
+       4: Leader<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.NetworkName"></a><h3>The "NetworkName" property</h3><a class="indexterm" name="id1867"></a><pre class="programlisting">
 NetworkName  readable   s
 </pre><p>
 The network name.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.PanId"></a><h3>The "PanId" property</h3><a class="indexterm" name="idm481"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.PanId"></a><h3>The "PanId" property</h3><a class="indexterm" name="id1873"></a><pre class="programlisting">
 PanId  readable   q
 </pre><p>
 The pan ID.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ExtPanId"></a><h3>The "ExtPanId" property</h3><a class="indexterm" name="idm487"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ExtPanId"></a><h3>The "ExtPanId" property</h3><a class="indexterm" name="id1879"></a><pre class="programlisting">
 ExtPanId  readable   t
 </pre><p>
 The extended pan ID.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Channel"></a><h3>The "Channel" property</h3><a class="indexterm" name="idm493"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Channel"></a><h3>The "Channel" property</h3><a class="indexterm" name="id1885"></a><pre class="programlisting">
 Channel  readable   q
 </pre><p>
 The current network channel, from 11 to 26
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.CcaFailureRate"></a><h3>The "CcaFailureRate" property</h3><a class="indexterm" name="idm499"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.CcaFailureRate"></a><h3>The "CcaFailureRate" property</h3><a class="indexterm" name="id1891"></a><pre class="programlisting">
 CcaFailureRate  readable   q
 </pre><p>
 The Clear Channel Assessment failure rate.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.MacCounters"></a><h3>The "MacCounters" property</h3><a class="indexterm" name="idm505"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.MacCounters"></a><h3>The "MacCounters" property</h3><a class="indexterm" name="id1897"></a><pre class="programlisting">
 MacCounters  readable   (uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu)
 </pre><p>
 The mac layer statistic counters.
 </p><p>
-The counter structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint32 tx_total;<br>
-uint32 tx_unicast;<br>
-uint32 tx_broadcast;<br>
-uint32 tx_ack_requested;<br>
-uint32 tx_acked;<br>
-uint32 tx_no_ack_requested;<br>
-uint32 tx_data;<br>
-uint32 tx_data_poll;<br>
-uint32 tx_beacon;<br>
-uint32 tx_beacon_request;<br>
-uint32 tx_other;<br>
-uint32 tx_retry;<br>
-uint32 tx_err_cca;<br>
-uint32 tx_err_abort;<br>
-uint32 tx_busy_channel;<br>
-uint32 rx_total;<br>
-uint32 rx_unicast;<br>
-uint32 rx_broadcast;<br>
-uint32 rx_data;<br>
-uint32 rx_data_poll;<br>
-uint32 rx_beacon;<br>
-uint32 rx_beacon_request;<br>
-uint32 rx_other;<br>
-uint32 rx_address_filtered;<br>
-uint32 rx_dest_address_filtered;<br>
-uint32 rx_duplicated;<br>
-uint32 rx_err_no_frame;<br>
-uint32 rx_err_unknown_neighbor;<br>
-uint32 rx_err_invalid_src_addr;<br>
-uint32 rx_err_sec;<br>
-uint32 rx_err_fcs;<br>
-uint32 rx_err_other;<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkCounters"></a><h3>The "LinkCounters" property</h3><a class="indexterm" name="idm513"></a><pre class="programlisting">
+     The counter structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint32 tx_total;<br>
+         uint32 tx_unicast;<br>
+         uint32 tx_broadcast;<br>
+         uint32 tx_ack_requested;<br>
+         uint32 tx_acked;<br>
+         uint32 tx_no_ack_requested;<br>
+         uint32 tx_data;<br>
+         uint32 tx_data_poll;<br>
+         uint32 tx_beacon;<br>
+         uint32 tx_beacon_request;<br>
+         uint32 tx_other;<br>
+         uint32 tx_retry;<br>
+         uint32 tx_err_cca;<br>
+         uint32 tx_err_abort;<br>
+         uint32 tx_busy_channel;<br>
+         uint32 rx_total;<br>
+         uint32 rx_unicast;<br>
+         uint32 rx_broadcast;<br>
+         uint32 rx_data;<br>
+         uint32 rx_data_poll;<br>
+         uint32 rx_beacon;<br>
+         uint32 rx_beacon_request;<br>
+         uint32 rx_other;<br>
+         uint32 rx_address_filtered;<br>
+         uint32 rx_dest_address_filtered;<br>
+         uint32 rx_duplicated;<br>
+         uint32 rx_err_no_frame;<br>
+         uint32 rx_err_unknown_neighbor;<br>
+         uint32 rx_err_invalid_src_addr;<br>
+         uint32 rx_err_sec;<br>
+         uint32 rx_err_fcs;<br>
+         uint32 rx_err_other;<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkCounters"></a><h3>The "LinkCounters" property</h3><a class="indexterm" name="id1905"></a><pre class="programlisting">
 LinkCounters  readable   (uuuu)
 </pre><p>
 The link statistic counters.
 </p><p>
-The counter structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint32 ip_tx_success;<br>
-uint32 ip_rx_success;<br>
-uint32 ip_tx_failure;<br>
-uint32 ip_rx_failure;<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkSupportedChannelMask"></a><h3>The "LinkSupportedChannelMask" property</h3><a class="indexterm" name="idm521"></a><pre class="programlisting">
+     The counter structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint32 ip_tx_success;<br>
+         uint32 ip_rx_success;<br>
+         uint32 ip_tx_failure;<br>
+         uint32 ip_rx_failure;<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkSupportedChannelMask"></a><h3>The "LinkSupportedChannelMask" property</h3><a class="indexterm" name="id1913"></a><pre class="programlisting">
 LinkSupportedChannelMask  readable   u
 </pre><p>
 The bitwise link supported channel mask
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkPreferredChannelMask"></a><h3>The "LinkPreferredChannelMask" property</h3><a class="indexterm" name="idm527"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LinkPreferredChannelMask"></a><h3>The "LinkPreferredChannelMask" property</h3><a class="indexterm" name="id1919"></a><pre class="programlisting">
 LinkPreferredChannelMask  readable   u
 </pre><p>
 The bitwise link preferred channel mask
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Rloc16"></a><h3>The "Rloc16" property</h3><a class="indexterm" name="idm533"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Rloc16"></a><h3>The "Rloc16" property</h3><a class="indexterm" name="id1925"></a><pre class="programlisting">
 Rloc16  readable   q
 </pre><p>
 The 16-bit routing locator
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ExtendedAddress"></a><h3>The "ExtendedAddress" property</h3><a class="indexterm" name="idm539"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ExtendedAddress"></a><h3>The "ExtendedAddress" property</h3><a class="indexterm" name="id1931"></a><pre class="programlisting">
 ExtendedAddress  readable   t
 </pre><p>
 The 64-bit extended address
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RouterID"></a><h3>The "RouterID" property</h3><a class="indexterm" name="idm545"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RouterID"></a><h3>The "RouterID" property</h3><a class="indexterm" name="id1937"></a><pre class="programlisting">
 RouterID  readable   y
 </pre><p>
 The current router ID
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LeaderData"></a><h3>The "LeaderData" property</h3><a class="indexterm" name="idm551"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LeaderData"></a><h3>The "LeaderData" property</h3><a class="indexterm" name="id1943"></a><pre class="programlisting">
 LeaderData  readable   (uyyyy)
 </pre><p>
 The network leader data.
 </p><p>
-The structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint32_t mPartitionId;       // Partition ID<br>
-uint8_t  mWeighting;         // Leader Weight<br>
-uint8_t  mDataVersion;       // Full Network Data Version<br>
-uint8_t  mStableDataVersion; // Stable Network Data Version<br>
-uint8_t  mLeaderRouterId;    // Leader Router ID<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.NetworkData"></a><h3>The "NetworkData" property</h3><a class="indexterm" name="idm559"></a><pre class="programlisting">
+     The structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint32_t mPartitionId;       // Partition ID<br>
+         uint8_t  mWeighting;         // Leader Weight<br>
+         uint8_t  mDataVersion;       // Full Network Data Version<br>
+         uint8_t  mStableDataVersion; // Stable Network Data Version<br>
+         uint8_t  mLeaderRouterId;    // Leader Router ID<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.NetworkData"></a><h3>The "NetworkData" property</h3><a class="indexterm" name="id1951"></a><pre class="programlisting">
 NetworkData  readable   ay
 </pre><p>
 The network data.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.StableNetworkData"></a><h3>The "StableNetworkData" property</h3><a class="indexterm" name="idm565"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.StableNetworkData"></a><h3>The "StableNetworkData" property</h3><a class="indexterm" name="id1957"></a><pre class="programlisting">
 StableNetworkData  readable   ay
 </pre><p>
 The stable network data.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LocalLeaderWeight"></a><h3>The "LocalLeaderWeight" property</h3><a class="indexterm" name="idm571"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.LocalLeaderWeight"></a><h3>The "LocalLeaderWeight" property</h3><a class="indexterm" name="id1963"></a><pre class="programlisting">
 LocalLeaderWeight  readable   y
 </pre><p>
 The leader weight of the current node.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ChannelMonitorSampleCount"></a><h3>The "ChannelMonitorSampleCount" property</h3><a class="indexterm" name="idm577"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ChannelMonitorSampleCount"></a><h3>The "ChannelMonitorSampleCount" property</h3><a class="indexterm" name="id1969"></a><pre class="programlisting">
 ChannelMonitorSampleCount  readable   u
 </pre><p>
 The number of the collected samples from the channel monitor
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ChannelMonitorChannelQualityMap"></a><h3>The "ChannelMonitorChannelQualityMap" property</h3><a class="indexterm" name="idm583"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ChannelMonitorChannelQualityMap"></a><h3>The "ChannelMonitorChannelQualityMap" property</h3><a class="indexterm" name="id1975"></a><pre class="programlisting">
 ChannelMonitorChannelQualityMap  readable   a(yq)
 </pre><p>
 The channel monitor statistics data.
 </p><p>
-The structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint8_t  mChannel;<br>
-uint16_t mOccupancy;<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ChildTable"></a><h3>The "ChildTable" property</h3><a class="indexterm" name="idm591"></a><pre class="programlisting">
+     The structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint8_t  mChannel;<br>
+         uint16_t mOccupancy;<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ChildTable"></a><h3>The "ChildTable" property</h3><a class="indexterm" name="id1983"></a><pre class="programlisting">
 ChildTable  readable   a(tuuqqyyyyqqbbbb)
 </pre><p>
 The node's child table as an array of child entry structure.
 </p><p>
-The child entry structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint64_t mExtAddress;         // IEEE 802.15.4 Extended Address<br>
-uint32_t mTimeout;            // Timeout<br>
-uint32_t mAge;                // Time last heard<br>
-uint16_t mRloc16;             // RLOC16<br>
-uint16_t mChildId;            // Child ID<br>
-uint8_t  mNetworkDataVersion; // Network Data Version<br>
-uint8_t  mLinkQualityIn;      // Link Quality In<br>
-int8_t   mAverageRssi;        // Average RSSI<br>
-int8_t   mLastRssi;           // Last observed RSSI<br>
-uint16_t mFrameErrorRate;     // Frame error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
-uint16_t mMessageErrorRate;   // (IPv6) msg error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
-bool     mRxOnWhenIdle;       // rx-on-when-idle<br>
-bool     mFullThreadDevice;   // Full Thread Device<br>
-bool     mFullNetworkData;    // Full Network Data<br>
-bool     mIsStateRestoring;   // Is in restoring state<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.NeighborTable"></a><h3>The "NeighborTable" property</h3><a class="indexterm" name="idm601"></a><pre class="programlisting">
+     The child entry structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint64_t mExtAddress;         // IEEE 802.15.4 Extended Address<br>
+         uint32_t mTimeout;            // Timeout<br>
+         uint32_t mAge;                // Time last heard<br>
+         uint16_t mRloc16;             // RLOC16<br>
+         uint16_t mChildId;            // Child ID<br>
+         uint8_t  mNetworkDataVersion; // Network Data Version<br>
+         uint8_t  mLinkQualityIn;      // Link Quality In<br>
+         int8_t   mAverageRssi;        // Average RSSI<br>
+         int8_t   mLastRssi;           // Last observed RSSI<br>
+         uint16_t mFrameErrorRate;     // Frame error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
+         uint16_t mMessageErrorRate;   // (IPv6) msg error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
+         bool     mRxOnWhenIdle;       // rx-on-when-idle<br>
+         bool     mFullThreadDevice;   // Full Thread Device<br>
+         bool     mFullNetworkData;    // Full Network Data<br>
+         bool     mIsStateRestoring;   // Is in restoring state<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.NeighborTable"></a><h3>The "NeighborTable" property</h3><a class="indexterm" name="id1993"></a><pre class="programlisting">
 NeighborTable  readable   a(tuquuyyyqqqbbbb)
 </pre><p>
 The node's neighbor table as an array of neighbor entry structure.
 </p><p>
-The neighbor entry structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint64_t mExtAddress;        // IEEE 802.15.4 Extended Address<br>
-uint32_t mAge;               // Time last heard<br>
-uint16_t mRloc16;            // RLOC16<br>
-uint32_t mLinkFrameCounter;  // Link Frame Counter<br>
-uint32_t mMleFrameCounter;   // MLE Frame Counter<br>
-uint8_t  mLinkQualityIn;     // Link Quality In<br>
-int8_t   mAverageRssi;       // Average RSSI<br>
-int8_t   mLastRssi;          // Last observed RSSI<br>
-uint16_t mFrameErrorRate;    // Frame error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
-uint16_t mMessageErrorRate;  // (IPv6) msg error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
-uint16_t mVersion;           // Thread version of the neighbor<br>
-bool     mRxOnWhenIdle;      // rx-on-when-idle<br>
-bool     mFullThreadDevice;  // Full Thread Device<br>
-bool     mFullNetworkData;   // Full Network Data<br>
-bool     mIsChild;           // Is the neighbor a child<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.PartitionId"></a><h3>The "PartitionId" property</h3><a class="indexterm" name="idm611"></a><pre class="programlisting">
+     The neighbor entry structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint64_t mExtAddress;        // IEEE 802.15.4 Extended Address<br>
+         uint32_t mAge;               // Time last heard<br>
+         uint16_t mRloc16;            // RLOC16<br>
+         uint32_t mLinkFrameCounter;  // Link Frame Counter<br>
+         uint32_t mMleFrameCounter;   // MLE Frame Counter<br>
+         uint8_t  mLinkQualityIn;     // Link Quality In<br>
+         int8_t   mAverageRssi;       // Average RSSI<br>
+         int8_t   mLastRssi;          // Last observed RSSI<br>
+         uint16_t mFrameErrorRate;    // Frame error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
+         uint16_t mMessageErrorRate;  // (IPv6) msg error rate (0xffff-&gt;100<code class="constant"></code>). Requires error tracking feature.<br>
+         uint16_t mVersion;           // Thread version of the neighbor<br>
+         bool     mRxOnWhenIdle;      // rx-on-when-idle<br>
+         bool     mFullThreadDevice;  // Full Thread Device<br>
+         bool     mFullNetworkData;   // Full Network Data<br>
+         bool     mIsChild;           // Is the neighbor a child<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.PartitionId"></a><h3>The "PartitionId" property</h3><a class="indexterm" name="id2003"></a><pre class="programlisting">
 PartitionId  readable   u
 </pre><p>
 The network partition ID.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.InstantRssi"></a><h3>The "InstantRssi" property</h3><a class="indexterm" name="idm617"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.InstantRssi"></a><h3>The "InstantRssi" property</h3><a class="indexterm" name="id2009"></a><pre class="programlisting">
 InstantRssi  readable   y
 </pre><p>
 The RSSI of the last received packet.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioTxPower"></a><h3>The "RadioTxPower" property</h3><a class="indexterm" name="idm623"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioTxPower"></a><h3>The "RadioTxPower" property</h3><a class="indexterm" name="id2015"></a><pre class="programlisting">
 RadioTxPower  readable   y
 </pre><p>
 The radio transmit power.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ExternalRoutes"></a><h3>The "ExternalRoutes" property</h3><a class="indexterm" name="idm629"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ExternalRoutes"></a><h3>The "ExternalRoutes" property</h3><a class="indexterm" name="id2021"></a><pre class="programlisting">
 ExternalRoutes  readable   ((ayy)qybb)
 </pre><p>
 The list of current external route rules.
 </p><p>
-External route rule structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-struct {<br>
-uint8[] prefix_bytes<br>
-uint8 prefix_length<br>
-}<br>
-uint16 rloc<br>
-uint8 preference<br>
-bool stable<br>
-bool next_hop_is_self<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OnMeshPrefixes"></a><h3>The "OnMeshPrefixes" property</h3><a class="indexterm" name="idm637"></a><pre class="programlisting">
+     External route rule structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         struct {<br>
+           uint8[] prefix_bytes<br>
+           uint8 prefix_length<br>
+         }<br>
+         uint16 rloc<br>
+         uint8 preference<br>
+         bool stable<br>
+         bool next_hop_is_self<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OnMeshPrefixes"></a><h3>The "OnMeshPrefixes" property</h3><a class="indexterm" name="id2029"></a><pre class="programlisting">
 OnMeshPrefixes  readable   a((ayy)qybbbbbbbbb)
 </pre><p>
 The list of current on-mesh prefixes.
 </p><p>
-on-mesh prefix structure definition:
-</p><div class="literallayout"><p><br>
-struct {<br>
-struct {<br>
-uint8[] prefix_bytes<br>
-uint8 prefix_length<br>
-}<br>
-uint16 rloc<br>
-uint8 preference<br>
-bool is_preferred<br>
-bool is_slaac<br>
-bool is_dhcp<br>
-bool is_configure<br>
-bool is_default_route<br>
-bool is_on_mesh<br>
-bool is_stable<br>
-bool is_nd_dns<br>
-bool is_dp<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ActiveDatasetTlvs"></a><h3>The "ActiveDatasetTlvs" property</h3><a class="indexterm" name="idm645"></a><pre class="programlisting">
+     on-mesh prefix structure definition:
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         struct {<br>
+           uint8[] prefix_bytes<br>
+           uint8 prefix_length<br>
+         }<br>
+         uint16 rloc<br>
+         uint8 preference<br>
+         bool is_preferred<br>
+         bool is_slaac<br>
+         bool is_dhcp<br>
+         bool is_configure<br>
+         bool is_default_route<br>
+         bool is_on_mesh<br>
+         bool is_stable<br>
+         bool is_nd_dns<br>
+         bool is_dp<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ActiveDatasetTlvs"></a><h3>The "ActiveDatasetTlvs" property</h3><a class="indexterm" name="id2037"></a><pre class="programlisting">
 ActiveDatasetTlvs  readwrite  ay
 </pre><p>
 The Thread active dataset tlv in binary form.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.PendingDatasetTlvs"></a><h3>The "PendingDatasetTlvs" property</h3><a class="indexterm" name="idm651"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.PendingDatasetTlvs"></a><h3>The "PendingDatasetTlvs" property</h3><a class="indexterm" name="id2043"></a><pre class="programlisting">
 PendingDatasetTlvs  readable   ay
 </pre><p>
 The Thread pending dataset tlv in binary form.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.FeatureFlagListData"></a><h3>The "FeatureFlagListData" property</h3><a class="indexterm" name="idm657"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.FeatureFlagListData"></a><h3>The "FeatureFlagListData" property</h3><a class="indexterm" name="id2049"></a><pre class="programlisting">
 FeatureFlagListData  readwrite  ay
 </pre><p>
 The Thread feature flags (defined as proto/feature_flag.proto)
 </p><p>
-in binary form.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioRegion"></a><h3>The "RadioRegion" property</h3><a class="indexterm" name="idm664"></a><pre class="programlisting">
+     in binary form.
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioRegion"></a><h3>The "RadioRegion" property</h3><a class="indexterm" name="id2056"></a><pre class="programlisting">
 RadioRegion  readwrite  s
 </pre><p>
 The radio region code in ISO 3166-1.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.SrpServerInfo"></a><h3>The "SrpServerInfo" property</h3><a class="indexterm" name="idm670"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.SrpServerInfo"></a><h3>The "SrpServerInfo" property</h3><a class="indexterm" name="id2062"></a><pre class="programlisting">
 SrpServerInfo  readable   (yqy(uutttt)(uutttt)(uuuuuu))
 </pre><p>
 The SRP server information.
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint8 state<br>
-uint16 port<br>
-uint8 address_mode<br>
-struct {  // hosts<br>
-uint32 fresh_count<br>
-uint32 deleted_count<br>
-uint64 lease_time_total<br>
-uint64 key_lease_time_total<br>
-uint64 remaining_lease_time_total<br>
-uint64 remaining_key_lease_time_total<br>
-}<br>
-struct {  // services<br>
-uint32 fresh_count<br>
-uint32 deleted_count<br>
-uint64 lease_time_total<br>
-uint64 key_lease_time_total<br>
-uint64 remaining_lease_time_total<br>
-uint64 remaining_key_lease_time_total<br>
-}<br>
-struct {  // response counters<br>
-uint32 success<br>
-uint32 server_failure<br>
-uint32 format_error<br>
-uint32 name_exists<br>
-uint32 refused<br>
-uint32 other<br>
-}<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.DnssdCounters"></a><h3>The "DnssdCounters" property</h3><a class="indexterm" name="idm678"></a><pre class="programlisting">
+     </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint8 state<br>
+         uint16 port<br>
+         uint8 address_mode<br>
+         struct {  // hosts<br>
+           uint32 fresh_count<br>
+           uint32 deleted_count<br>
+           uint64 lease_time_total<br>
+           uint64 key_lease_time_total<br>
+           uint64 remaining_lease_time_total<br>
+           uint64 remaining_key_lease_time_total<br>
+         }<br>
+         struct {  // services<br>
+           uint32 fresh_count<br>
+           uint32 deleted_count<br>
+           uint64 lease_time_total<br>
+           uint64 key_lease_time_total<br>
+           uint64 remaining_lease_time_total<br>
+           uint64 remaining_key_lease_time_total<br>
+         }<br>
+         struct {  // response counters<br>
+           uint32 success<br>
+           uint32 server_failure<br>
+           uint32 format_error<br>
+           uint32 name_exists<br>
+           uint32 refused<br>
+           uint32 other<br>
+         }<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.DnssdCounters"></a><h3>The "DnssdCounters" property</h3><a class="indexterm" name="id2070"></a><pre class="programlisting">
 DnssdCounters  readable   (uuuuuuu)
 </pre><p>
 The DNS-SD counters
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint32 success<br>
-uint32 server_failure<br>
-uint32 format_error<br>
-uint32 name_error<br>
-uint32 not_implemented<br>
-uint32 other<br>
-uint32 resolved_by_srp<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.MdnsTelemetryInfo"></a><h3>The "MdnsTelemetryInfo" property</h3><a class="indexterm" name="idm686"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint32 success<br>
+         uint32 server_failure<br>
+         uint32 format_error<br>
+         uint32 name_error<br>
+         uint32 not_implemented<br>
+         uint32 other<br>
+         uint32 resolved_by_srp<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.MdnsTelemetryInfo"></a><h3>The "MdnsTelemetryInfo" property</h3><a class="indexterm" name="id2078"></a><pre class="programlisting">
 MdnsTelemetryInfo  readable   (uuuuuuuu)(uuuuuuuu)(uuuuuuuu)(uuuuuuuu)uuuu
 </pre><p>
 The MDNS information
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-struct {  // host registration responses<br>
-uint32 success<br>
-uint32 not_found<br>
-uint32 invalid_args<br>
-uint32 duplicated<br>
-uint32 not_implemented<br>
-uint32 unknown_error<br>
-uint32 aborted<br>
-uint32 invalid_state<br>
-}<br>
-struct {  // service registration responses<br>
-uint32 success<br>
-uint32 not_found<br>
-uint32 invalid_args<br>
-uint32 duplicated<br>
-uint32 not_implemented<br>
-uint32 unknown_error<br>
-uint32 aborted<br>
-uint32 invalid_state<br>
-}<br>
-struct {  // host resolution responses<br>
-uint32 success<br>
-uint32 not_found<br>
-uint32 invalid_args<br>
-uint32 duplicated<br>
-uint32 not_implemented<br>
-uint32 unknown_error<br>
-uint32 aborted<br>
-uint32 invalid_state<br>
-}<br>
-struct {  // service resolution responses<br>
-uint32 success<br>
-uint32 not_found<br>
-uint32 invalid_args<br>
-uint32 duplicated<br>
-uint32 not_implemented<br>
-uint32 unknown_error<br>
-uint32 aborted<br>
-uint32 invalid_state<br>
-}<br>
-uint32 host_registration_ema_latency<br>
-uint32 service_registration_ema_latency<br>
-uint32 host_resolution_ema_latency<br>
-uint32 service_resolution_ema_latency<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OtbrVersion"></a><h3>The "OtbrVersion" property</h3><a class="indexterm" name="idm694"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         struct {  // host registration responses<br>
+           uint32 success<br>
+           uint32 not_found<br>
+           uint32 invalid_args<br>
+           uint32 duplicated<br>
+           uint32 not_implemented<br>
+           uint32 unknown_error<br>
+           uint32 aborted<br>
+           uint32 invalid_state<br>
+         }<br>
+         struct {  // service registration responses<br>
+           uint32 success<br>
+           uint32 not_found<br>
+           uint32 invalid_args<br>
+           uint32 duplicated<br>
+           uint32 not_implemented<br>
+           uint32 unknown_error<br>
+           uint32 aborted<br>
+           uint32 invalid_state<br>
+         }<br>
+         struct {  // host resolution responses<br>
+           uint32 success<br>
+           uint32 not_found<br>
+           uint32 invalid_args<br>
+           uint32 duplicated<br>
+           uint32 not_implemented<br>
+           uint32 unknown_error<br>
+           uint32 aborted<br>
+           uint32 invalid_state<br>
+         }<br>
+         struct {  // service resolution responses<br>
+           uint32 success<br>
+           uint32 not_found<br>
+           uint32 invalid_args<br>
+           uint32 duplicated<br>
+           uint32 not_implemented<br>
+           uint32 unknown_error<br>
+           uint32 aborted<br>
+           uint32 invalid_state<br>
+         }<br>
+         uint32 host_registration_ema_latency<br>
+         uint32 service_registration_ema_latency<br>
+         uint32 host_resolution_ema_latency<br>
+         uint32 service_resolution_ema_latency<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OtbrVersion"></a><h3>The "OtbrVersion" property</h3><a class="indexterm" name="id2086"></a><pre class="programlisting">
 OtbrVersion  readable   s
 </pre><p>
 The version string of the otbr package.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OtHostVersion"></a><h3>The "OtHostVersion" property</h3><a class="indexterm" name="idm700"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OtHostVersion"></a><h3>The "OtHostVersion" property</h3><a class="indexterm" name="id2092"></a><pre class="programlisting">
 OtHostVersion  readable   s
 </pre><p>
 The version string of the host build.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OtRcpVersion"></a><h3>The "OtRcpVersion" property</h3><a class="indexterm" name="idm706"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.OtRcpVersion"></a><h3>The "OtRcpVersion" property</h3><a class="indexterm" name="id2098"></a><pre class="programlisting">
 OtRcpVersion  readable   s
 </pre><p>
 The version string of the RCP firmware.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ThreadVersion"></a><h3>The "ThreadVersion" property</h3><a class="indexterm" name="idm712"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.ThreadVersion"></a><h3>The "ThreadVersion" property</h3><a class="indexterm" name="id2104"></a><pre class="programlisting">
 ThreadVersion  readable   q
 </pre><p>
 The Thread protocol version.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Eui64"></a><h3>The "Eui64" property</h3><a class="indexterm" name="idm718"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Eui64"></a><h3>The "Eui64" property</h3><a class="indexterm" name="id2110"></a><pre class="programlisting">
 Eui64  readable   t
 </pre><p>
 The IEEE EUI-64 of this Thread interface.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioSpinelMetrics"></a><h3>The "RadioSpinelMetrics" property</h3><a class="indexterm" name="idm724"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioSpinelMetrics"></a><h3>The "RadioSpinelMetrics" property</h3><a class="indexterm" name="id2116"></a><pre class="programlisting">
 RadioSpinelMetrics  readable   (uuuu)
 </pre><p>
 The radio spinel metrics
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint32_t mRcpTimeoutCount;         // The number of RCP timeouts.<br>
-uint32_t mRcpUnexpectedResetCount; // The number of RCP unexcepted resets.<br>
-uint32_t mRcpRestorationCount;     // The number of RCP restorations.<br>
-uint32_t mSpinelParseErrorCount;   // The number of spinel frame parse errors.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RcpInterfaceMetrics"></a><h3>The "RcpInterfaceMetrics" property</h3><a class="indexterm" name="idm732"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint32_t mRcpTimeoutCount;         // The number of RCP timeouts.<br>
+         uint32_t mRcpUnexpectedResetCount; // The number of RCP unexcepted resets.<br>
+         uint32_t mRcpRestorationCount;     // The number of RCP restorations.<br>
+         uint32_t mSpinelParseErrorCount;   // The number of spinel frame parse errors.<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RcpInterfaceMetrics"></a><h3>The "RcpInterfaceMetrics" property</h3><a class="indexterm" name="id2124"></a><pre class="programlisting">
 RcpInterfaceMetrics  readable   (yttttttt)
 </pre><p>
 The RCP interface metrics
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint8_t  mRcpInterfaceType;             // The RCP interface type.<br>
-uint64_t mTransferredFrameCount;        // The number of transferred frames.<br>
-uint64_t mTransferredValidFrameCount;   // The number of transferred valid frames.<br>
-uint64_t mTransferredGarbageFrameCount; // The number of transferred garbage frames.<br>
-uint64_t mRxFrameCount;                 // The number of received frames.<br>
-uint64_t mRxFrameByteCount;             // The number of received bytes.<br>
-uint64_t mTxFrameCount;                 // The number of transmitted frames.<br>
-uint64_t mTxFrameByteCount;             // The number of transmitted bytes.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Uptime"></a><h3>The "Uptime" property</h3><a class="indexterm" name="idm740"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint8_t  mRcpInterfaceType;             // The RCP interface type.<br>
+         uint64_t mTransferredFrameCount;        // The number of transferred frames.<br>
+         uint64_t mTransferredValidFrameCount;   // The number of transferred valid frames.<br>
+         uint64_t mTransferredGarbageFrameCount; // The number of transferred garbage frames.<br>
+         uint64_t mRxFrameCount;                 // The number of received frames.<br>
+         uint64_t mRxFrameByteCount;             // The number of received bytes.<br>
+         uint64_t mTxFrameCount;                 // The number of transmitted frames.<br>
+         uint64_t mTxFrameByteCount;             // The number of transmitted bytes.<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Uptime"></a><h3>The "Uptime" property</h3><a class="indexterm" name="id2132"></a><pre class="programlisting">
 Uptime  readable   t
 </pre><p>
 The number of milliseconds since OpenThread instance was initialized.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioCoexMetrics"></a><h3>The "RadioCoexMetrics" property</h3><a class="indexterm" name="idm746"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.RadioCoexMetrics"></a><h3>The "RadioCoexMetrics" property</h3><a class="indexterm" name="id2138"></a><pre class="programlisting">
 RadioCoexMetrics  readable   (uuuuuuuuuuuuuuuuuub)
 </pre><p>
 The radio coexistence metrics
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-uint32_t mNumGrantGlitch;                     // Number of grant glitches.<br>
-uint32_t mNumTxRequest;                       // Number of tx requests.<br>
-uint32_t mNumTxGrantImmediate;                // Number of tx requests while grant was active.<br>
-uint32_t mNumTxGrantWait;                     // Number of tx requests while grant was inactive.<br>
-uint32_t mNumTxGrantWaitActivated;            // Number of tx requests while grant was inactive that were ultimately granted.<br>
-uint32_t mNumTxGrantWaitTimeout;              // Number of tx requests while grant was inactive that timed out.<br>
-uint32_t mNumTxGrantDeactivatedDuringRequest; // Number of tx that were in progress when grant was deactivated.<br>
-uint32_t mNumTxDelayedGrant;                  // Number of tx requests that were not granted within 50us.<br>
-uint32_t mAvgTxRequestToGrantTime;            // Average time in usec from tx request to grant.<br>
-uint32_t mNumRxRequest;                       // Number of rx requests.<br>
-uint32_t mNumRxGrantImmediate;                // Number of rx requests while grant was active.<br>
-uint32_t mNumRxGrantWait;                     // Number of rx requests while grant was inactive.<br>
-uint32_t mNumRxGrantWaitActivated;            // Number of rx requests while grant was inactive that were ultimately granted.<br>
-uint32_t mNumRxGrantWaitTimeout;              // Number of rx requests while grant was inactive that timed out.<br>
-uint32_t mNumRxGrantDeactivatedDuringRequest; // Number of rx that were in progress when grant was deactivated.<br>
-uint32_t mNumRxDelayedGrant;                  // Number of rx requests that were not granted within 50us.<br>
-uint32_t mAvgRxRequestToGrantTime;            // Average time in usec from rx request to grant.<br>
-uint32_t mNumRxGrantNone;                     // Number of rx requests that completed without receiving grant.<br>
-bool     mStopped;                            // Stats collection stopped due to saturation.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64State"></a><h3>The "Nat64State" property</h3><a class="indexterm" name="idm754"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         uint32_t mNumGrantGlitch;                     // Number of grant glitches.<br>
+         uint32_t mNumTxRequest;                       // Number of tx requests.<br>
+         uint32_t mNumTxGrantImmediate;                // Number of tx requests while grant was active.<br>
+         uint32_t mNumTxGrantWait;                     // Number of tx requests while grant was inactive.<br>
+         uint32_t mNumTxGrantWaitActivated;            // Number of tx requests while grant was inactive that were ultimately granted.<br>
+         uint32_t mNumTxGrantWaitTimeout;              // Number of tx requests while grant was inactive that timed out.<br>
+         uint32_t mNumTxGrantDeactivatedDuringRequest; // Number of tx that were in progress when grant was deactivated.<br>
+         uint32_t mNumTxDelayedGrant;                  // Number of tx requests that were not granted within 50us.<br>
+         uint32_t mAvgTxRequestToGrantTime;            // Average time in usec from tx request to grant.<br>
+         uint32_t mNumRxRequest;                       // Number of rx requests.<br>
+         uint32_t mNumRxGrantImmediate;                // Number of rx requests while grant was active.<br>
+         uint32_t mNumRxGrantWait;                     // Number of rx requests while grant was inactive.<br>
+         uint32_t mNumRxGrantWaitActivated;            // Number of rx requests while grant was inactive that were ultimately granted.<br>
+         uint32_t mNumRxGrantWaitTimeout;              // Number of rx requests while grant was inactive that timed out.<br>
+         uint32_t mNumRxGrantDeactivatedDuringRequest; // Number of rx that were in progress when grant was deactivated.<br>
+         uint32_t mNumRxDelayedGrant;                  // Number of rx requests that were not granted within 50us.<br>
+         uint32_t mAvgRxRequestToGrantTime;            // Average time in usec from rx request to grant.<br>
+         uint32_t mNumRxGrantNone;                     // Number of rx requests that completed without receiving grant.<br>
+         bool     mStopped;                            // Stats collection stopped due to saturation.<br>
+       }<br>
+     </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64State"></a><h3>The "Nat64State" property</h3><a class="indexterm" name="id2146"></a><pre class="programlisting">
 Nat64State  readable   (ss)
 </pre><p>
 The state of NAT64
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-string mPrefixManagerState;<br>
-string mTranslatorState;<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64Mappings"></a><h3>The "Nat64Mappings" property</h3><a class="indexterm" name="idm762"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+           string mPrefixManagerState;<br>
+           string mTranslatorState;<br>
+       }<br>
+   </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64Mappings"></a><h3>The "Nat64Mappings" property</h3><a class="indexterm" name="id2154"></a><pre class="programlisting">
 Nat64Mappings  readable   a(tayayu((tttt)(tttt)(tttt)(tttt)))
 </pre><p>
 The state of NAT64
 </p><p>
-</p><div class="literallayout"><p><br>
-struct<br>
-{<br>
-uint64_t  mId;              // The unique id for a mapping session.<br>
-uint8_t[] mIp4;             // The IPv4 address of the mapping.<br>
-uint8_t[] mIp6;             // The IPv6 address of the mapping.<br>
-uint32_t  mRemainingTimeMs; // Remaining time before expiry in milliseconds.<br>
-struct<br>
-{<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mTotal;                // Counters for sum of all protocols.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mIcmp;                 // Counters for ICMP and ICMPv6.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mUdp;                  // Counters for UDP.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mTcp;                  // Counters for TCP.<br>
-} mCounters;<br>
-}[]<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64ProtocolCounters"></a><h3>The "Nat64ProtocolCounters" property</h3><a class="indexterm" name="idm770"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct<br>
+       {<br>
+         uint64_t  mId;              // The unique id for a mapping session.<br>
+         uint8_t[] mIp4;             // The IPv4 address of the mapping.<br>
+         uint8_t[] mIp6;             // The IPv6 address of the mapping.<br>
+         uint32_t  mRemainingTimeMs; // Remaining time before expiry in milliseconds.<br>
+         struct<br>
+         {<br>
+           struct<br>
+           {<br>
+             uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+             uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+             uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+             uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+           } mTotal;                // Counters for sum of all protocols.<br>
+           struct<br>
+           {<br>
+             uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+             uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+             uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+             uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+           } mIcmp;                 // Counters for ICMP and ICMPv6.<br>
+           struct<br>
+           {<br>
+             uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+             uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+             uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+             uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+           } mUdp;                  // Counters for UDP.<br>
+           struct<br>
+           {<br>
+             uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+             uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+             uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+             uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+           } mTcp;                  // Counters for TCP.<br>
+         } mCounters;<br>
+       }[]<br>
+   </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64ProtocolCounters"></a><h3>The "Nat64ProtocolCounters" property</h3><a class="indexterm" name="id2162"></a><pre class="programlisting">
 Nat64ProtocolCounters  readable   ((tttt)(tttt)(tttt)(tttt))
 </pre><p>
 The state of NAT64
 </p><p>
-</p><div class="literallayout"><p><br>
-struct<br>
-{<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mTotal;                // Counters for sum of all protocols.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mIcmp;                 // Counters for ICMP and ICMPv6.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mUdp;                  // Counters for UDP.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
-} mTcp;                  // Counters for TCP.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64ErrorCounters"></a><h3>The "Nat64ErrorCounters" property</h3><a class="indexterm" name="idm778"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct<br>
+       {<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+           uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+         } mTotal;                // Counters for sum of all protocols.<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+           uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+         } mIcmp;                 // Counters for ICMP and ICMPv6.<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+           uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+         } mUdp;                  // Counters for UDP.<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m4To6Bytes;   // Sum of size of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+           uint64_t m6To4Bytes;   // Sum of size of packets translated from IPv6 to IPv4.<br>
+         } mTcp;                  // Counters for TCP.<br>
+       }<br>
+   </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64ErrorCounters"></a><h3>The "Nat64ErrorCounters" property</h3><a class="indexterm" name="id2170"></a><pre class="programlisting">
 Nat64ErrorCounters  readable   ((tt)(tt)(tt)(tt))
 </pre><p>
 The state of NAT64
 </p><p>
-</p><div class="literallayout"><p><br>
-struct<br>
-{<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-} mUnknown;              // Packet drop for unknown reasons.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-} mIllegalPacket;        // Packet drop due to failed to parse the datagram.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-} mUnsupportedProto;     // Packet drop due to unsupported IP protocol.<br>
-struct<br>
-{<br>
-uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
-uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
-} mNoMapping;            // Packet drop due to no mappings found or mapping pool exhausted.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64Cidr"></a><h3>The "Nat64Cidr" property</h3><a class="indexterm" name="idm786"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct<br>
+       {<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+         } mUnknown;              // Packet drop for unknown reasons.<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+         } mIllegalPacket;        // Packet drop due to failed to parse the datagram.<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+         } mUnsupportedProto;     // Packet drop due to unsupported IP protocol.<br>
+         struct<br>
+         {<br>
+           uint64_t m4To6Packets; // Number of packets translated from IPv4 to IPv6.<br>
+           uint64_t m6To4Packets; // Number of packets translated from IPv6 to IPv4.<br>
+         } mNoMapping;            // Packet drop due to no mappings found or mapping pool exhausted.<br>
+       }<br>
+   </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Nat64Cidr"></a><h3>The "Nat64Cidr" property</h3><a class="indexterm" name="id2178"></a><pre class="programlisting">
 Nat64Cidr  readwrite  s
 </pre><p>
 The CIDR used for NAT64
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.BorderRoutingCounters"></a><h3>The "BorderRoutingCounters" property</h3><a class="indexterm" name="idm792"></a><pre class="programlisting">
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.BorderRoutingCounters"></a><h3>The "BorderRoutingCounters" property</h3><a class="indexterm" name="id2184"></a><pre class="programlisting">
 BorderRoutingCounters  readable   ((tt)(tt)(tt)(tt)uuuuuu)
 </pre><p>
 The counters for inbound/outbound packets
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-struct {  // inbound unicast<br>
-uint64 packets<br>
-uint64 bytes<br>
-}<br>
-struct {  // inbound multicast<br>
-uint64 packets<br>
-uint64 bytes<br>
-}<br>
-struct {  // outbound unicast<br>
-uint64 packets<br>
-uint64 bytes<br>
-}<br>
-struct {  // outbound multicast<br>
-uint64 packets<br>
-uint64 bytes<br>
-}<br>
-uint32  ra_rx;              // The number of received RA packets.<br>
-uint32  ra_tx_success;      // The number of RA packets successfully transmitted.<br>
-uint32  ra_tx_failure;      // The number of RA packets failed to transmit.<br>
-uint32  rs_rx;              // The number of received RS packets.<br>
-uint32  rs_tx_success;      // The number of RS packets successfully transmitted.<br>
-uint32  rs_tx_failure;      // The number of RS packets failed to transmit.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.InfraLinkInfo"></a><h3>The "InfraLinkInfo" property</h3><a class="indexterm" name="idm800"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         struct {  // inbound unicast<br>
+           uint64 packets<br>
+           uint64 bytes<br>
+         }<br>
+         struct {  // inbound multicast<br>
+           uint64 packets<br>
+           uint64 bytes<br>
+         }<br>
+         struct {  // outbound unicast<br>
+           uint64 packets<br>
+           uint64 bytes<br>
+         }<br>
+         struct {  // outbound multicast<br>
+           uint64 packets<br>
+           uint64 bytes<br>
+         }<br>
+         uint32  ra_rx;              // The number of received RA packets.<br>
+         uint32  ra_tx_success;      // The number of RA packets successfully transmitted.<br>
+         uint32  ra_tx_failure;      // The number of RA packets failed to transmit.<br>
+         uint32  rs_rx;              // The number of received RS packets.<br>
+         uint32  rs_tx_success;      // The number of RS packets successfully transmitted.<br>
+         uint32  rs_tx_failure;      // The number of RS packets failed to transmit.<br>
+       }<br>
+   </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.InfraLinkInfo"></a><h3>The "InfraLinkInfo" property</h3><a class="indexterm" name="id2192"></a><pre class="programlisting">
 InfraLinkInfo  readable   (sbbbuuu)
 </pre><p>
 Information of infrastructure network interface.
 </p><p>
-</p><div class="literallayout"><p><br>
-struct {<br>
-string name;                     // The name of the infrastructure network interface.<br>
-bool   is_up;                    // Whether the infrastructure network interface is up.<br>
-bool   is_running;               // Whether the infrastructure network interface is running.<br>
-bool   is_multicast;             // Whether the infrastructure network interface is multicast.<br>
-uint32 link_local_addresses      // The number of link-local addresses on the infra network interface.<br>
-uint32 unique_local_addresses    // The number of unique local addresses on the infra network interface.<br>
-uint32 global_unicast_addresses  // The number of global unicast addresses on the infra network interface.<br>
-}<br>
-</p></div><p>
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.DnsUpstreamQueryState"></a><h3>The "DnsUpstreamQueryState" property</h3><a class="indexterm" name="idm808"></a><pre class="programlisting">
+   </p><div class="literallayout"><p><br>
+       struct {<br>
+         string name;                     // The name of the infrastructure network interface.<br>
+         bool   is_up;                    // Whether the infrastructure network interface is up.<br>
+         bool   is_running;               // Whether the infrastructure network interface is running.<br>
+         bool   is_multicast;             // Whether the infrastructure network interface is multicast.<br>
+         uint32 link_local_addresses      // The number of link-local addresses on the infra network interface.<br>
+         uint32 unique_local_addresses    // The number of unique local addresses on the infra network interface.<br>
+         uint32 global_unicast_addresses  // The number of global unicast addresses on the infra network interface.<br>
+       }<br>
+   </p></div><p>
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.DnsUpstreamQueryState"></a><h3>The "DnsUpstreamQueryState" property</h3><a class="indexterm" name="id2200"></a><pre class="programlisting">
 DnsUpstreamQueryState  readwrite  b
 </pre><p>
 Whether the server will / should forward DNS queries platform
 </p><p>
-specified upstream DNS servers.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.TelemetryData"></a><h3>The "TelemetryData" property</h3><a class="indexterm" name="idm815"></a><pre class="programlisting">
+   specified upstream DNS servers.
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.TelemetryData"></a><h3>The "TelemetryData" property</h3><a class="indexterm" name="id2207"></a><pre class="programlisting">
 TelemetryData  readable   ay
 </pre><p>
 The Thread telemetry data (defined as proto/thread_telemetry.proto)
 </p><p>
-in binary form.
-</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Capabilities"></a><h3>The "Capabilities" property</h3><a class="indexterm" name="idm822"></a><pre class="programlisting">
+     in binary form.
+</p></div><div class="refsect2"><a name="gdbus-property-io-openthread-BorderRouter.Capabilities"></a><h3>The "Capabilities" property</h3><a class="indexterm" name="id2214"></a><pre class="programlisting">
 Capabilities  readable   ay
 </pre><p>
 The Thread capabilities data (defined as proto/capabilities.proto)
 </p><p>
-in binary form.
+     in binary form.
 </p></div></div></div><div class="navfooter"><hr></div></body></html>
