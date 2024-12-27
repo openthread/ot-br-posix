@@ -104,7 +104,7 @@ include(GNUInstallDirs)
 
 pkg_check_modules(SYSTEMD systemd)
 
-if(SYSTEMD_FOUND)
+if(SYSTEMD_FOUND AND (NOT DEFINED INSTALL_SYSTEMD_UNIT OR INSTALL_SYSTEMD_UNIT))
     pkg_get_variable(OTBR_SYSTEMD_UNIT_DIR systemd systemdsystemunitdir)
 endif()
 
