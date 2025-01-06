@@ -477,7 +477,7 @@ void DBusThreadObjectRcp::FactoryResetHandler(DBusRequest &aRequest)
     otError error = OT_ERROR_NONE;
 
     SuccessOrExit(error = mHost.GetThreadHelper()->Detach());
-    SuccessOrExit(otInstanceErasePersistentInfo(mHost.GetThreadHelper()->GetInstance()));
+    SuccessOrExit(otInstanceErasePersistentInfo(mHost.GetInstance()));
     mHost.Reset();
 
 exit:
@@ -1450,7 +1450,7 @@ exit:
 otError DBusThreadObjectRcp::GetTrelInfoHandler(DBusMessageIter &aIter)
 {
 #if OTBR_ENABLE_TREL
-    auto           instance = mHost.GetThreadHelper()->GetInstance();
+    auto           instance = mHost.GetInstance();
     otError        error    = OT_ERROR_NONE;
     TrelInfo       trelInfo;
     otTrelCounters otTrelCounters = *otTrelGetCounters(instance);
@@ -1674,8 +1674,7 @@ otError DBusThreadObjectRcp::GetUptimeHandler(DBusMessageIter &aIter)
 {
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otInstanceGetUptime(mHost.GetThreadHelper()->GetInstance())) ==
-                     OTBR_ERROR_NONE,
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otInstanceGetUptime(mHost.GetInstance())) == OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
 exit:
@@ -1767,7 +1766,7 @@ void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
     mHost.GetThreadHelper()->DetachGracefully([aRequest, this](otError error) mutable {
         SuccessOrExit(error);
         mPublisher->Stop();
-        SuccessOrExit(error = otInstanceErasePersistentInfo(mHost.GetThreadHelper()->GetInstance()));
+        SuccessOrExit(error = otInstanceErasePersistentInfo(mHost.GetInstance()));
 
     exit:
         aRequest.ReplyOtResult(error);
@@ -1787,7 +1786,7 @@ void DBusThreadObjectRcp::SetNat64Enabled(DBusRequest &aRequest)
     auto    args = std::tie(enable);
 
     VerifyOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otNat64SetEnabled(mHost.GetThreadHelper()->GetInstance(), enable);
+    otNat64SetEnabled(mHost.GetInstance(), enable);
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -1799,8 +1798,8 @@ otError DBusThreadObjectRcp::GetNat64State(DBusMessageIter &aIter)
 
     Nat64ComponentState state;
 
-    state.mPrefixManagerState = GetNat64StateName(otNat64GetPrefixManagerState(mHost.GetThreadHelper()->GetInstance()));
-    state.mTranslatorState    = GetNat64StateName(otNat64GetTranslatorState(mHost.GetThreadHelper()->GetInstance()));
+    state.mPrefixManagerState = GetNat64StateName(otNat64GetPrefixManagerState(mHost.GetInstance()));
+    state.mTranslatorState    = GetNat64StateName(otNat64GetTranslatorState(mHost.GetInstance()));
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, state) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
 
@@ -1817,8 +1816,8 @@ otError DBusThreadObjectRcp::GetNat64Mappings(DBusMessageIter &aIter)
     otNat64AddressMapping            otMapping;
     Nat64AddressMapping              mapping;
 
-    otNat64InitAddressMappingIterator(mHost.GetThreadHelper()->GetInstance(), &iterator);
-    while (otNat64GetNextAddressMapping(mHost.GetThreadHelper()->GetInstance(), &iterator, &otMapping) == OT_ERROR_NONE)
+    otNat64InitAddressMappingIterator(mHost.GetInstance(), &iterator);
+    while (otNat64GetNextAddressMapping(mHost.GetInstance(), &iterator, &otMapping) == OT_ERROR_NONE)
     {
         mapping.mId = otMapping.mId;
         std::copy(std::begin(otMapping.mIp4.mFields.m8), std::end(otMapping.mIp4.mFields.m8), mapping.mIp4.data());
@@ -1860,7 +1859,7 @@ otError DBusThreadObjectRcp::GetNat64ProtocolCounters(DBusMessageIter &aIter)
 
     otNat64ProtocolCounters otCounters;
     Nat64ProtocolCounters   counters;
-    otNat64GetCounters(mHost.GetThreadHelper()->GetInstance(), &otCounters);
+    otNat64GetCounters(mHost.GetInstance(), &otCounters);
 
     counters.mTotal.m4To6Packets = otCounters.mTotal.m4To6Packets;
     counters.mTotal.m4To6Bytes   = otCounters.mTotal.m4To6Bytes;
@@ -1891,7 +1890,7 @@ otError DBusThreadObjectRcp::GetNat64ErrorCounters(DBusMessageIter &aIter)
 
     otNat64ErrorCounters otCounters;
     Nat64ErrorCounters   counters;
-    otNat64GetErrorCounters(mHost.GetThreadHelper()->GetInstance(), &otCounters);
+    otNat64GetErrorCounters(mHost.GetInstance(), &otCounters);
 
     counters.mUnknown.m4To6Packets          = otCounters.mCount4To6[OT_NAT64_DROP_REASON_UNKNOWN];
     counters.mUnknown.m6To4Packets          = otCounters.mCount6To4[OT_NAT64_DROP_REASON_UNKNOWN];
@@ -1915,7 +1914,7 @@ otError DBusThreadObjectRcp::GetNat64Cidr(DBusMessageIter &aIter)
     otIp4Cidr cidr;
     char      cidrString[OT_IP4_CIDR_STRING_SIZE];
 
-    SuccessOrExit(error = otNat64GetCidr(mHost.GetThreadHelper()->GetInstance(), &cidr));
+    SuccessOrExit(error = otNat64GetCidr(mHost.GetInstance(), &cidr));
     otIp4CidrToString(&cidr, cidrString, sizeof(cidrString));
 
     VerifyOrExit(DBusMessageEncodeToVariant(&aIter, std::string(cidrString)) == OTBR_ERROR_NONE,
@@ -1933,7 +1932,7 @@ otError DBusThreadObjectRcp::SetNat64Cidr(DBusMessageIter &aIter)
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, cidrString) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
     SuccessOrExit(error = otIp4CidrFromString(cidrString.c_str(), &cidr));
-    SuccessOrExit(error = otNat64SetIp4Cidr(mHost.GetThreadHelper()->GetInstance(), &cidr));
+    SuccessOrExit(error = otNat64SetIp4Cidr(mHost.GetInstance(), &cidr));
 
 exit:
     return error;
@@ -2092,7 +2091,7 @@ otError DBusThreadObjectRcp::SetDnsUpstreamQueryState(DBusMessageIter &aIter)
     bool    enable;
 
     VerifyOrExit(DBusMessageExtractFromVariant(&aIter, enable) == OTBR_ERROR_NONE, error = OT_ERROR_INVALID_ARGS);
-    otDnssdUpstreamQuerySetEnabled(mHost.GetThreadHelper()->GetInstance(), enable);
+    otDnssdUpstreamQuerySetEnabled(mHost.GetInstance(), enable);
 
 exit:
     return error;
@@ -2108,8 +2107,8 @@ otError DBusThreadObjectRcp::GetDnsUpstreamQueryState(DBusMessageIter &aIter)
 #if OTBR_ENABLE_DNS_UPSTREAM_QUERY
     otError error = OT_ERROR_NONE;
 
-    VerifyOrExit(DBusMessageEncodeToVariant(
-                     &aIter, otDnssdUpstreamQueryIsEnabled(mHost.GetThreadHelper()->GetInstance())) == OTBR_ERROR_NONE,
+    VerifyOrExit(DBusMessageEncodeToVariant(&aIter, otDnssdUpstreamQueryIsEnabled(mHost.GetInstance())) ==
+                     OTBR_ERROR_NONE,
                  error = OT_ERROR_INVALID_ARGS);
 
 exit:
