@@ -34,7 +34,7 @@ add_subdirectory(common)
 if(OTBR_DBUS OR OTBR_FEATURE_FLAGS OR OTBR_TELEMETRY_DATA_API)
     add_subdirectory(proto)
 endif()
-add_subdirectory(ncp)
+add_subdirectory(host)
 add_subdirectory(sdp_proxy)
 add_subdirectory(trel_dnssd)
 

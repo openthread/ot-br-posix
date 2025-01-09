@@ -34,7 +34,7 @@
 #include "common/code_utils.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 AsyncTask::AsyncTask(const ResultHandler &aResultHandler)
     : mResultHandler(aResultHandler)
@@ -95,5 +95,5 @@ AsyncTaskPtr &AsyncTask::Then(const ThenHandler &aThen)
     return mNext;
 }
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr

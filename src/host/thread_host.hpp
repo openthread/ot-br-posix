@@ -46,7 +46,7 @@
 #include "common/logging.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 /**
  * This interface provides access to some Thread network properties in a sync way.
@@ -282,7 +282,7 @@ public:
     virtual ~ThreadHost(void) = default;
 };
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr
 
 #endif // OTBR_AGENT_THREAD_HOST_HPP_

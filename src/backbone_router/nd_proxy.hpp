@@ -55,7 +55,7 @@
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 
 namespace otbr {
 namespace BackboneRouter {
@@ -78,7 +78,7 @@ public:
     /**
      * This constructor initializes a NdProxyManager instance.
      */
-    explicit NdProxyManager(otbr::Ncp::RcpHost &aHost, std::string aBackboneInterfaceName)
+    explicit NdProxyManager(otbr::Host::RcpHost &aHost, std::string aBackboneInterfaceName)
         : mHost(aHost)
         , mBackboneInterfaceName(std::move(aBackboneInterfaceName))
         , mIcmp6RawSock(-1)
@@ -146,7 +146,7 @@ private:
                                     void                *aContext);
     int HandleNetfilterQueue(struct nfq_q_handle *aNfQueueHandler, struct nfgenmsg *aNfMsg, struct nfq_data *aNfData);
 
-    otbr::Ncp::RcpHost  &mHost;
+    otbr::Host::RcpHost &mHost;
     std::string          mBackboneInterfaceName;
     std::set<Ip6Address> mNdProxySet;
     uint32_t             mBackboneIfIndex;

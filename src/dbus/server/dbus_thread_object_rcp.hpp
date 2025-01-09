@@ -42,8 +42,8 @@
 
 #include "border_agent/border_agent.hpp"
 #include "dbus/server/dbus_object.hpp"
+#include "host/rcp_host.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -69,11 +69,11 @@ public:
      * @param[in] aPublisher      The Mdns::Publisher
      * @param[in] aBorderAgent    The Border Agent
      */
-    DBusThreadObjectRcp(DBusConnection     &aConnection,
-                        const std::string  &aInterfaceName,
-                        otbr::Ncp::RcpHost &aHost,
-                        Mdns::Publisher    *aPublisher,
-                        otbr::BorderAgent  &aBorderAgent);
+    DBusThreadObjectRcp(DBusConnection      &aConnection,
+                        const std::string   &aInterfaceName,
+                        otbr::Host::RcpHost &aHost,
+                        Mdns::Publisher     *aPublisher,
+                        otbr::BorderAgent   &aBorderAgent);
 
     otbrError Init(void) override;
 
@@ -181,7 +181,7 @@ private:
     void ReplyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otActiveScanResult> &aResult);
     void ReplyEnergyScanResult(DBusRequest &aRequest, otError aError, const std::vector<otEnergyScanResult> &aResult);
 
-    otbr::Ncp::RcpHost                                  &mHost;
+    otbr::Host::RcpHost                                 &mHost;
     std::unordered_map<std::string, PropertyHandlerType> mGetPropertyHandlers;
     otbr::Mdns::Publisher                               *mPublisher;
     otbr::BorderAgent                                   &mBorderAgent;

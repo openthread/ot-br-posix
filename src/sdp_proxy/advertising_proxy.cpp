@@ -51,7 +51,7 @@
 
 namespace otbr {
 
-AdvertisingProxy::AdvertisingProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
+AdvertisingProxy::AdvertisingProxy(Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mHost(aHost)
     , mPublisher(aPublisher)
     , mIsEnabled(false)

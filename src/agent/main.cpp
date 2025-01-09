@@ -52,7 +52,7 @@
 #include "common/logging.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
-#include "ncp/thread_host.hpp"
+#include "host/thread_host.hpp"
 
 #ifdef OTBR_ENABLE_PLATFORM_ANDROID
 #include <log/log.h>
@@ -200,10 +200,10 @@ static otbrLogLevel GetDefaultLogLevel(void)
 
 static void PrintRadioVersionAndExit(const std::vector<const char *> &aRadioUrls)
 {
-    auto host = std::unique_ptr<otbr::Ncp::ThreadHost>(
-        otbr::Ncp::ThreadHost::Create(/* aInterfaceName */ "", aRadioUrls,
-                                      /* aBackboneInterfaceName */ "",
-                                      /* aDryRun */ true, /* aEnableAutoAttach */ false));
+    auto host = std::unique_ptr<otbr::Host::ThreadHost>(
+        otbr::Host::ThreadHost::Create(/* aInterfaceName */ "", aRadioUrls,
+                                       /* aBackboneInterfaceName */ "",
+                                       /* aDryRun */ true, /* aEnableAutoAttach */ false));
     const char *coprocessorVersion;
 
     host->Init();
@@ -304,7 +304,7 @@ static int realmain(int argc, char *argv[])
 
     otbrLogInit(argv[0], logLevel, verbose, syslogDisable);
     otbrLogNotice("Running %s", OTBR_PACKAGE_VERSION);
-    otbrLogNotice("Thread version: %s", otbr::Ncp::RcpHost::GetThreadVersion());
+    otbrLogNotice("Thread version: %s", otbr::Host::RcpHost::GetThreadVersion());
     otbrLogNotice("Thread interface: %s", interfaceName);
 
     if (backboneInterfaceNames.empty())
@@ -335,7 +335,7 @@ static int realmain(int argc, char *argv[])
 #else
         const std::string backboneInterfaceName = backboneInterfaceNames.empty() ? "" : backboneInterfaceNames.front();
 #endif
-        std::unique_ptr<otbr::Ncp::ThreadHost> host = otbr::Ncp::ThreadHost::Create(
+        std::unique_ptr<otbr::Host::ThreadHost> host = otbr::Host::ThreadHost::Create(
             interfaceName, radioUrls, backboneInterfaceName.c_str(), /* aDryRun */ false, enableAutoAttach);
 
         otbr::Application app(*host, interfaceName, backboneInterfaceName, restListenAddress, restListenPort);

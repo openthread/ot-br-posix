@@ -39,7 +39,7 @@
 #include "rcp_host.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *aInterfaceName,
                                                const std::vector<const char *> &aRadioUrls,
@@ -82,5 +82,5 @@ std::unique_ptr<ThreadHost> ThreadHost::Create(const char                      *
     return host;
 }
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr

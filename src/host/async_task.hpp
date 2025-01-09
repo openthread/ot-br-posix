@@ -41,7 +41,7 @@
 #include <openthread/error.h>
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 class AsyncTask;
 using AsyncTaskPtr = std::shared_ptr<AsyncTask>;
@@ -108,7 +108,7 @@ private:
     AsyncTaskPtr mNext;
 };
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr
 
 #endif // OTBR_AGENT_ASYNC_TASK_HPP_

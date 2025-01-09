@@ -57,7 +57,7 @@
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
 #include "common/types.hpp"
-#include "ncp/posix/netif.hpp"
+#include "host/posix/netif.hpp"
 #include "utils/socket_utils.hpp"
 
 // Only Test on linux platform for now.

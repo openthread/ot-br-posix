@@ -44,8 +44,8 @@
 #include <openthread/instance.h>
 
 #include "common/types.hpp"
+#include "host/rcp_host.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
@@ -69,7 +69,7 @@ public:
      * @param[in] aHost       A reference to the OpenThread Controller instance.
      * @param[in] aPublisher  A reference to the mDNS Publisher.
      */
-    explicit TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
+    explicit TrelDnssd(Host::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the TrelDnssd instance.
@@ -170,7 +170,7 @@ private:
     uint16_t CountDuplicatePeers(const Peer &aPeer);
 
     Mdns::Publisher &mPublisher;
-    Ncp::RcpHost    &mHost;
+    Host::RcpHost   &mHost;
     TaskRunner       mTaskRunner;
     std::string      mTrelNetif;
     uint32_t         mTrelNetifIndex = 0;

@@ -37,11 +37,11 @@
 
 #include <openthread/openthread-system.h>
 
+#include "host/async_task.hpp"
 #include "lib/spinel/spinel_driver.hpp"
-#include "ncp/async_task.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 // =============================== NcpNetworkProperties ===============================
 
@@ -285,5 +285,5 @@ void NcpHost::HandleMdnsState(Mdns::Publisher::State aState)
 }
 #endif
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr

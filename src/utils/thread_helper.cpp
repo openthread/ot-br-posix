@@ -69,7 +69,7 @@
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
 #include "common/tlv.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 
 namespace otbr {
 namespace agent {
@@ -228,7 +228,7 @@ void CopyMdnsResponseCounters(const MdnsResponseCounters &from, threadnetwork::T
 #endif // OTBR_ENABLE_TELEMETRY_DATA_API
 } // namespace
 
-ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Ncp::RcpHost *aHost)
+ThreadHelper::ThreadHelper(otInstance *aInstance, otbr::Host::RcpHost *aHost)
     : mInstance(aInstance)
     , mHost(aHost)
 {

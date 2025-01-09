@@ -38,12 +38,12 @@
 #include "lib/spinel/spinel_driver.hpp"
 
 #include "common/mainloop.hpp"
-#include "ncp/ncp_spinel.hpp"
-#include "ncp/thread_host.hpp"
+#include "host/ncp_spinel.hpp"
+#include "host/thread_host.hpp"
 #include "posix/netif.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 /**
  * This class implements the NetworkProperties under NCP mode.
@@ -142,7 +142,7 @@ private:
     InfraIf                   mInfraIf;
 };
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr
 
 #endif // OTBR_AGENT_NCP_HOST_HPP_

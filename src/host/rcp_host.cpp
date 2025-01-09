@@ -28,7 +28,7 @@
 
 #define OTBR_LOG_TAG "RCP_HOST"
 
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 
 #include <assert.h>
 #include <limits.h>
@@ -60,7 +60,7 @@
 #endif
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 static const uint16_t kThreadVersion11 = 2; ///< Thread Version 1.1
 static const uint16_t kThreadVersion12 = 3; ///< Thread Version 1.2
@@ -803,5 +803,5 @@ extern "C" void otPlatLogHandleLevelChanged(otLogLevel aLogLevel)
     otbrLogInfo("OpenThread log level changed to %d", aLogLevel);
 }
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr
