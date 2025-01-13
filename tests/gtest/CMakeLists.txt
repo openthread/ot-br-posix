@@ -85,7 +85,7 @@ target_link_libraries(otbr-posix-gtest-unit
 gtest_discover_tests(otbr-posix-gtest-unit PROPERTIES LABELS "sudo")
 
 add_executable(otbr-gtest-host-api
-    ${OTBR_PROJECT_DIRECTORY}/src/ncp/rcp_host.cpp
+    ${OTBR_PROJECT_DIRECTORY}/src/host/rcp_host.cpp
     ${OPENTHREAD_PROJECT_DIRECTORY}/tests/gtest/fake_platform.cpp
     fake_posix_platform.cpp
     test_rcp_host_api.cpp

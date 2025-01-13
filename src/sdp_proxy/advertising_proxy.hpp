@@ -44,8 +44,8 @@
 #include <openthread/srp_server.h>
 
 #include "common/code_utils.hpp"
+#include "host/rcp_host.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/rcp_host.hpp"
 
 namespace otbr {
 
@@ -61,7 +61,7 @@ public:
      * @param[in] aHost       A reference to the NCP controller.
      * @param[in] aPublisher  A reference to the mDNS publisher.
      */
-    explicit AdvertisingProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher);
+    explicit AdvertisingProxy(Host::RcpHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method enables/disables the Advertising Proxy.
@@ -123,7 +123,7 @@ private:
     otInstance *GetInstance(void) { return mHost.GetInstance(); }
 
     // A reference to the NCP controller, has no ownership.
-    Ncp::RcpHost &mHost;
+    Host::RcpHost &mHost;
 
     // A reference to the mDNS publisher, has no ownership.
     Mdns::Publisher &mPublisher;

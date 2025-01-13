@@ -36,7 +36,7 @@
 
 #include "common/mainloop.hpp"
 #include "common/mainloop_manager.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 
 #include "fake_platform.hpp"
 
@@ -64,20 +64,20 @@ static void MainloopProcessUntil(otbr::MainloopContext    &aMainloop,
 
 TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
 {
-    otError                                    error              = OT_ERROR_FAILED;
-    bool                                       resultReceived     = false;
-    otbr::Ncp::ThreadEnabledState              threadEnabledState = otbr::Ncp::ThreadEnabledState::kStateInvalid;
-    otbr::MainloopContext                      mainloop;
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
-                                                                                    const std::string &aErrorMsg) {
+    otError                                     error              = OT_ERROR_FAILED;
+    bool                                        resultReceived     = false;
+    otbr::Host::ThreadEnabledState              threadEnabledState = otbr::Host::ThreadEnabledState::kStateInvalid;
+    otbr::MainloopContext                       mainloop;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
+                                                                                     const std::string &aErrorMsg) {
         OT_UNUSED_VARIABLE(aErrorMsg);
         resultReceived = true;
         error          = aError;
     };
-    otbr::Ncp::ThreadHost::ThreadEnabledStateCallback enabledStateCallback =
-        [&threadEnabledState](otbr::Ncp::ThreadEnabledState aState) { threadEnabledState = aState; };
-    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                            /* aEnableAutoAttach */ false);
+    otbr::Host::ThreadHost::ThreadEnabledStateCallback enabledStateCallback =
+        [&threadEnabledState](otbr::Host::ThreadEnabledState aState) { threadEnabledState = aState; };
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
 
     host.Init();
     host.AddThreadEnabledStateChangedCallback(enabledStateCallback);
@@ -87,7 +87,7 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
-    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateEnabled);
+    EXPECT_EQ(threadEnabledState, otbr::Host::ThreadEnabledState::kStateEnabled);
 
     // 2. Set active dataset and start it
     {
@@ -110,17 +110,17 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
     host.SetThreadEnabled(true, receiver);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
     EXPECT_EQ(error, OT_ERROR_NONE);
-    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateEnabled);
+    EXPECT_EQ(threadEnabledState, otbr::Host::ThreadEnabledState::kStateEnabled);
 
     // 4. Disable it
     error          = OT_ERROR_FAILED;
     resultReceived = false;
     host.SetThreadEnabled(false, receiver);
-    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateDisabling);
+    EXPECT_EQ(threadEnabledState, otbr::Host::ThreadEnabledState::kStateDisabling);
     MainloopProcessUntil(mainloop, /* aTimeoutSec */ 1, [&resultReceived]() { return resultReceived; });
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(host.GetDeviceRole(), OT_DEVICE_ROLE_DISABLED);
-    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateDisabled);
+    EXPECT_EQ(threadEnabledState, otbr::Host::ThreadEnabledState::kStateDisabled);
 
     // 5. Duplicate call, should get OT_ERROR_BUSY
     error                   = OT_ERROR_FAILED;
@@ -137,24 +137,24 @@ TEST(RcpHostApi, DeviceRoleChangesCorrectlyAfterSetThreadEnabled)
                          [&resultReceived, &resultReceived2]() { return resultReceived && resultReceived2; });
     EXPECT_EQ(error, OT_ERROR_NONE);
     EXPECT_EQ(error2, OT_ERROR_BUSY);
-    EXPECT_EQ(threadEnabledState, otbr::Ncp::ThreadEnabledState::kStateDisabled);
+    EXPECT_EQ(threadEnabledState, otbr::Host::ThreadEnabledState::kStateDisabled);
 
     host.Deinit();
 }
 
 TEST(RcpHostApi, SetCountryCodeWorkCorrectly)
 {
-    otError                                    error          = OT_ERROR_FAILED;
-    bool                                       resultReceived = false;
-    otbr::MainloopContext                      mainloop;
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
-                                                                                    const std::string &aErrorMsg) {
+    otError                                     error          = OT_ERROR_FAILED;
+    bool                                        resultReceived = false;
+    otbr::MainloopContext                       mainloop;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error](otError            aError,
+                                                                                     const std::string &aErrorMsg) {
         OT_UNUSED_VARIABLE(aErrorMsg);
         resultReceived = true;
         error          = aError;
     };
-    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                            /* aEnableAutoAttach */ false);
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
 
     // 1. Call SetCountryCode when host hasn't been initialized.
     otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
@@ -196,19 +196,19 @@ TEST(RcpHostApi, SetCountryCodeWorkCorrectly)
 
 TEST(RcpHostApi, StateChangesCorrectlyAfterLeave)
 {
-    otError                                    error          = OT_ERROR_NONE;
-    std::string                                errorMsg       = "";
-    bool                                       resultReceived = false;
-    otbr::MainloopContext                      mainloop;
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
-                                                           &errorMsg](otError aError, const std::string &aErrorMsg) {
+    otError                                     error          = OT_ERROR_NONE;
+    std::string                                 errorMsg       = "";
+    bool                                        resultReceived = false;
+    otbr::MainloopContext                       mainloop;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
+                                                            &errorMsg](otError aError, const std::string &aErrorMsg) {
         resultReceived = true;
         error          = aError;
         errorMsg       = aErrorMsg;
     };
 
-    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                            /* aEnableAutoAttach */ false);
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
 
     // 1. Call Leave when host hasn't been initialized.
     otbr::MainloopManager::GetInstance().RemoveMainloopProcessor(
@@ -265,18 +265,18 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterLeave)
 
 TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
 {
-    otError                                    error          = OT_ERROR_NONE;
-    std::string                                errorMsg       = "";
-    bool                                       resultReceived = false;
-    otbr::MainloopContext                      mainloop;
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
-                                                           &errorMsg](otError aError, const std::string &aErrorMsg) {
+    otError                                     error          = OT_ERROR_NONE;
+    std::string                                 errorMsg       = "";
+    bool                                        resultReceived = false;
+    otbr::MainloopContext                       mainloop;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
+                                                            &errorMsg](otError aError, const std::string &aErrorMsg) {
         resultReceived = true;
         error          = aError;
         errorMsg       = aErrorMsg;
     };
-    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                            /* aEnableAutoAttach */ false);
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
 
     otOperationalDataset     dataset;
     otOperationalDatasetTlvs datasetTlvs;
@@ -320,27 +320,27 @@ TEST(RcpHostApi, StateChangesCorrectlyAfterScheduleMigration)
 
 TEST(RcpHostApi, StateChangesCorrectlyAfterJoin)
 {
-    otError                                    error           = OT_ERROR_NONE;
-    otError                                    error_          = OT_ERROR_NONE;
-    std::string                                errorMsg        = "";
-    std::string                                errorMsg_       = "";
-    bool                                       resultReceived  = false;
-    bool                                       resultReceived_ = false;
-    otbr::MainloopContext                      mainloop;
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
-                                                           &errorMsg](otError aError, const std::string &aErrorMsg) {
+    otError                                     error           = OT_ERROR_NONE;
+    otError                                     error_          = OT_ERROR_NONE;
+    std::string                                 errorMsg        = "";
+    std::string                                 errorMsg_       = "";
+    bool                                        resultReceived  = false;
+    bool                                        resultReceived_ = false;
+    otbr::MainloopContext                       mainloop;
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver = [&resultReceived, &error,
+                                                            &errorMsg](otError aError, const std::string &aErrorMsg) {
         resultReceived = true;
         error          = aError;
         errorMsg       = aErrorMsg;
     };
-    otbr::Ncp::ThreadHost::AsyncResultReceiver receiver_ = [&resultReceived_, &error_,
-                                                            &errorMsg_](otError aError, const std::string &aErrorMsg) {
+    otbr::Host::ThreadHost::AsyncResultReceiver receiver_ = [&resultReceived_, &error_,
+                                                             &errorMsg_](otError aError, const std::string &aErrorMsg) {
         resultReceived_ = true;
         error_          = aError;
         errorMsg_       = aErrorMsg;
     };
-    otbr::Ncp::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
-                            /* aEnableAutoAttach */ false);
+    otbr::Host::RcpHost host("wpan0", std::vector<const char *>(), /* aBackboneInterfaceName */ "", /* aDryRun */ false,
+                             /* aEnableAutoAttach */ false);
 
     otOperationalDataset dataset;
     (void)dataset;

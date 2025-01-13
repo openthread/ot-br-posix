@@ -101,11 +101,11 @@ static std::string GetNat64StateName(otNat64State aState)
 namespace otbr {
 namespace DBus {
 
-DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection     &aConnection,
-                                         const std::string  &aInterfaceName,
-                                         otbr::Ncp::RcpHost &aHost,
-                                         Mdns::Publisher    *aPublisher,
-                                         otbr::BorderAgent  &aBorderAgent)
+DBusThreadObjectRcp::DBusThreadObjectRcp(DBusConnection      &aConnection,
+                                         const std::string   &aInterfaceName,
+                                         otbr::Host::RcpHost &aHost,
+                                         Mdns::Publisher     *aPublisher,
+                                         otbr::BorderAgent   &aBorderAgent)
     : DBusObject(&aConnection, OTBR_DBUS_OBJECT_PREFIX + aInterfaceName)
     , mHost(aHost)
     , mPublisher(aPublisher)

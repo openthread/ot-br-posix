@@ -46,7 +46,7 @@
 
 #include "common/code_utils.hpp"
 #include "common/mainloop.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 
 extern "C" {
 #include <libubox/blobmsg_json.h>
@@ -57,7 +57,7 @@ extern "C" {
 }
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 class RcpHost;
 }
 
@@ -79,7 +79,7 @@ public:
      * @param[in] aHost  A pointer to OpenThread Controller structure.
      * @param[in] aMutex       A pointer to mutex.
      */
-    static void Initialize(Ncp::RcpHost *aHost, std::mutex *aMutex);
+    static void Initialize(Host::RcpHost *aHost, std::mutex *aMutex);
 
     /**
      * This method return the instance of the global UbusServer.
@@ -750,7 +750,7 @@ private:
     const char          *mSockPath;
     struct blob_buf      mBuf;
     struct blob_buf      mNetworkdataBuf;
-    Ncp::RcpHost        *mHost;
+    Host::RcpHost       *mHost;
     std::mutex          *mHostMutex;
     time_t               mSecond;
     enum
@@ -764,7 +764,7 @@ private:
      * @param[in] aHost    The pointer to OpenThread Controller structure.
      * @param[in] aMutex   A pointer to mutex.
      */
-    UbusServer(Ncp::RcpHost *aHost, std::mutex *aMutex);
+    UbusServer(Host::RcpHost *aHost, std::mutex *aMutex);
 
     /**
      * This method start scan.
@@ -1083,7 +1083,7 @@ public:
      *
      * @param[in] aHost  A reference to the Thread controller.
      */
-    UBusAgent(otbr::Ncp::RcpHost &aHost)
+    UBusAgent(otbr::Host::RcpHost &aHost)
         : mHost(aHost)
         , mThreadMutex()
     {
@@ -1100,8 +1100,8 @@ public:
 private:
     static void UbusServerRun(void) { otbr::ubus::UbusServer::GetInstance().InstallUbusObject(); }
 
-    otbr::Ncp::RcpHost &mHost;
-    std::mutex          mThreadMutex;
+    otbr::Host::RcpHost &mHost;
+    std::mutex           mThreadMutex;
 };
 } // namespace ubus
 } // namespace otbr

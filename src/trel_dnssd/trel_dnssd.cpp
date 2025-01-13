@@ -81,7 +81,7 @@ namespace otbr {
 
 namespace TrelDnssd {
 
-TrelDnssd::TrelDnssd(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
+TrelDnssd::TrelDnssd(Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mPublisher(aPublisher)
     , mHost(aHost)
 {

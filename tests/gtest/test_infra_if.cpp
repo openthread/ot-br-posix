@@ -29,8 +29,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "ncp/posix/infra_if.hpp"
-#include "ncp/posix/netif.hpp"
+#include "host/posix/infra_if.hpp"
+#include "host/posix/netif.hpp"
 
 // Only Test on linux platform for now.
 #ifdef __linux__

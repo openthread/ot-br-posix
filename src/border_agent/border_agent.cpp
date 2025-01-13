@@ -59,7 +59,7 @@
 #include <openthread/platform/toolchain.h>
 
 #include "agent/uris.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
@@ -156,7 +156,7 @@ struct StateBitmap
     }
 };
 
-BorderAgent::BorderAgent(otbr::Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
+BorderAgent::BorderAgent(otbr::Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mHost(aHost)
     , mPublisher(aPublisher)
     , mIsEnabled(false)

@@ -46,7 +46,7 @@ namespace DBus {
 const struct timeval           DBusAgent::kPollTimeout = {0, 0};
 constexpr std::chrono::seconds DBusAgent::kDBusWaitAllowance;
 
-DBusAgent::DBusAgent(otbr::Ncp::ThreadHost &aHost, Mdns::Publisher &aPublisher)
+DBusAgent::DBusAgent(otbr::Host::ThreadHost &aHost, Mdns::Publisher &aPublisher)
     : mInterfaceName(aHost.GetInterfaceName())
     , mHost(aHost)
     , mPublisher(aPublisher)
@@ -71,12 +71,12 @@ void DBusAgent::Init(otbr::BorderAgent &aBorderAgent)
     {
     case OT_COPROCESSOR_RCP:
         mThreadObject = MakeUnique<DBusThreadObjectRcp>(*mConnection, mInterfaceName,
-                                                        static_cast<Ncp::RcpHost &>(mHost), &mPublisher, aBorderAgent);
+                                                        static_cast<Host::RcpHost &>(mHost), &mPublisher, aBorderAgent);
         break;
 
     case OT_COPROCESSOR_NCP:
         mThreadObject =
-            MakeUnique<DBusThreadObjectNcp>(*mConnection, mInterfaceName, static_cast<Ncp::NcpHost &>(mHost));
+            MakeUnique<DBusThreadObjectNcp>(*mConnection, mInterfaceName, static_cast<Host::NcpHost &>(mHost));
         break;
 
     default:

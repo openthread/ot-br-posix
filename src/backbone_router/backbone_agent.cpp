@@ -47,7 +47,7 @@
 namespace otbr {
 namespace BackboneRouter {
 
-BackboneAgent::BackboneAgent(otbr::Ncp::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName)
+BackboneAgent::BackboneAgent(otbr::Host::RcpHost &aHost, std::string aInterfaceName, std::string aBackboneInterfaceName)
     : mHost(aHost)
     , mBackboneRouterState(OT_BACKBONE_ROUTER_STATE_DISABLED)
 #if OTBR_ENABLE_DUA_ROUTING

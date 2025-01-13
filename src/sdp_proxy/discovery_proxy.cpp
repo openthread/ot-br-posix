@@ -58,7 +58,7 @@ static inline bool DnsLabelsEqual(const std::string &aLabel1, const std::string 
     return StringUtils::EqualCaseInsensitive(aLabel1, aLabel2);
 }
 
-DiscoveryProxy::DiscoveryProxy(Ncp::RcpHost &aHost, Mdns::Publisher &aPublisher)
+DiscoveryProxy::DiscoveryProxy(Host::RcpHost &aHost, Mdns::Publisher &aPublisher)
     : mHost(aHost)
     , mMdnsPublisher(aPublisher)
     , mIsEnabled(false)

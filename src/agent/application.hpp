@@ -44,8 +44,8 @@
 #if OTBR_ENABLE_BORDER_AGENT
 #include "border_agent/border_agent.hpp"
 #endif
-#include "ncp/ncp_host.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/ncp_host.hpp"
+#include "host/rcp_host.hpp"
 #if OTBR_ENABLE_BACKBONE_ROUTER
 #include "backbone_router/backbone_agent.hpp"
 #endif
@@ -99,7 +99,7 @@ public:
      * @param[in] aRestListenAddress     Network address to listen on.
      * @param[in] aRestListenPort        Network port to listen on.
      */
-    explicit Application(Ncp::ThreadHost   &aHost,
+    explicit Application(Host::ThreadHost  &aHost,
                          const std::string &aInterfaceName,
                          const std::string &aBackboneInterfaceName,
                          const std::string &aRestListenAddress,
@@ -138,7 +138,7 @@ public:
      *
      * @returns The OpenThread controller object.
      */
-    Ncp::ThreadHost &GetHost(void) { return mHost; }
+    Host::ThreadHost &GetHost(void) { return mHost; }
 
 #if OTBR_ENABLE_MDNS
     /**
@@ -261,9 +261,9 @@ private:
     void InitNcpMode(void);
     void DeinitNcpMode(void);
 
-    std::string      mInterfaceName;
-    const char      *mBackboneInterfaceName;
-    Ncp::ThreadHost &mHost;
+    std::string       mInterfaceName;
+    const char       *mBackboneInterfaceName;
+    Host::ThreadHost &mHost;
 #if OTBR_ENABLE_MDNS
     Mdns::StateSubject               mMdnsStateSubject;
     std::unique_ptr<Mdns::Publisher> mPublisher;

@@ -48,7 +48,7 @@
 #include "lib/spinel/spinel_prop_codec.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 static constexpr char kSpinelDataUnpackFormat[] = "CiiD";
 
@@ -1138,5 +1138,5 @@ otDeviceRole NcpSpinel::SpinelRoleToDeviceRole(spinel_net_role_t aRole)
     return role;
 }
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr

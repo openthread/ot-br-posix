@@ -44,7 +44,7 @@
 #include <openthread/thread_ftd.h>
 
 #include "common/logging.hpp"
-#include "ncp/rcp_host.hpp"
+#include "host/rcp_host.hpp"
 
 namespace otbr {
 namespace ubus {
@@ -58,7 +58,7 @@ const static int PANID_LENGTH      = 10;
 const static int XPANID_LENGTH     = 64;
 const static int NETWORKKEY_LENGTH = 64;
 
-UbusServer::UbusServer(Ncp::RcpHost *aHost, std::mutex *aMutex)
+UbusServer::UbusServer(Host::RcpHost *aHost, std::mutex *aMutex)
     : mIfFinishScan(false)
     , mContext(nullptr)
     , mSockPath(nullptr)
@@ -78,7 +78,7 @@ UbusServer &UbusServer::GetInstance(void)
     return *sUbusServerInstance;
 }
 
-void UbusServer::Initialize(Ncp::RcpHost *aHost, std::mutex *aMutex)
+void UbusServer::Initialize(Host::RcpHost *aHost, std::mutex *aMutex)
 {
     sUbusServerInstance = new UbusServer(aHost, aMutex);
 }

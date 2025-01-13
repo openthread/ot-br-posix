@@ -52,13 +52,13 @@
 
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
+#include "host/async_task.hpp"
+#include "host/posix/infra_if.hpp"
+#include "host/posix/netif.hpp"
 #include "mdns/mdns.hpp"
-#include "ncp/async_task.hpp"
-#include "ncp/posix/infra_if.hpp"
-#include "ncp/posix/netif.hpp"
 
 namespace otbr {
-namespace Ncp {
+namespace Host {
 
 /**
  * This interface is an observer to subscribe the network properties from NCP.
@@ -406,7 +406,7 @@ private:
     InfraIfSendIcmp6NdCallback       mInfraIfIcmp6NdCallback;
 };
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr
 
 #endif // OTBR_AGENT_NCP_SPINEL_HPP_

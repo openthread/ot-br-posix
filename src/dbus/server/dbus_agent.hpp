@@ -48,7 +48,7 @@
 #include "dbus/server/dbus_object.hpp"
 #include "dbus/server/dbus_thread_object_ncp.hpp"
 #include "dbus/server/dbus_thread_object_rcp.hpp"
-#include "ncp/thread_host.hpp"
+#include "host/thread_host.hpp"
 
 namespace otbr {
 namespace DBus {
@@ -62,7 +62,7 @@ public:
      * @param[in] aHost           A reference to the Thread host.
      * @param[in] aPublisher      A reference to the MDNS publisher.
      */
-    DBusAgent(otbr::Ncp::ThreadHost &aHost, Mdns::Publisher &aPublisher);
+    DBusAgent(otbr::Host::ThreadHost &aHost, Mdns::Publisher &aPublisher);
 
     /**
      * This method initializes the dbus agent.
@@ -87,7 +87,7 @@ private:
     std::string                 mInterfaceName;
     std::unique_ptr<DBusObject> mThreadObject;
     UniqueDBusConnection        mConnection;
-    otbr::Ncp::ThreadHost      &mHost;
+    otbr::Host::ThreadHost     &mHost;
     Mdns::Publisher            &mPublisher;
 
     /**

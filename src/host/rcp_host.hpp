@@ -49,7 +49,7 @@
 #include "common/mainloop.hpp"
 #include "common/task_runner.hpp"
 #include "common/types.hpp"
-#include "ncp/thread_host.hpp"
+#include "host/thread_host.hpp"
 #include "utils/thread_helper.hpp"
 
 namespace otbr {
@@ -58,7 +58,7 @@ namespace otbr {
 class FeatureFlagList;
 #endif
 
-namespace Ncp {
+namespace Host {
 
 /**
  * This class implements the NetworkProperties for architectures where OT APIs are directly accessible.
@@ -298,7 +298,7 @@ private:
 #endif
 };
 
-} // namespace Ncp
+} // namespace Host
 } // namespace otbr
 
 #endif // OTBR_AGENT_RCP_HOST_HPP_

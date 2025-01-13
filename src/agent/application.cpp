@@ -51,7 +51,7 @@ namespace otbr {
 std::atomic_bool     Application::sShouldTerminate(false);
 const struct timeval Application::kPollTimeout = {OTBR_MAINLOOP_POLL_TIMEOUT_SEC, 0};
 
-Application::Application(Ncp::ThreadHost   &aHost,
+Application::Application(Host::ThreadHost  &aHost,
                          const std::string &aInterfaceName,
                          const std::string &aBackboneInterfaceName,
                          const std::string &aRestListenAddress,
@@ -189,7 +189,7 @@ void Application::HandleSignal(int aSignal)
 
 void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRestListenPort)
 {
-    otbr::Ncp::RcpHost &rcpHost = static_cast<otbr::Ncp::RcpHost &>(mHost);
+    otbr::Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
 #if OTBR_ENABLE_BORDER_AGENT
     mBorderAgent = MakeUnique<BorderAgent>(rcpHost, *mPublisher);
 #endif
@@ -289,7 +289,7 @@ void Application::DeinitRcpMode(void)
 void Application::InitNcpMode(void)
 {
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
-    otbr::Ncp::NcpHost &ncpHost = static_cast<otbr::Ncp::NcpHost &>(mHost);
+    otbr::Host::NcpHost &ncpHost = static_cast<otbr::Host::NcpHost &>(mHost);
     ncpHost.SetMdnsPublisher(mPublisher.get());
     mMdnsStateSubject.AddObserver(ncpHost);
     mPublisher->Start();
