@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-5626982</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-8bdfb6b</span>
    </div>
   </td>
  </tr>
@@ -122,8 +122,8 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#if OTBR_ENABLE_BORDER_AGENT</span></div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="preprocessor">#include &quot;<a class="code" href="../../de/df0/border__agent_8hpp.html">border_agent/border_agent.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &quot;<a class="code" href="../../d2/d05/ncp__host_8hpp.html">ncp/ncp_host.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &quot;<a class="code" href="../../d3/d89/rcp__host_8hpp.html">ncp/rcp_host.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &quot;<a class="code" href="../../d2/d05/ncp__host_8hpp.html">host/ncp_host.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &quot;<a class="code" href="../../d3/d89/rcp__host_8hpp.html">host/rcp_host.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="preprocessor">#if OTBR_ENABLE_BACKBONE_ROUTER</span></div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">#include &quot;<a class="code" href="../../d0/df4/backbone__agent_8hpp.html">backbone_router/backbone_agent.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="preprocessor">#endif</span></div>
@@ -156,7 +156,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    <span class="keyword">typedef</span> std::function&lt;<a class="code hl_enumeration" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a>(<span class="keywordtype">void</span>)&gt; ErrorCondition;</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keyword">explicit</span> <a class="code hl_function" href="../../d5/d01/structotbr_1_1Application.html#a3d0a80c28e3f4cfd9f30b51d08cdf8e9">Application</a>(Ncp::ThreadHost   &amp;aHost,</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keyword">explicit</span> <a class="code hl_function" href="../../d5/d01/structotbr_1_1Application.html#a184594feae42c503363313485e315749">Application</a>(Host::ThreadHost  &amp;aHost,</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>                         <span class="keyword">const</span> std::string &amp;aInterfaceName,</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                         <span class="keyword">const</span> std::string &amp;aBackboneInterfaceName,</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>                         <span class="keyword">const</span> std::string &amp;aRestListenAddress,</div>
@@ -170,7 +170,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
 <div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    <a class="code hl_enumeration" href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a> <a class="code hl_function" href="../../d5/d01/structotbr_1_1Application.html#a69ae64f6b3a7859ed462019816a05475">Run</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno"><a class="line" href="../../d5/d01/structotbr_1_1Application.html#ae7d0f15b8574975c3a09021ddc66bbf6">  141</a></span>    <a class="code hl_class" href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html">Ncp::ThreadHost</a> &amp;<a class="code hl_function" href="../../d5/d01/structotbr_1_1Application.html#ae7d0f15b8574975c3a09021ddc66bbf6">GetHost</a>(<span class="keywordtype">void</span>) { <span class="keywordflow">return</span> mHost; }</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno"><a class="line" href="../../d5/d01/structotbr_1_1Application.html#ae3e45cac5cdab54fd2f497ef2b30b421">  141</a></span>    <a class="code hl_class" href="../../d0/d9b/classotbr_1_1Host_1_1ThreadHost.html">Host::ThreadHost</a> &amp;<a class="code hl_function" href="../../d5/d01/structotbr_1_1Application.html#ae3e45cac5cdab54fd2f497ef2b30b421">GetHost</a>(<span class="keywordtype">void</span>) { <span class="keywordflow">return</span> mHost; }</div>
 <div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
 <div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span><span class="preprocessor">#if OTBR_ENABLE_MDNS</span></div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    <a class="code hl_class" href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html">Mdns::Publisher</a> &amp;GetPublisher(<span class="keywordtype">void</span>)</div>
@@ -248,9 +248,9 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    <span class="keywordtype">void</span> InitNcpMode(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    <span class="keywordtype">void</span> DeinitNcpMode(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span> </div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    std::string      mInterfaceName;</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    <span class="keyword">const</span> <span class="keywordtype">char</span>      *mBackboneInterfaceName;</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    Ncp::ThreadHost &amp;mHost;</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    std::string       mInterfaceName;</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    <span class="keyword">const</span> <span class="keywordtype">char</span>       *mBackboneInterfaceName;</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    Host::ThreadHost &amp;mHost;</div>
 <div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="preprocessor">#if OTBR_ENABLE_MDNS</span></div>
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    Mdns::StateSubject               mMdnsStateSubject;</div>
 <div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    std::unique_ptr&lt;Mdns::Publisher&gt; mPublisher;</div>
@@ -293,8 +293,8 @@ $(document).ready(function() { init_codefold(1); });
 <div class="ttc" id="abackbone__agent_8hpp_html"><div class="ttname"><a href="../../d0/df4/backbone__agent_8hpp.html">backbone_agent.hpp</a></div></div>
 <div class="ttc" id="aborder__agent_8hpp_html"><div class="ttname"><a href="../../de/df0/border__agent_8hpp.html">border_agent.hpp</a></div></div>
 <div class="ttc" id="aclassNonCopyable_html"><div class="ttname"><a href="../../dc/d3c/classNonCopyable.html">NonCopyable</a></div><div class="ttdef"><b>Definition</b> code_utils.hpp:190</div></div>
+<div class="ttc" id="aclassotbr_1_1Host_1_1ThreadHost_html"><div class="ttname"><a href="../../d0/d9b/classotbr_1_1Host_1_1ThreadHost.html">otbr::Host::ThreadHost</a></div><div class="ttdef"><b>Definition</b> thread_host.hpp:116</div></div>
 <div class="ttc" id="aclassotbr_1_1Mdns_1_1Publisher_html"><div class="ttname"><a href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html">otbr::Mdns::Publisher</a></div><div class="ttdef"><b>Definition</b> mdns.hpp:74</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1ThreadHost_html"><div class="ttname"><a href="../../db/d04/classotbr_1_1Ncp_1_1ThreadHost.html">otbr::Ncp::ThreadHost</a></div><div class="ttdef"><b>Definition</b> thread_host.hpp:116</div></div>
 <div class="ttc" id="acommon_2types_8hpp_html_a9addd74a14dca1dab1b3e7a8205455aa"><div class="ttname"><a href="../../dc/d53/common_2types_8hpp.html#a9addd74a14dca1dab1b3e7a8205455aa">otbrError</a></div><div class="ttdeci">otbrError</div><div class="ttdef"><b>Definition</b> types.hpp:72</div></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="../../db/d16/config_8h.html">config.h</a></div></div>
 <div class="ttc" id="adbus__agent_8hpp_html"><div class="ttname"><a href="../../d8/d71/dbus__agent_8hpp.html">dbus_agent.hpp</a></div></div>
@@ -304,11 +304,11 @@ $(document).ready(function() { init_codefold(1); });
 <div class="ttc" id="arcp__host_8hpp_html"><div class="ttname"><a href="../../d3/d89/rcp__host_8hpp.html">rcp_host.hpp</a></div></div>
 <div class="ttc" id="arest__web__server_8hpp_html"><div class="ttname"><a href="../../d0/d9f/rest__web__server_8hpp.html">rest_web_server.hpp</a></div></div>
 <div class="ttc" id="astructotbr_1_1Application_html_a0ff7f453566d8b877efe74bce7b58c79"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#a0ff7f453566d8b877efe74bce7b58c79">otbr::Application::Init</a></div><div class="ttdeci">void Init(void)</div><div class="ttdef"><b>Definition</b> application.cpp:76</div></div>
-<div class="ttc" id="astructotbr_1_1Application_html_a3d0a80c28e3f4cfd9f30b51d08cdf8e9"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#a3d0a80c28e3f4cfd9f30b51d08cdf8e9">otbr::Application::Application</a></div><div class="ttdeci">Application(Ncp::ThreadHost &amp;aHost, const std::string &amp;aInterfaceName, const std::string &amp;aBackboneInterfaceName, const std::string &amp;aRestListenAddress, int aRestListenPort)</div><div class="ttdef"><b>Definition</b> application.cpp:54</div></div>
+<div class="ttc" id="astructotbr_1_1Application_html_a184594feae42c503363313485e315749"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#a184594feae42c503363313485e315749">otbr::Application::Application</a></div><div class="ttdeci">Application(Host::ThreadHost &amp;aHost, const std::string &amp;aInterfaceName, const std::string &amp;aBackboneInterfaceName, const std::string &amp;aRestListenAddress, int aRestListenPort)</div><div class="ttdef"><b>Definition</b> application.cpp:54</div></div>
 <div class="ttc" id="astructotbr_1_1Application_html_a69ae64f6b3a7859ed462019816a05475"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#a69ae64f6b3a7859ed462019816a05475">otbr::Application::Run</a></div><div class="ttdeci">otbrError Run(void)</div><div class="ttdef"><b>Definition</b> application.cpp:114</div></div>
 <div class="ttc" id="astructotbr_1_1Application_html_ab0e92efc64c9825cd522b445f048336e"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#ab0e92efc64c9825cd522b445f048336e">otbr::Application::SetErrorCondition</a></div><div class="ttdeci">void SetErrorCondition(ErrorCondition aErrorCondition)</div><div class="ttdef"><b>Definition</b> application.hpp:126</div></div>
 <div class="ttc" id="astructotbr_1_1Application_html_adf5dda38fabceb5ad6f81fbdca30a6f8"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#adf5dda38fabceb5ad6f81fbdca30a6f8">otbr::Application::Deinit</a></div><div class="ttdeci">void Deinit(void)</div><div class="ttdef"><b>Definition</b> application.cpp:96</div></div>
-<div class="ttc" id="astructotbr_1_1Application_html_ae7d0f15b8574975c3a09021ddc66bbf6"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#ae7d0f15b8574975c3a09021ddc66bbf6">otbr::Application::GetHost</a></div><div class="ttdeci">Ncp::ThreadHost &amp; GetHost(void)</div><div class="ttdef"><b>Definition</b> application.hpp:141</div></div>
+<div class="ttc" id="astructotbr_1_1Application_html_ae3e45cac5cdab54fd2f497ef2b30b421"><div class="ttname"><a href="../../d5/d01/structotbr_1_1Application.html#ae3e45cac5cdab54fd2f497ef2b30b421">otbr::Application::GetHost</a></div><div class="ttdeci">Host::ThreadHost &amp; GetHost(void)</div><div class="ttdef"><b>Definition</b> application.hpp:141</div></div>
 <div class="ttc" id="avendor_8hpp_html"><div class="ttname"><a href="../../d2/d92/vendor_8hpp.html">vendor.hpp</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->

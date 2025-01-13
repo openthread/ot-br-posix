@@ -11,7 +11,7 @@ var searchData=
   ['border_20router_20mdns_8',['Border-router-mdns',['../d5/d1f/group__border-router-mdns.html',1,'']]],
   ['border_5fagent_2ecpp_9',['border_agent.cpp',['../d1/dbe/border__agent_8cpp.html',1,'']]],
   ['border_5fagent_2ehpp_10',['border_agent.hpp',['../de/df0/border__agent_8hpp.html',1,'']]],
-  ['borderagent_11',['borderagent',['../d4/dfd/classotbr_1_1BorderAgent.html',1,'otbr::BorderAgent'],['../d4/dfd/classotbr_1_1BorderAgent.html#a3bed781c896e8b71eda98fbc673a34df',1,'otbr::BorderAgent::BorderAgent()']]],
+  ['borderagent_11',['borderagent',['../d4/dfd/classotbr_1_1BorderAgent.html',1,'otbr::BorderAgent'],['../d4/dfd/classotbr_1_1BorderAgent.html#a4408a0752e61e4e3c4da638da4fcc6d5',1,'otbr::BorderAgent::BorderAgent()']]],
   ['borderroutingcounters_12',['BorderRoutingCounters',['../d4/d1c/structotbr_1_1DBus_1_1BorderRoutingCounters.html',1,'otbr::DBus']]],
   ['br_13',['openthread-br',['../index.html',1,'']]],
   ['bytes2hex_14',['bytes2hex',['../d4/dfd/hex_8cpp.html#ab39cd153b273e06f7b06b4f8a8650c79',1,'otbr::Utils::Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength)'],['../d4/dfd/hex_8cpp.html#aefa4750485a5ac27e3925228d870bf4b',1,'otbr::Utils::Bytes2Hex(const uint8_t *aBytes, const uint16_t aBytesLength, char *aHex)']]],

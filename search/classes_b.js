@@ -6,5 +6,5 @@ var searchData=
   ['onmeshprefix_3',['OnMeshPrefix',['../d5/d02/structotbr_1_1DBus_1_1OnMeshPrefix.html',1,'otbr::DBus']]],
   ['openthreadclient_4',['OpenThreadClient',['../d3/d3f/classotbr_1_1Web_1_1OpenThreadClient.html',1,'otbr::Web']]],
   ['optional_5',['Optional',['../de/dac/classOptional.html',1,'']]],
-  ['otnetworkproperties_6',['OtNetworkProperties',['../d3/d8c/classotbr_1_1Ncp_1_1OtNetworkProperties.html',1,'otbr::Ncp']]]
+  ['otnetworkproperties_6',['OtNetworkProperties',['../de/d7a/classotbr_1_1Host_1_1OtNetworkProperties.html',1,'otbr::Host']]]
 ];

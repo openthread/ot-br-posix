@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-5626982</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-8bdfb6b</span>
    </div>
   </td>
  </tr>
@@ -125,7 +125,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &quot;<a class="code" href="../../d7/daf/dua__routing__manager_8hpp.html">backbone_router/dua_routing_manager.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &quot;<a class="code" href="../../d1/d28/nd__proxy_8hpp.html">backbone_router/nd_proxy.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="preprocessor">#include &quot;<a class="code" href="../../da/d7b/code__utils_8hpp.html">common/code_utils.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">#include &quot;<a class="code" href="../../d3/d89/rcp__host_8hpp.html">ncp/rcp_host.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="preprocessor">#include &quot;<a class="code" href="../../d3/d89/rcp__host_8hpp.html">host/rcp_host.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">namespace </span>otbr {</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="keyword">namespace </span>BackboneRouter {</div>
@@ -135,7 +135,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="keyword">static</span> <span class="keyword">constexpr</span> uint16_t kBackboneUdpPort = 61631; </div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    BackboneAgent(<a class="code hl_class" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html">otbr::Ncp::RcpHost</a> &amp;aHost, std::string aInterfaceName, std::string aBackboneInterfaceName);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    BackboneAgent(<a class="code hl_class" href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a> &amp;aHost, std::string aInterfaceName, std::string aBackboneInterfaceName);</div>
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="keywordtype">void</span> Init(<span class="keywordtype">void</span>);</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
@@ -159,7 +159,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span> </div>
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">char</span> *StateToString(otBackboneRouterState aState);</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <a class="code hl_class" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html">otbr::Ncp::RcpHost</a>   &amp;mHost;</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <a class="code hl_class" href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a>  &amp;mHost;</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    otBackboneRouterState mBackboneRouterState;</div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    Ip6Prefix             mDomainPrefix;</div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span><span class="preprocessor">#if OTBR_ENABLE_DUA_ROUTING</span></div>
@@ -175,7 +175,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span><span class="preprocessor">#endif </span><span class="comment">// BACKBONE_ROUTER_BACKBONE_AGENT_HPP_</span></div>
 <div class="ttc" id="aclassNonCopyable_html"><div class="ttname"><a href="../../dc/d3c/classNonCopyable.html">NonCopyable</a></div><div class="ttdef"><b>Definition</b> code_utils.hpp:190</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1RcpHost_html"><div class="ttname"><a href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html">otbr::Ncp::RcpHost</a></div><div class="ttdef"><b>Definition</b> rcp_host.hpp:92</div></div>
+<div class="ttc" id="aclassotbr_1_1Host_1_1RcpHost_html"><div class="ttname"><a href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a></div><div class="ttdef"><b>Definition</b> rcp_host.hpp:92</div></div>
 <div class="ttc" id="acode__utils_8hpp_html"><div class="ttname"><a href="../../da/d7b/code__utils_8hpp.html">code_utils.hpp</a></div></div>
 <div class="ttc" id="aconfig_8h_html"><div class="ttname"><a href="../../db/d16/config_8h.html">config.h</a></div></div>
 <div class="ttc" id="adua__routing__manager_8hpp_html"><div class="ttname"><a href="../../d7/daf/dua__routing__manager_8hpp.html">dua_routing_manager.hpp</a></div></div>

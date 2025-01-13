@@ -16,5 +16,5 @@ var searchData=
   ['otbrlogsyslogsetenabled_13',['otbrLogSyslogSetEnabled',['../d0/da9/logging_8hpp.html#af740e6936276863cd271888f9d24e088',1,'logging.cpp']]],
   ['otbrlogv_14',['otbrLogv',['../d0/da9/logging_8hpp.html#aaf2c504d00faeea0f5e4a8e45ed7a871',1,'logging.cpp']]],
   ['otbrlogvnofilter_15',['otbrLogvNoFilter',['../d0/da9/logging_8hpp.html#a13b760a72ea9fe45589aa46998847373',1,'logging.cpp']]],
-  ['otnetworkproperties_16',['OtNetworkProperties',['../d3/d8c/classotbr_1_1Ncp_1_1OtNetworkProperties.html#a584e37674eced73d19359eb8a6cce7ad',1,'otbr::Ncp::OtNetworkProperties']]]
+  ['otnetworkproperties_16',['OtNetworkProperties',['../de/d7a/classotbr_1_1Host_1_1OtNetworkProperties.html#a57292208bb9ba5d01ab78aeeedd05d3f',1,'otbr::Host::OtNetworkProperties']]]
 ];

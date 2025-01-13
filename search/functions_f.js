@@ -1,11 +1,11 @@
 var searchData=
 [
-  ['rcphost_0',['RcpHost',['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#abf4bbc3b43531cf49ea108da52d79f86',1,'otbr::Ncp::RcpHost']]],
+  ['rcphost_0',['RcpHost',['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#ab5b9c1a9c5215e42f57528fc4ca66994',1,'otbr::Host::RcpHost']]],
   ['read_1',['Read',['../d3/d3f/classotbr_1_1Web_1_1OpenThreadClient.html#ae94d437e6107bc18688865a865f2006f',1,'otbr::Web::OpenThreadClient']]],
   ['registerasyncgetpropertyhandler_2',['RegisterAsyncGetPropertyHandler',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#acc21a3ebf03bcc6c9122a06144c3fccd',1,'otbr::DBus::DBusObject']]],
   ['registergetpropertyhandler_3',['registergetpropertyhandler',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#a4e58bc06a49c62c4db7119b58c794296',1,'otbr::DBus::DBusObject::RegisterGetPropertyHandler()'],['../dc/d5c/classotbr_1_1DBus_1_1DBusThreadObjectRcp.html#a26753a91931306c776bb14fba3488981',1,'otbr::DBus::DBusThreadObjectRcp::RegisterGetPropertyHandler()']]],
   ['registermethod_4',['RegisterMethod',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#a260123f74ab6d1781ad12966c774ba53',1,'otbr::DBus::DBusObject']]],
-  ['registerresethandler_5',['RegisterResetHandler',['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#a58c0cc133b6e0b512ac9d3f19a5aaed1',1,'otbr::Ncp::RcpHost']]],
+  ['registerresethandler_5',['RegisterResetHandler',['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#a7198cfdd1a9060d33e7a9831879ee4b9',1,'otbr::Host::RcpHost']]],
   ['registersetpropertyhandler_6',['RegisterSetPropertyHandler',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#ada021d44f72a311d39d114f4b424b1a7',1,'otbr::DBus::DBusObject']]],
   ['removeexternalroute_7',['RemoveExternalRoute',['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#aee458a50a8b0d9f51cab57da34ca56b8',1,'otbr::DBus::ThreadApiDBus']]],
   ['removemainloopprocessor_8',['RemoveMainloopProcessor',['../d7/dcc/classotbr_1_1MainloopManager.html#ae8e2682cc2ccd75b93a4606003848e1d',1,'otbr::MainloopManager']]],
@@ -14,12 +14,12 @@ var searchData=
   ['reply_11',['Reply',['../d0/d92/classotbr_1_1DBus_1_1DBusRequest.html#a5948a3c18efa1352df77adac74347e6f',1,'otbr::DBus::DBusRequest']]],
   ['replyotresult_12',['ReplyOtResult',['../d0/d92/classotbr_1_1DBus_1_1DBusRequest.html#a15c08321c5a04ef2464b3b673fef0218',1,'otbr::DBus::DBusRequest']]],
   ['request_13',['Request',['../da/df0/classotbr_1_1rest_1_1Request.html#a52c5b75f73fa531174de4b86df11ad8f',1,'otbr::rest::Request']]],
-  ['reset_14',['reset',['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#a59cb080048eb1f0b26c933e2839d3828',1,'otbr::DBus::ThreadApiDBus::Reset()'],['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#ac5d421f0b97b65032e56924a585a5b91',1,'otbr::Ncp::RcpHost::Reset()'],['../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#aac024301fc948bc1942788c2dff1517d',1,'otbr::agent::ThreadHelper::Reset()']]],
+  ['reset_14',['reset',['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#a59cb080048eb1f0b26c933e2839d3828',1,'otbr::DBus::ThreadApiDBus::Reset()'],['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#ad2cca5e5d565703febb99b976d54781c',1,'otbr::Host::RcpHost::Reset()'],['../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#aac024301fc948bc1942788c2dff1517d',1,'otbr::agent::ThreadHelper::Reset()']]],
   ['resetreadcomplete_15',['ResetReadComplete',['../da/df0/classotbr_1_1rest_1_1Request.html#aacabd076aff9c6bf42d189b7deace308',1,'otbr::rest::Request']]],
   ['resource_16',['Resource',['../d7/d6e/classotbr_1_1rest_1_1Resource.html#abc6113c55387f1851043cb246a5d51d5',1,'otbr::rest::Resource']]],
   ['response_17',['Response',['../d2/db0/classotbr_1_1rest_1_1Response.html#adc1e6ef6d583cf3a9c2f742c4fc133d2',1,'otbr::rest::Response']]],
   ['restwebserver_18',['RestWebServer',['../d8/d5d/classotbr_1_1rest_1_1RestWebServer.html#ab8b5e1f7e426baaca328dcdac8ede626',1,'otbr::rest::RestWebServer']]],
   ['route2jsonstring_19',['Route2JsonString',['../d0/d6c/namespaceotbr_1_1rest_1_1Json.html#a9fe0ae5bec7fe781b986c237cd2720f3',1,'otbr::rest::Json']]],
   ['routedata2jsonstring_20',['RouteData2JsonString',['../d0/d6c/namespaceotbr_1_1rest_1_1Json.html#af86ee9d297e341e0ec9265d2479c0777',1,'otbr::rest::Json']]],
-  ['run_21',['run',['../d5/d01/structotbr_1_1Application.html#a69ae64f6b3a7859ed462019816a05475',1,'otbr::Application::Run()'],['../d3/d6f/classotbr_1_1Ncp_1_1AsyncTask.html#a8f1555186bccb1b7c6c0f768dacea00d',1,'otbr::Ncp::AsyncTask::Run()']]]
+  ['run_21',['run',['../d5/d01/structotbr_1_1Application.html#a69ae64f6b3a7859ed462019816a05475',1,'otbr::Application::Run()'],['../d1/d1d/classotbr_1_1Host_1_1AsyncTask.html#a16df4d5f81d5e02d5812d2613df4d103',1,'otbr::Host::AsyncTask::Run()']]]
 ];

@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-5626982</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-8bdfb6b</span>
    </div>
   </td>
  </tr>
@@ -122,8 +122,8 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="preprocessor">#include &lt;openthread/instance.h&gt;</span></div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="preprocessor">#include &quot;common/types.hpp&quot;</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &quot;<a class="code" href="../../de/d7c/mdns_8hpp.html">mdns/mdns.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &quot;<a class="code" href="../../d3/d89/rcp__host_8hpp.html">ncp/rcp_host.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="preprocessor">#include &quot;<a class="code" href="../../d3/d89/rcp__host_8hpp.html">host/rcp_host.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="preprocessor">#include &quot;<a class="code" href="../../de/d7c/mdns_8hpp.html">mdns/mdns.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="keyword">namespace </span>otbr {</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
@@ -132,7 +132,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="keyword">class </span>TrelDnssd : <span class="keyword">public</span> Mdns::StateObserver</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>{</div>
 <div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keyword">explicit</span> TrelDnssd(Ncp::RcpHost &amp;aHost, Mdns::Publisher &amp;aPublisher);</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keyword">explicit</span> TrelDnssd(Host::RcpHost &amp;aHost, Mdns::Publisher &amp;aPublisher);</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
 <div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    <span class="keywordtype">void</span> Initialize(std::string aTrelNetif);</div>
 <div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
@@ -207,7 +207,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>    uint16_t CountDuplicatePeers(<span class="keyword">const</span> Peer &amp;aPeer);</div>
 <div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span> </div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>    Mdns::Publisher &amp;mPublisher;</div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    Ncp::RcpHost    &amp;mHost;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>    Host::RcpHost   &amp;mHost;</div>
 <div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    TaskRunner       mTaskRunner;</div>
 <div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    std::string      mTrelNetif;</div>
 <div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    uint32_t         mTrelNetifIndex = 0;</div>

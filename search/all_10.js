@@ -3,13 +3,13 @@ var searchData=
   ['radiocoexmetrics_0',['RadioCoexMetrics',['../d5/d2d/structotbr_1_1DBus_1_1RadioCoexMetrics.html',1,'otbr::DBus']]],
   ['radiospinelmetrics_1',['RadioSpinelMetrics',['../dd/d09/structotbr_1_1DBus_1_1RadioSpinelMetrics.html',1,'otbr::DBus']]],
   ['rcp_5fhost_2ehpp_2',['rcp_host.hpp',['../d3/d89/rcp__host_8hpp.html',1,'']]],
-  ['rcphost_3',['rcphost',['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html',1,'otbr::Ncp::RcpHost'],['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#abf4bbc3b43531cf49ea108da52d79f86',1,'otbr::Ncp::RcpHost::RcpHost()']]],
+  ['rcphost_3',['rcphost',['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html',1,'otbr::Host::RcpHost'],['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#ab5b9c1a9c5215e42f57528fc4ca66994',1,'otbr::Host::RcpHost::RcpHost()']]],
   ['rcpinterfacemetrics_4',['RcpInterfaceMetrics',['../dc/d2a/structotbr_1_1DBus_1_1RcpInterfaceMetrics.html',1,'otbr::DBus']]],
   ['read_5',['Read',['../d3/d3f/classotbr_1_1Web_1_1OpenThreadClient.html#ae94d437e6107bc18688865a865f2006f',1,'otbr::Web::OpenThreadClient']]],
   ['registerasyncgetpropertyhandler_6',['RegisterAsyncGetPropertyHandler',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#acc21a3ebf03bcc6c9122a06144c3fccd',1,'otbr::DBus::DBusObject']]],
   ['registergetpropertyhandler_7',['registergetpropertyhandler',['../dc/d5c/classotbr_1_1DBus_1_1DBusThreadObjectRcp.html#a26753a91931306c776bb14fba3488981',1,'otbr::DBus::DBusThreadObjectRcp::RegisterGetPropertyHandler()'],['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#a4e58bc06a49c62c4db7119b58c794296',1,'otbr::DBus::DBusObject::RegisterGetPropertyHandler(const std::string &amp;aInterfaceName, const std::string &amp;aPropertyName, const PropertyHandlerType &amp;aHandler)']]],
   ['registermethod_8',['RegisterMethod',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#a260123f74ab6d1781ad12966c774ba53',1,'otbr::DBus::DBusObject']]],
-  ['registerresethandler_9',['RegisterResetHandler',['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#a58c0cc133b6e0b512ac9d3f19a5aaed1',1,'otbr::Ncp::RcpHost']]],
+  ['registerresethandler_9',['RegisterResetHandler',['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#a7198cfdd1a9060d33e7a9831879ee4b9',1,'otbr::Host::RcpHost']]],
   ['registersetpropertyhandler_10',['RegisterSetPropertyHandler',['../da/d4d/classotbr_1_1DBus_1_1DBusObject.html#ada021d44f72a311d39d114f4b424b1a7',1,'otbr::DBus::DBusObject']]],
   ['registration_11',['registration',['../da/d01/structotbr_1_1DBus_1_1SrpServerInfo_1_1Registration.html',1,'otbr::DBus::SrpServerInfo::Registration'],['../d3/dcf/classotbr_1_1Mdns_1_1Publisher_1_1Registration.html',1,'otbr::Mdns::Publisher::Registration']]],
   ['removeexternalroute_12',['RemoveExternalRoute',['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#aee458a50a8b0d9f51cab57da34ca56b8',1,'otbr::DBus::ThreadApiDBus']]],
@@ -20,7 +20,7 @@ var searchData=
   ['replyotresult_17',['ReplyOtResult',['../d0/d92/classotbr_1_1DBus_1_1DBusRequest.html#a15c08321c5a04ef2464b3b673fef0218',1,'otbr::DBus::DBusRequest']]],
   ['request_18',['request',['../da/df0/classotbr_1_1rest_1_1Request.html#a52c5b75f73fa531174de4b86df11ad8f',1,'otbr::rest::Request::Request()'],['../da/df0/classotbr_1_1rest_1_1Request.html',1,'otbr::rest::Request']]],
   ['request_2ehpp_19',['request.hpp',['../d6/d6f/request_8hpp.html',1,'']]],
-  ['reset_20',['reset',['../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#aac024301fc948bc1942788c2dff1517d',1,'otbr::agent::ThreadHelper::Reset()'],['../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html#ac5d421f0b97b65032e56924a585a5b91',1,'otbr::Ncp::RcpHost::Reset()'],['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#a59cb080048eb1f0b26c933e2839d3828',1,'otbr::DBus::ThreadApiDBus::Reset()']]],
+  ['reset_20',['reset',['../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#aac024301fc948bc1942788c2dff1517d',1,'otbr::agent::ThreadHelper::Reset()'],['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#ad2cca5e5d565703febb99b976d54781c',1,'otbr::Host::RcpHost::Reset()'],['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#a59cb080048eb1f0b26c933e2839d3828',1,'otbr::DBus::ThreadApiDBus::Reset()']]],
   ['resetreadcomplete_21',['ResetReadComplete',['../da/df0/classotbr_1_1rest_1_1Request.html#aacabd076aff9c6bf42d189b7deace308',1,'otbr::rest::Request']]],
   ['resource_22',['resource',['../d7/d6e/classotbr_1_1rest_1_1Resource.html',1,'otbr::rest::Resource'],['../d7/d6e/classotbr_1_1rest_1_1Resource.html#abc6113c55387f1851043cb246a5d51d5',1,'otbr::rest::Resource::Resource()']]],
   ['resource_2ehpp_23',['resource.hpp',['../d5/dc7/resource_8hpp.html',1,'']]],
@@ -38,5 +38,5 @@ var searchData=
   ['router_20border_20agent_35',['Border-router-border-agent',['../d4/d5a/group__border-router-border-agent.html',1,'']]],
   ['router_20dbus_20server_36',['Border-router-dbus-server',['../dd/d31/group__border-router-dbus-server.html',1,'']]],
   ['router_20mdns_37',['Border-router-mdns',['../d5/d1f/group__border-router-mdns.html',1,'']]],
-  ['run_38',['run',['../d5/d01/structotbr_1_1Application.html#a69ae64f6b3a7859ed462019816a05475',1,'otbr::Application::Run()'],['../d3/d6f/classotbr_1_1Ncp_1_1AsyncTask.html#a8f1555186bccb1b7c6c0f768dacea00d',1,'otbr::Ncp::AsyncTask::Run()']]]
+  ['run_38',['run',['../d5/d01/structotbr_1_1Application.html#a69ae64f6b3a7859ed462019816a05475',1,'otbr::Application::Run()'],['../d1/d1d/classotbr_1_1Host_1_1AsyncTask.html#a16df4d5f81d5e02d5812d2613df4d103',1,'otbr::Host::AsyncTask::Run()']]]
 ];

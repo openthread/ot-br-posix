@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-5626982</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-8bdfb6b</span>
    </div>
   </td>
  </tr>
@@ -134,7 +134,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="keyword">namespace </span>otbr {</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="keyword">namespace </span>Ncp {</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="keyword">namespace </span>Host {</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="keyword">class </span>RcpHost;</div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>}</div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>} <span class="comment">// namespace otbr</span></div>
@@ -157,7 +157,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    <span class="keyword">using </span>Dhcp6PdStateCallback = std::function&lt;void(otBorderRoutingDhcp6PdState)&gt;;</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <a class="code hl_class" href="../../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html">ThreadHelper</a>(otInstance *aInstance, <a class="code hl_class" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html">otbr::Ncp::RcpHost</a> *aHost);</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <a class="code hl_class" href="../../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html">ThreadHelper</a>(otInstance *aInstance, <a class="code hl_class" href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a> *aHost);</div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="../../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#a75f1f56479b09df49786f76f1aecccda">AddDeviceRoleHandler</a>(DeviceRoleHandler aHandler);</div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
@@ -269,7 +269,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span> </div>
 <div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>    otInstance *mInstance;</div>
 <div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span> </div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    <a class="code hl_class" href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html">otbr::Ncp::RcpHost</a> *mHost;</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    <a class="code hl_class" href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a> *mHost;</div>
 <div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span> </div>
 <div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>    ScanHandler                     mScanHandler;</div>
 <div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>    std::vector&lt;otActiveScanResult&gt; mScanResults;</div>
@@ -312,8 +312,8 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>} <span class="comment">// namespace otbr</span></div>
 <div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span> </div>
 <div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_THREAD_HELPER_HPP_</span></div>
+<div class="ttc" id="aclassotbr_1_1Host_1_1RcpHost_html"><div class="ttname"><a href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a></div><div class="ttdef"><b>Definition</b> rcp_host.hpp:92</div></div>
 <div class="ttc" id="aclassotbr_1_1Mdns_1_1Publisher_html"><div class="ttname"><a href="../../da/ddc/classotbr_1_1Mdns_1_1Publisher.html">otbr::Mdns::Publisher</a></div><div class="ttdef"><b>Definition</b> mdns.hpp:74</div></div>
-<div class="ttc" id="aclassotbr_1_1Ncp_1_1RcpHost_html"><div class="ttname"><a href="../../dd/d09/classotbr_1_1Ncp_1_1RcpHost.html">otbr::Ncp::RcpHost</a></div><div class="ttdef"><b>Definition</b> rcp_host.hpp:92</div></div>
 <div class="ttc" id="aclassotbr_1_1agent_1_1ThreadHelper_html"><div class="ttname"><a href="../../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html">otbr::agent::ThreadHelper</a></div><div class="ttdef"><b>Definition</b> thread_helper.hpp:71</div></div>
 <div class="ttc" id="aclassotbr_1_1agent_1_1ThreadHelper_html_a0569c5bec5dd73e5ffa2c99232f5a7c4"><div class="ttname"><a href="../../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#a0569c5bec5dd73e5ffa2c99232f5a7c4">otbr::agent::ThreadHelper::LogOpenThreadResult</a></div><div class="ttdeci">static void LogOpenThreadResult(const char *aAction, otError aError)</div><div class="ttdef"><b>Definition</b> thread_helper.cpp:692</div></div>
 <div class="ttc" id="aclassotbr_1_1agent_1_1ThreadHelper_html_a091901bf4e19a0a2ab3a93ac701102fa"><div class="ttname"><a href="../../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#a091901bf4e19a0a2ab3a93ac701102fa">otbr::agent::ThreadHelper::TryResumeNetwork</a></div><div class="ttdeci">otError TryResumeNetwork(void)</div><div class="ttdef"><b>Definition</b> thread_helper.cpp:670</div></div>
