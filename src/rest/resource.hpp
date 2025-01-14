@@ -129,6 +129,7 @@ private:
     void CommissionerJoiner(const Request &aRequest, Response &aResponse) const;
     void Diagnostic(const Request &aRequest, Response &aResponse) const;
     void HandleDiagnosticCallback(const Request &aRequest, Response &aResponse);
+    void CoprocessorVersion(const Request &aRequest, Response &aResponse) const;
 
     void GetNodeInfo(Response &aResponse) const;
     void DeleteNodeInfo(Response &aResponse) const;
@@ -149,6 +150,7 @@ private:
     void GetJoiners(Response &aResponse) const;
     void AddJoiner(const Request &aRequest, Response &aResponse) const;
     void RemoveJoiner(const Request &aRequest, Response &aResponse) const;
+    void GetCoprocessorVersion(Response &aResponse) const;
 
     void DeleteOutDatedDiagnostic(void);
     void UpdateDiag(std::string aKey, std::vector<otNetworkDiagTlv> &aDiag);

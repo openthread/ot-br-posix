@@ -389,6 +389,21 @@ paths:
           description: Invalid request body.
         "409":
           description: request rejected because commissioner is not active.
+  /node/coprocessor/version:
+    get:
+      tags:
+        - node
+      summary: Get the coprocessor firmware version
+      description: Retrieves the NCP or RCP coprocessor firmware version string.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Coprocessor version string
+                example: "OPENTHREAD/thread-reference-20200818-1740-g33cc75ed3; NRF52840; Jun  2 2022 14:25:49"
 
 components:
   schemas:
