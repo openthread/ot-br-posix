@@ -61,6 +61,9 @@
 #if OTBR_ENABLE_VENDOR_SERVER
 #include "agent/vendor.hpp"
 #endif
+#if OTBR_ENABLE_DNSSD_PLAT
+#include "host/posix/dnssd.hpp"
+#endif
 #include "utils/infra_link_selector.hpp"
 
 namespace otbr {
@@ -267,6 +270,9 @@ private:
 #if OTBR_ENABLE_MDNS
     Mdns::StateSubject               mMdnsStateSubject;
     std::unique_ptr<Mdns::Publisher> mPublisher;
+#endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    DnssdPlatform mDnssdPlatform;
 #endif
 #if OTBR_ENABLE_BORDER_AGENT
     std::unique_ptr<BorderAgent> mBorderAgent;
