@@ -2014,11 +2014,25 @@ void DBusThreadObjectRcp::DeactivateEphemeralKeyModeHandler(DBusRequest &aReques
     VerifyOrExit(mBorderAgent.GetEphemeralKeyEnabled(), error = OT_ERROR_NOT_CAPABLE);
 
     SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
-    if (!retain_active_session)
+
+    // Stop the ephemeral key use if
+    //  - there is no active session, or
+    //  - there is a connected session and we should not `retain_active_session`.
+
+    switch (otBorderAgentEphemeralKeyGetState(threadHelper->GetInstance()))
     {
-        otBorderAgentDisconnect(threadHelper->GetInstance());
+    case OT_BORDER_AGENT_STATE_STARTED:
+        break;
+    case OT_BORDER_AGENT_STATE_CONNECTED:
+    case OT_BORDER_AGENT_STATE_ACCEPTED:
+        VerifyOrExit(!retain_active_session);
+        break;
+    case OT_BORDER_AGENT_STATE_DISABLED:
+    case OT_BORDER_AGENT_STATE_STOPPED:
+        ExitNow();
     }
-    otBorderAgentClearEphemeralKey(threadHelper->GetInstance());
+
+    otBorderAgentEphemeralKeyStop(threadHelper->GetInstance());
 
 exit:
     aRequest.ReplyOtResult(error);
@@ -2040,8 +2054,8 @@ void DBusThreadObjectRcp::ActivateEphemeralKeyModeHandler(DBusRequest &aRequest)
     SuccessOrExit(mBorderAgent.CreateEphemeralKey(ePskc), error = OT_ERROR_INVALID_ARGS);
     otbrLogInfo("Created Ephemeral Key: %s", ePskc.c_str());
 
-    SuccessOrExit(error = otBorderAgentSetEphemeralKey(threadHelper->GetInstance(), ePskc.c_str(), lifetime,
-                                                       OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT));
+    SuccessOrExit(error = otBorderAgentEphemeralKeyStart(threadHelper->GetInstance(), ePskc.c_str(), lifetime,
+                                                         OTBR_CONFIG_BORDER_AGENT_MESHCOP_E_UDP_PORT));
 
 exit:
     if (error == OT_ERROR_NONE)
