@@ -66,6 +66,8 @@ install_packages_apt()
     # Avahi should be included for reference device builds.
     if [[ ${OTBR_MDNS} == "avahi" || ${OT_BACKBONE_CI} == 1 || ${REFERENCE_DEVICE} == 1 ]]; then
         sudo apt-get install --no-install-recommends -y avahi-daemon
+        # Increase the object number limit to rid of 'Too many objects' error
+        sudo sed -i 's/^#objects-per-client-max=[0-9]\+/objects-per-client-max=30000/' /etc/avahi/avahi-daemon.conf
     fi
 
     (MDNS_RESPONDER_SOURCE_NAME=mDNSResponder-1790.80.10 \
