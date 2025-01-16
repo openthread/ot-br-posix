@@ -48,6 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        dnssd_plat: [0]
         include:
           - name: "Border Router (mDNSResponder)"
             otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=OFF -DOTBR_DNS_UPSTREAM_QUERY=ON"
@@ -105,7 +106,22 @@ jobs:
             otbr_mdns: "avahi"
             cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
             packet_verification: 2
-
+          - name: "Border Router with OT Core Advertising Proxy (avahi)"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            border_routing: 1
+            internet: 0
+            otbr_mdns: "avahi"
+            dnssd_plat: 1
+            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
+            packet_verification: 1
+          - name: "Border Router with OT Core Advertising Proxy (mDNSResponder)"
+            otbr_options: "-DOT_DUA=ON -DOT_ECDSA=ON -DOT_MLR=ON -DOT_SERVICE=ON -DOT_SRP_SERVER=ON -DOTBR_COVERAGE=ON -DOTBR_DUA_ROUTING=ON -DOTBR_TREL=ON -DOTBR_DNS_UPSTREAM_QUERY=ON"
+            border_routing: 1
+            internet: 0
+            otbr_mdns: "mDNSResponder"
+            dnssd_plat: 1
+            cert_scripts: ./tests/scripts/thread-cert/border_router/*.py
+            packet_verification: 1
 
     name: ${{ matrix.name }}
     env:
@@ -120,6 +136,7 @@ jobs:
       INTER_OP_BBR: 0
       BORDER_ROUTING: ${{ matrix.border_routing }}
       NAT64: ${{ matrix.internet }}
+      DNSSD_PLAT: ${{ matrix.dnssd_plat }}
       MAX_JOBS: 3
     steps:
     - uses: actions/checkout@v4
@@ -153,6 +170,7 @@ jobs:
           --build-arg NAT64_SERVICE=openthread \
           --build-arg DNS64="${{ matrix.internet }}" \
           --build-arg MDNS="${{ matrix.otbr_mdns }}" \
+          --build-arg DNSSD_PLAT="${{ matrix.dnssd_plat }}" \
           --build-arg OTBR_OPTIONS="${otbr_options} -DCMAKE_CXX_FLAGS='-DOPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF=1'"
     - name: Bootstrap OpenThread Test
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
