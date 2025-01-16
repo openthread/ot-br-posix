@@ -42,6 +42,7 @@ config_ra()
 sudo tee "${RADVD_CONF}" > /dev/null <<EOF
 interface ${WPAN_INTERFACE}
 {
+    IgnoreIfMissing on;
     AdvSendAdvert on;
     prefix ${1}/${2}
     {

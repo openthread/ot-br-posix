@@ -137,9 +137,33 @@ dhcpv6_pd_ref_install()
     create_dhcpcd_conf_no_pd
     create_dhcp6_pd_daemon_service
 
+    # The dhcp6_pd_daemon is currently disabled because it restarts dhcpcd
+    # when the PD state changes. This restart disrupts mDNS, causing
+    # connectivity issues. The daemon and its associated systemd service
+    # files are still installed for potential future use.
+    #
+    # TODO: Re-enable and start the daemon when a solution is found
+    #       for dhcpcd restarts breaking mDNS.
+    #
+    # if have systemctl; then
+    #    sudo systemctl daemon-reload
+    #    sudo systemctl enable ${PD_DAEMON_SERVICE_NAME}
+    #    sudo systemctl start ${PD_DAEMON_SERVICE_NAME}
+    # fi
+
+    # Always enable PD, which is a workaround for the currently disabled
+    # dhcp6_pd_daemon which caused mDNS disruptions.
+    sudo cp ${DHCP_CONFIG_PD_PATH} ${DHCP_CONFIG_PATH}
+
     if have systemctl; then
         sudo systemctl daemon-reload
-        sudo systemctl enable ${PD_DAEMON_SERVICE_NAME}
-        sudo systemctl start ${PD_DAEMON_SERVICE_NAME}
+
+        # Restart dhcpcd only if it's running. This is unnecessary when the dhcp6_pd_daemon
+        # is enabled, as the daemon will handle dhcpcd restarts based on PD state changes.
+        if systemctl is-active dhcpcd; then
+            sudo systemctl restart dhcpcd || true
+        fi
+
+        sudo systemctl enable radvd
     fi
 }
