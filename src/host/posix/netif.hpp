@@ -63,11 +63,12 @@ public:
     otbrError Init(const std::string &aInterfaceName);
     void      Deinit(void);
 
-    void      Process(const MainloopContext *aContext);
-    void      UpdateFdSet(MainloopContext *aContext);
-    void      UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos);
-    otbrError UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
-    void      SetNetifState(bool aState);
+    void        Process(const MainloopContext *aContext);
+    void        UpdateFdSet(MainloopContext *aContext);
+    void        UpdateIp6UnicastAddresses(const std::vector<Ip6AddressInfo> &aAddrInfos);
+    otbrError   UpdateIp6MulticastAddresses(const std::vector<Ip6Address> &aAddrs);
+    void        SetNetifState(bool aState);
+    std::string GetNetifName(void) const;
 
     void Ip6Receive(const uint8_t *aBuf, uint16_t aLen);
 

@@ -27,6 +27,8 @@
 #
 
 add_library(otbr-posix
+    daemon.hpp
+    daemon.cpp
     infra_if.hpp
     infra_if.cpp
     netif.cpp

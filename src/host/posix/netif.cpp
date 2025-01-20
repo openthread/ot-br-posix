@@ -288,6 +288,11 @@ exit:
     }
 }
 
+std::string Netif::GetNetifName(void) const
+{
+    return mNetifName;
+}
+
 void Netif::Ip6Receive(const uint8_t *aBuf, uint16_t aLen)
 {
     otbrError error = OTBR_ERROR_NONE;
