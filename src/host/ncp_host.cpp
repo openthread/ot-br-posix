@@ -97,6 +97,7 @@ NcpHost::NcpHost(const char *aInterfaceName, const char *aBackboneInterfaceName,
     : mSpinelDriver(*static_cast<ot::Spinel::SpinelDriver *>(otSysGetSpinelDriver()))
     , mNetif(mNcpSpinel)
     , mInfraIf(mNcpSpinel)
+    , mDaemon()
 {
     memset(&mConfig, 0, sizeof(mConfig));
     mConfig.mInterfaceName         = aInterfaceName;
@@ -116,6 +117,7 @@ void NcpHost::Init(void)
     mNcpSpinel.Init(mSpinelDriver, *this);
     mNetif.Init(mConfig.mInterfaceName);
     mInfraIf.Init();
+    mDaemon.Init(mNetif.GetNetifName());
 
     mNcpSpinel.Ip6SetAddressCallback(
         [this](const std::vector<Ip6AddressInfo> &aAddrInfos) { mNetif.UpdateIp6UnicastAddresses(aAddrInfos); });
@@ -149,6 +151,7 @@ void NcpHost::Deinit(void)
 {
     mNcpSpinel.Deinit();
     mNetif.Deinit();
+    mDaemon.Deinit();
     otSysDeinit();
 }
 
@@ -258,6 +261,7 @@ void NcpHost::Process(const MainloopContext &aMainloop)
     mSpinelDriver.Process(&aMainloop);
 
     mNetif.Process(&aMainloop);
+    mDaemon.Process(aMainloop);
 }
 
 void NcpHost::Update(MainloopContext &aMainloop)
@@ -271,6 +275,7 @@ void NcpHost::Update(MainloopContext &aMainloop)
     }
 
     mNetif.UpdateFdSet(&aMainloop);
+    mDaemon.UpdateFdSet(aMainloop);
 }
 
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
