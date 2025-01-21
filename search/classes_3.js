@@ -66,5 +66,6 @@ var searchData=
   ['discoveredhostinfo_63',['DiscoveredHostInfo',['../d9/db0/structotbr_1_1Mdns_1_1Publisher_1_1DiscoveredHostInfo.html',1,'otbr::Mdns::Publisher']]],
   ['discoveredinstanceinfo_64',['DiscoveredInstanceInfo',['../d9/d60/structotbr_1_1Mdns_1_1Publisher_1_1DiscoveredInstanceInfo.html',1,'otbr::Mdns::Publisher']]],
   ['dnsnameinfo_65',['DnsNameInfo',['../d1/de1/structDnsNameInfo.html',1,'']]],
-  ['dnssdcounters_66',['DnssdCounters',['../d0/daa/structotbr_1_1DBus_1_1DnssdCounters.html',1,'otbr::DBus']]]
+  ['dnssdcounters_66',['DnssdCounters',['../d0/daa/structotbr_1_1DBus_1_1DnssdCounters.html',1,'otbr::DBus']]],
+  ['dnssdplatform_67',['DnssdPlatform',['../d9/dff/classotbr_1_1DnssdPlatform.html',1,'otbr']]]
 ];

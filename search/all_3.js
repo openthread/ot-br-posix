@@ -76,10 +76,10 @@ var searchData=
   ['dbustypetrait_3c_20uint64_5ft_20_3e_73',['DBusTypeTrait&lt; uint64_t &gt;',['../d0/dd7/structotbr_1_1DBus_1_1DBusTypeTrait_3_01uint64__t_01_4.html',1,'otbr::DBus']]],
   ['dbustypetrait_3c_20uint8_5ft_20_3e_74',['DBusTypeTrait&lt; uint8_t &gt;',['../d3/da2/structotbr_1_1DBus_1_1DBusTypeTrait_3_01uint8__t_01_4.html',1,'otbr::DBus']]],
   ['decodetxtdata_75',['DecodeTxtData',['../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#a62e75bf800871cb7031b05be8e3b520e',1,'otbr::Mdns::Publisher']]],
-  ['deinit_76',['deinit',['../da/d72/classotbr_1_1Host_1_1NcpHost.html#ae88f2776e0ed48d675913c61a6af775b',1,'otbr::Host::NcpHost::Deinit()'],['../d0/d9b/classotbr_1_1Host_1_1ThreadHost.html#aba2ae274ad45624a0daf6a7909da2d4a',1,'otbr::Host::ThreadHost::Deinit()'],['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#a83569e84f2978b64c5b14fed15fe3d70',1,'otbr::Host::RcpHost::Deinit()'],['../d6/de3/classotbr_1_1Host_1_1NcpSpinel.html#a704dbcb9829c59bf26ee0a15e7d1f726',1,'otbr::Host::NcpSpinel::Deinit()'],['../d5/d01/structotbr_1_1Application.html#adf5dda38fabceb5ad6f81fbdca30a6f8',1,'otbr::Application::Deinit()']]],
+  ['deinit_76',['deinit',['../d5/d01/structotbr_1_1Application.html#adf5dda38fabceb5ad6f81fbdca30a6f8',1,'otbr::Application::Deinit()'],['../d0/d9b/classotbr_1_1Host_1_1ThreadHost.html#aba2ae274ad45624a0daf6a7909da2d4a',1,'otbr::Host::ThreadHost::Deinit()'],['../d9/dd3/classotbr_1_1Host_1_1RcpHost.html#a83569e84f2978b64c5b14fed15fe3d70',1,'otbr::Host::RcpHost::Deinit()'],['../d6/de3/classotbr_1_1Host_1_1NcpSpinel.html#a704dbcb9829c59bf26ee0a15e7d1f726',1,'otbr::Host::NcpSpinel::Deinit()'],['../da/d72/classotbr_1_1Host_1_1NcpHost.html#ae88f2776e0ed48d675913c61a6af775b',1,'otbr::Host::NcpHost::Deinit()']]],
   ['dependencies_77',['dependencies',['../db/d1c/classotbr_1_1InfraIf_1_1Dependencies.html',1,'otbr::InfraIf::Dependencies'],['../da/d4a/classotbr_1_1Netif_1_1Dependencies.html',1,'otbr::Netif::Dependencies']]],
   ['destroy_78',['Destroy',['../da/ddc/classotbr_1_1Mdns_1_1Publisher.html#a764c8e33ecdf355a4eaf60292e9484c2',1,'otbr::Mdns::Publisher']]],
-  ['detach_79',['detach',['../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#a7b818790e83d9ad3a330a80f96bc938f',1,'otbr::agent::ThreadHelper::Detach()'],['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#a0a08eab9fc3fc1547316c41cb9e2be48',1,'otbr::DBus::ThreadApiDBus::Detach()']]],
+  ['detach_79',['detach',['../df/dcc/classotbr_1_1DBus_1_1ThreadApiDBus.html#a0a08eab9fc3fc1547316c41cb9e2be48',1,'otbr::DBus::ThreadApiDBus::Detach()'],['../d4/d44/classotbr_1_1agent_1_1ThreadHelper.html#a7b818790e83d9ad3a330a80f96bc938f',1,'otbr::agent::ThreadHelper::Detach()']]],
   ['diag2jsonstring_80',['Diag2JsonString',['../d0/d6c/namespaceotbr_1_1rest_1_1Json.html#a2ca37c5f0f0c9b4deae4e6947dadebe7',1,'otbr::rest::Json']]],
   ['diaginfo_81',['DiagInfo',['../da/dfd/structotbr_1_1rest_1_1DiagInfo.html',1,'otbr::rest']]],
   ['dienow_82',['DieNow',['../da/d7b/code__utils_8hpp.html#a05cbb5b745d641b2f59455570f6fddfe',1,'code_utils.hpp']]],
@@ -92,8 +92,11 @@ var searchData=
   ['discovery_5fproxy_2ehpp_89',['discovery_proxy.hpp',['../df/d90/discovery__proxy_8hpp.html',1,'']]],
   ['dns_5futils_2ehpp_90',['dns_utils.hpp',['../d9/da9/common_2dns__utils_8hpp.html',1,'(Global Namespace)'],['../d6/d66/utils_2dns__utils_8hpp.html',1,'(Global Namespace)']]],
   ['dnsnameinfo_91',['DnsNameInfo',['../d1/de1/structDnsNameInfo.html',1,'']]],
-  ['dnssdcounters_92',['DnssdCounters',['../d0/daa/structotbr_1_1DBus_1_1DnssdCounters.html',1,'otbr::DBus']]],
-  ['dua_5frouting_5fmanager_2ecpp_93',['dua_routing_manager.cpp',['../d4/de7/dua__routing__manager_8cpp.html',1,'']]],
-  ['dua_5frouting_5fmanager_2ehpp_94',['dua_routing_manager.hpp',['../d7/daf/dua__routing__manager_8hpp.html',1,'']]],
-  ['dumpdbusmessage_95',['DumpDBusMessage',['../df/de9/namespaceotbr_1_1DBus.html#ae1ff1319b519ce23b219248e1b1e57f0',1,'otbr::DBus']]]
+  ['dnssd_2ecpp_92',['dnssd.cpp',['../d2/d4c/dnssd_8cpp.html',1,'']]],
+  ['dnssd_2ehpp_93',['dnssd.hpp',['../dd/de9/dnssd_8hpp.html',1,'']]],
+  ['dnssdcounters_94',['DnssdCounters',['../d0/daa/structotbr_1_1DBus_1_1DnssdCounters.html',1,'otbr::DBus']]],
+  ['dnssdplatform_95',['dnssdplatform',['../d9/dff/classotbr_1_1DnssdPlatform.html#a1478f42b787c507e87e3c025730d4bdc',1,'otbr::DnssdPlatform::DnssdPlatform()'],['../d9/dff/classotbr_1_1DnssdPlatform.html',1,'otbr::DnssdPlatform']]],
+  ['dua_5frouting_5fmanager_2ecpp_96',['dua_routing_manager.cpp',['../d4/de7/dua__routing__manager_8cpp.html',1,'']]],
+  ['dua_5frouting_5fmanager_2ehpp_97',['dua_routing_manager.hpp',['../d7/daf/dua__routing__manager_8hpp.html',1,'']]],
+  ['dumpdbusmessage_98',['DumpDBusMessage',['../df/de9/namespaceotbr_1_1DBus.html#ae1ff1319b519ce23b219248e1b1e57f0',1,'otbr::DBus']]]
 ];

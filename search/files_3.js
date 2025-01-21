@@ -11,6 +11,8 @@ var searchData=
   ['discovery_5fproxy_2ecpp_8',['discovery_proxy.cpp',['../d8/d57/discovery__proxy_8cpp.html',1,'']]],
   ['discovery_5fproxy_2ehpp_9',['discovery_proxy.hpp',['../df/d90/discovery__proxy_8hpp.html',1,'']]],
   ['dns_5futils_2ehpp_10',['dns_utils.hpp',['../d9/da9/common_2dns__utils_8hpp.html',1,'(Global Namespace)'],['../d6/d66/utils_2dns__utils_8hpp.html',1,'(Global Namespace)']]],
-  ['dua_5frouting_5fmanager_2ecpp_11',['dua_routing_manager.cpp',['../d4/de7/dua__routing__manager_8cpp.html',1,'']]],
-  ['dua_5frouting_5fmanager_2ehpp_12',['dua_routing_manager.hpp',['../d7/daf/dua__routing__manager_8hpp.html',1,'']]]
+  ['dnssd_2ecpp_11',['dnssd.cpp',['../d2/d4c/dnssd_8cpp.html',1,'']]],
+  ['dnssd_2ehpp_12',['dnssd.hpp',['../dd/de9/dnssd_8hpp.html',1,'']]],
+  ['dua_5frouting_5fmanager_2ecpp_13',['dua_routing_manager.cpp',['../d4/de7/dua__routing__manager_8cpp.html',1,'']]],
+  ['dua_5frouting_5fmanager_2ehpp_14',['dua_routing_manager.hpp',['../d7/daf/dua__routing__manager_8hpp.html',1,'']]]
 ];
