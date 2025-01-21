@@ -177,6 +177,7 @@ private:
     std::string GetAlternativeServiceInstanceName() const;
 
     static void HandleEpskcStateChanged(void *aContext);
+    void        HandleEpskcStateChanged(void);
     void        PublishEpskcService(void);
     void        UnpublishEpskcService(void);
 
