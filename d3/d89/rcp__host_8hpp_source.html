@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-b510577</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-214b92d</span>
    </div>
   </td>
  </tr>
@@ -261,64 +261,51 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>    }</div>
 <div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>    <span class="keywordtype">void</span> HandleStateChanged(otChangedFlags aFlags);</div>
 <div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span> </div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleBackboneRouterDomainPrefixEvent(<span class="keywordtype">void</span>                             *aContext,</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>                                                      otBackboneRouterDomainPrefixEvent aEvent,</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>                                                      <span class="keyword">const</span> otIp6Prefix                *aDomainPrefix);</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    <span class="keywordtype">void</span>        HandleBackboneRouterDomainPrefixEvent(otBackboneRouterDomainPrefixEvent aEvent,</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>                                                      <span class="keyword">const</span> otIp6Prefix                *aDomainPrefix);</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span> </div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span><span class="preprocessor">#if OTBR_ENABLE_DUA_ROUTING</span></div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleBackboneRouterNdProxyEvent(<span class="keywordtype">void</span>                        *aContext,</div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>                                                 otBackboneRouterNdProxyEvent aEvent,</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                                                 <span class="keyword">const</span> otIp6Address          *aAddress);</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    <span class="keywordtype">void</span>        HandleBackboneRouterNdProxyEvent(otBackboneRouterNdProxyEvent aEvent, <span class="keyword">const</span> otIp6Address *aAddress);</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    <span class="keyword">using </span>DetachGracefullyCallback = std::function&lt;void()&gt;;</div>
-<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    <span class="keywordtype">void</span>        ThreadDetachGracefully(<span class="keyword">const</span> DetachGracefullyCallback &amp;aCallback);</div>
-<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> ThreadDetachGracefullyCallback(<span class="keywordtype">void</span> *aContext);</div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    <span class="keywordtype">void</span>        ThreadDetachGracefullyCallback(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>    <span class="keywordtype">void</span>        ConditionalErasePersistentInfo(<span class="keywordtype">bool</span> aErase);</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    <span class="keywordtype">void</span>        DisableThreadAfterDetach(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> SendMgmtPendingSetCallback(otError aError, <span class="keywordtype">void</span> *aContext);</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    <span class="keywordtype">void</span>        SendMgmtPendingSetCallback(otError aError);</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    <span class="keywordtype">bool</span> IsAutoAttachEnabled(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    <span class="keywordtype">void</span> DisableAutoAttach(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    <span class="keyword">using </span>DetachGracefullyCallback = std::function&lt;void()&gt;;</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    <span class="keywordtype">void</span>        ThreadDetachGracefully(<span class="keyword">const</span> DetachGracefullyCallback &amp;aCallback);</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> ThreadDetachGracefullyCallback(<span class="keywordtype">void</span> *aContext);</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    <span class="keywordtype">void</span>        ThreadDetachGracefullyCallback(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    <span class="keywordtype">void</span>        ConditionalErasePersistentInfo(<span class="keywordtype">bool</span> aErase);</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    <span class="keywordtype">void</span>        DisableThreadAfterDetach(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> SendMgmtPendingSetCallback(otError aError, <span class="keywordtype">void</span> *aContext);</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    <span class="keywordtype">void</span>        SendMgmtPendingSetCallback(otError aError);</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span> </div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    <span class="keywordtype">bool</span> IsAutoAttachEnabled(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    <span class="keywordtype">void</span> DisableAutoAttach(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span> </div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>    <span class="keywordtype">bool</span> IsAttached(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span> </div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>    <span class="keywordtype">void</span> UpdateThreadEnabledState(ThreadEnabledState aState);</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span> </div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>    otError SetOtbrAndOtLogLevel(<a class="code hl_enumeration" href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a> aLevel);</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span> </div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    otInstance *mInstance;</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span> </div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>    otPlatformConfig                           mConfig;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    std::unique_ptr&lt;otbr::agent::ThreadHelper&gt; mThreadHelper;</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    std::vector&lt;std::function&lt;void(<span class="keywordtype">void</span>)&gt;&gt;     mResetHandlers;</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>    TaskRunner                                 mTaskRunner;</div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    <span class="keywordtype">bool</span> IsAttached(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span> </div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    <span class="keywordtype">void</span> UpdateThreadEnabledState(ThreadEnabledState aState);</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span> </div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    otError SetOtbrAndOtLogLevel(<a class="code hl_enumeration" href="../../d0/da9/logging_8hpp.html#ada87d1da6f6926eb3d881aae37340f10">otbrLogLevel</a> aLevel);</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span> </div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    otInstance *mInstance;</div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span> </div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>    otPlatformConfig                           mConfig;</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>    std::unique_ptr&lt;otbr::agent::ThreadHelper&gt; mThreadHelper;</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    std::vector&lt;std::function&lt;void(<span class="keywordtype">void</span>)&gt;&gt;     mResetHandlers;</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    TaskRunner                                 mTaskRunner;</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>    std::vector&lt;ThreadStateChangedCallback&gt; mThreadStateChangedCallbacks;</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    std::vector&lt;ThreadEnabledStateCallback&gt; mThreadEnabledStateChangedCallbacks;</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>    <span class="keywordtype">bool</span>                                    mEnableAutoAttach = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>    ThreadEnabledState                      mThreadEnabledState;</div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>    AsyncResultReceiver                     mJoinReceiver;</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>    AsyncResultReceiver                     mSetThreadEnabledReceiver;</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    AsyncResultReceiver                     mScheduleMigrationReceiver;</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>    std::vector&lt;DetachGracefullyCallback&gt;   mDetachGracefullyCallbacks;</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span> </div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span><span class="preprocessor">#if OTBR_ENABLE_FEATURE_FLAGS</span></div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    <span class="comment">// The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.</span></div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>    std::string mAppliedFeatureFlagListBytes;</div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>};</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>    std::vector&lt;ThreadStateChangedCallback&gt; mThreadStateChangedCallbacks;</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    std::vector&lt;ThreadEnabledStateCallback&gt; mThreadEnabledStateChangedCallbacks;</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    <span class="keywordtype">bool</span>                                    mEnableAutoAttach = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>    ThreadEnabledState                      mThreadEnabledState;</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>    AsyncResultReceiver                     mJoinReceiver;</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    AsyncResultReceiver                     mSetThreadEnabledReceiver;</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    AsyncResultReceiver                     mScheduleMigrationReceiver;</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>    std::vector&lt;DetachGracefullyCallback&gt;   mDetachGracefullyCallbacks;</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span><span class="preprocessor">#if OTBR_ENABLE_FEATURE_FLAGS</span></div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    <span class="comment">// The applied FeatureFlagList in ApplyFeatureFlagList call, used for debugging purpose.</span></div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>    std::string mAppliedFeatureFlagListBytes;</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>};</div>
 </div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>} <span class="comment">// namespace Host</span></div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_RCP_HOST_HPP_</span></div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>} <span class="comment">// namespace Host</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_RCP_HOST_HPP_</span></div>
 <div class="ttc" id="aclassotbr_1_1Host_1_1NetworkProperties_html"><div class="ttname"><a href="../../d8/d7f/classotbr_1_1Host_1_1NetworkProperties.html">otbr::Host::NetworkProperties</a></div><div class="ttdef"><b>Definition</b> thread_host.hpp:57</div></div>
 <div class="ttc" id="aclassotbr_1_1Host_1_1OtNetworkProperties_html"><div class="ttname"><a href="../../de/d7a/classotbr_1_1Host_1_1OtNetworkProperties.html">otbr::Host::OtNetworkProperties</a></div><div class="ttdef"><b>Definition</b> rcp_host.hpp:67</div></div>
 <div class="ttc" id="aclassotbr_1_1Host_1_1OtNetworkProperties_html_a149d88636e5c052951b3a39bf12e8477"><div class="ttname"><a href="../../de/d7a/classotbr_1_1Host_1_1OtNetworkProperties.html#a149d88636e5c052951b3a39bf12e8477">otbr::Host::OtNetworkProperties::GetDatasetActiveTlvs</a></div><div class="ttdeci">void GetDatasetActiveTlvs(otOperationalDatasetTlvs &amp;aDatasetTlvs) const override</div><div class="ttdef"><b>Definition</b> rcp_host.cpp:92</div></div>
