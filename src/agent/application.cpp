@@ -40,6 +40,7 @@
 #include "agent/application.hpp"
 #include "common/code_utils.hpp"
 #include "common/mainloop_manager.hpp"
+#include "host/posix/dnssd.hpp"
 #include "utils/infra_link_selector.hpp"
 
 namespace otbr {
@@ -62,6 +63,9 @@ Application::Application(Host::ThreadHost  &aHost,
 #if OTBR_ENABLE_MDNS
     , mPublisher(
           Mdns::Publisher::Create([this](Mdns::Publisher::State aState) { mMdnsStateSubject.UpdateState(aState); }))
+#endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    , mDnssdPlatform(*mPublisher)
 #endif
 #if OTBR_ENABLE_DBUS_SERVER && OTBR_ENABLE_BORDER_AGENT
     , mDBusAgent(MakeUnique<DBus::DBusAgent>(mHost, *mPublisher))
@@ -221,6 +225,9 @@ void Application::CreateRcpMode(const std::string &aRestListenAddress, int aRest
 
 void Application::InitRcpMode(void)
 {
+    Host::RcpHost &rcpHost = static_cast<otbr::Host::RcpHost &>(mHost);
+    OTBR_UNUSED_VARIABLE(rcpHost);
+
 #if OTBR_ENABLE_BORDER_AGENT
     mMdnsStateSubject.AddObserver(*mBorderAgent);
 #endif
@@ -232,6 +239,13 @@ void Application::InitRcpMode(void)
 #endif
 #if OTBR_ENABLE_TREL
     mMdnsStateSubject.AddObserver(*mTrelDnssd);
+#endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    mMdnsStateSubject.AddObserver(mDnssdPlatform);
+    mDnssdPlatform.SetDnssdStateChangedCallback(([&rcpHost](otPlatDnssdState aState) {
+        OTBR_UNUSED_VARIABLE(aState);
+        otPlatDnssdStateHandleStateChange(rcpHost.GetInstance());
+    }));
 #endif
 
 #if OTBR_ENABLE_MDNS
@@ -267,10 +281,16 @@ void Application::InitRcpMode(void)
 #if OTBR_ENABLE_VENDOR_SERVER
     mVendorServer->Init();
 #endif
+#if OTBR_ENABLE_DNSSD_PLAT
+    mDnssdPlatform.Start();
+#endif
 }
 
 void Application::DeinitRcpMode(void)
 {
+#if OTBR_ENABLE_DNSSD_PLAT
+    mDnssdPlatform.Stop();
+#endif
 #if OTBR_ENABLE_SRP_ADVERTISING_PROXY
     mAdvertisingProxy->SetEnabled(false);
 #endif
