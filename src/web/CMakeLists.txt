@@ -27,7 +27,9 @@
 #
 
 pkg_check_modules(JSONCPP jsoncpp REQUIRED)
-set(Boost_USE_STATIC_LIBS ON)
+if(NOT DEFINED Boost_USE_STATIC_LIBS)
+    set(Boost_USE_STATIC_LIBS ON)
+endif()
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS filesystem system)
