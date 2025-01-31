@@ -250,10 +250,10 @@ void BorderAgent::SetEphemeralKeyEnabled(bool aIsEnabled)
 
     if (!mIsEphemeralKeyEnabled)
     {
-        // If the ePSKc feature is enabled, we call the clear function which
+        // If the ePSKc feature is enabled, we call the stop function which
         // will wait for the session to close if it is in active use before
         // removing ephemeral key and unpublishing the service.
-        otBorderAgentClearEphemeralKey(mHost.GetInstance());
+        otBorderAgentEphemeralKeyStop(mHost.GetInstance());
     }
 
     UpdateMeshCopService();
@@ -281,7 +281,7 @@ void BorderAgent::Start(void)
     mServiceInstanceName = GetServiceInstanceNameWithExtAddr(mBaseServiceInstanceName);
     UpdateMeshCopService();
 
-    otBorderAgentSetEphemeralKeyCallback(mHost.GetInstance(), BorderAgent::HandleEpskcStateChanged, this);
+    otBorderAgentEphemeralKeySetCallback(mHost.GetInstance(), BorderAgent::HandleEpskcStateChanged, this);
 }
 
 void BorderAgent::Stop(void)
@@ -292,18 +292,25 @@ void BorderAgent::Stop(void)
 
 void BorderAgent::HandleEpskcStateChanged(void *aContext)
 {
-    BorderAgent *borderAgent = static_cast<BorderAgent *>(aContext);
+    static_cast<BorderAgent *>(aContext)->HandleEpskcStateChanged();
+}
 
-    if (otBorderAgentIsEphemeralKeyActive(borderAgent->mHost.GetInstance()))
+void BorderAgent::HandleEpskcStateChanged(void)
+{
+    switch (otBorderAgentEphemeralKeyGetState(mHost.GetInstance()))
     {
-        borderAgent->PublishEpskcService();
-    }
-    else
-    {
-        borderAgent->UnpublishEpskcService();
+    case OT_BORDER_AGENT_STATE_STARTED:
+    case OT_BORDER_AGENT_STATE_CONNECTED:
+    case OT_BORDER_AGENT_STATE_ACCEPTED:
+        PublishEpskcService();
+        break;
+    case OT_BORDER_AGENT_STATE_DISABLED:
+    case OT_BORDER_AGENT_STATE_STOPPED:
+        UnpublishEpskcService();
+        break;
     }
 
-    for (auto &ephemeralKeyCallback : borderAgent->mEphemeralKeyChangedCallbacks)
+    for (auto &ephemeralKeyCallback : mEphemeralKeyChangedCallbacks)
     {
         ephemeralKeyCallback();
     }
@@ -312,7 +319,7 @@ void BorderAgent::HandleEpskcStateChanged(void *aContext)
 void BorderAgent::PublishEpskcService()
 {
     otInstance *instance = mHost.GetInstance();
-    int         port     = otBorderAgentGetUdpPort(instance);
+    int         port     = otBorderAgentEphemeralKeyGetUdpPort(instance);
 
     otbrLogInfo("Publish meshcop-e service %s.%s.local. port %d", mServiceInstanceName.c_str(),
                 kBorderAgentEpskcServiceType, port);
@@ -583,7 +590,7 @@ void BorderAgent::PublishMeshCopService(void)
 
     AppendVendorTxtEntries(mMeshCopTxtUpdate, txtList);
 
-    if (otBorderAgentGetState(instance) != OT_BORDER_AGENT_STATE_STOPPED)
+    if (otBorderAgentIsActive(instance))
     {
         port = otBorderAgentGetUdpPort(instance);
     }
