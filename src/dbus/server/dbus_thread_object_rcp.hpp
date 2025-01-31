@@ -103,6 +103,8 @@ private:
     void AddExternalRouteHandler(DBusRequest &aRequest);
     void RemoveExternalRouteHandler(DBusRequest &aRequest);
     void UpdateMeshCopTxtHandler(DBusRequest &aRequest);
+    void SetThreadEnabledHandler(DBusRequest &aRequest);
+    void JoinHandler(DBusRequest &aRequest);
     void GetPropertiesHandler(DBusRequest &aRequest);
     void LeaveNetworkHandler(DBusRequest &aRequest);
     void SetNat64Enabled(DBusRequest &aRequest);
