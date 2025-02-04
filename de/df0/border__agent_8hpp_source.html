@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-06579eb</span>
+   <div id="projectname">openthread-br<span id="projectnumber">&#160;0.3.0-731e115</span>
    </div>
   </td>
  </tr>
@@ -187,48 +187,49 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>    std::string GetAlternativeServiceInstanceName() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
 <div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> HandleEpskcStateChanged(<span class="keywordtype">void</span> *aContext);</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keywordtype">void</span>        PublishEpskcService(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    <span class="keywordtype">void</span>        UnpublishEpskcService(<span class="keywordtype">void</span>);</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    <a class="code hl_class" href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a> &amp;mHost;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    Mdns::Publisher     &amp;mPublisher;</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    <span class="keywordtype">bool</span>                 mIsEnabled;</div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    <span class="keywordtype">bool</span>                 mIsEphemeralKeyEnabled;</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span> </div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>    std::map&lt;std::string, std::vector&lt;uint8_t&gt;&gt; mMeshCopTxtUpdate;</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span> </div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    std::vector&lt;uint8_t&gt; mVendorOui;</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>    std::string mVendorName;</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    std::string mProductName;</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span> </div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    <span class="comment">// The base service instance name typically consists of the vendor and product name. But it can</span></div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    <span class="comment">// also be overridden by `OTBR_MESHCOP_SERVICE_INSTANCE_NAME` or method `SetMeshCopServiceValues()`.</span></div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    <span class="comment">// For example, this value can be &quot;OpenThread Border Router&quot;.</span></div>
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>    std::string mBaseServiceInstanceName;</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span> </div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    <span class="comment">// The actual instance name advertised in the mDNS service. This is usually the value of</span></div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    <span class="comment">// `mBaseServiceInstanceName` plus the Extended Address and optional random number for avoiding</span></div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    <span class="comment">// conflicts. For example, this value can be &quot;OpenThread Border Router #7AC3&quot; or</span></div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <span class="comment">// &quot;OpenThread Border Router #7AC3 (14379)&quot;.</span></div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    std::string mServiceInstanceName;</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span> </div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    std::vector&lt;EphemeralKeyChangedCallback&gt; mEphemeralKeyChangedCallbacks;</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>};</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>    <span class="keywordtype">void</span>        HandleEpskcStateChanged(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    <span class="keywordtype">void</span>        PublishEpskcService(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>    <span class="keywordtype">void</span>        UnpublishEpskcService(<span class="keywordtype">void</span>);</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <a class="code hl_class" href="../../d9/dd3/classotbr_1_1Host_1_1RcpHost.html">otbr::Host::RcpHost</a> &amp;mHost;</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    Mdns::Publisher     &amp;mPublisher;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    <span class="keywordtype">bool</span>                 mIsEnabled;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>    <span class="keywordtype">bool</span>                 mIsEphemeralKeyEnabled;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>    std::map&lt;std::string, std::vector&lt;uint8_t&gt;&gt; mMeshCopTxtUpdate;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span> </div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    std::vector&lt;uint8_t&gt; mVendorOui;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>    std::string mVendorName;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>    std::string mProductName;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span> </div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    <span class="comment">// The base service instance name typically consists of the vendor and product name. But it can</span></div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>    <span class="comment">// also be overridden by `OTBR_MESHCOP_SERVICE_INSTANCE_NAME` or method `SetMeshCopServiceValues()`.</span></div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>    <span class="comment">// For example, this value can be &quot;OpenThread Border Router&quot;.</span></div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>    std::string mBaseServiceInstanceName;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span> </div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    <span class="comment">// The actual instance name advertised in the mDNS service. This is usually the value of</span></div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>    <span class="comment">// `mBaseServiceInstanceName` plus the Extended Address and optional random number for avoiding</span></div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>    <span class="comment">// conflicts. For example, this value can be &quot;OpenThread Border Router #7AC3&quot; or</span></div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>    <span class="comment">// &quot;OpenThread Border Router #7AC3 (14379)&quot;.</span></div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    std::string mServiceInstanceName;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span> </div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>    std::vector&lt;EphemeralKeyChangedCallback&gt; mEphemeralKeyChangedCallbacks;</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>};</div>
 </div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span> </div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>} <span class="comment">// namespace otbr</span></div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_BORDER_AGENT_HPP_</span></div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span> </div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>} <span class="comment">// namespace otbr</span></div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span><span class="preprocessor">#endif </span><span class="comment">// OTBR_AGENT_BORDER_AGENT_HPP_</span></div>
 <div class="ttc" id="aadvertising__proxy_8hpp_html"><div class="ttname"><a href="../../dd/d20/advertising__proxy_8hpp.html">advertising_proxy.hpp</a></div></div>
 <div class="ttc" id="abackbone__agent_8hpp_html"><div class="ttname"><a href="../../d0/df4/backbone__agent_8hpp.html">backbone_agent.hpp</a></div></div>
 <div class="ttc" id="aclassNonCopyable_html"><div class="ttname"><a href="../../dc/d3c/classNonCopyable.html">NonCopyable</a></div><div class="ttdef"><b>Definition</b> code_utils.hpp:190</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html">otbr::BorderAgent</a></div><div class="ttdef"><b>Definition</b> border_agent.hpp:79</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html_a37e820aa1a726655846149b1f4ccb8c5"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#a37e820aa1a726655846149b1f4ccb8c5">otbr::BorderAgent::GetEphemeralKeyEnabled</a></div><div class="ttdeci">bool GetEphemeralKeyEnabled(void) const</div><div class="ttdef"><b>Definition</b> border_agent.hpp:135</div></div>
-<div class="ttc" id="aclassotbr_1_1BorderAgent_html_a382e5b6b3b2dc5c1a426f0f99fc3a7da"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#a382e5b6b3b2dc5c1a426f0f99fc3a7da">otbr::BorderAgent::AddEphemeralKeyChangedCallback</a></div><div class="ttdeci">void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback)</div><div class="ttdef"><b>Definition</b> border_agent.cpp:359</div></div>
+<div class="ttc" id="aclassotbr_1_1BorderAgent_html_a382e5b6b3b2dc5c1a426f0f99fc3a7da"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#a382e5b6b3b2dc5c1a426f0f99fc3a7da">otbr::BorderAgent::AddEphemeralKeyChangedCallback</a></div><div class="ttdeci">void AddEphemeralKeyChangedCallback(EphemeralKeyChangedCallback aCallback)</div><div class="ttdef"><b>Definition</b> border_agent.cpp:366</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html_a3fa72b202e6979b62b561f9438e7e376"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#a3fa72b202e6979b62b561f9438e7e376">otbr::BorderAgent::SetMeshCopServiceValues</a></div><div class="ttdeci">otbrError SetMeshCopServiceValues(const std::string &amp;aServiceInstanceName, const std::string &amp;aProductName, const std::string &amp;aVendorName, const std::vector&lt; uint8_t &gt; &amp;aVendorOui={}, const Mdns::Publisher::TxtList &amp;aNonStandardTxtEntries={})</div><div class="ttdef"><b>Definition</b> border_agent.cpp:199</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html_aa6be012f0ddb6ea06806e7eebdd3733c"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#aa6be012f0ddb6ea06806e7eebdd3733c">otbr::BorderAgent::EphemeralKeyChangedCallback</a></div><div class="ttdeci">std::function&lt; void(void)&gt; EphemeralKeyChangedCallback</div><div class="ttdef"><b>Definition</b> border_agent.hpp:82</div></div>
-<div class="ttc" id="aclassotbr_1_1BorderAgent_html_ac3f2fe5b0d789bdb66f86d539f758669"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#ac3f2fe5b0d789bdb66f86d539f758669">otbr::BorderAgent::HandleMdnsState</a></div><div class="ttdeci">void HandleMdnsState(Mdns::Publisher::State aState) override</div><div class="ttdef"><b>Definition</b> border_agent.cpp:364</div></div>
+<div class="ttc" id="aclassotbr_1_1BorderAgent_html_ac3f2fe5b0d789bdb66f86d539f758669"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#ac3f2fe5b0d789bdb66f86d539f758669">otbr::BorderAgent::HandleMdnsState</a></div><div class="ttdeci">void HandleMdnsState(Mdns::Publisher::State aState) override</div><div class="ttdef"><b>Definition</b> border_agent.cpp:371</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html_ac79458e25c04633585b8e7b610f2ff40"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#ac79458e25c04633585b8e7b610f2ff40">otbr::BorderAgent::CreateEphemeralKey</a></div><div class="ttdeci">static otbrError CreateEphemeralKey(std::string &amp;aEphemeralKey)</div><div class="ttdef"><b>Definition</b> border_agent.cpp:172</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html_af4656bc92ad466131bc9db31429f5a2d"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#af4656bc92ad466131bc9db31429f5a2d">otbr::BorderAgent::SetEphemeralKeyEnabled</a></div><div class="ttdeci">void SetEphemeralKeyEnabled(bool aIsEnabled)</div><div class="ttdef"><b>Definition</b> border_agent.cpp:246</div></div>
 <div class="ttc" id="aclassotbr_1_1BorderAgent_html_affc077ed4545cc1348d0c48bb7c84dfb"><div class="ttname"><a href="../../d4/dfd/classotbr_1_1BorderAgent.html#affc077ed4545cc1348d0c48bb7c84dfb">otbr::BorderAgent::SetEnabled</a></div><div class="ttdeci">void SetEnabled(bool aIsEnabled)</div><div class="ttdef"><b>Definition</b> border_agent.cpp:230</div></div>
