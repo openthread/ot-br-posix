@@ -159,6 +159,10 @@ otbrError DBusThreadObjectRcp::Init(void)
                    std::bind(&DBusThreadObjectRcp::UpdateMeshCopTxtHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_GET_PROPERTIES_METHOD,
                    std::bind(&DBusThreadObjectRcp::GetPropertiesHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_THREAD_ENABLED_METHOD,
+                   std::bind(&DBusThreadObjectRcp::SetThreadEnabledHandler, this, _1));
+    RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_JOIN_METHOD,
+                   std::bind(&DBusThreadObjectRcp::JoinHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_LEAVE_NETWORK_METHOD,
                    std::bind(&DBusThreadObjectRcp::LeaveNetworkHandler, this, _1));
     RegisterMethod(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_SET_NAT64_ENABLED_METHOD,
@@ -1757,6 +1761,52 @@ void DBusThreadObjectRcp::ActiveDatasetChangeHandler(const otOperationalDatasetT
     std::vector<uint8_t> value(aDatasetTlvs.mLength);
     std::copy(aDatasetTlvs.mTlvs, aDatasetTlvs.mTlvs + aDatasetTlvs.mLength, value.begin());
     SignalPropertyChanged(OTBR_DBUS_THREAD_INTERFACE, OTBR_DBUS_PROPERTY_ACTIVE_DATASET_TLVS, value);
+}
+
+void DBusThreadObjectRcp::SetThreadEnabledHandler(DBusRequest &aRequest)
+{
+    otError error  = OT_ERROR_NONE;
+    bool    enable = false;
+    auto    args   = std::tie(enable);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    mHost.SetThreadEnabled(enable, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
+}
+
+void DBusThreadObjectRcp::JoinHandler(DBusRequest &aRequest)
+{
+    std::vector<uint8_t>     dataset;
+    otOperationalDatasetTlvs activeOpDatasetTlvs;
+    otError                  error = OT_ERROR_NONE;
+
+    auto args = std::tie(dataset);
+
+    SuccessOrExit(DBusMessageToTuple(*aRequest.GetMessage(), args), error = OT_ERROR_INVALID_ARGS);
+
+    VerifyOrExit(dataset.size() <= sizeof(activeOpDatasetTlvs.mTlvs), error = OT_ERROR_INVALID_ARGS);
+    std::copy(dataset.begin(), dataset.end(), activeOpDatasetTlvs.mTlvs);
+    activeOpDatasetTlvs.mLength = dataset.size();
+
+    mHost.Join(activeOpDatasetTlvs, [aRequest](otError aError, const std::string &aErrorInfo) mutable {
+        OT_UNUSED_VARIABLE(aErrorInfo);
+        aRequest.ReplyOtResult(aError);
+    });
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        aRequest.ReplyOtResult(error);
+    }
 }
 
 void DBusThreadObjectRcp::LeaveNetworkHandler(DBusRequest &aRequest)
