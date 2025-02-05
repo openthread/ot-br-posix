@@ -105,13 +105,6 @@ case "$(uname)" in
             exit 0
         fi
 
-        if [ "$BUILD_TARGET" == otbr-dbus-check ]; then
-            install_openthread_binraries
-            configure_network
-            install_common_dependencies
-            exit 0
-        fi
-
         if [ "$BUILD_TARGET" == check ] || [ "$BUILD_TARGET" == meshcop ]; then
             install_openthread_binraries
             sudo apt-get install --no-install-recommends -y avahi-daemon avahi-utils
