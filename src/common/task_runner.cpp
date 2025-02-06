@@ -110,9 +110,9 @@ void TaskRunner::Update(MainloopContext &aMainloop)
 
 void TaskRunner::Process(const MainloopContext &aMainloop)
 {
-    OTBR_UNUSED_VARIABLE(aMainloop);
-
     ssize_t rval;
+
+    VerifyOrExit(FD_ISSET(mEventFd[kRead], &aMainloop.mReadFdSet));
 
     // Read any data in the pipe.
     do
@@ -126,6 +126,9 @@ void TaskRunner::Process(const MainloopContext &aMainloop)
     VerifyOrDie(errno == EAGAIN || errno == EWOULDBLOCK, strerror(errno));
 
     PopTasks();
+
+exit:
+    return;
 }
 
 TaskRunner::TaskId TaskRunner::PushTask(Milliseconds aDelay, Task<void> aTask)
