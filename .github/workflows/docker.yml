@@ -59,22 +59,37 @@ jobs:
       run: tests/scripts/check-docker
 
   buildx:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - image_tag: "latest"
+            runner: ubuntu-24.04
             base_image: "ubuntu:bionic"
             build_args: ""
-            platforms: "linux/amd64,linux/arm/v7,linux/arm64"
+            platforms: "linux/amd64"
+            push: yes
+          - image_tag: "latest"
+            runner: ubuntu-24.04-arm
+            base_image: "ubuntu:bionic"
+            build_args: ""
+            platforms: "linux/arm/v7,linux/arm64"
             push: yes
           - image_tag: "focal"
+            runner: ubuntu-24.04
             base_image: "ubuntu:focal"
             build_args: ""
-            platforms: "linux/amd64,linux/arm64"
+            platforms: "linux/amd64"
+            push: yes
+          - image_tag: "focal"
+            runner: ubuntu-24.04-arm
+            base_image: "ubuntu:focal"
+            build_args: ""
+            platforms: "linux/arm64"
             push: yes
           - image_tag: "reference-device"
+            runner: ubuntu-24.04
             base_image: "ubuntu:bionic"
             build_args: >-
               --build-arg REFERENCE_DEVICE=1
@@ -84,16 +99,40 @@ jobs:
               --build-arg WEB_GUI=0
               --build-arg REST_API=0
               --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_MLR=ON'
-            platforms: "linux/amd64,linux/arm/v7,linux/arm64"
+            platforms: "linux/amd64"
+            push: yes
+          - image_tag: "reference-device"
+            runner: ubuntu-24.04-arm
+            base_image: "ubuntu:bionic"
+            build_args: >-
+              --build-arg REFERENCE_DEVICE=1
+              --build-arg BORDER_ROUTING=0
+              --build-arg BACKBONE_ROUTER=1
+              --build-arg NAT64=0
+              --build-arg WEB_GUI=0
+              --build-arg REST_API=0
+              --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_MLR=ON'
+            platforms: "linux/arm/v7,linux/arm64"
             push: yes
           - image_tag: "test"
+            runner: ubuntu-24.04
             base_image: "ubuntu:bionic"
             build_args: >-
               --build-arg OT_BACKBONE_CI=1
               --build-arg REFERENCE_DEVICE=1
               --build-arg BACKBONE_ROUTER=1
               --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_MLR=ON'
-            platforms: "linux/amd64,linux/arm/v7,linux/arm64"
+            platforms: "linux/amd64"
+            push: no
+          - image_tag: "test"
+            runner: ubuntu-24.04-arm
+            base_image: "ubuntu:bionic"
+            build_args: >-
+              --build-arg OT_BACKBONE_CI=1
+              --build-arg REFERENCE_DEVICE=1
+              --build-arg BACKBONE_ROUTER=1
+              --build-arg OTBR_OPTIONS='-DOTBR_DUA_ROUTING=ON -DOT_DUA=ON -DOT_MLR=ON'
+            platforms: "linux/arm/v7,linux/arm64"
             push: no
     steps:
     - uses: actions/checkout@v4
@@ -118,11 +157,6 @@ jobs:
           --build-arg VCS_REF=${GITHUB_SHA::8} \
           ${{ matrix.build_args }} \
           ${TAGS} --file etc/docker/Dockerfile ." >> $GITHUB_OUTPUT
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      with:
-        image: tonistiigi/binfmt:qemu-v8.1.5
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
