@@ -81,7 +81,7 @@ trap shutdown TERM INT
 
 parse_args "$@"
 
-[ -n "$RADIO_URL" ] || RADIO_URL="spinel+hdlc+uart:///dev/ttyUSB0"
+[ -n "$RADIO_URL" ] || RADIO_URL="spinel+hdlc:///dev/ttyUSB0"
 [ -n "$TREL_URL" ] || TREL_URL=""
 [ -n "$TUN_INTERFACE_NAME" ] || TUN_INTERFACE_NAME="wpan0"
 [ -n "$BACKBONE_INTERFACE" ] || BACKBONE_INTERFACE="eth0"
