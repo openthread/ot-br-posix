@@ -46,6 +46,10 @@
 #
 #      OTBR_BUILD_DIR="./build/temp" script/cmake-build
 #
+#  Compile a release build (vendor name is required):
+#
+#      script/cmake-build -DCMAKE_BUILD_TYPE=Release -DOTBR_VENDOR_NAME=YourOrganizationName
+#
 #  Examples:
 #
 #      script/cmake-build
@@ -75,7 +79,8 @@ main()
     (
         cd "${builddir}" || die "Failed to enter ${builddir}"
 
-        cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "${OTBR_TOP_SRCDIR}" "$@"
+        cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_BUILD_TYPE=Debug "${OTBR_TOP_SRCDIR}" "$@"
 
         if [[ -n ${OTBR_TARGET[*]} ]]; then
             ninja "${OTBR_TARGET[@]}"
