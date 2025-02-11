@@ -69,6 +69,7 @@ otbr_install()
 
     otbr_options=(
         "-DBUILD_TESTING=OFF"
+        "-DCMAKE_BUILD_TYPE=Debug"
         "-DCMAKE_INSTALL_PREFIX=/usr"
         "-DOTBR_DBUS=ON"
         "-DOTBR_DNSSD_DISCOVERY_PROXY=ON"
