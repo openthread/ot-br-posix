@@ -88,6 +88,8 @@ public:
     }
 
 private:
+    using AddressList = Mdns::Publisher::AddressList;
+
     enum : uint32_t
     {
         kServiceTtlCapLimit = 10, // TTL cap limit for Discovery Proxy (in seconds).
@@ -103,6 +105,8 @@ private:
                                            const Mdns::Publisher::DiscoveredInstanceInfo &aInstanceInfo);
     void OnHostDiscovered(const std::string &aHostName, const Mdns::Publisher::DiscoveredHostInfo &aHostInfo);
     static uint32_t CapTtl(uint32_t aTtl);
+
+    static void FilterLinkLocalAddresses(const AddressList &aAddrList, AddressList &aFilteredList);
 
     void Start(void);
     void Stop(void);

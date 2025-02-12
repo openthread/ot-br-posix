@@ -1287,7 +1287,7 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
     VerifyOrExit(aAddress->sa_family == AF_INET6);
 
     address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
-    VerifyOrExit(!address.IsUnspecified() && !address.IsLinkLocal() && !address.IsMulticast() && !address.IsLoopback(),
+    VerifyOrExit(!address.IsUnspecified() && !address.IsMulticast() && !address.IsLoopback(),
                  otbrLogDebug("DNSServiceGetAddrInfo ignores address %s", address.ToString().c_str()));
 
     otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
@@ -1370,8 +1370,6 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     VerifyOrExit(aAddress->sa_family == AF_INET6);
 
     address.CopyFrom(*reinterpret_cast<const struct sockaddr_in6 *>(aAddress));
-    VerifyOrExit(!address.IsLinkLocal(),
-                 otbrLogDebug("DNSServiceGetAddrInfo ignore link-local address %s", address.ToString().c_str()));
 
     otbrLogInfo("DNSServiceGetAddrInfo reply: %s address=%s, ttl=%" PRIu32, isAdd ? "add" : "remove",
                 address.ToString().c_str(), aTtl);
