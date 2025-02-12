@@ -301,25 +301,22 @@ void TrelDnssd::OnTrelServiceInstanceAdded(const Mdns::Publisher::DiscoveredInst
     {
         otbrLogDebug("Peer address: %s", addr.ToString().c_str());
 
-        // Skip anycast (Refer to https://datatracker.ietf.org/doc/html/rfc2373#section-2.6.1)
-        if (addr.m64[1] == 0)
+        // Require link-local. Thread requires TREL peers to advertise link-local via mDNS.
+        if (!addr.IsLinkLocal())
         {
             continue;
         }
 
-        // If there are multiple addresses, we prefer the address
-        // which is numerically smallest. This prefers GUA over ULA
-        // (`fc00::/7`) and then link-local (`fe80::/10`).
-
+        // Pick the smallest link-local to be robust to reorderings.
         if (selectedAddress.IsUnspecified() || (addr < selectedAddress))
         {
             selectedAddress = addr;
         }
     }
 
-    if (aInstanceInfo.mAddresses.empty())
+    if (selectedAddress.IsUnspecified())
     {
-        otbrLogWarning("Peer %s does not have any IPv6 address, ignored", aInstanceInfo.mName.c_str());
+        otbrLogWarning("Peer %s does not have any IPv6 link-local address, ignored", aInstanceInfo.mName.c_str());
         ExitNow();
     }
 
