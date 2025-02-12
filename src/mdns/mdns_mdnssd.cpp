@@ -1265,7 +1265,8 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
     OTBR_UNUSED_VARIABLE(aInterfaceIndex);
 
     Ip6Address address;
-    bool       isAdd = (aFlags & kDNSServiceFlagsAdd) != 0;
+    bool       isAdd      = (aFlags & kDNSServiceFlagsAdd) != 0;
+    bool       moreComing = (aFlags & kDNSServiceFlagsMoreComing) != 0;
 
     otbrLog(aErrorCode == kDNSServiceErr_NoError ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u, error=%" PRId32, aFlags, aHostName,
@@ -1292,7 +1293,7 @@ void PublisherMDnsSd::ServiceInstanceResolution::HandleGetAddrInfoResult(DNSServ
     mInstanceInfo.mTtl = aTtl;
 
 exit:
-    if (!mInstanceInfo.mAddresses.empty() || aErrorCode != kDNSServiceErr_NoError)
+    if ((!mInstanceInfo.mAddresses.empty() && !moreComing) || aErrorCode != kDNSServiceErr_NoError)
     {
         FinishResolution();
     }
@@ -1347,7 +1348,8 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     OTBR_UNUSED_VARIABLE(aServiceRef);
 
     Ip6Address address;
-    bool       isAdd = (aFlags & kDNSServiceFlagsAdd) != 0;
+    bool       isAdd      = (aFlags & kDNSServiceFlagsAdd) != 0;
+    bool       moreComing = (aFlags & kDNSServiceFlagsMoreComing) != 0;
 
     otbrLog(aErrorCode == kDNSServiceErr_NoError ? OTBR_LOG_INFO : OTBR_LOG_WARNING, OTBR_LOG_TAG,
             "DNSServiceGetAddrInfo reply: flags=%" PRIu32 ", host=%s, sa_family=%u, error=%" PRId32, aFlags, aHostName,
@@ -1375,8 +1377,11 @@ void PublisherMDnsSd::HostSubscription::HandleResolveResult(DNSServiceRef       
     mHostInfo.mNetifIndex = aInterfaceIndex;
     mHostInfo.mTtl        = aTtl;
 
-    // NOTE: This `HostSubscription` object may be freed in `OnHostResolved`.
-    mPublisher.OnHostResolved(mHostName, mHostInfo);
+    if (!moreComing)
+    {
+        // NOTE: This `HostSubscription` object may be freed in `OnHostResolved`.
+        mPublisher.OnHostResolved(mHostName, mHostInfo);
+    }
 
 exit:
     if (aErrorCode != kDNSServiceErr_NoError)
