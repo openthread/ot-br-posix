@@ -74,13 +74,30 @@ if(OTBR_MDNS)
     gtest_discover_tests(otbr-gtest-mdns-subscribe)
 endif()
 
-add_executable(otbr-posix-gtest-unit
+set(OTBR_POSIX_GTEST_UNIT_SRCS
     test_infra_if.cpp
     test_netif.cpp
 )
-target_link_libraries(otbr-posix-gtest-unit
+set(OTBR_POSIX_GTEST_UNIT_LINK_LIBS
     otbr-posix
     GTest::gmock_main
+)
+if(OTBR_BORDER_AGENT)
+    set(OTBR_POSIX_GTEST_UNIT_SRCS
+        ${OTBR_POSIX_GTEST_UNIT_SRCS}
+        test_border_agent_udp_proxy.cpp
+    )
+    set(OTBR_POSIX_GTEST_UNIT_LINK_LIBS
+        ${OTBR_POSIX_GTEST_UNIT_LINK_LIBS}
+        otbr-border-agent
+    )
+endif()
+
+add_executable(otbr-posix-gtest-unit
+    ${OTBR_POSIX_GTEST_UNIT_SRCS}
+)
+target_link_libraries(otbr-posix-gtest-unit
+    ${OTBR_POSIX_GTEST_UNIT_LINK_LIBS}
 )
 gtest_discover_tests(otbr-posix-gtest-unit PROPERTIES LABELS "sudo")
 
