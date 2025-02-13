@@ -163,6 +163,12 @@ jobs:
     - name: Build OpenThread
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}
       run: |
+        echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+        (cd third_party/openthread/repo && git remote -v)
+        (cd third_party/openthread/repo && git fetch origin test/fix-br-tests-req-one-addr:refs/remotes/origin/test/fix-br-tests-req-one-addr)
+        (cd third_party/openthread/repo && git checkout origin/test/fix-br-tests-req-one-addr)
+        (cd third_party/openthread/repo && git branch)
+        echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
         (cd third_party/openthread/repo && ./script/test build)
     - name: Get Thread-Wireshark
       if: ${{ success() && steps.check_cache_result.outputs.cache-hit != 'true' }}

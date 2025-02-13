@@ -1,7 +1,7 @@
 [submodule "third_party/openthread/repo"]
 	path = third_party/openthread/repo
-	url = https://github.com/openthread/openthread.git
-	branch = main
+	url = https://github.com/abtink/openthread.git
+	branch = test/fix-br-tests-req-one-addr
 [submodule "third_party/cJSON/repo"]
 	path = third_party/cJSON/repo
 	url = https://github.com/DaveGamble/cJSON.git
