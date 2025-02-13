@@ -78,6 +78,7 @@ add_executable(otbr-posix-gtest-unit
     test_cli_daemon.cpp
     test_infra_if.cpp
     test_netif.cpp
+    test_udp_proxy.cpp
 )
 target_link_libraries(otbr-posix-gtest-unit
     otbr-posix
