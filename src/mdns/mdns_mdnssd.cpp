@@ -266,6 +266,7 @@ void PublisherMDnsSd::Stop(StopMode aStopMode)
     mSubscribedHosts.clear();
 
     mState = State::kIdle;
+    mStateCallback(mState);
 
 exit:
     return;

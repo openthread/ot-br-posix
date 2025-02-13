@@ -532,6 +532,7 @@ void PublisherAvahi::Stop(void)
     }
 
     mState = Mdns::Publisher::State::kIdle;
+    mStateCallback(mState);
 }
 
 void PublisherAvahi::HandleClientState(AvahiClient *aClient, AvahiClientState aState, void *aContext)
