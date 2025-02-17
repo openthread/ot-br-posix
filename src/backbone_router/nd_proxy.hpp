@@ -31,8 +31,8 @@
  *   This file includes definition for ICMPv6 Neighbor Advertisement (ND) proxy management.
  */
 
-#ifndef ND_PROXY_HPP_
-#define ND_PROXY_HPP_
+#ifndef BACKBONE_ROUTER_ND_PROXY_HPP_
+#define BACKBONE_ROUTER_ND_PROXY_HPP_
 
 #include "openthread-br/config.h"
 
@@ -166,4 +166,4 @@ private:
 } // namespace otbr
 
 #endif // OTBR_ENABLE_DUA_ROUTING
-#endif // ND_PROXY_HPP_
+#endif // BACKBONE_ROUTER_ND_PROXY_HPP_

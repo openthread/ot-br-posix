@@ -31,8 +31,8 @@
  *   This file includes definition for DUA routing functionalities.
  */
 
-#ifndef BACKBONE_ROUTER_DUA_ROUTING_MANAGER
-#define BACKBONE_ROUTER_DUA_ROUTING_MANAGER
+#ifndef BACKBONE_ROUTER_DUA_ROUTING_MANAGER_HPP_
+#define BACKBONE_ROUTER_DUA_ROUTING_MANAGER_HPP_
 
 #include "openthread-br/config.h"
 
@@ -105,4 +105,4 @@ private:
 
 #endif // OTBR_ENABLE_DUA_ROUTING
 
-#endif // BACKBONE_ROUTER_DUA_ROUTING_MANAGER
+#endif // BACKBONE_ROUTER_DUA_ROUTING_MANAGER_HPP_
