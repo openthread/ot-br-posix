@@ -469,6 +469,8 @@ otbrError PublisherMDnsSd::DnssdServiceRegistration::Register(void)
 
     otbrLogInfo("Registering service %s.%s", mName.c_str(), regType.c_str());
 
+    VerifyOrExit(GetPublisher().IsStarted(), dnsError = kDNSServiceErr_ServiceNotRunning);
+
     dnsError = DNSServiceRegister(&mServiceRef, kDNSServiceFlagsNoAutoRename, kDNSServiceInterfaceIndexAny,
                                   serviceNameCString, regType.c_str(),
                                   /* domain */ nullptr, hostNameCString, htons(mPort), mTxtData.size(), mTxtData.data(),
@@ -484,6 +486,7 @@ otbrError PublisherMDnsSd::DnssdServiceRegistration::Register(void)
         keyReg->Register();
     }
 
+exit:
     return GetPublisher().DnsErrorToOtbrError(dnsError);
 }
 
@@ -491,6 +494,7 @@ void PublisherMDnsSd::DnssdServiceRegistration::Unregister(void)
 {
     DnssdKeyRegistration *keyReg = mRelatedKeyReg;
 
+    VerifyOrExit(GetPublisher().IsStarted());
     VerifyOrExit(mServiceRef != nullptr);
 
     // If we have a related key registration associated with this
@@ -560,6 +564,8 @@ otbrError PublisherMDnsSd::DnssdHostRegistration::Register(void)
 
     otbrLogInfo("Registering new host %s", mName.c_str());
 
+    VerifyOrExit(GetPublisher().IsStarted(), dnsError = kDNSServiceErr_ServiceNotRunning);
+
     for (const Ip6Address &address : mAddresses)
     {
         DNSRecordRef recordRef = nullptr;
@@ -590,6 +596,7 @@ void PublisherMDnsSd::DnssdHostRegistration::Unregister(void)
 {
     DNSServiceErrorType dnsError;
 
+    VerifyOrExit(GetPublisher().IsStarted());
     VerifyOrExit(GetPublisher().mHostsRef != nullptr);
 
     for (size_t index = 0; index < mAddrRecordRefs.size(); index++)
@@ -674,6 +681,8 @@ otbrError PublisherMDnsSd::DnssdKeyRegistration::Register(void)
 
     otbrLogInfo("Registering new key %s", mName.c_str());
 
+    VerifyOrExit(GetPublisher().IsStarted(), dnsError = kDNSServiceErr_ServiceNotRunning);
+
     serviceReg = static_cast<DnssdServiceRegistration *>(GetPublisher().FindServiceRegistration(mName));
 
     if ((serviceReg != nullptr) && (serviceReg->mServiceRef != nullptr))
@@ -742,6 +751,8 @@ void PublisherMDnsSd::DnssdKeyRegistration::Unregister(void)
 
         otbrLogInfo("Unregistering key %s (was registered individually)", mName.c_str());
     }
+
+    VerifyOrExit(GetPublisher().IsStarted(), dnsError = kDNSServiceErr_ServiceNotRunning);
 
     VerifyOrExit(serviceRef != nullptr);
 
