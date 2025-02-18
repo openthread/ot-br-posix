@@ -119,7 +119,15 @@ private:
     public:
         using ServiceRegistration::ServiceRegistration; // Inherit base constructor
 
-        ~DnssdServiceRegistration(void) override { Unregister(); }
+        ~DnssdServiceRegistration(void) override
+        {
+            Unregister();
+            if (mServiceRef)
+            {
+                DNSServiceRefDeallocate(mServiceRef);
+                mServiceRef = nullptr;
+            }
+        }
 
         void      Update(MainloopContext &aMainloop) const;
         void      Process(const MainloopContext &aMainloop, std::vector<DNSServiceRef> &aReadyServices) const;
