@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <openthread/backbone_router_ftd.h>
+#include <openthread/border_agent.h>
 #include <openthread/border_routing.h>
 #include <openthread/dataset.h>
 #include <openthread/dnssd_server.h>
@@ -274,6 +275,8 @@ void RcpHost::Init(void)
 #endif
 #endif // OTBR_ENABLE_FEATURE_FLAGS
 
+    otBorderAgentSetMeshCoPServiceChangedCallback(mInstance, RcpHost::HandleMeshCoPServiceChanged, this);
+
     mThreadHelper = MakeUnique<otbr::agent::ThreadHelper>(mInstance, this);
 
     OtNetworkProperties::SetInstance(mInstance);
@@ -335,6 +338,7 @@ void RcpHost::Deinit(void)
     mSetThreadEnabledReceiver  = nullptr;
     mScheduleMigrationReceiver = nullptr;
     mDetachGracefullyCallbacks.clear();
+    mBorderAgentMeshCoPServiceChangedCallback = nullptr;
 }
 
 void RcpHost::HandleStateChanged(otChangedFlags aFlags)
@@ -780,6 +784,25 @@ void RcpHost::UpdateThreadEnabledState(ThreadEnabledState aState)
     {
         callback(mThreadEnabledState);
     }
+}
+
+void RcpHost::HandleMeshCoPServiceChanged(const uint8_t *aTxtData, uint16_t aLength, void *aContext)
+{
+    static_cast<RcpHost *>(aContext)->HandleMeshCoPServiceChanged(aTxtData, aLength);
+}
+
+void RcpHost::HandleMeshCoPServiceChanged(const uint8_t *aTxtData, uint16_t aLength)
+{
+    if (mBorderAgentMeshCoPServiceChangedCallback)
+    {
+        mBorderAgentMeshCoPServiceChangedCallback(otBorderAgentIsActive(mInstance), otBorderAgentGetUdpPort(mInstance),
+                                                  aTxtData, aLength);
+    }
+}
+
+void RcpHost::BorderAgentSetMeshCoPServiceChangedCallback(BorderAgentMeshCoPServiceChangedCallback aCallback)
+{
+    mBorderAgentMeshCoPServiceChangedCallback = aCallback;
 }
 
 /*
