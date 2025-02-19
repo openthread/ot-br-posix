@@ -118,11 +118,11 @@ public:
      *
      * @returns The result returned by the task @p aTask.
      */
-    template <class T> T PostAndWait(const Task<T> &aTask)
+    template <class T> T PostAndWait(const Task<T> &aTask, Milliseconds aDelay = Milliseconds::zero())
     {
         std::promise<T> pro;
 
-        Post([&pro, &aTask]() { pro.set_value(aTask()); });
+        Post(aDelay, [&pro, &aTask]() { pro.set_value(aTask()); });
 
         return pro.get_future().get();
     }
