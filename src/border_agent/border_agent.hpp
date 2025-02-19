@@ -109,7 +109,7 @@ public:
      *                                   allowed ranges or invalid keys are found in aNonStandardTxtEntries
      * @returns OTBR_ERROR_NONE          If successfully set the meshcop service values.
      */
-    otbrError SetMeshCopServiceValues(const std::string              &aServiceInstanceName,
+    otbrError SetMeshCoPServiceValues(const std::string              &aServiceInstanceName,
                                       const std::string              &aProductName,
                                       const std::string              &aVendorName,
                                       const std::vector<uint8_t>     &aVendorOui             = {},
@@ -142,6 +142,16 @@ public:
     void HandleMdnsState(Mdns::Publisher::State aState) override;
 
     /**
+     * This method handles BorderAgent state changes.
+     */
+    void HandleBorderAgentStateChange(bool aIsActive, uint16_t aPort);
+
+    /**
+     * This method handles OT core MeshCoP TXT value changes.
+     */
+    void HandleOtMeshCoPTxtValueChange(const std::vector<uint8_t> &aOtMeshCoPTxtValues);
+
+    /**
      * This method creates ephemeral key in the Border Agent.
      *
      * @param[out] aEphemeralKey  The ephemeral key digit string of length 9 with first 8 digits randomly
@@ -163,16 +173,13 @@ private:
     void Start(void);
     void Stop(void);
     bool IsEnabled(void) const { return mIsEnabled; }
-    void PublishMeshCopService(void);
-    void UpdateMeshCopService(void);
-    void UnpublishMeshCopService(void);
+    void PublishMeshCoPService(void);
+    void UpdateMeshCoPService(void);
+    void UnpublishMeshCoPService(void);
 #if OTBR_ENABLE_DBUS_SERVER
     void HandleUpdateVendorMeshCoPTxtEntries(std::map<std::string, std::vector<uint8_t>> aUpdate);
 #endif
 
-    void HandleThreadStateChanged(otChangedFlags aFlags);
-
-    bool        IsThreadStarted(void) const;
     std::string GetServiceInstanceNameWithExtAddr(const std::string &aServiceInstanceName) const;
     std::string GetAlternativeServiceInstanceName() const;
 
@@ -186,7 +193,7 @@ private:
     bool                 mIsEnabled;
     bool                 mIsEphemeralKeyEnabled;
 
-    std::map<std::string, std::vector<uint8_t>> mMeshCopTxtUpdate;
+    std::map<std::string, std::vector<uint8_t>> mMeshCoPTxtUpdate;
 
     std::vector<uint8_t> mVendorOui;
 
@@ -194,7 +201,7 @@ private:
     std::string mProductName;
 
     // The base service instance name typically consists of the vendor and product name. But it can
-    // also be overridden by `OTBR_MESHCOP_SERVICE_INSTANCE_NAME` or method `SetMeshCopServiceValues()`.
+    // also be overridden by `OTBR_MESHCOP_SERVICE_INSTANCE_NAME` or method `SetMeshCoPServiceValues()`.
     // For example, this value can be "OpenThread Border Router".
     std::string mBaseServiceInstanceName;
 
@@ -205,6 +212,14 @@ private:
     std::string mServiceInstanceName;
 
     std::vector<EphemeralKeyChangedCallback> mEphemeralKeyChangedCallbacks;
+
+    // The encoded MeshCoP TXT values from OT core.
+    std::vector<uint8_t> mOtMeshCoPTxtValues;
+
+    bool         mIsInitialized;
+    otExtAddress mExtAddress;
+    uint16_t     mMeshCoPUdpPort;
+    bool         mBaIsActive;
 };
 
 /**
