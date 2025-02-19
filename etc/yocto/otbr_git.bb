@@ -41,7 +41,7 @@ S = "${WORKDIR}/git"
 SRCREV = "${AUTOREV}"
 PV_append = "+${SRCPV}"
 
-DEPENDS += "avahi boost dbus iproute2 jsoncpp ncurses"
+DEPENDS += "avahi dbus iproute2 jsoncpp ncurses"
 
 inherit autotools cmake
 

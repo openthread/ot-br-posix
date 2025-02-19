@@ -83,9 +83,6 @@ install_packages_apt()
         && cd mDNSPosix \
         && make os=linux tls=no && sudo make install os=linux tls=no)
 
-    # Boost
-    sudo apt-get install --no-install-recommends -y libboost-dev libboost-filesystem-dev libboost-system-dev
-
     # nat64
     without NAT64 || {
         [ "$NAT64_SERVICE" != "tayga" ] || sudo apt-get install --no-install-recommends -y tayga
@@ -161,7 +158,6 @@ install_packages_rpm()
     with RELEASE || sudo $PM install -y cmake ninja-build
     sudo $PM install -y dbus-devel
     sudo $PM install -y avahi avahi-devel
-    sudo $PM install -y boost-devel boost-filesystem boost-system
     [ "$NAT64_SERVICE" != "tayga" ] || sudo $PM install -y tayga
     sudo $PM install -y iptables
     sudo $PM install -y jsoncpp-devel
@@ -171,7 +167,7 @@ install_packages_rpm()
 
 install_packages_brew()
 {
-    brew install boost cmake dbus jsoncpp ninja
+    brew install cmake dbus jsoncpp ninja
 }
 
 install_packages_source()
