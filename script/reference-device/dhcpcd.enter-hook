@@ -105,6 +105,8 @@ if [ ${interface} = ${UPSTREAM_INTERFACE} ]; then
 
     case $reason in
         DELEGATED6 | REBIND6 | RENEW6 | BOUND6 )
+            # TODO: Handle multiple IA_PD prefixes (new_dhcp6_ia_pd{i}_prefix{j}, new_dhcp6_ia_pd{i}_prefix{j}_length, etc.)
+            #       and deprecate old prefixes properly for each.  Currently, only one prefix is handled.
             if { [ -n "$new_dhcp6_ia_pd1_prefix1" ] && [ -n "$new_dhcp6_ia_pd1_prefix1_length" ]; } || \
                { [ -n "$old_dhcp6_ia_pd1_prefix1" ] && [ -n "$old_dhcp6_ia_pd1_prefix1_length" ]; }; then
                 config_ra "$old_dhcp6_ia_pd1_prefix1" "$old_dhcp6_ia_pd1_prefix1_length" \
