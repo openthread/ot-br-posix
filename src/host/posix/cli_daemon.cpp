@@ -89,7 +89,7 @@ void CliDaemon::CreateListenSocketOrDie(void)
 
     sockname.sun_family = AF_UNIX;
     strncpy(sockname.sun_path, socketfile.c_str(), sizeof(sockname.sun_path) - 1);
-    (void)unlink(sockname.sun_path);
+    OTBR_UNUSED_VARIABLE(unlink(sockname.sun_path));
 
     VerifyOrDie(bind(mListenSocket, reinterpret_cast<const struct sockaddr *>(&sockname), sizeof(struct sockaddr_un)) !=
                     -1,
