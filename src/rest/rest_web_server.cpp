@@ -49,6 +49,7 @@ static const uint32_t kMaxServeNum = 500;
 
 RestWebServer::RestWebServer(RcpHost &aHost, const std::string &aRestListenAddress, int aRestListenPort)
     : mResource(Resource(&aHost))
+    , mHost(aHost)
     , mListenFd(-1)
 {
     mAddress.sin6_family = AF_INET6;
@@ -87,6 +88,7 @@ void RestWebServer::Update(MainloopContext &aMainloop)
 void RestWebServer::Process(const MainloopContext &aMainloop)
 {
     UpdateConnections(aMainloop.mReadFdSet);
+    mResource.Process();
 }
 
 void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)

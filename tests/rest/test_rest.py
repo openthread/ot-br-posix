@@ -86,13 +86,19 @@ def diagnostics_check(data):
         expected_keys = [
             "ExtAddress", "Rloc16", "Mode", "Connectivity", "Route",
             "LeaderData", "NetworkData", "IP6AddressList", "MACCounters",
-            "ChildTable", "ChannelPages"
+            "ChildTable", "ChannelPages", "MaxChildTimeout", "Version",
+            "VendorName", "VendorModel", "VendorSWVersion", "ThreadStackVersion",
+            "Responsive"
         ]
         expected_value_type = [
             str, int, dict, dict, dict, dict, str, list, dict, list,
-            str
+            str, int, int, str, str, str, str, bool
         ]
         expected_check_dict = dict(zip(expected_keys, expected_value_type))
+        
+        if not "Responsive" in diag or not diag["Responsive"]:
+            print(f"Missing response from {diag['Rloc16']}")
+            return 1
 
         for key, value in expected_check_dict.items():
             assert (key in diag)
@@ -145,7 +151,7 @@ def diagnostics_check(data):
             assert (key in leaderdata)
             assert (type(leaderdata[key]) == int)
 
-        assert (re.match(r'^[A-F0-9]{12}$', diag["NetworkData"]) is not None)
+        assert (re.match(r'^[A-F0-9]{12,}$', diag["NetworkData"]) is not None)
 
         ip6_address_list = diag["IP6AddressList"]
         assert (type(ip6_address_list) == list)

@@ -1,0 +1,24 @@
+meta {
+  name: Get Action Item by ActionId (json)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions/{{action_id}}
+  body: none
+  auth: none
+}
+
+headers {
+  ~Accept: application/vnd.api+json
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:pre-request {
+  const actionId = bru.getEnvVar("action_id");  // Retrieve the stored ID
+}
