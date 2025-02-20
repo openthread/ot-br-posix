@@ -26,7 +26,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
-pkg_check_modules(JSONCPP jsoncpp cpp-httplib REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp REQUIRED)
 set(OTBR_WEB_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/otbr-web)
 
 add_executable(otbr-web
@@ -41,6 +41,7 @@ target_compile_definitions(otbr-web PRIVATE
 
 target_include_directories(otbr-web PRIVATE
     ${JSONCPP_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
 )
 target_link_libraries(otbr-web PRIVATE
     $<$<BOOL:${JSONCPP_LIBRARY_DIRS}>:-L$<JOIN:${JSONCPP_LIBRARY_DIRS}," -L">>

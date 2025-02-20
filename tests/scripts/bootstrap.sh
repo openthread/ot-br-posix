@@ -57,7 +57,6 @@ install_common_dependencies()
         doxygen \
         expect \
         net-tools \
-        libcpp-httplib-dev \
         libavahi-common-dev \
         libavahi-client-dev \
         libreadline-dev \
