@@ -27,12 +27,6 @@
 #
 
 pkg_check_modules(JSONCPP jsoncpp REQUIRED)
-if(NOT DEFINED Boost_USE_STATIC_LIBS)
-    set(Boost_USE_STATIC_LIBS ON)
-endif()
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS filesystem system)
 set(OTBR_WEB_DATADIR ${CMAKE_INSTALL_FULL_DATADIR}/otbr-web)
 
 add_executable(otbr-web
@@ -44,15 +38,10 @@ add_executable(otbr-web
 target_compile_definitions(otbr-web PRIVATE
     WEB_FILE_PATH=\"${OTBR_WEB_DATADIR}/frontend\"
 )
-# TODO remove this when Simple Http Server is replaced and web-gui is refactored
-target_compile_options(otbr-web PRIVATE
-    -Wno-deprecated-declarations
-    -Wno-unused-lambda-capture
-)
+
 target_include_directories(otbr-web PRIVATE
     ${JSONCPP_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/third_party/Simple-web-server/repo
+    ${PROJECT_SOURCE_DIR}/third_party/cpp-httplib/repo
 )
 target_link_libraries(otbr-web PRIVATE
     $<$<BOOL:${JSONCPP_LIBRARY_DIRS}>:-L$<JOIN:${JSONCPP_LIBRARY_DIRS}," -L">>
@@ -62,7 +51,6 @@ target_link_libraries(otbr-web PRIVATE
     openthread-ftd
     openthread-posix
     mbedtls
-    ${Boost_LIBRARIES}
     pthread
 )
 install(

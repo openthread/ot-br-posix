@@ -33,9 +33,6 @@ extraction:
         - cmake
         - libavahi-client-dev
         - libavahi-common-dev
-        - libboost-dev
-        - libboost-filesystem-dev
-        - libboost-system-dev
         - libdbus-1-dev
         - libjsoncpp-dev
         - ninja-build
