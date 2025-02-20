@@ -84,6 +84,14 @@ public:
     void SetResponsCode(std::string &aCode);
 
     /**
+     * This method sets the supported methods in "Allow" header field.
+     *
+     * @param[in] aCode  A string representing supported methods such as 'GET, POST, OPTIONS'.
+     *
+     */
+    void SetAllowMethods(const std::string &aMethods);
+
+    /**
      * This method sets the content type.
      *
      * @param[in] aCode  A string representing response content type such as text/plain.

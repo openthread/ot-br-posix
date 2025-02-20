@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "OpenThread REST JSON:API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

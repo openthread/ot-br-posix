@@ -27,9 +27,16 @@
  */
 
 #include "rest/json.hpp"
+#include "types.hpp"
+#include <map>
+#include <set>
 #include <sstream>
 
 #include "common/code_utils.hpp"
+#include "common/types.hpp"
+#include "openthread/mesh_diag.h"
+#include "openthread/platform/radio.h"
+#include "utils/string_utils.hpp"
 
 extern "C" {
 #include <cJSON.h>
@@ -43,6 +50,77 @@ namespace otbr {
 namespace rest {
 namespace Json {
 
+/**
+ * @brief Concat str1, '.', and str2.
+ *
+ * @param str1 A string.
+ * @param str2 Another string.
+ * @return std::string str1.str2
+ */
+std::string concat(const char *str1, const char *str2)
+{
+    return (std::string(str1) + "." + std::string(str2));
+}
+
+/**
+ * @brief Check if aKey is part of aSet.
+ *
+ * @param aSet A set of strings representing keys.
+ * @param aKey A key
+ * @return true  If aSet is empty (default, for return any key),
+ *               aKey is in aSet, or both,
+ *               aKey = 'atoplevelKey.asecondlevelKey' AND 'atoplevelKey.' are in aSet.
+ * @return false Otherwise.
+ *
+ * the logic in this implementation relates to parsing the query to the set aSet
+ * as implemented by BasicDiagnostics::parseQueryFieldValues
+ *
+ */
+static bool hasKey(std::set<std::string> aSet, std::string aKey)
+{
+    bool        ret = false;
+    std::string topKey;
+    std::size_t pos;
+
+    if (aSet.empty())
+    {
+        // defaults to has any key
+        ret = true;
+        ExitNow();
+    }
+
+    // for a second level key in aKey
+    // check if the top level key is present as well
+    pos = aKey.find(".");
+    if (pos != std::string::npos)
+    {
+        topKey = aKey.substr(0, pos + 1);
+    }
+
+    if (!topKey.empty() && aSet.find(aKey) != aSet.end() && aSet.find(topKey) != aSet.end())
+    {
+        ret = true;
+        ExitNow();
+    }
+
+    // simple key 'aKey' or
+    // comes here when 'atoplevelKey.asecondlevelKey' is not in aSet
+    pos = aKey.find(".");
+    if (pos != std::string::npos)
+    {
+        // ignore asecondlevelKey and look for 'atoplevelKey'
+        aKey = aKey.substr(0, pos);
+    }
+
+    if (aSet.find(aKey) != aSet.end())
+    {
+        ret = true;
+    }
+
+exit:
+    return ret;
+}
+
 static cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
 {
     char hex[2 * aLength + 1];
@@ -50,7 +128,16 @@ static cJSON *Bytes2HexJson(const uint8_t *aBytes, uint8_t aLength)
     otbr::Utils::Bytes2Hex(aBytes, aLength, hex);
     hex[2 * aLength] = '\0';
 
-    return cJSON_CreateString(hex);
+    return cJSON_CreateString(StringUtils::ToLowercase(hex).c_str());
+}
+
+static cJSON *Number2HexJson(const uint16_t aNumber)
+{
+    char hex[4 + 1] = {'\0'};
+
+    snprintf(hex, sizeof(hex), "%04X", aNumber);
+
+    return cJSON_CreateString(StringUtils::ToLowercase(hex).c_str());
 }
 
 std::string String2JsonString(const std::string &aString)
@@ -120,9 +207,9 @@ static cJSON *Mode2Json(const otLinkModeConfig &aMode)
 {
     cJSON *mode = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(mode, "RxOnWhenIdle", cJSON_CreateNumber(aMode.mRxOnWhenIdle));
-    cJSON_AddItemToObject(mode, "DeviceType", cJSON_CreateNumber(aMode.mDeviceType));
-    cJSON_AddItemToObject(mode, "NetworkData", cJSON_CreateNumber(aMode.mNetworkData));
+    cJSON_AddItemToObject(mode, "rxOnWhenIdle", cJSON_CreateBool(aMode.mRxOnWhenIdle));
+    cJSON_AddItemToObject(mode, "deviceTypeFTD", cJSON_CreateBool(aMode.mDeviceType));
+    cJSON_AddItemToObject(mode, "fullNetworkData", cJSON_CreateBool(aMode.mNetworkData));
 
     return mode;
 }
@@ -166,9 +253,9 @@ static cJSON *Timestamp2Json(const otTimestamp &aTimestamp)
 {
     cJSON *timestamp = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(timestamp, "Seconds", cJSON_CreateNumber(aTimestamp.mSeconds));
-    cJSON_AddItemToObject(timestamp, "Ticks", cJSON_CreateNumber(aTimestamp.mTicks));
-    cJSON_AddItemToObject(timestamp, "Authoritative", cJSON_CreateBool(aTimestamp.mAuthoritative));
+    cJSON_AddItemToObject(timestamp, "seconds", cJSON_CreateNumber(aTimestamp.mSeconds));
+    cJSON_AddItemToObject(timestamp, "ticks", cJSON_CreateNumber(aTimestamp.mTicks));
+    cJSON_AddItemToObject(timestamp, "authoritative", cJSON_CreateBool(aTimestamp.mAuthoritative));
 
     return timestamp;
 }
@@ -177,7 +264,7 @@ bool Json2Timestamp(const cJSON *jsonTimestamp, otTimestamp &aTimestamp)
 {
     cJSON *value;
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "Seconds");
+    value = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "seconds");
     if (cJSON_IsNumber(value))
     {
         aTimestamp.mSeconds = static_cast<uint64_t>(value->valuedouble);
@@ -187,7 +274,7 @@ bool Json2Timestamp(const cJSON *jsonTimestamp, otTimestamp &aTimestamp)
         return false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "Ticks");
+    value = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "ticks");
     if (cJSON_IsNumber(value))
     {
         aTimestamp.mTicks = static_cast<uint16_t>(value->valueint);
@@ -197,7 +284,7 @@ bool Json2Timestamp(const cJSON *jsonTimestamp, otTimestamp &aTimestamp)
         return false;
     }
 
-    value                     = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "Authoritative");
+    value                     = cJSON_GetObjectItemCaseSensitive(jsonTimestamp, "authoritative");
     aTimestamp.mAuthoritative = cJSON_IsTrue(value);
 
     return true;
@@ -207,22 +294,22 @@ static cJSON *SecurityPolicy2Json(const otSecurityPolicy &aSecurityPolicy)
 {
     cJSON *securityPolicy = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(securityPolicy, "RotationTime", cJSON_CreateNumber(aSecurityPolicy.mRotationTime));
-    cJSON_AddItemToObject(securityPolicy, "ObtainNetworkKey",
+    cJSON_AddItemToObject(securityPolicy, "rotationTime", cJSON_CreateNumber(aSecurityPolicy.mRotationTime));
+    cJSON_AddItemToObject(securityPolicy, "obtainNetworkKey",
                           cJSON_CreateBool(aSecurityPolicy.mObtainNetworkKeyEnabled));
-    cJSON_AddItemToObject(securityPolicy, "NativeCommissioning",
+    cJSON_AddItemToObject(securityPolicy, "nativeCommissioning",
                           cJSON_CreateBool(aSecurityPolicy.mNativeCommissioningEnabled));
     cJSON_AddItemToObject(securityPolicy, "Routers", cJSON_CreateBool(aSecurityPolicy.mRoutersEnabled));
-    cJSON_AddItemToObject(securityPolicy, "ExternalCommissioning",
+    cJSON_AddItemToObject(securityPolicy, "externalCommissioning",
                           cJSON_CreateBool(aSecurityPolicy.mExternalCommissioningEnabled));
-    cJSON_AddItemToObject(securityPolicy, "CommercialCommissioning",
+    cJSON_AddItemToObject(securityPolicy, "commercialCommissioning",
                           cJSON_CreateBool(aSecurityPolicy.mCommercialCommissioningEnabled));
-    cJSON_AddItemToObject(securityPolicy, "AutonomousEnrollment",
+    cJSON_AddItemToObject(securityPolicy, "autonomousEnrollment",
                           cJSON_CreateBool(aSecurityPolicy.mAutonomousEnrollmentEnabled));
-    cJSON_AddItemToObject(securityPolicy, "NetworkKeyProvisioning",
+    cJSON_AddItemToObject(securityPolicy, "networkKeyProvisioning",
                           cJSON_CreateBool(aSecurityPolicy.mNetworkKeyProvisioningEnabled));
-    cJSON_AddItemToObject(securityPolicy, "TobleLink", cJSON_CreateBool(aSecurityPolicy.mTobleLinkEnabled));
-    cJSON_AddItemToObject(securityPolicy, "NonCcmRouters", cJSON_CreateBool(aSecurityPolicy.mNonCcmRoutersEnabled));
+    cJSON_AddItemToObject(securityPolicy, "tobleLink", cJSON_CreateBool(aSecurityPolicy.mTobleLinkEnabled));
+    cJSON_AddItemToObject(securityPolicy, "nonCcmRouters", cJSON_CreateBool(aSecurityPolicy.mNonCcmRoutersEnabled));
 
     return securityPolicy;
 }
@@ -231,29 +318,29 @@ bool Json2SecurityPolicy(const cJSON *jsonSecurityPolicy, otSecurityPolicy &aSec
 {
     cJSON *value;
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "RotationTime");
+    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "rotationTime");
     if (cJSON_IsNumber(value))
     {
         aSecurityPolicy.mRotationTime = static_cast<uint16_t>(value->valueint);
     }
 
-    value                                    = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "ObtainNetworkKey");
+    value                                    = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "obtainNetworkKey");
     aSecurityPolicy.mObtainNetworkKeyEnabled = cJSON_IsTrue(value);
-    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "NativeCommissioning");
+    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "nativeCommissioning");
     aSecurityPolicy.mNativeCommissioningEnabled = cJSON_IsTrue(value);
-    value                                       = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "Routers");
+    value                                       = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "routers");
     aSecurityPolicy.mRoutersEnabled             = cJSON_IsTrue(value);
-    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "ExternalCommissioning");
+    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "externalCommissioning");
     aSecurityPolicy.mExternalCommissioningEnabled = cJSON_IsTrue(value);
-    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "CommercialCommissioning");
+    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "commercialCommissioning");
     aSecurityPolicy.mCommercialCommissioningEnabled = cJSON_IsTrue(value);
-    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "AutonomousEnrollment");
+    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "autonomousEnrollment");
     aSecurityPolicy.mAutonomousEnrollmentEnabled = cJSON_IsTrue(value);
-    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "NetworkKeyProvisioning");
+    value = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "networkKeyProvisioning");
     aSecurityPolicy.mNetworkKeyProvisioningEnabled = cJSON_IsTrue(value);
-    value                                          = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "TobleLink");
+    value                                          = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "tobleLink");
     aSecurityPolicy.mTobleLinkEnabled              = cJSON_IsTrue(value);
-    value                                 = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "NonCcmRouters");
+    value                                 = cJSON_GetObjectItemCaseSensitive(jsonSecurityPolicy, "nonCcmRouters");
     aSecurityPolicy.mNonCcmRoutersEnabled = cJSON_IsTrue(value);
 
     return true;
@@ -263,11 +350,12 @@ static cJSON *ChildTableEntry2Json(const otNetworkDiagChildEntry &aChildEntry)
 {
     cJSON *childEntry = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(childEntry, "ChildId", cJSON_CreateNumber(aChildEntry.mChildId));
-    cJSON_AddItemToObject(childEntry, "Timeout", cJSON_CreateNumber(aChildEntry.mTimeout));
+    cJSON_AddItemToObject(childEntry, "childId", cJSON_CreateNumber(aChildEntry.mChildId));
+    cJSON_AddItemToObject(childEntry, "timeout", cJSON_CreateNumber(aChildEntry.mTimeout));
+    cJSON_AddItemToObject(childEntry, "linkQuality", cJSON_CreateNumber(aChildEntry.mLinkQuality));
 
     cJSON *mode = Mode2Json(aChildEntry.mMode);
-    cJSON_AddItemToObject(childEntry, "Mode", mode);
+    cJSON_AddItemToObject(childEntry, "mode", mode);
 
     return childEntry;
 }
@@ -276,15 +364,15 @@ static cJSON *MacCounters2Json(const otNetworkDiagMacCounters &aMacCounters)
 {
     cJSON *macCounters = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(macCounters, "IfInUnknownProtos", cJSON_CreateNumber(aMacCounters.mIfInUnknownProtos));
-    cJSON_AddItemToObject(macCounters, "IfInErrors", cJSON_CreateNumber(aMacCounters.mIfInErrors));
-    cJSON_AddItemToObject(macCounters, "IfOutErrors", cJSON_CreateNumber(aMacCounters.mIfOutErrors));
-    cJSON_AddItemToObject(macCounters, "IfInUcastPkts", cJSON_CreateNumber(aMacCounters.mIfInUcastPkts));
-    cJSON_AddItemToObject(macCounters, "IfInBroadcastPkts", cJSON_CreateNumber(aMacCounters.mIfInBroadcastPkts));
-    cJSON_AddItemToObject(macCounters, "IfInDiscards", cJSON_CreateNumber(aMacCounters.mIfInDiscards));
-    cJSON_AddItemToObject(macCounters, "IfOutUcastPkts", cJSON_CreateNumber(aMacCounters.mIfOutUcastPkts));
-    cJSON_AddItemToObject(macCounters, "IfOutBroadcastPkts", cJSON_CreateNumber(aMacCounters.mIfOutBroadcastPkts));
-    cJSON_AddItemToObject(macCounters, "IfOutDiscards", cJSON_CreateNumber(aMacCounters.mIfOutDiscards));
+    cJSON_AddItemToObject(macCounters, "ifInUnknownProtos", cJSON_CreateNumber(aMacCounters.mIfInUnknownProtos));
+    cJSON_AddItemToObject(macCounters, "ifInErrors", cJSON_CreateNumber(aMacCounters.mIfInErrors));
+    cJSON_AddItemToObject(macCounters, "ifOutErrors", cJSON_CreateNumber(aMacCounters.mIfOutErrors));
+    cJSON_AddItemToObject(macCounters, "ifInUcastPkts", cJSON_CreateNumber(aMacCounters.mIfInUcastPkts));
+    cJSON_AddItemToObject(macCounters, "ifInBroadcastPkts", cJSON_CreateNumber(aMacCounters.mIfInBroadcastPkts));
+    cJSON_AddItemToObject(macCounters, "ifInDiscards", cJSON_CreateNumber(aMacCounters.mIfInDiscards));
+    cJSON_AddItemToObject(macCounters, "ifOutUcastPkts", cJSON_CreateNumber(aMacCounters.mIfOutUcastPkts));
+    cJSON_AddItemToObject(macCounters, "ifOutBroadcastPkts", cJSON_CreateNumber(aMacCounters.mIfOutBroadcastPkts));
+    cJSON_AddItemToObject(macCounters, "ifOutDiscards", cJSON_CreateNumber(aMacCounters.mIfOutDiscards));
 
     return macCounters;
 }
@@ -293,15 +381,15 @@ static cJSON *Connectivity2Json(const otNetworkDiagConnectivity &aConnectivity)
 {
     cJSON *connectivity = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(connectivity, "ParentPriority", cJSON_CreateNumber(aConnectivity.mParentPriority));
-    cJSON_AddItemToObject(connectivity, "LinkQuality3", cJSON_CreateNumber(aConnectivity.mLinkQuality3));
-    cJSON_AddItemToObject(connectivity, "LinkQuality2", cJSON_CreateNumber(aConnectivity.mLinkQuality2));
-    cJSON_AddItemToObject(connectivity, "LinkQuality1", cJSON_CreateNumber(aConnectivity.mLinkQuality1));
-    cJSON_AddItemToObject(connectivity, "LeaderCost", cJSON_CreateNumber(aConnectivity.mLeaderCost));
-    cJSON_AddItemToObject(connectivity, "IdSequence", cJSON_CreateNumber(aConnectivity.mIdSequence));
-    cJSON_AddItemToObject(connectivity, "ActiveRouters", cJSON_CreateNumber(aConnectivity.mActiveRouters));
-    cJSON_AddItemToObject(connectivity, "SedBufferSize", cJSON_CreateNumber(aConnectivity.mSedBufferSize));
-    cJSON_AddItemToObject(connectivity, "SedDatagramCount", cJSON_CreateNumber(aConnectivity.mSedDatagramCount));
+    cJSON_AddItemToObject(connectivity, "parentPriority", cJSON_CreateNumber(aConnectivity.mParentPriority));
+    cJSON_AddItemToObject(connectivity, "linkQuality3", cJSON_CreateNumber(aConnectivity.mLinkQuality3));
+    cJSON_AddItemToObject(connectivity, "linkQuality2", cJSON_CreateNumber(aConnectivity.mLinkQuality2));
+    cJSON_AddItemToObject(connectivity, "linkQuality1", cJSON_CreateNumber(aConnectivity.mLinkQuality1));
+    cJSON_AddItemToObject(connectivity, "leaderCost", cJSON_CreateNumber(aConnectivity.mLeaderCost));
+    cJSON_AddItemToObject(connectivity, "idSequence", cJSON_CreateNumber(aConnectivity.mIdSequence));
+    cJSON_AddItemToObject(connectivity, "activeRouters", cJSON_CreateNumber(aConnectivity.mActiveRouters));
+    cJSON_AddItemToObject(connectivity, "sedBufferSize", cJSON_CreateNumber(aConnectivity.mSedBufferSize));
+    cJSON_AddItemToObject(connectivity, "sedDatagramCount", cJSON_CreateNumber(aConnectivity.mSedDatagramCount));
 
     return connectivity;
 }
@@ -310,10 +398,10 @@ static cJSON *RouteData2Json(const otNetworkDiagRouteData &aRouteData)
 {
     cJSON *routeData = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(routeData, "RouteId", cJSON_CreateNumber(aRouteData.mRouterId));
-    cJSON_AddItemToObject(routeData, "LinkQualityOut", cJSON_CreateNumber(aRouteData.mLinkQualityOut));
-    cJSON_AddItemToObject(routeData, "LinkQualityIn", cJSON_CreateNumber(aRouteData.mLinkQualityIn));
-    cJSON_AddItemToObject(routeData, "RouteCost", cJSON_CreateNumber(aRouteData.mRouteCost));
+    cJSON_AddItemToObject(routeData, "routeId", cJSON_CreateNumber(aRouteData.mRouterId));
+    cJSON_AddItemToObject(routeData, "linkQualityOut", cJSON_CreateNumber(aRouteData.mLinkQualityOut));
+    cJSON_AddItemToObject(routeData, "linkQualityIn", cJSON_CreateNumber(aRouteData.mLinkQualityIn));
+    cJSON_AddItemToObject(routeData, "routeCost", cJSON_CreateNumber(aRouteData.mRouteCost));
 
     return routeData;
 }
@@ -322,7 +410,7 @@ static cJSON *Route2Json(const otNetworkDiagRoute &aRoute)
 {
     cJSON *route = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(route, "IdSequence", cJSON_CreateNumber(aRoute.mIdSequence));
+    cJSON_AddItemToObject(route, "idSequence", cJSON_CreateNumber(aRoute.mIdSequence));
 
     cJSON *RouteData = cJSON_CreateArray();
     for (uint16_t i = 0; i < aRoute.mRouteCount; ++i)
@@ -331,7 +419,7 @@ static cJSON *Route2Json(const otNetworkDiagRoute &aRoute)
         cJSON_AddItemToArray(RouteData, RouteDatavalue);
     }
 
-    cJSON_AddItemToObject(route, "RouteData", RouteData);
+    cJSON_AddItemToObject(route, "routeData", RouteData);
 
     return route;
 }
@@ -340,11 +428,11 @@ static cJSON *LeaderData2Json(const otLeaderData &aLeaderData)
 {
     cJSON *leaderData = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(leaderData, "PartitionId", cJSON_CreateNumber(aLeaderData.mPartitionId));
-    cJSON_AddItemToObject(leaderData, "Weighting", cJSON_CreateNumber(aLeaderData.mWeighting));
-    cJSON_AddItemToObject(leaderData, "DataVersion", cJSON_CreateNumber(aLeaderData.mDataVersion));
-    cJSON_AddItemToObject(leaderData, "StableDataVersion", cJSON_CreateNumber(aLeaderData.mStableDataVersion));
-    cJSON_AddItemToObject(leaderData, "LeaderRouterId", cJSON_CreateNumber(aLeaderData.mLeaderRouterId));
+    cJSON_AddItemToObject(leaderData, "partitionId", cJSON_CreateNumber(aLeaderData.mPartitionId));
+    cJSON_AddItemToObject(leaderData, "weighting", cJSON_CreateNumber(aLeaderData.mWeighting));
+    cJSON_AddItemToObject(leaderData, "dataVersion", cJSON_CreateNumber(aLeaderData.mDataVersion));
+    cJSON_AddItemToObject(leaderData, "stableDataVersion", cJSON_CreateNumber(aLeaderData.mStableDataVersion));
+    cJSON_AddItemToObject(leaderData, "leaderRouterId", cJSON_CreateNumber(aLeaderData.mLeaderRouterId));
 
     return leaderData;
 }
@@ -360,20 +448,66 @@ std::string IpAddr2JsonString(const otIp6Address &aAddress)
     return ret;
 }
 
+cJSON *Node2Json(const NodeInfo &aNode, std::set<std::string> aFieldset)
+{
+    cJSON *node = cJSON_CreateObject();
+
+    if (hasKey(aFieldset, KEY_BORDERAGENTID))
+    {
+        cJSON_AddItemToObject(node, KEY_BORDERAGENTID, Bytes2HexJson(aNode.mBaId.mId, sizeof(aNode.mBaId)));
+    }
+    // if (hasKey(aFieldset, KEY_BORDERAGENTSTATE))
+    // {
+    //     cJSON_AddItemToObject(node, KEY_BORDERAGENTSTATE, cJSON_CreateNumber(aNode.mBaState));
+    // }
+    if (hasKey(aFieldset, KEY_STATE))
+    {
+        cJSON_AddItemToObject(node, KEY_STATE, cJSON_CreateString(aNode.mRole.c_str()));
+    }
+    if (hasKey(aFieldset, KEY_ROUTERCOUNT))
+    {
+        cJSON_AddItemToObject(node, KEY_ROUTERCOUNT, cJSON_CreateNumber(aNode.mNumOfRouter));
+    }
+    if (hasKey(aFieldset, KEY_RLOC16_IPV6ADDRESS))
+    {
+        cJSON_AddItemToObject(node, KEY_RLOC16_IPV6ADDRESS, IpAddr2Json(aNode.mRlocAddress));
+    }
+    if (hasKey(aFieldset, KEY_EXTADDRESS))
+    {
+        cJSON_AddItemToObject(node, KEY_EXTADDRESS, Bytes2HexJson(aNode.mExtAddress, OT_EXT_ADDRESS_SIZE));
+    }
+    if (hasKey(aFieldset, KEY_NETWORKNAME))
+    {
+        cJSON_AddItemToObject(node, KEY_NETWORKNAME, cJSON_CreateString(aNode.mNetworkName.c_str()));
+    }
+    if (hasKey(aFieldset, KEY_RLOC16))
+    {
+        cJSON_AddItemToObject(node, KEY_RLOC16, Number2HexJson(aNode.mRloc16));
+    }
+    if (hasKey(aFieldset, KEY_ROUTERID))
+    {
+        if ((aNode.mRloc16 & CHILD_MASK) == 0)
+        {
+            cJSON_AddItemToObject(node, KEY_ROUTERID, cJSON_CreateNumber(aNode.mRloc16 >> 10));
+        }
+    }
+    if (hasKey(aFieldset, KEY_LEADERDATA))
+    {
+        cJSON_AddItemToObject(node, KEY_LEADERDATA, LeaderData2Json(aNode.mLeaderData));
+    }
+    if (hasKey(aFieldset, KEY_EXTPANID))
+    {
+        cJSON_AddItemToObject(node, KEY_EXTPANID, Bytes2HexJson(aNode.mExtPanId, OT_EXT_PAN_ID_SIZE));
+    }
+
+    return node;
+}
+
 std::string Node2JsonString(const NodeInfo &aNode)
 {
-    cJSON      *node = cJSON_CreateObject();
-    std::string ret;
-
-    cJSON_AddItemToObject(node, "BaId", Bytes2HexJson(aNode.mBaId.mId, sizeof(aNode.mBaId)));
-    cJSON_AddItemToObject(node, "State", cJSON_CreateString(aNode.mRole.c_str()));
-    cJSON_AddItemToObject(node, "NumOfRouter", cJSON_CreateNumber(aNode.mNumOfRouter));
-    cJSON_AddItemToObject(node, "RlocAddress", IpAddr2Json(aNode.mRlocAddress));
-    cJSON_AddItemToObject(node, "ExtAddress", Bytes2HexJson(aNode.mExtAddress, OT_EXT_ADDRESS_SIZE));
-    cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aNode.mNetworkName.c_str()));
-    cJSON_AddItemToObject(node, "Rloc16", cJSON_CreateNumber(aNode.mRloc16));
-    cJSON_AddItemToObject(node, "LeaderData", LeaderData2Json(aNode.mLeaderData));
-    cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aNode.mExtPanId, OT_EXT_PAN_ID_SIZE));
+    std::string           ret;
+    std::set<std::string> fieldset;
+    cJSON                *node = Node2Json(aNode, fieldset);
 
     ret = Json2String(node);
     cJSON_Delete(node);
@@ -381,129 +515,80 @@ std::string Node2JsonString(const NodeInfo &aNode)
     return ret;
 }
 
-std::string Diag2JsonString(const std::vector<std::vector<otNetworkDiagTlv>> &aDiagSet)
+std::string SparseNode2JsonString(const NodeInfo &aNode, std::set<std::string> aFieldset)
 {
-    cJSON      *diagInfo          = cJSON_CreateArray();
-    cJSON      *diagInfoOfOneNode = nullptr;
-    cJSON      *addrList          = nullptr;
-    cJSON      *tableList         = nullptr;
     std::string ret;
-    uint64_t    timeout;
+    cJSON      *node = Node2Json(aNode, aFieldset);
 
-    for (auto diagItem : aDiagSet)
+    ret = Json2String(node);
+    cJSON_Delete(node);
+
+    return ret;
+}
+
+cJSON *brCounter2Json(const otBorderRoutingCounters *aBrCounters)
+{
+    cJSON *ret = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(ret, "ifInUcastPkts", aBrCounters->mInboundUnicast.mPackets);
+    cJSON_AddNumberToObject(ret, "ifInBroadcastPkts", aBrCounters->mInboundMulticast.mPackets);
+    cJSON_AddNumberToObject(ret, "ifOutUcastPkts", aBrCounters->mOutboundUnicast.mPackets);
+    cJSON_AddNumberToObject(ret, "ifOutBroadcastPkts", aBrCounters->mOutboundMulticast.mPackets);
+    cJSON_AddNumberToObject(ret, "raRx", aBrCounters->mRaRx);
+    cJSON_AddNumberToObject(ret, "raTxSuccess", aBrCounters->mRaTxSuccess);
+    cJSON_AddNumberToObject(ret, "raTxFailed", aBrCounters->mRaTxFailure);
+    cJSON_AddNumberToObject(ret, "rsRx", aBrCounters->mRsRx);
+    cJSON_AddNumberToObject(ret, "rsTxSuccess", aBrCounters->mRsTxSuccess);
+    cJSON_AddNumberToObject(ret, "rsTxFailed", aBrCounters->mRsTxFailure);
+
+    return ret;
+}
+
+std::string jsonStr2JsonApiItem(std::string aId, const std::string aType, std::string aAttribute)
+{
+    cJSON      *root = cJSON_CreateObject();
+    std::string ret;
+
+    cJSON_AddStringToObject(root, "id", aId.c_str());
+    cJSON_AddStringToObject(root, "type", aType.c_str());
+    cJSON_AddItemToObject(root, "attributes", cJSON_Parse(aAttribute.c_str()));
+
+    ret = Json2String(root);
+    cJSON_Delete(root);
+
+    return ret;
+}
+
+std::string jsonStr2JsonApiItem(std::string aId, const std::string aType, std::string aAttribute, cJSON *aRelationship)
+{
+    cJSON      *root = cJSON_CreateObject();
+    std::string ret;
+
+    cJSON_AddStringToObject(root, "id", aId.c_str());
+    cJSON_AddStringToObject(root, "type", aType.c_str());
+    cJSON_AddItemToObject(root, "attributes", cJSON_Parse(aAttribute.c_str()));
+    cJSON_AddItemToObject(root, "relationships", cJSON_Duplicate(aRelationship, true));
+
+    ret = Json2String(root);
+    cJSON_Delete(root);
+
+    return ret;
+}
+
+std::string jsonStr2JsonApiColl(std::string data, std::string meta)
+{
+    cJSON      *root = cJSON_CreateObject();
+    std::string ret;
+
+    cJSON_AddItemToObject(root, "data", cJSON_Parse(data.c_str()));
+
+    if (meta.length() > 0)
     {
-        diagInfoOfOneNode = cJSON_CreateObject();
-        for (auto diagTlv : diagItem)
-        {
-            switch (diagTlv.mType)
-            {
-            case OT_NETWORK_DIAGNOSTIC_TLV_EXT_ADDRESS:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "ExtAddress",
-                                      Bytes2HexJson(diagTlv.mData.mExtAddress.m8, OT_EXT_ADDRESS_SIZE));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_SHORT_ADDRESS:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "Rloc16", cJSON_CreateNumber(diagTlv.mData.mAddr16));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_MODE:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "Mode", Mode2Json(diagTlv.mData.mMode));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_TIMEOUT:
-
-                timeout = static_cast<uint64_t>(diagTlv.mData.mTimeout);
-                cJSON_AddItemToObject(diagInfoOfOneNode, "Timeout", cJSON_CreateNumber(timeout));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_CONNECTIVITY:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "Connectivity",
-                                      Connectivity2Json(diagTlv.mData.mConnectivity));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_ROUTE:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "Route", Route2Json(diagTlv.mData.mRoute));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_LEADER_DATA:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "LeaderData", LeaderData2Json(diagTlv.mData.mLeaderData));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_NETWORK_DATA:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "NetworkData",
-                                      Bytes2HexJson(diagTlv.mData.mNetworkData.m8, diagTlv.mData.mNetworkData.mCount));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_IP6_ADDR_LIST:
-
-                addrList = cJSON_CreateArray();
-
-                for (uint16_t i = 0; i < diagTlv.mData.mIp6AddrList.mCount; ++i)
-                {
-                    cJSON_AddItemToArray(addrList, IpAddr2Json(diagTlv.mData.mIp6AddrList.mList[i]));
-                }
-                cJSON_AddItemToObject(diagInfoOfOneNode, "IP6AddressList", addrList);
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_MAC_COUNTERS:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "MACCounters", MacCounters2Json(diagTlv.mData.mMacCounters));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_BATTERY_LEVEL:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "BatteryLevel",
-                                      cJSON_CreateNumber(diagTlv.mData.mBatteryLevel));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_SUPPLY_VOLTAGE:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "SupplyVoltage",
-                                      cJSON_CreateNumber(diagTlv.mData.mSupplyVoltage));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_CHILD_TABLE:
-
-                tableList = cJSON_CreateArray();
-
-                for (uint16_t i = 0; i < diagTlv.mData.mChildTable.mCount; ++i)
-                {
-                    cJSON_AddItemToArray(tableList, ChildTableEntry2Json(diagTlv.mData.mChildTable.mTable[i]));
-                }
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "ChildTable", tableList);
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_CHANNEL_PAGES:
-
-                cJSON_AddItemToObject(
-                    diagInfoOfOneNode, "ChannelPages",
-                    Bytes2HexJson(diagTlv.mData.mChannelPages.m8, diagTlv.mData.mChannelPages.mCount));
-
-                break;
-            case OT_NETWORK_DIAGNOSTIC_TLV_MAX_CHILD_TIMEOUT:
-
-                cJSON_AddItemToObject(diagInfoOfOneNode, "MaxChildTimeout",
-                                      cJSON_CreateNumber(diagTlv.mData.mMaxChildTimeout));
-
-                break;
-            default:
-                break;
-            }
-        }
-        cJSON_AddItemToArray(diagInfo, diagInfoOfOneNode);
+        cJSON_AddItemToObject(root, "meta", cJSON_Parse(meta.c_str()));
     }
 
-    ret = Json2String(diagInfo);
-
-    cJSON_Delete(diagInfo);
+    ret = Json2String(root);
+    cJSON_Delete(root);
 
     return ret;
 }
@@ -618,8 +703,8 @@ std::string Error2JsonString(HttpStatusCode aErrorCode, std::string aErrorMessag
     std::string ret;
     cJSON      *error = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(error, "ErrorCode", cJSON_CreateNumber(static_cast<int16_t>(aErrorCode)));
-    cJSON_AddItemToObject(error, "ErrorMessage", cJSON_CreateString(aErrorMessage.c_str()));
+    cJSON_AddItemToObject(error, "errorCode", cJSON_CreateNumber(static_cast<int16_t>(aErrorCode)));
+    cJSON_AddItemToObject(error, "errorMessage", cJSON_CreateString(aErrorMessage.c_str()));
 
     ret = Json2String(error);
 
@@ -634,43 +719,43 @@ cJSON *ActiveDataset2Json(const otOperationalDataset &aActiveDataset)
 
     if (aActiveDataset.mComponents.mIsActiveTimestampPresent)
     {
-        cJSON_AddItemToObject(node, "ActiveTimestamp", Timestamp2Json(aActiveDataset.mActiveTimestamp));
+        cJSON_AddItemToObject(node, "activeTimestamp", Timestamp2Json(aActiveDataset.mActiveTimestamp));
     }
     if (aActiveDataset.mComponents.mIsNetworkKeyPresent)
     {
-        cJSON_AddItemToObject(node, "NetworkKey", Bytes2HexJson(aActiveDataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE));
+        cJSON_AddItemToObject(node, "networkKey", Bytes2HexJson(aActiveDataset.mNetworkKey.m8, OT_NETWORK_KEY_SIZE));
     }
     if (aActiveDataset.mComponents.mIsNetworkNamePresent)
     {
-        cJSON_AddItemToObject(node, "NetworkName", cJSON_CreateString(aActiveDataset.mNetworkName.m8));
+        cJSON_AddItemToObject(node, "networkName", cJSON_CreateString(aActiveDataset.mNetworkName.m8));
     }
     if (aActiveDataset.mComponents.mIsExtendedPanIdPresent)
     {
-        cJSON_AddItemToObject(node, "ExtPanId", Bytes2HexJson(aActiveDataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE));
+        cJSON_AddItemToObject(node, "extPanId", Bytes2HexJson(aActiveDataset.mExtendedPanId.m8, OT_EXT_PAN_ID_SIZE));
     }
     if (aActiveDataset.mComponents.mIsMeshLocalPrefixPresent)
     {
-        cJSON_AddItemToObject(node, "MeshLocalPrefix", IpPrefix2Json(aActiveDataset.mMeshLocalPrefix));
+        cJSON_AddItemToObject(node, "meshLocalPrefix", IpPrefix2Json(aActiveDataset.mMeshLocalPrefix));
     }
     if (aActiveDataset.mComponents.mIsPanIdPresent)
     {
-        cJSON_AddItemToObject(node, "PanId", cJSON_CreateNumber(aActiveDataset.mPanId));
+        cJSON_AddItemToObject(node, "panId", cJSON_CreateNumber(aActiveDataset.mPanId));
     }
     if (aActiveDataset.mComponents.mIsChannelPresent)
     {
-        cJSON_AddItemToObject(node, "Channel", cJSON_CreateNumber(aActiveDataset.mChannel));
+        cJSON_AddItemToObject(node, "channel", cJSON_CreateNumber(aActiveDataset.mChannel));
     }
     if (aActiveDataset.mComponents.mIsPskcPresent)
     {
-        cJSON_AddItemToObject(node, "PSKc", Bytes2HexJson(aActiveDataset.mPskc.m8, OT_PSKC_MAX_SIZE));
+        cJSON_AddItemToObject(node, "pskc", Bytes2HexJson(aActiveDataset.mPskc.m8, OT_PSKC_MAX_SIZE));
     }
     if (aActiveDataset.mComponents.mIsSecurityPolicyPresent)
     {
-        cJSON_AddItemToObject(node, "SecurityPolicy", SecurityPolicy2Json(aActiveDataset.mSecurityPolicy));
+        cJSON_AddItemToObject(node, "securityPolicy", SecurityPolicy2Json(aActiveDataset.mSecurityPolicy));
     }
     if (aActiveDataset.mComponents.mIsChannelMaskPresent)
     {
-        cJSON_AddItemToObject(node, "ChannelMask", cJSON_CreateNumber(aActiveDataset.mChannelMask));
+        cJSON_AddItemToObject(node, "channelMask", cJSON_CreateNumber(aActiveDataset.mChannelMask));
     }
 
     return node;
@@ -695,14 +780,14 @@ std::string PendingDataset2JsonString(const otOperationalDataset &aPendingDatase
     std::string ret;
 
     nodeActiveDataset = ActiveDataset2Json(aPendingDataset);
-    cJSON_AddItemToObject(node, "ActiveDataset", nodeActiveDataset);
+    cJSON_AddItemToObject(node, "activeDataset", nodeActiveDataset);
     if (aPendingDataset.mComponents.mIsPendingTimestampPresent)
     {
-        cJSON_AddItemToObject(node, "PendingTimestamp", Timestamp2Json(aPendingDataset.mPendingTimestamp));
+        cJSON_AddItemToObject(node, "pendingTimestamp", Timestamp2Json(aPendingDataset.mPendingTimestamp));
     }
     if (aPendingDataset.mComponents.mIsDelayPresent)
     {
-        cJSON_AddItemToObject(node, "Delay", cJSON_CreateNumber(aPendingDataset.mDelay));
+        cJSON_AddItemToObject(node, "delay", cJSON_CreateNumber(aPendingDataset.mDelay));
     }
 
     ret = Json2String(node);
@@ -717,7 +802,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
     otTimestamp timestamp;
     bool        ret = true;
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "ActiveTimestamp");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "activeTimestamp");
     if (cJSON_IsObject(value))
     {
         VerifyOrExit(Json2Timestamp(value, timestamp), ret = false);
@@ -733,7 +818,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         ExitNow(ret = false);
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "NetworkKey");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "networkKey");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(value->valuestring != nullptr, ret = false);
@@ -747,7 +832,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsNetworkKeyPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "NetworkName");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "networkName");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(value->valuestring != nullptr, ret = false);
@@ -760,7 +845,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsNetworkNamePresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "ExtPanId");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "extPanId");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(value->valuestring != nullptr, ret = false);
@@ -774,7 +859,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsExtendedPanIdPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "MeshLocalPrefix");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "meshLocalPrefix");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(value->valuestring != nullptr, ret = false);
@@ -786,7 +871,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsMeshLocalPrefixPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "PanId");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "panId");
     if (cJSON_IsNumber(value))
     {
         aDataset.mPanId                      = static_cast<otPanId>(value->valueint);
@@ -797,7 +882,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsPanIdPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "Channel");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "channel");
     if (cJSON_IsNumber(value))
     {
         aDataset.mChannel                      = static_cast<uint16_t>(value->valueint);
@@ -808,7 +893,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsChannelPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "PSKc");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "pskc");
     if (cJSON_IsString(value))
     {
         VerifyOrExit(value->valuestring != nullptr, ret = false);
@@ -822,7 +907,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsPskcPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "SecurityPolicy");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "securityPolicy");
     if (cJSON_IsObject(value))
     {
         VerifyOrExit(Json2SecurityPolicy(value, aDataset.mSecurityPolicy), ret = false);
@@ -833,7 +918,7 @@ bool JsonActiveDataset2Dataset(const cJSON *jsonActiveDataset, otOperationalData
         aDataset.mComponents.mIsSecurityPolicyPresent = false;
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "ChannelMask");
+    value = cJSON_GetObjectItemCaseSensitive(jsonActiveDataset, "channelMask");
     if (cJSON_IsNumber(value))
     {
         aDataset.mChannelMask                      = value->valueint;
@@ -874,7 +959,7 @@ bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, ot
     VerifyOrExit((jsonDataset = cJSON_Parse(aJsonPendingDataset.c_str())) != nullptr, ret = false);
     VerifyOrExit(cJSON_IsObject(jsonDataset), ret = false);
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "ActiveDataset");
+    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "activeDataset");
     if (cJSON_IsObject(value))
     {
         VerifyOrExit(JsonActiveDataset2Dataset(value, aDataset), ret = false);
@@ -896,7 +981,7 @@ bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, ot
         ExitNow(ret = false);
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "PendingTimestamp");
+    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "pendingTimestamp");
     if (cJSON_IsObject(value))
     {
         VerifyOrExit(Json2Timestamp(value, timestamp), ret = false);
@@ -912,7 +997,7 @@ bool JsonPendingDatasetString2Dataset(const std::string &aJsonPendingDataset, ot
         ExitNow(ret = false);
     }
 
-    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "Delay");
+    value = cJSON_GetObjectItemCaseSensitive(jsonDataset, "delay");
     if (cJSON_IsNumber(value))
     {
         aDataset.mDelay                      = value->valueint;
@@ -964,6 +1049,48 @@ std::string JoinerInfo2JsonString(const otJoinerInfo &aJoinerInfo)
     node = JoinerInfo2Json(aJoinerInfo);
     ret  = Json2String(node);
     cJSON_Delete(node);
+
+    return ret;
+}
+
+static cJSON *AddDevice2Json(const std::string &aEui, const std::string &aPskd, std::set<std::string> aFieldset)
+{
+    cJSON *root = cJSON_CreateObject();
+
+    if (hasKey(aFieldset, KEY_EUI64))
+    {
+        cJSON_AddItemToObject(root, KEY_EUI64, cJSON_CreateString(aEui.c_str()));
+    }
+
+    if (hasKey(aFieldset, KEY_PSKD))
+    {
+        cJSON_AddItemToObject(root, KEY_PSKD, cJSON_CreateString(aPskd.c_str()));
+    }
+
+    return root;
+}
+
+std::string AddDevice2JsonString(const std::string &aEui, const std::string &aPskd)
+{
+    std::string           ret;
+    std::set<std::string> fieldset;
+    cJSON                *json = AddDevice2Json(aEui, aPskd, fieldset);
+
+    ret = Json2String(json);
+    cJSON_Delete(json);
+
+    return ret;
+}
+
+std::string SparseAddDevice2JsonString(const std::string    &aEui,
+                                       const std::string    &aPskd,
+                                       std::set<std::string> aFieldset)
+{
+    std::string ret;
+    cJSON      *json = AddDevice2Json(aEui, aPskd, aFieldset);
+
+    ret = Json2String(json);
+    cJSON_Delete(json);
 
     return ret;
 }
@@ -1114,6 +1241,39 @@ cJSON *JoinerTable2Json(const std::vector<otJoinerInfo> &aJoinerTable)
 std::string JoinerTable2JsonString(const std::vector<otJoinerInfo> &aJoinerTable)
 {
     return Json2String(JoinerTable2Json(aJoinerTable));
+}
+
+cJSON *CreateMetaCollection(uint32_t aOffset, uint32_t aLimit, uint32_t aTotal)
+{
+    cJSON *meta            = cJSON_CreateObject();
+    cJSON *meta_collection = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(meta_collection, "offset", aOffset);
+    if (aLimit > 0)
+    {
+        cJSON_AddNumberToObject(meta_collection, "limit", aLimit);
+    }
+    cJSON_AddNumberToObject(meta_collection, "total", aTotal);
+    cJSON_AddItemToObject(meta, "collection", meta_collection);
+
+    return meta;
+}
+
+cJSON *CreateMetaCollection(uint32_t aOffset, uint32_t aLimit, uint32_t aTotal, uint32_t aPending)
+{
+    cJSON *meta            = cJSON_CreateObject();
+    cJSON *meta_collection = cJSON_CreateObject();
+
+    cJSON_AddNumberToObject(meta_collection, "offset", aOffset);
+    if (aLimit > 0)
+    {
+        cJSON_AddNumberToObject(meta_collection, "limit", aLimit);
+    }
+    cJSON_AddNumberToObject(meta_collection, "total", aTotal);
+    cJSON_AddItemToObject(meta_collection, "pending", cJSON_CreateNumber(aPending));
+    cJSON_AddItemToObject(meta, "collection", meta_collection);
+
+    return meta;
 }
 
 } // namespace Json

@@ -87,6 +87,7 @@ void RestWebServer::Update(MainloopContext &aMainloop)
 void RestWebServer::Process(const MainloopContext &aMainloop)
 {
     UpdateConnections(aMainloop.mReadFdSet);
+    mResource.Process();
 }
 
 void RestWebServer::UpdateConnections(const fd_set &aReadFdSet)

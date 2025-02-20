@@ -14,11 +14,201 @@ info:
 servers:
   - url: http://localhost:8081
 tags:
+  - name: Actions
+    description: Task queue.
   - name: node
     description: Thread parameters of this node.
   - name: diagnostics
     description: Thread network diagnostic.
 paths:
+  /api/actions:
+    get:
+      tags:
+        - Actions
+      summary: Read Actions collection.
+      parameters:
+        - name: Accept
+          description: Must be set to `application/vnd.api+json`
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/vnd.api+json
+      responses:
+        "200":
+          description: List of actions.
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+              example:
+                data:
+                  - id: 9ecae480-07a0-4b72-869d-15858196144e
+                    type: addThreadDeviceTask
+                    attributes:
+                      eui: "fedcba9876543210"
+                      pskd: "J01NME"
+                      timeout: 888
+                      status: "pending"
+                  - id: 9ecae480-07a0-4b72-869d-15858196144f
+                    type: addThreadDeviceTask
+                    attributes:
+                      eui: "fedcba9876543211"
+                      pskd: "J01NME2"
+                      timeout: 333
+                      status: "pending"
+    post:
+      tags:
+        - Actions
+      summary: Add task(s) to the Actions collection.
+      description: |
+        Input to add one or more *Task* items to the *Actions* collection (i.e., enqueue).
+
+        ## Condition
+        - requires all items in the list to be valid *Task* items with all required attributes;
+          otherwise rejects whole list and returns 422 Conflict.
+        - requires the *Actions* collection to have free memory slots to enqueue the new items;
+          completed, stopped, or failed items in the collection may be removed (oldest first);
+          otherwise,
+            - if number of items send by client exceeds maximum number of items in collection, rejects whole list and returns 409 Conflict
+            - else if not enough items can be freed, rejects whole list and returns 503 Service Unavailable
+
+        ## On Success
+        - enqueues the tasks given in the `data` array
+        - each *Task* item is given a unique `id`
+        - each *Task* item is given a `status` attribute that is initialized with `pending`
+        - returns 200 OK listing all items enqueued with ID and status
+
+        ## On Failure
+        Returns one of the following:
+        - 409 Conflict, when the request contains more items than the maximum total number of items for the collection
+        - 415 Unsupported Media Type, when the request content type is not `application/vnd.api+json`, TODO: allow `application/json` or empty (tolerant server)
+        - 422 Unprocessable Content, when invalid items are included or required task-specific attributes are missing
+        - 503 Service Unavailable, when no more items can be enqueued (but the number of items in the request does not exceed the maximum)
+
+        ## General Background Logic (amended by task-specific background logic)
+        - when a *Task* item is executed, its `status` attribute changes to `active`
+        - when a *Task* item completes successfully, its `status` attribute changes to `completed`
+        - when a *Task* item completes unsuccessfully, its `status` attribute changes to `stopped`
+        - when a *Task* item fails, its `status` attribute changes to `failed`
+
+      parameters:
+        - name: Accept
+          description: Must be set to `application/vnd.api+json`
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/vnd.api+json
+      responses:
+        "200":
+          description: Task accepted and queue for execution.
+          content:
+            application/vnd.api+json:
+              schema:
+                type: object
+              example:
+                data:
+                  - id: 9ecae480-07a0-4b72-869d-15858196144f
+                    type: addThreadDeviceTask
+                    attributes:
+                      eui: "fedcba9876543210"
+                      pskd: "J01NME"
+                      timeout: 900
+                      status: "pending"
+        "400":
+          description: The client sent an invalid request. The client SHOULD perform action(s) to provide valid syntax before retrying the request.
+        "409":
+          description: Conflict parsing the task. The client SHOULD provide less tasks in the request.
+        "415":
+          description: Unsupported Media Type. The client SHOULD use a supported content type `application/vnd.api+json` or (TODO) `application/json`.
+        "422":
+          description: Unprocessable task. The client SHOULD perform action(s) to provide valid attributes or required task-specific attributes before retrying the request.
+        "503":
+          description: Service unavailable. Too many tasks pending. The client SHOULD retry later.
+      requestBody:
+        description: Creates a new task.
+        required: true
+        content:
+          application/vnd.api+json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [addThreadDeviceTask]
+                        description: Type of task
+                      attributes:
+                        type: object
+              required:
+                - data
+            examples:
+              addThreadDeviceTask:
+                summary: Add new Thread Device to the Network
+                description: |
+                  ### Background Logic
+                  - when the task status becomes `active`:
+                    - the *On-Mesh Commissioner* is started, if not already running
+                    - the given *EUI-64*, *Joining Device Credential (pskd)*, and timeout are added to the *Commissioner Joiner Table*
+                    - the task status is updated to `undiscovered`, before first attempts from *Joiner*, and `attempted` waiting for retries from *Joiner*
+                  - when the identified *Joiner* successfully joins the network, the task completes successfully by:
+                    - stopping the *On-Mesh Commissioner*, if it is the last active `addThreadDeviceTask`
+                    - setting the task status to `completed`
+                  - when the task times out without any *Joiner* attempts, the task status is set to `stopped`
+                  - when an error occurs, the task status is set to `failed`
+
+                value:
+                  data:
+                    - type: addThreadDeviceTask
+                      attributes:
+                        eui: "fedcba9876543210"
+                        pskd: "J01NME"
+                        timeout: 900
+
+    delete:
+      tags:
+        - Actions
+      summary: Remove all tasks from the queue of actions.
+      responses:
+        "204":
+          description: Tasks deleted.
+    options:
+      tags:
+        - Actions
+      summary: List of allowed operations.
+
+  /api/actions/{actionId}:
+    get:
+      tags:
+        - Actions
+      summary: Read Actions item
+      description: |
+        *Task* item in the *Actions* collection selected by its `id`.
+
+        ## Condition
+        Requires a *Task* item with the given `id` to exist;
+        otherwise returns 404 Not Found.
+      parameters:
+        - name: actionId
+          description: ID of the requested Action item (Task).
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Accept
+          description: Must be set to `application/vnd.api+json`
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/vnd.api+json
+
   /diagnostics:
     get:
       tags:

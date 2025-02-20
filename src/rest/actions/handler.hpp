@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, The OpenThread Authors.
+ *  Copyright (c) 2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -26,75 +26,67 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * @file
- *   This file includes definitions for RESTful HTTP server.
- */
+#ifndef OTBR_REST_ACTIONS_HANDLER_HPP_
+#define OTBR_REST_ACTIONS_HANDLER_HPP_
 
-#ifndef OTBR_REST_REST_WEB_SERVER_HPP_
-#define OTBR_REST_REST_WEB_SERVER_HPP_
+#include <memory>
 
-#include "openthread-br/config.h"
-
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <sys/socket.h>
-
-#include "common/mainloop.hpp"
-#include "rest/connection.hpp"
-#include "rest/resource.hpp"
-
-using otbr::Host::RcpHost;
-using std::chrono::steady_clock;
+#include "action.hpp"
 
 namespace otbr {
 namespace rest {
+namespace actions {
 
-/**
- * This class implements a REST server.
- */
-class RestWebServer : public MainloopProcessor
+class Handler
 {
 public:
     /**
-     * The constructor to initialize a REST server.
-     *
-     * @param[in] aHost  A reference to the Thread controller.
+     * Validate a json object for the action.
      */
-    RestWebServer(RcpHost &aHost, const std::string &aRestListenAddress, int aRestListenPort);
+    bool Validate(const cJSON &aJson) const { return mValidate(aJson); }
 
     /**
-     * The destructor destroys the server instance.
+     * Create an action object from a json object.
      */
-    ~RestWebServer(void) override;
+    std::unique_ptr<BasicActions> Create(const cJSON &aJson, Services &aServices) const
+    {
+        return mCreate(aJson, aServices);
+    }
 
     /**
-     * This method initializes the REST server.
+     * Make a handler for a specific action type.
      */
-    void Init(void);
-
-    void Update(MainloopContext &aMainloop) override;
-    void Process(const MainloopContext &aMainloop) override;
+    template <typename ActionTy> static Handler MakeHandler(void)
+    {
+        return Handler{Helper<ActionTy>::Validate, Helper<ActionTy>::Build};
+    }
 
 private:
-    void      UpdateConnections(const fd_set &aReadFdSet);
-    void      CreateNewConnection(int32_t &aFd);
-    otbrError Accept(int32_t aListenFd);
-    bool      ParseListenAddress(const std::string listenAddress, struct in6_addr *sin6_addr);
-    void      InitializeListenFd(void);
-    bool      SetFdNonblocking(int32_t fd);
+    Handler(bool (*aValidate)(const cJSON &aJson),
+            std::unique_ptr<BasicActions> (*aCreate)(const cJSON &aJson, Services &aServices))
+        : mValidate(aValidate)
+        , mCreate(aCreate)
+    {
+    }
 
-    // Resource handler
-    Resource mResource;
-    // Struct for server configuration
-    sockaddr_in6 mAddress;
-    // File descriptor for listening
-    int32_t mListenFd;
-    // Connection List
-    std::unordered_map<int32_t, std::unique_ptr<Connection>> mConnectionSet;
+    bool (*mValidate)(const cJSON &aJson);
+    std::unique_ptr<BasicActions> (*mCreate)(const cJSON &aJson, Services &aServices);
+
+    template <typename ActionTy> struct Helper
+    {
+        static bool Validate(const cJSON &aJson) { return ActionTy::Validate(aJson); }
+
+        static std::unique_ptr<BasicActions> Build(const cJSON &aJson, Services &aServices)
+        {
+            return std::unique_ptr<BasicActions>(new ActionTy(aJson, aServices));
+        }
+    };
 };
 
+const Handler *FindHandler(const char *aName);
+
+} // namespace actions
 } // namespace rest
 } // namespace otbr
 
-#endif // OTBR_REST_REST_WEB_SERVER_HPP_
+#endif // OTBR_REST_ACTIONS_HANDLER_HPP_

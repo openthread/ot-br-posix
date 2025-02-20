@@ -1,0 +1,20 @@
+meta {
+  name: Get Action Item by ActionId (Bad Request)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{protocol}}://{{host}}:{{port}}{{base_path}}/actions/not_a_uuid
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+  ~Accept: application/json
+}
+
+assert {
+  res.status: eq 400
+}

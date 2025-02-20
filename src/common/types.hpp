@@ -59,6 +59,7 @@
 #define OTBR_IP4_ADDRESS_SIZE 4
 #define OTBR_NETWORK_KEY_SIZE 16
 #define OTBR_PSKC_SIZE 16
+#define CHILD_MASK 0x1FF
 
 /**
  * Forward declaration for otIp6Prefix to avoid including <openthread/ip6.h>
