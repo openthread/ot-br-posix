@@ -42,6 +42,7 @@ main()
             -DOTBR_FEATURE_FLAGS=ON \
             -DOTBR_TELEMETRY_DATA_API=ON \
             -DOTBR_WEB=ON \
+            -DOTBR_VENDOR_NAME="OpenThreadTest" \
             -DOTBR_REST=ON \
             .. \
         && scan-build -o "${SCAN_TMPDIR}" -analyze-headers -v ninja)
